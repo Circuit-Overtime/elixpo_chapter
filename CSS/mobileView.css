@@ -122,6 +122,12 @@
         transform: scale(0.9);
         left: 38%;
       }
+
+      .spinner
+      {
+        top: 50%;
+        left: 260%;
+      }
     .FooterSocials
   {
     position: absolute;
