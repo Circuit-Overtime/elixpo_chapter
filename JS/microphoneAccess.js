@@ -73,7 +73,7 @@ console.log("hearing");
             // console.error('Microphone access denied:', err);
         });
     } else {
-        alert('getUserMedia not supported on your browser');
+        alert('Please Try From a Different Device');
     }
 })
 
