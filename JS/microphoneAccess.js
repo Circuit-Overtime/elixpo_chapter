@@ -8,7 +8,7 @@ document.getElementById("microphoneAccessBtn").addEventListener("click", () => {
         .then(function(stream) {
           document.getElementById("microphoneAccessBtn").style.opacity = "0.8";
           document.getElementById("microphoneAccessBtn").style.pointerEvents = "none";
-          document.getElementById("mictext").innerHTML = "Blow out the Candles";
+          document.getElementById("mictext").innerHTML = "Blow Air on the Screen";
         // audio access guranted
             var audioContext = new AudioContext();
             var audioStream = audioContext.createMediaStreamSource(stream);
