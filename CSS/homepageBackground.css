@@ -1,0 +1,277 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script&family=Josefin+Sans&family=Lora&family=Montserrat&family=Orbitron:wght@500&family=Protest+Riot&family=Reenie+Beanie&family=Sevillana&family=Source+Code+Pro&family=Style+Script&display=swap');
+body
+{
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.majorContainer 
+{
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    /* Add your background pattern here */
+    background-color: #0e0e0e;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.171) 2px, transparent 0);
+    background-size: 30px 30px;
+    background-position: -5px -5px;
+  }
+  .FormCard
+  {
+    position: absolute;
+    top: 35%;
+    transform: translateX(-40%) translateY(-30%);
+    left: 70%;
+    width: 30%;
+    height: 70%;
+    border-radius: 1rem;
+    background-color: #4158D0;
+    background-image: linear-gradient(43deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%);
+    box-shadow: rgba(0, 0, 0, 0.17) 0px -23px 25px 0px inset, rgba(0, 0, 0, 0.15) 0px -36px 30px 0px inset, rgba(0, 0, 0, 0.1) 0px -79px 40px 0px inset, rgba(0, 0, 0, 0.06) 0px 2px 1px, rgba(0, 0, 0, 0.09) 0px 4px 2px, rgba(0, 0, 0, 0.09) 0px 8px 4px, rgba(0, 0, 0, 0.09) 0px 16px 8px, rgba(0, 0, 0, 0.09) 0px 32px 16px;
+  }
+ .heading
+{
+    position: absolute;
+    top: -70px;
+    text-shadow: 5px 0 5px #0e0e0e;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Dancing Script', cursive;
+    color: #fff;
+    font-size: 5em;
+    font-weight: 700;
+}
+
+
+  .name-container::after, .name-container::before,
+  .age-container::after, .age-container::before,
+  .message-container::after, .message-container::before,
+  .link-container::after, .link-container::before
+   {
+    content: "";
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    position: absolute;
+  }
+  
+  .name-container::before,
+  .age-container::before,
+  .message-container::before,
+  .link-container::before {
+    top: -1px;
+    left: -1px;
+    background: linear-gradient(0deg, rgb(218, 232, 247) 0%, rgb(255, 255, 255) 100%);
+    z-index: -1;
+  }
+  
+  .name-container::after,
+  .age-container::after,
+  .message-container::after,
+  .link-container::after {
+    bottom: -1px;
+    right: -1px;
+    background: linear-gradient(0deg, rgb(163, 206, 255) 0%, rgb(211, 232, 255) 100%);
+    box-shadow: rgba(79, 156, 232, 0.7019607843) 3px 3px 5px 0px, rgba(79, 156, 232, 0.7019607843) 5px 5px 20px 0px;
+    z-index: -2;
+  }
+  
+  .input {
+    padding: 10px;
+    width: 100%;
+    background: linear-gradient(135deg, rgb(218, 232, 247) 0%, rgb(214, 229, 247) 100%);
+    border: none;
+    font-weight: 700;
+    color: #3b3b3b;
+    font-size: 20px;
+    border-radius: 50px;
+    box-sizing: border-box;
+    padding-left: 50px;
+    padding-right: 40px;
+    font-family: 'Source Code Pro', monospace;
+  }
+  
+  .input:focus {
+    outline: none;
+    background: linear-gradient(135deg, rgb(239, 247, 255) 0%, rgb(214, 229, 247) 100%);
+  }
+
+
+
+  .name-container {
+    position: absolute;
+    top: 27%;
+    left: 3%;
+    width: 90%;
+    border-radius: 50px;
+    background: linear-gradient(135deg, rgb(218, 232, 247) 0%, rgb(214, 229, 247) 100%);
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    font-family: 'Source Code Pro', monospace;
+  }
+  .name-container > ion-icon
+  {
+    position: absolute;
+    left: 5%;
+    font-size: 24px;
+    color: #0e0e0e;
+  }
+  .name-container > input::placeholder
+  {
+    font-size: 15px;
+    text-align: center;
+  }
+  .age-container {
+    position: absolute;
+    top: 43%;
+    left: 3%;
+    width: 30%;
+    border-radius: 50px;
+    background: linear-gradient(135deg, rgb(218, 232, 247) 0%, rgb(214, 229, 247) 100%);
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    font-family: 'Source Code Pro', monospace;
+  }
+  .age-container > ion-icon
+  {
+    position: absolute;
+    left: 5%;
+    font-size: 24px;
+    color: #0e0e0e;
+  }
+  .link-container {
+    position: absolute;
+    top: 43%;
+    left: 38%;
+    width: 53%;
+    border-radius: 50px;
+    background: linear-gradient(135deg, rgb(218, 232, 247) 0%, rgb(214, 229, 247) 100%);
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    font-family: 'Source Code Pro', monospace;
+  }
+  .link-container > input::placeholder
+  {
+    font-size: 12px;
+    text-align: center;
+  } 
+  .link-container > input 
+  {
+    padding-left: 5px;
+    font-size: 15px;
+  }
+  .link-container > .domain
+  {
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .link-container > ion-icon
+  {
+    position: absolute;
+    left: 83%;
+    font-size: 24px;
+    color: #0e0e0e;
+  }
+  .message-container {
+    position: absolute;
+    top: 58%;
+    left: 3%;
+    width: 90%;
+    height: 20%;
+    border-radius: 25px;
+    background: linear-gradient(135deg, rgb(218, 232, 247) 0%, rgb(214, 229, 247) 100%);
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    font-family: 'Source Code Pro', monospace;
+  }
+  .message-container > ion-icon
+  {
+    position: absolute;
+    left: 5%;
+    font-size: 24px;
+    color: #0e0e0e;
+  }
+  
+
+
+  /* ====================================================GENERATE BUTTON============================================================ */
+  .Documents-btn {
+    position: absolute;
+    top: 85%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: fit-content;
+    height: 45px;
+    border: none;
+    padding: 0px 15px;
+    border-radius: 5px;
+    background-color: rgb(49, 49, 83);
+    gap: 10px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    user-select: none;
+    -webkit-tap-highlight-color : transparent;
+  }
+  .folderContainer {
+    width: 40px;
+    height: fit-content;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+  }
+  .fileBack {
+    z-index: 1;
+    width: 80%;
+    height: auto;
+  }
+  .filePage {
+    width: 50%;
+    height: auto;
+    position: absolute;
+    z-index: 2;
+    transition: all 0.3s ease-out;
+  }
+  .fileFront {
+    width: 85%;
+    height: auto;
+    position: absolute;
+    z-index: 3;
+    opacity: 0.95;
+    transform-origin: bottom;
+    transition: all 0.3s ease-out;
+  }
+  .text {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .Documents-btn:hover .filePage {
+    transform: translateY(-5px);
+  }
+  .Documents-btn:hover {
+    background-color: rgb(58, 58, 94);
+  }
+  .Documents-btn:hover .fileFront {
+    transform: rotateX(30deg);
+  }
+
+.errorText
+{
+  position: absolute;
+  color: #ffc;
+  font-family: 'Source Code Pro', monospace;
+  top: 85%;
+  left: 54%;
+  transform: translateX(37%);
+}

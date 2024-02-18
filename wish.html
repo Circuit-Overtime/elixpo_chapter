@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <link rel="stylesheet" href="CSS/wish.css">
+    <link rel="stylesheet" href="CSS/confetti.css">
+    <link rel="stylesheet" href="CSS/mobileView.css">
+</head>
+<body>
+    <div class="confetti"></div>
+
+    <div class="spinnerContainer">
+    <div class="spinner">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+    </div>
+
+    <div class="majorContainer"></div>
+    <div class="blob1"></div>
+    <div class="blob2"></div>
+    <div class="blob3"></div>
+    <div class="blob4"></div>
+    <div class="messageText" id="messageText"></div>
+    <div class="cake" id="cake">
+        <div class="plate"></div>
+        <div class="layer layer-bottom"></div>
+        <div class="layer layer-middle"></div>
+        <div class="layer layer-top"></div>
+        <div class="icing"></div>
+        <div class="drip drip1"></div>
+        <div class="drip drip2"></div>
+        <div class="drip drip3"></div>
+    </div>
+
+
+    
+    <button class="btn" id="microphoneAccessBtn">
+        
+        <span class="text" id="mictext">Unmute Mic to Blow Candles</span>
+    </button>
+
+    <ion-icon name="refresh" id="reloadSite"></ion-icon>
+
+
+    <div class="FooterSocials">
+        <ion-icon name="logo-github" id="githubRedirect"></ion-icon>
+        <ion-icon name="mail" id="createCardRedirect"></ion-icon>
+        <ion-icon name="logo-instagram" id="instagramRedirect"></ion-icon>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.7.1/firebase-firestore.js"></script>
+
+    <script src="JS/createCandles.js"></script>
+    <script src="JS/microphoneAccess.js"></script>
+
+</body>
+</html>
