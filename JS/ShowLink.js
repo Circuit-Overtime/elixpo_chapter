@@ -40,7 +40,7 @@ document.getElementById("fetchCard").addEventListener("click", () => {
   let inviteCopied = `
 Hey! Here's Surprise for you....
     I've made a Small Birthday Gift for You....
-        Here's The Secret Code for you to Access it: '${sessionStorage.getItem("linkToShare")}'
+        Here's The Secret Code for you to Access it: '${sessionStorage.getItem("linkToShare")}' (case sensative)
 
         1. Go to the Site and Paste your Secret Code
         2. Click on Receive Card to see the Surprise
@@ -49,7 +49,7 @@ Hey! Here's Surprise for you....
 
     click on this link to get your Surprise:- https://circuit-overtime.github.io/Birthday/linkRedirecrt.html
 
-    ....Don't Forget, your secret code is "${sessionStorage.getItem("linkToShare")}";
+    ....Don't Forget, your secret code is "${sessionStorage.getItem("linkToShare")}"; (case sensative)
 (Secured by Firebase, Hosted by GitHub);
 `;
 
