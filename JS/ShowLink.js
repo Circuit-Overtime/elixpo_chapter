@@ -48,7 +48,8 @@ Hey! Here's Surprise for you....
     Wishing you a very happy day!
 
     click on this link to get your Surprise:- https://circuit-overtime.github.io/Birthday/linkRedirecrt.html
-    Don't Forget, your secret code is "${sessionStorage.getItem("linkToShare")}";
+
+    ....Don't Forget, your secret code is "${sessionStorage.getItem("linkToShare")}";
 (Secured by Firebase, Hosted by GitHub);
 `;
 
