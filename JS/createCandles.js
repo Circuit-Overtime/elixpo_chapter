@@ -129,5 +129,12 @@ db.collection("links").doc(sessionStorage.getItem("birthdayLinkDetails")).get().
 
 
   document.getElementById("githubRedirect").addEventListener("click", () =>{
-    
+    location.href = ("https://github.com/Circuit-Overtime/Birthday");
+  })
+
+  document.getElementById("createCardRedirect").addEventListener("click", () =>{
+    location.replace("birthdayCard.html");
+  })
+  document.getElementById("instagramRedirect").addEventListener("click", () =>{
+    location.href = ("https://www.instagram.com/_b00lean_/");
   })
