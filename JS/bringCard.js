@@ -44,7 +44,7 @@ for(const star of document.getElementsByClassName("magic-starDir2")) {
   }
 
   document.getElementById("fetchCard").addEventListener("click", () => {
-    const cardSecret = document.getElementById("linkAccept").value.trim();
+    const cardSecret = document.getElementById("linkAccept").value.trim().toLowerCase();
     if(document.getElementById("linkAccept").value.trim() != "")
     {
       document.querySelector(".spinner").style.opacity = "1";

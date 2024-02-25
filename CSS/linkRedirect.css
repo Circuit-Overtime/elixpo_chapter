@@ -157,6 +157,7 @@ body {
     border: 2px solid #ffc;
     font-family: "Orbitron", sans-serif;
     caret-color: #fff;
+    text-transform: lowercase;
 
 
   }

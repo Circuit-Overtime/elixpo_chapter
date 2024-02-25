@@ -68,6 +68,7 @@
       box-sizing: border-box;
       padding-left: 30px;
       padding-right: 0px;
+      text-transform: lowercase;
     }
     #inputAge::placeholder
     {

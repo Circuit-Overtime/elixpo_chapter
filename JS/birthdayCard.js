@@ -53,7 +53,7 @@ function generateCard()
   const ageInput =  document.getElementById("inputAge").value.trim();
   const nameInput =  document.getElementById("inputName").value.trim();
   const messageInput = document.getElementById("includedMessage").value.trim();
-  const customURL = document.getElementById("customURL").value.trim();
+  const customURL = document.getElementById("customURL").value.trim().toLowerCase();
   const timeNow = Date.now();
   if((ageInput != "") && (nameInput != ""))
   {
@@ -68,7 +68,7 @@ function generateCard()
               db.collection("links").doc(randomCode).set({
                 age : ageInput,
                 name : nameInput,
-                encodeURL : randomCode,
+                encodeURL : randomCode.toLowerCase(),
                 message : messageInput,
                 timeStamp : timeNow
       
@@ -132,3 +132,8 @@ function generateCard()
 
   }
 
+  document.getElementById("inputAge").addEventListener("input", function(event) {
+    const input = event.target.value;
+    const sanitizedInput = input.replace(/\D/g, ''); // Remove non-digit characters
+    event.target.value = sanitizedInput; // Update input value
+});

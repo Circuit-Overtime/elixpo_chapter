@@ -152,6 +152,7 @@ body
     padding: 5px;
     display: flex;
     align-items: center;
+    text-transform: lowercase;
     font-family: 'Source Code Pro', monospace;
   }
   .link-container > input::placeholder
@@ -197,7 +198,10 @@ body
     color: #0e0e0e;
   }
   
-
+#customURL
+{
+  text-transform: lowercase;
+}
 
   /* ====================================================GENERATE BUTTON============================================================ */
   .Documents-btn {
