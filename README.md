@@ -19,7 +19,7 @@ Welcome to Birthday.asm, is an experimental playfull method to create dynamic Bi
 ## Project Screenshots
 
 <p align="center">
-  <img src="https://firebasestorage.googleapis.com/v0/b/birthday-1340e.appspot.com/o/Assests%2FbirthdaySnippet%20(1).jpg?alt=media&token=d9167bac-7cb6-491a-b046-5867b711e410" alt="project-screenshot" width="400"> <img src="https://firebasestorage.googleapis.com/v0/b/birthday-1340e.appspot.com/o/Assests%2FbirthdaySnippet%20(1).jpg?alt=media&token=d9167bac-7cb6-491a-b046-5867b711e410" alt="project-screenshot" width="400"> <img src="https://firebasestorage.googleapis.com/v0/b/birthday-1340e.appspot.com/o/Assests%2FbirthdaySnippet%20(3).jpg?alt=media&token=ee2cb9ce-b164-4283-ac02-db3d51bc7ba0" alt="project-screenshot" width="400">
+  <img src="https://firebasestorage.googleapis.com/v0/b/birthday-1340e.appspot.com/o/Assests%2FbirthdaySnippet%20(2).jpg?alt=media&token=95b9f539-47e6-416b-8e3d-8eacd0ffdbd3" alt="project-screenshot" width="400"> <img src="https://firebasestorage.googleapis.com/v0/b/birthday-1340e.appspot.com/o/Assests%2FbirthdaySnippet%20(1).jpg?alt=media&token=d9167bac-7cb6-491a-b046-5867b711e410" alt="project-screenshot" width="400"> <img src="https://firebasestorage.googleapis.com/v0/b/birthday-1340e.appspot.com/o/Assests%2FbirthdaySnippet%20(3).jpg?alt=media&token=ee2cb9ce-b164-4283-ac02-db3d51bc7ba0" alt="project-screenshot" width="400">
 </p>
 
 ## 🧐 Features
