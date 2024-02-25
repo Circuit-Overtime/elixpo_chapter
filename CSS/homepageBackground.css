@@ -132,6 +132,7 @@ body
     padding: 5px;
     display: flex;
     align-items: center;
+    
     font-family: 'Source Code Pro', monospace;
   }
   .age-container > ion-icon

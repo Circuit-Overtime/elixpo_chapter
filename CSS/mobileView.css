@@ -63,6 +63,16 @@
         top: 60%; /* Adjust top position for smaller screens */
     }
 
+    #inputAge
+    {
+      box-sizing: border-box;
+      padding-left: 30px;
+      padding-right: 0px;
+    }
+    #inputAge::placeholder
+    {
+      font-size: 20px;
+    }
     #fetchCard
     {
         transform-origin: center;
