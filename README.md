@@ -1,10 +1,12 @@
 # Birthday.asm
 
+Welcome to Birthday.asm, is an experimental playfull method to create dynamic Birthday Cards for your loved ones. It uses interactive feature with an users microphone, to detect air blowing sounds to detonate candles and reveal the secret birthday message for the recipent!
+
 <p align="center">
   <img src="https://firebasestorage.googleapis.com/v0/b/birthday-1340e.appspot.com/o/Assests%2FBirthday%20Cake.png?alt=media&token=63f1f8c9-4b38-4c12-b127-c8ad751bc6f0" alt="project-image">
 </p>
 
-Welcome to Birthday.asm, is an experimental playfull method to create dynamic Birthday Cards for your loved ones. It uses interactive feature with an users microphone, to detect air blowing sounds to detonate candles and reveal the secret birthday message for the recipent!
+
 
 <p align="center">
   <img src="https://img.shields.io/badge/built_with-VS_Code-blue" alt="shields"> <img src="https://img.shields.io/badge/hosted%20in%20GitHub-8A2BE2" alt="shields"> <img src="https://img.shields.io/badge/with-Firebase_Database-ff9000" alt="shields">
