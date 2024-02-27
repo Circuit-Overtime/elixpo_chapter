@@ -3,7 +3,7 @@
 Welcome to Birthday.asm, is an experimental playfull method to create dynamic Birthday Cards for your loved ones. It uses interactive feature with an users microphone, to detect air blowing sounds to detonate candles and reveal the secret birthday message for the recipent!
 
 <p align="center">
-  <img src="https://firebasestorage.googleapis.com/v0/b/birthday-1340e.appspot.com/o/Assests%2FBirthday%20Cake.png?alt=media&token=63f1f8c9-4b38-4c12-b127-c8ad751bc6f0" alt="project-image">
+  <img src="https://firebasestorage.googleapis.com/v0/b/birthday-1340e.appspot.com/o/Assests%2FBirthday%20Cake%20LOgo.png?alt=media&token=d5278cc1-c763-4bb2-944c-dabb2be45a35" alt="project-image">
 </p>
 
 
