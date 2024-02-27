@@ -45,6 +45,17 @@ body {
     height: device-height;
   }
 
+  .containerBranch
+  {
+    position: absolute;
+    height: 768px;
+    width: 1366px;
+    left: 50%;
+    top: 50%;
+    transform: translateX(-50%) translateY(-50%) ;
+  }
+
+  
 
   .blob1
 {

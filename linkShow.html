@@ -10,6 +10,7 @@
 
 </head>
 <body>
+  <div class="containerBranch">
     <div class="majorContainer"></div>
     <div class="blob1"></div>
     <div class="blob2"></div>
@@ -56,7 +57,7 @@
   
       <span class="text">Generate Card</span>
   </button>
-
+</div>
 
       <script> 
       let index = 0,
@@ -99,14 +100,14 @@ document.getElementById("makeCardCard").addEventListener("click", () => {
 })
 document.getElementById("fetchCard").addEventListener("click", () => {
   let inviteCopied = `
-Hey! Here's Surprise for you....
-    I've made a Small Birthday Gift for You....
+Hey! Here's Surprise for you.... ✨
+    I've made a Small Birthday Gift for You.... 🎁
         Here's The Secret Code for you to Access it: '${sessionStorage.getItem("linkToShare")}' (case sensative)
 
-        1. Go to the Site and Paste your Secret Code
-        2. Click on Receive Card to see the Surprise
+        1. Go to the Site and Paste your Secret Code 📋
+        2. Click on Receive Card to see the Surprise 😯
       
-    Wishing you a very happy day!
+    Wishing you a very happy day! 🎉
 
     click on this link to get your Surprise:- https://circuit-overtime.github.io/Birthday/linkRedirecrt.html
 
@@ -131,5 +132,6 @@ navigator.clipboard.writeText(inviteCopied)
   });
 })
       </script>
+      <script src="JS/PatchContextMenu.js"></script>
 </body>
 
