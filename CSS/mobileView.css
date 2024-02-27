@@ -1,6 +1,13 @@
 @media (max-width: 640px) {
 
-
+  .birthdayCap
+  {
+    display: none;
+  }
+  .birthdayCap
+  {
+    display: none;
+  }
     .FormCard {
         width: 80%; /* Adjust width for smaller screens */
         left: 50%; /* Center horizontally */

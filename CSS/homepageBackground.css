@@ -4,6 +4,18 @@ body
     box-sizing: border-box;
     margin: 0;
 }
+.redirectIcon
+{
+  position: absolute;
+  font-size: 30px;
+  color: #ffc;
+  left: 85%;
+  top: 5%;
+  z-index: 10;
+  cursor: pointer;
+
+  -webkit-tap-highlight-color: transparent;
+}
 
 .majorContainer 
 {
@@ -285,12 +297,27 @@ body
 {
   position: absolute;
   height: 100%;
-  width: 50%;
-  top: 40%;
-  transform: translateY(-50%);
+  width: 40%;
+  top: 45%;
+  transform: translateY(-50%) scale(0.85);
   left: 5%;
-  background: url(https://firebasestorage.googleapis.com/v0/b/birthday-1340e.appspot.com/o/Assests%2FBirthday%20Cake.png?alt=media&token=63f1f8c9-4b38-4c12-b127-c8ad751bc6f0);
+  background-repeat: no-repeat;
   background-size: cover;
   z-index: 100;
-  display: none;
+  display: block;
+}
+.birthdayCapOpt
+{
+  position: absolute;
+  height: 100%;
+  width: 40%;
+  top: 44%;
+  transform: translateY(-50%) scale(0.85);
+  left: 4.5%;
+  background-repeat: no-repeat;
+  background-size: cover;
+  z-index: 102;
+  filter: blur(3px);
+  display: block;
+  transition: 0.5s;
 }

@@ -333,7 +333,8 @@ body {
 
 .messageText
 {
-  position: absolute;
+  position: relative;
+  margin-top: 20px;
   color: #fff;
   font-family: "Dancing Script", cursive;
   font-weight: 400;
@@ -347,7 +348,33 @@ body {
   transform: translateX(-50%);
 }
 
-
+.nameContainer
+{
+  position: relative;
+  color: #ffae00;
+  font-family: "Dancing Script", cursive;
+  font-weight: 400;
+  font-size: 1.2em;
+  letter-spacing: 2px;
+  max-width: 80%;
+  flex-wrap: wrap;
+  word-wrap: break-word;
+  width: 95%;
+  left: 50%;
+  top: 2%;
+  text-align: left;
+  transform: translateX(-50%) translateY(-50px);
+  filter: blur(5px);
+  transition: 1s;
+  margin-bottom: 10px;
+  
+}
+.nameContainer.visible
+{
+  filter: blur(0px);
+  transform: translateX(-50%) translateY(0px);
+  transition: 1s;
+}
 #reloadSite
 {
   position: absolute;

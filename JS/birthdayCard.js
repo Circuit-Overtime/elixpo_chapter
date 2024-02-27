@@ -137,3 +137,11 @@ function generateCard()
     const sanitizedInput = input.replace(/\D/g, ''); // Remove non-digit characters
     event.target.value = sanitizedInput; // Update input value
 });
+
+document.getElementById("redirectIcon").addEventListener("click", () => {
+  location.replace("linkRedirecrt.html");
+})
+
+document.querySelector(".birthdayCap").addEventListener("load", () => {
+  document.querySelector(".birthdayCapOpt").style.opacity = "0";
+})

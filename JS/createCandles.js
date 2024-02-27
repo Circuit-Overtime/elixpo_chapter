@@ -27,6 +27,7 @@ const confettiCount = 600;
 const availableSpace = 310 - 10; // Maximum left position - Minimum left position
 const spaceBetweenCandles = availableSpace / (candleCount - 1); // Calculate spacing between candles
 
+
 function createCandles(n)
 {
     for (let i = 0; i < n; i++) {
@@ -111,17 +112,7 @@ db.collection("links").doc(sessionStorage.getItem("birthdayLinkDetails")).get().
   })
 
 
-  window.onload = e =>
-  {
-    if((sessionStorage.getItem("birthdayAgeNumber") != null) || (sessionStorage.getItem("birthdayLinkDetails") != null))
-    {
-        createCandles(sessionStorage.getItem("birthdayAgeNumber"));
-    }
-    else 
-    {
-        location.replace("linkRedirecrt.html");
-    }
-  }
+
 
   document.getElementById("reloadSite").addEventListener("click", () => {
     location.reload();
@@ -137,4 +128,9 @@ db.collection("links").doc(sessionStorage.getItem("birthdayLinkDetails")).get().
   })
   document.getElementById("instagramRedirect").addEventListener("click", () =>{
     location.href = ("https://www.instagram.com/_b00lean_/");
+  })
+
+  db.collection("links").doc(sessionStorage.getItem("birthdayLinkDetails")).get().then((doc) => {
+    document.getElementById("nameContainer").innerHTML = "Hello, "+doc.data().name;
+    document.getElementById("nameContainer").classList.add("visible")
   })

@@ -1,3 +1,14 @@
+window.onload = e =>
+{
+  if((sessionStorage.getItem("birthdayAgeNumber") != null) || (sessionStorage.getItem("birthdayLinkDetails") != null))
+  {
+      createCandles(sessionStorage.getItem("birthdayAgeNumber"));
+  }
+  if((sessionStorage.getItem("birthdayAgeNumber") == null) || (sessionStorage.getItem("birthdayLinkDetails") == null))
+  {
+      location.replace("linkRedirecrt.html");
+  }
+}
 
 document.getElementById("microphoneAccessBtn").addEventListener("click", () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -67,12 +78,31 @@ document.getElementById("microphoneAccessBtn").addEventListener("click", () => {
 
             audioStream.connect(analyser);
             analyzeAudio(analyser);
-console.log("hearing");
+
         })
-        .catch(function(err) {
-            // console.error('Microphone access denied:', err);
-        });
-    } else {
+        .catch(function(error) {
+          if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+              // Handle microphone permission denial
+              document.getElementById("mictext").innerHTML = "Please Allow Mic - Click Here";
+              document.getElementById("nameContainer").innerHTML = "Please Allow Mic Access from Site Settings";
+
+              setTimeout(() => {
+                document.getElementById("mictext").innerHTML = "Click Here to Unmute Mic";
+                db.collection("links").doc(sessionStorage.getItem("birthdayLinkDetails")).get().then((doc) => {
+                  document.getElementById("nameContainer").innerHTML = "Hello, "+doc.data().name;
+                })
+              }, 5200);
+          } else {
+              // Handle other errors
+              console.error("Error accessing microphone:", error);
+          }
+      });
+
+ 
+    } 
+
+    
+    else {
         alert('Please Try From a Different Device');
     }
 })
