@@ -1,4 +1,4 @@
-document.body.insertAdjacentHTML('beforeend', '<p id="rightClickVouch"></p>');
+document.body.insertAdjacentHTML('beforeend', '<p id="rightClickVouch" style="display:none;"></p>');
 document.getElementById("rightClickVouch").style.position = "absolute";
 document.getElementById("rightClickVouch").style.color = "#ffc";
 document.getElementById("rightClickVouch").style.transition = "0.25s"; 

@@ -3,6 +3,9 @@ body
 {
     box-sizing: border-box;
     margin: 0;
+    overflow: hidden;
+    background-color: #0e0e0e;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.171) 2px, transparent 0);
 }
 
 .containerBranch
