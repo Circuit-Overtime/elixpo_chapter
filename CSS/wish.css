@@ -5,6 +5,15 @@ body {
   overflow: hidden;
 }
 
+.containerBranch
+{
+  position: absolute;
+  height: 641px;
+  width: 1366px;
+  left: 50%;
+  top: 50%;
+  transform: translateX(-50%) translateY(-50%) ;
+}
 
 
 .spinnerContainer
@@ -366,7 +375,7 @@ body {
   left: 50%;
   top: 2%;
   text-align: left;
-  transform: translateX(-50%) translateY(-50px);
+  transform: translateX(-50%) translateY(0px);
   filter: blur(5px);
   transition: 1s;
   margin-bottom: 10px;
@@ -502,226 +511,87 @@ body {
 
 
   @media (max-width: 640px) {
-    .containerBranch
+    #cake
     {
-      height: 100%;
-      width: 100%;
+      transform: scale(0.9);
+      left: 47%;
     }
-    .birthdayCap
+
+    .spinner
     {
-      display: none;
+      top: 50%;
+      left: 260%;
     }
-    .birthdayCapOpt
-    {
-      display: none;
-    }
-      .FormCard {
-          width: 80%; /* Adjust width for smaller screens */
-          left: 50%; /* Center horizontally */
-          transform: translateX(-50%) translateY(-30%);
-      }
-      .FormCard input::placeholder
-      {
-          font-size: 13px;
-      }
-      .errorText {
-          font-size: 14px; /* Adjust font size for smaller screens */
-          top: 80%; /* Adjust top position for smaller screens */
-          left: 50%; /* Center horizontally */
-          transform: translateX(-50%);
-      }
-      .linkAcceptPreURL
-      {
-          height: 11%;
-  
-      }
-      .link_container
-      {
-          font-size: 14px;
-          top: 32%;
-          left: 50%;
-      }
-      .linkAccept
-      {
-          height: 13%;
-          font-size: 14px;
-          padding-right: 80px;
-          box-sizing: border-box;
-      }   
-      .linkAccept::placeholder
-      {
-          font-size: 9px;
-      }
-      .direction1
-      {
-          font-size: 15px;
-          left: 5%;
-          text-align: left;
-          padding: 10px; /* Adjust padding for smaller screens */
-          top: 50%; /* Adjust top position for smaller screens */
-      }
-  
-      .direction1.linkshow
-      {
-          font-size: 22px;
-          text-align: center;
-          left: 3%;
-      }
-  
-      .direction2
-      {
-          font-size: 15px;
-          left: 5%;
-          text-align: left;
-          padding: 10px; /* Adjust padding for smaller screens */
-          top: 60%; /* Adjust top position for smaller screens */
-      }
-  
-      #inputAge
-      {
-        box-sizing: border-box;
-        padding-left: 30px;
-        padding-right: 0px;
-        text-transform: lowercase;
-      }
-      #inputAge::placeholder
-      {
-        font-size: 20px;
-      }
-      #fetchCard
-      {
-          transform-origin: center;
-          left: 0%;
-          transform: scale(0.8);
-          -webkit-tap-highlight-color : transparent;
-      }
-      #makeCardCard   
-      {
-          transform-origin: center;
-          transform: scale(0.6);
-          left: 45%;
-          border: 2px solid #ffc;
-          -webkit-tap-highlight-color : transparent;
-      }
-  
-      #makeCardCard:hover {
-          fill: white;
-          transform:  scale(0.6);
-        } 
-        #fetchCard:hover {
-          fill: white;
-          transform:  scale(0.6);
-        } 
-  
-        #fetchCard:active {
-          background: linear-gradient(0deg,#A47CF3,#683FEA);
-          box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.4),
-          inset 0px -4px 0px 0px rgba(0, 0, 0, 0.2),
-          0px 0px 0px 4px rgba(255, 255, 255, 0.2),
-          0px 0px 180px 0px #9917FF;
-          transform:  scale(1.2);
-        }
-        #fetchCard:not(:active)
-        {
-          background: #1c1a1cce;
-          box-shadow: none;
-          transform:  scale(0.6);
-        }
-  
-        #makeCardCard:active {
-          background: linear-gradient(0deg,#A47CF3,#683FEA);
-          box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.4),
-          inset 0px -4px 0px 0px rgba(0, 0, 0, 0.2),
-          0px 0px 0px 4px rgba(255, 255, 255, 0.2),
-          0px 0px 180px 0px #9917FF;
-          transform:  scale(1.2);
-        }
-        #makeCardCard:not(:active)
-        {
-          background: #1c1a1cce;
-          box-shadow: none;
-          transform:  scale(0.6);
-        }
-        #cake
-        {
-          transform: scale(0.9);
-          left: 38%;
-        }
-  
-        .spinner
-        {
-          top: 50%;
-          left: 260%;
-        }
-      .FooterSocials
-    {
-      position: absolute;
-      top: 5%;
-      left: 57%;
-      opacity: 0.6;
-      width: 100%;
-      z-index: 10;
-    }
-    .FooterSocials ion-icon
-    {
-      color: #ffffff;
-      font-size: 24px;
-      margin-left: 15px;
-      cursor: pointer;
-  
-    }
-    .FooterSocials ion-icon:nth-child(1)
-    {
-      transform: rotate(9deg);
-    }
-  
-    .FooterSocials ion-icon:nth-child(2)
-    {
-      transform: rotate(-11deg);
-    }
-  
-    .FooterSocials ion-icon:nth-child(3)
-    {
-      transform: rotate(15deg);
-    }
-  
-    .FooterSocials ion-icon:nth-child(4)
-    {
-      transform: rotate(-15deg);
-      color: 7#ffc;
-     
-    }
-  
-    #microphoneAccessBtn:active {
-      background: linear-gradient(0deg,#A47CF3,#683FEA);
-      box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.4),
-      inset 0px -4px 0px 0px rgba(0, 0, 0, 0.2),
-      0px 0px 0px 4px rgba(255, 255, 255, 0.2),
-      0px 0px 180px 0px #9917FF;
-      transform: translateX(-50%) translateY(-50%) translateY(-2px);
-    }
-    #microphoneAccessBtn:not(:active)
-    {
-      background: #1c1a1cce;
-      box-shadow: none;
-      transform: translateX(-50%) translateY(-50%)
-    }
-    .messageText
-    {
-      top: 12%;
-      font-size: 18px;
-      min-height: 400px;
-      max-width: 90%;
-      word-wrap: break-word;
-    }
-  
-    #reloadSite
-    {
-      top: 5%;
-      left: 6%;
-      opacity: 0;
-      color: #ffc;
-      font-size: 30px;
-    }
+  .FooterSocials
+{
+  position: absolute;
+  top: 5%;
+  left: 52%;
+  opacity: 0.6;
+  width: 100%;
+  z-index: 10;
+}
+.FooterSocials ion-icon
+{
+  color: #ffffff;
+  font-size: 24px;
+  margin-left: 15px;
+  cursor: pointer;
+
+}
+.FooterSocials ion-icon:nth-child(1)
+{
+  transform: rotate(9deg);
+}
+
+.FooterSocials ion-icon:nth-child(2)
+{
+  transform: rotate(-11deg);
+}
+
+.FooterSocials ion-icon:nth-child(3)
+{
+  transform: rotate(15deg);
+}
+
+.FooterSocials ion-icon:nth-child(4)
+{
+  transform: rotate(-15deg);
+  color: 7#ffc;
+ 
+}
+
+#microphoneAccessBtn:active {
+  background: linear-gradient(0deg,#A47CF3,#683FEA);
+  box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.4),
+  inset 0px -4px 0px 0px rgba(0, 0, 0, 0.2),
+  0px 0px 0px 4px rgba(255, 255, 255, 0.2),
+  0px 0px 180px 0px #9917FF;
+  transform: translateX(-50%) translateY(-50%) translateY(-2px);
+}
+#microphoneAccessBtn:not(:active)
+{
+  background: #1c1a1cce;
+  box-shadow: none;
+  transform: translateX(-50%) translateY(-50%)
+}
+.messageText
+{
+  top: 12%;
+  font-size: 18px;
+  min-height: 400px;
+  max-width: 90%;
+  word-wrap: break-word;
+}
+
+#reloadSite
+{
+  top: 15%;
+  left: 6%;
+  opacity: 0;
+  color: #ffc;
+  font-size: 30px;
+}
+
   
   }   

@@ -214,11 +214,29 @@
 
   #reloadSite
   {
-    top: 5%;
+    top: 11%;
     left: 6%;
     opacity: 0;
     color: #ffc;
-    font-size: 30px;
+    font-size: 17px;
   }
+
+  .nameContainer
+  {
+    position: absolute;
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%) translateY(0px);
+
+  }
+
+  .nameContainer.visible
+{
+  left: 50%;
+  filter: blur(0px);
+  transform: translateX(-50%) translateY(0px);
+  transition: 1s;
+}
+
 
 }   
