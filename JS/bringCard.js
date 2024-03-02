@@ -12,7 +12,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 
-
+document.getElementById("linkAccept").focus();
 let index = 0,
     interval = 1000;
 
@@ -59,7 +59,25 @@ for(const star of document.getElementsByClassName("magic-starDir2")) {
           document.querySelector(".spinner").style.opacity = "0";
           location.replace("wish.html");
         }, 1200);
-      })
+      }) 
+      .catch((error) => {
+        document.querySelector(".spinner").style.opacity = "0";
+        document.getElementById("fetchCard").style.opacity = "1";
+        document.getElementById("fetchCard").style.pointerEvents = "all";
+        document.getElementById("linkAccept").value =  "The entered code doesn't exist";
+        setTimeout(() => {
+          document.getElementById("linkAccept").value = "";
+          document.getElementById("linkAccept").focus();
+        }, 2500)
+      });
+    }
+    else 
+    {
+      document.getElementById("linkAccept").setAttribute("placeholder", "Please Put a Valid Secret Code!");
+      setTimeout(() => {
+        document.getElementById("linkAccept").setAttribute("placeholder", "Paste or Write the Secret Card Code");
+        document.getElementById("linkAccept").focus();
+      }, 2500)
     }
 
   })
