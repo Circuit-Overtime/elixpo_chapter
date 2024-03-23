@@ -50,10 +50,11 @@ This project is inspired by and credits Ben Eater for the original idea and guid
 2. Refer to the documentation for assembly instructions, usage, and programming the computer.
 3. Explore and contribute to the project as desired.
 
+![Computer](https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145897.jpg?alt=media&token=d36dbc96-da91-45cc-a37d-31657e645f3d)
 <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-    <img src="https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145897.jpg?alt=media&token=d36dbc96-da91-45cc-a37d-31657e645f3d" alt="Schematic1" width="30%">
     <img src="https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145896.jpg?alt=media&token=7bcc363b-dd5d-4477-9c1a-314ed98063f4" alt="Schematic2" width="30%">
     <img src="https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145898.jpg?alt=media&token=96697968-a0e8-4ad4-b03e-d779f98ee663" alt="Schematic3" width="30%">
+      <img src="https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145899.jpg?alt=media&token=2c5d123b-e003-47b0-95af-bf26a02d17cf" alt="Schematic1" width="30%">
 </div>
 
 ##Changes
@@ -79,6 +80,7 @@ if(NFLAG == 1)
 - Updated the B register to be able to output contents to the BUS
 - Updated the step counter to be able to count from (000)~2~ to (110)~2~
 ``` Now the Step Counter can Count Upto 7 Steps, the current repo code has only 5 Steps without NOP) ```
+- Smoother Clock Speed with `20ms` delay from Arduino and `333Hz` PWM Clock.
 
 ## Contributions
 
