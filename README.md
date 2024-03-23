@@ -42,7 +42,7 @@ This project is inspired by and credits Ben Eater for the original idea and guid
 - `code/`: Contains the code for each component of the computer. [Code](https://github.com/Circuit-Overtime/8Bit-Computer-Programs/blob/1290e9e6d5b0815a8bc3304a0e4bb99490d9940c/8_Bit%20Computer%20Control%20Logic.ino)
 - `eepromFlasher/`: Contains the code to flash OP Code into EEPROM for anyone following Ben Eaters Approach of Creating Control Logic. [eepromFlasher.ino]()
 - `schematics/`: Includes schematics and diagrams detailing the computer's architecture.[Schematics](https://eater.net/8bit/schematics)
-- `docs/`: Documentation, user manual, and design notes at [Dedicated Docs Dropping Soon](https://github.com/Circuit-Overtime/8Bit-Computer-Programs/blob/1290e9e6d5b0815a8bc3304a0e4bb99490d9940c/eeprom%20programmer.ino)
+- `docs/`: Documentation, user manual, and design notes at [Dedicated Docs Dropping Soon](https://github.com/Circuit-Overtime/8Bit-Computer-Programs/blob/7d66061673cd8eb7509ea8b8da835e5c4654d911/Docs)
 
 ## Getting Started
 
