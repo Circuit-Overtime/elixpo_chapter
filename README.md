@@ -1,6 +1,6 @@
 # Programmable 8-bit Computer on Breadboards
 
-![Computer](/path/to/computer_image.jpg)
+![Computer](https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145895.jpg?alt=media&token=35921957-3199-47e0-983f-543870513678)
 
 This repository contains the code, schematics, and documentation for a programmable 8-bit computer built from scratch using simple logic gates on breadboards. The project is open source and fully scalable, capable of integrating additional functions and ICs.
 
@@ -34,15 +34,47 @@ This project is inspired by and credits Ben Eater for the original idea and guid
 
 ## Repository Structure
 
-- `code/`: Contains the code for each component of the computer. ![Code](https://github.com/Circuit-Overtime/8Bit-Computer-Programs)
-- `schematics/`: Includes schematics and diagrams detailing the computer's architecture.![Schematics](https://eater.net/8bit/schematics)
-- `docs/`: Documentation, user manual, and design notes at https://eater.net/8bit/schematics ![Docs](https://github.com/Circuit-Overtime/8Bit-Computer-Programs)
+- `code/`: Contains the code for each component of the computer. [Code](https://github.com/Circuit-Overtime/8Bit-Computer-Programs/blob/1290e9e6d5b0815a8bc3304a0e4bb99490d9940c/8_Bit%20Computer%20Control%20Logic.ino)
+- `eepromFlasher/`: Contains the code to flash OP Code into EEPROM for anyone following Ben Eaters Approach of Creating Control Logic. [eepromFlasher.ino]()
+- `schematics/`: Includes schematics and diagrams detailing the computer's architecture.[Schematics](https://eater.net/8bit/schematics)
+- `docs/`: Documentation, user manual, and design notes at [Dedicated Docs Dropping Soon](https://github.com/Circuit-Overtime/8Bit-Computer-Programs/blob/1290e9e6d5b0815a8bc3304a0e4bb99490d9940c/eeprom%20programmer.ino)
 
 ## Getting Started
 
 1. Clone the repository to your local machine.
 2. Refer to the documentation for assembly instructions, usage, and programming the computer.
 3. Explore and contribute to the project as desired.
+
+![Schematic1](https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145897.jpg?alt=media&token=d36dbc96-da91-45cc-a37d-31657e645f3d)
+
+![Schematic2](https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145896.jpg?alt=media&token=7bcc363b-dd5d-4477-9c1a-314ed98063f4)
+
+![Schematic3](https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145898.jpg?alt=media&token=96697968-a0e8-4ad4-b03e-d779f98ee663)
+
+
+##Changes
+
+- Used Arduino Nano to drive control logic in place of ATC16 EEPROMS  [Code](https://github.com/Circuit-Overtime/8Bit-Computer-Programs/blob/1290e9e6d5b0815a8bc3304a0e4bb99490d9940c/8_Bit%20Computer%20Control%20Logic.ino)
+- Added a negative flag register to the system [Specific Schematic will be Dropping Soon]
+```c++
+IF ALU_MSB == 1 and SUB = 1 THEN NEG_FLAG = 1
+```
+
+- Updated the Code to detect negative number and push a -ve sign at the output display mux ![Specific Code will be Dropping Soon]
+```.c
+#define NFLAG 11;
+pinMode(NFLAG, INPUT);
+
+if(NFLAG == 1)
+{
+  negativeFlgFunc();
+}
+
+```
+
+- Updated the B register to be able to output contents to the BUS
+- Updated the step counter to be able to count from (000)~2~ to (110)~2~
+``` Now the Step Counter can Count Upto 7 Steps, the current repo code has only 5 Steps without NOP) ```
 
 ## Contributions
 
