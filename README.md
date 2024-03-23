@@ -2,6 +2,11 @@
 
 ![Computer](https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145895.jpg?alt=media&token=35921957-3199-47e0-983f-543870513678)
 
+<p align="center">
+  <img src="https://img.shields.io/badge/EASY_EDA-Schematic-blue" alt="shields"> <img src="https://img.shields.io/badge/openSource%20in%20GitHub-8A2BE2" alt="shields"> <img src="https://img.shields.io/badge/with-Arduino_Nano-00ff65" alt="shields">
+</p>
+
+
 This repository contains the code, schematics, and documentation for a programmable 8-bit computer built from scratch using simple logic gates on breadboards. The project is open source and fully scalable, capable of integrating additional functions and ICs.
 
 ## Project Overview
@@ -45,12 +50,11 @@ This project is inspired by and credits Ben Eater for the original idea and guid
 2. Refer to the documentation for assembly instructions, usage, and programming the computer.
 3. Explore and contribute to the project as desired.
 
-![Schematic1](https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145897.jpg?alt=media&token=d36dbc96-da91-45cc-a37d-31657e645f3d)
-
-![Schematic2](https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145896.jpg?alt=media&token=7bcc363b-dd5d-4477-9c1a-314ed98063f4)
-
-![Schematic3](https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145898.jpg?alt=media&token=96697968-a0e8-4ad4-b03e-d779f98ee663)
-
+<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+    <img src="https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145897.jpg?alt=media&token=d36dbc96-da91-45cc-a37d-31657e645f3d" alt="Schematic1" width="30%">
+    <img src="https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145896.jpg?alt=media&token=7bcc363b-dd5d-4477-9c1a-314ed98063f4" alt="Schematic2" width="30%">
+    <img src="https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/mySkillsImages%2Fmsg6432412431-145898.jpg?alt=media&token=96697968-a0e8-4ad4-b03e-d779f98ee663" alt="Schematic3" width="30%">
+</div>
 
 ##Changes
 
