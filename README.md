@@ -34,9 +34,9 @@ This project is inspired by and credits Ben Eater for the original idea and guid
 
 ## Repository Structure
 
-- `code/`: Contains the code for each component of the computer.
-- `schematics/`: Includes schematics and diagrams detailing the computer's architecture.
-- `docs/`: Documentation, user manual, and design notes.
+- `code/`: Contains the code for each component of the computer. ![Code](https://github.com/Circuit-Overtime/8Bit-Computer-Programs)
+- `schematics/`: Includes schematics and diagrams detailing the computer's architecture.![Schematics](https://eater.net/8bit/schematics)
+- `docs/`: Documentation, user manual, and design notes at https://eater.net/8bit/schematics ![Docs](https://github.com/Circuit-Overtime/8Bit-Computer-Programs)
 
 ## Getting Started
 
