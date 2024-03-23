@@ -100,13 +100,13 @@ void loop() {
       stepT3Instruction(instBitInt);
       break;
     case 11: //011
-//    Serial.println("T4");
       stepT4Instruction(instBitInt);
       break;
     case 100: //100
       stepT5Instruction(instBitInt);
       break;
      //we are resetting after the step reaches to 4, we can increase the count by adjusting the reset wire of the step counter
+    //we can increse the case by 101 110 and 111 (max 3 bit counter can go upto 111)
   }
   
   delay(20); //setting the delay to 20ms
