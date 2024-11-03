@@ -5,7 +5,7 @@
 ## ✔️ Light Theme Preview 
 
 
-<img src="Images/light-theme-preview.png" height="500" width="500">
+<img src="Images/light-theme-preview.png" width="900">
 
 
 ## ✔️ Dark Theme Preview
