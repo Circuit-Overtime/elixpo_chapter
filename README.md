@@ -4,13 +4,13 @@
 
 ## ✔️ Light Theme Preview 
 
-<br>
-<img src="Images/light-theme-preview.png">
+
+<img src="Images/light-theme-preview.png" height="500" width="500">
 
 
 ## ✔️ Dark Theme Preview
 
-<br>
+
 <img src="Images/dark-theme-preview.png">
 
 
@@ -78,5 +78,3 @@ We’re excited to see the community help Inkflow Workspace grow! If you have id
 ## 📜 License
 
 This project is licensed under the MIT License. Check out the `LICENSE` file for more details.
-
----
