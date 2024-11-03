@@ -1,16 +1,16 @@
 # ✨ Inkflow Workspace 🎨
 
----
+
 
 ## ✔️ Light Theme Preview 
 
-
+<br>
 <img src="Images/light-theme-preview.png">
 
 
 ## ✔️ Dark Theme Preview
 
-
+<br>
 <img src="Images/dark-theme-preview.png">
 
 
