@@ -11,22 +11,24 @@ Welcome to **Inkflow Workspace** – your go-to web app for seamless, intuitive 
 
 ## 🌟 Key Features
 
-- ✏️ **Freehand Drawing**: Sketch smoothly and freely with our intuitive freehand drawing tool.
-- 🔷 **Shape Tools**: Add basic shapes to structure your designs with just a click.
-- 🎨 **Color & Brush Customization**: A rich palette of colors and adjustable brush sizes for perfect strokes.
-- ↩️ **Undo & Redo**: Easily correct mistakes or revisit previous versions of your artwork.
-- 💾 **Save & Export Options**: Save your work directly to your device or export it for sharing.
+ ✏️ **Freehand Drawing**: Experience seamless and fluid sketching with our advanced freehand drawing tool, designed for precision and ease of use.
+ 🔷 **Shape Tools**: Effortlessly incorporate fundamental shapes into your designs with a single click, enhancing your creative workflow.
+ 🎨 **Color & Brush Customization**: Access a diverse palette of colors and customizable brush sizes, allowing for meticulous control over your artistic strokes.
+ ↩️ **Undo & Redo**: Instantly rectify errors or revert to previous iterations of your artwork with our intuitive undo and redo functionality.
+ 💾 **Save & Export Options**: Securely save your creations directly to your device or export them for easy sharing with others.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- 🖥️ **HTML** - Structural foundation of the app
-- 🎨 **CSS** - Styling to make the app look clean and modern
-- 💡 **JavaScript** - Adding dynamic interactions and functionality
-- 🌈 **Tailwind CSS** - Rapid styling with utility-first approach
-- 🖼️ **Iconscout** - Beautiful icons for UI elements
-- 🚀 **Bootstrap Icons** - Sleek icons for intuitive navigation and layout
+<p>
+<a href="https://developer.mozilla.org/en-US/docs/Glossary/HTML5" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/html5-colored.svg" width="36" height="36" alt="HTML5" /></a>
+<a href="https://www.w3.org/TR/CSS/#css" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/css3-colored.svg" width="36" height="36" alt="CSS3" /></a>
+<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/javascript-colored.svg" width="36" height="36" alt="JavaScript" /></a>
+<a href="https://tailwindcss.com/" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/tailwindcss-colored.svg" width="36" height="36" alt="TailwindCSS" /></a>
+<a href="https://getbootstrap.com/" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/bootstrap-colored.svg" width="36" height="36" alt="Bootstrap" /></a>
+<a href="https://git-scm.com/" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/git-colored.svg" width="36" height="36" alt="Git" /></a>
+</p>
 
 ---
 
