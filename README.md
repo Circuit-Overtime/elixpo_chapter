@@ -1,4 +1,4 @@
-# <center>✨ Inkflow Workspace 🎨</center>
+# ✨ Inkflow Workspace 🎨
 
 <img src="Images/dark-theme-preview.png">
 
@@ -45,6 +45,12 @@ Here’s how to run **Inkflow Workspace** on your local machine:
    ```
 
 3. **Open the project** by launching `index.html` in your preferred browser.
+
+---
+
+## 🤝 Collaboration
+
+We would like to extend our heartfelt thanks to <a href="https://github.com/Circuit-Overtime">Ayushman Bhattacharya</a> for his contributions to this repository, particularly in handling the backend and server aspects, which ensure a smooth user experience in Inkflow Workspace.
 
 ---
 
