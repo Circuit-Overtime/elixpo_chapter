@@ -50,7 +50,7 @@ Here’s how to run **Inkflow Workspace** on your local machine:
 
 ## 🤝 Collaboration
 
-We would like to extend our heartfelt thanks to <a href="https://github.com/Circuit-Overtime">Ayushman Bhattacharya</a> for his contributions to this repository, particularly in handling the backend and server aspects, which ensure a smooth user experience in Inkflow Workspace.
+We would like to extend our heartfelt thanks to <a href="https://github.com/Circuit-Overtime" target="_blank"><b>Ayushman Bhattacharya</b></a> for his contributions to this repository, particularly in handling the backend and server aspects, which ensure a smooth user experience in Inkflow Workspace.
 
 ---
 
