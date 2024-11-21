@@ -2,8 +2,10 @@
 
 Welcome to **Inkflow Workspace** – your go-to web app for seamless, intuitive digital art creation. Whether you’re sketching ideas, designing shapes, or exploring your creativity, Inkflow Workspace offers all the tools you need to bring your imagination to life!
 
-<img src="Images/dark-theme-preview.png">
 
+
+
+<img src="Images/dark-theme-preview.png">
 
 
 
