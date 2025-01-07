@@ -93,12 +93,14 @@
         width: 35px;
         height: 35px;
     }
-    #zoom-percentage{
-        right:55px;
+
+    #zoom-percentage {
+        right: 55px;
     }
-    #zoom-toolbar{
+
+    #zoom-toolbar {
         padding: 5px 8px;
-        gap:14px;
+        gap: 14px;
     }
 }
 
@@ -107,7 +109,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        padding: 2px 5px;
+        padding: 5px 15px;
         gap: 5.5px;
     }
 
@@ -147,7 +149,7 @@
     .tool {
         width: 30px;
         height: 30px;
-        font-size: 13px;
+        font-size: 15px;
     }
 
     #colorPicker {
@@ -157,16 +159,18 @@
 
     #zoom-percentage {
         top: 50%;
-        right:50px;
+        right: 40px;
 
     }
-    #zoom-toolbar{
+
+    #zoom-toolbar {
         padding: 5px 8px;
-        gap:14px;
+        gap: 14px;
     }
-    #theme-toggle{
+
+    #theme-toggle {
         top: 95%;
-        right:36.2%;
+        right: 36.2%;
         transform: translateY(-50%);
     }
 }
