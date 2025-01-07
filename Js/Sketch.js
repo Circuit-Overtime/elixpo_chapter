@@ -746,3 +746,10 @@ window.addEventListener('resize', handleResize);
 
 handleResize();
 updateCursorStyle();
+
+
+//more tools trigger toolbar open and close
+function toggleMainToolbar2() {
+    const toolbar2 = document.getElementById('main-toolbar2');
+    toolbar2.style.display = toolbar2.style.display === 'none' ? 'block' : 'none';
+}

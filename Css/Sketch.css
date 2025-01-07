@@ -106,6 +106,12 @@ body.light-theme #strokeWidth {
     left: 50%;
     transform: translateX(-50%);
 }
+#main-toolbar2{
+    display: none; 
+    position: absolute; 
+    top: 70px; 
+    left: 10px;
+}
 
 #strokeWidth {
     background-color: #232329;
