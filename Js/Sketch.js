@@ -56,6 +56,88 @@ function resizeCanvas() {
 
 window.addEventListener('resize', handleResize);
 
+// Touch event handlers starts here
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousedown', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+    });
+    handleMouseDown(mouseEvent);
+});
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+    });
+    if (isPanning) {
+        pan(mouseEvent);
+    } else {
+        handleMouseMove(mouseEvent);
+    }
+});
+
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    const mouseEvent = new MouseEvent('mouseup', {});
+    handleMouseUp(mouseEvent);
+});
+
+// Prevent zooming on mobile double tap
+canvas.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTap < 300) {
+        e.preventDefault();
+    }
+    lastTap = now;
+});
+
+// Handle touch zoom gestures
+let initialPinchDistance = null;
+let initialScale = 1;
+
+canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+        initialPinchDistance = getPinchDistance(e);
+        initialScale = scale;
+    }
+});
+
+canvas.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2) {
+        const currentDistance = getPinchDistance(e);
+        if (initialPinchDistance === null) {
+            initialPinchDistance = currentDistance;
+        }
+        const pinchScale = currentDistance / initialPinchDistance;
+        scale = initialScale * pinchScale;
+        
+        const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        
+        elements.forEach(element => {
+            element.x1 = centerX + (element.x1 - centerX) * pinchScale;
+            element.y1 = centerY + (element.y1 - centerY) * pinchScale;
+            if (element.x2 !== undefined) element.x2 = centerX + (element.x2 - centerX) * pinchScale;
+            if (element.y2 !== undefined) element.y2 = centerY + (element.y2 - centerY) * pinchScale;
+        });
+        
+        redrawCanvas();
+    }
+});
+
+function getPinchDistance(e) {
+    return Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+    );
+}
+// Touch event handlers up to here
+
 zoomIn.addEventListener('click', () => {
     currentZoom = Math.min(currentZoom + 10, 200); // Limit zoom to 200%
     zoomPercentage.textContent = currentZoom + '%';
