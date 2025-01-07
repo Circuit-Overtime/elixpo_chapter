@@ -18,6 +18,7 @@
 
 <body>
     <canvas id="canvas"></canvas>
+    <!-- Toolbar 1: Main drawing tools and controls -->
     <div id="main-toolbar" class="toolbar">
         <button class="tool" id="select" title="Select/Pan"><ion-icon name="hand-right-outline"></ion-icon></button>
         <button class="tool" id="pointer" title="Pointer"><i class="bi bi-cursor"
@@ -39,6 +40,7 @@
             <option value="6">6px</option>
             <option value="7">7px</option>
         </select>
+        <!-- Toolbar 2: Additional shapes and tools -->
         <button class="tool" id="more-tools" title="More Tools" style="font-size: larger;" onclick="toggleMainToolbar2()"><ion-icon name="apps"></ion-icon></button>
         <div id="main-toolbar2" class="toolbar">
             <button class="tool" id="line" title="Line"><i class="bi bi-dash-lg"></i></button>
