@@ -87,68 +87,31 @@ canvas.addEventListener('touchend', (e) => {
     handleMouseUp(mouseEvent);
 });
 
-// Prevent zooming on mobile double tap
-canvas.addEventListener('touchend', (e) => {
-    const now = Date.now();
-    if (now - lastTap < 300) {
-        e.preventDefault();
-    }
-    lastTap = now;
+// Prevent all zooming gestures
+canvas.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
 });
 
-// Handle touch zoom gestures
-let initialPinchDistance = null;
-let initialScale = 1;
-
-canvas.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) {
-        initialPinchDistance = getPinchDistance(e);
-        initialScale = scale;
-    }
+canvas.addEventListener('gesturechange', (e) => {
+    e.preventDefault();
 });
 
-canvas.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 2) {
-        const currentDistance = getPinchDistance(e);
-        if (initialPinchDistance === null) {
-            initialPinchDistance = currentDistance;
-        }
-        const pinchScale = currentDistance / initialPinchDistance;
-        scale = initialScale * pinchScale;
-        
-        const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-        const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-        
-        elements.forEach(element => {
-            element.x1 = centerX + (element.x1 - centerX) * pinchScale;
-            element.y1 = centerY + (element.y1 - centerY) * pinchScale;
-            if (element.x2 !== undefined) element.x2 = centerX + (element.x2 - centerX) * pinchScale;
-            if (element.y2 !== undefined) element.y2 = centerY + (element.y2 - centerY) * pinchScale;
-        });
-        
-        redrawCanvas();
-    }
+canvas.addEventListener('gestureend', (e) => {
+    e.preventDefault();
 });
-
-function getPinchDistance(e) {
-    return Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-    );
-}
 // Touch event handlers up to here
 
 zoomIn.addEventListener('click', () => {
     currentZoom = Math.min(currentZoom + 10, 200); // Limit zoom to 200%
     zoomPercentage.textContent = currentZoom + '%';
-    
+
     const zoom = 1 + scaleFactor;
     scale *= zoom;
-    
+
     // Get center of canvas
     const centerX = canvas.width / 4; // Divide by 4 because canvas is scaled 2x
     const centerY = canvas.height / 4;
-    
+
     elements.forEach(element => {
         element.x1 = centerX + (element.x1 - centerX) * zoom;
         element.y1 = centerY + (element.y1 - centerY) * zoom;
@@ -162,14 +125,14 @@ zoomOut.addEventListener('click', () => {
     if (currentZoom > 10) {
         currentZoom -= 10;
         zoomPercentage.textContent = currentZoom + '%';
-        
+
         const zoom = 1 - scaleFactor;
         scale *= zoom;
-        
+
         // Get center of canvas
         const centerX = canvas.width / 4; // Divide by 4 because canvas is scaled 2x
         const centerY = canvas.height / 4;
-        
+
         elements.forEach(element => {
             element.x1 = centerX + (element.x1 - centerX) * zoom;
             element.y1 = centerY + (element.y1 - centerY) * zoom;
@@ -764,7 +727,7 @@ if (currentTheme === 'light') {
 // Theme toggle functionality
 themeBtn.addEventListener('click', () => {
     document.body.classList.toggle('light-theme');
-    
+
     if (document.body.classList.contains('light-theme')) {
         localStorage.setItem('theme', 'light');
         themeIcon.classList.remove('fa-moon');
@@ -774,7 +737,7 @@ themeBtn.addEventListener('click', () => {
         themeIcon.classList.remove('fa-sun');
         themeIcon.classList.add('fa-moon');
     }
-    
+
     // Redraw canvas with new theme colors
     redrawCanvas();
 });
