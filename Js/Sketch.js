@@ -722,6 +722,11 @@ if (currentTheme === 'light') {
     document.body.classList.add('light-theme');
     themeIcon.classList.remove('fa-moon');
     themeIcon.classList.add('fa-sun');
+    selectedColor = '#000000'; // Set pencil color to black
+    document.getElementById('colorPicker').value = '#000000'; // Update color picker
+} else {
+    selectedColor = '#ffffff'; // Set pencil color to white or default
+    document.getElementById('colorPicker').value = '#ffffff'; // Update color picker
 }
 
 // Theme toggle functionality
@@ -732,10 +737,14 @@ themeBtn.addEventListener('click', () => {
         localStorage.setItem('theme', 'light');
         themeIcon.classList.remove('fa-moon');
         themeIcon.classList.add('fa-sun');
+        selectedColor = '#000000'; // Set pencil color to black
+        document.getElementById('colorPicker').value = '#000000'; // Update color picker
     } else {
         localStorage.setItem('theme', 'dark');
         themeIcon.classList.remove('fa-sun');
         themeIcon.classList.add('fa-moon');
+        selectedColor = '#ffffff'; // Reset pencil color to white or default
+        document.getElementById('colorPicker').value = '#ffffff'; // Update color picker
     }
 
     // Redraw canvas with new theme colors
