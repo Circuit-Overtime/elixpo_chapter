@@ -514,7 +514,85 @@ function drawElement(element) {
         case 'arrow':
             drawArrow(ctx, element.x1, element.y1, element.x2, element.y2);
             break;
+        case 'triangle':
+            drawPolygon(ctx, element.x1, element.y1, element.x2, element.y2, 3, options);
+            break;
+        case 'pentagon':
+            drawPolygon(ctx, element.x1, element.y1, element.x2, element.y2, 5, options);
+            break;
+        case 'star':
+            drawStar(ctx, element.x1, element.y1, element.x2, element.y2, options);
+            break;
+        case 'diamond':
+            drawDiamond(ctx, element.x1, element.y1, element.x2, element.y2, options);
+            break;
+        case 'hexagon':
+            drawPolygon(ctx, element.x1, element.y1, element.x2, element.y2, 6, options);
+            break;
     }
+}
+
+function drawPolygon(ctx, x1, y1, x2, y2, sides, options) {
+    const radius = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1)) / 2;
+    const centerX = (x1 + x2) / 2;
+    const centerY = (y1 + y2) / 2;
+    const angle = (2 * Math.PI) / sides;
+
+    ctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+        const x = centerX + radius * Math.cos(i * angle);
+        const y = centerY + radius * Math.sin(i * angle);
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+    ctx.closePath();
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
+}
+
+function drawStar(ctx, x1, y1, x2, y2, options) {
+    const outerRadius = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1)) / 2;
+    const innerRadius = outerRadius / 2.5;
+    const centerX = (x1 + x2) / 2;
+    const centerY = (y1 + y2) / 2;
+    const angle = Math.PI / 5;
+
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+        const radius = i % 2 === 0 ? outerRadius : innerRadius;
+        const x = centerX + radius * Math.cos(i * angle);
+        const y = centerY + radius * Math.sin(i * angle);
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+    ctx.closePath();
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
+}
+
+function drawDiamond(ctx, x1, y1, x2, y2, options) {
+    const width = Math.abs(x2 - x1);
+    const height = Math.abs(y2 - y1);
+    const centerX = (x1 + x2) / 2;
+    const centerY = (y1 + y2) / 2;
+
+    ctx.beginPath();
+    ctx.moveTo(centerX, y1);
+    ctx.lineTo(x2, centerY);
+    ctx.lineTo(centerX, y2);
+    ctx.lineTo(x1, centerY);
+    ctx.closePath();
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
 }
 
 function pan(e) {
