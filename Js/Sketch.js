@@ -214,6 +214,35 @@ document.querySelectorAll('.tool').forEach(tool => {
     });
 });
 
+document.querySelectorAll('#main-toolbar2 .tool').forEach(tool => {
+    tool.addEventListener('click', () => {
+        if (tool.id === 'clear') {
+            elements = [];
+            redrawCanvas();
+        } else if (tool.id === 'save') {
+            saveWork();
+        } else if (tool.id === 'open-sidebar') {
+            sidebar.classList.toggle('open');
+        } else if (tool.id === 'undo') {
+            undo();
+        } else if (tool.id === 'redo') {
+            redo();
+        } else if (tool.id === 'select') {
+            selectedTool = 'select';
+            document.querySelector('.tool.active')?.classList.remove('active');
+            tool.classList.add('active');
+        } else {
+            document.querySelector('.tool.active')?.classList.remove('active');
+            tool.classList.add('active');
+            selectedTool = tool.id;
+            updateCursorStyle();
+        }
+        // Hide main toolbar2 when a tool is selected
+        const toolbar2 = document.getElementById('main-toolbar2');
+        toolbar2.style.display = 'none';
+    });
+});
+
 document.getElementById('colorPicker').addEventListener('input', (e) => {
     selectedColor = e.target.value;
 });
