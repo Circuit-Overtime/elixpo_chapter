@@ -109,8 +109,8 @@ body.light-theme #strokeWidth {
 #main-toolbar2{
     display: none; 
     position: absolute; 
-    top: 70px; 
-    left: 10px;
+    top: 60px; 
+    left: 88.5%;
 }
 
 #strokeWidth {
