@@ -11,6 +11,10 @@ html {
 
 #instructions {
     color: white;
+    position: absolute; 
+    top: 70px; width: 100%; 
+    font-size:small; 
+    text-align: center;
 }
 
 #theme-toggle {
@@ -106,6 +110,9 @@ body.light-theme #strokeWidth {
     left: 50%;
     transform: translateX(-50%);
 }
+
+/*Toolbar------2  Positioning */
+
 #main-toolbar2{
     display: none; 
     position: absolute; 
