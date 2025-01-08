@@ -245,7 +245,7 @@
     }
 }
 
-@media (max-width: 390px) {
+@media only screen and (max-device-width: 390px) {
     .toolbar {
         display: flex;
         justify-content: center;
