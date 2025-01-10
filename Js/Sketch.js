@@ -869,3 +869,38 @@ function toggleMainToolbar2() {
     const toolbar2 = document.getElementById('main-toolbar2');
     toolbar2.style.display = toolbar2.style.display === 'none' ? 'block' : 'none';
 }
+
+// Save all data to local storage
+function saveAllData() {
+    const data = {
+        elements,
+        selectedTool,
+        selectedColor,
+        selectedStrokeWidth,
+        currentZoom,
+        scale
+    };
+    localStorage.setItem('inkFlowData', JSON.stringify(data));
+}
+
+// Load all data from local storage
+function loadAllData() {
+    const data = JSON.parse(localStorage.getItem('inkFlowData'));
+    if (data) {
+        elements = data.elements || [];
+        selectedTool = data.selectedTool || 'pencil';
+        selectedColor = data.selectedColor || '#ffffff';
+        selectedStrokeWidth = data.selectedStrokeWidth || 3;
+        currentZoom = data.currentZoom || 100;
+        scale = data.scale || 1;
+        redrawCanvas();
+        updateCursorStyle();
+        zoomPercentage.textContent = currentZoom + '%';
+    }
+}
+
+// Save data on window unload
+window.addEventListener('beforeunload', saveAllData);
+
+// Load data on window load
+window.addEventListener('load', loadAllData);
