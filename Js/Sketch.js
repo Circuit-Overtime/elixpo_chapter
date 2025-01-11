@@ -163,11 +163,6 @@ canvas.addEventListener('wheel', (e) => {
     }
 });
 
-// Removed the context menu event listener to reset the function of canvas
-// canvas.addEventListener('contextmenu', (e) => {
-//     e.preventDefault();
-// });
-
 canvas.addEventListener('mousedown', (e) => {
     handleMouseDown(e);
 });

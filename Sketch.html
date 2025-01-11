@@ -11,14 +11,14 @@
     <link href="Icons/bootstrap/css/bootstrap.min.css" rel="stylesheet"> 
     <link href="Icons/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <link rel="icon" href="Images/InkFlow.png" type="image/png">
+    <link rel="stylesheet" href="Css/Theme.css">
     <link rel="stylesheet" href="Css/Sketch.css" defer>
-    <link rel="stylesheet" href="Css/responsive.css">
+    <link rel="stylesheet" href="Css/Responsive.css">
     <!-- <link rel="stylesheet" href="Css/Sticky.css"> -->
 </head>
 
 <body>
     <canvas id="canvas"></canvas>
-    <!-- Toolbar 1: Main drawing tools and controls -->
     <div id="main-toolbar" class="toolbar">
         <button class="tool" id="select" title="Select/Pan"><ion-icon name="hand-right-outline"></ion-icon></button>
         <button class="tool" id="pointer" title="Pointer"><i class="bi bi-cursor"
@@ -38,7 +38,6 @@
             <option value="6">6px</option>
             <option value="7">7px</option>
         </select>
-        <!-- Toolbar 2: Additional shapes and tools -->
         <button class="tool" id="more-tools" title="More Tools" style="font-size: larger;" onclick="toggleMainToolbar2()"><ion-icon name="apps"></ion-icon></button>
         <div id="main-toolbar2" class="toolbar">
             <button class="tool" id="line" title="Line"><i class="bi bi-dash-lg"></i></button>
@@ -71,6 +70,7 @@
     </div>
     <textarea type="text" id="textInput" class="textInput" spellcheck="false" autocomplete="off" multiline></textarea>
     <div id="angleInfo"></div>
+
     <script src="Icons/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/roughjs@latest/bundled/rough.js"></script>
     <script src="Js/Sketch.js"></script>

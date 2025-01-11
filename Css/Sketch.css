@@ -11,10 +11,10 @@ html {
 
 #instructions {
     color: rgb(141, 133, 133);
-    position: absolute; 
-    top: 60px; 
-    width: 100%; 
-    font-size:small; 
+    position: absolute;
+    top: 60px;
+    width: 100%;
+    font-size: small;
     text-align: center;
 }
 
@@ -26,73 +26,11 @@ html {
     padding: 5px 5px;
 }
 
-/* Theme transition styles */
-body {
-    transition: background-color 0.5s ease;
-}
-
-#canvas {
-    transition: background-color 0.5s ease;
-}
-
-.toolbar {
-    transition: background-color 0.5s ease;
-}
-
-.tool {
-    transition: color 0.5s ease, background-color 0.5s ease;
-}
-
-#instructions,
-#zoom-percentage {
-    transition: color 0.5s ease;
-}
-
-/* Light theme styles */
-body.light-theme {
-    background-color: #ffffff;
-}
-
-body.light-theme #canvas {
-    background-color: #ffffff;
-}
-
-body.light-theme .toolbar {
-    background-color: #f0f0f0;
-}
-
-body.light-theme .tool {
-    color: #000000;
-}
-
-body.light-theme .tool:hover {
-    background-color: #e0e0e0;
-}
-
-body.light-theme .tool.active {
-    background-color: #d0d0d0;
-}
-
-body.light-theme #instructions {
-    color: #b3adad;
-}
-
-body.light-theme #zoom-percentage {
-    color: #000000;
-}
-
-body.light-theme #strokeWidth {
-    color: #000000;
-    background-color: #F0F0F0;
-}
-
-/* Canvas Styles */
 #canvas {
     background-color: #121212;
     cursor: crosshair;
 }
 
-/* Toolbar Styles */
 .toolbar {
     position: fixed;
     top: 15px;
@@ -106,18 +44,15 @@ body.light-theme #strokeWidth {
     z-index: 1000;
 }
 
-/* Main Toolbar Positioning */
 #main-toolbar {
     left: 50%;
     transform: translateX(-50%);
 }
 
-/*Toolbar------2  Positioning */
-
-#main-toolbar2{
-    display: none; 
-    position: absolute; 
-    top: 60px; 
+#main-toolbar2 {
+    display: none;
+    position: absolute;
+    top: 60px;
     left: 88.5%;
 }
 
@@ -153,7 +88,6 @@ body.light-theme #strokeWidth {
     padding: 5px 5px;
 }
 
-/* Zoom Toolbar Styles */
 #zoom-toolbar {
     position: fixed;
     top: 95%;
@@ -162,7 +96,20 @@ body.light-theme #strokeWidth {
     display: flex;
 }
 
-/* Tool Styles */
+#zoom-percentage {
+    position: fixed;
+    color: white;
+    top: 50%;
+    right: 55px;
+    transform: translateY(-50%);
+    display: flex;
+    width: 7.8%;
+    height: 3%;
+    justify-content: center;
+    align-items: center;
+    font-size: smaller;
+}
+
 .tool {
     width: 40px;
     height: 40px;
@@ -178,18 +125,15 @@ body.light-theme #strokeWidth {
     transition: all 0.3s ease, transform 0.3s ease;
 }
 
-/* Tool Hover Styles */
 .tool:hover {
     background-color: #31303B;
     transform: translateY(-5px) scale(1.1);
 }
 
-/* Tool Active Styles */
 .tool.active {
     background-color: #403E6A;
 }
 
-/* Color Picker Styles */
 #colorPicker {
     width: 40px;
     height: 40px;
@@ -201,12 +145,10 @@ body.light-theme #strokeWidth {
     transition: all 0.3s ease;
 }
 
-/* Color Picker Hover Styles */
 #colorPicker:hover {
     transform: scale(1.1);
 }
 
-/* Color Picker Webkit Styles */
 #colorPicker::-webkit-color-swatch-wrapper {
     padding: 0;
 }
@@ -219,7 +161,6 @@ body.light-theme #strokeWidth {
 #textInput {
     position: fixed;
     display: none;
-    /* Change this to 'block' or 'inline' when you want to show it */
     padding: 5px;
     background-color: rgba(255, 255, 255, 0.1);
     color: white;
@@ -227,27 +168,18 @@ body.light-theme #strokeWidth {
     outline: none;
     caret-color: white;
     resize: none;
-    /* Prevent manual resizing */
     min-height: 20px;
-    /* Set a minimum height */
     min-width: 50px;
-    /* Set a minimum width */
     max-height: none;
-    /* Remove max-height */
     max-width: none;
-    /* Remove max-width */
     white-space: nowrap;
-    /* Prevent line breaks */
     overflow: hidden;
-    /* Hide overflow */
 }
 
 #textInput::placeholder {
     color: white;
 }
 
-
-/* Angle Info Styles */
 #angleInfo {
     position: fixed;
     bottom: 20px;
@@ -260,18 +192,4 @@ body.light-theme #strokeWidth {
     font-size: 15px;
     display: none;
     transition: all 0.3s ease;
-}
-
-#zoom-percentage {
-    position: fixed;
-    color: white;
-    top: 50%;
-    right: 55px;
-    transform: translateY(-50%);
-    display: flex;
-    width: 7.8%;
-    height: 3%;
-    justify-content: center;
-    align-items: center;
-    font-size: smaller;
 }

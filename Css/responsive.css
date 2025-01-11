@@ -42,9 +42,6 @@
     }
 }
 
-
-/* Mobile Styles */
-
 @media (max-width: 638px) {
     .toolbar {
         display: flex;
@@ -62,7 +59,6 @@
         flex-direction: row;
         display: flex;
     }
-
 
     #undoredo {
         position: fixed;
@@ -126,7 +122,6 @@
         display: flex;
         /* padding: 5px 8px; */
     }
-
 
     #undoredo {
         position: fixed;
@@ -197,7 +192,6 @@
         display: flex;
         /* padding: 5px 8px; */
     }
-
 
     #undoredo {
         position: fixed;

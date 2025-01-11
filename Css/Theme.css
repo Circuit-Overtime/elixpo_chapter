@@ -1,0 +1,59 @@
+/* Theme transition styles */
+body {
+    transition: background-color 0.5s ease;
+}
+
+#canvas {
+    transition: background-color 0.5s ease;
+}
+
+.toolbar {
+    transition: background-color 0.5s ease;
+}
+
+.tool {
+    transition: color 0.5s ease, background-color 0.5s ease;
+}
+
+#instructions,
+#zoom-percentage {
+    transition: color 0.5s ease;
+}
+
+/* Light theme styles */
+body.light-theme {
+    background-color: #ffffff;
+}
+
+body.light-theme #canvas {
+    background-color: #ffffff;
+}
+
+body.light-theme .toolbar {
+    background-color: #f0f0f0;
+}
+
+body.light-theme .tool {
+    color: #000000;
+}
+
+body.light-theme .tool:hover {
+    background-color: #e0e0e0;
+}
+
+body.light-theme .tool.active {
+    background-color: #d0d0d0;
+}
+
+body.light-theme #instructions {
+    color: #b3adad;
+}
+
+body.light-theme #zoom-percentage {
+    color: #000000;
+}
+
+body.light-theme #strokeWidth {
+    color: #000000;
+    background-color: #F0F0F0;
+}
