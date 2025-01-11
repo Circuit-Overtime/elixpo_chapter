@@ -76,7 +76,7 @@ html {
 
 #lock-bar {
     position: fixed;
-    right: 10.9%;
+    right: 10%;
     top: 95%;
     transform: translateY(-50%);
     display: flex;
@@ -94,7 +94,7 @@ html {
 #delete {
     position: fixed;
     top: 95%;
-    left: 9.5%;
+    left: 9%;
     transform: translateY(-50%);
     display: flex;
     padding: 5px 5px;
