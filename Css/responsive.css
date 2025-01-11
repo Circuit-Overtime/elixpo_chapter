@@ -260,7 +260,7 @@
 
     #lock-bar {
         position: fixed;
-        right: 35%;
+        right: 37%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
@@ -281,7 +281,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 26%;
+        left: 26.5%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -310,7 +310,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 46%;
+        right: 49.5%;
         transform: translateY(-50%);
     }
 }
