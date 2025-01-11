@@ -4,7 +4,7 @@
         justify-content: center;
         align-items: center;
         padding: 5px 15px;
-        gap: 13px;
+        gap: 5px;
 
     }
 
@@ -14,7 +14,7 @@
 
     #lock-bar {
         position: fixed;
-        right: 21.3%;
+        right: 20%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
@@ -48,7 +48,7 @@
         justify-content: center;
         align-items: center;
         padding: 5px 8px;
-        gap: 5.5px;
+        gap: 2px;
     }
 
     #lock-bar {
@@ -106,7 +106,7 @@
         justify-content: center;
         align-items: center;
         padding: 5px 15px;
-        gap: 5.5px;
+        gap: 1px;
     }
 
     #main-toolbar {
@@ -176,7 +176,7 @@
         justify-content: center;
         align-items: center;
         padding: 5px 10px;
-        gap: 2px;
+        gap: 0px;
     }
 
     #main-toolbar {

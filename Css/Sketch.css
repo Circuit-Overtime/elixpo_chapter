@@ -18,12 +18,16 @@ html {
     text-align: center;
 }
 
-#theme-toggle {
-    position: fixed;
-    right: 20px;
-    padding: 5px 5px;
-    display: flex;
-    padding: 5px 5px;
+.bi-cursor{
+    transform: rotate(290deg);
+}
+
+.bi-fonts{
+    font-size:larger;
+}
+
+#more-tools{
+    font-size: larger;
 }
 
 #canvas {
@@ -39,7 +43,7 @@ html {
     border-radius: 10px;
     padding: 5px 15px;
     display: flex;
-    gap: 13px;
+    gap: 5px;
     transition: all 0.3s ease, transform 0.3s ease;
     z-index: 1000;
 }
@@ -54,6 +58,14 @@ html {
     position: absolute;
     top: 60px;
     left: 88.5%;
+}
+
+#theme-toggle {
+    position: fixed;
+    right: 20px;
+    padding: 5px 5px;
+    display: flex;
+    padding: 5px 5px;
 }
 
 #strokeWidth {
@@ -135,14 +147,15 @@ html {
 }
 
 #colorPicker {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
     padding: 0;
     border: none;
     border-radius: 50%;
     cursor: pointer;
     overflow: hidden;
     transition: all 0.3s ease;
+    margin-top:2px;
 }
 
 #colorPicker:hover {
