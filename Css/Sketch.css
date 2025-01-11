@@ -10,54 +10,11 @@ html {
 }
 
 #instructions {
-    color: rgb(141, 133, 133);
-    position: absolute;
-    top: 60px;
-    width: 100%;
-    font-size: small;
+    color: white;
+    position: absolute; 
+    top: 70px; width: 100%; 
+    font-size:small; 
     text-align: center;
-}
-
-.bi-cursor{
-    transform: rotate(290deg);
-}
-
-.bi-fonts{
-    font-size:larger;
-}
-
-#more-tools{
-    font-size: larger;
-}
-
-#canvas {
-    background-color: #121212;
-    cursor: crosshair;
-}
-
-.toolbar {
-    position: fixed;
-    top: 15px;
-    background-color: #232329;
-    backdrop-filter: blur(10px);
-    border-radius: 10px;
-    padding: 5px 15px;
-    display: flex;
-    gap: 5px;
-    transition: all 0.3s ease, transform 0.3s ease;
-    z-index: 1000;
-}
-
-#main-toolbar {
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-#main-toolbar2 {
-    display: none;
-    position: absolute;
-    top: 60px;
-    left: 88.5%;
 }
 
 #theme-toggle {
@@ -68,6 +25,101 @@ html {
     padding: 5px 5px;
 }
 
+/* Theme transition styles */
+body {
+    transition: background-color 0.5s ease;
+}
+
+#canvas {
+    transition: background-color 0.5s ease;
+}
+
+.toolbar {
+    transition: background-color 0.5s ease;
+}
+
+.tool {
+    transition: color 0.5s ease, background-color 0.5s ease;
+}
+
+#instructions,
+#zoom-percentage {
+    transition: color 0.5s ease;
+}
+
+/* Light theme styles */
+body.light-theme {
+    background-color: #ffffff;
+}
+
+body.light-theme #canvas {
+    background-color: #ffffff;
+}
+
+body.light-theme .toolbar {
+    background-color: #f0f0f0;
+}
+
+body.light-theme .tool {
+    color: #000000;
+}
+
+body.light-theme .tool:hover {
+    background-color: #e0e0e0;
+}
+
+body.light-theme .tool.active {
+    background-color: #d0d0d0;
+}
+
+body.light-theme #instructions {
+    color: #000000;
+}
+
+body.light-theme #zoom-percentage {
+    color: #000000;
+}
+
+body.light-theme #strokeWidth {
+    color: #000000;
+    background-color: #F0F0F0;
+}
+
+/* Canvas Styles */
+#canvas {
+    background-color: #121212;
+    cursor: crosshair;
+}
+
+/* Toolbar Styles */
+.toolbar {
+    position: fixed;
+    top: 15px;
+    background-color: #232329;
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 5px 15px;
+    display: flex;
+    gap: 13px;
+    transition: all 0.3s ease, transform 0.3s ease;
+    z-index: 1000;
+}
+
+/* Main Toolbar Positioning */
+#main-toolbar {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/*Toolbar------2  Positioning */
+
+#main-toolbar2{
+    display: none; 
+    position: absolute; 
+    top: 60px; 
+    left: 88.5%;
+}
+
 #strokeWidth {
     background-color: #232329;
     color: white;
@@ -76,7 +128,7 @@ html {
 
 #lock-bar {
     position: fixed;
-    right: 10%;
+    right: 10.9%;
     top: 95%;
     transform: translateY(-50%);
     display: flex;
@@ -94,12 +146,13 @@ html {
 #delete {
     position: fixed;
     top: 95%;
-    left: 9%;
+    left: 9.5%;
     transform: translateY(-50%);
     display: flex;
     padding: 5px 5px;
 }
 
+/* Zoom Toolbar Styles */
 #zoom-toolbar {
     position: fixed;
     top: 95%;
@@ -108,20 +161,7 @@ html {
     display: flex;
 }
 
-#zoom-percentage {
-    position: fixed;
-    color: white;
-    top: 50%;
-    right: 55px;
-    transform: translateY(-50%);
-    display: flex;
-    width: 7.8%;
-    height: 3%;
-    justify-content: center;
-    align-items: center;
-    font-size: smaller;
-}
-
+/* Tool Styles */
 .tool {
     width: 40px;
     height: 40px;
@@ -137,31 +177,35 @@ html {
     transition: all 0.3s ease, transform 0.3s ease;
 }
 
+/* Tool Hover Styles */
 .tool:hover {
     background-color: #31303B;
     transform: translateY(-5px) scale(1.1);
 }
 
+/* Tool Active Styles */
 .tool.active {
     background-color: #403E6A;
 }
 
+/* Color Picker Styles */
 #colorPicker {
-    width: 35px;
-    height: 35px;
+    width: 40px;
+    height: 40px;
     padding: 0;
     border: none;
     border-radius: 50%;
     cursor: pointer;
     overflow: hidden;
     transition: all 0.3s ease;
-    margin-top:2px;
 }
 
+/* Color Picker Hover Styles */
 #colorPicker:hover {
     transform: scale(1.1);
 }
 
+/* Color Picker Webkit Styles */
 #colorPicker::-webkit-color-swatch-wrapper {
     padding: 0;
 }
@@ -174,6 +218,7 @@ html {
 #textInput {
     position: fixed;
     display: none;
+    /* Change this to 'block' or 'inline' when you want to show it */
     padding: 5px;
     background-color: rgba(255, 255, 255, 0.1);
     color: white;
@@ -181,18 +226,27 @@ html {
     outline: none;
     caret-color: white;
     resize: none;
+    /* Prevent manual resizing */
     min-height: 20px;
+    /* Set a minimum height */
     min-width: 50px;
+    /* Set a minimum width */
     max-height: none;
+    /* Remove max-height */
     max-width: none;
+    /* Remove max-width */
     white-space: nowrap;
+    /* Prevent line breaks */
     overflow: hidden;
+    /* Hide overflow */
 }
 
 #textInput::placeholder {
     color: white;
 }
 
+
+/* Angle Info Styles */
 #angleInfo {
     position: fixed;
     bottom: 20px;
@@ -205,4 +259,18 @@ html {
     font-size: 15px;
     display: none;
     transition: all 0.3s ease;
+}
+
+#zoom-percentage {
+    position: fixed;
+    color: white;
+    top: 50%;
+    right: 55px;
+    transform: translateY(-50%);
+    display: flex;
+    width: 7.8%;
+    height: 3%;
+    justify-content: center;
+    align-items: center;
+    font-size: smaller;
 }

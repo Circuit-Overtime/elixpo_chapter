@@ -4,7 +4,7 @@
         justify-content: center;
         align-items: center;
         padding: 5px 15px;
-        gap: 5px;
+        gap: 13px;
 
     }
 
@@ -14,7 +14,7 @@
 
     #lock-bar {
         position: fixed;
-        right: 20%;
+        right: 21.3%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
@@ -42,13 +42,16 @@
     }
 }
 
+
+/* Mobile Styles */
+
 @media (max-width: 638px) {
     .toolbar {
         display: flex;
         justify-content: center;
         align-items: center;
         padding: 5px 8px;
-        gap: 2px;
+        gap: 5.5px;
     }
 
     #lock-bar {
@@ -59,6 +62,7 @@
         flex-direction: row;
         display: flex;
     }
+
 
     #undoredo {
         position: fixed;
@@ -72,7 +76,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 18%;
+        left: 18.5%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -106,7 +110,7 @@
         justify-content: center;
         align-items: center;
         padding: 5px 15px;
-        gap: 1px;
+        gap: 5.5px;
     }
 
     #main-toolbar {
@@ -115,13 +119,14 @@
 
     #lock-bar {
         position: fixed;
-        right: 27.5%;
+        right: 27.4%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
         display: flex;
         /* padding: 5px 8px; */
     }
+
 
     #undoredo {
         position: fixed;
@@ -165,7 +170,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 36.5%;
+        right: 36.2%;
         transform: translateY(-50%);
     }
 }
@@ -176,7 +181,7 @@
         justify-content: center;
         align-items: center;
         padding: 5px 10px;
-        gap: 0px;
+        gap: 2px;
     }
 
     #main-toolbar {
@@ -185,13 +190,14 @@
 
     #lock-bar {
         position: fixed;
-        right: 33%;
+        right: 32%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
         display: flex;
         /* padding: 5px 8px; */
     }
+
 
     #undoredo {
         position: fixed;
@@ -205,7 +211,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 25%;
+        left: 24%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -234,7 +240,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 44%;
+        right: 42.4%;
         transform: translateY(-50%);
     }
 }
@@ -254,7 +260,7 @@
 
     #lock-bar {
         position: fixed;
-        right: 37%;
+        right: 35%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
@@ -275,7 +281,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 26.5%;
+        left: 26%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -304,7 +310,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 49.5%;
+        right: 46%;
         transform: translateY(-50%);
     }
 }
