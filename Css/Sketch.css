@@ -10,9 +10,10 @@ html {
 }
 
 #instructions {
-    color: white;
+    color: rgb(141, 133, 133);
     position: absolute; 
-    top: 70px; width: 100%; 
+    top: 60px; 
+    width: 100%; 
     font-size:small; 
     text-align: center;
 }
@@ -73,7 +74,7 @@ body.light-theme .tool.active {
 }
 
 body.light-theme #instructions {
-    color: #000000;
+    color: #b3adad;
 }
 
 body.light-theme #zoom-percentage {
