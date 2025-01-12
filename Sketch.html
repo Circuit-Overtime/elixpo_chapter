@@ -21,15 +21,15 @@
     <canvas id="canvas"></canvas>
     <!-- Toolbar 1: Main drawing tools and controls -->
     <div id="main-toolbar" class="toolbar">
-        <button class="tool" id="select" title="Select/Pan"><ion-icon name="hand-right-outline"></ion-icon></button>
-        <button class="tool" id="pointer" title="Pointer"><i class="bi bi-cursor"></i></button>
-        <button class="tool" id="rectangle" title="Rectangle"><i class="far fa-square"></i></button>
-        <button class="tool" id="circle" title="Circle"><i class="far fa-circle"></i></button>
-        <button class="tool" id="arrow" title="Arrow"><i class="bi bi-arrow-right"></i></button>
-        <button class="tool active" id="pencil" title="Pencil"><i class="fas fa-pencil-alt"></i></button>
-        <button class="tool" id="eraser" title="Eraser"><i class="bi bi-eraser"></i></button>
-        <button class="tool" id="text" title="Text"><i class="bi bi-fonts"></i></button>
-        <input type="color" id="colorPicker" value="#ffffff" title="Color Picker">
+        <button class="tool" id="select" title="Pan -- X or 1"><ion-icon name="hand-right-outline"></ion-icon></button>
+        <button class="tool" id="pointer" title="Pointer -- Y or 2"><i class="bi bi-cursor"></i></button>
+        <button class="tool" id="rectangle" title="Rectangle -- R or 3"><i class="far fa-square"></i></button>
+        <button class="tool" id="circle" title="Circle -- C or 4"><i class="far fa-circle"></i></button>
+        <button class="tool" id="arrow" title="Arrow -- A or 5"><i class="bi bi-arrow-right"></i></button>
+        <button class="tool active" id="pencil" title="Pencil -- P or 6"><i class="fas fa-pencil-alt"></i></button>
+        <button class="tool" id="eraser" title="Eraser -- E or 7"><i class="bi bi-eraser"></i></button>
+        <button class="tool" id="text" title="Text -- T or 8"><i class="bi bi-fonts"></i></button>
+        <input type="color" id="colorPicker" value="#ffffff" title="Color Picker -- W or 9">
         <div id="instructions">Click & drag, release when you're finished</div>
         <select id="strokeWidth" title="Stroke Width">
             <option value="1">1px</option>
@@ -39,7 +39,7 @@
             <option value="7">7px</option>
         </select>
         <!-- Toolbar 2: Additional shapes and tools -->
-        <button class="tool" id="more-tools" title="More Tools" onclick="toggleMainToolbar2()"><ion-icon name="apps"></ion-icon></button>
+        <button class="tool" id="more-tools" title="More Tools -- Z or 10" onclick="toggleMainToolbar2()"><ion-icon name="apps"></ion-icon></button>
         <div id="main-toolbar2" class="toolbar">
             <button class="tool" id="line" title="Line"><i class="bi bi-dash-lg"></i></button>
             <button class="tool" id="triangle" title="Triangle"><i class="bi bi-triangle"></i></button>
@@ -52,19 +52,19 @@
         </div>
     </div>
     <div id="theme-toggle" class="toolbar">
-        <button class="tool" id="theme-btn" title="Toggle Theme"><i class="fas fa-moon"></i></button>
+        <button class="tool" id="theme-btn" title="Toggle Theme -- Q or *"><i class="fas fa-moon"></i></button>
     </div>
     <div id="undoredo" class="toolbar">
-        <button class="tool" id="undo" title="Undo"><i class="fas fa-undo"></i></button>
-        <button class="tool" id="redo" title="Redo"><i class="fas fa-redo"></i></button>
+        <button class="tool" id="undo" title="Undo -- Ctrl + U"><i class="fas fa-undo"></i></button>
+        <button class="tool" id="redo" title="Redo -- Ctrl + R"><i class="fas fa-redo"></i></button>
     </div>
     <div id="delete" class="toolbar">
-        <button class="tool" id="clear" title="Clear All"><i class="fas fa-trash-alt"></i></button>
+        <button class="tool" id="clear" title="Clear All -- Ctrl + D"><i class="fas fa-trash-alt"></i></button>
     </div>
     <div id="zoom-toolbar" class="toolbar">
-        <button class="tool" id="zoom-in" title="Zoom In"><i class="bi bi-plus-lg"></i></button>&nbsp&nbsp
+        <button class="tool" id="zoom-in" title="Zoom In -- Ctrl +"><i class="bi bi-plus-lg"></i></button>&nbsp&nbsp
         <span id="zoom-percentage" class="toolbar">100%</span>
-        <button class="tool" id="zoom-out" title="Zoom Out"><i class="bi bi-dash-lg"></i></button>
+        <button class="tool" id="zoom-out" title="Zoom Out -- Ctrl -"><i class="bi bi-dash-lg"></i></button>
     </div>
     <div id="lock-bar" class="toolbar">
         <button class="tool" id="lock" title="Lock/Unlock"><ion-icon name="lock-closed"></ion-icon></button>
