@@ -10,7 +10,7 @@ html {
 }
 
 #instructions {
-    color: white;
+    color: rgb(174, 171, 171);
     position: absolute; 
     top: 70px; width: 100%; 
     font-size:small; 
