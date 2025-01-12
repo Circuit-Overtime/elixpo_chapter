@@ -17,6 +17,18 @@ html {
     text-align: center;
 }
 
+.bi-fonts{
+    font-size: larger;
+}
+
+.bi-cursor{
+    transform: rotate(290deg);
+}
+
+#more-tools{
+    font-size: larger;
+}
+
 #theme-toggle {
     position: fixed;
     right: 20px;

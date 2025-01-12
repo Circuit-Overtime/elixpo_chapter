@@ -22,14 +22,13 @@
     <!-- Toolbar 1: Main drawing tools and controls -->
     <div id="main-toolbar" class="toolbar">
         <button class="tool" id="select" title="Select/Pan"><ion-icon name="hand-right-outline"></ion-icon></button>
-        <button class="tool" id="pointer" title="Pointer"><i class="bi bi-cursor"
-                style="transform: rotate(290deg);"></i></button>
+        <button class="tool" id="pointer" title="Pointer"><i class="bi bi-cursor"></i></button>
         <button class="tool" id="rectangle" title="Rectangle"><i class="far fa-square"></i></button>
         <button class="tool" id="circle" title="Circle"><i class="far fa-circle"></i></button>
         <button class="tool" id="arrow" title="Arrow"><i class="bi bi-arrow-right"></i></button>
         <button class="tool active" id="pencil" title="Pencil"><i class="fas fa-pencil-alt"></i></button>
         <button class="tool" id="eraser" title="Eraser"><i class="bi bi-eraser"></i></button>
-        <button class="tool" id="text" title="Text"><i class="bi bi-fonts" style="font-size:larger"></i></button>
+        <button class="tool" id="text" title="Text"><i class="bi bi-fonts"></i></button>
         <input type="color" id="colorPicker" value="#ffffff" title="Color Picker">
         <div id="instructions">Click & drag, release when you're finished</div>
         <select id="strokeWidth" title="Stroke Width">
@@ -40,7 +39,7 @@
             <option value="7">7px</option>
         </select>
         <!-- Toolbar 2: Additional shapes and tools -->
-        <button class="tool" id="more-tools" title="More Tools" style="font-size: larger;" onclick="toggleMainToolbar2()"><ion-icon name="apps"></ion-icon></button>
+        <button class="tool" id="more-tools" title="More Tools" onclick="toggleMainToolbar2()"><ion-icon name="apps"></ion-icon></button>
         <div id="main-toolbar2" class="toolbar">
             <button class="tool" id="line" title="Line"><i class="bi bi-dash-lg"></i></button>
             <button class="tool" id="triangle" title="Triangle"><i class="bi bi-triangle"></i></button>
