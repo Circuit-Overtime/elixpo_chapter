@@ -12,7 +12,8 @@ html {
 #instructions {
     color: rgb(174, 171, 171);
     position: absolute; 
-    top: 70px; width: 100%; 
+    top: 65px; 
+    width: 100%; 
     font-size:small; 
     text-align: center;
 }

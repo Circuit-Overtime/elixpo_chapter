@@ -314,3 +314,73 @@
         transform: translateY(-50%);
     }
 }
+
+@media (max-width: 400px) {
+    .toolbar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 5px 5px;
+        gap: 1px;
+    }
+
+    #main-toolbar {
+        left: 50%;
+    }
+
+    #lock-bar {
+        position: fixed;
+        right: 38%;
+        top: 95%;
+        transform: translateY(-50%);
+        flex-direction: row;
+        display: flex;
+        /* padding: 5px 8px; */
+    }
+
+
+    #undoredo {
+        position: fixed;
+        top: 95%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: row;
+        padding: 5px 8px;
+    }
+
+    #delete {
+        position: fixed;
+        top: 95%;
+        left: 28%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: row;
+    }
+
+    .tool {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+    }
+
+    #colorPicker {
+        width: 30px;
+        height: 30px;
+    }
+
+    #zoom-percentage {
+        top: 50%;
+        right: 45px;
+    }
+
+    #zoom-toolbar {
+        padding: 5px 8px;
+        gap: 14px;
+    }
+
+    #theme-toggle {
+        top: 95%;
+        right: 48%;
+        transform: translateY(-50%);
+    }
+}
