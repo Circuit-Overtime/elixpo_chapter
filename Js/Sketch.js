@@ -932,9 +932,40 @@ document.addEventListener('keydown', function (event) {
         selectTool('text');
         document.getElementById('text').click();
     }
+    // Theme toggle
+    if (event.key === 'q' || event.key === 'Q' || event.key === '*') {
+        document.getElementById('theme-btn').click();
+    }
+
+    // Undo/Redo
+    if (event.ctrlKey && (event.key === 'u' || event.key === 'U')) {
+        event.preventDefault();
+        document.getElementById('undo').click();
+    }
+    if (event.ctrlKey && (event.key === 'r' || event.key === 'R')) {
+        event.preventDefault();
+        document.getElementById('redo').click();
+    }
+
+    // Clear all
+    if (event.ctrlKey && (event.key === 'd' || event.key === 'D')) {
+        event.preventDefault();
+        document.getElementById('clear').click();
+    }
+
+    // Zoom controls
+    if (event.ctrlKey && event.key === '+') {
+        event.preventDefault();
+        document.getElementById('zoom-in').click();
+    }
+    if (event.ctrlKey && event.key === '-') {
+        event.preventDefault();
+        document.getElementById('zoom-out').click();
+    }
     if (key === 'w' || key === '9') document.getElementById('colorPicker').click();
     if (key === 'z' || key === '0') toggleMainToolbar2();
 });
+
 
 function selectTool(toolId) {
     // Remove active class from all tools
