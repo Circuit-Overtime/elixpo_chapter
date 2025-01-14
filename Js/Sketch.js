@@ -894,6 +894,56 @@ function loadAllData() {
     }
 }
 
+//KEYBOARD MAPPING FOR ALL TOOLS
+document.addEventListener('keydown', function (event) {
+    // Convert key to lowercase for case-insensitive comparison
+    const key = event.key.toLowerCase();
+
+    // Mapping of keys to tools
+    if (key === 'x' || key === '1') {
+        selectTool('select');
+        document.getElementById('select').click();
+    }
+    if (key === 'y' || key === '2') {
+        selectTool('pointer');
+        document.getElementById('pointer').click();
+    }
+    if (key === 'r' || key === '3') {
+        selectTool('rectangle');
+        document.getElementById('rectangle').click();
+    }
+    if (key === 'c' || key === '4') {
+        selectTool('circle');
+        document.getElementById('circle').click();
+    }
+    if (key === 'a' || key === '5') {
+        selectTool('arrow');
+        document.getElementById('arrow').click();
+    }
+    if (key === 'p' || key === '6') {
+        selectTool('pencil');
+        document.getElementById('pencil').click();
+    }
+    if (key === 'e' || key === '7') {
+        selectTool('eraser');
+        document.getElementById('eraser').click();
+    }
+    if (key === 't' || key === '8') {
+        selectTool('text');
+        document.getElementById('text').click();
+    }
+    if (key === 'w' || key === '9') document.getElementById('colorPicker').click();
+    if (key === 'z' || key === '0') toggleMainToolbar2();
+});
+
+function selectTool(toolId) {
+    // Remove active class from all tools
+    document.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
+    // Add active class to selected tool
+    document.getElementById(toolId).classList.add('active');
+    currentTool = toolId;
+}
+
 // Save data on window unload
 window.addEventListener('beforeunload', saveAllData);
 
