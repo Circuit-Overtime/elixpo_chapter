@@ -30,12 +30,17 @@ html {
     font-size: larger;
 }
 
+#share{
+    left: 20px;
+    padding: 5px 5px;
+    display: flex;
+}
+
 #theme-toggle {
     position: fixed;
     right: 20px;
     padding: 5px 5px;
     display: flex;
-    padding: 5px 5px;
 }
 
 #canvas {
