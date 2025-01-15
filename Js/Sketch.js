@@ -494,10 +494,26 @@ function drawElement(element) {
             drawRoundedRectangle(ctx, element.x1, element.y1, element.x2 - element.x1, element.y2 - element.y1, 10, options);
             break;
         case 'circle':
-            const width = element.x2 - element.x1;
-            const height = element.y2 - element.y1;
+            const width = Math.abs(element.x2 - element.x1);
+            const height = Math.abs(element.y2 - element.y1);
             const diameter = Math.max(Math.abs(width), Math.abs(height));
-            rc.circle(element.x1 + width / 2, element.y1 + height / 2, diameter, options);
+            const centerX = element.x1 + width / 2;
+            const centerY = element.y1 + height / 2;
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, diameter / 2, 0, Math.PI * 2);
+            ctx.strokeStyle = options.stroke;
+            ctx.lineWidth = options.strokeWidth;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // Add a subtle shadow for depth
+            ctx.shadowColor = options.stroke;
+            ctx.shadowBlur = 0;
+            ctx.stroke();
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
             break;
         case 'text':
             ctx.font = '25px monospace';
