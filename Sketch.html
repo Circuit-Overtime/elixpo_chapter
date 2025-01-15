@@ -24,14 +24,38 @@
     </div>
     <!-- Toolbar 1: Main drawing tools and controls -->
     <div id="main-toolbar" class="toolbar">
-        <button class="tool" id="select" title="Pan -- X or 1" onclick="document.getElementById('instructions').textContent = 'Click and drag to move across canvas. Release when done.'"><ion-icon name="hand-right-outline"></ion-icon></button>
-        <button class="tool" id="pointer" title="Pointer -- Y or 2" onclick="document.getElementById('instructions').textContent = 'Click and drag objects to move them around the canvas freely.'"><i class="bi bi-cursor"></i></button>
-        <button class="tool" id="rectangle" title="Rectangle -- R or 3" onclick="document.getElementById('instructions').textContent = 'Click, drag diagonally to create rectangle. Hold Shift for perfect square.'"><i class="far fa-square"></i></button>
-        <button class="tool" id="circle" title="Circle -- C or 4" onclick="document.getElementById('instructions').textContent = 'Click and drag outward to draw circle. Hold Shift for perfect circle.'"><i class="far fa-circle"></i></button>
-        <button class="tool" id="arrow" title="Arrow -- A or 5" onclick="document.getElementById('instructions').textContent = 'Click start point, drag to set direction and length of arrow.'"><i class="bi bi-arrow-right"></i></button>
-        <button class="tool active" id="pencil" title="Pencil -- P or 6" onclick="document.getElementById('instructions').textContent = 'Click and drag to draw freehand. Adjust width as needed.'"><i class="fas fa-pencil-alt"></i></button>
-        <button class="tool" id="eraser" title="Eraser -- E or 7" onclick="document.getElementById('instructions').textContent = 'Click and drag over elements to erase them from canvas.'"><i class="bi bi-eraser"></i></button>
-        <button class="tool" id="text" title="Text -- T or 8" onclick="document.getElementById('instructions').textContent = 'Click to add text. Type and click outside when done.'"><i class="bi bi-fonts"></i></button>
+        <button class="tool" id="select" title="Pan -- X or 1" onclick="document.getElementById('instructions').textContent = 'Click and drag to move across canvas. Release when done.'">
+            <ion-icon name="hand-right-outline"></ion-icon>
+            <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">1</span>
+        </button>
+        <button class="tool" id="pointer" title="Pointer -- Y or 2" onclick="document.getElementById('instructions').textContent = 'Click and drag objects to move them around the canvas freely.'">
+            <i class="bi bi-cursor"></i>
+            <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">2</span>
+        </button>
+        <button class="tool" id="rectangle" title="Rectangle -- R or 3" onclick="document.getElementById('instructions').textContent = 'Click, drag diagonally to create rectangle. Hold Shift for perfect square.'">
+            <i class="far fa-square"></i>
+            <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">3</span>
+        </button>
+        <button class="tool" id="circle" title="Circle -- C or 4" onclick="document.getElementById('instructions').textContent = 'Click and drag outward to draw circle. Hold Shift for perfect circle.'">
+            <i class="far fa-circle"></i>
+            <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">4</span>
+        </button>
+        <button class="tool" id="arrow" title="Arrow -- A or 5" onclick="document.getElementById('instructions').textContent = 'Click start point, drag to set direction and length of arrow.'">
+            <i class="bi bi-arrow-right"></i>
+            <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">5</span>
+        </button>
+        <button class="tool active" id="pencil" title="Pencil -- P or 6" onclick="document.getElementById('instructions').textContent = 'Click and drag to draw freehand. Adjust width as needed.'">
+            <i class="fas fa-pencil-alt"></i>
+            <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">6</span>
+        </button>
+        <button class="tool" id="eraser" title="Eraser -- E or 7" onclick="document.getElementById('instructions').textContent = 'Click and drag over elements to erase them from canvas.'">
+            <i class="bi bi-eraser"></i>
+            <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">7</span>
+        </button>
+        <button class="tool" id="text" title="Text -- T or 8" onclick="document.getElementById('instructions').textContent = 'Click to add text. Type and click outside when done.'">
+            <i class="bi bi-fonts"></i>
+            <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">8</span>
+        </button>
         <input type="color" id="colorPicker" value="#ffffff" title="Color Picker -- W or 9" onclick="document.getElementById('instructions').textContent = 'Select color for shapes and text on canvas.'">
         <div id="instructions">Click & drag. Release when you're Finished</div>
         <select id="strokeWidth" title="Stroke Width" onclick="document.getElementById('instructions').textContent = 'Click and select to choose Thickness or Thinness.'">
@@ -42,16 +66,39 @@
             <option value="7">7px</option>
         </select>
         <!-- Toolbar 2: Additional shapes and tools -->
-        <button class="tool" id="more-tools" title="More Tools -- M or 0" onclick="toggleMainToolbar2()"><ion-icon name="apps"></ion-icon></button>
+        <button class="tool" id="more-tools" title="More Tools -- M or 0" onclick="toggleMainToolbar2()">
+            <ion-icon name="apps"></ion-icon>
+            <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">0</span>
+        </button>
         <div id="main-toolbar2" class="toolbar">
-            <button class="tool" id="line" title="Line"><i class="bi bi-dash-lg"></i></button>
-            <button class="tool" id="triangle" title="Triangle"><i class="bi bi-triangle"></i></button>
-            <button class="tool" id="pentagon" title="Pentagon"><i class="bi bi-pentagon"></i></button>
-            <button class="tool" id="star" title="Star"><i class="bi bi-star"></i></button>
-            <button class="tool" id="diamond" title="Diamond"><i class="bi bi-diamond"></i></button>
-            <button class="tool" id="hexagon" title="Hexagon"><i class="bi bi-hexagon"></i></button>
-            <button class="tool" id="sticky-notes" title="Sticky Notes"><i class="bi bi-sticky"></i></button>
-
+            <button class="tool" id="line" title="Line -- L or 11" onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a straight line.'">
+                <i class="bi bi-dash-lg"></i>
+                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">11</span>
+            </button>
+            <button class="tool" id="triangle" title="Triangle -- G or 12" onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a triangle.'">
+                <i class="bi bi-triangle"></i>
+                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">12</span>
+            </button>
+            <button class="tool" id="pentagon" title="Pentagon -- N or 13" onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a pentagon.'">
+                <i class="bi bi-pentagon"></i>
+                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">13</span>
+            </button>
+            <button class="tool" id="star" title="Star -- S or 14" onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a star.'">
+                <i class="bi bi-star"></i>
+                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">14</span>
+            </button>
+            <button class="tool" id="diamond" title="Diamond -- D or 15" onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a diamond.'">
+                <i class="bi bi-diamond"></i>
+                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">15</span>
+            </button>
+            <button class="tool" id="hexagon" title="Hexagon -- H or 16" onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a hexagon.'">
+                <i class="bi bi-hexagon"></i>
+                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">16</span>
+            </button>
+            <button class="tool" id="sticky-notes" title="Sticky Notes -- K or 17" onclick="document.getElementById('instructions').textContent = 'Click to add a sticky note.'">
+                <i class="bi bi-sticky"></i>
+                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">17</span>
+            </button>
         </div>
     </div>
     <div id="theme-toggle" class="toolbar">
