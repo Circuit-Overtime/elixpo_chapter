@@ -938,11 +938,11 @@ document.addEventListener('keydown', function (event) {
     }
 
     // Undo/Redo
-    if (event.ctrlKey && (event.key === 'u' || event.key === 'U')) {
+    if (event.ctrlKey && (event.key === 'z' || event.key === 'Z')) {
         event.preventDefault();
         document.getElementById('undo').click();
     }
-    if (event.ctrlKey && (event.key === 'r' || event.key === 'R')) {
+    if (event.ctrlKey && (event.key === 'y' || event.key === 'Y')) {
         event.preventDefault();
         document.getElementById('redo').click();
     }
@@ -953,17 +953,18 @@ document.addEventListener('keydown', function (event) {
         document.getElementById('clear').click();
     }
 
-    // Zoom controls
-    if (event.ctrlKey && event.key === '+') {
-        event.preventDefault();
-        document.getElementById('zoom-in').click();
-    }
-    if (event.ctrlKey && event.key === '-') {
-        event.preventDefault();
-        document.getElementById('zoom-out').click();
-    }
+    // // Zoom controls
+    // if (event.ctrlKey && event.key === '+') {
+    //     event.preventDefault();
+    //     document.getElementById('zoom-in').click();
+    // }
+    // if (event.ctrlKey && event.key === '-') {
+    //     event.preventDefault();
+    //     document.getElementById('zoom-out').click();
+    // }
+    
     if (key === 'w' || key === '9') document.getElementById('colorPicker').click();
-    if (key === 'z' || key === '0') toggleMainToolbar2();
+    if (key === 'm' || key === '0') toggleMainToolbar2();
 });
 
 

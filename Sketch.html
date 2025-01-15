@@ -24,18 +24,17 @@
     </div>
     <!-- Toolbar 1: Main drawing tools and controls -->
     <div id="main-toolbar" class="toolbar">
-        
-        <button class="tool" id="select" title="Pan -- X or 1"><ion-icon name="hand-right-outline"></ion-icon></button>
-        <button class="tool" id="pointer" title="Pointer -- Y or 2"><i class="bi bi-cursor"></i></button>
-        <button class="tool" id="rectangle" title="Rectangle -- R or 3"><i class="far fa-square"></i></button>
-        <button class="tool" id="circle" title="Circle -- C or 4"><i class="far fa-circle"></i></button>
-        <button class="tool" id="arrow" title="Arrow -- A or 5"><i class="bi bi-arrow-right"></i></button>
-        <button class="tool active" id="pencil" title="Pencil -- P or 6"><i class="fas fa-pencil-alt"></i></button>
-        <button class="tool" id="eraser" title="Eraser -- E or 7"><i class="bi bi-eraser"></i></button>
-        <button class="tool" id="text" title="Text -- T or 8"><i class="bi bi-fonts"></i></button>
-        <input type="color" id="colorPicker" value="#ffffff" title="Color Picker -- W or 9">
-        <div id="instructions">Click & drag, release when you're finished</div>
-        <select id="strokeWidth" title="Stroke Width">
+        <button class="tool" id="select" title="Pan -- X or 1" onclick="document.getElementById('instructions').textContent = 'Click and drag to move across canvas. Release when done.'"><ion-icon name="hand-right-outline"></ion-icon></button>
+        <button class="tool" id="pointer" title="Pointer -- Y or 2" onclick="document.getElementById('instructions').textContent = 'Click and drag objects to move them around the canvas freely.'"><i class="bi bi-cursor"></i></button>
+        <button class="tool" id="rectangle" title="Rectangle -- R or 3" onclick="document.getElementById('instructions').textContent = 'Click, drag diagonally to create rectangle. Hold Shift for perfect square.'"><i class="far fa-square"></i></button>
+        <button class="tool" id="circle" title="Circle -- C or 4" onclick="document.getElementById('instructions').textContent = 'Click and drag outward to draw circle. Hold Shift for perfect circle.'"><i class="far fa-circle"></i></button>
+        <button class="tool" id="arrow" title="Arrow -- A or 5" onclick="document.getElementById('instructions').textContent = 'Click start point, drag to set direction and length of arrow.'"><i class="bi bi-arrow-right"></i></button>
+        <button class="tool active" id="pencil" title="Pencil -- P or 6" onclick="document.getElementById('instructions').textContent = 'Click and drag to draw freehand. Adjust width as needed.'"><i class="fas fa-pencil-alt"></i></button>
+        <button class="tool" id="eraser" title="Eraser -- E or 7" onclick="document.getElementById('instructions').textContent = 'Click and drag over elements to erase them from canvas.'"><i class="bi bi-eraser"></i></button>
+        <button class="tool" id="text" title="Text -- T or 8" onclick="document.getElementById('instructions').textContent = 'Click to add text. Type and click outside when done.'"><i class="bi bi-fonts"></i></button>
+        <input type="color" id="colorPicker" value="#ffffff" title="Color Picker -- W or 9" onclick="document.getElementById('instructions').textContent = 'Select color for shapes and text on canvas.'">
+        <div id="instructions">Click & drag. Release when you're Finished</div>
+        <select id="strokeWidth" title="Stroke Width" onclick="document.getElementById('instructions').textContent = 'Click and select to choose Thickness or Thinness.'">
             <option value="1">1px</option>
             <option value="2">2px</option>
             <option value="3" selected>3px</option>
@@ -43,7 +42,7 @@
             <option value="7">7px</option>
         </select>
         <!-- Toolbar 2: Additional shapes and tools -->
-        <button class="tool" id="more-tools" title="More Tools -- Z or 0" onclick="toggleMainToolbar2()"><ion-icon name="apps"></ion-icon></button>
+        <button class="tool" id="more-tools" title="More Tools -- M or 0" onclick="toggleMainToolbar2()"><ion-icon name="apps"></ion-icon></button>
         <div id="main-toolbar2" class="toolbar">
             <button class="tool" id="line" title="Line"><i class="bi bi-dash-lg"></i></button>
             <button class="tool" id="triangle" title="Triangle"><i class="bi bi-triangle"></i></button>
@@ -56,11 +55,11 @@
         </div>
     </div>
     <div id="theme-toggle" class="toolbar">
-        <button class="tool" id="theme-btn" title="Toggle Theme -- Q or *"><i class="fas fa-moon"></i></button>
+        <button class="tool" id="theme-btn" title="Theme -- Q or *"><i class="fas fa-moon"></i></button>
     </div>
     <div id="undoredo" class="toolbar">
-        <button class="tool" id="undo" title="Undo -- Ctrl + U"><i class="fas fa-undo"></i></button>
-        <button class="tool" id="redo" title="Redo -- Ctrl + R"><i class="fas fa-redo"></i></button>
+        <button class="tool" id="undo" title="Undo -- Ctrl + Z"><i class="fas fa-undo"></i></button>
+        <button class="tool" id="redo" title="Redo -- Ctrl + Y"><i class="fas fa-redo"></i></button>
     </div>
     <div id="delete" class="toolbar">
         <button class="tool" id="clear" title="Clear All -- Ctrl + D"><i class="fas fa-trash-alt"></i></button>
