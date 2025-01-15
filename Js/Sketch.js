@@ -488,7 +488,7 @@ function drawElement(element) {
             rc.line(element.x1, element.y1, element.x2, element.y2, options);
             break;
         case 'line':
-            rc.line(element.x1, element.y1, element.x2, element.y2, options);
+            drawFluidLine(ctx, element.x1, element.y1, element.x2, element.y2, options);
             break;
         case 'rectangle':
             drawRoundedRectangle(ctx, element.x1, element.y1, element.x2 - element.x1, element.y2 - element.y1, 10, options);
@@ -541,6 +541,18 @@ function drawElement(element) {
             drawPolygon(ctx, element.x1, element.y1, element.x2, element.y2, 6, options);
             break;
     }
+}
+
+// New function to draw fluid lines with rounded ends
+function drawFluidLine(ctx, x1, y1, x2, y2, options) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
 }
 
 function drawPolygon(ctx, x1, y1, x2, y2, sides, options) {
