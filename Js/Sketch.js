@@ -491,7 +491,7 @@ function drawElement(element) {
             rc.line(element.x1, element.y1, element.x2, element.y2, options);
             break;
         case 'rectangle':
-            rc.rectangle(element.x1, element.y1, element.x2 - element.x1, element.y2 - element.y1, options);
+            drawRoundedRectangle(ctx, element.x1, element.y1, element.x2 - element.x1, element.y2 - element.y1, 10, options);
             break;
         case 'circle':
             const width = element.x2 - element.x1;
@@ -584,6 +584,23 @@ function drawDiamond(ctx, x1, y1, x2, y2, options) {
     ctx.lineTo(x2, centerY);
     ctx.lineTo(centerX, y2);
     ctx.lineTo(x1, centerY);
+    ctx.closePath();
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
+}
+
+function drawRoundedRectangle(ctx, x, y, width, height, radius, options) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
     ctx.closePath();
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
