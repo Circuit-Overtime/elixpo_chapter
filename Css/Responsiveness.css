@@ -61,8 +61,7 @@
     }
 
     #share{
-        top:50%;
-        left: 3px;
+        left: 20px;
         padding: 5px 5px;
         display: flex;
     }
@@ -123,6 +122,13 @@
         align-items: center;
         padding: 5px 15px;
         gap: 5.5px;
+    }
+
+    #share{
+        top: 45%;
+        left: 3px;
+        padding: 5px 5px;
+        display: flex;
     }
 
     #main-toolbar {
@@ -196,6 +202,13 @@
         gap: 2px;
     }
 
+    #share{
+        top: 45%;
+        left: 3px;
+        padding: 5px 5px;
+        display: flex;
+    }
+
     #main-toolbar {
         left: 50%;
     }
@@ -266,6 +279,13 @@
         gap: 1px;
     }
 
+    #share{
+        top: 45%;
+        left: 3px;
+        padding: 5px 5px;
+        display: flex;
+    }
+
     #main-toolbar {
         left: 50%;
     }
@@ -334,6 +354,13 @@
         align-items: center;
         padding: 5px 5px;
         gap: 1px;
+    }
+
+    #share{
+        top: 45%;
+        left: 3px;
+        padding: 5px 5px;
+        display: flex;
     }
 
     #main-toolbar {
