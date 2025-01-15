@@ -499,19 +499,19 @@ function drawElement(element) {
             const diameter = Math.max(Math.abs(width), Math.abs(height));
             const centerX = element.x1 + width / 2;
             const centerY = element.y1 + height / 2;
-            
+
             ctx.beginPath();
             ctx.arc(centerX, centerY, diameter / 2, 0, Math.PI * 2);
             ctx.strokeStyle = options.stroke;
             ctx.lineWidth = options.strokeWidth;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            
+
             // Add a subtle shadow for depth
             ctx.shadowColor = options.stroke;
             ctx.shadowBlur = 0;
             ctx.stroke();
-            
+
             // Reset shadow
             ctx.shadowBlur = 0;
             break;
@@ -1007,7 +1007,7 @@ document.addEventListener('keydown', function (event) {
     //     event.preventDefault();
     //     document.getElementById('zoom-out').click();
     // }
-    
+
     if (key === 'w' || key === '9') document.getElementById('colorPicker').click();
     if (key === 'm' || key === '0') toggleMainToolbar2();
 });
@@ -1023,17 +1023,17 @@ function selectTool(toolId) {
 
 // Add your team joining logic here
 function showTeamCodePopup() {
-document.getElementById('teamCodePopup').style.display = 'block';
+    document.getElementById('teamCodePopup').style.display = 'block';
 }
 
 function hideTeamCodePopup() {
-document.getElementById('teamCodePopup').style.display = 'none';
+    document.getElementById('teamCodePopup').style.display = 'none';
 }
 
 function joinTeam() {
-const teamCode = document.getElementById('teamCode').value;
+    const teamCode = document.getElementById('teamCode').value;
 
-hideTeamCodePopup();
+    hideTeamCodePopup();
 }
 
 // Save data on window unload

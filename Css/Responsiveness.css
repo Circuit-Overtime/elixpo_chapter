@@ -8,7 +8,7 @@
 
     }
 
-    #share{
+    #share {
         left: 20px;
         padding: 5px 5px;
         display: flex;
@@ -60,11 +60,12 @@
         gap: 5.5px;
     }
 
-    #share{
+    #share {
         left: 20px;
         padding: 5px 5px;
         display: flex;
     }
+
     #lock-bar {
         position: fixed;
         right: 23.5%;
@@ -124,7 +125,7 @@
         gap: 5.5px;
     }
 
-    #share{
+    #share {
         top: 45%;
         left: 3px;
         padding: 5px 5px;
@@ -202,7 +203,7 @@
         gap: 2px;
     }
 
-    #share{
+    #share {
         top: 45%;
         left: 3px;
         padding: 5px 5px;
@@ -279,7 +280,7 @@
         gap: 1px;
     }
 
-    #share{
+    #share {
         top: 45%;
         left: 3px;
         padding: 5px 5px;
@@ -356,7 +357,7 @@
         gap: 1px;
     }
 
-    #share{
+    #share {
         top: 45%;
         left: 3px;
         padding: 5px 5px;
@@ -409,7 +410,7 @@
 
     #zoom-percentage {
         top: 50%;
-        right:50px;
+        right: 50px;
     }
 
     #zoom-toolbar {
