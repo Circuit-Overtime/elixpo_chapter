@@ -9,130 +9,130 @@ html {
     background-color: #121212;
 }
 
-#teamCodePopup{
-    display: none; 
-    position: fixed; 
-    top: 50%; 
-    left: 50%; 
-    transform: translate(-50%, -50%); 
+#teamCodePopup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 1000;
 }
 
 .form-container {
-width: 450px;
-height: 250px;
-background: rgba(255, 255, 255, 0.95);
-padding: 32px 40px;
-font-size: 14px;
-font-family: inherit;
-color: #212121;
-display: flex;
-flex-direction: column;
-gap: 20px;
-box-sizing: border-box;
-border-radius: 12px;
-box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-backdrop-filter: blur(10px);
-border: 1px solid rgba(255, 255, 255, 0.125);
-transition: transform 0.2s ease;
+    width: 450px;
+    height: 250px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 32px 40px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #212121;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.125);
+    transition: transform 0.2s ease;
 }
 
 .form-container:hover {
-transform: translateY(-5px);
+    transform: translateY(-5px);
 }
 
 .form-container .logo-container {
-text-align: center;
-font-weight: 600;
-font-size: 24px;
-color: #14171b;
-margin-bottom: 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 24px;
+    color: #14171b;
+    margin-bottom: 10px;
 }
 
 .form-container .logo-container i {
-margin-right: 10px;
-font-size: 28px;
+    margin-right: 10px;
+    font-size: 28px;
 }
 
 .form-container .form-group {
-display: flex;
-flex-direction: column;
-gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .form-container .form-group label {
-font-weight: 500;
-color: #5f6368;
+    font-weight: 500;
+    color: #5f6368;
 }
 
 .form-container .form-group input {
-width: 100%;
-padding: 12px 16px;
-border-radius: 8px;
-font-family: inherit;
-border: 2px solid #e0e0e0;
-transition: border-color 0.3s ease;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: inherit;
+    border: 2px solid #e0e0e0;
+    transition: border-color 0.3s ease;
 }
 
 .form-container .form-group input:focus {
-outline: none;
-border-color: #000000;
+    outline: none;
+    border-color: #000000;
 }
 
 .form-submit-btn {
-display: flex;
-justify-content: center;
-align-items: center;
-font-family: inherit;
-color: #fff;
-background-color: #050505;
-border: none;
-width: 100%;
-padding: 12px 16px;
-font-size: 14px;
-font-weight: 500;
-gap: 8px;
-margin: 12px 0;
-cursor: pointer;
-border-radius: 8px;
-transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: inherit;
+    color: #fff;
+    background-color: #050505;
+    border: none;
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    gap: 8px;
+    margin: 12px 0;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
 }
 
 .form-submit-btn:hover {
-background-color: #040404;
-transform: translateY(-2px);
+    background-color: #040404;
+    transform: translateY(-2px);
 }
 
 .cancel-btn {
-background-color: #bf1a1a;
+    background-color: #bf1a1a;
 }
 
 .cancel-btn:hover {
-background-color: #bf1a1a;
+    background-color: #bf1a1a;
 }
 
 #instructions {
     color: rgb(174, 171, 171);
-    position: absolute; 
-    top: 65px; 
-    width: 100%; 
-    font-size:small; 
+    position: absolute;
+    top: 65px;
+    width: 100%;
+    font-size: small;
     text-align: center;
 }
 
-.bi-fonts{
+.bi-fonts {
     font-size: larger;
 }
 
-.bi-cursor{
+.bi-cursor {
     transform: rotate(290deg);
 }
 
-#more-tools{
+#more-tools {
     font-size: larger;
 }
 
-#share{
+#share {
     left: 20px;
     padding: 5px 5px;
     display: flex;
@@ -168,10 +168,10 @@ background-color: #bf1a1a;
     transform: translateX(-50%);
 }
 
-#main-toolbar2{
-    display: none; 
-    position: absolute; 
-    top: 60px; 
+#main-toolbar2 {
+    display: none;
+    position: absolute;
+    top: 60px;
     left: 88.5%;
 }
 
@@ -312,4 +312,3 @@ background-color: #bf1a1a;
     display: none;
     transition: all 0.3s ease;
 }
-
