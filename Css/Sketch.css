@@ -21,7 +21,7 @@ html {
 .form-container {
     width: 450px;
     height: 250px;
-    background: rgba(255, 255, 255, 0.95);
+    background-color: #F0F0F0;
     padding: 32px 40px;
     font-size: 14px;
     font-family: inherit;
@@ -30,8 +30,8 @@ html {
     flex-direction: column;
     gap: 20px;
     box-sizing: border-box;
-    border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.125);
     transition: transform 0.2s ease;
@@ -62,7 +62,10 @@ html {
 
 .form-container .form-group label {
     font-weight: 500;
-    color: #5f6368;
+    color: #88898aa3;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
 }
 
 .form-container .form-group input {
@@ -70,13 +73,13 @@ html {
     padding: 12px 16px;
     border-radius: 8px;
     font-family: inherit;
-    border: 2px solid #e0e0e0;
+    border: 2px solid #81808081;
     transition: border-color 0.3s ease;
 }
 
 .form-container .form-group input:focus {
     outline: none;
-    border-color: #000000;
+    border-color: #818080;
 }
 
 .form-submit-btn {
@@ -84,12 +87,12 @@ html {
     justify-content: center;
     align-items: center;
     font-family: inherit;
-    color: #fff;
+    color: #e7e7e7;
     background-color: #050505;
     border: none;
     width: 100%;
     padding: 12px 16px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
     gap: 8px;
     margin: 12px 0;
