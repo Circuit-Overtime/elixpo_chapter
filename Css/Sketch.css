@@ -9,6 +9,12 @@ html {
     background-color: #121212;
 }
 
+#share {
+    left: 20px;
+    padding: 5px 5px;
+    display: flex;
+}
+
 #teamCodePopup {
     display: none;
     position: fixed;
@@ -133,12 +139,6 @@ html {
 
 #more-tools {
     font-size: larger;
-}
-
-#share {
-    left: 20px;
-    padding: 5px 5px;
-    display: flex;
 }
 
 #theme-toggle {
