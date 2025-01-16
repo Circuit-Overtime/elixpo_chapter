@@ -45,6 +45,8 @@ let undoStack = [];
 let redoStack = [];
 const maxHistorySize = 10;
 
+let isTeamCodePopupOpen = false;
+
 function resizeCanvas() {
     canvas.width = window.innerWidth * 2;
     canvas.height = window.innerHeight * 2;
@@ -941,6 +943,8 @@ function loadAllData() {
 
 //KEYBOARD MAPPING FOR ALL TOOLS
 document.addEventListener('keydown', function (event) {
+    if (isTeamCodePopupOpen) return; // Disable keyboard mapping when team code popup is open
+
     // Convert key to lowercase for case-insensitive comparison
     const key = event.key.toLowerCase();
 
@@ -1024,10 +1028,12 @@ function selectTool(toolId) {
 // Add your team joining logic here
 function showTeamCodePopup() {
     document.getElementById('teamCodePopup').style.display = 'block';
+    isTeamCodePopupOpen = true;
 }
 
 function hideTeamCodePopup() {
     document.getElementById('teamCodePopup').style.display = 'none';
+    isTeamCodePopupOpen = false;
 }
 
 function joinTeam() {
