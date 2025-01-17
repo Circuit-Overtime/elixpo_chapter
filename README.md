@@ -6,25 +6,9 @@ Welcome to **Inkflow Workspace** – your go-to web app for seamless, intuitive 
 ## 🌟 Toolbar Preview and Sketches
 <img src="Images/PREVIEW1.png">
 
----
-
-## 🌟 Undo Redo & Delete Preview and Sketches
-<img src="Images/PREVIEW2.png">
-
----
-
-## 🌟 Theme Change Preview and Sketches
-<img src="Images/PREVIEW3.png">
-
----
-
-## 🌟 Zoom In & Out Preview and Sketches
-<img src="Images/PREVIEW4.png">
-
----
 
 ## 🌟 Over all look & Feel Preview and Sketches
-<img src="Images/PREVIEW5.png">
+<img src="Images/PREVIEW2.png">
 
 ---
 
