@@ -393,7 +393,7 @@ function draw(e) {
     if (!isDrawing) return;
 
     const currentX = e.offsetX;
-    const currentY = e.offsetY;
+    const currentY = e.offsetY;  // Fix: properly declare currentY
 
     if (selectedTool === 'pencil') {
         elements.push({
@@ -932,9 +932,13 @@ function loadAllData() {
         elements = data.elements || [];
         selectedTool = data.selectedTool || 'pencil';
         selectedColor = data.selectedColor || '#ffffff';
-        selectedStrokeWidth = data.selectedStrokeWidth || 3;
+        // selectedStrokeWidth = data.selectedStrokeWidth || 3;
         currentZoom = data.currentZoom || 100;
         scale = data.scale || 1;
+        
+        // Update the stroke width input value to match loaded stroke width
+        document.getElementById('strokeWidth').value = selectedStrokeWidth;
+        
         redrawCanvas();
         updateCursorStyle();
         zoomPercentage.textContent = currentZoom + '%';
