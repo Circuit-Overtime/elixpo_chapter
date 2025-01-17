@@ -3,8 +3,30 @@
 Welcome to **Inkflow Workspace** – your go-to web app for seamless, intuitive digital art creation. Whether you’re sketching ideas, designing shapes, or exploring your creativity, Inkflow Workspace offers all the tools you need to bring your imagination to life!
 
 
-<img src="Images/.png">
+## 🌟 Toolbar Preview and Sketches
+<img src="Images/PREVIEW1.png">
 
+---
+
+## 🌟 Undo Redo & Delete Preview and Sketches
+<img src="Images/PREVIEW2.png">
+
+---
+
+## 🌟 Theme Change Preview and Sketches
+<img src="Images/PREVIEW3.png">
+
+---
+
+## 🌟 Zoom In & Out Preview and Sketches
+<img src="Images/PREVIEW4.png">
+
+---
+
+## 🌟 Over all look & Feel Preview and Sketches
+<img src="Images/PREVIEW5.png">
+
+---
 
 ## 🌟 Key Features
 
