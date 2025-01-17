@@ -942,8 +942,10 @@ function loadAllData() {
 }
 
 //KEYBOARD MAPPING FOR ALL TOOLS
-document.addEventListener('keydown', function (event) {
-    if (isTeamCodePopupOpen) return; // Disable keyboard mapping when team code popup is open
+document.addEventListener('keydown', handleKeyDown);
+
+function handleKeyDown(event) {
+    if (isTeamCodePopupOpen || selectedTool === 'text') return; // Disable keyboard mapping when team code popup is open or text tool is selected
 
     // Convert key to lowercase for case-insensitive comparison
     const key = event.key.toLowerCase();
@@ -1014,15 +1016,21 @@ document.addEventListener('keydown', function (event) {
 
     if (key === 'w' || key === '9') document.getElementById('colorPicker').click();
     if (key === 'm' || key === '0') toggleMainToolbar2();
-});
-
+}
 
 function selectTool(toolId) {
     // Remove active class from all tools
     document.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
     // Add active class to selected tool
     document.getElementById(toolId).classList.add('active');
-    currentTool = toolId;
+    selectedTool = toolId;
+
+    // Re-enable keyboard mapping when switching from text tool
+    if (toolId !== 'text') {
+        document.addEventListener('keydown', handleKeyDown);
+    } else {
+        document.removeEventListener('keydown', handleKeyDown);
+    }
 }
 
 // Add your team joining logic here
