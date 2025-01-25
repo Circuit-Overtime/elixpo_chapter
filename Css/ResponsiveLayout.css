@@ -18,14 +18,14 @@
         left: 50%;
     }
 
-    #lock-bar {
+    /* #lock-bar {
         position: fixed;
         right: 21.3%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
         display: flex;
-    }
+    } */
 
     #delete {
         position: fixed;
@@ -66,15 +66,14 @@
         display: flex;
     }
 
-    #lock-bar {
+    /* #lock-bar {
         position: fixed;
         right: 23.5%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
         display: flex;
-    }
-
+    } */
 
     #undoredo {
         position: fixed;
@@ -126,7 +125,7 @@
     }
 
     #share {
-        top: 45%;
+        top: 15%;
         left: 3px;
         padding: 5px 5px;
         display: flex;
@@ -177,16 +176,14 @@
         left: 50%;
     }
 
-    #lock-bar {
+    /* #lock-bar {
         position: fixed;
         right: 27.4%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
         display: flex;
-        /* padding: 5px 8px; */
-    }
-
+    } */
 
     #undoredo {
         position: fixed;
@@ -230,7 +227,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 36.2%;
+        right: 27.4%;
         transform: translateY(-50%);
     }
 }
@@ -245,7 +242,7 @@
     }
 
     #share {
-        top: 45%;
+        top: 15%;
         left: 3px;
         padding: 5px 5px;
         display: flex;
@@ -305,16 +302,14 @@
         left: 50%;
     }
 
-    #lock-bar {
+    /* #lock-bar {
         position: fixed;
         right: 32%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
         display: flex;
-        /* padding: 5px 8px; */
-    }
-
+    } */
 
     #undoredo {
         position: fixed;
@@ -357,7 +352,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 42.4%;
+        right: 32%;
         transform: translateY(-50%);
     }
 }
@@ -372,7 +367,7 @@
     }
 
     #share {
-        top: 45%;
+        top: 15%;
         left: 3px;
         padding: 5px 5px;
         display: flex;
@@ -433,16 +428,14 @@
         left: 50%;
     }
 
-    #lock-bar {
+    /* #lock-bar {
         position: fixed;
         right: 35%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
         display: flex;
-        /* padding: 5px 8px; */
-    }
-
+    } */
 
     #undoredo {
         position: fixed;
@@ -485,7 +478,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 46%;
+        right: 34%;
         transform: translateY(-50%);
     }
 }
@@ -561,16 +554,14 @@
         left: 50%;
     }
 
-    #lock-bar {
+    /* #lock-bar {
         position: fixed;
         right: 34.3%;
         top: 95%;
         transform: translateY(-50%);
         flex-direction: row;
         display: flex;
-        /* padding: 5px 8px; */
-    }
-
+    } */
 
     #undoredo {
         position: fixed;
@@ -613,7 +604,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 45.3%;
+        right: 35%;
         transform: translateY(-50%);
     }
 }

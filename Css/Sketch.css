@@ -184,14 +184,14 @@ html {
     border: none;
 }
 
-#lock-bar {
+/* #lock-bar {
     position: fixed;
     right: 10.9%;
     top: 95%;
     transform: translateY(-50%);
     display: flex;
     padding: 5px 5px;
-}
+} */
 
 #undoredo {
     left: 20px;
