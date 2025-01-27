@@ -18,6 +18,21 @@
         left: 50%;
     }
 
+    #main-toolbar2 {
+        display: none;
+        position: absolute;
+        top: 60px;
+        left: 76%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .tool-row {
+        display: flex;
+        gap: 10px;
+    }
+
     /* #lock-bar {
         position: fixed;
         right: 21.3%;
@@ -58,6 +73,21 @@
         align-items: center;
         padding: 5px 8px;
         gap: 5.5px;
+    }
+
+    #main-toolbar2 {
+        display: none;
+        position: absolute;
+        top: 95px;
+        left: 74%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .tool-row {
+        display: flex;
+        gap: 10px;
     }
 
     #share {
@@ -122,6 +152,21 @@
         align-items: center;
         padding: 5px 15px;
         gap: 5.5px;
+    }
+
+    #main-toolbar2 {
+        display: none;
+        position: absolute;
+        top: 95px;
+        left: 65%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .tool-row {
+        display: flex;
+        gap: 10px;
     }
 
     #share {
@@ -239,6 +284,21 @@
         align-items: center;
         padding: 5px 10px;
         gap: 2px;
+    }
+
+    #main-toolbar2 {
+        display: none;
+        position: absolute;
+        top: 95px;
+        left: 60%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .tool-row {
+        display: flex;
+        gap: 10px;
     }
 
     #share {
@@ -366,6 +426,21 @@
         gap: 1px;
     }
 
+    #main-toolbar2 {
+        display: none;
+        position: absolute;
+        top: 95px;
+        left: 58%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .tool-row {
+        display: flex;
+        gap: 10px;
+    }
+
     #share {
         top: 15%;
         left: 3px;
@@ -490,6 +565,21 @@
         align-items: center;
         padding: 5px 5px;
         gap: 1px;
+    }
+
+    #main-toolbar2 {
+        display: none;
+        position: absolute;
+        top: 95px;
+        left: 59%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .tool-row {
+        display: flex;
+        gap: 10px;
     }
 
     #share {
