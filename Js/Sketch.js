@@ -510,7 +510,7 @@ function drawElement(element) {
             drawSmoothCircle(ctx, element.x1, element.y1, element.x2, element.y2, options);
             break;
         case 'text':
-            ctx.font = '25px monospace';
+            ctx.font = '25px "Comic Sans MS"'; // Set default font to Comic Sans MS
             ctx.fillStyle = element.color;
             if (element.text !== undefined) {
                 ctx.fillText(element.text, element.x1, element.y1);
@@ -686,7 +686,7 @@ function showTextInput(x, y) {
     textInput.style.fontSize = '25px';
     textInput.style.color = selectedColor;
     textInput.style.backgroundColor = 'transparent';
-    textInput.style.fontFamily = 'monospace';
+    textInput.style.fontFamily = '"Comic Sans MS"'; // Set default font to Comic Sans MS
     textInput.style.caretColor = selectedColor;
     textInput.style.left = `${x}px`;
     textInput.style.top = `${y - 20}px`;
