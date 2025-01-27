@@ -393,9 +393,19 @@ function draw(e) {
     if (!isDrawing) return;
 
     const currentX = e.offsetX;
-    const currentY = e.offsetY;  // Fix: properly declare currentY
+    const currentY = e.offsetY;
 
     if (selectedTool === 'pencil') {
+        // Use quadratic curves for smoother lines
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.quadraticCurveTo(lastX, lastY, currentX, currentY);
+        ctx.strokeStyle = selectedColor;
+        ctx.lineWidth = selectedStrokeWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+
         elements.push({
             type: 'pencil',
             x1: lastX,
@@ -406,6 +416,7 @@ function draw(e) {
             strokeWidth: selectedStrokeWidth,
             roughness: 0.3
         });
+
         [lastX, lastY] = [currentX, currentY];
     } else if (selectedTool === 'eraser') {
         const eraserRadius = 20;
@@ -487,7 +498,7 @@ function drawElement(element) {
 
     switch (element.type) {
         case 'pencil':
-            rc.line(element.x1, element.y1, element.x2, element.y2, options);
+            drawSmoothLine(ctx, element.x1, element.y1, element.x2, element.y2, options);
             break;
         case 'line':
             drawFluidLine(ctx, element.x1, element.y1, element.x2, element.y2, options);
@@ -496,26 +507,7 @@ function drawElement(element) {
             drawRoundedRectangle(ctx, element.x1, element.y1, element.x2 - element.x1, element.y2 - element.y1, 10, options);
             break;
         case 'circle':
-            const width = Math.abs(element.x2 - element.x1);
-            const height = Math.abs(element.y2 - element.y1);
-            const diameter = Math.max(Math.abs(width), Math.abs(height));
-            const centerX = element.x1 + width / 2;
-            const centerY = element.y1 + height / 2;
-
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, diameter / 2, 0, Math.PI * 2);
-            ctx.strokeStyle = options.stroke;
-            ctx.lineWidth = options.strokeWidth;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            // Add a subtle shadow for depth
-            ctx.shadowColor = options.stroke;
-            ctx.shadowBlur = 0;
-            ctx.stroke();
-
-            // Reset shadow
-            ctx.shadowBlur = 0;
+            drawSmoothCircle(ctx, element.x1, element.y1, element.x2, element.y2, options);
             break;
         case 'text':
             ctx.font = '25px monospace';
@@ -550,6 +542,17 @@ function drawFluidLine(ctx, x1, y1, x2, y2, options) {
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+}
+
+function drawSmoothLine(ctx, x1, y1, x2, y2, options) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.quadraticCurveTo(x1, y1, x2, y2);
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.lineCap = 'round';
@@ -634,6 +637,22 @@ function drawRoundedRectangle(ctx, x, y, width, height, radius, options) {
     ctx.closePath();
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
+}
+
+function drawSmoothCircle(ctx, x1, y1, x2, y2, options) {
+    const width = Math.abs(x2 - x1);
+    const height = Math.abs(y2 - y1);
+    const diameter = Math.max(width, height);
+    const centerX = x1 + width / 2;
+    const centerY = y1 + height / 2;
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, diameter / 2, 0, Math.PI * 2);
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.stroke();
 }
 
