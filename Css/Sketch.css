@@ -176,6 +176,14 @@ html {
     position: absolute;
     top: 60px;
     left: 88.5%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tool-row {
+    display: flex;
+    gap: 10px;
 }
 
 #strokeWidth {

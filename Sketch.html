@@ -99,42 +99,47 @@
             <i class="bi bi-layout-sidebar-inset-reverse"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">0</span>
         </button>
-        <div id="main-toolbar2" class="toolbar">
-            <button class="tool" id="line" title="Line -- L or 11"
-                onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a straight line.'">
-                <i class="bi bi-dash-lg"></i>
-                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">11</span>
-            </button>
-            <button class="tool" id="triangle" title="Triangle -- G or 12"
-                onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a triangle.'">
-                <i class="bi bi-triangle"></i>
-                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">12</span>
-            </button>
-            <button class="tool" id="pentagon" title="Pentagon -- N or 13"
-                onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a pentagon.'">
-                <i class="bi bi-pentagon"></i>
-                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">13</span>
-            </button>
-            <button class="tool" id="star" title="Star -- S or 14"
-                onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a star.'">
-                <i class="bi bi-star"></i>
-                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">14</span>
-            </button>
-            <button class="tool" id="diamond" title="Diamond -- D or 15"
-                onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a diamond.'">
-                <i class="bi bi-diamond"></i>
-                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">15</span>
-            </button>
-            <button class="tool" id="hexagon" title="Hexagon -- H or 16"
-                onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a hexagon.'">
-                <i class="bi bi-hexagon"></i>
-                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">16</span>
-            </button>
-            <button class="tool" id="sticky-notes" title="Sticky Notes -- K or 17"
-                onclick="document.getElementById('instructions').textContent = 'Click to add a sticky note.'">
-                <i class="bi bi-sticky"></i>
-                <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">17</span>
-            </button>
+        <div id="main-toolbar2" class="toolbar" style="display: none;">
+            <div class="tool-row">
+                <button class="tool" id="line" title="Line -- L or 11"
+                    onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a straight line.'">
+                    <i class="bi bi-dash-lg"></i>
+                    <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">11</span>
+                </button>
+                <button class="tool" id="triangle" title="Triangle -- G or 12"
+                    onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a triangle.'">
+                    <i class="bi bi-triangle"></i>
+                    <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">12</span>
+                </button>
+                <button class="tool" id="pentagon" title="Pentagon -- N or 13"
+                    onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a pentagon.'">
+                    <i class="bi bi-pentagon"></i>
+                    <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">13</span>
+                </button>
+                <button class="tool" id="star" title="Star -- S or 14"
+                    onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a star.'">
+                    <i class="bi bi-star"></i>
+                    <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">14</span>
+                </button>
+            </div>
+            <div class="tool-row">
+                <button class="tool" id="diamond" title="Diamond -- D or 15"
+                    onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a diamond.'">
+                    <i class="bi bi-diamond"></i>
+                    <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">15</span>
+                </button>
+                <button class="tool" id="hexagon" title="Hexagon -- H or 16"
+                    onclick="document.getElementById('instructions').textContent = 'Click and drag to draw a hexagon.'">
+                    <i class="bi bi-hexagon"></i>
+                    <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">16</span>
+                </button>
+                <button class="tool" id="sticky-notes" title="Sticky Notes -- K or 17"
+                    onclick="document.getElementById('instructions').textContent = 'Click to add a sticky note.'">
+                    <i class="bi bi-sticky"></i>
+                    <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">17</span>
+                </button>
+                <!-- Add more tools here if needed -->
+            </div>
         </div>
     </div>
     <div id="theme-toggle" class="toolbar">

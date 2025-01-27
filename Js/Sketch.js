@@ -393,7 +393,7 @@ function draw(e) {
     if (!isDrawing) return;
 
     const currentX = e.offsetX;
-    const currentY = e.offsetY;
+    const currentY = e.offsetY; // Define currentY
 
     if (selectedTool === 'pencil') {
         // Use quadratic curves for smoother lines
