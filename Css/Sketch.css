@@ -266,8 +266,9 @@ html {
 }
 
 #colorPicker {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
+    margin-top: 3px;
     padding: 0;
     border: none;
     border-radius: 50%;
