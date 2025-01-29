@@ -258,7 +258,7 @@ html {
 
 .tool:hover {
     background-color: #31303B;
-    transform: scale(1.2);
+    transform: scale(1.1);
 }
 
 .tool.active {
