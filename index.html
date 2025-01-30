@@ -7,6 +7,8 @@
     <title>InkFlow - Collaborative Workspace for Creative Ones</title>
     <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@latest/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@latest/dist/ionicons/ionicons.js"></script>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=edit" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link href="Icons/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="Icons/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
@@ -64,7 +66,7 @@
         </button>
         <button class="tool active" id="pencil" title="Pencil -- P or 6"
             onclick="document.getElementById('instructions').textContent = 'Click and drag to draw freehand. Adjust width as needed.'">
-            <!-- <i class="fas fa-pencil-alt"></i> --><i class="bi bi-pencil"></i>
+            <i class="fas fa-pencil-alt"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">6</span>
         </button>
         <button class="tool" id="eraser" title="Eraser -- E or 7"
@@ -84,7 +86,7 @@
         <input type="file" id="fileInput" accept="image/*" style="display: none;">
         <input type="color" id="colorPicker" value="#ffffff" title="Color Picker -- W or 9"
             onclick="document.getElementById('instructions').textContent = 'Select color for shapes and text on canvas.'">
-        <div id="instructions">Choose any Tool. Select to get started</div>
+        <div id="instructions">Choose any Tool. Click to get started</div>
         <select id="strokeWidth" title="Stroke Width"
             onclick="document.getElementById('instructions').textContent = 'Click and select to choose Thickness or Thinness.'">
             <option value="1">1px</option>
