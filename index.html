@@ -64,7 +64,7 @@
         </button>
         <button class="tool active" id="pencil" title="Pencil -- P or 6"
             onclick="document.getElementById('instructions').textContent = 'Click and drag to draw freehand. Adjust width as needed.'">
-            <i class="fas fa-pencil-alt"></i>
+            <!-- <i class="fas fa-pencil-alt"></i> --><i class="bi bi-pencil"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">6</span>
         </button>
         <button class="tool" id="eraser" title="Eraser -- E or 7"
@@ -84,7 +84,7 @@
         <input type="file" id="fileInput" accept="image/*" style="display: none;">
         <input type="color" id="colorPicker" value="#ffffff" title="Color Picker -- W or 9"
             onclick="document.getElementById('instructions').textContent = 'Select color for shapes and text on canvas.'">
-        <div id="instructions">Click & drag. Release when you're Finished</div>
+        <div id="instructions">Choose any Tools. Select to get started</div>
         <select id="strokeWidth" title="Stroke Width"
             onclick="document.getElementById('instructions').textContent = 'Click and select to choose Thickness or Thinness.'">
             <option value="1">1px</option>
