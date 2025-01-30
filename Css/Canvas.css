@@ -149,14 +149,14 @@ html {
 }
 
 #canvas {
-    background-color: #121212;
+    background-color: #101011;
     cursor: crosshair;
 }
 
 .toolbar {
     position: fixed;
     top: 15px;
-    background-color: #232329;
+    background-color: #202025;
     backdrop-filter: blur(10px);
     border-radius: 10px;
     padding: 5px 15px;
@@ -262,7 +262,7 @@ html {
 }
 
 .tool.active {
-    background-color: #403E6A;
+    background-color: #4387f4;
 }
 
 #colorPicker {

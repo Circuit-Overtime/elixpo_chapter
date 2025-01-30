@@ -42,7 +42,8 @@ body.light-theme .tool:hover {
 }
 
 body.light-theme .tool.active {
-    background-color: #d0d0d0;
+    background-color: #4387f4;
+    color:#ffffff;
 }
 
 body.light-theme #instructions {
