@@ -209,12 +209,13 @@ html {
     top: 95%;
     transform: translateY(-50%);
     display: flex;
+    padding: 5px 6px;
 }
 
 #delete {
     position: fixed;
     top: 95%;
-    left: 9.5%;
+    left: 8.5%;
     transform: translateY(-50%);
     display: flex;
     padding: 5px 5px;
@@ -229,6 +230,7 @@ html {
 }
 
 #zoom-percentage {
+    background-color: transparent;
     position: fixed;
     color: white;
     top: 50%;
