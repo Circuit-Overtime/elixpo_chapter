@@ -51,6 +51,13 @@ let isDragging = false;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
 
+let animationFrameId = null;
+let lastTimestamp = 0;
+const ANIMATION_DURATION = 100; // in milliseconds
+let startDragPos = { x: 0, y: 0 };
+let targetPos = { x: 0, y: 0 };
+let isAnimating = false;
+
 function resizeCanvas() {
     canvas.width = window.innerWidth * 2;
     canvas.height = window.innerHeight * 2;
@@ -314,6 +321,19 @@ function isWithinEraserRadius(x, y, element) {
 }
 
 function handleMouseDown(e) {
+    if (selectedTool === 'pointer') {
+        const clickedX = e.offsetX;
+        const clickedY = e.offsetY;
+        selectedElement = getElementAtPosition(clickedX, clickedY);
+
+        if (selectedElement) {
+            isDragging = true;
+            dragOffsetX = clickedX - selectedElement.x1;
+            dragOffsetY = clickedY - selectedElement.y1;
+            canvas.style.cursor = 'move';
+            return;
+        }
+    }
     if (selectedTool === 'select') {
         const clickedX = e.offsetX;
         const clickedY = e.offsetY;
@@ -347,40 +367,46 @@ function handleMouseDown(e) {
 }
 
 function handleMouseMove(e) {
+    if (isDragging && selectedTool === 'pointer' && selectedElement) {
+        const newX = e.offsetX - dragOffsetX;
+        const newY = e.offsetY - dragOffsetY;
+        
+        // Calculate the movement delta
+        const dx = newX - selectedElement.x1;
+        const dy = newY - selectedElement.y1;
+
+        // Move all points of the element
+        selectedElement.x1 += dx;
+        selectedElement.y1 += dy;
+        if (selectedElement.x2 !== undefined) selectedElement.x2 += dx;
+        if (selectedElement.y2 !== undefined) selectedElement.y2 += dy;
+
+        redrawCanvas();
+        return;
+    }
     if (selectedElement) {
         const newX = e.offsetX;
         const newY = e.offsetY;
 
-        const moveX = newX - offsetX;
-        const moveY = newY - offsetY;
+        if (selectedTool === 'pointer' && isDragging) {
+            // Calculate the movement delta
+            const dx = newX - dragOffsetX - selectedElement.x1;
+            const dy = newY - dragOffsetY - selectedElement.y1;
 
-        const dx = moveX - selectedElement.x1;
-        const dy = moveY - selectedElement.y1;
+            // Set target position for smooth animation
+            targetPos = {
+                x: selectedElement.x1 + dx,
+                y: selectedElement.y1 + dy
+            };
 
-        selectedElement.x1 = moveX;
-        selectedElement.y1 = moveY;
-
-        if (selectedElement.x2 !== undefined && selectedElement.y2 !== undefined) {
-            selectedElement.x2 += dx;
-            selectedElement.y2 += dy;
+            if (!isAnimating) {
+                isAnimating = true;
+                lastTimestamp = performance.now();
+                animateMove();
+            }
+        } else {
+            // ...existing mouse move handling...
         }
-
-        if (selectedElement.type === 'pencil') {
-            elements = elements.map(element => {
-                if (element === selectedElement) {
-                    return {
-                        ...element,
-                        x1: element.x1 + dx,
-                        y1: element.y1 + dy,
-                        x2: element.x2 + dx,
-                        y2: element.y2 + dy
-                    };
-                }
-                return element;
-            });
-        }
-
-        redrawCanvas();
     } else if (isPanning) {
         pan(e);
     } else if (isDragging && selectedTool === 'pointer') {
@@ -405,13 +431,54 @@ function handleMouseMove(e) {
     }
 }
 
+function animateMove() {
+    const currentTime = performance.now();
+    const elapsed = currentTime - lastTimestamp;
+    const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+
+    // Calculate intermediate position
+    const currentX = selectedElement.x1 + (targetPos.x - selectedElement.x1) * progress;
+    const currentY = selectedElement.y1 + (targetPos.y - selectedElement.y1) * progress;
+
+    // Move the element
+    const dx = currentX - selectedElement.x1;
+    const dy = currentY - selectedElement.y1;
+
+    selectedElement.x1 = currentX;
+    selectedElement.y1 = currentY;
+    if (selectedElement.x2 !== undefined) selectedElement.x2 += dx;
+    if (selectedElement.y2 !== undefined) selectedElement.y2 += dy;
+
+    redrawCanvas();
+
+    if (progress < 1) {
+        animationFrameId = requestAnimationFrame(animateMove);
+    } else {
+        isAnimating = false;
+        cancelAnimationFrame(animationFrameId);
+    }
+}
+
 function handleMouseUp(e) {
+    if (isDragging && selectedTool === 'pointer') {
+        isDragging = false;
+        selectedElement = null;
+        saveState();
+        updateCursorStyle();
+        return;
+    }
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        isAnimating = false;
+    }
+
     if (selectedElement) {
         selectedElement = null;
     } else if (isPanning) {
         isPanning = false;
     } else if (isDragging && selectedTool === 'pointer') {
         isDragging = false;
+        saveState(); // Save state after dragging completes
     } else if (isDrawing && selectedTool === 'arrow') {
         isDrawing = false;
         elements.push({
@@ -851,6 +918,8 @@ function updateCursorStyle() {
         canvas.style.cursor = 'grab';
     } else if (selectedTool === 'text') {
         canvas.style.cursor = 'text';
+    } else if (selectedTool === 'pointer') {
+        canvas.style.cursor = 'move';
     } else {
         canvas.style.cursor = 'crosshair';
     }
@@ -890,8 +959,12 @@ function getElementAtPosition(x, y) {
     for (let i = elements.length - 1; i >= 0; i--) {
         const element = elements[i];
         if (isWithinBounds(element, x, y)) {
+            canvas.style.cursor = 'move';
             return element;
         }
+    }
+    if (selectedTool === 'pointer') {
+        canvas.style.cursor = 'move';
     }
     return null;
 }
@@ -904,13 +977,29 @@ function isWithinBounds(element, x, y) {
         case 'pencil':
             return pointToLineDistance(element.x1, element.y1, element.x2, element.y2, x, y) < tolerance;
         case 'rectangle':
-            return x >= element.x1 && x <= element.x2 && y >= element.y1 && y <= element.y2;
+            const minX = Math.min(element.x1, element.x2);
+            const maxX = Math.max(element.x1, element.x2);
+            const minY = Math.min(element.y1, element.y2);
+            const maxY = Math.max(element.y1, element.y2);
+            return x >= minX && x <= maxX && y >= minY && y <= maxY;
         case 'circle':
             const radius = Math.abs(element.x2 - element.x1) / 2;
-            const centerX = element.x1 + radius;
-            const centerY = element.y1 + radius;
+            const centerX = element.x1 + (element.x2 - element.x1) / 2;
+            const centerY = element.y1 + (element.y2 - element.y1) / 2;
             const distFromCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
             return distFromCenter <= radius;
+        case 'triangle':
+        case 'pentagon':
+        case 'hexagon':
+        case 'star':
+        case 'diamond':
+            const boundingRadius = Math.max(
+                Math.abs(element.x2 - element.x1),
+                Math.abs(element.y2 - element.y1)
+            ) / 2;
+            const shapeCenterX = (element.x1 + element.x2) / 2;
+            const shapeCenterY = (element.y1 + element.y2) / 2;
+            return Math.sqrt(Math.pow(x - shapeCenterX, 2) + Math.pow(y - shapeCenterY, 2)) <= boundingRadius;
         case 'text':
             return x >= element.x1 && x <= element.x1 + 100 && y >= element.y1 - 20 && y <= element.y1;
         default:
