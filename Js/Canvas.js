@@ -47,6 +47,10 @@ const maxHistorySize = 10;
 
 let isTeamCodePopupOpen = false;
 
+let isDragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
 function resizeCanvas() {
     canvas.width = window.innerWidth * 2;
     canvas.height = window.innerHeight * 2;
@@ -323,6 +327,16 @@ function handleMouseDown(e) {
             startPanX = e.clientX;
             startPanY = e.clientY;
         }
+    } else if (selectedTool === 'pointer') {
+        const clickedX = e.offsetX;
+        const clickedY = e.offsetY;
+        selectedElement = getElementAtPosition(clickedX, clickedY);
+
+        if (selectedElement && (selectedElement.type === 'rectangle' || selectedElement.type === 'circle' || selectedElement.type === 'triangle' || selectedElement.type === 'pentagon' || selectedElement.type === 'hexagon' || selectedElement.type === 'star' || selectedElement.type === 'line' || selectedElement.type === 'diamond')) {
+            isDragging = true;
+            dragOffsetX = clickedX - selectedElement.x1;
+            dragOffsetY = clickedY - selectedElement.y1;
+        }
     } else if (selectedTool === 'arrow') {
         isDrawing = true;
         startX = e.offsetX;
@@ -369,6 +383,19 @@ function handleMouseMove(e) {
         redrawCanvas();
     } else if (isPanning) {
         pan(e);
+    } else if (isDragging && selectedTool === 'pointer') {
+        const newX = e.offsetX;
+        const newY = e.offsetY;
+
+        const moveX = newX - dragOffsetX;
+        const moveY = newY - dragOffsetY;
+
+        selectedElement.x1 = moveX;
+        selectedElement.y1 = moveY;
+        selectedElement.x2 = moveX + (selectedElement.x2 - selectedElement.x1);
+        selectedElement.y2 = moveY + (selectedElement.y2 - selectedElement.y1);
+
+        redrawCanvas();
     } else if (isDrawing && selectedTool === 'arrow') {
         redrawCanvas();
         const context = canvas.getContext('2d');
@@ -383,6 +410,8 @@ function handleMouseUp(e) {
         selectedElement = null;
     } else if (isPanning) {
         isPanning = false;
+    } else if (isDragging && selectedTool === 'pointer') {
+        isDragging = false;
     } else if (isDrawing && selectedTool === 'arrow') {
         isDrawing = false;
         elements.push({
