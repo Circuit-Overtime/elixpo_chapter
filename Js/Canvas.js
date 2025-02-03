@@ -62,21 +62,34 @@ window.addEventListener('resize', handleResize);
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
     const mouseEvent = new MouseEvent('mousedown', {
-        clientX: touch.clientX,
-        clientY: touch.clientY
+        clientX: touch.clientX - rect.left,
+        clientY: touch.clientY - rect.top
     });
+    
+    if (selectedTool === 'arrow') {
+        isDrawing = true;
+        startX = touch.clientX - rect.left;
+        startY = touch.clientY - rect.top;
+    }
+    
     handleMouseDown(mouseEvent);
 });
 
 canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
     const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
     const mouseEvent = new MouseEvent('mousemove', {
-        clientX: touch.clientX,
-        clientY: touch.clientY
+        clientX: touch.clientX - rect.left,
+        clientY: touch.clientY - rect.top
     });
-    if (isPanning) {
+    
+    if (selectedTool === 'arrow' && isDrawing) {
+        redrawCanvas();
+        drawArrow(ctx, startX, startY, touch.clientX - rect.left, touch.clientY - rect.top);
+    } else if (isPanning) {
         pan(mouseEvent);
     } else {
         handleMouseMove(mouseEvent);
@@ -85,6 +98,24 @@ canvas.addEventListener('touchmove', (e) => {
 
 canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    
+    if (selectedTool === 'arrow' && isDrawing) {
+        const lastTouch = e.changedTouches[0];
+        isDrawing = false;
+        elements.push({
+            type: 'arrow',
+            x1: startX,
+            y1: startY,
+            x2: lastTouch.clientX - rect.left,
+            y2: lastTouch.clientY - rect.top,
+            color: selectedColor,
+            strokeWidth: selectedStrokeWidth
+        });
+        saveState();
+        redrawCanvas();
+    }
+    
     const mouseEvent = new MouseEvent('mouseup', {});
     handleMouseUp(mouseEvent);
 });
@@ -360,7 +391,8 @@ function handleMouseUp(e) {
             y1: startY,
             x2: e.offsetX,
             y2: e.offsetY,
-            color: selectedColor
+            color: selectedColor,
+            strokeWidth: selectedStrokeWidth  // Add strokeWidth here
         });
         saveState();
         redrawCanvas();
@@ -498,7 +530,7 @@ function drawElement(element) {
     const options = {
         stroke: element.color,
         roughness: element.roughness || 0.5,
-        strokeWidth: element.strokeWidth || 2,
+        strokeWidth: element.strokeWidth || selectedStrokeWidth, // Use element's strokeWidth if available
         fillStyle: 'solid',
         fillWeight: 0.5,
         bowing: 0.5,
@@ -529,7 +561,7 @@ function drawElement(element) {
             }
             break;
         case 'arrow':
-            drawArrow(ctx, element.x1, element.y1, element.x2, element.y2);
+            drawArrow(ctx, element.x1, element.y1, element.x2, element.y2, element.strokeWidth || selectedStrokeWidth, element.color || selectedColor);
             break;
         case 'triangle':
             drawPolygon(ctx, element.x1, element.y1, element.x2, element.y2, 3, options);
@@ -795,26 +827,31 @@ function updateCursorStyle() {
     }
 }
 
-function drawArrow(context, fromX, fromY, toX, toY) {
-    const headLength = 10;
+function drawArrow(context, fromX, fromY, toX, toY, strokeWidth = selectedStrokeWidth, color = selectedColor) {
+    const headLength = Math.min(20, Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2)) / 3);
     const dx = toX - fromX;
     const dy = toY - fromY;
     const angle = Math.atan2(dy, dx);
 
+    // Draw the shaft
     context.beginPath();
     context.moveTo(fromX, fromY);
+    context.lineTo(toX, toY);
+    context.strokeStyle = color;
+    context.lineWidth = strokeWidth;
+    context.lineCap = 'round';
+    context.stroke();
 
-    const midX = (fromX + toX) / 2;
-    const midY = (fromY + toY) / 2;
-    context.quadraticCurveTo(midX, midY, toX, toY);
-
+    // Draw the arrowhead
+    context.beginPath();
     context.moveTo(toX, toY);
-    context.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+    context.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6),
+                  toY - headLength * Math.sin(angle - Math.PI / 6));
     context.moveTo(toX, toY);
-    context.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
-
-    context.strokeStyle = selectedColor;
-    context.lineWidth = 2;
+    context.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6),
+                  toY - headLength * Math.sin(angle + Math.PI / 6));
+    context.strokeStyle = color;
+    context.lineWidth = strokeWidth;
     context.lineCap = 'round';
     context.lineJoin = 'round';
     context.stroke();
