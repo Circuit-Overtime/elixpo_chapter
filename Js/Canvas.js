@@ -438,6 +438,16 @@ function draw(e) {
         showAngle(lastX, lastY, currentX, currentY);
     }
 
+    if (selectedTool === 'rectangle') {
+        // Update only x2 and y2 for the current element
+        if (currentElement) {
+            currentElement.x2 = currentX;
+            currentElement.y2 = currentY;
+        }
+        redrawCanvas();
+        return;
+    }
+
     redrawCanvas();
 }
 
@@ -504,8 +514,10 @@ function drawElement(element) {
             drawFluidLine(ctx, element.x1, element.y1, element.x2, element.y2, options);
             break;
         case 'rectangle':
-            drawRoundedRectangle(ctx, element.x1, element.y1, element.x2 - element.x1, element.y2 - element.y1, 10, options);
-            break;
+            const width = element.x2 - element.x1;
+            const height = element.y2 - element.y1;
+            drawRoundedRectangle(ctx, element.x1, element.y1, width, height, 10, options);
+            return;
         case 'circle':
             drawSmoothCircle(ctx, element.x1, element.y1, element.x2, element.y2, options);
             break;
@@ -624,19 +636,41 @@ function drawDiamond(ctx, x1, y1, x2, y2, options) {
 }
 
 function drawRoundedRectangle(ctx, x, y, width, height, radius, options) {
+    // Calculate actual coordinates for any direction
+    const startX = Math.min(x, x + width);
+    const startY = Math.min(y, y + height);
+    const rectWidth = Math.abs(width);
+    const rectHeight = Math.abs(height);
+
+    // Ensure radius doesn't exceed half of smallest dimension
+    const maxRadius = Math.min(rectWidth, rectHeight) / 2;
+    const cornerRadius = Math.min(radius, maxRadius);
+
     ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.moveTo(startX + cornerRadius, startY);
+
+    // Top edge
+    ctx.lineTo(startX + rectWidth - cornerRadius, startY);
+    ctx.quadraticCurveTo(startX + rectWidth, startY, startX + rectWidth, startY + cornerRadius);
+
+    // Right edge
+    ctx.lineTo(startX + rectWidth, startY + rectHeight - cornerRadius);
+    ctx.quadraticCurveTo(startX + rectWidth, startY + rectHeight, startX + rectWidth - cornerRadius, startY + rectHeight);
+
+    // Bottom edge
+    ctx.lineTo(startX + cornerRadius, startY + rectHeight);
+    ctx.quadraticCurveTo(startX, startY + rectHeight, startX, startY + rectHeight - cornerRadius);
+
+    // Left edge
+    ctx.lineTo(startX, startY + cornerRadius);
+    ctx.quadraticCurveTo(startX, startY, startX + cornerRadius, startY);
+
     ctx.closePath();
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
+    ctx.lineCap = 'square';
+    ctx.lineJoin = 'miter';
+    ctx.miterLimit = 2;
     ctx.stroke();
 }
 
@@ -954,10 +988,10 @@ function loadAllData() {
         // selectedStrokeWidth = data.selectedStrokeWidth || 3;
         currentZoom = data.currentZoom || 100;
         scale = data.scale || 1;
-        
+
         // Update the stroke width input value to match loaded stroke width
         document.getElementById('strokeWidth').value = selectedStrokeWidth;
-        
+
         redrawCanvas();
         updateCursorStyle();
         zoomPercentage.textContent = currentZoom + '%';
