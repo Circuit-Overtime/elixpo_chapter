@@ -1086,6 +1086,18 @@ if (currentTheme === 'light') {
     document.getElementById('colorPicker').value = '#ffffff'; // Update color picker
 }
 
+// Function to switch colors of drawn elements between black and white
+function switchElementColors() {
+    elements.forEach(element => {
+        if (element.color === '#ffffff') {
+            element.color = '#000000';
+        } else if (element.color === '#000000') {
+            element.color = '#ffffff';
+        }
+    });
+    redrawCanvas();
+}
+
 // Theme toggle functionality
 themeBtn.addEventListener('click', () => {
     document.body.classList.toggle('light-theme');
@@ -1096,12 +1108,14 @@ themeBtn.addEventListener('click', () => {
         themeIcon.classList.add('fa-sun');
         selectedColor = '#000000'; // Set pencil color to black
         document.getElementById('colorPicker').value = '#000000'; // Update color picker
+        switchElementColors(); // Switch drawn elements' color
     } else {
         localStorage.setItem('theme', 'dark');
         themeIcon.classList.remove('fa-sun');
         themeIcon.classList.add('fa-moon');
         selectedColor = '#ffffff'; // Reset pencil color to white or default
         document.getElementById('colorPicker').value = '#ffffff'; // Update color picker
+        switchElementColors(); // Switch drawn elements' color
     }
 
     // Redraw canvas with new theme colors
