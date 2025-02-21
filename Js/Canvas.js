@@ -78,13 +78,13 @@ canvas.addEventListener('touchstart', (e) => {
         clientX: touch.clientX - rect.left,
         clientY: touch.clientY - rect.top
     });
-    
+
     if (selectedTool === 'arrow') {
         isDrawing = true;
         startX = touch.clientX - rect.left;
         startY = touch.clientY - rect.top;
     }
-    
+
     handleMouseDown(mouseEvent);
 });
 
@@ -96,7 +96,7 @@ canvas.addEventListener('touchmove', (e) => {
         clientX: touch.clientX - rect.left,
         clientY: touch.clientY - rect.top
     });
-    
+
     if (selectedTool === 'arrow' && isDrawing) {
         redrawCanvas();
         drawArrow(ctx, startX, startY, touch.clientX - rect.left, touch.clientY - rect.top);
@@ -110,7 +110,7 @@ canvas.addEventListener('touchmove', (e) => {
 canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
-    
+
     if (selectedTool === 'arrow' && isDrawing) {
         const lastTouch = e.changedTouches[0];
         isDrawing = false;
@@ -126,7 +126,7 @@ canvas.addEventListener('touchend', (e) => {
         saveState();
         redrawCanvas();
     }
-    
+
     const mouseEvent = new MouseEvent('mouseup', {});
     handleMouseUp(mouseEvent);
 });
@@ -370,7 +370,7 @@ function handleMouseMove(e) {
     if (isDragging && selectedTool === 'pointer' && selectedElement) {
         const newX = e.offsetX - dragOffsetX;
         const newY = e.offsetY - dragOffsetY;
-        
+
         // Calculate the movement delta
         const dx = newX - selectedElement.x1;
         const dy = newY - selectedElement.y1;
@@ -944,10 +944,10 @@ function drawArrow(context, fromX, fromY, toX, toY, strokeWidth = selectedStroke
     context.beginPath();
     context.moveTo(toX, toY);
     context.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6),
-                  toY - headLength * Math.sin(angle - Math.PI / 6));
+        toY - headLength * Math.sin(angle - Math.PI / 6));
     context.moveTo(toX, toY);
     context.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6),
-                  toY - headLength * Math.sin(angle + Math.PI / 6));
+        toY - headLength * Math.sin(angle + Math.PI / 6));
     context.strokeStyle = color;
     context.lineWidth = strokeWidth;
     context.lineCap = 'round';

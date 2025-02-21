@@ -114,12 +114,12 @@ html {
 
 .cancel-btn {
     background-color: #000000;
-    color:white;
+    color: white;
 }
 
 .cancel-btn:hover {
     background-color: #bf1a1a;
-    color:white;
+    color: white;
 }
 
 #instructions {
@@ -230,7 +230,7 @@ html {
 }
 
 #zoom-percentage {
-    background-color: transparent;
+    background-color: #202025;
     position: fixed;
     color: white;
     top: 50%;
