@@ -1300,7 +1300,7 @@ function drawNotebookBackground() {
     const lineSpacing = 40; // Adjust the spacing between lines
     const verticalLineSpacing = 40; // Adjust the spacing between vertical lines
 
-    ctx.strokeStyle = 'rgba(112, 112, 112, 0.65)'; // Light gray color for lines
+    ctx.strokeStyle = 'rgba(112, 112, 112, 0.39)'; // Light gray color for lines
     ctx.lineWidth = 0.1;
 
     // Draw horizontal lines
