@@ -151,7 +151,7 @@ html {
 }
 
 #canvas {
-    background-color: #101011;
+    background-color: transparent; /* Make canvas background transparent */
     cursor: crosshair;
 }
 

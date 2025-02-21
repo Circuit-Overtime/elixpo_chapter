@@ -594,6 +594,7 @@ function stopDrawing() {
 
 function redrawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawNotebookBackground(); // Draw notebook background before elements
 
     elements.forEach(element => {
         if (element === hoveredElement && element.type === 'pencil') {
@@ -1281,3 +1282,27 @@ window.addEventListener('beforeunload', saveAllData);
 
 // Load data on window load
 window.addEventListener('load', loadAllData);
+
+function drawNotebookBackground() {
+    const lineSpacing = 40; // Adjust the spacing between lines
+    const verticalLineSpacing = 40; // Adjust the spacing between vertical lines
+
+    ctx.strokeStyle = 'rgba(112, 112, 112, 0.65)'; // Light gray color for lines
+    ctx.lineWidth = 0.1;
+
+    // Draw horizontal lines
+    for (let y = lineSpacing; y < canvas.height; y += lineSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+
+    // Draw vertical lines
+    for (let x = verticalLineSpacing; x < canvas.width; x += verticalLineSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+}
