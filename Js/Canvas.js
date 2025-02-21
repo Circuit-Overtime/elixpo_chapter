@@ -599,8 +599,10 @@ function stopDrawing() {
     saveState();
     redrawCanvas();
 
-    // Switch to pointer tool after drawing
-    selectTool('pointer');
+    // Switch to pointer tool after drawing, except for pencil and colorPicker
+    if (selectedTool !== 'pencil' && selectedTool !== 'colorPicker') {
+        selectTool('pointer');
+    }
 }
 
 function redrawCanvas() {
