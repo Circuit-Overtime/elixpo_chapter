@@ -497,7 +497,7 @@ function handleMouseUp(e) {
         });
         saveState();
         redrawCanvas();
-        
+
         // Switch to pointer tool after drawing arrow
         selectTool('pointer');
     } else {
@@ -598,7 +598,7 @@ function stopDrawing() {
     currentElement = null;
     saveState();
     redrawCanvas();
-    
+
     // Switch to pointer tool after drawing
     selectTool('pointer');
 }
