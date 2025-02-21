@@ -126,6 +126,7 @@ html {
     color: rgb(174, 171, 171);
     position: absolute;
     top: 65px;
+    transform: translateX(-50% -50%);
     width: 100%;
     font-size: small;
     text-align: center;
