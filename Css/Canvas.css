@@ -266,7 +266,8 @@ html {
 }
 
 .tool.active {
-    background-color: #4387f4;
+    /* background-color: #4387f4; */
+    background-color: #3182ED;
 }
 
 #colorPicker {
