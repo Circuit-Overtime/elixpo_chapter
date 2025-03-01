@@ -9,117 +9,11 @@ html {
     background-color: #121212;
 }
 
-#share {
+#sidebar {
     left: 20px;
     padding: 5px 5px;
     display: flex;
-}
-
-#teamCodePopup {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1000;
-}
-
-.form-container {
-    width: 450px;
-    height: 250px;
-    background-color: #F0F0F0;
-    padding: 32px 40px;
-    font-size: 14px;
-    font-family: inherit;
-    color: #212121;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    box-sizing: border-box;
-    border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.125);
-    transition: transform 0.2s ease;
-}
-
-.form-container:hover {
-    transform: translateY(-5px);
-}
-
-.form-container .logo-container {
-    text-align: center;
-    font-weight: 600;
-    font-size: 24px;
-    color: #14171b;
-    margin-bottom: 10px;
-}
-
-.form-container .logo-container i {
-    margin-right: 10px;
-    font-size: 28px;
-}
-
-.form-container .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.form-container .form-group label {
-    font-weight: 500;
-    color: #88898aa3;
-    justify-content: center;
-    text-align: center;
-    align-items: center;
-}
-
-.form-container .form-group input {
-    width: 100%;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-family: inherit;
-    border: 2px solid #81808081;
-    transition: border-color 0.3s ease;
-}
-
-.form-container .form-group input:focus {
-    outline: none;
-    border-color: #818080;
-}
-
-.form-submit-btn {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: inherit;
-    color: #ffffff;
-    background-color: #4387F4;
-    border: none;
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 15px;
-    font-weight: 500;
-    gap: 8px;
-    margin: 12px 0;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-.form-submit-btn:hover {
-    background-color: #007dfb;
-    transform: translateY(-2px);
-}
-
-.cancel-btn {
-    background-color: #000000;
-    color: white;
-}
-
-.cancel-btn:hover {
-    background-color: #bf1a1a;
-    color: white;
+    font-size: 20px;
 }
 
 #instructions {
@@ -140,9 +34,6 @@ html {
     transform: rotate(290deg);
 }
 
-#more-tools {
-    font-size: larger;
-}
 
 #theme-toggle {
     position: fixed;
@@ -173,21 +64,6 @@ html {
 #main-toolbar {
     left: 50%;
     transform: translateX(-50%);
-}
-
-#main-toolbar2 {
-    display: none;
-    position: absolute;
-    top: 60px;
-    left: 88.5%;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.tool-row {
-    display: flex;
-    gap: 10px;
 }
 
 #strokeWidth {
