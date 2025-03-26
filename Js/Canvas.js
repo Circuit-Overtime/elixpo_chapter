@@ -1273,23 +1273,6 @@ function selectTool(toolId) {
     }
 }
 
-// Add your team joining logic here
-function showTeamCodePopup() {
-    document.getElementById('teamCodePopup').style.display = 'block';
-    isTeamCodePopupOpen = true;
-}
-
-function hideTeamCodePopup() {
-    document.getElementById('teamCodePopup').style.display = 'none';
-    isTeamCodePopupOpen = false;
-}
-
-function joinTeam() {
-    const teamCode = document.getElementById('teamCode').value;
-
-    hideTeamCodePopup();
-}
-
 // Save data on window unload
 window.addEventListener('beforeunload', saveAllData);
 
