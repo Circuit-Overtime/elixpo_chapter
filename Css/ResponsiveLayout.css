@@ -8,7 +8,7 @@
 
     }
 
-    #share {
+    #sidebar {
         left: 20px;
         padding: 5px 5px;
         display: flex;
@@ -45,7 +45,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 17%;
+        left: 19%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -90,7 +90,7 @@
         gap: 10px;
     }
 
-    #share {
+    #sidebar {
         left: 20px;
         padding: 5px 5px;
         display: flex;
@@ -117,7 +117,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 18.5%;
+        left: 19.9%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -169,52 +169,11 @@
         gap: 10px;
     }
 
-    #share {
+    #sidebar {
         top: 15%;
         left: 3px;
         padding: 5px 5px;
         display: flex;
-    }
-
-    .form-container {
-        width: 380px;
-        height: 250px;
-        background-color: #F0F0F0;
-        padding: 32px 40px;
-        font-size: 14px;
-        font-family: inherit;
-        color: #212121;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        box-sizing: border-box;
-        border-radius: 15px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.125);
-        transition: transform 0.2s ease;
-    }
-
-    .form-container .logo-container {
-        text-align: center;
-        font-weight: 600;
-        font-size: 22px;
-        color: #14171b;
-        margin-bottom: 10px;
-    }
-    
-    .form-container .logo-container i {
-        margin-right: 10px;
-        font-size: 22px;
-    }
-
-    .form-container .form-group label {
-        font-weight: 500;
-        color: #88898aa3;
-        justify-content: center;
-        text-align: center;
-        align-items: center;
-        font-size: 12px;
     }
 
     #main-toolbar {
@@ -242,7 +201,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 21%;
+        left: 23%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -272,7 +231,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 27.4%;
+        right: 27.8%;
         transform: translateY(-50%);
     }
 }
@@ -301,61 +260,11 @@
         gap: 10px;
     }
 
-    #share {
+    #sidebar {
         top: 15%;
         left: 3px;
         padding: 5px 5px;
         display: flex;
-    }
-
-    .form-container {
-        width: 330px;
-        height: 240px;
-        background-color: #F0F0F0;
-        padding: 32px 40px;
-        font-size: 14px;
-        font-family: inherit;
-        color: #212121;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        box-sizing: border-box;
-        border-radius: 15px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.125);
-        transition: transform 0.2s ease;
-    }
-
-    .form-container .logo-container {
-        text-align: center;
-        font-weight: 600;
-        font-size: 18px;
-        color: #14171b;
-        margin-bottom: 10px;
-    }
-    
-    .form-container .logo-container i {
-        margin-right: 10px;
-        font-size: 18px;
-    }
-
-    .form-container .form-group label {
-        font-weight: 500;
-        color: #88898aa3;
-        justify-content: center;
-        text-align: center;
-        align-items: center;
-        font-size: 10px;
-    }
-
-    .form-container .form-group input {
-        width: 100%;
-        padding: 12px 16px;
-        border-radius: 8px;
-        font-family: inherit;
-        border: 2px solid #81808081;
-        transition: border-color 0.3s ease;
     }
 
     #main-toolbar {
@@ -383,7 +292,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 24%;
+        left: 25%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -412,7 +321,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 32%;
+        right: 32.3%;
         transform: translateY(-50%);
     }
 }
@@ -441,63 +350,12 @@
         gap: 10px;
     }
 
-    #share {
+    #sidebar {
         top: 15%;
         left: 3px;
         padding: 5px 5px;
         display: flex;
     }
-
-    .form-container {
-        width: 330px;
-        height: 240px;
-        background-color: #F0F0F0;
-        padding: 32px 40px;
-        font-size: 14px;
-        font-family: inherit;
-        color: #212121;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        box-sizing: border-box;
-        border-radius: 15px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.125);
-        transition: transform 0.2s ease;
-    }
-
-    .form-container .logo-container {
-        text-align: center;
-        font-weight: 600;
-        font-size: 18px;
-        color: #14171b;
-        margin-bottom: 10px;
-    }
-    
-    .form-container .logo-container i {
-        margin-right: 10px;
-        font-size: 18px;
-    }
-
-    .form-container .form-group label {
-        font-weight: 500;
-        color: #88898aa3;
-        justify-content: center;
-        text-align: center;
-        align-items: center;
-        font-size: 10px;
-    }
-
-    .form-container .form-group input {
-        width: 100%;
-        padding: 12px 16px;
-        border-radius: 8px;
-        font-family: inherit;
-        border: 2px solid #81808081;
-        transition: border-color 0.3s ease;
-    }
-
 
     #main-toolbar {
         left: 50%;
@@ -524,7 +382,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 26%;
+        left: 27.8%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -553,7 +411,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 34%;
+        right: 34.5%;
         transform: translateY(-50%);
     }
 }
@@ -563,8 +421,8 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        padding: 5px 5px;
-        gap: 1px;
+        padding: 5px 10px;
+        gap: 5px;
     }
 
     #main-toolbar2 {
@@ -582,63 +440,12 @@
         gap: 10px;
     }
 
-    #share {
+    #sidebar {
         top: 15%;
         left: 3px;
         padding: 5px 5px;
         display: flex;
     }
-
-    .form-container {
-        width: 330px;
-        height: 240px;
-        background-color: #F0F0F0;
-        padding: 32px 40px;
-        font-size: 14px;
-        font-family: inherit;
-        color: #212121;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        box-sizing: border-box;
-        border-radius: 15px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.125);
-        transition: transform 0.2s ease;
-    }
-
-    .form-container .logo-container {
-        text-align: center;
-        font-weight: 600;
-        font-size: 18px;
-        color: #14171b;
-        margin-bottom: 10px;
-    }
-    
-    .form-container .logo-container i {
-        margin-right: 10px;
-        font-size: 18px;
-    }
-
-    .form-container .form-group label {
-        font-weight: 500;
-        color: #88898aa3;
-        justify-content: center;
-        text-align: center;
-        align-items: center;
-        font-size: 10px;
-    }
-
-    .form-container .form-group input {
-        width: 100%;
-        padding: 12px 16px;
-        border-radius: 8px;
-        font-family: inherit;
-        border: 2px solid #81808081;
-        transition: border-color 0.3s ease;
-    }
-
 
     #main-toolbar {
         left: 50%;
@@ -659,13 +466,13 @@
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
-        padding: 5px 8px;
+        padding: 5px 10px;
     }
 
     #delete {
         position: fixed;
         top: 95%;
-        left: 25.9%;
+        left: 28.8%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -674,7 +481,7 @@
     .tool {
         width: 30px;
         height: 30px;
-        font-size: 13px;
+        font-size: 14px;
     }
 
     #colorPicker {
@@ -684,7 +491,7 @@
 
     #zoom-percentage {
         top: 50%;
-        right: 50px;
+        right: 40px;
     }
 
     #zoom-toolbar {
@@ -694,7 +501,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 35%;
+        right: 35.3%;
         transform: translateY(-50%);
     }
 }

@@ -37,6 +37,10 @@ body.light-theme .toolbar {
     backdrop-filter: blur(10px);
 }
 
+body.light-theme .toolbar-divider {
+    background-color: #d4d4d4;
+}
+
 body.light-theme .tool {
     color: #000000;
 }

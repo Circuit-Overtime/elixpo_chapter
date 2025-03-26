@@ -60,6 +60,13 @@ html {
     z-index: 1000;
 }
 
+.toolbar-divider {
+    width: 1px;
+    height: 30px;
+    background-color: #5c5c5c;
+    margin: auto 0;
+}
+
 #main-toolbar {
     left: 50%;
     transform: translateX(-50%);
@@ -92,7 +99,7 @@ html {
 #delete {
     position: fixed;
     top: 95%;
-    left: 8.5%;
+    left: 9.3%;
     transform: translateY(-50%);
     display: flex;
     padding: 5px 5px;
