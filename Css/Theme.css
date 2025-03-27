@@ -70,3 +70,34 @@ body.light-theme #strokeWidth {
     color: #000000;
     background-color: #FCFCFC;
 }
+
+/* Light theme styles for floating-tab */
+body.light-theme .floating-tab {
+    background: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .floating-tab-divider {
+    background: #dfdfdf;
+}
+
+body.light-theme .shape-btn {
+    background: #f0f0f0;
+    color: #000000;
+    border: 1px solid #e0e0e0;
+}
+
+body.light-theme .shape-btn:hover {
+    background: #e0e0e0;
+}
+
+body.light-theme .shape-btn.active {
+    background-color: #4387f4;
+    color: #ffffff;
+}
+
+body.light-theme .color-btn {
+    border: 1px solid #717171;
+    box-shadow: none;
+}
