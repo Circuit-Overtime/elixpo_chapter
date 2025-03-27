@@ -257,3 +257,83 @@ html {
     background: #b596c5e5;
     border-radius: 5px;
 }
+
+.floating-tab {
+    position: fixed;
+    width: 180px;
+    background: #202025;
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    right: 20px;
+    top: 80px;
+    transition: transform 0.3s ease;
+}
+
+.color-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.color-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding-bottom: 2px;
+    padding-top: 4px;
+    height: 110px;
+    overflow-y: auto;
+}
+
+.color-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.color-btn:hover {
+    transform: scale(1.1);
+}
+
+.floating-tab-divider {
+    height: 1px;
+    background: #5c5c5c;
+    margin: 15px 0;
+}
+
+.shape-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.shape-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    height: 130px;
+    overflow-y: auto;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.shape-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 10px;
+    background: #31303B;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
