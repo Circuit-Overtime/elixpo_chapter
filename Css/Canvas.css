@@ -6,14 +6,14 @@ html {
     height: 100%;
     overflow: hidden;
     font-family: Arial, sans-serif;
-    background-color: #121212;
+    background-color: #101011;
 }
 
 #sidebar {
     left: 20px;
     padding: 5px 5px;
     display: flex;
-    font-size: 20px;
+    font-size: 21px;
 }
 
 #instructions {
@@ -43,7 +43,6 @@ html {
 
 #canvas {
     background-color: transparent;
-    /* Make canvas background transparent */
     cursor: crosshair;
 }
 
@@ -51,7 +50,7 @@ html {
     position: fixed;
     top: 15px;
     background-color: #202025;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
     border-radius: 10px;
     padding: 5px 15px;
     display: flex;
@@ -155,8 +154,8 @@ html {
 }
 
 #colorPicker {
-    width: 35px;
-    height: 35px;
+    width: 32px;
+    height: 32px;
     margin-top: 3px;
     padding: 0;
     border: none;

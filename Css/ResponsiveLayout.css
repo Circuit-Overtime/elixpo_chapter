@@ -51,6 +51,12 @@
         flex-direction: row;
     }
 
+    #zoom-percentage {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
     .tool {
         width: 40px;
         height: 40px;
@@ -58,9 +64,9 @@
     }
 
     #colorPicker {
-        width: 35px;
-        height: 35px;
-        margin-top: 2px;
+        width: 30px;
+        height: 30px;
+        margin-top: 1px;
     }
 }
 
@@ -72,7 +78,7 @@
         justify-content: center;
         align-items: center;
         padding: 5px 8px;
-        gap: 5.5px;
+        gap: 8px;
     }
 
     #main-toolbar2 {
@@ -117,7 +123,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 19.9%;
+        left: 20.5%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -131,12 +137,14 @@
     }
 
     #colorPicker {
-        width: 35px;
-        height: 35px;
+        width: 30px;
+        height: 30px;
     }
 
     #zoom-percentage {
-        right: 52px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
     }
 
     #zoom-toolbar {
@@ -151,7 +159,7 @@
         justify-content: center;
         align-items: center;
         padding: 5px 15px;
-        gap: 5.5px;
+        gap: 10px;
     }
 
     #main-toolbar2 {
@@ -201,7 +209,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 23%;
+        left: 24.4%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -220,8 +228,8 @@
 
     #zoom-percentage {
         top: 50%;
-        right: 40px;
-
+        left: 50%;
+        transform: translate(-50%, -50%);
     }
 
     #zoom-toolbar {
@@ -242,7 +250,7 @@
         justify-content: center;
         align-items: center;
         padding: 5px 10px;
-        gap: 2px;
+        gap: 6px;
     }
 
     #main-toolbar2 {
@@ -292,7 +300,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 25%;
+        left: 26.8%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -311,7 +319,8 @@
 
     #zoom-percentage {
         top: 50%;
-        right: 45px;
+        left: 50%;
+        transform: translate(-50%, -50%);
     }
 
     #zoom-toolbar {
@@ -485,13 +494,14 @@
     }
 
     #colorPicker {
-        width: 30px;
-        height: 30px;
+        width: 25px;
+        height: 25px;
     }
 
     #zoom-percentage {
         top: 50%;
-        right: 40px;
+        left: 50%;
+        transform: translate(-50%, -50%);
     }
 
     #zoom-toolbar {
