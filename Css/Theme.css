@@ -71,7 +71,6 @@ body.light-theme #strokeWidth {
     background-color: #FCFCFC;
 }
 
-/* Light theme styles for floating-tab */
 body.light-theme .floating-tab {
     background: #FCFCFC;
     border: 1px solid #c8c8c897;
