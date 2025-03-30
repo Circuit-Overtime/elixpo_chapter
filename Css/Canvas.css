@@ -71,12 +71,6 @@ html {
     transform: translateX(-50%);
 }
 
-#strokeWidth {
-    background-color: #202025;
-    color: white;
-    border: none;
-}
-
 /* #lock-bar {
     position: fixed;
     right: 10.9%;
@@ -151,31 +145,6 @@ html {
 .tool.active {
     /* background-color: #4387f4; */
     background-color: #3182ED;
-}
-
-#colorPicker {
-    width: 32px;
-    height: 32px;
-    margin-top: 3px;
-    padding: 0;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    overflow: hidden;
-    transition: all 0.3s ease;
-}
-
-#colorPicker:hover {
-    transform: scale(1.1);
-}
-
-#colorPicker::-webkit-color-swatch-wrapper {
-    padding: 0;
-}
-
-#colorPicker::-webkit-color-swatch {
-    border: none;
-    border-radius: 50%;
 }
 
 #textInput {

@@ -14,7 +14,6 @@ const rc = rough.canvas(canvas, {
 });
 const angleInfo = document.getElementById('angleInfo');
 const sidebar = document.getElementById('sidebar');
-const savedList = document.getElementById('saved-list');
 const textInput = document.getElementById('textInput');
 const zoomPercentage = document.getElementById('zoom-percentage');
 const zoomIn = document.getElementById('zoom-in');
@@ -223,10 +222,6 @@ canvas.addEventListener('mouseup', (e) => {
     handleMouseUp(e);
 });
 
-document.getElementById('strokeWidth').addEventListener('change', (e) => {
-    selectedStrokeWidth = Math.max(1, parseInt(e.target.value)); // Ensure stroke width is at least 1
-});
-
 document.querySelectorAll('.tool').forEach(tool => {
     tool.addEventListener('click', () => {
         if (tool.id === 'clear') {
@@ -282,10 +277,6 @@ document.querySelectorAll('#main-toolbar2 .tool').forEach(tool => {
         const toolbar2 = document.getElementById('main-toolbar2');
         toolbar2.style.display = 'none';
     });
-});
-
-document.getElementById('colorPicker').addEventListener('input', (e) => {
-    selectedColor = e.target.value;
 });
 
 canvas.addEventListener('mousedown', handleMouseDown);
@@ -1093,10 +1084,8 @@ if (currentTheme === 'light') {
     themeIcon.classList.remove('fa-moon');
     themeIcon.classList.add('fa-sun');
     selectedColor = '#000000'; // Set pencil color to black
-    document.getElementById('colorPicker').value = '#000000'; // Update color picker
 } else {
     selectedColor = '#ffffff'; // Set pencil color to white or default
-    document.getElementById('colorPicker').value = '#ffffff'; // Update color picker
 }
 
 // Function to switch colors of drawn elements between black and white
@@ -1120,14 +1109,12 @@ themeBtn.addEventListener('click', () => {
         themeIcon.classList.remove('fa-moon');
         themeIcon.classList.add('fa-sun');
         selectedColor = '#000000'; // Set pencil color to black
-        document.getElementById('colorPicker').value = '#000000'; // Update color picker
         switchElementColors(); // Switch drawn elements' color
     } else {
         localStorage.setItem('theme', 'dark');
         themeIcon.classList.remove('fa-sun');
         themeIcon.classList.add('fa-moon');
         selectedColor = '#ffffff'; // Reset pencil color to white or default
-        document.getElementById('colorPicker').value = '#ffffff'; // Update color picker
         switchElementColors(); // Switch drawn elements' color
     }
 
@@ -1170,9 +1157,6 @@ function loadAllData() {
         // selectedStrokeWidth = data.selectedStrokeWidth || 3;
         currentZoom = data.currentZoom || 100;
         scale = data.scale || 1;
-
-        // Update the stroke width input value to match loaded stroke width
-        document.getElementById('strokeWidth').value = selectedStrokeWidth;
 
         redrawCanvas();
         updateCursorStyle();
@@ -1253,7 +1237,6 @@ function handleKeyDown(event) {
     //     document.getElementById('zoom-out').click();
     // }
 
-    if (key === 'w' || key === '9') document.getElementById('colorPicker').click();
     if (key === 'm' || key === '0') toggleMainToolbar2();
 }
 
@@ -1277,7 +1260,6 @@ window.addEventListener('beforeunload', saveAllData);
 
 // Load data on window load
 window.addEventListener('load', () => {
-    loadStickyNotes();
     loadAllData();
     
     // Add width button event listeners
@@ -1289,8 +1271,6 @@ window.addEventListener('load', () => {
             btn.classList.add('active');
             // Update stroke width
             selectedStrokeWidth = parseInt(btn.dataset.width);
-            // Update stroke width select
-            document.getElementById('strokeWidth').value = selectedStrokeWidth;
         });
     });
 });
