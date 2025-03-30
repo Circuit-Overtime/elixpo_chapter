@@ -18,10 +18,15 @@
 
 <body>
     <canvas id="canvas"></canvas>
+
     <div id="sidebar" class="toolbar">
         <button class="tool" id="sidebar" title="Sidebar"><i class="bi bi-three-dots-vertical"></i></button>
     </div>
+
     <div id="main-toolbar" class="toolbar">
+
+        <div class="toolbar-divider"></div>
+
         <button class="tool" id="select" title="Pan -- X or 1"
             onclick="document.getElementById('instructions').textContent = 'Click and drag to move across canvas. Release when done.'">
             <ion-icon name="hand-right-outline"></ion-icon>
@@ -65,10 +70,11 @@
             <i class="bi bi-fonts"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">8</span>
         </button>
-        <!-- <button class="tool" id="image" title="Image -- I" onclick="document.getElementById('fileInput').click(); document.getElementById('instructions').textContent = 'Select an image to upload to canvas.'">
+        <button class="tool" id="image" title="Image -- I"
+            onclick="document.getElementById('fileInput').click(); document.getElementById('instructions').textContent = 'Select an image to upload to canvas.'">
             <i class="bi bi-image"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">9</span>
-        </button> -->
+        </button>
         <input type="file" id="fileInput" accept="image/*" style="display: none;">
 
         <div class="toolbar-divider"></div>
@@ -77,7 +83,6 @@
             onclick="document.getElementById('instructions').textContent = 'Search Tools and Colors'">
             <i class="bi bi-search"></i>
         </button>
-
         <div id="instructions">Choose any Tool. Click to get started</div>
     </div>
     <div id="theme-toggle" class="toolbar">
@@ -130,7 +135,7 @@
         <div class="floating-tab-divider"></div>
 
         <div class="width-grid">
-            <button class="width-btn" data-width="4">4px</button>
+            <button class="width-btn active" data-width="4">4px</button>
             <button class="width-btn" data-width="6">6px</button>
             <button class="width-btn" data-width="8">8px</button>
         </div>
@@ -138,23 +143,23 @@
         <div class="floating-tab-divider"></div>
 
         <div class="shape-grid">
-            <button class="shape-btn tool" data-shape="triangle"><i class="bi bi-triangle"></i></button>
-            <button class="shape-btn tool" data-shape="line"><i class="bi bi-dash-lg"></i></button>
-            <button class="shape-btn tool" data-shape="star"><i class="bi bi-star"></i></button>
-            <button class="shape-btn tool" data-shape="diamond"><i class="bi bi-diamond"></i></button>
-            <button class="shape-btn tool" data-shape="pentagon"><i class="bi bi-pentagon"></i></button>
-            <button class="shape-btn tool" data-shape="hexagon"><i class="bi bi-hexagon"></i></button>
-            <button class="shape-btn tool" data-shape="heart"><i class="bi bi-heart"></i></button>
-            <button class="shape-btn tool" data-shape="cloud"><i class="bi bi-cloud"></i></button>
-            <button class="shape-btn tool" data-shape="ellipse"><i class="bi bi-egg"></i></button>
-            <button class="shape-btn tool" data-shape="parallelogram"><i class="bi bi-slash-lg"></i></button>
-            <button class="shape-btn tool" data-shape="arrowhead"><i class="bi bi-arrow-up-right"></i></button>
-            <button class="shape-btn tool" data-shape="plus"><i class="bi bi-plus-lg"></i></button>
-            <button class="shape-btn tool" data-shape="cross"><i class="bi bi-x-lg"></i></button>
-            <button class="shape-btn tool" data-shape="chevron"><i class="bi bi-chevron-right"></i></button>
-            <button class="shape-btn tool" data-shape="chevron"><i class="bi bi-chevron-left"></i></button>
-            <button class="shape-btn tool" data-shape="octagon"><i class="bi bi-octagon"></i></button>
-            <button class="shape-btn tool" data-shape="trapezoid"><i class="bi bi-box"></i></button>
+            <button class="shape-btn tool" id="triangle"><i class="bi bi-triangle"></i></button>
+            <button class="shape-btn tool" id="line"><i class="bi bi-dash-lg"></i></button>
+            <button class="shape-btn tool" id="star"><i class="bi bi-star"></i></button>
+            <button class="shape-btn tool" id="diamond"><i class="bi bi-diamond"></i></button>
+            <button class="shape-btn tool" id="pentagon"><i class="bi bi-pentagon"></i></button>
+            <button class="shape-btn tool" id="hexagon"><i class="bi bi-hexagon"></i></button>
+            <button class="shape-btn tool" id="heart"><i class="bi bi-heart"></i></button>
+            <button class="shape-btn tool" id="cloud"><i class="bi bi-cloud"></i></button>
+            <button class="shape-btn tool" id="ellipse"><i class="bi bi-egg"></i></button>
+            <button class="shape-btn tool" id="parallelogram"><i class="bi bi-slash-lg"></i></button>
+            <button class="shape-btn tool" id="arrowhead"><i class="bi bi-arrow-up-right"></i></button>
+            <button class="shape-btn tool" id="plus"><i class="bi bi-plus-lg"></i></button>
+            <button class="shape-btn tool" id="cross"><i class="bi bi-x-lg"></i></button>
+            <button class="shape-btn tool" id="chevron"><i class="bi bi-chevron-right"></i></button>
+            <button class="shape-btn tool" id="chevron"><i class="bi bi-chevron-left"></i></button>
+            <button class="shape-btn tool" id="octagon"><i class="bi bi-octagon"></i></button>
+            <button class="shape-btn tool" id="trapezoid"><i class="bi bi-box"></i></button>
         </div>
     </div>
 
@@ -166,9 +171,6 @@
         <div id="zoom-percentage" class="toolbar">100%</div>
         <button class="tool" id="zoom-out" title="Zoom Out -- Ctrl -"><i class="bi bi-dash-lg"></i></button>
     </div>
-    <!-- <div id="lock-bar" class="toolbar">
-        <button class="tool" id="lock" title="Lock/Unlock"><ion-icon name="lock-closed"></ion-icon></button>
-    </div> -->
     <textarea type="text" id="textInput" class="textInput" spellcheck="false" autocomplete="off" multiline></textarea>
     <div id="angleInfo"></div>
     <div id="sticky-notes-container"></div>
