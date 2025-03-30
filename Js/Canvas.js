@@ -1341,13 +1341,13 @@ window.addEventListener('load', () => {
             document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
             // Add active class to clicked button
             btn.classList.add('active');
-            
+
             // Update text input color if it's visible
             if (textInput.style.display === 'block') {
                 textInput.style.color = selectedColor;
                 textInput.style.caretColor = selectedColor;
             }
-            
+
             // If there's a selected element, update its color
             if (selectedElement) {
                 selectedElement.color = selectedColor;
@@ -1355,6 +1355,195 @@ window.addEventListener('load', () => {
             }
         });
     });
+});
+
+// Search functionality
+const searchDropdown = document.getElementById('search-dropdown');
+const searchInput = document.getElementById('search-input');
+const searchResults = document.querySelector('.search-results');
+const closeSearch = document.getElementById('close-search');
+const searchBtn = document.getElementById('search');
+
+// Extract tools and colors from HTML
+function extractSearchableItems() {
+    const toolButtons = document.querySelectorAll('#main-toolbar .tool');
+    const colorButtons = document.querySelectorAll('.color-grid .color-btn');
+
+    const items = [];
+
+    // Extract tools
+    toolButtons.forEach(button => {
+        if (button.id && button.id !== 'search') {
+            items.push({
+                type: 'tool',
+                id: button.id,
+                name: button.title?.split('--')[0]?.trim() || button.id,
+                icon: button.innerHTML.split('<span')[0],
+                shortcut: button.title?.split('--')[1]?.trim() || ''
+            });
+        }
+    });
+
+    // Extract colors
+    colorButtons.forEach(button => {
+        const color = button.style.backgroundColor;
+        const colorName = getColorName(color);
+        items.push({
+            type: 'color',
+            name: colorName,
+            value: rgb2hex(color)
+        });
+    });
+
+    return items;
+}
+
+// Helper function to convert RGB to HEX
+function rgb2hex(rgb) {
+    if (rgb.startsWith('#')) return rgb;
+    return '#' + rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/)
+        .slice(1)
+        .map(n => parseInt(n, 10).toString(16).padStart(2, '0'))
+        .join('');
+}
+
+// Helper function to get color names
+function getColorName(color) {
+    const colorMap = {
+        '#ff0000': 'Red',
+        '#00ff00': 'Green', 
+        '#0000ff': 'Blue',
+        '#ffff00': 'Yellow',
+        '#ff00ff': 'Magenta',
+        '#00ffff': 'Cyan',
+        '#ffffff': 'White',
+        '#000000': 'Black',
+        '#ffa500': 'Orange',
+        '#800000': 'Maroon',
+        '#808000': 'Olive',
+        '#008000': 'Dark Green',
+        '#800080': 'Purple', 
+    };
+
+    const hex = rgb2hex(color);
+    return colorMap[hex] || hex;
+}
+
+const searchableItems = extractSearchableItems();
+
+searchBtn.addEventListener('click', () => {
+    searchDropdown.classList.add('active');
+    searchInput.focus();
+    searchInput.value = '';
+    searchResults.innerHTML = '';
+    // Disable keyboard shortcuts when search is active
+    document.removeEventListener('keydown', handleKeyDown);
+});
+
+closeSearch.addEventListener('click', () => {
+    searchDropdown.classList.remove('active');
+    // Re-enable keyboard shortcuts when search is closed
+    if (selectedTool !== 'text') {
+        document.addEventListener('keydown', handleKeyDown);
+    }
+});
+
+searchInput.addEventListener('focus', () => {
+    document.removeEventListener('keydown', handleKeyDown);
+});
+
+searchInput.addEventListener('blur', () => {
+    if (!searchDropdown.classList.contains('active') && selectedTool !== 'text') {
+        document.addEventListener('keydown', handleKeyDown);
+    }
+});
+
+searchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+
+    if (searchTerm === '') {
+        searchResults.innerHTML = '';
+        return;
+    }
+
+    const filteredItems = searchableItems.filter(item =>
+        item.name.toLowerCase().includes(searchTerm) ||
+        (item.shortcut && item.shortcut.toLowerCase().includes(searchTerm))
+    );
+
+    displaySearchResults(filteredItems);
+});
+
+function displaySearchResults(items) {
+    searchResults.innerHTML = '';
+
+    if (items.length === 0) {
+        const noResults = document.createElement('div');
+        noResults.className = 'search-item';
+        noResults.innerHTML = '<span>No matching tools or colors found</span>';
+        searchResults.appendChild(noResults);
+        return;
+    }
+
+    // Group items by type
+    const tools = items.filter(item => item.type === 'tool');
+    const colors = items.filter(item => item.type === 'color');
+
+    // Display tools first
+    if (tools.length > 0) {
+        const toolsHeader = document.createElement('div');
+        toolsHeader.className = 'search-category';
+        toolsHeader.textContent = 'Tools';
+        searchResults.appendChild(toolsHeader);
+
+        tools.forEach(item => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'search-item';
+            resultItem.innerHTML = `
+                ${item.icon}
+                <span>${item.name}${item.shortcut ? ` (${item.shortcut})` : ''}</span>
+            `;
+            resultItem.addEventListener('click', () => {
+                selectTool(item.id);
+                document.getElementById(item.id).click();
+                searchDropdown.classList.remove('active');
+            });
+            searchResults.appendChild(resultItem);
+        });
+    }
+
+    // Then display colors
+    if (colors.length > 0) {
+        const colorsHeader = document.createElement('div');
+        colorsHeader.className = 'search-category';
+        colorsHeader.textContent = 'Colors';
+        searchResults.appendChild(colorsHeader);
+
+        colors.forEach(item => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'search-item';
+            resultItem.innerHTML = `
+                <div class="color-preview" style="background: ${item.value}"></div>
+                <span>${item.name}</span>
+            `;
+            resultItem.addEventListener('click', () => {
+                selectedColor = item.value;
+                searchDropdown.classList.remove('active');
+            });
+            searchResults.appendChild(resultItem);
+        });
+    }
+}
+
+// Update the click outside handler
+document.addEventListener('click', (e) => {
+    if (!searchDropdown.contains(e.target) && !searchBtn.contains(e.target)) {
+        searchDropdown.classList.remove('active');
+        // Re-enable keyboard shortcuts when clicking outside
+        if (selectedTool !== 'text') {
+            document.addEventListener('keydown', handleKeyDown);
+        }
+    }
 });
 
 function drawHeart(ctx, x1, y1, x2, y2, options) {
@@ -1442,5 +1631,67 @@ function drawCross(ctx, x1, y1, x2, y2, options) {
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
+}
+
+function extractSearchableItems() {
+    const toolButtons = document.querySelectorAll('#main-toolbar .tool');
+    const colorButtons = document.querySelectorAll('.color-grid .color-btn');
+
+    const items = [];
+
+    // Extract tools from main toolbar and shape grid
+    const allTools = [
+        ...Array.from(document.querySelectorAll('#main-toolbar .tool')),
+        ...Array.from(document.querySelectorAll('.shape-grid .tool'))
+    ];
+
+    allTools.forEach(button => {
+        if (button.id && button.id !== 'search') {
+            items.push({
+                type: 'tool',
+                id: button.id,
+                name: button.title || button.id,
+                icon: button.innerHTML.split('<span')[0],
+                shortcut: button.title?.split('--')[1]?.trim() || ''
+            });
+        }
+    });
+
+    // Extract colors
+    colorButtons.forEach(button => {
+        const color = button.style.backgroundColor;
+        const colorName = getColorName(color);
+        items.push({
+            type: 'color',
+            name: colorName,
+            value: rgb2hex(color)
+        });
+    });
+
+    return items;
+}
+
+function selectTool(toolId) {
+    document.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
+
+    // Try to find the tool in main toolbar first
+    let toolElement = document.getElementById(toolId);
+
+    // If not found in main toolbar, look in shape grid
+    if (!toolElement) {
+        toolElement = document.querySelector(`.shape-grid .tool[id="${toolId}"]`);
+    }
+
+    if (toolElement) {
+        toolElement.classList.add('active');
+    }
+
+    selectedTool = toolId;
+
+    if (toolId !== 'text') {
+        document.addEventListener('keydown', handleKeyDown);
+    } else {
+        document.removeEventListener('keydown', handleKeyDown);
+    }
 }
 
