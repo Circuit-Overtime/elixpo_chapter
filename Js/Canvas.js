@@ -363,18 +363,18 @@ function handleMouseDown(e) {
 
 function handleMouseMove(e) {
     if (isDragging && selectedTool === 'pointer' && selectedElement) {
-        const newX = e.offsetX - dragOffsetX;
-        const newY = e.offsetY - dragOffsetY;
+        const newX = e.offsetX;
+        const newY = e.offsetY;
 
         // Calculate the movement delta
-        const dx = newX - selectedElement.x1;
-        const dy = newY - selectedElement.y1;
+        const dx = newX - dragOffsetX - selectedElement.x1;
+        const dy = newY - dragOffsetY - selectedElement.y1;
 
-        // Move all points of the element
+        // Move both points for all shape types
         selectedElement.x1 += dx;
         selectedElement.y1 += dy;
-        if (selectedElement.x2 !== undefined) selectedElement.x2 += dx;
-        if (selectedElement.y2 !== undefined) selectedElement.y2 += dy;
+        selectedElement.x2 += dx;
+        selectedElement.y2 += dy;
 
         redrawCanvas();
         return;
@@ -1033,6 +1033,24 @@ function isWithinBounds(element, x, y) {
             return Math.sqrt(Math.pow(x - shapeCenterX, 2) + Math.pow(y - shapeCenterY, 2)) <= boundingRadius;
         case 'text':
             return x >= element.x1 && x <= element.x1 + 100 && y >= element.y1 - 20 && y <= element.y1;
+        case 'heart':
+        case 'parallelogram':
+        case 'arrowhead':
+        case 'plus':
+        case 'cross':
+        case 'octagon':
+            const boundingBox = {
+                minX: Math.min(element.x1, element.x2),
+                maxX: Math.max(element.x1, element.x2),
+                minY: Math.min(element.y1, element.y2),
+                maxY: Math.max(element.y1, element.y2)
+            };
+            // Add padding for easier selection
+            boundingBox.minX -= tolerance;
+            boundingBox.maxX += tolerance;
+            boundingBox.minY -= tolerance;
+            boundingBox.maxY += tolerance;
+            return x >= boundingBox.minX && x <= boundingBox.maxX && y >= boundingBox.minY && y <= boundingBox.maxY;
         default:
             return false;
     }
