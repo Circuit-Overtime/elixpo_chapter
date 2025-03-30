@@ -146,6 +146,7 @@ canvas.addEventListener('gestureend', (e) => {
 // Touch event handlers up to here
 
 zoomIn.addEventListener('click', () => {
+    if (currentZoom >= 200) return; // Prevent zooming beyond 200%
     currentZoom = Math.min(currentZoom + 10, 200); // Limit zoom to 200%
     zoomPercentage.textContent = currentZoom + '%';
 
@@ -166,25 +167,24 @@ zoomIn.addEventListener('click', () => {
 });
 
 zoomOut.addEventListener('click', () => {
-    if (currentZoom > 10) {
-        currentZoom -= 10;
-        zoomPercentage.textContent = currentZoom + '%';
+    if (currentZoom <= 70) return; // Prevent zooming below 70%
+    currentZoom = Math.max(currentZoom - 10, 70); // Limit zoom to minimum 70%
+    zoomPercentage.textContent = currentZoom + '%';
 
-        const zoom = 1 - scaleFactor;
-        scale *= zoom;
+    const zoom = 1 - scaleFactor;
+    scale *= zoom;
 
-        // Get center of canvas
-        const centerX = canvas.width / 4; // Divide by 4 because canvas is scaled 2x
-        const centerY = canvas.height / 4;
+    // Get center of canvas
+    const centerX = canvas.width / 4; // Divide by 4 because canvas is scaled 2x
+    const centerY = canvas.height / 4;
 
-        elements.forEach(element => {
-            element.x1 = centerX + (element.x1 - centerX) * zoom;
-            element.y1 = centerY + (element.y1 - centerY) * zoom;
-            if (element.x2 !== undefined) element.x2 = centerX + (element.x2 - centerX) * zoom;
-            if (element.y2 !== undefined) element.y2 = centerY + (element.y2 - centerY) * zoom;
-        });
-        redrawCanvas();
-    }
+    elements.forEach(element => {
+        element.x1 = centerX + (element.x1 - centerX) * zoom;
+        element.y1 = centerY + (element.y1 - centerY) * zoom;
+        if (element.x2 !== undefined) element.x2 = centerX + (element.x2 - centerX) * zoom;
+        if (element.y2 !== undefined) element.y2 = centerY + (element.y2 - centerY) * zoom;
+    });
+    redrawCanvas();
 });
 
 canvas.addEventListener('wheel', (e) => {
@@ -192,8 +192,20 @@ canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
         const mouseX = e.offsetX;
         const mouseY = e.offsetY;
-        const zoom = e.deltaY < 0 ? 1 + scaleFactor : 1 - scaleFactor;
+        const zoomingIn = e.deltaY < 0;
 
+        // Check zoom limits
+        if ((zoomingIn && currentZoom >= 200) || (!zoomingIn && currentZoom <= 70)) {
+            return;
+        }
+
+        // Update current zoom
+        currentZoom = zoomingIn ?
+            Math.min(currentZoom + 10, 200) :
+            Math.max(currentZoom - 10, 70);
+        zoomPercentage.textContent = currentZoom + '%';
+
+        const zoom = zoomingIn ? 1 + scaleFactor : 1 - scaleFactor;
         scale *= zoom;
 
         elements.forEach(element => {
@@ -1113,6 +1125,16 @@ window.addEventListener('keydown', (e) => {
     } else if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
         saveWork();
+    } else if (e.ctrlKey && e.key === '+') {
+        e.preventDefault();
+        if (currentZoom < 200) {
+            document.getElementById('zoom-in').click();
+        }
+    } else if (e.ctrlKey && e.key === '-') {
+        e.preventDefault();
+        if (currentZoom > 70) {
+            document.getElementById('zoom-out').click();
+        }
     }
 });
 
@@ -1373,7 +1395,7 @@ window.addEventListener('load', () => {
     const observer = new MutationObserver(() => {
         localStorage.setItem('floatingTabCollapsed', floatingTab.classList.contains('collapsed'));
     });
-    
+
     observer.observe(floatingTab, {
         attributes: true,
         attributeFilter: ['class']
