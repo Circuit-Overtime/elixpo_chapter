@@ -96,15 +96,16 @@ body.light-theme .shape-btn.active {
     color: #ffffff;
 }
 
+.light-theme .width-opacity-wrapper{
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
 body.light-theme .color-btn {
     border: 1px solid #717171;
     box-shadow: none;
-}
-
-body.light-theme .width-grid {
-    background: #f6f6f6;
-    color: #000000;
-    border: 1px solid #e0e0e0;
 }
 
 body.light-theme .width-btn {
@@ -120,12 +121,6 @@ body.light-theme .width-btn:hover {
 body.light-theme .width-btn.active {
     background: #3182ED;
     color: #ffffff;
-}
-
-body.light-theme .opacity-control {
-    background: #f6f6f6;
-    color: #000000;
-    border: 1px solid #e0e0e0;
 }
 
 .light-theme .opacity-slider {
