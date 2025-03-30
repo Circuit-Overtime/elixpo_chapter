@@ -33,15 +33,6 @@
         gap: 10px;
     }
 
-    /* #lock-bar {
-        position: fixed;
-        right: 21.3%;
-        top: 95%;
-        transform: translateY(-50%);
-        flex-direction: row;
-        display: flex;
-    } */
-
     #delete {
         position: fixed;
         top: 95%;
@@ -101,15 +92,6 @@
         padding: 5px 5px;
         display: flex;
     }
-
-    /* #lock-bar {
-        position: fixed;
-        right: 23.5%;
-        top: 95%;
-        transform: translateY(-50%);
-        flex-direction: row;
-        display: flex;
-    } */
 
     #undoredo {
         position: fixed;
@@ -187,15 +169,6 @@
     #main-toolbar {
         left: 50%;
     }
-
-    /* #lock-bar {
-        position: fixed;
-        right: 27.4%;
-        top: 95%;
-        transform: translateY(-50%);
-        flex-direction: row;
-        display: flex;
-    } */
 
     #undoredo {
         position: fixed;
@@ -279,15 +252,6 @@
         left: 50%;
     }
 
-    /* #lock-bar {
-        position: fixed;
-        right: 32%;
-        top: 95%;
-        transform: translateY(-50%);
-        flex-direction: row;
-        display: flex;
-    } */
-
     #undoredo {
         position: fixed;
         top: 95%;
@@ -370,15 +334,6 @@
         left: 50%;
     }
 
-    /* #lock-bar {
-        position: fixed;
-        right: 35%;
-        top: 95%;
-        transform: translateY(-50%);
-        flex-direction: row;
-        display: flex;
-    } */
-
     #undoredo {
         position: fixed;
         top: 95%;
@@ -459,16 +414,6 @@
     #main-toolbar {
         left: 50%;
     }
-
-    /* #lock-bar {
-        position: fixed;
-        right: 34.3%;
-        top: 95%;
-        transform: translateY(-50%);
-        flex-direction: row;
-        display: flex;
-    } */
-
     #undoredo {
         position: fixed;
         top: 95%;
