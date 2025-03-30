@@ -96,7 +96,7 @@ body.light-theme .shape-btn.active {
     color: #ffffff;
 }
 
-.light-theme .width-opacity-wrapper{
+.light-theme .width-opacity-wrapper {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(5px);
     border: 1px solid rgba(0, 0, 0, 0.1);
@@ -125,4 +125,43 @@ body.light-theme .width-btn.active {
 
 .light-theme .opacity-slider {
     background: #e0e0e0;
+}
+
+/* Search dropdown light theme styles */
+body.light-theme .search-dropdown {
+    background: #FCFCFC;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .search-input-wrapper {
+    background: #f0f0f0;
+    border: 1px solid #e0e0e0;
+}
+
+body.light-theme .search-input-wrapper input {
+    color: #000000;
+}
+
+body.light-theme .search-input-wrapper input::placeholder {
+    color: #666666;
+}
+
+body.light-theme .search-input-wrapper i {
+    color: #666666;
+}
+
+body.light-theme .search-results::-webkit-scrollbar-thumb {
+    background: #e0e0e0;
+}
+
+body.light-theme .search-item {
+    color: #000000;
+}
+
+body.light-theme .search-item:hover {
+    background: #f0f0f0;
+}
+
+body.light-theme .search-category {
+    color: #666666;
 }
