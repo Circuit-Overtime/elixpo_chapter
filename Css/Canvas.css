@@ -219,6 +219,12 @@ html {
     transform: scale(1.1);
 }
 
+.color-btn.active {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    border: 2px solid #ffffff;
+}
+
 .width-grid {
     display: flex;
     flex-direction: row;

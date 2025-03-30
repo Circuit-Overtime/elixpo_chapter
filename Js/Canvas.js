@@ -1314,6 +1314,29 @@ window.addEventListener('load', () => {
             redrawCanvas();
         }
     });
+
+    // Add color button event listeners
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedColor = btn.style.backgroundColor;
+            // Remove active class from all color buttons
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            btn.classList.add('active');
+            
+            // Update text input color if it's visible
+            if (textInput.style.display === 'block') {
+                textInput.style.color = selectedColor;
+                textInput.style.caretColor = selectedColor;
+            }
+            
+            // If there's a selected element, update its color
+            if (selectedElement) {
+                selectedElement.color = selectedColor;
+                redrawCanvas();
+            }
+        });
+    });
 });
 
 function drawHeart(ctx, x1, y1, x2, y2, options) {
