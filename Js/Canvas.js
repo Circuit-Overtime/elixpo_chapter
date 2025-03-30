@@ -227,7 +227,6 @@ document.querySelectorAll('.tool').forEach(tool => {
     tool.addEventListener('click', () => {
         if (tool.id === 'clear') {
             elements = [];
-            clearStickyNotes(); // Clear sticky notes when the clear tool is clicked
             redrawCanvas();
         } else if (tool.id === 'save') {
             saveWork();
@@ -254,7 +253,6 @@ document.querySelectorAll('#main-toolbar2 .tool').forEach(tool => {
     tool.addEventListener('click', () => {
         if (tool.id === 'clear') {
             elements = [];
-            clearStickyNotes(); // Clear sticky notes when the clear tool is clicked
             redrawCanvas();
         } else if (tool.id === 'save') {
             saveWork();
@@ -1316,128 +1314,6 @@ window.addEventListener('load', () => {
             redrawCanvas();
         }
     });
-});
-
-document.getElementById('sticky-notes').addEventListener('click', () => {
-    createStickyNote();
-    selectTool('pointer'); // Switch to pointer tool after creating a sticky note
-});
-
-function createStickyNote() {
-    const stickyNote = document.createElement('div');
-    stickyNote.className = 'sticky-note';
-    stickyNote.style.left = '44%';
-    stickyNote.style.top = '40%';
-
-    const textarea = document.createElement('textarea');
-    stickyNote.appendChild(textarea);
-
-    document.getElementById('sticky-notes-container').appendChild(stickyNote);
-
-    // Make the sticky note draggable
-    makeDraggable(stickyNote);
-
-    // Disable keyboard mapping when writing inside sticky notes
-    textarea.addEventListener('focus', () => {
-        document.removeEventListener('keydown', handleKeyDown);
-    });
-
-    textarea.addEventListener('blur', () => {
-        document.addEventListener('keydown', handleKeyDown);
-        saveStickyNotes(); // Save sticky notes to local storage
-    });
-
-    // Save sticky notes to local storage
-    saveStickyNotes();
-}
-
-function makeDraggable(element) {
-    let isDragging = false;
-    let startX, startY, initialX, initialY;
-
-    element.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        initialX = element.offsetLeft;
-        initialY = element.offsetTop;
-        element.style.cursor = 'grabbing';
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-            element.style.left = `${initialX + dx}px`;
-            element.style.top = `${initialY + dy}px`;
-        }
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (isDragging) {
-            isDragging = false;
-            element.style.cursor = 'move';
-            saveStickyNotes(); // Save sticky notes to local storage
-        }
-    });
-}
-
-function saveStickyNotes() {
-    const stickyNotes = [];
-    document.querySelectorAll('.sticky-note').forEach(note => {
-        stickyNotes.push({
-            left: note.style.left,
-            top: note.style.top,
-            content: note.querySelector('textarea').value
-        });
-    });
-    localStorage.setItem('stickyNotes', JSON.stringify(stickyNotes));
-}
-
-function loadStickyNotes() {
-    const stickyNotes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
-    stickyNotes.forEach(noteData => {
-        const stickyNote = document.createElement('div');
-        stickyNote.className = 'sticky-note';
-        stickyNote.style.left = noteData.left;
-        stickyNote.style.top = noteData.top;
-
-        const textarea = document.createElement('textarea');
-        textarea.value = noteData.content;
-        stickyNote.appendChild(textarea);
-
-        document.getElementById('sticky-notes-container').appendChild(stickyNote);
-
-        // Make the sticky note draggable
-        makeDraggable(stickyNote);
-
-        // Disable keyboard mapping when writing inside sticky notes
-        textarea.addEventListener('focus', () => {
-            document.removeEventListener('keydown', handleKeyDown);
-        });
-
-        textarea.addEventListener('blur', () => {
-            document.addEventListener('keydown', handleKeyDown);
-            saveStickyNotes(); // Save sticky notes to local storage
-        });
-    });
-}
-
-function clearStickyNotes() {
-    document.querySelectorAll('.sticky-note').forEach(note => note.remove());
-    localStorage.removeItem('stickyNotes');
-}
-
-// Load sticky notes on window load
-window.addEventListener('load', () => {
-    loadStickyNotes();
-    loadAllData();
-});
-
-// Save sticky notes on window unload
-window.addEventListener('beforeunload', () => {
-    saveStickyNotes();
-    saveAllData();
 });
 
 function drawHeart(ctx, x1, y1, x2, y2, options) {
