@@ -100,3 +100,9 @@ body.light-theme .color-btn {
     border: 1px solid #717171;
     box-shadow: none;
 }
+
+body.light-theme .width-grid {
+    background: #f0f0f0;
+    color: #000000;
+    border: 1px solid #e0e0e0;
+}
