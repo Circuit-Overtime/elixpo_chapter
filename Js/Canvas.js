@@ -29,6 +29,7 @@ let lastY = 0;
 let elements = [];
 let selectedTool = 'pencil';
 let selectedColor = '#ffffff';
+let currentOpacity = 1; // Add this line
 let currentElement = null;
 let selectedElement = null;
 let offsetX = 0;
@@ -511,7 +512,8 @@ function startDrawing(e) {
             roughness: 0.5,
             strokeWidth: selectedStrokeWidth,
             fillStyle: 'solid',
-            fillWeight: 0.5
+            fillWeight: 0.5,
+            opacity: currentOpacity // Add this line
         };
     }
 }
@@ -638,6 +640,9 @@ function drawElement(element) {
         simplification: 0.5
     };
 
+    // Set global alpha for opacity
+    ctx.globalAlpha = element.opacity || 1;
+
     switch (element.type) {
         case 'pencil':
             drawSmoothLine(ctx, element.x1, element.y1, element.x2, element.y2, options);
@@ -700,6 +705,9 @@ function drawElement(element) {
             drawPolygon(ctx, element.x1, element.y1, element.x2, element.y2, 8, options);
             break;
     }
+
+    // Reset global alpha
+    ctx.globalAlpha = 1;
 }
 
 // New function to draw fluid lines with rounded ends
@@ -1282,7 +1290,7 @@ window.addEventListener('beforeunload', saveAllData);
 // Load data on window load
 window.addEventListener('load', () => {
     loadAllData();
-    
+
     // Add width button event listeners
     document.querySelectorAll('.width-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1293,6 +1301,20 @@ window.addEventListener('load', () => {
             // Update stroke width
             selectedStrokeWidth = parseInt(btn.dataset.width);
         });
+    });
+
+    // Add opacity slider event listener
+    const opacitySlider = document.getElementById('opacity-slider');
+
+    opacitySlider.addEventListener('input', (e) => {
+        currentOpacity = e.target.value / 100;
+
+        // Update the opacity of the most recently drawn element
+        if (elements.length > 0) {
+            const lastElement = elements[elements.length - 1];
+            lastElement.opacity = currentOpacity;
+            redrawCanvas();
+        }
     });
 });
 
@@ -1426,21 +1448,21 @@ function drawHeart(ctx, x1, y1, x2, y2, options) {
 
     ctx.beginPath();
     ctx.moveTo(topX, topY);
-    
+
     // Left curve
     ctx.bezierCurveTo(
         x1, y1,
         x1, y1 + height / 2,
         topX, y1 + height
     );
-    
+
     // Right curve
     ctx.bezierCurveTo(
         x2, y1 + height / 2,
         x2, y1,
         topX, topY
     );
-    
+
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
@@ -1467,9 +1489,9 @@ function drawArrowhead(ctx, x1, y1, x2, y2, options) {
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
-    ctx.lineTo(x2 - width * Math.cos(angle - Math.PI/6), y2 - width * Math.sin(angle - Math.PI/6));
+    ctx.lineTo(x2 - width * Math.cos(angle - Math.PI / 6), y2 - width * Math.sin(angle - Math.PI / 6));
     ctx.moveTo(x2, y2);
-    ctx.lineTo(x2 - width * Math.cos(angle + Math.PI/6), y2 - width * Math.sin(angle + Math.PI/6));
+    ctx.lineTo(x2 - width * Math.cos(angle + Math.PI / 6), y2 - width * Math.sin(angle + Math.PI / 6));
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
@@ -1481,10 +1503,10 @@ function drawPlus(ctx, x1, y1, x2, y2, options) {
     const size = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
 
     ctx.beginPath();
-    ctx.moveTo(centerX - size/2, centerY);
-    ctx.lineTo(centerX + size/2, centerY);
-    ctx.moveTo(centerX, centerY - size/2);
-    ctx.lineTo(centerX, centerY + size/2);
+    ctx.moveTo(centerX - size / 2, centerY);
+    ctx.lineTo(centerX + size / 2, centerY);
+    ctx.moveTo(centerX, centerY - size / 2);
+    ctx.lineTo(centerX, centerY + size / 2);
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
@@ -1496,10 +1518,10 @@ function drawCross(ctx, x1, y1, x2, y2, options) {
     const centerY = (y1 + y2) / 2;
 
     ctx.beginPath();
-    ctx.moveTo(centerX - size/2, centerY - size/2);
-    ctx.lineTo(centerX + size/2, centerY + size/2);
-    ctx.moveTo(centerX + size/2, centerY - size/2);
-    ctx.lineTo(centerX - size/2, centerY + size/2);
+    ctx.moveTo(centerX - size / 2, centerY - size / 2);
+    ctx.lineTo(centerX + size / 2, centerY + size / 2);
+    ctx.moveTo(centerX + size / 2, centerY - size / 2);
+    ctx.lineTo(centerX - size / 2, centerY + size / 2);
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();

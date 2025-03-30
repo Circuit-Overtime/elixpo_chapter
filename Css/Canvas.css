@@ -302,6 +302,48 @@ html {
     background: #3182ED;
 }
 
+.opacity-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    margin: 5px 0;
+    width: 100%;
+}
+
+.opacity-slider {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    background: #31303B;
+    border-radius: 2px;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #3182ED;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.opacity-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+#opacity-value {
+    color: white;
+    font-size: 0.8em;
+    min-width: 40px;
+    top: 80%;
+}
+
 .floating-tab-divider {
     height: 1px;
     background: #5c5c5c;

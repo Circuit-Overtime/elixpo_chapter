@@ -112,11 +112,16 @@ body.light-theme .width-btn {
     color: #000000;
     border: 1px solid #e0e0e0;
 }
+
 body.light-theme .width-btn:hover {
-    background: #e0e0e0; 
+    background: #e0e0e0;
 }
 
 body.light-theme .width-btn.active {
-    background: #3182ED;    
+    background: #3182ED;
     color: #ffffff;
+}
+
+.light-theme .opacity-slider {
+    background: #e0e0e0;
 }
