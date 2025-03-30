@@ -73,17 +73,12 @@
 
         <div class="toolbar-divider"></div>
 
-        <input type="color" id="colorPicker" value="#ffffff" title="Color Picker -- W or 9"
-            onclick="document.getElementById('instructions').textContent = 'Select color for shapes and text on canvas.'">
+        <button class="tool" id="search" title="search -- /"
+            onclick="document.getElementById('instructions').textContent = 'Search Tools and Colors'">
+            <i class="bi bi-search"></i>
+        </button>
+
         <div id="instructions">Choose any Tool. Click to get started</div>
-        <select id="strokeWidth" title="Stroke Width"
-            onclick="document.getElementById('instructions').textContent = 'Click and select to choose Thickness or Thinness.'">
-            <!-- <option value="1">1px</option>
-            <option value="2">2px</option> -->
-            <option value="3" selected>3x</option>
-            <!-- <option value="6">6px</option> -->
-            <option value="7">6x</option>
-        </select>
     </div>
     <div id="theme-toggle" class="toolbar">
         <button class="tool" id="theme-btn" title="Theme -- Q or *"><i class="fas fa-moon"></i></button>
@@ -134,9 +129,15 @@
 
         <div class="floating-tab-divider"></div>
 
+        <div class="width-grid">
+            <button class="width-btn" data-width="4">4px</button>
+            <button class="width-btn" data-width="6">6px</button>
+            <button class="width-btn" data-width="8">8px</button>
+        </div>
+
+        <div class="floating-tab-divider"></div>
+
         <div class="shape-grid">
-            <button class="shape-btn tool" data-shape="triangle"><i class="bi bi-link"></i></button>
-            <button class="shape-btn tool" data-shape="triangle"><i class="bi bi-pin-angle"></i></button>
             <button class="shape-btn tool" data-shape="triangle"><i class="bi bi-triangle"></i></button>
             <button class="shape-btn tool" data-shape="line"><i class="bi bi-dash-lg"></i></button>
             <button class="shape-btn tool" data-shape="star"><i class="bi bi-star"></i></button>
@@ -147,31 +148,13 @@
             <button class="shape-btn tool" data-shape="cloud"><i class="bi bi-cloud"></i></button>
             <button class="shape-btn tool" data-shape="ellipse"><i class="bi bi-egg"></i></button>
             <button class="shape-btn tool" data-shape="parallelogram"><i class="bi bi-slash-lg"></i></button>
-            <button class="shape-btn tool" data-shape="trapezoid"><i class="bi bi-box"></i></button>
             <button class="shape-btn tool" data-shape="arrowhead"><i class="bi bi-arrow-up-right"></i></button>
             <button class="shape-btn tool" data-shape="plus"><i class="bi bi-plus-lg"></i></button>
             <button class="shape-btn tool" data-shape="cross"><i class="bi bi-x-lg"></i></button>
             <button class="shape-btn tool" data-shape="chevron"><i class="bi bi-chevron-right"></i></button>
             <button class="shape-btn tool" data-shape="chevron"><i class="bi bi-chevron-left"></i></button>
             <button class="shape-btn tool" data-shape="octagon"><i class="bi bi-octagon"></i></button>
-            <button class="shape-btn tool" data-shape="html"><ion-icon name="logo-html5"></ion-icon></button>
-            <button class="shape-btn tool" data-shape="css"><ion-icon name="logo-css3"></ion-icon></button>
-            <button class="shape-btn tool" data-shape="javascript"><ion-icon name="logo-javascript"></ion-icon></button>
-            <button class="shape-btn tool" data-shape="python"><ion-icon name="logo-python"></ion-icon></button>
-            <button class="shape-btn tool" data-shape="nodejs"><ion-icon name="logo-nodejs"></ion-icon></button>
-            <button class="shape-btn tool" data-shape="react"><ion-icon name="logo-react"></ion-icon></button>
-            <button class="shape-btn tool" data-shape="angular"><ion-icon name="logo-angular"></ion-icon></button>
-            <button class="shape-btn tool" data-shape="github"><i class="bi bi-github"></i></button>
-            <button class="shape-btn tool" data-shape="facebook"><i class="bi bi-facebook"></i></button>
-            <button class="shape-btn tool" data-shape="instagram"><i class="bi bi-instagram"></i></button>
-            <button class="shape-btn tool" data-shape="twitter"><i class="bi bi-twitter"></i></button>
-            <button class="shape-btn tool" data-shape="youtube"><i class="bi bi-youtube"></i></button>
-            <button class="shape-btn tool" data-shape="linkedin"><i class="bi bi-linkedin"></i></button>
-            <button class="shape-btn tool" data-shape="whatsapp"><i class="bi bi-whatsapp"></i></button>
-            <button class="shape-btn tool" data-shape="telegram"><i class="bi bi-telegram"></i></button>
-            <button class="shape-btn tool" data-shape="tiktok"><i class="bi bi-tiktok"></i></button>
-            <button class="shape-btn tool" data-shape="snapchat"><i class="bi bi-snapchat"></i></button>
-            <button class="shape-btn tool" data-shape="pinterest"><i class="bi bi-pinterest"></i></button>
+            <button class="shape-btn tool" data-shape="trapezoid"><i class="bi bi-box"></i></button>
         </div>
     </div>
 

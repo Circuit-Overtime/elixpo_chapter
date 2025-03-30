@@ -1276,7 +1276,24 @@ function selectTool(toolId) {
 window.addEventListener('beforeunload', saveAllData);
 
 // Load data on window load
-window.addEventListener('load', loadAllData);
+window.addEventListener('load', () => {
+    loadStickyNotes();
+    loadAllData();
+    
+    // Add width button event listeners
+    document.querySelectorAll('.width-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all width buttons
+            document.querySelectorAll('.width-btn').forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            btn.classList.add('active');
+            // Update stroke width
+            selectedStrokeWidth = parseInt(btn.dataset.width);
+            // Update stroke width select
+            document.getElementById('strokeWidth').value = selectedStrokeWidth;
+        });
+    });
+});
 
 document.getElementById('sticky-notes').addEventListener('click', () => {
     createStickyNote();
