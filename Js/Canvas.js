@@ -663,9 +663,6 @@ function drawElement(element) {
                 ctx.fillText(element.text, element.x1, element.y1);
             }
             break;
-        case 'arrow':
-            drawArrow(ctx, element.x1, element.y1, element.x2, element.y2, element.strokeWidth || selectedStrokeWidth, element.color || selectedColor);
-            break;
         case 'triangle':
             drawPolygon(ctx, element.x1, element.y1, element.x2, element.y2, 3, options);
             break;
@@ -1236,8 +1233,8 @@ function handleKeyDown(event) {
         document.getElementById('circle').click();
     }
     if (key === 'a' || key === '5') {
-        selectTool('arrow');
-        document.getElementById('arrow').click();
+        selectTool('arrowhead');
+        document.getElementById('arrowhead').click();
     }
     if (key === 'p' || key === '6') {
         selectTool('pencil');
