@@ -165,3 +165,11 @@ body.light-theme .search-item:hover {
 body.light-theme .search-category {
     color: #666666;
 }
+
+body.light-theme .collapse-tab {
+    background: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    border-right: none;
+    color: #000000;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+}
