@@ -1352,6 +1352,30 @@ window.addEventListener('load', () => {
             }
         });
     });
+
+    // Add floating tab collapse functionality
+    const floatingTab = document.getElementById('floating-tab');
+    const collapseButton = document.getElementById('collapse-tab');
+
+    collapseButton.addEventListener('click', () => {
+        floatingTab.classList.toggle('collapsed');
+    });
+
+    // Save collapse state
+    const savedCollapseState = localStorage.getItem('floatingTabCollapsed');
+    if (savedCollapseState === 'true') {
+        floatingTab.classList.add('collapsed');
+    }
+
+    // Update collapse state in storage when changed
+    const observer = new MutationObserver(() => {
+        localStorage.setItem('floatingTabCollapsed', floatingTab.classList.contains('collapsed'));
+    });
+    
+    observer.observe(floatingTab, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
 });
 
 // Search functionality
