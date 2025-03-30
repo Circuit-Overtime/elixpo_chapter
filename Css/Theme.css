@@ -122,6 +122,12 @@ body.light-theme .width-btn.active {
     color: #ffffff;
 }
 
+body.light-theme .opacity-control {
+    background: #f6f6f6;
+    color: #000000;
+    border: 1px solid #e0e0e0;
+}
+
 .light-theme .opacity-slider {
     background: #e0e0e0;
 }

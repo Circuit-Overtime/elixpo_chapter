@@ -269,20 +269,21 @@ html {
     border-radius: 10px;
     margin: 5px 0;
     width: 100%;
+    height: 40px;
 }
 
 .opacity-slider {
     width: 100%;
-    height: 4px;
+    height: 8px;
     -webkit-appearance: none;
-    background: #31303B;
-    border-radius: 2px;
+    background: #818181;
+    border-radius: 12px;
 }
 
 .opacity-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     background: #3182ED;
     border-radius: 50%;
     cursor: pointer;
