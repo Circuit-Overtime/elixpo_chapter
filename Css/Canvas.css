@@ -184,38 +184,6 @@ html {
     z-index: 1000;
     right: 20px;
     top: 80px;
-    transition: transform 0.3s ease, right 0.3s ease;
-}
-
-.floating-tab.collapsed {
-    right: -180px;
-}
-
-.collapse-tab {
-    position: absolute;
-    left: -25px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 25px;
-    height: 50px;
-    background: #202025;
-    border: none;
-    border-radius: 8px 0 0 8px;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.floating-tab.collapsed .collapse-button i {
-    transform: rotate(180deg);
-}
-
-.collapse-tab i {
-    transition: transform 0.3s ease;
-    font-size: large;
 }
 
 .color-grid::-webkit-scrollbar {

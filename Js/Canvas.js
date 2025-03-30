@@ -1316,7 +1316,9 @@ window.addEventListener('load', () => {
         });
     });
 
-    // Add opacity slider event listener
+    // Remove all collapse tab related event listeners and localStorage handling
+
+    // Save opacity state
     const opacitySlider = document.getElementById('opacity-slider');
 
     opacitySlider.addEventListener('input', (e) => {
