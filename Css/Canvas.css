@@ -230,6 +230,8 @@ html {
     backdrop-filter: blur(5px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
 }
 
 .width-grid {
@@ -307,7 +309,7 @@ html {
 
 .floating-tab-divider {
     height: 1px;
-    background: #5c5c5c;
+    background: #3e3e3e;
     margin: 15px 0;
 }
 
