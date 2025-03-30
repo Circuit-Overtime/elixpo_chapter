@@ -678,6 +678,27 @@ function drawElement(element) {
         case 'hexagon':
             drawPolygon(ctx, element.x1, element.y1, element.x2, element.y2, 6, options);
             break;
+        case 'heart':
+            drawHeart(ctx, element.x1, element.y1, element.x2, element.y2, options);
+            break;
+        case 'parallelogram':
+            drawParallelogram(ctx, element.x1, element.y1, element.x2, element.y2, options);
+            break;
+        case 'arrowhead':
+            drawArrowhead(ctx, element.x1, element.y1, element.x2, element.y2, options);
+            break;
+        case 'plus':
+            drawPlus(ctx, element.x1, element.y1, element.x2, element.y2, options);
+            break;
+        case 'cross':
+            drawCross(ctx, element.x1, element.y1, element.x2, element.y2, options);
+            break;
+        case 'chevron':
+            drawChevron(ctx, element.x1, element.y1, element.x2, element.y2, options);
+            break;
+        case 'octagon':
+            drawPolygon(ctx, element.x1, element.y1, element.x2, element.y2, 8, options);
+            break;
     }
 }
 
@@ -1396,3 +1417,91 @@ window.addEventListener('beforeunload', () => {
     saveStickyNotes();
     saveAllData();
 });
+
+function drawHeart(ctx, x1, y1, x2, y2, options) {
+    const width = Math.abs(x2 - x1);
+    const height = Math.abs(y2 - y1);
+    const topX = x1 + width / 2;
+    const topY = y1 + height * 0.3;
+
+    ctx.beginPath();
+    ctx.moveTo(topX, topY);
+    
+    // Left curve
+    ctx.bezierCurveTo(
+        x1, y1,
+        x1, y1 + height / 2,
+        topX, y1 + height
+    );
+    
+    // Right curve
+    ctx.bezierCurveTo(
+        x2, y1 + height / 2,
+        x2, y1,
+        topX, topY
+    );
+    
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
+}
+
+function drawParallelogram(ctx, x1, y1, x2, y2, options) {
+    const offset = Math.abs(x2 - x1) / 4;
+    ctx.beginPath();
+    ctx.moveTo(x1 + offset, y1);
+    ctx.lineTo(x2, y1);
+    ctx.lineTo(x2 - offset, y2);
+    ctx.lineTo(x1, y2);
+    ctx.closePath();
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
+}
+
+function drawArrowhead(ctx, x1, y1, x2, y2, options) {
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    const width = length / 3;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.lineTo(x2 - width * Math.cos(angle - Math.PI/6), y2 - width * Math.sin(angle - Math.PI/6));
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - width * Math.cos(angle + Math.PI/6), y2 - width * Math.sin(angle + Math.PI/6));
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
+}
+
+function drawPlus(ctx, x1, y1, x2, y2, options) {
+    const centerX = (x1 + x2) / 2;
+    const centerY = (y1 + y2) / 2;
+    const size = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
+
+    ctx.beginPath();
+    ctx.moveTo(centerX - size/2, centerY);
+    ctx.lineTo(centerX + size/2, centerY);
+    ctx.moveTo(centerX, centerY - size/2);
+    ctx.lineTo(centerX, centerY + size/2);
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
+}
+
+function drawCross(ctx, x1, y1, x2, y2, options) {
+    const size = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
+    const centerX = (x1 + x2) / 2;
+    const centerY = (y1 + y2) / 2;
+
+    ctx.beginPath();
+    ctx.moveTo(centerX - size/2, centerY - size/2);
+    ctx.lineTo(centerX + size/2, centerY + size/2);
+    ctx.moveTo(centerX + size/2, centerY - size/2);
+    ctx.lineTo(centerX - size/2, centerY + size/2);
+    ctx.strokeStyle = options.stroke;
+    ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
+}
+
