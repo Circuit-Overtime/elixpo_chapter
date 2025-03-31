@@ -365,6 +365,20 @@ function handleMouseDown(e) {
         isDrawing = true;
         startX = e.offsetX;
         startY = e.offsetY;
+    } else if (selectedTool === 'fill-color') {
+        const clickedX = e.offsetX;
+        const clickedY = e.offsetY;
+        const elementToFill = getElementAtPosition(clickedX, clickedY);
+        
+        if (elementToFill) {
+            elementToFill.fillColor = selectedColor;
+            saveState();
+            redrawCanvas();
+            // Switch to pointer tool after filling
+            selectTool('pointer');
+            document.getElementById('pointer').click();
+        }
+        return;
     } else {
         startDrawing(e);
     }
@@ -647,7 +661,8 @@ function drawElement(element) {
         fillWeight: 0.5,
         bowing: 0.5,
         curveFitting: 1,
-        simplification: 0.5
+        simplification: 0.5,
+        fill: element.fillColor || 'transparent' // Add this line
     };
 
     // Set global alpha for opacity
@@ -664,9 +679,17 @@ function drawElement(element) {
             const width = element.x2 - element.x1;
             const height = element.y2 - element.y1;
             drawRoundedRectangle(ctx, element.x1, element.y1, width, height, 10, options);
+            if (element.fillColor) {
+                ctx.fillStyle = element.fillColor;
+                ctx.fill();
+            }
             return;
         case 'circle':
             drawSmoothCircle(ctx, element.x1, element.y1, element.x2, element.y2, options);
+            if (element.fillColor) {
+                ctx.fillStyle = element.fillColor;
+                ctx.fill();
+            }
             break;
         case 'text':
             ctx.font = '25px "Comic Sans MS"'; // Set default font to Comic Sans MS
@@ -757,6 +780,10 @@ function drawPolygon(ctx, x1, y1, x2, y2, sides, options) {
         }
     }
     ctx.closePath();
+    if (options.fill !== 'transparent') {
+        ctx.fillStyle = options.fill;
+        ctx.fill();
+    }
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
@@ -781,6 +808,10 @@ function drawStar(ctx, x1, y1, x2, y2, options) {
         }
     }
     ctx.closePath();
+    if (options.fill !== 'transparent') {
+        ctx.fillStyle = options.fill;
+        ctx.fill();
+    }
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
@@ -798,6 +829,10 @@ function drawDiamond(ctx, x1, y1, x2, y2, options) {
     ctx.lineTo(centerX, y2);
     ctx.lineTo(x1, centerY);
     ctx.closePath();
+    if (options.fill !== 'transparent') {
+        ctx.fillStyle = options.fill;
+        ctx.fill();
+    }
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
@@ -960,6 +995,8 @@ function updateCursorStyle() {
         canvas.style.cursor = 'text';
     } else if (selectedTool === 'pointer') {
         canvas.style.cursor = 'move';
+    } else if (selectedTool === 'fill-color') {
+        canvas.style.cursor = 'crosshair';
     } else {
         canvas.style.cursor = 'crosshair';
     }
@@ -1645,6 +1682,11 @@ function drawHeart(ctx, x1, y1, x2, y2, options) {
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
+    ctx.closePath();
+    if (options.fill !== 'transparent') {
+        ctx.fillStyle = options.fill;
+        ctx.fill();
+    }
 }
 
 function drawParallelogram(ctx, x1, y1, x2, y2, options) {
@@ -1655,6 +1697,10 @@ function drawParallelogram(ctx, x1, y1, x2, y2, options) {
     ctx.lineTo(x2 - offset, y2);
     ctx.lineTo(x1, y2);
     ctx.closePath();
+    if (options.fill !== 'transparent') {
+        ctx.fillStyle = options.fill;
+        ctx.fill();
+    }
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
@@ -1680,12 +1726,22 @@ function drawPlus(ctx, x1, y1, x2, y2, options) {
     const centerX = (x1 + x2) / 2;
     const centerY = (y1 + y2) / 2;
     const size = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
+    const thickness = size / 4;
 
     ctx.beginPath();
-    ctx.moveTo(centerX - size / 2, centerY);
-    ctx.lineTo(centerX + size / 2, centerY);
-    ctx.moveTo(centerX, centerY - size / 2);
-    ctx.lineTo(centerX, centerY + size / 2);
+    ctx.moveTo(centerX - size/2, centerY - thickness/2);
+    ctx.lineTo(centerX + size/2, centerY - thickness/2);
+    ctx.lineTo(centerX + size/2, centerY + thickness/2);
+    ctx.lineTo(centerX + thickness/2, centerY + thickness/2);
+    ctx.lineTo(centerX + thickness/2, centerY + size/2);
+    ctx.lineTo(centerX - thickness/2, centerY + size/2);
+    ctx.lineTo(centerX - thickness/2, centerY + thickness/2);
+    ctx.lineTo(centerX - size/2, centerY + thickness/2);
+    ctx.closePath();
+    if (options.fill !== 'transparent') {
+        ctx.fillStyle = options.fill;
+        ctx.fill();
+    }
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
@@ -1695,14 +1751,40 @@ function drawCross(ctx, x1, y1, x2, y2, options) {
     const size = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
     const centerX = (x1 + x2) / 2;
     const centerY = (y1 + y2) / 2;
-
+    const thickness = size / 4;
+    
     ctx.beginPath();
-    ctx.moveTo(centerX - size / 2, centerY - size / 2);
-    ctx.lineTo(centerX + size / 2, centerY + size / 2);
-    ctx.moveTo(centerX + size / 2, centerY - size / 2);
-    ctx.lineTo(centerX - size / 2, centerY + size / 2);
+    // First diagonal
+    ctx.moveTo(centerX - size/2, centerY - size/2);
+    ctx.lineTo(centerX - size/2 + thickness, centerY - size/2);
+    ctx.lineTo(centerX + size/2, centerY + size/2 - thickness);
+    ctx.lineTo(centerX + size/2, centerY + size/2);
+    ctx.lineTo(centerX + size/2 - thickness, centerY + size/2);
+    ctx.lineTo(centerX - size/2, centerY - size/2 + thickness);
+    ctx.closePath();
+    
+    if (options.fill !== 'transparent') {
+        ctx.fillStyle = options.fill;
+        ctx.fill();
+    }
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
+    
+    // Second diagonal
+    ctx.beginPath();
+    ctx.moveTo(centerX + size/2, centerY - size/2);
+    ctx.lineTo(centerX + size/2, centerY - size/2 + thickness);
+    ctx.lineTo(centerX - size/2 + thickness, centerY + size/2);
+    ctx.lineTo(centerX - size/2, centerY + size/2);
+    ctx.lineTo(centerX - size/2, centerY + size/2 - thickness);
+    ctx.lineTo(centerX + size/2 - thickness, centerY - size/2);
+    ctx.closePath();
+    
+    if (options.fill !== 'transparent') {
+        ctx.fillStyle = options.fill;
+        ctx.fill();
+    }
     ctx.stroke();
 }
 
