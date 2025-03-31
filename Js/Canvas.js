@@ -1727,23 +1727,35 @@ function drawPlus(ctx, x1, y1, x2, y2, options) {
     const centerY = (y1 + y2) / 2;
     const size = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
     const thickness = size / 4;
-
+    
     ctx.beginPath();
+    // Horizontal line of the plus
     ctx.moveTo(centerX - size/2, centerY - thickness/2);
     ctx.lineTo(centerX + size/2, centerY - thickness/2);
     ctx.lineTo(centerX + size/2, centerY + thickness/2);
-    ctx.lineTo(centerX + thickness/2, centerY + thickness/2);
-    ctx.lineTo(centerX + thickness/2, centerY + size/2);
-    ctx.lineTo(centerX - thickness/2, centerY + size/2);
-    ctx.lineTo(centerX - thickness/2, centerY + thickness/2);
     ctx.lineTo(centerX - size/2, centerY + thickness/2);
     ctx.closePath();
+    
     if (options.fill !== 'transparent') {
         ctx.fillStyle = options.fill;
         ctx.fill();
     }
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
+    ctx.stroke();
+    
+    // Vertical line of the plus
+    ctx.beginPath();
+    ctx.moveTo(centerX - thickness/2, centerY - size/2);
+    ctx.lineTo(centerX + thickness/2, centerY - size/2);
+    ctx.lineTo(centerX + thickness/2, centerY + size/2);
+    ctx.lineTo(centerX - thickness/2, centerY + size/2);
+    ctx.closePath();
+    
+    if (options.fill !== 'transparent') {
+        ctx.fillStyle = options.fill;
+        ctx.fill();
+    }
     ctx.stroke();
 }
 
