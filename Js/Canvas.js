@@ -1302,6 +1302,15 @@ function handleKeyDown(event) {
     // }
 
     if (key === 'm' || key === '0') toggleMainToolbar2();
+
+    // Add search and image shortcuts
+    if (key === '/') {
+        event.preventDefault(); // Prevent browser's find feature
+        document.getElementById('search').click();
+    }
+    if (key === 'i' || key === '9') {
+        document.getElementById('image').click();
+    }
 }
 
 function selectTool(toolId) {

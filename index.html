@@ -68,7 +68,7 @@
             <i class="bi bi-type"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">8</span>
         </button>
-        <button class="tool" id="image" title="Image -- I"
+        <button class="tool" id="image" title="Image -- I or 9"
             onclick="document.getElementById('fileInput').click(); document.getElementById('instructions').textContent = 'Select an image to upload to canvas.'">
             <i class="bi bi-image"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">9</span>
@@ -76,6 +76,11 @@
         <input type="file" id="fileInput" accept="image/*" style="display: none;">
 
         <div class="toolbar-divider"></div>
+
+        <button class="tool" id="fill-color" title="Fill"
+            onclick="document.getElementById('instructions').textContent = 'Select Shades and Colors to Fill'">
+            <i class="fa-solid fa-fill-drip"></i>
+        </button>
 
         <button class="tool" id="search" title="search -- /"
             onclick="document.getElementById('instructions').textContent = 'Search Tools and Colors'">
@@ -189,8 +194,12 @@
         </div>
     </div>
     <script src="Icons/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/rough.js/2.1.1/rough.js" integrity="sha512-sZtT5AmC0DFqxtF/WG8fUVvsum8ZkIoHa08hQO5css2CRXZrvMt9DwMZ4hFNQZiJtwZnmc413p/msPhYMyjlPA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/rough.js/2.1.1/rough.min.js" integrity="sha512-lTLYEWPPtelBz0gl9pujLocRWfHSKaULk5s8vrpzjBqPmmCTByfkhRRwBX8Vvq6hY8IKxATwI4q1qsqb9WtY1g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/rough.js/2.1.1/rough.js"
+        integrity="sha512-sZtT5AmC0DFqxtF/WG8fUVvsum8ZkIoHa08hQO5css2CRXZrvMt9DwMZ4hFNQZiJtwZnmc413p/msPhYMyjlPA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/rough.js/2.1.1/rough.min.js"
+        integrity="sha512-lTLYEWPPtelBz0gl9pujLocRWfHSKaULk5s8vrpzjBqPmmCTByfkhRRwBX8Vvq6hY8IKxATwI4q1qsqb9WtY1g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="Js/Canvas.js"></script>
 </body>
 
