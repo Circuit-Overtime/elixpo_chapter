@@ -26,14 +26,6 @@ html {
     text-align: center;
 }
 
-.bi-type {
-    font-size: 22px;
-}
-
-.bi-cursor {
-    transform: rotate(290deg);
-}
-
 #theme-toggle {
     position: fixed;
     right: 20px;
@@ -134,7 +126,6 @@ html {
 }
 
 .tool.active {
-    /* background-color: #4387f4; */
     background-color: #3182ED;
 }
 

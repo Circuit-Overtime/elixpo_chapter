@@ -35,7 +35,7 @@
 
         <button class="tool" id="pointer" title="Pointer -- Y or 2"
             onclick="document.getElementById('instructions').textContent = 'Click and drag objects to move them around the canvas freely.'">
-            <i class="bi bi-cursor"></i>
+            <i class="bi bi-cursor" style="transform: rotate(290deg);"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">2</span>
         </button>
         <button class="tool" id="rectangle" title="Rectangle -- R or 3"
@@ -65,7 +65,7 @@
         </button>
         <button class="tool" id="text" title="Text -- T or 8"
             onclick="document.getElementById('instructions').textContent = 'Click to add text. Type and click outside when done.'">
-            <i class="bi bi-type"></i>
+            <i class="bi bi-type" style="font-size: 22px;"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">8</span>
         </button>
         <button class="tool" id="image" title="Image -- I or 9"
@@ -77,9 +77,9 @@
 
         <div class="toolbar-divider"></div>
 
-        <button class="tool" id="fill-color" title="Fill"
-            onclick="document.getElementById('instructions').textContent = 'Select Shades and Colors to Fill'">
-            <i class="fa-solid fa-fill-drip"></i>
+        <button class="tool" id="fill-color" title="Color Fill"
+            onclick="document.getElementById('instructions').textContent = 'Fill Colors Inside Shapes'">
+            <ion-icon name="square" style="font-size: 22px;"></ion-icon>
         </button>
 
         <button class="tool" id="search" title="search -- /"
