@@ -133,8 +133,6 @@
     }
 }
 
-
-
 @media (max-width: 500px) {
     .sidebar-dropdown {
         width: 100%;
@@ -213,6 +211,24 @@
         padding: 5px 8px;
         gap: 14px;
     }
+
+    .themebtn {
+        width: 35px;
+        height: 35px;
+        font-size: 15px;
+    }
+
+    .sidebar-dropdown {
+        top: 100px;
+        left: 20px;
+        width: 30%;
+    }
+
+    .sidebarbtn {
+        width: 35px;
+        height: 35px;
+        font-size: 15px;
+    }
 }
 
 @media (max-width: 500px) {
@@ -290,15 +306,40 @@
         gap: 14px;
     }
 
+    .zoom-in-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+    }
+
+    .zoom-out-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+    }
+
     #theme-toggle {
         top: 95%;
         right: 27.8%;
         transform: translateY(-50%);
     }
 
+    .themebtn {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+    }
+
     .sidebar-dropdown {
-        width: calc(100% - 40px);
+        top: 200px;
         left: 20px;
+        width: 50%;
+    }
+
+    .sidebarbtn {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
     }
 }
 
@@ -331,6 +372,12 @@
         left: 3px;
         padding: 5px 5px;
         display: flex;
+    }
+
+    .sidebarbtn {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
     }
 
     #main-toolbar {
@@ -377,10 +424,34 @@
         gap: 14px;
     }
 
+    .zoom-in-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+    }
+
+    .zoom-out-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+    }
+
     #theme-toggle {
         top: 95%;
         right: 32.3%;
         transform: translateY(-50%);
+    }
+
+    .themebtn {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+    }
+
+    .sidebar-dropdown {
+        top: 200px;
+        left: 20px;
+        width: 50%;
     }
 }
 
@@ -501,6 +572,12 @@
         display: flex;
     }
 
+    .sidebarbtn {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+
     #main-toolbar {
         left: 50%;
     }
@@ -543,6 +620,24 @@
     #zoom-toolbar {
         padding: 5px 8px;
         gap: 14px;
+    }
+
+    .zoom-in-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+
+    .zoom-out-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+
+    .themebtn {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
     }
 
     #theme-toggle {
