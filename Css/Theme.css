@@ -58,6 +58,31 @@ body.light-theme #instructions {
     color: #b3adad;
 }
 
+
+body.light-theme .themebtn {
+    color: #000000;
+}
+
+body.light-theme .themebtn:hover {
+    background-color: #e0e0e0;
+}
+
+body.light-theme .zoom-in-btn {
+    color: #000000;
+}
+
+body.light-theme .zoom-in-btn:hover {
+    background-color: #e0e0e0;
+}
+
+body.light-theme .zoom-out-btn {
+    color: #000000;
+}
+
+body.light-theme .zoom-out-btn:hover {
+    background-color: #e0e0e0;
+}
+
 body.light-theme #zoom-percentage {
     color: #000000;
     background-color: #FCFCFC;
@@ -166,10 +191,18 @@ body.light-theme .search-category {
     color: #666666;
 }
 
-/* Sidebar Dropdown Theme Styles */
+body.light-theme .sidebarbtn {
+    color: #000000;
+}
+
+body.light-theme .sidebarbtn:hover {
+    background-color: #e0e0e0;
+}
+
 body.light-theme .sidebar-dropdown {
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    background: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 body.light-theme .sidebar-header {

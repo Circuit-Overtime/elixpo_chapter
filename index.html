@@ -26,55 +26,51 @@ Description: An intuitive digital canvas for creative expression and collaborati
     <canvas id="canvas"></canvas>
 
     <div id="sidebar" class="toolbar">
-        <button class="tool" id="sidebar" title="Sidebar"><i class="bi bi-three-dots-vertical"></i></button>
+        <button class="sidebarbtn" id="sidebar" title="Sidebar"><i class="bi bi-grid"></i></button>
     </div>
 
     <div id="sidebar-dropdown" class="sidebar-dropdown">
-        <div class="sidebar-header">
-            <h3>InkFlow</h3>
-            <button id="close-sidebar"><i class="bi bi-x"></i></button>
-        </div>
         <div class="sidebar-content">
             <div class="menu-section">
                 <h4>File</h4>
                 <button class="menu-item">
                     <i class="bi bi-file-earmark-plus"></i>
                     <span>New File</span>
-                    <span class="shortcut">⌘N</span>
+                    <span class="shortcut">Ctrl N</span>
                 </button>
                 <button class="menu-item">
                     <i class="bi bi-folder2-open"></i>
                     <span>Open</span>
-                    <span class="shortcut">⌘O</span>
+                    <span class="shortcut">Ctrl O</span>
                 </button>
                 <button class="menu-item">
                     <i class="bi bi-save"></i>
                     <span>Save</span>
-                    <span class="shortcut">⌘S</span>
+                    <span class="shortcut">Ctrl S</span>
                 </button>
                 <button class="menu-item">
                     <i class="bi bi-share"></i>
                     <span>Share</span>
-                    <span class="shortcut">⌘⇧S</span>
+                    <span class="shortcut">Ctrl W</span>
                 </button>
             </div>
             <div class="menu-divider"></div>
             <div class="menu-section">
                 <h4>Edit</h4>
                 <button class="menu-item">
-                    <i class="bi bi-clipboard"></i>
-                    <span>Copy</span>
-                    <span class="shortcut">⌘C</span>
-                </button>
-                <button class="menu-item">
                     <i class="bi bi-scissors"></i>
                     <span>Cut</span>
-                    <span class="shortcut">⌘X</span>
+                    <span class="shortcut">Ctrl X</span>
+                </button>
+                <button class="menu-item">
+                    <i class="bi bi-clipboard"></i>
+                    <span>Copy</span>
+                    <span class="shortcut">Ctrl C</span>
                 </button>
                 <button class="menu-item">
                     <i class="bi bi-clipboard-plus"></i>
                     <span>Paste</span>
-                    <span class="shortcut">⌘V</span>
+                    <span class="shortcut">Ctrl V</span>
                 </button>
             </div>
             <div class="menu-divider"></div>
@@ -161,7 +157,7 @@ Description: An intuitive digital canvas for creative expression and collaborati
         <div id="instructions">Choose any Tool. Click to get started</div>
     </div>
     <div id="theme-toggle" class="toolbar">
-        <button class="tool" id="theme-btn" title="Theme -- Q or *"><i class="fas fa-moon"></i></button>
+        <button class="themebtn" id="theme-btn" title="Theme -- Q or *"><i class="fas fa-moon"></i></button>
     </div>
     <div id="undoredo" class="toolbar">
         <button class="tool" id="undo" title="Undo -- Ctrl + Z"><i class="bi bi-arrow-90deg-left"></i></button>
@@ -247,9 +243,10 @@ Description: An intuitive digital canvas for creative expression and collaborati
         <button class="tool" id="clear" title="Clear All -- Ctrl + D"><i class="fas fa-trash-alt"></i></button>
     </div>
     <div id="zoom-toolbar" class="toolbar">
-        <button class="tool" id="zoom-in" title="Zoom In -- Ctrl +"><i class="bi bi-plus-lg"></i></button>&nbsp&nbsp
+        <button class="zoom-in-btn" id="zoom-in" title="Zoom In -- Ctrl +"><i
+                class="bi bi-plus-lg"></i></button>&nbsp&nbsp
         <div id="zoom-percentage" class="toolbar">100%</div>
-        <button class="tool" id="zoom-out" title="Zoom Out -- Ctrl -"><i class="bi bi-dash-lg"></i></button>
+        <button class="zoom-out-btn" id="zoom-out" title="Zoom Out -- Ctrl -"><i class="bi bi-dash-lg"></i></button>
     </div>
     <textarea type="text" id="textInput" class="textInput" spellcheck="false" autocomplete="off" multiline></textarea>
 

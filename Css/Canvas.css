@@ -26,6 +26,27 @@ html {
     text-align: center;
 }
 
+.themebtn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    border-radius: 30%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.themebtn:hover {
+    background-color: #31303B;
+    transform: scale(1.1);
+}
+
 #theme-toggle {
     position: fixed;
     right: 20px;
@@ -79,6 +100,48 @@ html {
     transform: translateY(-50%);
     display: flex;
     padding: 5px 5px;
+}
+
+.zoom-in-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    border-radius: 30%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.zoom-in-btn:hover {
+    background-color: #31303B;
+    transform: scale(1.1);
+}
+
+.zoom-out-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    border-radius: 30%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.zoom-out-btn:hover {
+    background-color: #31303B;
+    transform: scale(1.1);
 }
 
 #zoom-toolbar {
@@ -433,7 +496,27 @@ html {
     letter-spacing: 0.5px;
 }
 
-/* Updated Sidebar Dropdown Styles */
+.sidebarbtn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    border-radius: 30%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.sidebarbtn:hover {
+    background-color: #31303B;
+    transform: scale(1.1);
+}
+
 .sidebar-dropdown {
     position: fixed;
     top: 90px;
@@ -455,41 +538,6 @@ html {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
-}
-
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.sidebar-header h3 {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-#close-sidebar {
-    width: 30px;
-    height: 30px;
-    border: none;
-    background: none;
-    color: rgba(0, 128, 255, 0.6);
-    cursor: pointer;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    font-size: 20px;
-}
-
-#close-sidebar:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 0, 0, 0.9);
 }
 
 .sidebar-content {
