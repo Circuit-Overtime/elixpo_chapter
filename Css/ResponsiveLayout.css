@@ -567,9 +567,10 @@
 
     #sidebar {
         top: 15%;
-        left: 3px;
+        left: 20px;
         padding: 5px 5px;
         display: flex;
+        top:92.6%;
     }
 
     .sidebarbtn {
@@ -589,12 +590,13 @@
         display: flex;
         flex-direction: row;
         padding: 5px 10px;
+        left: 17%;
     }
 
     #delete {
         position: fixed;
         top: 95%;
-        left: 30%;
+        left: 41.2%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -647,7 +649,7 @@
     }
 
     .sidebar-dropdown {
-        top: 200px;
+        top: 150px;
         left: 20px;
         width: 50%;
     }
