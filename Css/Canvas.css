@@ -596,13 +596,19 @@ html {
     color: rgba(255, 255, 255, 0.7);
 }
 
+.menu-item a{
+    text-decoration: none;
+    color: white;
+    flex: 1;
+}
+
 .menu-item span {
     flex: 1;
 }
 
 .menu-item .shortcut {
     flex: none;
-    font-size: 11px;
+    font-size: 12px;
     color: rgba(255, 255, 255, 0.4);
     margin-left: 16px;
 }

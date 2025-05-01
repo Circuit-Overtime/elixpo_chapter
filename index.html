@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InkFlow - Collaborative Workspace for Creative Ones</title>
+    <title>InkFlow - Collaborative Canvas for Creative Ones</title>
     <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@latest/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@latest/dist/ionicons/ionicons.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -34,7 +34,7 @@ Description: An intuitive digital canvas for creative expression and collaborati
             <div class="menu-section">
                 <h4>File</h4>
                 <button class="menu-item">
-                    <i class="bi bi-file-earmark-plus"></i>
+                    <i class="bi bi-folder-plus"></i>
                     <span>New File</span>
                     <span class="shortcut">Ctrl N</span>
                 </button>
@@ -42,11 +42,6 @@ Description: An intuitive digital canvas for creative expression and collaborati
                     <i class="bi bi-folder2-open"></i>
                     <span>Open</span>
                     <span class="shortcut">Ctrl O</span>
-                </button>
-                <button class="menu-item">
-                    <i class="bi bi-save"></i>
-                    <span>Save</span>
-                    <span class="shortcut">Ctrl S</span>
                 </button>
                 <button class="menu-item">
                     <i class="bi bi-share"></i>
@@ -57,6 +52,11 @@ Description: An intuitive digital canvas for creative expression and collaborati
             <div class="menu-divider"></div>
             <div class="menu-section">
                 <h4>Edit</h4>
+                <button class="menu-item">
+                    <i class="bi bi-floppy"></i>
+                    <span>Save</span>
+                    <span class="shortcut">Ctrl S</span>
+                </button>
                 <button class="menu-item">
                     <i class="bi bi-scissors"></i>
                     <span>Cut</span>
@@ -77,9 +77,14 @@ Description: An intuitive digital canvas for creative expression and collaborati
             <div class="menu-section">
                 <h4>Canvas</h4>
                 <button class="menu-item">
-                    <i class="bi bi-arrows-fullscreen"></i>
-                    <span>Fit to Screen</span>
-                    <span class="shortcut">Ctrl 1</span>
+                    <i class="bi bi-zoom-in"></i>
+                    <span>Zoom In</span>
+                    <span class="shortcut">Ctrl +</span>
+                </button>
+                <button class="menu-item">
+                    <i class="bi bi-zoom-out"></i>
+                    <span>Zoom Out</span>
+                    <span class="shortcut">Ctrl -</span>
                 </button>
                 <button class="menu-item">
                     <i class="bi bi-aspect-ratio"></i>
@@ -92,7 +97,7 @@ Description: An intuitive digital canvas for creative expression and collaborati
                 <h4>Account</h4>
                 <button class="menu-item">
                     <i class="bi bi-person"></i>
-                    <span>Sign In</span>
+                    <a href="./Auth/Signin.html">Sign In</a>
                     <span class="shortcut">Ctrl ⇧</span>
                 </button>
             </div>

@@ -222,6 +222,10 @@ body.light-theme #close-sidebar:hover {
     color: rgba(255, 0, 0, 0.9);
 }
 
+body.light-theme .menu-item a {
+    color: #000000;
+}
+
 body.light-theme .menu-section h4 {
     color: rgba(0, 0, 0, 0.4);
 }
