@@ -21,11 +21,77 @@ Version: 1.0
 Author: Vivek
 Description: An intuitive digital canvas for creative expression and collaboration
 -->
+
 <body>
     <canvas id="canvas"></canvas>
 
     <div id="sidebar" class="toolbar">
         <button class="tool" id="sidebar" title="Sidebar"><i class="bi bi-three-dots-vertical"></i></button>
+    </div>
+
+    <div id="sidebar-dropdown" class="sidebar-dropdown">
+        <div class="sidebar-header">
+            <h3>InkFlow</h3>
+            <button id="close-sidebar"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="sidebar-content">
+            <div class="menu-section">
+                <h4>File</h4>
+                <button class="menu-item">
+                    <i class="bi bi-file-earmark-plus"></i>
+                    <span>New File</span>
+                    <span class="shortcut">⌘N</span>
+                </button>
+                <button class="menu-item">
+                    <i class="bi bi-folder2-open"></i>
+                    <span>Open</span>
+                    <span class="shortcut">⌘O</span>
+                </button>
+                <button class="menu-item">
+                    <i class="bi bi-save"></i>
+                    <span>Save</span>
+                    <span class="shortcut">⌘S</span>
+                </button>
+                <button class="menu-item">
+                    <i class="bi bi-share"></i>
+                    <span>Share</span>
+                    <span class="shortcut">⌘⇧S</span>
+                </button>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-section">
+                <h4>Edit</h4>
+                <button class="menu-item">
+                    <i class="bi bi-clipboard"></i>
+                    <span>Copy</span>
+                    <span class="shortcut">⌘C</span>
+                </button>
+                <button class="menu-item">
+                    <i class="bi bi-scissors"></i>
+                    <span>Cut</span>
+                    <span class="shortcut">⌘X</span>
+                </button>
+                <button class="menu-item">
+                    <i class="bi bi-clipboard-plus"></i>
+                    <span>Paste</span>
+                    <span class="shortcut">⌘V</span>
+                </button>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-section">
+                <h4>Canvas</h4>
+                <button class="menu-item">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                    <span>Fit to Screen</span>
+                    <span class="shortcut">⇧1</span>
+                </button>
+                <button class="menu-item">
+                    <i class="bi bi-aspect-ratio"></i>
+                    <span>Reset Zoom</span>
+                    <span class="shortcut">⇧0</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <div id="main-toolbar" class="toolbar">

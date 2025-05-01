@@ -369,7 +369,7 @@ function handleMouseDown(e) {
         const clickedX = e.offsetX;
         const clickedY = e.offsetY;
         const elementToFill = getElementAtPosition(clickedX, clickedY);
-        
+
         if (elementToFill) {
             elementToFill.fillColor = selectedColor;
             saveState();
@@ -1727,15 +1727,15 @@ function drawPlus(ctx, x1, y1, x2, y2, options) {
     const centerY = (y1 + y2) / 2;
     const size = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
     const thickness = size / 4;
-    
+
     ctx.beginPath();
     // Horizontal line of the plus
-    ctx.moveTo(centerX - size/2, centerY - thickness/2);
-    ctx.lineTo(centerX + size/2, centerY - thickness/2);
-    ctx.lineTo(centerX + size/2, centerY + thickness/2);
-    ctx.lineTo(centerX - size/2, centerY + thickness/2);
+    ctx.moveTo(centerX - size / 2, centerY - thickness / 2);
+    ctx.lineTo(centerX + size / 2, centerY - thickness / 2);
+    ctx.lineTo(centerX + size / 2, centerY + thickness / 2);
+    ctx.lineTo(centerX - size / 2, centerY + thickness / 2);
     ctx.closePath();
-    
+
     if (options.fill !== 'transparent') {
         ctx.fillStyle = options.fill;
         ctx.fill();
@@ -1743,15 +1743,15 @@ function drawPlus(ctx, x1, y1, x2, y2, options) {
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
-    
+
     // Vertical line of the plus
     ctx.beginPath();
-    ctx.moveTo(centerX - thickness/2, centerY - size/2);
-    ctx.lineTo(centerX + thickness/2, centerY - size/2);
-    ctx.lineTo(centerX + thickness/2, centerY + size/2);
-    ctx.lineTo(centerX - thickness/2, centerY + size/2);
+    ctx.moveTo(centerX - thickness / 2, centerY - size / 2);
+    ctx.lineTo(centerX + thickness / 2, centerY - size / 2);
+    ctx.lineTo(centerX + thickness / 2, centerY + size / 2);
+    ctx.lineTo(centerX - thickness / 2, centerY + size / 2);
     ctx.closePath();
-    
+
     if (options.fill !== 'transparent') {
         ctx.fillStyle = options.fill;
         ctx.fill();
@@ -1764,17 +1764,17 @@ function drawCross(ctx, x1, y1, x2, y2, options) {
     const centerX = (x1 + x2) / 2;
     const centerY = (y1 + y2) / 2;
     const thickness = size / 4;
-    
+
     ctx.beginPath();
     // First diagonal
-    ctx.moveTo(centerX - size/2, centerY - size/2);
-    ctx.lineTo(centerX - size/2 + thickness, centerY - size/2);
-    ctx.lineTo(centerX + size/2, centerY + size/2 - thickness);
-    ctx.lineTo(centerX + size/2, centerY + size/2);
-    ctx.lineTo(centerX + size/2 - thickness, centerY + size/2);
-    ctx.lineTo(centerX - size/2, centerY - size/2 + thickness);
+    ctx.moveTo(centerX - size / 2, centerY - size / 2);
+    ctx.lineTo(centerX - size / 2 + thickness, centerY - size / 2);
+    ctx.lineTo(centerX + size / 2, centerY + size / 2 - thickness);
+    ctx.lineTo(centerX + size / 2, centerY + size / 2);
+    ctx.lineTo(centerX + size / 2 - thickness, centerY + size / 2);
+    ctx.lineTo(centerX - size / 2, centerY - size / 2 + thickness);
     ctx.closePath();
-    
+
     if (options.fill !== 'transparent') {
         ctx.fillStyle = options.fill;
         ctx.fill();
@@ -1782,17 +1782,17 @@ function drawCross(ctx, x1, y1, x2, y2, options) {
     ctx.strokeStyle = options.stroke;
     ctx.lineWidth = options.strokeWidth;
     ctx.stroke();
-    
+
     // Second diagonal
     ctx.beginPath();
-    ctx.moveTo(centerX + size/2, centerY - size/2);
-    ctx.lineTo(centerX + size/2, centerY - size/2 + thickness);
-    ctx.lineTo(centerX - size/2 + thickness, centerY + size/2);
-    ctx.lineTo(centerX - size/2, centerY + size/2);
-    ctx.lineTo(centerX - size/2, centerY + size/2 - thickness);
-    ctx.lineTo(centerX + size/2 - thickness, centerY - size/2);
+    ctx.moveTo(centerX + size / 2, centerY - size / 2);
+    ctx.lineTo(centerX + size / 2, centerY - size / 2 + thickness);
+    ctx.lineTo(centerX - size / 2 + thickness, centerY + size / 2);
+    ctx.lineTo(centerX - size / 2, centerY + size / 2);
+    ctx.lineTo(centerX - size / 2, centerY + size / 2 - thickness);
+    ctx.lineTo(centerX + size / 2 - thickness, centerY - size / 2);
     ctx.closePath();
-    
+
     if (options.fill !== 'transparent') {
         ctx.fillStyle = options.fill;
         ctx.fill();
@@ -1861,4 +1861,69 @@ function selectTool(toolId) {
         document.removeEventListener('keydown', handleKeyDown);
     }
 }
+
+// Sidebar functionality
+const sidebarBtn = document.querySelector('#sidebar');
+const sidebarDropdown = document.querySelector('.sidebar-dropdown');
+const closeSidebarBtn = document.querySelector('#close-sidebar');
+let isSidebarOpen = false;
+
+function toggleSidebar() {
+    isSidebarOpen = !isSidebarOpen;
+    sidebarDropdown.classList.toggle('active');
+
+    // Disable keyboard shortcuts when sidebar is open
+    if (isSidebarOpen) {
+        document.removeEventListener('keydown', handleKeyDown);
+    } else {
+        if (selectedTool !== 'text') {
+            document.addEventListener('keydown', handleKeyDown);
+        }
+    }
+}
+
+sidebarBtn.addEventListener('click', toggleSidebar);
+closeSidebarBtn.addEventListener('click', toggleSidebar);
+
+// Close sidebar when clicking outside
+document.addEventListener('click', (e) => {
+    if (isSidebarOpen &&
+        !sidebarDropdown.contains(e.target) &&
+        !sidebarBtn.contains(e.target)) {
+        toggleSidebar();
+    }
+});
+
+// Prevent clicks inside sidebar from closing it
+sidebarDropdown.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+
+// Add menu item functionality
+document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const action = item.textContent.trim().toLowerCase();
+        switch (action) {
+            case 'new file':
+                elements = [];
+                redrawCanvas();
+                break;
+            case 'save':
+                saveWork();
+                break;
+            case 'zoom in':
+                document.getElementById('zoom-in').click();
+                break;
+            case 'zoom out':
+                document.getElementById('zoom-out').click();
+                break;
+            case 'delete':
+                elements = [];
+                redrawCanvas();
+                break;
+            // Add more menu item actions as needed
+        }
+        toggleSidebar();
+    });
+});
 

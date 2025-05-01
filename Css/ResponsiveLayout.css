@@ -133,6 +133,16 @@
     }
 }
 
+
+
+@media (max-width: 500px) {
+    .sidebar-dropdown {
+        width: 100%;
+        left: -100%;
+    }
+}
+
+
 @media (max-width: 638px) {
     .toolbar {
         display: flex;
@@ -284,6 +294,11 @@
         top: 95%;
         right: 27.8%;
         transform: translateY(-50%);
+    }
+
+    .sidebar-dropdown {
+        width: calc(100% - 40px);
+        left: 20px;
     }
 }
 
@@ -448,6 +463,11 @@
         right: 34.5%;
         transform: translateY(-50%);
     }
+
+    .sidebar-dropdown {
+        width: calc(100% - 20px);
+        left: 10px;
+    }
 }
 
 @media (max-width: 400px) {
@@ -529,5 +549,11 @@
         top: 95%;
         right: 35.3%;
         transform: translateY(-50%);
+    }
+
+    .sidebar-dropdown {
+        top: 200px;
+        left: 20px;
+        width: 50%;
     }
 }

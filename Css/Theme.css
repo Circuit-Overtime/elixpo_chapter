@@ -165,3 +165,77 @@ body.light-theme .search-item:hover {
 body.light-theme .search-category {
     color: #666666;
 }
+
+/* Sidebar Dropdown Theme Styles */
+body.light-theme .sidebar-dropdown {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .sidebar-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .sidebar-header h3 {
+    color: rgba(0, 0, 0, 0.9);
+}
+
+body.light-theme #close-sidebar {
+    color: rgba(0, 128, 255, 0.6);
+}
+
+body.light-theme #close-sidebar:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: rgba(255, 0, 0, 0.9);
+}
+
+body.light-theme .menu-section h4 {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+body.light-theme .menu-divider {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .menu-item {
+    color: rgba(0, 0, 0, 0.9);
+}
+
+body.light-theme .menu-item:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .menu-item i {
+    color: rgba(0, 0, 0, 0.7);
+}
+
+body.light-theme .menu-item .shortcut {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+/* Dark theme styles are inherited from the existing theme */
+.sidebar-dropdown {
+    background: #202025;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-header {
+    border-bottom: 1px solid #31303B;
+}
+
+.sidebar-header h3 {
+    color: #ffffff;
+}
+
+.menu-section h4 {
+    color: #818181;
+}
+
+.menu-item {
+    color: #ffffff;
+    background: transparent;
+}
+
+.menu-item:hover {
+    background: #31303B;
+}
