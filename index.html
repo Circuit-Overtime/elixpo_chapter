@@ -31,75 +31,49 @@ Description: An intuitive digital canvas for creative expression and collaborati
 
     <div id="sidebar-dropdown" class="sidebar-dropdown">
         <div class="sidebar-content">
-            <div class="menu-section">
-                <h4>File</h4>
-                <button class="menu-item">
-                    <i class="bi bi-folder-plus"></i>
-                    <span>New File</span>
-                    <span class="shortcut">Ctrl N</span>
-                </button>
-                <button class="menu-item">
-                    <i class="bi bi-folder2-open"></i>
-                    <span>Open</span>
-                    <span class="shortcut">Ctrl O</span>
-                </button>
-                <button class="menu-item">
-                    <i class="bi bi-share"></i>
-                    <span>Share</span>
-                    <span class="shortcut">Ctrl W</span>
-                </button>
+            <div class="menu-item has-submenu" data-submenu="edit">
+                <span>Edit</span>
+                <i class="bi bi-chevron-right submenu-arrow"></i>
+            </div>
+            <div class="menu-item has-submenu" data-submenu="view">
+                <span>View</span>
+                <i class="bi bi-chevron-right submenu-arrow"></i>
+            </div>
+            <div class="menu-item has-submenu" data-submenu="export">
+                <span>Export</span>
+                <i class="bi bi-chevron-right submenu-arrow"></i>
+            </div>
+            <div class="menu-item">
+                <span>Insert Embed</span>
+            </div>
+            <div class="menu-item">
+                <span>Upload Media</span>
             </div>
             <div class="menu-divider"></div>
-            <div class="menu-section">
-                <h4>Edit</h4>
-                <button class="menu-item">
-                    <i class="bi bi-floppy"></i>
-                    <span>Save</span>
-                    <span class="shortcut">Ctrl S</span>
-                </button>
-                <button class="menu-item">
-                    <i class="bi bi-scissors"></i>
-                    <span>Cut</span>
-                    <span class="shortcut">Ctrl X</span>
-                </button>
-                <button class="menu-item">
-                    <i class="bi bi-clipboard"></i>
-                    <span>Copy</span>
-                    <span class="shortcut">Ctrl C</span>
-                </button>
-                <button class="menu-item">
-                    <i class="bi bi-clipboard-plus"></i>
-                    <span>Paste</span>
-                    <span class="shortcut">Ctrl V</span>
-                </button>
+            <div class="menu-item">
+                <span>Download File</span>
             </div>
             <div class="menu-divider"></div>
-            <div class="menu-section">
-                <h4>Canvas</h4>
-                <button class="menu-item">
-                    <i class="bi bi-zoom-in"></i>
-                    <span>Zoom In</span>
-                    <span class="shortcut">Ctrl +</span>
-                </button>
-                <button class="menu-item">
-                    <i class="bi bi-zoom-out"></i>
-                    <span>Zoom Out</span>
-                    <span class="shortcut">Ctrl -</span>
-                </button>
-                <button class="menu-item">
-                    <i class="bi bi-aspect-ratio"></i>
-                    <span>Reset Zoom</span>
-                    <span class="shortcut">Ctrl 0</span>
-                </button>
+            <div class="menu-item has-submenu" data-submenu="preferences">
+                <span>Preferences</span>
+                <i class="bi bi-chevron-right submenu-arrow"></i>
+            </div>
+            <div class="menu-item has-submenu" data-submenu="language">
+                <span>Language</span>
+                <i class="bi bi-chevron-right submenu-arrow"></i>
+            </div>
+            <div class="menu-item">
+                <span>Keyboard Binding</span>
+                <i class="bi bi-chevron-right submenu-arrow"></i>
+            </div>
+            <div class="menu-item has-submenu" data-submenu="help">
+                <span>Help</span>
+                <i class="bi bi-chevron-right submenu-arrow"></i>
             </div>
             <div class="menu-divider"></div>
-            <div class="menu-section">
-                <h4>Account</h4>
-                <button class="menu-item">
-                    <i class="bi bi-person"></i>
-                    <a href="./Auth/Signin.html">Sign In</a>
-                    <span class="shortcut">Ctrl ⇧</span>
-                </button>
+            <div class="menu-item">
+                <a href="./Auth/Signin.html">Sign In</a>
+                <i class="bi bi-person"></i>
             </div>
         </div>
     </div>
