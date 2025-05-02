@@ -598,10 +598,10 @@
     }
 
     #sidebar {
-        left: 20px;
+        left: 15px;
         padding: 8px 8px;
         display: flex;
-        top: 91.9%;
+        top: 92.4%;
     }
 
     .sidebarbtn {
@@ -611,7 +611,7 @@
     }
 
     .sidebar-dropdown {
-        top: 100px;
+        top: 110px;
         left: 20px;
         width: 50%;
     }
@@ -627,16 +627,17 @@
         display: flex;
         flex-direction: row;
         padding: 8px 8px;
-        left: 18%;
+        left: 17%;
     }
 
     #delete {
         position: fixed;
         top: 95%;
-        left: 41.2%;
+        left: 40.8%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
+        padding: 8px 8px;
     }
 
     #fill-color {
@@ -661,6 +662,7 @@
     }
 
     #zoom-toolbar {
+        right: 15px;
         padding: 8px 8px;
         gap: 14px;
     }
@@ -685,7 +687,17 @@
 
     #theme-toggle {
         top: 95%;
-        right: 34.4%;
+        right: 34%;
         transform: translateY(-50%);
+        padding: 8px 8px;
+    }
+
+    .floating-tab {
+        top: 110px;
+        right: 20px;
+    }
+
+    .floating-tab .shape-grid {
+        height: 116px;
     }
 }
