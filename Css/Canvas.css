@@ -505,6 +505,7 @@ html {
 }
 
 .account-card {
+    display: none;  /* Add this line to hide the card */
     background-color: #252529;
     border-radius: 10px;
     padding: 10px;
