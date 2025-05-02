@@ -58,7 +58,6 @@ body.light-theme #instructions {
     color: #b3adad;
 }
 
-
 body.light-theme .themebtn {
     color: #000000;
 }
@@ -248,6 +247,46 @@ body.light-theme .menu-item i {
 
 body.light-theme .menu-item .shortcut {
     color: rgba(0, 0, 0, 0.4);
+}
+
+/* Light theme account card styles */
+body.light-theme .account-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .profile-info .name {
+    color: #333333;
+}
+
+body.light-theme .profile-info .username {
+    color: #666666;
+}
+
+body.light-theme .actions-section {
+    border-top: 1px solid #e0e0e0;
+}
+
+body.light-theme .settings-btn {
+    background: #e5e5e5;
+    color: #000000;
+}
+
+body.light-theme .settings-btn svg {
+    fill: #666666;
+}
+
+body.light-theme .logout-btn {
+    color: #dc3545;
+}
+
+body.light-theme .logout-btn:hover {
+    background: rgba(220, 53, 69, 0.1);
+}
+
+body.light-theme .divider {
+    color: #e0e0e0;
 }
 
 /* Dark theme styles are inherited from the existing theme */

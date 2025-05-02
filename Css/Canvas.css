@@ -1,3 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Hubot+Sans:ital,wght@0,200..900;1,200..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+
+
+
+
+
+
 body,
 html {
     margin: 0;
@@ -496,6 +504,103 @@ html {
     letter-spacing: 0.5px;
 }
 
+.account-card {
+    background-color: #252529;
+    border-radius: 10px;
+    padding: 10px;
+    width: 100%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+    border: 1px solid rgb(48, 48, 48);
+}
+
+.profile-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.profile-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.name {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+    line-height: 1.2;
+    text-wrap: wrap;
+}
+
+.username {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    margin-top: 2px;
+    text-wrap: wrap;
+}
+
+.actions-section {
+    display: flex;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 10px;
+    gap: 2px;
+}
+
+.settings-btn {
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    font-size: 11.5px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #ffffff;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.logout-btn {
+    margin-left: auto;
+    color: #ff4444;
+    font-weight: 500;
+    font-size: 11.5px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 68, 68, 0.1);
+}
+
+.divider {
+    margin: 0 15px;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    height: 20px;
+}
+
 .sidebarbtn {
     width: 40px;
     height: 40px;
@@ -544,6 +649,10 @@ html {
     padding: 8px;
     max-height: calc(100vh - 200px);
     overflow-y: auto;
+}
+
+.sidebar-content::-webkit-scrollbar {
+    display: none;
 }
 
 .menu-section {
@@ -596,7 +705,7 @@ html {
     color: rgba(255, 255, 255, 0.7);
 }
 
-.menu-item a{
+.menu-item a {
     text-decoration: none;
     color: white;
     flex: 1;
