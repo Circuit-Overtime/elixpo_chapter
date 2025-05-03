@@ -533,6 +533,7 @@ html {
     left: 20px;
     padding: 5px 5px;
     display: flex;
+    font-size: 20px;
 }
 
 .sidebarbtn {
