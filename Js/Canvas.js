@@ -1230,23 +1230,13 @@ const themeIcon = themeBtn.querySelector('i');
 const currentTheme = localStorage.getItem('theme') || 'dark';
 if (currentTheme === 'light') {
     document.body.classList.add('light-theme');
-    themeIcon.classList.remove('fa-moon');
-    themeIcon.classList.add('fa-sun');
-    selectedColor = '#000000'; // Set pencil color to black
+    themeIcon.classList.remove('bi-cloud-moon');
+    themeIcon.classList.add('bi-brightness-low');
+    selectedColor = '#000000';
 } else {
-    selectedColor = '#ffffff'; // Set pencil color to white or default
-}
-
-// Function to switch colors of drawn elements between black and white
-function switchElementColors() {
-    elements.forEach(element => {
-        if (element.color === '#ffffff') {
-            element.color = '#000000';
-        } else if (element.color === '#000000') {
-            element.color = '#ffffff';
-        }
-    });
-    redrawCanvas();
+    themeIcon.classList.remove('bi-brightness-low');
+    themeIcon.classList.add('bi-cloud-moon');
+    selectedColor = '#ffffff';
 }
 
 // Theme toggle functionality
@@ -1255,19 +1245,18 @@ themeBtn.addEventListener('click', () => {
 
     if (document.body.classList.contains('light-theme')) {
         localStorage.setItem('theme', 'light');
-        themeIcon.classList.remove('fa-moon');
-        themeIcon.classList.add('fa-sun');
-        selectedColor = '#000000'; // Set pencil color to black
-        switchElementColors(); // Switch drawn elements' color
+        themeIcon.classList.remove('bi-cloud-moon');
+        themeIcon.classList.add('bi-brightness-low');
+        selectedColor = '#000000';
+        switchElementColors();
     } else {
         localStorage.setItem('theme', 'dark');
-        themeIcon.classList.remove('fa-sun');
-        themeIcon.classList.add('fa-moon');
-        selectedColor = '#ffffff'; // Reset pencil color to white or default
-        switchElementColors(); // Switch drawn elements' color
+        themeIcon.classList.remove('bi-brightness-low');
+        themeIcon.classList.add('bi-cloud-moon');
+        selectedColor = '#ffffff';
+        switchElementColors();
     }
 
-    // Redraw canvas with new theme colors
     redrawCanvas();
 });
 
