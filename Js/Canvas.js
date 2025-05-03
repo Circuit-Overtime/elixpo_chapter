@@ -58,6 +58,10 @@ let startDragPos = { x: 0, y: 0 };
 let targetPos = { x: 0, y: 0 };
 let isAnimating = false;
 
+const floatingTab = document.getElementById('floating-tab');
+const colorPalatebtn = document.getElementById('colorpalatebtn');
+let isFloatingTabVisible = false;
+
 function resizeCanvas() {
     canvas.width = window.innerWidth * 2;
     canvas.height = window.innerHeight * 2;
@@ -1985,4 +1989,24 @@ function getTouchCenter(touches) {
         y: (touches[0].clientY + touches[1].clientY) / 2
     };
 }
+
+function toggleFloatingTab() {
+    isFloatingTabVisible = !isFloatingTabVisible;
+    floatingTab.classList.toggle('hidden');
+    colorPalatebtn.classList.toggle('active');
+}
+
+// Close floating tab when clicking outside
+document.addEventListener('click', (e) => {
+    if (isFloatingTabVisible && 
+        !floatingTab.contains(e.target) && 
+        !colorPalatebtn.contains(e.target)) {
+        toggleFloatingTab();
+    }
+});
+
+// Prevent clicks inside floating tab from closing it
+floatingTab.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
 

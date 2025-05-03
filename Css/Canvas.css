@@ -224,6 +224,13 @@ html {
     z-index: 1000;
     right: 20px;
     top: 80px;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.floating-tab.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .color-grid::-webkit-scrollbar {
@@ -756,4 +763,9 @@ html {
     display: flex;
     align-items: center;
     height: 20px;
+}
+
+#colorpalatebtn.active {
+    background-color: #31303B;
+    transform: scale(1.1);
 }

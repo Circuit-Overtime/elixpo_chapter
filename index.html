@@ -168,7 +168,8 @@ Description: An intuitive digital canvas for creative expression and collaborati
         <div id="instructions">Choose any Tool. Click to get started</div>
     </div>
     <div id="color-palate" class="toolbar">
-        <button class="colorpalatebtn" id="colorpalatebtn" title="Colors & Shape"><i class="bi bi-palette"></i></button>
+        <button class="colorpalatebtn" id="colorpalatebtn" title="Colors & Shape" onclick="toggleFloatingTab()"><i
+                class="bi bi-palette"></i></button>
     </div>
     <div id="theme-toggle" class="toolbar">
         <button class="themebtn" id="theme-btn" title="Theme -- Q or *"><i class="fas fa-moon"></i></button>
@@ -181,7 +182,7 @@ Description: An intuitive digital canvas for creative expression and collaborati
         <button class="tool" id="redo" title="Redo -- Ctrl + Y"><i class="bi bi-arrow-90deg-right"></i></button>
     </div>
 
-    <div id="floating-tab" class="floating-tab">
+    <div id="floating-tab" class="floating-tab hidden">
 
         <div class="color-grid">
             <button class="color-btn" style="background: #ff0000"></button>
