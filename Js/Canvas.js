@@ -123,7 +123,7 @@ canvas.addEventListener('touchmove', (e) => {
         const currentDistance = getTouchDistance(e.touches);
         const zoomDelta = (currentDistance / initialDistance - 1) * 50;
         let newZoom = Math.min(Math.max(initialZoom + zoomDelta, 70), 200);
-        
+
         if (newZoom !== currentZoom) {
             // Get center point between fingers
             const touchCenter = getTouchCenter(e.touches);
@@ -1224,18 +1224,16 @@ window.addEventListener('keydown', (e) => {
 });
 
 const themeBtn = document.getElementById('theme-btn');
-const themeIcon = themeBtn.querySelector('i');
+const themeIcon = themeBtn.querySelector('ion-icon');
 
 // Check for saved theme preference
 const currentTheme = localStorage.getItem('theme') || 'dark';
 if (currentTheme === 'light') {
     document.body.classList.add('light-theme');
-    themeIcon.classList.remove('bi-cloud-moon');
-    themeIcon.classList.add('bi-brightness-low');
+    themeIcon.setAttribute('name', 'sunny-outline');
     selectedColor = '#000000';
 } else {
-    themeIcon.classList.remove('bi-brightness-low');
-    themeIcon.classList.add('bi-cloud-moon');
+    themeIcon.setAttribute('name', 'moon-outline');
     selectedColor = '#ffffff';
 }
 
@@ -1245,14 +1243,12 @@ themeBtn.addEventListener('click', () => {
 
     if (document.body.classList.contains('light-theme')) {
         localStorage.setItem('theme', 'light');
-        themeIcon.classList.remove('bi-cloud-moon');
-        themeIcon.classList.add('bi-brightness-low');
+        themeIcon.setAttribute('name', 'sunny-outline');
         selectedColor = '#000000';
         switchElementColors();
     } else {
         localStorage.setItem('theme', 'dark');
-        themeIcon.classList.remove('bi-brightness-low');
-        themeIcon.classList.add('bi-cloud-moon');
+        themeIcon.setAttribute('name', 'moon-outline');
         selectedColor = '#ffffff';
         switchElementColors();
     }
@@ -1987,8 +1983,8 @@ function toggleFloatingTab() {
 
 // Close floating tab when clicking outside
 document.addEventListener('click', (e) => {
-    if (isFloatingTabVisible && 
-        !floatingTab.contains(e.target) && 
+    if (isFloatingTabVisible &&
+        !floatingTab.contains(e.target) &&
         !colorPalatebtn.contains(e.target)) {
         toggleFloatingTab();
     }
