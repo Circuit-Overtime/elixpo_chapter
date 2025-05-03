@@ -186,11 +186,9 @@ html {
 #color-palate {
     position: fixed;
     right: 20px;
-    background-color: #202025;
-    border-radius: 10px;
     padding: 5px 5px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
+    display: flex;
+    font-size: 20px;
 }
 
 .colorpalatebtn {
@@ -211,6 +209,10 @@ html {
 
 .colorpalatebtn:hover {
     background-color: #31303B;
+    transform: scale(1.1);
+}
+
+#colorpalatebtn.active {
     transform: scale(1.1);
 }
 
@@ -766,6 +768,5 @@ html {
 }
 
 #colorpalatebtn.active {
-    background-color: #31303B;
     transform: scale(1.1);
 }

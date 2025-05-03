@@ -303,6 +303,10 @@ body.light-theme .colorpalatebtn:hover {
     background-color: #e0e0e0;
 }
 
+body.light-theme .colorpalatebtn.active {
+    transform: scale(1.1);
+}
+
 /* Dark theme styles are inherited from the existing theme */
 .sidebar-dropdown {
     background: #202025;
