@@ -456,7 +456,7 @@
     }
 
     #undoredo {
-        left: 17%;
+        left: 46%;
         position: fixed;
         top: 95%;
         transform: translateY(-50%);
@@ -468,7 +468,7 @@
     #delete {
         position: fixed;
         top: 95%;
-        left: 40%;
+        left: 70%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: row;
@@ -511,7 +511,7 @@
 
     #theme-toggle {
         top: 95%;
-        right: 32.3%;
+        right: 20px;
         transform: translateY(-50%);
     }
 
@@ -522,18 +522,23 @@
     }
 
     .sidebar-dropdown {
-        top: 110px;
+        top: 30%;
         left: 20px;
-        width: 50%;
+        width: 45%;
     }
 
     .floating-tab {
-        top: 110px;
+        top: 30%;
         right: 20px;
     }
 
     .floating-tab .shape-grid {
-        height: 110px;
+        height: 115px;
+    }
+
+    #color-palate {
+        top: 92.5%;
+        right: 71%;
     }
 }
 
