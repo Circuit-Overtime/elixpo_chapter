@@ -289,6 +289,20 @@ body.light-theme .divider {
     color: #e0e0e0;
 }
 
+body.light-theme #color-palate {
+    border: 1px solid #c8c8c897;
+    background: #FCFCFC;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .colorpalatebtn {
+    color: #000000;
+}
+
+body.light-theme .colorpalatebtn:hover {
+    background-color: #e0e0e0;
+}
+
 /* Dark theme styles are inherited from the existing theme */
 .sidebar-dropdown {
     background: #202025;

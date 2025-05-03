@@ -17,11 +17,9 @@ html {
     background-color: #101011;
 }
 
-#sidebar {
-    left: 20px;
-    padding: 5px 5px;
-    display: flex;
-    font-size: 21px;
+#canvas {
+    background-color: transparent;
+    cursor: crosshair;
 }
 
 #instructions {
@@ -32,39 +30,6 @@ html {
     width: 100%;
     font-size: small;
     text-align: center;
-}
-
-.themebtn {
-    width: 40px;
-    height: 40px;
-    border: none;
-    background-color: transparent;
-    color: #fff;
-    border-radius: 30%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 17px;
-    transition: all 0.3s ease;
-    transform-origin: center;
-}
-
-.themebtn:hover {
-    background-color: #31303B;
-    transform: scale(1.1);
-}
-
-#theme-toggle {
-    position: fixed;
-    right: 20px;
-    padding: 5px 5px;
-    display: flex;
-}
-
-#canvas {
-    background-color: transparent;
-    cursor: crosshair;
 }
 
 .toolbar {
@@ -92,87 +57,105 @@ html {
     transform: translateX(-50%);
 }
 
-#undoredo {
-    left: 20px;
+.search-dropdown {
     position: fixed;
-    top: 95%;
-    transform: translateY(-50%);
-    display: flex;
-    padding: 5px 6px;
+    top: 75px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.95);
+    width: 300px;
+    background: #202025;
+    border-radius: 20px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
 }
 
-#delete {
-    position: fixed;
-    top: 95%;
-    left: 9%;
-    transform: translateY(-50%);
-    display: flex;
-    padding: 5px 5px;
+.search-dropdown.active {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+    visibility: visible;
 }
 
-.zoom-in-btn {
-    width: 40px;
-    height: 40px;
-    border: none;
-    background-color: transparent;
-    color: #fff;
-    border-radius: 30%;
-    cursor: pointer;
+.search-input-wrapper {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 17px;
-    transition: all 0.3s ease;
-    transform-origin: center;
+    background: #31303B;
+    border-radius: 15px;
+    padding: 8px 15px;
+    margin-bottom: 10px;
 }
 
-.zoom-in-btn:hover {
-    background-color: #31303B;
-    transform: scale(1.1);
-}
-
-.zoom-out-btn {
-    width: 40px;
-    height: 40px;
+.search-input-wrapper input {
+    flex: 1;
+    background: none;
     border: none;
-    background-color: transparent;
-    color: #fff;
-    border-radius: 30%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 17px;
-    transition: all 0.3s ease;
-    transform-origin: center;
-}
-
-.zoom-out-btn:hover {
-    background-color: #31303B;
-    transform: scale(1.1);
-}
-
-#zoom-toolbar {
-    position: fixed;
-    top: 95%;
-    right: 20px;
-    transform: translateY(-50%);
-    display: flex;
-}
-
-#zoom-percentage {
-    background-color: #202025;
-    position: fixed;
     color: white;
-    top: 50%;
-    right: 55px;
-    transform: translateY(-50%);
+    outline: none;
+    font-size: 14px;
+}
+
+.search-input-wrapper input::placeholder {
+    color: #818181;
+}
+
+.search-input-wrapper i {
+    color: #818181;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.search-results {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-bottom: 5px;
+}
+
+.search-results::-webkit-scrollbar {
+    width: 5px;
+}
+
+.search-results::-webkit-scrollbar-thumb {
+    background: #31303B;
+    border-radius: 10px;
+}
+
+.search-item {
     display: flex;
-    width: 7.8%;
-    height: 3%;
-    justify-content: center;
     align-items: center;
-    font-size: smaller;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    transition: background 0.2s ease;
+    margin: 0 5px;
+}
+
+.search-item:hover {
+    background: #31303B;
+}
+
+.search-item i,
+.search-item ion-icon {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.search-item .color-preview {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.search-category {
+    color: #818181;
+    font-size: 12px;
+    text-transform: uppercase;
+    padding: 8px 10px 4px;
+    letter-spacing: 0.5px;
 }
 
 .tool {
@@ -200,40 +183,35 @@ html {
     background-color: #3182ED;
 }
 
-#textInput {
+#color-palate {
     position: fixed;
-    display: none;
-    padding: 5px;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
+    right: 20px;
+    background-color: #202025;
+    border-radius: 10px;
+    padding: 5px 5px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+.colorpalatebtn {
+    width: 40px;
+    height: 40px;
     border: none;
-    outline: none;
-    caret-color: white;
-    resize: none;
-    min-height: 20px;
-    min-width: 50px;
-    max-height: none;
-    max-width: none;
-    white-space: nowrap;
-    overflow: hidden;
-}
-
-#textInput::placeholder {
-    color: white;
-}
-
-#angleInfo {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #232329;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-size: 15px;
-    display: none;
+    background-color: transparent;
+    color: #fff;
+    border-radius: 30%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
     transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.colorpalatebtn:hover {
+    background-color: #31303B;
+    transform: scale(1.1);
 }
 
 .floating-tab {
@@ -403,206 +381,77 @@ html {
     justify-content: center;
 }
 
-.search-dropdown {
+#theme-toggle {
+    top: 92%;
     position: fixed;
-    top: 75px;
-    left: 50%;
-    transform: translateX(-50%) scale(0.95);
-    width: 300px;
-    background: #202025;
-    border-radius: 20px;
-    padding: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    z-index: 1001;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-}
-
-.search-dropdown.active {
-    transform: translateX(-50%) scale(1);
-    opacity: 1;
-    visibility: visible;
-}
-
-.search-input-wrapper {
+    right: 10.5%;
+    padding: 5px 5px;
     display: flex;
-    align-items: center;
-    background: #31303B;
-    border-radius: 15px;
-    padding: 8px 15px;
-    margin-bottom: 10px;
 }
 
-.search-input-wrapper input {
-    flex: 1;
-    background: none;
-    border: none;
-    color: white;
-    outline: none;
-    font-size: 14px;
-}
-
-.search-input-wrapper input::placeholder {
-    color: #818181;
-}
-
-.search-input-wrapper i {
-    color: #818181;
-    cursor: pointer;
-    padding: 5px;
-}
-
-.search-results {
-    max-height: 300px;
-    overflow-y: auto;
-    padding-bottom: 5px;
-}
-
-.search-results::-webkit-scrollbar {
-    width: 5px;
-}
-
-.search-results::-webkit-scrollbar-thumb {
-    background: #31303B;
-    border-radius: 10px;
-}
-
-.search-item {
-    display: flex;
-    align-items: center;
-    padding: 8px 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    color: white;
-    transition: background 0.2s ease;
-    margin: 0 5px;
-}
-
-.search-item:hover {
-    background: #31303B;
-}
-
-.search-item i,
-.search-item ion-icon {
-    margin-right: 10px;
-    font-size: 18px;
-}
-
-.search-item .color-preview {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    margin-right: 10px;
-}
-
-.search-category {
-    color: #818181;
-    font-size: 12px;
-    text-transform: uppercase;
-    padding: 8px 10px 4px;
-    letter-spacing: 0.5px;
-}
-
-.account-card {
-    display: none;  /* Add this line to hide the card */
-    background-color: #252529;
-    border-radius: 10px;
-    padding: 10px;
-    width: 100%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 10px;
-    border: 1px solid rgb(48, 48, 48);
-}
-
-.profile-section {
-    display: flex;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.profile-image {
+.themebtn {
     width: 40px;
     height: 40px;
-    border-radius: 50%;
-    overflow: hidden;
-    margin-right: 12px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    cursor: pointer;
-}
-
-.profile-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.name {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0;
-    color: #ffffff;
-    line-height: 1.2;
-    text-wrap: wrap;
-}
-
-.username {
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 12px;
-    margin-top: 2px;
-    text-wrap: wrap;
-}
-
-.actions-section {
-    display: flex;
-    align-items: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 10px;
-    gap: 2px;
-}
-
-.settings-btn {
-    background: rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    padding: 6px 8px;
-    font-size: 11.5px;
     border: none;
-    border-radius: 6px;
+    background-color: transparent;
+    color: #fff;
+    border-radius: 30%;
     cursor: pointer;
-    color: #ffffff;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.logout-btn {
-    margin-left: auto;
-    color: #ff4444;
-    font-weight: 500;
-    font-size: 11.5px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 6px 8px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
-
-.logout-btn:hover {
-    background: rgba(255, 68, 68, 0.1);
-}
-
-.divider {
-    margin: 0 15px;
-    color: rgba(255, 255, 255, 0.2);
-    font-size: 18px;
     display: flex;
     align-items: center;
-    height: 20px;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    transform-origin: center;
 }
 
-.sidebarbtn {
+.themebtn:hover {
+    background-color: #31303B;
+    transform: scale(1.1);
+}
+
+#undoredo {
+    left: 20px;
+    position: fixed;
+    top: 95%;
+    transform: translateY(-50%);
+    display: flex;
+    padding: 5px 6px;
+}
+
+#delete {
+    position: fixed;
+    top: 95%;
+    left: 9%;
+    transform: translateY(-50%);
+    display: flex;
+    padding: 5px 5px;
+}
+
+#zoom-toolbar {
+    position: fixed;
+    top: 95%;
+    right: 20px;
+    transform: translateY(-50%);
+    display: flex;
+}
+
+#zoom-percentage {
+    background-color: #202025;
+    position: fixed;
+    color: white;
+    top: 50%;
+    right: 55px;
+    transform: translateY(-50%);
+    display: flex;
+    width: 7.8%;
+    height: 3%;
+    justify-content: center;
+    align-items: center;
+    font-size: smaller;
+}
+
+.zoom-in-btn {
     width: 40px;
     height: 40px;
     border: none;
@@ -618,9 +467,92 @@ html {
     transform-origin: center;
 }
 
+.zoom-in-btn:hover {
+    background-color: #31303B;
+    transform: scale(1.1);
+}
+
+.zoom-out-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    border-radius: 30%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.zoom-out-btn:hover {
+    background-color: #31303B;
+    transform: scale(1.1);
+}
+
+#textInput {
+    position: fixed;
+    display: none;
+    padding: 5px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    outline: none;
+    caret-color: white;
+    resize: none;
+    min-height: 20px;
+    min-width: 50px;
+    max-height: none;
+    max-width: none;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+#textInput::placeholder {
+    color: white;
+}
+
+#angleInfo {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #232329;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 15px;
+    display: none;
+    transition: all 0.3s ease;
+}
+
+#sidebar {
+    left: 20px;
+    padding: 5px 5px;
+    display: flex;
+}
+
+.sidebarbtn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    border-radius: 30%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
 .sidebarbtn:hover {
     background-color: #31303B;
-    border-radius: 30px;
     transform: scale(1.1);
 }
 
@@ -723,4 +655,104 @@ html {
     font-size: 12px;
     color: rgba(255, 255, 255, 0.4);
     margin-left: 16px;
+}
+
+
+.account-card {
+    display: none;
+    /* Add this line to hide the card */
+    background-color: #252529;
+    border-radius: 10px;
+    padding: 10px;
+    width: 100%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+    border: 1px solid rgb(48, 48, 48);
+}
+
+.profile-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.profile-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.name {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+    line-height: 1.2;
+    text-wrap: wrap;
+}
+
+.username {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    margin-top: 2px;
+    text-wrap: wrap;
+}
+
+.actions-section {
+    display: flex;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 10px;
+    gap: 2px;
+}
+
+.settings-btn {
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    font-size: 11.5px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #ffffff;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.logout-btn {
+    margin-left: auto;
+    color: #ff4444;
+    font-weight: 500;
+    font-size: 11.5px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 68, 68, 0.1);
+}
+
+.divider {
+    margin: 0 15px;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    height: 20px;
 }
