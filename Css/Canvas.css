@@ -620,6 +620,7 @@ html {
 
 .sidebarbtn:hover {
     background-color: #31303B;
+    border-radius: 30px;
     transform: scale(1.1);
 }
 
@@ -693,6 +694,7 @@ html {
 
 .menu-item:hover {
     background: rgba(202, 195, 195, 0.1);
+    border-radius: 7px;
 }
 
 .menu-item i {
