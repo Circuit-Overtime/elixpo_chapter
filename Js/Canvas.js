@@ -71,39 +71,79 @@ window.addEventListener('resize', handleResize);
 
 // Touch event handlers starts here
 canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    const mouseEvent = new MouseEvent('mousedown', {
-        clientX: touch.clientX - rect.left,
-        clientY: touch.clientY - rect.top
-    });
+    if (e.touches.length === 1) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const mouseEvent = new MouseEvent('mousedown', {
+            clientX: touch.clientX - rect.left,
+            clientY: touch.clientY - rect.top
+        });
 
-    if (selectedTool === 'arrow') {
-        isDrawing = true;
-        startX = touch.clientX - rect.left;
-        startY = touch.clientY - rect.top;
+        if (selectedTool === 'arrow') {
+            isDrawing = true;
+            startX = touch.clientX - rect.left;
+            startY = touch.clientY - rect.top;
+        }
+
+        handleMouseDown(mouseEvent);
+    } else if (e.touches.length === 2) {
+        e.preventDefault();
+        // Get initial distance between two fingers
+        initialDistance = getTouchDistance(e.touches);
+        initialZoom = currentZoom;
     }
-
-    handleMouseDown(mouseEvent);
 });
 
 canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    const mouseEvent = new MouseEvent('mousemove', {
-        clientX: touch.clientX - rect.left,
-        clientY: touch.clientY - rect.top
-    });
+    if (e.touches.length === 1) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const mouseEvent = new MouseEvent('mousemove', {
+            clientX: touch.clientX - rect.left,
+            clientY: touch.clientY - rect.top
+        });
 
-    if (selectedTool === 'arrow' && isDrawing) {
-        redrawCanvas();
-        drawArrow(ctx, startX, startY, touch.clientX - rect.left, touch.clientY - rect.top);
-    } else if (isPanning) {
-        pan(mouseEvent);
-    } else {
-        handleMouseMove(mouseEvent);
+        if (selectedTool === 'arrow' && isDrawing) {
+            redrawCanvas();
+            drawArrow(ctx, startX, startY, touch.clientX - rect.left, touch.clientY - rect.top);
+        } else if (isPanning) {
+            pan(mouseEvent);
+        } else {
+            handleMouseMove(mouseEvent);
+        }
+    } else if (e.touches.length === 2) {
+        e.preventDefault();
+        // Calculate new zoom level based on finger distance
+        const currentDistance = getTouchDistance(e.touches);
+        const zoomDelta = (currentDistance / initialDistance - 1) * 50;
+        let newZoom = Math.min(Math.max(initialZoom + zoomDelta, 70), 200);
+        
+        if (newZoom !== currentZoom) {
+            // Get center point between fingers
+            const touchCenter = getTouchCenter(e.touches);
+            const rect = canvas.getBoundingClientRect();
+            const centerX = (touchCenter.x - rect.left);
+            const centerY = (touchCenter.y - rect.top);
+
+            // Apply zoom
+            const zoomFactor = newZoom / currentZoom;
+            currentZoom = newZoom;
+            scale *= zoomFactor;
+
+            // Transform elements around touch center
+            elements.forEach(element => {
+                element.x1 = centerX + (element.x1 - centerX) * zoomFactor;
+                element.y1 = centerY + (element.y1 - centerY) * zoomFactor;
+                if (element.x2 !== undefined) element.x2 = centerX + (element.x2 - centerX) * zoomFactor;
+                if (element.y2 !== undefined) element.y2 = centerY + (element.y2 - centerY) * zoomFactor;
+            });
+
+            // Update zoom display and redraw
+            zoomPercentage.textContent = Math.round(currentZoom) + '%';
+            redrawCanvas();
+        }
     }
 });
 
@@ -144,6 +184,10 @@ canvas.addEventListener('gestureend', (e) => {
     e.preventDefault();
 });
 // Touch event handlers up to here
+
+// Pinch zoom variables
+let initialDistance = 0;
+let initialZoom = 1;
 
 zoomIn.addEventListener('click', () => {
     if (currentZoom >= 200) return; // Prevent zooming beyond 200%
@@ -1926,4 +1970,19 @@ document.querySelectorAll('.menu-item').forEach(item => {
         toggleSidebar();
     });
 });
+
+// Helper function to calculate distance between two touch points
+function getTouchDistance(touches) {
+    const dx = touches[1].clientX - touches[0].clientX;
+    const dy = touches[1].clientY - touches[0].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Helper function to calculate center point between two touches
+function getTouchCenter(touches) {
+    return {
+        x: (touches[0].clientX + touches[1].clientX) / 2,
+        y: (touches[0].clientY + touches[1].clientY) / 2
+    };
+}
 
