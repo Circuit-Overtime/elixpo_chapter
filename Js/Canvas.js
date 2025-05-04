@@ -740,10 +740,11 @@ function drawElement(element) {
             }
             break;
         case 'text':
-            ctx.font = '25px "Comic Sans MS"'; // Set default font to Comic Sans MS
+            const scaledFontSize = Math.round(25 * (currentZoom / 100));
+            ctx.font = `${scaledFontSize}px "Comic Sans MS"`;
             ctx.fillStyle = element.color;
             if (element.text !== undefined) {
-                ctx.fillText(element.text, element.x1, element.y1);
+                ctx.fillText(element.text, element.x1 * (currentZoom / 100), element.y1 * (currentZoom / 100));
             }
             break;
         case 'triangle':
@@ -968,13 +969,19 @@ function showTextInput(x, y) {
     isWriting = true;
     textInput.value = '';
     textInput.style.display = 'block';
-    textInput.style.fontSize = '25px';
+    // Scale font size with zoom
+    const scaledFontSize = Math.round(25 * (currentZoom / 100));
+    textInput.style.fontSize = `${scaledFontSize}px`;
     textInput.style.color = selectedColor;
     textInput.style.backgroundColor = 'transparent';
-    textInput.style.fontFamily = '"Comic Sans MS"'; // Set default font to Comic Sans MS
+    textInput.style.fontFamily = '"Comic Sans MS"';
     textInput.style.caretColor = selectedColor;
-    textInput.style.left = `${x}px`;
-    textInput.style.top = `${y - 20}px`;
+    // Apply zoom scaling to position
+    textInput.style.left = `${x * (currentZoom / 100)}px`;
+    textInput.style.top = `${(y - 20) * (currentZoom / 100)}px`;
+    // Apply zoom transform
+    textInput.style.transform = `scale(${currentZoom / 100})`;
+    textInput.style.transformOrigin = 'top left';
     setTimeout(() => textInput.focus(), 500);
     textInput.focus();
 }
@@ -985,10 +992,11 @@ canvas.addEventListener('click', (e) => {
         if (text && text.trim() !== '') {
             elements.push({
                 type: 'text',
-                x1: parseInt(textInput.style.left),
-                y1: parseInt(textInput.style.top) + 20,
+                x1: parseInt(textInput.style.left) / (currentZoom / 100),
+                y1: (parseInt(textInput.style.top) + 20) / (currentZoom / 100),
                 text: text,
-                color: selectedColor
+                color: selectedColor,
+                zoom: currentZoom // Store the zoom level when text was created
             });
             redrawCanvas();
         } else {
@@ -996,6 +1004,75 @@ canvas.addEventListener('click', (e) => {
         }
         textInput.style.display = 'none';
         isWriting = false;
+    }
+});
+
+// Add after the existing canvas click event listener
+canvas.addEventListener('dblclick', (e) => {
+    const clickedX = e.offsetX;
+    const clickedY = e.offsetY;
+    const clickedElement = elements.find(element => 
+        element.type === 'text' && 
+        clickedX >= element.x1 * (currentZoom / 100) - 5 && 
+        clickedX <= element.x1 * (currentZoom / 100) + getTextWidth(element.text) + 5 &&
+        clickedY >= element.y1 * (currentZoom / 100) - 25 && 
+        clickedY <= element.y1 * (currentZoom / 100) + 5
+    );
+
+    if (clickedElement) {
+        // Show text input at the clicked text element's position
+        isWriting = true;
+        textInput.value = clickedElement.text;
+        textInput.style.display = 'block';
+        const scaledFontSize = Math.round(25 * (currentZoom / 100));
+        textInput.style.fontSize = `${scaledFontSize}px`;
+        textInput.style.color = clickedElement.color;
+        textInput.style.backgroundColor = 'transparent';
+        textInput.style.fontFamily = '"Comic Sans MS"';
+        textInput.style.caretColor = clickedElement.color;
+        textInput.style.left = `${clickedElement.x1 * (currentZoom / 100)}px`;
+        textInput.style.top = `${(clickedElement.y1 - 20) * (currentZoom / 100)}px`;
+        textInput.style.transform = `scale(${currentZoom / 100})`;
+        textInput.style.transformOrigin = 'top left';
+        
+        // Remove the old text element
+        elements = elements.filter(el => el !== clickedElement);
+        redrawCanvas();
+        
+        // Focus the text input
+        setTimeout(() => {
+            textInput.focus();
+            // Place cursor at the end of text
+            textInput.setSelectionRange(textInput.value.length, textInput.value.length);
+        }, 0);
+    }
+});
+
+// Add this helper function to calculate text width
+function getTextWidth(text) {
+    ctx.font = `25px "Comic Sans MS"`;
+    return ctx.measureText(text).width;
+}
+
+// Update the existing click handler for text input
+canvas.addEventListener('click', (e) => {
+    if (isWriting) {
+        const text = textInput.value;
+        if (text && text.trim() !== '') {
+            elements.push({
+                type: 'text',
+                x1: parseInt(textInput.style.left) / (currentZoom / 100),
+                y1: (parseInt(textInput.style.top) + 20) / (currentZoom / 100),
+                text: text,
+                color: selectedColor,
+                zoom: currentZoom
+            });
+            redrawCanvas();
+        }
+        textInput.style.display = 'none';
+        isWriting = false;
+        // Switch back to pointer tool after editing
+        selectTool('pointer');
     }
 });
 

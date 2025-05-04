@@ -518,10 +518,8 @@ html {
     max-width: none;
     white-space: nowrap;
     overflow: hidden;
-}
-
-#textInput::placeholder {
-    color: white;
+    transform-origin: top left;
+    will-change: transform;
 }
 
 #angleInfo {
