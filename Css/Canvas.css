@@ -222,20 +222,24 @@ html {
 .floating-tab {
     position: fixed;
     width: 180px;
-    background: #202025;
+    background: rgba(32, 32, 37, 0.95);
+    backdrop-filter: blur(10px);
     border-radius: 10px;
     padding: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
     z-index: 1000;
     right: 20px;
     top: 90px;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-}
-
-.floating-tab.hidden {
     opacity: 0;
     visibility: hidden;
-    pointer-events: none;
+    transform: translateY(-8px) scale(0.98);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.floating-tab.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
 }
 
 .color-grid::-webkit-scrollbar {

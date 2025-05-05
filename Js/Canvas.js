@@ -2087,9 +2087,20 @@ function getTouchCenter(touches) {
 
 function toggleFloatingTab() {
     isFloatingTabVisible = !isFloatingTabVisible;
-    floatingTab.classList.toggle('hidden');
+    floatingTab.classList.toggle('active');
     colorPalatebtn.classList.toggle('active');
 }
+
+// Update click outside handler
+document.addEventListener('click', (e) => {
+    if (isFloatingTabVisible &&
+        !floatingTab.contains(e.target) &&
+        !colorPalatebtn.contains(e.target)) {
+        isFloatingTabVisible = false;
+        floatingTab.classList.remove('active');
+        colorPalatebtn.classList.remove('active');
+    }
+});
 
 // Close floating tab when clicking outside
 document.addEventListener('click', (e) => {
