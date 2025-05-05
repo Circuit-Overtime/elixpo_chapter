@@ -1011,11 +1011,11 @@ canvas.addEventListener('click', (e) => {
 canvas.addEventListener('dblclick', (e) => {
     const clickedX = e.offsetX;
     const clickedY = e.offsetY;
-    const clickedElement = elements.find(element => 
-        element.type === 'text' && 
-        clickedX >= element.x1 * (currentZoom / 100) - 5 && 
+    const clickedElement = elements.find(element =>
+        element.type === 'text' &&
+        clickedX >= element.x1 * (currentZoom / 100) - 5 &&
         clickedX <= element.x1 * (currentZoom / 100) + getTextWidth(element.text) + 5 &&
-        clickedY >= element.y1 * (currentZoom / 100) - 25 && 
+        clickedY >= element.y1 * (currentZoom / 100) - 25 &&
         clickedY <= element.y1 * (currentZoom / 100) + 5
     );
 
@@ -1034,11 +1034,11 @@ canvas.addEventListener('dblclick', (e) => {
         textInput.style.top = `${(clickedElement.y1 - 20) * (currentZoom / 100)}px`;
         textInput.style.transform = `scale(${currentZoom / 100})`;
         textInput.style.transformOrigin = 'top left';
-        
+
         // Remove the old text element
         elements = elements.filter(el => el !== clickedElement);
         redrawCanvas();
-        
+
         // Focus the text input
         setTimeout(() => {
             textInput.focus();
@@ -1321,17 +1321,42 @@ themeBtn.addEventListener('click', () => {
     if (document.body.classList.contains('light-theme')) {
         localStorage.setItem('theme', 'light');
         themeIcon.setAttribute('name', 'sunny-outline');
-        selectedColor = '#000000';
+        selectedColor = '#000000'; // Force black in light theme
         switchElementColors();
     } else {
         localStorage.setItem('theme', 'dark');
         themeIcon.setAttribute('name', 'moon-outline');
-        selectedColor = '#ffffff';
+        selectedColor = '#ffffff'; // Force white in dark theme
         switchElementColors();
     }
 
     redrawCanvas();
 });
+
+// Modify the invertColor function to only handle black and white
+function invertColor(color) {
+    if (color.toLowerCase() === '#ffffff' || color === 'rgb(255, 255, 255)') {
+        return '#000000';
+    } else if (color.toLowerCase() === '#000000' || color === 'rgb(0, 0, 0)') {
+        return '#ffffff';
+    }
+    return color; // Leave other colors unchanged
+}
+
+// Update the switchElementColors function to only switch black/white colors
+function switchElementColors() {
+    elements.forEach(element => {
+        if (element.color === '#000000' || element.color === '#ffffff' ||
+            element.color === 'rgb(0, 0, 0)' || element.color === 'rgb(255, 255, 255)') {
+            element.color = invertColor(element.color);
+        }
+        if (element.fillColor === '#000000' || element.fillColor === '#ffffff' ||
+            element.fillColor === 'rgb(0, 0, 0)' || element.fillColor === 'rgb(255, 255, 255)') {
+            element.fillColor = invertColor(element.fillColor);
+        }
+    });
+    redrawCanvas();
+}
 
 window.addEventListener('resize', handleResize);
 
