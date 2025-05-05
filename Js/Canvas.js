@@ -564,6 +564,9 @@ function handleMouseUp(e) {
 
         // Switch to pointer tool after drawing arrow
         selectTool('pointer');
+    } else if (selectedTool !== 'eraser') { // Add this condition to prevent switching from eraser
+        stopDrawing();
+        saveState();
     } else {
         stopDrawing();
         saveState();
@@ -664,8 +667,8 @@ function stopDrawing() {
     saveState();
     redrawCanvas();
 
-    // Switch to pointer tool after drawing, except for pencil and colorPicker
-    if (selectedTool !== 'pencil' && selectedTool !== 'colorPicker') {
+    // Switch to pointer tool after drawing, except for pencil, eraser and colorPicker
+    if (selectedTool !== 'pencil' && selectedTool !== 'eraser' && selectedTool !== 'colorPicker') {
         selectTool('pointer');
     }
 }
