@@ -631,7 +631,7 @@ html {
 
 .sidebar-content {
     padding: 8px;
-    max-height: calc(100vh - 200px);
+    max-height: 462px;
     overflow-y: auto;
 }
 
