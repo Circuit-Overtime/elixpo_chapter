@@ -34,7 +34,7 @@ html {
 
 .toolbar {
     position: fixed;
-    top: 15px;
+    top: 20px;
     left: 50%;
     transform: translateX(-50%);
     background-color: #202025;
@@ -182,7 +182,7 @@ html {
 
 .color-palate {
     position: fixed;
-    top: 15px;
+    top: 20px;
     background-color: #202025;
     backdrop-filter: blur(20px);
     border-radius: 10px;
@@ -588,7 +588,7 @@ html {
     backdrop-filter: blur(20px);
     border-radius: 10px;
     transition: all 0.3s ease, transform 0.3s ease;
-    top: 15px;
+    top: 20px;
     left: 20px;
     padding: 5px 5px;
     display: flex;
