@@ -1412,7 +1412,10 @@ function loadAllData() {
 document.addEventListener('keydown', handleKeyDown);
 
 function handleKeyDown(event) {
-    if (isTeamCodePopupOpen || selectedTool === 'text') return; // Disable keyboard mapping when team code popup is open or text tool is selected
+    // If text input is visible or text tool is active, don't handle keyboard shortcuts
+    if (textInput.style.display === 'block' || isWriting || selectedTool === 'text') {
+        return;
+    }
 
     // Convert key to lowercase for case-insensitive comparison
     const key = event.key.toLowerCase();
@@ -1496,11 +1499,21 @@ function handleKeyDown(event) {
 function selectTool(toolId) {
     // Remove active class from all tools
     document.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
-    // Add active class to selected tool
-    document.getElementById(toolId).classList.add('active');
+
+    // Try to find the tool in main toolbar first
+    let toolElement = document.getElementById(toolId);
+
+    // If not found in main toolbar, look in shape grid
+    if (!toolElement) {
+        toolElement = document.querySelector(`.shape-grid .tool[id="${toolId}"]`);
+    }
+
+    if (toolElement) {
+        toolElement.classList.add('active');
+    }
+
     selectedTool = toolId;
 
-    // Re-enable keyboard mapping when switching from text tool
     if (toolId !== 'text') {
         document.addEventListener('keydown', handleKeyDown);
     } else {
@@ -1987,30 +2000,6 @@ function extractSearchableItems() {
     });
 
     return items;
-}
-
-function selectTool(toolId) {
-    document.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
-
-    // Try to find the tool in main toolbar first
-    let toolElement = document.getElementById(toolId);
-
-    // If not found in main toolbar, look in shape grid
-    if (!toolElement) {
-        toolElement = document.querySelector(`.shape-grid .tool[id="${toolId}"]`);
-    }
-
-    if (toolElement) {
-        toolElement.classList.add('active');
-    }
-
-    selectedTool = toolId;
-
-    if (toolId !== 'text') {
-        document.addEventListener('keydown', handleKeyDown);
-    } else {
-        document.removeEventListener('keydown', handleKeyDown);
-    }
 }
 
 // Sidebar functionality
