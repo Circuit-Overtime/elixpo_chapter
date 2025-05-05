@@ -228,7 +228,7 @@ html {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     z-index: 1000;
     right: 20px;
-    top: 80px;
+    top: 90px;
     transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
