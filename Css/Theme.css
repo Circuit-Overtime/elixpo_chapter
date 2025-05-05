@@ -72,6 +72,7 @@ body.light-theme .zoom-in-btn {
 
 body.light-theme .zoom-in-btn:hover {
     background-color: #e0e0e0;
+    transform: scale(1.1);
 }
 
 body.light-theme .zoom-out-btn {
@@ -80,11 +81,11 @@ body.light-theme .zoom-out-btn {
 
 body.light-theme .zoom-out-btn:hover {
     background-color: #e0e0e0;
+    transform: scale(1.1);
 }
 
 body.light-theme #zoom-percentage {
     color: #000000;
-    background-color: #FCFCFC;
     border: none;
     backdrop-filter: none;
     border-radius: none;
@@ -307,29 +308,50 @@ body.light-theme .colorpalatebtn.active {
     transform: scale(1.1);
 }
 
-/* Dark theme styles are inherited from the existing theme */
-.sidebar-dropdown {
-    background: #202025;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+body.light-theme .sidebar {
+    background-color: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.sidebar-header {
-    border-bottom: 1px solid #31303B;
+body.light-theme .sidebar-btn {
+    color: #000000;
 }
 
-.sidebar-header h3 {
-    color: #ffffff;
+body.light-theme .sidebar-btn:hover {
+    background-color: #e0e0e0;
+    transform: scale(1.1);
 }
 
-.menu-section h4 {
-    color: #818181;
+body.light-theme .theme-toggle {
+    background-color: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.menu-item {
-    color: #ffffff;
-    background: transparent;
+body.light-theme .theme-btn {
+    color: #000000;
 }
 
-.menu-item:hover {
-    background: #31303B;
+body.light-theme .theme-btn:hover {
+    background-color: #e0e0e0;
+    transform: scale(1.1);
+}
+
+body.light-theme .undoredo {
+    background-color: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .delete {
+    background-color: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .zoom-toolbar {
+    background-color: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
