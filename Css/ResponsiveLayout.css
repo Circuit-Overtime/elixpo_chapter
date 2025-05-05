@@ -7,56 +7,30 @@
         gap: 5px;
     }
 
-    #sidebar {
+    .sidebar {
         left: 20px;
-        padding: 8px 8px;
+        padding: 5px 5px;
         display: flex;
     }
 
-    #main-toolbar {
-        left: 50%;
-    }
-
-    #main-toolbar2 {
-        display: none;
-        position: absolute;
-        top: 60px;
-        left: 76%;
+    .color-palate {
+        right: 20px;
+        padding: 5px 5px;
         display: flex;
-        flex-direction: column;
-        gap: 10px;
     }
 
-    .tool-row {
-        display: flex;
-        gap: 10px;
-    }
-
-    #delete {
-        position: fixed;
-        top: 95%;
-        left: 17%;
-        transform: translateY(-50%);
+    .delete {
+        top: 92%;
+        left: 18%;
         display: flex;
         flex-direction: row;
-    }
-
-    #zoom-percentage {
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        padding: 5px 5px;
     }
 
     .tool {
         width: 40px;
         height: 40px;
         font-size: 17px;
-    }
-
-    #colorPicker {
-        width: 30px;
-        height: 30px;
-        margin-top: 1px;
     }
 
     .sidebar-dropdown {
@@ -79,17 +53,11 @@
         height: 140px;
     }
 
-    #theme-toggle {
+    .theme-toggle {
         top: 92%;
-        right: 20%;
+        right: 22.5%;
         display: flex;
-        padding: 8px 8px;
-    }
-
-    .themebtn {
-        width: 35px;
-        height: 35px;
-        font-size: 20px;
+        padding: 5px 5px;
     }
 }
 
@@ -98,48 +66,35 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        padding: 5px 8px;
+        padding: 8px 15px;
         gap: 8px;
     }
 
-    #main-toolbar2 {
-        display: none;
-        position: absolute;
-        top: 95px;
-        left: 74%;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .tool-row {
-        display: flex;
-        gap: 10px;
-    }
-
-    #sidebar {
+    .sidebar {
         left: 20px;
         padding: 5px 5px;
         display: flex;
     }
 
-    #undoredo {
-        position: fixed;
-        top: 95%;
-        transform: translateY(-50%);
+    .color-palate {
+        right: 20px;
+        padding: 5px 5px;
+        display: flex;
+    }
+
+    .undoredo {
+        top: 92%;
         display: flex;
         flex-direction: row;
         padding: 5px 8px;
     }
 
-    #delete {
-        position: fixed;
-        top: 95%;
+    .delete {
+        top: 92%;
         left: 18%;
-        transform: translateY(-50%);
         display: flex;
         flex-direction: row;
-        padding: 5px 8px;
+        padding: 5px 5px;
     }
 
     .tool {
@@ -148,26 +103,26 @@
         font-size: 15px;
     }
 
-    #colorPicker {
-        width: 30px;
-        height: 30px;
+    .theme-toggle {
+        top: 92%;
+        right: 21%;
+        display: flex;
+        padding: 3px 3px;
     }
 
-    #zoom-percentage {
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+    .zoom-toolbar {
+        top: 92%;
+        right: 20px;
+        padding: 3px 3px;
+        gap: 25px;
     }
 
-    #zoom-toolbar {
-        padding: 5px 8px;
-        gap: 14px;
+    .zoom-in-btn {
+        margin-right: 10px;
     }
 
-    .colorpalatebtn {
-        width: 35px;
-        height: 35px;
-        font-size: 15px;
+    .zoom-out-btn {
+        margin-left: 10px;
     }
 }
 
@@ -184,48 +139,36 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        padding: 5px 8px;
+        padding: 5px 4px;
         gap: 8px;
     }
 
-    #main-toolbar2 {
-        display: none;
-        position: absolute;
-        top: 95px;
-        left: 74%;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .tool-row {
-        display: flex;
-        gap: 10px;
-    }
-
-    #sidebar {
+    .sidebar {
         left: 20px;
-        padding: 5px 5px;
+        padding: 3px 3px;
         display: flex;
     }
 
-    #undoredo {
-        position: fixed;
-        top: 95%;
-        transform: translateY(-50%);
+    .color-palate {
+        right: 20px;
+        padding: 3px 3px;
         display: flex;
-        flex-direction: row;
-        padding: 5px 8px;
     }
 
-    #delete {
-        position: fixed;
-        top: 95%;
-        left: 20.5%;
-        transform: translateY(-50%);
+    .undoredo {
+        top: 92%;
         display: flex;
         flex-direction: row;
-        padding: 5px 8px;
+        padding: 6px 8px;
+    }
+
+    .delete {
+        position: fixed;
+        top: 92%;
+        left: 22%;
+        display: flex;
+        flex-direction: row;
+        padding: 6px 6px;
     }
 
     .tool {
@@ -234,27 +177,25 @@
         font-size: 15px;
     }
 
-    #colorPicker {
-        width: 30px;
-        height: 30px;
+    .zoom-toolbar {
+        top: 92%;
+        right: 20px;
+        padding: 3px 3px;
+        gap: 25px;
     }
 
-    #zoom-percentage {
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+    .zoom-in-btn {
+        margin-right: 10px;
     }
 
-    #zoom-toolbar {
-        padding: 5px 8px;
-        gap: 14px;
+    .zoom-out-btn {
+        margin-left: 10px;
     }
 
-    #theme-toggle {
-        top: 95%;
-        right: 25%;
-        transform: translateY(-50%);
-        padding: 8px 8px;
+    .theme-toggle {
+        top: 92%;
+        right: 26%;
+        padding: 4px 4px;
     }
 
     .themebtn {
@@ -264,7 +205,7 @@
     }
 
     .sidebar-dropdown {
-        top: 110px;
+        top: 130px;
         left: 20px;
         width: 30%;
     }
@@ -276,7 +217,7 @@
     }
 
     .floating-tab {
-        top: 110px;
+        top: 130px;
         right: 20px;
     }
 
@@ -294,47 +235,30 @@
         gap: 10px;
     }
 
-    #main-toolbar2 {
-        display: none;
-        position: absolute;
-        top: 95px;
-        left: 65%;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .tool-row {
-        display: flex;
-        gap: 10px;
-    }
-
-    #sidebar {
-        top: 92.3%;
+    .sidebar {
+        top: 92%;
         left: 20px;
-        padding: 8px 8px;
+        padding: 3px 3px;
         display: flex;
     }
 
-    #main-toolbar {
-        left: 50%;
+    .color-palate {
+        top: 92%;
+        right: 75.3%;
+        padding: 3px 3px;
     }
 
-    #undoredo {
-        left: 27%;
-        position: fixed;
-        top: 95%;
-        transform: translateY(-50%);
+    .undoredo {
+        left: 26%;
+        top: 92%;
         display: flex;
         flex-direction: row;
         padding: 8px 8px;
     }
 
-    #delete {
-        position: fixed;
-        top: 95%;
-        left: 50%;
-        transform: translateY(-50%);
+    .delete {
+        top: 92%;
+        left: 47.7%;
         display: flex;
         flex-direction: row;
         padding: 8px 8px;
@@ -346,71 +270,40 @@
         font-size: 15px;
     }
 
-    #colorPicker {
-        width: 30px;
-        height: 30px;
-    }
-
-    #zoom-percentage {
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-
-    #zoom-toolbar {
-        padding: 8px 8px;
-        gap: 14px;
+    .zoom-toolbar {
+        top: 92%;
+        right: 20px;
+        padding: 3.5px 3px;
+        gap: 25px;
     }
 
     .zoom-in-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
+        margin-right: 10px;
     }
 
     .zoom-out-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
+        margin-left: 10px;
     }
 
-    #theme-toggle {
-        top: 95%;
-        right: 29%;
-        transform: translateY(-50%);
-        padding: 8px 8px;
-    }
-
-    .themebtn {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
+    .theme-toggle {
+        top: 92%;
+        right: 31.5%;
+        padding: 4px 4px;
     }
 
     .sidebar-dropdown {
-        top: 110px;
+        top: 180px;
         left: 20px;
         width: 40%;
     }
 
-    .sidebarbtn {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
-    }
-
     .floating-tab {
-        top: 110px;
+        top: 180px;
         right: 20px;
     }
 
     .floating-tab .shape-grid {
-        height: 110px;
-    }
-
-    #color-palate {
-        top: 92.3%;
-        right: 75%;
+        height: 115px;
     }
 }
 
@@ -423,53 +316,38 @@
         gap: 6px;
     }
 
-    #main-toolbar2 {
-        display: none;
-        position: absolute;
-        top: 95px;
-        left: 60%;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .tool-row {
-        display: flex;
-        gap: 10px;
-    }
-
-    #sidebar {
-        top: 92.5%;
+    .sidebar {
+        top: 92%;
         left: 20px;
-        padding: 8px 8px;
+        padding: 5px 5px;
         display: flex;
     }
 
-    .sidebarbtn {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
+    .color-palate {
+        top: 92%;
+        right: 70%;
+        padding: 5px 5px;
     }
 
-    #main-toolbar {
-        left: 50%;
-    }
-
-    #undoredo {
-        left: 46%;
-        position: fixed;
-        top: 95%;
-        transform: translateY(-50%);
+    .undoredo {
+        left: 40%;
+        top: 92%;
         display: flex;
         flex-direction: row;
-        padding: 8px 8px;
+        padding: 9px 8px;
     }
 
-    #delete {
-        position: fixed;
-        top: 95%;
+    #undo {
+        margin-right: 10px;
+    }
+
+    #redo {
+        margin-left: 10px;
+    }
+
+    .delete {
+        top: 92%;
         left: 70%;
-        transform: translateY(-50%);
         display: flex;
         flex-direction: row;
     }
@@ -480,45 +358,33 @@
         font-size: 15px;
     }
 
-    #colorPicker {
-        width: 30px;
-        height: 30px;
-    }
+    /**
+     * Hides/disables pinch-zoom functionality for mobile devices
+     * This comment is temporarily hidden from view as it affects
+     * the mobile user's ability to use pinch-zoom gestures
+     */
 
-    #zoom-percentage {
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-
-    #zoom-toolbar {
-        padding: 8px 8px;
-        gap: 14px;
+    .zoom-toolbar {
+        top: 92%;
+        right: 20px;
+        padding: 3.5px 3px;
+        gap: 25px;
         display: none;
     }
 
     .zoom-in-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
+        margin-right: 10px;
     }
 
     .zoom-out-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
+        margin-left: 10px;
     }
 
-    #theme-toggle {
-        top: 95%;
+    .theme-toggle {
+        top: 92%;
+        display: flex;
         right: 20px;
-        transform: translateY(-50%);
-    }
-
-    .themebtn {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
+        padding: 4px 4px;
     }
 
     .sidebar-dropdown {
@@ -535,11 +401,6 @@
     .floating-tab .shape-grid {
         height: 115px;
     }
-
-    #color-palate {
-        top: 92.5%;
-        right: 71%;
-    }
 }
 
 @media (max-width: 400px) {
@@ -551,32 +412,20 @@
         gap: 5px;
     }
 
-    #main-toolbar2 {
-        display: none;
-        position: absolute;
-        top: 95px;
-        left: 59%;
+    .sidebar {
+        left: 20px;
+        padding: 5px 5px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        top: 92%;
     }
 
-    .tool-row {
+    .color-palate {
+        padding: 5px 5px;
         display: flex;
-        gap: 10px;
-    }
-
-    #sidebar {
-        left: 15px;
-        padding: 8px 8px;
-        display: flex;
-        top: 91.8%;
-    }
-
-    .sidebarbtn {
-        width: 30px;
-        height: 30px;
-        font-size: 14px;
+        flex-direction: column;
+        top: 92%;
+        right: 67%;
     }
 
     .sidebar-dropdown {
@@ -585,32 +434,28 @@
         width: 44%;
     }
 
-    #main-toolbar {
-        left: 50%;
-    }
-
-    #undoredo {
-        position: fixed;
-        top: 95%;
-        transform: translateY(-50%);
+    .undoredo {
+        top: 92%;
+        left: 35%;
         display: flex;
         flex-direction: row;
-        padding: 8px 8px;
-        left: 43%;
+        padding: 10px 8px;
     }
 
-    #delete {
-        position: fixed;
-        top: 95%;
-        left: 68%;
-        transform: translateY(-50%);
+    #undo {
+        margin-right: 5px;
+    }
+
+    #redo {
+        margin-left: 5px;
+    }
+
+    .delete {
+        top: 92%;
+        left: 65.5%;
         display: flex;
         flex-direction: row;
-        padding: 8px 8px;
-    }
-
-    #fill-color {
-        display: none;
+        padding: 10px 10px;
     }
 
     .tool {
@@ -619,47 +464,26 @@
         font-size: 15px;
     }
 
-    #colorPicker {
-        width: 25px;
-        height: 25px;
-    }
-
-    #zoom-percentage {
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-
-    #zoom-toolbar {
-        right: 15px;
-        padding: 8px 8px;
-        gap: 14px;
+    .zoom-toolbar {
+        top: 92%;
+        right: 20px;
+        padding: 3px 3px;
+        gap: 25px;
         display: none;
     }
 
     .zoom-in-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 14px;
+        margin-right: 10px;
     }
 
     .zoom-out-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 14px;
+        margin-left: 10px;
     }
 
-    .themebtn {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
-    }
-
-    #theme-toggle {
-        top: 95%;
+    .theme-toggle {
+        top: 92%;
         right: 20px;
-        transform: translateY(-50%);
-        padding: 8px 8px;
+        padding: 6px 6px;
     }
 
     .floating-tab {
@@ -669,10 +493,5 @@
 
     .floating-tab .shape-grid {
         height: 116px;
-    }
-
-    #color-palate {
-        top: 91.9%;
-        right: 70%;
     }
 }

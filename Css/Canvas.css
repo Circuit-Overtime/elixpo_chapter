@@ -404,7 +404,7 @@ html {
     transition: all 0.3s ease, transform 0.3s ease;
     top: 92%;
     position: fixed;
-    right: 10.5%;
+    right: 11.5%;
     padding: 5px 5px;
     display: flex;
 }
@@ -461,7 +461,7 @@ html {
     backdrop-filter: blur(20px);
     transition: all 0.3s ease, transform 0.3s ease;
     border-radius: 10px;
-    padding: 5px 15px;
+    padding: 5px 8px;
     display: flex;
     top: 92%;
     right: 20px;
@@ -495,6 +495,7 @@ html {
     font-size: 17px;
     transition: all 0.3s ease;
     transform-origin: center;
+    margin-right: 15px;
 }
 
 .zoom-in-btn:hover {
@@ -516,6 +517,7 @@ html {
     font-size: 17px;
     transition: all 0.3s ease;
     transform-origin: center;
+    margin-left: 15px;
 }
 
 .zoom-out-btn:hover {
