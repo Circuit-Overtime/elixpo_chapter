@@ -528,15 +528,21 @@ html {
     border: none;
     outline: none;
     caret-color: white;
-    resize: none;
-    min-height: 20px;
-    min-width: 50px;
-    max-height: none;
-    max-width: none;
-    white-space: nowrap;
+    resize: both;
+    min-height: none;
+    min-width: none;
+    max-height: 800px;
+    max-width: 800px;
+    white-space: pre-wrap;
     overflow: hidden;
     transform-origin: top left;
     will-change: transform;
+    line-height: 1.2;
+    font-family: "Comic Sans MS", cursive;
+}
+
+#textInput:focus {
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 #angleInfo {

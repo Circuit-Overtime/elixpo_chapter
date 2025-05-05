@@ -740,11 +740,19 @@ function drawElement(element) {
             }
             break;
         case 'text':
-            const scaledFontSize = Math.round(25 * (currentZoom / 100));
+            const scaledFontSize = Math.round(25 * (element.textWidth || 1) * (currentZoom / 100));
             ctx.font = `${scaledFontSize}px "Comic Sans MS"`;
             ctx.fillStyle = element.color;
             if (element.text !== undefined) {
-                ctx.fillText(element.text, element.x1 * (currentZoom / 100), element.y1 * (currentZoom / 100));
+                const lines = element.text.split('\n');
+                const lineHeight = scaledFontSize * 1.2;
+                lines.forEach((line, index) => {
+                    ctx.fillText(
+                        line,
+                        element.x1 * (currentZoom / 100),
+                        (element.y1 + index * lineHeight) * (currentZoom / 100)
+                    );
+                });
             }
             break;
         case 'triangle':
@@ -969,21 +977,20 @@ function showTextInput(x, y) {
     isWriting = true;
     textInput.value = '';
     textInput.style.display = 'block';
-    // Scale font size with zoom
-    const scaledFontSize = Math.round(25 * (currentZoom / 100));
+    // Scale font size with zoom and selected width
+    const baseSize = 25;
+    const widthMultiplier = selectedStrokeWidth / 4; // 4px is our base width
+    const scaledFontSize = Math.round(baseSize * widthMultiplier * (currentZoom / 100));
     textInput.style.fontSize = `${scaledFontSize}px`;
     textInput.style.color = selectedColor;
     textInput.style.backgroundColor = 'transparent';
     textInput.style.fontFamily = '"Comic Sans MS"';
     textInput.style.caretColor = selectedColor;
-    // Apply zoom scaling to position
     textInput.style.left = `${x * (currentZoom / 100)}px`;
     textInput.style.top = `${(y - 20) * (currentZoom / 100)}px`;
-    // Apply zoom transform
     textInput.style.transform = `scale(${currentZoom / 100})`;
     textInput.style.transformOrigin = 'top left';
-    setTimeout(() => textInput.focus(), 500);
-    textInput.focus();
+    setTimeout(() => textInput.focus(), 0);
 }
 
 canvas.addEventListener('click', (e) => {
@@ -1065,7 +1072,8 @@ canvas.addEventListener('click', (e) => {
                 y1: (parseInt(textInput.style.top) + 20) / (currentZoom / 100),
                 text: text,
                 color: selectedColor,
-                zoom: currentZoom
+                zoom: currentZoom,
+                textWidth: selectedStrokeWidth / 4 // Store the text width multiplier
             });
             redrawCanvas();
         }
@@ -1516,6 +1524,14 @@ window.addEventListener('load', () => {
             btn.classList.add('active');
             // Update stroke width
             selectedStrokeWidth = parseInt(btn.dataset.width);
+
+            // Update text input size if it's visible
+            if (textInput.style.display === 'block') {
+                const baseSize = 25;
+                const widthMultiplier = selectedStrokeWidth / 4;
+                const scaledFontSize = Math.round(baseSize * widthMultiplier * (currentZoom / 100));
+                textInput.style.fontSize = `${scaledFontSize}px`;
+            }
         });
     });
 
