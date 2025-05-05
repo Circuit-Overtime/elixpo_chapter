@@ -35,6 +35,8 @@ html {
 .toolbar {
     position: fixed;
     top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
     background-color: #202025;
     backdrop-filter: blur(20px);
     border-radius: 10px;
@@ -50,11 +52,6 @@ html {
     height: 30px;
     background-color: #5c5c5c84;
     margin: auto 0;
-}
-
-#main-toolbar {
-    left: 50%;
-    transform: translateX(-50%);
 }
 
 .search-dropdown {
@@ -183,7 +180,13 @@ html {
     background-color: #3182ED;
 }
 
-#color-palate {
+.color-palate {
+    position: fixed;
+    top: 15px;
+    background-color: #202025;
+    backdrop-filter: blur(20px);
+    border-radius: 10px;
+    transition: all 0.3s ease, transform 0.3s ease;
     position: fixed;
     right: 20px;
     padding: 5px 5px;
@@ -390,7 +393,11 @@ html {
     justify-content: center;
 }
 
-#theme-toggle {
+.theme-toggle {
+    background-color: #202025;
+    backdrop-filter: blur(20px);
+    border-radius: 10px;
+    transition: all 0.3s ease, transform 0.3s ease;
     top: 92%;
     position: fixed;
     right: 10.5%;
@@ -398,7 +405,7 @@ html {
     display: flex;
 }
 
-.themebtn {
+.theme-btn {
     width: 40px;
     height: 40px;
     border: none;
@@ -414,47 +421,57 @@ html {
     transform-origin: center;
 }
 
-.themebtn:hover {
+.theme-btn:hover {
     background-color: #31303B;
     transform: scale(1.1);
 }
 
-#undoredo {
+.undoredo {
+    background-color: #202025;
+    backdrop-filter: blur(20px);
+    border-radius: 10px;
+    transition: all 0.3s ease, transform 0.3s ease;
+    gap: 10px;
     left: 20px;
     position: fixed;
-    top: 95%;
-    transform: translateY(-50%);
+    top: 92%;
     display: flex;
     padding: 5px 6px;
 }
 
-#delete {
+.delete {
+    background-color: #202025;
+    backdrop-filter: blur(20px);
+    border-radius: 10px;
+    transition: all 0.3s ease, transform 0.3s ease;
     position: fixed;
-    top: 95%;
+    top: 92%;
     left: 9%;
-    transform: translateY(-50%);
     display: flex;
     padding: 5px 5px;
 }
 
-#zoom-toolbar {
+.zoom-toolbar {
     position: fixed;
-    top: 95%;
-    right: 20px;
-    transform: translateY(-50%);
+    background-color: #202025;
+    backdrop-filter: blur(20px);
+    transition: all 0.3s ease, transform 0.3s ease;
+    border-radius: 10px;
+    padding: 5px 15px;
     display: flex;
+    top: 92%;
+    right: 20px;
+    gap: 25px;
 }
 
 #zoom-percentage {
-    background-color: #202025;
     position: fixed;
     color: white;
+    left: 50%;
     top: 50%;
-    right: 55px;
-    transform: translateY(-50%);
+    transform: translate(-50%, -50%);
     display: flex;
-    width: 7.8%;
-    height: 3%;
+    padding: 5px 5px;
     justify-content: center;
     align-items: center;
     font-size: smaller;
@@ -524,26 +541,51 @@ html {
 
 #angleInfo {
     position: fixed;
-    bottom: 20px;
+    top: 15%;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #232329;
+    background: linear-gradient(135deg, rgba(64, 97, 237, 0.4), rgba(134, 67, 230, 0.4));
+    background-size: 200% 200%;
+    animation: gradientMove 3s ease infinite;
+    backdrop-filter: blur(10px);
     color: white;
-    padding: 5px 10px;
+    padding: 5px 15px;
     border-radius: 20px;
     font-size: 15px;
     display: none;
     transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-#sidebar {
+@keyframes gradientMove {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.sidebar {
+    position: fixed;
+    background-color: #202025;
+    backdrop-filter: blur(20px);
+    border-radius: 10px;
+    transition: all 0.3s ease, transform 0.3s ease;
+    top: 15px;
     left: 20px;
     padding: 5px 5px;
     display: flex;
     font-size: 20px;
 }
 
-.sidebarbtn {
+.sidebar-btn {
     width: 40px;
     height: 40px;
     border: none;
@@ -559,7 +601,7 @@ html {
     transform-origin: center;
 }
 
-.sidebarbtn:hover {
+.sidebar-btn:hover {
     background-color: #31303B;
     transform: scale(1.1);
 }

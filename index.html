@@ -25,8 +25,8 @@ Description: An intuitive digital canvas for creative expression and collaborati
 <body>
     <canvas id="canvas"></canvas>
 
-    <div id="sidebar" class="toolbar">
-        <button class="sidebarbtn" id="sidebar" title="Sidebar"><i class="bi bi-grid"></i></button>
+    <div id="sidebar" class="sidebar">
+        <button class="sidebar-btn" id="sidebar-btn" title="Sidebar"><i class="bi bi-grid"></i></button>
     </div>
 
     <div id="sidebar-dropdown" class="sidebar-dropdown">
@@ -101,7 +101,7 @@ Description: An intuitive digital canvas for creative expression and collaborati
         </div>
     </div>
 
-    <div id="main-toolbar" class="toolbar">
+    <div id="toolbar" class="toolbar">
 
         <button class="tool" id="select" title="Pan -- X or 1"
             onclick="document.getElementById('instructions').textContent = 'Click and drag to move across canvas. Release when done.'">
@@ -167,15 +167,13 @@ Description: An intuitive digital canvas for creative expression and collaborati
 
         <div id="instructions">Choose any Tool. Click to get started</div>
     </div>
-    <div id="color-palate" class="toolbar">
-        <button class="colorpalatebtn" id="colorpalatebtn" title="Colors & Shape" onclick="toggleFloatingTab()"><i
-                class="bi bi-palette"></i></button>
+    <div id="color-palate" class="color-palate">
+        <button class="colorpalatebtn" id="colorpalatebtn" title="Colors & Shape" onclick="toggleFloatingTab()"><i class="bi bi-palette"></i></button>
     </div>
-    <div id="theme-toggle" class="toolbar">
-        <button class="themebtn" id="theme-btn" title="Theme -- Q or *"><ion-icon
-                name="moon-outline"></ion-icon></button>
+    <div id="theme-toggle" class="theme-toggle">
+        <button class="theme-btn" id="theme-btn" title="Theme -- Q or *"><ion-icon name="moon-outline"></ion-icon></button>
     </div>
-    <div id="undoredo" class="toolbar">
+    <div id="undoredo" class="undoredo">
         <button class="tool" id="undo" title="Undo -- Ctrl + Z"><i class="bi bi-arrow-90deg-left"></i></button>
 
         <div class="toolbar-divider"></div>
@@ -245,24 +243,21 @@ Description: An intuitive digital canvas for creative expression and collaborati
             <button class="shape-btn tool" id="octagon" title="Octagon"><i class="bi bi-octagon"></i></button>
             <button class="shape-btn tool" id="star" title="Star"><i class="bi bi-star"></i></button>
             <button class="shape-btn tool" id="heart" title="Heart"><i class="bi bi-heart"></i></button>
-            <button class="shape-btn tool" id="parallelogram" title="Parallelogram"><i
-                    class="bi bi-slash-lg"></i></button>
-            <button class="shape-btn tool" id="arrowhead" title="Arrowhead"><i
-                    class="bi bi-arrow-up-right"></i></button>
+            <button class="shape-btn tool" id="parallelogram" title="Parallelogram"><i class="bi bi-slash-lg"></i></button>
+            <button class="shape-btn tool" id="arrowhead" title="Arrowhead"><i class="bi bi-arrow-up-right"></i></button>
             <button class="shape-btn tool" id="line" title="Line"><i class="bi bi-dash-lg"></i></button>
             <button class="shape-btn tool" id="cross" title="Cross"><i class="bi bi-x-lg"></i></button>
             <button class="shape-btn tool" id="plus" title="Plus"><i class="bi bi-plus-lg"></i></button>
         </div>
     </div>
 
-    <div id="delete" class="toolbar">
+    <div id="delete" class="delete">
         <button class="tool" id="clear" title="Clear All -- Ctrl + D"><i class="bi bi-trash3"></i></button>
     </div>
-    <div id="zoom-toolbar" class="toolbar">
-        <button class="zoom-in-btn" id="zoom-in" title="Zoom In -- Ctrl +"><i
-                class="bi bi-plus-lg"></i></button>&nbsp&nbsp
-        <div id="zoom-percentage" class="toolbar">100%</div>
+    <div id="zoom-toolbar" class="zoom-toolbar">
+        <button class="zoom-in-btn" id="zoom-in" title="Zoom In -- Ctrl +"><i class="bi bi-plus-lg"></i></button>
         <button class="zoom-out-btn" id="zoom-out" title="Zoom Out -- Ctrl -"><i class="bi bi-dash-lg"></i></button>
+        <div id="zoom-percentage">100%</div>
     </div>
     <textarea type="text" id="textInput" class="textInput" spellcheck="false" autocomplete="off" multiline></textarea>
 
