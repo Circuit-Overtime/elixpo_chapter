@@ -286,8 +286,16 @@ canvas.addEventListener('mouseup', (e) => {
 document.querySelectorAll('.tool').forEach(tool => {
     tool.addEventListener('click', () => {
         if (tool.id === 'clear') {
+            // Clear all elements including text
             elements = [];
+            // Also clear any active text input
+            textInput.style.display = 'none';
+            textInput.value = '';
+            isWriting = false;
             redrawCanvas();
+            // Switch back to pointer tool after clearing
+            selectTool('pointer');
+            document.getElementById('pointer').click();
         } else if (tool.id === 'save') {
             saveWork();
         } else if (tool.id === 'open-sidebar') {
