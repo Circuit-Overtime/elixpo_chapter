@@ -54,42 +54,112 @@ Description: An intuitive digital canvas for creative expression and collaborati
             <div class="menu-divider"></div> -->
 
             <div class="menu-card">
-                <div class="menu-item">
+                <div class="menu-item" id="edit-menu">
                     <span>Edit</span>
                     <i class="bi bi-chevron-right"></i>
+                    <div class="edit-dropdown">
+                        <div class="menu-item" onclick="handleUndo()">
+                            <span>Undo</span>
+                            <span class="shortcut">Ctrl + Z</span>
+                        </div>
+                        <div class="menu-item" onclick="handleRedo()">
+                            <span>Redo</span>
+                            <span class="shortcut">Ctrl + Y</span>
+                        </div>
+                        <div class="menu-divider"></div>
+                        <div class="menu-item" onclick="handleCut()">
+                            <span>Cut</span>
+                            <span class="shortcut">Ctrl + X</span>
+                        </div>
+                        <div class="menu-item" onclick="handleCopy()">
+                            <span>Copy</span>
+                            <span class="shortcut">Ctrl + C</span>
+                        </div>
+                        <div class="menu-item" onclick="handlePaste()">
+                            <span>Paste</span>
+                            <span class="shortcut">Ctrl + V</span>
+                        </div>
+                        <div class="menu-divider"></div>
+                        <div class="menu-item" onclick="handleSelectAll()">
+                            <span>Select All</span>
+                            <span class="shortcut">Ctrl + A</span>
+                        </div>
+                        <div class="menu-item" onclick="handleDeleteAll()">
+                            <span>Delete All</span>
+                            <span class="shortcut">Ctrl + D</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="menu-item">
+                <div class="menu-item" id="view-menu">
                     <span>View</span>
                     <i class="bi bi-chevron-right"></i>
+                    <div class="view-dropdown">
+                        <div class="menu-item" onclick="handleZoomIn()">
+                            <span>Zoom In</span>
+                            <span class="shortcut">Ctrl +</span>
+                        </div>
+                        <div class="menu-item" onclick="handleZoomOut()">
+                            <span>Zoom Out</span>
+                            <span class="shortcut">Ctrl -</span>
+                        </div>
+                        <div class="menu-divider"></div>
+                        <div class="menu-item" onclick="handleZoomReset()">
+                            <span>Reset Zoom</span>
+                            <span class="shortcut">Ctrl 0</span>
+                        </div>
+                        <div class="menu-item" onclick="handleZoomToFit()">
+                            <span>Zoom to Fit</span>
+                            <span class="shortcut">Ctrl 1</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="menu-item">
+                <div class="menu-item" id="export-menu">
                     <span>Export</span>
                     <i class="bi bi-chevron-right"></i>
+                    <div class="export-dropdown">
+                        <div class="menu-item" onclick="handleExportPNG()">
+                            <span>Download as PNG</span>
+                            <span class="shortcut">Alt + P</span>
+                        </div>
+                        <div class="menu-item" onclick="handleExportSVG()">
+                            <span>Download as SVG</span>
+                            <span class="shortcut">Alt + S</span>
+                        </div>
+                        <div class="menu-item" onclick="handleExportJPG()">
+                            <span>Download as JPG</span>
+                            <span class="shortcut">Alt + J</span>
+                        </div>
+                        <div class="menu-divider"></div>
+                        <div class="menu-item" onclick="handleGenerateLink()">
+                            <span>Generate Link</span>
+                            <span class="shortcut">Alt + L</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="menu-item">
+                <div class="menu-item" onclick="handleInsertEmbed()">
                     <span>Insert Embed</span>
                 </div>
-                <div class="menu-item">
+                <div class="menu-item" onclick="handleUploadMedia()">
                     <span>Upload Media</span>
                 </div>
                 <div class="menu-divider"></div>
-                <div class="menu-item">
+                <div class="menu-item" onclick="handleDownload()">
                     <span>Download File</span>
                 </div>
                 <div class="menu-divider"></div>
-                <div class="menu-item">
+                <div class="menu-item" onclick="handlePreferences()">
                     <span>Preferences</span>
                     <i class="bi bi-chevron-right"></i>
                 </div>
-                <div class="menu-item">
+                <div class="menu-item" onclick="handleLanguage()">
                     <span>Language</span>
                     <i class="bi bi-chevron-right"></i>
                 </div>
-                <div class="menu-item">
+                <div class="menu-item" onclick="handleKeyboardBinding()">
                     <span>Keyboard Binding</span>
                     <i class="bi bi-chevron-right"></i>
                 </div>
-                <div class="menu-item">
+                <div class="menu-item" onclick="handleDocs()">
                     <span>Docs</span>
                     <i class="bi bi-chevron-right"></i>
                 </div>
@@ -169,10 +239,12 @@ Description: An intuitive digital canvas for creative expression and collaborati
         <div id="instructions">Choose any Tool. Click to get started</div>
     </div>
     <div id="color-palate" class="color-palate">
-        <button class="colorpalatebtn" id="colorpalatebtn" title="Colors & Shape" onclick="toggleFloatingTab()"><i class="bi bi-palette"></i></button>
+        <button class="colorpalatebtn" id="colorpalatebtn" title="Colors & Shape" onclick="toggleFloatingTab()"><i
+                class="bi bi-palette"></i></button>
     </div>
     <div id="theme-toggle" class="theme-toggle">
-        <button class="theme-btn" id="theme-btn" title="Theme -- Q or *"><ion-icon name="moon-outline"></ion-icon></button>
+        <button class="theme-btn" id="theme-btn" title="Theme -- Q or *"><ion-icon
+                name="moon-outline"></ion-icon></button>
     </div>
     <div id="undoredo" class="undoredo">
         <button class="tool" id="undo" title="Undo -- Ctrl + Z"><i class="bi bi-arrow-90deg-left"></i></button>
@@ -244,8 +316,10 @@ Description: An intuitive digital canvas for creative expression and collaborati
             <button class="shape-btn tool" id="octagon" title="Octagon"><i class="bi bi-octagon"></i></button>
             <button class="shape-btn tool" id="star" title="Star"><i class="bi bi-star"></i></button>
             <button class="shape-btn tool" id="heart" title="Heart"><i class="bi bi-heart"></i></button>
-            <button class="shape-btn tool" id="parallelogram" title="Parallelogram"><i class="bi bi-slash-lg"></i></button>
-            <button class="shape-btn tool" id="arrowhead" title="Arrowhead"><i class="bi bi-arrow-up-right"></i></button>
+            <button class="shape-btn tool" id="parallelogram" title="Parallelogram"><i
+                    class="bi bi-slash-lg"></i></button>
+            <button class="shape-btn tool" id="arrowhead" title="Arrowhead"><i
+                    class="bi bi-arrow-up-right"></i></button>
             <button class="shape-btn tool" id="line" title="Line"><i class="bi bi-dash-lg"></i></button>
             <button class="shape-btn tool" id="cross" title="Cross"><i class="bi bi-x-lg"></i></button>
             <button class="shape-btn tool" id="plus" title="Plus"><i class="bi bi-plus-lg"></i></button>
@@ -281,6 +355,7 @@ Description: An intuitive digital canvas for creative expression and collaborati
         integrity="sha512-lTLYEWPPtelBz0gl9pujLocRWfHSKaULk5s8vrpzjBqPmmCTByfkhRRwBX8Vvq6hY8IKxATwI4q1qsqb9WtY1g=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="Js/Canvas.js"></script>
+    <script src="Js/MenuActions.js"></script>
 </body>
 
 </html>

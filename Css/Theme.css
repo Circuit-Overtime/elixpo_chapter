@@ -250,6 +250,39 @@ body.light-theme .menu-item .shortcut {
     color: rgba(0, 0, 0, 0.4);
 }
 
+/* Light theme styles for all dropdowns */
+body.light-theme .edit-dropdown,
+body.light-theme .view-dropdown,
+body.light-theme .export-dropdown {
+    background: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .edit-dropdown .menu-item,
+body.light-theme .view-dropdown .menu-item,
+body.light-theme .export-dropdown .menu-item {
+    color: rgba(0, 0, 0, 0.9);
+}
+
+body.light-theme .edit-dropdown .menu-item:hover,
+body.light-theme .view-dropdown .menu-item:hover,
+body.light-theme .export-dropdown .menu-item:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .edit-dropdown .shortcut,
+body.light-theme .view-dropdown .shortcut,
+body.light-theme .export-dropdown .shortcut {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+body.light-theme .edit-dropdown .menu-divider,
+body.light-theme .view-dropdown .menu-divider,
+body.light-theme .export-dropdown .menu-divider {
+    background: rgba(0, 0, 0, 0.08);
+}
+
 /* Light theme account card styles */
 body.light-theme .account-card {
     background-color: #ffffff;
