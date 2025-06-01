@@ -1,3 +1,127 @@
+@media (width: 1280px) {
+
+    .delete {
+        top: 90%;
+        left: 14%;
+        padding: 6px;
+    }
+
+    .tool {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+
+    .sidebar-dropdown {
+        top: 100px;
+        left: 25px;
+        width: 220px;
+    }
+
+    .sidebar-content {
+        height: 400px;
+    }
+
+    .floating-tab {
+        top: 100px;
+        right: 25px;
+        width: 200px;
+    }
+
+    .theme-toggle {
+        top: 90%;
+        right: 16%;
+        padding: 6px;
+    }
+
+    .theme-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .zoom-toolbar {
+        top: 90%;
+        right: 25px;
+        padding: 6px;
+        gap: 30px;
+    }
+
+    .zoom-in-btn,
+    .zoom-out-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .undoredo {
+        top: 90%;
+        left: 25px;
+        padding: 6px 10px;
+        gap: 12px;
+    }
+}
+
+@media (width: 1024px) {
+
+    .delete {
+        top: 88%;
+        left: 18%;
+        padding: 6px;
+    }
+
+    .tool {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+
+    .sidebar-dropdown {
+        top: 100px;
+        left: 25px;
+        width: 220px;
+    }
+
+    .sidebar-content {
+        height: 400px;
+    }
+
+    .floating-tab {
+        top: 100px;
+        right: 25px;
+        width: 200px;
+    }
+
+    .theme-toggle {
+        top: 88%;
+        right: 21%;
+        padding: 6px;
+    }
+
+    .theme-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .zoom-toolbar {
+        top: 88%;
+        right: 25px;
+        padding: 6px;
+        gap: 30px;
+    }
+
+    .zoom-in-btn,
+    .zoom-out-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .undoredo {
+        top: 88%;
+        left: 25px;
+        padding: 6px 10px;
+        gap: 12px;
+    }
+}
+
 @media (max-width: 798px) {
     .toolbar {
         display: flex;
@@ -61,14 +185,70 @@
     }
 }
 
-@media (max-width: 768px) {
-    .toolbar {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 8px 15px;
-        gap: 8px;
+@media (width: 1024px) {
+
+    .delete {
+        top: 88%;
+        left: 18%;
+        padding: 6px;
     }
+
+    .tool {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+
+    .sidebar-dropdown {
+        top: 100px;
+        left: 25px;
+        width: 220px;
+    }
+
+    .sidebar-content {
+        height: 400px;
+    }
+
+    .floating-tab {
+        top: 100px;
+        right: 25px;
+        width: 200px;
+    }
+
+    .theme-toggle {
+        top: 88%;
+        right: 21%;
+        padding: 6px;
+    }
+
+    .theme-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .zoom-toolbar {
+        top: 88%;
+        right: 25px;
+        padding: 6px;
+        gap: 30px;
+    }
+
+    .zoom-in-btn,
+    .zoom-out-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .undoredo {
+        top: 88%;
+        left: 25px;
+        padding: 6px 10px;
+        gap: 12px;
+    }
+}
+
+@media (width: 853px) {
+
 
     .sidebar {
         left: 20px;
@@ -86,7 +266,6 @@
         top: 92%;
         display: flex;
         flex-direction: row;
-        padding: 5px 8px;
     }
 
     .delete {
@@ -94,26 +273,112 @@
         left: 18%;
         display: flex;
         flex-direction: row;
-        padding: 5px 5px;
-    }
-
-    .tool {
-        width: 35px;
-        height: 35px;
-        font-size: 15px;
     }
 
     .theme-toggle {
         top: 92%;
         right: 21%;
         display: flex;
-        padding: 3px 3px;
     }
 
     .zoom-toolbar {
         top: 92%;
         right: 20px;
-        padding: 3px 3px;
+        gap: 25px;
+    }
+
+    .zoom-in-btn {
+        margin-right: 10px;
+    }
+
+    .zoom-out-btn {
+        margin-left: 10px;
+    }
+}
+
+@media (width: 820px) {
+    .sidebar {
+        left: 20px;
+        padding: 5px 5px;
+        display: flex;
+    }
+
+    .color-palate {
+        right: 20px;
+        padding: 5px 5px;
+        display: flex;
+    }
+
+    .undoredo {
+        top: 92%;
+        display: flex;
+        flex-direction: row;
+    }
+
+    .delete {
+        top: 92%;
+        left: 18%;
+        display: flex;
+        flex-direction: row;
+    }
+
+    .theme-toggle {
+        top: 92%;
+        right: 21%;
+        display: flex;
+    }
+
+    .zoom-toolbar {
+        top: 92%;
+        right: 20px;
+        gap: 25px;
+    }
+
+    .zoom-in-btn {
+        margin-right: 10px;
+    }
+
+    .zoom-out-btn {
+        margin-left: 10px;
+    }
+}
+
+@media (width: 800px) {
+
+    .sidebar {
+        left: 20px;
+        padding: 5px 5px;
+        display: flex;
+    }
+
+    .color-palate {
+        right: 20px;
+        padding: 5px 5px;
+        display: flex;
+    }
+
+    .undoredo {
+        top: 92%;
+        display: flex;
+        flex-direction: row;
+    }
+
+    .delete {
+        top: 92%;
+        left: 18%;
+        display: flex;
+        flex-direction: row;
+    }
+
+    .theme-toggle {
+        top: 92%;
+        right: 21%;
+        display: flex;
+    }
+
+    .zoom-toolbar {
+        top: 92%;
+        right: 20px;
         gap: 25px;
     }
 
@@ -494,5 +759,102 @@
 
     .floating-tab .shape-grid {
         height: 116px;
+    }
+}
+
+@media (max-width: 390px) {
+    .toolbar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px 5px;
+        gap: 5px;
+    }
+
+    .sidebar {
+        left: 20px;
+        padding: 5px 5px;
+        display: flex;
+        flex-direction: column;
+        top: 92%;
+    }
+
+    .color-palate {
+        padding: 5px 5px;
+        display: flex;
+        flex-direction: column;
+        top: 92%;
+        right: 67%;
+    }
+
+    .sidebar-dropdown {
+        top: 21.5%;
+        left: 15px;
+        width: 44%;
+    }
+
+    .undoredo {
+        top: 92%;
+        left: 49%;
+        display: flex;
+        flex-direction: row;
+        padding: 10px 8px;
+    }
+
+    #undo {
+        margin-right: 5px;
+    }
+
+    #redo {
+        margin-left: 5px;
+    }
+
+    .delete {
+        top: 92%;
+        left: 65.5%;
+        display: flex;
+        flex-direction: row;
+        padding: 10px 10px;
+    }
+
+    .tool {
+        width: 31px;
+        height: 31px;
+        font-size: 15px;
+    }
+
+    .zoom-toolbar {
+        top: 92%;
+        right: 20px;
+        padding: 3px 3px;
+        gap: 25px;
+        display: none;
+    }
+
+    .zoom-in-btn {
+        margin-right: 10px;
+    }
+
+    .zoom-out-btn {
+        margin-left: 10px;
+    }
+
+    .theme-toggle {
+        top: 92%;
+        right: 20px;
+        padding: 6px 6px;
+    }
+
+    .floating-tab {
+        top: 30%;
+        right: 15px;
+    }
+
+    .floating-tab .shape-grid {
+        height: 116px;
+    }
+
+    #fill-color {
+        display: none;
     }
 }
