@@ -325,12 +325,13 @@
 
     .color-palate {
         top: 92%;
-        right: 70%;
+        right: 69%;
         padding: 5px 5px;
     }
 
     .undoredo {
-        left: 40%;
+        left: 50%;
+        transform: translateX(-50%);
         top: 92%;
         display: flex;
         flex-direction: row;
