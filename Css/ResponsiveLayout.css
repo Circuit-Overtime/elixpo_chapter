@@ -122,6 +122,68 @@
     }
 }
 
+@media (width: 1200px) {
+
+    .delete {
+        top: 88%;
+        left: 15%;
+        padding: 6px;
+    }
+
+    .tool {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+
+    .sidebar-dropdown {
+        top: 100px;
+        left: 25px;
+        width: 220px;
+    }
+
+    .sidebar-content {
+        height: 400px;
+    }
+
+    .floating-tab {
+        top: 100px;
+        right: 25px;
+        width: 200px;
+    }
+
+    .theme-toggle {
+        top: 88%;
+        right: 17%;
+        padding: 6px;
+    }
+
+    .theme-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .zoom-toolbar {
+        top: 88%;
+        right: 25px;
+        padding: 6px;
+        gap: 30px;
+    }
+
+    .zoom-in-btn,
+    .zoom-out-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .undoredo {
+        top: 88%;
+        left: 25px;
+        padding: 6px 10px;
+        gap: 12px;
+    }
+}
+
 @media (max-width: 798px) {
     .toolbar {
         display: flex;
@@ -398,6 +460,106 @@
     }
 }
 
+@media (max-width: 700px) {
+    .toolbar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 5px 15px;
+        gap: 8px;
+    }
+
+    .sidebar {
+        left: 20px;
+        padding: 3px 3px;
+        display: flex;
+    }
+
+    .color-palate {
+        right: 20px;
+        padding: 3px 3px;
+        display: flex;
+    }
+
+    .undoredo {
+        top: 92%;
+        display: flex;
+        flex-direction: row;
+        padding: 6px 8px;
+    }
+
+    #undo {
+        margin-right: 10px;
+    }
+
+    #redo {
+        margin-left: 10px;
+    }
+
+
+    .delete {
+        position: fixed;
+        top: 92%;
+        left: 23%;
+        display: flex;
+        flex-direction: row;
+        padding: 6px 6px;
+    }
+
+    .tool {
+        width: 35px;
+        height: 35px;
+        font-size: 17px;
+    }
+
+    .zoom-toolbar {
+        top: 92%;
+        right: 20px;
+        padding: 3px 3px;
+        gap: 25px;
+    }
+
+    .zoom-in-btn {
+        margin-right: 10px;
+    }
+
+    .zoom-out-btn {
+        margin-left: 10px;
+    }
+
+    .theme-toggle {
+        top: 92%;
+        right: 23.5%;
+        padding: 4px 4px;
+    }
+
+    .themebtn {
+        width: 35px;
+        height: 35px;
+        font-size: 15px;
+    }
+
+    .sidebar-dropdown {
+        top: 130px;
+        left: 20px;
+        width: 30%;
+    }
+
+    .sidebarbtn {
+        width: 35px;
+        height: 35px;
+        font-size: 15px;
+    }
+
+    .floating-tab {
+        top: 130px;
+        right: 20px;
+    }
+
+    .floating-tab .shape-grid {
+        height: 130px;
+    }
+}
 
 @media (max-width: 638px) {
     .toolbar {
@@ -572,6 +734,87 @@
     }
 }
 
+@media (width: 540px) {
+    .toolbar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px 10px;
+        gap: 10px;
+    }
+
+    .sidebar {
+        top: 92%;
+        left: 20px;
+        padding: 3px 3px;
+        display: flex;
+    }
+
+    .color-palate {
+        top: 92%;
+        right: 77%;
+        padding: 3px 3px;
+    }
+
+    .undoredo {
+        left: 36%;
+        top: 92%;
+        display: flex;
+        flex-direction: row;
+        padding: 8px 8px;
+    }
+
+    .delete {
+        top: 92%;
+        left: 61%;
+        display: flex;
+        flex-direction: row;
+        padding: 8px 8px;
+    }
+
+    .tool {
+        width: 31px;
+        height: 31px;
+        font-size: 15px;
+    }
+
+    .zoom-toolbar {
+        top: 92%;
+        right: 20px;
+        padding: 3.5px 3px;
+        gap: 25px;
+    }
+
+    .zoom-in-btn {
+        margin-right: 10px;
+    }
+
+    .zoom-out-btn {
+        margin-left: 10px;
+    }
+
+    .theme-toggle {
+        top: 92%;
+        right: 66%;
+        padding: 4px 4px;
+    }
+
+    .sidebar-dropdown {
+        top: 180px;
+        left: 20px;
+        width: 40%;
+    }
+
+    .floating-tab {
+        top: 180px;
+        right: 20px;
+    }
+
+    .floating-tab .shape-grid {
+        height: 115px;
+    }
+}
+
 @media (max-width: 430px) {
     .toolbar {
         display: flex;
@@ -702,7 +945,7 @@
 
     .undoredo {
         top: 92%;
-        left: 35%;
+        left: 49%;
         display: flex;
         flex-direction: row;
         padding: 10px 8px;

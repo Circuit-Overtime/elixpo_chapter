@@ -841,24 +841,6 @@ html {
     padding: 8px;
 }
 
-/* Show sub-dropdown with a small delay */
-#edit-menu:hover .sub-dropdown,
-#view-menu:hover .sub-dropdown {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-    transition-delay: 0.1s;
-}
-
-/* Keep sub-dropdown visible when hovering over it for both menus */
-#edit-menu .sub-dropdown:hover,
-#view-menu .sub-dropdown:hover {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-}
-
-/* View dropdown styles */
 .view-dropdown {
     position: fixed;
     width: 200px;
@@ -872,8 +854,8 @@ html {
     transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 2001;
     padding: 8px;
-    top: 90px;
-    left: calc(40% + 110px);
+    top: 60px;
+    left: 200px;
 }
 
 #view-menu:hover .view-dropdown {
@@ -904,7 +886,7 @@ html {
     z-index: 2001;
     padding: 8px;
     top: 90px;
-    left: calc(40% + 220px);
+    left: 200px;
 }
 
 #export-menu:hover .export-dropdown {
@@ -934,8 +916,8 @@ html {
     transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 2001;
     padding: 8px;
-    top: 90px;
-    left: 40%;
+    top: 20px;
+    left: 200px;
 }
 
 #edit-menu:hover .edit-dropdown {
