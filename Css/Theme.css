@@ -388,3 +388,19 @@ body.light-theme .zoom-toolbar {
     border: 1px solid #c8c8c897;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
+
+/* Light theme notification styles */
+body.light-theme .floating-notification {
+    background: rgba(255, 255, 255, 0.98);
+    color: #333333;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+body.light-theme .notification-content i {
+    color: #4387f4;
+}
+
+body.light-theme .notification-progress {
+    background: linear-gradient(90deg, #4387f4, #8860D0);
+}

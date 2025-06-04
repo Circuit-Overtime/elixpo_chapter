@@ -74,19 +74,50 @@ function handleDownload() {
     linkElement.click();
 }
 
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    const progress = document.createElement('div');
+    
+    notification.className = 'floating-notification';
+    progress.className = 'notification-progress';
+    
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="bi bi-info-circle"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    notification.appendChild(progress);
+    document.body.appendChild(notification);
+
+    // Trigger animation
+    setTimeout(() => notification.classList.add('show'), 100);
+    
+    // Start progress bar animation
+    progress.style.width = '100%';
+    
+    // Remove notification after animation
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
 function handlePreferences() {
-    alert('Preferences will be available in the next update!');
+    showNotification('Preferences will be available in the next update! 🔧');
 }
 
 function handleLanguage() {
-    alert('Language settings will be available in the next update!');
+    showNotification('Language settings will be available in the next update! 🌐');
 }
 
 function handleKeyboardBinding() {
-    alert('Keyboard binding customization will be available in the next update!');
+    showNotification('Keyboard binding customization will be available in the next update! ⌨️');
 }
 
 function handleDocs() {
+    showNotification('Opening documentation...', 'info');
     window.open('https://github.com/yourusername/inkflow/wiki', '_blank');
 }
 
