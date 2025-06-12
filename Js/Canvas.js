@@ -283,9 +283,10 @@ canvas.addEventListener('mouseup', (e) => {
     handleMouseUp(e);
 });
 
-document.querySelectorAll('.tool').forEach(tool => {
+// Update the existing event listener for tools to handle both class and id
+document.querySelectorAll('.tool, .delete-btn').forEach(tool => {
     tool.addEventListener('click', () => {
-        if (tool.id === 'clear') {
+        if (tool.id === 'clear' || tool.classList.contains('delete-btn')) {
             // Clear all elements including text
             elements = [];
             // Also clear any active text input
@@ -296,6 +297,8 @@ document.querySelectorAll('.tool').forEach(tool => {
             // Switch back to pointer tool after clearing
             selectTool('pointer');
             document.getElementById('pointer').click();
+            // Save state after clearing
+            saveState();
         } else if (tool.id === 'save') {
             saveWork();
         } else if (tool.id === 'open-sidebar') {
@@ -1485,16 +1488,6 @@ function handleKeyDown(event) {
         document.getElementById('clear').click();
     }
 
-    // // Zoom controls
-    // if (event.ctrlKey && event.key === '+') {
-    //     event.preventDefault();
-    //     document.getElementById('zoom-in').click();
-    // }
-    // if (event.ctrlKey && event.key === '-') {
-    //     event.preventDefault();
-    //     document.getElementById('zoom-out').click();
-    // }
-
     if (key === 'm' || key === '0') toggleMainToolbar2();
 
     // Add search and image shortcuts
@@ -2039,6 +2032,7 @@ closeSidebarBtn.addEventListener('click', toggleSidebar);
 // Close sidebar when clicking outside
 document.addEventListener('click', (e) => {
     if (isSidebarOpen &&
+       
         !sidebarDropdown.contains(e.target) &&
         !sidebarBtn.contains(e.target)) {
         toggleSidebar();
