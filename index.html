@@ -166,7 +166,7 @@
 
     <div id="toolbar" class="toolbar">
 
-        <button class="tool" id="select" title="Pan -- X or 1"
+        <button class="tool" id="select" title="Pan | X or 1"
             onclick="document.getElementById('instructions').textContent = 'Click and drag to move across canvas. Release when done.'">
             <ion-icon name="hand-right-outline"></ion-icon>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">1</span>
@@ -174,42 +174,42 @@
 
         <div class="toolbar-divider"></div>
 
-        <button class="tool" id="pointer" title="Pointer -- Y or 2"
+        <button class="tool" id="pointer" title="Pointer | Y or 2"
             onclick="document.getElementById('instructions').textContent = 'Click and drag objects to move them around the canvas freely.'">
             <i class="bi bi-cursor" style="transform: rotate(350deg);"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">2</span>
         </button>
-        <button class="tool" id="rectangle" title="Rectangle -- R or 3"
+        <button class="tool" id="rectangle" title="Rectangle | R or 3"
             onclick="document.getElementById('instructions').textContent = 'Click, drag diagonally to create rectangle. Hold Shift for perfect square.'">
             <i class="far fa-square"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">3</span>
         </button>
-        <button class="tool" id="circle" title="Circle -- C or 4"
+        <button class="tool" id="circle" title="Circle | C or 4"
             onclick="document.getElementById('instructions').textContent = 'Click and drag outward to draw circle. Hold Shift for perfect circle.'">
             <i class="far fa-circle"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">4</span>
         </button>
-        <button class="tool" id="arrowhead" title="Arrow -- A or 5"
+        <button class="tool" id="arrowhead" title="Arrow | A or 5"
             onclick="document.getElementById('instructions').textContent = 'Click start point, drag to set direction and length of arrow.'">
             <i class="bi bi-arrow-right"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">5</span>
         </button>
-        <button class="tool active" id="pencil" title="Pencil -- P or 6"
+        <button class="tool active" id="pencil" title="Pencil | P or 6"
             onclick="document.getElementById('instructions').textContent = 'Click and drag to draw freehand. Adjust width as needed.'">
             <i class="fas fa-pencil-alt"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">6</span>
         </button>
-        <button class="tool" id="eraser" title="Eraser -- E or 7"
+        <button class="tool" id="eraser" title="Eraser | E or 7"
             onclick="document.getElementById('instructions').textContent = 'Click and drag over elements to erase them from canvas.'">
             <i class="bi bi-eraser"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">7</span>
         </button>
-        <button class="tool" id="text" title="Text -- T or 8"
+        <button class="tool" id="text" title="Text | T or 8"
             onclick="document.getElementById('instructions').textContent = 'Click to add text. Type and click outside when done.'">
             <i class="bi bi-type" style="font-size: 22px;"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">8</span>
         </button>
-        <button class="tool" id="image" title="Image -- I or 9"
+        <button class="tool" id="image" title="Image | I or 9"
             onclick="document.getElementById('fileInput').click(); document.getElementById('instructions').textContent = 'Select an image to upload to canvas.'">
             <i class="bi bi-image"></i>
             <span style="font-size: 0.6em; position: relative; top: 4px; left:3px;">9</span>
@@ -223,7 +223,7 @@
             <ion-icon name="square" style="font-size: 22px;"></ion-icon>
         </button>
 
-        <button class="tool" id="search" title="search -- /"
+        <button class="tool" id="search" title="search | /"
             onclick="document.getElementById('instructions').textContent = 'Search Tools and Colors'">
             <i class="bi bi-search"></i>
         </button>
@@ -235,15 +235,15 @@
                 class="bi bi-palette"></i></button>
     </div>
     <div id="theme-toggle" class="theme-toggle">
-        <button class="theme-btn" id="theme-btn" title="Theme -- Q or *"><ion-icon
+        <button class="theme-btn" id="theme-btn" title="Theme | Q or *"><ion-icon
                 name="moon-outline"></ion-icon></button>
     </div>
     <div id="undoredo" class="undoredo">
-        <button class="tool" id="undo" title="Undo -- Ctrl + Z"><i class="bi bi-arrow-90deg-left"></i></button>
+        <button class="tool" id="undo" title="Undo | Ctrl + Z"><i class="bi bi-arrow-90deg-left"></i></button>
 
         <div class="toolbar-divider"></div>
 
-        <button class="tool" id="redo" title="Redo -- Ctrl + Y"><i class="bi bi-arrow-90deg-right"></i></button>
+        <button class="tool" id="redo" title="Redo | Ctrl + Y"><i class="bi bi-arrow-90deg-right"></i></button>
     </div>
 
     <div id="floating-tab" class="floating-tab hidden">
@@ -319,11 +319,11 @@
     </div>
 
     <div id="delete" class="delete">
-        <button class="tool" id="clear" title="Clear All -- Ctrl + D"><i class="bi bi-trash3"></i></button>
+        <button class="tool" id="clear" title="Clear All | Ctrl + D"><i class="bi bi-trash3"></i></button>
     </div>
     <div id="zoom-toolbar" class="zoom-toolbar">
-        <button class="zoom-in-btn" id="zoom-in" title="Zoom In -- Ctrl +"><i class="bi bi-plus-lg"></i></button>
-        <button class="zoom-out-btn" id="zoom-out" title="Zoom Out -- Ctrl -"><i class="bi bi-dash-lg"></i></button>
+        <button class="zoom-in-btn" id="zoom-in" title="Zoom In | Ctrl +"><i class="bi bi-plus-lg"></i></button>
+        <button class="zoom-out-btn" id="zoom-out" title="Zoom Out | Ctrl -"><i class="bi bi-dash-lg"></i></button>
         <div id="zoom-percentage">100%</div>
     </div>
     <textarea type="text" id="textInput" class="textInput" spellcheck="false" autocomplete="off" multiline></textarea>
