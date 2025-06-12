@@ -936,7 +936,6 @@ html {
     transform: translateY(0) scale(1);
 }
 
-/* Export dropdown styles */
 .export-dropdown {
     position: fixed;
     width: 200px;
@@ -967,7 +966,6 @@ html {
     transform: translateY(0) scale(1);
 }
 
-/* Remove menu-dropdown styles and keep edit-dropdown */
 .edit-dropdown {
     position: fixed;
     width: 200px;
@@ -996,53 +994,4 @@ html {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
-}
-
-.floating-notification {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.9);
-    background: rgba(32, 32, 37, 0.95);
-    backdrop-filter: blur(10px);
-    color: white;
-    padding: 15px 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    z-index: 9999;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    min-width: 300px;
-    text-align: center;
-}
-
-.floating-notification.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translate(-50%, -50%) scale(1);
-}
-
-.notification-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-}
-
-.notification-content i {
-    font-size: 20px;
-    color: #3182ED;
-}
-
-.notification-progress {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #3182ED, #8860D0);
-    border-radius: 0 0 12px 12px;
-    width: 100%;
-    transition: width 3s linear;
 }
