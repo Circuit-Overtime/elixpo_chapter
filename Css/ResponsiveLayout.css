@@ -670,12 +670,12 @@
 
     .color-palate {
         top: 92%;
-        right: 75.3%;
+        right: 74%;
         padding: 3px 3px;
     }
 
     .undoredo {
-        left: 28%;
+        left: 29%;
         top: 92%;
         display: flex;
         flex-direction: row;
@@ -684,7 +684,7 @@
 
     .delete {
         top: 92%;
-        left: 55%;
+        left: 57%;
         display: flex;
         flex-direction: row;
        padding: 4px 4px;
@@ -724,13 +724,13 @@
     }
 
     .sidebar-dropdown {
-        top: 180px;
+        top: 350px;
         left: 20px;
         width: 40%;
     }
 
     .floating-tab {
-        top: 180px;
+        top: 250px;
         right: 20px;
     }
 
