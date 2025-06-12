@@ -423,3 +423,25 @@ body.light-theme .notification-content i {
 body.light-theme .notification-progress {
     background: linear-gradient(90deg, #4387f4, #8860D0);
 }
+
+body.light-theme .layout-dropdown {
+    background: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .layout-dropdown .menu-item {
+    color: rgba(0, 0, 0, 0.9);
+}
+
+body.light-theme .layout-dropdown .menu-item:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .layout-dropdown .shortcut {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+body.light-theme .layout-dropdown .menu-divider {
+    background: rgba(0, 0, 0, 0.08);
+}

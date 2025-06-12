@@ -48,7 +48,7 @@
             <div class="menu-card">
                 <div class="menu-item" id="edit-menu">
                     <span>Edit</span>
-                    <i class="bi bi-chevron-right"></i>
+                    <ion-icon name="chevron-forward-outline"></ion-icon>
                     <div class="edit-dropdown">
                         <div class="menu-item" onclick="handleUndo()">
                             <span>Undo</span>
@@ -84,7 +84,7 @@
                 </div>
                 <div class="menu-item" id="view-menu">
                     <span>View</span>
-                    <i class="bi bi-chevron-right"></i>
+                    <ion-icon name="chevron-forward-outline"></ion-icon>
                     <div class="view-dropdown">
                         <div class="menu-item" onclick="handleZoomIn()">
                             <span>Zoom In</span>
@@ -107,7 +107,7 @@
                 </div>
                 <div class="menu-item" id="export-menu">
                     <span>Export</span>
-                    <i class="bi bi-chevron-right"></i>
+                    <ion-icon name="chevron-forward-outline"></ion-icon>
                     <div class="export-dropdown">
                         <div class="menu-item" onclick="handleExportPNG()">
                             <span>Download as PNG</span>
@@ -135,21 +135,30 @@
                     <span>Upload Media</span>
                 </div>
                 <div class="menu-divider"></div>
-                <div class="menu-item" onclick="handlePreferences()">
-                    <span>Preferences</span>
-                    <i class="bi bi-chevron-right"></i>
+                <div class="menu-item" id="layout-menu">
+                    <span>Layout</span><span style="font-size: 0.8em; color: #888; margin-left: 2px;">coming soon</span>
+                    <ion-icon name="chevron-forward-outline"></ion-icon>
+                    <div class="layout-dropdown">
+                        <div class="menu-item">
+                            <span>Dynamic</span>
+                            <span class="shortcut">Shift + D</span>
+                        </div>
+                        <div class="menu-item">
+                            <span>Linear</span>
+                            <span class="shortcut">Shift + L</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="menu-item" onclick="handleLanguage()">
                     <span>Language</span>
-                    <i class="bi bi-chevron-right"></i>
+                    <ion-icon name="chevron-forward-outline"></ion-icon>
                 </div>
                 <div class="menu-item" onclick="handleKeyboardBinding()">
                     <span>Keyboard Binding</span>
-                    <i class="bi bi-chevron-right"></i>
+                    <ion-icon name="chevron-forward-outline"></ion-icon>
                 </div>
                 <div class="menu-item" onclick="handleDocs()">
                     <span>Docs</span>
-                    <i class="bi bi-chevron-right"></i>
                 </div>
                 <div class="menu-divider"></div>
                 <div class="menu-item">

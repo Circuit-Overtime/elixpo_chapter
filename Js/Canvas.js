@@ -2033,6 +2033,7 @@ closeSidebarBtn.addEventListener('click', toggleSidebar);
 document.addEventListener('click', (e) => {
     if (isSidebarOpen &&
        
+
         !sidebarDropdown.contains(e.target) &&
         !sidebarBtn.contains(e.target)) {
         toggleSidebar();
@@ -2117,4 +2118,27 @@ document.addEventListener('click', (e) => {
 floatingTab.addEventListener('click', (e) => {
     e.stopPropagation();
 });
+
+function handleLayout(event) {
+    // Prevent the click from closing the dropdown
+    if (event) {
+        event.stopPropagation();
+    }
+}
+
+function handleDynamicLayout(event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    // Add your dynamic layout logic here
+    console.log('Dynamic layout selected');
+}
+
+function handleLinearLayout(event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    // Add your linear layout logic here
+    console.log('Linear layout selected');
+}
 
