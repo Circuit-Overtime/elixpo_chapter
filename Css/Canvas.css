@@ -453,6 +453,27 @@ html {
     padding: 5px 5px;
 }
 
+.delete-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    border-radius: 30%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.delete-btn:hover {
+    background-color: #31303B;
+    transform: scale(1.1);
+}
+
 .zoom-toolbar {
     position: fixed;
     background-color: #202025;

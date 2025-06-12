@@ -184,69 +184,6 @@
     }
 }
 
-@media (max-width: 798px) {
-    .toolbar {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 5px 15px;
-        gap: 5px;
-    }
-
-    .sidebar {
-        left: 20px;
-        padding: 5px 5px;
-        display: flex;
-    }
-
-    .color-palate {
-        right: 20px;
-        padding: 5px 5px;
-        display: flex;
-    }
-
-    .delete {
-        top: 92%;
-        left: 18%;
-        display: flex;
-        flex-direction: row;
-        padding: 5px 5px;
-    }
-
-    .tool {
-        width: 40px;
-        height: 40px;
-        font-size: 17px;
-    }
-
-    .sidebar-dropdown {
-        top: 110px;
-        left: 20px;
-    }
-
-    .sidebarbtn {
-        width: 35px;
-        height: 35px;
-        font-size: 15px;
-    }
-
-    .floating-tab {
-        top: 110px;
-        right: 20px;
-    }
-
-    .floating-tab .shape-grid {
-        height: 140px;
-    }
-
-    .theme-toggle {
-        top: 92%;
-        right: 22.5%;
-        display: flex;
-        padding: 5px 5px;
-    }
-}
-
 @media (width: 1024px) {
 
     .delete {
@@ -453,10 +390,66 @@
     }
 }
 
-@media (max-width: 500px) {
+@media (max-width: 798px) {
+    .toolbar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 5px 15px;
+        gap: 5px;
+    }
+
+    .sidebar {
+        left: 20px;
+        padding: 5px 5px;
+        display: flex;
+    }
+
+    .color-palate {
+        right: 20px;
+        padding: 5px 5px;
+        display: flex;
+    }
+
+    .delete {
+        top: 92%;
+        left: 18%;
+        display: flex;
+        flex-direction: row;
+        padding: 5px 5px;
+    }
+
+    .tool {
+        width: 40px;
+        height: 40px;
+        font-size: 17px;
+    }
+
     .sidebar-dropdown {
-        width: 100%;
-        left: -100%;
+        top: 110px;
+        left: 20px;
+    }
+
+    .sidebarbtn {
+        width: 35px;
+        height: 35px;
+        font-size: 15px;
+    }
+
+    .floating-tab {
+        top: 110px;
+        right: 20px;
+    }
+
+    .floating-tab .shape-grid {
+        height: 140px;
+    }
+
+    .theme-toggle {
+        top: 92%;
+        right: 22.5%;
+        display: flex;
+        padding: 5px 5px;
     }
 }
 
@@ -495,7 +488,6 @@
     #redo {
         margin-left: 10px;
     }
-
 
     .delete {
         position: fixed;
@@ -592,7 +584,7 @@
     .delete {
         position: fixed;
         top: 92%;
-        left: 22%;
+        left: 25%;
         display: flex;
         flex-direction: row;
         padding: 6px 6px;
@@ -654,6 +646,13 @@
 }
 
 @media (max-width: 500px) {
+    .sidebar-dropdown {
+        width: 100%;
+        left: -100%;
+    }
+}
+
+@media (max-width: 500px) {
     .toolbar {
         display: flex;
         justify-content: center;
@@ -676,7 +675,7 @@
     }
 
     .undoredo {
-        left: 26%;
+        left: 28%;
         top: 92%;
         display: flex;
         flex-direction: row;
@@ -685,10 +684,10 @@
 
     .delete {
         top: 92%;
-        left: 47.7%;
+        left: 55%;
         display: flex;
         flex-direction: row;
-        padding: 8px 8px;
+       padding: 4px 4px;
     }
 
     .tool {
@@ -698,23 +697,29 @@
     }
 
     .zoom-toolbar {
-        top: 92%;
+        top: 82%;
         right: 20px;
-        padding: 3.5px 3px;
+        padding: 3.5px 5px;
         gap: 25px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
 
     .zoom-in-btn {
-        margin-right: 10px;
+        margin-bottom: 10px;
+        margin-right: 0;
     }
 
     .zoom-out-btn {
-        margin-left: 10px;
+        margin-top: 10px;
+        margin-left: 0;
     }
 
     .theme-toggle {
         top: 92%;
-        right: 31.5%;
+        right: 19%;
         padding: 4px 4px;
     }
 
