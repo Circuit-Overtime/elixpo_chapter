@@ -373,6 +373,22 @@ body.light-theme .undoredo {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
+body.light-theme .undo-btn {
+    color: #000000;
+}
+
+body.light-theme .undo-btn:hover {
+    background-color: #e0e0e0;
+}
+
+body.light-theme .redo-btn {
+    color: #000000;
+}
+
+body.light-theme .redo-btn:hover {
+    background-color: #e0e0e0;
+}
+
 body.light-theme .delete {
     background-color: #FCFCFC;
     border: 1px solid #c8c8c897;

@@ -441,6 +441,52 @@ html {
     padding: 5px 6px;
 }
 
+.undo-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    border-radius: 30%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+    margin-right: 10px;
+}
+
+.undo-btn:hover {
+    background-color: #31303B;
+    transform: scale(1.1);
+}
+
+
+.redo-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    border-radius: 30%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+    margin-left: 10px;
+}
+
+.redo-btn:hover {
+    background-color: #31303B;
+    transform: scale(1.1);
+}
+
+
 .delete {
     background-color: #202025;
     backdrop-filter: blur(20px);
@@ -448,7 +494,7 @@ html {
     transition: all 0.3s ease, transform 0.3s ease;
     position: fixed;
     top: 92%;
-    left: 9%;
+    left: 10.5%;
     display: flex;
     padding: 5px 5px;
 }
