@@ -3,7 +3,6 @@
     .delete {
         top: 90%;
         left: 14%;
-        padding: 6px;
     }
 
     .tool {
@@ -42,7 +41,6 @@
     .zoom-toolbar {
         top: 90%;
         right: 25px;
-        padding: 6px;
         gap: 30px;
     }
 
@@ -55,7 +53,6 @@
     .undoredo {
         top: 90%;
         left: 25px;
-        padding: 6px 10px;
         gap: 12px;
     }
 }
@@ -64,8 +61,7 @@
 
     .delete {
         top: 88%;
-        left: 18%;
-        padding: 6px;
+        left: 20%;
     }
 
     .tool {
@@ -92,32 +88,17 @@
 
     .theme-toggle {
         top: 88%;
-        right: 21%;
-        padding: 6px;
-    }
-
-    .theme-btn {
-        width: 45px;
-        height: 45px;
+        right: 20%;
     }
 
     .zoom-toolbar {
         top: 88%;
         right: 25px;
-        padding: 6px;
-        gap: 30px;
-    }
-
-    .zoom-in-btn,
-    .zoom-out-btn {
-        width: 45px;
-        height: 45px;
     }
 
     .undoredo {
         top: 88%;
         left: 25px;
-        padding: 6px 10px;
         gap: 12px;
     }
 }
@@ -269,7 +250,7 @@
 
     .delete {
         top: 92%;
-        left: 18%;
+        left: 20%;
         display: flex;
         flex-direction: row;
     }
@@ -316,7 +297,7 @@
 
     .delete {
         top: 92%;
-        left: 18%;
+        left: 20%;
         display: flex;
         flex-direction: row;
     }
@@ -364,7 +345,7 @@
 
     .delete {
         top: 92%;
-        left: 18%;
+        left: 20%;
         display: flex;
         flex-direction: row;
     }
@@ -413,7 +394,7 @@
 
     .delete {
         top: 92%;
-        left: 18%;
+        left: 20.5%;
         display: flex;
         flex-direction: row;
         padding: 5px 5px;
@@ -568,6 +549,42 @@
         display: flex;
     }
 
+    .sidebar-dropdown {
+        top: 130px;
+        left: 20px;
+        width: 30%;
+    }
+
+    .edit-dropdown {
+        top: 10px;
+        left: 190px;
+    }
+
+    .view-dropdown {
+        top: 60px;
+        left: 190px;
+    }
+
+    .export-dropdown {
+        top: 90px;
+        left: 190px;
+    }
+
+    .layout-dropdown {
+        top: 200px;
+        left: 190px;
+    }
+
+    .language-dropdown {
+        top: 100px;
+        left: 190px;
+    }
+
+    .keyboard-dropdown {
+        top: 100px;
+        left: 190px;
+    }
+
     .color-palate {
         right: 20px;
         padding: 3px 3px;
@@ -578,7 +595,7 @@
         top: 92%;
         display: flex;
         flex-direction: row;
-        padding: 6px 8px;
+        padding: 3px 3px;
     }
 
     .delete {
@@ -587,7 +604,8 @@
         left: 25%;
         display: flex;
         flex-direction: row;
-        padding: 6px 6px;
+        padding: 3px 3px;
+
     }
 
     .tool {
@@ -614,25 +632,7 @@
     .theme-toggle {
         top: 92%;
         right: 26%;
-        padding: 4px 4px;
-    }
-
-    .themebtn {
-        width: 35px;
-        height: 35px;
-        font-size: 15px;
-    }
-
-    .sidebar-dropdown {
-        top: 130px;
-        left: 20px;
-        width: 30%;
-    }
-
-    .sidebarbtn {
-        width: 35px;
-        height: 35px;
-        font-size: 15px;
+        padding: 3px 3px;
     }
 
     .floating-tab {
@@ -668,6 +668,42 @@
         display: flex;
     }
 
+    .sidebar-dropdown {
+        top: 350px;
+        left: 20px;
+        width: 40%;
+    }
+
+    .edit-dropdown {
+        top: 10px;
+        left: 200px;
+    }
+
+    .view-dropdown {
+        top: 60px;
+        left: 200px;
+    }
+
+    .export-dropdown {
+        top: 90px;
+        left: 200px;
+    }
+
+    .layout-dropdown {
+        top: 200px;
+        left: 200px;
+    }
+
+    .language-dropdown {
+        top: 70px;
+        left: 200px;
+    }
+
+    .keyboard-dropdown {
+        top: 49px;
+        left: 200px;
+    }
+
     .color-palate {
         top: 92%;
         right: 74%;
@@ -675,19 +711,17 @@
     }
 
     .undoredo {
-        left: 29%;
+        left: 30%;
         top: 92%;
         display: flex;
         flex-direction: row;
-        padding: 8px 8px;
     }
 
     .delete {
         top: 92%;
-        left: 57%;
+        left: 59%;
         display: flex;
         flex-direction: row;
-       padding: 4px 4px;
     }
 
     .tool {
@@ -697,7 +731,7 @@
     }
 
     .zoom-toolbar {
-        top: 82%;
+        top: 84.5%;
         right: 20px;
         padding: 3.5px 5px;
         gap: 25px;
@@ -720,13 +754,6 @@
     .theme-toggle {
         top: 92%;
         right: 19%;
-        padding: 4px 4px;
-    }
-
-    .sidebar-dropdown {
-        top: 350px;
-        left: 20px;
-        width: 40%;
     }
 
     .floating-tab {
@@ -766,7 +793,6 @@
         top: 92%;
         display: flex;
         flex-direction: row;
-        padding: 8px 8px;
     }
 
     .delete {
@@ -774,7 +800,6 @@
         left: 61%;
         display: flex;
         flex-direction: row;
-        padding: 8px 8px;
     }
 
     .tool {
@@ -801,7 +826,6 @@
     .theme-toggle {
         top: 92%;
         right: 66%;
-        padding: 4px 4px;
     }
 
     .sidebar-dropdown {
@@ -848,7 +872,7 @@
         top: 92%;
         display: flex;
         flex-direction: row;
-        padding: 9px 8px;
+        padding: 5px 5px;
     }
 
     #undo {
@@ -864,6 +888,7 @@
         left: 70%;
         display: flex;
         flex-direction: row;
+        padding: 5px 5px;
     }
 
     .tool {
@@ -871,12 +896,6 @@
         height: 31px;
         font-size: 15px;
     }
-
-    /**
-     * Hides/disables pinch-zoom functionality for mobile devices
-     * This comment is temporarily hidden from view as it affects
-     * the mobile user's ability to use pinch-zoom gestures
-     */
 
     .zoom-toolbar {
         top: 92%;
@@ -898,7 +917,7 @@
         top: 92%;
         display: flex;
         right: 20px;
-        padding: 4px 4px;
+        padding: 5px 5px;
     }
 
     .sidebar-dropdown {
@@ -953,7 +972,7 @@
         left: 49%;
         display: flex;
         flex-direction: row;
-        padding: 10px 8px;
+        padding: 5px 5px;
     }
 
     #undo {
@@ -969,7 +988,7 @@
         left: 65.5%;
         display: flex;
         flex-direction: row;
-        padding: 10px 10px;
+        padding: 5px 5px;
     }
 
     .tool {
@@ -997,7 +1016,7 @@
     .theme-toggle {
         top: 92%;
         right: 20px;
-        padding: 6px 6px;
+        padding: 5px 5px;
     }
 
     .floating-tab {
@@ -1046,7 +1065,6 @@
         left: 49%;
         display: flex;
         flex-direction: row;
-        padding: 10px 8px;
     }
 
     #undo {
@@ -1062,7 +1080,6 @@
         left: 65.5%;
         display: flex;
         flex-direction: row;
-        padding: 10px 10px;
     }
 
     .tool {
@@ -1090,7 +1107,6 @@
     .theme-toggle {
         top: 92%;
         right: 20px;
-        padding: 6px 6px;
     }
 
     .floating-tab {
