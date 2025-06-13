@@ -16,7 +16,7 @@ html {
 }
 
 #canvas {
-    background-color: #101011;  /* Changed from transparent to dark background */
+    background-color: #101011;
     cursor: crosshair;
 }
 
