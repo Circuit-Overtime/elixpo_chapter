@@ -445,3 +445,29 @@ body.light-theme .layout-dropdown .shortcut {
 body.light-theme .layout-dropdown .menu-divider {
     background: rgba(0, 0, 0, 0.08);
 }
+
+body.light-theme .language-dropdown {
+    background: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .language-item {
+    color: rgba(0, 0, 0, 0.9);
+}
+
+body.light-theme .language-item:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .language-name {
+    color: #333333;
+}
+
+body.light-theme .language-icon {
+    color: rgba(0, 0, 0, 0.7);
+}
+
+body.light-theme .menu-item .language-shortcut {
+    color: rgba(0, 0, 0, 0.4);
+}

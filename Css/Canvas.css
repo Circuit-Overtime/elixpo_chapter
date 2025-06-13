@@ -1025,3 +1025,60 @@ html {
     visibility: visible;
     transform: translateY(0) scale(1);
 }
+
+.language-dropdown {
+    position: fixed;
+    width: 200px;
+    background: rgba(32, 32, 37, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.98);
+    transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2001;
+    padding: 8px;
+    top: 130px;
+    left: 200px;
+}
+
+.language-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    transition: background 0.2s;
+}
+
+.language-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.language-icon {
+    width: 24px;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.language-name {
+    flex: 1;
+}
+
+#language-menu:hover .language-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    transition-delay: 0.1s;
+}
+
+.language-dropdown:hover {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
