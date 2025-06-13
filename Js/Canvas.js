@@ -62,13 +62,63 @@ const floatingTab = document.getElementById('floating-tab');
 const colorPalatebtn = document.getElementById('colorpalatebtn');
 let isFloatingTabVisible = false;
 
+// Add these variables at the top with other declarations
+let mouseX = 0;
+let mouseY = 0;
+
+function drawGrid() {
+    const gridSize = 20; // Size of grid squares
+    const dotSize = 1; // Size of dots
+
+    // Check if light theme is active
+    const isLightTheme = document.body.classList.contains('light-theme');
+
+    // Draw the base grid dots
+    ctx.fillStyle = isLightTheme ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
+
+    for (let x = gridSize; x < canvas.width / 2; x += gridSize) {
+        for (let y = gridSize; y < canvas.height / 2; y += gridSize) {
+            // Calculate distance from cursor
+            const distance = Math.sqrt(
+                Math.pow(x - mouseX, 2) +
+                Math.pow(y - mouseY, 2)
+            );
+
+            // Only change color for dots near the cursor (within 100 pixels)
+            if (distance < 100) {
+                // Use a darker blue with alpha based on distance
+                ctx.fillStyle = '#1a4f8c'; // Darker blue color
+                ctx.globalAlpha = 1 - (distance / 100);
+            } else {
+                ctx.fillStyle = isLightTheme ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
+                ctx.globalAlpha = 1;
+            }
+
+            ctx.beginPath();
+            ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Reset global alpha
+    ctx.globalAlpha = 1;
+}
+
+// Add this event listener to track mouse movement
+canvas.addEventListener('mousemove', (e) => {
+    mouseX = e.offsetX;
+    mouseY = e.offsetY;
+    redrawCanvas();
+});
+
 function resizeCanvas() {
     canvas.width = window.innerWidth * 2;
     canvas.height = window.innerHeight * 2;
     canvas.style.width = `${window.innerWidth}px`;
     canvas.style.height = `${window.innerHeight}px`;
     ctx.scale(2, 2);
-    redrawCanvas();
+    drawGrid(); // Draw grid first
+    redrawCanvas(); // Then draw user content
 }
 
 window.addEventListener('resize', handleResize);
@@ -320,7 +370,7 @@ document.querySelectorAll('.tool, .undo-btn, .redo-btn, .delete-btn').forEach(to
     });
 });
 
-// Update the undo/redo keyboard shortcut handler
+// Update the undo/redo keyboard shortcut
 window.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'z') {
         e.preventDefault();
@@ -677,6 +727,7 @@ function stopDrawing() {
 
 function redrawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawGrid(); // This will handle the animation
 
     elements.forEach(element => {
         if (element === hoveredElement && element.type === 'pencil') {
@@ -1334,16 +1385,16 @@ themeBtn.addEventListener('click', () => {
     if (document.body.classList.contains('light-theme')) {
         localStorage.setItem('theme', 'light');
         themeIcon.setAttribute('name', 'sunny-outline');
-        selectedColor = '#000000'; // Force black in light theme
+        selectedColor = '#000000';
         switchElementColors();
     } else {
         localStorage.setItem('theme', 'dark');
         themeIcon.setAttribute('name', 'moon-outline');
-        selectedColor = '#ffffff'; // Force white in dark theme
+        selectedColor = '#ffffff';
         switchElementColors();
     }
 
-    redrawCanvas();
+    redrawCanvas(); // This will redraw the grid with the new theme color
 });
 
 // Modify the invertColor function to only handle black and white
@@ -2023,8 +2074,6 @@ closeSidebarBtn.addEventListener('click', toggleSidebar);
 // Close sidebar when clicking outside
 document.addEventListener('click', (e) => {
     if (isSidebarOpen &&
-
-
         !sidebarDropdown.contains(e.target) &&
         !sidebarBtn.contains(e.target)) {
         toggleSidebar();
