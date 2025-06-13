@@ -472,3 +472,30 @@ body.light-theme .language-icon {
 body.light-theme .menu-item .language-shortcut {
     color: rgba(0, 0, 0, 0.4);
 }
+
+body.light-theme .keyboard-dropdown {
+    background: #FCFCFC;
+    border: 1px solid #c8c8c897;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .keyboard-section h4 {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+body.light-theme .keyboard-item {
+    color: rgba(0, 0, 0, 0.9);
+}
+
+body.light-theme .keyboard-item:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .keyboard-item .key-combo {
+    color: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .keyboard-dropdown::-webkit-scrollbar-thumb {
+    background: #e0e0e0;
+}

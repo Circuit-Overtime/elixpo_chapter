@@ -1086,3 +1086,80 @@ html {
     visibility: visible;
     transform: translateY(0) scale(1);
 }
+
+.keyboard-dropdown {
+    position: fixed;
+    width: 200px;
+    background: rgba(32, 32, 37, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.98);
+    transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2001;
+    padding: 12px;
+    top: 160px;
+    left: 200px;
+    max-height: 360px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.keyboard-dropdown::-webkit-scrollbar {
+    display: none;
+}
+
+.keyboard-section {
+    margin-bottom: 12px;
+}
+
+.keyboard-section h4 {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding: 0 4px;
+    letter-spacing: 0.04em;
+}
+
+.keyboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.keyboard-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.keyboard-item .key-combo {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+}
+
+#keyboard-menu:hover .keyboard-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    transition-delay: 0.1s;
+}
+
+.keyboard-dropdown:hover {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
