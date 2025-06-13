@@ -1041,6 +1041,15 @@ html {
     padding: 8px;
     top: 130px;
     left: 200px;
+    max-height: 400px;
+    overflow: hidden;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.language-dropdown::-webkit-scrollbar {
+    display: none;
 }
 
 .language-item {
@@ -1058,16 +1067,11 @@ html {
 }
 
 .language-icon {
-    width: 24px;
-    margin-right: 12px;
+    font-weight: 400;
+    margin-left: 8px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-}
-
-.language-name {
-    flex: 1;
+    font-size: 13px;
+    color: #888;
 }
 
 #language-menu:hover .language-dropdown {

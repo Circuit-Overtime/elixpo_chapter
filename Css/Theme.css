@@ -465,7 +465,8 @@ body.light-theme .language-name {
 }
 
 body.light-theme .language-icon {
-    color: rgba(0, 0, 0, 0.7);
+    color: #888;
+    font-weight: 400;
 }
 
 body.light-theme .menu-item .language-shortcut {
