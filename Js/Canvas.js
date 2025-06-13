@@ -283,30 +283,30 @@ canvas.addEventListener('mouseup', (e) => {
     handleMouseUp(e);
 });
 
-// Update the existing event listener for tools to handle both class and id
-document.querySelectorAll('.tool, .delete-btn').forEach(tool => {
+// Replace the existing tool event listener section with this updated one
+document.querySelectorAll('.tool, .undo-btn, .redo-btn, .delete-btn').forEach(tool => {
     tool.addEventListener('click', () => {
+        if (tool.classList.contains('undo-btn')) {
+            undo();
+            return;
+        }
+        if (tool.classList.contains('redo-btn')) {
+            redo();
+            return;
+        }
         if (tool.id === 'clear' || tool.classList.contains('delete-btn')) {
-            // Clear all elements including text
             elements = [];
-            // Also clear any active text input
             textInput.style.display = 'none';
             textInput.value = '';
             isWriting = false;
             redrawCanvas();
-            // Switch back to pointer tool after clearing
             selectTool('pointer');
             document.getElementById('pointer').click();
-            // Save state after clearing
             saveState();
         } else if (tool.id === 'save') {
             saveWork();
         } else if (tool.id === 'open-sidebar') {
             sidebar.classList.toggle('open');
-        } else if (tool.id === 'undo') {
-            undo();
-        } else if (tool.id === 'redo') {
-            redo();
         } else if (tool.id === 'select') {
             selectedTool = 'select';
             document.querySelector('.tool.active')?.classList.remove('active');
@@ -320,38 +320,29 @@ document.querySelectorAll('.tool, .delete-btn').forEach(tool => {
     });
 });
 
-document.querySelectorAll('#main-toolbar2 .tool').forEach(tool => {
-    tool.addEventListener('click', () => {
-        if (tool.id === 'clear') {
-            elements = [];
-            redrawCanvas();
-        } else if (tool.id === 'save') {
-            saveWork();
-        } else if (tool.id === 'open-sidebar') {
-            sidebar.classList.toggle('open');
-        } else if (tool.id === 'undo') {
-            undo();
-        } else if (tool.id === 'redo') {
-            redo();
-        } else if (tool.id === 'select') {
-            selectedTool = 'select';
-            document.querySelector('.tool.active')?.classList.remove('active');
-            tool.classList.add('active');
-        } else {
-            document.querySelector('.tool.active')?.classList.remove('active');
-            tool.classList.add('active');
-            selectedTool = tool.id;
-            updateCursorStyle();
+// Update the undo/redo keyboard shortcut handler
+window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        document.querySelector('.undo-btn').click();
+    } else if (e.ctrlKey && e.key === 'y') {
+        e.preventDefault();
+        document.querySelector('.redo-btn').click();
+    } else if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveWork();
+    } else if (e.ctrlKey && e.key === '+') {
+        e.preventDefault();
+        if (currentZoom < 200) {
+            document.getElementById('zoom-in').click();
         }
-        // Hide main toolbar2 when a tool is selected
-        const toolbar2 = document.getElementById('main-toolbar2');
-        toolbar2.style.display = 'none';
-    });
+    } else if (e.ctrlKey && e.key === '-') {
+        e.preventDefault();
+        if (currentZoom > 70) {
+            document.getElementById('zoom-out').click();
+        }
+    }
 });
-
-canvas.addEventListener('mousedown', handleMouseDown);
-canvas.addEventListener('mousemove', handleMouseMove);
-canvas.addEventListener('mouseup', handleMouseUp);
 
 canvas.addEventListener('mousemove', (e) => {
     if (selectedTool === 'eraser') {
@@ -2032,7 +2023,7 @@ closeSidebarBtn.addEventListener('click', toggleSidebar);
 // Close sidebar when clicking outside
 document.addEventListener('click', (e) => {
     if (isSidebarOpen &&
-       
+
 
         !sidebarDropdown.contains(e.target) &&
         !sidebarBtn.contains(e.target)) {
