@@ -514,3 +514,20 @@ body.light-theme .fill-btn.active {
     background-color: #4387f4;
     color: #ffffff;
 }
+
+body.light-theme .fill-btn img {
+    filter: brightness(0);
+}
+
+body.light-theme .fill-btn:hover img {
+    filter: brightness(0) opacity(0.8);
+}
+
+body.light-theme .fill-btn.active img {
+    filter: brightness(0) invert(1);
+}
+
+body.light-theme .fill-btn.active {
+    background-color: #4387f4;
+    color: #ffffff;
+}

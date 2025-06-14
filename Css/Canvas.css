@@ -422,13 +422,17 @@ html {
     justify-content: center;
 }
 
-.fill-btn:hover {
-    transform: scale(1.1);
-    background-color: #31303B;
+.fill-btn img {
+    filter: brightness(0) invert(1);
+    transition: filter 0.3s ease;
 }
 
-.fill-btn.active {
-    background: #3182ED;
+.fill-btn:hover img {
+    filter: brightness(0) invert(1) opacity(0.8);
+}
+
+.fill-btn.active img {
+    filter: brightness(0) invert(1);
 }
 
 .theme-toggle {
