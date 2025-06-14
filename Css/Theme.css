@@ -531,3 +531,7 @@ body.light-theme .fill-btn.active {
     background-color: #4387f4;
     color: #ffffff;
 }
+
+body.light-theme .section-header {
+    color: rgba(0, 0, 0, 0.469);
+}
