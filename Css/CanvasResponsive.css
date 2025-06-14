@@ -860,6 +860,36 @@
         display: flex;
     }
 
+    .edit-dropdown {
+        top: 10px;
+        left: 195px;
+    }
+
+    .view-dropdown {
+        top: 60px;
+        left: 195px;
+    }
+
+    .export-dropdown {
+        top: 90px;
+        left: 195px;
+    }
+
+    .layout-dropdown {
+        top: 200px;
+        left: 195px;
+    }
+
+    .language-dropdown {
+        top: 100px;
+        left: 195px;
+    }
+
+    .keyboard-dropdown {
+        top: 100px;
+        left: 195px;
+    }
+
     .color-palate {
         top: 92%;
         right: 69%;
@@ -953,23 +983,55 @@
         top: 92%;
     }
 
-    .color-palate {
-        padding: 5px 5px;
-        display: flex;
-        flex-direction: column;
-        top: 92%;
-        right: 67%;
-    }
-
     .sidebar-dropdown {
         top: 21.5%;
         left: 15px;
         width: 44%;
     }
 
+    .edit-dropdown {
+        top: 10px;
+        left: 180px;
+    }
+
+    .view-dropdown {
+        top: 60px;
+        left: 180px;
+    }
+
+    .export-dropdown {
+        top: 90px;
+        left: 180px;
+    }
+
+    .layout-dropdown {
+        top: 200px;
+        left: 180px;
+    }
+
+    .language-dropdown {
+        top: 100px;
+        left: 180px;
+    }
+
+    .keyboard-dropdown {
+        top: 100px;
+        left: 180px;
+    }
+
+
+    .color-palate {
+        padding: 5px 5px;
+        display: flex;
+        flex-direction: column;
+        top: 92%;
+        right: 67.6%;
+    }
+
+
     .undoredo {
         top: 92%;
-        left: 49%;
+        left: 49.5%;
         display: flex;
         flex-direction: row;
         padding: 5px 5px;
@@ -985,7 +1047,7 @@
 
     .delete {
         top: 92%;
-        left: 65.5%;
+        left: 67%;
         display: flex;
         flex-direction: row;
         padding: 5px 5px;
