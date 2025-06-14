@@ -327,10 +327,10 @@
 
         <div class="toolbar-divider"></div>
 
-        <button class="tool" id="fill-color" title="Color Fill"
+        <!-- <button class="tool" id="fill-color" title="Color Fill"
             onclick="document.getElementById('instructions').textContent = 'Fill Colors Inside Shapes'">
             <ion-icon name="color-fill-outline" style="font-size: 22px;"></ion-icon>
-        </button>
+        </button> -->
 
         <button class="tool" id="search" title="search | /"
             onclick="document.getElementById('instructions').textContent = 'Search Tools and Colors'">
@@ -426,6 +426,20 @@
             <button class="shape-btn tool" id="line" title="Line"><i class="bi bi-dash-lg"></i></button>
             <button class="shape-btn tool" id="cross" title="Cross"><i class="bi bi-x-lg"></i></button>
             <button class="shape-btn tool" id="plus" title="Plus"><i class="bi bi-plus-lg"></i></button>
+        </div>
+
+        <div class="floating-tab-divider"></div>
+
+        <div class="fill-grid">
+            <button class="fill-btn tool" id="fill-color" title="Color Fill">
+                <ion-icon name="color-fill-outline" style="font-size: 22px;"></ion-icon>
+            </button>
+            <button class="fill-btn tool" id="fill-gradient" title="Gradient Fill">
+                <i class="bi bi-grid-3x3"></i>
+            </button>
+            <button class="fill-btn tool" id="fill-pattern" title="Pattern Fill">
+                <i class="bi bi-grid-3x3"></i>
+            </button>
         </div>
     </div>
 

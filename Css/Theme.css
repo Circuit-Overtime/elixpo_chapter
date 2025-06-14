@@ -499,3 +499,18 @@ body.light-theme .keyboard-item .key-combo {
 body.light-theme .keyboard-dropdown::-webkit-scrollbar-thumb {
     background: #e0e0e0;
 }
+
+body.light-theme .fill-btn {
+    background: #f0f0f0;
+    color: #000000;
+    border: 1px solid #e0e0e0;
+}
+
+body.light-theme .fill-btn:hover {
+    background: #e0e0e0;
+}
+
+body.light-theme .fill-btn.active {
+    background-color: #4387f4;
+    color: #ffffff;
+}

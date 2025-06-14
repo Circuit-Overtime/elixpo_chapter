@@ -395,6 +395,42 @@ html {
     justify-content: center;
 }
 
+.fill-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.fill-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.fill-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 10px;
+    background: #31303B;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fill-btn:hover {
+    transform: scale(1.1);
+    background-color: #31303B;
+}
+
+.fill-btn.active {
+    background: #3182ED;
+}
+
 .theme-toggle {
     background-color: #202025;
     backdrop-filter: blur(20px);
