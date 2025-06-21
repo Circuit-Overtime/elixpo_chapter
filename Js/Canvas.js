@@ -28,8 +28,8 @@ let lastX = 0;
 let lastY = 0;
 let elements = [];
 let selectedTool = 'pencil';
-let selectedColor = '#ffffff';
-let currentOpacity = 1; // Add this line
+let selectedColor = '#0088ff';
+let currentOpacity = 1;
 let currentElement = null;
 let selectedElement = null;
 let offsetX = 0;
@@ -656,7 +656,7 @@ function draw(e) {
         ctx.beginPath();
         ctx.moveTo(lastX, lastY);
         ctx.quadraticCurveTo(lastX, lastY, currentX, currentY);
-        ctx.strokeStyle = selectedColor;
+        ctx.strokeStyle = '#0088ff'; // Always use #0088ff for pencil
         ctx.lineWidth = selectedStrokeWidth;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -668,7 +668,7 @@ function draw(e) {
             y1: lastY,
             x2: currentX,
             y2: currentY,
-            color: selectedColor,
+            color: '#0088ff', // Always store as #0088ff
             strokeWidth: selectedStrokeWidth,
             roughness: 0.3
         });
@@ -758,7 +758,7 @@ function showEraserRadius(e) {
 
 function drawElement(element) {
     const options = {
-        stroke: element.color,
+        stroke: (element.type === 'pencil') ? '#0088ff' : element.color,
         roughness: element.roughness || 0.5,
         strokeWidth: element.strokeWidth || selectedStrokeWidth, // Use element's strokeWidth if available
         fillStyle: 'solid',
@@ -1410,13 +1410,15 @@ function invertColor(color) {
 // Update the switchElementColors function to only switch black/white colors
 function switchElementColors() {
     elements.forEach(element => {
-        if (element.color === '#000000' || element.color === '#ffffff' ||
-            element.color === 'rgb(0, 0, 0)' || element.color === 'rgb(255, 255, 255)') {
-            element.color = invertColor(element.color);
-        }
-        if (element.fillColor === '#000000' || element.fillColor === '#ffffff' ||
-            element.fillColor === 'rgb(0, 0, 0)' || element.fillColor === 'rgb(255, 255, 255)') {
-            element.fillColor = invertColor(element.fillColor);
+        if (element.type !== 'pencil') {
+            if (element.color === '#000000' || element.color === '#ffffff' ||
+                element.color === 'rgb(0, 0, 0)' || element.color === 'rgb(255, 255, 255)') {
+                element.color = invertColor(element.color);
+            }
+            if (element.fillColor === '#000000' || element.fillColor === '#ffffff' ||
+                element.fillColor === 'rgb(0, 0, 0)' || element.fillColor === 'rgb(255, 255, 255)') {
+                element.fillColor = invertColor(element.fillColor);
+            }
         }
     });
     redrawCanvas();
@@ -1560,6 +1562,11 @@ function selectTool(toolId) {
 
     selectedTool = toolId;
 
+    // Set pencil color to #0088ff when pencil is selected
+    if (toolId === 'pencil') {
+        selectedColor = '#0088ff';
+    }
+
     if (toolId !== 'text') {
         document.addEventListener('keydown', handleKeyDown);
     } else {
@@ -1626,9 +1633,8 @@ window.addEventListener('load', () => {
             }
 
             // If there's a selected element, update its color
-            if (selectedElement) {
+            if (selectedElement && selectedElement.type !== 'pencil') {
                 selectedElement.color = selectedColor;
-                redrawCanvas();
             }
         });
     });
