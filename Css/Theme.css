@@ -303,8 +303,8 @@ body.light-theme .settings-btn {
     color: #000000;
 }
 
-body.light-theme .settings-btn svg {
-    fill: #666666;
+body.light-theme .settings-btn:hover {
+    background: rgba(179, 177, 177, 0.654);
 }
 
 body.light-theme .logout-btn {
@@ -312,7 +312,7 @@ body.light-theme .logout-btn {
 }
 
 body.light-theme .logout-btn:hover {
-    background: rgba(220, 53, 69, 0.1);
+    background: rgba(255, 68, 68, 0.462);
 }
 
 body.light-theme .divider {

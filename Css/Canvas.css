@@ -883,9 +883,10 @@ html {
 .actions-section {
     display: flex;
     align-items: center;
+    justify-content: center;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 10px;
-    gap: 2px;
+    gap: 45px;
 }
 
 .settings-btn {
@@ -902,12 +903,15 @@ html {
     transition: all 0.2s ease;
 }
 
+.settings-btn:hover {
+    background: rgba(179, 177, 177, 0.363);
+}
+
 .logout-btn {
-    margin-left: auto;
     color: #ff4444;
     font-weight: 500;
     font-size: 11.5px;
-    background: transparent;
+    background: #ff444441;
     border: none;
     cursor: pointer;
     padding: 6px 8px;
@@ -916,16 +920,7 @@ html {
 }
 
 .logout-btn:hover {
-    background: rgba(255, 68, 68, 0.1);
-}
-
-.divider {
-    margin: 0 15px;
-    color: rgba(255, 255, 255, 0.2);
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    height: 20px;
+    background: rgba(255, 68, 68, 0.462);
 }
 
 #colorpalatebtn.active {
