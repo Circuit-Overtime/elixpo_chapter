@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Hubot+Sans:ital,wght@0,200..900;1,200..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Montserrat+Alternates&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 
 
 body,
@@ -362,9 +362,9 @@ html {
 
 .section-header {
     color: #9b9b9b;
-    font-size: 14px;
-    font-family: "Montserrat Alternates", sans-serif;
-    font-weight: 400;
+    font-size: 12px;
+    font-family: "Lato", sans-serif;
+    font-weight: 500;
     font-style: normal;
     margin-top: 8px;
     margin-bottom: 8px;
