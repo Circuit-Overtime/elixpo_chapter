@@ -31,6 +31,13 @@ html {
 }
 
 .toolbar {
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -moz-user-select: none;
+}
+
+.toolbar {
     position: fixed;
     top: 20px;
     left: 50%;
@@ -215,6 +222,13 @@ html {
 
 #colorpalatebtn.active {
     transform: scale(1.1);
+}
+
+.floating-tab {
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -moz-user-select: none;
 }
 
 .floating-tab {
@@ -778,6 +792,22 @@ html {
     height: 1px;
     background: rgba(255, 255, 255, 0.1);
     margin: 8px 0;
+}
+
+.floating-tab {
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -moz-user-select: none;
+}
+
+.menu-item,
+.menu-item span,
+.menu-item .shortcut {
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -moz-user-select: none;
 }
 
 .menu-item {

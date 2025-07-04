@@ -2071,46 +2071,14 @@ function toggleSidebar() {
 sidebarBtn.addEventListener('click', toggleSidebar);
 closeSidebarBtn.addEventListener('click', toggleSidebar);
 
-// Close sidebar when clicking outside
+// Close all dropdowns when clicking outside
 document.addEventListener('click', (e) => {
-    if (isSidebarOpen &&
-        !sidebarDropdown.contains(e.target) &&
-        !sidebarBtn.contains(e.target)) {
-        toggleSidebar();
+    if (!e.target.closest('.menu-item') && !e.target.closest('.sidebar-dropdown')) {
+        document.querySelectorAll('.view-dropdown, .edit-dropdown, .export-dropdown, .layout-dropdown, .language-dropdown').forEach(dropdown => {
+            dropdown.style.opacity = '0';
+            dropdown.style.visibility = 'hidden';
+        });
     }
-});
-
-// Prevent clicks inside sidebar from closing it
-sidebarDropdown.addEventListener('click', (e) => {
-    e.stopPropagation();
-});
-
-// Add menu item functionality
-document.querySelectorAll('.menu-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const action = item.textContent.trim().toLowerCase();
-        switch (action) {
-            case 'new file':
-                elements = [];
-                redrawCanvas();
-                break;
-            case 'save':
-                saveWork();
-                break;
-            case 'zoom in':
-                document.getElementById('zoom-in').click();
-                break;
-            case 'zoom out':
-                document.getElementById('zoom-out').click();
-                break;
-            case 'delete':
-                elements = [];
-                redrawCanvas();
-                break;
-            // Add more menu item actions as needed
-        }
-        toggleSidebar();
-    });
 });
 
 // Helper function to calculate distance between two touch points
@@ -2166,19 +2134,21 @@ function handleLayout(event) {
     }
 }
 
-function handleDynamicLayout(event) {
-    if (event) {
-        event.stopPropagation();
-    }
-    // Add your dynamic layout logic here
-    console.log('Dynamic layout selected');
-}
 
-function handleLinearLayout(event) {
-    if (event) {
-        event.stopPropagation();
-    }
-    // Add your linear layout logic here
-    console.log('Linear layout selected');
-}
+// Add global variables for menu integration
+window.currentZoom = 100;
+window.elements = elements;
+window.redrawCanvas = redrawCanvas;
 
+function toggleSidebar() {
+    isSidebarOpen = !isSidebarOpen;
+    sidebarDropdown.classList.toggle('active');
+
+    if (isSidebarOpen) {
+        document.removeEventListener('keydown', handleKeyDown);
+    } else {
+        if (selectedTool !== 'text') {
+            document.addEventListener('keydown', handleKeyDown);
+        }
+    }
+}
