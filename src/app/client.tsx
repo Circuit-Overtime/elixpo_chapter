@@ -1,18 +1,9 @@
-'use client'
-import { useTRPC } from '@/trpc/client'
-import { useSuspenseQuery } from '@tanstack/react-query';
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 
-const Client = () => {
-  const trpc = useTRPC();
-  const {data} = useSuspenseQuery(trpc.hello.queryOptions({text: "subhro pre"}));
-
-  useEffect(() => {
-    },[])
-    const [ ] = useState();
+const client = () => {
   return (
-    <div>{JSON.stringify(data)}</div>
+    <div>client</div>
   )
 }
 
-export default Client
+export default client
