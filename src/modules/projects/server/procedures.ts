@@ -2,47 +2,51 @@ import { inngest } from '@/inngest/client'
 import prisma from '@/lib/db'
 import {baseProcedure, createTRPCRouter} from '@/trpc/init'
 import z from 'zod'
-
-export const messageRouter = createTRPCRouter({
+import { generateSlug } from 'random-word-slugs'
+export const projectRouter = createTRPCRouter({
     getMany: baseProcedure
      .query(
         async() => {
-             const message = await prisma.message.findMany({
+             const projects = await prisma.project.findMany({
                  orderBy: {
                      updatedAt: 'desc'
                  }
              })
-             return message
+             return projects
         }),
      create: baseProcedure
       .input(
          z.object({
              prompt: z.string()
              .min(1, {message: "Message is Required"})
-             .max(10000, {message: "Value is too long"}),
-             projectId: z.string()
-             .min(1, {message: "ProjectID is required"})
-             
+             .max(10000,{message: "Value is too long"})
          })
       )
       .mutation(async ({input}) => {
-       const createdMsg = await prisma.message.create({
-             data: {
-                 projectId: input.projectId,
-                  content: input.prompt,
-                  role: "USER",
-                  type: "RESULT"
-                  
+
+       const createProject = await prisma.project.create({
+          data: {
+             name: generateSlug(2,{
+                format: "kebab"
+             }),
+             messages: {
+                 create:{ 
+                    content: input.prompt,
+                    role: "USER",
+                    type: "RESULT"
+                 }
              }
-          })
+          }
+       })
+
           await inngest.send({
              name: "app/message.created",
              data:{
                  prompt: input.prompt,
-                 projectId: input.projectId
+                 projectId: createProject.id
              }
           })
 
-          return createdMsg
+          return createProject
       })
 })

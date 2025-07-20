@@ -2,18 +2,22 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useTRPC } from '@/trpc/client'
-import { trpc } from '@/trpc/server'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
 
 const page = () => {
   const [value,setValue] = useState("")
   const trpc = useTRPC();
-  const {data: message} = useQuery(trpc.messages.getMany.queryOptions());
-  const createMsg = useMutation(trpc.messages.create.mutationOptions({
-    onSuccess: () => {
-       toast.success("fuck it happend")
+  const router = useRouter();
+  
+  const createProject = useMutation(trpc.projects.create.mutationOptions({
+    onSuccess: (data) => {
+        router.push(`/projects/${data.id}`)
+    },
+    onError: () => {
+       toast.error("fuck not happend")
     }
   }))
   return (
@@ -24,12 +28,9 @@ const page = () => {
      value={value}
      onChange={(e) => setValue(e.target.value)}
     />
-    <Button disabled={createMsg.isPending} onClick={() => createMsg.mutate({prompt: value})} variant='ghost' className='text-black mt-5 ml-4 bg-white p-2 px-5 rounded-md'>
+    <Button disabled={createProject.isPending} onClick={() => createProject.mutate({prompt: value})} variant='ghost' className='text-black mt-5 ml-4 bg-white p-2 px-5 rounded-md'>
       Background job Invoke
     </Button>
-   <div className='text-white'>
-     {JSON.stringify(message,null,2)}
-   </div>
    </div>
   )
 }
