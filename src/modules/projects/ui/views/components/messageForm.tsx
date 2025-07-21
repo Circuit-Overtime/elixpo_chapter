@@ -60,7 +60,7 @@ const MessageForm = ({projectId}: Props) => {
    <Form {...form}>
      <form
      className={cn(
-         "relative bg-sidebar border border-black/15 rounded-xl p-3 pt-1 dark:bg-sidebar transition-all",
+         "relative bg-sidebar border border-black/15 rounded-xl p-3  pt-1 dark:bg-sidebar transition-all",
          isFocused && 'shadow-xs',
          showUsage && "rounded-t-none"
 
