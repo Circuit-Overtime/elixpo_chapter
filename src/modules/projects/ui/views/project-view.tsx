@@ -21,7 +21,7 @@ const ProjectView =  ({projectId}: Props) => {
         <ResizablePanel
          defaultSize={35}
          minSize={25}
-         className='flex flex-col px-5 min-h-0'
+         className='flex flex-col px-2 min-h-0'
         >
          <Suspense fallback={<div>Loading...</div>}>
              <MesssageContainer projectId={projectId}/>
