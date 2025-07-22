@@ -19,10 +19,11 @@ const ProjectHeader = (props: ProjectHeaderProps) => {
   const {data:project} = useSuspenseQuery(trpc.projects.getOne.queryOptions({id: props.projectId}))
   const {setTheme,theme} = useTheme()
   return (
-   <header className='flex justify-between  p-2  border-b'>
+   <header className='flex justify-between bg-sidebar  p-2  border-b'>
     <DropdownMenu>
         <DropdownMenuTrigger asChild>
            <Button
+           size='sm'
            variant='ghost'
            className='focus-visible:ring-0 hover:bg-transparent hover:opacity-75 transition-opacity pl-2'>
             <Image alt='Fing' src={logos.logo2}  className='w-6 h-6 object-contain' />

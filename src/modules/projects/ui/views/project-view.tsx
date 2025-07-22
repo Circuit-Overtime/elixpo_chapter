@@ -7,6 +7,7 @@ import {ResizableHandle,ResizablePanel,ResizablePanelGroup} from "@/components/u
 import MesssageContainer from './components/message-container'
 import { Fragment } from '@/generated/prisma'
 import ProjectHeader from './components/ProjectHeader'
+import FragmentView from './components/FragmentView'
 interface Props {
      projectId: string
 }
@@ -40,7 +41,9 @@ const ProjectView =  ({projectId}: Props) => {
          defaultSize={65}
          minSize={50}
         >
-          TODO Preview
+         {
+            !!activeFragment && (<FragmentView data={activeFragment} />)
+         }
         </ResizablePanel>
      </ResizablePanelGroup>
     </div>
