@@ -73,7 +73,8 @@ const Navbar: React.FC<NavbarProps> = () => {
           <div className="flex items-center">
             <div className="w-[70px] flex gap-x-2">
               <Image
-                src={logos.logo2}
+                src={logos.logo7}
+
                 alt="Logo"
                 width={38}
                 height={38}
