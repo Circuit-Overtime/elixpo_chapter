@@ -26,7 +26,7 @@ const ProjectHeader = (props: ProjectHeaderProps) => {
            size='sm'
            variant='ghost'
            className='focus-visible:ring-0 hover:bg-transparent hover:opacity-75 transition-opacity pl-2'>
-            <Image alt='Fing' src={logos.logo2}  className='w-6 h-6 object-contain' />
+            <Image alt='Fing' src={logos.logo7}  className='w-6 h-6 object-contain' />
             <span className='text-md font-mono'>{project.name}</span>
             <ChevronDown />
            </Button>

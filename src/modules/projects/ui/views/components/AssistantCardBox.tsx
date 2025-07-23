@@ -24,7 +24,7 @@ const AssistantCardBox = (props: Props) => {
    )}>
       <div className='flex items-center gap-5 '>
        <div className='flex items-center gap-1'>
-         <Image className='w-6 object-contain shrink-0' src={logos.logo2} alt='logo' />
+         <Image className='w-6 object-contain shrink-0' src={logos.logo7} alt='logo' />
          <span className='text-md font-bold' style={{fontFamily: "monospace"}} >Fing</span>
        </div>
        <span className='group-hover:opacity-100 opacity-0 transition-opacity'> <p className="text-xs text-right" style={{ fontFamily: "monospace" }}>

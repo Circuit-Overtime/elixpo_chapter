@@ -71,13 +71,17 @@ const ProjectView =  ({projectId}: Props) => {
             </TabsList>
             <div className='ml-auto flex items-center'>
               <Button
-                asChild size='sm'
-                className='bg-purple-400 dark:bg-purple-300'
-              >
-               <Link className='font-mono' href="/">
-                <CrownIcon/> Upgrade
-               </Link>
-              </Button>
+               asChild
+               size="sm"
+               className="relative overflow-hidden  font-mono text-white px-5 py-2 border border-transparent
+               bg-gradient-to-r from-purple-500 via-pink-500 to-red-500
+               bg-[length:200%_200%] animate-gradient-shine transition-all duration-500"
+                >
+                 <Link href="/" className="flex items-center gap-2">
+                 <CrownIcon className="h-4 w-4" />
+                           Upgrade
+                  </Link>
+                </Button>
             </div>
           </div>
           <TabsContent className='-mt-2'  value='preview'>
