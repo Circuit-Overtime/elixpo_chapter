@@ -46,7 +46,7 @@ const FileExploer = (prosp: Props) => {
  },[selectFiles,prosp.files])
   return (
    <ResizablePanelGroup direction='horizontal'>
-    <ResizablePanel className='bg-sidebar' defaultSize={30} minSize={30}>
+    <ResizablePanel className='bg-sidebar' minSize={20} defaultSize={25} maxSize={40} >
       <TreeView
        data={treeData}
        value={selectFiles}

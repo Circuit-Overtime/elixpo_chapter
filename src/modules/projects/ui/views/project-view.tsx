@@ -48,7 +48,7 @@ const ProjectView =  ({projectId}: Props) => {
               projectId={projectId}/>
          </Suspense>
         </ResizablePanel>
-        <ResizableHandle withHandle />
+        <ResizableHandle className='hover:bg-primary transition-colors' />
         <ResizablePanel
          defaultSize={65}
          minSize={50}

@@ -6,6 +6,9 @@ import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
+import Layout from './layout'
+import Navbar from './components/Navbar'
+import Hero from './components/Hero'
 
 const page = () => {
   const [value,setValue] = useState("")
@@ -21,17 +24,10 @@ const page = () => {
     }
   }))
   return (
-   <div className='px-10'>
-    <Input
-     className='mt-10 py-8 px-5 bg-[#ddd] text-black'
-     placeholder='Enter Your fucking prompt'
-     value={value}
-     onChange={(e) => setValue(e.target.value)}
-    />
-    <Button disabled={createProject.isPending} onClick={() => createProject.mutate({prompt: value})} variant='ghost' className='text-black mt-5 ml-4 bg-white p-2 px-5 rounded-md'>
-      Background job Invoke
-    </Button>
-   </div>
+   <Layout>
+    <Navbar/>
+    <Hero/>
+   </Layout>
   )
 }
 
