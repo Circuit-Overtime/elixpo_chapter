@@ -1,50 +1,74 @@
-# 🚀 FingAI – Build Smarter, Launch Faster
+# 🚀 FingAI — Build Smarter, Launch Faster
 
-![Landing Page Preview](./public/newhome.png)
-
-FingAI is a modern, AI-powered website builder that empowers you to create and deploy professional, responsive, and intelligent web pages effortlessly. Designed with performance, accessibility, and aesthetic minimalism in mind — it's like having a developer, designer, and marketer in one tool.
+FingAI is a modern AI-powered SaaS website builder designed to streamline your web development process with intelligent design automation and real-time optimization. Whether you're a developer, startup, or designer, FingAI helps you go from idea to launch — effortlessly.
 
 ---
 
-## 🧠 Features
+## 🌐 Preview
 
-- 🌟 **AI-Powered Generation**: Generate layouts and content using OpenAI & Gemini LLMs.
-- 🎨 **Minimal, Clean UI**: Smooth animations, soft shadows, and glassmorphism — powered by Tailwind CSS and Framer Motion.
-- 🛠️ **Drag & Deploy**: Build your site visually, then launch it in one click.
-- ⚙️ **Smart Layout Engine**: Uses intelligent design logic to auto-adjust grids and sections.
-- 🎬 **Demo Video Integration**: Embed demo videos into your site effortlessly.
-- 🌓 **Theme Toggle**: Light and Dark mode support.
-- 🔁 **Live Updates**: Powered by Inngest for scheduled and async actions.
-- 📈 **Backend Intelligence**: Prisma ORM with Neon for scalable Postgres-based logic.
-- 💬 **Testimonial and FAQ Builder**: Create trust easily with testimonial & FAQ sections.
-- 📦 **Typescript + React + Next.js**: Fast, typed, reliable, and scalable.
+![Landing Page](public/newhome.png)
 
 ---
 
 ## 🧰 Tech Stack Used
 
-| Tech | Description | Logo |
-|------|-------------|------|
-| **Next.js** | React framework for fullstack apps | ![Next.js](https://cdn.worldvectorlogo.com/logos/nextjs-2.svg) |
-| **React** | Frontend library | ![React](https://cdn.worldvectorlogo.com/logos/react-2.svg) |
-| **TypeScript** | Static typing for better dev experience | ![TS](https://cdn.worldvectorlogo.com/logos/typescript.svg) |
-| **Tailwind CSS** | Utility-first CSS for clean styling | ![Tailwind](https://cdn.worldvectorlogo.com/logos/tailwind-css-2.svg) |
-| **Prisma** | ORM to connect to Neon DB | ![Prisma](https://cdn.worldvectorlogo.com/logos/prisma-3.svg) |
-| **Neon** | Scalable PostgreSQL serverless database | ![Neon](https://avatars.githubusercontent.com/u/100548682?s=200&v=4) |
-| **Framer Motion** | Declarative animations library | ![Framer Motion](https://cdn.worldvectorlogo.com/logos/framer-motion.svg) |
-| **GSAP** | Animation for scroll and visual polish | ![GSAP](https://assets.codepen.io/16327/internal/avatars/users/default.png?fit=crop&format=auto&height=512&version=1692378473&width=512) |
-| **Inngest** | Event-driven backend workflows | ![Inngest](https://avatars.githubusercontent.com/u/106751677?s=200&v=4) |
-| **OpenAI** | AI generation (layout, content, SEO) | ![OpenAI](https://cdn.worldvectorlogo.com/logos/openai-icon.svg) |
-| **Gemini** | Multimodal AI support | ![Gemini](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Google_Gemini_logo.svg/2560px-Google_Gemini_logo.svg.png) |
+| Category        | Stack                                                   | Description                                           |
+|----------------|----------------------------------------------------------|-------------------------------------------------------|
+| **Frontend**    | Next.js 15 App Router, React, TypeScript                | Powerful React framework with app routing            |
+| **UI & Styling**| Tailwind CSS, Shadcn UI, Lucide Icons                   | Sleek, responsive UI with accessible components       |
+| **Animations**  | GSAP, Raw CSS, Tailwind Transitions                     | Minimal smooth scroll & hover effects without bloat  |
+| **Database**    | Prisma ORM, Neon DB                                     | Type-safe, scalable Postgres with edge-ready access  |
+| **AI Tools**    | OpenAI, Gemini Pro                                      | Seamless LLM integration for content and design      |
+| **Workers**     | Inngest                                                  | Background jobs and event-driven functions           |
+| **Tooling**     | ESLint, Prettier, Docker, pnpm                          | Code consistency and containerized environments      |
 
 ---
 
-## 🔧 Installation & Setup
+## ✨ Features
 
-To clone and run this project locally:
+- 🔮 AI-Generated Layouts and Content
+- 🌓 Full Light/Dark Mode with Toggle
+- 🎥 Hero Section with Autoplay Demo Video
+- 🗣️ Testimonials with Smooth Vertical Scroll Animation
+- 💳 Responsive Pricing Cards
+- 📚 Expandable FAQ Section with Glassmorphism
+- 🌈 Gradient Text Animations & Hover Effects
+- 🎨 Styled with Tailwind, no external CSS
+- 🧱 Modular Component Structure (Shadcn)
+- 📦 Deployed with Docker-ready setup
 
-### 📦 1. Clone the Repository
+---
+
+## 📦 Clone and Run Locally
 
 ```bash
-git clone https://github.com/yourusername/fingai.git
+# Clone the repository
+git clone https://github.com/your-username/fingai.git
+
+# Navigate to project folder
 cd fingai
+
+# Install dependencies (use npm or pnpm)
+npm install
+
+# Start the dev server
+npm run dev
+```
+
+> Make sure you have Docker installed and configured for running Prisma + Neon locally if needed.
+
+---
+
+## 🤝 Contribution
+
+Have ideas or improvements? Feel free to fork the repo, open issues, or submit PRs.
+
+---
+
+## 📄 License
+
+MIT License. © 2025 FingAI Team
+
+---
+
+> Built with ❤️ by Subhro and the FingAI team
