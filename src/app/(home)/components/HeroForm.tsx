@@ -35,6 +35,13 @@ const HeroForm = () => {
          prompt:  ""
      }
   })
+  const onSelect = (value:string) => {
+     form.setValue("prompt",value,{
+         shouldDirty: true,
+         shouldTouch: true,
+         shouldValidate: true
+     })
+  }
   
   const createProject = useMutation(trpc.projects.create.mutationOptions({
      onSuccess: (data) => {
@@ -121,6 +128,7 @@ const HeroForm = () => {
      <div className='flex-wrap gap-2 mt-5 md:ml-10  justify-center hidden md:flex max-w-3xl' >
         {PROJECT_TEMPLATES.map((data) => (
              <Button
+              onClick={() => onSelect(data.prompt)}
               key={data.title}
               variant='outline'
               className='bg-white dark:bg-sidebar'
