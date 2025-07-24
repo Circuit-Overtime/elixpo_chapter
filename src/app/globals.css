@@ -122,6 +122,7 @@
   *::-webkit-scrollbar {
      display: none;
   }
+  
 }
 
 @keyframes shine {

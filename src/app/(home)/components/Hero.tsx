@@ -107,10 +107,35 @@ const Hero: React.FC<HeroProps> = ({ darkMode }) => {
 
         <div className="flex items-center mt-4 px-2 md:px-0 flex-col text-center">
           <h1 className="text-3xl md:text-8xl font-bold" style={{ fontFamily: 'poppins' }}>
-            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-red-500 bg-clip-text text-transparent">
+            <span className="text-5xl md:text-8xl font-extrabold dark:text-transparent bg-clip-text dark:bg-gradient-to-r from-pink-500 via-purple-400 to-pink-500 glow-gradient animate-gradientShift">
               FingAI.
+               <style>
+        {`
+          @keyframes gradientShift {
+            0% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: 0% 50%;
+            }
+          }
+
+          .animate-gradientShift {
+            background-size: 200% 200%;
+            animation: gradientShift 5s ease infinite;
+          }
+
+          .glow-gradient {
+            text-shadow: 0 0 20px rgba(255, 0, 255, 0.6),
+                         0 0 30px rgba(0, 255, 255, 0.4);
+          }
+        `}
+      </style>
             </span>{' '}
-            ships it anyway
+            ships it  anyway
           </h1>
           <h1 className="text-2xl md:text-7xl mt-2 font-bold" style={{ fontFamily: 'poppins' }}>
             {text}|

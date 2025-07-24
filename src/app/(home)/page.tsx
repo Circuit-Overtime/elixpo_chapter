@@ -9,6 +9,10 @@ import { toast } from 'sonner'
 import Layout from './layout'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
+import ProductShowCase from './components/ProductShowCase'
+import TestiMoni from './components/TestiMoni'
+import Faq from './components/Faq'
+import CallToAction from './components/CallToAction'
 
 const page = () => {
   const [value,setValue] = useState("")
@@ -27,7 +31,12 @@ const page = () => {
    <Layout>
     <Navbar/>
     <Hero/>
+    <ProductShowCase/>
+    <TestiMoni/>
+    <Faq/>
+    <CallToAction/>
    </Layout>
+   
   )
 }
 
