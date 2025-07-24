@@ -68,7 +68,7 @@ const ScrollZoomVideo = () => {
   }, []);
 
   return (
-    <div className="flex justify-center mt-10 my-10">
+    <div className="flex justify-center mt-7 md:mt-10 md:my-10">
       <div
         ref={videoContainerRef}
         className="overflow-hidden rounded-xl shadow-xl transition-all duration-500 ease-in-out relative cursor-pointer"

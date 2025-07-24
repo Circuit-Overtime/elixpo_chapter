@@ -5,6 +5,20 @@ import logo4 from '../images/logoipsum-custom-logo (1).svg'
 import logo5 from '../images/logoipsum-custom-logo (2).svg'
 import logo6 from '../images/logoipsum-custom-logo.svg'
 import logo7 from '../images/new.svg'
+import Tesiti from '../images/testi.png'
+import Tube from '../images/tube.png'
+import Pyramid from '../images/pyramid.png'
+import Spring from '../images/spring.png'
+import Star from '../images/star.png'
+import testiOne from '../images/avatar-1.png'
+import testiTwo from '../images/avatar-2.png'
+import testiThree from '../images/avatar-3.png'
+import testiFour from '../images/avatar-4.png'
+import testiFive from '../images/avatar-5.png'
+import testiSix from '../images/avatar-6.png'
+import testiSeven from '../images/avatar-7.png'
+import testiEight from '../images/avatar-8.png'
+import testiNine from '../images/avatar-9.png'
 export const logos = {
      logo,
      logo2,
@@ -13,4 +27,23 @@ export const logos = {
      logo5,
      logo6,
      logo7
+}
+export const IMAES = {
+      Tesiti,
+      Tube,
+      Pyramid,
+      Star,
+      Spring
+}
+
+export const AVATAR = {
+      testiOne,
+      testiTwo,
+      testiThree,
+      testiFour,
+      testiFive,
+      testiSix,
+      testiSeven,
+      testiEight,
+      testiNine
 }
