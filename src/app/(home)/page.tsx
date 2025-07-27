@@ -13,6 +13,9 @@ import ProductShowCase from './components/ProductShowCase'
 import TestiMoni from './components/TestiMoni'
 import Faq from './components/Faq'
 import CallToAction from './components/CallToAction'
+import ProjectsShowCase from './components/ProjectsShowCase'
+import Try from './components/Try'
+import Footer from './components/Footer'
 
 const page = () => {
   const [value,setValue] = useState("")
@@ -35,6 +38,9 @@ const page = () => {
     <TestiMoni/>
     <Faq/>
     <CallToAction/>
+    <ProjectsShowCase/>
+    <Try/>
+    <Footer/>
    </Layout>
    
   )
