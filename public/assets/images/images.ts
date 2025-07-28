@@ -19,6 +19,11 @@ import testiSix from '../images/avatar-6.png'
 import testiSeven from '../images/avatar-7.png'
 import testiEight from '../images/avatar-8.png'
 import testiNine from '../images/avatar-9.png'
+import login from '../images/login.jpg'
+import login2 from '../images/login2.jpg'
+import login3 from '../images/login3.jpg'
+import login4 from '../images/login4.jpg'
+import login5 from '../images/login5.jpg'
 export const logos = {
      logo,
      logo2,
@@ -46,4 +51,12 @@ export const AVATAR = {
       testiSeven,
       testiEight,
       testiNine
+}
+export const Auth = {
+       login,
+       login2,
+       login3,
+       login4,
+       login5,
+       
 }

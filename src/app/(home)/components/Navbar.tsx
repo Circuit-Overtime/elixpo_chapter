@@ -8,6 +8,10 @@ import { Menu, X } from 'lucide-react'; // ✅ Lucide icons
 import { logos } from '../../../../public/assets/images/images';
 import { Button } from '@/components/ui/button';
 
+import { useRouter } from 'next/navigation'
+import { SignedIn, SignedOut, SignIn, SignInButton, SignOutButton, SignUpButton } from '@clerk/nextjs';
+import UserControl from '@/components/user-control';
+
 // Adjust your color system if needed
 const colors = {
   primary: '#3c096c',
@@ -23,7 +27,7 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = () => {
   const [activeButton, setActiveButton] = useState<'login' | 'signup'>('login');
   const [isOpen, setIsOpen] = useState(false);
- /*  const router = useRouter(); */
+   const router = useRouter(); 
   const menuRef = useRef<HTMLDivElement>(null);
 
   const navItems = [
@@ -47,12 +51,12 @@ const Navbar: React.FC<NavbarProps> = () => {
  */
   const handleLogin = () => {
     setActiveButton('login');
-   /*  router.push('/signin'); */
+     router.push('/sign-in'); 
   };
 
   const handleSignUp = () => {
     setActiveButton('signup');
-   /*  router.push('/signup'); */
+     router.push('/sign-up'); 
   };
 
   /* useEffect(() => {
@@ -101,40 +105,35 @@ const Navbar: React.FC<NavbarProps> = () => {
             </div>
 
             {/* Desktop Auth Buttons */}
-            <div className="hidden md:flex text-xs items-center gap-4 text-white">
-             <Button
-  className="relative overflow-hidden rounded-full font-mono px-5 py-2 text-white 
-             bg-gradient-to-r from-purple-500 via-pink-600 to-red-600 
-             bg-[length:200%_200%] animate-none"
-  style={{
-    animation: 'shine 2s linear infinite',
-    backgroundSize: '200% 200%',
-    backgroundPosition: '0% 50%',
-  }}
->
-  SignIn
-</Button>
+            <SignedOut>
+              <div className='flex gap-2 items-center'>
+                 <SignUpButton>
+                  <Button className='font-mono' variant={"outline"}>
+                    Sign Up
+                  </Button>
+                 </SignUpButton>
 
-<style jsx global>{`
-  @keyframes shine {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
-  }
-`}</style>
-
-              <Button
-              className='bg-transparent hover:text-white  border text-black border-black rounded-4xl font-mono dark:text-white dark:hover:text-black dark:border-white'
-              >
-                SignUp
-              </Button>
-            </div>
+                  <SignInButton>
+                  <Button className='relative overflow-hidden font-mono   text-white 
+                       bg-gradient-to-r from-purple-500 via-pink-600 to-red-600 
+                       bg-[length:200%_200%]'
+            style={{
+              animation: 'shine 2s linear infinite',
+              backgroundSize: '200% 200%',
+              backgroundPosition: '0% 50%',
+            }}>
+                    Sign In
+                  </Button>
+                 </SignInButton>
+              </div>
+            </SignedOut>
+            <SignedIn>
+              <SignOutButton>
+                <UserControl showName />
+              </SignOutButton>
+            </SignedIn>
+             
+          
           </div>
         </div>
 
