@@ -7,6 +7,7 @@ import HeroForm from './HeroForm';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import ScrollZoomVideo from './ScrollZoomVideo';
+import Image from 'next/image';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -173,7 +174,7 @@ const Hero: React.FC<HeroProps> = ({ darkMode }) => {
 
         {/* VIDEO SECTION WITH SCROLLING ZOOM */}
        <div className='flex justify-center px-10 md:px-0 items-center w-full'> 
-         <ScrollZoomVideo/>
+       <ScrollZoomVideo/>
        </div>
       </div>
     </section>
