@@ -47,7 +47,7 @@ const Try: React.FC = () => {
           {[...Array(10)].map((_, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 text-white text-6xl md:text-8xl font-medium px-8"
+              className="flex items-center gap-3  text-6xl md:text-8xl font-medium px-8"
               style={{ fontFamily: 'Poppins' }}
             >
               <GoNorthStar className="w-20 h-20 text-pink-400" />

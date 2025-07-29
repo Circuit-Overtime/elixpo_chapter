@@ -8,7 +8,7 @@ import { FaDiscord, FaGithubAlt, FaInstagram, FaLinkedin } from 'react-icons/fa'
 
 const Footer = () => {
   return (
-    <section className='py-20 bg-white dark:bg-black mt-10 relative shadow rounded-t-4xl'>
+    <section className='py-20 bg-white dark:bg-black mt-10 relative shadow shadow-black rounded-t-4xl'>
       <div className='container mx-auto px-4 md:px-8'>
         <div className='px-6 py-10 border border-black/15 dark:border-white/15 shadow-2xs rounded-3xl'>
           <div className='flex flex-col lg:flex-row lg:justify-between gap-10'>

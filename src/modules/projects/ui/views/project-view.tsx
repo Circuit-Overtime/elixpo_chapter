@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { Braces, CrownIcon, EyeIcon } from 'lucide-react'
 import CodeView from '@/components/code-view/CodeView'
 import FileExplorer from '@/components/FileExploer'
+import UserControl from '@/components/user-control'
 interface Props {
      projectId: string
 }
@@ -69,7 +70,7 @@ const ProjectView =  ({projectId}: Props) => {
                     <Braces className='size-4' /> <span className='font-mono text-xs'>Code</span>
                 </TabsTrigger>
             </TabsList>
-            <div className='ml-auto flex items-center'>
+            <div className='ml-auto gap-3 flex items-center'>
               <Button
                asChild
                size="sm"
@@ -82,6 +83,7 @@ const ProjectView =  ({projectId}: Props) => {
                            Upgrade
                   </Link>
                 </Button>
+                <UserControl  />
             </div>
           </div>
           <TabsContent className='-mt-2'  value='preview'>

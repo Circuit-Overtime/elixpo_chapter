@@ -22,7 +22,7 @@ const SignInPage = () => {
                   card: 'bg-transparent! shadow-none!  border-none!',
                    headerTitle: 'text-white  text-3xl! font-[poppins]! font-bold!',
                    headerSubtitle: "font-mono!  text-xs!",
-                   formFieldInput: 'bg-white/10! text-white! placeholder-white/50! py-6!',
+                   formFieldInput: 'bg-white/10! py-6!',
                    formButtonPrimary: 'bg-pink-500! text-white! py-2.5! hover:bg-white/90',
                     socialButtonsBlockButton: "py-3!",
                     dividerText: 'text-white/60!',
