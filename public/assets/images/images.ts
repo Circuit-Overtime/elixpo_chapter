@@ -24,6 +24,12 @@ import login2 from '../images/login2.jpg'
 import login3 from '../images/login3.jpg'
 import login4 from '../images/login4.jpg'
 import login5 from '../images/login5.jpg'
+import login6 from '../images/login6.png'
+import login7 from '../images/login7.jpg'
+import login8 from '../images/login8.jpg'
+import login9 from '../images/login9.jpg'
+import login10 from '../images/login10.jpg'
+import login11 from '../images/login11.jpg'
 export const logos = {
      logo,
      logo2,
@@ -58,5 +64,12 @@ export const Auth = {
        login3,
        login4,
        login5,
+       login6,
+       login7,
+       login8,
+       login9,
+       login10,
+       login11
+
        
 }
