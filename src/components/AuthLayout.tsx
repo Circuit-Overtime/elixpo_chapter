@@ -2,7 +2,8 @@ import React, { ReactNode } from 'react';
 import { useRouter } from 'next/navigation'
 import { Auth, logos } from '../../public/assets/images/images';
 import Image from 'next/image';
-import { ArrowBigDownDashIcon } from 'lucide-react';
+import { ArrowBigDownDashIcon, ArrowLeft, ArrowLeftCircle, ArrowLeftCircleIcon, DecimalsArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -13,7 +14,28 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
   return (
     <div className='flex flex-col bg-neutral-950 md:flex-row w-full h-screen overflow-hidden'>
-     
+        {/* right */}
+      <div  className='w-full relative md:w-1/2 h-auto px-5 md:px-10  overflow-y-auto no-scrollbar'>
+       <div className='fixed py-3 top-0 '>
+        <div className='flex items-center justify-between'>
+             <div className='flex items-center gap-1' > 
+            <Image alt='' className='w-10 h-10' src={logos.logo7} />
+            <span className='font-bold text-xl' style={{fontFamily: 'poppins'}} >FingAI.</span>
+         </div>
+         <div onClick={() => navigate.push('/')} className='absolute -right-56 md:-right-135 p-2 bg-white top-4 rounded-full'>
+            <ArrowLeft  className='text-black' size={19} />
+         </div>
+        </div>
+       </div>
+        <div
+       
+       
+      >
+        
+       
+        {children}
+      </div>
+       </div>
       {/* Left Auth Content */}
      <div
         className='hidden md:flex w-1/2 h-full relative items-center justify-center overflow-hidden'
@@ -27,25 +49,25 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
       
         {/* Main Illustration */}
-        <div className='max-w-[100%] max-h-[100%] z-20'>
-          <Image
-            src={Auth.login2}
-            
-            className='w-full h-full object-cover'
-            alt="login-illustration"
-          />
-        </div>
+      <div className="relative w-full h-full max-w-full max-h-full z-20">
+  {/* Background image */}
+  <Image
+    src={Auth.login8}
+    fill
+    className="object-cover"
+    alt="login-illustration"
+    priority
+  />
+
+  {/* Blur overlay */}
+  <div className="absolute inset-0  bg-black/15 backdrop-blur-xl z-10" />
+</div>
+
+
       </div>
       
       {/* Right Side Image Section */}
-       <div
-       
-        className='w-full md:w-1/2 h-full px-5 md:px-10 pb-12 overflow-y-auto no-scrollbar'
-      >
-        
-       
-        {children}
-      </div>
+      
     </div>
   );
 };
