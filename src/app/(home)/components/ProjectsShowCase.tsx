@@ -5,15 +5,17 @@ import { useTRPC } from '@/trpc/client';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { use, useState } from 'react';
 import { IMAES, logos } from '../../../../public/assets/images/images';
+import { useUser } from '@clerk/nextjs';
 
 const ProjectsShowCase = () => {
   const trpc = useTRPC();
   const { data: projects } = useQuery(trpc.projects.getMany.queryOptions());
   const [showAll, setShowAll] = useState(false);
-
+  const {user} = useUser()
   const visibleProjects = showAll ? projects : projects?.slice(0, 16);
+  if(!user) return null
 
   return (
     <section className="py-0 md:py-10">
@@ -23,7 +25,7 @@ const ProjectsShowCase = () => {
             className="text-center text-4xl md:text-8xl font-bold"
             style={{ fontFamily: 'poppins' }}
           >
-            Your{' '}
+            {user?.firstName}'s{' '}
             <span className="text-5xl md:text-8xl font-extrabold dark:text-transparent bg-clip-text dark:bg-gradient-to-r from-pink-500 via-purple-400 to-pink-500 glow-gradient animate-gradientShift">
               Fings
               <style>
@@ -98,7 +100,7 @@ const ProjectsShowCase = () => {
         </div>
 
        
-            <Image width={162} height={162} alt='' src={IMAES.Tube}  className='hidden md:block absolute right-70 -top-10 hover:rotate-12  duration-500' />
+            {/* <Image width={162} height={162} alt='' src={IMAES.Tube}  className='hidden md:block absolute right-70 -top-10 hover:rotate-12  duration-500' /> */}
            
       
       </div>

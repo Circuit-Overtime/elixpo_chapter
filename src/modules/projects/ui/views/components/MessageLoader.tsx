@@ -40,7 +40,7 @@ const MessageLoader = () => {
   return (
     <div className='flex flex-col group px-2 pb-4'>
         <div className='flex items-center gap-1'>
-          <Image alt='fing' src={logos.logo2} className='w-6 h-6 object-contain' />
+          <Image alt='fing' src={logos.logo7} className='w-6 h-6 object-contain' />
           <span className='text-md font-bold' style={{fontFamily: "monospace"}} >Fing</span>
         </div>
       <div className=' pl-8 gap-y-4 flex items-center'>

@@ -1,10 +1,12 @@
 import { inngest } from '@/inngest/client'
 import prisma from '@/lib/db'
-import {baseProcedure, createTRPCRouter} from '@/trpc/init'
+import {protechedRoute, createTRPCRouter} from '@/trpc/init'
+import { TRPCError } from '@trpc/server'
+import { userAgent } from 'next/server'
 import z from 'zod'
 
 export const messageRouter = createTRPCRouter({
-    getMany: baseProcedure
+    getMany: protechedRoute
     .input(
          z.object({
              projectId: z.string()
@@ -13,10 +15,13 @@ export const messageRouter = createTRPCRouter({
          })
       )
      .query(
-        async({input}) => {
+        async({input,ctx}) => {
              const message = await prisma.message.findMany({
                 where: {
-                    projectId: input.projectId
+                    projectId: input.projectId,
+                    project: {
+                        userId: ctx.auth.userId
+                    }
                 },
                 include:{
                     fragment: true
@@ -27,7 +32,7 @@ export const messageRouter = createTRPCRouter({
              })
              return message
         }),
-     create: baseProcedure
+     create: protechedRoute
       .input(
          z.object({
              prompt: z.string()
@@ -38,10 +43,20 @@ export const messageRouter = createTRPCRouter({
              
          })
       )
-      .mutation(async ({input}) => {
+      .mutation(async ({input,ctx}) => {
+       const existingProject = await prisma.project.findUnique({ 
+           where: {
+              id: input.projectId,
+              userId: ctx.auth.userId 
+           }
+       })
+
+       if(!existingProject) {
+         throw new TRPCError({code: "NOT_FOUND", message: "Project not found "})
+       }
        const createdMsg = await prisma.message.create({
              data: {
-                 projectId: input.projectId,
+                 projectId: existingProject.id,
                   content: input.prompt,
                   role: "USER",
                   type: "RESULT"

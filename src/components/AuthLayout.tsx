@@ -13,7 +13,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   const navigate = useRouter();
 
   return (
-    <div className='flex flex-col bg-neutral-950 md:flex-row w-full h-screen overflow-hidden'>
+    <div className='flex flex-col  md:flex-row w-full h-screen overflow-hidden'>
         {/* right */}
       <div  className='w-full relative md:w-1/2 h-auto px-5 md:px-10  overflow-y-auto no-scrollbar'>
        <div className='fixed py-3 top-0 '>
@@ -60,7 +60,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   />
 
   {/* Blur overlay */}
-  <div className="absolute inset-0  bg-black/15 backdrop-blur-xl z-10" />
+  <div className="absolute inset-0  bg-black/15 backdrop-blur-xs z-10" />
 </div>
 
 
