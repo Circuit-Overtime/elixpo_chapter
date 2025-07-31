@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { ArrowUp, Loader2Icon } from 'lucide-react'
+import Usage from './usage'
 
 
 interface Props {
@@ -26,14 +27,14 @@ const MessageForm = ({projectId}: Props) => {
   const [isFocused,setIsFocused] = useState(false);
   const trpc = useTRPC();
   const queryClient = useQueryClient()
-  const showUsage = false
+  
   const form = useForm<z.infer<typeof formSchema>>({
      resolver: zodResolver(formSchema),
      defaultValues: {
          prompt:  ""
      }
   })
-  
+  const {data: usage} = useQuery(trpc.usage.status.queryOptions())
   const createMessage = useMutation(trpc.messages.create.mutationOptions({
      onSuccess: () => {
           form.reset();
@@ -55,9 +56,14 @@ const MessageForm = ({projectId}: Props) => {
         projectId
      })
   }
-  
+  const showUsage = !!usage
   return (
    <Form {...form}>
+   {
+    showUsage && (
+      <Usage points={usage.remainingPoints} msBeforeNext={usage.msBeforeNext} />
+    )
+   }
      <form
      className={cn(
          "relative bg-sidebar border border-black/15 rounded-xl p-3  pt-1 dark:bg-white/15 dark:border-white/15 transition-all",
