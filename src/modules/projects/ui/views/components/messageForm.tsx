@@ -11,6 +11,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { ArrowUp, Loader2Icon } from 'lucide-react'
 import Usage from './usage'
+import { useRouter } from 'next/navigation'
+
 
 
 interface Props {
@@ -26,6 +28,7 @@ const formSchema = z.object({
 const MessageForm = ({projectId}: Props) => {
   const [isFocused,setIsFocused] = useState(false);
   const trpc = useTRPC();
+  const router = useRouter()
   const queryClient = useQueryClient()
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -41,11 +44,15 @@ const MessageForm = ({projectId}: Props) => {
           queryClient.invalidateQueries(
             trpc.messages.getMany.queryOptions({projectId})
           )
-          // TODO Invalidate usage status  
+         queryClient.invalidateQueries(
+           trpc.usage.status.queryOptions()
+         )  
      },
-     onError: (err) => {
-        //TODO redirect to pricing page
-         toast.error(err.message)
+     onError: (error) => {
+         toast.error(error.message)
+         if(error.data?.code === 'BAD_REQUEST') {
+            router.push("/pricing")
+         }
      }
   }))
   const isPending = createMessage.isPending

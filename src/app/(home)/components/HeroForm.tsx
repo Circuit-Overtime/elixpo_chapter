@@ -53,12 +53,16 @@ const HeroForm = () => {
             trpc.projects.getMany.queryOptions()
           );
           router.push(`/projects/${data.id}`)
-          // TODO Invalidate usage status  
+         
+          queryClient.invalidateQueries(
+            trpc.usage.status.queryOptions()
+          )
      },
-     onError: (err) => {
+     onError: (error) => {
         //TODO redirect to pricing page
-         toast.error(err.message)
-         if(err.data?.code === 'UNAUTHORIZED') {
+
+         toast.error(error.message)
+         if(error.data?.code === 'UNAUTHORIZED') {
            openSignIn({
              appearance: {
                baseTheme: currTheme === 'dark' ? dark : undefined,
@@ -79,6 +83,10 @@ const HeroForm = () => {
                }
              }
            })
+         }
+
+          if(error.data?.code === 'BAD_REQUEST') {
+            router.push("/pricing")
          }
      }
   }))
