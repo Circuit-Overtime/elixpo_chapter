@@ -49,7 +49,7 @@ export const fing_AI_Agent = inngest.createFunction(
       name: "Fing-AI",
       description: "I'm FING AI, a expert coding agent. I can develope next.js project. Interactive UI",
       system: PROMPT,
-      model: openai({ model: "gpt-4.1", defaultParameters: { temperature: 0.1 }}),
+      model: gemini({ model: "gemini-2.0-flash-lite"}),
       tools: [
         createTool({
           name: "terminal",

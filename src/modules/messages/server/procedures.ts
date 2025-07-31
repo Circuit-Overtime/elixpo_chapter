@@ -1,5 +1,6 @@
 import { inngest } from '@/inngest/client'
 import prisma from '@/lib/db'
+import { consumeCredits } from '@/lib/usage'
 import {protechedRoute, createTRPCRouter} from '@/trpc/init'
 import { TRPCError } from '@trpc/server'
 import { userAgent } from 'next/server'
@@ -54,6 +55,17 @@ export const messageRouter = createTRPCRouter({
        if(!existingProject) {
          throw new TRPCError({code: "NOT_FOUND", message: "Project not found "})
        }
+ 
+       try {
+         await consumeCredits()
+       } catch (error) {
+         if(error instanceof Error) {
+             throw new TRPCError({code: "NOT_FOUND", message: "something wents wrong"})
+         }else {
+             throw new TRPCError({code: "BAD_REQUEST", message: "You are ran out of credits"})
+         }
+       }
+
        const createdMsg = await prisma.message.create({
              data: {
                  projectId: existingProject.id,
