@@ -78,7 +78,7 @@ const ProjectView =  ({projectId}: Props) => {
                bg-gradient-to-r from-purple-500 via-pink-500 to-red-500
                bg-[length:200%_200%] animate-gradient-shine transition-all duration-500"
                 >
-                 <Link href="/" className="flex items-center gap-2">
+                 <Link href="/pricing" className="flex items-center gap-2">
                  <CrownIcon className="h-4 w-4" />
                            Upgrade
                   </Link>

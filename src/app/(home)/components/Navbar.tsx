@@ -96,13 +96,13 @@ const Navbar: React.FC<NavbarProps> = () => {
           {/* Right Section */}
           <div className="flex items-center gap-5">
             {/* Mobile Menu Toggle */}
-            <div onClick={() => setIsOpen(!isOpen)} className="md:hidden mr-0 cursor-pointer">
+           {/*  <div onClick={() => setIsOpen(!isOpen)} className="md:hidden mr-0 cursor-pointer">
               {isOpen ? (
                 <X color="white" size={20} />
               ) : (
                 <Menu  className='' size={20} />
               )}
-            </div>
+            </div> */}
 
             {/* Desktop Auth Buttons */}
             <SignedOut>

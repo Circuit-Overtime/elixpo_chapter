@@ -24,7 +24,7 @@ const UserControl = ({ showName }: Props) => {
             "flex items-center gap-3 px-4! py-2 rounded-full bg-black! text-white hover:bg-neutral-800 transition duration-300",
  */
           // Avatar box - increased size, no ring
-          avatarBox: "w-10! h-10! rounded-full",
+          avatarBox: "w-8! h-8! rounded-full",
 
           // User name
           userButtonName: "text-base! font-mono! text-white!",

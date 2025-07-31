@@ -9,6 +9,7 @@ import { PROMPT } from "@/prompt";
 // See: https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/function-calling
 import { z } from "zod";
 import prisma from "@/lib/db";
+import { anthropic } from "inngest";
 
 
 // Use plain ZodObject types for parameters to avoid type errors
@@ -48,7 +49,7 @@ export const fing_AI_Agent = inngest.createFunction(
       name: "Fing-AI",
       description: "I'm FING AI, a expert coding agent. I can develope next.js project. Interactive UI",
       system: PROMPT,
-      model: gemini({ model: "gemini-2.0-flash-lite"}),
+      model: openai({ model: "gpt-4.1", defaultParameters: { temperature: 0.1 }}),
       tools: [
         createTool({
           name: "terminal",
