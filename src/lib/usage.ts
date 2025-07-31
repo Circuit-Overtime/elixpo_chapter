@@ -2,14 +2,17 @@ import { auth } from '@clerk/nextjs/server'
 import { RateLimiterPrisma } from 'rate-limiter-flexible'
 import prisma from './db';
 
-const DAILY_CREDIT = 5;         // Users can use only 1 token
+const FREE_CREDITS = 5;         // Users can use only 1 token
+const PRO_CREDITS  = 100 + FREE_CREDITS;
 const DURATION = 60 * 60 * 24;  // 1 day in seconds
 
 export const getUsageTracker = async () => {
+ const {has} = await auth();
+ const isPro = has({plan: 'pro'})
   const usageTracker = new RateLimiterPrisma({
     storeClient: prisma,
     tableName: 'Usage',
-    points: DAILY_CREDIT,   // Allow 1 point
+    points: isPro ? PRO_CREDITS : FREE_CREDITS,   // Allow 1 point
     duration: DURATION      // Reset that point every 24 hours
   });
 
