@@ -78,3 +78,5 @@ elixpo-minecraft-mod/.gradle
 #model files
 *.gguf
 *.safetensor
+
+

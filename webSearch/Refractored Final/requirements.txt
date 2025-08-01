@@ -1,9 +1,0 @@
-flask
-flask-cors
-flask-limiter
-requests
-beautifulsoup4
-duckduckgo-search
-pytube
-youtube-transcript-api
-tqdm
