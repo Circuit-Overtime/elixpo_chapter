@@ -1,0 +1,233 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: white;
+    transition: background-color 0.5s ease;
+    background-color: #101011;
+}
+
+.modal {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 480px;
+    padding: 40px 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    position: relative;
+    transition: background-color 0.5s ease, box-shadow 0.5s ease;
+    background-color: #202025;
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #fff;
+}
+
+.logo {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 36px;
+}
+
+.logo img {
+    color: #fff;
+    filter: invert(1);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 24px;
+    font-weight: 500;
+    color: #fff;
+}
+
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #31303B;
+    background-color: #202025;
+    cursor: pointer;
+    margin-bottom: 25px;
+    transition: background-color 0.2s;
+    color: #fff;
+}
+
+.google-btn:hover {
+    background-color: #31303B;
+}
+
+.google-icon {
+    margin-right: 10px;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 20px 0;
+    color: #818181;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #31303B;
+}
+
+.divider::before {
+    margin-right: 15px;
+}
+
+.divider::after {
+    margin-left: 15px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #fff;
+}
+
+input[type="email"] {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #31303B;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+    background-color: #202025;
+    color: #fff;
+}
+
+input[type="email"]:focus {
+    border-color: #ffffff97;
+    outline: none;
+}
+
+.continue-btn {
+    width: 100%;
+    padding: 14px;
+    background-color: #ffffff;
+    color: rgb(0, 0, 0);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.arrow-icon {
+    margin-left: 8px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ------------------------------ Light theme styles --------------------------*/
+
+body.light-theme {
+    background-color: #F9FAFB;
+}
+
+body.light-theme .modal {
+    background-color: white;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .close-btn {
+    color: #333;
+}
+
+body.light-theme .logo img {
+    filter: invert(0);
+}
+
+body.light-theme h1 {
+    color: #333;
+}
+
+body.light-theme .google-btn {
+    background-color: white;
+    border-color: #ddd;
+    color: #333;
+}
+
+body.light-theme .continue-btn {
+    background-color: #101011;
+    color: white;
+}
+
+body.light-theme .google-btn:hover {
+    background-color: #f5f5f5;
+}
+
+body.light-theme .divider {
+    color: #777;
+}
+
+body.light-theme .divider::before,
+body.light-theme .divider::after {
+    border-color: #ddd;
+}
+
+body.light-theme label {
+    color: #333;
+}
+
+body.light-theme input[type="email"] {
+    border-color: #ddd;
+    background-color: white;
+    color: #333;
+}
+
+body.light-theme input[type="email"]:focus {
+    border-color: #333;
+}
