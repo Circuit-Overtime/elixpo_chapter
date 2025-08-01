@@ -10,6 +10,7 @@ interface Props {
      projectId: string,
      activeFragment: Fragment | null,
      setActiveFragment: (fragment: Fragment | null) => void;
+     selectedModel: string;
 }
 const MesssageContainer = (props: Props) => {
   const {activeFragment,setActiveFragment} = props
@@ -67,7 +68,7 @@ const MesssageContainer = (props: Props) => {
        </div>
        <div className='relative p-3 pt-1'>
         <div className='absolute -top-6 left-0 right-0 h-6 bg-gradient-to-b from-transparent to-background/70 pointer-events-none' />
-        <MessageForm projectId={props.projectId} />
+        <MessageForm projectId={props.projectId} selectedModel={props.selectedModel}  />
        </div>
     </div>
   )

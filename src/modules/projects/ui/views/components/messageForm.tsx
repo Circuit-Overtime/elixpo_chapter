@@ -16,7 +16,9 @@ import { useRouter } from 'next/navigation'
 
 
 interface Props {
-     projectId: string
+     projectId: string,
+     selectedModel: string;
+    
 }
 
 const formSchema = z.object({
@@ -25,7 +27,7 @@ const formSchema = z.object({
             .max(10000,{message: "value is  too long"})
             
 })
-const MessageForm = ({projectId}: Props) => {
+const MessageForm = ({projectId,selectedModel}: Props) => {
   const [isFocused,setIsFocused] = useState(false);
   const trpc = useTRPC();
   const router = useRouter()
@@ -60,7 +62,8 @@ const MessageForm = ({projectId}: Props) => {
   const onSubmit = async (prompts:z.infer<typeof formSchema>) => {
      await createMessage.mutateAsync({
         prompt: prompts.prompt,
-        projectId
+        projectId,
+        selectedModel
      })
   }
   const showUsage = !!usage

@@ -15,94 +15,117 @@ import { Braces, CrownIcon, EyeIcon } from 'lucide-react'
 import CodeView from '@/components/code-view/CodeView'
 import FileExplorer from '@/components/FileExploer'
 import UserControl from '@/components/user-control'
+
 interface Props {
-     projectId: string
+  projectId: string
 }
 
-const ProjectView =  ({projectId}: Props) => {
-     const files = {
-    "index.tsx": `console.log("Hello world")`,
-    "style.css": `body { background: #000; }`,
-    "README.md": `# My App`,
-  }
-  /* const trpc = useTRPC()
-  const {data: projects} =  useSuspenseQuery(trpc.projects.getOne.queryOptions({
-     id: projectId
-  })) */
-  const [activeFragment,setActiveFragment] = useState<Fragment | null>(null);
-  const [tabState,setTabState] = useState<"preview" | "code">("preview")
+// Model configuration constants
+const MODEL_OPTIONS = [
+  { value: 'gpt-4.1', label: 'OpenAI GPT-4.1' },
+  { value: 'gpt-4o', label: 'OpenAI GPT-4o' },
+  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+  { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite' }
+] as const;
+
+type ModelValue = typeof MODEL_OPTIONS[number]['value'];
+
+const ProjectView = ({projectId}: Props) => {
+  const [activeFragment, setActiveFragment] = useState<Fragment | null>(null);
+  const [tabState, setTabState] = useState<"preview" | "code">("preview");
+  const [selectedModel, setSelectedModel] = useState<ModelValue>('gpt-4.1');
+
+  // This wrapper ensures type safety while matching ProjectHeader's expected type
+  const handleModelChange = (model: string) => {
+    // Validate the model is one of our options
+    if (MODEL_OPTIONS.some(opt => opt.value === model)) {
+      setSelectedModel(model as ModelValue);
+    }
+  };
+
+  // Helper function to get display name
+  const getDisplayName = (value: string) => {
+    return MODEL_OPTIONS.find(opt => opt.value === value)?.label || value;
+  };
+
   return (
     <div className='h-screen'>
-     <ResizablePanelGroup direction='horizontal'>
+      <ResizablePanelGroup direction='horizontal'>
         <ResizablePanel
-         defaultSize={35}
-         minSize={25}
-         className='flex flex-col  min-h-0'
+          defaultSize={35}
+          minSize={25}
+          className='flex flex-col min-h-0'
         >
-         <Suspense fallback={<div>Loading...</div>}>
-             <ProjectHeader projectId={projectId} />
-         </Suspense>
-         <Suspense fallback={<div>Loading...</div>}>
-             <MesssageContainer
-             activeFragment={activeFragment}
-             setActiveFragment={setActiveFragment}
-              projectId={projectId}/>
-         </Suspense>
+          <Suspense fallback={<div>Loading header...</div>}>
+            <ProjectHeader
+              projectId={projectId}
+              selectedModel={selectedModel}
+              setSelectedModel={handleModelChange}
+            />
+          </Suspense>
+          
+          <Suspense fallback={<div>Loading messages...</div>}>
+            <MesssageContainer
+              activeFragment={activeFragment}
+              setActiveFragment={setActiveFragment}
+              projectId={projectId}
+              selectedModel={selectedModel}
+            />
+          </Suspense>
         </ResizablePanel>
+        
         <ResizableHandle className='hover:bg-primary transition-colors' />
-        <ResizablePanel
-         defaultSize={65}
-         minSize={50}
-        >
-         <Tabs
-          className='h-full'
-          defaultValue='preview'
-          value={tabState}
-          onValueChange={(value) => setTabState(value as "preview" | "code")}
-         >
-          <div className='flex w-full justify-between bg-sidebar p-2 border-b'>
-            <TabsList className='h-8 p-0 gap-1  border rounded-md'>
+        
+        <ResizablePanel defaultSize={65} minSize={50}>
+          <Tabs
+            className='h-full'
+            defaultValue='preview'
+            value={tabState}
+            onValueChange={(value) => setTabState(value as "preview" | "code")}
+          >
+            <div className='flex w-full justify-between bg-sidebar p-2 border-b'>
+              <TabsList className='h-8 p-0 gap-1 border rounded-md'>
                 <TabsTrigger className='rounded-md' value='preview'>
-                    <EyeIcon className='size-4'  />
-                     <span className='font-mono text-xs'>Demo</span>
+                  <EyeIcon className='size-4' />
+                  <span className='font-mono text-xs'>Demo</span>
                 </TabsTrigger>
                 <TabsTrigger className='rounded-md' value='code'>
-                    <Braces className='size-4' /> <span className='font-mono text-xs'>Code</span>
+                  <Braces className='size-4' />
+                  <span className='font-mono text-xs'>Code</span>
                 </TabsTrigger>
-            </TabsList>
-            <div className='ml-auto gap-3 flex items-center'>
-              <Button
-               asChild
-               size="sm"
-               className="relative overflow-hidden  font-mono text-white px-5 py-2 border border-transparent
-               bg-gradient-to-r from-purple-500 via-pink-500 to-red-500
-               bg-[length:200%_200%] animate-gradient-shine transition-all duration-500"
+              </TabsList>
+              
+              <div className='ml-auto gap-3 flex items-center'>
+                <Button
+                  asChild
+                  size="sm"
+                  className="relative overflow-hidden font-mono text-white px-5 py-2 border border-transparent
+                  bg-gradient-to-r from-purple-500 via-pink-500 to-red-500
+                  bg-[length:200%_200%] animate-gradient-shine transition-all duration-500"
                 >
-                 <Link href="/pricing" className="flex items-center gap-2">
-                 <CrownIcon className="h-4 w-4" />
-                           Upgrade
+                  <Link href="/pricing" className="flex items-center gap-2">
+                    <CrownIcon className="h-4 w-4" />
+                    Upgrade
                   </Link>
                 </Button>
-                <UserControl  />
+                <UserControl />
+              </div>
             </div>
-          </div>
-          <TabsContent className='-mt-2'  value='preview'>
-             {
-                !!activeFragment && <FragmentView data={activeFragment} />
-             }
-          </TabsContent>
-          <TabsContent className='-mt-2 min-h-0' value='code'>
-           {
-            !!activeFragment?.files && <FileExplorer files={activeFragment?.files as {[path:string]:string}} />
-           }
-           
-          </TabsContent>
-         </Tabs>
-         
+            
+            <TabsContent className='-mt-2' value='preview'>
+              {activeFragment && <FragmentView data={activeFragment} />}
+            </TabsContent>
+            
+            <TabsContent className='-mt-2 min-h-0' value='code'>
+              {activeFragment?.files && (
+                <FileExplorer files={activeFragment.files as {[path:string]:string}} />
+              )}
+            </TabsContent>
+          </Tabs>
         </ResizablePanel>
-     </ResizablePanelGroup>
+      </ResizablePanelGroup>
     </div>
   )
 }
 
-export default ProjectView 
+export default ProjectView
