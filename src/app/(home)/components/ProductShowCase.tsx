@@ -19,7 +19,7 @@ const ProductShowCase = () => {
   return (
     <section
       ref={sectionRef}
-      className='py-0 md:py-10 mx-auto min-h-[120vh]' // <-- min-height added for scroll effect
+      className='py-0 md:py-10 mx-auto ' // <-- min-height added for scroll effect
     >
       <div className='container'>
         <div className='text-center'>
@@ -31,7 +31,7 @@ const ProductShowCase = () => {
           </button>
         </div>
 
-        <div className='flex text-4xl md:text-7xl font-bold mt-1 md:mt-2 flex-col items-center'>
+        <div className='flex text-3xl md:text-7xl font-bold mt-1 md:mt-2 flex-col items-center'>
           <h1>A more efficient way</h1>
           <h1>
             <div className='flex items-center gap-2'>

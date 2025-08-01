@@ -1,9 +1,9 @@
 import { inngest } from "./client";
-import { openai, createAgent, gemini, createTool, createNetwork, type Tool } from "@inngest/agent-kit";
+import { openai, createAgent, gemini, createTool, createNetwork, type Tool, type Message, createState } from "@inngest/agent-kit";
 import { getSandbox, lastAssisTextMsgCon } from "./utils";
 import { Sandbox } from "@e2b/code-interpreter";
 
-import { PROMPT } from "@/prompt";
+import { FRAGMENT_TITLE_PROMPT, PROMPT, RESPONSE_PROMPT } from "@/prompt";
 /* import {zodToJsonSchema} from 'zod-to-json-schema' */
 // --- Fix: Use Zod schemas for tool parameters to avoid zod-to-json-schema errors ---
 // See: https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/function-calling
@@ -35,6 +35,20 @@ interface AgentState {
    files: {[path:string]:string}
 }
 
+const parseOut = (value: Message[]) => {
+    const output = value[0]
+     if(output.type !== 'text' ) {
+       return "Here You go"
+     }
+
+     if(Array.isArray(output.content)) {
+       return output.content.map((txt) => txt).join("")
+     } else {
+       return output.content
+     }
+     
+   }
+
 export const fing_AI_Agent = inngest.createFunction(
   { id: "code-agent" },
   { event: "app/message.created" },
@@ -44,12 +58,47 @@ export const fing_AI_Agent = inngest.createFunction(
       return sandbox.sandboxId;
     });
 
+  const previousMessage = await step.run("previous_message", async () => {
+  const formattedMsg: Message[] = [];
+
+  const messages = await prisma.message.findMany({
+    where: {
+      projectId: event.data.projectId,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  for (const msg of messages) {
+    formattedMsg.push({
+      type: "text",
+      role: msg.role === 'ASSISTANT' ? "assistant" : 'user',
+      content: msg.content
+    });
+  }
+
+  return formattedMsg;
+});
+
+const state = createState<AgentState>(
+  {
+    summary: "",
+    files: {}
+  },
+  {
+    messages: previousMessage
+  }
+
+)
+
+
     // Create a new agent with a system prompt (you can add optional tools, too)
     const codeAgent = createAgent<AgentState>({
       name: "Fing-AI",
       description: "I'm FING AI, a expert coding agent. I can develope next.js project. Interactive UI",
       system: PROMPT,
-      model: gemini({ model: "gemini-2.0-flash-lite"}),
+      model: openai({ model: "gpt-4.1",defaultParameters: {temperature: 0.1}}),
       tools: [
         createTool({
           name: "terminal",
@@ -150,6 +199,7 @@ export const fing_AI_Agent = inngest.createFunction(
       name: "Fing-AI-networks",
       agents: [codeAgent],
       maxIter: 5,
+      defaultState: state,
       router: async ({ network }) => {
         const summary = network.state.data.summary;
 
@@ -160,7 +210,41 @@ export const fing_AI_Agent = inngest.createFunction(
       }
     });
 
-    const result = await network.run(event.data.prompt);
+    const result = await network.run(event.data.prompt,{state});
+
+    const fragementTitleGenerator = createAgent({
+       name: 'FingAI_Fragment',
+       description: "Generate the title of the fragment",
+       system: FRAGMENT_TITLE_PROMPT,
+       model: gemini({model: 'gemini-2.0-flash-lite'})
+    }) 
+    const responseGenerator = createAgent({
+       name: 'FingAI_response',
+       description: "Generate the response",
+       system: RESPONSE_PROMPT,
+       model: openai({model: 'gpt-4o', defaultParameters: {temperature: 0.1}})
+    }) 
+
+   const {output: fragmentTitle} = await fragementTitleGenerator.run(result.state.data.summary) 
+ 
+   const {output: response_generator} = await responseGenerator.run(result.state.data.summary)
+
+   const generateFragTitle = () => {
+     const output = fragmentTitle[0]
+     if(output.type !== 'text' ) {
+       return "Fragment"
+     }
+
+     if(Array.isArray(output.content)) {
+       return output.content.map((txt) => txt).join("")
+     } else {
+       return output.content
+     }
+     
+   }
+
+   
+
     const isError = !result.state.data.summary || Object.keys(result.state.data.files || {}).length === 0
     const sandboxUrl = await step.run("get-sandbox-url", async () => {
       const sandbox = await getSandbox(sandboxId);
@@ -184,13 +268,13 @@ export const fing_AI_Agent = inngest.createFunction(
   return await prisma.message.create({
     data: {
       projectId: event.data.projectId,
-      content: summary,
+      content: parseOut(response_generator),
       role: "ASSISTANT",
       type: "RESULT",
       fragment: {
         create: {
           sandboxUrl: sandboxUrl,
-          title: "Fragment",
+          title: parseOut(fragmentTitle),
           files: result.state.data.files,
         }
       },
@@ -200,7 +284,7 @@ export const fing_AI_Agent = inngest.createFunction(
 
     return {
       url: sandboxUrl,
-      title: "Fragment",
+      title: generateFragTitle(),
       files: result.state.data.files,
       summary: result.state.data.summary
     };

@@ -64,7 +64,7 @@ export const FragmentCard = (props: FragmentProps) => {
          onClick={() => props.onFragmentClick(props.fragment)}
          className={cn(
              "flex items-start text-start gap-2 w-fit p-3 bg-muted rounded-lg border border-black/15 hover:bg-secondary transition-colors",
-             props.isActiveFragment && 'bg-purple-200 text-black border border-primary hover:bg-purple-300'
+             props.isActiveFragment && '  border border-primary '
          )}>
          <Code2Icon />
           <div className='flex flex-col flex-1'>
