@@ -1,12 +1,24 @@
 {
   "manifest_version": 3,
   "name": "Elixpo Art: Select Text and Transform to Picture",
-  "version": "4.5",
+  "version": "5",
   "description": "Converts Text to Your Imaginary Picture - Powered by Elixpo",
+  "permissions": ["commands"],
+  "background": {
+    "service_worker": "service.js"
+  },
   "icons": {
     "16": "shines.png",
     "48": "shines.png",
     "128": "shines.png"
+  },
+  "commands": {
+    "reload": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E"
+      },
+      "description": "Reloads the extension"
+    }
   },
   "host_permissions": [
     "https://*.firebaseio.com/*",
@@ -14,15 +26,18 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["shines.png"],
+      "resources": ["shines.png",
+      "assests/*"
+    ],
       "matches": ["<all_urls>"]
     }
   ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["firebase-app.js", "firebase-firestore.js", "elixpo_art_ext.js"],
-      "css": ["elixpo_art_ext.css"]
+      "css": ["elixpo_art_rem.css"],
+      "js": ["nodeStructure.js", "imageGen.js"]
+  
     }
   ]
 }
