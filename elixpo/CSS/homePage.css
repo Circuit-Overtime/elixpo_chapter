@@ -1,0 +1,228 @@
+@import url('https://fonts.googleapis.com/css2?family=Amarante&family=Bitcount+Grid+Double:wght@100..900&family=Changa+One:ital@0;1&family=Pathway+Gothic+One&display=swap');
+@font-face
+{
+    font-family: "Canopee";
+    src: url("./FONT/Canopee\ Regular.otf") format("opentype");
+}
+.name 
+{
+    font-family: "Bitcount Grid Double", system-ui;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+.location 
+{
+    font-family: "Bitcount Grid Double", system-ui;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+
+}
+
+.hoverScale {
+  background-size: 400px !important;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: background-size 0.25s ease;
+}
+
+.hoverScale:hover {
+  background-size: 450px !important;
+}
+.featuredDescription
+{
+  font-family: "Pathway Gothic One", sans-serif;
+}
+
+.appContainer::-webkit-scrollbar
+{
+  display: none;
+}
+.navBar ion-icon 
+{
+  font-size: 2em;
+}
+
+.featureName
+{
+   font-family: "Amarante";
+    font-optical-sizing: auto;
+}
+.newTag 
+{
+  font-family: monospace;
+  font-weight: 700;
+}
+.spotlight 
+{
+  min-width:0;
+  width: 100%;
+  padding: 40px;
+}
+.spotlight::-webkit-scrollbar
+{
+  display: none;
+}
+.nameContainer {
+  font-family: "Canopee";
+  font-optical-sizing: auto;
+  font-weight: 700;
+}
+
+.nameContainer p {
+  fill: none;
+  stroke: #96B59F;
+  stroke-miterlimit: 10;
+}
+.text1
+{
+  font-family: "Canopee";
+}
+.description1 
+{
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.col2text 
+{
+  font-family: "Canopee";
+  font-weight: 500;
+}
+.col2text {
+  font-family: "Canopee";
+  font-weight: 500;
+}
+
+.col2text::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 60%;
+  height: 3px;
+  background: #03280d4a;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 1;
+}
+.websiteTextContainer,
+.webCol1Row1Text1,
+.slide2text1
+{
+  font-family: "Canopee";
+  font-weight: 500;
+  position: relative;
+  padding-bottom: 10px;
+}
+.webDescription1,
+.webDescription2
+{
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.webCol2text1 
+{
+  font-family: "Canopee";
+  font-weight: 500;
+  position: relative;
+  padding-bottom: 10px;
+}
+.webDescription3 
+{
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.quote 
+{
+  font-family: "Pathway Gothic One", sans-serif; 
+}
+.recommendationSection::-webkit-scrollbar
+{
+  display: none;
+}
+.userName 
+{
+  font-family: "Canopee";
+}
+.userDesig 
+{
+  font-family: "Pathway Gothic One", sans-serif; 
+}
+.contactMeText 
+{
+  font-family: "Pathway Gothic One", sans-serif; 
+}
+.contactMeBox 
+{
+  font-family: "Canopee";
+  font-weight: 500;
+  position: relative;
+}
+
+@keyframes scroll-horizontal {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll-horizontal 10s linear infinite;
+}
+
+.footerName 
+{
+  font-family: "Bitcount Grid Double", system-ui;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+.text1row1col1techTracks 
+{
+  font-family: "Canopee";
+  font-weight: 500;
+  position: relative;
+  padding-bottom: 10px;
+}
+.descriptionRow2 
+{
+  font-family: "Pathway Gothic One", sans-serif; 
+}
+.featuredTileSpecialText 
+{
+  font-family: "Canopee";
+  position: relative;
+  padding-bottom: 10px;
+}
+.featuredTileSpecialDesc 
+{
+  font-family: "Pathway Gothic One", sans-serif; 
+}
+.visitCircle 
+{
+  font-family: "Bitcount Grid Double", system-ui;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+.hidden
+{
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+
+
+/* canvas {
+  height: 100% !important;
+  width: 100% !important;
+  position: absolute;
+  top: 0%;
+  bottom: 0%;
+  right: 0%;
+  left: 0%;
+  pointer-events: none; 
+  opacity: 0; 
+  z-index: 10; 
+} */

@@ -1,0 +1,20 @@
+{
+  "server": {
+    "baseDir": ".",
+    "middleware": {
+      "1": {
+        "route": "/api",
+        "handle": {
+          "target": "http://localhost:3002",
+          "proxy": true,
+          "changeOrigin": true,
+          "logLevel": "debug"
+        }
+      },
+      "2": {
+        "route": "/",
+        "handle": "historyApiFallback"
+      }
+    }
+  }
+}
