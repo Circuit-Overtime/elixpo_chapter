@@ -60,14 +60,14 @@ const ProductShowCase = () => {
               }}
             >
               <Image
-                src={IMAES.Tesiti}
+                src={IMAES.Tesitimo}
                 alt='preview'
                 className='w-full h-auto object-cover rounded-2xl'
               />
             </div>
 
             {/* Glow layer */}
-            <div className='absolute -inset-1 -z-10 blur-2xl opacity-70 rounded-2xl bg-gradient-to-r from-purple-500 via-pink-500 to-fuchsia-500 animate-pulse pointer-events-none' />
+            <div className='absolute -inset-1 -z-10 blur-2xl opacity-70 rounded-2xl bg-gradient-to-r from-pink-500 via-red-600 to-purple-500 animate-pulse pointer-events-none' />
           </div>
 
           {/* Parallax Motion Elements */}

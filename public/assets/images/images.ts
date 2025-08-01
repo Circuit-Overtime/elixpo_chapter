@@ -6,6 +6,7 @@ import logo5 from '../images/logoipsum-custom-logo (2).svg'
 import logo6 from '../images/logoipsum-custom-logo.svg'
 import logo7 from '../images/new.svg'
 import Tesiti from '../images/testi.png'
+import Tesitimo from '../images/testti.jpeg'
 import Tube from '../images/tube.png'
 import Pyramid from '../images/pyramid.png'
 import Spring from '../images/spring.png'
@@ -41,6 +42,7 @@ export const logos = {
 }
 export const IMAES = {
       Tesiti,
+      Tesitimo,
       Tube,
       Pyramid,
       Star,

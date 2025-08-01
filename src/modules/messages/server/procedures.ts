@@ -40,7 +40,8 @@ export const messageRouter = createTRPCRouter({
              .min(1, {message: "Message is Required"})
              .max(10000, {message: "Value is too long"}),
              projectId: z.string()
-             .min(1, {message: "ProjectID is required"})
+             .min(1, {message: "ProjectID is required"}),
+             selectedModel: z.string().optional()
              
          })
       )
@@ -80,7 +81,8 @@ export const messageRouter = createTRPCRouter({
              name: "app/message.created",
              data:{
                  prompt: input.prompt,
-                 projectId: input.projectId
+                 projectId: input.projectId,
+                 selectedModel: input.selectedModel ?? "openAI-GPT-4.1",
              }
           })
 
