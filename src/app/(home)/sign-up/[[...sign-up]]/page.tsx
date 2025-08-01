@@ -17,7 +17,7 @@ const page = () => {
             
             elements:{
                   
-                  card: 'bg-transparent! shadow-none!  border-none!',
+                  card: 'bg-neutral-950! shadow-none!  border-none!',
                    headerTitle: 'text-white  text-3xl! font-[poppins]! font-bold!',
                    headerSubtitle: "font-mono!  text-xs!",
                    formFieldInput: 'bg-white/10! py-6!',

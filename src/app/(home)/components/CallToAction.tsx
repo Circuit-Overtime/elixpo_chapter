@@ -18,7 +18,7 @@ const CallToAction = () => {
   const translateY = useTransform(scrollYProgress, [0, 1], [150, -150])
 
   return (
-    <section ref={sectionRef} className='py-10 md:py-52 min-h-[90vh]'>
+    <section ref={sectionRef} className='py-10 md:py-52 '>
       <div className='container mx-auto relative'>
         <div>
           <h1 className='text-center text-4xl md:text-7xl font-bold' style={{ fontFamily: 'poppins' }}>

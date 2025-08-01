@@ -8,7 +8,7 @@ interface Props {
 export default function GlowingGradientText({children}: Props) {
   return (
     <>
-      <h1 className="text-5xl md:text-8xl font-extrabold dark:text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 glow-gradient animate-gradientShift">
+      <h1 className="text-4xl md:text-8xl font-extrabold dark:text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 glow-gradient animate-gradientShift">
        {children}
       </h1>
 
