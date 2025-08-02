@@ -1,0 +1,15 @@
+*
+{
+  user-select: none;
+}
+body {
+  background-color: #1a1a1a; /* Dark background matching the image */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  overflow: hidden; /* Prevent glow overflow creating scrollbars */
+  font-family: sans-serif; /* Optional: for any potential text */
+  
+}

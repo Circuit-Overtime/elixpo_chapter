@@ -74,3 +74,9 @@ Thumbs.db
 
 *.lock
 elixpo-minecraft-mod/.gradle
+
+#model files
+*.gguf
+*.safetensor
+
+
