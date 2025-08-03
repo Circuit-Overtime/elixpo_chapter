@@ -1,11 +1,11 @@
-import logo from '../images/logoipsum-363.png'
+/* import logo from '../images/logoipsum-363.png'
 import logo2 from '../images/logoipsum-370.png'
 import logo3 from '../images/logoipsum-371.png'
 import logo4 from '../images/logoipsum-custom-logo (1).svg'
 import logo5 from '../images/logoipsum-custom-logo (2).svg'
-import logo6 from '../images/logoipsum-custom-logo.svg'
+import logo6 from '../images/logoipsum-custom-logo.svg' */
 import logo7 from '../images/new.svg'
-import Tesiti from '../images/testi.png'
+/* import Tesiti from '../images/testi.png' */
 import Tesitimo from '../images/testti.jpeg'
 import Tube from '../images/tube.png'
 import Pyramid from '../images/pyramid.png'
@@ -20,28 +20,28 @@ import testiSix from '../images/avatar-6.png'
 import testiSeven from '../images/avatar-7.png'
 import testiEight from '../images/avatar-8.png'
 import testiNine from '../images/avatar-9.png'
-import login from '../images/login.jpg'
+/* import login from '../images/login.jpg'
 import login2 from '../images/login2.jpg'
 import login3 from '../images/login3.jpg'
 import login4 from '../images/login4.jpg'
 import login5 from '../images/login5.jpg'
 import login6 from '../images/login6.png'
-import login7 from '../images/login7.jpg'
+import login7 from '../images/login7.jpg' */
 import login8 from '../images/login8.jpg'
-import login9 from '../images/login9.jpg'
+/* import login9 from '../images/login9.jpg'
 import login10 from '../images/login10.jpg'
-import login11 from '../images/login11.jpg'
+import login11 from '../images/login11.jpg' */
 export const logos = {
-     logo,
+   /*   logo,
      logo2,
      logo3,
      logo4,
      logo5,
-     logo6,
+     logo6, */
      logo7
 }
 export const IMAES = {
-      Tesiti,
+     /*  Tesiti, */
       Tesitimo,
       Tube,
       Pyramid,
@@ -61,17 +61,17 @@ export const AVATAR = {
       testiNine
 }
 export const Auth = {
-       login,
+      /*  login,
        login2,
        login3,
        login4,
        login5,
        login6,
-       login7,
+       login7, */
        login8,
-       login9,
+      /*  login9,
        login10,
-       login11
+       login11 */
 
        
 }

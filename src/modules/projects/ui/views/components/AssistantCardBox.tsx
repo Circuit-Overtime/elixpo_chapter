@@ -1,5 +1,5 @@
-import { Card } from '@/components/ui/card'
-import { Fragment, MessageRole, MessageType } from '@/generated/prisma'
+
+import { Fragment, MessageType } from '@/generated/prisma'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import React from 'react'

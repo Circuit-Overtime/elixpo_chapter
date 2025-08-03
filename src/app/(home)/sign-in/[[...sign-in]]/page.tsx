@@ -2,14 +2,13 @@
 
 import AuthLayout from "@/components/AuthLayout";
 import { SignIn } from "@clerk/nextjs";
-import { useTheme } from "next-themes";
 import {dark} from '@clerk/themes'
 import React from "react";
 import { useCurrentTheme } from "@/hooks/use-current-theme";
 import Link from "next/link";
 
 const SignInPage = () => {
-  const currTheme = useCurrentTheme()
+  const useCurrTheme = useCurrentTheme()
   return (
     <AuthLayout>
         <section className="flex flex-col justify-center items-center h-screen bg-dot-black/[0.4]">
@@ -33,13 +32,13 @@ const SignInPage = () => {
                     footerDeveloper: 'text-pink-500 text-xs font-mono! mt-1',
                    
             },
-             baseTheme: currTheme === 'dark' ? dark : undefined
+             baseTheme: useCurrTheme === 'dark' ? dark : undefined
         }}
     
       />
       <div className="mt-4">
         <div className="text-center mb-6">
-          <p className="text-xs font-mono">Don't have an Account ? <Link className="" href={"/sign-up"} >
+          <p className="text-xs font-mono">Don&apos;t have an Account ? <Link className="" href={"/sign-up"} >
           <span className="font-mono hover:underline text-pink-400 text-xs">Sign Up</span></Link> </p>
         </div>
         </div>

@@ -3,7 +3,7 @@ import prisma from '@/lib/db'
 import { consumeCredits } from '@/lib/usage'
 import {protechedRoute, createTRPCRouter} from '@/trpc/init'
 import { TRPCError } from '@trpc/server'
-import { userAgent } from 'next/server'
+/* import { userAgent } from 'next/server' */
 import z from 'zod'
 
 export const messageRouter = createTRPCRouter({

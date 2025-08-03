@@ -39,7 +39,7 @@ export default function GlobalError() {
         transition={{ delay: 0.6, duration: 0.5 }}
         className="max-w-2xl font-mono mb-10"
       >
-        The Page You're Looking for Can't be Found. It's Looks Like You're Trying to Access a Page That Either Has Been Deleted or Never Existed...
+        The Page You&apos;re Looking for Can&apos;t be Found. It&apos;s Looks Like You&apos;re Trying to Access a Page That Either Has Been Deleted or Never Existed...
       </motion.p>
 
       <motion.div

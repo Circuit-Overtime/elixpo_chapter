@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {useForm} from "react-hook-form"
 import TextAreaAutoSize from 'react-textarea-autosize'
 import { Button } from '@/components/ui/button'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { ArrowUp, Loader2Icon } from 'lucide-react'
 import { useRouter } from 'next/navigation'

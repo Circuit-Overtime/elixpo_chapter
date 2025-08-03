@@ -1,6 +1,6 @@
 import { StaticImageData } from "next/image";
 import { AVATAR } from "../../public/assets/images/images";
-import { string } from "zod";
+
 
 export const PROJECT_TEMPLATES = [
   {

@@ -1,7 +1,7 @@
 import { TreeItem } from '@/types'
 import React from 'react'
 import { SidebarProvider,Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarRail } from './ui/sidebar'
-import { ChevronLeftIcon, ChevronRightIcon, FileIcon, FolderIcon } from 'lucide-react'
+import {  ChevronRightIcon, FileIcon, FolderIcon } from 'lucide-react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible'
 
 interface Props {

@@ -5,8 +5,8 @@ import AuthLayout from '@/components/AuthLayout'
 import { useCurrentTheme } from '@/hooks/use-current-theme'
 import { dark } from '@clerk/themes'
 import Link from 'next/link'
-const page = () => {
-  const currTheme = useCurrentTheme()
+const Page = () => {
+  const useCurrTheme = useCurrentTheme()
   
   return (
    <AuthLayout>
@@ -31,7 +31,7 @@ const page = () => {
                     footerDeveloper: 'text-pink-500 text-xs font-mono! mt-1',
                    
             },
-             baseTheme: currTheme === 'dark' ? dark : undefined
+             baseTheme: useCurrTheme === 'dark' ? dark : undefined
         }}
     
       />
@@ -46,4 +46,4 @@ const page = () => {
   )
 }
 
-export default page
+export default Page

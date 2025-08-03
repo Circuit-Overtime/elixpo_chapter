@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Fragment } from '@/generated/prisma'
-import { ExternalLink, ExternalLinkIcon, RefreshCcw } from 'lucide-react'
+import { ExternalLinkIcon, RefreshCcw } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
 import Hint from './Hint'
@@ -10,7 +10,7 @@ interface Props {
      data: Fragment | null
 }
 const FragmentView = ({data}: Props) => {
-  const [copy,setCopy] = useState(false);
+  const [  ,setCopy] = useState(false);
   const [fragKey,setFragKey] = useState(0)
 
   const onReFresh = () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import Image from 'next/image'
+
 import React, { useRef } from 'react'
 import { IMAES } from '../../../../public/assets/images/images'
 import { Button } from '@/components/ui/button'

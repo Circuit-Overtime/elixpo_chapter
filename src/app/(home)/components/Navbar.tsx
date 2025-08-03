@@ -1,22 +1,22 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 /* import { useRouter } from 'next/router'; */
 import Image from 'next/image';
 
-import { Menu, X } from 'lucide-react'; // ✅ Lucide icons
+import { X } from 'lucide-react'; // ✅ Lucide icons
 import { logos } from '../../../../public/assets/images/images';
 import { Button } from '@/components/ui/button';
 
 import { useRouter } from 'next/navigation'
-import { SignedIn, SignedOut, SignIn, SignInButton, SignOutButton, SignUpButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignInButton, SignOutButton, SignUpButton } from '@clerk/nextjs';
 import UserControl from '@/components/user-control';
 
 // Adjust your color system if needed
-const colors = {
+/* const colors = {
   primary: '#3c096c',
   white: '#ffffff',
-};
+}; */
 
 interface NavbarProps {
   title?: string;
@@ -25,7 +25,7 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = () => {
-  const [activeButton, setActiveButton] = useState<'login' | 'signup'>('login');
+ 
   const [isOpen, setIsOpen] = useState(false);
    const router = useRouter(); 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -50,12 +50,12 @@ const Navbar: React.FC<NavbarProps> = () => {
   });
  */
   const handleLogin = () => {
-    setActiveButton('login');
+    
      router.push('/sign-in'); 
   };
 
   const handleSignUp = () => {
-    setActiveButton('signup');
+   
      router.push('/sign-up'); 
   };
 

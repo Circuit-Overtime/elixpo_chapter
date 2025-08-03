@@ -2,8 +2,7 @@ import React, { ReactNode } from 'react';
 import { useRouter } from 'next/navigation'
 import { Auth, logos } from '../../public/assets/images/images';
 import Image from 'next/image';
-import { ArrowBigDownDashIcon, ArrowLeft, ArrowLeftCircle, ArrowLeftCircleIcon, DecimalsArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import {  ArrowLeft } from 'lucide-react';
 
 interface AuthLayoutProps {
   children: ReactNode;

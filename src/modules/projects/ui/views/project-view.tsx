@@ -1,7 +1,4 @@
-'use client'
-import prisma from '@/lib/db'
-import { useTRPC } from '@/trpc/client'
-import { useSuspenseQuery } from '@tanstack/react-query'
+"use client"
 import React, { Suspense, useState } from 'react'
 import {ResizableHandle,ResizablePanel,ResizablePanelGroup} from "@/components/ui/resizable"
 import MesssageContainer from './components/message-container'
@@ -12,13 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Braces, CrownIcon, EyeIcon } from 'lucide-react'
-import CodeView from '@/components/code-view/CodeView'
 import FileExplorer from '@/components/FileExploer'
 import UserControl from '@/components/user-control'
 import CustomLoader from '@/components/loader/CustomLoader'
 import HeaderLoader from '@/components/loader/HeaderLoader'
 import { ErrorBoundary } from 'react-error-boundary'
-import HeaderError from '@/components/Error/headerError'
+
 import MessageError from '@/components/Error/messageError'
 
 interface Props {
@@ -49,10 +45,7 @@ const ProjectView = ({projectId}: Props) => {
   };
 
   // Helper function to get display name
-  const getDisplayName = (value: string) => {
-    return MODEL_OPTIONS.find(opt => opt.value === value)?.label || value;
-  };
-
+ 
   return (
     <div className='h-screen'>
       <ResizablePanelGroup direction='horizontal'>
@@ -61,7 +54,7 @@ const ProjectView = ({projectId}: Props) => {
           minSize={25}
           className='flex flex-col min-h-0'
         >
-         {/*  <ErrorBoundary fallback={<MessageError/>}> */}
+           <ErrorBoundary fallback={<MessageError/>}> 
             <Suspense fallback={<HeaderLoader/>}>
             <ProjectHeader
               projectId={projectId}
@@ -80,7 +73,7 @@ const ProjectView = ({projectId}: Props) => {
               selectedModel={selectedModel}
             />
           </Suspense>
-        {/*   </ErrorBoundary> */}
+          </ErrorBoundary>
         </ResizablePanel>
         
         <ResizableHandle className='hover:bg-primary transition-colors' />

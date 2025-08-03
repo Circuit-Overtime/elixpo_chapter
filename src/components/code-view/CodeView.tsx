@@ -6,8 +6,7 @@ import "prismjs/components/prism-tsx"
 import "prismjs/components/prism-typescript"
 import "prismjs/components/prism-python"
 import "./code-theme.css"
-import { Button } from '../ui/button'
-import { Copy } from 'lucide-react'
+
 
 interface Props {
      code: string,
