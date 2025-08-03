@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Input } from '@/components/ui/input';
+
+
 import HeroForm from './HeroForm';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import ScrollZoomVideo from './ScrollZoomVideo';
-import Image from 'next/image';
+
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -15,21 +15,22 @@ interface HeroProps {
   darkMode?: boolean;
 }
 
-const Hero: React.FC<HeroProps> = ({ darkMode }) => {
-  const slogans = [
+const Hero: React.FC<HeroProps> = () => {
+  
+
+  const [text, setText] = useState('');
+  const [sloganIndex, setSloganIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+
+  const videoWrapperRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const slogans = [
     'Hack it. Prompt it. Launch it.',
     'Code less. Launch smarter.',
     'Generate. Push. Deploy.',
     'Prompt. Publish. Profit.'
   ];
-
-  const [text, setText] = useState('');
-  const [sloganIndex, setSloganIndex] = useState(0);
-  const [charIndex, setCharIndex] = useState(0);
-  const router = useRouter();
-  const videoWrapperRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
     const current = slogans[sloganIndex];
     if (charIndex < current.length) {
       const timeout = setTimeout(() => {
@@ -47,9 +48,7 @@ const Hero: React.FC<HeroProps> = ({ darkMode }) => {
     }
   }, [charIndex, sloganIndex]);
 
-  const handleWelcome = () => {
-    router.push('/signup');
-  };
+  
 
   useLayoutEffect(() => {
     if (!videoWrapperRef.current) return;

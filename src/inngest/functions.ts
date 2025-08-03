@@ -1,5 +1,5 @@
 import { inngest } from "./client";
-import { openai, createAgent, gemini, createTool, createNetwork, type Tool, type Message, createState } from "@inngest/agent-kit";
+import { openai, createAgent, gemini, createTool, createNetwork, type Message, createState } from "@inngest/agent-kit";
 import { getSandbox, lastAssisTextMsgCon } from "./utils";
 import { Sandbox } from "@e2b/code-interpreter";
 import { FRAGMENT_TITLE_PROMPT, PROMPT, RESPONSE_PROMPT } from "@/prompt";
@@ -58,7 +58,7 @@ export const fing_AI_Agent = inngest.createFunction(
   { id: "code-agent" },
   { event: "app/message.created" },
   async ({ event, step }) => {
-    const { prompt, selectedModel: rawModel = "gpt-4.1" } = event.data;
+    const { selectedModel: rawModel = "gpt-4.1" } = event.data;
     const selectedModel = normalizeModel(rawModel);
     const modelConfig = SUPPORTED_MODELS[selectedModel];
 
@@ -101,7 +101,7 @@ export const fing_AI_Agent = inngest.createFunction(
         createTool({
           name: "terminal",
           description: "Run commands in the terminal",
-          parameters: z.object({ command: z.string() }) as any,
+          parameters: z.object({ command: z.string() }),
           handler: async ({ command }, { step }) => {
             return await step?.run("terminal", async () => {
               const buffer = { stdout: "", stderr: "" };
@@ -127,7 +127,7 @@ export const fing_AI_Agent = inngest.createFunction(
               path: z.string().describe("File path"),
               content: z.string().describe("File content"),
             })),
-          }) as any,
+          }) ,
           handler: async ({ files }, { step, network }) => {
             const newFiles = await step?.run("createOrUpdateFiles", async () => {
               try {
@@ -150,7 +150,7 @@ export const fing_AI_Agent = inngest.createFunction(
         createTool({
           name: "readFiles",
           description: "Read files from the sandbox",
-          parameters: z.object({ files: z.array(z.string()) }) as any,
+          parameters: z.object({ files: z.array(z.string()) }),
           handler: async ({ files }, { step }) => {
             return await step?.run("readFiles", async () => {
               try {

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { Star } from 'lucide-react';
+
 import {GoNorthStar} from 'react-icons/go'
 const Try: React.FC = () => {
   const marqueeRef = useRef<HTMLDivElement | null>(null);

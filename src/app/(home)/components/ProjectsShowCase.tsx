@@ -5,8 +5,8 @@ import { useTRPC } from '@/trpc/client';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { use, useState } from 'react';
-import { IMAES, logos } from '../../../../public/assets/images/images';
+import React, {  useState } from 'react';
+import {  logos } from '../../../../public/assets/images/images';
 import { useUser } from '@clerk/nextjs';
 
 const ProjectsShowCase = () => {
@@ -25,7 +25,7 @@ const ProjectsShowCase = () => {
             className="text-center text-4xl md:text-8xl font-bold"
             style={{ fontFamily: 'poppins' }}
           >
-            {user?.firstName}'s{' '}
+            {user?.firstName}&apos;s{' '}
             <span className="text-5xl md:text-8xl font-extrabold dark:text-transparent bg-clip-text dark:bg-gradient-to-r from-pink-500 via-purple-400 to-pink-500 glow-gradient animate-gradientShift">
               Fings
               <style>

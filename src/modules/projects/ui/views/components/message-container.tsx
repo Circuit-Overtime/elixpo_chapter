@@ -1,6 +1,6 @@
 import { useTRPC } from '@/trpc/client'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import MessageCard from './messageCard'
 import MessageForm from './messageForm'
 import { Fragment } from '@/generated/prisma'
@@ -25,14 +25,15 @@ const MesssageContainer = (props: Props) => {
 
 ))
   useEffect(() => {
-     const lastAssisMsgFrag = message.findLast((msg) => {
-         msg.role === 'ASSISTANT' && !!msg.fragment
-     })
+  const lastAssisMsgFrag = message.findLast(
+    (msg) => msg.role === 'ASSISTANT' && !!msg.fragment
+  );
 
-     if(lastAssisMsgFrag) {
-        setActiveFragment(lastAssisMsgFrag.fragment)
-     }
-  },[message,setActiveFragment]);
+  if (lastAssisMsgFrag) {
+    setActiveFragment(lastAssisMsgFrag.fragment);
+  }
+}, [message, setActiveFragment]);
+
 
   useEffect(() => {
      bottomRef.current?.scrollIntoView();

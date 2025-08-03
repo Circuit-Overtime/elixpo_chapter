@@ -1,11 +1,11 @@
 'use client'
 import { PricingTable } from '@clerk/nextjs'
-import Image from 'next/image'
+
 import React from 'react'
-import { logos } from '../../../../public/assets/images/images'
+
 import { useCurrentTheme } from '@/hooks/use-current-theme'
 import { dark } from '@clerk/themes'
-import Navbar from '../components/Navbar'
+
 
 const Billing = () => {
   

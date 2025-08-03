@@ -31,10 +31,16 @@ export const consumeCredits = async () => {
   try {
     const res = await usage.consume(userId);  // consume 1 token
     return res;
-  } catch (err: any) {
-    // Rate limit exceeded
-    throw new Error("No free credits available. Try again after 24 hours.");
+  } catch (error: unknown) {
+  if (error instanceof Error) {
+    console.error(error.message);
+  } else {
+    console.error('An unknown error occurred');
   }
+
+  throw new Error("No free credits available. Try again after 24 hours.");
+}
+
 };
 
 export const getUsageStatus = async () => {
