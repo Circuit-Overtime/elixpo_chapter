@@ -241,3 +241,9 @@ body {
       text-decoration: underline;
       color: #9090f0; 
     }
+
+    .default-text-not-editable 
+    {
+      color: #888 !important; 
+      pointer-events: none; 
+    }

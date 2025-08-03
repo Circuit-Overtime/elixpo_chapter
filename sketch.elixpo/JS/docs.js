@@ -9,9 +9,9 @@ function generateHexID() {
 function createSection() {
   const section = document.createElement('section');
   const h1 = document.createElement('h1');
-  h1.innerHTML = '<span class="default-text">Heading</span>';
+  h1.innerHTML = '\u200B<span class="default-text-not-editable" contenteditable="false">Untitled File</span>';
   const p = document.createElement('p');
-  p.innerHTML = '<span class="default-text">Start typing...</span>';
+  p.innerHTML = '\u200B<span class="default-text-not-editable" contenteditable="false">Welcome to Elixpo Sketch, you can type your notes here -- styled with markdown support!</span>';
   
   section.appendChild(h1);
   section.appendChild(p);
@@ -20,7 +20,11 @@ function createSection() {
 
 function createParagraph() {
   const p = document.createElement('p');
-  p.innerHTML = '<span class="default-text">\u200B</span>';
+  // Always start with a default-text span
+  const defaultSpan = document.createElement('span');
+  defaultSpan.className = 'default-text';
+  defaultSpan.innerHTML = '\u200B';
+  p.appendChild(defaultSpan);
   return p;
 }
 
@@ -104,7 +108,11 @@ function placeCaretAtEnd(el) {
 
 function createNewLineElement() {
   const p = document.createElement('p');
-  p.innerHTML = '<span class="default-text">\u200B</span>';
+  // Always ensure new line elements have a span
+  const defaultSpan = document.createElement('span');
+  defaultSpan.className = 'default-text';
+  defaultSpan.innerHTML = '\u200B';
+  p.appendChild(defaultSpan);
   return p;
 }
 
@@ -124,6 +132,9 @@ function handleBlockFormatting(lineEl) {
       const code = pre.querySelector('code');
       const copyButton = pre.querySelector('i[data-copy-btn]');
 
+      // Add ID to pre element
+      pre.id = `pre_${hexID}`;
+
       // Add copy functionality
       copyButton.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -139,13 +150,15 @@ function handleBlockFormatting(lineEl) {
       const newP = createParagraph();
       section.appendChild(newP);
       
-      placeCaretAtEnd(code);
+      placeCaretAtStart(code);
       return true;
     }
 
     // Check for horizontal rule
-    if (text == '---\u00A0' || text === '***\u00A0' || text === '___\u00A0') {
+    if (text === '---\u00A0' || text === '***\u00A0' || text === '___\u00A0') {
+      const hexID = generateHexID();
       const hr = document.createElement('hr');
+      hr.id = `hr_${hexID}`;
       section.replaceChild(hr, lineEl);
       
       // Add new paragraph after hr
@@ -169,9 +182,12 @@ function handleBlockFormatting(lineEl) {
     for (const pattern of headingPatterns) {
       const match = text.match(pattern.regex);
       if (match) {
+        const hexID = generateHexID();
         // Create new section with heading
         const newSection = document.createElement('section');
         const heading = document.createElement(pattern.tag);
+        heading.id = `${pattern.tag}_${hexID}`;
+        // Use the captured content without the hash symbols
         heading.textContent = match[1] || '\u200B';
         
         const newP = createParagraph();
@@ -182,19 +198,27 @@ function handleBlockFormatting(lineEl) {
         // Insert new section after current section
         editor.insertBefore(newSection, section.nextSibling);
         
-        placeCaretAtStart(newP);
+        // Place caret in the heading itself, not the P
+        placeCaretAtEnd(heading);
         return true;
       }
     }
 
     // Check for list items
-    if (text.match(/^[\*\-\+]\s(.*)/) || text.match(/^\d+\.\s(.*)/)) {
-      const isOrdered = text.match(/^\d+\.\s(.*)/);
+    const unorderedListMatch = text.match(/^[\*\-\+]\s(.*)/);
+    const orderedListMatch = text.match(/^\d+\.\s(.*)/);
+    
+    if (unorderedListMatch || orderedListMatch) {
+      const hexID = generateHexID();
+      const isOrdered = !!orderedListMatch;
       const listType = isOrdered ? 'ol' : 'ul';
-      const content = text.match(isOrdered ? /^\d+\.\s(.*)/ : /^[\*\-\+]\s(.*)/)[1];
+      const content = isOrdered ? orderedListMatch[1] : unorderedListMatch[1];
       
       const list = document.createElement(listType);
+      list.id = `${listType}_${hexID}`;
       const li = document.createElement('li');
+      li.id = `li_${generateHexID()}`;
+      // Use the captured content without the list markers
       li.textContent = content;
       list.appendChild(li);
       
@@ -210,9 +234,13 @@ function handleBlockFormatting(lineEl) {
     }
 
     // Check for blockquote
-    if (text.match(/^>\s(.*)/)) {
-      const content = text.match(/^>\s(.*)/)[1];
+    const blockquoteMatch = text.match(/^>\s(.*)/);
+    if (blockquoteMatch) {
+      const hexID = generateHexID();
+      const content = blockquoteMatch[1];
       const blockquote = document.createElement('blockquote');
+      blockquote.id = `blockquote_${hexID}`;
+      // Use the captured content without the > symbol
       blockquote.textContent = content;
       
       // Replace current p with blockquote
@@ -509,6 +537,21 @@ function updateCodeBlockClasses(codeElement) {
   codeElement.innerHTML = result.value;
 }
 
+function removeDefaultTextIfPresent(element) {
+  const defaultSpan = element.querySelector('.default-text-not-editable');
+  if (defaultSpan) {
+    defaultSpan.remove();
+    // Ensure there's at least a default-text span for cursor positioning
+    if (element.textContent === '' || !element.querySelector('span')) {
+      const newSpan = document.createElement('span');
+      newSpan.className = 'default-text';
+      newSpan.innerHTML = '\u200B';
+      element.innerHTML = '';
+      element.appendChild(newSpan);
+    }
+  }
+}
+
 editor.addEventListener('input', (e) => {
   const sel = window.getSelection();
   const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
@@ -516,10 +559,47 @@ editor.addEventListener('input', (e) => {
 
   if (!currentLine || !range) return;
 
+  // Remove default text when user starts typing
+  if (currentLine.tagName === 'H1' || currentLine.tagName === 'P') {
+    removeDefaultTextIfPresent(currentLine);
+  }
+
+  // Ensure cursor is always within a span for P tags
+  if (currentLine.tagName === 'P') {
+    const currentNode = range.startContainer;
+    
+    // If cursor is directly in the P tag (not in a span), move it to a span
+    if (currentNode === currentLine) {
+      let targetSpan = currentLine.querySelector('span');
+      if (!targetSpan) {
+        targetSpan = document.createElement('span');
+        targetSpan.className = 'default-text';
+        targetSpan.innerHTML = '\u200B';
+        currentLine.appendChild(targetSpan);
+      }
+      placeCaretAtEnd(targetSpan);
+      return;
+    }
+    
+    // If cursor is in a text node that's a direct child of P, wrap it in a span
+    if (currentNode.nodeType === Node.TEXT_NODE && currentNode.parentNode === currentLine) {
+      const span = document.createElement('span');
+      span.className = 'default-text';
+      currentNode.parentNode.insertBefore(span, currentNode);
+      span.appendChild(currentNode);
+      // Restore cursor position
+      const newRange = document.createRange();
+      newRange.setStart(currentNode, range.startOffset);
+      newRange.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+    }
+  }
+
   // Only handle block formatting on space, and only for P tags
   if (e.inputType === 'insertText' && e.data === ' ') {
     // Check if the line has any styled spans - if so, don't apply block formatting
-    const hasStyledContent = currentLine.querySelector('span[class]');
+    const hasStyledContent = currentLine.querySelector('span[class]:not(.default-text)');
     if (currentLine.tagName === 'P' && !hasStyledContent && handleBlockFormatting(currentLine)) {
       return;
     }
@@ -527,6 +607,11 @@ editor.addEventListener('input', (e) => {
 
   // Apply inline styles for H1 and P tags
   if (currentLine.tagName === 'H1' || currentLine.tagName === 'P') {
+    // Skip styling if default text is still present
+    if (currentLine.querySelector('.default-text-not-editable')) {
+      return;
+    }
+
     // Store the cursor position relative to the entire line's text content
     let cursorPosition = 0;
     
@@ -645,15 +730,41 @@ editor.addEventListener('keydown', (e) => {
   const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
   let currentLine = getCurrentLineElement();
 
+  // Remove default text when user starts typing
+  if (currentLine && (currentLine.tagName === 'H1' || currentLine.tagName === 'P') && 
+      (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace')) {
+    removeDefaultTextIfPresent(currentLine);
+  }
+
+  // Ensure cursor is in a span for P tags when typing
+  if (currentLine && currentLine.tagName === 'P' && e.key.length === 1) {
+    const currentNode = range.startContainer;
+    
+    // If cursor is directly in P tag, move to a span
+    if (currentNode === currentLine) {
+      let targetSpan = currentLine.querySelector('span.default-text');
+      if (!targetSpan) {
+        targetSpan = document.createElement('span');
+        targetSpan.className = 'default-text';
+        currentLine.appendChild(targetSpan);
+      }
+      placeCaretAtStart(targetSpan);
+      return;
+    }
+  }
+
   if(e.key === 'Backspace') {
     if (currentLine && (currentLine.tagName === 'H1' || currentLine.tagName === 'P')) {
-      if (currentLine.textContent === '' || currentLine.innerHTML === '<br>' || currentLine.innerHTML === '<span class="default-text">\u200B</span>') {
+      const hasDefaultText = currentLine.querySelector('.default-text');
+      const isEmpty = currentLine.textContent === '\u200B' || currentLine.textContent === '' || currentLine.innerHTML === '<br>';
+      
+      if (hasDefaultText || isEmpty) {
         e.preventDefault();
         const section = currentLine.parentNode;
         
         // If it's an H1 and there are other elements in section, just reset it
         if (currentLine.tagName === 'H1' && section.children.length > 1) {
-          currentLine.innerHTML = '<span class="default-text">\u200B</span>';
+          currentLine.innerHTML = '\u200B<span class="default-text-not-editable" contenteditable="false"></span>';
           placeCaretAtStart(currentLine);
           return;
         }
@@ -676,7 +787,7 @@ editor.addEventListener('keydown', (e) => {
             return;
           } else {
             // Last P in section, reset it
-            currentLine.innerHTML = '<span class="default-text">\u200B</span>';
+            currentLine.innerHTML = '\u200B<span class="default-text-not-editable" contenteditable="false"></span>';
             placeCaretAtStart(currentLine);
             return;
           }
