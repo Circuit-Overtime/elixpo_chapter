@@ -15,6 +15,11 @@ import { Braces, CrownIcon, EyeIcon } from 'lucide-react'
 import CodeView from '@/components/code-view/CodeView'
 import FileExplorer from '@/components/FileExploer'
 import UserControl from '@/components/user-control'
+import CustomLoader from '@/components/loader/CustomLoader'
+import HeaderLoader from '@/components/loader/HeaderLoader'
+import { ErrorBoundary } from 'react-error-boundary'
+import HeaderError from '@/components/Error/headerError'
+import MessageError from '@/components/Error/messageError'
 
 interface Props {
   projectId: string
@@ -56,15 +61,18 @@ const ProjectView = ({projectId}: Props) => {
           minSize={25}
           className='flex flex-col min-h-0'
         >
-          <Suspense fallback={<div>Loading header...</div>}>
+         {/*  <ErrorBoundary fallback={<MessageError/>}> */}
+            <Suspense fallback={<HeaderLoader/>}>
             <ProjectHeader
               projectId={projectId}
               selectedModel={selectedModel}
               setSelectedModel={handleModelChange}
             />
           </Suspense>
+         
           
-          <Suspense fallback={<div>Loading messages...</div>}>
+         
+            <Suspense fallback={<CustomLoader/>}>
             <MesssageContainer
               activeFragment={activeFragment}
               setActiveFragment={setActiveFragment}
@@ -72,6 +80,7 @@ const ProjectView = ({projectId}: Props) => {
               selectedModel={selectedModel}
             />
           </Suspense>
+        {/*   </ErrorBoundary> */}
         </ResizablePanel>
         
         <ResizableHandle className='hover:bg-primary transition-colors' />

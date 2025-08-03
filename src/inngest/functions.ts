@@ -5,6 +5,7 @@ import { Sandbox } from "@e2b/code-interpreter";
 import { FRAGMENT_TITLE_PROMPT, PROMPT, RESPONSE_PROMPT } from "@/prompt";
 import { z } from "zod";
 import prisma from "@/lib/db";
+import { SANDBOX_SET_TIMEOUT } from "./types";
 
 interface AgentState {
   summary: string;
@@ -63,6 +64,7 @@ export const fing_AI_Agent = inngest.createFunction(
 
     const sandboxId = await step.run("get_sandbox-id", async () => {
       const sandbox = await Sandbox.create("fing-next-jsv1");
+      await sandbox.setTimeout(SANDBOX_SET_TIMEOUT)
       return sandbox.sandboxId;
     });
 
@@ -71,6 +73,7 @@ export const fing_AI_Agent = inngest.createFunction(
       const messages = await prisma.message.findMany({
         where: { projectId: event.data.projectId },
         orderBy: { createdAt: 'desc' },
+        take: 5
       });
 
       for (const msg of messages) {
@@ -80,7 +83,7 @@ export const fing_AI_Agent = inngest.createFunction(
           content: msg.content
         });
       }
-      return formattedMsg;
+      return formattedMsg.reverse();
     });
 
     const state = createState<AgentState>(
