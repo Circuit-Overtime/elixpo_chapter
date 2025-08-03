@@ -29,7 +29,7 @@ const parseOut = (value: Message[]) => {
 const SUPPORTED_MODELS = {
   'gpt-4.1': {
     provider: openai,
-    config: { model: 'gpt-4-0125-preview', defaultParameters: { temperature: 0.1 } }
+    config: { model: 'gpt-4.1', defaultParameters: { temperature: 0.1 } }
   },
   'gpt-4o': {
     provider: openai,
