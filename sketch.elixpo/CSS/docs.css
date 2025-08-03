@@ -1,7 +1,7 @@
 @font-face
 {
     font-family: 'lixCode';
-    src: url(../../FONT/lixCode.ttf);
+    src: url(../FONT/lixCode.ttf);
     font-weight: normal;
     font-size: normal;
 }
@@ -67,16 +67,84 @@ body {
       box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
     }
     pre {
-      background-color: #242424; /* Atom One Dark background */
-      padding: 15px;
-      border-radius: 8px;
-      overflow-x: auto;
-      font-family: 'Fira Code', 'JetBrains Mono', monospace; /* Monospaced font */
-      font-size: 0.9em;
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      justify-content: space-between;
+      align-items: start;
+      padding: 5px 5px;
+      border-radius: 12px;
+      box-sizing: border-box;
+      background-color: #242424;
+      border: 1px solid #666;
       margin: 1em 0;
-      line-height: 1.45;
-      border: 2px solid #F47067;
       position: relative;
+    }
+    
+    .editor section pre {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      justify-content: space-between;
+      align-items: start;
+      padding: 5px 5px;
+      border-radius: 12px;
+      box-sizing: border-box;
+      background-color: #242424;
+      border: 1px solid #666;
+    }
+    
+    .editor section pre i {
+      font-size: 1.5em;
+      color: #fff;
+      cursor: pointer;
+      padding: 5px 5px;
+      margin-top: 10px;
+    }
+    
+    .editor section pre .code_block {
+      font-family: 'lixCode', monospace;
+      font-size: 1em;
+      background: transparent;
+      color: #ffffff;
+      display: block;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      outline: none;
+      border: none;
+      width: 100%;
+    }
+    
+    pre i {
+      font-size: 1.5em;
+      color: #fff;
+      cursor: pointer;
+      padding: 5px 5px;
+      margin-top: 10px;
+    }
+    
+    pre .code_block {
+      font-family: 'lixCode', monospace;
+      font-size: 1em;
+      background: transparent;
+      color: #ffffff;
+      display: block;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      outline: none;
+      border: none;
+      width: 100%;
+    }
+
+    [data-copy-btn] {
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: transform 0.2s ease;
+    }
+    
+    [data-copy-btn].copied {
+      color: green;
+      transform: scale(1.3);
     }
     
     pre .copy-button:hover {
