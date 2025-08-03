@@ -9,10 +9,10 @@ function generateHexID() {
 function createSection() {
   const section = document.createElement('section');
   const h1 = document.createElement('h1');
-  h1.innerHTML = '\u200B<span class="default-text-not-editable" contenteditable="false">Untitled File</span>';
+  h1.innerHTML = '\u00A0<span class="default-text-not-editable" contenteditable="false">Untitled File</span>';
   const p = document.createElement('p');
-  p.innerHTML = '\u200B<span class="default-text-not-editable" contenteditable="false">Welcome to Elixpo Sketch, you can type your notes here -- styled with markdown support!</span>';
-  
+  p.innerHTML = '\u00A0<span class="default-text-not-editable" contenteditable="false">Welcome to Elixpo Sketch, you can type your notes here -- styled with markdown support!</span>';
+
   section.appendChild(h1);
   section.appendChild(p);
   return section;
@@ -20,10 +20,9 @@ function createSection() {
 
 function createParagraph() {
   const p = document.createElement('p');
-  // Always start with a default-text span
   const defaultSpan = document.createElement('span');
   defaultSpan.className = 'default-text';
-  defaultSpan.innerHTML = '\u200B';
+  defaultSpan.innerHTML = '\u00A0';
   p.appendChild(defaultSpan);
   return p;
 }
@@ -43,7 +42,6 @@ function highlightCodeBlock(codeElement) {
     if (codeElement.dataset.highlighted) {
       delete codeElement.dataset.highlighted;
     }
-    // Ensure the code_block class is present
     if (!codeElement.classList.contains('code_block')) {
       codeElement.classList.add('code_block');
     }
@@ -63,7 +61,7 @@ function getCurrentLineElement() {
     if (node.parentNode === editor) {
       return node;
     }
-    if (node.tagName === 'H1' || node.tagName === 'P') {
+    if (node.tagName === 'H1' || node.tagName === 'P' || node.tagName === 'BLOCKQUOTE') {
       return node;
     }
     if (node.tagName === 'LI') {
@@ -80,6 +78,8 @@ function getCurrentLineElement() {
 function placeCaretAtStart(el) {
   const range = document.createRange();
   const sel = window.getSelection();
+
+  if (!el) return;
 
   if (el.nodeType === Node.TEXT_NODE) {
     range.setStart(el, 0);
@@ -100,6 +100,9 @@ function placeCaretAtStart(el) {
 function placeCaretAtEnd(el) {
   const range = document.createRange();
   const sel = window.getSelection();
+
+  if (!el) return;
+
   range.selectNodeContents(el);
   range.collapse(false);
   sel.removeAllRanges();
@@ -108,23 +111,19 @@ function placeCaretAtEnd(el) {
 
 function createNewLineElement() {
   const p = document.createElement('p');
-  // Always ensure new line elements have a span
   const defaultSpan = document.createElement('span');
   defaultSpan.className = 'default-text';
-  defaultSpan.innerHTML = '\u200B';
+  defaultSpan.innerHTML = '\u00A0';
   p.appendChild(defaultSpan);
   return p;
 }
 
 function handleBlockFormatting(lineEl) {
   const text = lineEl.textContent;
-  let handled = false;
+  const section = lineEl.parentNode;
 
   if (lineEl.tagName === 'P') {
-    const section = lineEl.parentNode;
-    
-    // Check for code block
-    if (text === '```\u00A0') {
+    if (text === '```\u00A0' || text === '```  ' || text === '\u00A0\u00A0') {
       const hexID = generateHexID();
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = createCodeBlock(hexID);
@@ -132,10 +131,8 @@ function handleBlockFormatting(lineEl) {
       const code = pre.querySelector('code');
       const copyButton = pre.querySelector('i[data-copy-btn]');
 
-      // Add ID to pre element
       pre.id = `pre_${hexID}`;
 
-      // Add copy functionality
       copyButton.addEventListener('click', (e) => {
         e.stopPropagation();
         navigator.clipboard.writeText(code.textContent);
@@ -143,412 +140,347 @@ function handleBlockFormatting(lineEl) {
         setTimeout(() => copyButton.classList.remove('copied'), 1500);
       });
 
-      // Replace current p with pre
       section.replaceChild(pre, lineEl);
-      
-      // Add new paragraph after pre
       const newP = createParagraph();
       section.appendChild(newP);
-      
+
       placeCaretAtStart(code);
       return true;
     }
 
-    // Check for horizontal rule
-    if (text === '---\u00A0' || text === '***\u00A0' || text === '___\u00A0') {
+    else if (text === '---\u00A0\u00A0' || text === '***\u00A0\u00A0' || text === '___\u00A0\u00A0' || text === '---\u00A0\u00A0') {
+
       const hexID = generateHexID();
       const hr = document.createElement('hr');
       hr.id = `hr_${hexID}`;
       section.replaceChild(hr, lineEl);
-      
-      // Add new paragraph after hr
+
       const newP = createParagraph();
       section.appendChild(newP);
-      
+
       placeCaretAtStart(newP);
+      return true;
+        }
+
+        // Heading detection: match #, ##, ###, etc. with any combination of spaces or &nbsp; before/after
+      else if (/^(?:\s|\u00A0)*#{1,6}(?:\s|\u00A0)+$/.test(text)) {
+      console.log(lineEl)
+      lineEl.querySelector('span').textContent = '';
+      console.log(text.parentElement);
+      const hexID = generateHexID();
+      const heading = document.createElement(`h${text.trim().length}`);
+      heading.id = `heading_${hexID}`;
+      heading.textContent = text.trim().replace(/^#{1,6}/, '').trim() || '\u00A0';
+
+      section.replaceChild(heading, lineEl);
+      const newP = createParagraph();
+      section.appendChild(newP);
+
+      placeCaretAtStart(heading);
       return true;
     }
 
-    // Check for heading patterns - these create new sections
-    const headingPatterns = [
-      { regex: /^#\s(.*)/, tag: 'h1' },
-      { regex: /^##\s(.*)/, tag: 'h2' },
-      { regex: /^###\s(.*)/, tag: 'h3' },
-      { regex: /^####\s(.*)/, tag: 'h4' },
-      { regex: /^#####\s(.*)/, tag: 'h5' },
-      { regex: /^######\s(.*)/, tag: 'h6' }
-    ];
-
-    for (const pattern of headingPatterns) {
-      const match = text.match(pattern.regex);
-      if (match) {
-        const hexID = generateHexID();
-        // Create new section with heading
-        const newSection = document.createElement('section');
-        const heading = document.createElement(pattern.tag);
-        heading.id = `${pattern.tag}_${hexID}`;
-        // Use the captured content without the hash symbols
-        heading.textContent = match[1] || '\u200B';
-        
-        const newP = createParagraph();
-        
-        newSection.appendChild(heading);
-        newSection.appendChild(newP);
-        
-        // Insert new section after current section
-        editor.insertBefore(newSection, section.nextSibling);
-        
-        // Place caret in the heading itself, not the P
-        placeCaretAtEnd(heading);
-        return true;
-      }
-    }
-
-    // Check for list items
     const unorderedListMatch = text.match(/^[\*\-\+]\s(.*)/);
     const orderedListMatch = text.match(/^\d+\.\s(.*)/);
-    
+
     if (unorderedListMatch || orderedListMatch) {
       const hexID = generateHexID();
       const isOrdered = !!orderedListMatch;
       const listType = isOrdered ? 'ol' : 'ul';
       const content = isOrdered ? orderedListMatch[1] : unorderedListMatch[1];
-      
+
       const list = document.createElement(listType);
       list.id = `${listType}_${hexID}`;
       const li = document.createElement('li');
       li.id = `li_${generateHexID()}`;
-      // Use the captured content without the list markers
       li.textContent = content;
       list.appendChild(li);
-      
-      // Replace current p with list
+
       section.replaceChild(list, lineEl);
-      
-      // Add new paragraph after list
       const newP = createParagraph();
       section.appendChild(newP);
-      
+
       placeCaretAtEnd(li);
       return true;
     }
 
-    // Check for blockquote
     const blockquoteMatch = text.match(/^>\s(.*)/);
     if (blockquoteMatch) {
       const hexID = generateHexID();
       const content = blockquoteMatch[1];
       const blockquote = document.createElement('blockquote');
       blockquote.id = `blockquote_${hexID}`;
-      // Use the captured content without the > symbol
       blockquote.textContent = content;
-      
-      // Replace current p with blockquote
+
       section.replaceChild(blockquote, lineEl);
-      
-      // Add new paragraph after blockquote
       const newP = createParagraph();
       section.appendChild(newP);
-      
+
       placeCaretAtEnd(blockquote);
       return true;
     }
   }
 
-  return handled;
+  return false;
 }
 
-function escapeHtml(unsafe) {
-  return unsafe
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, '"')
-    .replace(/'/g, "'");
+const stylePatterns = [
+  { regex: /\*\*(.+?)\*\*/g, tag: 'span', className: 'bold' },
+  { regex: /(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, tag: 'span', className: 'italic' },
+  { regex: /__(.+?)__/g, tag: 'span', className: 'underline' },
+  { regex: /(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, tag: 'span', className: 'italic' },
+  { regex: /~~(.+?)~~/g, tag: 'span', className: 'strike' },
+  { regex: /==(.+?)==/g, tag: 'span', className: 'mark' },
+  { regex: /`([^`\n]+?)`/g, tag: 'span', className: 'code-inline' }
+];
+
+function hasMarkdownPattern(text) {
+  const patterns = [
+    /\*\*(.+?)\*\*/g,
+    /(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g,
+    /__(.+?)__/g,
+    /(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g,
+    /~~(.+?)~~/g,
+    /==(.+?)==/g,
+    /`([^`\n]+?)`/g
+  ];
+  return patterns.some(pattern => pattern.test(text));
 }
 
 
-function traverseAndApplyInlineStyles(node) {
-    if (!node) return;
+function processMarkdownInText(text, parentNode, replaceNode = null) {
+  if (!text || !hasMarkdownPattern(text)) return { addedTrailingSpan: false };
 
-    if (node.nodeType === Node.ELEMENT_NODE && (node.tagName === 'CODE' || node.tagName === 'PRE')) {
-        return;
+  const allMatches = [];
+  for (let i = 0; i < stylePatterns.length; i++) {
+    const pattern = stylePatterns[i];
+    let match;
+    const regex = new RegExp(pattern.regex.source, pattern.regex.flags);
+    while ((match = regex.exec(text)) !== null) {
+      allMatches.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        fullMatch: match[0],
+        content: match[1],
+        tag: pattern.tag,
+        className: pattern.className,
+        priority: i
+      });
+    }
+  }
+
+  if (allMatches.length === 0) {
+    if (!parentNode.querySelector('span.default-text')) {
+      const defaultSpan = document.createElement('span');
+      defaultSpan.className = 'default-text';
+      defaultSpan.textContent = text;
+      parentNode.innerHTML = '';
+      parentNode.appendChild(defaultSpan);
+    }
+    return { addedTrailingSpan: false };
+  }
+
+  allMatches.sort((a, b) => {
+    if (a.start !== b.start) return a.start - b.start;
+    return a.priority - b.priority;
+  });
+
+  const validMatches = [];
+  for (const match of allMatches) {
+    const hasOverlap = validMatches.some(existing =>
+      (match.start < existing.end && match.end > existing.start)
+    );
+    if (!hasOverlap) {
+      validMatches.push(match);
+    }
+  }
+
+  const fragment = document.createDocumentFragment();
+  let lastIndex = 0;
+
+  for (const match of validMatches) {
+    if (match.start > lastIndex) {
+      const beforeText = text.substring(lastIndex, match.start);
+      if (beforeText) {
+        const defaultSpan = document.createElement('span');
+        defaultSpan.className = 'default-text';
+        defaultSpan.textContent = beforeText;
+        fragment.appendChild(defaultSpan);
+      }
     }
 
-    // Check if this node already has styled spans - if so, only process text nodes that aren't styled
-    const hasStyledSpans = node.querySelector('.bold, .italic, .underline, .strike, .mark, .code-inline, .default-text');
-    
-    if (hasStyledSpans) {
-        // Only process text nodes that are direct children and not in styled spans
-        const directTextNodes = Array.from(node.childNodes).filter(child => 
-            child.nodeType === Node.TEXT_NODE
-        );
-        
-        for (const textNode of directTextNodes) {
-            processTextNodeForStyles(textNode);
-        }
-        
-        // Also process any default-text spans that might have new content
-        const defaultSpans = node.querySelectorAll('.default-text');
-        for (const span of defaultSpans) {
-            if (span.childNodes.length === 1 && span.firstChild.nodeType === Node.TEXT_NODE) {
-                processTextNodeForStyles(span.firstChild);
-            }
-        }
-    } else {
-        // Process the entire line's text content as before
-        processEntireLineContent(node);
-    }
-}
+    const styledSpan = document.createElement(match.tag);
+    styledSpan.className = match.className;
+    styledSpan.textContent = match.content;
+    fragment.appendChild(styledSpan);
 
+    lastIndex = match.end;
+  }
+
+  const remainingText = text.substring(lastIndex);
+  let addedTrailingSpan = false;
+  if (remainingText) {
+    const defaultSpan = document.createElement('span');
+    defaultSpan.className = 'default-text';
+    defaultSpan.textContent = remainingText;
+    fragment.appendChild(defaultSpan);
+  } else {
+    const lastMatch = validMatches[validMatches.length - 1];
+    if (lastMatch && lastMatch.end === text.length) {
+      const defaultSpan = document.createElement('span');
+      defaultSpan.className = 'default-text';
+      defaultSpan.innerHTML = '&nbsp;';
+      fragment.appendChild(defaultSpan);
+      addedTrailingSpan = true;
+    }
+  }
+
+  if (replaceNode) {
+    // Replace specific span
+    parentNode.insertBefore(fragment, replaceNode);
+    parentNode.removeChild(replaceNode);
+  } else {
+    // Replace entire line content
+    parentNode.innerHTML = '';
+    parentNode.appendChild(fragment);
+  }
+
+  return { addedTrailingSpan };
+}
 
 function processEntireLineContent(node) {
-    // Process the entire line's text content as a single unit
-    const lineText = node.textContent;
-    if (!lineText) return;
+  const existingStyledSpans = node.querySelectorAll('span:not(.default-text)');
+  const allSpans = Array.from(node.querySelectorAll('span'));
 
-    // Define all inline style patterns
-    const stylePatterns = [
-        { regex: /\*\*(.+?)\*\*/g, tag: 'span', className: 'bold' },
-        { regex: /(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, tag: 'span', className: 'italic' },
-        { regex: /__(.+?)__/g, tag: 'span', className: 'underline' },
-        { regex: /(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, tag: 'span', className: 'italic' },
-        { regex: /~~(.+?)~~/g, tag: 'span', className: 'strike' },
-        { regex: /==(.+?)==/g, tag: 'span', className: 'mark' },
-        { regex: /`([^`\n]+?)`/g, tag: 'span', className: 'code-inline' }
-    ];
+  if (existingStyledSpans.length > 0) {
+    let hasChanges = false;
+    let addedTrailingSpan = false;
 
-    // Collect all matches with their positions
-    const allMatches = [];
-    
-    for (let i = 0; i < stylePatterns.length; i++) {
-        const pattern = stylePatterns[i];
-        let match;
-        const regex = new RegExp(pattern.regex.source, pattern.regex.flags);
-        
-        while ((match = regex.exec(lineText)) !== null) {
-            allMatches.push({
-                start: match.index,
-                end: match.index + match[0].length,
-                fullMatch: match[0],
-                content: match[1],
-                tag: pattern.tag,
-                className: pattern.className,
-                priority: i
-            });
+    for (const span of allSpans) {
+      if (span.classList.contains('default-text')) {
+        const spanText = span.textContent;
+        if (spanText && hasMarkdownPattern(spanText)) {
+          const result = processMarkdownInText(spanText, span.parentNode, span);
+          if (result && result.addedTrailingSpan) {
+            addedTrailingSpan = true;
+          }
+          hasChanges = true;
         }
+      }
     }
-
-    if (allMatches.length === 0) {
-        // No styles, wrap in default span
-        const defaultSpan = document.createElement('span');
-        defaultSpan.className = 'default-text';
-        defaultSpan.textContent = lineText;
-        node.innerHTML = '';
-        node.appendChild(defaultSpan);
-        return;
+    if (hasChanges) {
+      cleanupEmptySpans(node);
     }
+    return { addedTrailingSpan };
+  }
 
-    // Sort matches by start position
-    allMatches.sort((a, b) => {
-        if (a.start !== b.start) return a.start - b.start;
-        return a.priority - b.priority;
-    });
+  const lineText = node.textContent;
+  if (!lineText) return { addedTrailingSpan: false };
 
-    // Remove overlapping matches
-    const validMatches = [];
-    for (const match of allMatches) {
-        const hasOverlap = validMatches.some(existing => 
-            (match.start < existing.end && match.end > existing.start)
-        );
-        if (!hasOverlap) {
-            validMatches.push(match);
-        }
-    }
-
-    // Clear and rebuild
-    node.innerHTML = '';
-    
-    let lastIndex = 0;
-    const fragment = document.createDocumentFragment();
-
-    for (const match of validMatches) {
-        // Add text before the match
-        if (match.start > lastIndex) {
-            const beforeText = lineText.substring(lastIndex, match.start);
-            if (beforeText) {
-                const defaultSpan = document.createElement('span');
-                defaultSpan.className = 'default-text';
-                defaultSpan.textContent = beforeText;
-                fragment.appendChild(defaultSpan);
-            }
-        }
-        
-        // Create styled span
-        const styledSpan = document.createElement(match.tag);
-        styledSpan.className = match.className;
-        styledSpan.textContent = match.content;
-        fragment.appendChild(styledSpan);
-        
-        lastIndex = match.end;
-    }
-
-    // Add remaining text
-    const remainingText = lineText.substring(lastIndex);
-    if (remainingText) {
-        const defaultSpan = document.createElement('span');
-        defaultSpan.className = 'default-text';
-        defaultSpan.textContent = remainingText;
-        fragment.appendChild(defaultSpan);
-    }
-
-    node.appendChild(fragment);
+  return processMarkdownInText(lineText, node);
 }
 
-
-function processTextNodeForStyles(textNode) {
-    if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
-    
-    const parent = textNode.parentNode;
-    const text = textNode.nodeValue;
-    
-    // Define all inline style patterns
-    const stylePatterns = [
-        { regex: /\*\*(.+?)\*\*/g, tag: 'span', className: 'bold' },
-        { regex: /(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, tag: 'span', className: 'italic' },
-        { regex: /__(.+?)__/g, tag: 'span', className: 'underline' },
-        { regex: /(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, tag: 'span', className: 'italic' },
-        { regex: /~~(.+?)~~/g, tag: 'span', className: 'strike' },
-        { regex: /==(.+?)==/g, tag: 'span', className: 'mark' },
-        { regex: /`([^`\n]+?)`/g, tag: 'span', className: 'code-inline' }
-    ];
-
-    // Find all matches in this text node
-    const allMatches = [];
-    
-    for (let i = 0; i < stylePatterns.length; i++) {
-        const pattern = stylePatterns[i];
-        let match;
-        const regex = new RegExp(pattern.regex.source, pattern.regex.flags);
-        
-        while ((match = regex.exec(text)) !== null) {
-            allMatches.push({
-                start: match.index,
-                end: match.index + match[0].length,
-                fullMatch: match[0],
-                content: match[1],
-                tag: pattern.tag,
-                className: pattern.className,
-                priority: i
-            });
-        }
+function cleanupEmptySpans(node) {
+  const spans = node.querySelectorAll('span');
+  for (const span of spans) {
+    if (span.textContent === '' || span.textContent === '\u200B') {
+      span.remove();
     }
-
-    if (allMatches.length === 0) {
-        // No styles found, ensure it's in a default span
-        if (!parent.classList.contains('default-text')) {
-            const defaultSpan = document.createElement('span');
-            defaultSpan.className = 'default-text';
-            defaultSpan.textContent = text;
-            parent.insertBefore(defaultSpan, textNode);
-            parent.removeChild(textNode);
-        }
-        return;
-    }
-
-    // Sort matches by start position
-    allMatches.sort((a, b) => {
-        if (a.start !== b.start) return a.start - b.start;
-        return a.priority - b.priority;
-    });
-
-    // Remove overlapping matches
-    const validMatches = [];
-    for (const match of allMatches) {
-        const hasOverlap = validMatches.some(existing => 
-            (match.start < existing.end && match.end > existing.start)
-        );
-        if (!hasOverlap) {
-            validMatches.push(match);
-        }
-    }
-
-    // Create fragment with styled content
-    const fragment = document.createDocumentFragment();
-    let lastIndex = 0;
-
-    for (const match of validMatches) {
-        // Add text before the match
-        if (match.start > lastIndex) {
-            const beforeText = text.substring(lastIndex, match.start);
-            if (beforeText) {
-                const defaultSpan = document.createElement('span');
-                defaultSpan.className = 'default-text';
-                defaultSpan.textContent = beforeText;
-                fragment.appendChild(defaultSpan);
-            }
-        }
-        
-        // Create styled span
-        const styledSpan = document.createElement(match.tag);
-        styledSpan.className = match.className;
-        styledSpan.textContent = match.content;
-        fragment.appendChild(styledSpan);
-        
-        lastIndex = match.end;
-    }
-
-    // Add remaining text
-    const remainingText = text.substring(lastIndex);
-    if (remainingText) {
-        const defaultSpan = document.createElement('span');
-        defaultSpan.className = 'default-text';
-        defaultSpan.textContent = remainingText;
-        fragment.appendChild(defaultSpan);
-    }
-
-    // Replace the text node with styled spans
-    parent.insertBefore(fragment, textNode);
-    parent.removeChild(textNode);
+  }
+  if (node.tagName === 'P' && !node.querySelector('span')) {
+    const defaultSpan = document.createElement('span');
+    defaultSpan.className = 'default-text';
+    defaultSpan.innerHTML = '\u00A0';
+    node.appendChild(defaultSpan);
+  }
 }
-
 
 function updateCodeBlockClasses(codeElement) {
   if (!codeElement) return;
-  
-  // Clear existing highlighting
+
   if (codeElement.dataset.highlighted) {
     delete codeElement.dataset.highlighted;
   }
-  
-  // Auto-detect language and highlight
+
   const result = hljs.highlightAuto(codeElement.textContent);
-  
-  // Reset classes and apply new ones
+
   codeElement.className = 'code_block hljs';
-  
-  // Add detected language class if available
+
   if (result.language) {
     codeElement.classList.add(`language-${result.language}`);
     codeElement.dataset.detectedLanguage = result.language;
   }
-  
-  // Apply the highlighted HTML
+
   codeElement.innerHTML = result.value;
+}
+
+function getCursorPositionInCodeBlock(codeElement) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return 0;
+
+  const range = sel.getRangeAt(0);
+  const preSelectionRange = range.cloneRange();
+  preSelectionRange.selectNodeContents(codeElement);
+  preSelectionRange.setEnd(range.startContainer, range.startOffset);
+
+  return preSelectionRange.toString().length;
+}
+
+function restoreCursorPositionInCodeBlock(codeElement, position) {
+  const sel = window.getSelection();
+  const range = document.createRange();
+
+  let currentPos = 0;
+  const walker = document.createTreeWalker(
+    codeElement,
+    NodeFilter.SHOW_TEXT,
+    null,
+    false
+  );
+
+  let node;
+  while (node = walker.nextNode()) {
+    const nodeLength = node.textContent.length;
+    if (currentPos + nodeLength >= position) {
+      range.setStart(node, position - currentPos);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      return;
+    }
+    currentPos += nodeLength;
+  }
+
+  range.selectNodeContents(codeElement);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
 }
 
 function removeDefaultTextIfPresent(element) {
   const defaultSpan = element.querySelector('.default-text-not-editable');
   if (defaultSpan) {
     defaultSpan.remove();
-    // Ensure there's at least a default-text span for cursor positioning
     if (element.textContent === '' || !element.querySelector('span')) {
       const newSpan = document.createElement('span');
       newSpan.className = 'default-text';
-      newSpan.innerHTML = '\u200B';
+      newSpan.innerHTML = '\u00A0';
       element.innerHTML = '';
       element.appendChild(newSpan);
     }
+  }
+}
+
+if (editor.children.length === 0 || editor.textContent.trim() === '') {
+  editor.innerHTML = '';
+  const initialSection = createSection();
+  editor.appendChild(initialSection);
+  placeCaretAtStart(initialSection.querySelector('p'));
+} else {
+  if (!editor.querySelector('section')) {
+    const initialSection = createSection();
+    editor.appendChild(initialSection);
+    placeCaretAtStart(initialSection.querySelector('p'));
   }
 }
 
@@ -559,70 +491,62 @@ editor.addEventListener('input', (e) => {
 
   if (!currentLine || !range) return;
 
-  // Remove default text when user starts typing
   if (currentLine.tagName === 'H1' || currentLine.tagName === 'P') {
     removeDefaultTextIfPresent(currentLine);
   }
 
-  // Ensure cursor is always within a span for P tags
   if (currentLine.tagName === 'P') {
     const currentNode = range.startContainer;
-    
-    // If cursor is directly in the P tag (not in a span), move it to a span
+
     if (currentNode === currentLine) {
       let targetSpan = currentLine.querySelector('span');
       if (!targetSpan) {
         targetSpan = document.createElement('span');
         targetSpan.className = 'default-text';
-        targetSpan.innerHTML = '\u200B';
+        targetSpan.innerHTML = ' ';
         currentLine.appendChild(targetSpan);
       }
       placeCaretAtEnd(targetSpan);
       return;
     }
-    
-    // If cursor is in a text node that's a direct child of P, wrap it in a span
+
     if (currentNode.nodeType === Node.TEXT_NODE && currentNode.parentNode === currentLine) {
       const span = document.createElement('span');
       span.className = 'default-text';
       currentNode.parentNode.insertBefore(span, currentNode);
       span.appendChild(currentNode);
-      // Restore cursor position
       const newRange = document.createRange();
       newRange.setStart(currentNode, range.startOffset);
       newRange.collapse(true);
       sel.removeAllRanges();
       sel.addRange(newRange);
     }
+
+    setTimeout(() => {
+      cleanupEmptySpans(currentLine);
+    }, 0);
   }
 
-  // Only handle block formatting on space, and only for P tags
   if (e.inputType === 'insertText' && e.data === ' ') {
-    // Check if the line has any styled spans - if so, don't apply block formatting
     const hasStyledContent = currentLine.querySelector('span[class]:not(.default-text)');
     if (currentLine.tagName === 'P' && !hasStyledContent && handleBlockFormatting(currentLine)) {
       return;
     }
   }
 
-  // Apply inline styles for H1 and P tags
   if (currentLine.tagName === 'H1' || currentLine.tagName === 'P') {
-    // Skip styling if default text is still present
     if (currentLine.querySelector('.default-text-not-editable')) {
       return;
     }
 
-    // Store the cursor position relative to the entire line's text content
     let cursorPosition = 0;
-    
-    // Calculate cursor position within the line
     const walker = document.createTreeWalker(
       currentLine,
       NodeFilter.SHOW_TEXT,
       null,
       false
     );
-    
+
     let node;
     let found = false;
     while ((node = walker.nextNode()) && !found) {
@@ -634,10 +558,29 @@ editor.addEventListener('input', (e) => {
       }
     }
 
-    // Apply inline styles - this will process ALL text nodes in the line
-    traverseAndApplyInlineStyles(currentLine);
+    const styleResult = processEntireLineContent(currentLine);
 
-    // Restore cursor position
+    if (styleResult && styleResult.addedTrailingSpan) {
+      const spans = currentLine.querySelectorAll('span.default-text');
+      const lastDefaultSpan = spans[spans.length - 1];
+      if (
+        lastDefaultSpan &&
+        (
+          lastDefaultSpan.innerHTML === '&nbsp;' ||
+          lastDefaultSpan.textContent === '\u00A0' ||
+          lastDefaultSpan.textContent === '\u200B' ||
+          lastDefaultSpan.textContent === ''        ||
+          lastDefaultSpan.textContent === ' ' ||
+          lastDefaultSpan.textContent.trim() === '' 
+        )
+      ) {
+        setTimeout(() => {
+          placeCaretAtStart(lastDefaultSpan);
+        }, 0);
+        return;
+      }
+    }
+
     try {
       let currentPos = 0;
       const newWalker = document.createTreeWalker(
@@ -646,7 +589,7 @@ editor.addEventListener('input', (e) => {
         null,
         false
       );
-      
+
       let newNode;
       while ((newNode = newWalker.nextNode())) {
         const nodeLength = newNode.textContent.length;
@@ -661,15 +604,12 @@ editor.addEventListener('input', (e) => {
         }
         currentPos += nodeLength;
       }
-      
-      // Fallback: place at end of line
       placeCaretAtEnd(currentLine);
     } catch (err) {
       console.warn("Error restoring cursor position:", err);
       placeCaretAtEnd(currentLine);
     }
-  }
-  else if (currentLine.tagName === 'PRE') {
+  } else if (currentLine.tagName === 'PRE') {
     const codeEl = currentLine.querySelector('code');
     if (codeEl) {
       const cursorPos = getCursorPositionInCodeBlock(codeEl);
@@ -679,68 +619,19 @@ editor.addEventListener('input', (e) => {
   }
 });
 
-function getCursorPositionInCodeBlock(codeElement) {
-  const sel = window.getSelection();
-  if (!sel.rangeCount) return 0;
-  
-  const range = sel.getRangeAt(0);
-  const preSelectionRange = range.cloneRange();
-  preSelectionRange.selectNodeContents(codeElement);
-  preSelectionRange.setEnd(range.startContainer, range.startOffset);
-  
-  return preSelectionRange.toString().length;
-}
-
-
-function restoreCursorPositionInCodeBlock(codeElement, position) {
-  const sel = window.getSelection();
-  const range = document.createRange();
-  
-  let currentPos = 0;
-  const walker = document.createTreeWalker(
-    codeElement,
-    NodeFilter.SHOW_TEXT,
-    null,
-    false
-  );
-  
-  let node;
-  while (node = walker.nextNode()) {
-    const nodeLength = node.textContent.length;
-    if (currentPos + nodeLength >= position) {
-      range.setStart(node, position - currentPos);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      return;
-    }
-    currentPos += nodeLength;
-  }
-  
-  // Fallback: place at end
-  range.selectNodeContents(codeElement);
-  range.collapse(false);
-  sel.removeAllRanges();
-  sel.addRange(range);
-}
-
-
 editor.addEventListener('keydown', (e) => {
   const sel = window.getSelection();
   const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
   let currentLine = getCurrentLineElement();
 
-  // Remove default text when user starts typing
-  if (currentLine && (currentLine.tagName === 'H1' || currentLine.tagName === 'P') && 
-      (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace')) {
+  if (currentLine && (currentLine.tagName === 'H1' || currentLine.tagName === 'P') &&
+    (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace')) {
     removeDefaultTextIfPresent(currentLine);
   }
 
-  // Ensure cursor is in a span for P tags when typing
   if (currentLine && currentLine.tagName === 'P' && e.key.length === 1) {
     const currentNode = range.startContainer;
-    
-    // If cursor is directly in P tag, move to a span
+
     if (currentNode === currentLine) {
       let targetSpan = currentLine.querySelector('span.default-text');
       if (!targetSpan) {
@@ -753,108 +644,103 @@ editor.addEventListener('keydown', (e) => {
     }
   }
 
-  if(e.key === 'Backspace') {
-    if (currentLine && (currentLine.tagName === 'H1' || currentLine.tagName === 'P')) {
-      const hasDefaultText = currentLine.querySelector('.default-text');
-      const isEmpty = currentLine.textContent === '\u200B' || currentLine.textContent === '' || currentLine.innerHTML === '<br>';
-      
-      if (hasDefaultText || isEmpty) {
+  if (e.key === 'Backspace') {
+    if (currentLine && currentLine.tagName === 'P') {
+      const hasContent = currentLine.textContent.trim() !== '' &&
+        currentLine.textContent !== '\u00A0' &&
+        currentLine.textContent !== '\u200B';
+
+      if (!hasContent) {
         e.preventDefault();
-        const section = currentLine.parentNode;
-        
-        // If it's an H1 and there are other elements in section, just reset it
-        if (currentLine.tagName === 'H1' && section.children.length > 1) {
-          currentLine.innerHTML = '\u200B<span class="default-text-not-editable" contenteditable="false"></span>';
-          placeCaretAtStart(currentLine);
-          return;
-        }
-        
-        // If it's a P and there are other Ps in section, remove this P
-        if (currentLine.tagName === 'P') {
-          const otherPs = section.querySelectorAll('p');
-          if (otherPs.length > 1) {
-            const prevP = currentLine.previousElementSibling;
-            const nextP = currentLine.nextElementSibling;
-            section.removeChild(currentLine);
-            if (prevP && prevP.tagName === 'P') {
-              placeCaretAtEnd(prevP);
-            } else if (nextP && nextP.tagName === 'P') {
-              placeCaretAtStart(nextP);
-            } else {
-              const h1 = section.querySelector('h1');
-              if (h1) placeCaretAtEnd(h1);
-            }
-            return;
-          } else {
-            // Last P in section, reset it
-            currentLine.innerHTML = '\u200B<span class="default-text-not-editable" contenteditable="false"></span>';
-            placeCaretAtStart(currentLine);
-            return;
+        return;
+      }
+
+      setTimeout(() => {
+        const spans = currentLine.querySelectorAll('span');
+        for (const span of spans) {
+          if (span.textContent === '' || span.textContent === '\u200B') {
+            span.remove();
           }
         }
-      }
+
+        if (!currentLine.querySelector('span')) {
+          const defaultSpan = document.createElement('span');
+          defaultSpan.className = 'default-text';
+          defaultSpan.innerHTML = '\u00A0';
+          currentLine.appendChild(defaultSpan);
+          placeCaretAtStart(defaultSpan);
+        }
+      }, 0);
+
+      return;
     }
 
-    if (currentLine && currentLine.tagName === 'DIV' && currentLine.parentElement?.tagName === 'LI' && currentLine.textContent.trim() === '') {
-      e.preventDefault();
-      const liParent = currentLine.parentElement;
+    if (currentLine && currentLine.tagName === 'H1') {
+      const hasDefaultText = currentLine.querySelector('.default-text-not-editable');
+      const isEmpty = currentLine.textContent === '\u00A0' || currentLine.textContent === '';
 
-      liParent.removeChild(currentLine);
-      if (!liParent.hasChildNodes()) {
-          const br = document.createElement('br');
-          liParent.appendChild(br);
+      if (hasDefaultText || isEmpty) {
+        e.preventDefault();
+        currentLine.innerHTML = '\u00A0<span class="default-text-not-editable" contenteditable="false">Untitled File</span>';
+        placeCaretAtStart(currentLine);
+        return;
       }
-      placeCaretAtEnd(liParent);
       return;
     }
 
     if (currentLine && currentLine.tagName === 'LI') {
-        const ul = currentLine.parentElement;
-        if (!ul || (ul.tagName !== 'UL' && ul.tagName !== 'OL')) return;
+      const ul = currentLine.parentElement;
+      if (!ul || (ul.tagName !== 'UL' && ul.tagName !== 'OL')) return;
 
-        const isEmpty = currentLine.textContent.trim() === '';
+      const isEmpty = currentLine.textContent.trim() === '';
 
-        if (isEmpty) {
-            e.preventDefault();
+      if (isEmpty) {
+        e.preventDefault();
 
-            if (ul.parentNode.tagName === 'LI') {
-                const parentLi = ul.parentNode;
-                ul.remove();
-                placeCaretAtEnd(parentLi);
-            } else {
-                const newDiv = createNewLineElement();
-                ul.remove();
-                editor.insertBefore(newDiv, ul.nextSibling || null);
-                placeCaretAtStart(newDiv);
-            }
-            return;
+        if (ul.parentNode.tagName === 'LI') {
+          const parentLi = ul.parentNode;
+          ul.remove();
+          placeCaretAtEnd(parentLi);
+        } else {
+          const section = ul.closest('section');
+          const newP = createParagraph();
+          ul.removeChild(currentLine);
+          if (ul.children.length === 0) {
+            ul.remove();
+          }
+          section.appendChild(newP);
+          placeCaretAtStart(newP);
         }
-    }
-  }
-
-  if (currentLine && currentLine.tagName === 'PRE') {
-    if (sel) {
-      if(e.key === 'Backspace') {
-        const codeEl = currentLine.querySelector('code');
-        const selectedContent = sel.toString();
-        if (codeEl && selectedContent === codeEl.textContent && selectedContent.length > 0) {
-          e.preventDefault();
-          codeEl.textContent = '';
-          placeCaretAtStart(codeEl);
-          updateCodeBlockClasses(codeEl);
-          return;
-        }
-
-        const isCaretAtStart = sel.isCollapsed && sel.anchorOffset === 0 && (sel.anchorNode === codeEl || sel.anchorNode === codeEl.firstChild);
-        const isCodeEmpty = codeEl.textContent.trim() === '';
-        if (isCaretAtStart && isCodeEmpty) {
-            e.preventDefault();
-            const newDiv = createNewLineElement();
-            editor.replaceChild(newDiv, currentLine);
-            placeCaretAtStart(newDiv);
-            return;
-        }
+        return;
       }
+      return;
+    }
+
+    if (currentLine && currentLine.tagName === 'PRE') {
+      const codeEl = currentLine.querySelector('code');
+      const selectedContent = sel.toString();
+
+      if (codeEl && selectedContent === codeEl.textContent && selectedContent.length > 0) {
+        e.preventDefault();
+        codeEl.textContent = '';
+        placeCaretAtStart(codeEl);
+        updateCodeBlockClasses(codeEl);
+        return;
+      }
+
+      const isCaretAtStart = sel.isCollapsed && sel.anchorOffset === 0 &&
+        (sel.anchorNode === codeEl || sel.anchorNode === codeEl.firstChild);
+      const isCodeEmpty = codeEl.textContent.trim() === '';
+
+      if (isCaretAtStart && isCodeEmpty) {
+        e.preventDefault();
+        const section = currentLine.closest('section');
+        const newP = createParagraph();
+        section.replaceChild(newP, currentLine);
+        placeCaretAtStart(newP);
+        return;
+      }
+      return;
     }
   }
 
@@ -869,7 +755,6 @@ editor.addEventListener('keydown', (e) => {
       return;
     }
 
-    // Handle Enter in H1 tags - create new P in same section
     if (currentLine.tagName === 'H1') {
       const section = currentLine.parentNode;
       const newP = createParagraph();
@@ -878,20 +763,16 @@ editor.addEventListener('keydown', (e) => {
       return;
     }
 
-    // Handle Enter in P tags - create new P in same section
     if (currentLine.tagName === 'P') {
       const section = currentLine.parentNode;
       const newP = createParagraph();
-      
-      // Extract remaining content after cursor
+
       const remainingContents = range.extractContents();
       if (remainingContents.hasChildNodes()) {
-        // Clear the new P and add the remaining content
         newP.innerHTML = '';
         newP.appendChild(remainingContents);
       }
-      
-      // Insert new P after current P
+
       section.insertBefore(newP, currentLine.nextSibling);
       placeCaretAtStart(newP);
       return;
@@ -955,46 +836,37 @@ editor.addEventListener('keydown', (e) => {
         placeCaretAtStart(newLi);
         enterPressCount = 0;
       }
-    }
+    } else if (currentLine.tagName === 'PRE') {
+      const codeEl = currentLine.querySelector('code');
+      if (codeEl) {
+        if (e.shiftKey) {
+          e.preventDefault();
+          const range = sel.getRangeAt(0);
 
-    else if (currentLine.tagName === 'PRE') {
-  const codeEl = currentLine.querySelector('code');
-  if (codeEl) {
-    if (e.shiftKey) {
-      e.preventDefault();
-      const range = sel.getRangeAt(0);
-      
-      // Store cursor position before making changes
-      const cursorPos = getCursorPositionInCodeBlock(codeEl);
-      
-      // Insert newline at current position
-      const textNode = document.createTextNode('\n');
-      range.insertNode(textNode);
-      
-      // Update syntax highlighting
-      updateCodeBlockClasses(codeEl);
-      
-      // Restore cursor position AFTER the newline (cursorPos + 1)
-      restoreCursorPositionInCodeBlock(codeEl, cursorPos + 1);
-    } else {
-      e.preventDefault();
-      if (codeEl.textContent.trim() === '') {
-        const section = currentLine.closest('section');
-        const newP = createParagraph();
-        section.replaceChild(newP, currentLine);
-        placeCaretAtStart(newP);
-      } else {
-        const section = currentLine.closest('section');
-        const newP = createParagraph();
-        section.appendChild(newP);
-        placeCaretAtStart(newP);
+          const cursorPos = getCursorPositionInCodeBlock(codeEl);
+
+          const textNode = document.createTextNode('\n');
+          range.insertNode(textNode);
+
+          updateCodeBlockClasses(codeEl);
+
+          restoreCursorPositionInCodeBlock(codeEl, cursorPos + 1);
+        } else {
+          e.preventDefault();
+          if (codeEl.textContent.trim() === '') {
+            const section = currentLine.closest('section');
+            const newP = createParagraph();
+            section.replaceChild(newP, currentLine);
+            placeCaretAtStart(newP);
+          } else {
+            const section = currentLine.closest('section');
+            const newP = createParagraph();
+            section.appendChild(newP);
+            placeCaretAtStart(newP);
+          }
+        }
       }
-    }
-  }
-}
-
-    else {
-      // For other elements, create new P in section
+    } else {
       const section = currentLine.closest('section');
       if (section) {
         const newP = createParagraph();
@@ -1003,9 +875,7 @@ editor.addEventListener('keydown', (e) => {
       }
       enterPressCount = 0;
     }
-  }
-
-  else if (e.key === 'Tab') {
+  } else if (e.key === 'Tab') {
     e.preventDefault();
     if (currentLine && currentLine.tagName === 'LI') {
       const parentList = currentLine.parentNode;
@@ -1042,69 +912,8 @@ editor.addEventListener('keydown', (e) => {
       sel.removeAllRanges();
       sel.addRange(range);
     }
-  } else if (e.key === 'Backspace') {
-    enterPressCount = 0;
-    const sel = window.getSelection();
-    if (sel.isCollapsed && sel.anchorOffset === 0) {
-      const currentLineElement = getCurrentLineElement();
-      if (!currentLineElement) return;
-
-      // Handle backspace at beginning of elements - no longer convert back to divs
-      if (currentLineElement.tagName === 'H1' || currentLineElement.tagName === 'P') {
-        // Don't do anything special at start - let normal editing handle it
-        return;
-      }
-      else if (currentLineElement.tagName === 'LI' && !currentLineElement.previousElementSibling) {
-        e.preventDefault();
-        const parentList = currentLineElement.parentNode;
-        const section = parentList.closest('section');
-        const newP = createParagraph();
-        newP.innerHTML = currentLineElement.innerHTML;
-        parentList.removeChild(currentLineElement);
-        if (parentList.children.length === 0) {
-          parentList.remove();
-        }
-        section.appendChild(newP);
-        placeCaretAtEnd(newP);
-      }
-      else if (currentLineElement.tagName === 'PRE' && currentLineElement.textContent.trim() === '') {
-        e.preventDefault();
-        const section = currentLineElement.closest('section');
-        const newP = createParagraph();
-        section.replaceChild(newP, currentLineElement);
-        placeCaretAtStart(newP);
-      }
-    }
   } else {
     enterPressCount = 0;
-  }
-});
-
-editor.addEventListener('keydown', (e) => {
-  if (e.key === 'Tab' && e.shiftKey) {
-    e.preventDefault();
-    const currentLi = getCurrentLineElement();
-    if (currentLi && currentLi.tagName === 'LI') {
-      const parentList = currentLi.parentNode;
-      const grandParentLi = parentList.parentNode;
-
-      if (grandParentLi && grandParentLi.tagName === 'LI') {
-        grandParentLi.parentNode.insertBefore(currentLi, grandParentLi.nextSibling);
-        if (parentList.children.length === 0) {
-          parentList.remove();
-        }
-        placeCaretAtEnd(currentLi);
-      } else if (parentList.parentNode === editor) {
-        const newDiv = document.createElement('div');
-        newDiv.innerHTML = currentLi.innerHTML;
-        editor.insertBefore(newDiv, parentList.nextSibling || parentList);
-        parentList.removeChild(currentLi);
-        if (parentList.children.length === 0) {
-          parentList.remove();
-        }
-        placeCaretAtEnd(newDiv);
-      }
-    }
   }
 });
 
@@ -1123,18 +932,3 @@ editor.addEventListener('click', (e) => {
     }
   }
 });
-
-// Initialize editor with a section containing H1 and P
-if (editor.children.length === 0 || editor.textContent.trim() === '') {
-  editor.innerHTML = '';
-  const initialSection = createSection();
-  editor.appendChild(initialSection);
-  placeCaretAtStart(initialSection.querySelector('p'));
-} else {
-  // If editor has content but no sections, wrap in section
-  if (!editor.querySelector('section')) {
-    const initialSection = createSection();
-    editor.appendChild(initialSection);
-    placeCaretAtStart(initialSection.querySelector('p'));
-  }
-}
