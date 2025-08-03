@@ -299,6 +299,7 @@ function processMarkdownInText(text, parentNode, replaceNode = null) {
     return { addedTrailingSpan: false };
   }
 
+  // Sort and filter overlapping
   allMatches.sort((a, b) => {
     if (a.start !== b.start) return a.start - b.start;
     return a.priority - b.priority;
@@ -316,10 +317,9 @@ function processMarkdownInText(text, parentNode, replaceNode = null) {
 
   const fragment = document.createDocumentFragment();
   let lastIndex = 0;
-  let lastTrailingSpan = null;
+  let insertedTrailingSpan = null;
 
   for (const match of validMatches) {
-    // Add text before the match
     if (match.start > lastIndex) {
       const beforeText = text.substring(lastIndex, match.start);
       if (beforeText) {
@@ -331,7 +331,6 @@ function processMarkdownInText(text, parentNode, replaceNode = null) {
       }
     }
 
-    // Create the styled span
     const styledSpan = document.createElement(match.tag);
     styledSpan.className = match.className;
     styledSpan.id = `span_${generateHexID()}`;
@@ -341,12 +340,8 @@ function processMarkdownInText(text, parentNode, replaceNode = null) {
     lastIndex = match.end;
   }
 
-  // Handle remaining text after the last match
   const remainingText = text.substring(lastIndex);
-  let addedTrailingSpan = false;
-  
   if (remainingText) {
-    // Create a span for remaining text
     const remainingSpan = document.createElement('span');
     remainingSpan.className = 'default-text';
     remainingSpan.id = `span_${generateHexID()}`;
@@ -354,34 +349,38 @@ function processMarkdownInText(text, parentNode, replaceNode = null) {
     fragment.appendChild(remainingSpan);
   }
 
-  // Always create a trailing span at the end for easy typing
-  const finalTrailingSpan = document.createElement('span');
-  finalTrailingSpan.className = 'default-text';
-  finalTrailingSpan.id = `span_${generateHexID()}`;
-  finalTrailingSpan.innerHTML = ' ';
-  fragment.appendChild(finalTrailingSpan);
-  lastTrailingSpan = finalTrailingSpan;
-  addedTrailingSpan = true;
+  const trailingSpan = document.createElement('span');
+  trailingSpan.className = 'default-text';
+  trailingSpan.id = `span_${generateHexID()}`;
+  trailingSpan.textContent = '\u00A0  '; 
+  fragment.appendChild(trailingSpan);
+  insertedTrailingSpan = trailingSpan;
+  placeCaretAtEnd(trailingSpan);
+  console.log("Inserted trailing span:", insertedTrailingSpan);
 
   if (replaceNode) {
-    // Replace specific span
     parentNode.insertBefore(fragment, replaceNode);
     parentNode.removeChild(replaceNode);
   } else {
-    // Replace entire line content
     parentNode.innerHTML = '';
     parentNode.appendChild(fragment);
   }
 
-  // Always place caret in the last trailing span
-  if (lastTrailingSpan) {
+  
+  if (insertedTrailingSpan?.firstChild?.nodeType === Node.TEXT_NODE) {
     setTimeout(() => {
-      placeCaretAtEnd(lastTrailingSpan);
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.setStart(insertedTrailingSpan.firstChild, insertedTrailingSpan.firstChild.length);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
     }, 0);
   }
 
-  return { addedTrailingSpan };
+  return { addedTrailingSpan: true };
 }
+
 
 function processEntireLineContent(node) {
   const existingStyledSpans = node.querySelectorAll('span:not(.default-text)');
