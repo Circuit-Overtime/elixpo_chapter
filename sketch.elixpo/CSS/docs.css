@@ -7,11 +7,11 @@
 }
 
 body {
-      background-color: #242424; /* Dark background */
+      background-color: #242424; 
       margin: 0;
       padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-      color: #e0e0e0; /* Light text color */
+      color: #e0e0e0; 
     }
     #editor {
       margin: 50px auto;
@@ -19,14 +19,12 @@ body {
       max-width: 800px;
       padding: 20px;
       border-radius: 8px;
-      background-color: #1a1a1a; /* Darker background for editor */
-      border: 1px solid #333;
+      background-color: transparent; 
       font-size: 1.15rem;
       outline: none;
       min-height: 500px;
       line-height: 1.6;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      caret-color: #f0f0f0; /* White caret */
+      caret-color: #f0f0f0; 
     }
     #editor:empty::before {
       content: "Start typing...";

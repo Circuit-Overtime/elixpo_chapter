@@ -743,30 +743,54 @@ editor.addEventListener('keydown', (e) => {
   const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
   let currentLine = getCurrentLineElement();
 
-  if (currentLine && (currentLine.tagName === 'H1' || currentLine.tagName === 'H2' || 
-      currentLine.tagName === 'H3' || currentLine.tagName === 'H4' || currentLine.tagName === 'H5' || 
-      currentLine.tagName === 'H6' || currentLine.tagName === 'P' || currentLine.tagName === 'BLOCKQUOTE') &&
-      (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace')) {
-    removeDefaultTextIfPresent(currentLine);
-  }
-
-  // Handle span creation for paragraph elements
-  if (currentLine && currentLine.tagName === 'P' && e.key.length === 1) {
-    const currentNode = range.startContainer;
-
-    if (currentNode === currentLine) {
-      let targetSpan = currentLine.querySelector('span.default-text');
-      if (!targetSpan) {
-        targetSpan = document.createElement('span');
-        targetSpan.className = 'default-text';
-        currentLine.appendChild(targetSpan);
+  // Handle Ctrl+A selection behavior
+  if (e.ctrlKey && e.key === 'a') {
+    if (currentLine) {
+      // If we're in a block element (not P), select only that block's content
+      if (currentLine.tagName !== 'P') {
+        e.preventDefault();
+        const range = document.createRange();
+        range.selectNodeContents(currentLine);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        return;
       }
-      placeCaretAtStart(targetSpan);
-      return;
+      // If we're in a P tag, allow default Ctrl+A behavior (select all)
     }
+    return;
   }
 
+  // Handle Backspace after Ctrl+A
   if (e.key === 'Backspace') {
+    const selection = sel.toString();
+    const selectedRange = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+    
+    // Check if this is a "select all" scenario (large selection that includes multiple elements)
+    if (selectedRange && !selectedRange.collapsed) {
+      const selectedContent = selectedRange.cloneContents();
+      const sections = selectedContent.querySelectorAll('section');
+      const allSections = editor.querySelectorAll('section');
+      
+      // If user selected all content (multiple sections or entire editor content)
+      if (sections.length > 0 || selection.length > 100) { // Arbitrary threshold for "large selection"
+        // Check if the first section's H1 is included in selection
+        const firstSection = allSections[0];
+        const firstH1 = firstSection ? firstSection.querySelector('h1') : null;
+        
+        if (firstH1 && selectedRange.intersectsNode(firstH1)) {
+          e.preventDefault();
+          
+          // Clear all content but preserve the first section structure
+          editor.innerHTML = '';
+          const resetSection = createSection();
+          editor.appendChild(resetSection);
+          placeCaretAtStart(resetSection.querySelector('p'));
+          return;
+        }
+      }
+    }
+
+    // Original backspace logic for specific elements
     if (currentLine && currentLine.tagName === 'P') {
       const hasContent = currentLine.textContent.trim() !== '' &&
         currentLine.textContent !== '\u00A0' &&
@@ -799,42 +823,52 @@ editor.addEventListener('keydown', (e) => {
 
     if (currentLine && (currentLine.tagName == "H1" || currentLine.tagName === 'H2' || currentLine.tagName === 'H3' || 
     currentLine.tagName === 'H4' || currentLine.tagName === 'H5' || currentLine.tagName === 'H6')) {
-  const isEmpty = currentLine.textContent.trim() === '' || currentLine.textContent === '\u00A0';
-  
-  if (isEmpty) {
-    e.preventDefault();
-    
-    const section = currentLine.closest('section');
-    const paragraphs = section.querySelectorAll('p');
-    
-    currentLine.remove();
-    
-    if (paragraphs.length > 0) {
-      const lastP = paragraphs[paragraphs.length - 1];
-
-      const defaultSpans = lastP.querySelectorAll('span.default-text:not(.default-text-not-editable)');
+      const isEmpty = currentLine.textContent.trim() === '' || currentLine.textContent === '\u00A0';
       
-      if (defaultSpans.length > 0) {
-        const lastDefaultSpan = defaultSpans[defaultSpans.length - 1];
-        placeCaretAtEnd(lastDefaultSpan);
-      } else {
-
-        const newSpan = document.createElement('span');
-        newSpan.className = 'default-text';
-        newSpan.innerHTML = '\u00A0';
-        lastP.appendChild(newSpan);
-        placeCaretAtEnd(newSpan);
+      // Prevent deletion of the very first H1 header
+      const section = currentLine.closest('section');
+      const allSections = editor.querySelectorAll('section');
+      const isFirstSection = allSections[0] === section;
+      const isFirstH1 = currentLine.tagName === 'H1' && isFirstSection;
+      
+      if (isFirstH1) {
+        e.preventDefault();
+        return;
       }
-    } else {
-      const newP = createParagraph();
-      section.appendChild(newP);
-      placeCaretAtStart(newP);
-    }
-    return;
-  }
-  return;
-}
+      
+      if (isEmpty) {
+        e.preventDefault();
+        
+        const paragraphs = section.querySelectorAll('p');
+        
+        currentLine.remove();
+        
+        if (paragraphs.length > 0) {
+          const lastP = paragraphs[paragraphs.length - 1];
 
+          const defaultSpans = lastP.querySelectorAll('span.default-text:not(.default-text-not-editable)');
+          
+          if (defaultSpans.length > 0) {
+            const lastDefaultSpan = defaultSpans[defaultSpans.length - 1];
+            placeCaretAtEnd(lastDefaultSpan);
+          } else {
+            const newSpan = document.createElement('span');
+            newSpan.className = 'default-text';
+            newSpan.innerHTML = '\u00A0';
+            lastP.appendChild(newSpan);
+            placeCaretAtEnd(newSpan);
+          }
+        } else {
+          const newP = createParagraph();
+          section.appendChild(newP);
+          placeCaretAtStart(newP);
+        }
+        return;
+      }
+      return;
+    }
+
+    // Rest of the original backspace logic for LI and PRE elements...
     if (currentLine && currentLine.tagName === 'LI') {
       const parentList = currentLine.parentElement;
       if (!parentList || (parentList.tagName !== 'UL' && parentList.tagName !== 'OL')) return;
@@ -846,30 +880,25 @@ editor.addEventListener('keydown', (e) => {
       if (isEmpty || isCaretAtStart) {
         e.preventDefault();
 
-        // Check if this is a nested list (parent list is inside another LI)
         const grandParentLi = parentList.parentElement;
         const isNested = grandParentLi && grandParentLi.tagName === 'LI';
 
         if (isEmpty) {
-          // Remove the empty list item
           const nextLi = currentLine.nextElementSibling;
           const prevLi = currentLine.previousElementSibling;
           
           currentLine.remove();
           
-          // If this was the last item in a nested list, remove the list too
           if (parentList.children.length === 0 && isNested) {
             parentList.remove();
             placeCaretAtEnd(grandParentLi);
           } else if (parentList.children.length === 0) {
-            // If this was the last item in a top-level list
             const section = parentList.closest('section');
             const newP = createParagraph();
             parentList.remove();
             section.appendChild(newP);
             placeCaretAtStart(newP);
           } else {
-            // Move focus to next or previous item
             if (nextLi) {
               placeCaretAtStart(nextLi);
             } else if (prevLi) {
@@ -877,21 +906,16 @@ editor.addEventListener('keydown', (e) => {
             }
           }
         } else {
-          // Not empty but caret is at start - un-indent the item
           if (isNested) {
-            // Move this LI out of the nested list
             const nextSibling = grandParentLi.nextElementSibling;
             const grandParentList = grandParentLi.parentElement;
             
-            // Remove from current nested list
             currentLine.remove();
             
-            // If nested list is now empty, remove it
             if (parentList.children.length === 0) {
               parentList.remove();
             }
             
-            // Insert after the parent LI
             if (nextSibling) {
               grandParentList.insertBefore(currentLine, nextSibling);
             } else {
@@ -900,18 +924,15 @@ editor.addEventListener('keydown', (e) => {
             
             placeCaretAtStart(currentLine);
           } else {
-            // Top-level list item - convert to paragraph
             const section = parentList.closest('section');
             const newP = createParagraph();
             
-            // Copy content to new paragraph
             if (currentLine.textContent.trim()) {
               newP.textContent = currentLine.textContent;
             }
             
             currentLine.remove();
             
-            // If list is now empty, remove it
             if (parentList.children.length === 0) {
               parentList.remove();
             }
@@ -953,7 +974,31 @@ editor.addEventListener('keydown', (e) => {
     }
   }
 
-   if (e.key === 'Enter') {
+  // Rest of existing keydown logic...
+  if (currentLine && (currentLine.tagName === 'H1' || currentLine.tagName === 'H2' || 
+      currentLine.tagName === 'H3' || currentLine.tagName === 'H4' || currentLine.tagName === 'H5' || 
+      currentLine.tagName === 'H6' || currentLine.tagName === 'P' || currentLine.tagName === 'BLOCKQUOTE') &&
+      (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace')) {
+    removeDefaultTextIfPresent(currentLine);
+  }
+
+  // Handle span creation for paragraph elements
+  if (currentLine && currentLine.tagName === 'P' && e.key.length === 1) {
+    const currentNode = range.startContainer;
+
+    if (currentNode === currentLine) {
+      let targetSpan = currentLine.querySelector('span.default-text');
+      if (!targetSpan) {
+        targetSpan = document.createElement('span');
+        targetSpan.className = 'default-text';
+        currentLine.appendChild(targetSpan);
+      }
+      placeCaretAtStart(targetSpan);
+      return;
+    }
+  }
+
+  if (e.key === 'Enter') {
     e.preventDefault();
     enterPressCount++;
 
