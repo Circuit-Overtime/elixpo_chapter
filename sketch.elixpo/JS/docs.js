@@ -123,7 +123,7 @@ function handleBlockFormatting(lineEl) {
   const section = lineEl.parentNode;
 
   if (lineEl.tagName === 'P') {
-    if (text === '```\u00A0' || text === '```  ' || text === '\u00A0\u00A0') {
+    if (text === '```\u00A0' || text === '```  ' || text === '\u00A0\u00A0') {
       const hexID = generateHexID();
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = createCodeBlock(hexID);
@@ -149,7 +149,6 @@ function handleBlockFormatting(lineEl) {
     }
 
     else if (text === '---\u00A0\u00A0' || text === '***\u00A0\u00A0' || text === '___\u00A0\u00A0' || text === '---\u00A0\u00A0') {
-
       const hexID = generateHexID();
       const hr = document.createElement('hr');
       hr.id = `hr_${hexID}`;
@@ -160,23 +159,29 @@ function handleBlockFormatting(lineEl) {
 
       placeCaretAtStart(newP);
       return true;
-        }
+    }
 
-        // Heading detection: match #, ##, ###, etc. with any combination of spaces or &nbsp; before/after
-      else if (/^(?:\s|\u00A0)*#{1,6}(?:\s|\u00A0)+$/.test(text)) {
-      console.log(lineEl)
-      lineEl.querySelector('span').textContent = '';
-      console.log(text.parentElement);
+    // Heading detection: match #, ##, ###, etc. with any combination of spaces or &nbsp; before/after
+    else if (/^(?:\s|\u00A0)*#{1,6}(?:\s|\u00A0)+.*/.test(text)) {
       const hexID = generateHexID();
-      const heading = document.createElement(`h${text.trim().length}`);
+      const hashCount = (text.match(/#/g) || []).length;
+      const content = text.replace(/^(?:\s|\u00A0)*#{1,6}(?:\s|\u00A0)*/, '').trim() || '\u00A0';
+      
+      const heading = document.createElement(`h${Math.min(hashCount, 6)}`);
       heading.id = `heading_${hexID}`;
-      heading.textContent = text.trim().replace(/^#{1,6}/, '').trim() || '\u00A0';
+      
+      // Process inline markdown in heading content
+      if (content !== '\u00A0' && hasMarkdownPattern(content)) {
+        processMarkdownInText(content, heading);
+      } else {
+        heading.textContent = content;
+      }
 
       section.replaceChild(heading, lineEl);
       const newP = createParagraph();
       section.appendChild(newP);
 
-      placeCaretAtStart(heading);
+      placeCaretAtEnd(heading);
       return true;
     }
 
@@ -193,9 +198,15 @@ function handleBlockFormatting(lineEl) {
       list.id = `${listType}_${hexID}`;
       const li = document.createElement('li');
       li.id = `li_${generateHexID()}`;
-      li.textContent = content;
-      list.appendChild(li);
+      
+      // Process inline markdown in list item content
+      if (content && hasMarkdownPattern(content)) {
+        processMarkdownInText(content, li);
+      } else {
+        li.textContent = content;
+      }
 
+      list.appendChild(li);
       section.replaceChild(list, lineEl);
       const newP = createParagraph();
       section.appendChild(newP);
@@ -210,7 +221,13 @@ function handleBlockFormatting(lineEl) {
       const content = blockquoteMatch[1];
       const blockquote = document.createElement('blockquote');
       blockquote.id = `blockquote_${hexID}`;
-      blockquote.textContent = content;
+      
+      // Process inline markdown in blockquote content
+      if (content && hasMarkdownPattern(content)) {
+        processMarkdownInText(content, blockquote);
+      } else {
+        blockquote.textContent = content;
+      }
 
       section.replaceChild(blockquote, lineEl);
       const newP = createParagraph();
@@ -223,6 +240,7 @@ function handleBlockFormatting(lineEl) {
 
   return false;
 }
+
 
 const stylePatterns = [
   { regex: /\*\*(.+?)\*\*/g, tag: 'span', className: 'bold' },
@@ -503,7 +521,7 @@ editor.addEventListener('input', (e) => {
       if (!targetSpan) {
         targetSpan = document.createElement('span');
         targetSpan.className = 'default-text';
-        targetSpan.innerHTML = ' ';
+        targetSpan.innerHTML = ' ';
         currentLine.appendChild(targetSpan);
       }
       placeCaretAtEnd(targetSpan);
@@ -518,7 +536,7 @@ editor.addEventListener('input', (e) => {
       const newRange = document.createRange();
       newRange.setStart(currentNode, range.startOffset);
       newRange.collapse(true);
-      sel.removeAllRanges();
+      sel.removeAllRananges();
       sel.addRange(newRange);
     }
 
@@ -534,7 +552,11 @@ editor.addEventListener('input', (e) => {
     }
   }
 
-  if (currentLine.tagName === 'H1' || currentLine.tagName === 'P') {
+  // Process inline markdown for all supported block elements
+  if (currentLine.tagName === 'H1' || currentLine.tagName === 'H2' || currentLine.tagName === 'H3' || 
+      currentLine.tagName === 'H4' || currentLine.tagName === 'H5' || currentLine.tagName === 'H6' || 
+      currentLine.tagName === 'P' || currentLine.tagName === 'BLOCKQUOTE' || currentLine.tagName === 'LI') {
+    
     if (currentLine.querySelector('.default-text-not-editable')) {
       return;
     }
@@ -619,16 +641,20 @@ editor.addEventListener('input', (e) => {
   }
 });
 
+
 editor.addEventListener('keydown', (e) => {
   const sel = window.getSelection();
   const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
   let currentLine = getCurrentLineElement();
 
-  if (currentLine && (currentLine.tagName === 'H1' || currentLine.tagName === 'P') &&
-    (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace')) {
+  if (currentLine && (currentLine.tagName === 'H1' || currentLine.tagName === 'H2' || 
+      currentLine.tagName === 'H3' || currentLine.tagName === 'H4' || currentLine.tagName === 'H5' || 
+      currentLine.tagName === 'H6' || currentLine.tagName === 'P' || currentLine.tagName === 'BLOCKQUOTE') &&
+      (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace')) {
     removeDefaultTextIfPresent(currentLine);
   }
 
+  // Handle span creation for paragraph elements
   if (currentLine && currentLine.tagName === 'P' && e.key.length === 1) {
     const currentNode = range.startContainer;
 
@@ -689,27 +715,89 @@ editor.addEventListener('keydown', (e) => {
     }
 
     if (currentLine && currentLine.tagName === 'LI') {
-      const ul = currentLine.parentElement;
-      if (!ul || (ul.tagName !== 'UL' && ul.tagName !== 'OL')) return;
+      const parentList = currentLine.parentElement;
+      if (!parentList || (parentList.tagName !== 'UL' && parentList.tagName !== 'OL')) return;
 
       const isEmpty = currentLine.textContent.trim() === '';
+      const isCaretAtStart = sel.isCollapsed && sel.anchorOffset === 0 && 
+        (sel.anchorNode === currentLine || sel.anchorNode === currentLine.firstChild);
 
-      if (isEmpty) {
+      if (isEmpty || isCaretAtStart) {
         e.preventDefault();
 
-        if (ul.parentNode.tagName === 'LI') {
-          const parentLi = ul.parentNode;
-          ul.remove();
-          placeCaretAtEnd(parentLi);
-        } else {
-          const section = ul.closest('section');
-          const newP = createParagraph();
-          ul.removeChild(currentLine);
-          if (ul.children.length === 0) {
-            ul.remove();
+        // Check if this is a nested list (parent list is inside another LI)
+        const grandParentLi = parentList.parentElement;
+        const isNested = grandParentLi && grandParentLi.tagName === 'LI';
+
+        if (isEmpty) {
+          // Remove the empty list item
+          const nextLi = currentLine.nextElementSibling;
+          const prevLi = currentLine.previousElementSibling;
+          
+          currentLine.remove();
+          
+          // If this was the last item in a nested list, remove the list too
+          if (parentList.children.length === 0 && isNested) {
+            parentList.remove();
+            placeCaretAtEnd(grandParentLi);
+          } else if (parentList.children.length === 0) {
+            // If this was the last item in a top-level list
+            const section = parentList.closest('section');
+            const newP = createParagraph();
+            parentList.remove();
+            section.appendChild(newP);
+            placeCaretAtStart(newP);
+          } else {
+            // Move focus to next or previous item
+            if (nextLi) {
+              placeCaretAtStart(nextLi);
+            } else if (prevLi) {
+              placeCaretAtEnd(prevLi);
+            }
           }
-          section.appendChild(newP);
-          placeCaretAtStart(newP);
+        } else {
+          // Not empty but caret is at start - un-indent the item
+          if (isNested) {
+            // Move this LI out of the nested list
+            const nextSibling = grandParentLi.nextElementSibling;
+            const grandParentList = grandParentLi.parentElement;
+            
+            // Remove from current nested list
+            currentLine.remove();
+            
+            // If nested list is now empty, remove it
+            if (parentList.children.length === 0) {
+              parentList.remove();
+            }
+            
+            // Insert after the parent LI
+            if (nextSibling) {
+              grandParentList.insertBefore(currentLine, nextSibling);
+            } else {
+              grandParentList.appendChild(currentLine);
+            }
+            
+            placeCaretAtStart(currentLine);
+          } else {
+            // Top-level list item - convert to paragraph
+            const section = parentList.closest('section');
+            const newP = createParagraph();
+            
+            // Copy content to new paragraph
+            if (currentLine.textContent.trim()) {
+              newP.textContent = currentLine.textContent;
+            }
+            
+            currentLine.remove();
+            
+            // If list is now empty, remove it
+            if (parentList.children.length === 0) {
+              parentList.remove();
+            }
+            
+            section.appendChild(newP);
+            placeCaretAtStart(newP);
+          }
         }
         return;
       }
@@ -744,7 +832,7 @@ editor.addEventListener('keydown', (e) => {
     }
   }
 
-  if (e.key === 'Enter') {
+   if (e.key === 'Enter') {
     e.preventDefault();
     enterPressCount++;
 
@@ -780,61 +868,133 @@ editor.addEventListener('keydown', (e) => {
 
     if (currentLine.tagName === 'LI') {
       const parentList = currentLine.parentNode;
-      const isCaretAtStartOfLi = range.startOffset === 0 && range.startContainer === currentLine.firstChild;
-      const isLiEmpty = currentLine.textContent.trim() === '' && !currentLine.querySelector('br');
+      const isCaretAtStart = range.startOffset === 0 && 
+        (range.startContainer === currentLine || range.startContainer === currentLine.firstChild);
+      const isLiEmpty = currentLine.textContent.trim() === '';
 
       if (isLiEmpty) {
-        if (enterPressCount >= 2 || (isCaretAtStartOfLi && !currentLine.previousElementSibling)) {
+        // Empty list item - exit the list
+        const section = parentList.closest('section');
+        const newP = createParagraph();
+        
+        // Remove the empty list item
+        currentLine.remove();
+        
+        // Check if this was a nested list
+        const grandParentLi = parentList.parentElement;
+        const isNested = grandParentLi && grandParentLi.tagName === 'LI';
+        
+        if (parentList.children.length === 0) {
+          // List is now empty, remove it
+          if (isNested) {
+            parentList.remove();
+            // Insert the new paragraph after the parent LI
+            const grandParentList = grandParentLi.parentElement;
+            const nextSibling = grandParentLi.nextElementSibling;
+            if (nextSibling) {
+              grandParentList.insertBefore(newP, nextSibling);
+            } else {
+              section.appendChild(newP);
+            }
+          } else {
+            parentList.remove();
+            section.appendChild(newP);
+          }
+        } else {
+          // List still has items, insert paragraph after the list
+          if (isNested) {
+            // For nested lists, insert after the parent LI
+            const grandParentList = grandParentLi.parentElement;
+            const nextSibling = grandParentLi.nextElementSibling;
+            if (nextSibling) {
+              grandParentList.insertBefore(newP, nextSibling);
+            } else {
+              section.appendChild(newP);
+            }
+          } else {
+            const nextSibling = parentList.nextElementSibling;
+            if (nextSibling) {
+              section.insertBefore(newP, nextSibling);
+            } else {
+              section.appendChild(newP);
+            }
+          }
+        }
+        
+        placeCaretAtStart(newP);
+        enterPressCount = 0;
+      } else {
+        // List item has content - create new list item or exit on double enter
+        if (enterPressCount >= 2 && isCaretAtStart) {
+          // Double enter at start of non-empty item - exit list
           const section = parentList.closest('section');
           const newP = createParagraph();
-          parentList.removeChild(currentLine);
+          
+          // Copy current item content to paragraph
+          if (currentLine.innerHTML) {
+            newP.innerHTML = currentLine.innerHTML;
+          }
+          
+          currentLine.remove();
+          
+          // Check if list is now empty
+          const grandParentLi = parentList.parentElement;
+          const isNested = grandParentLi && grandParentLi.tagName === 'LI';
+          
           if (parentList.children.length === 0) {
-            if (parentList.parentNode.tagName === 'LI') {
-              const grandParentLi = parentList.parentNode;
+            if (isNested) {
               parentList.remove();
-              section.insertBefore(newP, grandParentLi.nextSibling || null);
-              placeCaretAtStart(newP);
+              const grandParentList = grandParentLi.parentElement;
+              const nextSibling = grandParentLi.nextElementSibling;
+              if (nextSibling) {
+                grandParentList.insertBefore(newP, nextSibling);
+              } else {
+                section.appendChild(newP);
+              }
             } else {
               parentList.remove();
               section.appendChild(newP);
-              placeCaretAtStart(newP);
             }
           } else {
-            const next = currentLine.nextElementSibling;
-            const prev = currentLine.previousElementSibling;
-            if (next) placeCaretAtStart(next);
-            else if (prev) placeCaretAtEnd(prev);
-            else placeCaretAtStart(parentList.children[0]);
-          }
-          enterPressCount = 0;
-        } else {
-          const nextSibling = currentLine.nextElementSibling;
-          if (nextSibling && nextSibling.tagName === 'LI') {
-            parentList.removeChild(currentLine);
-            placeCaretAtStart(nextSibling);
-          } else {
-            const section = parentList.closest('section');
-            const newP = createParagraph();
-            parentList.removeChild(currentLine);
-            if (parentList.children.length === 0) {
-              parentList.remove();
+            if (isNested) {
+              const grandParentList = grandParentLi.parentElement;
+              const nextSibling = grandParentLi.nextElementSibling;
+              if (nextSibling) {
+                grandParentList.insertBefore(newP, nextSibling);
+              } else {
+                section.appendChild(newP);
+              }
+            } else {
+              const nextSibling = parentList.nextElementSibling;
+              if (nextSibling) {
+                section.insertBefore(newP, nextSibling);
+              } else {
+                section.appendChild(newP);
+              }
             }
-            section.appendChild(newP);
-            placeCaretAtStart(newP);
           }
+          
+          placeCaretAtStart(newP);
+          enterPressCount = 0;
+        } else {
+          // Normal enter - create new list item
+          const newLi = document.createElement('li');
+          newLi.id = `li_${generateHexID()}`;
+          
+          const remainingContents = range.extractContents();
+          if (remainingContents.hasChildNodes()) {
+            newLi.appendChild(remainingContents);
+          } else {
+            const defaultSpan = document.createElement('span');
+            defaultSpan.className = 'default-text';
+            defaultSpan.innerHTML = '\u00A0';
+            newLi.appendChild(defaultSpan);
+          }
+          
+          parentList.insertBefore(newLi, currentLine.nextSibling);
+          placeCaretAtStart(newLi);
           enterPressCount = 0;
         }
-      } else {
-        const newLi = document.createElement('li');
-        const remainingContents = range.extractContents();
-        if (remainingContents.hasChildNodes()) {
-          newLi.appendChild(remainingContents);
-        } else {
-          newLi.appendChild(document.createElement('br'));
-        }
-        currentLine.parentNode.insertBefore(newLi, currentLine.nextSibling);
-        placeCaretAtStart(newLi);
-        enterPressCount = 0;
       }
     } else if (currentLine.tagName === 'PRE') {
       const codeEl = currentLine.querySelector('code');
@@ -875,7 +1035,9 @@ editor.addEventListener('keydown', (e) => {
       }
       enterPressCount = 0;
     }
-  } else if (e.key === 'Tab') {
+  }
+  
+  else if (e.key === 'Tab') {
     e.preventDefault();
     if (currentLine && currentLine.tagName === 'LI') {
       const parentList = currentLine.parentNode;
