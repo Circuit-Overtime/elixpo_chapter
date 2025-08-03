@@ -48,7 +48,7 @@ const ProjectsShowCase = () => {
             </span>
           </h1>
           <p className="text-md mt-2 md:text-lg text-center font-mono">
-            project built with love and purpose
+            projects built with love and purpose
           </p>
         </div>
 
