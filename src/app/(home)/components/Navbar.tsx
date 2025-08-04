@@ -128,9 +128,13 @@ const Navbar: React.FC<NavbarProps> = () => {
               </div>
             </SignedOut>
             <SignedIn>
-              <SignOutButton>
-                <UserControl showName />
-              </SignOutButton>
+              <div className='flex gap-4 items-center'>
+                 <UserControl showName />
+                 <Button onClick={() => router.push("/dashboard")} className='font-mono text-xs bg-pink-700 rounded-none dark:text-white hover:bg-pink-900' variant={"default"} >
+                  Dashboard
+                 </Button>
+              </div>
+             
             </SignedIn>
              
           
