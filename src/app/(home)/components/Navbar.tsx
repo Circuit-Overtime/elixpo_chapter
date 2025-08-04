@@ -9,7 +9,7 @@ import { logos } from '../../../../public/assets/images/images';
 import { Button } from '@/components/ui/button';
 
 import { useRouter } from 'next/navigation'
-import { SignedIn, SignedOut, SignInButton, SignOutButton, SignUpButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
 import UserControl from '@/components/user-control';
 
 // Adjust your color system if needed
