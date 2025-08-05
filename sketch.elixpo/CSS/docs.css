@@ -14,17 +14,27 @@ body {
       color: #e0e0e0; 
     }
     #editor {
-      margin: 50px auto;
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%, 0);
+      margin: 20px auto;
       width: 80%;
       max-width: 800px;
+      overflow: auto;
       padding: 20px;
       border-radius: 8px;
       background-color: transparent; 
       font-size: 1.15rem;
       outline: none;
-      min-height: 500px;
+      min-height: 400px;
+      max-height: 85%;
       line-height: 1.6;
       caret-color: #f0f0f0; 
+    }
+
+    #editor::-webkit-scrollbar
+    {
+      display: none;
     }
     #editor:empty::before {
       content: "Start typing...";
@@ -244,4 +254,122 @@ body {
     {
       color: #888 !important; 
       pointer-events: none; 
+    }
+    
+    
+
+  .controls
+  {
+    position: absolute;
+    top: 90%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: row;
+    gap: 25px;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 15px;
+    box-sizing: border-box;
+    border: 3px solid #474444;
+    border-radius: 15px;
+  }
+
+  .controls .typography
+  {
+    display: flex;
+    flex-direction: row;
+    cursor: pointer;
+  }
+
+  .controls .typography:hover > svg 
+  {
+    fill: #ffffff; 
+    transform: scale(1.1);
+    transition: fill 0.2s ease, transform 0.2s ease;
+  }
+.controls .spacer 
+{
+  height: 30px;
+  width: 4px;
+  background: #888;
+}
+  .controls svg 
+  {
+    height: 25px;
+    width: 25px;
+    fill: #bab0b0;
+    cursor: pointer;
+    transition: fill 0.2s ease, transform 0.2s ease;
+  }
+    .controls svg:hover 
+    {
+      fill: #ffffff; 
+      transform: scale(1.1);
+      transition: fill 0.2s ease, transform 0.2s ease;
+    }
+
+    .textControls 
+    {
+      position: absolute;
+      top: 75%;
+      left: 40%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      max-width: 290px;
+      gap: 10px;
+      padding: 10px 20px;
+      box-sizing: border-box;
+      border-radius: 12px;
+      background-color: transparent;
+      border: 2px solid #474444;
+      opacity: 1;
+      pointer-events: auto;
+      transition: opacity 0.3s ease, filter 0.3s ease;
+      filter: blur(0);
+    }
+    .textControls.hidden 
+    {
+      opacity: 0;
+      pointer-events: none;
+      filter: blur(5px);
+      transition: opacity 0.3s ease, filter 0.3s ease;
+    }
+
+    .textControls > .heading,
+    .textControls > .styles 
+    {
+      display: flex;
+      flex-direction: row;
+      width: 40px;
+      box-sizing: border-box;
+      border-radius: 8px;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .textControls > .heading > svg 
+    {
+      width: 25px;
+      height: 25px;
+      fill: #f0f0f0; 
+      margin-right: -5px;
+      cursor: pointer;
+      transition: fill 0.2s ease, transform 0.2s ease;
+    }
+    .textControls > .heading > svg:hover,
+    .textControls > .styles > svg:hover,
+    .textControls > .heading:hover 
+    {
+      fill: #ffffff; 
+      transform: scale(1.1);
+      transition: fill 0.2s ease, transform 0.2s ease;
+    }
+    .textControls > .heading > span 
+    {
+      font-size: 1.1em;
+      color: #f0f0f0; 
     }
