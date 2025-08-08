@@ -1,11 +1,11 @@
 'use client'
-import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from '@/components/ui/sidebar';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import React, { useState } from 'react'
 import { logos } from '../../../../../public/assets/images/images';
 import Link from 'next/link';
-import {  HomeIcon } from 'lucide-react';
+import {  Code, Code2, Compass, Database, FlameIcon, FolderPlus, History, HomeIcon, LayoutDashboardIcon, LucideIcon, Plus, Settings, Star, Terminal, Zap } from 'lucide-react';
 interface Props {
    id?: string,
    name?: string,
@@ -13,6 +13,14 @@ interface Props {
    starred?: boolean
 }
 const initialPlayground: Props[] = [];
+const LucidIconsMap:Record<string, LucideIcon> = {
+   Zap: Zap,
+   Code: Code2,
+   DataBase: Database,
+   Compass: Compass,
+   FlameIcon: FlameIcon,
+   Terminal: Terminal
+}
 const DashBoardSideBar = (props: Props) => {
   
   const pathName = usePathname();
@@ -30,16 +38,132 @@ const DashBoardSideBar = (props: Props) => {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathName === '/'} >
+              <SidebarMenuButton asChild isActive={pathName === '/'} tooltip={"Home"} >
                 <Link href={"/"} >
                   <HomeIcon className='size-4'/>
                   <span className='font-mono text-md'>Home</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathName === '/dashboard'} tooltip={"dashboard"} >
+                <Link href={"/dashboard"} >
+                  <LayoutDashboardIcon className='size-4'/>
+                  <span className='font-mono text-md'>Dashboard</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
+
+
+
+         <SidebarGroup>
+          <SidebarGroupLabel>
+            <Star className='size-4' />
+            <span className='ml-2' >Starred</span>
+          </SidebarGroupLabel>
+          <SidebarGroupAction title='Add Starred Playground'>
+            <Plus className='size-4' />
+          </SidebarGroupAction>
+
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {
+                starredPlayGrd.length === 0 && recentPlayGround.length === 0 ? 
+                 (<span className='font-mono text-xs text-muted-foreground text-center'>Create a Playground</span> ) :
+                ( 
+                   starredPlayGrd.map((playground) => {
+                   const IconComp = LucidIconsMap[playground.icon as keyof typeof LucidIconsMap] ?? Code2;
+
+                     return (
+                       <SidebarMenuItem   key={playground.id} >
+                        <SidebarMenuButton
+                         asChild 
+                         isActive={pathName === `/playground/${playground.id}`}
+                        >
+                           <Link
+                            href={`/playground/${playground.id}`} >
+                            {IconComp && <IconComp className='size-4' /> }
+                          <span>
+                            {playground.name}
+                          </span>
+                         </Link>
+                        </SidebarMenuButton>
+                       </SidebarMenuItem>
+                     )
+                   })
+  
+                )
+              }
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+
+
+        <SidebarGroup>
+          <SidebarGroupLabel>
+            <History className='size-4' />
+            <span className='ml-2' >Recent</span>
+          </SidebarGroupLabel>
+          <SidebarGroupAction title='Add Starred Playground'>
+            <FolderPlus className='size-4' />
+          </SidebarGroupAction>
+
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {
+                starredPlayGrd.length === 0 && recentPlayGround.length === 0 ? 
+                 null :
+                ( 
+                   starredPlayGrd.map((playground) => {
+                   const IconComp = LucidIconsMap[playground.icon as keyof typeof LucidIconsMap] ?? Code2;
+
+                     return (
+                       <SidebarMenuItem   key={playground.id} >
+                        <SidebarMenuButton
+                         asChild 
+                         isActive={pathName === `/playground/${playground.id}`}
+                        >
+                           <Link
+                            href={`/playground/${playground.id}`} >
+                            {IconComp && <IconComp className='size-4' /> }
+                          <span>
+                            {playground.name}
+                          </span>
+                         </Link>
+                        </SidebarMenuButton>
+                       </SidebarMenuItem>
+                     )
+                   })
+                   )}
+                   <SidebarMenuItem>
+                    <SidebarMenuButton    asChild tooltip={'view all'}>
+                       <Link  href={'/playground'} >
+                       <span className='text-xs font-mono text-muted-foreground'>View all playground</span>
+                       </Link>
+                    </SidebarMenuButton>
+                   </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
        </SidebarContent>
+
+       <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton>
+              <Link className='flex items-center gap-2' href={"/settings"} >
+               <Settings className='size-4'/>
+               <span className='text-xs font-mono '>Settings</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+       </SidebarFooter>
+       <SidebarRail/>
     </Sidebar>
   )
 }
