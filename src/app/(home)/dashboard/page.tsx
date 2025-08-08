@@ -1,8 +1,16 @@
+import { LayoutDashboard } from 'lucide-react'
 import React from 'react'
+import DashboardLayout from './DashboardLayout'
 
 const Dashboard = () => {
   return (
-    <div className='flex items-center justify-center h-screen w-full text-9xl' >Under development</div>
+ 
+    <DashboardLayout>
+      <div>
+      under development
+    </div>
+    </DashboardLayout>
+ 
   )
 }
 

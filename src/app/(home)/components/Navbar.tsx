@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 /* import { useRouter } from 'next/router'; */
 import Image from 'next/image';
 
-import { X } from 'lucide-react'; // ✅ Lucide icons
+import { Menu, X } from 'lucide-react'; // ✅ Lucide icons
 import { logos } from '../../../../public/assets/images/images';
 import { Button } from '@/components/ui/button';
 
@@ -30,12 +30,12 @@ const Navbar: React.FC<NavbarProps> = () => {
    const router = useRouter(); 
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const navItems = [
+  /* const navItems = [
     { label: 'Overview' },
     { label: 'Feature' },
     { label: 'About' },
     { label: 'Contact' },
-  ];
+  ]; */
 
  /*  const buttonStyle = (type: 'login' | 'signup'): React.CSSProperties => ({
     backgroundColor: activeButton === type ? colors.primary : 'transparent',
@@ -94,18 +94,18 @@ const Navbar: React.FC<NavbarProps> = () => {
           
 
           {/* Right Section */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-0">
             {/* Mobile Menu Toggle */}
-           {/*  <div onClick={() => setIsOpen(!isOpen)} className="md:hidden mr-0 cursor-pointer">
+            <div onClick={() => setIsOpen(!isOpen)} className="md:hidden mr-0 cursor-pointer">
               {isOpen ? (
                 <X color="white" size={20} />
               ) : (
                 <Menu  className='' size={20} />
               )}
-            </div> */}
+            </div> 
 
             {/* Desktop Auth Buttons */}
-            <SignedOut>
+            <SignedOut >
               <div className='flex gap-2 items-center'>
                  <SignUpButton>
                   <Button className='font-mono' variant={"outline"}>
@@ -128,9 +128,11 @@ const Navbar: React.FC<NavbarProps> = () => {
               </div>
             </SignedOut>
             <SignedIn>
-              <div className='flex gap-4 items-center'>
-                 <UserControl showName />
-                 <Button onClick={() => router.push("/dashboard")} className='font-mono text-xs bg-pink-700 rounded-none dark:text-white hover:bg-pink-900' variant={"default"} >
+              <div className=' flex gap-4 items-center'>
+                <div className='hidden md:block' >
+                   <UserControl  showName />
+                </div>
+                 <Button onClick={() => router.push("/dashboard")} className='hidden md:block font-mono text-xs bg-pink-700  rounded-none dark:text-white hover:bg-pink-900' variant={"default"} >
                   Dashboard
                  </Button>
               </div>
@@ -147,34 +149,28 @@ const Navbar: React.FC<NavbarProps> = () => {
             {/* Close Icon */}
             <button
               onClick={() => setIsOpen(false)}
-              className="absolute top-6 right-3 text-white text-2xl hover:text-red-400 transition"
+              className="absolute top-6 right-10 text-white text-2xl hover:text-red-400 transition"
               aria-label="Close Menu"
             >
               <X size={24} />
             </button>
 
             <div ref={menuRef} className="flex flex-col items-center gap-6">
-              {navItems.map((item, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  className="text-white capitalize text-4xl"
-                  style={{ fontFamily: 'monospace' }}
-                >
-                  {item.label}
-                </a>
-              ))}
 
-              <div className="flex flex-col text-lg items-center gap-4 text-white">
-                <button  onClick={handleLogin}>
-                  SignIn
-                </button>
-                <button
-                  
-                  onClick={handleSignUp}
-                >
-                  SignUp
-                </button>
+              <div className="flex flex-col  text-lg items-center gap-4 text-white">
+                <Button className='relative overflow-hidden font-mono  rounded-none  text-white 
+                       bg-gradient-to-r from-purple-500 via-pink-600 to-red-600 
+                       bg-[length:200%_200%]'
+            style={{
+              animation: 'shine 2s linear infinite',
+              backgroundSize: '200% 200%',
+              backgroundPosition: '0% 50%',
+            }}>
+                    Sign In
+                  </Button>
+                 <Button variant={"outline"} className='rounded-none' >
+                    Sign Up
+                  </Button>
               </div>
             </div>
           </div>
