@@ -8,12 +8,12 @@ interface Props {
 export default function GlowingGradientText({children}: Props) {
   return (
     <>
-      <h1 className="text-4xl md:text-8xl font-extrabold dark:text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 glow-gradient animate-gradientShift">
+      <h1 style={{fontFamily: "monospace"}} className="text-xs md:text-2xl font-extrabold dark:text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-blue-500 to-pink-500 animate-gradientShift">
        {children}
       </h1>
 
       {/* Inline style tag for animation */}
-      <style>
+      <style> 
         {`
           @keyframes gradientShift {
             0% {

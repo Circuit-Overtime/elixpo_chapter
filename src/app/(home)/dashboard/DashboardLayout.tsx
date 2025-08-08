@@ -10,7 +10,7 @@ const DashboardLayout = ({children}: Props) => {
     <div className='flex min-h-screen w-full overflow-x-hidden' >
        <DashBoardSideBar/>
 
-        <main className='px-10'>{children}</main>
+        <main className='px-10 '>{children}</main>
     </div>
 
    </SidebarProvider>

@@ -20,6 +20,7 @@ import testiSix from '../images/avatar-6.png'
 import testiSeven from '../images/avatar-7.png'
 import testiEight from '../images/avatar-8.png'
 import testiNine from '../images/avatar-9.png'
+import ProjectButton from '../images/projectbutton.png'
 /* import login from '../images/login.jpg'
 import login2 from '../images/login2.jpg'
 import login3 from '../images/login3.jpg'
@@ -46,7 +47,8 @@ export const IMAES = {
       Tube,
       Pyramid,
       Star,
-      Spring
+      Spring,
+      ProjectButton
 }
 
 export const AVATAR = {
