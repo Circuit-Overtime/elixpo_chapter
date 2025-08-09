@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+
 function applyBlockStyle(elementType) {
     
     sel = currentLineFormat.sel;
@@ -105,6 +106,16 @@ function applyBlockStyle(elementType) {
         } else {
             console.warn("No block-level ancestor found for currentLine");
             return;
+        }
+    }
+    
+    // --- FIX 2: Special handling for code blocks ---
+    // If we're inside a code block structure, find the actual PRE element
+    if (currentLine && currentLine.tagName === 'CODE') {
+        const preElement = currentLine.closest('pre');
+        if (preElement) {
+            currentLine = preElement;
+            currentLineFormat.currentLine = preElement;
         }
     }
     
@@ -134,9 +145,26 @@ function applyBlockStyle(elementType) {
         }
     }
 
-    const content = currentLine.innerHTML || '\u00A0';
     const hexID = generateHexID();
     let newElement;
+    let content;
+
+    // --- FIX 3: Special content extraction for code blocks ---
+    if (currentLine.tagName === 'PRE') {
+        // Extract text content from code element, preserving line breaks
+        const codeElement = currentLine.querySelector('code');
+        content = codeElement ? codeElement.textContent : currentLine.textContent;
+        
+        // Convert line breaks to <br> tags for HTML
+        content = content.replace(/\n/g, '<br>');
+        
+        // If content is empty, use placeholder
+        if (!content.trim()) {
+            content = '\u00A0';
+        }
+    } else {
+        content = currentLine.innerHTML || '\u00A0';
+    }
 
     // Check if we're clicking the same style on an element that already has it
     const shouldToggleToP = (
@@ -158,14 +186,18 @@ function applyBlockStyle(elementType) {
         newElement.innerHTML = content;
         currentLine.parentNode.replaceChild(newElement, currentLine);
         
-        // --- FIX 2: Update currentLineFormat reference ---
+        // --- FIX 4: Update currentLineFormat reference ---
         currentLineFormat.currentLine = newElement;
         
-        // Clear block style selection
+        // Clear block style selection and hide language selector
         document.querySelectorAll(".blockedStyleElements").forEach(el => {
             el.classList.remove('selected');
         });
+        document.getElementById("languageSelector")?.classList.add('hidden');
+        
         currentBlock = "PARAGRAPH";
+        updateBlockStyleAvailability("PARAGRAPH");
+        updateInlineStyleAvailability("PARAGRAPH");
     } else {
         // Apply the new block style
         switch(elementType) {
@@ -175,7 +207,6 @@ function applyBlockStyle(elementType) {
             case "H4":
             case "H5":
                 const headingLevel = elementType.charAt(1);
-                updateCurrentBlock(`HEADING${headingLevel}`);
                 
                 // Simple heading conversion - just change the tag name
                 newElement = document.createElement(`h${headingLevel}`);
@@ -183,12 +214,12 @@ function applyBlockStyle(elementType) {
                 newElement.innerHTML = content;
                 currentLine.parentNode.replaceChild(newElement, currentLine);
                 
-                // --- FIX 3: Update currentLineFormat reference ---
+                // --- FIX 5: Update currentLineFormat reference ---
                 currentLineFormat.currentLine = newElement;
+                updateCurrentBlock(`HEADING${headingLevel}`);
                 break;
 
             case "PRE":
-                updateCurrentBlock("CODE_BLOCK");
                 newElement = document.createElement('div');
                 newElement.innerHTML = createCodeBlock(hexID);
                 const pre = newElement.firstElementChild;
@@ -202,26 +233,37 @@ function applyBlockStyle(elementType) {
                     setTimeout(() => copyButton.classList.remove('copied'), 1500);
                 });
                 
-                code.innerHTML = content;
+                // --- FIX 6: Convert HTML content back to plain text for code blocks ---
+                let textContent = content;
+                if (content.includes('<br>')) {
+                    // Convert <br> tags back to line breaks
+                    textContent = content.replace(/<br\s*\/?>/gi, '\n');
+                }
+                // Remove any remaining HTML tags
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = textContent;
+                textContent = tempDiv.textContent || tempDiv.innerText || '';
+                
+                code.textContent = textContent; // Use textContent to preserve formatting
                 currentLine.parentNode.replaceChild(newElement, currentLine);
                 
-                // --- FIX 4: Update currentLineFormat reference ---
-                currentLineFormat.currentLine = newElement;
+                // --- FIX 7: Update currentLineFormat reference ---
+                currentLineFormat.currentLine = pre; // Point to the PRE element, not the wrapper div
+                updateCurrentBlock("CODE_BLOCK");
                 break;
 
             case "BLOCKQUOTE":
-                updateCurrentBlock("BLOCKQUOTE");
                 newElement = document.createElement('blockquote');
                 newElement.id = `quote_${hexID}`;
                 newElement.innerHTML = content;
                 currentLine.parentNode.replaceChild(newElement, currentLine);
                 
-                // --- FIX 5: Update currentLineFormat reference ---
+                // --- FIX 8: Update currentLineFormat reference ---
                 currentLineFormat.currentLine = newElement;
+                updateCurrentBlock("BLOCKQUOTE");
                 break;
 
             case "UL":
-                updateCurrentBlock("UNORDERED_LIST");
                 const ul = document.createElement('ul');
                 ul.id = `ul_${hexID}`;
                 const li = document.createElement('li');
@@ -231,12 +273,12 @@ function applyBlockStyle(elementType) {
                 currentLine.parentNode.replaceChild(ul, currentLine);
                 newElement = li;
                 
-                // --- FIX 6: Update currentLineFormat reference ---
+                // --- FIX 9: Update currentLineFormat reference ---
                 currentLineFormat.currentLine = newElement;
+                updateCurrentBlock("UNORDERED_LIST");
                 break;
 
             case "OL":
-                updateCurrentBlock("ORDERED_LIST");
                 const ol = document.createElement('ol');
                 ol.id = `ol_${hexID}`;
                 const liItem = document.createElement('li');
@@ -246,9 +288,12 @@ function applyBlockStyle(elementType) {
                 currentLine.parentNode.replaceChild(ol, currentLine);
                 newElement = liItem;
                 
-                // --- FIX 7: Update currentLineFormat reference ---
+                // --- FIX 10: Update currentLineFormat reference ---
                 currentLineFormat.currentLine = newElement;
+                updateCurrentBlock("ORDERED_LIST");
                 break;
+            default:
+                currentBlock = null;
         }
     }
 
@@ -275,7 +320,7 @@ function applyBlockStyle(elementType) {
                         sel.removeAllRanges();
                         sel.addRange(newRange);
                         
-                        // --- FIX 8: Update range reference ---
+                        // --- FIX 11: Update range reference ---
                         currentLineFormat.range = newRange;
                         return;
                     }
@@ -283,7 +328,7 @@ function applyBlockStyle(elementType) {
                 }
                 placeCaretAtEnd(newElement);
                 
-                // --- FIX 9: Update range reference for fallback ---
+                // --- FIX 12: Update range reference for fallback ---
                 const fallbackRange = document.createRange();
                 fallbackRange.selectNodeContents(newElement);
                 fallbackRange.collapse(false);
@@ -293,7 +338,7 @@ function applyBlockStyle(elementType) {
                 console.warn("Error restoring cursor position:", err);
                 placeCaretAtEnd(newElement);
                 
-                // --- FIX 10: Update range reference for error case ---
+                // --- FIX 13: Update range reference for error case ---
                 const errorRange = document.createRange();
                 errorRange.selectNodeContents(newElement);
                 errorRange.collapse(false);
@@ -301,8 +346,11 @@ function applyBlockStyle(elementType) {
             }
         }, 0);
     }
+    else 
+    {
+        updateCurrentBlock = null;
+    }
 }
-
 
 function applyInlineStyle(styleType, selection) {
     sel = currentLineFormat.sel;
@@ -779,6 +827,10 @@ function updateCurrentBlock(type) {
         el.classList.remove('selected');
     });
     currentBlock = type;
+
+    document.getElementById("languageSelector")?.classList.add('hidden');
+    updateBlockStyleAvailability(type);
+    
     switch (currentBlock) {
         case "HEADING1":
             document.getElementById('HEADING1')?.classList.add('selected');
@@ -797,6 +849,12 @@ function updateCurrentBlock(type) {
             break;
         case "CODE_BLOCK":
             document.getElementById('CODE_BLOCK')?.classList.add('selected');
+            document.getElementById("languageSelector")?.classList.remove('hidden');
+            setTimeout(() => {
+                if (typeof updateLanguageSelectorForCodeBlock === 'function') {
+                    updateLanguageSelectorForCodeBlock();
+                }
+            }, 0);
             break;
         case "UNORDERED_LIST":
             document.getElementById('UNORDERED_LIST')?.classList.add('selected');
@@ -806,6 +864,13 @@ function updateCurrentBlock(type) {
             break;
         case "BLOCKQUOTE":
             document.getElementById('BLOCKQUOTE')?.classList.add('selected');
+            break;
+        case "PARAGRAPH":
+            updateBlockStyleAvailability("PARAGRAPH");
+            document.querySelectorAll(".blockedStyleElements").forEach(el => {
+                el.classList.remove('selected');
+            });
+            currentBlock = null;
             break;
     }
 }
@@ -942,6 +1007,47 @@ function handleSelectionChange() {
     return;
   }
   
+  // --- FIX: Update currentBlock based on current position ---
+  const currentLine = getCurrentLineElement();
+  if (currentLine) {
+    switch (currentLine.tagName) {
+      case 'H1':
+        if (currentBlock !== "HEADING1") updateCurrentBlock("HEADING1");
+        break;
+      case 'H2':
+        if (currentBlock !== "HEADING2") updateCurrentBlock("HEADING2");
+        break;
+      case 'H3':
+        if (currentBlock !== "HEADING3") updateCurrentBlock("HEADING3");
+        break;
+      case 'H4':
+        if (currentBlock !== "HEADING4") updateCurrentBlock("HEADING4");
+        break;
+      case 'H5':
+        if (currentBlock !== "HEADING5") updateCurrentBlock("HEADING5");
+        break;
+      case 'PRE':
+        if (currentBlock !== "CODE_BLOCK") updateCurrentBlock("CODE_BLOCK");
+        break;
+      case 'BLOCKQUOTE':
+        if (currentBlock !== "BLOCKQUOTE") updateCurrentBlock("BLOCKQUOTE");
+        break;
+      case 'LI':
+        const parentList = currentLine.parentElement;
+        if (parentList && parentList.tagName === 'UL') {
+          if (currentBlock !== "UNORDERED_LIST") updateCurrentBlock("UNORDERED_LIST");
+        } else if (parentList && parentList.tagName === 'OL') {
+          if (currentBlock !== "ORDERED_LIST") updateCurrentBlock("ORDERED_LIST");
+        }
+        break;
+      case 'P':
+      default:
+        updateCurrentBlock("PARAGRAPH");
+        if (currentBlock !== null) updateCurrentBlock("PARAGRAPH");
+        break;
+    }
+  }
+  
   // Get the current element more accurately
   let currentElement = range.startContainer;
   if (currentElement.nodeType === Node.TEXT_NODE) {
@@ -986,4 +1092,114 @@ function handleSelectionChange() {
       updateInlineStyleButtons(null, 'default-text');
     }
   }
+}
+
+
+function getBlockCompatibilityRules() {
+    return {
+        "BLOCKQUOTE": {
+            allowed: ["INLINE_CODE"], // Only inline code allowed inside blockquotes
+            disallowed: ["HEADING1", "HEADING2", "HEADING3", "HEADING4", "HEADING5", "CODE_BLOCK", "UNORDERED_LIST", "ORDERED_LIST"]
+        },
+        "CODE_BLOCK": {
+            allowed: [], // No other block styles allowed inside code blocks
+            disallowed: ["HEADING1", "HEADING2", "HEADING3", "HEADING4", "HEADING5", "BLOCKQUOTE", "UNORDERED_LIST", "ORDERED_LIST"]
+        },
+        "HEADING1": {
+            allowed: ["HEADING2", "HEADING3", "HEADING4", "HEADING5", "CODE_BLOCK", "BLOCKQUOTE", "UNORDERED_LIST", "ORDERED_LIST"],
+            disallowed: []
+        },
+        "HEADING2": {
+            allowed: ["HEADING1", "HEADING3", "HEADING4", "HEADING5", "CODE_BLOCK", "BLOCKQUOTE", "UNORDERED_LIST", "ORDERED_LIST"],
+            disallowed: []
+        },
+        "HEADING3": {
+            allowed: ["HEADING1", "HEADING2", "HEADING4", "HEADING5", "CODE_BLOCK", "BLOCKQUOTE", "UNORDERED_LIST", "ORDERED_LIST"],
+            disallowed: []
+        },
+        "HEADING4": {
+            allowed: ["HEADING1", "HEADING2", "HEADING3", "HEADING5", "CODE_BLOCK", "BLOCKQUOTE", "UNORDERED_LIST", "ORDERED_LIST"],
+            disallowed: []
+        },
+        "HEADING5": {
+            allowed: ["HEADING1", "HEADING2", "HEADING3", "HEADING4", "CODE_BLOCK", "BLOCKQUOTE", "UNORDERED_LIST", "ORDERED_LIST"],
+            disallowed: []
+        },
+        "UNORDERED_LIST": {
+            allowed: ["HEADING1", "HEADING2", "HEADING3", "HEADING4", "HEADING5", "CODE_BLOCK", "BLOCKQUOTE", "ORDERED_LIST"],
+            disallowed: []
+        },
+        "ORDERED_LIST": {
+            allowed: ["HEADING1", "HEADING2", "HEADING3", "HEADING4", "HEADING5", "CODE_BLOCK", "BLOCKQUOTE", "UNORDERED_LIST"],
+            disallowed: []
+        },
+        "PARAGRAPH": {
+            allowed: ["HEADING1", "HEADING2", "HEADING3", "HEADING4", "HEADING5", "CODE_BLOCK", "BLOCKQUOTE", "UNORDERED_LIST", "ORDERED_LIST"],
+            disallowed: []
+        }
+    };
+}
+
+function updateBlockStyleAvailability(currentBlockType) {
+    const rules = getBlockCompatibilityRules();
+    const currentRules = rules[currentBlockType];
+    
+    if (!currentRules) return;
+    
+    // Reset all block controls first
+    const allBlockControls = [
+        "HEADING1", "HEADING2", "HEADING3", "HEADING4", "HEADING5", 
+        "CODE_BLOCK", "UNORDERED_LIST", "ORDERED_LIST", "BLOCKQUOTE"
+    ];
+    
+    allBlockControls.forEach(controlId => {
+        const element = document.getElementById(controlId);
+        if (element) {
+            element.classList.remove('deactivated');
+            element.style.pointerEvents = 'auto';
+            element.style.opacity = '1';
+        }
+    });
+    
+    // Deactivate disallowed controls
+    currentRules.disallowed.forEach(controlId => {
+        const element = document.getElementById(controlId);
+        if (element) {
+            element.classList.add('deactivated');
+            element.style.pointerEvents = 'none';
+            element.style.opacity = '0.5';
+        }
+    });
+}
+
+function updateInlineStyleAvailability(currentBlockType) {
+    const inlineControls = [
+        "BOLD_CONTROL", "ITALIC_CONTROL", "UNDERLINE_CONTROL", 
+        "STRIKETHROUGH_CONTROL", "MARKED_CONTROL", "INLINE_CODE"
+    ];
+    
+    // Reset all inline controls first
+    inlineControls.forEach(controlId => {
+        const element = document.getElementById(controlId);
+        if (element) {
+            element.classList.remove('deactivated');
+            element.style.pointerEvents = 'auto';
+            element.style.opacity = '1';
+        }
+    });
+    
+    // Special rules for specific block types
+    if (currentBlockType === "CODE_BLOCK") {
+        document.getElementById("languageSelector").classList.remove('hidden');
+        inlineControls.forEach(controlId => {
+            if (controlId !== "INLINE_CODE") {
+                const element = document.getElementById(controlId);
+                if (element) {
+                    element.classList.add('deactivated');
+                    element.style.pointerEvents = 'none';
+                    element.style.opacity = '0.5';
+                }
+            }
+        });
+    }
 }
