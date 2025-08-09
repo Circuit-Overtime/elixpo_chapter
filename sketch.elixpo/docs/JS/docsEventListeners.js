@@ -11,9 +11,18 @@ editor.addEventListener('input', (e) => {
   }
   console.log("Current line:", currentLine ? currentLine.tagName : "null");
 
-if (currentLine.tagName === 'TD') {
+
+
+  if (!currentLine || !range) return;
+
+  if (currentLine.tagName === 'TD') {
+    // Always ensure listeners are attached (for pasted tables, etc)
+    if (typeof attachTableCellListeners === 'function') {
+      attachTableCellListeners(currentLine);
+    }
+
     processInlineMarkdown(currentLine);
-    
+
     // Update currentLineFormat for table cells
     const sel = window.getSelection();
     const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
@@ -25,12 +34,12 @@ if (currentLine.tagName === 'TD') {
       range: range,
       currentLine: currentLine // Point to TD, not table
     };
-    
+
     // Handle inline styling for table cells
-    
+
     if (
-      cellText.match(/^[\*\-\+]\s(.*)/) ||
-      cellText.match(/^\d+\.\s(.*)/)
+      cellText.match(/^(?:\s|\u00A0)*[\*\-\+]\s(.*)/) ||
+      cellText.match(/^(?:\s|\u00A0)*\d+\.\s(.*)/)
     ) {
       // Run bullet formatting for table cell
       setTimeout(() => {
@@ -50,21 +59,21 @@ if (currentLine.tagName === 'TD') {
       placeCaretAtEnd(targetSpan);
       return;
     }
-    
+
     if (currentNode.nodeType === Node.TEXT_NODE && currentNode.parentNode === currentLine) {
       const span = document.createElement('span');
       span.className = 'default-text';
       span.id = `span_${generateHexID()}`;
       currentNode.parentNode.insertBefore(span, currentNode);
       span.appendChild(currentNode);
-      
+
       const newRange = document.createRange();
       newRange.setStart(currentNode, range.startOffset);
       newRange.collapse(true);
       sel.removeAllRanges();
       sel.addRange(newRange);
     }
-    
+
     // Process inline markdown for table cells
     setTimeout(() => {
       const styleResult = processEntireLineContent(currentLine);
@@ -83,13 +92,10 @@ if (currentLine.tagName === 'TD') {
         }
       }
     }, 0);
-    
+
     return;
   }
-
-
-  if (!currentLine || !range) return;
-
+  
   if (currentLine.tagName === 'H1' || currentLine.tagName === 'P') {
     removeDefaultTextIfPresent(currentLine);
   }

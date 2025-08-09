@@ -5,110 +5,33 @@ function handleBlockFormatting(lineEl) {
   console.log(lineEl.tagName)
   if (lineEl.tagName === 'P') {
 
-    if (text === 'TABLE\u00A0' || text === 'TABLE  ' || text === 'TABLE\u00A0\u00A0') {
-     updateCurrentBlock("TABLE");
-    const hexID = generateHexID();
-    const tableDiv = document.createElement('div');
-    tableDiv.innerHTML = createTable(hexID);
-    const table = tableDiv.firstElementChild;
+     if (text === 'TABLE\u00A0' || text === 'TABLE  ' || text === 'TABLE\u00A0\u00A0') {
+      updateCurrentBlock("TABLE");
+      const hexID = generateHexID();
+      const tableDiv = document.createElement('div');
+      tableDiv.innerHTML = createTable(hexID);
+      const table = tableDiv.firstElementChild;
 
-    // Set equal column widths
-    const cols = table.querySelectorAll('tr:first-child td');
-    cols.forEach(td => {
-      td.style.maxWidth = '200px';
-      td.style.width = '200px';
-    });
+      // Set equal column widths
+      const cols = table.querySelectorAll('tr:first-child td');
+      cols.forEach(td => {
+        td.style.maxWidth = '200px';
+        td.style.width = '200px';
+      });
 
-    // Add event listeners for each cell
-    const cells = table.querySelectorAll('td');
-    cells.forEach(cell => {
-  cell.addEventListener('input', () => {
-    const cellText = cell.textContent;
+      // Add event listeners for each cell
+      const cells = table.querySelectorAll('td');
+      cells.forEach(cell => {
+        attachTableCellListeners(cell);
+      });
 
-    // Unordered: - , + , *
-    if (/^[\*\-\+]\s/.test(cellText)) {
-      handleTableCellBullet(cell, false);
-      return;
-    }
-    // Ordered: 1. 2. etc
-    if (/^\d+\.\s/.test(cellText)) {
-      handleTableCellBullet(cell, true);
-      return;
+      section.replaceChild(table, lineEl);
+      const newP = createParagraph();
+      section.appendChild(newP);
+      placeCaretAtStart(table.querySelector('td'));
+      return true;
     }
 
-    // Inline markdown for normal text
-    processInlineMarkdown(cell);
-  });
-
-  cell.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    const list = cell.querySelector('ul,ol');
-    const activeEl = document.activeElement;
-    if (list && activeEl && activeEl.tagName === 'LI') {
-      // If current LI is empty
-      if (activeEl.textContent.trim() === '') {
-        e.preventDefault();
-        // Remove the empty LI
-        const next = activeEl.nextSibling;
-        list.removeChild(activeEl);
-
-        // If list is now empty, remove the list and insert a new span in the TD
-        if (list.children.length === 0) {
-          cell.removeChild(list);
-          const newSpan = document.createElement('span');
-          newSpan.className = 'default-text';
-          newSpan.id = `span_${generateHexID()}`;
-          newSpan.innerHTML = '\u00A0';
-          cell.appendChild(newSpan);
-          placeCaretAtStart(newSpan);
-        } else if (next && next.tagName === 'LI') {
-          placeCaretAtStart(next);
-        } else {
-          // If no next LI, place caret at end of last LI
-          const lastLi = list.lastElementChild;
-          if (lastLi) placeCaretAtEnd(lastLi);
-        }
-      } else {
-        // Normal Enter: add new LI
-        e.preventDefault();
-        const newLi = document.createElement('li');
-        newLi.className = 'markdown-table-li';
-        newLi.innerHTML = '\u00A0';
-        list.appendChild(newLi);
-        placeCaretAtStart(newLi);
-      }
-    } else {
-      // Default: just insert a <br>
-      e.preventDefault();
-      const br = document.createElement('br');
-      const sel = window.getSelection();
-      const range = sel.getRangeAt(0);
-      range.insertNode(br);
-      range.setStartAfter(br);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-  }
-});
-
-  // Init
-  if (!cell.querySelector('span,ul,ol')) {
-    const defaultSpan = document.createElement('span');
-    defaultSpan.className = 'default-text';
-    defaultSpan.id = `span_${generateHexID()}`;
-    defaultSpan.innerHTML = '\u00A0';
-    cell.appendChild(defaultSpan);
-  }
-});
-
-    section.replaceChild(table, lineEl);
-    const newP = createParagraph();
-    section.appendChild(newP);
-    placeCaretAtStart(table.querySelector('td'));
-    return true;
-     
-    }
 
     if (text === '```\u00A0' || text === '```  ' || text === '```\u00A0\u00A0') {
       updateCurrentBlock("CODE_BLOCK");
@@ -302,8 +225,6 @@ function handleBlockFormatting(lineEl) {
 
   return false;
 }
-
-
 function handleTableCellBullet(cellEl, isOrdered) {
   const text = cellEl.textContent;
   let content = '';
@@ -337,4 +258,120 @@ function handleTableCellBullet(cellEl, isOrdered) {
 
   // Place caret at end of li
   placeCaretAtEnd(li);
+
+  // Re-attach listeners to this cell (for new content)
+  attachTableCellListeners(cellEl);
+}
+
+
+function attachTableCellListeners(cell) {
+  // Remove previous listeners if any
+  cell.oninput = null;
+  cell.onkeydown = null;
+
+  cell.addEventListener('input', () => {
+    const cellText = cell.textContent;
+
+    // Unordered: - , + , *
+    if (/^(?:\s|\u00A0)*[\*\-\+]\s/.test(cellText)) {
+      handleTableCellBullet(cell, false);
+      return;
+    }
+    // Ordered: 1. 2. etc
+    if (/^(?:\s|\u00A0)*\d+\.\s/.test(cellText)) {
+      handleTableCellBullet(cell, true);
+      return;
+    }
+
+    // Inline markdown for normal text
+    processInlineMarkdown(cell);
+  });
+
+  cell.addEventListener('keydown', (e) => {
+    // Shift+Enter: always insert a line break inside the cell
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      const br = document.createElement('br');
+      const sel = window.getSelection();
+      if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        range.insertNode(br);
+        range.setStartAfter(br);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      return;
+    }
+
+    // Handle Enter inside a list in a table cell (same as normal block behavior)
+    if (e.key === 'Enter') {
+      const list = cell.querySelector('ul,ol');
+      const activeEl = document.activeElement;
+      
+      if (list && activeEl && activeEl.tagName === 'LI') {
+        // If current LI is empty, exit the list (same as normal block behavior)
+        if (activeEl.textContent.trim() === '') {
+          e.preventDefault();
+          
+          // Remove the empty LI
+          list.removeChild(activeEl);
+
+          // If list is now empty, remove the list and add default span
+          if (list.children.length === 0) {
+            cell.removeChild(list);
+            const newSpan = document.createElement('span');
+            newSpan.className = 'default-text';
+            newSpan.id = `span_${generateHexID()}`;
+            newSpan.innerHTML = '\u00A0';
+            cell.appendChild(newSpan);
+            placeCaretAtStart(newSpan);
+          } else {
+            // If there are other items, place caret at end of last item
+            const lastLi = list.lastElementChild;
+            if (lastLi) placeCaretAtEnd(lastLi);
+          }
+          return;
+        } else {
+          // Normal Enter: add new LI (same as normal block behavior)
+          e.preventDefault();
+          const newLi = document.createElement('li');
+          newLi.className = 'markdown-table-li';
+          newLi.innerHTML = '\u00A0';
+          
+          // Insert after current LI
+          if (activeEl.nextSibling) {
+            list.insertBefore(newLi, activeEl.nextSibling);
+          } else {
+            list.appendChild(newLi);
+          }
+          
+          placeCaretAtStart(newLi);
+          return;
+        }
+      } else {
+        // Not in a list: just insert a line break
+        e.preventDefault();
+        const br = document.createElement('br');
+        const sel = window.getSelection();
+        if (sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0);
+          range.insertNode(br);
+          range.setStartAfter(br);
+          range.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+      }
+    }
+  });
+
+  // Init
+  if (!cell.querySelector('span,ul,ol')) {
+    const defaultSpan = document.createElement('span');
+    defaultSpan.className = 'default-text';
+    defaultSpan.id = `span_${generateHexID()}`;
+    defaultSpan.innerHTML = '\u00A0';
+    cell.appendChild(defaultSpan);
+  }
 }

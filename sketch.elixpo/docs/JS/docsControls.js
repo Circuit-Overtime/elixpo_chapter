@@ -97,7 +97,13 @@ function applyBlockStyle(elementType) {
     range = currentLineFormat.range;
     currentLine = currentLineFormat.currentLine;
     
-    // --- FIX 1: Find the actual block-level element ---
+    // --- FIX 1: Handle table cells specially ---
+    if (currentLine && currentLine.tagName === 'TD') {
+        handleTableCellBlockStyle(currentLine, elementType);
+        return;
+    }
+    
+    // --- FIX 2: Find the actual block-level element ---
     // If currentLine is a span, traverse up to find the parent block element
     if (currentLine && currentLine.tagName === 'SPAN') {
         const blockAncestor = currentLine.closest('h1,h2,h3,h4,h5,h6,p,pre,blockquote,li');
@@ -110,7 +116,7 @@ function applyBlockStyle(elementType) {
         }
     }
     
-    // --- FIX 2: Special handling for code blocks ---
+    // --- FIX 3: Special handling for code blocks ---
     // If we're inside a code block structure, find the actual PRE element
     if (currentLine && currentLine.tagName === 'CODE') {
         const preElement = currentLine.closest('pre');
@@ -150,7 +156,7 @@ function applyBlockStyle(elementType) {
     let newElement;
     let content;
 
-    // --- FIX 3: Special content extraction for code blocks ---
+    // --- FIX 4: Special content extraction for code blocks ---
     if (currentLine.tagName === 'PRE') {
         // Extract text content from code element, preserving line breaks
         const codeElement = currentLine.querySelector('code');
@@ -184,10 +190,33 @@ function applyBlockStyle(elementType) {
     if (shouldToggleToP) {
         newElement = document.createElement('p');
         newElement.id = `p_${hexID}`;
-        newElement.innerHTML = content;
-        currentLine.parentNode.replaceChild(newElement, currentLine);
         
-        // --- FIX 4: Update currentLineFormat reference ---
+        // Special handling for list items - extract just the text content
+        if (currentLine.tagName === 'LI') {
+            const listParent = currentLine.parentElement;
+            content = currentLine.innerHTML; // Get the content of the LI
+            
+            // Replace the entire list with the paragraph if it's the only item
+            if (listParent.children.length === 1) {
+                newElement.innerHTML = content;
+                listParent.parentNode.replaceChild(newElement, listParent);
+            } else {
+                // If there are other items, just convert this one
+                newElement.innerHTML = content;
+                listParent.parentNode.insertBefore(newElement, listParent);
+                currentLine.remove();
+                
+                // If that was the last item, we need to update the reference
+                if (listParent.children.length === 0) {
+                    listParent.remove();
+                }
+            }
+        } else {
+            newElement.innerHTML = content;
+            currentLine.parentNode.replaceChild(newElement, currentLine);
+        }
+        
+        // --- FIX 5: Update currentLineFormat reference ---
         currentLineFormat.currentLine = newElement;
         
         // Clear block style selection and hide language selector
@@ -215,7 +244,7 @@ function applyBlockStyle(elementType) {
                 newElement.innerHTML = content;
                 currentLine.parentNode.replaceChild(newElement, currentLine);
                 
-                // --- FIX 5: Update currentLineFormat reference ---
+                // --- FIX 6: Update currentLineFormat reference ---
                 currentLineFormat.currentLine = newElement;
                 updateCurrentBlock(`HEADING${headingLevel}`);
                 break;
@@ -234,7 +263,7 @@ function applyBlockStyle(elementType) {
                     setTimeout(() => copyButton.classList.remove('copied'), 1500);
                 });
                 
-                // --- FIX 6: Convert HTML content back to plain text for code blocks ---
+                // --- FIX 7: Convert HTML content back to plain text for code blocks ---
                 let textContent = content;
                 if (content.includes('<br>')) {
                     // Convert <br> tags back to line breaks
@@ -248,7 +277,7 @@ function applyBlockStyle(elementType) {
                 code.textContent = textContent; // Use textContent to preserve formatting
                 currentLine.parentNode.replaceChild(newElement, currentLine);
                 
-                // --- FIX 7: Update currentLineFormat reference ---
+                // --- FIX 8: Update currentLineFormat reference ---
                 currentLineFormat.currentLine = pre; // Point to the PRE element, not the wrapper div
                 updateCurrentBlock("CODE_BLOCK");
                 break;
@@ -259,12 +288,40 @@ function applyBlockStyle(elementType) {
                 newElement.innerHTML = content;
                 currentLine.parentNode.replaceChild(newElement, currentLine);
                 
-                // --- FIX 8: Update currentLineFormat reference ---
+                // --- FIX 9: Update currentLineFormat reference ---
                 currentLineFormat.currentLine = newElement;
                 updateCurrentBlock("BLOCKQUOTE");
                 break;
 
             case "UL":
+                // Special handling if we're already in a list
+                if (currentLine.tagName === 'LI') {
+                    const currentList = currentLine.parentElement;
+                    
+                    // If it's already a UL, do nothing (or toggle to P as handled above)
+                    if (currentList.tagName === 'UL') {
+                        return;
+                    }
+                    
+                    // If it's an OL, convert to UL
+                    if (currentList.tagName === 'OL') {
+                        const ul = document.createElement('ul');
+                        ul.id = `ul_${hexID}`;
+                        
+                        // Move all LI elements to new UL
+                        while (currentList.firstChild) {
+                            ul.appendChild(currentList.firstChild);
+                        }
+                        
+                        currentList.parentNode.replaceChild(ul, currentList);
+                        newElement = currentLine; // Keep reference to current LI
+                        currentLineFormat.currentLine = newElement;
+                        updateCurrentBlock("UNORDERED_LIST");
+                        return;
+                    }
+                }
+                
+                // Normal case: create new UL
                 const ul = document.createElement('ul');
                 ul.id = `ul_${hexID}`;
                 const li = document.createElement('li');
@@ -274,12 +331,40 @@ function applyBlockStyle(elementType) {
                 currentLine.parentNode.replaceChild(ul, currentLine);
                 newElement = li;
                 
-                // --- FIX 9: Update currentLineFormat reference ---
+                // --- FIX 10: Update currentLineFormat reference ---
                 currentLineFormat.currentLine = newElement;
                 updateCurrentBlock("UNORDERED_LIST");
                 break;
 
             case "OL":
+                // Special handling if we're already in a list
+                if (currentLine.tagName === 'LI') {
+                    const currentList = currentLine.parentElement;
+                    
+                    // If it's already an OL, do nothing (or toggle to P as handled above)
+                    if (currentList.tagName === 'OL') {
+                        return;
+                    }
+                    
+                    // If it's a UL, convert to OL
+                    if (currentList.tagName === 'UL') {
+                        const ol = document.createElement('ol');
+                        ol.id = `ol_${hexID}`;
+                        
+                        // Move all LI elements to new OL
+                        while (currentList.firstChild) {
+                            ol.appendChild(currentList.firstChild);
+                        }
+                        
+                        currentList.parentNode.replaceChild(ol, currentList);
+                        newElement = currentLine; // Keep reference to current LI
+                        currentLineFormat.currentLine = newElement;
+                        updateCurrentBlock("ORDERED_LIST");
+                        return;
+                    }
+                }
+                
+                // Normal case: create new OL
                 const ol = document.createElement('ol');
                 ol.id = `ol_${hexID}`;
                 const liItem = document.createElement('li');
@@ -289,7 +374,7 @@ function applyBlockStyle(elementType) {
                 currentLine.parentNode.replaceChild(ol, currentLine);
                 newElement = liItem;
                 
-                // --- FIX 10: Update currentLineFormat reference ---
+                // --- FIX 11: Update currentLineFormat reference ---
                 currentLineFormat.currentLine = newElement;
                 updateCurrentBlock("ORDERED_LIST");
                 break;
@@ -321,7 +406,7 @@ function applyBlockStyle(elementType) {
                         sel.removeAllRanges();
                         sel.addRange(newRange);
                         
-                        // --- FIX 11: Update range reference ---
+                        // --- FIX 12: Update range reference ---
                         currentLineFormat.range = newRange;
                         return;
                     }
@@ -329,7 +414,7 @@ function applyBlockStyle(elementType) {
                 }
                 placeCaretAtEnd(newElement);
                 
-                // --- FIX 12: Update range reference for fallback ---
+                // --- FIX 13: Update range reference for fallback ---
                 const fallbackRange = document.createRange();
                 fallbackRange.selectNodeContents(newElement);
                 fallbackRange.collapse(false);
@@ -339,7 +424,7 @@ function applyBlockStyle(elementType) {
                 console.warn("Error restoring cursor position:", err);
                 placeCaretAtEnd(newElement);
                 
-                // --- FIX 13: Update range reference for error case ---
+                // --- FIX 14: Update range reference for error case ---
                 const errorRange = document.createRange();
                 errorRange.selectNodeContents(newElement);
                 errorRange.collapse(false);
@@ -1203,4 +1288,135 @@ function updateInlineStyleAvailability(currentBlockType) {
             }
         });
     }
+}
+
+function handleTableCellBlockStyle(cell, elementType) {
+    const existingList = cell.querySelector('ul,ol');
+    
+    if (elementType === "UL") {
+        if (existingList) {
+            if (existingList.tagName === 'UL') {
+                // Convert UL back to normal text (extract all LI content)
+                const allText = Array.from(existingList.querySelectorAll('li'))
+                    .map(li => li.textContent.trim())
+                    .filter(text => text)
+                    .join(' ');
+                
+                cell.removeChild(existingList);
+                
+                if (allText) {
+                    const newSpan = document.createElement('span');
+                    newSpan.className = 'default-text';
+                    newSpan.id = `span_${generateHexID()}`;
+                    newSpan.textContent = allText;
+                    cell.appendChild(newSpan);
+                    placeCaretAtEnd(newSpan);
+                } else {
+                    const newSpan = document.createElement('span');
+                    newSpan.className = 'default-text';
+                    newSpan.id = `span_${generateHexID()}`;
+                    newSpan.innerHTML = '\u00A0';
+                    cell.appendChild(newSpan);
+                    placeCaretAtStart(newSpan);
+                }
+            } else if (existingList.tagName === 'OL') {
+                // Convert OL to UL
+                const ul = document.createElement('ul');
+                ul.className = 'markdown-table-list';
+                
+                // Move all LI elements to new UL
+                while (existingList.firstChild) {
+                    existingList.firstChild.className = 'markdown-table-li';
+                    ul.appendChild(existingList.firstChild);
+                }
+                
+                cell.replaceChild(ul, existingList);
+                
+                const firstLi = ul.querySelector('li');
+                if (firstLi) placeCaretAtEnd(firstLi);
+            }
+        } else {
+            // Create new UL from existing text content
+            const cellText = cell.textContent.trim();
+            cell.innerHTML = '';
+            
+            const ul = document.createElement('ul');
+            ul.className = 'markdown-table-list';
+            const li = document.createElement('li');
+            li.className = 'markdown-table-li';
+            li.textContent = cellText || '\u00A0';
+            ul.appendChild(li);
+            cell.appendChild(ul);
+            
+            placeCaretAtEnd(li);
+        }
+        
+        // Re-attach listeners
+        attachTableCellListeners(cell);
+        return;
+    }
+    
+    if (elementType === "OL") {
+        if (existingList) {
+            if (existingList.tagName === 'OL') {
+                // Convert OL back to normal text (extract all LI content)
+                const allText = Array.from(existingList.querySelectorAll('li'))
+                    .map(li => li.textContent.trim())
+                    .filter(text => text)
+                    .join(' ');
+                
+                cell.removeChild(existingList);
+                
+                if (allText) {
+                    const newSpan = document.createElement('span');
+                    newSpan.className = 'default-text';
+                    newSpan.id = `span_${generateHexID()}`;
+                    newSpan.textContent = allText;
+                    cell.appendChild(newSpan);
+                    placeCaretAtEnd(newSpan);
+                } else {
+                    const newSpan = document.createElement('span');
+                    newSpan.className = 'default-text';
+                    newSpan.id = `span_${generateHexID()}`;
+                    newSpan.innerHTML = '\u00A0';
+                    cell.appendChild(newSpan);
+                    placeCaretAtStart(newSpan);
+                }
+            } else if (existingList.tagName === 'UL') {
+                // Convert UL to OL
+                const ol = document.createElement('ol');
+                ol.className = 'markdown-table-list';
+                
+                // Move all LI elements to new OL
+                while (existingList.firstChild) {
+                    existingList.firstChild.className = 'markdown-table-li';
+                    ol.appendChild(existingList.firstChild);
+                }
+                
+                cell.replaceChild(ol, existingList);
+                
+                const firstLi = ol.querySelector('li');
+                if (firstLi) placeCaretAtEnd(firstLi);
+            }
+        } else {
+            // Create new OL from existing text content
+            const cellText = cell.textContent.trim();
+            cell.innerHTML = '';
+            
+            const ol = document.createElement('ol');
+            ol.className = 'markdown-table-list';
+            const li = document.createElement('li');
+            li.className = 'markdown-table-li';
+            li.textContent = cellText || '\u00A0';
+            ol.appendChild(li);
+            cell.appendChild(ol);
+            
+            placeCaretAtEnd(li);
+        }
+        
+        // Re-attach listeners
+        attachTableCellListeners(cell);
+        return;
+    }
+ 
 }
