@@ -4,6 +4,112 @@ function handleBlockFormatting(lineEl) {
   const section = lineEl.parentNode;
   console.log(lineEl.tagName)
   if (lineEl.tagName === 'P') {
+
+    if (text === 'TABLE\u00A0' || text === 'TABLE  ' || text === 'TABLE\u00A0\u00A0') {
+     updateCurrentBlock("TABLE");
+    const hexID = generateHexID();
+    const tableDiv = document.createElement('div');
+    tableDiv.innerHTML = createTable(hexID);
+    const table = tableDiv.firstElementChild;
+
+    // Set equal column widths
+    const cols = table.querySelectorAll('tr:first-child td');
+    cols.forEach(td => {
+      td.style.maxWidth = '200px';
+      td.style.width = '200px';
+    });
+
+    // Add event listeners for each cell
+    const cells = table.querySelectorAll('td');
+    cells.forEach(cell => {
+  cell.addEventListener('input', () => {
+    const cellText = cell.textContent;
+
+    // Unordered: - , + , *
+    if (/^[\*\-\+]\s/.test(cellText)) {
+      handleTableCellBullet(cell, false);
+      return;
+    }
+    // Ordered: 1. 2. etc
+    if (/^\d+\.\s/.test(cellText)) {
+      handleTableCellBullet(cell, true);
+      return;
+    }
+
+    // Inline markdown for normal text
+    processInlineMarkdown(cell);
+  });
+
+  cell.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const list = cell.querySelector('ul,ol');
+    const activeEl = document.activeElement;
+    if (list && activeEl && activeEl.tagName === 'LI') {
+      // If current LI is empty
+      if (activeEl.textContent.trim() === '') {
+        e.preventDefault();
+        // Remove the empty LI
+        const next = activeEl.nextSibling;
+        list.removeChild(activeEl);
+
+        // If list is now empty, remove the list and insert a new span in the TD
+        if (list.children.length === 0) {
+          cell.removeChild(list);
+          const newSpan = document.createElement('span');
+          newSpan.className = 'default-text';
+          newSpan.id = `span_${generateHexID()}`;
+          newSpan.innerHTML = '\u00A0';
+          cell.appendChild(newSpan);
+          placeCaretAtStart(newSpan);
+        } else if (next && next.tagName === 'LI') {
+          placeCaretAtStart(next);
+        } else {
+          // If no next LI, place caret at end of last LI
+          const lastLi = list.lastElementChild;
+          if (lastLi) placeCaretAtEnd(lastLi);
+        }
+      } else {
+        // Normal Enter: add new LI
+        e.preventDefault();
+        const newLi = document.createElement('li');
+        newLi.className = 'markdown-table-li';
+        newLi.innerHTML = '\u00A0';
+        list.appendChild(newLi);
+        placeCaretAtStart(newLi);
+      }
+    } else {
+      // Default: just insert a <br>
+      e.preventDefault();
+      const br = document.createElement('br');
+      const sel = window.getSelection();
+      const range = sel.getRangeAt(0);
+      range.insertNode(br);
+      range.setStartAfter(br);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }
+});
+
+  // Init
+  if (!cell.querySelector('span,ul,ol')) {
+    const defaultSpan = document.createElement('span');
+    defaultSpan.className = 'default-text';
+    defaultSpan.id = `span_${generateHexID()}`;
+    defaultSpan.innerHTML = '\u00A0';
+    cell.appendChild(defaultSpan);
+  }
+});
+
+    section.replaceChild(table, lineEl);
+    const newP = createParagraph();
+    section.appendChild(newP);
+    placeCaretAtStart(table.querySelector('td'));
+    return true;
+     
+    }
+
     if (text === '```\u00A0' || text === '```  ' || text === '```\u00A0\u00A0') {
       updateCurrentBlock("CODE_BLOCK");
       console.log("inside code creation")
@@ -146,38 +252,30 @@ function handleBlockFormatting(lineEl) {
     const orderedListMatch = text.match(/^\d+\.\s(.*)/);
 
     if (unorderedListMatch || orderedListMatch) {
-      if (unorderedListMatch)
-      {
-        updateCurrentBlock("UNORDERED_LIST");
-      }
-      else 
-      {
-        updateCurrentBlock("ORDERED_LIST");
-      }
-      const hexID = generateHexID();
-      const isOrdered = !!orderedListMatch;
-      const listType = isOrdered ? 'ol' : 'ul';
-      const content = isOrdered ? orderedListMatch[1] : unorderedListMatch[1];
+    const isOrdered = !!orderedListMatch;
+    const listType = isOrdered ? 'ol' : 'ul';
+    const content = isOrdered ? orderedListMatch[1] : unorderedListMatch[1];
 
-      const list = document.createElement(listType);
-      list.id = `${listType}_${hexID}`;
-      const li = document.createElement('li');
-      li.id = `li_${generateHexID()}`;
-      
-      if (content && hasMarkdownPattern(content)) {
-        processMarkdownInText(content, li);
-      } else {
-        li.textContent = content;
-      }
+    updateCurrentBlock(isOrdered ? "ORDERED_LIST" : "UNORDERED_LIST");
+    const hexID = generateHexID();
+    const list = document.createElement(listType);
+    list.id = `${listType}_${hexID}`;
+    const li = document.createElement('li');
+    li.id = `li_${generateHexID()}`;
 
-      list.appendChild(li);
-      section.replaceChild(list, lineEl);
-      const newP = createParagraph();
-      section.appendChild(newP);
-
-      placeCaretAtEnd(li);
-      return true;
+    if (content && hasMarkdownPattern(content)) {
+      processMarkdownInText(content, li);
+    } else {
+      li.textContent = content;
     }
+
+    list.appendChild(li);
+    section.replaceChild(list, lineEl);
+    const newP = createParagraph();
+    section.appendChild(newP);
+    placeCaretAtEnd(li);
+    return true;
+  }
 
     const blockquoteMatch = text.match(/^>\s(.*)/);
     if (blockquoteMatch) {
@@ -206,4 +304,37 @@ function handleBlockFormatting(lineEl) {
 }
 
 
+function handleTableCellBullet(cellEl, isOrdered) {
+  const text = cellEl.textContent;
+  let content = '';
+  let listType = isOrdered ? 'ol' : 'ul';
 
+  if (isOrdered) {
+    const match = text.match(/^(\d+)\.\s(.*)/);
+    content = match ? match[2] : '';
+  } else {
+    const match = text.match(/^[\*\-\+]\s(.*)/);
+    content = match ? match[1] : '';
+  }
+
+  // Clear cell and create list structure
+  cellEl.innerHTML = '';
+
+  // Create list
+  const list = document.createElement(listType);
+  list.className = 'markdown-table-list';
+  const li = document.createElement('li');
+  li.className = 'markdown-table-li';
+
+  if (content && hasMarkdownPattern(content)) {
+    processMarkdownInText(content, li);
+  } else {
+    li.textContent = content || '\u00A0';
+  }
+
+  list.appendChild(li);
+  cellEl.appendChild(list);
+
+  // Place caret at end of li
+  placeCaretAtEnd(li);
+}

@@ -522,3 +522,54 @@ body {
   border-radius: 5px;
   transition: 0.2s;
 }
+
+
+.markdown-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  table-layout: fixed;
+}
+
+.markdown-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  min-width: 100px;
+  min-height: 30px;
+  vertical-align: top;
+  max-width: 200px;
+  word-break: break-word;
+}
+
+.markdown-table td[contenteditable="true"] {
+  outline: none;
+}
+
+.markdown-table td:focus {
+  background-color: #f5f5f5;
+  border-color: #007acc;
+}
+.markdown-table .bullet-point {
+  font-weight: bold;
+  margin-right: 4px;
+  color: #333;
+}
+
+.markdown-table td {
+  line-height: 1.4;
+}
+
+.markdown-table td br {
+  line-height: 1.4;
+}
+
+.markdown-table-list {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.markdown-table-li {
+  margin: 0;
+  padding: 0;
+  list-style-position: inside;
+}

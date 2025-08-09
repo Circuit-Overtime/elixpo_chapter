@@ -20,7 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
         { id: "CODE_BLOCK", type: "PRE" },
         { id: "UNORDERED_LIST", type: "UL" },
         { id: "ORDERED_LIST", type: "OL" },
-        { id: "BLOCKQUOTE", type: "BLOCKQUOTE" }
+        { id: "BLOCKQUOTE", type: "BLOCKQUOTE" },
+        { id: "TABLE", type: "TABLE" }
     ];
 
     blockControls.forEach(control => {

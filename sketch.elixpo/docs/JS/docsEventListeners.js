@@ -11,6 +11,83 @@ editor.addEventListener('input', (e) => {
   }
   console.log("Current line:", currentLine ? currentLine.tagName : "null");
 
+if (currentLine.tagName === 'TD') {
+    processInlineMarkdown(currentLine);
+    
+    // Update currentLineFormat for table cells
+    const sel = window.getSelection();
+    const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+    const cellText = currentLine.textContent;
+    const currentNode = range.startContainer;
+
+    currentLineFormat = {
+      sel: sel,
+      range: range,
+      currentLine: currentLine // Point to TD, not table
+    };
+    
+    // Handle inline styling for table cells
+    
+    if (
+      cellText.match(/^[\*\-\+]\s(.*)/) ||
+      cellText.match(/^\d+\.\s(.*)/)
+    ) {
+      // Run bullet formatting for table cell
+      setTimeout(() => {
+        handleTableCellBullet(currentLine, false);
+      }, 0);
+      return;
+    }
+
+    if (currentNode === currentLine) {
+      let targetSpan = currentLine.querySelector('span.default-text');
+      if (!targetSpan) {
+        targetSpan = document.createElement('span');
+        targetSpan.className = 'default-text';
+        targetSpan.innerHTML = '\u00A0';
+        currentLine.appendChild(targetSpan);
+      }
+      placeCaretAtEnd(targetSpan);
+      return;
+    }
+    
+    if (currentNode.nodeType === Node.TEXT_NODE && currentNode.parentNode === currentLine) {
+      const span = document.createElement('span');
+      span.className = 'default-text';
+      span.id = `span_${generateHexID()}`;
+      currentNode.parentNode.insertBefore(span, currentNode);
+      span.appendChild(currentNode);
+      
+      const newRange = document.createRange();
+      newRange.setStart(currentNode, range.startOffset);
+      newRange.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+    }
+    
+    // Process inline markdown for table cells
+    setTimeout(() => {
+      const styleResult = processEntireLineContent(currentLine);
+      if (styleResult && styleResult.addedTrailingSpan) {
+        const spans = currentLine.querySelectorAll('span.default-text');
+        const lastDefaultSpan = spans[spans.length - 1];
+        if (lastDefaultSpan && (
+          lastDefaultSpan.innerHTML === ' ' ||
+          lastDefaultSpan.textContent === '\u00A0' ||
+          lastDefaultSpan.textContent === '\u200B' ||
+          lastDefaultSpan.textContent === '' ||
+          lastDefaultSpan.textContent === ' ' ||
+          lastDefaultSpan.textContent.trim() === ''
+        )) {
+          placeCaretAtStart(lastDefaultSpan);
+        }
+      }
+    }, 0);
+    
+    return;
+  }
+
+
   if (!currentLine || !range) return;
 
   if (currentLine.tagName === 'H1' || currentLine.tagName === 'P') {
@@ -415,7 +492,22 @@ editor.addEventListener('keydown', (e) => {
       return;
     }
 
-    if (currentLine.tagName === 'H1') {
+if (currentLine && currentLine.tagName === 'TD') {
+      // Create a line break in the cell
+      const br = document.createElement('br');
+      range.insertNode(br);
+      
+      // Move cursor after the break
+      const newRange = document.createRange();
+      newRange.setStartAfter(br);
+      newRange.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+      return;
+    }
+
+
+    if (currentLine.tagName === 'H1' || currentLine.tagName === 'H2' || currentLine.tagName === 'H3' || currentLine.tagName === 'H4' || currentLine.tagName === 'H5' || currentLine.tagName === 'H6') {
       const section = currentLine.parentNode;
       const newP = createParagraph();
       section.appendChild(newP);
@@ -599,6 +691,80 @@ editor.addEventListener('keydown', (e) => {
 
   else if (e.key === 'Tab') {
     e.preventDefault();
+    console.log(currentLine.tagName)
+  if (currentLine && currentLine.tagName === 'TD') {
+      const currentCell = currentLine;
+      const table = currentCell.closest('table');
+      const cells = Array.from(table.querySelectorAll('td'));
+      const currentIndex = cells.indexOf(currentCell);
+      const rows = Array.from(table.querySelectorAll('tr'));
+    const currentRow = currentCell.closest('tr');
+    const currentRowIndex = rows.indexOf(currentRow);
+    const cellsInCurrentRow = Array.from(currentRow.querySelectorAll('td'));
+    const currentCellIndex = cellsInCurrentRow.indexOf(currentCell);
+    
+    let targetCell = null;
+    
+    switch(e.key) {
+      case 'ArrowUp':
+        if (currentRowIndex > 0) {
+          const prevRow = rows[currentRowIndex - 1];
+          const prevRowCells = Array.from(prevRow.querySelectorAll('td'));
+          targetCell = prevRowCells[Math.min(currentCellIndex, prevRowCells.length - 1)];
+        }
+        break;
+      case 'ArrowDown':
+        if (currentRowIndex < rows.length - 1) {
+          const nextRow = rows[currentRowIndex + 1];
+          const nextRowCells = Array.from(nextRow.querySelectorAll('td'));
+          targetCell = nextRowCells[Math.min(currentCellIndex, nextRowCells.length - 1)];
+        }
+        break;
+      case 'ArrowLeft':
+        if (currentCellIndex > 0) {
+          targetCell = cellsInCurrentRow[currentCellIndex - 1];
+        } else if (currentRowIndex > 0) {
+          const prevRow = rows[currentRowIndex - 1];
+          const prevRowCells = Array.from(prevRow.querySelectorAll('td'));
+          targetCell = prevRowCells[prevRowCells.length - 1];
+        }
+        break;
+      case 'ArrowRight':
+        if (currentCellIndex < cellsInCurrentRow.length - 1) {
+          targetCell = cellsInCurrentRow[currentCellIndex + 1];
+        } else if (currentRowIndex < rows.length - 1) {
+          const nextRow = rows[currentRowIndex + 1];
+          const nextRowCells = Array.from(nextRow.querySelectorAll('td'));
+          targetCell = nextRowCells[0];
+        }
+        break;
+    }
+  
+      
+      if (e.shiftKey) {
+        // Previous cell
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : cells.length - 1;
+        placeCaretAtStart(cells[prevIndex]);
+      } else {
+        // Next cell
+        const nextIndex = currentIndex < cells.length - 1 ? currentIndex + 1 : 0;
+        placeCaretAtStart(cells[nextIndex]);
+      }
+
+      if (targetCell) {
+      e.preventDefault();
+      placeCaretAtStart(targetCell);
+      
+      // Update currentLineFormat
+      currentLineFormat = {
+        sel: window.getSelection(),
+        range: window.getSelection().getRangeAt(0),
+        currentLine: targetCell
+      };
+    }
+      return;
+    }
+
     if (currentLine && currentLine.tagName === 'LI') {
       const parentList = currentLine.parentNode;
       const previousSibling = currentLine.previousElementSibling;
@@ -662,3 +828,7 @@ editor.addEventListener('click', (e) => {
 
  
 
+
+
+
+ 

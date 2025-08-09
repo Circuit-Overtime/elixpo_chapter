@@ -220,5 +220,30 @@ function processEntireLineContent(node) {
     return { addedTrailingSpan: false };
   }
 
+  // Handle table cells - process inline markdown
+  if (node.tagName === 'TD') {
+    return processMarkdownInText(lineText, node);
+  }
+
   return processMarkdownInText(lineText, node);
+}
+
+// Add new function specifically for table cells
+function processInlineMarkdown(cellNode) {
+  if (!cellNode || cellNode.tagName !== 'TD') return;
+  
+  const cellText = cellNode.textContent;
+  if (!cellText || cellText.trim() === '') {
+    if (!cellNode.querySelector('span.default-text')) {
+      cellNode.innerHTML = '';
+      const defaultSpan = document.createElement('span');
+      defaultSpan.className = 'default-text';
+      defaultSpan.innerHTML = '\u00A0';
+      cellNode.appendChild(defaultSpan);
+    }
+    return;
+  }
+
+  // Process inline markdown patterns in table cells
+  processMarkdownInText(cellText, cellNode);
 }
