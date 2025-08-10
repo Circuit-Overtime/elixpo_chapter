@@ -42,26 +42,57 @@ function createCodeBlock(hexID) {
   `;
 }
 
-function createListLi(content = '\u00A0') {
-  const li = document.createElement('li');
-  li.className = 'markdown-table-li';
-  li.innerHTML = `<span class="list-bullet"> </span><span class="default-text" contenteditable="true">${content}</span>`;
-  return li;
-}
-
-function createTable(hexID) {
-  let tableHTML = `<table class="markdown-table" id="table_${hexID}">`;
-  
-  for (let row = 0; row < 3; row++) {
-    tableHTML += '<tr>';
-    for (let col = 0; col < 3; col++) {
-      tableHTML += `<td contenteditable="true" data-cell="${row}-${col}">&nbsp;</td>`;
-    }
-    tableHTML += '</tr>';
-  }
-  
-  tableHTML += '</table>';
-  return tableHTML;
+function createTableBlock(hexID) {
+  return `
+    <table id="table_${hexID}" contenteditable="false">
+      <tbody>
+        <tr>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+        </tr>
+        <tr>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+        </tr>
+        <tr>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+        </tr>
+        <tr>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+          <td contenteditable="true">
+          <span class="default-text">&nbsp;</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  `;
 }
 
 function highlightCodeBlock(codeElement) {
@@ -101,23 +132,6 @@ function getCurrentLineElement() {
       return node;
     }
     
-    while (node && node !== document.body) {
-    // Check for table cell first
-    if (node.tagName === 'TD') {
-      return node;
-    }
-    
-    // Check for other block elements
-    if (node.tagName === 'P' || node.tagName === 'H1' || node.tagName === 'H2' || 
-        node.tagName === 'H3' || node.tagName === 'H4' || node.tagName === 'H5' || 
-        node.tagName === 'H6' || node.tagName === 'LI' || node.tagName === 'BLOCKQUOTE' || 
-        node.tagName === 'PRE' || node.tagName === 'CODE') {
-      return node;
-    }
-    
-    node = node.parentNode;
-  }
-  
     // Check if this node is a direct child of editor (section)
     if (node.parentNode === editor) {
       return node;
@@ -149,7 +163,7 @@ function getCurrentLineElement() {
       
 
       let parent = node;
-      // console.log(parent, parent.tagName, parent.parentNode)
+      console.log(parent, parent.tagName, parent.parentNode)
       while (parent && parent !== section) {
         if (parent.tagName === 'H1' || parent.tagName === 'H2' || parent.tagName === 'H3' || 
             parent.tagName === 'H4' || parent.tagName === 'H5' || parent.tagName === 'H6' || 
@@ -159,7 +173,7 @@ function getCurrentLineElement() {
           return parent;
         }
         parent = parent.parentNode;
-        // console.log(parent.tagName)
+        console.log(parent.tagName)
         
       }
     }
