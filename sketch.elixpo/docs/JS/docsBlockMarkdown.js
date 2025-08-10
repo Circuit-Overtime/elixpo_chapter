@@ -38,31 +38,85 @@ function handleBlockFormatting(lineEl) {
         currentLineFormat = {
           sel: sel,
           range: range,
-          currentLine: pre // Point to PRE element for block operations
+          currentLine: pre 
         };
       });
 
-      // --- FIX: Handle key events for code blocks ---
+
       code.addEventListener('keydown', (e) => {
-        // Allow Tab key in code blocks
         if (e.key === 'Tab') {
           e.preventDefault();
           const selection = window.getSelection();
           const range = selection.getRangeAt(0);
-          
-          // Insert tab character or spaces
+
           const tabText = document.createTextNode('    '); // 4 spaces
           range.insertNode(tabText);
+          // Move caret after inserted tab
           range.setStartAfter(tabText);
           range.setEndAfter(tabText);
           selection.removeAllRanges();
           selection.addRange(range);
+          return;
         }
-        
-        // Handle other special keys as needed
-        if (e.key === 'Enter') {
-          // Allow normal line breaks in code
-          // No special handling needed, let default behavior work
+
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+          e.preventDefault();
+          const range = document.createRange();
+          range.selectNodeContents(code);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          return;
+        }
+
+        // Only clear code if the caret is at the start or end and all is selected
+        if (
+          (e.key === 'Backspace' || e.key === 'Delete') &&
+          code.textContent.length > 0
+        ) {
+          const sel = window.getSelection();
+          // Check if all content is selected
+          if (
+            sel.rangeCount === 1 &&
+            sel.anchorNode === sel.focusNode &&
+            sel.anchorOffset === 0 &&
+            sel.focusOffset === code.textContent.length - 2
+          ) {
+            e.preventDefault();
+            code.textContent = '';
+            code.innerHTML = '\u200B';
+            placeCaretAtStart(code);
+            updateCodeBlockClasses(code);
+            return;
+          }
+          // If caret is at start and Backspace is pressed, clear code
+          if (
+            e.key === 'Backspace' &&
+            sel.rangeCount === 1 &&
+            sel.anchorOffset === 0
+          ) {
+            console.log(code.firstChild)
+            e.preventDefault();
+            code.textContent = '';
+            code.innerHTML = '\u200B';
+            placeCaretAtStart(code);
+            updateCodeBlockClasses(code);
+            return;
+          }
+          // If caret is at end and Delete is pressed, clear code
+          if (
+            e.key === 'Delete' &&
+            sel.rangeCount === 1 &&
+            sel.anchorNode === code.firstChild &&
+            sel.anchorOffset === code.textContent.length
+          ) {
+            e.preventDefault();
+            code.textContent = '';
+            code.innerHTML = '\u200B';
+            placeCaretAtStart(code);
+            updateCodeBlockClasses(code);
+            return;
+          }
         }
       });
 
