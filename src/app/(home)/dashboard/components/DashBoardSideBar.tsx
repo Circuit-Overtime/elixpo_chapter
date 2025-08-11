@@ -12,7 +12,7 @@ interface Props {
    icon?: string,
    starred?: boolean
 }
-const initialPlayground: Props[] = [];
+/* const initialPlayground: Props[] = []; */
 const LucidIconsMap:Record<string, LucideIcon> = {
    Zap: Zap,
    Code: Code2,
@@ -21,7 +21,7 @@ const LucidIconsMap:Record<string, LucideIcon> = {
    FlameIcon: FlameIcon,
    Terminal: Terminal
 }
-const DashBoardSideBar = (props: Props) => {
+const DashBoardSideBar = ({initialPlayground}: {initialPlayground: Props[]}) => {
   
   const pathName = usePathname();
   const [starredPlayGrd,setStarredPlayGrd] = useState(initialPlayground.filter((p) => p.starred));

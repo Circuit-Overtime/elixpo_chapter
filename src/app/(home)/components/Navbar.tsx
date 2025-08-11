@@ -85,7 +85,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                 className="object-contain"
                 
               />
-              <span className='font-bold text-2xl' style={{fontFamily: "poppins"}}>FingAI.</span>
+              <span className='font-bold text-2xl flex items-center ' style={{fontFamily: "poppins"}}>FingAI<span className='text-pink-500 text-4xl'>.</span> </span>
             </div>
             
           </div>

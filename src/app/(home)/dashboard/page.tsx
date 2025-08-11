@@ -1,15 +1,84 @@
-import { LayoutDashboard } from 'lucide-react'
+"use client"
 import React from 'react'
 import DashboardLayout from './DashboardLayout'
 import AddProjectButton from './components/AddProjectButton'
 import AddRepoButton from './components/AddRepoButton'
-import { spawn } from 'child_process'
 import Image from 'next/image'
 import { IMAES } from '../../../../public/assets/images/images'
+import { useTRPC } from '@/trpc/client'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import ProjectTable from './components/ProjectTable'
+import { toast } from 'sonner'
+import { Templates } from '@/generated/prisma'
+import { PlayGroundProjects } from './types/types'
 
-const Dashboard = () => {
-  const playground: any[] = []
+const Dashboard =  () => {
+ const trpc = useTRPC();
+ const queryClient = useQueryClient();
+  // Fetch playgrounds with proper typing
+  const { data: playgrounds, isLoading, error } = useQuery(
+    trpc.playground.getAllPlaygrounds.queryOptions()
+  );
 
+  // Properly typed delete mutation
+  const deleteProjectById = useMutation({
+    ...trpc.playground.deleteProjectById.mutationOptions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        trpc.playground.getAllPlaygrounds.queryOptions()
+      );
+      toast.success('Project deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete project', {
+        description: error.message
+      });
+    }
+  });
+  const editProjectById = useMutation({
+  ...trpc.playground.editProjectById.mutationOptions(),
+  onSuccess: () => {
+    queryClient.invalidateQueries(
+      trpc.playground.getAllPlaygrounds.queryOptions()
+    );
+    toast.success('Project edited successfully');
+  },
+  onError: (error) => {
+    toast.error('Failed to edit project', {
+      description: error?.message
+    }); 
+  }
+});
+  const duplicateProject = useMutation({
+  ...trpc.playground.duplicateProjectById.mutationOptions(),
+  onSuccess: () => {
+    queryClient.invalidateQueries(
+      trpc.playground.getAllPlaygrounds.queryOptions()
+    );
+    toast.success('Project duplicated successfully');
+  },
+  onError: (error) => {  // Properly typed error parameter
+    toast.error('Failed to duplicate project', {
+      description: error.message || 'An unknown error occurred'
+    });
+  }
+});
+
+const handleEdit = (projects: PlayGroundProjects) => {
+  editProjectById.mutate({ 
+     id: projects.id,
+     title: projects.title,
+     describtion: projects.describtion,
+     template: projects.template as Templates
+  });
+};
+  const handleDelete = (id:string) => {
+     deleteProjectById.mutate({id})
+  }
+
+ const handleDuplicate = (project: PlayGroundProjects) => {
+  duplicateProject.mutate({ id: project.id });
+};
   return (
     <DashboardLayout>
       <section className="">
@@ -22,11 +91,17 @@ const Dashboard = () => {
 
             <div className='mt-10 md:mt-20 flex flex-col justify-center items-center w-full'>
               {
-                playground && playground.length === 0 ? 
+                playgrounds && playgrounds.length === 0 ? 
                 (
                   <EmptyState/>
                 ) : (
-                  <span>play</span>
+                  <ProjectTable 
+                 
+                   projects={playgrounds|| []}
+                   onDelete={handleDelete}
+                   onDuplicate={handleDuplicate}
+                   onUpdate={handleEdit}
+                  />
                 )
               }
             </div>
