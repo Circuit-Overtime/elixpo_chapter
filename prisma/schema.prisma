@@ -65,3 +65,37 @@ model Usage {
     points Int
     expire DateTime?
 }
+
+enum Templates {
+    REACT
+    NEXTJS
+    EXPRESS
+    HONO
+    ANGULAR
+    VUE
+}
+
+
+
+model Playground {
+    id String @id @default(cuid()) @map("_id")
+    title String
+    describtion String?
+    template Templates @default(REACT)
+    userId String
+    startMark StartMark[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model StartMark {
+    id String @id @default(cuid()) @map("_id")
+    userId String
+    isMarked Boolean
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    playgroundId String
+    playground Playground @relation(fields: [playgroundId],references: [id], onDelete: Cascade)
+
+    @@unique([userId,playgroundId])
+}
