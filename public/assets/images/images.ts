@@ -21,6 +21,12 @@ import testiSeven from '../images/avatar-7.png'
 import testiEight from '../images/avatar-8.png'
 import testiNine from '../images/avatar-9.png'
 import ProjectButton from '../images/projectbutton.png'
+import React from '../images/react.svg'
+import Express from '../images/expressjs-icon.svg'
+import Hono from '../images/hono.svg'
+import Angular from '../images/angular-2.svg'
+import Vue from '../images/vuejs-icon.svg'
+import Next from '../images/next.svg'
 /* import login from '../images/login.jpg'
 import login2 from '../images/login2.jpg'
 import login3 from '../images/login3.jpg'
@@ -76,4 +82,13 @@ export const Auth = {
        login11 */
 
        
+}
+
+export const TemplateLogo = {
+       React,
+       Next,
+       Hono,
+       Vue,
+       Angular,
+       Express
 }
