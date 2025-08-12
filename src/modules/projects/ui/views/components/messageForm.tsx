@@ -50,7 +50,7 @@ const MessageForm = ({projectId,selectedModel}: Props) => {
            trpc.usage.status.queryOptions()
          )  
      },
-     onError: (error) => {
+     onError: (error) => {  
          toast.error(error.message)
          if(error.data?.code === 'BAD_REQUEST') {
             router.push("/pricing")
