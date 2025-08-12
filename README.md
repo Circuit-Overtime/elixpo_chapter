@@ -13,9 +13,9 @@
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 
 
-## Hacktoberfest 2024
+## Hacktoberfest 2025
 
-Hacktoberfest 2024 is an opportunity for developers and enthusiasts to contribute to open-source projects. We are excited to participate and encourage community involvement in our ElixpoAI Art Generator project. 
+Hacktoberfest 2025 is an opportunity for developers and enthusiasts to contribute to open-source projects. We are excited to participate and encourage community involvement in our ElixpoAI Art Generator project. 
 
 During this event, we welcome contributions in the form of bug fixes, feature enhancements, documentation improvements, and more. By collaborating with fellow developers, we aim to enhance our project and create a vibrant community around AI art generation.
 
