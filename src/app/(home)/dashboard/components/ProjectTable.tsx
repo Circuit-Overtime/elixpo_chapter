@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import Image from 'next/image'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { Copy, Download, Edit3, ExternalLink, Eye, MoreHorizontal, Trash2 } from 'lucide-react'
+import { Code2, Copy, Download, Edit3, ExternalLink, Eye, MoreHorizontal, Trash2 } from 'lucide-react'
 const ProjectTable = ({
     projects=[],
     onDelete,
@@ -34,7 +34,9 @@ const ProjectTable = ({
        
    }
    const handleDeleteClick = async (project: PlayGroundProjects) => {
-     
+     if(onDelete) {
+         onDelete(project.id)
+     }
    }
   const frameworkColors = {
   react: "bg-blue-500 text-white", 
@@ -46,8 +48,13 @@ const ProjectTable = ({
 };
   return (
     <>
-    <div className='border w-full rounded-md overflow-hidden'>
-     <Table>
+   
+   <div className='flex flex-col md:w-full gap-2'>
+    <h1 style={{fontFamily: "poppins"}} className='text-2xl mb-2 flex items-center gap-2 font-bold'>Recent <span className='text-neutral-500'>Projects</span> 
+        <Code2/>
+         </h1>
+     <div className='border w-full  rounded-md overflow-hidden'>
+     <Table >
         <TableHeader>
             <TableRow>
                 <TableHead>Projects</TableHead>
@@ -168,6 +175,7 @@ const ProjectTable = ({
         </TableBody>
      </Table>
     </div>
+   </div>
     </>
   )
 }
