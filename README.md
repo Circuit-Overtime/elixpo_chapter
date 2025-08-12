@@ -1,4 +1,4 @@
-# 🚀 FingAI — Build Smarter, Launch Faster
+# 🚀 FingAI — Build Smarter, Launch Faster.
 
 FingAI is a modern AI-powered SaaS website builder designed to streamline your web development process with intelligent design automation and real-time optimization. Whether you're a developer, startup, or designer, FingAI helps you go from idea to launch — effortlessly.
 
