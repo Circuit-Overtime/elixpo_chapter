@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { use, useState } from 'react'
 import { TemplateModalProps, templates } from '../types/types'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Check, Code, Globe, Plus, Search, Server, Star, Zap } from 'lucide-react';
+import { Check, ChevronRight, Clock, Code, Code2, Globe, Plus, Search, Server, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { RadioGroup } from '@/components/ui/radio-group';
@@ -9,8 +9,13 @@ import Image from 'next/image';
 import { TemplateLogo } from '../../../../../public/assets/images/images';
 import GlobalError from '@/components/Error/page';
 import { RadioGroupItem } from '@radix-ui/react-radio-group';
+import { Button } from '@/components/ui/button';
+import { GoNorthStar } from 'react-icons/go';
+
 
 const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
+
+ 
   const [step, setStep] = useState<"select" | "configure">("select");
   const [selectedTemplate,setSelectedTemplate] = useState<string | null>();
   const [searchQurey, setSearchQurey] = useState("");
@@ -33,12 +38,59 @@ const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
   const handleSelectTemplate = (templateId: string) => {
      setSelectedTemplate(templateId)
   }
+  
+  const handleBack = () => {
+      setStep("select")
+  }
+   const handleCreateProject = () => {
+    if (selectedTemplate) {
+      const templateMap: Record<
+        string,
+        "REACT" | "NEXTJS" | "EXPRESS" | "VUE" | "HONO" | "ANGULAR"
+      > = {
+        react: "REACT",
+        nextjs: "NEXTJS",
+        express: "EXPRESS",
+        vue: "VUE",
+        hono: "HONO",
+        angular: "ANGULAR",
+      };
+
+      const template = templates.find((t) => t.id === selectedTemplate);
+      onSubmit({
+        title: projectName || `New ${template?.name} Project`,
+        template: templateMap[selectedTemplate] || "REACT",
+        describtion: template?.describtion,
+      });
+
+      console.log(
+        `Creating ${projectName || "new project"} with template: ${
+          template?.name
+        }`
+      );
+      onClose();
+      // Reset state for next time
+      setStep("select");
+      setSelectedTemplate(null);
+      setProjectName("");
+    }
+  };
+
+  
 
   const renderStars = (count: number) => {
       return Array(5).fill(0).map((_ , i) => (
          <Star key={i} size={14} className={ i < count ? "fill-pink-500" : "text-neutral-300"} />
       ))
   }
+  const onCreate = () => {
+     if(selectedTemplate) {
+         setStep("configure")
+     }
+  }
+
+  
+
   return (
      <Dialog   open={isOpen} onOpenChange={(open) => {
          if(!open) {
@@ -139,7 +191,7 @@ const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
                             <div className='flex flex-col gap-1'>
                                <div className='flex pr-5 items-center justify-between'>
                                 <div className='flex items-center gap-1'>
-                                     <span className='font-mono text-md'>{template.name}</span>
+                                     <span className='font-mono font-bold text-md'>{template.name}</span>
                                       <div className="flex gap-1">
                                 {template.category === "frontend" && (
                                   <Code size={14} className="text-blue-500" />
@@ -208,6 +260,35 @@ const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
         }
         </div>
     </RadioGroup>
+
+    <div className='flex items-center justify-end gap-5'>
+        <div className='flex items-center gap-2'>
+            <Clock className='dark:text-muted-foreground size-4'/>
+
+            <span  className='text-xs font-mono dark:text-muted-foreground'>
+                Estimate Setup time {""}
+                {selectedTemplate ? "2-5 minutes" : "Select a template"}
+            </span>
+        </div>
+
+        <div className='flex items-center gap-3' >
+         <Button className='bg-red-600 dark:text-white rounded-none hover:bg-red-700 font-mono' variant={"default"} >Cancel</Button>
+         <Button
+         onClick={onCreate}
+         className='relative overflow-hidden font-mono  rounded-none  text-white 
+                               bg-gradient-to-r from-purple-500 via-pink-600 to-red-600 
+                               bg-[length:200%_200%]'
+                    style={{
+                      animation: 'shine 2s linear infinite',
+                      backgroundSize: '200% 200%',
+                      backgroundPosition: '0% 50%',
+                    }}>
+                             Continue
+
+                             <ChevronRight/>
+                          </Button>
+        </div>
+    </div>
  
         </div>
 
@@ -215,7 +296,90 @@ const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
             </>
         ) : 
         
-        (<></>)
+        (<>
+         <DialogHeader>
+            <DialogTitle>
+               <div className='flex items-center gap-2'>
+                 <span style={{fontFamily: "monospace"}} className='font-bold text-2xl '>Configure Your Project</span>
+               </div>
+                
+            </DialogTitle>
+
+            <DialogDescription>
+                <span className='text-xs font-mono'>{
+                    templates.find((t) => 
+                    t.id === selectedTemplate
+                )?.name} Project Configuration </span>
+            </DialogDescription>
+        </DialogHeader>
+
+        <div className='flex flex-col '>
+           <div className="relative flex-1 flex flex-col gap-2">
+  {/* Label */}
+  <label 
+    htmlFor="projectName" 
+    className="text-xs font-mono font-bold ml-2 "
+  >
+    Project Name
+  </label>
+
+  {/* Input Wrapper */}
+  <div className="relative">
+    {/* Search Icon */}
+    <div className="absolute left-4 top-1/2 -translate-y-1/2 ">
+      <Code2 size={20} />
+    </div>
+
+    {/* Input Field */}
+    <Input
+      id="projectName"
+      value={projectName}
+      onChange={(e) => setProjectName(e.target.value)}
+      className="pl-12 py-6 w-full rounded-lg border placeholder:font-mono text-xs"
+      placeholder="Set a Project name"
+    />
+  </div>
+</div>
+      <div className="p-4 mt-3 mb-3  shadow-[0_0_0_1px_#FF4F7D,0_8px_20px_rgba(255,79,125,0.15)]  rounded-lg border">
+                <h3 className="font-medium font-mono mb-2">Selected Template Features</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {templates
+                    .find((t) => t.id === selectedTemplate)
+                    ?.features.map((feature) => (
+                      <div key={feature} className="flex items-center gap-2">
+                        <GoNorthStar size={14} className="text-pink-500" />
+                        <span className="text-sm font-medium font-mono ">{feature}</span>
+                      </div>
+                    ))}
+                </div>
+        </div>
+            
+</div>
+
+
+    <div className=' flex justify-between'>    
+        <Button onClick={handleBack}  className='rounded-none bg-red-600 px-8 font-mono text-white hover:bg-red-700'>
+            Back
+        </Button>
+
+        <Button
+         onClick={handleCreateProject}
+         className='relative overflow-hidden font-mono  rounded-none  text-white 
+                               bg-gradient-to-r from-purple-500 via-pink-600 to-red-600 
+                               bg-[length:200%_200%]'
+                    style={{
+                      animation: 'shine 2s linear infinite',
+                      backgroundSize: '200% 200%',
+                      backgroundPosition: '0% 50%',
+                    }}>
+                             Create Project
+
+                             <ChevronRight/>
+                          </Button>
+       </div>
+
+       
+        </>)
         }
        </DialogContent>
      </Dialog>

@@ -36,17 +36,24 @@ const ProjectTable = ({
    const handleDeleteClick = async (project: PlayGroundProjects) => {
      
    }
-
+  const frameworkColors = {
+  react: "bg-blue-500 text-white", 
+  nextjs: "bg-gray-900 text-white",
+  vue: "bg-green-500 text-white",
+  angular: "bg-red-600 text-white",
+  svelte: "bg-orange-500 text-white",
+  default: "bg-pink-600 text-white" // fallback
+};
   return (
     <>
-    <div className='border rounded-md overflow-hidden'>
+    <div className='border w-full rounded-md overflow-hidden'>
      <Table>
         <TableHeader>
             <TableRow>
                 <TableHead>Projects</TableHead>
                 <TableHead>Template</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead>User</TableHead>
+               
                 <TableHead className='w-[50px]'>Actions</TableHead>
             </TableRow>
         </TableHeader>
@@ -64,7 +71,9 @@ const ProjectTable = ({
                        </TableCell>
 
                        <TableCell>
-                       <Badge variant={"outline"} className='bg-pink-900 ' >
+                       <Badge
+                       
+                       variant={"outline"} className='bg-pink-800 ' >
                         {project.template}
                        </Badge>
                        </TableCell>
@@ -77,7 +86,7 @@ const ProjectTable = ({
 
                      
 
-                      <TableCell>
+                      <TableCell  >
                         <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -85,7 +94,7 @@ const ProjectTable = ({
                         <span className="sr-only">Open menu</span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuContent align="end" className="w-48  flex flex-col space-y-3 font-mono dark:bg-neutral-950 p-4 rounded-md">
                       <DropdownMenuItem asChild>
                         {/* <MarkedToggleButton
                           markedForRevision={project.Starmark[0]?.isMarked}
@@ -97,46 +106,58 @@ const ProjectTable = ({
                           href={`/playground/${project.id}`}
                           className="flex items-center"
                         >
-                          <Eye className="h-4 w-4 mr-2" />
+                          <span className='flex items-center gap-1'>
+                         <Eye className="h-4 w-4 mr-2" />
                           Open Project
+                          </span>
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
+                      <DropdownMenuItem className='hover:border-none' asChild>
                         <Link
                           href={`/playground/${project.id}`}
                           target="_blank"
                           className="flex items-center"
                         >
-                          <ExternalLink className="h-4 w-4 mr-2" />
+                         <span className='flex items-center gap-1'>
+                         <ExternalLink className="h-4 w-4 mr-2" />
                           Open in New Tab
+                         </span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => handleEditClick(project)}
                       >
-                        <Edit3 className="h-4 w-4 mr-2" />
+                       <span className='flex items-center gap-1'>
+                         <Edit3 className="h-4 w-4 mr-2" />
                         Edit Project
+                       </span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleDuplicateProject(project)}
                       >
+                        <span className='flex items-center gap-1'>
                         <Copy className="h-4 w-4 mr-2" />
                         Duplicate
+                        </span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => copyProjectUrl(project.id)}
                       >
-                        <Download className="h-4 w-4 mr-2" />
-                        Copy URL
+                       <span className='flex gap-1 items-center'>
+                         <Download className="h-4 w-4 mr-2" />
+                        Copy URL 
+                       </span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => handleDeleteClick(project)}
                         className="text-destructive focus:text-destructive"
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                       <span className='flex items-center gap-1'>
+                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete Project
+                       </span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

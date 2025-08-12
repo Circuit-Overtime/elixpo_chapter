@@ -6,12 +6,36 @@ import Image from 'next/image'
 import { IMAES } from '../../../../../public/assets/images/images'
 import { SelectedTempProps } from '../types/types'
 import TemplateModal from './TemplateModal'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTRPC } from '@/trpc/client'
+import { useRouter } from 'next/navigation'
 
 
 const AddProjectButton = () => {
+  const trpc = useTRPC();  
+  const queryClient = useQueryClient();
+  const router = useRouter()
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [seletedTemplate, setSelectedTemplate] = useState<SelectedTempProps | null>(null);   
-  
+  const createProject = useMutation(trpc.playground.createPlayground.mutationOptions({
+     onSuccess: (data) => {
+         queryClient.invalidateQueries({queryKey: [['playground', 'getAllPlayground']]})
+         setIsModalOpen(false)
+         router.push(`/playground/${data.id}`)
+     }
+  }))
+  const handelSubmit = (data: {
+    title: string;
+    describtion?: string;
+    template: "REACT" | "NEXTJS" | "EXPRESS" | "VUE" | "HONO" | "ANGULAR";
+  }) => { 
+      createProject.mutate({
+        title: data.title,
+        description: data.describtion,
+        template: data.template
+      })
+  }
   
   return (
   <>
@@ -42,7 +66,7 @@ const AddProjectButton = () => {
       <TemplateModal
       isOpen={isModalOpen}
       onClose={() => setIsModalOpen(false)}
-      onSubmit={() => {}}
+      onSubmit={handelSubmit}
     />
     )
    }
