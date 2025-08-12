@@ -5,7 +5,15 @@ function handleBlockFormatting(lineEl) {
   const text = lineEl.textContent;
   const section = lineEl.parentNode;
   console.log(lineEl.tagName)
+  
+  // Check if we're inside a table cell (TD)
+  const isInTableCell = lineEl.closest('td') !== null;
+  
   if (lineEl.tagName === 'P') {
+    // Handle table-specific formatting first
+    if (isInTableCell) {
+      return handleTableCellFormatting(lineEl, text);
+    }
 
     if (
       text === 'TABLE\u00A0' ||
@@ -45,19 +53,7 @@ function handleBlockFormatting(lineEl) {
 
         // Keyboard navigation and editing
         td.addEventListener('keydown', (e) => {
-          if (e.key === 'Tab') {
-            e.preventDefault();
-            const tds = Array.from(td.parentElement.children);
-            const currentIndex = tds.indexOf(td);
-            const nextTd = tds[currentIndex + 1];
-            if (nextTd) {
-              nextTd.focus();
-              const firstP = nextTd.querySelector('p');
-              if (firstP) {
-                placeCaretAtStart(firstP);
-              }
-            }
-          }
+
           if (e.key === "Backspace") {
             const pTags = td.querySelectorAll('p');
             // Remove any empty <p> tag, or remove the table if all <p> tags are empty
@@ -234,7 +230,7 @@ function handleBlockFormatting(lineEl) {
 
       placeCaretAtStart(code);
       
-      // --- FIX: Update currentLineFormat to code element ---
+
       setTimeout(() => {
         currentLineFormat.currentLine = pre;
       }, 0);
@@ -308,30 +304,30 @@ function handleBlockFormatting(lineEl) {
     const orderedListMatch = text.match(/^\d+\.\s(.*)/);
 
     if (unorderedListMatch || orderedListMatch) {
-    const isOrdered = !!orderedListMatch;
-    const listType = isOrdered ? 'ol' : 'ul';
-    const content = isOrdered ? orderedListMatch[1] : unorderedListMatch[1];
+      const isOrdered = !!orderedListMatch;
+      const listType = isOrdered ? 'ol' : 'ul';
+      const content = isOrdered ? orderedListMatch[1] : unorderedListMatch[1];
 
-    updateCurrentBlock(isOrdered ? "ORDERED_LIST" : "UNORDERED_LIST");
-    const hexID = generateHexID();
-    const list = document.createElement(listType);
-    list.id = `${listType}_${hexID}`;
-    const li = document.createElement('li');
-    li.id = `li_${generateHexID()}`;
+      updateCurrentBlock(isOrdered ? "ORDERED_LIST" : "UNORDERED_LIST");
+      const hexID = generateHexID();
+      const list = document.createElement(listType);
+      list.id = `${listType}_${hexID}`;
+      const li = document.createElement('li');
+      li.id = `li_${generateHexID()}`;
 
-    if (content && hasMarkdownPattern(content)) {
-      processMarkdownInText(content, li);
-    } else {
-      li.textContent = content;
+      if (content && hasMarkdownPattern(content)) {
+        processMarkdownInText(content, li);
+      } else {
+        li.textContent = content;
+      }
+
+      list.appendChild(li);
+      section.replaceChild(list, lineEl);
+      const newP = createParagraph();
+      section.appendChild(newP);
+      placeCaretAtEnd(li);
+      return true;
     }
-
-    list.appendChild(li);
-    section.replaceChild(list, lineEl);
-    const newP = createParagraph();
-    section.appendChild(newP);
-    placeCaretAtEnd(li);
-    return true;
-  }
 
     const blockquoteMatch = text.match(/^>\s(.*)/);
     if (blockquoteMatch) {
@@ -359,16 +355,3 @@ function handleBlockFormatting(lineEl) {
   return false;
 }
 
-          
-function getCaretLine(cell) {
-  const sel = window.getSelection();
-  if (!sel.rangeCount) return 0;
-  const range = sel.getRangeAt(0);
-  const preCaretRange = range.cloneRange();
-  preCaretRange.selectNodeContents(cell);
-  preCaretRange.setEnd(range.endContainer, range.endOffset);
-  return preCaretRange.toString().split('\n').length - 1;
-}
-function getTotalLines(cell) {
-  return cell.textContent.split('\n').length;
-}

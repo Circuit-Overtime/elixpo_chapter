@@ -19,8 +19,48 @@ function createSection() {
   const p = document.createElement('p');
   p.innerHTML = '\u00A0<span class="default-text-not-editable" contenteditable="false">Welcome to Elixpo Sketch, you can type your notes here -- styled with markdown support!</span>';
 
+  let testTable = `
+  <table id="table_05e019f7" contenteditable="false" style="border-collapse:collapse;">
+      <tbody>
+        <tr>
+          <td contenteditable="true" style="vertical-align: top; max-width: 200px; width: 200px;">
+            <p><span class="default-text">&nbsp;</span></p>
+          </td>
+          <td contenteditable="true" style="vertical-align: top; max-width: 200px; width: 200px;">
+            <p><span class="default-text">&nbsp;</span></p>
+          </td>
+          <td contenteditable="true" style="vertical-align: top; max-width: 200px; width: 200px;">
+            <p><span class="default-text">&nbsp;</span></p>
+          </td>
+        </tr>
+        <tr>
+          <td contenteditable="true" style="vertical-align:top;">
+            <p><span class="default-text">&nbsp;</span></p>
+          </td>
+          <td contenteditable="true" style="vertical-align:top;">
+            <p><span class="default-text">&nbsp;</span></p>
+          </td>
+          <td contenteditable="true" style="vertical-align:top;">
+            <p><span class="default-text">&nbsp;</span></p>
+          </td>
+        </tr>
+        <tr>
+          <td contenteditable="true" style="vertical-align:top;">
+            <p><span class="default-text">&nbsp;</span></p>
+          </td>
+          <td contenteditable="true" style="vertical-align:top;">
+            <p><span class="default-text">&nbsp;</span></p>
+          </td>
+          <td contenteditable="true" style="vertical-align:top;">
+            <p><span class="default-text">&nbsp;</span></p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  `
   section.appendChild(h1);
   section.appendChild(p);
+  section.innerHTML += (testTable);
   return section;
 }
 
