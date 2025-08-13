@@ -48,6 +48,7 @@ export const playGroundRouter = createTRPCRouter({
             take: 1, // Only get the most recent mark
           },
         },
+        
         orderBy: { createdAt: "desc" },
       });
 
@@ -110,11 +111,19 @@ export const playGroundRouter = createTRPCRouter({
             id: input.id,
             userId: ctx.auth.userId, // Ensure user owns the playground
           },
+          
           include: {
             startMark: {
               where: { userId: ctx.auth.userId },
-              select: { isMarked: true },
+              select: { 
+                 isMarked: true
+              },
             },
+            templateFiles: {
+                 select: {
+                     content: true
+                 }
+            }
           },
         });
       } catch (error) {
@@ -124,6 +133,7 @@ export const playGroundRouter = createTRPCRouter({
         });
       }
     }),
+    
 
 
 
@@ -290,6 +300,75 @@ editProjectById: protechedRoute
       });
     }
   }),
+
+
+/* 🚀saveCode */
+saveCode: protechedRoute
+  .input(
+    z.object({
+      playgroundId: z.string().min(1, "Playground ID is required"),
+      data: z.any() // Accept any JSON-serializable data
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    // Verify playground exists and belongs to user
+    const playground = await prisma.playground.findUnique({
+      where: {
+        id: input.playgroundId,
+        userId: ctx.auth.userId
+      }
+    });
+
+    if (!playground) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Playground not found or access denied"
+      });
+    }
+
+    try {
+      // First try to find existing template file
+      const existingFile = await prisma.templateFile.findFirst({
+        where: {
+          playgroundId: input.playgroundId
+        }
+      });
+
+      // Properly handle JSON data for Prisma
+      const jsonData = input.data === null ? null : input.data;
+
+      let result;
+      if (existingFile) {
+        // Update existing file
+        result = await prisma.templateFile.update({
+          where: { id: existingFile.id },
+          data: { 
+            content: jsonData,
+            updatedAt: new Date() 
+          }
+        });
+      } else {
+        // Create new file
+        result = await prisma.templateFile.create({
+          data: {
+            playgroundId: input.playgroundId,
+            content: jsonData
+          }
+        });
+      }
+
+      revalidatePath(`/playground/${input.playgroundId}`);
+      revalidatePath("/dashboard");
+
+      return result;
+    } catch (error) {
+      console.error("SaveCode error:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: error instanceof Error ? error.message : "Failed to save code"
+      });
+    }
+  })
 
  
 });
