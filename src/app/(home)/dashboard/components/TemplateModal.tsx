@@ -11,6 +11,7 @@ import GlobalError from '@/components/Error/page';
 import { RadioGroupItem } from '@radix-ui/react-radio-group';
 import { Button } from '@/components/ui/button';
 import { GoNorthStar } from 'react-icons/go';
+import GradientButton from '@/components/Custombuttons/GradientButton';
 
 
 const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
@@ -144,25 +145,25 @@ const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
   <TabsList className="w-full sm:w-[420px] grid grid-cols-4 gap-2 rounded-md dark:bg-neutral-900 p-1 shadow-sm">
     <TabsTrigger
       value="all"
-      className="data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm data-[state=active]:text-pink-500 rounded-md py-2 text-sm font-medium transition-all duration-200"
+      className="dark:data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm data-[state=active]:text-pink-500 rounded-md py-2 text-sm font-medium transition-all duration-200"
     >
      <span className='font-mono'>All</span>
     </TabsTrigger>
     <TabsTrigger
       value="fullstack"
-      className="data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm data-[state=active]:text-pink-500 rounded-md py-2 text-sm font-medium transition-all duration-200"
+      className="dark:data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm data-[state=active]:text-pink-500 rounded-md py-2 text-sm font-medium transition-all duration-200"
     >
        <span className='font-mono'>Fullstack</span>
     </TabsTrigger>
     <TabsTrigger
       value="frontend"
-      className="data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm data-[state=active]:text-pink-500 rounded-md py-2 text-sm font-medium transition-all duration-200"
+      className="dark:data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm data-[state=active]:text-pink-500 rounded-md py-2 text-sm font-medium transition-all duration-200"
     >
        <span className='font-mono'>Frontend</span>
     </TabsTrigger>
     <TabsTrigger
       value="backend"
-      className="data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm data-[state=active]:text-pink-500 rounded-md py-2 text-sm font-medium transition-all duration-200"
+      className="dark:data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm data-[state=active]:text-pink-500 rounded-md py-2 text-sm font-medium transition-all duration-200"
     >
        <span className='font-mono'>Backend</span>
     </TabsTrigger>
@@ -177,7 +178,7 @@ const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
                      return (
                         <div 
                          onClick={() => handleSelectTemplate(template.id)}
-                        key={template.id} className={`relative flex p-6 border bg-neutral-900 rounded-lg cursor-pointer
+                        key={template.id} className={`relative flex p-6 border dark:bg-neutral-900 rounded-lg cursor-pointer
                           transition-all duration-300 hover:scale-[1.02]
                           ${
                             selectedTemplate === template.id
@@ -272,21 +273,12 @@ const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
         </div>
 
         <div className='flex items-center gap-3' >
-         <Button className='bg-red-600 dark:text-white rounded-none hover:bg-red-700 font-mono' variant={"default"} >Cancel</Button>
-         <Button
-         onClick={onCreate}
-         className='relative overflow-hidden font-mono  rounded-none  text-white 
-                               bg-gradient-to-r from-purple-500 via-pink-600 to-red-600 
-                               bg-[length:200%_200%]'
-                    style={{
-                      animation: 'shine 2s linear infinite',
-                      backgroundSize: '200% 200%',
-                      backgroundPosition: '0% 50%',
-                    }}>
-                             Continue
-
-                             <ChevronRight/>
-                          </Button>
+         <Button onClick={() => onClose() } className='bg-red-600 dark:text-white rounded-none hover:bg-red-700 font-mono' variant={"default"} >Cancel</Button>
+         <GradientButton
+           onClick={() => setStep('configure')}
+         >
+            Continue
+         </GradientButton>
         </div>
     </div>
  
@@ -362,20 +354,11 @@ const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
             Back
         </Button>
 
-        <Button
-         onClick={handleCreateProject}
-         className='relative overflow-hidden font-mono  rounded-none  text-white 
-                               bg-gradient-to-r from-purple-500 via-pink-600 to-red-600 
-                               bg-[length:200%_200%]'
-                    style={{
-                      animation: 'shine 2s linear infinite',
-                      backgroundSize: '200% 200%',
-                      backgroundPosition: '0% 50%',
-                    }}>
-                             Create Project
-
-                             <ChevronRight/>
-                          </Button>
+       <GradientButton
+        onClick={handleCreateProject}
+       >
+        Create Project
+       </GradientButton>
        </div>
 
        
