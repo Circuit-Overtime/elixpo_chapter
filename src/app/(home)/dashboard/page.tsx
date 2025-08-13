@@ -11,6 +11,8 @@ import ProjectTable from './components/ProjectTable'
 import { toast } from 'sonner'
 import { Templates } from '@/generated/prisma'
 import { PlayGroundProjects } from './types/types'
+import CustomLoader from '@/components/loader/CustomLoader'
+import HeaderLoader from '@/components/loader/HeaderLoader'
 
 const Dashboard =  () => {
  const trpc = useTRPC();
@@ -90,20 +92,20 @@ const handleEdit = (projects: PlayGroundProjects) => {
             </div>
 
             <div className='mt-10 md:mt-20 flex flex-col justify-center items-center w-full'>
-              {
-                playgrounds && playgrounds.length === 0 ? 
-                (
-                  <EmptyState/>
-                ) : (
-                  <ProjectTable 
-                 
-                   projects={playgrounds|| []}
-                   onDelete={handleDelete}
-                   onDuplicate={handleDuplicate}
-                   onUpdate={handleEdit}
-                  />
-                )
-              }
+              {isLoading ? (
+                <HeaderLoader />
+              ) : error ? (
+                <p className="text-red-500">Failed to load projects</p>
+              ) : playgrounds && playgrounds.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <ProjectTable
+                  projects={playgrounds || []}
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                  onUpdate={handleEdit}
+                />
+              )}
             </div>
           </div>
         </div>
