@@ -56,7 +56,7 @@ const PlaygroundView = ({ playgroundId }: Props) => {
     <PlaygroundLayout>
       <TooltipProvider>
         <SidebarInset>
-          <header className="flex items-center">
+         {/*  <header className="flex items-center">
             <SidebarTrigger className='ml-1' />
             <Separator orientation='vertical' className='mr-2 h-4' />
             <div className='flex flex-1 items-center gap-2'>
@@ -69,12 +69,15 @@ const PlaygroundView = ({ playgroundId }: Props) => {
                 )}
               </div>
             </div>
-          </header>
+          </header> */}
           
           {/* Add your template content here */}
           {templateData && (
             <div className="mt-4">
-               <TemplateTree/>
+               <TemplateTree
+               data={templateData}
+               title={playgroundData?.title}
+               />
               
             </div>
           )}
