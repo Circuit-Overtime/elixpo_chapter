@@ -8,7 +8,7 @@ interface Props {
 }
 const PlaygroundLayout = ({children}:Props) => {
   return (
-  <SidebarProvider>
+  <SidebarProvider >
     {children}
   </SidebarProvider>
   )

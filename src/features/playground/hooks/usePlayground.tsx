@@ -1,3 +1,4 @@
+"use client";
 import { useCallback, useState } from "react";
 import { TemplateFolder } from "../lib/path-to-json";
 import { useTRPC } from "@/trpc/client";
@@ -7,7 +8,7 @@ import { TRPCError } from "@trpc/server";
 
 interface PlayGroundData {
   id: string;
-  name?: string;
+  title?: string;
   [key: string]: any;
 }
 

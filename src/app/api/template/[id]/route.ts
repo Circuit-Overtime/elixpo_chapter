@@ -1,54 +1,75 @@
-import { readTemplateStructureFromJson,saveTemplateStructureToJson } from "@/features/playground/lib/path-to-json";
+import { readTemplateStructureFromJson, saveTemplateStructureToJson } from "@/features/playground/lib/path-to-json";
 import prisma from "@/lib/db";
 import path from "path";
 import fs from 'fs/promises'
 import { NextRequest } from "next/server";
-import { error } from "console";
 import { templatePaths } from "@/lib/template";
-import { _success } from "zod/v4/core";
 
 function validateJson(data: unknown): boolean {
-      try {
-         JSON.parse(JSON.stringify(data))
-         return true
-      }catch(error) {
-         console.log("Invalide Json Structure", error);
-         return false
-         
-      }
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  return true;
 }
 
 export async function GET(
-    request: NextRequest,
-    {params}: {params: Promise<{id: string}>}
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
-     const {id} = await params;
-     if(!id) {
-         return Response.json({error: "Missing PlayGround Id"}, {status: 404})
-     }
-     const playground = await prisma.playground.findUnique({
-         where: {
-             id
-         }
-     })
+  try {
+    const { id } = params;
+    
+    if (!id) {
+      return Response.json({ error: "Missing PlayGround Id" }, { status: 400 });
+    }
 
-     if(!playground) {
-         return Response.json({error: "PlayGround is not Found"},{status: 404})
-     }
+    const playground = await prisma.playground.findUnique({
+      where: { id }
+    });
+
+    if (!playground) {
+      return Response.json({ error: "PlayGround not found" }, { status: 404 });
+    }
+
+    if (!playground.template || !(playground.template in templatePaths)) {
+      return Response.json({ error: "Invalid template specified" }, { status: 400 });
+    }
 
     const templateKey = playground.template as keyof typeof templatePaths;
-    const templatePath = templatePaths[templateKey]
-     try {
-       const inputPath = path.join(process.cwd(), templatePath);
-       const outpuFile = path.join(process.cwd(), `output/${templateKey}.json`)
-       await saveTemplateStructureToJson(inputPath, outpuFile);
-       const res = readTemplateStructureFromJson(outpuFile);
-       if(!validateJson(!(await res).items)) {
-         return Response.json({error: "Invalide Json Structure"},{status: 500})
-       }
-       await fs.unlink(outpuFile)
-       return Response.json({ success: true, templateJson: res }, { status: 200 });
-     } catch (error) {
-        return Response.json({ error: "Failed to generate template" }, { status: 500 });
-     }
+    const templatePath = templatePaths[templateKey];
+    const inputPath = path.join(process.cwd(), templatePath);
+    const outputFile = path.join(process.cwd(), `output/${templateKey}.json`);
+
+    try {
+      // Create output directory if it doesn't exist
+      await fs.mkdir(path.dirname(outputFile), { recursive: true });
+      
+      await saveTemplateStructureToJson(inputPath, outputFile);
+      const templateData = await readTemplateStructureFromJson(outputFile);
+
+      if (!validateJson(templateData?.items)) {
+        throw new Error("Invalid JSON structure");
+      }
+
+      return Response.json({ 
+        success: true, 
+        templateJson: templateData 
+      }, { status: 200 });
+
+    } finally {
+      // Clean up the temporary file
+      try {
+        await fs.unlink(outputFile);
+      } catch (cleanupError) {
+        console.error("Failed to clean up temporary file:", cleanupError);
+      }
+    }
+
+  } catch (error) {
+    console.error("Error in GET /api/playground:", error);
+    return Response.json(
+      { error: "Internal server error" }, 
+      { status: 500 }
+    );
+  }
 }

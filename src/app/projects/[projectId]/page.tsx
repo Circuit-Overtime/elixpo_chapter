@@ -1,3 +1,4 @@
+
 import GlobalError from '@/components/Error/page'
 import CustomLoader from '@/components/loader/CustomLoader'
 import ProjectView from '@/modules/projects/ui/views/project-view'
