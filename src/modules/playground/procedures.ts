@@ -1,3 +1,4 @@
+
 import prisma from "@/lib/db";
 import { createTRPCRouter, protechedRoute } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
@@ -102,38 +103,41 @@ export const playGroundRouter = createTRPCRouter({
     }),
 
   // Get a single playground by ID
-  getPlayground: protechedRoute
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        return await prisma.playground.findUnique({
-          where: {
-            id: input.id,
-            userId: ctx.auth.userId, // Ensure user owns the playground
-          },
-          
-          include: {
-            startMark: {
-              where: { userId: ctx.auth.userId },
-              select: { 
-                 isMarked: true
-              },
-            },
-            templateFiles: {
-                 select: {
-                     content: true
-                 }
-            }
-          },
-        });
-      } catch (error) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to fetch playground",
-        });
-      }
-    }),
-    
+ getPlayground: protechedRoute
+  .input(z.object({ id: z.string() }))
+  .query(async ({ ctx, input }) => {
+    const playground = await prisma.playground.findUnique({
+      where: {
+        id: input.id,
+        userId: ctx.auth.userId, // Ensures user owns it
+      },
+      select: {
+        id: true,
+        title: true, // ✅ Added title
+        describtion: true,
+        template: true,
+        createdAt: true,
+        updatedAt: true,
+        startMark: {
+          where: { userId: ctx.auth.userId },
+          select: { isMarked: true },
+        },
+        templateFiles: {
+          select: { content: true },
+        },
+      },
+    });
+
+    if (!playground) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Playground not found or access denied",
+      });
+    }
+
+    return playground;
+  }),
+
 
 
 
