@@ -46,3 +46,35 @@ export interface TemplateTreeNodeProps {
         parentPath: string
     ) => void
 }
+
+
+
+//handle file folder dialogs interfaces 
+
+export interface FileDialogProps {
+     isOpen: boolean;
+     onClose: () => void;
+     onCreateFile: (filename:string, extension: string) => void
+}
+
+export interface FolderDialogProps {
+     isOpen: boolean;
+     onClose: () => void;
+     onCreateFolder: (foldername:string) => void
+}
+
+export interface RenameFolderDialogProps {
+     isOpen: boolean;
+     onClose: () => void;
+     onRename: (foldername: string) => void
+     currentFolderName: string
+}
+
+export interface RenameFildDialogProps {
+     isOpen: boolean;
+     onClose: () => void;
+     onRename: (filename: string, extension: string) => void
+     currentFileName: string
+     currentExtension: string
+
+}
