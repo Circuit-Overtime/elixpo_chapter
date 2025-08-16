@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react'
-import { TemplateFolder, TemplateFiles, TemplateTreeNodeProps } from '../types/types'
+import { TemplateFolder, TemplateFile, TemplateTreeNodeProps } from '../types/types'
 import { Folder, FolderOpen, File, Plus, Trash, Pencil, MoreHorizontal, Edit, Trash2, ChevronRight, FilePlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SidebarMenuButton, SidebarMenuItem, SidebarMenu } from '@/components/ui/sidebar'
@@ -36,7 +36,7 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
 
   // ---- File Rendering ----
   if (!isFolder) {
-    const file = item as TemplateFiles
+    const file = item as TemplateFile
     const fullFileName = `${file.filename}.${file.fileExtension}`
     const isActive =
       selectedFiles?.filename === file.filename &&

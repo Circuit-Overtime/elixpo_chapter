@@ -9,6 +9,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
 import TemplateTree from './components/templates-tree'
 import CustomLoader from '@/components/loader/CustomLoader'
+import { useFileExplorer } from '@/features/playground/hooks/useFileExplorer'
 
 interface Props {
   playgroundId: string
@@ -26,6 +27,8 @@ const PlaygroundView = ({ playgroundId }: Props) => {
     saveTemplateData,
     isSaving
   } = usePlayground(playgroundId)
+
+  const explore = useFileExplorer()
 
   useEffect(() => {
     if (playgroundId) {
@@ -77,6 +80,8 @@ const PlaygroundView = ({ playgroundId }: Props) => {
                <TemplateTree
                data={templateData}
                title={playgroundData?.title}
+               
+
                />
               
             </div>
