@@ -2,14 +2,6 @@
 
 Welcome to **Inkflow Workspace** – your go-to web app for seamless, intuitive digital art creation. Whether you’re sketching ideas, designing shapes, or exploring your creativity, Inkflow Workspace offers all the tools you need to bring your imagination to life!
 
-
-## 🌟 Toolbar Preview and Sketches
-<img src="Images/PREVIEW1.png">
-
-
-## 🌟 Over all look & Feel Preview and Sketches
-<img src="Images/PREVIEW2.png">
-
 ---
 
 ## 🌟 Key Features
@@ -64,8 +56,3 @@ We would like to extend our heartfelt thanks to <a href="https://github.com/Circ
 
 We’re thrilled to invite our amazing community to help **Inkflow Workspace** flourish! 🌱 If you have brilliant ideas or wish to enhance our app, don’t hesitate to open issues or submit pull requests. Together, let’s transform this platform into a vibrant creative haven for everyone! 🎨✨
 
----
-
-## 📜 License
-
-This project is licensed under the MIT License. Check out the `LICENSE` file for more details.
