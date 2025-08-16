@@ -58,6 +58,18 @@ const PlaygroundView = ({ playgroundId }: Props) => {
   return (
     <PlaygroundLayout>
       <TooltipProvider>
+       <>
+       {templateData && (
+            <div className="mt-4">
+               <TemplateTree
+               data={templateData}
+               title={playgroundData?.title}
+               
+
+               />
+              
+            </div>
+          )}
         <SidebarInset>
          {/*  <header className="flex items-center">
             <SidebarTrigger className='ml-1' />
@@ -75,18 +87,10 @@ const PlaygroundView = ({ playgroundId }: Props) => {
           </header> */}
           
           {/* Add your template content here */}
-          {templateData && (
-            <div className="mt-4">
-               <TemplateTree
-               data={templateData}
-               title={playgroundData?.title}
-               
-
-               />
-              
-            </div>
-          )}
+         
         </SidebarInset>
+       </>
+         
       </TooltipProvider>
     </PlaygroundLayout>
   )
