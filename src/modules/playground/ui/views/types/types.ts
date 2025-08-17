@@ -79,3 +79,9 @@ export interface RenameFildDialogProps {
      currentExtension: string
 
 }
+
+export interface PlaygroundCodeEditorProps {
+     activeFile: TemplateFile | undefined
+     content: string
+     onContentChange: (value:string) => void
+}
