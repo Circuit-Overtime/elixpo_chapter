@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@radix-ui
 import { DialogFooter, DialogHeader } from '@/components/ui/dialog'
 import GradientButton from '@/components/Custombuttons/GradientButton'
 import { RenameFolderDialog } from './Dialogs/RenameFolderDialog'
+import NewFileDialog from './Dialogs/NewFileDialog'
+import NewFolderDialog from './Dialogs/NewFolderDialog'
 
 
 
@@ -82,19 +84,7 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
   return (
     <SidebarMenuItem>
       <div className="flex items-center group">
-        {isRenaming ? (
-          <div className="flex-1 relative">
-            <Input
-              autoFocus
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onBlur={handleRenameSubmit}
-              className="h-8 px-2 py-1 text-sm border rounded"
-            />
-          </div>
-        ) : (
-          <>
+        <>
             <SidebarMenuButton 
               isActive={isSelected} 
               onClick={() => onFileSelect?.(file)} 
@@ -115,10 +105,9 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => {
-                  setNewName(fileName);
-                  setIsRenaming(true);
-                }}>
+                <DropdownMenuItem 
+                 onClick={() => setIsNewFileDialogOpen(true)}
+                >
                   <Edit3 className="h-4 w-4 mr-2" />
                   Rename
                 </DropdownMenuItem>
@@ -130,8 +119,14 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
           </>
-        )}
       </div>
+
+      <NewFileDialog
+       isOpen={isNewFileDialogOpen}
+       onClose={() => setIsNewFileDialogOpen(false)}
+       onCreateFile={() => {}}
+       
+      />
     </SidebarMenuItem>
   );
 } else {
@@ -171,11 +166,11 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem >
+                <DropdownMenuItem onClick={() => setIsNewFileDialogOpen(true)} >
                   <FilePlus className="h-4 w-4 mr-2" />
                   New File
                 </DropdownMenuItem>
-                <DropdownMenuItem >
+                <DropdownMenuItem onClick={() => setIsNewFolderDialogOpen(true)} >
                   <FolderPlus className="h-4 w-4 mr-2" />
                   New Folder
                 </DropdownMenuItem>
@@ -222,9 +217,8 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
      
       </SidebarMenuItem>
 
-       {isNewFolderDialogOpen && (
-          <div className="fixed  inset-0 z-50 flex items-center justify-center bg-opacity-50">
-            <div className="bg-transparent border rounded-lg p-6 w-full max-w-md">
+     
+           
           <RenameFolderDialog
           isOpen={isNewFolderDialogOpen}
           currentFolderName={folder.folderName}
@@ -232,9 +226,19 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
           onRename={handelOnRename}
          
          />
-            </div>
-          </div>
-        )}
+           
+
+        <NewFileDialog
+         isOpen={isNewFileDialogOpen}
+         onClose={() => setIsNewFileDialogOpen(false)}
+         onCreateFile={() =>{}}
+        />
+
+        <NewFolderDialog
+         isOpen={isNewFolderDialogOpen}
+         onClose={() => setIsNewFolderDialogOpen(false)}
+         onCreateFolder={() => {}}
+        />
      </div>
     )
 }
@@ -249,86 +253,3 @@ export default TemplateTreeNode
 
 
 
-const RenameFileDialog = ({
-   currentExtension,
-   currentFileName,
-   isOpen,
-   onClose,
-   onRename
-}: RenameFildDialogProps) => {
-     const [filename, setFilename] = React.useState(currentFileName);
-     const [extension, setExtension] = React.useState(currentExtension);
-
-      React.useEffect(() => {
-    if (isOpen) {
-      setFilename(currentFileName);
-      setExtension(currentExtension)
-    }
-  }, [isOpen, currentFileName,currentExtension]);
-   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (filename.trim()) {
-      onRename(filename.trim(), extension.trim() || currentExtension);
-    }
-  };
-
-  
-     return (
-         <Dialog open={isOpen} onOpenChange={onClose} >
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>
-                        Rename File
-                    </DialogTitle>
-                    <DialogDescription>
-                        Enter a name to rename your File
-                    </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} >
-                    <div className="relative flex-1 flex flex-col gap-2">  
-  {/* Label */}
-  <label 
-
-    className="text-xs font-mono font-bold ml-2 "
-  >
-     Rename File
-  </label>
-
-  {/* Input Wrapper */}
-  <div className="relative">
-   
-    <div className="absolute left-4 top-1/2 -translate-y-1/2 ">
-      <Edit className="size-4" />
-    </div>
-
-    {/* Input Field */}
-    <Input
-      id="rename-foldername"
-      value={filename}
-      onChange={(e) => setFilename(e.target.value)}
-     
-      className="pl-12 py-6 w-full rounded-lg border placeholder:font-mono text-xs"
-      placeholder="Rename your folder"
-    />
-  </div>
-</div>
-
-
-                 </form>
-
-                 <DialogFooter>
-                    <div className='w-full flex justify-between items-center'>
-                       <Button onClick={onClose} className='text-white font-mono bg-red-600 rounded-none'>
-                        Cancel
-                       </Button>
-
-                       <GradientButton>
-                         Rename
-                       </GradientButton>
-                    </div>
-
-                 </DialogFooter>
-            </DialogContent>
-         </Dialog>
-     )
-}
