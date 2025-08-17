@@ -16,6 +16,8 @@ import { FaMagic } from 'react-icons/fa'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TemplateFile } from './types/types'
+import { ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import PlayGroundCodeEditor from './components/codeview/code-editor'
 
 
 interface Props {
@@ -190,50 +192,70 @@ const PlaygroundView = ({ playgroundId }: Props) => {
                 explore.openFiles.length > 0 ? (
                   <div className='flex flex-col h-full'>
                     <div className='border-b bg-muted/30' >
-                        <Tabs
-                         value={explore.activeFileId || " "}
-                         onValueChange={explore.setActiveFileId}
-
-                        >
-                            <div className='flex items-center justify-between px-4 py-2'>
-                                <TabsList className='h-8 bg-transparent flex items-center gap-2'>
-                                    {
-                                        explore.openFiles.map((files) => (
-                                            <TabsTrigger
-                                            className='relative  h-8 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm group'
-                                            value={files.id} key={files.id}>
-                                                 <div className='flex items-center gap-1'>
-                                                    <FileText className='size-4'/>
-                                                    <span>{files.filename}.{files.fileExtension}</span>
-                                                    {
-                                                        files.hasUnsavedChanges && (
-                                                            <span className='h-2 w-2 rounded-full bg-pink-500' />
-                                                        )
-                                                    }
-                                                 </div> 
-                                            </TabsTrigger>
-                                        ))
-                                    }
-                                </TabsList>
-
-                            </div>
-
-                        </Tabs>
+                         <Tabs
+    value={explore.activeFileId || ""}
+    onValueChange={explore.setActiveFileId}
+  >
+    <div className='flex items-center justify-between px-4 py-2'>
+      <TabsList className='h-8 bg-transparent flex items-center gap-0'> {/* Changed gap-2 to gap-0 */}
+        {explore.openFiles.map((files) => (
+          <TabsTrigger
+            asChild
+            className='relative h-8 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm group'
+            value={files.id} 
+            key={files.id}
+          >
+            <div className='flex items-center gap-1'>
+              <FileText className='size-4'/>
+              <span>{files.filename}.{files.fileExtension}</span>
+              {files.hasUnsavedChanges && (
+                <span className='h-2 w-2 rounded-full bg-pink-500' />
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 hover:bg-transparent"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent tab switching when clicking close
+                  explore.closeFile(files.id);
+                }}
+              >
+                <X className="h-3 w-3 text-pink-500" />
+              </Button>
+            </div>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </div>
+  </Tabs>
 
 
                     </div>
+<div className='flex-1 overflow-auto'>
+    <ResizablePanelGroup
+     direction='horizontal'
+     className='h-full'
+    >
+        <ResizablePanel
+         defaultSize={isPreview ? 50 : 100}
+        >
+        {activeFiles && (
+                          <PlayGroundCodeEditor
+                            activeFile={activeFiles}
+                            content={activeFiles?.content}
+                            onContentChange={(value) => {
+                              if (explore.activeFileId) {
+                                explore.updateFileContent(explore.activeFileId, value)
+                              }
+                            }}
+                          />
+                        )}
 
-                    <div>
-                        {
-                            explore.openFiles.length > 0 && (
-                                explore.openFiles.map((data) => (
-                                     <div key={data.id}>
-                                        {data.content}
-                                     </div>
-                                ))
-                            )
-                        }
-                    </div>
+        </ResizablePanel>
+
+
+    </ResizablePanelGroup>
+</div>
 
                   </div>
                 ) : (
