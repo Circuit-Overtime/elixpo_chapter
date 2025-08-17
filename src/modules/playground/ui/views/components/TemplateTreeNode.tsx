@@ -150,7 +150,7 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
             <CollapsibleTrigger asChild>
               <SidebarMenuButton className="flex-1">
                 <ChevronRight className="transition-transform" />
-                <Folder className="h-4 w-4 mr-2 shrink-0" />
+                <Folder className="h-4 w-4 mr-2 shrink-0 text-pink-800" />
                 <span>{folderName}</span>
               </SidebarMenuButton>
             </CollapsibleTrigger>
