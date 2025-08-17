@@ -1,9 +1,8 @@
 import GradientButton from "@/components/Custombuttons/GradientButton";
 import { Button } from "@/components/ui/button";
-import { DialogFooter, DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RenameFolderDialogProps } from "../../types/types";
 import React from "react";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@radix-ui/react-dialog";
 import { Edit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
