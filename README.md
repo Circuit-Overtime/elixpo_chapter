@@ -8,6 +8,8 @@ FingAI is a modern AI-powered SaaS website builder designed to streamline your w
 
 ![Landing Page](public/newhome.png)
 
+
+
 ---
 
 ## 🧰 Tech Stack Used
