@@ -11,9 +11,12 @@ import TemplateTree from './components/templates-tree'
 import CustomLoader from '@/components/loader/CustomLoader'
 import { useFileExplorer } from '@/features/playground/hooks/useFileExplorer'
 import { Button } from '@/components/ui/button'
-import { Code, Eye, EyeClosed, EyeOff, Save, Settings, X } from 'lucide-react'
+import { Code, Eye, EyeClosed, EyeOff, File, Files, FilesIcon, FileText, Save, Settings, X } from 'lucide-react'
 import { FaMagic } from 'react-icons/fa'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TemplateFile } from './types/types'
+
 
 interface Props {
   playgroundId: string
@@ -36,6 +39,9 @@ const PlaygroundView = ({ playgroundId }: Props) => {
   const explore = useFileExplorer()
   const activeFiles = explore.openFiles.find((file) => file.id === explore.activeFileId);
   const hasUnsavedChanges = explore.openFiles.some((file) => file.hasUnsavedChanges)
+  const handleFileSelect = (file: TemplateFile) => {
+      explore.openFile(file)
+  }
   useEffect(() => {
     if (playgroundId) {
       loadPlayground()
@@ -72,6 +78,8 @@ const PlaygroundView = ({ playgroundId }: Props) => {
                <TemplateTree
                data={templateData}
                title={"File Explorer"}
+               onFileSelect={handleFileSelect}
+               selectedFile={activeFiles}
                
 
                />
@@ -177,7 +185,72 @@ const PlaygroundView = ({ playgroundId }: Props) => {
             </div>
           </header> 
           
-          {/* Add your template content here */}
+         <div className='h-[calc(100vh-4rem)] '>
+            {
+                explore.openFiles.length > 0 ? (
+                  <div className='flex flex-col h-full'>
+                    <div className='border-b bg-muted/30' >
+                        <Tabs
+                         value={explore.activeFileId || " "}
+                         onValueChange={explore.setActiveFileId}
+
+                        >
+                            <div className='flex items-center justify-between px-4 py-2'>
+                                <TabsList className='h-8 bg-transparent flex items-center gap-2'>
+                                    {
+                                        explore.openFiles.map((files) => (
+                                            <TabsTrigger
+                                            className='relative  h-8 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm group'
+                                            value={files.id} key={files.id}>
+                                                 <div className='flex items-center gap-1'>
+                                                    <FileText className='size-4'/>
+                                                    <span>{files.filename}.{files.fileExtension}</span>
+                                                    {
+                                                        files.hasUnsavedChanges && (
+                                                            <span className='h-2 w-2 rounded-full bg-pink-500' />
+                                                        )
+                                                    }
+                                                 </div> 
+                                            </TabsTrigger>
+                                        ))
+                                    }
+                                </TabsList>
+
+                            </div>
+
+                        </Tabs>
+
+
+                    </div>
+
+                    <div>
+                        {
+                            explore.openFiles.length > 0 && (
+                                explore.openFiles.map((data) => (
+                                     <div key={data.id}>
+                                        {data.content}
+                                     </div>
+                                ))
+                            )
+                        }
+                    </div>
+
+                  </div>
+                ) : (
+                     /* implement welcome page task for vivek */
+                    <div className='flex flex-col justify-center h-full items-center flex-1'>
+                     <FileText className='size-30' />
+                     <div className='flex flex-col mt-3 items-center'>
+                       
+                        <p className='font-mono'>No file open</p>
+                        <p className='font-mono'>Select a file to open</p>
+                     </div>
+                    </div>
+                )
+            }
+
+         </div>
+
          
         </SidebarInset>
        </>
