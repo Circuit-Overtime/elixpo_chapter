@@ -15,6 +15,7 @@
     "@e2b/code-interpreter": "^1.5.1",
     "@hookform/resolvers": "^5.1.1",
     "@inngest/agent-kit": "^0.8.3",
+    "@monaco-editor/react": "^4.7.0",
     "@prisma/client": "^6.11.1",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
