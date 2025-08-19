@@ -11,14 +11,16 @@ import TemplateTree from './components/templates-tree'
 import CustomLoader from '@/components/loader/CustomLoader'
 import { useFileExplorer } from '@/features/playground/hooks/useFileExplorer'
 import { Button } from '@/components/ui/button'
-import { Code, Eye, EyeClosed, EyeOff, File, Files, FilesIcon, FileText, Save, Settings, X } from 'lucide-react'
+import { AlertCircle, Code, Eye, EyeClosed, EyeOff, File, Files, FilesIcon, FileText, FolderOpen, Save, Settings, X } from 'lucide-react'
 import { FaMagic } from 'react-icons/fa'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TemplateFile } from './types/types'
-import { ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import PlayGroundCodeEditor from './components/codeview/code-editor'
 import { useWebContainer } from '@/features/webcontainer/hooks/useWebContainer'
+import WebcontainerPreview from './components/webcontainerView/WebcontainerPreview'
+import { LoadingStep } from '@/components/loader/LoadingStep'
 
 
 interface Props {
@@ -63,14 +65,61 @@ const PlaygroundView = ({ playgroundId }: Props) => {
     )
   }
 
+  // Error state
   if (error) {
     return (
-      <PlaygroundLayout>
-        <div className="p-4 text-red-500">
-          Error loading playground: {error}
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
+        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <h2 className="text-xl font-semibold text-red-600 mb-2">
+          Something went wrong
+        </h2>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()} variant="destructive">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
+        <div className="w-full max-w-md p-6 rounded-lg shadow-sm border">
+          <h2 className="text-xl font-semibold mb-6 text-center">
+            Loading Playground
+          </h2>
+          <div className="mb-8">
+            <LoadingStep
+              currentStep={1}
+              step={1}
+              label="Loading playground data"
+            />
+            <LoadingStep
+              currentStep={2}
+              step={2}
+              label="Setting up environment"
+            />
+            <LoadingStep currentStep={3} step={3} label="Ready to code" />
+          </div>
         </div>
-      </PlaygroundLayout>
-    )
+      </div>
+    );
+  }
+
+  // No template data
+  if (!templateData) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
+        <FolderOpen className="h-12 w-12 text-amber-500 mb-4" />
+        <h2 className="text-xl font-semibold text-amber-600 mb-2">
+          No template data available
+        </h2>
+        <Button onClick={() => window.location.reload()} variant="outline">
+          Reload Template
+        </Button>
+      </div>
+    );
   }
 
 
@@ -256,7 +305,28 @@ const PlaygroundView = ({ playgroundId }: Props) => {
                         )}
 
         </ResizablePanel>
+       
+       {
+        isPreview && (
+            <>
+            <ResizableHandle/>
+            <ResizablePanel defaultSize={50}>
+               
+             <WebcontainerPreview
+              templateData={templateData!}
+              error={container.error}
+              instance={container.instance}
+              isLoading={container.isLoading}
+              serverUrl={container.serverUrl!
 
+              }
+              writeFileSync={container.writeFileSync}
+              forceResetup={false}
+             />
+            </ResizablePanel>
+            </>
+        )
+       }
 
     </ResizablePanelGroup>
 </div>
