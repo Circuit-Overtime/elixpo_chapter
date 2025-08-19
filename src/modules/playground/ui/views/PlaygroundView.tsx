@@ -18,6 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TemplateFile } from './types/types'
 import { ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import PlayGroundCodeEditor from './components/codeview/code-editor'
+import { useWebContainer } from '@/features/webcontainer/hooks/useWebContainer'
 
 
 interface Props {
@@ -39,6 +40,9 @@ const PlaygroundView = ({ playgroundId }: Props) => {
   } = usePlayground(playgroundId)
 
   const explore = useFileExplorer()
+  const container = 
+  //@ts-ignore
+  useWebContainer({templateData});
   const activeFiles = explore.openFiles.find((file) => file.id === explore.activeFileId);
   const hasUnsavedChanges = explore.openFiles.some((file) => file.hasUnsavedChanges)
   const handleFileSelect = (file: TemplateFile) => {
