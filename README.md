@@ -8,7 +8,11 @@ FingAI is a modern AI-powered SaaS website builder designed to streamline your w
 
 ![Landing Page](public/newhome.png)
 
+## 🚀 Playground
+![Playground](public/playground.png)
 
+## 💻 Fing's Code Editor
+![Fing's Code Editor](public/codeview.png)
 
 ---
 
