@@ -2,7 +2,7 @@ import { TemplateFile, TemplateFolder } from "./path-to-json";
 
 export function findFilePath(
   file: TemplateFile,
-  folder: TemplateFolder | null | undefined, // Allow null/undefined
+  folder: TemplateFolder | null | undefined,
   pathSoFar: string[] = []
 ): string | null {
   // Add null/undefined checks
@@ -12,16 +12,19 @@ export function findFilePath(
 
   for (const item of folder.items) {
     if ("folderName" in item) {
+      // It's a folder, search recursively
       const res = findFilePath(file, item, [...pathSoFar, item.folderName]);
       if (res) return res;
     } else {
+      // It's a file, check if it matches
       if (
         item.filename === file.filename &&
         item.fileExtension === file.fileExtension
       ) {
+        // Return the full path including the filename
         return [
           ...pathSoFar,
-          item.filename + (item.fileExtension ? "." + item.fileExtension : ""),
+          item.filename + (item.fileExtension ? "." + item.fileExtension : "")
         ].join("/");
       }
     }
@@ -75,10 +78,8 @@ export const generateFileId = (
   }
 
   const path = findFilePath(file, rootFolder)?.replace(/^\/+/, '') || '';
-  const extension = file.fileExtension?.trim();
-  const extensionSuffix = extension ? `.${extension}` : '';
-
-  return path
-    ? `${path}/${file.filename}${extensionSuffix}`
-    : `${file.filename}${extensionSuffix}`;
+  
+  // If we found a path, just return it (it already includes filename.extension)
+  // If not, return just the filename.extension
+  return path || `${file.filename}${file.fileExtension ? `.${file.fileExtension}` : ''}`;
 }

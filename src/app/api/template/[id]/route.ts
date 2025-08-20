@@ -14,10 +14,10 @@ function validateJson(data: unknown): boolean {
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // 👈 fix: params is async
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // 👈 must await params
+    const { id } = await context.params;
 
     if (!id) {
       return Response.json(
@@ -28,6 +28,17 @@ export async function GET(
 
     const playground = await prisma.playground.findUnique({
       where: { id },
+      include: {
+        templateFiles: {
+          select: { 
+            id: true,
+            content: true,
+            updatedAt: true
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 1
+        },
+      },
     });
 
     if (!playground) {
@@ -37,6 +48,32 @@ export async function GET(
       );
     }
 
+    // 1. FIRST TRY: Return saved data from database if it exists
+    if (playground.templateFiles && playground.templateFiles.length > 0) {
+      const templateFile = playground.templateFiles[0];
+      
+      try {
+        if (templateFile.content && typeof templateFile.content === 'string') {
+          const parsedData = JSON.parse(templateFile.content);
+          
+          if (validateJson(parsedData)) {
+            return Response.json(
+              {
+                success: true,
+                templateJson: parsedData,
+                source: "database"
+              },
+              { status: 200 }
+            );
+          }
+        }
+      } catch (parseError) {
+        console.error("Failed to parse saved template data:", parseError);
+        // Fall through to generating from template
+      }
+    }
+
+    // 2. FALLBACK: Generate from template if no saved data exists
     if (!playground.template || !(playground.template in templatePaths)) {
       return Response.json(
         { error: "Invalid template specified" },
@@ -64,6 +101,7 @@ export async function GET(
         {
           success: true,
           templateJson: templateData,
+          source: "template"
         },
         { status: 200 }
       );
@@ -76,7 +114,7 @@ export async function GET(
       }
     }
   } catch (error) {
-    console.error("Error in GET /api/playground:", error);
+    console.error("Error in GET /api/template:", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

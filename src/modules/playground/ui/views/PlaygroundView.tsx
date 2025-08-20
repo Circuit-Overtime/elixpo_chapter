@@ -3,7 +3,7 @@ import PlaygroundLayout from '@/app/playground/[playgroundId]/PlaygroundLayout'
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { usePlayground } from '@/features/playground/hooks/usePlayground'
 
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { useTRPC } from '@/trpc/client'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
@@ -21,6 +21,8 @@ import PlayGroundCodeEditor from './components/codeview/code-editor'
 import { useWebContainer } from '@/features/webcontainer/hooks/useWebContainer'
 import WebcontainerPreview from './components/webcontainerView/WebcontainerPreview'
 import { LoadingStep } from '@/components/loader/LoadingStep'
+import { findFilePath } from '@/features/playground/lib'
+import { toast } from 'sonner'
 
 
 interface Props {
@@ -28,9 +30,9 @@ interface Props {
 }
 
 const PlaygroundView = ({ playgroundId }: Props) => {
-  const trpc = useTRPC()
+
   const [isPreview, setIsPreview] = React.useState(true)
-  
+  const lastSyncedContent = useRef<Map<string, string>>(new Map());
   const {
     playgroundData,
     templateData,
@@ -50,21 +52,168 @@ const PlaygroundView = ({ playgroundId }: Props) => {
   const handleFileSelect = (file: TemplateFile) => {
       explore.openFile(file)
   }
+  
   useEffect(() => {
     if (playgroundId) {
       loadPlayground()
     }
   }, [playgroundId]) // Only depend on playgroundId
-  console.log(playgroundData?.name)
+  
+  
+const handleSaveFile = useCallback(async () => {
+  if (!activeFiles || !templateData) return;
+  
+  try {
+    console.log('🚀 Starting save process for file:', activeFiles.filename);
+    
+    // Create a deep copy of templateData
+    const updatedTemplateData = structuredClone(templateData);
+    
+    // Use the recursive approach from the reference code
+    const updateFileContent = (items: any[]): any[] => {
+      return items.map((item) => {
+        if ("folderName" in item) {
+          // It's a folder, recurse into its items
+          return { ...item, items: updateFileContent(item.items) };
+        } else if (
+          // It's a file, check if it's the one we want to update
+          "filename" in item &&
+          item.filename === activeFiles.filename &&
+          item.fileExtension === activeFiles.fileExtension
+        ) {
+          console.log('🔄 Updating file content:', activeFiles.filename);
+          return { ...item, content: activeFiles.content };
+        }
+        return item;
+      });
+    };
 
-  if (isLoading) {
-    return (
-     <div>
-        <CustomLoader/>
-     </div>
-    )
+    // Update the template data
+    updatedTemplateData.items = updateFileContent(updatedTemplateData.items);
+    
+    // Find file path for webcontainer sync
+    const filePath = findFilePath(activeFiles, updatedTemplateData);
+    console.log('📍 File path for webcontainer:', filePath);
+    
+    // Save to backend - pass the object directly
+    console.log('💾 Calling saveTemplateData');
+    await saveTemplateData(updatedTemplateData);
+    console.log('✅ saveTemplateData completed');
+    
+    // Sync with webcontainer
+    if (container.writeFileSync && filePath) {
+      try {
+        console.log('🔄 Syncing with webcontainer');
+        await container.writeFileSync(filePath, activeFiles.content);
+        console.log('✅ Webcontainer sync completed');
+      } catch (error) {
+        console.error('❌ Failed to sync file to webcontainer:', error);
+      }
+    }
+    
+    // Update the file's unsaved changes status
+    explore.markFileAsSaved(activeFiles.id);
+    console.log('✅ File marked as saved in UI');
+    
+    toast.success(`Saved ${activeFiles.filename}.${activeFiles.fileExtension}`);
+    
+  } catch (error) {
+    console.error('❌ Error saving file:', error);
+    toast.error('Failed to save file');
   }
+}, [activeFiles, templateData, saveTemplateData, explore, container.writeFileSync]);
 
+const handleSaveAllFiles = useCallback(async () => {
+  if (!templateData || explore.openFiles.length === 0) return;
+  
+  try {
+    console.log('🚀 Starting save all process for', explore.openFiles.length, 'files');
+    
+    // Create a deep copy of templateData
+    const updatedTemplateData = structuredClone(templateData);
+    let savedCount = 0;
+    
+    // Update all unsaved files
+    const unsavedFiles = explore.openFiles.filter(file => file.hasUnsavedChanges);
+    
+    if (unsavedFiles.length === 0) {
+      toast.info("No unsaved changes");
+      return;
+    }
+    
+    // Use recursive approach to update all files
+    const updateAllFilesContent = (items: any[]): any[] => {
+      return items.map((item) => {
+        if ("folderName" in item) {
+          // It's a folder, recurse into its items
+          return { ...item, items: updateAllFilesContent(item.items) };
+        } else if ("filename" in item) {
+          // It's a file, check if it's in our unsaved files list
+          const unsavedFile = unsavedFiles.find(
+            f => f.filename === item.filename && f.fileExtension === item.fileExtension
+          );
+          
+          if (unsavedFile) {
+            console.log('🔄 Updating file:', unsavedFile.filename);
+            savedCount++;
+            return { ...item, content: unsavedFile.content };
+          }
+        }
+        return item;
+      });
+    };
+
+    // Update the template data
+    updatedTemplateData.items = updateAllFilesContent(updatedTemplateData.items);
+    
+    // Save to backend
+    console.log('💾 Calling saveTemplateData for all files');
+    await saveTemplateData(updatedTemplateData);
+    console.log('✅ saveTemplateData completed for all files');
+    
+    // Sync each file with webcontainer
+    for (const file of unsavedFiles) {
+      const filePath = findFilePath(file, updatedTemplateData);
+      if (container.writeFileSync && filePath) {
+        try {
+          await container.writeFileSync(filePath, file.content);
+          console.log('✅ Synced file to webcontainer:', filePath);
+        } catch (error) {
+          console.error('❌ Failed to sync file to webcontainer:', error);
+        }
+      }
+    }
+    
+    // Mark all files as saved
+    explore.markAllFilesAsSaved();
+    console.log('✅ All files marked as saved in UI');
+    
+    toast.success(`Saved ${savedCount} file${savedCount !== 1 ? 's' : ''}`);
+    
+  } catch (error) {
+    console.error('❌ Error saving all files:', error);
+    toast.error('Failed to save files');
+  }
+}, [explore.openFiles, templateData, saveTemplateData, explore, container.writeFileSync]);
+
+// Keyboard shortcut
+React.useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.ctrlKey && e.key === 's') {
+      e.preventDefault();
+      handleSaveFile();
+    }
+    
+    // Ctrl+Shift+S for save all
+    if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+      e.preventDefault();
+      handleSaveAllFiles();
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [handleSaveFile, handleSaveAllFiles]);
   // Error state
   if (error) {
     return (
@@ -122,8 +271,6 @@ const PlaygroundView = ({ playgroundId }: Props) => {
     );
   }
 
-
-
   return (
     <PlaygroundLayout>
       <TooltipProvider>
@@ -135,10 +282,7 @@ const PlaygroundView = ({ playgroundId }: Props) => {
                title={"File Explorer"}
                onFileSelect={handleFileSelect}
                selectedFile={activeFiles}
-               
-
                />
-              
             </div>
           )}
         <SidebarInset>
@@ -158,13 +302,12 @@ const PlaygroundView = ({ playgroundId }: Props) => {
 
               <div className='flex items-center gap-2'>
                 <Tooltip>
-                    <TooltipTrigger
-                         
-                         asChild>
+                    <TooltipTrigger asChild>
                          <Button
                           size={"sm"}
                           variant={"outline"}
-                          disabled={!hasUnsavedChanges}
+                          disabled={!activeFiles?.hasUnsavedChanges}
+                          onClick={() => handleSaveFile()}
                          >
                            <Save className='size-4'/>
                          </Button>
@@ -173,32 +316,28 @@ const PlaygroundView = ({ playgroundId }: Props) => {
                 </Tooltip>
 
                 <Tooltip>
-                    <TooltipTrigger
-                         
-                         asChild>
+                    <TooltipTrigger asChild>
                          <Button
                           className='font-mono'
                           size={"sm"}
                           variant={"outline"}
                           disabled={!hasUnsavedChanges}
+                          onClick={handleSaveAllFiles}
                          >
                            <Save className='size-4'/> All
                          </Button>
                     </TooltipTrigger>
-                    <TooltipContent>save all (Ctrl+Shirt+s)</TooltipContent>
+                    <TooltipContent>save all (Ctrl+Shift+s)</TooltipContent>
                 </Tooltip>
 
                 {/* TODO:TOGGLE AI */}
 
                 <Tooltip>
-                    <TooltipTrigger
-                         
-                         asChild>
+                    <TooltipTrigger asChild>
                          <Button
                           className='font-mono'
                           size={"sm"}
                           variant={"outline"}
-                         
                          >
                            <FaMagic className='size-3'/> FingAI
                          </Button>
@@ -228,7 +367,7 @@ const PlaygroundView = ({ playgroundId }: Props) => {
                            }
                         </DropdownMenuItem>
                          <Separator/>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => explore.closeAllFiles()}>
                             <X className='size-3'/>
                             Close All Files
                         </DropdownMenuItem>
@@ -281,8 +420,6 @@ const PlaygroundView = ({ playgroundId }: Props) => {
       </TabsList>
     </div>
   </Tabs>
-
-
                     </div>
 <div className='flex-1 overflow-auto'>
     <ResizablePanelGroup
@@ -303,7 +440,6 @@ const PlaygroundView = ({ playgroundId }: Props) => {
                             }}
                           />
                         )}
-
         </ResizablePanel>
        
        {
@@ -317,9 +453,7 @@ const PlaygroundView = ({ playgroundId }: Props) => {
               error={container.error}
               instance={container.instance}
               isLoading={container.isLoading}
-              serverUrl={container.serverUrl!
-
-              }
+              serverUrl={container.serverUrl!}
               writeFileSync={container.writeFileSync}
               forceResetup={false}
              />
@@ -327,30 +461,22 @@ const PlaygroundView = ({ playgroundId }: Props) => {
             </>
         )
        }
-
     </ResizablePanelGroup>
 </div>
-
                   </div>
                 ) : (
-                     /* implement welcome page task for vivek */
                     <div className='flex flex-col justify-center h-full items-center flex-1'>
                      <FileText className='size-30' />
                      <div className='flex flex-col mt-3 items-center'>
-                       
                         <p className='font-mono'>No file open</p>
                         <p className='font-mono'>Select a file to open</p>
                      </div>
                     </div>
                 )
             }
-
          </div>
-
-         
         </SidebarInset>
        </>
-         
       </TooltipProvider>
     </PlaygroundLayout>
   )

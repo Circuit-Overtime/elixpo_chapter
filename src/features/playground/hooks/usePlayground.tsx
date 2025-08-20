@@ -1,10 +1,10 @@
 "use client";
 import { useCallback, useState } from "react";
-import { TemplateFolder } from "../lib/path-to-json";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { TRPCError } from "@trpc/server";
+import { TemplateFolder } from "./types/tpyes";
 
 interface PlayGroundData {
   id: string;
@@ -18,7 +18,7 @@ interface usePlayGroundReturn {
   isLoading: boolean;
   error: string | null;
   loadPlayground: () => Promise<void>;
-  saveTemplateData: (data: string) => Promise<void>;
+  saveTemplateData: (data: TemplateFolder | string) => Promise<void>; // Changed from string to TemplateFolder | string
   isSaving: boolean;
 }
 
@@ -99,16 +99,38 @@ export const usePlayground = (id: string): usePlayGroundReturn => {
     }
   }, [id, refetch]);
 
-  const saveTemplateData = useCallback(
-    async (data: string) => {
-      if (!id) return;
-      await saveCodeMutation.mutateAsync({
+  // In your usePlayground hook, change the saveTemplateData function:
+const saveTemplateData = useCallback(
+  async (data: TemplateFolder | string): Promise<void> => { // Add Promise<void> return type
+    if (!id) {
+      console.error('❌ No playground ID provided');
+      return;
+    }
+    
+    console.log('💾 saveTemplateData called with data type:', typeof data);
+    
+    try {
+      // If data is already a string, use it directly
+      // If it's an object, stringify it for the backend
+      const dataToSave = typeof data === 'string' ? data : JSON.stringify(data);
+      
+      console.log('📦 Sending to backend, data length:', dataToSave.length);
+      
+      await saveCodeMutation.mutateAsync({ // Remove the result assignment
         playgroundId: id,
-        data: JSON.parse(data), // Ensure JSON object
+        data: dataToSave,
       });
-    },
-    [id, saveCodeMutation]
-  );
+      
+      console.log('✅ Backend save successful');
+      // Don't return anything (void)
+    } catch (error) {
+      console.error('❌ Error in saveTemplateData:', error);
+      toast.error('Failed to save changes');
+      throw error;
+    }
+  },
+  [id, saveCodeMutation]
+);
 
   return {
     playgroundData,

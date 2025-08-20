@@ -9,7 +9,7 @@ export interface UseWebContainerReturn {
       serverUrl: string | null
       isLoading: boolean
       error: string | null
-      instance: WebContainer
+      instance: WebContainer | null
       writeFileSync: (path: string, content: string) => Promise<void>
       destroy:() => void
 }
