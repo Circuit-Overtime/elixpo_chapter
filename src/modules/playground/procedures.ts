@@ -306,15 +306,19 @@ editProjectById: protechedRoute
   }),
 
 
+
+/* 🚀saveCode */
 /* 🚀saveCode */
 saveCode: protechedRoute
   .input(
     z.object({
       playgroundId: z.string().min(1, "Playground ID is required"),
-      data: z.any() // Accept any JSON-serializable data
+      data: z.string() // Change from z.any() to z.string()
     })
   )
   .mutation(async ({ ctx, input }) => {
+    console.log('🔵 saveCode mutation called, data length:', input.data.length);
+
     // Verify playground exists and belongs to user
     const playground = await prisma.playground.findUnique({
       where: {
@@ -338,25 +342,22 @@ saveCode: protechedRoute
         }
       });
 
-      // Properly handle JSON data for Prisma
-      const jsonData = input.data === null ? null : input.data;
-
       let result;
       if (existingFile) {
-        // Update existing file
+        // Update existing file - store the string data directly
         result = await prisma.templateFile.update({
           where: { id: existingFile.id },
           data: { 
-            content: jsonData,
+            content: input.data, // Store the string directly
             updatedAt: new Date() 
           }
         });
       } else {
-        // Create new file
+        // Create new file - store the string data directly
         result = await prisma.templateFile.create({
           data: {
             playgroundId: input.playgroundId,
-            content: jsonData
+            content: input.data // Store the string directly
           }
         });
       }
@@ -373,6 +374,5 @@ saveCode: protechedRoute
       });
     }
   })
-
  
 });

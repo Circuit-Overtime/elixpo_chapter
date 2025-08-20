@@ -45,6 +45,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
   const commandHistory = useRef<string[]>([]);
   const historyIndex = useRef<number>(-1);
   const currentProcess = useRef<any>(null);
+  const shellProcess = useRef<any>(null);
 
   const terminalThemes = {
     dark: {
@@ -111,10 +112,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
       }
     },
     clearTerminal: () => {
-      if (term.current) {
-        term.current.clear();
-        writePrompt();
-      }
+      clearTerminal();
     },
     focusTerminal: () => {
       if (term.current) {
@@ -187,7 +185,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
 
     } catch (error) {
       if (term.current) {
-        term.current.writeln(`\r\nError: ${error instanceof Error ? error.message : String(error)}`);
+        term.current.writeln(`\r\nCommand not found: ${command}`);
         writePrompt();
       }
       currentProcess.current = null;
@@ -198,9 +196,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
     if (!term.current) return;
 
     // Handle special characters
-    const str = new TextDecoder().decode(new TextEncoder().encode(data));
-    
-    switch (str) {
+    switch (data) {
       case '\r': // Enter
         executeCommand(currentLine.current);
         break;
@@ -222,7 +218,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
           currentProcess.current.kill();
           currentProcess.current = null;
         }
-        term.current.write("^C");
+        term.current.writeln("^C");
         writePrompt();
         break;
         
@@ -278,9 +274,6 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
   const initializeTerminal = useCallback(() => {
     if (!terminalRef.current || term.current) return;
 
-    // Check if we're in a browser environment
-    if (typeof window === 'undefined') return;
-
     const terminal = new Terminal({
       cursorBlink: true,
       fontFamily: '"Fira Code", "JetBrains Mono", "Consolas", monospace',
@@ -314,15 +307,11 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
 
     // Initial fit
     setTimeout(() => {
-      try {
-        fitAddonInstance.fit();
-      } catch (e) {
-        console.warn("Could not fit terminal:", e);
-      }
+      fitAddonInstance.fit();
     }, 100);
 
     // Welcome message
-    terminal.writeln("🚀 Fing Terminal");
+    terminal.writeln("🚀 Fing's Terminal");
     terminal.writeln("Type 'help' for available commands");
     writePrompt();
 
@@ -381,43 +370,41 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `terminal-log-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+      a.download = `terminal-log-${new Date().toISOString().slice(0, 19)}.txt`;
       a.click();
       URL.revokeObjectURL(url);
     }
   }, []);
 
-  const searchInTerminal = useCallback((searchTerm: string) => {
-    if (searchAddon.current && searchTerm) {
-      searchAddon.current.findNext(searchTerm);
+  const searchInTerminal = useCallback((term: string) => {
+    if (searchAddon.current && term) {
+      searchAddon.current.findNext(term);
     }
   }, []);
 
   useEffect(() => {
-    // Only initialize in browser environment
-    if (typeof window !== 'undefined') {
-      initializeTerminal();
-    }
+    initializeTerminal();
 
     // Handle resize
-    const handleResize = () => {
+    const resizeObserver = new ResizeObserver(() => {
       if (fitAddon.current) {
         setTimeout(() => {
-          try {
-            fitAddon.current?.fit();
-          } catch (e) {
-            console.warn("Could not fit terminal on resize:", e);
-          }
+          fitAddon.current?.fit();
         }, 100);
       }
-    };
+    });
 
-    window.addEventListener('resize', handleResize);
+    if (terminalRef.current) {
+      resizeObserver.observe(terminalRef.current);
+    }
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       if (currentProcess.current) {
         currentProcess.current.kill();
+      }
+      if (shellProcess.current) {
+        shellProcess.current.kill();
       }
       if (term.current) {
         term.current.dispose();

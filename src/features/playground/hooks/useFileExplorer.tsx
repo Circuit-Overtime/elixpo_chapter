@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { create } from "zustand";
-import { TemplateFile,TemplateFolder } from '../../playground/hooks/types/tpyes'
+import { TemplateFile, TemplateFolder } from '../../playground/hooks/types/tpyes'
 import { generateFileId } from "../lib";
 
 interface FileExplorerState {
@@ -56,6 +56,8 @@ interface FileExplorerState {
     saveTemplateData: (data: TemplateFolder) => Promise<void>
   ) => Promise<void>;
   updateFileContent: (fileId: string, content: string) => void;
+  markFileAsSaved: (fileId: string) => void; // NEW: Added this method
+  markAllFilesAsSaved: () => void; // NEW: Added this method
 }
 
 interface OpenFile extends TemplateFile {
@@ -127,7 +129,6 @@ export const useFileExplorer = create<FileExplorerState>((set,get) => ({
              activeFileId: newActiveFileId,
              editorContent: newEditorContent
          })},
-
 
   handleAddFile: async (newFile, parentPath, writeFileSync, instance, saveTemplateData) => {
     const { templateData } = get();
@@ -207,7 +208,6 @@ export const useFileExplorer = create<FileExplorerState>((set,get) => ({
     }
   },
 
-
   handleDeleteFile: async (file, parentPath, saveTemplateData) => {
     const { templateData, openFiles } = get();
     if (!templateData) return;
@@ -255,7 +255,6 @@ export const useFileExplorer = create<FileExplorerState>((set,get) => ({
       toast.error("Failed to delete file");
     }
   },
-
 
    handleDeleteFolder: async (folder, parentPath, saveTemplateData) => {
     const { templateData } = get();
@@ -442,17 +441,37 @@ export const useFileExplorer = create<FileExplorerState>((set,get) => ({
     }));
   },
 
+  // NEW: Mark a specific file as saved
+  markFileAsSaved: (fileId) => {
+    set((state) => ({
+      openFiles: state.openFiles.map((file) =>
+        file.id === fileId
+          ? {
+              ...file,
+              hasUnsavedChanges: false,
+              originalContent: file.content,
+            }
+          : file
+      ),
+    }));
+  },
 
+  // NEW: Mark all files as saved
+  markAllFilesAsSaved: () => {
+    set((state) => ({
+      openFiles: state.openFiles.map((file) => ({
+        ...file,
+        hasUnsavedChanges: false,
+        originalContent: file.content,
+      })),
+    }));
+  },
 
-
-  
-
-    
-
-
-
-
-     
-
-}))
-
+  closeAllFiles: () => {
+    set({
+      openFiles: [],
+      activeFileId: null,
+      editorContent: "",
+    });
+  },
+}));
