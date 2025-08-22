@@ -56,6 +56,7 @@ export interface FileDialogProps {
      onClose: () => void;
      onCreateFile: (filename:string, extension: string) => void
      
+     
 }
 
 export interface FolderDialogProps {

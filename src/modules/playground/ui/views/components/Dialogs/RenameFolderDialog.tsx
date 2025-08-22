@@ -63,21 +63,23 @@ export const RenameFolderDialog = ({
   </div>
 </div>
 
-
-                 </form>
-
-                 <DialogFooter>
+ <DialogFooter className="mt-5">
                     <div className='w-full flex justify-between items-center'>
                        <Button onClick={onClose} className='text-white font-mono bg-red-600 hover:bg-red-800 rounded-none'>
                         Cancel
                        </Button>
 
-                       <GradientButton>
+                       <GradientButton
+                        type="submit"
+                       >
                          Rename
                        </GradientButton>
                     </div>
 
                  </DialogFooter>
+                 </form>
+
+                
             </DialogContent>
          </Dialog>
      )

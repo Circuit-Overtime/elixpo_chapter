@@ -3,24 +3,22 @@ import PlaygroundLayout from '@/app/playground/[playgroundId]/PlaygroundLayout'
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { usePlayground } from '@/features/playground/hooks/usePlayground'
 
-import React, { useCallback, useEffect, useRef } from 'react'
-import { useTRPC } from '@/trpc/client'
+import React, { useCallback, useEffect } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
 import TemplateTree from './components/templates-tree'
 import CustomLoader from '@/components/loader/CustomLoader'
 import { useFileExplorer } from '@/features/playground/hooks/useFileExplorer'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, Code, Eye, EyeClosed, EyeOff, File, Files, FilesIcon, FileText, FolderOpen, Save, Settings, X } from 'lucide-react'
+import { AlertCircle, Eye, EyeClosed, FileText, FolderOpen, Save, Settings, X } from 'lucide-react'
 import { FaMagic } from 'react-icons/fa'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { TemplateFile } from './types/types'
+import { TemplateFile, TemplateFolder } from './types/types'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import PlayGroundCodeEditor from './components/codeview/code-editor'
 import { useWebContainer } from '@/features/webcontainer/hooks/useWebContainer'
 import WebcontainerPreview from './components/webcontainerView/WebcontainerPreview'
-import { LoadingStep } from '@/components/loader/LoadingStep'
 import { findFilePath } from '@/features/playground/lib'
 import { toast } from 'sonner'
 
@@ -32,16 +30,16 @@ interface Props {
 const PlaygroundView = ({ playgroundId }: Props) => {
 
   const [isPreview, setIsPreview] = React.useState(true)
-  const lastSyncedContent = useRef<Map<string, string>>(new Map());
-  const {
+/*   const lastSyncedContent = useRef<Map<string, string>>(new Map());
+ */  const {
      playgroundData,
     templateData,
     isLoading,
     error,
     loadPlayground,
     saveTemplateData,
-    isSaving,
-    setTemplateData,
+   /*  isSaving, */
+   /*  setTemplateData, */
   } = usePlayground(playgroundId)
 
   const explore = useFileExplorer()
@@ -84,9 +82,58 @@ const wrappHandleAddFile = useCallback((newFile: TemplateFile, parentPath: strin
 }, [explore, container.writeFileSync, container.instance, saveTemplateData]); 
 
 
-const wrapHandleAddFoler = useCallback(() => {
-   
-},[])
+const wrapHandleAddFoler = useCallback((newFolder: TemplateFolder, parentPath: string) => {
+       return explore.handleAddFolder(
+           newFolder,
+           parentPath,
+           container.instance,
+           saveTemplateData
+       )
+},[explore.handleAddFolder, container.instance, saveTemplateData]);
+
+const wrapHandleDeleteFile = useCallback((file: TemplateFile, parentPath: string) => {
+     return explore.handleDeleteFile(
+        file, 
+        parentPath,
+        saveTemplateData
+     )
+},[explore.handleDeleteFile, saveTemplateData])
+
+const wrapHandleDeleteFolder = useCallback((folder: TemplateFolder, parentPath: string) => {
+    return explore.handleDeleteFolder(
+       folder,
+       parentPath,
+       saveTemplateData
+    )
+},[explore.handleDeleteFolder, saveTemplateData]);
+
+const wrapRenameFile = useCallback(( 
+    file: TemplateFile,
+    newFilename: string,
+    newExtension: string,
+    parentPath: string
+) => {
+   return explore.handleRenameFile(
+     file,
+     newFilename,
+     newExtension,
+     parentPath,
+     saveTemplateData
+   )
+},[explore.handleRenameFile, saveTemplateData]);
+
+const wrapRenameFolder = useCallback((
+   folder: TemplateFolder,
+   newFolderName: string,
+   parentPath: string
+) => {
+    return explore.handleRenameFolder(
+       folder,
+       newFolderName,
+       parentPath,
+       saveTemplateData
+    )
+},[explore.handleRenameFolder, saveTemplateData])
 
 const handleSaveFile = useCallback(async () => {
   if (!activeFiles || !templateData) return;
@@ -292,6 +339,12 @@ React.useEffect(() => {
                onFileSelect={handleFileSelect}
                selectedFile={activeFiles}
                onAddFile={wrappHandleAddFile}
+               onAddFolder={wrapHandleAddFoler}
+               onDeleteFile={wrapHandleDeleteFile}
+               onDeleteFolder={wrapHandleDeleteFolder}
+               onRenameFile={wrapRenameFile}
+               onRenameFolder={wrapRenameFolder}
+              
                />
             </div>
           )}

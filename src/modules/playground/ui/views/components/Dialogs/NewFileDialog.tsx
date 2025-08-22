@@ -10,7 +10,8 @@ import GradientButton from '@/components/Custombuttons/GradientButton';
 const NewFileDialog: React.FC<FileDialogProps> = ({
     isOpen, 
     onClose,
-    onCreateFile
+    onCreateFile,
+    
 }) => {
     const [filename, setFilename] = React.useState("");
     const [extension, setExtension] = React.useState("js");
@@ -93,21 +94,21 @@ const NewFileDialog: React.FC<FileDialogProps> = ({
   </div>
 </div>
 
-
-                 </form>
-
-                 <DialogFooter>
+ <DialogFooter className='mt-5'>
                     <div className='w-full flex justify-between items-center'>
                        <Button onClick={onClose} className='text-white font-mono bg-red-600 hover:bg-red-800 rounded-none'>
                         Cancel
                        </Button>
 
-                       <GradientButton>
+                       <GradientButton type='submit' >
                          Create
                        </GradientButton>
                     </div>
 
                  </DialogFooter>
+                 </form>
+
+                
             </DialogContent>
 
         </Dialog>
