@@ -18,8 +18,9 @@ interface usePlayGroundReturn {
   isLoading: boolean;
   error: string | null;
   loadPlayground: () => Promise<void>;
-  saveTemplateData: (data: TemplateFolder | string) => Promise<void>; // Changed from string to TemplateFolder | string
+  saveTemplateData: (data: TemplateFolder | string) => Promise<void>;
   isSaving: boolean;
+  setTemplateData: (data: TemplateFolder) => void; // Added setter function
 }
 
 export const usePlayground = (id: string): usePlayGroundReturn => {
@@ -48,7 +49,7 @@ export const usePlayground = (id: string): usePlayGroundReturn => {
       console.error("Failed to save template", err);
       toast.error("Failed to save template");
     },
-  })) 
+  }));
 
   const loadPlayground = useCallback(async () => {
     if (!id) return;
@@ -99,38 +100,46 @@ export const usePlayground = (id: string): usePlayGroundReturn => {
     }
   }, [id, refetch]);
 
-  // In your usePlayground hook, change the saveTemplateData function:
-const saveTemplateData = useCallback(
-  async (data: TemplateFolder | string): Promise<void> => { // Add Promise<void> return type
-    if (!id) {
-      console.error('❌ No playground ID provided');
-      return;
-    }
-    
-    console.log('💾 saveTemplateData called with data type:', typeof data);
-    
-    try {
-      // If data is already a string, use it directly
-      // If it's an object, stringify it for the backend
-      const dataToSave = typeof data === 'string' ? data : JSON.stringify(data);
+  const saveTemplateData = useCallback(
+    async (data: TemplateFolder | string): Promise<void> => {
+      if (!id) {
+        console.error('❌ No playground ID provided');
+        return;
+      }
       
-      console.log('📦 Sending to backend, data length:', dataToSave.length);
+      console.log('💾 saveTemplateData called with data type:', typeof data);
       
-      await saveCodeMutation.mutateAsync({ // Remove the result assignment
-        playgroundId: id,
-        data: dataToSave,
-      });
-      
-      console.log('✅ Backend save successful');
-      // Don't return anything (void)
-    } catch (error) {
-      console.error('❌ Error in saveTemplateData:', error);
-      toast.error('Failed to save changes');
-      throw error;
-    }
-  },
-  [id, saveCodeMutation]
-);
+      try {
+        // If data is a TemplateFolder object, update local state immediately
+        if (typeof data !== 'string') {
+          setTemplate(data); // ✅ CRITICAL: Update local state for immediate UI update
+          console.log('🔄 Updated local template state');
+        }
+        
+        // Prepare data for backend (always stringify for backend)
+        const dataToSave = typeof data === 'string' ? data : JSON.stringify(data);
+        
+        console.log('📦 Sending to backend, data length:', dataToSave.length);
+        
+        await saveCodeMutation.mutateAsync({
+          playgroundId: id,
+          data: dataToSave,
+        });
+        
+        console.log('✅ Backend save successful');
+      } catch (error) {
+        console.error('❌ Error in saveTemplateData:', error);
+        toast.error('Failed to save changes');
+        throw error;
+      }
+    },
+    [id, saveCodeMutation]
+  );
+
+  // Expose setter function for external state updates
+  const setTemplateData = useCallback((data: TemplateFolder) => {
+    setTemplate(data);
+  }, []);
 
   return {
     playgroundData,
@@ -139,6 +148,7 @@ const saveTemplateData = useCallback(
     error,
     loadPlayground,
     saveTemplateData,
-    isSaving: saveCodeMutation.isPending, // ✅ expose loading state for UI
+    isSaving: saveCodeMutation.isPending,
+    setTemplateData, // ✅ Expose the setter function
   };
 };
