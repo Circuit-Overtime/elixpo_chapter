@@ -4,11 +4,15 @@ import { ChevronRight } from 'lucide-react'
 
 interface Props {
      children: React.ReactNode,
-     onClick?: () => void
+     onClick?:() => void
+     ondisable?: boolean
+     type?: "button" | "submit" | "reset";
 }
-const GradientButton = ({children,onClick}:Props) => {
+const GradientButton = ({children,onClick,ondisable,type}:Props) => {
   return (
     <Button
+         type={type}
+         disabled={ondisable}
          onClick={onClick}
          className='relative overflow-hidden font-mono  rounded-none  text-white 
                                bg-gradient-to-r from-purple-500 via-pink-600 to-red-600 

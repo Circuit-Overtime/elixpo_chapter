@@ -29,6 +29,7 @@ import GradientButton from "@/components/Custombuttons/GradientButton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { RenameFolderDialog } from "./Dialogs/RenameFolderDialog";
 import TemplateTreeNode from "./TemplateTreeNode";
+import { toast } from "sonner";
 
   const TemplateTree = ({
   data,
@@ -42,7 +43,8 @@ import TemplateTreeNode from "./TemplateTreeNode";
   selectedFile,
   title,
 }: TemplateFileTreeProps) => {
-  const [isNewFileDialogOpen, setIsNewFileDialogOpen] = React.useState(false);
+    const isRootFolder = data && typeof data === "object" && "folderName" in data
+    const [isNewFileDialogOpen, setIsNewFileDialogOpen] = React.useState(false);
   const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = React.useState(false);
 
   const handelNewFileDialog = () => {
@@ -52,9 +54,26 @@ import TemplateTreeNode from "./TemplateTreeNode";
      setIsNewFolderDialogOpen(true)
   }
 
-  const handleCreateFile = () => {
+    const handleCreateFile = (filename: string, extension: string) => {
+    if (onAddFile && isRootFolder) {
+      const newFile: TemplateFile = {
+        filename,
+        fileExtension: extension,
+        content: "",
+      };
+      
+      // For root folder, path should be empty string
+      // If the TemplateFolder type has a path property, use it, otherwise use empty string
+      const rootFolderPath = (data as any).path || "";
+      onAddFile(newFile, rootFolderPath);
+      
+      toast.success(`File ${filename}.${extension} created successfully`);
+    } else {
+      toast.error("Cannot create file: No root folder found");
+    }
+    setIsNewFileDialogOpen(false);
+  };
 
-  }
 
   const handleOnCreateFolder = () => {
      
@@ -112,7 +131,7 @@ import TemplateTreeNode from "./TemplateTreeNode";
         </SidebarGroup>
       </SidebarContent>
       <SidebarRail/>
-      <NewFileDialog onCreateFile={handleCreateFile} isOpen={isNewFileDialogOpen} onClose={() => setIsNewFileDialogOpen(false)} />
+      <NewFileDialog   onCreateFile={handleCreateFile} isOpen={isNewFileDialogOpen} onClose={() => setIsNewFileDialogOpen(false)} />
 
         <NewFolderDialog onCreateFolder={handleOnCreateFolder} isOpen={isNewFolderDialogOpen} onClose={() => setIsNewFolderDialogOpen(false)} />
     
@@ -212,18 +231,22 @@ const NewFileDialog = ({isOpen,onClose,onCreateFile}: FileDialogProps) => {
     />
   </div>
 </div>
-                 </form>
-                  <DialogFooter>
+ <DialogFooter className="mt-5">
                 <div className="flex w-full mt-2 justify-between items-center" >
                     <Button onClick={onClose} className="bg-red-600 hover:bg-red-700 rounded-none text-white font-mono">
                         Cancel
                     </Button>
 
-                    <GradientButton>
+                  <GradientButton
+                      ondisable={!filename.trim()}
+                      type="submit"
+                     >
                         Create File 
                     </GradientButton>
                 </div>
             </DialogFooter>
+                 </form>
+                 
             </DialogContent>
 
            
@@ -235,6 +258,8 @@ const NewFolderDialog = ({isOpen,onClose,onCreateFolder}: FolderDialogProps) => 
      const [foldername, setFolderName] = React.useState("")
 
      const handleSubmit = (e: React.FormEvent) => {
+       console.log("Helllo pressed")
+       
          e.preventDefault()
          if(foldername.trim()) {
             onCreateFolder(foldername.trim() || " ")
@@ -284,20 +309,23 @@ const NewFolderDialog = ({isOpen,onClose,onCreateFolder}: FolderDialogProps) => 
     />
   </div>
 </div>
-
-
-                 </form>
-                  <DialogFooter>
+ <DialogFooter className="mt-5">
                 <div className="flex w-full mt-2 justify-between items-center" >
                     <Button onClick={onClose} className="bg-red-600 hover:bg-red-700 rounded-none text-white font-mono">
                         Cancel
                     </Button>
 
-                    <GradientButton>
+                    <GradientButton
+                     type="submit" 
+                      ondisable={!foldername.trim()}
+                    >
                         Create Folder 
                     </GradientButton>
                 </div>
-            </DialogFooter>
+            </DialogFooter> 
+
+                 </form>
+                 
             </DialogContent>
 
            

@@ -34,16 +34,18 @@ const PlaygroundView = ({ playgroundId }: Props) => {
   const [isPreview, setIsPreview] = React.useState(true)
   const lastSyncedContent = useRef<Map<string, string>>(new Map());
   const {
-    playgroundData,
+     playgroundData,
     templateData,
     isLoading,
     error,
     loadPlayground,
     saveTemplateData,
-    isSaving
+    isSaving,
+    setTemplateData,
   } = usePlayground(playgroundId)
 
   const explore = useFileExplorer()
+  
   const container = 
   //@ts-ignore
   useWebContainer({templateData});
@@ -52,14 +54,40 @@ const PlaygroundView = ({ playgroundId }: Props) => {
   const handleFileSelect = (file: TemplateFile) => {
       explore.openFile(file)
   }
+
+  
   
   useEffect(() => {
     if (playgroundId) {
       loadPlayground()
     }
   }, [playgroundId]) // Only depend on playgroundId
+
+   React.useEffect(() => {
+    if (templateData && !explore.openFiles.length) {
+
+      
+      explore.setTemplateData(templateData);
+    }
+  }, [templateData, explore.setTemplateData, explore.openFiles.length]);
+
   
   
+const wrappHandleAddFile = useCallback((newFile: TemplateFile, parentPath: string) => {
+  return explore.handleAddFile(
+    newFile,
+    parentPath,
+    container.writeFileSync!,
+    container.instance,
+    saveTemplateData
+  )
+}, [explore, container.writeFileSync, container.instance, saveTemplateData]); 
+
+
+const wrapHandleAddFoler = useCallback(() => {
+   
+},[])
+
 const handleSaveFile = useCallback(async () => {
   if (!activeFiles || !templateData) return;
   
@@ -233,26 +261,7 @@ React.useEffect(() => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
-        <div className="w-full max-w-md p-6 rounded-lg shadow-sm border">
-          <h2 className="text-xl font-semibold mb-6 text-center">
-            Loading Playground
-          </h2>
-          <div className="mb-8">
-            <LoadingStep
-              currentStep={1}
-              step={1}
-              label="Loading playground data"
-            />
-            <LoadingStep
-              currentStep={2}
-              step={2}
-              label="Setting up environment"
-            />
-            <LoadingStep currentStep={3} step={3} label="Ready to code" />
-          </div>
-        </div>
-      </div>
+      <CustomLoader/>
     );
   }
 
@@ -282,6 +291,7 @@ React.useEffect(() => {
                title={"File Explorer"}
                onFileSelect={handleFileSelect}
                selectedFile={activeFiles}
+               onAddFile={wrappHandleAddFile}
                />
             </div>
           )}
