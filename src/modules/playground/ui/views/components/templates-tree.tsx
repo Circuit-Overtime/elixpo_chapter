@@ -75,8 +75,15 @@ import { toast } from "sonner";
   };
 
 
-  const handleOnCreateFolder = () => {
-     
+  const handleOnCreateFolder = (folderName: string) => {
+     if(onAddFolder && isRootFolder) {
+       const newFolder: TemplateFolder = {
+          folderName,
+          items:[]
+       }
+        onAddFolder(newFolder, "")
+     }
+      setIsNewFolderDialogOpen(false)
   }
   
   return (
@@ -255,14 +262,14 @@ const NewFileDialog = ({isOpen,onClose,onCreateFile}: FileDialogProps) => {
 }
 
 const NewFolderDialog = ({isOpen,onClose,onCreateFolder}: FolderDialogProps) => {
-     const [foldername, setFolderName] = React.useState("")
+     const [folderName, setFolderName] = React.useState("")
 
      const handleSubmit = (e: React.FormEvent) => {
        console.log("Helllo pressed")
        
          e.preventDefault()
-         if(foldername.trim()) {
-            onCreateFolder(foldername.trim() || " ")
+         if(folderName.trim()) {
+            onCreateFolder(folderName.trim() || " ")
             setFolderName("");
          }
      }
@@ -302,7 +309,7 @@ const NewFolderDialog = ({isOpen,onClose,onCreateFolder}: FolderDialogProps) => 
     {/* Input Field */}
     <Input
       id="folderName"
-      value={foldername}
+      value={folderName}
       onChange={(e) => setFolderName(e.target.value)}
       className="pl-12 py-6 w-full rounded-lg border placeholder:font-mono text-xs"
       placeholder="Create Folder"
@@ -317,7 +324,7 @@ const NewFolderDialog = ({isOpen,onClose,onCreateFolder}: FolderDialogProps) => 
 
                     <GradientButton
                      type="submit" 
-                      ondisable={!foldername.trim()}
+                      ondisable={!folderName.trim()}
                     >
                         Create Folder 
                     </GradientButton>

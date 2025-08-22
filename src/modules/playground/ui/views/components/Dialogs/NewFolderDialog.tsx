@@ -56,19 +56,19 @@ const NewFolderDialog: React.FC<FolderDialogProps> = ({
   </div>
 </div>
 
-
-                 </form>
-                  <DialogFooter>
+ <DialogFooter className='mt-5'>
                 <div className="flex w-full mt-2 justify-between items-center" >
                     <Button onClick={onClose} className="bg-red-600 hover:bg-red-700 rounded-none text-white font-mono">
                         Cancel
                     </Button>
 
-                    <GradientButton>
+                    <GradientButton type='submit'>
                         Create Folder 
                     </GradientButton>
                 </div>
             </DialogFooter>
+                 </form>
+                 
             </DialogContent>
 
            

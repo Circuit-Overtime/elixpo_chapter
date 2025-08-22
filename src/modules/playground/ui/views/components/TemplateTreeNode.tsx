@@ -39,9 +39,7 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
   const [isDeleteDialog, setIsOpenDeleteDialog] = useState(false)
   const [isNewFileDialogOpen, setIsNewFileDialogOpen] = React.useState(false)
   const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = React.useState(false)
-  const handelOnRename = () => {
-    
-  }
+  
 
   const handleRenameSubmit = () => {
 
@@ -63,7 +61,7 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(fileName);
 
-  const handleRenameSubmit = () => {
+   const handleRenameSubmit = () => {
     if (newName.trim() && newName !== fileName) {
       const [filename, ...extParts] = newName.split('.');
       const fileExtension = extParts.join('.');
@@ -81,6 +79,19 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
     }
   };
 
+  
+const handleDelete = () => {
+   onDeleteFile?.(file, path)
+   
+}
+
+const handleRenameFile = (
+  newFileName: string,
+  newFileExtension: string,
+) => {
+   onRenameFile?.(file, newFileExtension, newFileExtension,path)
+   setIsNewFileDialogOpen(false)
+}
   return (
     <SidebarMenuItem>
       <div className="flex items-center group">
@@ -106,13 +117,13 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem 
-                 onClick={() => setIsNewFileDialogOpen(true)}
+                 onClick={openRenameFileDialog}
                 >
                   <Edit3 className="h-4 w-4 mr-2" />
                   Rename
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </DropdownMenuItem>
@@ -124,7 +135,8 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
       <NewFileDialog
        isOpen={isNewFileDialogOpen}
        onClose={() => setIsNewFileDialogOpen(false)}
-       onCreateFile={() => {}}
+       onCreateFile={handleRenameFile}
+
        
       />
     </SidebarMenuItem>
@@ -133,9 +145,36 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
     const folder = item as TemplateFolder
     const folderName = folder.folderName
     const currentPath = path ? `${path}/${folderName}` : folderName
+    const handleDeleteFolder = () => {
+       onDeleteFolder?.(folder, path)
 
-   
-  
+    }
+    const createFile = (filename: string, extension: string) => {
+       if(onAddFile) {
+         const newFile: TemplateFile = {
+            filename,
+            fileExtension: extension,
+            content: ""
+         }
+          onAddFile(newFile, currentPath)
+       }
+       setIsNewFileDialogOpen(false)
+    }
+      const handleCreateFolder = (folderName: string) => {
+      if (onAddFolder) {
+        const newFolder: TemplateFolder = {
+          folderName,
+          items: [],
+        }
+        onAddFolder(newFolder, currentPath)
+      }
+      setIsNewFolderDialogOpen(false)
+    }
+
+    const handelOnRename = (newFoldername: string) => {
+       onRenameFolder?.(folder,newFoldername, path);
+       setIsNewFolderDialogOpen(false)
+    }   
     return (
      <div>
 
@@ -180,7 +219,9 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
                   Rename
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem  className="text-destructive">
+                <DropdownMenuItem
+                 onClick={handleDeleteFolder}
+                 className="text-destructive">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </DropdownMenuItem>
@@ -231,13 +272,13 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
         <NewFileDialog
          isOpen={isNewFileDialogOpen}
          onClose={() => setIsNewFileDialogOpen(false)}
-         onCreateFile={() =>{}}
+         onCreateFile={createFile}
         />
 
         <NewFolderDialog
          isOpen={isNewFolderDialogOpen}
          onClose={() => setIsNewFolderDialogOpen(false)}
-         onCreateFolder={() => {}}
+         onCreateFolder={handleCreateFolder}
         />
      </div>
     )
