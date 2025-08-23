@@ -1,6 +1,6 @@
 'use client'
-import React, { useState } from "react";
-import { FileDialogProps, FolderDialogProps, RenameFolderDialogProps, TemplateFile, TemplateFileTreeProps, TemplateFolder, TemplateTreeNodeProps } from "../types/types";
+import React from "react";
+import { FileDialogProps, FolderDialogProps, TemplateFile, TemplateFileTreeProps, TemplateFolder } from "../types/types";
 import {
   Sidebar,
   SidebarContent,
@@ -8,26 +8,20 @@ import {
   SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronRight, CodeXml, Edit3, File, FilePlus, FilePlus2, Folder, FolderPlus, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import {  CodeXml, FilePlus2, FolderPlus, Plus } from "lucide-react";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import GradientButton from "@/components/Custombuttons/GradientButton";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { RenameFolderDialog } from "./Dialogs/RenameFolderDialog";
 import TemplateTreeNode from "./TemplateTreeNode";
 import { toast } from "sonner";
 
@@ -46,7 +40,9 @@ import { toast } from "sonner";
     const isRootFolder = data && typeof data === "object" && "folderName" in data
     const [isNewFileDialogOpen, setIsNewFileDialogOpen] = React.useState(false);
   const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = React.useState(false);
-
+ const openNewFolderDialog = () => {
+      setIsNewFolderDialogOpen(true); // Open the NEW folder dialog
+    }
   const handelNewFileDialog = () => {
      setIsNewFileDialogOpen(true)
   }
@@ -104,7 +100,7 @@ import { toast } from "sonner";
             </DropdownMenuTrigger>
 
             <DropdownMenuContent className="font-mono" align="end">
-              <DropdownMenuItem onClick={handleNewFolderDialog}>
+              <DropdownMenuItem onClick={openNewFolderDialog}>
                 <FolderPlus className="size-4" />
                 New Folder
               </DropdownMenuItem>
@@ -269,7 +265,7 @@ const NewFolderDialog = ({isOpen,onClose,onCreateFolder}: FolderDialogProps) => 
        
          e.preventDefault()
          if(folderName.trim()) {
-            onCreateFolder(folderName.trim() || " ")
+            onCreateFolder(folderName.trim())
             setFolderName("");
          }
      }

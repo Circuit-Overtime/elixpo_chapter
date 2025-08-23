@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { FormEvent } from 'react'
 import { FolderDialogProps } from '../../types/types'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FolderPlus, Plus } from 'lucide-react';
@@ -12,7 +12,13 @@ const NewFolderDialog: React.FC<FolderDialogProps> = ({
     onCreateFolder
 }) => {
   const [foldername, setFoldername] = React.useState("");
-  const handleSubmit = () => {}
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if(foldername.trim()) {
+       onCreateFolder(foldername.trim());
+       setFoldername("");
+    }
+  }
   return (
    <Dialog open={isOpen} onOpenChange={onClose} > 
             <DialogContent>
