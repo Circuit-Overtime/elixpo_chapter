@@ -1,20 +1,16 @@
 'use client'
 import React, { useState } from 'react'
-import { TemplateFolder, TemplateFile, TemplateTreeNodeProps, RenameFolderDialogProps, RenameFildDialogProps } from '../types/types'
-import { Folder, File, MoreHorizontal, Edit, Trash2, ChevronRight, FilePlus, FolderPlus, Edit3 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { SidebarMenuButton, SidebarMenuItem, SidebarMenu, Sidebar, SidebarContent, SidebarMenuSub } from '@/components/ui/sidebar'
+import { TemplateFolder, TemplateFile, TemplateTreeNodeProps } from '../types/types'
+import { Folder, File, MoreHorizontal, Trash2, ChevronRight, FilePlus, FolderPlus, Edit3 } from 'lucide-react'
+import { SidebarMenuButton, SidebarMenuItem, SidebarMenuSub } from '@/components/ui/sidebar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { CollapsibleContent } from '@radix-ui/react-collapsible'
-import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@radix-ui/react-dialog'
-import { DialogFooter, DialogHeader } from '@/components/ui/dialog'
-import GradientButton from '@/components/Custombuttons/GradientButton'
 import { RenameFolderDialog } from './Dialogs/RenameFolderDialog'
 import NewFileDialog from './Dialogs/NewFileDialog'
 import NewFolderDialog from './Dialogs/NewFolderDialog'
+import RenameFileDialog from './Dialogs/RenameFIleDialog'
 
 
 
@@ -36,21 +32,22 @@ const TemplateTreeNode: React.FC<TemplateTreeNodeProps> = ({
   const isFolder = isValidItem && "folderName" in item
 
   const [isOpen, setIsOpen] = useState<boolean>(level < 2) // open first few levels
-  const [isDeleteDialog, setIsOpenDeleteDialog] = useState(false)
   const [isNewFileDialogOpen, setIsNewFileDialogOpen] = React.useState(false)
-  const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = React.useState(false)
+  const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = React.useState(false);
+  const [isRenameFolderDialogOpen,setIsRenameFolderDialogOpen] = React.useState(false)
+  const [isRenameFileDialog, setIsRenameFileDialog] = React.useState(false);
   
 
-  const handleRenameSubmit = () => {
+  /* const handleRenameSubmit = () => {
 
-  }
+  } */
 
   const openRenameFolderDialog = () => {
-     setIsNewFolderDialogOpen(true)
+     setIsRenameFolderDialogOpen(true)
   }
 
   const openRenameFileDialog = () => {
-     setIsNewFileDialogOpen(true)
+      setIsRenameFileDialog(true)
   }
    if (!isValidItem) return null
 
@@ -89,7 +86,7 @@ const handleRenameFile = (
   newFileName: string,
   newFileExtension: string,
 ) => {
-   onRenameFile?.(file, newFileExtension, newFileExtension,path)
+   onRenameFile?.(file,newFileName,newFileExtension ,path)
    setIsNewFileDialogOpen(false)
 }
   return (
@@ -132,12 +129,12 @@ const handleRenameFile = (
           </>
       </div>
 
-      <NewFileDialog
-       isOpen={isNewFileDialogOpen}
-       onClose={() => setIsNewFileDialogOpen(false)}
-       onCreateFile={handleRenameFile}
-
-       
+      <RenameFileDialog
+       isOpen={isRenameFileDialog}
+       currentFileName={file.filename}
+       currentExtension={file.fileExtension}
+       onClose={() => setIsRenameFileDialog(false)}
+       onRename={handleRenameFile}
       />
     </SidebarMenuItem>
   );
@@ -160,15 +157,15 @@ const handleRenameFile = (
        }
        setIsNewFileDialogOpen(false)
     }
-      const handleCreateFolder = (folderName: string) => {
+     const handleCreateFolder = (folder: string) => {
       if (onAddFolder) {
         const newFolder: TemplateFolder = {
-          folderName,
+          folderName: folder,
           items: [],
-        }
-        onAddFolder(newFolder, currentPath)
+        };
+        onAddFolder(newFolder, currentPath);
       }
-      setIsNewFolderDialogOpen(false)
+      setIsNewFolderDialogOpen(false); // Close the NEW folder dialog
     }
 
     const handelOnRename = (newFoldername: string) => {
@@ -261,9 +258,9 @@ const handleRenameFile = (
      
            
           <RenameFolderDialog
-          isOpen={isNewFolderDialogOpen}
+          isOpen={isRenameFolderDialogOpen}
           currentFolderName={folder.folderName}
-          onClose={() => setIsNewFolderDialogOpen(false)}
+          onClose={() => setIsRenameFolderDialogOpen(false)}
           onRename={handelOnRename}
          
          />
@@ -276,9 +273,9 @@ const handleRenameFile = (
         />
 
         <NewFolderDialog
-         isOpen={isNewFolderDialogOpen}
-         onClose={() => setIsNewFolderDialogOpen(false)}
-         onCreateFolder={handleCreateFolder}
+          isOpen={isNewFolderDialogOpen}
+          onClose={() => setIsNewFolderDialogOpen(false)}
+          onCreateFolder={handleCreateFolder}
         />
      </div>
     )
