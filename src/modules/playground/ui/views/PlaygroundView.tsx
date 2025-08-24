@@ -21,6 +21,7 @@ import { useWebContainer } from '@/features/webcontainer/hooks/useWebContainer'
 import WebcontainerPreview from './components/webcontainerView/WebcontainerPreview'
 import { findFilePath } from '@/features/playground/lib'
 import { toast } from 'sonner'
+import AIAgentCompoents from '@/features/FIngAI/components/AIAgentCompoents'
 
 
 interface Props {
@@ -30,6 +31,7 @@ interface Props {
 const PlaygroundView = ({ playgroundId }: Props) => {
 
   const [isPreview, setIsPreview] = React.useState(true)
+  const [toggle,setToggle] = React.useState(false)
 /*   const lastSyncedContent = useRef<Map<string, string>>(new Map());
  */  const {
      playgroundData,
@@ -395,18 +397,12 @@ React.useEffect(() => {
 
                 {/* TODO:TOGGLE AI */}
 
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                         <Button
-                          className='font-mono'
-                          size={"sm"}
-                          variant={"outline"}
-                         >
-                           <FaMagic className='size-3'/> FingAI
-                         </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Fing Ai Agent</TooltipContent>
-                </Tooltip>
+                <AIAgentCompoents
+                 isEnabled={true}
+                 suggestionOnLoading={false}
+                 onToggle={() => setToggle(!toggle) }
+
+                /> 
               <Tooltip>
 
                  <DropdownMenu>

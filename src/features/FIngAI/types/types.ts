@@ -1,0 +1,19 @@
+export interface AISuggestionState {
+     suggestion: string | null;
+     isLoading: boolean;
+     position: {
+         line: number;
+         column: number;
+     } | null;
+     decoration: string[];
+     isEnabled: boolean;
+
+}
+export interface UseAISuggestionsReturn extends AISuggestionState {
+     toggedEnabled: () => void;
+     fetchSuggestion: (type: string, editor: any) => Promise<void>;
+     accpectSuggestion: (editor: any, monaco: any) => void;
+     rejectSuggestion: (editor: any) => void;
+     clearSuggestion: (editor: any) => void;
+
+}
