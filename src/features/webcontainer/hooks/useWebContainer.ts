@@ -1,11 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { WebContainer } from '@webcontainer/api';
 import { TemplateFolder } from '@/features/playground/lib/path-to-json';
-import { UseWebContainerPros, UseWebContainerReturn } from '../types/types';
 
+interface UseWebContainerProps {
+  templateData: TemplateFolder;
+}
 
+interface UseWebContainerReturn {
+  serverUrl: string | null;
+  isLoading: boolean;
+  error: string | null;
+  instance: WebContainer | null;
+  writeFileSync: (path: string, content: string) => Promise<void>;
+  destroy: () => void; // Added destroy function
+}
 
-export const useWebContainer = ({ templateData }: UseWebContainerPros): UseWebContainerReturn => {
+export const useWebContainer = ({ templateData }: UseWebContainerProps): UseWebContainerReturn => {
   const [serverUrl, setServerUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
