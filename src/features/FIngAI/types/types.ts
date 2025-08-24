@@ -10,9 +10,9 @@ export interface AISuggestionState {
 
 }
 export interface UseAISuggestionsReturn extends AISuggestionState {
-     toggedEnabled: () => void;
+     toggleEnabled: () => void;
      fetchSuggestion: (type: string, editor: any) => Promise<void>;
-     accpectSuggestion: (editor: any, monaco: any) => void;
+     acceptSuggestion: (editor: any, monaco: any) => void;
      rejectSuggestion: (editor: any) => void;
      clearSuggestion: (editor: any) => void;
 

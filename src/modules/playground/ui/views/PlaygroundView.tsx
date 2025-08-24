@@ -11,7 +11,6 @@ import CustomLoader from '@/components/loader/CustomLoader'
 import { useFileExplorer } from '@/features/playground/hooks/useFileExplorer'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, Eye, EyeClosed, FileText, FolderOpen, Save, Settings, X } from 'lucide-react'
-import { FaMagic } from 'react-icons/fa'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TemplateFile, TemplateFolder } from './types/types'
@@ -22,6 +21,7 @@ import WebcontainerPreview from './components/webcontainerView/WebcontainerPrevi
 import { findFilePath } from '@/features/playground/lib'
 import { toast } from 'sonner'
 import AIAgentCompoents from '@/features/FIngAI/components/AIAgentCompoents'
+import { useAISuggestion } from '@/features/FIngAI/hooks/useAIFeature'
 
 
 interface Props {
@@ -43,6 +43,8 @@ const PlaygroundView = ({ playgroundId }: Props) => {
    /*  isSaving, */
    /*  setTemplateData, */
   } = usePlayground(playgroundId)
+  const AI = useAISuggestion();
+
 
   const explore = useFileExplorer()
   
@@ -398,9 +400,9 @@ React.useEffect(() => {
                 {/* TODO:TOGGLE AI */}
 
                 <AIAgentCompoents
-                 isEnabled={true}
-                 suggestionOnLoading={false}
-                 onToggle={() => setToggle(!toggle) }
+                 isEnabled={AI.isEnabled}
+                 suggestionOnLoading={AI.isLoading}
+                 onToggle={AI.toggleEnabled}
 
                 /> 
               <Tooltip>
@@ -490,6 +492,13 @@ React.useEffect(() => {
         >
         {activeFiles && (
                           <PlayGroundCodeEditor
+                            suggestion={AI.suggestion}
+                            suggestionLoading={AI.isLoading}
+                            suggestionPosition={AI.position}
+                            onAcceptSuggestion={(editor, monaco) => AI.acceptSuggestion(editor, monaco)}
+                            onRejectSuggestion={(editor) => AI.rejectSuggestion(editor)}
+                            onTriggerSuggestion={(type,editor) => AI.fetchSuggestion(type,editor)}
+                            
                             activeFile={activeFiles}
                             content={activeFiles?.content}
                             onContentChange={(value) => {
