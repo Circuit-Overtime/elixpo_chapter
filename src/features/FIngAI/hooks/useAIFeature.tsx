@@ -108,38 +108,42 @@ export const useAISuggestion = (): UseAISuggestionsReturn => {
   }, []); // Remove state.isEnabled from dependencies to prevent stale closures
 
   const acceptSuggestion = useCallback(
-    (editor: any, monaco: any) => {
-      setState((currentState) => {
-        if (!currentState.suggestion || !currentState.position || !editor || !monaco) {
-          return currentState;
-        }
+  (editor: any, monaco: any, updateFileContent?: (fileId: string, content: string) => void, fileId?: string) => {
+    setState((currentState) => {
+      if (!currentState.suggestion || !currentState.position || !editor || !monaco) {
+        return currentState;
+      }
 
-        const { line, column } = currentState.position;
-        const sanitizedSuggestion = currentState.suggestion.replace(/^\d+:\s*/gm, "");
+      const { line, column } = currentState.position;
+      const sanitizedSuggestion = currentState.suggestion.replace(/^\d+:\s*/gm, "");
 
-        editor.executeEdits("", [
-          {
-            range: new monaco.Range(line, column, line, column),
-            text: sanitizedSuggestion,
-            forceMoveMarkers: true,
-          },
-        ]);
+      editor.executeEdits("", [
+        {
+          range: new monaco.Range(line, column, line, column),
+          text: sanitizedSuggestion,
+          forceMoveMarkers: true,
+        },
+      ]);
 
-        // Clear decorations
-        if (editor && currentState.decoration.length > 0) {
-          editor.deltaDecorations(currentState.decoration, []);
-        }
+      // ✅ Call updateFileContent after render tick
+      if (updateFileContent && fileId) {
+        setTimeout(() => {
+          const newContent = editor.getModel()?.getValue() || "";
+          updateFileContent(fileId, newContent);
+        }, 0);
+      }
 
-        return {
-          ...currentState,
-          suggestion: null,
-          position: null,
-          decoration: [],
-        };
-      });
-    },
-    []
-  );
+      return {
+        ...currentState,
+        suggestion: null,
+        position: null,
+        decoration: [],
+      };
+    });
+  },
+  []
+);
+
 
   const rejectSuggestion = useCallback((editor: any) => {
     setState((currentState) => {
