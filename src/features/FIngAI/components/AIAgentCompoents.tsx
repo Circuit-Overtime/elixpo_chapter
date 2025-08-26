@@ -6,7 +6,8 @@ import { Progress } from '@/components/ui/progress'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { Bot, FileText, Loader2, Power, PowerOff } from 'lucide-react'
-import React from 'react'
+import React, { useState } from 'react'
+import AIChatSlider from './AIChatSlider'
 
 
 interface AIAgentCompoentsProps { 
@@ -24,7 +25,9 @@ const AIAgentCompoents = ({
   loadingProgress=0,
   onToggle
 }: AIAgentCompoentsProps) => {
+  const [isOpenChat, setIsOpenChat] = useState(false);
   return (
+    <>
      <DropdownMenu>
        <DropdownMenuTrigger asChild>
           <Button style={{fontFamily: 'monospace'}} variant={'outline'} size={'sm'} className={cn(
@@ -108,7 +111,7 @@ const AIAgentCompoents = ({
     <DropdownMenuSeparator/>
 
      <DropdownMenuItem 
-           
+            onClick={() => setIsOpenChat(true)}
             className="py-2.5 cursor-pointer"
           >
             <div className="flex items-center gap-3 w-full">
@@ -123,6 +126,12 @@ const AIAgentCompoents = ({
           </DropdownMenuItem>
        </DropdownMenuContent>
      </DropdownMenu>
+
+     <AIChatSlider
+      isOpen={isOpenChat}
+      onClose={() => setIsOpenChat(false)}
+     />
+    </>
   )
 }
 
