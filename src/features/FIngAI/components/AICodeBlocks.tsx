@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -59,6 +59,11 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
   const [showNumbers, setShowNumbers] = useState(showLineNumbers)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null)
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const match = /language-(\w+)/.exec(className || "")
   const language = match ? match[1] : "text"
@@ -175,6 +180,69 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
 
   const lineCount = children.split("\n").length
   const shouldShowControls = lineCount > 3
+
+  // Custom code formatter to avoid hydration errors
+  const CustomCodeFormatter = () => (
+    <div className="border-x border-b border-zinc-700/50 rounded-b-lg overflow-hidden bg-[#1e1e1e] relative">
+      {isClient ? (
+        <SyntaxHighlighter
+          language={language}
+          style={theme === "dark" ? vscDarkPlus : vs}
+          showLineNumbers={showNumbers && lineCount > 1}
+          wrapLines={true}
+          wrapLongLines={true}
+          customStyle={{
+            margin: 0,
+            padding: "16px",
+            background: "transparent",
+            fontSize: "13px",
+            fontFamily:
+              "'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace",
+            maxHeight: isFullscreen ? "calc(100vh - 120px)" : collapsed ? "200px" : `${maxHeight}px`,
+            overflow: "auto",
+          }}
+          lineNumberStyle={{
+            color: "#6b7280",
+            fontSize: "12px",
+            paddingRight: "16px",
+            userSelect: "none",
+          }}
+        >
+          {children}
+        </SyntaxHighlighter>
+      ) : (
+        // Server-side fallback
+        <pre
+          className="p-4 overflow-x-auto text-sm font-mono"
+          style={{
+            margin: 0,
+            background: "transparent",
+            fontSize: "13px",
+            fontFamily:
+              "'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace",
+            maxHeight: isFullscreen ? "calc(100vh - 120px)" : collapsed ? "200px" : `${maxHeight}px`,
+            overflow: "auto",
+            color: theme === "dark" ? "#d4d4d4" : "#1f2937",
+          }}
+        >
+          <code>{children}</code>
+        </pre>
+      )}
+
+      {collapsed && lineCount > 20 && (
+        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1e1e1e] to-transparent flex items-end justify-center pb-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCollapsed(false)}
+            className="text-xs text-zinc-400 hover:text-zinc-200"
+          >
+            Show {lineCount - 10} more lines
+          </Button>
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <TooltipProvider>
@@ -377,47 +445,8 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
           </div>
         </div>
 
-        {/* Code content */}
-        <div className="border-x border-b border-zinc-700/50 rounded-b-lg overflow-hidden bg-[#1e1e1e] relative">
-          <SyntaxHighlighter
-            language={language}
-            style={theme === "dark" ? vscDarkPlus : vs}
-            showLineNumbers={showNumbers && lineCount > 1}
-            wrapLines={true}
-            wrapLongLines={true}
-            customStyle={{
-              margin: 0,
-              padding: "16px",
-              background: "transparent",
-              fontSize: "13px",
-              fontFamily:
-                "'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace",
-              maxHeight: isFullscreen ? "calc(100vh - 120px)" : collapsed ? "200px" : `${maxHeight}px`,
-              overflow: "auto",
-            }}
-            lineNumberStyle={{
-              color: "#6b7280",
-              fontSize: "12px",
-              paddingRight: "16px",
-              userSelect: "none",
-            }}
-          >
-            {children}
-          </SyntaxHighlighter>
-
-          {collapsed && lineCount > 20 && (
-            <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1e1e1e] to-transparent flex items-end justify-center pb-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setCollapsed(false)}
-                className="text-xs text-zinc-400 hover:text-zinc-200"
-              >
-                Show {lineCount - 10} more lines
-              </Button>
-            </div>
-          )}
-        </div>
+        {/* Use custom code formatter */}
+        <CustomCodeFormatter />
       </div>
     </TooltipProvider>
   )
