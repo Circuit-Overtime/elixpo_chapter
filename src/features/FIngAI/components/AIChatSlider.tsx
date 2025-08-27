@@ -20,6 +20,7 @@ import { EnhancedCodeBlock } from './AICodeBlocks';
 import { EnhancedFilePreview } from './CodeBlockPreview';
 import { Textarea } from '@/components/ui/textarea';
 import { FaMagento } from 'react-icons/fa';
+import UserControl from '@/components/user-control';
 
 const AIChatSlider = ({
     isOpen,
@@ -65,9 +66,132 @@ const AIChatSlider = ({
 
 
 
-  const handleSendMessage = () => {
+const handleSendMessage = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!input.trim() || isLoading) return;
 
+  // Map chatMode -> message type
+  const messageType: ChatMessage["type"] =
+    chatMode === "chat"
+      ? "chat"
+      : chatMode === "review"
+      ? "code_review"
+      : chatMode === "fix"
+      ? "error_fix"
+      : "optimization";
+
+  // ✅ Create user message (fully typed)
+  const newMessage: ChatMessage = {
+    role: "user",
+    content: input.trim(),
+    timeStamp: new Date(),
+    attachment: [...attachments],
+    id: Date.now().toString(),
+    codeSuggestion: [],
+    type: messageType,
+  };
+
+  setMessages((prev) => [...prev, newMessage]);
+  setInput("");
+  setIsLoading(true);
+
+  try {
+    // Prepare enhanced context
+    let contextualMessage = getChatModePrompt(chatMode, input.trim(), {
+      activeFile: activeFileName,
+      activeFileContent: activeFileContent?.substring(0, 2000),
+      language: activeFileLanguage,
+      cursorPosition,
+    });
+
+    // Attach files if available
+    if (attachments.length > 0) {
+      contextualMessage += "\n\nAttached files:\n";
+      attachments.forEach((file) => {
+        contextualMessage += `\n**${file.name}** (${file.language}, ${file.type}):\n\`\`\`${file.language}\n${file.content.substring(
+          0,
+          1000
+        )}\n\`\`\`\n`;
+      });
+    }
+
+    // 🔥 Send to API
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: contextualMessage,
+        history: messages.slice(-10).map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+        stream: streamResponse,
+        mode: chatMode,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      const suggestions: CodeSuggestion[] = generateCodeSuggestions(
+        input.trim(),
+        attachments
+      );
+
+      // ✅ Assistant message (fully typed)
+      const assistantMessage: ChatMessage = {
+        role: "assistant",
+        content: data.response,
+        timeStamp: new Date(),
+        attachment: [],
+        id: Date.now().toString(),
+        codeSuggestion: suggestions,
+        type: messageType,
+        tokens: data.tokens,
+        models: data.model || "FingAI.", // ✅ matches your interface
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } else {
+      // Error message (fallback)
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Sorry, I encountered an error while processing your request. Please try again.",
+          timeStamp: new Date(),
+          id: Date.now().toString(),
+          attachment: [],
+          codeSuggestion: [],
+          type: "chat",
+        },
+      ]);
+    }
+  } catch (error) {
+    console.error("Error sending message:", error);
+
+    // Network / runtime error fallback
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content:
+          "I'm having trouble connecting right now. Please check your internet connection and try again.",
+        timeStamp: new Date(),
+        id: Date.now().toString(),
+        attachment: [],
+        codeSuggestion: [],
+        type: "chat",
+      },
+    ]);
+  } finally {
+    setIsLoading(false);
+    setAttachments([]);
   }
+};
+
+
 
    // Enhanced language detection with more file types
   const detectLanguage = (fileName: string, content: string): string => {
@@ -785,34 +909,53 @@ const AIChatSlider = ({
                       )}
 
                       <div className="prose prose-invert prose-sm max-w-none">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm, remarkMath]}
-                          rehypePlugins={[rehypeKatex]}
-                          components={{
-                            code: ({
-                              children,
-                              className,
-                            //@ts-ignore
-                              inline: _inline,
-                            }) => (
-                              <EnhancedCodeBlock
-                                className={className}
-                                inline={_inline as boolean}
-                                onInsert={
-                                  onInsertCode
-                                    ? (code) => handleInsertCode(code)
-                                    : undefined
-                                }
-                                onRun={onRunCode}
-                                theme={theme}
-                              >
-                                {String(children)}
-                              </EnhancedCodeBlock>
-                            ),
-                          }}
-                        >
-                          {msg.content}
-                        </ReactMarkdown>
+                       <ReactMarkdown
+  remarkPlugins={[remarkGfm, remarkMath]}
+  rehypePlugins={[rehypeKatex]}
+  components={{
+    // Fix for paragraph wrapping issue
+    p: ({ children, ...props }) => {
+      // Check if the paragraph contains only a code block
+      const childrenArray = React.Children.toArray(children);
+      const hasOnlyCodeBlock = childrenArray.length === 1 && 
+        React.isValidElement(childrenArray[0]) && 
+        childrenArray[0].type === 'pre';
+      
+      if (hasOnlyCodeBlock) {
+        // If it's just a code block, render it without the paragraph wrapper
+        return <>{children}</>;
+      }
+      
+      // Otherwise, render normal paragraph
+      return <p {...props}>{children}</p>;
+    },
+    //@ts-ignore
+    code: ({ node, className, children, inline, ...props }) => {
+      if (inline) {
+        return (
+          <code className={`bg-zinc-800/60 text-zinc-200 px-1.5 py-0.5 rounded text-sm font-mono border border-zinc-700/50 ${className || ''}`} {...props}>
+            {children}
+          </code>
+        );
+      }
+
+      return (
+        <EnhancedCodeBlock
+          className={className}
+          inline={inline}
+          onInsert={onInsertCode}
+          onRun={onRunCode}
+          theme={theme}
+          {...props}
+        >
+          {String(children).replace(/\n$/, '')}
+        </EnhancedCodeBlock>
+      );
+    },
+  }}
+>
+  {msg.content}
+</ReactMarkdown>
                       </div>
 
                       {/* Show attachments for user messages */}
@@ -870,7 +1013,7 @@ const AIChatSlider = ({
                     {msg.role === "user" && (
                       <Avatar className="h-9 w-9 border border-zinc-700 bg-zinc-800 shrink-0">
                         <AvatarFallback className="bg-zinc-700 text-zinc-300">
-                          <User className="h-5 w-5" />
+                         <UserControl/>
                         </AvatarFallback>
                       </Avatar>
                     )}
