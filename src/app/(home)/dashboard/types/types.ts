@@ -1,4 +1,3 @@
-import { UserResource } from "@clerk/types";
 import { TemplateLogo } from "../../../../../public/assets/images/images";
 export interface PlayGroundProjects {
   id: string;

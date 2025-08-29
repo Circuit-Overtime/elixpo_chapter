@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
+import type * as monaco from "monaco-editor";
 
 interface AISuggestionsState {
   suggestion: string | null;
@@ -10,10 +11,15 @@ interface AISuggestionsState {
 
 interface UseAISuggestionsReturn extends AISuggestionsState {
   toggleEnabled: () => void;
-  fetchSuggestion: (type: string, editor: any) => Promise<void>;
-  acceptSuggestion: (editor: any, monaco: any) => void;
-  rejectSuggestion: (editor: any) => void;
-  clearSuggestion: (editor: any) => void;
+  fetchSuggestion: (type: string, editor: monaco.editor.IStandaloneCodeEditor) => Promise<void>;
+  acceptSuggestion: (
+    editor: monaco.editor.IStandaloneCodeEditor,
+    monacoNs: typeof monaco,
+    updateFileContent?: (fileId: string, content: string) => void,
+    fileId?: string
+  ) => void;
+  rejectSuggestion: (editor: monaco.editor.IStandaloneCodeEditor) => void;
+  clearSuggestion: (editor: monaco.editor.IStandaloneCodeEditor) => void;
 }
 
 export const useAISuggestion = (): UseAISuggestionsReturn => {
@@ -26,126 +32,128 @@ export const useAISuggestion = (): UseAISuggestionsReturn => {
   });
 
   const toggleEnabled = useCallback(() => {
-    console.log("Toggling AI suggestions");
     setState((prev) => ({ ...prev, isEnabled: !prev.isEnabled }));
   }, []);
 
-  const fetchSuggestion = useCallback(async (type: string, editor: any) => {
-    console.log("Fetching AI suggestion...");
-    console.log("AI Suggestions Enabled:", state.isEnabled);
-    console.log("Editor Instance Available:", !!editor);
+  const fetchSuggestion = useCallback(
+    async (type: string, editor: monaco.editor.IStandaloneCodeEditor) => {
+      console.log("Fetching AI suggestion...");
+      console.log("AI Suggestions Enabled:", state.isEnabled);
+      console.log("Editor Instance Available:", !!editor);
 
-    // Use functional state update to get fresh state
-    setState((currentState) => {
-      if (!currentState.isEnabled) {
-        console.warn("AI suggestions are disabled.");
-        return currentState;
-      }
+      setState((currentState) => {
+        if (!currentState.isEnabled) {
+          console.warn("AI suggestions are disabled.");
+          return currentState;
+        }
 
-      if (!editor) {
-        console.warn("Editor instance is not available.");
-        return currentState;
-      }
+        if (!editor) {
+          console.warn("Editor instance is not available.");
+          return currentState;
+        }
 
-      const model = editor.getModel();
-      const cursorPosition = editor.getPosition();
+        const model = editor.getModel();
+        const cursorPosition = editor.getPosition();
 
-      if (!model || !cursorPosition) {
-        console.warn("Editor model or cursor position is not available.");
-        return currentState;
-      }
+        if (!model || !cursorPosition) {
+          console.warn("Editor model or cursor position is not available.");
+          return currentState;
+        }
 
-      // Set loading state immediately
-      const newState = { ...currentState, isLoading: true };
+        const newState = { ...currentState, isLoading: true };
 
-      // Perform the async operation
-      (async () => {
-        try {
-          const payload = {
-            fileContent: model.getValue(),
-            cursorLine: cursorPosition.lineNumber - 1,
-            cursorColumn: cursorPosition.column - 1,
-            suggestionType: type,
-          };
-          console.log("Request payload:", payload);
+        (async () => {
+          try {
+            const payload = {
+              fileContent: model.getValue(),
+              cursorLine: cursorPosition.lineNumber - 1,
+              cursorColumn: cursorPosition.column - 1,
+              suggestionType: type,
+            };
+            console.log("Request payload:", payload);
 
-          const response = await fetch("/api/fingAI-suggestion", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
+            const response = await fetch("/api/fingAI-suggestion", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
 
-          if (!response.ok) {
-            throw new Error(`API responded with status ${response.status}`);
-          }
+            if (!response.ok) {
+              throw new Error(`API responded with status ${response.status}`);
+            }
 
-          const data = await response.json();
-          console.log("API response:", data);
+            const data: { suggestion?: string } = await response.json();
+            console.log("API response:", data);
 
-          if (data.suggestion) {
-            const suggestionText = data.suggestion.trim();
-            setState((prev) => ({
-              ...prev,
-              suggestion: suggestionText,
-              position: {
-                line: cursorPosition.lineNumber,
-                column: cursorPosition.column,
-              },
-              isLoading: false,
-            }));
-          } else {
-            console.warn("No suggestion received from API.");
+            if (data.suggestion) {
+              const suggestionText = data.suggestion.trim();
+              setState((prev) => ({
+                ...prev,
+                suggestion: suggestionText,
+                position: {
+                  line: cursorPosition.lineNumber,
+                  column: cursorPosition.column,
+                },
+                isLoading: false,
+              }));
+            } else {
+              console.warn("No suggestion received from API.");
+              setState((prev) => ({ ...prev, isLoading: false }));
+            }
+          } catch (error) {
+            console.error("Error fetching code suggestion:", error);
             setState((prev) => ({ ...prev, isLoading: false }));
           }
-        } catch (error) {
-          console.error("Error fetching code suggestion:", error);
-          setState((prev) => ({ ...prev, isLoading: false }));
-        }
-      })();
+        })();
 
-      return newState;
-    });
-  }, []); // Remove state.isEnabled from dependencies to prevent stale closures
+        return newState;
+      });
+    },
+    [state.isEnabled] // ✅ added proper dependency
+  );
 
   const acceptSuggestion = useCallback(
-  (editor: any, monaco: any, updateFileContent?: (fileId: string, content: string) => void, fileId?: string) => {
-    setState((currentState) => {
-      if (!currentState.suggestion || !currentState.position || !editor || !monaco) {
-        return currentState;
-      }
+    (
+      editor: monaco.editor.IStandaloneCodeEditor,
+      monacoNs: typeof monaco,
+      updateFileContent?: (fileId: string, content: string) => void,
+      fileId?: string
+    ) => {
+      setState((currentState) => {
+        if (!currentState.suggestion || !currentState.position || !editor || !monacoNs) {
+          return currentState;
+        }
 
-      const { line, column } = currentState.position;
-      const sanitizedSuggestion = currentState.suggestion.replace(/^\d+:\s*/gm, "");
+        const { line, column } = currentState.position;
+        const sanitizedSuggestion = currentState.suggestion.replace(/^\d+:\s*/gm, "");
 
-      editor.executeEdits("", [
-        {
-          range: new monaco.Range(line, column, line, column),
-          text: sanitizedSuggestion,
-          forceMoveMarkers: true,
-        },
-      ]);
+        editor.executeEdits("", [
+          {
+            range: new monacoNs.Range(line, column, line, column),
+            text: sanitizedSuggestion,
+            forceMoveMarkers: true,
+          },
+        ]);
 
-      // ✅ Call updateFileContent after render tick
-      if (updateFileContent && fileId) {
-        setTimeout(() => {
-          const newContent = editor.getModel()?.getValue() || "";
-          updateFileContent(fileId, newContent);
-        }, 0);
-      }
+        if (updateFileContent && fileId) {
+          setTimeout(() => {
+            const newContent = editor.getModel()?.getValue() || "";
+            updateFileContent(fileId, newContent);
+          }, 0);
+        }
 
-      return {
-        ...currentState,
-        suggestion: null,
-        position: null,
-        decoration: [],
-      };
-    });
-  },
-  []
-);
+        return {
+          ...currentState,
+          suggestion: null,
+          position: null,
+          decoration: [],
+        };
+      });
+    },
+    []
+  );
 
-
-  const rejectSuggestion = useCallback((editor: any) => {
+  const rejectSuggestion = useCallback((editor: monaco.editor.IStandaloneCodeEditor) => {
     setState((currentState) => {
       if (editor && currentState.decoration.length > 0) {
         editor.deltaDecorations(currentState.decoration, []);
@@ -159,7 +167,7 @@ export const useAISuggestion = (): UseAISuggestionsReturn => {
     });
   }, []);
 
-  const clearSuggestion = useCallback((editor: any) => {
+  const clearSuggestion = useCallback((editor: monaco.editor.IStandaloneCodeEditor) => {
     setState((currentState) => {
       if (editor && currentState.decoration.length > 0) {
         editor.deltaDecorations(currentState.decoration, []);

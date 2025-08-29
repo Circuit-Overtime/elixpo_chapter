@@ -123,11 +123,11 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
     URL.revokeObjectURL(url)
   }
 
-  const highlightSearchTerm = (text: string, term: string): string => {
+  /* const highlightSearchTerm = (text: string, term: string): string => {
     if (!term) return text
     const regex = new RegExp(`(${term})`, "gi")
     return text.replace(regex, "**$1**")
-  }
+  } */
 
   const filteredContent = searchTerm
     ? file.content

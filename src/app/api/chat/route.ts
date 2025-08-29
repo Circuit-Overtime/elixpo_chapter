@@ -14,6 +14,12 @@ interface EnhancePromptRequest {
   }
 }
 
+interface OllamaResponse {
+  response?: string
+  error?: string
+  [key: string]: unknown // allows extra fields safely
+}
+
 async function generateAIResponse(messages: ChatMessage[]) {
   const systemPrompt = `You are an expert AI coding assistant...`
 
@@ -34,9 +40,8 @@ async function generateAIResponse(messages: ChatMessage[]) {
         options: {
           temperature: 0.7,
           top_p: 0.9,
-          num_predict: 1000,   // ✅ keep this
+          num_predict: 1000,
           repeat_penalty: 1.1,
-          // remove max_tokens
         },
       }),
       signal: controller.signal,
@@ -48,9 +53,9 @@ async function generateAIResponse(messages: ChatMessage[]) {
       throw new Error(`AI model API error: ${response.status}`)
     }
 
-    let data: any
+    let data: OllamaResponse
     try {
-      data = JSON.parse(raw)
+      data = JSON.parse(raw) as OllamaResponse
     } catch {
       console.error("Invalid JSON from Ollama:", raw)
       throw new Error("AI model returned invalid JSON")
@@ -67,7 +72,6 @@ async function generateAIResponse(messages: ChatMessage[]) {
     clearTimeout(timeoutId)
   }
 }
-
 
 async function enhancePrompt(request: EnhancePromptRequest) {
   const enhancementPrompt = `You are a prompt enhancement assistant. Take the user's basic prompt and enhance it...
@@ -99,7 +103,7 @@ Return only the enhanced prompt, nothing else.`
 
     if (!response.ok) throw new Error("Failed to enhance prompt")
 
-    const data = await response.json()
+    const data = (await response.json()) as OllamaResponse
     return data.response?.trim() || request.prompt
   } catch (error) {
     console.error("Prompt enhancement error:", error)
@@ -124,14 +128,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 })
     }
 
-    const validHistory = Array.isArray(history)
+    const validHistory: ChatMessage[] = Array.isArray(history)
       ? history.filter(
-          (msg: any) =>
-            msg &&
+          (msg: unknown): msg is ChatMessage =>
             typeof msg === "object" &&
-            typeof msg.role === "string" &&
-            typeof msg.content === "string" &&
-            ["user", "assistant"].includes(msg.role),
+            msg !== null &&
+            "role" in msg &&
+            "content" in msg &&
+            typeof (msg as ChatMessage).role === "string" &&
+            typeof (msg as ChatMessage).content === "string" &&
+            ["user", "assistant"].includes((msg as ChatMessage).role),
         )
       : []
 

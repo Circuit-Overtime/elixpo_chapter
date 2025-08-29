@@ -11,7 +11,6 @@ import ProjectTable from './components/ProjectTable'
 import { toast } from 'sonner'
 import { Templates } from '@/generated/prisma'
 import { PlayGroundProjects } from './types/types'
-import CustomLoader from '@/components/loader/CustomLoader'
 import HeaderLoader from '@/components/loader/HeaderLoader'
 
 const Dashboard =  () => {
@@ -21,6 +20,7 @@ const Dashboard =  () => {
   const { data: playgrounds, isLoading, error } = useQuery(
     trpc.playground.getAllPlaygrounds.queryOptions()
   );
+  
 
   // Properly typed delete mutation
   const deleteProjectById = useMutation({
