@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { AIAgentChatProps, ChatMessage, CodeSuggestion, FileAttachment } from '../types/types'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Badge, Bot, Brain, Check, Code, Copy, DownloadCloud, FileText, Filter, Loader2, MessageSquare, Minus, Paperclip, Plus, RefreshCw, Search, Send, Settings2, Sparkles, Terminal, User, X, Zap } from 'lucide-react';
+import { Badge, Bot, Brain, Check, Code, Copy, DownloadCloud, FileText, Filter, Loader2, MessageSquare, Minus, Paperclip, Plus, RefreshCw, Search, Send, Settings2, Sparkles, Terminal, X, Zap } from 'lucide-react';
 import Image from 'next/image';
 import { logos } from '../../../../public/assets/images/images';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,6 @@ import rehypeKatex from "rehype-katex";
 import { EnhancedCodeBlock } from './AICodeBlocks';
 import { EnhancedFilePreview } from './CodeBlockPreview';
 import { Textarea } from '@/components/ui/textarea';
-import { FaMagento } from 'react-icons/fa';
 import UserControl from '@/components/user-control';
 
 const AIChatSlider = ({
@@ -44,7 +42,7 @@ const AIChatSlider = ({
   >("chat");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
-  const [showSettings, setShowSettings] = useState(false);
+  /* const [showSettings, setShowSettings] = useState(false); */
   const [autoSave, setAutoSave] = useState(true);
   const [streamResponse, setStreamResponse] = useState(true);
 

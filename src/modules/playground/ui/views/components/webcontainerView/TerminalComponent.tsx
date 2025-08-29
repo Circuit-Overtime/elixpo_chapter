@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Copy, Trash2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+
 interface TerminalProps {
   webcontainerUrl?: string;
   className?: string;
@@ -25,8 +26,7 @@ export interface TerminalRef {
   focusTerminal: () => void;
 }
 
-const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({ 
-  webcontainerUrl, 
+const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({  
   className,
   theme = "dark",
   webContainerInstance

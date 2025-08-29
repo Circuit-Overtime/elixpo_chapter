@@ -153,7 +153,10 @@ async function generateSuggestion(prompt: string): Promise<string> {
       }
 
       const healthData = await healthCheck.json();
-      console.log('✅ Ollama available, models:', healthData.models?.map((m: any) => m.name) || []);
+      console.log(
+  '✅ Ollama available, models:',
+  healthData.models?.map((m: { name: string }) => m.name) || []
+);
 
     } catch (healthError) {
       console.log('❌ Ollama not available:', healthError);
@@ -210,15 +213,14 @@ async function generateSuggestion(prompt: string): Promise<string> {
     console.log('✨ Final suggestion length:', suggestion.length);
     return suggestion;
 
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
-      console.error('⏰ Ollama request timed out');
-      return "// AI suggestion timed out. Try again.";
-    }
-    
+ } catch (error: unknown) {
+  if (error instanceof Error) {
+    console.error("❌ Ollama generation error:", error.message);
+  } else {
     console.error("❌ Ollama generation error:", error);
-    return generateMockSuggestion(prompt);
   }
+  return generateMockSuggestion(prompt);
+}
 }
 
 function cleanSuggestion(suggestion: string): string {
@@ -345,8 +347,8 @@ function detectIncompletePatterns(line: string, column: number): string[] {
 
   return patterns;
 }
-
-function getLastNonEmptyLine(lines: string[], currentLine: number): string {
+// Rename unused function
+function _getLastNonEmptyLine(lines: string[], currentLine: number): string {
   for (let i = currentLine - 1; i >= 0; i--) {
     const line = lines[i];
     if (line.trim() !== "") return line;

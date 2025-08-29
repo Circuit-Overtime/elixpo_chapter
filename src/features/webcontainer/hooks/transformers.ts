@@ -56,4 +56,4 @@ export function transformToWebContainerFormat(template: { folderName: string; it
   });
 
   return result;
-}1
+}

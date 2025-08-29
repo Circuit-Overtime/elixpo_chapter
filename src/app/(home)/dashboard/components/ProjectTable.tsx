@@ -18,6 +18,7 @@ import GradientButton from '@/components/Custombuttons/GradientButton'
 import { toast } from 'sonner'
 import { AlertDialog, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { AlertDescription } from '@/components/ui/alert'
+import HeaderLoader from '@/components/loader/HeaderLoader'
 const ProjectTable = ({
     projects=[],
     onDelete,
@@ -29,7 +30,7 @@ const ProjectTable = ({
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [seletedProject, setSelectedProject] = useState<PlayGroundProjects | null>(null);
     const [editData,setEditData] = useState<EditProjectProps>({title: " ", describtion: " "});
-    const [_, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
    /*  const [favorite, setFavorite] = useState(false); */
 
    const copyProjectUrl = async (projectId: string) => {
@@ -103,7 +104,14 @@ const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
   svelte: "bg-orange-500 text-white",
   default: "bg-pink-600 text-white" // fallback
 }; */
-  return (
+
+ {
+   if(isLoading) {
+     return (
+      <HeaderLoader/>
+     )
+   } else {
+     return (
     <>
    
    <div className='flex flex-col md:w-full gap-2'>
@@ -358,6 +366,9 @@ const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     </AlertDialog>
     </>
   )
+   }
+ }
+  
 }
 
 export default ProjectTable
