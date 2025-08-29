@@ -5,13 +5,17 @@ import { usePathname } from 'next/navigation';
 import React, { useState } from 'react'
 import { logos } from '../../../../../public/assets/images/images';
 import Link from 'next/link';
-import {  Code, Code2, Compass, Database, FlameIcon, FolderPlus, History, HomeIcon, LayoutDashboardIcon, LucideIcon, Plus, Settings, Star, Terminal, Zap } from 'lucide-react';
+import {  Code2, Compass, Database, FlameIcon, FolderPlus, History, HomeIcon, LayoutDashboardIcon, LucideIcon, Plus, Settings, Star, Terminal, Zap } from 'lucide-react';
+import { useTRPC } from '@/trpc/client';
+import { useQuery } from '@tanstack/react-query';
+
 interface Props {
    id?: string,
    name?: string,
    icon?: string,
    starred?: boolean
 }
+
 /* const initialPlayground: Props[] = []; */
 const LucidIconsMap:Record<string, LucideIcon> = {
    Zap: Zap,
@@ -21,11 +25,19 @@ const LucidIconsMap:Record<string, LucideIcon> = {
    FlameIcon: FlameIcon,
    Terminal: Terminal
 }
+
 const DashBoardSideBar = ({initialPlayground}: {initialPlayground: Props[]}) => {
   
   const pathName = usePathname();
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [starredPlayGrd,setStarredPlayGrd] = useState(initialPlayground.filter((p) => p.starred));
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [recentPlayGround,setRecentPlayGround] = useState(initialPlayground);
+  const trpc = useTRPC();
+ const {data: playgrounds} = useQuery(trpc.playground.getAllPlaygrounds.queryOptions());
+ 
+
   return (
     <Sidebar variant='inset' collapsible='icon' className="border-r " >
        <SidebarHeader className='mx-auto'>
@@ -62,7 +74,7 @@ const DashBoardSideBar = ({initialPlayground}: {initialPlayground: Props[]}) => 
          <SidebarGroup>
           <SidebarGroupLabel>
             <Star className='size-4' />
-            <span className='ml-2' >Starred</span>
+            <span className='ml-2 font-mono' >Starred</span>
           </SidebarGroupLabel>
           <SidebarGroupAction title='Add Starred Playground'>
             <Plus className='size-4' />
@@ -106,7 +118,7 @@ const DashBoardSideBar = ({initialPlayground}: {initialPlayground: Props[]}) => 
         <SidebarGroup>
           <SidebarGroupLabel>
             <History className='size-4' />
-            <span className='ml-2' >Recent</span>
+            <span className='ml-2 font-mono' >Recent Projects</span>
           </SidebarGroupLabel>
           <SidebarGroupAction title='Add Starred Playground'>
             <FolderPlus className='size-4' />
@@ -114,7 +126,7 @@ const DashBoardSideBar = ({initialPlayground}: {initialPlayground: Props[]}) => 
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {
+              {/* {
                 starredPlayGrd.length === 0 && recentPlayGround.length === 0 ? 
                  null :
                 ( 
@@ -131,14 +143,35 @@ const DashBoardSideBar = ({initialPlayground}: {initialPlayground: Props[]}) => 
                             href={`/playground/${playground.id}`} >
                             {IconComp && <IconComp className='size-4' /> }
                           <span>
-                            {playground.name}
+                            {playground.name} 
                           </span>
                          </Link>
                         </SidebarMenuButton>
                        </SidebarMenuItem>
                      )
                    })
-                   )}
+                   )} */}
+
+                   {
+                    playgrounds?.slice(0,4).map((playground) => {
+                      return (
+                      
+                       <SidebarMenuButton
+                        key={playground.id}
+                       className=''>
+                        <Link
+                         href={`/playground/${playground.id}`}
+                         >
+                         <span className=' font-mono flex items-center gap-2'>
+                          <Code2 className='size-3' />
+                            {playground.title}
+                         </span>
+                         </Link>
+                       </SidebarMenuButton>
+                      
+                      )
+                    })
+                   }
                    <SidebarMenuItem>
                     <SidebarMenuButton    asChild tooltip={'view all'}>
                        <Link  href={'/playground'} >

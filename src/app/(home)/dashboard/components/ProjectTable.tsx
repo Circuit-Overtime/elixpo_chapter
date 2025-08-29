@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { format } from "date-fns";
 
 import { Button } from '@/components/ui/button'
-import {  Code2, Copy, Delete, Download, Edit, Edit3, ExternalLink, Eye, MoreHorizontal, Trash2 } from 'lucide-react'
+import {  Code2, Copy, Download, Edit, Edit3, ExternalLink, Eye, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useUser } from '@clerk/nextjs'
 import UserControl from '@/components/user-control'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -29,8 +29,8 @@ const ProjectTable = ({
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [seletedProject, setSelectedProject] = useState<PlayGroundProjects | null>(null);
     const [editData,setEditData] = useState<EditProjectProps>({title: " ", describtion: " "});
-    const [isLoading, setIsLoading] = useState(false);
-    const [favorite, setFavorite] = useState(false);
+    const [_, setIsLoading] = useState(false);
+   /*  const [favorite, setFavorite] = useState(false); */
 
    const copyProjectUrl = async (projectId: string) => {
      const url = `${window.location.origin}/playground/${projectId}`
@@ -94,7 +94,7 @@ const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
   }
 };
 
-
+/* 
   const frameworkColors = {
   react: "bg-blue-500 text-white", 
   nextjs: "bg-gray-900 text-white",
@@ -102,7 +102,7 @@ const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
   angular: "bg-red-600 text-white",
   svelte: "bg-orange-500 text-white",
   default: "bg-pink-600 text-white" // fallback
-};
+}; */
   return (
     <>
    

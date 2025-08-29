@@ -1,13 +1,11 @@
-import React, { use, useState } from 'react'
+import React, {  useState } from 'react'
 import { TemplateModalProps, templates } from '../types/types'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Check, ChevronRight, Clock, Code, Code2, Globe, Plus, Search, Server, Star } from 'lucide-react';
+import { Check, Clock, Code, Code2, Globe, Plus, Search, Server, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
+import { Tabs, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { RadioGroup } from '@/components/ui/radio-group';
 import Image from 'next/image';
-import { TemplateLogo } from '../../../../../public/assets/images/images';
-import GlobalError from '@/components/Error/page';
 import { RadioGroupItem } from '@radix-ui/react-radio-group';
 import { Button } from '@/components/ui/button';
 import { GoNorthStar } from 'react-icons/go';
@@ -16,11 +14,11 @@ import GradientButton from '@/components/Custombuttons/GradientButton';
 
 const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
 
- 
+  type Category = "fullstack" | "frontend" | "backend" | "all";
   const [step, setStep] = useState<"select" | "configure">("select");
   const [selectedTemplate,setSelectedTemplate] = useState<string | null>();
   const [searchQurey, setSearchQurey] = useState("");
-  const [category, setCategory] = useState<"fullstack" | "frontend" | "backend" | "all">("all");
+  const [category, setCategory] = useState<Category>("all");
   const [projectName,setProjectName] = useState("");
 
   const filterTemplate = templates.filter((template) => {
@@ -84,12 +82,12 @@ const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
          <Star key={i} size={14} className={ i < count ? "fill-pink-500" : "text-neutral-300"} />
       ))
   }
-  const onCreate = () => {
+ /*  const onCreate = () => {
      if(selectedTemplate) {
          setStep("configure")
      }
   }
-
+ */
   
 
   return (
@@ -139,7 +137,7 @@ const TemplateModal = ({isOpen,onClose,onSubmit}: TemplateModalProps) => {
 
        <Tabs
   defaultValue="all"
-  onValueChange={(value) => setCategory(value as any)}
+  onValueChange={(value) => setCategory(value as Category)}
   className="w-full sm:w-auto"
 >
   <TabsList className="w-full sm:w-[420px] grid grid-cols-4 gap-2 rounded-md dark:bg-neutral-900 p-1 shadow-sm">

@@ -17,7 +17,7 @@ const AddProjectButton = () => {
   const router = useRouter()
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [seletedTemplate, setSelectedTemplate] = useState<SelectedTempProps | null>(null);   
+ /*  const [seletedTemplate, setSelectedTemplate] = useState<SelectedTempProps | null>(null); */   
   const createProject = useMutation(trpc.playground.createPlayground.mutationOptions({
      onSuccess: (data) => {
          queryClient.invalidateQueries({queryKey: [['playground', 'getAllPlayground']]})

@@ -49,7 +49,7 @@ const Navbar: React.FC<NavbarProps> = () => {
     transition: '0.2s ease',
   });
  */
-  const handleLogin = () => {
+ /*  const handleLogin = () => {
     
      router.push('/sign-in'); 
   };
@@ -57,7 +57,7 @@ const Navbar: React.FC<NavbarProps> = () => {
   const handleSignUp = () => {
    
      router.push('/sign-up'); 
-  };
+  }; */
 
   /* useEffect(() => {
     if (isOpen && menuRef.current) {
