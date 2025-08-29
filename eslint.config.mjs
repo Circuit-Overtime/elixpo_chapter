@@ -12,12 +12,12 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    ignores: ["**/generated/*"],
-    rules: {
-      // ✅ Allow "any" globally
-      "@typescript-eslint/no-explicit-any": "off",
-    },
+     ignores: ["**/generated/*"],
+     rules: {
+       
+     }
   },
+  
 ];
 
 export default eslintConfig;
