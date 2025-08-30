@@ -359,67 +359,10 @@ async def generate_complete_higgs_instruction(text: str, include_music: bool = T
         }
     }
 
-# Example usage functions
-async def demo_story_generation():
-    story_text = "Once upon a time, in a magical forest, a young girl discovered a talking fox who needed her help to save the woodland creatures."
-    result = await generate_complete_higgs_instruction(story_text, include_music=True, include_sound_effects=True)
-    
-    print("=== STORY EXAMPLE ===")
-    print("System Instruction:")
-    print(result["system_instruction"])
-    print("\nFormatted Transcript:")
-    print(result["formatted_transcript"])
-
-async def demo_dialogue_generation():
-    dialogue_text = '"Hello there!" said Alice cheerfully. "I\'ve been looking for you everywhere!" Bob replied with a worried expression, "Is everything alright? You seem upset."'
-    result = await generate_complete_higgs_instruction(dialogue_text, include_music=True, include_sound_effects=True)
-    
-    print("\n=== DIALOGUE EXAMPLE ===")
-    print("System Instruction:")
-    print(result["system_instruction"])
-    print("\nFormatted Transcript:")
-    print(result["formatted_transcript"])
-
-async def demo_news_generation():
-    news_text = "Breaking news: Scientists have made a groundbreaking discovery that could revolutionize renewable energy technology."
-    result = await generate_complete_higgs_instruction(news_text, include_music=False, include_sound_effects=True)
-    
-    print("\n=== NEWS EXAMPLE ===")
-    print("System Instruction:")
-    print(result["system_instruction"])
-    print("\nFormatted Transcript:")
-    print(result["formatted_transcript"])
-
 if __name__ == "__main__":
     async def main():
-        # Original example
         user_prompt = "Hello everyone! I'm so excited to share this amazing news with you today!"
-        
-        print("=== ORIGINAL EXAMPLE ===")
         system_instruction = await generate_higgs_system_instruction(user_prompt)
-        print("Generated Higgs v2 System Instruction:")
-        print(system_instruction)
-        
-        print("\n" + "="*80)
-        
-        # Complete instruction with transcript
-        complete_result = await generate_complete_higgs_instruction(user_prompt)
-        print("Complete Higgs v2 Package:")
-        print("System Instruction:")
-        print(complete_result["system_instruction"])
-        print("\nFormatted Transcript:")
-        print(complete_result["formatted_transcript"])
-        
-        print("\n" + "="*80)
-        print("HIGGS V2 SUPPORTED TAGS:")
-        for category, tags in complete_result["higgs_v2_info"]["supported_tags"].items():
-            print(f"{category.upper()}: {', '.join(tags)}")
-        
-        print("\n" + "="*80)
-        
-        # Run demo examples
-        await demo_story_generation()
-        await demo_dialogue_generation()
-        await demo_news_generation()
+        logger.info("System instruction generated successfully")
         
     asyncio.run(main())
