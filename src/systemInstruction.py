@@ -121,7 +121,7 @@ Response format (exactly like this):
 """
 
     payload = {
-        "model": "mistral",
+        "model": os.getenv("MODEL"),
         "messages": [
             {"role": "system", "content": base_instruction},
             {"role": "user", "content": f"Analyze this text and create optimal Higgs v2 system instruction: {text}"}
@@ -260,7 +260,7 @@ Text to convert: {text}
 """
 
     payload = {
-        "model": "mistral",
+        "model": os.getenv("MODEL"),
         "messages": [
             {"role": "system", "content": transcript_instruction},
             {"role": "user", "content": f"Convert this to Higgs v2 transcript: {text}"}

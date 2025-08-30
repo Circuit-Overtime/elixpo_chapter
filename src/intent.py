@@ -10,7 +10,7 @@ load_dotenv()
 async def getIntentType(text: str, system: Optional[str] = None, max_tokens: Optional[int] = 300) -> dict:
     logger.info(f"Classifying intent and extracting content for prompt: {text} with max tokens: {max_tokens}")
     payload = {
-        "model": "mistral",
+        "model": os.getenv("MODEL"),
         "messages": [
             {
                 "role": "system",
@@ -18,7 +18,7 @@ async def getIntentType(text: str, system: Optional[str] = None, max_tokens: Opt
                     "You are an intent classification and content extraction AI. "
                     "Your output must be ONLY a JSON object with this schema:\n"
                     "{ \"intent\": \"DIRECT\" or \"REPLY\", \"content\": \"...\" }\n\n"
-
+                    "No markdown formatting is needed! Don't wrap any markdown formatting, the response should be in plain text"
                     "Rules:\n"
                     "1. intent = \"DIRECT\" if the user explicitly requests their text to be spoken, "
                     "read aloud, repeated exactly, transcribed, or otherwise delivered verbatim. "
@@ -38,6 +38,7 @@ async def getIntentType(text: str, system: Optional[str] = None, max_tokens: Opt
 
                     "3. Do not output explanations or any text outside the JSON object. "
                     "Strictly return only the JSON object."
+                    "No markdown formatting is needed! Don't wrap any markdown formatting, the response should be in plain text"
                 )
 
             },

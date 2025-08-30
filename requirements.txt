@@ -164,3 +164,4 @@ Werkzeug
 wrapt
 yarl
 gunicorn
+hypercorn

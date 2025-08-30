@@ -23,5 +23,7 @@ pip install -r requirements.txt
 export PYTHONPATH="${PYTHONPATH}:$(pwd):$(pwd)/src"
 
 # Start the app with gunicorn, specifying the working directory
+echo "Starting the model server"
+python src/model_server.py
 echo "Starting the app on port 8000..."
-python src/app.py
+hypercorn src.app:app --workers 1 --bind 0.0.0.0:8000

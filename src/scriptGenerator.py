@@ -11,7 +11,7 @@ load_dotenv()
 async def generate_reply(prompt: str, max_tokens: Optional[int] = 60) -> str:
     logger.info(f"Generating reply for prompt: {prompt} with max tokens: {max_tokens}")
     payload = {
-        "model": "mistral",
+        "model": os.getenv("MODEL"),
         "messages": [
             {
                 "role": "system",
