@@ -1,0 +1,43 @@
+"messages": 
+[
+    {
+        "role" : "system",
+        "content" : [
+            {"type" : "text", "text" : "System instructions here"}
+        ]
+    },
+    {
+        "role": "user",
+        "content": [
+            { "type": "text", "text": "Your prompt text here" },
+            {
+                "type": "voice",
+                "voice": { 
+                    "name": "alloy", // or "ballad", "verse", etc.
+                    "data": "<base64_audio_string>", 
+                    "format": "wav"
+                }
+            },
+            {
+                "type": "clone_audio_transcript",
+                "audio_text": "Transcription or description of the reference audio"
+            },
+            {
+                "type": "speech_audio",
+                "audio":  { "data": "<base64_audio_string>", "format": "wav" }
+            }
+        ]
+    }
+]
+
+
+
+
+text=Transcribe%20this%3A&system=optional_system_prompt&voice=alloy
+
+TTS --> TEXT TO SPEECH (audio modality output)
+STS --> SPEECH TO SPEECH (audio modality output)
+STT --> SPEECH TO TEXT (text modality output)
+TTT --> TEXT TO TEXT (text modality output)
+
+
