@@ -3,6 +3,14 @@
     {
       "source": "/",
       "destination": "/index.html"
+    },
+    {
+      "source": "/logo.png",
+      "destination": "/Images/logo.png"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/Images/favicon.ico"
     }
   ]
 }
