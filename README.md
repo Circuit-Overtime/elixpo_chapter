@@ -1,4 +1,4 @@
-# InkFlow-Canvas
+# InkFlow Canvas  <img src="Images/logo.png" alt="InkFlow-Canvas Logo" width="20" height="20"/>
 
 <p align="center">
   <img src="Images/logo.png" alt="InkFlow-Canvas Logo" width="200"/>
