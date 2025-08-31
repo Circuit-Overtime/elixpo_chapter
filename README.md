@@ -74,18 +74,6 @@ You'll need a modern web browser that supports HTML5 and JavaScript.
     ```
 3.  Open `index.html` in your browser.
 
-## 💻 Tech Stack
-
-- [HTML5](https://developer.mozilla.org/en-US/docs/Glossary/HTML5)
-- [CSS3](https://www.w3.org/TR/CSS/#css)
-- [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-- [Bootstrap](https://getbootstrap.com/)
-- [Rough.js](https://roughjs.com/)
-
-## 🖼️ Screenshots
-
-*(We recommend adding screenshots of your application here to showcase its features and user interface.)*
-
 ## 🤝 Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
