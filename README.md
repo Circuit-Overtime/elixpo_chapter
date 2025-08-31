@@ -10,7 +10,7 @@
   <strong>A web-based, intuitive, and feature-rich digital canvas for all your creative needs.</strong>
 </p>
 
-<p align="center" styles="text-decoration=none;">
+<p align="center">
   <a href="https://inkflowa.vercel.app">View Demo</a>
   ·
   <a href="https://github.com/ez-vivek/InkFlow-Canvas/issues">Report Bug</a>
