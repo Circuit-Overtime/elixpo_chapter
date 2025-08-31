@@ -10,13 +10,30 @@
   <strong>A web-based, intuitive, and feature-rich digital canvas for all your creative needs.</strong>
 </p>
 
-<p align="center">
-  <a href="https://inkflowa.vercel.app">View Demo</a>
-  ·
-  <a href="https://github.com/ez-vivek/InkFlow-Canvas/issues">Report Bug</a>
-  ·
-  <a href="https://github.com/ez-vivek/InkFlow-Canvas/pulls">Request Feature</a>
-</p>
+<div style="text-align: center; padding: 20px 0;">
+
+  <a href="https://inkflowa.vercel.app" 
+     style="display: inline-block; padding: 8px 16px; margin: 0 5px; background-color: #f6f8fa; color: #24292e; border: 1px solid rgba(27, 31, 35, 0.15); border-radius: 6px; box-shadow: 0 1px 0 rgba(27, 31, 35, 0.04); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 500; text-decoration: none; line-height: 20px; cursor: pointer; transition: background-color 0.2s;"
+     onmouseover="this.style.backgroundColor='#f3f4f6'; this.style.borderColor='rgba(27, 31, 35, 0.35)';"
+     onmouseout="this.style.backgroundColor='#f6f8fa'; this.style.borderColor='rgba(27, 31, 35, 0.15)';">
+     View Demo
+  </a>
+
+  <a href="https://github.com/ez-vivek/InkFlow-Canvas/issues"
+     style="display: inline-block; padding: 8px 16px; margin: 0 5px; background-color: #f6f8fa; color: #24292e; border: 1px solid rgba(27, 31, 35, 0.15); border-radius: 6px; box-shadow: 0 1px 0 rgba(27, 31, 35, 0.04); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 500; text-decoration: none; line-height: 20px; cursor: pointer; transition: background-color 0.2s;"
+     onmouseover="this.style.backgroundColor='#f3f4f6'; this.style.borderColor='rgba(27, 31, 35, 0.35)';"
+     onmouseout="this.style.backgroundColor='#f6f8fa'; this.style.borderColor='rgba(27, 31, 35, 0.15)';">
+     Report Bug
+  </a>
+
+  <a href="https://github.com/ez-vivek/InkFlow-Canvas/pulls"
+     style="display: inline-block; padding: 8px 16px; margin: 0 5px; background-color: #f6f8fa; color: #24292e; border: 1px solid rgba(27, 31, 35, 0.15); border-radius: 6px; box-shadow: 0 1px 0 rgba(27, 31, 35, 0.04); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 500; text-decoration: none; line-height: 20px; cursor: pointer; transition: background-color 0.2s;"
+     onmouseover="this.style.backgroundColor='#f3f4f6'; this.style.borderColor='rgba(27, 31, 35, 0.35)';"
+     onmouseout="this.style.backgroundColor='#f6f8fa'; this.style.borderColor='rgba(27, 31, 35, 0.15)';">
+     Request Feature
+  </a>
+
+</div>
 
 ## <img src="Images/logo.png" alt="InkFlow-Canvas Logo" width="20" height="20"/> About
 
