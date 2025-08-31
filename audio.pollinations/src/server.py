@@ -97,6 +97,8 @@ Your task each time:
 - Decide the pipeline using the rules above.
 - Call exactly one function with the given arguments, passing voice_path to the `voice` parameter where applicable.
 
+Don't return any markdown response! Evertyhing has to be in plain text!
+
 """
 },
 {
