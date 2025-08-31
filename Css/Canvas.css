@@ -1,6 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Hubot+Sans:ital,wght@0,200..900;1,200..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Montserrat+Alternates&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 
 
@@ -11,7 +8,7 @@ html {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    font-family: Arial, sans-serif;
+    font-family: lato, sans-serif;
     background-color: #101011;
 }
 
@@ -377,7 +374,6 @@ html {
 .section-header {
     color: #9b9b9b;
     font-size: 12px;
-    font-family: "Lato", sans-serif;
     font-weight: 500;
     font-style: normal;
     margin-top: 8px;
@@ -667,7 +663,6 @@ html {
     transform-origin: top left;
     will-change: transform;
     line-height: 1.2;
-    font-family: "Comic Sans MS", cursive;
 }
 
 #textInput:focus {
@@ -755,7 +750,6 @@ html {
     visibility: hidden;
     transform: translateY(-8px) scale(0.98);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .sidebar-dropdown.active {

@@ -797,7 +797,7 @@ function drawElement(element) {
             break;
         case 'text':
             const scaledFontSize = Math.round(25 * (element.textWidth || 1) * (currentZoom / 100));
-            ctx.font = `${scaledFontSize}px "Comic Sans MS"`;
+            ctx.font = `${scaledFontSize}px lato, sans-serif`;
             ctx.fillStyle = element.color;
             if (element.text !== undefined) {
                 const lines = element.text.split('\n');
@@ -1040,7 +1040,7 @@ function showTextInput(x, y) {
     textInput.style.fontSize = `${scaledFontSize}px`;
     textInput.style.color = selectedColor;
     textInput.style.backgroundColor = 'transparent';
-    textInput.style.fontFamily = '"Comic Sans MS"';
+    textInput.style.fontFamily = 'lato, sans-serif';
     textInput.style.caretColor = selectedColor;
     textInput.style.left = `${x * (currentZoom / 100)}px`;
     textInput.style.top = `${(y - 20) * (currentZoom / 100)}px`;
@@ -1091,7 +1091,7 @@ canvas.addEventListener('dblclick', (e) => {
         textInput.style.fontSize = `${scaledFontSize}px`;
         textInput.style.color = clickedElement.color;
         textInput.style.backgroundColor = 'transparent';
-        textInput.style.fontFamily = '"Comic Sans MS"';
+        textInput.style.fontFamily = 'lato, sans-serif';
         textInput.style.caretColor = clickedElement.color;
         textInput.style.left = `${clickedElement.x1 * (currentZoom / 100)}px`;
         textInput.style.top = `${(clickedElement.y1 - 20) * (currentZoom / 100)}px`;
@@ -1113,7 +1113,7 @@ canvas.addEventListener('dblclick', (e) => {
 
 // Add this helper function to calculate text width
 function getTextWidth(text) {
-    ctx.font = `25px "Comic Sans MS"`;
+    ctx.font = `25px lato, sans-serif`;
     return ctx.measureText(text).width;
 }
 
