@@ -18,7 +18,7 @@
   <a href="https://github.com/ez-vivek/InkFlow-Canvas/pulls">Request Feature</a>
 </p>
 
-## 📖 About
+## <img src="Images/logo.png" alt="InkFlow-Canvas Logo" width="20" height="20"/> About
 
 InkFlow Canvas is a versatile and user-friendly web application that provides a digital canvas for freehand drawing, shape creation, and other creative tasks. It's designed to be intuitive for both beginners and experienced artists, offering a range of tools to bring your ideas to life.
 
