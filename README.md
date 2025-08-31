@@ -1,58 +1,101 @@
-# ✨ Inkflow Workspace 🎨
+# InkFlow-Canvas
 
-Welcome to **Inkflow Workspace** – your go-to web app for seamless, intuitive digital art creation. Whether you’re sketching ideas, designing shapes, or exploring your creativity, Inkflow Workspace offers all the tools you need to bring your imagination to life!
-
----
-
-## 🌟 Key Features
-
- **✏️** **Freehand Drawing**: Experience seamless and fluid sketching with our advanced freehand drawing tool, designed for precision and ease of use.
- **🔷** **Shape Tools**: Effortlessly incorporate fundamental shapes into your designs with a single click, enhancing your creative workflow.
- **🎨** **Color & Brush Customization**: Access a diverse palette of colors and customizable brush sizes, allowing for meticulous control over your artistic strokes.
- **↩️** **Undo & Redo**: Instantly rectify errors or revert to previous iterations of your artwork with our intuitive undo and redo functionality.
- **💾** **Save & Export Options**: Securely save your creations directly to your device or export them for easy sharing with others.
-
----
-
-## 🛠️ Tech Stack
-
-<p>
-<a href="https://developer.mozilla.org/en-US/docs/Glossary/HTML5" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/html5-colored.svg" width="36" height="36" alt="HTML5" /></a>
-<a href="https://www.w3.org/TR/CSS/#css" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/css3-colored.svg" width="36" height="36" alt="CSS3" /></a>
-<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/javascript-colored.svg" width="36" height="36" alt="JavaScript" /></a>
-<a href="https://tailwindcss.com/" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/tailwindcss-colored.svg" width="36" height="36" alt="TailwindCSS" /></a>
-<a href="https://getbootstrap.com/" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/bootstrap-colored.svg" width="36" height="36" alt="Bootstrap" /></a>
-<a href="https://git-scm.com/" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/git-colored.svg" width="36" height="36" alt="Git" /></a>
-<a href="https://www.python.org/" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/danielcranney/readme-generator/main/public/icons/skills/python-colored.svg" width="36" height="36" alt="Python" /></a>
+<p align="center">
+  <img src="Images/logo.png" alt="InkFlow-Canvas Logo" width="200"/>
 </p>
 
----
+<h1 align="center">InkFlow Canvas</h1>
+
+<p align="center">
+  <strong>A web-based, intuitive, and feature-rich digital canvas for all your creative needs.</strong>
+</p>
+
+<p align="center">
+  <a href="https://inkflowa.vercel.app">View Demo</a>
+  ·
+  <a href="https://github.com/ez-vivek/InkFlow-Canvas/issues">Report Bug</a>
+  ·
+  <a href="https://github.com/ez-vivek/InkFlow-Canvas/pulls">Request Feature</a>
+</p>
+
+## 📖 About
+
+InkFlow Canvas is a versatile and user-friendly web application that provides a digital canvas for freehand drawing, shape creation, and other creative tasks. It's designed to be intuitive for both beginners and experienced artists, offering a range of tools to bring your ideas to life.
+
+## ✨ Features
+
+- **✏️ Freehand Drawing:** Smooth and responsive pencil tool for sketching and drawing.
+- **🔷 Shape Tools:** A wide variety of shapes including rectangles, circles, triangles, and more.
+- **🎨 Customization:** Adjust brush size, color, and opacity to your liking.
+- **↩️ Undo/Redo:** Easily correct mistakes and navigate through your drawing history.
+- **💾 Save & Export:** Save your work locally and export it in various formats (PNG, JPG, SVG).
+- **🌗 Light/Dark Mode:** Switch between light and dark themes for a comfortable viewing experience.
+- **⌨️ Keyboard Shortcuts:** A rich set of keyboard shortcuts for quick access to tools and actions.
+- **🔍 Zoom & Pan:** Navigate the canvas with ease using zoom and pan controls.
+- **🖼️ Image Upload:** Upload images directly to your canvas.
+- **- ✒️ Text Tool:** Add and edit text on your canvas.
+
+## 🛠️ Tools
+
+| Tool | Shortcut | Description |
+| --- | --- | --- |
+| Pan | `X` or `1` | Pan across the canvas. |
+| Pointer | `Y` or `2` | Select and move objects. |
+| Rectangle | `R` or `3` | Draw a rectangle. |
+| Circle | `C` or `4` | Draw a circle. |
+| Arrow | `A` or `5` | Draw an arrow. |
+| Pencil | `P` or `6` | Freehand drawing. |
+| Eraser | `E` or `7` | Erase parts of your drawing. |
+| Text | `T` or `8` | Add text to the canvas. |
+| Image | `I` or `9` | Upload an image. |
+| Theme | `Q` or `*` | Toggle between light and dark mode. |
+| Undo | `Ctrl + Z` | Undo the last action. |
+| Redo | `Ctrl + Y` | Redo the last undone action. |
+| Clear All | `Ctrl + D` | Clear the entire canvas. |
+| Search | `/` | Search for tools and colors. |
 
 ## 🚀 Getting Started
 
-Here’s how to run **Inkflow Workspace** on your local machine:
+To get a local copy up and running, follow these simple steps.
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/ez-vivek/Inkflow.git
-   ```
+### Prerequisites
 
-2. **Navigate to the project directory**:
-   ```bash
-   cd Inkflow
-   ```
+You'll need a modern web browser that supports HTML5 and JavaScript.
 
-3. **Open the project** by launching `index.html` in your preferred browser.
+### Installation
 
----
+1.  Clone the repo
+    ```sh
+    git clone https://github.com/ez-vivek/InkFlow-Canvas.git
+    ```
+2.  Navigate to the project directory
+    ```sh
+    cd InkFlow-Canvas
+    ```
+3.  Open `index.html` in your browser.
 
-## 🤝 Collaboration
+## 💻 Tech Stack
 
-We would like to extend our heartfelt thanks to <a href="https://github.com/Circuit-Overtime" target="_blank"><b>Ayushman Bhattacharya</b></a> for his contributions to this repository, particularly in handling the backend and server aspects, which ensure a smooth user experience in Inkflow Workspace.
+- [HTML5](https://developer.mozilla.org/en-US/docs/Glossary/HTML5)
+- [CSS3](https://www.w3.org/TR/CSS/#css)
+- [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+- [Bootstrap](https://getbootstrap.com/)
+- [Rough.js](https://roughjs.com/)
 
----
+## 🖼️ Screenshots
 
-## 🌟 Contributing to Inkflow Workspace
+*(We recommend adding screenshots of your application here to showcase its features and user interface.)*
 
-We’re thrilled to invite our amazing community to help **Inkflow Workspace** flourish! 🌱 If you have brilliant ideas or wish to enhance our app, don’t hesitate to open issues or submit pull requests. Together, let’s transform this platform into a vibrant creative haven for everyone! 🎨✨
+## 🤝 Contributing
 
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
+
+## 📜 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
