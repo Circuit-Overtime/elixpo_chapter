@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FingUI 🚀  
+A modern UI library built for speed, flexibility, and developers who love clean design.  
 
-## Getting Started
+![FingUI Banner](./assets/banner.png) <!-- Image 1 -->
 
-First, run the development server:
+---
 
+## ✨ Features
+- 🎨 **Customizable Components** – Tailored with props and theme support.  
+- ⚡ **Performance Optimized** – Lightweight with zero bloat.  
+- 🔥 **Framer Motion Powered** – Smooth, production-ready animations.  
+- 🛠️ **Developer Friendly** – Simple APIs, reusable across projects.  
+- 🌍 **Cross-Platform Ready** – Works seamlessly with React + React Native.  
+
+---
+
+## 🧑‍💻 Tech Stack
+- **React** – Frontend foundation  
+- **Tailwind CSS** – For sleek styling  
+- **Framer Motion** – For fluid animations  
+- **TypeScript** – Strict type safety  
+- **Rollup** – For bundling & packaging  
+
+![FingUI Tech Stack](./assets/tech-stack.png) <!-- Image 2 -->
+
+---
+
+## 🚀 Getting Started  
+
+### 1️⃣ Install
 ```bash
-npm run dev
+npm install finguui
 # or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+yarn add finguui
