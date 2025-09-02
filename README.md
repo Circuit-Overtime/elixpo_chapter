@@ -14,7 +14,8 @@ A modern UI library built for speed, flexibility, and developers who love clean 
 - 🔥 **Framer Motion Powered** – Smooth, production-ready animations.  
 - 🛠️ **Developer Friendly** – Simple APIs, reusable across projects.  
 - 🌍 **Cross-Platform Ready** – Works seamlessly with React + React Native.  
-
+## ⚡️ Glimps
+![FingUI Components](./public/button.png) <!-- Image 2 -->
 ---
 
 ## 🧑‍💻 Tech Stack
