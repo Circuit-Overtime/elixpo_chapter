@@ -1,7 +1,7 @@
 # FingUI 🚀  
 A modern UI library built for speed, flexibility, and developers who love clean design.  
 
-![FingUI Banner](./public/Fing.jpg) <!-- Image 1 -->
+![FingUI Banner](./public/fing.jpg) <!-- Image 1 -->
 
 ---
 
