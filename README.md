@@ -26,7 +26,7 @@ A modern UI library built for speed, flexibility, and developers who love clean 
 - **Rollup** – For bundling & packaging  
 
 
-## Contributor
+## 💻 WorkFlow
 ![FingUI Tech Stack](./public/features.png) <!-- Image 2 -->
 
 ---
