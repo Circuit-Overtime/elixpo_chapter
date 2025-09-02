@@ -7,7 +7,7 @@ interface Props {
 }
 const Layout = ({ children }: Props) => {
   return (
-     <main className="flex  flex-col min-h-screen  max-h-screen relative">
+     <main className="flex  flex-col min-h-screen  max-h-screen relative ">
   {/* Full-page dotted background */}
   
 

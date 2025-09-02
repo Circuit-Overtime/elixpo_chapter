@@ -2,13 +2,17 @@
 import Image from 'next/image'
 import React, {  useEffect, useState } from 'react'
 import { LOGO } from '../../../../public/assets/images/images'
-import { GitBranch} from 'lucide-react'
+import { Blocks, Code, FileCode, GitBranch, HandPlatter, icons, Moon, SquareDashedBottomCodeIcon} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import ThemeToggleButton from '@/components/ui/theme-toggle-button'
 import { useTheme } from 'next-themes'
 import { BsDiscord } from "react-icons/bs";
-
+import { ExpandedTabs } from '@/components/ui/expanded-tabs'
+import { Home,Bell,Settings,HelpCircle, Shield, User, } from "lucide-react"
+import { MdDashboard } from "react-icons/md";
+import { IoIosColorFill } from "react-icons/io";
+import { LuBlocks } from "react-icons/lu";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,24 +30,29 @@ const Navbar = () => {
   /*  const menuRef = useRef<HTMLDivElement>(null); */
   const options = [
     {
-        options: "Docs",
-        path: "/docs"
+       title: "Docs",
+       href: "/docs",
+        icon: FileCode
     },
     {
-        options: "Components",
-        path: "/componets"
+        title: "Components",
+        href: "/components",
+        icon: Code
     },
     {
-        options: "Themes",
-        path: "/themes"
+        title: "Themes",
+        href: "/themes",
+        icon: Moon
     },
     {
-        options: "Color",
-        path: "/componets"
+        title: "Color",
+         href: "/color",
+        icon: HandPlatter
     },
     {
-        options: "Blocks",
-        path: "/blocks"
+        title: "Blocks",
+        href: "/block",
+        icon: Blocks
     }
   ]
   return (
@@ -53,6 +62,7 @@ const Navbar = () => {
           {/* Logo */}
            <div className='flex items-center gap-2'>
             <Image
+             
               src={theme === "dark" ? LOGO.DARK_LOGO : LOGO.LIGHT_LOGO}
              alt='logo'
              className='w-10 h-10 object-contain'
@@ -65,17 +75,10 @@ const Navbar = () => {
 
           {/* Right Section */}
          <div className=' gap-5 hidden md:block'>
-          {
-            options && options.map((data) => (
-                <Link
-                 key={data.options}
-                 className='font-mono mr-10 text-xs '
-                 href={'/'}
-                 >
-                 {data.options}
-                </Link>
-            ))
-          }
+        
+         <ExpandedTabs 
+         className='mt-2'
+         tabs={options} />
          </div>
 
 

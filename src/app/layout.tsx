@@ -34,7 +34,7 @@ export default function RootLayout({
         attribute='class' defaultTheme="system" enableSystem disableTransitionOnChange
         >
           <Toaster/>
-          <Navbar/>
+        {/*   <Navbar/> */}
           {children}
         </ThemeProvider>
       </body>
