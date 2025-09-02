@@ -27,7 +27,7 @@ A modern UI library built for speed, flexibility, and developers who love clean 
 
 
 ## Contributor
-![FingUI Tech Stack](./assets/features.png) <!-- Image 2 -->
+![FingUI Tech Stack](./public/features.png) <!-- Image 2 -->
 
 ---
 
