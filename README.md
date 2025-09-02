@@ -4,7 +4,10 @@ A modern UI library built for speed, flexibility, and developers who love clean 
 ![FingUI Banner](./public/fing.jpg) <!-- Image 1 -->
 
 ---
+## ⚡️ Preview
+![FingUI Homepage](./public/home.png) <!-- Image 2 -->
 
+---
 ## ✨ Features
 - 🎨 **Customizable Components** – Tailored with props and theme support.  
 - ⚡ **Performance Optimized** – Lightweight with zero bloat.  
