@@ -25,7 +25,9 @@ A modern UI library built for speed, flexibility, and developers who love clean 
 - **TypeScript** – Strict type safety  
 - **Rollup** – For bundling & packaging  
 
-![FingUI Tech Stack](./assets/tech-stack.png) <!-- Image 2 -->
+
+## Contributor
+![FingUI Tech Stack](./assets/feature.png) <!-- Image 2 -->
 
 ---
 
