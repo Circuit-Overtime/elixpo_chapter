@@ -11,6 +11,9 @@ import Links from './components_for_home/Links'
 import FAQ from './components_for_home/FAQ'
 import Contributer from './components_for_home/Contributer'
 import Marquee from './components_for_home/Marquee'
+import Impress from './components_for_home/Impress'
+import Footer from './components_for_home/Footer'
+
 
 
 
@@ -30,6 +33,8 @@ const page = () => {
      <FAQ/>
      <Contributer/>
      <Marquee/>
+     <Impress/>
+     <Footer/>
    </Layout>
   )
 }
