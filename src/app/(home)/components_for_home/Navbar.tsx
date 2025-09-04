@@ -11,7 +11,7 @@ import { BsDiscord } from "react-icons/bs";
 import { ExpandedTabs } from '@/components/ui/expanded-tabs'
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+ // const [isOpen, setIsOpen] = useState(false);
   const {theme} = useTheme()
    const [mounted, setMounted] = useState(false);
 
