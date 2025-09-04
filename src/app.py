@@ -19,6 +19,8 @@ import time
 import asyncio
 import atexit
 import os
+import hashlib
+from datetime import datetime, timedelta
 
 request_queue = None
 response_queue = None
@@ -99,12 +101,33 @@ def ensure_worker_initialized():
 
 app = Flask(__name__)
 CORS(app)
+recent_requests = {}
 
 @app.before_request
 def before_request():
     g.request_id = reqID()
     g.start_time = time.time()
-    # Initialize worker on first request
+    if request.method in ['GET', 'POST'] and request.endpoint == 'audio_endpoint':
+        request_data = {
+            'method': request.method,
+            'args': dict(request.args) if request.method == 'GET' else None,
+            'json': request.get_json(silent=True) if request.method == 'POST' else None,
+            'user_agent': request.headers.get('User-Agent', ''),
+            'ip': request.remote_addr
+        }
+        
+        request_hash = hashlib.md5(str(request_data).encode()).hexdigest()
+        now = datetime.now()
+        if request_hash in recent_requests:
+            last_time = recent_requests[request_hash]
+            if (now - last_time).total_seconds() < 5:
+                logger.warning(f"Duplicate request detected and blocked: {request_hash}")
+                return jsonify({"error": {"message": "Duplicate request detected", "code": 429}}), 429
+        
+        recent_requests[request_hash] = now
+        cutoff = now - timedelta(minutes=1)
+        recent_requests = {k: v for k, v in recent_requests.items() if v > cutoff}
+
     ensure_worker_initialized()
 
 @app.after_request
@@ -284,7 +307,12 @@ def audio_endpoint():
             return jsonify({"error": {"message": str(e), "code": 500}}), 500
         finally:
             cleanup_temp_file(request_id)
-            
+
+
+@app.route("/favicon.ico")
+def favicon():
+    return "", 204
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "alive", "message": "Still breathing! 💨"}), 200
