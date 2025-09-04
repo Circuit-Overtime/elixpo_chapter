@@ -19,7 +19,7 @@ import {
 import { Check, Loader2, SendHorizontal, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-//@ts-ignore
+//@ts-expect-error
 import { Button, ButtonProps } from "@/components/ui/button"
 
 const DRAG_CONSTRAINTS = { left: 0, right: 290 }
@@ -129,7 +129,7 @@ const SlideButton = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <motion.div
         animate={completed ? BUTTON_STATES.completed : BUTTON_STATES.initial}
-        //@ts-ignore
+        //@ts-expect-error
         transition={ANIMATION_CONFIG.spring}
         className="shadow-button-inset dark:shadow-button-inset-dark relative flex h-9 items-center justify-center rounded-full bg-gray-100"
       >

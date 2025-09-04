@@ -168,7 +168,7 @@ const Cube = () => {
         fragmentShader={fragmentShader}
         uniforms={uniforms.current}
         side={THREE.DoubleSide}
-        //@ts-ignore
+        //@ts-expect-error
         flatShading
         wireframe
       />
@@ -209,7 +209,7 @@ const Footer = () => {
 
             <p className="border border-white px-4 py-1 rounded-2xl mt-2 font-mono text-base">
               <Link href={"/"} className="flex items-center gap-2">
-                Let's Reach us <Circle className="size-4" />
+                Let&apos;s Reach us <Circle className="size-4" />
               </Link>
             </p>
           </motion.div>

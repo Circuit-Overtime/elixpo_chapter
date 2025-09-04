@@ -9,7 +9,7 @@ const MinimalCard = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <div
     ref={ref}
-    // eslint-disable-next-line tailwindcss/no-contradicting-classname
+   
     className={cn(
       "rounded-[24px] bg-amber-100 p-2 no-underline shadow-sm transition-colors hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-800/80 ",
       "shadow-[0px_1px_1px_0px_rgba(0,0,0,0.05),0px_1px_1px_0px_rgba(255,252,240,0.5)_inset,0px_0px_0px_1px_hsla(0,0%,100%,0.1)_inset,0px_0px_1px_0px_rgba(28,27,26,0.5)]",
