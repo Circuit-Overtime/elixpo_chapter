@@ -28,7 +28,7 @@ export function PopoverForm({
   showCloseButton = false,
 }: PopoverFormProps) {
   const ref = useRef<HTMLDivElement>(null)
-  //@ts-ignore
+  //@ts-expect-error
   useClickOutside(ref, () => setOpen(false))
 
   return (

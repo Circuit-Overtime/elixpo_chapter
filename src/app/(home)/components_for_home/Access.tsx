@@ -72,7 +72,7 @@ const Access = () => {
 
            <div className='flex flex-col  items-center md:items-end justify-start  gap-y-10 mt-10 md:mt-6 '>
               <ShareButton
-              //@ts-ignore
+              //@ts-expect-error
                 links={shareLinks}
                 className='font-mono'
                >
@@ -84,7 +84,7 @@ const Access = () => {
               />
                <BadgeButton/>
                 <WrapButton>
-                Let's Build Sleek.
+                Let&apos;s Build Sleek.
             </WrapButton>
            </div>
          </div>

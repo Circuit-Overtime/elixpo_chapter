@@ -24,7 +24,7 @@ const Hero = () => {
             <WrapButton 
             
             className='mt-5'>
-                Let's Build Sleek.
+                Let&apos;s Build Sleek.
             </WrapButton>
 
             <div className=" mx-auto  max-w-6xl mt-10 rounded-[34px] bg-neutral-700">

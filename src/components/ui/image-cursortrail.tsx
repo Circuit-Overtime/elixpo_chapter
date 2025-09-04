@@ -5,9 +5,9 @@ import { createRef, useRef } from "react"
 import { cn } from "@/lib/utils"
 
 interface ImageMouseTrailProps {
-  //@ts-ignore
+  //@ts-expect-error
   items: ImageItem[]
-   //@ts-ignore
+  //@ts-expect-error
   children?: ReactNode
   className?: string
   imgClass?: string
