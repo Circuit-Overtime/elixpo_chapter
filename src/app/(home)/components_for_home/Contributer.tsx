@@ -52,7 +52,7 @@ const Contributer = () => {
         <div className='flex flex-col items-center gap-y-5'>
             <div  className='flex items-center gap-2 rounded-2xl font-mono border px-4 py-1'>
              <SparklesIcon className='fill-[#EEBDE0] stroke-1 text-neutral-800' />
-            <span>Let&apos;s connect with Fing.</span>
+            <span>connect with Fing.</span>
          </div>
 
 
