@@ -5,9 +5,9 @@ import { createRef, useRef } from "react"
 import { cn } from "@/lib/utils"
 
 interface ImageMouseTrailProps {
-  //@ts-expect-error
+ {/* @ts-expect-error ShareButton component has no typed props for `links` */}
   items: ImageItem[]
-  //@ts-expect-error
+  {/* @ts-expect-error ShareButton component has no typed props for `links` */}
   children?: ReactNode
   className?: string
   imgClass?: string
