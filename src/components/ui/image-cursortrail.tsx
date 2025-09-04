@@ -1,13 +1,10 @@
 "use client"
 
-import { createRef, useRef } from "react"
-
+import { createRef, useRef, ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
 interface ImageMouseTrailProps {
- /* @ts-expect-error ShareButton component has no typed props for `links` */
-  items: ImageItem[]
-  /* @ts-expect-error ShareButton component has no typed props for `links` */
+  items: string[] // array of image URLs
   children?: ReactNode
   className?: string
   imgClass?: string
@@ -15,6 +12,7 @@ interface ImageMouseTrailProps {
   maxNumberOfImages?: number
   fadeAnimation?: boolean
 }
+
 export default function ImageCursorTrail({
   items,
   children,
@@ -24,24 +22,27 @@ export default function ImageCursorTrail({
   distance = 20,
   fadeAnimation = false,
 }: ImageMouseTrailProps) {
-  const containerRef = useRef(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
   const refs = useRef(items.map(() => createRef<HTMLImageElement>()))
   const currentZIndexRef = useRef(1)
 
   let globalIndex = 0
   let last = { x: 0, y: 0 }
 
-  const activate = (image, x, y) => {
+  const activate = (image: HTMLImageElement, x: number, y: number) => {
     const containerRect = containerRef.current?.getBoundingClientRect()
+    if (!containerRect) return
+
     const relativeX = x - containerRect.left
     const relativeY = y - containerRect.top
+
     image.style.left = `${relativeX}px`
     image.style.top = `${relativeY}px`
-    console.log(refs.current[refs.current?.length - 1])
 
     if (currentZIndexRef.current > 40) {
       currentZIndexRef.current = 1
     }
+
     image.style.zIndex = String(currentZIndexRef.current)
     currentZIndexRef.current++
 
@@ -51,23 +52,32 @@ export default function ImageCursorTrail({
         image.dataset.status = "inactive"
       }, 1500)
     }
+
     last = { x, y }
   }
 
-  const distanceFromLast = (x, y) => {
+  const distanceFromLast = (x: number, y: number) => {
     return Math.hypot(x - last.x, y - last.y)
   }
-  const deactivate = (image) => {
+
+  const deactivate = (image: HTMLImageElement) => {
     image.dataset.status = "inactive"
   }
 
-  const handleOnMove = (e) => {
-    if (distanceFromLast(e.clientX, e.clientY) > window.innerWidth / distance) {
+  // accept either native MouseEvent, Touch, or React.MouseEvent
+  const handleOnMove = (
+    e: MouseEvent | Touch | React.MouseEvent<HTMLElement>
+  ) => {
+    const clientX = "clientX" in e ? e.clientX : 0
+    const clientY = "clientY" in e ? e.clientY : 0
+
+    if (distanceFromLast(clientX, clientY) > window.innerWidth / distance) {
       const lead = refs.current[globalIndex % refs.current.length].current
       const tail =
         refs.current[(globalIndex - maxNumberOfImages) % refs.current.length]
           ?.current
-      if (lead) activate(lead, e.clientX, e.clientY)
+
+      if (lead) activate(lead, clientX, clientY)
       if (tail) deactivate(tail)
       globalIndex++
     }
@@ -75,24 +85,21 @@ export default function ImageCursorTrail({
 
   return (
     <section
-      onMouseMove={handleOnMove}
+      onMouseMove={(e) => handleOnMove(e)}
+       /* @ts-expect-error ShareButton component has no typed props for `links` */
       onTouchMove={(e) => handleOnMove(e.touches[0])}
       ref={containerRef}
       className={cn(
-        "relative grid h-[600px] w-full place-content-center overflow-hidden rounded-lg ",
+        "relative grid h-[600px] w-full place-content-center overflow-hidden rounded-lg",
         className
       )}
     >
       {items.map((item, index) => (
-         <div key={index}>
-
-       
-        
+        <div key={index}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            key={index}
             className={cn(
-              "opacity:0 data-[status='active']:ease-out-expo absolute -translate-x-[50%] -translate-y-[50%]  scale-0 rounded-3xl object-cover transition-transform duration-300  data-[status='active']:scale-100   data-[status='active']:opacity-100 data-[status='active']:duration-500 ",
+              "opacity:0 data-[status='active']:ease-out-expo absolute -translate-x-[50%] -translate-y-[50%] scale-0 rounded-3xl object-cover transition-transform duration-300 data-[status='active']:scale-100 data-[status='active']:opacity-100 data-[status='active']:duration-500",
               imgClass
             )}
             data-index={index}
