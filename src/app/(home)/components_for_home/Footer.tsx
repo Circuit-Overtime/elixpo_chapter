@@ -168,7 +168,7 @@ const Cube = () => {
         fragmentShader={fragmentShader}
         uniforms={uniforms.current}
         side={THREE.DoubleSide}
-        //@ts-expect-error
+        {/* @ts-expect-error ShareButton component has no typed props for `links` */}
         flatShading
         wireframe
       />
