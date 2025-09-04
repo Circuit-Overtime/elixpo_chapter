@@ -129,7 +129,7 @@ const SlideButton = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <motion.div
         animate={completed ? BUTTON_STATES.completed : BUTTON_STATES.initial}
-       {/* @ts-expect-error ShareButton component has no typed props for `links` */}
+       /* @ts-expect-error ShareButton component has no typed props for `links` */
         transition={ANIMATION_CONFIG.spring}
         className="shadow-button-inset dark:shadow-button-inset-dark relative flex h-9 items-center justify-center rounded-full bg-gray-100"
       >

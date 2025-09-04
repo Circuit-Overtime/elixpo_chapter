@@ -72,7 +72,7 @@ const Access = () => {
 
            <div className='flex flex-col  items-center md:items-end justify-start  gap-y-10 mt-10 md:mt-6 '>
               <ShareButton
-             {/* @ts-expect-error ShareButton component has no typed props for `links` */}
+             /* @ts-expect-error ShareButton component has no typed props for `links` */
                 links={shareLinks}
                 className='font-mono'
                >
