@@ -53,6 +53,16 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
         return audio_bytes
 
 if __name__ == "__main__":
+    import multiprocessing as mp
+    from model_server import model_worker
+    from model_service import init_model_service
+
+    request_queue = mp.Queue()
+    response_queue = mp.Queue()
+    worker_process = mp.Process(target=model_worker, args=(request_queue, response_queue))
+    worker_process.start()
+    init_model_service(request_queue, response_queue)
+
     async def main():
         text = "Such a beautiful day to start with!! What's on your mind?"
         requestID = "request123"
@@ -66,3 +76,4 @@ if __name__ == "__main__":
         print("Audio saved as output_reply.wav")
     
     asyncio.run(main())
+    worker_process.terminate()

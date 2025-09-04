@@ -7,6 +7,8 @@ from voiceMap import VOICE_BASE64_MAP
 from server import run_audio_pipeline
 import uuid
 import multiprocessing as mp
+import threading
+import queue
 from fastapi import FastAPI, Request, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,24 +17,85 @@ import traceback
 from wittyMessages import get_validation_error, get_witty_error
 import time
 import asyncio
-
-
+import atexit
+import os
 
 request_queue = None
 response_queue = None
 worker_process = None
+worker_thread = None
+_worker_initialized = False
+
+def is_daemon_process():
+    try:
+        import multiprocessing
+        return multiprocessing.current_process().daemon
+    except:
+        return False
 
 def init_worker():
-    """Initialize the worker process"""
-    global request_queue, response_queue, worker_process
-    from model_server import model_worker
-    from model_service import init_model_service
+    """Initialize the worker process or thread"""
+    global request_queue, response_queue, worker_process, worker_thread, _worker_initialized
     
-    request_queue = mp.Queue()
-    response_queue = mp.Queue()
-    worker_process = mp.Process(target=model_worker, args=(request_queue, response_queue))
-    worker_process.start()
-    init_model_service(request_queue, response_queue)
+    if _worker_initialized:
+        return
+        
+    try:
+        from model_server import model_worker
+        from model_service import init_model_service
+        
+        # Use threading if we're in a daemon process, otherwise use multiprocessing
+        if is_daemon_process():
+            logger.info("Running in daemon process, using threading for worker")
+            request_queue = queue.Queue()
+            response_queue = queue.Queue()
+            
+            # Wrap model_worker for threading
+            def thread_worker():
+                model_worker(request_queue, response_queue)
+            
+            worker_thread = threading.Thread(target=thread_worker, daemon=True)
+            worker_thread.start()
+        else:
+            logger.info("Running in main process, using multiprocessing for worker")
+            request_queue = mp.Queue()
+            response_queue = mp.Queue()
+            worker_process = mp.Process(target=model_worker, args=(request_queue, response_queue))
+            worker_process.start()
+        
+        init_model_service(request_queue, response_queue)
+        _worker_initialized = True
+        
+        # Register cleanup function
+        atexit.register(cleanup_worker)
+        
+    except Exception as e:
+        logger.error(f"Failed to initialize worker: {e}")
+        raise
+
+def cleanup_worker():
+    """Clean up worker process or thread"""
+    global worker_process, worker_thread, request_queue
+    
+    try:
+        if request_queue:
+            request_queue.put("STOP")
+        
+        if worker_process and worker_process.is_alive():
+            worker_process.join(timeout=5)
+            if worker_process.is_alive():
+                worker_process.terminate()
+        
+        if worker_thread and worker_thread.is_alive():
+            worker_thread.join(timeout=5)
+            
+    except Exception as e:
+        logger.error(f"Error cleaning up worker: {e}")
+
+def ensure_worker_initialized():
+    """Ensure worker is initialized before processing requests"""
+    if not _worker_initialized:
+        init_worker()
 
 app = Flask(__name__)
 CORS(app)
@@ -41,6 +104,8 @@ CORS(app)
 def before_request():
     g.request_id = reqID()
     g.start_time = time.time()
+    # Initialize worker on first request
+    ensure_worker_initialized()
 
 @app.after_request
 def after_request(response):
@@ -247,18 +312,14 @@ def method_not_allowed(e):
 
 if __name__ == "__main__":
     mp.set_start_method('spawn', force=True)
-    init_worker()
     host = "0.0.0.0"
     port = 8000
     logger.info(f"Starting Elixpo Audio API Server at {host}:{port}")
 
+    # Initialize worker when running directly
+    init_worker()
+
     try:
-        # Use Flask's built-in server with threading support
         app.run(host=host, port=port, debug=False, threaded=True)
     finally:
-        # Clean up worker process
-        if worker_process and worker_process.is_alive():
-            request_queue.put("STOP")
-            worker_process.join(timeout=5)
-            if worker_process.is_alive():
-                worker_process.terminate()
+        cleanup_worker()
