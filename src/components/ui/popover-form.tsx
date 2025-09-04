@@ -28,7 +28,7 @@ export function PopoverForm({
   showCloseButton = false,
 }: PopoverFormProps) {
   const ref = useRef<HTMLDivElement>(null)
-  //@ts-expect-error
+ {/* @ts-expect-error ShareButton component has no typed props for `links` */}
   useClickOutside(ref, () => setOpen(false))
 
   return (
