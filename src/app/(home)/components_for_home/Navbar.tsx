@@ -2,17 +2,13 @@
 import Image from 'next/image'
 import React, {  useEffect, useState } from 'react'
 import { LOGO } from '../../../../public/assets/images/images'
-import { Blocks, Code, FileCode, GitBranch, HandPlatter, icons, Moon, SquareDashedBottomCodeIcon} from 'lucide-react'
+import { Blocks, Code, FileCode, GitBranch, HandPlatter, Moon} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import ThemeToggleButton from '@/components/ui/theme-toggle-button'
 import { useTheme } from 'next-themes'
 import { BsDiscord } from "react-icons/bs";
 import { ExpandedTabs } from '@/components/ui/expanded-tabs'
-import { Home,Bell,Settings,HelpCircle, Shield, User, } from "lucide-react"
-import { MdDashboard } from "react-icons/md";
-import { IoIosColorFill } from "react-icons/io";
-import { LuBlocks } from "react-icons/lu";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
