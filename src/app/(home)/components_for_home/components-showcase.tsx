@@ -44,7 +44,7 @@ const ComponentsShowCase = () => {
          <SparklesIcon className='fill-[#EEBDE0] stroke-1 text-neutral-800' />
          <span className='font-mono'>Components Preview</span>
        </div>
-      <span className='text-base md:text-lg font-mono text-center'>hey, {text}|</span>
+      <span className='text-base md:text-lg font-mono text-center '>hey, {text}|</span>
           </div>
        <div className='mt-5'> 
        <MaskedDiv  maskType="type-4" className="my-4">
