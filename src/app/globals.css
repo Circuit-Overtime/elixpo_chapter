@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -161,3 +162,15 @@
   }
 }
 
+html,
+body {
+  height: 100%;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}

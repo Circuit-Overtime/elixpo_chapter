@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
@@ -39,12 +40,17 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-three/drei": "^10.7.4",
     "@react-three/fiber": "^9.3.0",
+    "@studio-freight/lenis": "^1.0.42",
+    "@types/mdx": "^2.0.13",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.12",
+    "fumadocs-core": "^15.7.10",
+    "fumadocs-mdx": "^11.9.0",
+    "fumadocs-ui": "^15.7.10",
     "gsap": "^3.13.0",
     "hast-util-to-html": "^9.0.5",
     "hls.js": "^0.14.17",

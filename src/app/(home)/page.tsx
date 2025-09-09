@@ -25,6 +25,7 @@ const page = () => {
    <Layout>
     <Navbar/>
     <Hero/>
+
      <ComponentsShowCase/> 
      <Access/>
      <Testimonial/>

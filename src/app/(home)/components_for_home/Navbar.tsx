@@ -52,7 +52,7 @@ const Navbar = () => {
     }
   ]
   return (
-      <section className="py-3 sticky top-0 z-50">
+      <section  className="py-3 sticky top-0 z-50">
       <div className="container  px-4 md:px-10 lg:px-2 mx-auto">
         <div className="flex items-center justify-between  rounded-full   px-4 md:px-0">
           {/* Logo */}
@@ -73,7 +73,7 @@ const Navbar = () => {
          <div className=' gap-5 hidden md:block'>
         
          <ExpandedTabs 
-         className='mt-2'
+         className='mt-2 font-mono'
          tabs={options} />
          </div>
 

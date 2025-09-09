@@ -4,10 +4,11 @@ import WrapButton from '@/components/ui/wrap-button'
 import { cn } from '@/lib/utils'
 import React from 'react'
 import {  Show } from '../../../../public/assets/images/images'
+import Link from 'next/link'
 
 const Hero = () => {
   return (
-    <section className='py-20 overflow-x-clip'>
+    <section  className='py-20 overflow-x-clip'>
         <div className='container   mx-auto px-3 md:px-0'>
           
             <div className='flex flex-col  items-center'>
@@ -17,16 +18,18 @@ const Hero = () => {
                 <h1 style={{fontFamily: "poppins"}} className='text-6xl mt-4 md:mt-2 font-black text-center'>Build Sleek Interfaces, Effortlessly.</h1>
             </div>
 
-            <div className='text-center w-fit text-base mt-4 px-0 md:px-28 font-mono'>
-               <p>FingUI is a modern React component library powered by Tailwind CSS and Framer Motion. Create beautiful, animated, and reusable UI components with minimal effort.</p>
-            </div>
+            
 
+           <Link 
+             href={"/docs"}
+           >
             <WrapButton 
             
             className='mt-5'>
                 Let&apos;s Build Sleek.
             </WrapButton>
 
+           </Link>
             <div className=" mx-auto  max-w-6xl mt-10 rounded-[34px] bg-neutral-700">
               <div className="relative z-10 grid w-full gap-8 rounded-[28px] bg-neutral-950 p-2">
                 <SkiperCard
@@ -60,7 +63,7 @@ const Hero = () => {
                     "left-[5%] top-[50%] md:left-1/2 md:left-[68px] md:top-[30%]"
                   )}
                   description="Whether you’re building dashboards, apps, or landing pages—fingUI."
-                  bgClass="hover:lg:bg-red-500 "
+                  bgClass="hover:lg:bg-amber-300 "
                   //  eslint-disable-next-line @typescript-eslint/ban-ts-comment
                   //   @ts-ignore
                   image={{
