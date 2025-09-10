@@ -1,8 +1,33 @@
+"use client"
 import React from 'react'
+import RefreshButton from './RefreshButton'
+import Preview from './Preview';
 
-const PreviewClient = () => {
+
+interface PreviewClientProps {
+   children: React.ReactNode;
+   className: string;
+   isPreminum?: boolean;
+   link: string;
+   useIframe?: boolean;
+   height?: number;
+   compact?: boolean;
+   comment?: string[];
+}
+const PreviewClient = (
+ props : PreviewClientProps
+) => {
+  const [key,setKey] = React.useState(0);
+  const handleRefresh = () => {
+     setKey((prev) => prev + 1);
+  }
   return (
-    <div>PreviewClient</div>
+    <div>
+       <RefreshButton  onRefresh={handleRefresh} />
+       <div key={key} >
+         <Preview {...props} />
+       </div>
+    </div>
   )
 }
 
