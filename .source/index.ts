@@ -1,7 +1,8 @@
 // @ts-nocheck -- skip type checking
-import * as meta_0 from "../content/docs/meta.json?collection=meta&hash=1757420629066"
-import * as docs_0 from "../content/docs/index.mdx?collection=docs&hash=1757420629066"
+import * as docs_1 from "../content/docs/components/ai-input.mdx?collection=docs&hash=1757436513603"
+import * as docs_0 from "../content/docs/index.mdx?collection=docs&hash=1757436513603"
+import * as meta_0 from "../content/docs/meta.json?collection=meta&hash=1757436513603"
 import { _runtime } from "fumadocs-mdx"
 import * as _source from "../source.config"
-export const docs = _runtime.doc<typeof _source.docs>([{ info: {"path":"index.mdx","absolutePath":"/Users/yahikonamikaze/Documents/My_project/FingUI/fingui/content/docs/index.mdx"}, data: docs_0 }]);
+export const docs = _runtime.doc<typeof _source.docs>([{ info: {"path":"index.mdx","absolutePath":"/Users/yahikonamikaze/Documents/My_project/FingUI/fingui/content/docs/index.mdx"}, data: docs_0 }, { info: {"path":"components/ai-input.mdx","absolutePath":"/Users/yahikonamikaze/Documents/My_project/FingUI/fingui/content/docs/components/ai-input.mdx"}, data: docs_1 }]);
 export const meta = _runtime.meta<typeof _source.meta>([{ info: {"path":"meta.json","absolutePath":"/Users/yahikonamikaze/Documents/My_project/FingUI/fingui/content/docs/meta.json"}, data: meta_0 }]);
