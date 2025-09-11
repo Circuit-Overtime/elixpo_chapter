@@ -136,7 +136,7 @@ def audio_endpoint():
             voice = request.args.get("voice")
             seed = request.args.get("seed")
             voice_path = None
-            
+            request_id = None
 
             generateHashValue = cacheName(f"{text}{system if system else ''}{voice if voice else ''}{str(seed) if seed else 42}")
             request_id = generateHashValue
@@ -197,10 +197,10 @@ def audio_endpoint():
         try:
             body = request.get_json(force=True)
             messages = body.get("messages", [])
+            seed = body.get("seed", 42)
             if not messages or not isinstance(messages, list):
                 return jsonify({"error": {"message": "Missing or invalid 'messages' in payload.", "code": 400}}), 400
-
-            # Parse system and user message
+            request_id = None
             system_instruction = None
             user_content = None
             for msg in messages:
@@ -245,7 +245,7 @@ def audio_endpoint():
             # Validate and save base64 audio if present
             voice_path = None
             speech_audio_path = None
-            generateHashValue = cacheName(f"{text}{system if system else ''}{voice if voice else ''}{str(seed) if seed else 42}")
+            generateHashValue = cacheName(f"{text}{system_instruction if system_instruction else ''}{voice_name if voice_name else ''}{str(seed) if seed else 42}")
             request_id = generateHashValue
             gen_audio_folder = os.path.join(os.path.dirname(__file__), "..", "genAudio")
             cached_audio_path = os.path.join(gen_audio_folder, f"{generateHashValue}.wav")
