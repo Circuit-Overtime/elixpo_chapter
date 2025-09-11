@@ -6,13 +6,10 @@ from requestID import reqID
 from voiceMap import VOICE_BASE64_MAP
 from server import run_audio_pipeline
 import uuid
-from cacheHash import cacheName
+from cacheHash import cacheName, cache_cleanup_worker, init_cache_service
 import multiprocessing as mp
 import threading
 import queue
-from fastapi import FastAPI, Request, HTTPException, Query
-from fastapi.responses import StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
 import io
 import traceback
 from wittyMessages import get_validation_error, get_witty_error
@@ -21,96 +18,67 @@ import asyncio
 import atexit
 import os
 
+# Model worker variables
 request_queue = None
 response_queue = None
 worker_process = None
 worker_thread = None
 _worker_initialized = False
 
-cache_cleanup_thread = None
-cache_cleanup_stop_event = None
+# Cache cleanup process variables
+cache_request_queue = None
+cache_response_queue = None
+cache_cleanup_process = None
+_cache_initialized = False
 
-def cleanup_old_cache_files():
-    """Clean up cache files older than 1 hour"""
-    try:
-        gen_audio_folder = os.path.join(os.path.dirname(__file__), "..", "genAudio")
-        
-        # Ensure the directory exists
-        if not os.path.exists(gen_audio_folder):
-            return
-            
-        current_time = time.time()
-        one_hour_ago = current_time - 3600  # 3600 seconds = 1 hour
-        
-        cleaned_count = 0
-        for filename in os.listdir(gen_audio_folder):
-            if filename.endswith('.wav'):
-                file_path = os.path.join(gen_audio_folder, filename)
-                try:
-                    # Get file modification time
-                    file_mtime = os.path.getmtime(file_path)
-                    
-                    # If file is older than 1 hour, remove it
-                    if file_mtime < one_hour_ago:
-                        os.remove(file_path)
-                        cleaned_count += 1
-                        logger.debug(f"Removed old cache file: {filename}")
-                        
-                except OSError as e:
-                    logger.warning(f"Failed to remove cache file {filename}: {e}")
-                    
-        if cleaned_count > 0:
-            logger.info(f"Cache cleanup: removed {cleaned_count} old audio files")
-            
-    except Exception as e:
-        logger.error(f"Error during cache cleanup: {e}")
-
-def cache_cleanup_worker():
-    """Background worker that periodically cleans up old cache files"""
-    global cache_cleanup_stop_event
+def init_cache_cleanup():
+    """Initialize the cache cleanup process"""
+    global cache_request_queue, cache_response_queue, cache_cleanup_process, _cache_initialized
     
-    logger.info("Cache cleanup worker started")
-    
-    while not cache_cleanup_stop_event.is_set():
-        try:
-            cleanup_old_cache_files()
-            
-            # Wait for 10 minutes or until stop event is set
-            if cache_cleanup_stop_event.wait(timeout=600):  # 600 seconds = 10 minutes
-                break
-                
-        except Exception as e:
-            logger.error(f"Error in cache cleanup worker: {e}")
-            # Wait a bit before retrying on error
-            if cache_cleanup_stop_event.wait(timeout=60):
-                break
-    
-    logger.info("Cache cleanup worker stopped")
-
-def start_cache_cleanup():
-    """Start the cache cleanup background thread"""
-    global cache_cleanup_thread, cache_cleanup_stop_event
-    
-    if cache_cleanup_thread and cache_cleanup_thread.is_alive():
+    if _cache_initialized:
         return
         
-    cache_cleanup_stop_event = threading.Event()
-    cache_cleanup_thread = threading.Thread(target=cache_cleanup_worker, daemon=True)
-    cache_cleanup_thread.start()
-    logger.info("Cache cleanup thread started")
+    try:
+        logger.info("Starting cache cleanup process")
+        cache_request_queue = mp.Queue()
+        cache_response_queue = mp.Queue()
+        cache_cleanup_process = mp.Process(
+            target=cache_cleanup_worker, 
+            args=(cache_request_queue, cache_response_queue)
+        )
+        cache_cleanup_process.start()
+        
+        init_cache_service(cache_request_queue, cache_response_queue)
+        _cache_initialized = True
+        
+        logger.info("Cache cleanup process started")
+        
+    except Exception as e:
+        logger.error(f"Failed to initialize cache cleanup: {e}")
+        raise
 
-def stop_cache_cleanup():
-    """Stop the cache cleanup background thread"""
-    global cache_cleanup_thread, cache_cleanup_stop_event
+def cleanup_cache_worker():
+    """Stop cache cleanup process"""
+    global cache_cleanup_process, cache_request_queue
     
-    if cache_cleanup_stop_event:
-        cache_cleanup_stop_event.set()
+    try:
+        if cache_request_queue:
+            cache_request_queue.put("STOP")
         
-    if cache_cleanup_thread and cache_cleanup_thread.is_alive():
-        cache_cleanup_thread.join(timeout=5)
-        logger.info("Cache cleanup thread stopped")
+        if cache_cleanup_process and cache_cleanup_process.is_alive():
+            cache_cleanup_process.join(timeout=5)
+            if cache_cleanup_process.is_alive():
+                cache_cleanup_process.terminate()
+                logger.warning("Cache cleanup process terminated forcefully")
+            
+    except Exception as e:
+        logger.error(f"Error cleaning up cache worker: {e}")
 
-        
+def ensure_cache_initialized():
+    """Ensure cache cleanup is initialized"""
+    if not _cache_initialized:
+        init_cache_cleanup()
+
 def is_daemon_process():
     try:
         import multiprocessing
@@ -128,7 +96,6 @@ def init_worker():
     try:
         from model_server import model_worker
         from model_service import init_model_service
-
         
         # Use threading if we're in a daemon process, otherwise use multiprocessing
         if is_daemon_process():
@@ -160,10 +127,11 @@ def init_worker():
         raise
 
 def cleanup_worker():
+    """Clean up both model worker and cache worker"""
     global worker_process, worker_thread, request_queue
     
     # Stop cache cleanup first
-    stop_cache_cleanup()
+    cleanup_cache_worker()
     
     try:
         if request_queue:
@@ -194,6 +162,8 @@ def before_request():
     g.start_time = time.time()
     # Initialize worker on first request
     ensure_worker_initialized()
+    # Initialize cache cleanup on first request
+    ensure_cache_initialized()
 
 @app.after_request
 def after_request(response):
@@ -227,19 +197,26 @@ def audio_endpoint():
             request_id = generateHashValue
             gen_audio_folder = os.path.join(os.path.dirname(__file__), "..", "genAudio")
             cached_audio_path = os.path.join(gen_audio_folder, f"{generateHashValue}.wav")
-            if os.path.isfile(cached_audio_path):
-                with open(cached_audio_path, "rb") as f:
-                    audio_data = f.read()
-                return Response(
-                    audio_data,
-                    mimetype="audio/wav",
-                    headers={
-                        "Content-Disposition": f"inline; filename={request_id}.wav",
-                        "Content-Length": str(len(audio_data))
-                    }
-                )
+            cached_text_path = os.path.join(gen_audio_folder, f"{generateHashValue}.txt")
+            
+            if os.path.isfile(cached_audio_path) or os.path.isfile(cached_text_path):
+                if os.path.isfile(cached_text_path):
+                    with open(cached_text_path, "r") as f:
+                        cached_text = f.read()
+                    return jsonify({"text": cached_text, "request_id": request_id})
+                else:
+                    with open(cached_audio_path, "rb") as f:
+                        audio_data = f.read()
+                    return Response(
+                        audio_data,
+                        mimetype="audio/wav",
+                        headers={
+                            "Content-Disposition": f"inline; filename={request_id}.wav",
+                            "Content-Length": str(len(audio_data))
+                        }
+                    )
 
-            # if audio is not in cache
+            # If audio is not in cache, prepare voice
             if VOICE_BASE64_MAP.get(voice):
                 named_voice_path = VOICE_BASE64_MAP.get(voice)
                 coded = encode_audio_base64(named_voice_path)
@@ -248,7 +225,6 @@ def audio_endpoint():
                 named_voice_path = VOICE_BASE64_MAP.get("alloy")
                 coded = encode_audio_base64(named_voice_path)
                 voice_path = save_temp_audio(coded, request_id, "clone")
-                
 
             if not text or not isinstance(text, str) or not text.strip():
                 return jsonify({"error": {"message": "Missing required 'text' parameter.", "code": 400}}), 400
@@ -283,11 +259,14 @@ def audio_endpoint():
             body = request.get_json(force=True)
             messages = body.get("messages", [])
             seed = body.get("seed", 42)
+            
             if not messages or not isinstance(messages, list):
                 return jsonify({"error": {"message": "Missing or invalid 'messages' in payload.", "code": 400}}), 400
+            
             request_id = None
             system_instruction = None
             user_content = None
+            
             for msg in messages:
                 if msg.get("role") == "system":
                     for item in msg.get("content", []):
@@ -327,27 +306,37 @@ def audio_endpoint():
             if voice_b64 and voice_name and voice_name != "alloy":
                 return jsonify({"error": {"message": "Provide either 'voice.data' (base64) or 'voice.name', not both.", "code": 400}}), 400
 
-            # Validate and save base64 audio if present
-            voice_path = None
-            speech_audio_path = None
+            # Generate cache key and check cache
             generateHashValue = cacheName(f"{text}{system_instruction if system_instruction else ''}{voice_name if voice_name else ''}{str(seed) if seed else 42}")
             request_id = generateHashValue
             gen_audio_folder = os.path.join(os.path.dirname(__file__), "..", "genAudio")
             cached_audio_path = os.path.join(gen_audio_folder, f"{generateHashValue}.wav")
-            if os.path.isfile(cached_audio_path):
-                with open(cached_audio_path, "rb") as f:
-                    audio_data = f.read()
-                return Response(
-                    audio_data,
-                    mimetype="audio/wav",
-                    headers={
-                        "Content-Disposition": f"inline; filename={request_id}.wav",
-                        "Content-Length": str(len(audio_data))
-                    }
-                )
+            cached_text_path = os.path.join(gen_audio_folder, f"{generateHashValue}.txt")
+            
+            if os.path.isfile(cached_audio_path) or os.path.isfile(cached_text_path):
+                if os.path.isfile(cached_text_path):
+                    with open(cached_text_path, "r") as f:
+                        cached_text = f.read()
+                    return jsonify({"text": cached_text, "request_id": request_id})
+                else:
+                    with open(cached_audio_path, "rb") as f:
+                        audio_data = f.read()
+                    return Response(
+                        audio_data,
+                        mimetype="audio/wav",
+                        headers={
+                            "Content-Disposition": f"inline; filename={request_id}.wav",
+                            "Content-Length": str(len(audio_data))
+                        }
+                    )
+
+            # Prepare voice and speech audio
+            voice_path = None
+            speech_audio_path = None
+            
             if voice_b64:
                 try:
-                    decoded = validate_and_decode_base64_audio(voice_b64, max_duration_sec=5)
+                    decoded = validate_and_decode_base64_audio(voice_b64, max_duration_sec=15)
                     voice_path = save_temp_audio(decoded, request_id, "clone")
                 except Exception as e:
                     return jsonify({"error": {"message": f"Invalid voice audio: {e}", "code": 400}}), 400
@@ -375,8 +364,7 @@ def audio_endpoint():
                 except Exception as e:
                     return jsonify({"error": {"message": f"Invalid speech_audio: {e}", "code": 400}}), 400
 
-            # If voice_path is present, ignore voice_name param
-
+            # Run audio pipeline
             result = asyncio.run(run_audio_pipeline(
                 reqID=request_id,
                 text=text,
@@ -430,7 +418,6 @@ def method_not_allowed(e):
     logger.info(f"405 error: {request.method} on {request.url}")
     return jsonify({"error": {"message": "That HTTP method is not invited to this party! Try a different one! 🎉", "code": 405}}), 405
 
-
 if __name__ == "__main__":
     mp.set_start_method('spawn', force=True)
     host = "0.0.0.0"
@@ -438,7 +425,7 @@ if __name__ == "__main__":
     logger.info(f"Starting Elixpo Audio API Server at {host}:{port}")
 
     init_worker()
-    start_cache_cleanup()
+    init_cache_cleanup()
 
     try:
         app.run(host=host, port=port, debug=False, threaded=True)
