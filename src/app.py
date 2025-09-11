@@ -26,6 +26,7 @@ worker_process = None
 worker_thread = None
 _worker_initialized = False
 
+
 def is_daemon_process():
     try:
         import multiprocessing
@@ -316,7 +317,6 @@ if __name__ == "__main__":
     port = 8000
     logger.info(f"Starting Elixpo Audio API Server at {host}:{port}")
 
-    # Initialize worker when running directly
     init_worker()
 
     try:
