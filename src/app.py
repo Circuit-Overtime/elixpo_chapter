@@ -134,10 +134,11 @@ def audio_endpoint():
             text = request.args.get("text")
             system = request.args.get("system")
             voice = request.args.get("voice")
+            seed = request.args.get("seed")
             voice_path = None
             
 
-            generateHashValue = cacheName(f"{text}{system if system else ''}{voice if voice else ''}")
+            generateHashValue = cacheName(f"{text}{system if system else ''}{voice if voice else ''}{str(seed) if seed else 42}")
             request_id = generateHashValue
             gen_audio_folder = os.path.join(os.path.dirname(__file__), "..", "genAudio")
             cached_audio_path = os.path.join(gen_audio_folder, f"{generateHashValue}.wav")
@@ -244,7 +245,7 @@ def audio_endpoint():
             # Validate and save base64 audio if present
             voice_path = None
             speech_audio_path = None
-            generateHashValue = cacheName(f"{text}{system_instruction if system_instruction else ''}{voice_name if voice_name else ''}")
+            generateHashValue = cacheName(f"{text}{system if system else ''}{voice if voice else ''}{str(seed) if seed else 42}")
             request_id = generateHashValue
             gen_audio_folder = os.path.join(os.path.dirname(__file__), "..", "genAudio")
             cached_audio_path = os.path.join(gen_audio_folder, f"{generateHashValue}.wav")

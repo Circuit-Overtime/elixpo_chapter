@@ -27,6 +27,6 @@ def cacheName(query: str, length: int = 16) -> str:
     return encoded[:length]
 
 if __name__ == "__main__":
-    print(cacheName("a beautiful flower"))
+    print(cacheName("a beautiful flower 42"))
     print(cacheName("SELECT * FROM users WHERE id=43"))
     print(cacheName("a beautiful flower"))  
