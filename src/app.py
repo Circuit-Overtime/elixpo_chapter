@@ -6,6 +6,7 @@ from requestID import reqID
 from voiceMap import VOICE_BASE64_MAP
 from server import run_audio_pipeline
 import uuid
+from cacheHash import cacheName
 import multiprocessing as mp
 import threading
 import queue
@@ -44,6 +45,7 @@ def init_worker():
     try:
         from model_server import model_worker
         from model_service import init_model_service
+
         
         # Use threading if we're in a daemon process, otherwise use multiprocessing
         if is_daemon_process():
@@ -127,13 +129,31 @@ def health_check():
 
 @app.route("/audio", methods=["GET", "POST"])
 def audio_endpoint():
-    request_id = g.request_id
     if request.method == "GET":
         try:
             text = request.args.get("text")
             system = request.args.get("system")
             voice = request.args.get("voice")
             voice_path = None
+            
+
+            generateHashValue = cacheName(f"{text}{system if system else ''}{voice if voice else ''}")
+            request_id = generateHashValue
+            gen_audio_folder = os.path.join(os.path.dirname(__file__), "..", "genAudio")
+            cached_audio_path = os.path.join(gen_audio_folder, f"{generateHashValue}.wav")
+            if os.path.isfile(cached_audio_path):
+                with open(cached_audio_path, "rb") as f:
+                    audio_data = f.read()
+                return Response(
+                    audio_data,
+                    mimetype="audio/wav",
+                    headers={
+                        "Content-Disposition": f"inline; filename={request_id}.wav",
+                        "Content-Length": str(len(audio_data))
+                    }
+                )
+
+            # if audio is not in cache
             if VOICE_BASE64_MAP.get(voice):
                 named_voice_path = VOICE_BASE64_MAP.get(voice)
                 coded = encode_audio_base64(named_voice_path)
@@ -224,7 +244,21 @@ def audio_endpoint():
             # Validate and save base64 audio if present
             voice_path = None
             speech_audio_path = None
-
+            generateHashValue = cacheName(f"{text}{system_instruction if system_instruction else ''}{voice_name if voice_name else ''}")
+            request_id = generateHashValue
+            gen_audio_folder = os.path.join(os.path.dirname(__file__), "..", "genAudio")
+            cached_audio_path = os.path.join(gen_audio_folder, f"{generateHashValue}.wav")
+            if os.path.isfile(cached_audio_path):
+                with open(cached_audio_path, "rb") as f:
+                    audio_data = f.read()
+                return Response(
+                    audio_data,
+                    mimetype="audio/wav",
+                    headers={
+                        "Content-Disposition": f"inline; filename={request_id}.wav",
+                        "Content-Length": str(len(audio_data))
+                    }
+                )
             if voice_b64:
                 try:
                     decoded = validate_and_decode_base64_audio(voice_b64, max_duration_sec=5)

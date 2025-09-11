@@ -26,7 +26,7 @@ def cacheName(query: str, length: int = 16) -> str:
     # Truncate/pad to fixed length
     return encoded[:length]
 
-# Example usage
-print(cacheName("SELECT * FROM users WHERE id=42"))
-print(cacheName("SELECT * FROM users WHERE id=43"))
-print(cacheName("SELECT * FROM users WHERE id=42"))  # same as first
+if __name__ == "__main__":
+    print(cacheName("a beautiful flower"))
+    print(cacheName("SELECT * FROM users WHERE id=43"))
+    print(cacheName("a beautiful flower"))  
