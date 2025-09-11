@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: audio-pollinations  
-data:
-  MODEL: mistral
-  MODEL_PATH: bosonai/higgs-audio-v2-generation-3B-base
-  AUDIO_TOKENIZER_PATH: bosonai/higgs-audio-v2-tokenizer
