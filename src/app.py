@@ -27,7 +27,90 @@ worker_process = None
 worker_thread = None
 _worker_initialized = False
 
+cache_cleanup_thread = None
+cache_cleanup_stop_event = None
 
+def cleanup_old_cache_files():
+    """Clean up cache files older than 1 hour"""
+    try:
+        gen_audio_folder = os.path.join(os.path.dirname(__file__), "..", "genAudio")
+        
+        # Ensure the directory exists
+        if not os.path.exists(gen_audio_folder):
+            return
+            
+        current_time = time.time()
+        one_hour_ago = current_time - 3600  # 3600 seconds = 1 hour
+        
+        cleaned_count = 0
+        for filename in os.listdir(gen_audio_folder):
+            if filename.endswith('.wav'):
+                file_path = os.path.join(gen_audio_folder, filename)
+                try:
+                    # Get file modification time
+                    file_mtime = os.path.getmtime(file_path)
+                    
+                    # If file is older than 1 hour, remove it
+                    if file_mtime < one_hour_ago:
+                        os.remove(file_path)
+                        cleaned_count += 1
+                        logger.debug(f"Removed old cache file: {filename}")
+                        
+                except OSError as e:
+                    logger.warning(f"Failed to remove cache file {filename}: {e}")
+                    
+        if cleaned_count > 0:
+            logger.info(f"Cache cleanup: removed {cleaned_count} old audio files")
+            
+    except Exception as e:
+        logger.error(f"Error during cache cleanup: {e}")
+
+def cache_cleanup_worker():
+    """Background worker that periodically cleans up old cache files"""
+    global cache_cleanup_stop_event
+    
+    logger.info("Cache cleanup worker started")
+    
+    while not cache_cleanup_stop_event.is_set():
+        try:
+            cleanup_old_cache_files()
+            
+            # Wait for 10 minutes or until stop event is set
+            if cache_cleanup_stop_event.wait(timeout=600):  # 600 seconds = 10 minutes
+                break
+                
+        except Exception as e:
+            logger.error(f"Error in cache cleanup worker: {e}")
+            # Wait a bit before retrying on error
+            if cache_cleanup_stop_event.wait(timeout=60):
+                break
+    
+    logger.info("Cache cleanup worker stopped")
+
+def start_cache_cleanup():
+    """Start the cache cleanup background thread"""
+    global cache_cleanup_thread, cache_cleanup_stop_event
+    
+    if cache_cleanup_thread and cache_cleanup_thread.is_alive():
+        return
+        
+    cache_cleanup_stop_event = threading.Event()
+    cache_cleanup_thread = threading.Thread(target=cache_cleanup_worker, daemon=True)
+    cache_cleanup_thread.start()
+    logger.info("Cache cleanup thread started")
+
+def stop_cache_cleanup():
+    """Stop the cache cleanup background thread"""
+    global cache_cleanup_thread, cache_cleanup_stop_event
+    
+    if cache_cleanup_stop_event:
+        cache_cleanup_stop_event.set()
+        
+    if cache_cleanup_thread and cache_cleanup_thread.is_alive():
+        cache_cleanup_thread.join(timeout=5)
+        logger.info("Cache cleanup thread stopped")
+
+        
 def is_daemon_process():
     try:
         import multiprocessing
@@ -77,8 +160,10 @@ def init_worker():
         raise
 
 def cleanup_worker():
-    """Clean up worker process or thread"""
     global worker_process, worker_thread, request_queue
+    
+    # Stop cache cleanup first
+    stop_cache_cleanup()
     
     try:
         if request_queue:
@@ -353,6 +438,7 @@ if __name__ == "__main__":
     logger.info(f"Starting Elixpo Audio API Server at {host}:{port}")
 
     init_worker()
+    start_cache_cleanup()
 
     try:
         app.run(host=host, port=port, debug=False, threaded=True)
