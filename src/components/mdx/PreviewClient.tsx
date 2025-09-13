@@ -1,7 +1,7 @@
 "use client"
 import React from 'react'
 import RefreshButton from './RefreshButton'
-import Preview from './Preview';
+import {Preview} from './Preview';
 
 
 interface PreviewClientProps {
@@ -14,7 +14,7 @@ interface PreviewClientProps {
    compact?: boolean;
    comment?: string[];
 }
-const PreviewClient = (
+export const PreviewClient = (
  props : PreviewClientProps
 ) => {
   const [key,setKey] = React.useState(0);
@@ -31,4 +31,3 @@ const PreviewClient = (
   )
 }
 
-export default PreviewClient

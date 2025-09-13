@@ -6,10 +6,9 @@ import {
   DocsTitle,
 } from 'fumadocs-ui/page';
 import { notFound } from 'next/navigation';
-import { getMDXComponents } from '../../../../../mdx-components';
 import type { Metadata } from 'next';
-import Preview from '@/components/mdx/Preview';
-import PreviewClient from '@/components/mdx/PreviewClient';
+import {Preview} from '@/components/mdx/Preview';
+import {PreviewClient} from '@/components/mdx/PreviewClient';
 import defaultMdxComponents from 'fumadocs-ui/mdx';
 
 

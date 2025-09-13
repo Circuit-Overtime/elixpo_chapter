@@ -189,7 +189,7 @@ const Footer = () => {
   const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [0, 1, 1])
 
   return (
-    <section ref={ref} className="py-10 relative overflow-x-clip bg-black">
+    <section ref={ref} className="py-10 relative overflow-x-clip">
       <div className="container mx-auto flex flex-col items-center gap-y-5">
         <div className="hidden md:block w-full h-[600px] relative">
           <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
