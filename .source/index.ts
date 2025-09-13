@@ -1,4 +1,6 @@
 // @ts-nocheck -- skip type checking
+import * as meta_1 from "../content/docs/components/ai/_meta.json?collection=meta&hash=1757436513603"
+import * as meta_0 from "../content/docs/_meta.json?collection=meta&hash=1757436513603"
 import * as docs_6 from "../content/docs/components/ai/index.mdx?collection=docs&hash=1757436513603"
 import * as docs_5 from "../content/docs/components/ai/ai-input-third.mdx?collection=docs&hash=1757436513603"
 import * as docs_4 from "../content/docs/components/ai/ai-input-second.mdx?collection=docs&hash=1757436513603"
@@ -6,8 +8,6 @@ import * as docs_3 from "../content/docs/components/ai/ai-input-four.mdx?collect
 import * as docs_2 from "../content/docs/components/ai/ai-input-five.mdx?collection=docs&hash=1757436513603"
 import * as docs_1 from "../content/docs/components/ai/ai-input-first.mdx?collection=docs&hash=1757436513603"
 import * as docs_0 from "../content/docs/index.mdx?collection=docs&hash=1757436513603"
-import * as meta_1 from "../content/docs/components/ai/_meta.json?collection=meta&hash=1757436513603"
-import * as meta_0 from "../content/docs/_meta.json?collection=meta&hash=1757436513603"
 import { _runtime } from "fumadocs-mdx"
 import * as _source from "../source.config"
 export const docs = _runtime.doc<typeof _source.docs>([{ info: {"path":"index.mdx","absolutePath":"/Users/yahikonamikaze/Documents/My_project/FingUI/fingui/content/docs/index.mdx"}, data: docs_0 }, { info: {"path":"components/ai/ai-input-first.mdx","absolutePath":"/Users/yahikonamikaze/Documents/My_project/FingUI/fingui/content/docs/components/ai/ai-input-first.mdx"}, data: docs_1 }, { info: {"path":"components/ai/ai-input-five.mdx","absolutePath":"/Users/yahikonamikaze/Documents/My_project/FingUI/fingui/content/docs/components/ai/ai-input-five.mdx"}, data: docs_2 }, { info: {"path":"components/ai/ai-input-four.mdx","absolutePath":"/Users/yahikonamikaze/Documents/My_project/FingUI/fingui/content/docs/components/ai/ai-input-four.mdx"}, data: docs_3 }, { info: {"path":"components/ai/ai-input-second.mdx","absolutePath":"/Users/yahikonamikaze/Documents/My_project/FingUI/fingui/content/docs/components/ai/ai-input-second.mdx"}, data: docs_4 }, { info: {"path":"components/ai/ai-input-third.mdx","absolutePath":"/Users/yahikonamikaze/Documents/My_project/FingUI/fingui/content/docs/components/ai/ai-input-third.mdx"}, data: docs_5 }, { info: {"path":"components/ai/index.mdx","absolutePath":"/Users/yahikonamikaze/Documents/My_project/FingUI/fingui/content/docs/components/ai/index.mdx"}, data: docs_6 }]);
