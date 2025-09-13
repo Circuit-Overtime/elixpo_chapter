@@ -32,7 +32,7 @@ const Navbar = () => {
     },
     {
         title: "Components",
-        href: "/components",
+        href: "/docs/components/ai",
         icon: Code
     },
     {

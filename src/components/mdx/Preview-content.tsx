@@ -9,7 +9,7 @@ import {
     type RefObject,
 } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Copy, Check, CheckCheck, Terminal } from "lucide-react";
+import { ArrowUpRight, Copy, CheckCheck, Terminal } from "lucide-react";
 import { copyComponent } from "@/lib/action";
 import { cn } from "@/lib/utils";
 import { OpenInV0Button } from "@/components/open-in-v0"; 

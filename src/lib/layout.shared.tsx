@@ -27,7 +27,7 @@ export function baseOptions(): BaseLayoutProps {
        },
        {
          text: "Components",
-         url: "/component"
+         url: "/components"
        },
        {
          text: "Themes",
@@ -35,7 +35,7 @@ export function baseOptions(): BaseLayoutProps {
        },
        {
          text: "Blocks",
-         url: "/block",
+         url: "/blocks",
          
        },
        {
@@ -44,6 +44,6 @@ export function baseOptions(): BaseLayoutProps {
         
        }
     ],
-    
+
   };
 }

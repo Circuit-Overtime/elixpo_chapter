@@ -4,7 +4,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/ui/theme-provider"
-import LenisProvider from "@/hooks/LenisProvider";
 import { RootProvider } from 'fumadocs-ui/provider'
 
 const geistSans = Geist({
@@ -34,7 +33,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <RootProvider>
-      <LenisProvider>
+     
           
          <ThemeProvider
         attribute='class' defaultTheme="system" enableSystem disableTransitionOnChange
@@ -45,7 +44,7 @@ export default function RootLayout({
            {children}
         
         </ThemeProvider>
-      </LenisProvider>
+     
        </RootProvider>
       </body>
     </html>

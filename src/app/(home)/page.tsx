@@ -15,9 +15,6 @@ import Impress from './components_for_home/Impress'
 import Footer from './components_for_home/Footer'
 
 
-
-
-
 const page = () => {
   
   
@@ -25,7 +22,6 @@ const page = () => {
    <Layout>
     <Navbar/>
     <Hero/>
-
      <ComponentsShowCase/> 
      <Access/>
      <Testimonial/>

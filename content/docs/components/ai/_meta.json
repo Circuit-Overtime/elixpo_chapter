@@ -1,0 +1,27 @@
+{
+  "title": "AI Input",
+  "description": "Interactive input fields powered by AI",
+  "icon": "Bot",
+  "pages": [
+    {
+      "title": "Slide In",
+      "path": "ai-input-first"
+    },
+     {
+      "title": "With Search",
+      "path": "ai-input-second"
+    },
+     {
+      "title": "SpeechRecognition",
+      "path": "ai-input-third"
+    },
+    {
+      "title": "Chat Window",
+      "path": "ai-input-four"
+    },
+    {
+      "title": "Terminal",
+      "path": "ai-input-five"
+    }
+  ]
+}

@@ -7,8 +7,12 @@ import { ReactNode } from 'react';
 export default function Layout({ children }: {children: ReactNode}) {
   return (
     <DocsLayout 
-     tree={source.pageTree} {...baseOptions()} sidebar={{defaultOpenLevel: 1}} >
-      <div className='px-0 md:px-44'>
+     tree={source.pageTree} {...baseOptions()} sidebar={{
+      defaultOpenLevel: 1,
+      className: 'dark:bg-black font-mono'     // Tailwind class
+      
+      }}  >
+      <div className='px-0 md:px-36 font-[poppins] font-medium '>
         {children}
       </div>
     </DocsLayout>
