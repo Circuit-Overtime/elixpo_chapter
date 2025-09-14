@@ -16,6 +16,10 @@ const Hero = () => {
                 <p>Now: available: FingUI CLI 🚀</p>
             </div>
                 <h1 style={{fontFamily: "poppins"}} className='text-6xl mt-4 md:mt-2 font-black text-center'>Build Sleek Interfaces, Effortlessly.</h1>
+                <div className='text-center w-fit text-base mt-4 px-0 md:px-28 font-mono'>
+               <p>FingUI is a modern React component library powered by Tailwind CSS and Framer Motion. Create beautiful, animated, and reusable UI components with minimal effort.</p>
+            </div>
+            
             </div>
 
             

@@ -1,0 +1,22 @@
+{
+  "title": "Components",
+  "description": "The headless library",
+  "icon": "Dna",
+  "root": true,
+  "defaultOpen": true,
+  "pages": [
+    {
+      "title": "AI Input",
+      "icon": "Bot",
+      "pages": [
+        "components/ai/ai-input-first",
+        "components/ai/ai-input-second",
+        "components/ai/ai-input-third",
+        "components/ai/ai-input-four",
+        "components/ai/ai-input-five"
+        
+
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 export interface NavItem {
       id: string | number,
       title: string,
-      herf: string,
+      href: string,
       description: string,
       count?: number | string,
       isComingSoon?: boolean,
@@ -24,7 +24,7 @@ export const navigationSection: NavSection[] = [
             {
                  id: "intro",
                  title: "Introduction",
-                 herf: "/docs",
+                 href: "/docs",
                  description: "",
                  count: 1,
                  
