@@ -2,7 +2,7 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 import Image from 'next/image';
 import { LOGO } from '../../public/assets/images/images';
-import { HeaderPro } from '@/components/FingUIComponents/landing/header-pro';
+import { HeaderPro } from '@/components/landing/header-pro';
 
 export function baseOptions(): BaseLayoutProps {
   

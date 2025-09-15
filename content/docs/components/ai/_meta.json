@@ -22,6 +22,14 @@
     {
       "title": "Terminal",
       "path": "ai-input-five"
+    },
+    {
+      "title": "Industrial",
+      "path": "ai-input-six"
+    },
+    {
+      "title": "Model Selection",
+      "path": "ai-input-seven"
     }
   ]
 }

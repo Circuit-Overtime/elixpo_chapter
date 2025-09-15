@@ -16,23 +16,21 @@ import Footer from './components_for_home/Footer'
 
 
 const page = () => {
-  
-  
   return (
-   <Layout>
+  <Layout>
     <Navbar/>
     <Hero/>
-     <ComponentsShowCase/> 
-     <Access/>
-     <Testimonial/>
-     <Works/>
-     <Links/>
-     <FAQ/>
-     <Contributer/>
-     <Marquee/>
-     <Impress/>
-     <Footer/>
-   </Layout>
+    <ComponentsShowCase/> 
+    <Access/>
+    <Testimonial/>
+    <Works/>
+    <Links/>
+    <FAQ/>
+    <Contributer/>
+    <Marquee/>
+    <Impress/>
+    <Footer/>
+  </Layout>
   )
 }
 

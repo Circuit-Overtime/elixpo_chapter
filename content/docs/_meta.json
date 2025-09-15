@@ -1,5 +1,5 @@
 {
-  "title": "Components",
+  "title": "Component",
   "description": "The headless library",
   "icon": "Dna",
   "root": true,
@@ -9,14 +9,30 @@
       "title": "AI Input",
       "icon": "Bot",
       "pages": [
+        
         "components/ai/ai-input-first",
         "components/ai/ai-input-second",
         "components/ai/ai-input-third",
         "components/ai/ai-input-four",
-        "components/ai/ai-input-five"
+        "components/ai/ai-input-five",
+        "components/ai/ai-input-six",
+         "components/ai/ai-input-seven"
+
+        
         
 
       ]
-    }
+    },
+    
+{
+  "title": "Landing Components",
+  "icon": "Home",
+  "pages": [
+    "components/landing/footer",
+    "components/landing/landing-footer-3d"
   ]
 }
+
+  ]
+}
+
