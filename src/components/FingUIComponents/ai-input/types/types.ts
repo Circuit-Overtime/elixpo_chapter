@@ -67,3 +67,32 @@ export interface AIInputFiveProps {
   title?: string
   version?: string
 }
+
+
+// 🔹 Props for dynamic behavior
+export interface AIInputSixProps {
+  placeholder?: string
+  temperature?: number
+  pressure?: number
+  status?: "READY" | "PROCESSING" | "ERROR" | string
+  onSend?: (message: string) => Promise<void> | void
+  onRecordStart?: () => void
+  onRecordStop?: () => void
+}
+
+export type Model = {
+  name: string;
+  description?: string;
+  icon?: React.ReactNode;
+};
+
+export type AIInputSevenProps = {
+  models?: Model[];
+  defaultModel?: string;
+  onSend?: (data: {
+    value: string;
+    selectedModel: string;
+    fileName?: string;
+    isPrivacyMode: boolean;
+  }) => void;
+};
