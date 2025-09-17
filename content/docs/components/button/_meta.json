@@ -1,0 +1,11 @@
+{
+  "title": "Buttons",
+  "description": "Minimal animated sleek button components",
+  "icon": "Bot",
+  "pages": [
+    {
+      "title": "button-v1",
+      "path": "button/button-morph"
+    }
+  ]
+}

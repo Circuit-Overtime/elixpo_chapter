@@ -6,6 +6,10 @@
     {
       "title": "Footer with 3d Model",
       "path": "landing-footer-3d"
+    },
+     {
+      "title": "Navbar with extended options",
+      "path": "landing-navbar-extended"
     }
     
   ]

@@ -1,0 +1,11 @@
+{
+  "title": "dropdown",
+  "description": "Interactive input fields powered by AI",
+  "icon": "Bot",
+  "pages": [
+    {
+      "title": "dropdown-v1",
+      "path": "dropdown-first"
+    }
+  ]
+}
