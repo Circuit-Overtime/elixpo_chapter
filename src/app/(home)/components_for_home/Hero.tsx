@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils'
 import React from 'react'
 import {  Show } from '../../../../public/assets/images/images'
 import Link from 'next/link'
+import { ButtonMorph } from '@/components/FingUIComponents/buttons/button-morph'
+import { Button } from '@/components/ui/button'
 
 const Hero = () => {
   return (
@@ -32,8 +34,10 @@ const Hero = () => {
             className='mt-5'>
                 Let&apos;s Build Sleek.
             </WrapButton>
+           
 
            </Link>
+       
             <div className=" mx-auto  max-w-6xl mt-10 rounded-[34px] bg-neutral-700">
               <div className="relative z-10 grid w-full gap-8 rounded-[28px] bg-neutral-950 p-2">
                 <SkiperCard
