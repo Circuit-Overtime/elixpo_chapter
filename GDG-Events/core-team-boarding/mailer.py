@@ -13,14 +13,14 @@ SMTP_PORT = 587
 SMTP_USER = os.getenv("GMAIL_USER_CORE")  
 SMTP_PASSWORD = os.getenv("GMAIL_PASSWORD_CORE")  
 FROM_EMAIL = SMTP_USER
-SUBJECT = "🎉 Congratulations on Your Application! Shortlisted for Interview"
-with open("shortlistedCandidatesDesign.json", "r", encoding="utf-8") as f:
+SUBJECT = "🎉 GDG JISU - Congratulations on Your Application! Here's the next step!"
+with open("shortlistedCandidatesContent.json", "r", encoding="utf-8") as f:
     participants = json.load(f)
 for participant in participants:
     name = participant['name']
     to_email = participant['email']
     print(f"Preparing email for {name} <{to_email}>")
-    content = prepareBodyDesign(name)
+    content = prepareBodyContent(name)
     msg = EmailMessage()
     msg["Subject"] = SUBJECT
     msg["From"] = FROM_EMAIL

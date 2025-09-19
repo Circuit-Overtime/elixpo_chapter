@@ -1,4 +1,4 @@
-def prepareContentBody(name):
+def prepareBody(name):
     html = f"""
     <html>
     <head>
