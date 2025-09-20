@@ -1,5 +1,6 @@
 from emailBodyDesign import prepareBody as prepareBodyDesign
 from emailBodyContent import prepareBody as prepareBodyContent
+from emailBodyShortlisted import prepareShortlistBody
 import os
 import json
 import smtplib
@@ -13,14 +14,15 @@ SMTP_PORT = 587
 SMTP_USER = os.getenv("GMAIL_USER_CORE")  
 SMTP_PASSWORD = os.getenv("GMAIL_PASSWORD_CORE")  
 FROM_EMAIL = SMTP_USER
-SUBJECT = "🎉 GDG JISU - Congratulations on Your Application! Here's the next step!"
-with open("shortlistedCandidatesContent.json", "r", encoding="utf-8") as f:
+SUBJECT = "🎉 GDG JISU - Congratulations on Your Application! Shortlisted for interview ~"
+with open("interviewCandidates.json", "r", encoding="utf-8") as f:
     participants = json.load(f)
 for participant in participants:
     name = participant['name']
     to_email = participant['email']
+    role = participant['role']
     print(f"Preparing email for {name} <{to_email}>")
-    content = prepareBodyContent(name)
+    content = prepareShortlistBody(name, role)
     msg = EmailMessage()
     msg["Subject"] = SUBJECT
     msg["From"] = FROM_EMAIL
