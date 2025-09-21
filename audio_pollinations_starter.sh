@@ -26,4 +26,4 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd):$(pwd)/src"
 echo "Starting the model server"
 python src/model_server.py
 echo "Starting the app on port 8000..."
-hypercorn src.app:app --workers 10 --bind 0.0.0.0:8000
+hypercorn src.app:app --workers 3 --bind 0.0.0.0:8000
