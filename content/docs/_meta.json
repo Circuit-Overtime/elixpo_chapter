@@ -38,7 +38,9 @@
       "title": "Buttons",
       "icon": "Home",
       "pages": [
-        "components/buttons/buttons-first-v1"
+        "components/button/button-morph",
+        "components/button/button-glitch",
+        "components/button/button-neon"
       ]
     },
     {
