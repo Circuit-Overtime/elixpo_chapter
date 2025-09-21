@@ -21,7 +21,7 @@ const prePath =
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : process.env.NEXT_PUBLIC_SITE_URL
     ? `https://${process.env.NEXT_PUBLIC_SITE_URL}`
-    : "https://localhost:3000"; // 👈 safe fallback
+    : "https://fing-ui.vercel.app/"; // 👈 safe fallback
 export const Preview = (
 {
   children,
