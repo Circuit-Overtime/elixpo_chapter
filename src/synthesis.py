@@ -95,13 +95,12 @@ if __name__ == "__main__":
     async def main():
         global higgs_engine
         # chatTemplate = "/tmp/higgs/request224/chatTemplate.json"
-        cloneAudio = "audio.wav"
-        base64 = encode_audio_base64(cloneAudio)
+        # cloneAudio = "audio.wav"
+        # base64 = encode_audio_base64(cloneAudio)
         chatTemplate = create_speaker_chat(
             text = "This is a test audio being generated as a part of the api response check",
             requestID = "request12",
             system = "You are a voice synthesis engine. Speak the user’s text exactly and only as written. Do not add extra words, introductions, or confirmations.",
-            clone_audio_path = base64,
             clone_audio_transcript = None
         )
         higgs_engine = HiggsAudioServeEngine("bosonai/higgs-audio-v2-generation-3B-base", "bosonai/higgs-audio-v2-tokenizer")

@@ -17,8 +17,6 @@ class ModelService:
         }
         
         self.request_queue.put(request)
-        
-        # Wait for response
         while True:
             try:
                 response = self.response_queue.get(timeout=1)
@@ -40,7 +38,6 @@ class ModelService:
         
         self.request_queue.put(request)
         
-        # Wait for response
         while True:
             try:
                 response = self.response_queue.get(timeout=1)
@@ -51,7 +48,6 @@ class ModelService:
             except:
                 await asyncio.sleep(0.1)
 
-# Global service instance
 _model_service = None
 
 def get_model_service():

@@ -29,6 +29,7 @@ def model_worker(request_queue, response_queue):
             break
         try:
             if req["type"] == "tts":
+                print("Recieved req for the tts encoding now")
                 audio_bytes = run_async_synthesis(req["chat_template"])
                 response_queue.put({"id": req["id"], "result": audio_bytes})
             elif req["type"] == "transcribe":

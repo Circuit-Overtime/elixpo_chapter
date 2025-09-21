@@ -56,7 +56,6 @@ if __name__ == "__main__":
     import multiprocessing as mp
     from model_server import model_worker
     from model_service import init_model_service
-    import torchaudio
 
     mp.set_start_method('spawn', force=True)
     request_queue = mp.Queue()
