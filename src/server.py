@@ -30,8 +30,8 @@ async def run_audio_pipeline(
     reqID: str = None,
     text: str = None,
     voice: str = None,
-    synthesis_audio_path: Optional[str] = None, #this is b64 speech input for STS or STT 
-    clone_audio_transcript: Optional[str] = None, #this is transcript of the cloned voice
+    synthesis_audio_path: Optional[str] = None, 
+    clone_audio_transcript: Optional[str] = None,
     system_instruction: Optional[str] = None 
 ):
     

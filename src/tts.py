@@ -47,7 +47,7 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
             clone_audio_path=clone_path,
             clone_audio_transcript=clone_text
         )
-        
+        print(f"Generating Audio for {requestID}")
         model_service = get_model_service()
         audio_bytes = await model_service.synthesize_speech_async(prepareChatTemplate)
         return audio_bytes
@@ -57,6 +57,7 @@ if __name__ == "__main__":
     from model_server import model_worker
     from model_service import init_model_service
 
+    mp.set_start_method('spawn', force=True)
     request_queue = mp.Queue()
     response_queue = mp.Queue()
     worker_process = mp.Process(target=model_worker, args=(request_queue, response_queue))
