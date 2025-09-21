@@ -4,8 +4,16 @@
   "icon": "Bot",
   "pages": [
     {
-      "title": "button-v1",
+      "title": "button-morph",
       "path": "button/button-morph"
+    },
+    {
+      "title": "button-glitched",
+      "path": "button/button-glitch"
+    },
+     {
+      "title": "button-NeonBorder",
+      "path": "button/button-neon"
     }
   ]
 }
