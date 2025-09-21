@@ -17,6 +17,10 @@ import time
 import asyncio
 import atexit
 import os
+import threading
+import queue
+import io
+import traceback
 
 # Model worker variables
 request_queue = None
@@ -40,13 +44,29 @@ def init_cache_cleanup():
         
     try:
         logger.info("Starting cache cleanup process")
-        cache_request_queue = mp.Queue()
-        cache_response_queue = mp.Queue()
-        cache_cleanup_process = mp.Process(
-            target=cache_cleanup_worker, 
-            args=(cache_request_queue, cache_response_queue)
-        )
-        cache_cleanup_process.start()
+        
+        # Use threading if we're in a daemon process, otherwise use multiprocessing
+        if is_daemon_process():
+            logger.info("Running in daemon process, using threading for cache cleanup")
+            import queue
+            cache_request_queue = queue.Queue()
+            cache_response_queue = queue.Queue()
+            
+            # Wrap cache_cleanup_worker for threading
+            def thread_cache_worker():
+                cache_cleanup_worker(cache_request_queue, cache_response_queue)
+            
+            cache_cleanup_thread = threading.Thread(target=thread_cache_worker, daemon=True)
+            cache_cleanup_thread.start()
+        else:
+            logger.info("Running in main process, using multiprocessing for cache cleanup")
+            cache_request_queue = mp.Queue()
+            cache_response_queue = mp.Queue()
+            cache_cleanup_process = mp.Process(
+                target=cache_cleanup_worker, 
+                args=(cache_request_queue, cache_response_queue)
+            )
+            cache_cleanup_process.start()
         
         init_cache_service(cache_request_queue, cache_response_queue)
         _cache_initialized = True
@@ -70,6 +90,8 @@ def cleanup_cache_worker():
             if cache_cleanup_process.is_alive():
                 cache_cleanup_process.terminate()
                 logger.warning("Cache cleanup process terminated forcefully")
+        
+        # Note: Thread cleanup happens automatically with daemon=True
             
     except Exception as e:
         logger.error(f"Error cleaning up cache worker: {e}")
