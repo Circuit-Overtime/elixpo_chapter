@@ -323,11 +323,11 @@ Analyze this request and call the appropriate pipeline function.
 
 if __name__ == "__main__":
     async def main():
-        text = "Expand some facts on this please"
+        text = "good morning fellow humans, what a wonderful day to be alive!"
         synthesis_audio_path = None
         requestID = reqID()
         voice = "ash"
-        synthesis_audio_path="trialCodes/sample.wav"
+        synthesis_audio_path=None
         clone_audio_transcript = None
         
 
