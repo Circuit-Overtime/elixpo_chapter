@@ -16,7 +16,8 @@ from tts import generate_tts
 from ttt import generate_ttt
 from sts import generate_sts
 from stt import generate_stt
-import loggerConfig
+
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("elixpo-audio")
 
@@ -353,20 +354,21 @@ if __name__ == "__main__":
             saved_base64_path_speech = save_temp_audio(base64_synthesis_audio, reqID, "speech")
 
         result = await run_audio_pipeline(reqID=requestID, text=text, voice=saved_base64_path_clone, synthesis_audio_path=saved_base64_path_speech, clone_audio_transcript=clone_audio_transcript)
+        
 
-        if not result:
-            print("[ERROR] Pipeline returned None")
-            return
+        # if not result:
+        #     print("[ERROR] Pipeline returned None")
+        #     return
 
-        if result["type"] == "text":
-            print(f"[Pipeline Result | Text] Content: {result['data']}")
-            print(f"[Pipeline Result | Text] File saved at: {result.get('file_path', 'N/A')}")
+        # if result["type"] == "text":
+        #     print(f"[Pipeline Result | Text] Content: {result['data']}")
+        #     print(f"[Pipeline Result | Text] File saved at: {result.get('file_path', 'N/A')}")
 
-        elif result["type"] == "audio":
-            print(f"[Pipeline Result | Audio] Audio bytes length: {len(result['data'])} bytes")
-            print(f"[Pipeline Result | Audio] File saved at: {result.get('file_path', 'N/A')}")
+        # elif result["type"] == "audio":
+        #     print(f"[Pipeline Result | Audio] Audio bytes length: {len(result['data'])} bytes")
+        #     print(f"[Pipeline Result | Audio] File saved at: {result.get('file_path', 'N/A')}")
 
-        elif result["type"] == "error":
-            print(f"[Pipeline Error] {result['message']}")
+        # elif result["type"] == "error":
+        #     print(f"[Pipeline Error] {result['message']}")
 
     asyncio.run(main())

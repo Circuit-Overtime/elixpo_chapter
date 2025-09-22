@@ -9,7 +9,6 @@ _cache_service = None
 
 
 def base62_encode(num: int) -> str:
-    """Convert an integer to a base62 string."""
     if num == 0:
         return BASE62[0]
     digits = []
@@ -20,14 +19,12 @@ def base62_encode(num: int) -> str:
     return ''.join(reversed(digits))
 
 def cacheName(query: str, length: int = 16) -> str:
-    """Generate deterministic alphanumeric cache name from query."""
     digest = hashlib.sha256(query.encode()).digest()
     num = int.from_bytes(digest[:8], 'big')
     encoded = base62_encode(num)
     return encoded[:length]
 
 def cache_cleanup_worker(request_queue, response_queue):
-    """Dedicated cache cleanup worker process"""
     logger.info("Cache cleanup worker process started")
     
     while True:
