@@ -7,7 +7,9 @@ from loguru import logger
 import time, resource
 import hashlib
 import string
+from config import TRANSCRIBE_MODEL_SIZE
 import os
+
 
 BASE62 = string.digits + string.ascii_letters
 _cache_service = None
@@ -30,13 +32,12 @@ def base62_encode(num: int) -> str:
 class ipcModules:
     logger.info("Loading IPC Device...")
     def __init__(self):
-        self.model = whisper.load_model("base")
+        self.model = whisper.load_model(TRANSCRIBE_MODEL_SIZE)
         self.serve_engine = HiggsAudioServeEngine(
             MODEL_PATH,
             AUDIO_TOKENIZER_PATH,
             device=device,
         )
-
 
     def stop_cleanup(self):
         try:
@@ -44,9 +45,8 @@ class ipcModules:
         except Exception as e:
             logger.error(f"Error stopping cache cleanup: {e}")
 
-
-    
-    def cleanup_old_cache_files():
+    @staticmethod
+    def cleanup_old_cache_files():  # Make it static to avoid proxy issues
         try:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             gen_audio_folder = os.path.join(script_dir, "..", "genAudio")
@@ -78,18 +78,16 @@ class ipcModules:
         except Exception as e:
             logger.error(f"Error during cache cleanup: {e}")
 
-
-    def cacheName(query: str, length: int = 16) -> str:
-        digest = hashlib.sha256(query.encode()).digest()
+    @staticmethod
+    def cacheName(query: str, length: int = 16) -> str:  # Make it static to avoid proxy issues
+        # Encode the query string locally to avoid multiprocessing proxy issues
+        query_bytes = query.encode('utf-8')
+        digest = hashlib.sha256(query_bytes).digest()
         num = int.from_bytes(digest[:8], 'big')
         encoded = base62_encode(num)
         return encoded[:length]
 
-    
-
-    
-
-    def speechSynthesis(self, chatTemplate: str):
+    def speechSynthesis(self, chatTemplate: str): 
         logger.info("Starting generation...")
         start_time = time.time()
         try:
@@ -114,11 +112,10 @@ class ipcModules:
 
         return output.audio, output.sampling_rate
 
-    def transcribe(self, audio_path: str) -> str:
+    def transcribe(self, audio_path: str, reqID) -> str:
         result = self.model.transcribe(audio_path)
         return result["text"]
     
-
 
 
 class ModelManager(BaseManager): pass
@@ -134,4 +131,4 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Error in producer main: {e}")
 
-    
+

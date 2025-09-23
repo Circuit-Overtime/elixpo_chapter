@@ -86,7 +86,7 @@ def save_temp_audio(audio_data: str, req_id: str, usageType: str = "clone") -> s
 
     tmp_dir = f"/tmp/higgs/{req_id}"
     os.makedirs(tmp_dir, exist_ok=True)
-    file_path = os.path.join(tmp_dir, f"voice_{req_id}.txt" if usageType == "clone" else f"speech_{req_id}.txt")
+    file_path = os.path.join(tmp_dir, f"voice_{req_id}.wav" if usageType == "clone" else f"speech_{req_id}.wav")
 
     with open(file_path, "w") as f:
         f.write(audio_data)
