@@ -7,18 +7,19 @@ from loguru import logger
 import time, resource
 import hashlib
 import string
-from config import TRANSCRIBE_MODEL_SIZE, MAX_CACHE_SIZE_MB, MAX_CACHE_FILES
+from config import TRANSCRIBE_MODEL_SIZE, MAX_CACHE_SIZE_MB, MAX_CACHE_FILES, MAX_CONCURRENT_OPERATIONS
 import os
 import time
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+import threading
+from functools import wraps
 
 BASE62 = string.digits + string.ascii_letters
 MODEL_PATH = "bosonai/higgs-audio-v2-generation-3B-base"
 AUDIO_TOKENIZER_PATH = "bosonai/higgs-audio-v2-tokenizer"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 torch.cuda.set_per_process_memory_fraction(0.5, 0)
-
-
 
 
 def base62_encode(num: int) -> str:
@@ -31,6 +32,12 @@ def base62_encode(num: int) -> str:
         digits.append(BASE62[rem])
     return ''.join(reversed(digits))
 
+def thread_safe_gpu_operation(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        with self._gpu_lock:
+            return func(self, *args, **kwargs)
+    return wrapper
 
 class ipcModules:
     logger.info("Loading IPC Device...")
@@ -41,12 +48,16 @@ class ipcModules:
             AUDIO_TOKENIZER_PATH,
             device=device,
         )
+        self.executor = ThreadPoolExecutor(max_workers=MAX_CONCURRENT_OPERATIONS, thread_name_prefix="AudioOp")
+        self._gpu_lock = threading.Lock()
+        self._operation_semaphore = threading.Semaphore(MAX_CONCURRENT_OPERATIONS)
 
     def stop_cleanup(self):
         try:
             self.request_queue.put("STOP")
         except Exception as e:
             logger.error(f"Error stopping cache cleanup: {e}")
+        self.executor.shutdown(wait=True, timeout=30)
 
     @staticmethod
     def cleanup_old_cache_files(): 
@@ -119,54 +130,89 @@ class ipcModules:
 
     @staticmethod
     def cacheName(query: str, length: int = 16) -> str:  
-       
         query_bytes = query.encode('utf-8')
         digest = hashlib.sha256(query_bytes).digest()
         num = int.from_bytes(digest[:8], 'big')
         encoded = base62_encode(num)
         return encoded[:length]
 
-    def speechSynthesis(self, chatTemplate: str): 
-        logger.info("Starting generation...")
-        start_time = time.time()
-        try:
-            output: HiggsAudioResponse = self.serve_engine.generate(
-                chat_ml_sample=chatTemplate,
-                max_new_tokens=1024,
-                temperature=1.0,
-                top_p=0.95,
-                top_k=50,
-                stop_strings=["<|end_of_text|>", "<|eot_id|>"],
-            )
-        except RuntimeError as e:
-            if "CUDA out of memory" in str(e):
-                logger.error("GPU OOM — request denied")
-                return None, None
-            raise e
+    def _speechSynthesis_worker(self, chatTemplate: str):
+        with self._operation_semaphore:
+            thread_id = threading.current_thread().name
+            logger.info(f"[{thread_id}] Starting generation...")
+            start_time = time.time()
+            
+            try:
+                with self._gpu_lock:
+                    output: HiggsAudioResponse = self.serve_engine.generate(
+                        chat_ml_sample=chatTemplate,
+                        max_new_tokens=1024,
+                        temperature=1.0,
+                        top_p=0.95,
+                        top_k=50,
+                        stop_strings=["<|end_of_text|>", "<|eot_id|>"],
+                    )
+                    torch.cuda.empty_cache()
+                    
+            except RuntimeError as e:
+                if "CUDA out of memory" in str(e):
+                    logger.error(f"[{thread_id}] GPU OOM — request denied")
+                    return None, None
+                raise e
 
-        elapsed_time = time.time() - start_time
-        logger.info(f"Generation time: {elapsed_time:.2f} seconds")
+            elapsed_time = time.time() - start_time
+            logger.info(f"[{thread_id}] Generation time: {elapsed_time:.2f} seconds")
 
-        torch.cuda.empty_cache()
+            return output.audio, output.sampling_rate
 
-        return output.audio, output.sampling_rate
+    def speechSynthesis(self, chatTemplate: str):
+        future = self.executor.submit(self._speechSynthesis_worker, chatTemplate)
+        return future.result()  
+
+    def speechSynthesis_async(self, chatTemplate: str):
+        return self.executor.submit(self._speechSynthesis_worker, chatTemplate)
+
+    def _transcribe_worker(self, audio_path: str, reqID):
+        with self._operation_semaphore:
+            thread_id = threading.current_thread().name
+            logger.info(f"[{thread_id}] Starting transcription for request {reqID}")
+            start_time = time.time()
+            
+            try:
+                result = self.model.transcribe(audio_path)
+                elapsed_time = time.time() - start_time
+                logger.info(f"[{thread_id}] Transcription time: {elapsed_time:.2f} seconds")
+                return result["text"]
+            except Exception as e:
+                logger.error(f"[{thread_id}] Transcription error: {e}")
+                raise e
 
     def transcribe(self, audio_path: str, reqID) -> str:
-        result = self.model.transcribe(audio_path)
-        return result["text"]
-    
+        future = self.executor.submit(self._transcribe_worker, audio_path, reqID)
+        return future.result()  
 
+    def transcribe_async(self, audio_path: str, reqID):
+        return self.executor.submit(self._transcribe_worker, audio_path, reqID)
+
+    def get_active_operations_count(self):
+        return MAX_CONCURRENT_OPERATIONS - self._operation_semaphore._value
 
 class ModelManager(BaseManager): pass
-
 if __name__ == "__main__":
     try:
         server = ipcModules()
         ModelManager.register("Service", callable=lambda: server)
         
         manager = ModelManager(address=("localhost", 6000), authkey=b"secret")
-        print("[Producer] Server started at localhost:6000")
-        manager.get_server().serve_forever()
+        print(f"[Producer] Server started at localhost:6000 with {MAX_CONCURRENT_OPERATIONS} concurrent operations")
+        
+        try:
+            manager.get_server().serve_forever()
+        except KeyboardInterrupt:
+            logger.info("Shutting down server...")
+        finally:
+            server.stop_cleanup()
+            
     except Exception as e:
         logger.error(f"Error in producer main: {e}")
 

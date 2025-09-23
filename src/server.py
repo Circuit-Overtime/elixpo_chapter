@@ -182,10 +182,8 @@ Analyze this request and call the appropriate pipeline function.
 
                         audio_path = os.path.join(higgs_dir, f"{reqID}.wav")
                         torchaudio.save(audio_path, torch.from_numpy(audio_bytes)[None, :], sample_rate)
-                        
-                        logger.info(f"[{reqID}] TTS audio saved to: {audio_path}")
 
-                        # Convert to actual WAV bytes for response
+                        logger.info(f"[{reqID}] TTS audio saved to: {audio_path}")
                         with open(audio_path, "rb") as f:
                             wav_bytes = f.read()
                         
@@ -210,7 +208,6 @@ Analyze this request and call the appropriate pipeline function.
                             system=fn_args.get("system")
                         )
                         
-                        # Save text to higgs directory
                         text_path = os.path.join(higgs_dir, f"{reqID}.txt")
                         with open(text_path, "w", encoding="utf-8") as f:
                             f.write(text_result)
@@ -239,11 +236,9 @@ Analyze this request and call the appropriate pipeline function.
                         audio_path = os.path.join(higgs_dir, f"{reqID}.wav")
                         torchaudio.save(audio_path, torch.from_numpy(audio_bytes)[None, :], sample_rate)
 
-                        # Convert to actual WAV bytes for response
                         with open(audio_path, "rb") as f:
                             wav_bytes = f.read()
 
-                        # Also save a copy to genAudio directory
                         os.makedirs("genAudio", exist_ok=True)
                         gen_audio_path = f"genAudio/{reqID}.wav"
                         with open(gen_audio_path, "wb") as f:
@@ -267,8 +262,7 @@ Analyze this request and call the appropriate pipeline function.
                             requestID=fn_args.get("requestID"),
                             system=fn_args.get("system")
                         )
-                        
-                        # Save text to higgs directory
+
                         text_path = os.path.join(higgs_dir, f"{reqID}.txt")
                         with open(text_path, "w", encoding="utf-8") as f:
                             f.write(text_result)
@@ -316,7 +310,6 @@ Analyze this request and call the appropriate pipeline function.
             "reqID": reqID
         }
     finally:
-        # Clean up higgs directory after pipeline completion
         try:
             if os.path.exists(higgs_dir):
                 shutil.rmtree(higgs_dir)
