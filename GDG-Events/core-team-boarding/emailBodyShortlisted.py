@@ -51,7 +51,7 @@ def prepareShortlistBody(name, role):
             </p>
             <div class="highlight">
                 <b>Interview Date:</b> 24th September 2025<br>
-                <b>Time:</b> Will be informed soon via WhatsApp group
+                <b>Time:</b> Will be informed soon via WhatsApp group by 5:00PM.
             </div>
             <p>
                 To ensure you receive all further updates and instructions regarding the interview, please join our official WhatsApp group using the link below:
@@ -62,7 +62,6 @@ def prepareShortlistBody(name, role):
             <p style="color:#d32f2f;">
                 <b>Important:</b> Please <u>do not share</u> this group link with anyone else. Sharing the link will lead to <b>direct disqualification</b> from the selection process.
                 <br> 
-                If you have had applied for Design Team / Content Team we are yet to roll out the approval emails for the same. Please wait for the same patiently on 22nd September 2025 (tentative).
             </p>
             <p>
                 All further details regarding the interview (including the exact time and instructions) will be communicated in the WhatsApp group. Please make sure to join as soon as possible and keep notifications on.

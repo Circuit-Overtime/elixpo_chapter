@@ -15,7 +15,7 @@ SMTP_USER = os.getenv("GMAIL_USER_CORE")
 SMTP_PASSWORD = os.getenv("GMAIL_PASSWORD_CORE")  
 FROM_EMAIL = SMTP_USER
 SUBJECT = "🎉 GDG JISU - Congratulations on Your Application! Shortlisted for interview ~"
-with open("interviewCandidates.json", "r", encoding="utf-8") as f:
+with open("interviewContentCandidate.json", "r", encoding="utf-8") as f:
     participants = json.load(f)
 for participant in participants:
     name = participant['name']
