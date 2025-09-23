@@ -227,11 +227,12 @@ def audio_endpoint():
             if speech_audio_b64:
                 try:
                     decoded = validate_and_decode_base64_audio(speech_audio_b64, max_duration_sec=60)
-                    speech_audio_path = convertToAudio(decoded, request_id)
+                    saved_audio_path = save_temp_audio(decoded, request_id, "speech")
+                    speech_audio_path = convertToAudio(saved_audio_path, request_id)
                 except Exception as e:
                     return jsonify({"error": {"message": f"Invalid speech_audio: {e}", "code": 400}}), 400
 
-            # Run audio pipeline
+
             result = asyncio.run(run_audio_pipeline(
                 reqID=request_id,
                 text=text,
