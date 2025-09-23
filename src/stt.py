@@ -47,7 +47,7 @@ if __name__ == "__main__":
         saved_path = save_temp_audio(base64_audio, "223Req", "speech")
         content = await generate_stt(
             text="Transcribe the audio",
-            audio_base64_path=saved_path,
+            audio_base64_path=audio,
             requestID="223Req",
             system=None,
         )
