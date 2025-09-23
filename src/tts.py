@@ -1,11 +1,23 @@
 from templates import create_speaker_chat
-from model_service import get_model_service
 from systemInstruction import generate_higgs_system_instruction
 from intent import getIntentType
 from utility import encode_audio_base64, validate_and_decode_base64_audio, save_temp_audio
 from voiceMap import VOICE_BASE64_MAP
+from synthesis import synthesize_speech
 import asyncio
 from typing import Optional
+from multiprocessing.managers import BaseManager
+import os
+import threading
+import time
+import torch
+import torchaudio
+
+class ModelManager(BaseManager): pass
+ModelManager.register("Service")
+manager = ModelManager(address=("localhost", 6000), authkey=b"secret")
+manager.connect()
+service = manager.Service()
 
 async def generate_tts(text: str, requestID: str, system: Optional[str] = None, clone_text: Optional[str] = None, voice: Optional[str] = "alloy") -> bytes:
 
@@ -48,21 +60,15 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
             clone_audio_transcript=clone_text
         )
         print(f"Generating Audio for {requestID}")
-        model_service = get_model_service()
-        audio_bytes = await model_service.synthesize_speech_async(prepareChatTemplate)
+        audio_bytes = await service.speechSynthesis(chatTemplate=prepareChatTemplate)
         return audio_bytes
 
 if __name__ == "__main__":
-    import multiprocessing as mp
-    from model_server import model_worker
-    from model_service import init_model_service
-
-    mp.set_start_method('spawn', force=True)
-    request_queue = mp.Queue()
-    response_queue = mp.Queue()
-    worker_process = mp.Process(target=model_worker, args=(request_queue, response_queue))
-    worker_process.start()
-    init_model_service(request_queue, response_queue)
+    class ModelManager(BaseManager): pass
+    ModelManager.register("Service")
+    manager = ModelManager(address=("localhost", 6000), authkey=b"secret")
+    manager.connect()
+    service = manager.Service()
 
     async def main():
         text = "Such a beautiful day to start with!! What's on your mind?"
@@ -71,10 +77,29 @@ if __name__ == "__main__":
         voice = "alloy"
         clone_text = None
         
+        def cleanup_cache():
+            while True:
+                try:
+                    service.cleanup_old_cache_files()
+                except Exception as e:
+                    print(f"Cleanup error: {e}")
+
+                time.sleep(600)
+
+        cleanup_thread = threading.Thread(target=cleanup_cache, daemon=True)
+        cleanup_thread.start()
+        cache_name = service.cacheName(text)
+        if os.path.exists(f"genAudio/{cache_name}.wav"):
+            print(f"Cache hit: genAudio/{cache_name}.wav already exists.")
+            return
+        
         audio_bytes = await generate_tts(text, requestID, system, clone_text, voice)
-        with open("output_reply.wav", "wb") as f:
+        with open(f"{cache_name}.wav", "wb") as f:
             f.write(audio_bytes)
-        print("Audio saved as output_reply.wav")
-    
+        with open(f"genAudio/{cache_name}.wav", "wb") as f:
+            f.write(audio_bytes)
+
+        print(f"Audio saved as {cache_name}.wav")
+
     asyncio.run(main())
-    worker_process.terminate()
+    

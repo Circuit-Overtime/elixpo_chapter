@@ -5,37 +5,27 @@ from utility import save_temp_audio, cleanup_temp_file, validate_and_decode_base
 from requestID import reqID
 from voiceMap import VOICE_BASE64_MAP
 from server import run_audio_pipeline
-from cacheHash import cacheName, cache_cleanup_worker, init_cache_service
 import multiprocessing as mp
+from multiprocessing.managers import BaseManager
 import threading
-import queue
-import io
 import traceback
 from wittyMessages import get_validation_error, get_witty_error
 import time
 import asyncio
 import os
-import threading
 import queue
 import io
 import traceback
 
-# Model worker variables
-request_queue = None
-response_queue = None
-worker_process = None
-worker_thread = None
-_worker_initialized = False
-
-# Cache cleanup process variables
-cache_request_queue = None
-cache_response_queue = None
-cache_cleanup_process = None
-_cache_initialized = False
-
 
 app = Flask(__name__)
 CORS(app)
+
+class ModelManager(BaseManager): pass
+ModelManager.register("Service")
+manager = ModelManager(address=("localhost", 6000), authkey=b"secret")
+manager.connect()
+service = manager.Service()
 
 @app.before_request
 def before_request():
@@ -70,7 +60,7 @@ def audio_endpoint():
             voice_path = None
             request_id = None
 
-            generateHashValue = cacheName(f"{text}{system if system else ''}{voice if voice else ''}{str(seed) if seed else 42}")
+            generateHashValue = service.cacheName(f"{text}{system if system else ''}{voice if voice else ''}{str(seed) if seed else 42}")
             request_id = generateHashValue
             gen_audio_folder = os.path.join(os.path.dirname(__file__), "..", "genAudio")
             cached_audio_path = os.path.join(gen_audio_folder, f"{generateHashValue}.wav")
@@ -184,7 +174,7 @@ def audio_endpoint():
                 return jsonify({"error": {"message": "Provide either 'voice.data' (base64) or 'voice.name', not both.", "code": 400}}), 400
 
             # Generate cache key and check cache
-            generateHashValue = cacheName(f"{text}{system_instruction if system_instruction else ''}{voice_name if voice_name else ''}{str(seed) if seed else 42}")
+            generateHashValue = service.cacheName(f"{text}{system_instruction if system_instruction else ''}{voice_name if voice_name else ''}{str(seed) if seed else 42}")
             request_id = generateHashValue
             gen_audio_folder = os.path.join(os.path.dirname(__file__), "..", "genAudio")
             cached_audio_path = os.path.join(gen_audio_folder, f"{generateHashValue}.wav")
