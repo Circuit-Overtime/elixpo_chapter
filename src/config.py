@@ -13,4 +13,6 @@ DEFAULT_SYSTEM_PROMPT = (
 
 DEFAULT_STOP_STRINGS = ["<|end_of_text|>", "<|eot_id|>"]
 TEMP_SAVE_DIR = "/tmp/higgs/"
+MAX_CACHE_SIZE_MB = 500 
+MAX_CACHE_FILES = 100    
 TRANSCRIBE_MODEL_SIZE = "small"

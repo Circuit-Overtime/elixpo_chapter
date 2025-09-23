@@ -7,16 +7,19 @@ from loguru import logger
 import time, resource
 import hashlib
 import string
-from config import TRANSCRIBE_MODEL_SIZE
+from config import TRANSCRIBE_MODEL_SIZE, MAX_CACHE_SIZE_MB, MAX_CACHE_FILES
 import os
-
+import time
+from pathlib import Path
 
 BASE62 = string.digits + string.ascii_letters
-_cache_service = None
 MODEL_PATH = "bosonai/higgs-audio-v2-generation-3B-base"
 AUDIO_TOKENIZER_PATH = "bosonai/higgs-audio-v2-tokenizer"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 torch.cuda.set_per_process_memory_fraction(0.5, 0)
+
+
+
 
 def base62_encode(num: int) -> str:
     if num == 0:
@@ -46,41 +49,77 @@ class ipcModules:
             logger.error(f"Error stopping cache cleanup: {e}")
 
     @staticmethod
-    def cleanup_old_cache_files():  # Make it static to avoid proxy issues
+    def cleanup_old_cache_files(): 
         try:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             gen_audio_folder = os.path.join(script_dir, "..", "genAudio")
             
             if not os.path.exists(gen_audio_folder):
                 return
-                
-            current_time = time.time()
-            one_hour_ago = current_time - 3600  
             
-            cleaned_count = 0
+            files_info = []
+            total_size = 0
+            
             for filename in os.listdir(gen_audio_folder):
                 if filename.endswith('.wav'):
                     file_path = os.path.join(gen_audio_folder, filename)
                     try:
-                        file_mtime = os.path.getmtime(file_path)
-                        
-                        if file_mtime < one_hour_ago:
-                            os.remove(file_path)
-                            cleaned_count += 1
-                            logger.debug(f"Removed old cache file: {filename}")
-                            
+                        stat = os.stat(file_path)
+                        files_info.append({
+                            'path': file_path,
+                            'filename': filename,
+                            'atime': stat.st_atime, 
+                            'size': stat.st_size
+                        })
+                        total_size += stat.st_size
                     except OSError as e:
-                        logger.warning(f"Failed to remove cache file {filename}: {e}")
-                        
+                        logger.warning(f"Failed to stat cache file {filename}: {e}")
+            
+            files_info.sort(key=lambda x: x['atime'])
+            
+            total_size_mb = total_size / (1024 * 1024)
+            cleaned_count = 0
+            freed_mb = 0
+            files_to_remove = []
+
+            if total_size_mb > MAX_CACHE_SIZE_MB:
+                target_size = MAX_CACHE_SIZE_MB * 0.8 * 1024 * 1024  
+                current_size = total_size
+                
+                for file_info in files_info:
+                    if current_size <= target_size:
+                        break
+                    files_to_remove.append(file_info)
+                    current_size -= file_info['size']
+            
+           
+            if len(files_info) > MAX_CACHE_FILES:
+                excess_count = len(files_info) - int(MAX_CACHE_FILES * 0.8)  
+                for i in range(excess_count):
+                    if files_info[i] not in files_to_remove:
+                        files_to_remove.append(files_info[i])
+            
+            
+            for file_info in files_to_remove:
+                try:
+                    os.remove(file_info['path'])
+                    cleaned_count += 1
+                    freed_mb += file_info['size'] / (1024 * 1024)
+                    logger.debug(f"Removed LRU cache file: {file_info['filename']}")
+                except OSError as e:
+                    logger.warning(f"Failed to remove cache file {file_info['filename']}: {e}")
+            
             if cleaned_count > 0:
-                logger.info(f"Cache cleanup: removed {cleaned_count} old audio files")
+                logger.info(f"LRU cache cleanup: removed {cleaned_count} files, freed {freed_mb:.2f} MB")
+            else:
+                logger.debug(f"Cache within limits: {len(files_info)} files, {total_size_mb:.2f} MB")
                 
         except Exception as e:
-            logger.error(f"Error during cache cleanup: {e}")
+            logger.error(f"Error during LRU cache cleanup: {e}")
 
     @staticmethod
-    def cacheName(query: str, length: int = 16) -> str:  # Make it static to avoid proxy issues
-        # Encode the query string locally to avoid multiprocessing proxy issues
+    def cacheName(query: str, length: int = 16) -> str:  
+       
         query_bytes = query.encode('utf-8')
         digest = hashlib.sha256(query_bytes).digest()
         num = int.from_bytes(digest[:8], 'big')

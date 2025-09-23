@@ -6,7 +6,8 @@ import logging
 import asyncio
 import shutil
 from typing import Optional
-
+import torch
+import torchaudio
 from tools import tools
 from config import TEMP_SAVE_DIR
 from utility import encode_audio_base64, save_temp_audio, cleanup_temp_file, validate_and_decode_base64_audio
@@ -171,20 +172,20 @@ Analyze this request and call the appropriate pipeline function.
                 try:
                     if fn_name == "generate_tts":
                         logger.info(f"[{reqID}] Calling TTS pipeline")
-                        audio_bytes = await generate_tts(
+                        audio_bytes,sample_rate = await generate_tts(
                             text=fn_args.get("text"),
                             requestID=fn_args.get("requestID"),
                             system=fn_args.get("system"),
                             clone_text=fn_args.get("clone_text"),
                             voice=fn_args.get("voice")
                         )
-                        
+
                         audio_path = os.path.join(higgs_dir, f"{reqID}.wav")
-                        with open(audio_path, "wb") as f:
-                            f.write(audio_bytes)
+                        torchaudio.save(audio_path, torch.from_numpy(audio_bytes)[None, :], sample_rate)
+
                         logger.info(f"[{reqID}] TTS audio saved to: {audio_path}")
 
-                        # Also save a copy to genAudio directory
+                        
                         os.makedirs("genAudio", exist_ok=True)
                         gen_audio_path = f"genAudio/{reqID}.wav"
                         with open(gen_audio_path, "wb") as f:
@@ -222,7 +223,7 @@ Analyze this request and call the appropriate pipeline function.
 
                     elif fn_name == "generate_sts":
                         logger.info(f"[{reqID}] Calling STS pipeline")
-                        audio_bytes = await generate_sts(
+                        audio_bytes, sample_rate = await generate_sts(
                             text=fn_args.get("text"),
                             audio_base64_path=fn_args.get("synthesis_audio_path"),
                             requestID=fn_args.get("requestID"),
@@ -231,10 +232,9 @@ Analyze this request and call the appropriate pipeline function.
                             voice=fn_args.get("voice", "alloy")
                         )
                         
-                        # Save audio bytes to higgs directory
+                        
                         audio_path = os.path.join(higgs_dir, f"{reqID}.wav")
-                        with open(audio_path, "wb") as f:
-                            f.write(audio_bytes)
+                        torchaudio.save(audio_path, torch.from_numpy(audio_bytes)[None, :], sample_rate)
 
                         # Also save a copy to genAudio directory
                         os.makedirs("genAudio", exist_ok=True)
@@ -356,19 +356,19 @@ if __name__ == "__main__":
         result = await run_audio_pipeline(reqID=requestID, text=text, voice=saved_base64_path_clone, synthesis_audio_path=saved_base64_path_speech, clone_audio_transcript=clone_audio_transcript)
         
 
-        # if not result:
-        #     print("[ERROR] Pipeline returned None")
-        #     return
+        if not result:
+            print("[ERROR] Pipeline returned None")
+            return
 
-        # if result["type"] == "text":
-        #     print(f"[Pipeline Result | Text] Content: {result['data']}")
-        #     print(f"[Pipeline Result | Text] File saved at: {result.get('file_path', 'N/A')}")
+        if result["type"] == "text":
+            print(f"[Pipeline Result | Text] Content: {result['data']}")
+            print(f"[Pipeline Result | Text] File saved at: {result.get('file_path', 'N/A')}")
 
-        # elif result["type"] == "audio":
-        #     print(f"[Pipeline Result | Audio] Audio bytes length: {len(result['data'])} bytes")
-        #     print(f"[Pipeline Result | Audio] File saved at: {result.get('file_path', 'N/A')}")
+        elif result["type"] == "audio":
+            print(f"[Pipeline Result | Audio] Audio bytes length: {len(result['data'])} bytes")
+            print(f"[Pipeline Result | Audio] File saved at: {result.get('file_path', 'N/A')}")
 
-        # elif result["type"] == "error":
-        #     print(f"[Pipeline Error] {result['message']}")
+        elif result["type"] == "error":
+            print(f"[Pipeline Error] {result['message']}")
 
     asyncio.run(main())
