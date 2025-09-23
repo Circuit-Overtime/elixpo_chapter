@@ -90,9 +90,9 @@ if __name__ == "__main__":
         cleanup_thread = threading.Thread(target=cleanup_cache, daemon=True)
         cleanup_thread.start()
         cache_name = service.cacheName(text)
-        if os.path.exists(f"genAudio/{cache_name}.wav"):
-            print(f"Cache hit: genAudio/{cache_name}.wav already exists.")
-            return
+        # if os.path.exists(f"genAudio/{cache_name}.wav"):
+        #     print(f"Cache hit: genAudio/{cache_name}.wav already exists.")
+        #     return
         
         audio_bytes, audio_sample = await generate_tts(text, requestID, system, clone_text, voice)
         torchaudio.save(f"{cache_name}.wav", torch.from_numpy(audio_bytes)[None, :], audio_sample)

@@ -18,17 +18,16 @@ service = manager.Service()
 
 
 async def generate_sts(text: str, audio_base64_path: str, requestID: str, system: Optional[str] = None, clone_text: Optional[str] = None, voice: Optional[str] = "alloy") -> bytes:
-    if voice:
-        load_audio_path = VOICE_BASE64_MAP.get(voice)
-        if load_audio_path:
-            with open(load_audio_path, "r") as f:
-                audio_data = f.read()
-                if validate_and_decode_base64_audio(audio_data):
-                    clone_path = save_temp_audio(audio_data, requestID, "clone")
+    
+    if voice and not VOICE_BASE64_MAP.get(voice):
+        with open(voice, "r") as f:
+            audio_data = f.read()
+            if validate_and_decode_base64_audio(audio_data):
+                clone_path = voice
     else:
         load_audio_path = VOICE_BASE64_MAP.get("alloy")
         base64_data = encode_audio_base64(load_audio_path)    
-        clone_path = save_temp_audio(base64_data, requestID, "clone")   
+        clone_path = save_temp_audio(base64_data, requestID, "clone")  
 
         
     transcription = service.transcribe(audio_base64_path, requestID)
@@ -47,24 +46,22 @@ async def generate_sts(text: str, audio_base64_path: str, requestID: str, system
         """
 
     if intention == "DIRECT":
-        chatTemplate = create_speaker_chat(
+        prepareChatTemplate = create_speaker_chat(
         text=transcription.strip(),
         requestID=requestID,
         system=system,
         clone_audio_path=clone_path,
-        clone_audio_transcript=clone_text
     )
     elif intention == "REPLY":
-        chatTemplate = create_speaker_chat(
+        prepareChatTemplate = create_speaker_chat(
         text=content,
         requestID=requestID,
         system=system,
         clone_audio_path=clone_path,
-        clone_audio_transcript=clone_text
         )
     
-    audio_bytes, sample_rate = service.speechSynthesis(chatTemplate)
-    return audio_bytes, sample_rate
+    audio_bytes, audio_sample = service.speechSynthesis(chatTemplate=prepareChatTemplate)
+    return audio_bytes, audio_sample
 
 if __name__ == "__main__":
     async def main():
