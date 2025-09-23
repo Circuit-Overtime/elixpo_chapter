@@ -125,6 +125,14 @@ def set_random_seed(seed: Optional[int] = None):
             torch.cuda.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
 
+def convertToAudio(audio_base64_path: str, reqID: str) -> str:
+    with open(f"{audio_base64_path}", "r") as f:
+        b64_audio = f.read()
+    audio_bytes = base64.b64decode(b64_audio)
+    audio_path = f"/tmp/higgs/{reqID}/converted_{reqID}.wav"
+    with open(audio_path, "wb") as f:
+        f.write(audio_bytes)
+    return audio_path
 
 def encode_audio_base64(audio_path: str) -> str:
     def is_base64(s: str) -> bool:

@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, Response, g
 from flask_cors import CORS
 from loguru import logger
-from utility import save_temp_audio, cleanup_temp_file, validate_and_decode_base64_audio, encode_audio_base64
+from utility import save_temp_audio, cleanup_temp_file, validate_and_decode_base64_audio, encode_audio_base64, convertToAudio
 from requestID import reqID
 from voiceMap import VOICE_BASE64_MAP
 from server import run_audio_pipeline
@@ -227,7 +227,7 @@ def audio_endpoint():
             if speech_audio_b64:
                 try:
                     decoded = validate_and_decode_base64_audio(speech_audio_b64, max_duration_sec=60)
-                    speech_audio_path = save_temp_audio(decoded, request_id, "speech")
+                    speech_audio_path = convertToAudio(decoded, request_id)
                 except Exception as e:
                     return jsonify({"error": {"message": f"Invalid speech_audio: {e}", "code": 400}}), 400
 
