@@ -28,7 +28,7 @@ const Testimonial = () => {
          </div>
 
          <div className='flex flex-col items-center ' >
-            <span style={{fontFamily: "poppins"}} className='text-5xl text-center md:text-7xl font-black'>Loved By <span className='dark:text-amber-200 text-amber-400'>Developer</span></span>
+            <span  className='text-5xl text-center md:text-7xl font-[poppins] font-black'>Loved By <span className='dark:text-amber-200 text-amber-400'>Developer</span></span>
             <p className='text-xs md:text-lg mt-2 font-mono text-center'>See what the community is saying about <span className='text-blue-400'>FingUI.</span></p>
          </div>
 

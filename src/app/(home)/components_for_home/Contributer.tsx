@@ -47,7 +47,7 @@ const Contributer = () => {
     }, 3300)
   }
   return (
-    <section ref={sectionRef} className='py-20 overflow-x-clip relative'>
+    <section ref={sectionRef} className='py-0 md:py-20 overflow-x-clip relative'>
      <div className='container mx-auto'>
         <div className='flex flex-col items-center gap-y-5'>
             <div  className='flex items-center gap-2 rounded-2xl font-mono border px-4 py-1'>
@@ -58,7 +58,7 @@ const Contributer = () => {
 
            <div className='grid grid-cols-1 md:grid-cols-2 py-0 md:py-20' >
            <div className='flex items-center md:items-start flex-col px-4 md:px-0'>
-             <span style={{fontFamily: 'poppins'}} className='text-5xl text-center md:text-left md:text-8xl font-black '><span className=''>Contribute.</span> <span className='dark:text-amber-200'>Collaborate.</span> <span className='text-blue-400'>Creat.</span></span>
+             <span  className='text-5xl text-center font-[poppins] md:text-left md:text-8xl font-black '><span className=''>Contribute.</span> <span className='dark:text-amber-200'>Collaborate.</span> <span className='text-blue-400'>Creat.</span></span>
             <p className='text-center md:text-left font-mono mt-4 text-xs md:text-xl '>
                 Join the Fing Developer Community — Build the Future with Us (slightly extended, more powerful)
             </p>

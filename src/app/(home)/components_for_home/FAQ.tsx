@@ -28,8 +28,8 @@ const Faq = () => {
 
            <div className="flex flex-col items-center">
             <span
-              style={{ fontFamily: 'poppins' }}
-              className="text-4xl capitalize text-center md:text-6xl font-black"
+             
+              className="text-4xl capitalize font-[poppins] text-center md:text-6xl font-black"
             >
               All you need to{' '}
               <span className="dark:text-amber-200 text-amber-300">Know.</span>

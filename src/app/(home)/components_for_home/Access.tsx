@@ -55,7 +55,7 @@ const Access = () => {
 
          <div className='grid grid-cols-1 md:grid-cols-2 py-0 md:py-20' >
            <div className='flex items-center md:items-start flex-col px-4 md:px-0'>
-             <span style={{fontFamily: 'poppins'}} className='text-5xl text-center md:text-left md:text-8xl font-black '><span className='dark:text-amber-200 text-amber-400'>Buttons</span> That Fit Every Style.</span>
+             <span  className='text-5xl text-center font-[poppins] md:text-left md:text-8xl font-black '><span className='dark:text-amber-200 text-amber-400'>Buttons</span> That Fit Every Style.</span>
             <p className='text-center md:text-left font-mono mt-4 text-xs md:text-xl '>From minimal to bold, discover button variants that add <span className='text-red-400'>
                 personality</span> and <span className='text-blue-400'>functionality</span> to your <span className='text-amber-400'>project</span>.</p>
 

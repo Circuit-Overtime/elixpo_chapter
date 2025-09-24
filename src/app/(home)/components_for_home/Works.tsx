@@ -59,8 +59,8 @@ const Works = () => {
 
           <div className="flex flex-col items-center">
             <span
-              style={{ fontFamily: 'poppins' }}
-              className="text-4xl capitalize text-center md:text-6xl font-black"
+             
+              className="text-4xl font-[poppins] f capitalize text-center md:text-6xl font-black"
             >
               Simple process,{' '}
               <span className="dark:text-amber-200 text-amber-300">beautiful</span> results
