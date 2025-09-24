@@ -23,18 +23,19 @@ with open("finalSelectedInterview.json", "r", encoding="utf-8") as f:
     participants = json.load(f)
 for participant in participants:
     name = participant['name']
-    to_email = participant['email']
-    role = participant['role']
-    print(f"Preparing email for {name} <{to_email}>")
-    content = prepareOnboardingBody(name, role)
-    msg = EmailMessage()
-    msg["Subject"] = SUBJECT
-    msg['From'] = formataddr(("Ayushman Bhattacharya", "bhattacharyaa599@gmail.com"))
-    msg["To"] = to_email
-    msg.set_content(f"{content}", subtype="html")
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.send_message(msg)
-    print(f"✅ Email sent to {name} <{to_email}>")
-    
+    if name == "Kritika Chakraborty":
+        to_email = participant['email']
+        role = participant['role']
+        print(f"Preparing email for {name} <{to_email}>")
+        content = prepareOnboardingBody(name, role)
+        msg = EmailMessage()
+        msg["Subject"] = SUBJECT
+        msg['From'] = formataddr(("Ayushman Bhattacharya", "bhattacharyaa599@gmail.com"))
+        msg["To"] = to_email
+        msg.set_content(f"{content}", subtype="html")
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.send_message(msg)
+        print(f"✅ Email sent to {name} <{to_email}>")
+        
