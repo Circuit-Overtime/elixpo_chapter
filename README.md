@@ -34,8 +34,11 @@ It provides beautiful, reusable, and production-ready components to help develop
 
 ## 🚀 Getting Started  
 
-### 1️⃣ Install
-```bash
-npm install finguui
-# or
-yarn add finguui
+Before installing FingUI, make sure you have the following installed on your system:  
+
+### ✅ Node.js & npm  
+- Download & install from [nodejs.org](https://nodejs.org/)  
+- Verify installation:  
+  ```bash
+  node -v
+  npm -v
