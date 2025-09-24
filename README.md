@@ -1,5 +1,6 @@
 # FingUI 🚀  
-A modern UI library built for speed, flexibility, and developers who love clean design.  
+FingUI is a modern UI component library built with **React**, **Tailwind CSS v4**, and **Framer Motion**.  
+It provides beautiful, reusable, and production-ready components to help developers ship faster without compromising on design.  
 
 ![FingUI Banner](./public/fing.jpg) <!-- Image 1 -->
 
