@@ -202,7 +202,7 @@ export default function PreviewContent({
                                     )}
                                 />
                             )}
-                            <span>npx shadcn add {getFileName()}</span>
+                            <span>bunx shadcn add {getFileName()}</span>
                         </Button>
 
                         {!isBlock && (

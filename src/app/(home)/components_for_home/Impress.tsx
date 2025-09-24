@@ -46,7 +46,7 @@ const images = [
               <SparklesIcon className="  fill-[#EEBDE0] stroke-1 text-neutral-800" />{" "}
               Component Preview
             </Badge> */}
-            <h1 style={{fontFamily: "poppins"}} className="max-w-4xl text-center text-7xl font-black tracking-tight ">
+            <h1  className="max-w-4xl text-center text-7xl font-black font-[poppins] tracking-tight ">
              <span className='text-amber-300'>FingUI</span> is here to express not to impress.
             </h1>
           </article>

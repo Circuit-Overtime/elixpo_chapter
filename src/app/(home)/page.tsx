@@ -13,6 +13,7 @@ import Contributer from './components_for_home/Contributer'
 import Marquee from './components_for_home/Marquee'
 import Impress from './components_for_home/Impress'
 import Footer from './components_for_home/Footer'
+import Line from './components_for_home/Line'
 
 
 const page = () => {
@@ -25,7 +26,8 @@ const page = () => {
     <Testimonial/>
     <Works/>
     <Links/>
-    <FAQ/>
+    <Line/>
+   
     <Contributer/>
     <Marquee/>
     <Impress/>

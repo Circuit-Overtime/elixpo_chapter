@@ -122,8 +122,8 @@ const Links = () => {
 
           <div className="flex flex-col items-center">
             <span
-              style={{ fontFamily: 'poppins' }}
-              className="text-4xl capitalize text-center md:text-6xl font-black"
+             
+              className="text-4xl font-[poppins] capitalize text-center md:text-6xl font-black"
             >
               Minds behind the,{' '}
               <span className="dark:text-amber-200 text-amber-300">FingUI.</span>

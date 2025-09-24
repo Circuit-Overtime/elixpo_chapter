@@ -29,10 +29,14 @@ import Three3d2 from '../images/3d2.png'
 import Three3d3 from '../images/3d3.png'
 import Three3d4 from '../images/3d4.png'
 import Three3d5 from '../images/3d5.png'
+import FINGAI_DARK from '../images/fingAI_dark.svg'
+import FINGAI_LIGHT from "../images/fingAI_light.svg"
 
 export const LOGO = {
      DARK_LOGO,
-     LIGHT_LOGO
+     LIGHT_LOGO,
+     FINGAI_DARK,
+     FINGAI_LIGHT
 }
 export const Show = {
       Show1,
