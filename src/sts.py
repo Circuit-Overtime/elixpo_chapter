@@ -67,6 +67,10 @@ async def generate_sts(text: str, audio_base64_path: str, requestID: str, system
     buffer = io.BytesIO()
     torchaudio.save(buffer, audio_tensor, audio_sample, format="wav")
     audio_bytes = buffer.getvalue()
+    
+    # Add the missing return statement
+    return audio_bytes, audio_sample
+
 
 if __name__ == "__main__":
     async def main():

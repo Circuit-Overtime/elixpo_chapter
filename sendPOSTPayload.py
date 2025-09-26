@@ -16,13 +16,13 @@ payload = {
         {
             "role": "system",
             "content": [
-                {"type": "text", "text": "You are an audio transcriber"}
+                {"type": "text", "text": "You generate audio from the users input"}
             ]
         },
         {
             "role": "user",
             "content": [
-                {"type": "text", "text": "Transcribe the users audio for me"},
+                {"type": "text", "text": "Give me a cool reply of the transcribed audio"},
                 {
                     "type": "voice",
                     "voice": {

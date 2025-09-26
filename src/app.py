@@ -252,9 +252,35 @@ def audio_endpoint():
                     }
                 )
             elif result["type"] == "text":
-                return jsonify({"text": result["data"], "request_id": request_id})
+                return jsonify({
+                    "id": request_id,
+                    "object": "chat.completion",
+                    "choices": [
+                        {
+                            "index": 0,
+                            "message": {
+                                "role": "assistant",
+                                "content": result["data"]
+                            },
+                            "finish_reason": "stop"
+                        }
+                    ]
+                })
             else:
-                return jsonify({"error": {"message": result.get("message", "Unknown error"), "code": 500}}), 500
+                return jsonify({
+                    "id": request_id,
+                    "object": "chat.completion",
+                    "choices": [
+                        {
+                            "index": 0,
+                            "message": {
+                                "role": "assistant",
+                                "content": result.get("message", "Unknown error")
+                            },
+                            "finish_reason": "stop"
+                        }
+                    ]
+                }), 500
 
         except Exception as e:
             logger.error(f"POST error: {traceback.format_exc()}")
