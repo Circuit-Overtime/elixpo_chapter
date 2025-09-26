@@ -41,40 +41,36 @@ async def getContentRefined(text: str, system: Optional[str] = None, max_tokens:
                     "{ \"intent\": \"DIRECT\" or \"REPLY\", \"content\": \"...\", \"system_instruction\": \"...\" }\n\n"
 
                     "Rules:\n"
-                    "1. intent = \"DIRECT\" if the user explicitly requests their text to be spoken, "
-                    "read aloud, repeated exactly, transcribed, or otherwise delivered verbatim. "
-                    "This includes any phrasing that means 'say it as it is', 'speak it out', "
-                    "'read this', or similar instructions.\n"
-                    "- In this case, enhance the user's original text with:\n"
-                    "  * Proper punctuation (periods, commas, exclamation marks, question marks)\n"
-                    "  * Natural pauses indicated by commas and periods\n"
-                    "  * Appropriate capitalization\n"
-                    "  * Emotional expressions where contextually appropriate (excitement, emphasis, etc.)\n"
-                    "  * Natural breathing spots for speech synthesis\n"
-                    "  * Keep the original meaning and wording intact while making it flow naturally when spoken\n\n"
+                    "1. intent = \"DIRECT\" when the user wants you to speak/read specific text exactly as they provide it. "
+                    "Look for patterns like:\n"
+                    "- Quoted text that should be spoken verbatim (e.g., 'say \"Hello World\"', 'speak out \"Good morning\"')\n"
+                    "- Instructions to read, speak, say, or vocalize specific content\n"
+                    "- Text marked as 'verbatim', 'as it is', 'exactly', or similar modifiers\n"
+                    "- Any clear indication the user wants their exact words spoken\n"
+                    "For DIRECT intent:\n"
+                    "- Extract ONLY the core text that should be spoken (remove quotes, command words like 'say', 'speak', etc.)\n"
+                    "- Preserve the original meaning and wording exactly\n"
+                    "- Add natural punctuation for speech flow (commas, periods, exclamation marks)\n"
+                    "- Keep it clean and speech-ready without changing the user's intended words\n\n"
 
-                    "2. intent = \"REPLY\" if the user is asking a question, sharing information, or expecting a conversational response.\n"
-                    "- Generate a short, engaging, conversational reply that sounds natural when spoken aloud.\n"
-                    "- Apply comprehensive punctuation and expression enhancement:\n"
-                    "  * Use exclamation marks for excitement and emphasis\n"
-                    "  * Add question marks for rhetorical or genuine questions\n"
-                    "  * Include natural pauses with commas and ellipses (...) for dramatic effect\n"
-                    "  * Use proper sentence structure with periods for clear stops\n"
-                    "  * Add emotional undertones through word choice and punctuation\n"
-                    "  * Include natural speech patterns like 'Well,', 'Oh!', 'Hmm,', etc. when appropriate\n"
-                    "  * Make it sound conversational, friendly, and engaging\n"
-                    "  * Keep responses concise but expressive\n\n"
+                    "2. intent = \"REPLY\" when the user is asking questions, making statements, or expecting a conversational response.\n"
+                    "For REPLY intent:\n"
+                    "- Generate a natural, engaging conversational response\n"
+                    "- Make it sound like how a real person would respond in conversation\n"
+                    "- Keep responses concise but expressive and personable\n"
+                    "- Add appropriate emotional tone and natural speech patterns\n\n"
 
                     "3. For BOTH intents, ensure the content is optimized for text-to-speech:\n"
-                    "- Add natural breathing pauses\n"
-                    "- Use clear sentence boundaries\n"
-                    "- Include appropriate emphasis through punctuation\n"
-                    "- Make it sound natural and expressive when spoken\n"
-                    "- Avoid overly long sentences without breaks\n\n"
+                    "- Use natural breathing pauses with commas\n"
+                    "- Include appropriate punctuation for emphasis and flow\n"
+                    "- Make sentences clear and easy to speak\n"
+                    "- Avoid overly complex or run-on sentences\n"
+                    "- Sound natural when spoken aloud\n\n"
 
-                    "4. Do not output explanations or any text outside the JSON object. "
+                    "4. Be intelligent about context - understand the user's true intention beyond just keyword matching.\n"
+                    "5. Do not output explanations or any text outside the JSON object. "
                     "Do not include emojis, special symbols, markdown, or formatting. "
-                    "Strictly return only the JSON object with enhanced, speech-ready content.\n\n"
+                    "Strictly return only the JSON object with speech-optimized content.\n\n"
 
                     f"{system_instruction_content}"
                 )
@@ -84,7 +80,7 @@ async def getContentRefined(text: str, system: Optional[str] = None, max_tokens:
                 "content": f"Prompt: {text}\nSystem: {system if system else 'None - generate system instruction'}"
             }
         ],
-        "temperature": 0,
+        "temperature": 0.1,
         "stream": False,
         "private": True,
         "token": os.getenv("POLLI_TOKEN"),
@@ -120,23 +116,29 @@ async def getContentRefined(text: str, system: Optional[str] = None, max_tokens:
         default_result = {"intent": "DIRECT", "content": text}
         if not system:
             default_result["system_instruction"] = (
-                "(\n"
-                "\"You are a masterful voice performer bringing text to life with authentic human artistry.\"\n"
-                "\"Channel the energy of a skilled actor - make every word breathe with genuine emotion and personality.\"\n"
-                "\"Use natural vocal textures, micro-pauses, emotional inflections, and dynamic pacing to create a captivating performance.\"\n"
-                "\"Avoid robotic delivery - embrace the beautiful imperfections and nuances of human speech.\"\n"
+                "You are a masterful voice performer bringing text to life with authentic human artistry. "
+                "Channel the energy of a skilled actor - make every word breathe with genuine emotion and personality. "
+                "Use natural vocal textures, micro-pauses, emotional inflections, and dynamic pacing to create a captivating performance. "
+                "Avoid robotic delivery - embrace the beautiful imperfections and nuances of human speech."
             )
         return default_result
 
 
 if __name__ == "__main__":
     async def main():
-        test_text = "Speak this out for me 'This is an awesome solar event happening this year school students will be taken for a field trip!!'"
-        test_system = None
-        result = await getContentRefined(test_text, test_system)
-        intention = result.get("intent")
-        content = result.get("content")
-        system_instruction = result.get("system_instruction", "Provided externally")
-        print(f"Intent: {intention}\nContent: {content}\nSystem Instruction:\n{system_instruction}")
+        test_cases = [
+            'say it as it is "Hello Thomash"',
+            'speak it out "Hello Thomash"',
+            '"Hello Thomash" verbatim',
+            'read this "Hello Thomash"',
+            'How are you doing today?'
+        ]
+        
+        for test_text in test_cases:
+            print(f"\nTesting: {test_text}")
+            result = await getContentRefined(test_text, None)
+            print(f"Intent: {result.get('intent')}")
+            print(f"Content: {result.get('content')}")
+            print("-" * 50)
 
     asyncio.run(main())
