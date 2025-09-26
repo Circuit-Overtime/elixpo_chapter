@@ -180,23 +180,16 @@ Analyze this request and call the appropriate pipeline function.
                             voice=fn_args.get("voice")
                         )
 
-                        audio_path = os.path.join(higgs_dir, f"{reqID}.wav")
-                        torchaudio.save(audio_path, torch.from_numpy(audio_bytes)[None, :], sample_rate)
-
-                        logger.info(f"[{reqID}] TTS audio saved to: {audio_path}")
-                        with open(audio_path, "rb") as f:
-                            wav_bytes = f.read()
-                        
                         os.makedirs("genAudio", exist_ok=True)
                         gen_audio_path = f"genAudio/{reqID}.wav"
                         with open(gen_audio_path, "wb") as f:
-                            f.write(wav_bytes)
-                        logger.info(f"[{reqID}] TTS audio also saved to: {gen_audio_path}")
+                            f.write(audio_bytes)
+                        logger.info(f"[{reqID}] TTS audio saved to: {gen_audio_path}")
 
                         return {
                             "type": "audio",
-                            "data": wav_bytes,
-                            "file_path": audio_path,
+                            "data": audio_bytes,
+                            "file_path": gen_audio_path,
                             "reqID": reqID
                         }
 
@@ -234,23 +227,16 @@ Analyze this request and call the appropriate pipeline function.
                         
                         
                         audio_path = os.path.join(higgs_dir, f"{reqID}.wav")
-                        torchaudio.save(audio_path, torch.from_numpy(audio_bytes)[None, :], sample_rate)
-
-                        with open(audio_path, "rb") as f:
-                            wav_bytes = f.read()
-
                         os.makedirs("genAudio", exist_ok=True)
                         gen_audio_path = f"genAudio/{reqID}.wav"
                         with open(gen_audio_path, "wb") as f:
-                            f.write(wav_bytes)
-                        logger.info(f"[{reqID}] STS audio also saved to: {gen_audio_path}")
-                        
-                        logger.info(f"[{reqID}] STS audio saved to: {audio_path}")
-                        
+                            f.write(audio_bytes)
+                        logger.info(f"[{reqID}] STS audio saved to: {gen_audio_path}")
+
                         return {
                             "type": "audio",
-                            "data": wav_bytes,
-                            "file_path": audio_path,
+                            "data": audio_bytes,
+                            "file_path": gen_audio_path,
                             "reqID": reqID
                         }
 

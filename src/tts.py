@@ -10,6 +10,7 @@ import threading
 import time
 import torch
 import torchaudio
+import io 
 
 class ModelManager(BaseManager): pass
 ModelManager.register("Service")
@@ -61,7 +62,13 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
         clone_audio_transcript=clone_text
     )
     print(f"Generating Audio for {requestID}")
-    audio_bytes, audio_sample = service.speechSynthesis(chatTemplate=prepareChatTemplate)
+    audio_numpy, audio_sample = service.speechSynthesis(chatTemplate=prepareChatTemplate)
+
+    audio_tensor = torch.from_numpy(audio_numpy).unsqueeze(0)
+    buffer = io.BytesIO()
+    torchaudio.save(buffer, audio_tensor, audio_sample, format="wav")
+    audio_bytes = buffer.getvalue()
+    
     return audio_bytes, audio_sample
 
 if __name__ == "__main__":

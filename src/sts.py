@@ -8,7 +8,7 @@ import loggerConfig
 import torchaudio
 import torch 
 from intent import getContentRefined
-
+import io
 
 class ModelManager(BaseManager): pass
 ModelManager.register("Service")
@@ -60,8 +60,13 @@ async def generate_sts(text: str, audio_base64_path: str, requestID: str, system
         clone_audio_path=clone_path,
         )
     
-    audio_bytes, audio_sample = service.speechSynthesis(chatTemplate=prepareChatTemplate)
-    return audio_bytes, audio_sample
+    audio_numpy, audio_sample = service.speechSynthesis(chatTemplate=prepareChatTemplate)
+    
+    # Convert numpy array to bytes
+    audio_tensor = torch.from_numpy(audio_numpy).unsqueeze(0)
+    buffer = io.BytesIO()
+    torchaudio.save(buffer, audio_tensor, audio_sample, format="wav")
+    audio_bytes = buffer.getvalue()
 
 if __name__ == "__main__":
     async def main():
