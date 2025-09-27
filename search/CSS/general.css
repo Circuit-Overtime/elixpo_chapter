@@ -35,7 +35,12 @@
 
 }
 .newsSection::-webkit-scrollbar,
-.newsItemsVRContainer::-webkit-scrollbar
+.newsItemsVRContainer::-webkit-scrollbar,
+.topicSection::-webkit-scrollbar
 {
   display: none;
+}
+
+#fff {
+    color: rgba(123, 231, 145, 0.705);
 }
