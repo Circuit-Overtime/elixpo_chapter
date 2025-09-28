@@ -5,6 +5,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore} from "firebase/firestore";
 import { getDatabase, ref, push } from "firebase/database";
 import {rateLimit} from 'express-rate-limit';
+import generateImageWorker from './generateImage';
 import fs from 'fs';
 import multer from 'multer'; 
 import FormData from 'form-data'; 
@@ -33,7 +34,7 @@ const MAX_QUEUE_LENGTH = 15;
 const MAX_CONCURRENT_REQUESTS = 100; 
 let activeImageWorkers = 0;
 const imageGenerationQueue = [];
-const POLLINATIONS_TOKEN = "O6avo5r25XbBPnQ3";
+
 
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -92,7 +93,7 @@ app.post('/db-write', async (req, res) => {
   }
   try {
     const nodeRef = ref(dbRef, dbPath);
-    await push(nodeRef, value); // Push the whole comment object
+    await push(nodeRef, value); 
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to write to Realtime Database: ' + err.message });
@@ -202,8 +203,6 @@ app.post('/generate-image', async (req, res) => {
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' });
   }
-
-  // Add request to queue
   const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
   const imageRequest = {
     id: requestId,
@@ -218,23 +217,17 @@ app.post('/generate-image', async (req, res) => {
     res,
     timestamp: Date.now()
   };
-
-  // Check queue limit
   if (imageGenerationQueue.length >= MAX_QUEUE_LENGTH) {
     return res.status(429).json({ 
       error: 'Queue is full. Please try again later.',
       queueLength: imageGenerationQueue.length 
     });
   }
-
   imageGenerationQueue.push(imageRequest);
   console.log(`Added request ${requestId} to queue. Queue length: ${imageGenerationQueue.length}`);
-
-  // Process queue
   processImageQueue();
 });
 
-// Queue processing function
 async function processImageQueue() {
   if (activeImageWorkers >= MAX_CONCURRENT_REQUESTS || imageGenerationQueue.length === 0) {
     return;
@@ -277,73 +270,8 @@ async function processImageQueue() {
   }
 }
 
-// Worker function for image generation
-async function generateImageWorker(request) {
-  const { prompt, width, height, model, seed, imageMode, uploadedUrl, privateMode } = request;
-  
-  let generateUrl;
-  
-  if (imageMode && uploadedUrl) {
-    if (model === "kontext") {
-      generateUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&image=[${uploadedUrl}]&nologo=true&token=${POLLINATIONS_TOKEN}`;
-    } else {
-      throw new Error("Image mode only supports kontext model");
-    }
-  } else {
-    generateUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&model=${model}&nologo=true&referrer=elixpoart&token=${POLLINATIONS_TOKEN}&seed=${seed}`;
-  }
 
-  if (privateMode) {
-    generateUrl += "&private=true";
-  }
 
-  // Implement retry logic with fallback
-  const maxRetries = 3;
-  let lastError;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`Attempt ${attempt} for request ${request.id}`);
-      
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
-      
-      const response = await fetch(generateUrl, { 
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'ElixpoArt/1.0'
-        }
-      });
-      
-      clearTimeout(timeout);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      return await response.blob();
-      
-    } catch (error) {
-      lastError = error;
-      console.log(`Attempt ${attempt} failed for request ${request.id}:`, error.message);
-      
-      // If gptimage or kontext fails and not in imageMode, fallback to flux
-      if ((model === 'gptimage' || model === 'kontext') && !imageMode && attempt === 2) {
-        generateUrl = generateUrl.replace(`model=${model}`, 'model=flux');
-        console.log(`Falling back to flux model for request ${request.id}`);
-      }
-      
-      if (attempt < maxRetries) {
-        // Exponential backoff
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-      }
-    }
-  }
-  
-  throw lastError || new Error('Image generation failed after all retries');
-}
-
-// Batch image generation endpoint
 app.post('/generate-batch', async (req, res) => {
   const { requests } = req.body;
   
@@ -404,28 +332,12 @@ app.post('/generate-batch', async (req, res) => {
   }
 });
 
-app.get('/img/models', (req, res) => {
-    res.json(availableImageModels);
-});
-
-app.get('/themes', (req, res) => {
-    res.json(availableThemes);
-});
-
-app.get('/ratios', (req, res) => {
-    res.json(availableRatios);
-});
-
 app.post('/ping', (req, res) => {
     res.send('OK');
 });
 
 app.get('/', (req, res) => {
     res.send('Visit https://elixpoart.vercel.app for a better experience');
-});
-
-app.get('/bpm', (req, res) => {
-    res.send('Alive');
 });
 
 app.get('/queue-status', (req, res) => {
