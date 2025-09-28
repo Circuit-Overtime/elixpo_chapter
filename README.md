@@ -1,6 +1,7 @@
-# [Elixpo-art](https://elixpoart.vercel.app)
+# [Elixpo-Chapter](https://elixpo.com)
 
-![image](https://github.com/user-attachments/assets/26dd6299-29c1-4149-889d-d590f34312e0)
+![Elixpo_Generated](https://github.com/user-attachments/assets/dcf4bafc-8a93-4a45-adcb-4b392197da35)
+
 
 
 *Your Engine for Personalized Synthetic Media*
