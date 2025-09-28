@@ -3,7 +3,8 @@
 
 ![Elixpo_Generated](https://github.com/user-attachments/assets/dcf4bafc-8a93-4a45-adcb-4b392197da35)
 
-## Elixpo is my personal college based project series targetted to build an open-source collaborative since 2023, my freshman years! It has been `2 Years` and counting and here's a short brief of the journey so far! **Welcome to the CHAPTER**.
+### Elixpo is my personal college based project series targetted to build an open-source collaborative since 2023, my freshman years! It has been `2 Years` and counting and here's a short brief of the journey so far!
+### 💖 **Welcome to the CHAPTER | Please leave a ⭐ on the repository (would mean a lot to me)**.
 
 # 👑 Achievements of Elixpo Series:
 - **Built `10+` Open Source Projects**
