@@ -1,7 +1,7 @@
 let lastPromptText = "";
 const MAX_NOTIFS = 3;
 const notifQueue = [];
-let serverURL = "https://imgelixpo.vercel.app"; 
+let serverURL = "/api"; 
 
 
 window.onload = function() {

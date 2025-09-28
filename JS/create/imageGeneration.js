@@ -12,7 +12,7 @@ let imageTimeout = null;
 let imageController = null;
 let isMouseOverImageDisplay = false;
 let extractedDetails = {};
-
+let serverURL = "/api";
 
 
 async function uploadImageToUguu(file) {
@@ -28,7 +28,7 @@ async function uploadImageToUguu(file) {
     formData.append('file', file);
 
     try {
-        const res = await fetch(`https://imgelixpo.vercel.app/upload-to-uguu`, {
+        const res = await fetch(`${serverURL}/upload-to-uguu`, {
             method: 'POST',
             body: formData,
         });
