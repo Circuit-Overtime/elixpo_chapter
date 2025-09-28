@@ -2,8 +2,7 @@ let lastPromptText = "";
 const MAX_NOTIFS = 3;
 const notifQueue = [];
 let serverURL = "https://imgelixpo.vercel.app"; 
-// window.addEventListener('resize', scaleContainer);
-// window.addEventListener('load', scaleContainer);
+
 
 window.onload = function() {
   showSection("imageCustomization"); 
@@ -16,7 +15,7 @@ window.onload = function() {
 
   setInterval(() => {
     if (localStorage.getItem("ElixpoAIUser") == null) {
-        redirectTo("src/auth/?notify=true"); //root hompage redirect
+        redirectTo("src/auth/?notify=true"); 
     }
   }, 1000);
   setTimeout(() => {

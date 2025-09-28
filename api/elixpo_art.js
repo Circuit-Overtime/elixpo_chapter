@@ -1,19 +1,13 @@
 import express from 'express';
 import fetch from 'node-fetch';
 import cors from 'cors';
-import axios from 'axios';
 import { initializeApp } from "firebase/app";
 import { getFirestore} from "firebase/firestore";
 import { getDatabase, ref, push } from "firebase/database";
-import { v4 as uuidv4 } from "uuid";
 import {rateLimit} from 'express-rate-limit';
-import {Readable} from 'stream';
-import bodyParser from 'body-parser';
-import { IgApiClient } from 'instagram-private-api';
 import fs from 'fs';
 import multer from 'multer'; 
 import FormData from 'form-data'; 
-import path from 'path'; 
 import dotenv from 'dotenv'
 
 dotenv.config();
@@ -36,9 +30,6 @@ const PORT = 3000;
 const requestQueue = [];
 let endPointImageRequestQueue = [];
 const MAX_QUEUE_LENGTH = 15;
-const maxRequests = 20;
-let activeRequests = 0;
-
 const MAX_CONCURRENT_REQUESTS = 4;
 let activeImageQueueWorkers = 0;
 
@@ -48,9 +39,6 @@ let activeImageQueueWorkers = 0;
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-    // Add request to the queue
-
     console.log('Request added to queue:', req.originalUrl);
     console.log('Request queue length:', requestQueue.length);
     next();
@@ -237,8 +225,6 @@ app.post('/upload-to-uguu', upload.single('file'), async (req, res) => {
           imageQueueLength: endPointImageRequestQueue.length,
           activeImageWorkers: activeImageQueueWorkers,
           requestQueueLength: requestQueue.length,
-          activeInstagramRequests: activeRequests,
-          maxInstagramRequests: maxRequests,
           maxImageQueueLength: MAX_QUEUE_LENGTH,
           maxConcurrentWorkers: MAX_CONCURRENT_REQUESTS
       });
@@ -247,17 +233,11 @@ app.post('/upload-to-uguu', upload.single('file'), async (req, res) => {
 
   app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
-    try {
-          // await initializeInstagramClient();
-     } catch (error) {
-         console.error("Failed to initialize Instagram client on startup:", error);
-     }
   });
 
 
   process.on('uncaughtException', err => {
     console.error('There was an uncaught exception:', err);
-     // Log the error to Firebase or a logging service
      const errorData = {
          type: 'uncaughtException',
          message: err.message,
@@ -268,17 +248,16 @@ app.post('/upload-to-uguu', upload.single('file'), async (req, res) => {
       push(errorsRef, errorData)
      .then(() => {
           console.log("Uncaught exception logged to Firebase. Exiting.");
-          process.exit(1); // Exit the process after logging
+          process.exit(1); 
      })
      .catch((firebaseError) => {
           console.error("Failed to log uncaught exception to Firebase:", firebaseError);
-          process.exit(1); // Exit anyway if logging fails
+          process.exit(1); 
      });
   });
 
   process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-     // Log the rejection reason to Firebase
      const errorData = {
          type: 'unhandledRejection',
          message: reason instanceof Error ? reason.message : String(reason),
@@ -290,11 +269,8 @@ app.post('/upload-to-uguu', upload.single('file'), async (req, res) => {
       push(errorsRef, errorData)
      .then(() => {
           console.log("Unhandled rejection logged to Firebase.");
-          // Depending on the nature of the rejection, you might decide to exit
-          // process.exit(1); // Consider exiting if the rejection is critical
      })
       .catch((firebaseError) => {
           console.error("Failed to log unhandled rejection to Firebase:", firebaseError);
-           // process.exit(1); // Consider exiting anyway if logging fails
      });
   });
