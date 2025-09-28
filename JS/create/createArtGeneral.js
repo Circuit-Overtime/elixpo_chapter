@@ -1,7 +1,6 @@
 let lastPromptText = "";
 const MAX_NOTIFS = 3;
 const notifQueue = [];
-let serverURL = "/api"; 
 
 
 window.onload = function() {

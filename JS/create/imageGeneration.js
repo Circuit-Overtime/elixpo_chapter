@@ -12,7 +12,7 @@ let imageTimeout = null;
 let imageController = null;
 let isMouseOverImageDisplay = false;
 let extractedDetails = {};
-let serverURL = "/api";
+let serverURL = "http://localhost:3005";
 
 
 async function uploadImageToUguu(file) {
@@ -408,116 +408,93 @@ document.getElementById("interruptButton").addEventListener("click", function ()
 async function generateImage(generationNumber, prompt, width, height, model, suffixPrompt, selectedImageQuality, enhanceMode, privateMode, imageMode, signal) {
     document.getElementById("interruptButton").classList.remove("hidden");
     const promptText = `${prompt}`;
-    let generateUrl;
-
-    if (imageMode) {
-        console.log("In image mode");
-        const uploadedUrl = document.getElementById("imageHolder").getAttribute("data-uploaded-url");
-        if (uploadedUrl) {
-            if(model == "gptimage") 
-            {
-                // generateUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&nologo=true&token=fEWo70t94146ZYgk&image=${encodeURIComponent(uploadedUrl)}`;
-                notify("oops! gptimage model is not supported anymore, switch to kontext please!");
-            }
-            else if(model == "kontext")
-            {
-                generateUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&image=[${uploadedUrl}]&nologo=true&token=fEWo70t94146ZYgk`;
-            }
-            notify("Remixing with your request!! Would take a minute or so, hang on buddy!");
-        } else {
-            notify("Image not found. Please upload a valid image.");
-            return;
-        }
-    } else {
-        generateUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptText)}?width=${width}&height=${height}&model=${model}&nologo=true&referrer=elixpoart&token=fEWo70t94146ZYgk`;
-        notify("Trying to paint the image!", true);
-    }
-
-    if (privateMode) {
-        generateUrl += "&private=true";
-    }
+    
+    notify("Sending request to server...", true);
 
     const tilePromises = [];
     const generationTimes = [];
 
-    for (let i = 1; i <= generationNumber; i++) {
-        const tile = document.querySelector(`.tile${i}`);
-        const loadingAnimation = tile.querySelector(".loadingAnimations");
-        const downloadBtn = tile.querySelector(".inPictureControls > #downloadBtn");
-        const copyBtn = tile.querySelector(".inPictureControls > #copyButton");
-
-        tile.style.pointerEvents = "none";
-        loadingAnimation.classList.remove("hidden");
-
+    // Prepare batch requests
+    const batchRequests = [];
+    for (let i = 0; i < generationNumber; i++) {
         const tileSeed = Math.floor(Math.random() * 10000);
-        let imageRequestUrl = `${generateUrl}&seed=${tileSeed}`;
-        const tryGeneration = async (currentModel, watchdogTimeout = 60000) => {
-            const controller = new AbortController();
-            const watchdog = setTimeout(() => controller.abort(), watchdogTimeout);
-            try {
-                const response = await fetch(imageRequestUrl, { signal: controller.signal });
-                clearTimeout(watchdog);
-                if (!response.ok) {
-                    throw new Error(`HTTP error ${response.status}`);
-                }
-                return response.blob();
-            } catch (error) {
-                clearTimeout(watchdog);
+        const uploadedUrl = imageMode ? document.getElementById("imageHolder").getAttribute("data-uploaded-url") : null;
+        
+        batchRequests.push({
+            prompt: promptText,
+            width: parseInt(width),
+            height: parseInt(height),
+            model: model,
+            seed: tileSeed,
+            imageMode: imageMode,
+            uploadedUrl: uploadedUrl,
+            privateMode: privateMode
+        });
+    }
 
-                if (controller.signal.aborted && (currentModel === "gptimage" || currentModel == "kontext") && !imageMode) {
-                    notify("gptimage model took too long. Switching to flux...");
-                    const fallbackUrl = imageRequestUrl.replace(`model=${currentModel}`, "model=flux");
-                    imageRequestUrl = fallbackUrl;
-                    return tryGeneration("flux");
-                }
+    try {
+        // Send batch request to backend
+        const response = await fetch(`${serverURL}/generate-batch`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                requests: batchRequests
+            }),
+            signal: signal
+        });
 
-                if ((error.message.includes("500") || error.message.includes("HTTP")) && currentModel !== "flux") {
-                    notify("Opps my brush broke! Trying  again");
-                    imageRequestUrl = imageRequestUrl.replace(`model=${currentModel}`, "model=flux");
-                    return tryGeneration("flux");
-                }
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
 
-                throw error;
-            }
-        };
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Batch generation failed');
+        }
 
-        const tilePromise = tryGeneration(model)
-            .then(blob => {
-                const endTime = performance.now();
-                const generationTime = Math.round((endTime - performance.now()) / 1000);
-                generationTimes.push(generationTime);
+        notify("Processing images...", true);
 
-                const imageUrl = URL.createObjectURL(blob);
+        // Process results
+        data.results.forEach((result, index) => {
+            const tileIndex = index + 1;
+            const tile = document.querySelector(`.tile${tileIndex}`);
+            const loadingAnimation = tile.querySelector(".loadingAnimations");
+            const downloadBtn = tile.querySelector(".inPictureControls > #downloadBtn");
+            const copyBtn = tile.querySelector(".inPictureControls > #copyButton");
+
+            if (result.success) {
+                const imageUrl = result.imageData;
+                const generationTime = Math.round(result.generationTime / 1000);
+                
                 tile.style.backgroundImage = `url(${imageUrl})`;
                 tile.style.pointerEvents = "all";
                 tile.setAttribute("data-time", generationTime);
-
+                
                 loadingAnimation.classList.add("hidden");
                 downloadBtn.setAttribute("data-id", imageUrl);
                 copyBtn.setAttribute("data-id", prompt);
-
+                
+                // Store for later use
+                generateURLS[index] = imageUrl;
+                generationTimes.push(generationTime);
+                
                 tile.addEventListener("click", () => {
-                    expandImage(imageUrl, promptText, tileSeed, height, width, model, ratio, generationTime);
+                    expandImage(imageUrl, promptText, batchRequests[index].seed, height, width, model, ratio, generationTime);
                 });
-            })
-            .catch(error => {
+            } else {
+                console.error(`Error generating image for tile${tileIndex}:`, result.error);
                 loadingAnimation.classList.add("hidden");
-                if (error.name === "AbortError") {
-                    notify("Generation aborted!");
-                    console.warn(`Fetch aborted for tile${i}`);
-                } else {
-                    console.error(`Error generating image for tile${i}:`, error);
-                    notify("Failed to generate image. Please try again.");
-                }
-            });
+                tile.style.backgroundColor = "#ff4444";
+                tile.innerHTML = `<div style="color: white; text-align: center; padding: 20px;">Generation Failed</div>`;
+            }
+        });
 
-        tilePromises.push(tilePromise);
-    }
-
-    Promise.all(tilePromises).then(() => {
         if (signal.aborted) return;
 
-        notify("Generation complete");
+        notify("Generation complete!");
         dismissNotification();
         document.getElementById("acceptBtn").classList.remove("hidden");
         document.getElementById("rejectBtn").classList.remove("hidden");
@@ -526,11 +503,40 @@ async function generateImage(generationNumber, prompt, width, height, model, suf
 
         const avg = Math.round(generationTimes.reduce((a, b) => a + b, 0) / generationTimes.length);
         console.log(`Average generation time: ${avg}s`);
-    });
+
+    } catch (error) {
+        console.error('Image generation error:', error);
+        
+        if (error.name === "AbortError") {
+            notify("Generation aborted!");
+        } else {
+            notify(`Generation failed: ${error.message}`);
+        }
+        
+        
+        document.querySelectorAll(".tile .loadingAnimations").forEach(loading => {
+            loading.classList.add("hidden");
+        });
+        document.getElementById("interruptButton").classList.add("hidden");
+        document.getElementById("generateButton").removeAttribute("disabled");
+    }
 }
 
 
-
+async function checkQueueStatus() {
+    try {
+        const response = await fetch(`${serverURL}/queue-status`);
+        const data = await response.json();
+        
+        // Update UI with queue info if needed
+        console.log('Queue status:', data);
+        
+        return data;
+    } catch (error) {
+        console.error('Failed to check queue status:', error);
+        return null;
+    }
+}
 
 document.getElementById("acceptBtn").addEventListener("click", function() {
     let specialDir = localStorage.getItem("ElixpoAIUser")+"_"+Date.now();
@@ -698,15 +704,9 @@ function cleanImageGenerator() {
 function generateUniqueId(inputString) {
     // Get the current timestamp
     const timestamp = Date.now().toString();
-
-    // Concatenate the input string and the timestamp
     let combined = inputString + timestamp;
-
-    // Shuffle the combined string
     combined = combined.split('').sort(() => Math.random() - 0.5).join('');
-
-    // Generate a unique alphanumeric ID by slicing the shuffled string
-    const uniqueId = combined.slice(0, 10); // You can adjust the length of the ID by changing this value
+    const uniqueId = combined.slice(0, 10); 
 
     return uniqueId;
 }
@@ -745,8 +745,6 @@ function expandImage(imageUrl, prompt, seed, height, width, model, ratio, time) 
     const imageSpecs = document.getElementById("imageSpecs");
     const downloadButton = document.getElementById("ImageDisplayDownloadBtn");
     document.getElementById("usernameDisplay").innerHTML = `<span> by ${localStorage.getItem("ElixpoAIUser").slice(0, 11)+"..."}</span>`;
-
-    
     hideSection("imageCustomization");
     hideSection("imageGenerator");
     showSection("imageDisplay");
@@ -776,11 +774,6 @@ function expandImage(imageUrl, prompt, seed, height, width, model, ratio, time) 
             console.error("No image URL found for download.");
         }
     };
-
-
-   
-    
-   
 }
 
 document.getElementById("goUpBtn").addEventListener("click", function () {

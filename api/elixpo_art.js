@@ -26,28 +26,26 @@ const FBapp = initializeApp(firebaseConfig);
 const db = getFirestore(FBapp);
 const dbRef = getDatabase(FBapp);
 const app = express();
-const PORT = 3000;
+const PORT = 3005;
 const requestQueue = [];
 let endPointImageRequestQueue = [];
 const MAX_QUEUE_LENGTH = 15;
-const MAX_CONCURRENT_REQUESTS = 4;
-let activeImageQueueWorkers = 0;
+const MAX_CONCURRENT_REQUESTS = 100; 
+let activeImageWorkers = 0;
+const imageGenerationQueue = [];
+const POLLINATIONS_TOKEN = "O6avo5r25XbBPnQ3";
 
-
-
-  app.use((req, res, next) => {
+app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     console.log('Request added to queue:', req.originalUrl);
     console.log('Request queue length:', requestQueue.length);
     next();
-  });
-
+});
 
 app.use(cors());
 app.use(express.json());
-
 
 const limiter = rateLimit({
     windowMs: 1 * 60 * 1000, 
@@ -56,8 +54,9 @@ const limiter = rateLimit({
       error: "Too many requests, please try again after a minute.",
     },
     keyGenerator: (req) => req.ip, 
-  });
+});
 
+app.use(limiter);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -70,8 +69,6 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
-
-
 
 app.post('/firebase-write', async (req, res) => {
   const { collection, doc: docName, data } = req.body;
@@ -87,7 +84,6 @@ app.post('/firebase-write', async (req, res) => {
     res.status(500).json({ error: 'Failed to write to Firebase: ' + err.message });
   }
 });
-
 
 app.post('/db-write', async (req, res) => {
   const { path: dbPath, value } = req.body;
@@ -146,7 +142,6 @@ app.post('/firebase-read', async (req, res) => {
   }
 });
 
-
 app.post('/upload-to-uguu', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded or file processing failed' });
@@ -192,85 +187,296 @@ app.post('/upload-to-uguu', upload.single('file'), async (req, res) => {
   }
 });
 
+app.post('/generate-image', async (req, res) => {
+  const { 
+    prompt, 
+    width, 
+    height, 
+    model, 
+    seed, 
+    imageMode, 
+    uploadedUrl, 
+    privateMode 
+  } = req.body;
 
+  if (!prompt) {
+    return res.status(400).json({ error: 'Prompt is required' });
+  }
 
-  app.get('/img/models', (req, res) => {
-    res.json(availableImageModels);
-  });
+  // Add request to queue
+  const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  const imageRequest = {
+    id: requestId,
+    prompt,
+    width: width || 1024,
+    height: height || 576,
+    model: model || 'flux',
+    seed: seed || Math.floor(Math.random() * 10000),
+    imageMode: imageMode || false,
+    uploadedUrl: uploadedUrl || null,
+    privateMode: privateMode || false,
+    res,
+    timestamp: Date.now()
+  };
 
+  // Check queue limit
+  if (imageGenerationQueue.length >= MAX_QUEUE_LENGTH) {
+    return res.status(429).json({ 
+      error: 'Queue is full. Please try again later.',
+      queueLength: imageGenerationQueue.length 
+    });
+  }
 
-  app.get('/themes', (req, res) => {
-    res.json(availableThemes);
-  });
+  imageGenerationQueue.push(imageRequest);
+  console.log(`Added request ${requestId} to queue. Queue length: ${imageGenerationQueue.length}`);
 
-  app.get('/ratios', (req, res) => {
-    res.json(availableRatios);
-  });
+  // Process queue
+  processImageQueue();
+});
 
-  app.post('/ping', (req, res) => {
-    res.send('OK');
-  });
+// Queue processing function
+async function processImageQueue() {
+  if (activeImageWorkers >= MAX_CONCURRENT_REQUESTS || imageGenerationQueue.length === 0) {
+    return;
+  }
 
-  app.get('/', (req, res) => {
-      res.send('Visit https://elixpoart.vercel.app for a better experience');
-  });
+  const request = imageGenerationQueue.shift();
+  if (!request) return;
 
-  app.get('/bpm', (req, res) => {
-      res.send('Alive');
-  });
+  activeImageWorkers++;
+  console.log(`Processing request ${request.id}. Active workers: ${activeImageWorkers}`);
 
+  try {
+    const imageBlob = await generateImageWorker(request);
+    
+    // Convert blob to base64 for transmission
+    const buffer = Buffer.from(await imageBlob.arrayBuffer());
+    const base64Image = buffer.toString('base64');
+    
+    request.res.json({
+      success: true,
+      imageData: `data:image/png;base64,${base64Image}`,
+      requestId: request.id,
+      generationTime: Date.now() - request.timestamp
+    });
+  } catch (error) {
+    console.error(`Error processing request ${request.id}:`, error);
+    request.res.status(500).json({
+      error: 'Image generation failed',
+      message: error.message,
+      requestId: request.id
+    });
+  } finally {
+    activeImageWorkers--;
+    console.log(`Completed request ${request.id}. Active workers: ${activeImageWorkers}`);
+    
+    // Process next item in queue
+    if (imageGenerationQueue.length > 0) {
+      setImmediate(processImageQueue);
+    }
+  }
+}
 
-  app.get('/queue-status', (req, res) => {
-      res.json({
-          imageQueueLength: endPointImageRequestQueue.length,
-          activeImageWorkers: activeImageQueueWorkers,
-          requestQueueLength: requestQueue.length,
-          maxImageQueueLength: MAX_QUEUE_LENGTH,
-          maxConcurrentWorkers: MAX_CONCURRENT_REQUESTS
+// Worker function for image generation
+async function generateImageWorker(request) {
+  const { prompt, width, height, model, seed, imageMode, uploadedUrl, privateMode } = request;
+  
+  let generateUrl;
+  
+  if (imageMode && uploadedUrl) {
+    if (model === "kontext") {
+      generateUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&image=[${uploadedUrl}]&nologo=true&token=${POLLINATIONS_TOKEN}`;
+    } else {
+      throw new Error("Image mode only supports kontext model");
+    }
+  } else {
+    generateUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&model=${model}&nologo=true&referrer=elixpoart&token=${POLLINATIONS_TOKEN}&seed=${seed}`;
+  }
+
+  if (privateMode) {
+    generateUrl += "&private=true";
+  }
+
+  // Implement retry logic with fallback
+  const maxRetries = 3;
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Attempt ${attempt} for request ${request.id}`);
+      
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      
+      const response = await fetch(generateUrl, { 
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'ElixpoArt/1.0'
+        }
       });
-  });
+      
+      clearTimeout(timeout);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return await response.blob();
+      
+    } catch (error) {
+      lastError = error;
+      console.log(`Attempt ${attempt} failed for request ${request.id}:`, error.message);
+      
+      // If gptimage or kontext fails and not in imageMode, fallback to flux
+      if ((model === 'gptimage' || model === 'kontext') && !imageMode && attempt === 2) {
+        generateUrl = generateUrl.replace(`model=${model}`, 'model=flux');
+        console.log(`Falling back to flux model for request ${request.id}`);
+      }
+      
+      if (attempt < maxRetries) {
+        // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
+    }
+  }
+  
+  throw lastError || new Error('Image generation failed after all retries');
+}
 
+// Batch image generation endpoint
+app.post('/generate-batch', async (req, res) => {
+  const { requests } = req.body;
+  
+  if (!Array.isArray(requests) || requests.length === 0) {
+    return res.status(400).json({ error: 'Requests array is required' });
+  }
+  
+  if (requests.length > 10) {
+    return res.status(400).json({ error: 'Maximum 10 images per batch' });
+  }
+  
+  const batchId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  const results = [];
+  
+  try {
+    const promises = requests.map(async (req, index) => {
+      const requestId = `${batchId}-${index}`;
+      const imageRequest = {
+        id: requestId,
+        ...req,
+        timestamp: Date.now()
+      };
+      
+      try {
+        const imageBlob = await generateImageWorker(imageRequest);
+        const buffer = Buffer.from(await imageBlob.arrayBuffer());
+        const base64Image = buffer.toString('base64');
+        
+        return {
+          success: true,
+          index,
+          imageData: `data:image/png;base64,${base64Image}`,
+          generationTime: Date.now() - imageRequest.timestamp
+        };
+      } catch (error) {
+        return {
+          success: false,
+          index,
+          error: error.message
+        };
+      }
+    });
+    
+    const batchResults = await Promise.all(promises);
+    
+    res.json({
+      success: true,
+      batchId,
+      results: batchResults
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      error: 'Batch generation failed',
+      message: error.message,
+      batchId
+    });
+  }
+});
 
-  app.listen(PORT, async () => {
+app.get('/img/models', (req, res) => {
+    res.json(availableImageModels);
+});
+
+app.get('/themes', (req, res) => {
+    res.json(availableThemes);
+});
+
+app.get('/ratios', (req, res) => {
+    res.json(availableRatios);
+});
+
+app.post('/ping', (req, res) => {
+    res.send('OK');
+});
+
+app.get('/', (req, res) => {
+    res.send('Visit https://elixpoart.vercel.app for a better experience');
+});
+
+app.get('/bpm', (req, res) => {
+    res.send('Alive');
+});
+
+app.get('/queue-status', (req, res) => {
+    res.json({
+        imageQueueLength: endPointImageRequestQueue.length,
+        activeImageWorkers: activeImageQueueWorkers,
+        requestQueueLength: requestQueue.length,
+        maxImageQueueLength: MAX_QUEUE_LENGTH,
+        maxConcurrentWorkers: MAX_CONCURRENT_REQUESTS
+    });
+});
+
+app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
-  });
+});
 
-
-  process.on('uncaughtException', err => {
+process.on('uncaughtException', err => {
     console.error('There was an uncaught exception:', err);
-     const errorData = {
-         type: 'uncaughtException',
-         message: err.message,
-         stack: err.stack,
-         timestamp: new Date().toISOString()
-     };
-     const errorsRef = ref(dbRef, "serverErrors");
-      push(errorsRef, errorData)
-     .then(() => {
-          console.log("Uncaught exception logged to Firebase. Exiting.");
-          process.exit(1); 
-     })
-     .catch((firebaseError) => {
-          console.error("Failed to log uncaught exception to Firebase:", firebaseError);
-          process.exit(1); 
-     });
-  });
+    const errorData = {
+        type: 'uncaughtException',
+        message: err.message,
+        stack: err.stack,
+        timestamp: new Date().toISOString()
+    };
+    const errorsRef = ref(dbRef, "serverErrors");
+    push(errorsRef, errorData)
+    .then(() => {
+        console.log("Uncaught exception logged to Firebase. Exiting.");
+        process.exit(1); 
+    })
+    .catch((firebaseError) => {
+        console.error("Failed to log uncaught exception to Firebase:", firebaseError);
+        process.exit(1); 
+    });
+});
 
-  process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-     const errorData = {
-         type: 'unhandledRejection',
-         message: reason instanceof Error ? reason.message : String(reason),
-         stack: reason instanceof Error ? reason.stack : 'N/A',
-         promise: promise,
-         timestamp: new Date().toISOString()
-     };
-     const errorsRef = ref(dbRef, "serverErrors");
-      push(errorsRef, errorData)
-     .then(() => {
-          console.log("Unhandled rejection logged to Firebase.");
-     })
-      .catch((firebaseError) => {
-          console.error("Failed to log unhandled rejection to Firebase:", firebaseError);
-     });
-  });
+    const errorData = {
+        type: 'unhandledRejection',
+        message: reason instanceof Error ? reason.message : String(reason),
+        stack: reason instanceof Error ? reason.stack : 'N/A',
+        promise: promise,
+        timestamp: new Date().toISOString()
+    };
+    const errorsRef = ref(dbRef, "serverErrors");
+    push(errorsRef, errorData)
+    .then(() => {
+        console.log("Unhandled rejection logged to Firebase.");
+    })
+    .catch((firebaseError) => {
+        console.error("Failed to log unhandled rejection to Firebase:", firebaseError);
+    });
+});
