@@ -3,9 +3,9 @@
 
 ![Elixpo_Generated](https://github.com/user-attachments/assets/dcf4bafc-8a93-4a45-adcb-4b392197da35)
 
-## Elixpo is my personal college based project to build open-source projects since 2023, my freshman years! It has been `2 Years` and counting.
+## Elixpo is my personal college based project series targetted to build an open-source collaborative since 2023, my freshman years! It has been `2 Years` and counting and here's a short brief of the journey so far! **Welcome to the CHAPTER**.
 
-# Achievements of Elixpo Series:
+# 👑 Achievements of Elixpo Series:
 - **Built `10+` Open Source Projects**
 - **3000+ Stars on GitHub**
 - **10+ Contributors**
@@ -13,6 +13,7 @@
 - **Global Attention From Developers**
 - **Made it to Pollinations + GSSOC + OSCI**
 - **Hacktoberfest 2024 & 2025**
+- **Funded by MS Startup Foundations 2024**
 
 
 ## 🚀 Key Features
@@ -27,7 +28,13 @@
 > ### PS: This project is part of `Hacktoberfest 2025`. We welcome contributions from developers around the world to help us improve and expand the capabilities of this art generator.
 
 
-## Project Overview
+## 📢 Latest News
+
+- **Hacktoberfest 2025 is here!**  
+  If you're participating, please check out our [Code of Conduct](./CODE_OF_CONDUCT.md) and [Contributing Guidelines](./CONTRIBUTING.md) before submitting your PRs.
+- For event PRs, look for issues tagged with `hacktoberfest` in our [issue tracker](https://github.com/Circuit-Overtime/elixpo_ai_chapter/issues) and join the community effort!
+
+
 # Elixpo Open Source Initiative
 
 This project is a **college initiative** where I document and build all the large-scale projects and ideas I’ve been working on. The goal is to make them **open-source for public usage**, enabling collaboration, learning, and real-world contributions.  
@@ -69,45 +76,62 @@ A special **shoutout** to [Ez-Vivek](https://github.com/ez-vivek) and [CSE-Anwes
 </a>
 
 
-## Architecture
-```mermaid
-graph LR
-    Q[Bots - Discord, Chrome Extension] --> L1
-    
-    N[30+ Mobile and Web Apps] --> L1
-    N --> L2
-    
-    A[elixpo-art Web Frontend] --> L1
-    A --> L2
-    
-    R[AI Agents - Qwen, Sillytavern, ...] --> L1
-    
-    L1[Image CDN] --> B
-    L2[Text CDN] --> C
-    
-    B[image.pollinations - AWS EC2 CPU] --> F[groqCloud - Prompt Enhancing]
-    B --> S[Safety Checker]
-    B --> M[llmplayground.net - Custom FLUX models]
-    F --> E[Translation Service - 1 GPU VM]
-    E --> D[FLUX image generation model - 2-6 GPU VMs on AWS]
-    
-    C[text.pollinations - AWS EC2 CPU] --> P[karma.yt - Realtime News]
-    C --> G[Azure-hosted Serverless LLMs]
-    G  --> H[OpenAI]
-    G --> I[Mistral]
-    G --> J[Llama]
-    G --> K[Claude]
 
+## Overall Architecture
+```mermaid
+graph TD
+
+    %% Main Entry
+    E[Elixpo - Main Entry Point]:::core
+
+    %% Connected Platforms
+    subgraph Platforms
+        A[Elixpo Art]:::service
+        B[Elix Blogs]:::service
+        C[Elixpo Search]:::service
+        D[Elixpo Sketch]:::service
+        F[Elixpo Chat]:::service
+        G[Elixpo Verse]:::service
+    end
+
+    %% API Layer
+    subgraph API Binding Layer
+        P[Pollinations API Provider]:::api
+    end
+
+    %% Connections
+    E --> A
+    E --> B
+    E --> C
+    E --> D
+    E --> F
+    E --> G
+
+    A --> P
+    B --> P
+    C --> P
+    D --> P
+    F --> P
+    G --> P
+
+    %% External Integration
+    subgraph External Services
+        X[VPS Calls - Scaleway, Raspberry pi, GCP]:::ai
+        Y[Infra - AWS, Azure, GPU VMs]:::infra
+    end
+
+    P --> X
+    P --> Y
+
+    
 ```
 
 
 ## Development Note
 
-The website is being built in a private repository, but updates are being made in the open-source version to keep track of changes and ensure security. This project is part of Hacktoberfest, and we welcome contributions from open-source developers.
+Elixpo is a parallel development initiative with multiple sub-projects evolving simultaneously within this monorepo. We actively welcome external open-source projects—if you’d like your project featured here, submit a proposal! Accepted projects will be listed as contributors and included under the GNU GPL license.  
 
-Additionally, Kaggle builds are being created for the dataset to be published, and a model is being developed under specific circumstances. A Discord bot is also in development for the same purpose, alongside a Minecraft mod utilizing the Fabric API of version 1.21 to process requests and generate images in-game.
-
-Research papers will be published, and efforts to fine-tune stickers and improve code readability are underway to make the repository more user-friendly.
+> Each project follows its own dedicated development track and process, covering diverse fields across computer science. This structure encourages collaboration, innovation, and cross-disciplinary growth within the Elixpo ecosystem.
 
 ## Collaborators
 
@@ -115,106 +139,61 @@ We are excited to collaborate with various developers and artists in the open-so
 
 ## Funding
 
-This project is currently funded through a combination of personal investments and community contributions. We are exploring sponsorship opportunities to further expand the project's development and outreach. If you would like to support us or discuss potential funding options, please contact us.
+This project is funded through a mix of personal investment, community contributions, and generous infrastructure support. Our cloud compute and VPS resources are provided by [Pollinations AI](https://pollinations.ai) — special thanks to Thomas Haferlach and the Pollinations team for enabling our large-scale AI workloads.
+
+We are actively seeking sponsors to help us grow and sustain the project. If you or your organization would like to support Elixpo, please visit our [GitHub Sponsors page](https://github.com/sponsors/Circuit-Overtime) or reach out to discuss partnership opportunities.
+
+Your support helps us cover infrastructure costs, accelerate development, and expand our open-source initiatives. Thank you for helping us build a more accessible and collaborative AI ecosystem!
 
 
-## Gallery
+#  Recent Releases
 
-You can explore the generated artwork in our [Gallery](https://elixpoart.vercel.app/src/gallery). 
+Here are some of our latest releases and live demos:
 
-We can include a query parameter `id` to help share specific images by their image ID. For example, you can access an image directly using the following link:
+- **Elixpo Art Chrome Extension**  
+  [Available on Chrome Web Store](https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh?authuser=0&hl=en-GB&pli=1)  
+  Easily generate AI art from selected text in your browser.
 
-[https://elixpoart.vercel.app/src/gallery?id=9pde71i621](https://elixpoart.vercel.app/src/gallery?id=9pde71i621)
+- **Elixpo Art Platform**  
+  [elixpo.com](https://elixpo.com)  
+  The main platform for AI-powered art generation and sharing.
 
-### Kaggle and Data Science Builds
+- **Jackey Discord Bot**  
+  [jackey.elixpo.com](https://jackey.elixpo.com)  
+  A personalized Discord bot for image generation and more.
 
-We are planning to enhance our presence on Kaggle by creating and sharing various data science writings and scripts. These builds will focus on optimizing the dataset for our AI models and providing insights into data processing techniques. Our goal is to foster a community around data science practices and encourage collaboration on Kaggle.
+- **Fine-Tuned Llama Medicine Model**  
+  [ollama.com/Elixpo/LlamaMedicine](https://ollama.com/Elixpo/LlamaMedicine)  
+  Specialized Llama model fine-tuned for medicine-related tasks.
 
-- [15/10/2024]
-- Code from Kaggle!
-```bash
-https://www.kaggle.com/code/circuitovertime/elixpo-ai-platform-testing-beta/edit/run/199734513
-```
-- Code from Google Colab!
-```bash
-https://colab.research.google.com/drive/1jfJKeganPiY2i2T-vR_TlPQuMKEq8SC_?usp=sharing
-```
-- A custom made prompt_collection for further research work
-```bash
-https://www.kaggle.com/datasets/circuitovertime/prompt-and-gibberish-for-ai-art-gen/data?select=prompts_collection.csv
-```
-- A custom made prompt pimper using `Elixpo/promptPimp` model of hugging-face
-```bash
-https://www.kaggle.com/code/overtimecraftsclips/fine-tuning-of-elixpo-promptpimp
-```
+- **Emoji Translator**  
+  [huggingface.co/Elixpo/Emoji-Contextual-Translator](https://huggingface.co/Elixpo/Emoji-Contextual-Translator)  
+  Translate text to context-aware emojis using our custom model.
 
-- Added the kaggle research begind the backend of a low level model for prompt classification
-- Added files under the /kaggle_workflows mentioning the ipnyb files of Kaggle and Google Colab!
-- Added a custom dataset made especially for the low level model
+  - **Elixpo Art Blog**  
+    [elixpo.com/blogs/elixpo_art](https://elixpo.com/blogs/elixpo_art)  
+    In-depth articles and updates about the Elixpo Art platform.
 
-### Chrome Extension
-- A Custom Built Chrome Extension in Javascript which is approved by Google!
-```bash
-https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh
-```
+---
 
-### Discord Bot 
-- A custom made discord bot for generating images using `discord.js` and `Discord API` implementation.
-```bash
-https://discord.com/oauth2/authorize?client_id=1214916249222643752
-```
+# Our Vision
 
-### Blogs Release 
-- Released a detailed analysis blog for Elixpo_Art Service
-```bash
-  https://elixpoart.vercel.app/src/blogs/elixpo_art
-```
-### Minecraft Bots
+At Elixpo-ai-chapter, we are dedicated to shaping a future where AI is:
 
-In the future, we aim to expand the functionality  to, our Minecraft mod will be enhanced to support more complex interactions, allowing players to generate and manipulate images directly within the game. We envision these tools becoming integral parts of our ecosystem, enhancing user engagement and creativity.
+- **Open & Accessible**: AI should empower everyone—free from paywalls, proprietary barriers, or exclusivity.
+- **Transparent & Ethical**: We prioritize transparency in our models and workflows, ensuring ethical development and responsible use.
+- **Community-Driven**: Our platform thrives on collaboration, inviting developers, creators, and enthusiasts to contribute and innovate together.
+- **Interconnected**: We’re building an ecosystem where AI tools and services integrate seamlessly, enabling composable and synergistic solutions.
+- **Continuously Evolving**: We embrace rapid advancements in AI, adapting and improving while upholding our core values of openness and accessibility.
 
+Our mission is to advance AI for the benefit of all—respecting ethical standards, fostering responsible innovation, and building a collaborative community. Join us in making AI open, ethical, and impactful for everyone.
 
-## 🏢 Supported By
-
-- [LLMPlayground.net](https://llmplayground.net/): Hosting Custom Flux Models
-- [Karma.YT](https://karma.yt): Social media integrations
-- [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits
-- [Google Cloud for Startups](https://cloud.google.com/): GPU Cloud Credits
-- [OVH Cloud](https://www.ovhcloud.com/): GPU Cloud credits
-- [NVIDIA Inception](https://www.nvidia.com/en-us/deep-learning-ai/startups/): AI startup support
-- [Azure (MS for Startups)](https://azure.microsoft.com/): OpenAI credits
-- [Outlier Ventures](https://outlierventures.io/): Startup Accelerator
-
-
-## 🌍 Our Vision
-
-Elixpo-ai-chapter envisions a future where AI technology is:
-
-- **Open & Accessible**: We believe AI should be available to everyone, not locked behind paywalls or restricted access
-
-- **Transparent & Ethical**: Our open-source approach ensures transparency in how our models work and behave
-
-- **Community-Driven**: We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate
-
-- **Interconnected**: We're creating an ecosystem where AI services can seamlessly work together, fostering innovation through composability
-
-- **Evolving**: We embrace the rapid evolution of AI technology while maintaining our commitment to openness and accessibility
-
-We're committed to developing AI technology that serves humanity while respecting ethical boundaries and promoting responsible innovation. Join us in shaping the future of AI.
-
-### Stargazers
-
+# Stargazers
 <p align="left">
-  <a href="https://reporoster.com/stars/dark/Circuit-Overtime/elixpo_ai_chapter">
-    <img src="https://reporoster.com/stars/dark/Circuit-Overtime/elixpo_ai_chapter" alt="Stargazers">
+  <a href="https://reporoster.com/stars/dark/Circuit-Overtime/elixpo_chapter">
+    <img src="https://reporoster.com/stars/dark/Circuit-Overtime/elixpo_chapter" alt="Stargazers" />
   </a>
 </p>
 
 
-## License
-
-This is published under the `MIT LICENSE`.
-
----
-
-Made with ❤️ by Ayushman Bhattacharya & Collabs!
+> ## `Made with ❤️ by Ayushman Bhattacharya & Collabs!`
