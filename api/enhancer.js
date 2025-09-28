@@ -1,4 +1,7 @@
- const systemContent = `Instruction Set for AI Image Prompt Engineering:
+import dotenv from 'dotenv'
+dotenv.config();
+const POLLINATIONS_TOKEN = process.env.polli_token;
+const systemContent = `Instruction Set for AI Image Prompt Engineering:
 Your primary goal is to generate a high-quality, professional-grade image prompt under 1000 tokens. You will adhere to the following principles, derived from research into advanced prompt engineering.
 **Core Formula:** Structure your prompt using this six-part formula:
 **Subject + Action + Environment + Art Style + Lighting + Details**
@@ -21,3 +24,58 @@ Your primary goal is to generate a high-quality, professional-grade image prompt
 - **Abstract Concepts:** Translate abstract ideas into visually descriptive prompts.
 - **Final Output:** The final output must be **only the new prompt**, with no additional text or explanation.`;
 
+
+async function promptEnhance(userPrompt) {
+    console.log("Enhancing prompt:", userPrompt);
+    const seed = Math.floor(Math.random() * 10000);     
+
+    const response = await fetch("https://text.pollinations.ai/openai", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            model: process.env.ENHANCER_MODEL || "openai",
+            seed: seed,
+            messages: [
+                {
+                    role: "system",
+                    content: systemContent
+                },
+                {
+                    role: "user",
+                    content: userPrompt
+                }
+            ]
+        }),
+        token: POLLINATIONS_TOKEN,
+        top_p: 0.9,
+        temperature: 1.2,
+        private: "true",
+        frequency_penalty: 0,
+        presence_penalty: 0,
+        max_tokens: 500
+
+
+    });
+
+    if (!response.ok) {
+        console.error("Enhancer Error:", response.statusText);
+        // notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
+        return userPrompt;
+    }
+
+    const data = await response.json();
+    if (data.error) {
+        console.error("Enhancer Error:", data.error);
+        // notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
+        return userPrompt;
+    }
+
+    const enhanced = data.choices?.[0]?.message?.content || "";
+    return enhanced.trim();
+}
+
+// test
+// promptEnhance("A fantasy landscape with mountains and a river").then(console.log);
+export default promptEnhance;

@@ -466,7 +466,8 @@ async function generateImage(generationNumber, prompt, width, height, model, suf
             const copyBtn = tile.querySelector(".inPictureControls > #copyButton");
 
             if (result.success) {
-                const imageUrl = result.imageData;
+                const imageUrl = result.imageData; 
+                const actualImageUrl = result.actualImageUrl; 
                 const generationTime = Math.round(result.generationTime / 1000);
                 
                 tile.style.backgroundImage = `url(${imageUrl})`;
@@ -477,15 +478,18 @@ async function generateImage(generationNumber, prompt, width, height, model, suf
                 downloadBtn.setAttribute("data-id", imageUrl);
                 copyBtn.setAttribute("data-id", prompt);
                 
-                // Store for later use
-                generateURLS[index] = imageUrl;
+                // Store the actual https:// URL for database storage
+                generateURLS[index] = actualImageUrl || imageUrl;
                 generationTimes.push(generationTime);
+                
+                console.log(`Image ${index}: Display URL: ${imageUrl.substring(0, 50)}...`);
+                console.log(`Image ${index}: Storage URL: ${actualImageUrl}`);
                 
                 tile.addEventListener("click", () => {
                     expandImage(imageUrl, promptText, batchRequests[index].seed, height, width, model, ratio, generationTime);
                 });
             } else {
-                console.error(`Error generating image for tile${tileIndex}:`, result.error);
+                console.error(`Error generating image for tile${tileIndex}:`, result.error || 'Unknown error');
                 loadingAnimation.classList.add("hidden");
                 tile.style.backgroundColor = "#ff4444";
                 tile.innerHTML = `<div style="color: white; text-align: center; padding: 20px;">Generation Failed</div>`;
@@ -494,15 +498,24 @@ async function generateImage(generationNumber, prompt, width, height, model, suf
 
         if (signal.aborted) return;
 
-        notify("Generation complete!");
-        dismissNotification();
-        document.getElementById("acceptBtn").classList.remove("hidden");
-        document.getElementById("rejectBtn").classList.remove("hidden");
-        document.getElementById("acceptBtn").setAttribute("data-prompt", prompt);
+        // Only show success message and buttons if there are successful generations
+        const successfulGenerations = data.results.filter(result => result.success);
+        if (successfulGenerations.length > 0) {
+            notify("Generation complete!");
+            dismissNotification();
+            document.getElementById("acceptBtn").classList.remove("hidden");
+            document.getElementById("rejectBtn").classList.remove("hidden");
+            document.getElementById("acceptBtn").setAttribute("data-prompt", prompt);
+            
+            const avg = Math.round(generationTimes.reduce((a, b) => a + b, 0) / generationTimes.length);
+            console.log(`Average generation time: ${avg}s`);
+        } else {
+            notify("All generations failed. Please try again.");
+            document.getElementById("generateButton").removeAttribute("disabled");
+        }
+        
         document.getElementById("interruptButton").classList.add("hidden");
-
-        const avg = Math.round(generationTimes.reduce((a, b) => a + b, 0) / generationTimes.length);
-        console.log(`Average generation time: ${avg}s`);
+        console.log('Final generateURLS array:', generateURLS);
 
     } catch (error) {
         console.error('Image generation error:', error);
@@ -512,7 +525,6 @@ async function generateImage(generationNumber, prompt, width, height, model, suf
         } else {
             notify(`Generation failed: ${error.message}`);
         }
-        
         
         document.querySelectorAll(".tile .loadingAnimations").forEach(loading => {
             loading.classList.add("hidden");
@@ -577,11 +589,12 @@ async function handleStaticServerUpload(generateURLS, imageNumber, imageTheme, m
             date: new Date().toDateString(),
             imgId: imageGenId
         };
-
-        // Prepare image URLs as Imgurl0, Imgurl1, ...
+        console.log(generateURLS)
+        
         generateURLS.forEach((imageUrl, idx) => {
             mainData[`Imgurl${idx}`] = imageUrl;
         });
+        
 
         try {
             // Write image generation data
@@ -836,7 +849,7 @@ document.querySelectorAll(".inPictureControls > #copyButton").forEach(copyBtn =>
 
 
 
-// generateImage(2, "a beautiful kite", "512", "512", "flux", "a realistic depiction", "SD", false, false, false, null, new AbortController());
+
 function typeEnhancedPrompt(msg, wordIndex = 0, callback) {
     const welcomeMessage = document.getElementById("overlay");
     const message = msg;
@@ -863,51 +876,49 @@ function typeEnhancedPrompt(msg, wordIndex = 0, callback) {
 }
 
 
-
 async function promptEnhance(userPrompt, pimpController) {
     console.log("Enhancing prompt:", userPrompt);
-    const seed = Math.floor(Math.random() * 10000);     
 
-    const response = await fetch("https://text.pollinations.ai/openai", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            model: "openai",
-            seed: seed,
-            messages: [
-                {
-                    role: "system",
-                    content: "You are a professional AI prompt enhancer specialized in creating rich, vivid, and detailed prompts for AI art generation. Transform the user's input into a visually immersive and technically optimized prompt between 50 to 100 words. Include visual styles, lighting, composition, mood, and camera perspective if applicable, without changing the core idea."
-                },
-                {
-                    role: "user",
-                    content: userPrompt
-                }
-            ]
-        }),
-        signal: pimpController.signal,
-        mode: "cors"
-    });
+    try {
+        const response = await fetch(`${serverURL}/enhance`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                prompt: userPrompt
+            }),
+            signal: pimpController.signal
+        });
 
-    if (!response.ok) {
-        console.error("Enhancer Error:", response.statusText);
-        notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
+        if (!response.ok) {
+            console.error("Enhancer Error:", response.statusText);
+            notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
+            return userPrompt;
+        }
+
+        const data = await response.json();
+        
+        if (!data.success) {
+            console.error("Enhancer Error:", data.error);
+            notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
+            return data.fallback || userPrompt;
+        }
+
+        console.log(`Prompt enhanced successfully in ${data.processingTime}ms`);
+        return data.enhanced || userPrompt;
+
+    } catch (error) {
+        if (error.name === "AbortError") {
+            console.log("Enhancement request aborted");
+            return userPrompt;
+        }
+        
+        console.error("Enhancement request failed:", error);
+        notify("Enhancement failed, using original prompt");
         return userPrompt;
     }
-
-    const data = await response.json();
-    if (data.error) {
-        console.error("Enhancer Error:", data.error);
-        notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
-        return userPrompt;
-    }
-
-    const enhanced = data.choices?.[0]?.message?.content || "";
-    return enhanced.trim();
 }
-
 
 
 
@@ -949,5 +960,5 @@ return aspectRatioMap[aspectRatio] || { SD: "1024x768", HD: "1280x960", LD: "512
 }
 
 
-
+// generateImage(2, "a beautiful kite", "512", "512", "flux", "a realistic depiction", "SD", false, false, false, null, new AbortController());
 manageTileNumbers();
