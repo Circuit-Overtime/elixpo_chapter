@@ -10,6 +10,7 @@ Hacktoberfest 2025 officially runs throughout **October 2025**. To have your Pul
 
 We have multiple projects under the `elixpo_chapter` umbrella, and each project has its own set of issues. To make a meaningful contribution:
 
+
 ### 1. Explore Projects and Issues
 
 Before you start, please refer to the main `README.md` file of the `elixpo_chapter` repository. It lists all the projects and provides an overview. Each project repository will have its own dedicated [Issues](https://github.com/elixpo_chapter/ElixpoAI-Art-Generator/issues) section.
@@ -45,6 +46,16 @@ We are actively seeking contributors knowledgeable in data science and machine l
 - Collaborating on dataset refinement and curation.
 - Contributing to model training, evaluation, and fine-tuning.
 - Writing articles or blog posts about your findings, methodologies, or novel approaches.
+
+
+### How to earn the "Elixpo Contributor" badge
+To earn this badge, contributors need to:
+1. Submit at least one meaningful pull request that gets merged into the repository.
+2. Ensure the pull request follows the project's contribution guidelines.
+3. The contribution can be related to bug fixes, feature additions, or documentation improvements.
+
+Once your pull request is merged, you will automatically be issued the badge!
+
 
 ## Getting Started
 
