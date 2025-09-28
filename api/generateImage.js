@@ -1,7 +1,10 @@
 import dotenv from 'dotenv'
+import fetch from 'node-fetch';
+
 dotenv.config();
 
 const POLLINATIONS_TOKEN = process.env.polli_token;
+
 async function generateImageWorker(request) {
   const { prompt, width, height, model, seed, imageMode, uploadedUrl, privateMode } = request;
   
@@ -24,15 +27,16 @@ async function generateImageWorker(request) {
   // Implement retry logic with fallback
   const maxRetries = 3;
   let lastError;
+  let currentUrl = generateUrl;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Attempt ${attempt} for request ${request.id}`);
+      console.log(`Attempt ${attempt} for request ${request.id}: ${currentUrl}`);
       
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
       
-      const response = await fetch(generateUrl, { 
+      const response = await fetch(currentUrl, { 
         signal: controller.signal,
         headers: {
           'User-Agent': 'ElixpoArt/1.0'
@@ -45,7 +49,13 @@ async function generateImageWorker(request) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      return await response.blob();
+      const imageBlob = await response.blob();
+      
+      // Return both the blob and the successful URL
+      return {
+        blob: imageBlob,
+        originalUrl: currentUrl
+      };
       
     } catch (error) {
       lastError = error;
@@ -53,7 +63,7 @@ async function generateImageWorker(request) {
       
       // If gptimage or kontext fails and not in imageMode, fallback to flux
       if ((model === 'gptimage' || model === 'kontext') && !imageMode && attempt === 2) {
-        generateUrl = generateUrl.replace(`model=${model}`, 'model=flux');
+        currentUrl = currentUrl.replace(`model=${model}`, 'model=flux');
         console.log(`Falling back to flux model for request ${request.id}`);
       }
       

@@ -77,5 +77,5 @@ async function promptEnhance(userPrompt) {
 }
 
 // test
-promptEnhance("A fantasy landscape with mountains and a river").then(console.log);
+// promptEnhance("A fantasy landscape with mountains and a river").then(console.log);
 export default promptEnhance;

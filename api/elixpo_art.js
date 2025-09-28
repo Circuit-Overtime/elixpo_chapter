@@ -5,8 +5,8 @@ import { initializeApp } from "firebase/app";
 import { getFirestore} from "firebase/firestore";
 import { getDatabase, ref, push } from "firebase/database";
 import {rateLimit} from 'express-rate-limit';
-import generateImageWorker from './generateImage';
-import promptEnhance from './enhancer';
+import generateImageWorker from './generateImage.js';
+import promptEnhance from './enhancer.js';
 import fs from 'fs';
 import multer from 'multer'; 
 import FormData from 'form-data'; 
@@ -289,15 +289,16 @@ async function processImageQueue() {
   console.log(`Processing request ${request.id}. Active workers: ${activeImageWorkers}`);
 
   try {
-    const imageBlob = await generateImageWorker(request);
+    const result = await generateImageWorker(request);
     
     // Convert blob to base64 for transmission
-    const buffer = Buffer.from(await imageBlob.arrayBuffer());
+    const buffer = Buffer.from(await result.blob.arrayBuffer());
     const base64Image = buffer.toString('base64');
     
     request.res.json({
       success: true,
       imageData: `data:image/png;base64,${base64Image}`,
+      actualImageUrl: result.originalUrl, 
       requestId: request.id,
       generationTime: Date.now() - request.timestamp
     });
@@ -319,8 +320,6 @@ async function processImageQueue() {
   }
 }
 
-
-
 app.post('/generate-batch', async (req, res) => {
   const { requests } = req.body;
   
@@ -333,7 +332,6 @@ app.post('/generate-batch', async (req, res) => {
   }
   
   const batchId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-  const results = [];
   
   try {
     const promises = requests.map(async (req, index) => {
@@ -345,14 +343,15 @@ app.post('/generate-batch', async (req, res) => {
       };
       
       try {
-        const imageBlob = await generateImageWorker(imageRequest);
-        const buffer = Buffer.from(await imageBlob.arrayBuffer());
+        const result = await generateImageWorker(imageRequest);
+        const buffer = Buffer.from(await result.blob.arrayBuffer());
         const base64Image = buffer.toString('base64');
         
         return {
           success: true,
           index,
           imageData: `data:image/png;base64,${base64Image}`,
+          actualImageUrl: result.originalUrl, // Fixed: use result.originalUrl
           generationTime: Date.now() - imageRequest.timestamp
         };
       } catch (error) {
