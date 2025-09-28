@@ -863,51 +863,49 @@ function typeEnhancedPrompt(msg, wordIndex = 0, callback) {
 }
 
 
-
 async function promptEnhance(userPrompt, pimpController) {
     console.log("Enhancing prompt:", userPrompt);
-    const seed = Math.floor(Math.random() * 10000);     
 
-    const response = await fetch("https://text.pollinations.ai/openai", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            model: "openai",
-            seed: seed,
-            messages: [
-                {
-                    role: "system",
-                    content: "You are a professional AI prompt enhancer specialized in creating rich, vivid, and detailed prompts for AI art generation. Transform the user's input into a visually immersive and technically optimized prompt between 50 to 100 words. Include visual styles, lighting, composition, mood, and camera perspective if applicable, without changing the core idea."
-                },
-                {
-                    role: "user",
-                    content: userPrompt
-                }
-            ]
-        }),
-        signal: pimpController.signal,
-        mode: "cors"
-    });
+    try {
+        const response = await fetch(`${serverURL}/enhance`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                prompt: userPrompt
+            }),
+            signal: pimpController.signal
+        });
 
-    if (!response.ok) {
-        console.error("Enhancer Error:", response.statusText);
-        notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
+        if (!response.ok) {
+            console.error("Enhancer Error:", response.statusText);
+            notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
+            return userPrompt;
+        }
+
+        const data = await response.json();
+        
+        if (!data.success) {
+            console.error("Enhancer Error:", data.error);
+            notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
+            return data.fallback || userPrompt;
+        }
+
+        console.log(`Prompt enhanced successfully in ${data.processingTime}ms`);
+        return data.enhanced || userPrompt;
+
+    } catch (error) {
+        if (error.name === "AbortError") {
+            console.log("Enhancement request aborted");
+            return userPrompt;
+        }
+        
+        console.error("Enhancement request failed:", error);
+        notify("Enhancement failed, using original prompt");
         return userPrompt;
     }
-
-    const data = await response.json();
-    if (data.error) {
-        console.error("Enhancer Error:", data.error);
-        notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
-        return userPrompt;
-    }
-
-    const enhanced = data.choices?.[0]?.message?.content || "";
-    return enhanced.trim();
 }
-
 
 
 

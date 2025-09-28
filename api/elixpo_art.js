@@ -6,6 +6,7 @@ import { getFirestore} from "firebase/firestore";
 import { getDatabase, ref, push } from "firebase/database";
 import {rateLimit} from 'express-rate-limit';
 import generateImageWorker from './generateImage';
+import promptEnhance from './enhancer';
 import fs from 'fs';
 import multer from 'multer'; 
 import FormData from 'form-data'; 
@@ -188,6 +189,54 @@ app.post('/upload-to-uguu', upload.single('file'), async (req, res) => {
   }
 });
 
+
+app.post('/enhance', async (req, res) => {
+  const { prompt } = req.body;
+
+  if (!prompt || typeof prompt !== 'string') {
+    return res.status(400).json({ 
+      error: 'Prompt is required and must be a string' 
+    });
+  }
+
+  if (prompt.length > 2000) {
+    return res.status(400).json({ 
+      error: 'Prompt is too long. Maximum 2000 characters allowed.' 
+    });
+  }
+
+  try {
+    console.log(`Enhancing prompt: "${prompt.substring(0, 100)}..."`);
+    
+    const startTime = Date.now();
+    const enhancedPrompt = await promptEnhance(prompt);
+    const processingTime = Date.now() - startTime;
+    
+    if (!enhancedPrompt || enhancedPrompt.trim() === '') {
+      throw new Error('Enhancement failed - empty response');
+    }
+
+    console.log(`Prompt enhanced successfully in ${processingTime}ms`);
+    
+    res.json({
+      success: true,
+      original: prompt,
+      enhanced: enhancedPrompt.trim(),
+      processingTime: processingTime
+    });
+
+  } catch (error) {
+    console.error('Prompt enhancement error:', error);
+    
+    res.status(500).json({
+      error: 'Failed to enhance prompt',
+      message: error.message,
+      fallback: prompt 
+    });
+  }
+});
+
+
 app.post('/generate-image', async (req, res) => {
   const { 
     prompt, 
@@ -342,8 +391,8 @@ app.get('/', (req, res) => {
 
 app.get('/queue-status', (req, res) => {
     res.json({
-        imageQueueLength: endPointImageRequestQueue.length,
-        activeImageWorkers: activeImageQueueWorkers,
+        imageQueueLength: imageGenerationQueue.length, // Fixed variable name
+        activeImageWorkers: activeImageWorkers, // Fixed variable name
         requestQueueLength: requestQueue.length,
         maxImageQueueLength: MAX_QUEUE_LENGTH,
         maxConcurrentWorkers: MAX_CONCURRENT_REQUESTS
