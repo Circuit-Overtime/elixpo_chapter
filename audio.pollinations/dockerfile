@@ -16,5 +16,5 @@ RUN pip install -r requirements.txt
 COPY . .
 
 EXPOSE 8000
-ENV FLASK_APP=src/app.py
-CMD ["gunicorn", "-w", "30", "-b", "0.0.0.0:8000", "src.app:app"]
+ENV FLASK_APP=/app/src
+CMD ["hypercorn", "app:app", "--workers", "3", "--bind", "0.0.0.0:8000"]

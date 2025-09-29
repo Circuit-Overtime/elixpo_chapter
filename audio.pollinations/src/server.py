@@ -6,7 +6,8 @@ import logging
 import asyncio
 import shutil
 from typing import Optional
-
+import torch
+import torchaudio
 from tools import tools
 from config import TEMP_SAVE_DIR
 from utility import encode_audio_base64, save_temp_audio, cleanup_temp_file, validate_and_decode_base64_audio
@@ -16,7 +17,8 @@ from tts import generate_tts
 from ttt import generate_ttt
 from sts import generate_sts
 from stt import generate_stt
-import loggerConfig
+
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("elixpo-audio")
 
@@ -30,8 +32,8 @@ async def run_audio_pipeline(
     reqID: str = None,
     text: str = None,
     voice: str = None,
-    synthesis_audio_path: Optional[str] = None, #this is b64 speech input for STS or STT 
-    clone_audio_transcript: Optional[str] = None, #this is transcript of the cloned voice
+    synthesis_audio_path: Optional[str] = None, 
+    clone_audio_transcript: Optional[str] = None,
     system_instruction: Optional[str] = None 
 ):
     
@@ -170,30 +172,24 @@ Analyze this request and call the appropriate pipeline function.
                 try:
                     if fn_name == "generate_tts":
                         logger.info(f"[{reqID}] Calling TTS pipeline")
-                        audio_bytes = await generate_tts(
+                        audio_bytes,sample_rate = await generate_tts(
                             text=fn_args.get("text"),
                             requestID=fn_args.get("requestID"),
                             system=fn_args.get("system"),
                             clone_text=fn_args.get("clone_text"),
                             voice=fn_args.get("voice")
                         )
-                        
-                        audio_path = os.path.join(higgs_dir, f"{reqID}.wav")
-                        with open(audio_path, "wb") as f:
-                            f.write(audio_bytes)
-                        logger.info(f"[{reqID}] TTS audio saved to: {audio_path}")
 
-                        # Also save a copy to genAudio directory
                         os.makedirs("genAudio", exist_ok=True)
                         gen_audio_path = f"genAudio/{reqID}.wav"
                         with open(gen_audio_path, "wb") as f:
                             f.write(audio_bytes)
-                        logger.info(f"[{reqID}] TTS audio also saved to: {gen_audio_path}")
+                        logger.info(f"[{reqID}] TTS audio saved to: {gen_audio_path}")
 
                         return {
                             "type": "audio",
                             "data": audio_bytes,
-                            "file_path": audio_path,
+                            "file_path": gen_audio_path,
                             "reqID": reqID
                         }
 
@@ -205,7 +201,6 @@ Analyze this request and call the appropriate pipeline function.
                             system=fn_args.get("system")
                         )
                         
-                        # Save text to higgs directory
                         text_path = os.path.join(higgs_dir, f"{reqID}.txt")
                         with open(text_path, "w", encoding="utf-8") as f:
                             f.write(text_result)
@@ -221,7 +216,7 @@ Analyze this request and call the appropriate pipeline function.
 
                     elif fn_name == "generate_sts":
                         logger.info(f"[{reqID}] Calling STS pipeline")
-                        audio_bytes = await generate_sts(
+                        audio_bytes, sample_rate = await generate_sts(
                             text=fn_args.get("text"),
                             audio_base64_path=fn_args.get("synthesis_audio_path"),
                             requestID=fn_args.get("requestID"),
@@ -230,24 +225,17 @@ Analyze this request and call the appropriate pipeline function.
                             voice=fn_args.get("voice", "alloy")
                         )
                         
-                        # Save audio bytes to higgs directory
-                        audio_path = os.path.join(higgs_dir, f"{reqID}.wav")
-                        with open(audio_path, "wb") as f:
-                            f.write(audio_bytes)
-
-                        # Also save a copy to genAudio directory
+                        
                         os.makedirs("genAudio", exist_ok=True)
                         gen_audio_path = f"genAudio/{reqID}.wav"
                         with open(gen_audio_path, "wb") as f:
                             f.write(audio_bytes)
-                        logger.info(f"[{reqID}] TTS audio also saved to: {gen_audio_path}")
-                        
-                        logger.info(f"[{reqID}] STS audio saved to: {audio_path}")
-                        
+                        logger.info(f"[{reqID}] TTS audio saved to: {gen_audio_path}")
+
                         return {
                             "type": "audio",
                             "data": audio_bytes,
-                            "file_path": audio_path,
+                            "file_path": gen_audio_path,
                             "reqID": reqID
                         }
 
@@ -259,8 +247,7 @@ Analyze this request and call the appropriate pipeline function.
                             requestID=fn_args.get("requestID"),
                             system=fn_args.get("system")
                         )
-                        
-                        # Save text to higgs directory
+
                         text_path = os.path.join(higgs_dir, f"{reqID}.txt")
                         with open(text_path, "w", encoding="utf-8") as f:
                             f.write(text_result)
@@ -308,7 +295,6 @@ Analyze this request and call the appropriate pipeline function.
             "reqID": reqID
         }
     finally:
-        # Clean up higgs directory after pipeline completion
         try:
             if os.path.exists(higgs_dir):
                 shutil.rmtree(higgs_dir)
@@ -323,11 +309,11 @@ Analyze this request and call the appropriate pipeline function.
 
 if __name__ == "__main__":
     async def main():
-        text = "Expand some facts on this please"
+        text = "good morning fellow humans, what a wonderful day to be alive!"
         synthesis_audio_path = None
         requestID = reqID()
         voice = "ash"
-        synthesis_audio_path="trialCodes/sample.wav"
+        synthesis_audio_path=None
         clone_audio_transcript = None
         
 
@@ -353,6 +339,7 @@ if __name__ == "__main__":
             saved_base64_path_speech = save_temp_audio(base64_synthesis_audio, reqID, "speech")
 
         result = await run_audio_pipeline(reqID=requestID, text=text, voice=saved_base64_path_clone, synthesis_audio_path=saved_base64_path_speech, clone_audio_transcript=clone_audio_transcript)
+        
 
         if not result:
             print("[ERROR] Pipeline returned None")

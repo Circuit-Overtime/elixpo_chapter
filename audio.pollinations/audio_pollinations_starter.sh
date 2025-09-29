@@ -4,6 +4,10 @@ cd ~/scratch/audio.pollinations || { echo "Directory not found"; exit 1; }
 echo "Checking if port 8000 is in use and clearing it..."
 sudo lsof -ti:8000 | xargs -r sudo kill -9
 
+# Clear port 6000 if in use (model server port)
+echo "Checking if port 6000 is in use and clearing it..."
+sudo lsof -ti:6000 | xargs -r sudo kill -9
+
 # Create virtual environment if not exists
 if [ ! -d "higgs_audio_env" ]; then
     echo "Creating virtual environment..."
@@ -22,8 +26,28 @@ pip install -r requirements.txt
 # Add both current directory and src directory to PYTHONPATH
 export PYTHONPATH="${PYTHONPATH}:$(pwd):$(pwd)/src"
 
-# Start the app with gunicorn, specifying the working directory
-echo "Starting the model server"
-python src/model_server.py
+# Start the model server in background
+echo "Starting the model server in background..."
+python src/model_server.py &
+MODEL_SERVER_PID=$!
+
+# Wait a moment for model server to start
+echo "Waiting for model server to initialize..."
+sleep 15
+
+# Function to cleanup background processes on exit
+cleanup() {
+    echo "Shutting down processes..."
+    kill $MODEL_SERVER_PID 2>/dev/null
+    pkill -f "hypercorn src.app:app" 2>/dev/null
+    exit
+}
+
+# Set up trap to cleanup on script exit
+trap cleanup EXIT INT TERM
+
+# Start the app with hypercorn
 echo "Starting the app on port 8000..."
-hypercorn src.app:app --workers 10 --bind 0.0.0.0:8000
+hypercorn src.app:app --workers 5 --bind 0.0.0.0:8000
+
+wait
