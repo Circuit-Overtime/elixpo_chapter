@@ -128,7 +128,7 @@ torch-stoi==0.2.3
 torchaudio==2.8.0
 tqdm==4.67.1
 traitlets==5.14.3
-transformers==4.46.1
+transformers==4.53.0
 triton==3.4.0
 typer==0.15.4
 typing_extensions==4.15.0
