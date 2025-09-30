@@ -1,102 +1,92 @@
-from loguru import logger 
+from loguru import logger
 import requests
 from typing import Optional
 from dotenv import load_dotenv
-import os 
+import os
 import asyncio
 import loggerConfig
+
 load_dotenv()
 
-async def getIntentType(text: str, system: Optional[str] = None, max_tokens: Optional[int] = 300) -> dict:
-    logger.info(f"Classifying intent and extracting content for prompt: {text} with max tokens: {max_tokens}")
-    payload = {
-        'model': 'gemini',
-        'messages': [
-            {
-                'role': 'system',
-                'content': (
-                    "You are an intent classification and content enhancement AI for advanced audio synthesis using Higgs Audio v2 capabilities. "
-                    "Your output must be ONLY a JSON object with this schema:\n"
-                    "{ \"intent\": \"DIRECT\" or \"REPLY\", \"content\": \"...\" }\n\n"
-                    "No markdown formatting is needed! Don't wrap any markdown formatting, the response should be in plain text.\n\n"
-                    
-                    "EMOTIONAL AND VOCAL EXPRESSION TAGS:\n"
-                    "- [happy]: Joyful, upbeat tone\n"
-                    "- [sad]: Melancholic, somber delivery\n"
-                    "- [angry]: Intense, forceful expression\n"
-                    "- [excited]: High energy, animated delivery\n"
-                    "- [calm]: Peaceful, measured tone\n"
-                    "- [surprised]: Sudden, startled expression\n"
-                    "- [whisper]: Soft, intimate delivery\n"
-                    "- [shout]: Loud, emphatic expression\n"
-                    "- [laughing]: Include natural laughter\n"
-                    "- [crying]: Emotional, tearful delivery\n"
-                    "- [breathless]: Quick, urgent pacing\n"
-                    "- [thoughtful]: Contemplative, reflective tone\n"
 
-                    
-                    "SUPPORTED TAGS FOR CONTENT ENHANCEMENT:\n"
-                    "- Emotions: [happy], [sad], [angry], [excited], [calm], [surprised], [thoughtful], [serious]\n"
-                    "- Vocal Effects: [whisper], [shout], [laughing], [crying], [breathless], [echo], [reverb]\n"
-                    "- Audio Quality: [close mic], [distant], [filtered], [clear]\n"
-                    "- Pacing: [fast], [slow], [pause], [long pause], [rushed], [drawn out]\n"
-                    "- Background: [background music: classical], [background music: jazz], [background music: ambient], [background music: electronic]\n"
-                    "- Sound Effects: [sound effect: rain], [sound effect: birds], [sound effect: applause], [sound effect: footsteps]\n"
-                    "- Ambient: [ambient: nature sounds], [ambient: coffee shop], [ambient: quiet room]\n"
-                    "- Special: [silence], [music fades in], [music fades out]\n\n"
-                    
-                    "CONTENT ENHANCEMENT RULES:\n"
-                    "1. intent = \"DIRECT\" if the user explicitly requests their text to be spoken, read aloud, repeated exactly, transcribed, or otherwise delivered verbatim. "
-                    "This includes any phrasing that means 'say it as it is', 'speak it out', 'read this', or similar instructions.\n"
-                    "- Keep the user's wording exactly the same but enhance it with:\n"
-                    "  * Correct punctuation, capitalization, and natural stops\n"
-                    "  * Appropriate emotion tags based on content tone (e.g., [excited] for positive news, [calm] for peaceful content, [serious] for important information)\n"
-                    "  * Vocal cues for better delivery (e.g., [pause] for emphasis, [whisper] for intimate moments, [clear] for announcements)\n"
-                    "  * Pacing adjustments (e.g., [slow] for dramatic effect, [fast] for urgent content)\n"
-                    "  * Background elements if appropriate (e.g., [ambient: quiet room] for professional content)\n\n"
-                    
-                    "2. intent = \"REPLY\" if the user is asking a question, sharing information, or expecting a conversational response.\n"
-                    "- Generate a short, casual, friendly reply as a conversational AI\n"
-                    "- Keep it concise, engaging, and natural sounding like chatting with a friend\n"
-                    "- Automatically enhance the reply with:\n"
-                    "  * Proper punctuation, sentence stops, and natural expressions\n"
-                    "  * Appropriate emotional tags matching the response tone (e.g., [happy] for positive replies, [thoughtful] for reflective responses)\n"
-                    "  * Natural vocal elements (e.g., [pause] for consideration, [laughing] for humorous responses)\n"
-                    "  * Conversational pacing and clarity tags\n"
-                    "- Do not write scripts, narration, or long paragraphs\n"
-                    "- Do not include emojis, special symbols, or anything other than plain text with supported tags\n\n"
-                    
-                    "TAG PLACEMENT GUIDELINES:\n"
-                    "- Place emotion tags before or within relevant phrases: [excited] That's amazing news!\n"
-                    "- Use pacing tags for natural flow: This is important. [pause] Let me explain further.\n"
-                    "- Add background elements sparingly: [ambient: quiet room] for professional tone\n"
-                    "- Include vocal effects when they enhance meaning: [whisper] This is just between us.\n\n"
-                    
-                    "AUTOMATIC CONTENT ANALYSIS:\n"
-                    "- Detect excitement words (amazing, awesome, incredible, fantastic) → add [excited]\n"
-                    "- Detect calm words (peaceful, gentle, soft, serene) → add [calm]\n"
-                    "- Detect serious words (important, urgent, critical, grave) → add [serious]\n"
-                    "- Detect sad words (tragic, sorrowful, mourning, loss) → add [sad]\n"
-                    "- Detect humor words (funny, joke, hilarious, amusing) → add [happy] or [laughing]\n"
-                    "- Add [pause] after important statements or before explanations\n"
-                    "- Use [clear] for announcements or important information\n"
-                    "- Apply [thoughtful] for reflective or contemplative content\n\n"
-                    
-                    "3. Do not output explanations or any text outside the JSON object. Strictly return only the JSON object.\n"
-                    "No markdown formatting is needed! Don't wrap any markdown formatting, the response should be in plain text."
+async def getContentRefined(text: str, system: Optional[str] = None, max_tokens: Optional[int] = 300) -> dict:
+    logger.info(f"Classifying intent and extracting content for prompt: {text} with max tokens: {max_tokens}")
+
+    # System instruction block (merged & detailed)
+    system_instruction_content = ""
+    if not system:
+        system_instruction_content = (
+            "Additionally, generate system instructions for the text using this format:\n"
+            "Your job is to describe HOW the text should be spoken, not WHAT should be said.\n\n"
+            "Focus on:\n"
+            "- Voice texture and tone (warm, crisp, breathy, rich, smooth, raspy, etc.)\n"
+            "- Emotional atmosphere (intimate, energetic, contemplative, dramatic, playful, etc.)\n"
+            "- Speaking pace and rhythm (leisurely, urgent, measured, flowing, staccato, etc.)\n"
+            "- Physical environment feel (cozy room, grand hall, quiet library, bustling cafe, etc.)\n"
+            "- Vocal character (confident speaker, gentle storyteller, excited friend, wise mentor, etc.)\n"
+            "- Natural human qualities (slight breathiness, warm chuckles, thoughtful pauses, etc.)\n\n"
+            "Do NOT include any dialogue or text content - only describe the speaking environment and vocal approach.\n"
+            "Use plain descriptive language without any formatting.\n\n"
+            "When system is empty/none, your JSON output should include a third field 'system_instruction' with the instructions"
+        )
+
+    payload = {
+        "model": "mistral",
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are an intent classification and content extraction AI. "
+                    "Your output must be ONLY a JSON object with this schema:\n"
+                    "{ \"intent\": \"DIRECT\" or \"REPLY\", \"content\": \"...\", \"system_instruction\": \"...\" }\n\n"
+
+                    "Rules:\n"
+                    "1. intent = \"DIRECT\" when the user wants you to speak/read specific text exactly as they provide it. "
+                    "Look for patterns like:\n"
+                    "- Quoted text that should be spoken verbatim (e.g., 'say \"Hello World\"', 'speak out \"Good morning\"')\n"
+                    "- Instructions to read, speak, say, or vocalize specific content\n"
+                    "- Text marked as 'verbatim', 'as it is', 'exactly', or similar modifiers\n"
+                    "- Any clear indication the user wants their exact words spoken\n"
+                    "For DIRECT intent:\n"
+                    "- Extract ONLY the core text that should be spoken (remove quotes, command words like 'say', 'speak', etc.)\n"
+                    "- Preserve the original meaning and wording exactly\n"
+                    "- Add natural punctuation for speech flow (commas, periods, exclamation marks)\n"
+                    "- Keep it clean and speech-ready without changing the user's intended words\n\n"
+
+                    "2. intent = \"REPLY\" when the user is asking questions, making statements, or expecting a conversational response.\n"
+                    "For REPLY intent:\n"
+                    "- Generate a natural, engaging conversational response\n"
+                    "- Make it sound like how a real person would respond in conversation\n"
+                    "- Keep responses concise but expressive and personable\n"
+                    "- Add appropriate emotional tone and natural speech patterns\n\n"
+
+                    "3. For BOTH intents, ensure the content is optimized for text-to-speech:\n"
+                    "- Use natural breathing pauses with commas\n"
+                    "- Include appropriate punctuation for emphasis and flow\n"
+                    "- Make sentences clear and easy to speak\n"
+                    "- Avoid overly complex or run-on sentences\n"
+                    "- Sound natural when spoken aloud\n\n"
+
+                    "4. Be intelligent about context - understand the user's true intention beyond just keyword matching.\n"
+                    "5. Do not output explanations or any text outside the JSON object. "
+                    "Do not include emojis, special symbols, markdown, or formatting. "
+                    "Strictly return only the JSON object with speech-optimized content.\n\n"
+
+                    f"{system_instruction_content}"
                 )
             },
             {
-                'role': 'user',
-                'content': f"Prompt: {text}\nSystem: {system}"
+                "role": "user",
+                "content": f"Prompt: {text}\nSystem: {system if system else 'None - generate system instruction'}"
             }
         ],
-        'temperature': 0,
-        'stream': False,
-        'private': True,
-        'token': os.getenv('POLLI_TOKEN'),
-        'referrer': 'elixpoart',
-        'max_tokens': max_tokens
+        "temperature": 0.1,
+        "stream": False,
+        "private": True,
+        "token": os.getenv("POLLI_TOKEN"),
+        "referrer": "elixpoart",
+        "max_tokens": max_tokens,
+        "json": True,
     }
 
     try:
@@ -107,25 +97,48 @@ async def getIntentType(text: str, system: Optional[str] = None, max_tokens: Opt
         data = response.json()
         try:
             reply = data["choices"][0]["message"]["content"]
-            # Try to parse the JSON string
             import json as pyjson
             result = pyjson.loads(reply)
-            assert "intent" in result and "content" in result
+            required_fields = ["intent", "content"]
+            if not system:
+                required_fields.append("system_instruction")
+
+            for field in required_fields:
+                assert field in result
         except Exception as e:
             raise RuntimeError(f"Unexpected response format: {data}") from e
-        
+
         logger.info(f"Intent and content: {result}")
         return result
+
     except requests.exceptions.Timeout:
-        logger.warning("Timeout occurred in getIntentType, returning default DIRECT.")
-        return {"intent": "DIRECT", "content": text}
+        logger.warning("Timeout occurred in getContentRefined, returning default DIRECT.")
+        default_result = {"intent": "DIRECT", "content": text}
+        if not system:
+            default_result["system_instruction"] = (
+                "You are a masterful voice performer bringing text to life with authentic human artistry. "
+                "Channel the energy of a skilled actor - make every word breathe with genuine emotion and personality. "
+                "Use natural vocal textures, micro-pauses, emotional inflections, and dynamic pacing to create a captivating performance. "
+                "Avoid robotic delivery - embrace the beautiful imperfections and nuances of human speech."
+            )
+        return default_result
+
 
 if __name__ == "__main__":
     async def main():
-        test_text = "This is an awesome solar event happening this year school students will be taken for a field trip!!"
-        test_system = "Transcription system"
-        result = await getIntentType(test_text, test_system)
-        intention = result.get("intent")
-        content = result.get("content")
-        print({intention + "\n" + content})
+        test_cases = [
+            'say it as it is "Hello Thomash"',
+            'speak it out "Hello Thomash"',
+            '"Hello Thomash" verbatim',
+            'read this "Hello Thomash"',
+            'How are you doing today?'
+        ]
+        
+        for test_text in test_cases:
+            print(f"\nTesting: {test_text}")
+            result = await getContentRefined(test_text, None)
+            print(f"Intent: {result.get('intent')}")
+            print(f"Content: {result.get('content')}")
+            print("-" * 50)
+
     asyncio.run(main())

@@ -8,12 +8,13 @@
     <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@latest/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@latest/dist/ionicons/ionicons.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato&display=swap" rel="stylesheet">
     <link href="Icons/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="Icons/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-    <link rel="icon" href="Images/InkFlow.png" type="image/png">
-    <link rel="stylesheet" href="Css/Theme.css">
-    <link rel="stylesheet" href="Css/Canvas.css">
-    <link rel="stylesheet" href="Css/CanvasResponsive.css">
+    <link rel="icon" href="Images/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="Css/light-theme.css">
+    <link rel="stylesheet" href="Css/canvas.css">
+    <link rel="stylesheet" href="Css/canvas-responsive.css">
 </head>
 
 <body>
@@ -25,24 +26,6 @@
 
     <div id="sidebar-dropdown" class="sidebar-dropdown">
         <div class="sidebar-content">
-
-            <!-- <div class="account-card">
-                <div class="profile-section">
-                    <div class="profile-image">
-                        <img src="./Images/Demo Img.png" alt="Profile Image" id="profile-img">
-                    </div>
-                    <div class="profile-info">
-                        <h2 class="name">Name</h2>
-                        <span class="username">@username</span>
-                    </div>
-                </div>
-                <div class="actions-section">
-                    <button class="settings-btn">Settings</button>
-                    <button class="logout-btn">Log out</button>
-                </div>
-            </div>
-           
-            <div class="menu-divider"></div> -->
 
             <div class="menu-card">
                 <div class="menu-item" id="edit-menu">
@@ -260,9 +243,7 @@
                     <span>Docs</span><span style="font-size: 0.8em; color: #888; margin-left: -12px;">coming soon</span>
                 </div>
                 <div class="menu-divider"></div>
-                <div class="menu-item">
-                    <a href="./Auth/Signin.html">Sign In</a>
-                    <i class="bi bi-person"></i>
+                <div class="menu-item">Sign In<i class="bi bi-person" style=" color: #888; padding-left: 70%;"></i>
                 </div>
             </div>
         </div>
@@ -427,10 +408,10 @@
                 <ion-icon name="color-fill-outline" style="font-size: 22px;"></ion-icon>
             </button>
             <button class="fill-btn tool" id="fill-dot" title="Dot Fill">
-                <img src="./Images/DotFill.png" alt="Gradient Fill" style="width: 22px; height: 22px;">
+                <img src="./Images/dot-fill.png" alt="Dot Fill" style="width: 22px; height: 22px;">
             </button>
             <button class="fill-btn tool" id="fill-pattern" title="Pattern Fill">
-                <img src="./Images/DiagonalFill.png" alt="Gradient Fill" style="width: 22px; height: 22px;">
+                <img src="./Images/diagonal-fill.png" alt="Pattern Fill" style="width: 22px; height: 22px;">
             </button>
         </div>
     </div>
@@ -463,8 +444,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/rough.js/2.1.1/rough.min.js"
         integrity="sha512-lTLYEWPPtelBz0gl9pujLocRWfHSKaULk5s8vrpzjBqPmmCTByfkhRRwBX8Vvq6hY8IKxATwI4q1qsqb9WtY1g=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="Js/MenuItems.js"></script>
-    <script src="Js/Canvas.js"></script>
+    <script src="Js/sidebar.js"></script>
+    <script src="Js/canvas.js"></script>
 </body>
 
 </html>

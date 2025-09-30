@@ -3,4 +3,6 @@ __pycache__/
 higgs_audio_env/
 pretrained_models/
 genAudio/
+audioExtractor/audioext
+audioExtractor/boson_multimodal
 k8s/secret.yaml

@@ -1,0 +1,16 @@
+{
+  "title": "Landing",
+  "description": "Minimal Interactive UI components for landing pages",
+  "icon": "Dna",
+  "pages": [
+    {
+      "title": "Footer with 3d Model",
+      "path": "landing-footer-3d"
+    },
+     {
+      "title": "Navbar with extended options",
+      "path": "landing-navbar-extended"
+    }
+    
+  ]
+}

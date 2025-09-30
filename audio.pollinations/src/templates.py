@@ -109,5 +109,5 @@ if __name__ == "__main__":
         "request12",
         "An energetic ambience! Don't add any overhead sounds or tokens, just say as much",
     )
-    print(template)
+    # print(template)
     print(f"Chat template saved to {template}")

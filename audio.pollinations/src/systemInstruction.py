@@ -24,24 +24,17 @@ Focus on:
 - Natural human qualities (slight breathiness, warm chuckles, thoughtful pauses, etc.)
 
 Do NOT include any dialogue or text content - only describe the speaking environment and vocal approach.
-Do NOT include any unnecessary environment or other form factors.
 Use plain descriptive language without any formatting.
-
-ADVANCED FEATURES:
-- Automatic voice assignment for unnamed speakers
-- Context-aware emotional adaptation
-- Natural prosody changes during narration
-- Melodic humming capabilities
-- Simultaneous speech and background music generation
 
 Response format (exactly like this):
 (
+"You are a masterful voice performer bringing text to life with authentic human artistry."
 "Channel the energy of a skilled actor - make every word breathe with genuine emotion and personality."
 "Use natural vocal textures, micro-pauses, emotional inflections, and dynamic pacing to create a captivating performance."
-"Embrace emotional expression, natural prosody changes, and the beautiful imperfections of human speech."
+"Avoid robotic delivery - embrace the beautiful imperfections and nuances of human speech."
 "Generate audio following instruction."
 "<|scene_desc_start|>"
-[COMPREHENSIVE SCENE DESCRIPTION WITH VOICE CHARACTERISTICS, ENVIRONMENT, EMOTIONAL TONE, AND AUDIO ELEMENTS]
+[SCENE DESCRIPTION HERE - describe voice texture, tone, environment, and speaking style only]
 "<|scene_desc_end|>"
 )
 """
