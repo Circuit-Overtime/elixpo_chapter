@@ -20,7 +20,6 @@
 
 # 👑 Achievements of Elixpo Series:
 - **Built `10+` Open Source Projects**
-- **3000+ Stars on GitHub**
 - **10+ Contributors**
 - **20 Hackathons Participated**
 - **Global Attention From Developers**
@@ -55,7 +54,7 @@ This project is a **college initiative** where I document and build all the larg
 Currently, the repository is licensed under **GNU GPL-3.0**, ensuring that all derived work also remains open-source.  
 Through this initiative, I want to **give back to the community**, while creating a space for developers and learners to contribute, collaborate, and grow together.  
 
-Since 2023, I’ve been deeply involved in development, and in the last two years, I’ve built **10+ open-source projects** that have collectively received **3000+ GitHub stars**.  
+Since 2023, I’ve been deeply involved in development, and in the last two years, I’ve built **10+ open-source projects** that have collectively received a lot of attention and appreciation from the developer community.
 
 A special **shoutout** to [Ez-Vivek](https://github.com/ez-vivek) and [CSE-Anwesha](https://github.com/CSE-Anwesha) for being the **first contributors** to this project and helping lay the foundation for the initial codebase.  
 
