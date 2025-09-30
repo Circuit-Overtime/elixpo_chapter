@@ -3,6 +3,9 @@ import { Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/theme/provider";
 import { Toaster } from "sonner";
+import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
+import { ConvexClientProvider } from "@/convex/provider";
+
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -26,10 +29,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <ConvexAuthNextjsServerProvider>
+       <html lang="en">
       <body
         className={`${poppins.variable} ${geistMono.variable} antialiased`}
       >
+       <ConvexClientProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -39,7 +44,11 @@ export default function RootLayout({
           <Toaster />
           {children}
         </ThemeProvider>
+       </ConvexClientProvider>
+        
       </body>
     </html>
+    </ConvexAuthNextjsServerProvider>
+   
   );
 }
