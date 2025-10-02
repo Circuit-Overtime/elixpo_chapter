@@ -39,16 +39,13 @@ class EmbeddingClient:
                     raise
 
     def _ensure_connection(self):
-        """Ensure connection is still active, reconnect if needed"""
         try:
-            # Try a simple operation to test connection
             self._service.get_active_operations_count()
         except Exception:
             logger.warning("Connection lost, attempting to reconnect...")
             self._connect()
 
     def generate_embeddings(self, texts: List[str], batch_size: int = 32) -> np.ndarray:
-        """Generate embeddings for a list of texts"""
         self._ensure_connection()
         try:
             return self._service.generate_embeddings(texts, batch_size)
@@ -57,7 +54,6 @@ class EmbeddingClient:
             raise
 
     def build_vector_index(self, docs: List[str], urls: List[str]) -> Tuple[faiss.Index, np.ndarray, List[Dict]]:
-        """Build a FAISS vector index from documents and URLs"""
         self._ensure_connection()
         try:
             return self._service.build_vector_index(docs, urls)
@@ -66,7 +62,6 @@ class EmbeddingClient:
             raise
 
     def search_index(self, query: str, index: faiss.Index, metadata: List[Dict], top_k: int = 3) -> List[Dict]:
-        """Search the vector index for relevant documents"""
         self._ensure_connection()
         try:
             return self._service.search_index(query, index, metadata, top_k)
@@ -75,7 +70,6 @@ class EmbeddingClient:
             raise
 
     def web_search_with_embeddings(self, search_query: str, max_concurrent: int = 5, max_chars: int = 2000) -> tuple[str, list]:
-        """Perform complete web search with embeddings pipeline"""
         self._ensure_connection()
         try:
             return self._service.web_search_with_embeddings(search_query, max_concurrent, max_chars)
@@ -84,7 +78,6 @@ class EmbeddingClient:
             raise
 
     def get_active_operations_count(self) -> int:
-        """Get the number of active operations on the server"""
         self._ensure_connection()
         try:
             return self._service.get_active_operations_count()
@@ -93,7 +86,6 @@ class EmbeddingClient:
             return -1
 
     def close(self):
-        """Close the connection to the embedding server"""
         if self._manager:
             try:
                 self._manager.shutdown()
@@ -115,12 +107,7 @@ def get_embedding_model():
     """Legacy compatibility function - returns the client for use with existing code"""
     return get_embedding_client()
 
-# Wrapper functions for backward compatibility
 async def fast_web_search_with_embeddings(search_query: str, model_client, max_concurrent: int = 5, max_chars: int = 2000) -> tuple[str, list]:
-    """
-    Backward compatibility wrapper for fast_web_search_with_embeddings
-    Now uses the IPC embedding client instead of local model
-    """
     try:
         return model_client.web_search_with_embeddings(search_query, max_concurrent, max_chars)
     except Exception as e:
