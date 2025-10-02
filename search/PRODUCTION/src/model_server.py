@@ -52,9 +52,9 @@ class ipcModules:
         self._gpu_lock = threading.Lock()
         self._operation_semaphore = threading.Semaphore(2)
 
-    def encodeSemantic(self, data: list[str], query: str):
+    def encodeSemantic(self, data: list[str], query: list[str]):
         data_embedding = self.model.encode(data, convert_to_tensor=True)
-        query_embedding = self.model.encode([query], convert_to_tensor=True)
+        query_embedding = self.model.encode(query, convert_to_tensor=True)
         return data_embedding.cpu().numpy(), query_embedding.cpu().numpy()
 
     def cosineScore(self, query_embedding, data_embedding, k=3):

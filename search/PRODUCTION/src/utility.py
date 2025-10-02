@@ -20,6 +20,14 @@ search_service = manager.accessSearchAgents()
 embedModelService = manager.ipcService()
 
 
+def webSearch(query: str):
+    urls = search_service.web_search(query)
+    return urls
+
+def imageSearch(query: str):
+    urls = search_service.image_search(query)
+    return urls
+
 def preprocess_text(text):
     # Remove URLs, special characters, and clean up
     text = re.sub(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', '', text)
@@ -37,10 +45,10 @@ def preprocess_text(text):
             if not any(word in sentence.lower() for word in ['feedback', 'menu', 'navigation', 'click', 'download']):
                 meaningful_sentences.append(sentence)
     
-    return meaningful_sentences[:15]
+    return meaningful_sentences
 
 
-def fetch_url_content_parallel(urls, max_workers=10):
+def fetch_url_content_parallel(queries, urls, max_workers=10):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(fetch_full_text, url): url for url in urls}
         results = ""
@@ -57,8 +65,13 @@ def fetch_url_content_parallel(urls, max_workers=10):
                 results += f"\nURL: {url}\n Failed to fetch content of this URL"
         logger.info(f"Fetched all URL information in parallel.")
         sentences = preprocess_text(results)
+        data_embed, query_embed = embedModelService.encodeSemantic(sentences, list(queries))
+        scores = embedModelService.cosineScore(query_embed, data_embed, k=5)
+        for idx, score in scores:
+            if score > 0.8:  
+                sentences[idx]
 
-        return results
+        return sentences
 
 def fetch_youtube_parallel(urls, mode='metadata', max_workers=10):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -76,8 +89,6 @@ def fetch_youtube_parallel(urls, mode='metadata', max_workers=10):
                 logger.error(f"YouTube {mode} failed for {url}: {e}")
                 results[url] = '[Failed]'
         return results
-
-
 
 
 
