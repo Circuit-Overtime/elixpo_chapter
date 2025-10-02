@@ -198,7 +198,7 @@ class YahooSearchAgentText:
     def __init__(self, custom_port=None):
         self.playwright = None
         self.context = None
-        self.tab_count = 0  # Track tabs opened by this agent
+        self.tab_count = 0  
         
         if custom_port:
             self.custom_port = custom_port
@@ -321,7 +321,7 @@ class YahooSearchAgentImage:
         self.playwright = None
         self.context = None
         self.save_dir = "downloaded_images"
-        self.tab_count = 0  # Track tabs opened by this agent
+        self.tab_count = 0
         
         if custom_port:
             self.custom_port = custom_port

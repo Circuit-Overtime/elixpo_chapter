@@ -65,6 +65,13 @@ class ipcModules:
             else:
                 print(f"[PORT] Warning: Attempted to release port {port} that wasn't tracked")
 
+    def get_status(self):
+        with self.lock:
+            return {
+                "active_ports": len(self.used_ports),
+                "used_ports": list(self.used_ports),
+                "available_range": f"{self.start_port}-{self.end_port}"
+            }
     
 
 if __name__ == "__main__":
