@@ -37,7 +37,7 @@ async def initialize_search_agents():
     else:
         logger.info("Search agent pool already initialized")
 
-# model = get_embedding_model()
+
 
 @lru_cache(maxsize=100)
 def cached_web_search_key(query: str) -> str:
@@ -62,6 +62,7 @@ async def optimized_tool_execution(function_name: str, function_args: dict, memo
             result = f"Location: {location_name} and Local Time is: {localTime}, Please mention the location and time when making the final response!"
             memoized_results["timezone_info"][location_name] = result
             yield result
+
         elif function_name == "web_search":
             start_time = time.time()
             search_query = function_args.get("query")
@@ -73,7 +74,6 @@ async def optimized_tool_execution(function_name: str, function_args: dict, memo
             if cache_key in memoized_results["web_searches"]:
                 logger.info(f"Using cached web search for: {search_query}")
                 yield memoized_results["web_searches"][cache_key]
-            
             logger.info(f"Performing optimized web search for: {search_query}")
             response = None
             tool_result = response.get("result")

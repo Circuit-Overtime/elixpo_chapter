@@ -7,8 +7,10 @@ import concurrent
 import os
 import re
 import asyncio
-
+import random
 _deepsearch_store = {}
+
+
 
 def preprocess_text(text):
     # Remove URLs, special characters, and clean up
@@ -76,20 +78,7 @@ def fetch_youtube_parallel(urls, mode='metadata', max_workers=10):
         return results
 
 
-async def handle_accept_popup(page):
-    try:
-        accept_button = await page.query_selector("button:has-text('Accept')")
-        if not accept_button:
-            accept_button = await page.query_selector("button:has-text('Aceptar todo')")
-        if not accept_button:
-            accept_button = await page.query_selector("button:has-text('Aceptar')")
 
-        if accept_button:
-            await accept_button.click()
-            print("[INFO] Accepted cookie/privacy popup.")
-            await asyncio.sleep(1)
-    except Exception as e:
-        print(f"[WARN] No accept popup found: {e}")
 
 
 def storeDeepSearchQuery(query: list, sessionID: str):
