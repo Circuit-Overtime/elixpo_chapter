@@ -1,4 +1,4 @@
-//code improvished by me , @elixpo [YouTube]
+//code improvised by me , @elixpo [YouTube]
 //inspired from Ben Eater's 8 Bit Breadboard computer, this code
 //performs operations to run simple programs on the computer.
 //The idea is simple and same as of Ben but there are some differences:- 
