@@ -86,7 +86,7 @@ def save_temp_audio(audio_data: str, req_id: str, usageType: str = "clone") -> s
 
     tmp_dir = f"/tmp/higgs/{req_id}"
     os.makedirs(tmp_dir, exist_ok=True)
-    file_path = os.path.join(tmp_dir, f"voice_{req_id}.txt" if usageType == "clone" else f"speech_{req_id}.txt")
+    file_path = os.path.join(tmp_dir, f"voice_{req_id}.wav" if usageType == "clone" else f"speech_{req_id}.wav")
 
     with open(file_path, "w") as f:
         f.write(audio_data)
@@ -125,6 +125,14 @@ def set_random_seed(seed: Optional[int] = None):
             torch.cuda.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
 
+def convertToAudio(audio_base64_path: str, reqID: str) -> str:
+    with open(f"{audio_base64_path}", "r") as f:
+        b64_audio = f.read()
+    audio_bytes = base64.b64decode(b64_audio)
+    audio_path = f"/tmp/higgs/{reqID}/converted_{reqID}.wav"
+    with open(audio_path, "wb") as f:
+        f.write(audio_bytes)
+    return audio_path
 
 def encode_audio_base64(audio_path: str) -> str:
     def is_base64(s: str) -> bool:

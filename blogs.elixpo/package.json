@@ -6,6 +6,7 @@
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0",
     "fs": "^0.0.1-security",
+    "google-auth-library": "^10.3.0",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^7.0.5",
     "nodemon": "^3.1.10",
@@ -20,10 +21,10 @@
   },
   "scripts": {
     "frontend": "lite-server",
-    "backend": "node api/iconsFetcher.js",
-    "backend:dev": "nodemon api/iconsFetcher.js",
-    "dev": "concurrently \"npm run frontend\"",
-    "start": "node api/iconsFetcher.js",
+    "backend": "node api/authWorker/authService.js",
+    "backend:dev": "nodemon api/authWorker/authService.js",
+    "dev": "concurrently \"npm run frontend\" \"npm run backend:dev\"",
+    "start": "node api/authWorker/authService.js",
     "build": "echo 'No build step needed for static frontend'"
   }
 }

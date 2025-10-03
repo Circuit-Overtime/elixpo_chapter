@@ -12,7 +12,7 @@ let imageTimeout = null;
 let imageController = null;
 let isMouseOverImageDisplay = false;
 let extractedDetails = {};
-
+let serverURL = "http://localhost:3005";
 
 
 async function uploadImageToUguu(file) {
@@ -28,7 +28,7 @@ async function uploadImageToUguu(file) {
     formData.append('file', file);
 
     try {
-        const res = await fetch(`https://imgelixpo.vercel.app/upload-to-uguu`, {
+        const res = await fetch(`${serverURL}/upload-to-uguu`, {
             method: 'POST',
             body: formData,
         });
@@ -346,7 +346,7 @@ async function preparePromptInput(generationNumber, prompt, ratio, model, select
             notify("Processing your image...", true);
             document.getElementById("overlay").classList.remove("display");
             scrollToImageGenerator();
-            generateImage(generationNumber, finalPrompt, width, height, "kontext", suffixPrompt, selectedImageQuality, enhanceMode, privateMode, imageMode, signal);
+            generateImage(generationNumber, finalPrompt, width, height, "nanobanana", suffixPrompt, selectedImageQuality, enhanceMode, privateMode, imageMode, signal);
         } else {
             notify("Failed to upload image. Please try again.");
             document.getElementById("generateButton").removeAttribute("disabled");
@@ -408,129 +408,147 @@ document.getElementById("interruptButton").addEventListener("click", function ()
 async function generateImage(generationNumber, prompt, width, height, model, suffixPrompt, selectedImageQuality, enhanceMode, privateMode, imageMode, signal) {
     document.getElementById("interruptButton").classList.remove("hidden");
     const promptText = `${prompt}`;
-    let generateUrl;
-
-    if (imageMode) {
-        console.log("In image mode");
-        const uploadedUrl = document.getElementById("imageHolder").getAttribute("data-uploaded-url");
-        if (uploadedUrl) {
-            if(model == "gptimage") 
-            {
-                // generateUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&nologo=true&token=fEWo70t94146ZYgk&image=${encodeURIComponent(uploadedUrl)}`;
-                notify("oops! gptimage model is not supported anymore, switch to kontext please!");
-            }
-            else if(model == "kontext")
-            {
-                generateUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&image=[${uploadedUrl}]&nologo=true&token=fEWo70t94146ZYgk`;
-            }
-            notify("Remixing with your request!! Would take a minute or so, hang on buddy!");
-        } else {
-            notify("Image not found. Please upload a valid image.");
-            return;
-        }
-    } else {
-        generateUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptText)}?width=${width}&height=${height}&model=${model}&nologo=true&referrer=elixpoart&token=fEWo70t94146ZYgk`;
-        notify("Trying to paint the image!", true);
-    }
-
-    if (privateMode) {
-        generateUrl += "&private=true";
-    }
+    
+    notify("Sending request to server...", true);
 
     const tilePromises = [];
     const generationTimes = [];
 
-    for (let i = 1; i <= generationNumber; i++) {
-        const tile = document.querySelector(`.tile${i}`);
-        const loadingAnimation = tile.querySelector(".loadingAnimations");
-        const downloadBtn = tile.querySelector(".inPictureControls > #downloadBtn");
-        const copyBtn = tile.querySelector(".inPictureControls > #copyButton");
-
-        tile.style.pointerEvents = "none";
-        loadingAnimation.classList.remove("hidden");
-
+    // Prepare batch requests
+    const batchRequests = [];
+    for (let i = 0; i < generationNumber; i++) {
         const tileSeed = Math.floor(Math.random() * 10000);
-        let imageRequestUrl = `${generateUrl}&seed=${tileSeed}`;
-        const tryGeneration = async (currentModel, watchdogTimeout = 60000) => {
-            const controller = new AbortController();
-            const watchdog = setTimeout(() => controller.abort(), watchdogTimeout);
-            try {
-                const response = await fetch(imageRequestUrl, { signal: controller.signal });
-                clearTimeout(watchdog);
-                if (!response.ok) {
-                    throw new Error(`HTTP error ${response.status}`);
-                }
-                return response.blob();
-            } catch (error) {
-                clearTimeout(watchdog);
+        const uploadedUrl = imageMode ? document.getElementById("imageHolder").getAttribute("data-uploaded-url") : null;
+        
+        batchRequests.push({
+            prompt: promptText,
+            width: parseInt(width),
+            height: parseInt(height),
+            model: model,
+            seed: tileSeed,
+            imageMode: imageMode,
+            uploadedUrl: uploadedUrl,
+            privateMode: privateMode
+        });
+    }
 
-                if (controller.signal.aborted && (currentModel === "gptimage" || currentModel == "kontext") && !imageMode) {
-                    notify("gptimage model took too long. Switching to flux...");
-                    const fallbackUrl = imageRequestUrl.replace(`model=${currentModel}`, "model=flux");
-                    imageRequestUrl = fallbackUrl;
-                    return tryGeneration("flux");
-                }
+    try {
+        // Send batch request to backend
+        const response = await fetch(`${serverURL}/generate-batch`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                requests: batchRequests
+            }),
+            signal: signal
+        });
 
-                if ((error.message.includes("500") || error.message.includes("HTTP")) && currentModel !== "flux") {
-                    notify("Opps my brush broke! Trying  again");
-                    imageRequestUrl = imageRequestUrl.replace(`model=${currentModel}`, "model=flux");
-                    return tryGeneration("flux");
-                }
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
 
-                throw error;
-            }
-        };
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Batch generation failed');
+        }
 
-        const tilePromise = tryGeneration(model)
-            .then(blob => {
-                const endTime = performance.now();
-                const generationTime = Math.round((endTime - performance.now()) / 1000);
-                generationTimes.push(generationTime);
+        notify("Processing images...", true);
 
-                const imageUrl = URL.createObjectURL(blob);
+        // Process results
+        data.results.forEach((result, index) => {
+            const tileIndex = index + 1;
+            const tile = document.querySelector(`.tile${tileIndex}`);
+            const loadingAnimation = tile.querySelector(".loadingAnimations");
+            const downloadBtn = tile.querySelector(".inPictureControls > #downloadBtn");
+            const copyBtn = tile.querySelector(".inPictureControls > #copyButton");
+
+            if (result.success) {
+                const imageUrl = result.imageData; 
+                const actualImageUrl = result.actualImageUrl; 
+                const generationTime = Math.round(result.generationTime / 1000);
+                
                 tile.style.backgroundImage = `url(${imageUrl})`;
                 tile.style.pointerEvents = "all";
                 tile.setAttribute("data-time", generationTime);
-
+                
                 loadingAnimation.classList.add("hidden");
                 downloadBtn.setAttribute("data-id", imageUrl);
                 copyBtn.setAttribute("data-id", prompt);
-
+                
+                // Store the actual https:// URL for database storage
+                generateURLS[index] = actualImageUrl || imageUrl;
+                generationTimes.push(generationTime);
+                
+                console.log(`Image ${index}: Display URL: ${imageUrl.substring(0, 50)}...`);
+                console.log(`Image ${index}: Storage URL: ${actualImageUrl}`);
+                
                 tile.addEventListener("click", () => {
-                    expandImage(imageUrl, promptText, tileSeed, height, width, model, ratio, generationTime);
+                    expandImage(imageUrl, promptText, batchRequests[index].seed, height, width, model, ratio, generationTime);
                 });
-            })
-            .catch(error => {
+            } else {
+                console.error(`Error generating image for tile${tileIndex}:`, result.error || 'Unknown error');
                 loadingAnimation.classList.add("hidden");
-                if (error.name === "AbortError") {
-                    notify("Generation aborted!");
-                    console.warn(`Fetch aborted for tile${i}`);
-                } else {
-                    console.error(`Error generating image for tile${i}:`, error);
-                    notify("Failed to generate image. Please try again.");
-                }
-            });
+                tile.style.backgroundColor = "#ff4444";
+                tile.innerHTML = `<div style="color: white; text-align: center; padding: 20px;">Generation Failed</div>`;
+            }
+        });
 
-        tilePromises.push(tilePromise);
-    }
-
-    Promise.all(tilePromises).then(() => {
         if (signal.aborted) return;
 
-        notify("Generation complete");
-        dismissNotification();
-        document.getElementById("acceptBtn").classList.remove("hidden");
-        document.getElementById("rejectBtn").classList.remove("hidden");
-        document.getElementById("acceptBtn").setAttribute("data-prompt", prompt);
+        // Only show success message and buttons if there are successful generations
+        const successfulGenerations = data.results.filter(result => result.success);
+        if (successfulGenerations.length > 0) {
+            notify("Generation complete!");
+            dismissNotification();
+            document.getElementById("acceptBtn").classList.remove("hidden");
+            document.getElementById("rejectBtn").classList.remove("hidden");
+            document.getElementById("acceptBtn").setAttribute("data-prompt", prompt);
+            
+            const avg = Math.round(generationTimes.reduce((a, b) => a + b, 0) / generationTimes.length);
+            console.log(`Average generation time: ${avg}s`);
+        } else {
+            notify("All generations failed. Please try again.");
+            document.getElementById("generateButton").removeAttribute("disabled");
+        }
+        
         document.getElementById("interruptButton").classList.add("hidden");
+        console.log('Final generateURLS array:', generateURLS);
 
-        const avg = Math.round(generationTimes.reduce((a, b) => a + b, 0) / generationTimes.length);
-        console.log(`Average generation time: ${avg}s`);
-    });
+    } catch (error) {
+        console.error('Image generation error:', error);
+        
+        if (error.name === "AbortError") {
+            notify("Generation aborted!");
+        } else {
+            notify(`Generation failed: ${error.message}`);
+        }
+        
+        document.querySelectorAll(".tile .loadingAnimations").forEach(loading => {
+            loading.classList.add("hidden");
+        });
+        document.getElementById("interruptButton").classList.add("hidden");
+        document.getElementById("generateButton").removeAttribute("disabled");
+    }
 }
 
 
-
+async function checkQueueStatus() {
+    try {
+        const response = await fetch(`${serverURL}/queue-status`);
+        const data = await response.json();
+        
+        // Update UI with queue info if needed
+        console.log('Queue status:', data);
+        
+        return data;
+    } catch (error) {
+        console.error('Failed to check queue status:', error);
+        return null;
+    }
+}
 
 document.getElementById("acceptBtn").addEventListener("click", function() {
     let specialDir = localStorage.getItem("ElixpoAIUser")+"_"+Date.now();
@@ -571,11 +589,12 @@ async function handleStaticServerUpload(generateURLS, imageNumber, imageTheme, m
             date: new Date().toDateString(),
             imgId: imageGenId
         };
-
-        // Prepare image URLs as Imgurl0, Imgurl1, ...
+        console.log(generateURLS)
+        
         generateURLS.forEach((imageUrl, idx) => {
             mainData[`Imgurl${idx}`] = imageUrl;
         });
+        
 
         try {
             // Write image generation data
@@ -698,15 +717,9 @@ function cleanImageGenerator() {
 function generateUniqueId(inputString) {
     // Get the current timestamp
     const timestamp = Date.now().toString();
-
-    // Concatenate the input string and the timestamp
     let combined = inputString + timestamp;
-
-    // Shuffle the combined string
     combined = combined.split('').sort(() => Math.random() - 0.5).join('');
-
-    // Generate a unique alphanumeric ID by slicing the shuffled string
-    const uniqueId = combined.slice(0, 10); // You can adjust the length of the ID by changing this value
+    const uniqueId = combined.slice(0, 10); 
 
     return uniqueId;
 }
@@ -745,8 +758,6 @@ function expandImage(imageUrl, prompt, seed, height, width, model, ratio, time) 
     const imageSpecs = document.getElementById("imageSpecs");
     const downloadButton = document.getElementById("ImageDisplayDownloadBtn");
     document.getElementById("usernameDisplay").innerHTML = `<span> by ${localStorage.getItem("ElixpoAIUser").slice(0, 11)+"..."}</span>`;
-
-    
     hideSection("imageCustomization");
     hideSection("imageGenerator");
     showSection("imageDisplay");
@@ -776,11 +787,6 @@ function expandImage(imageUrl, prompt, seed, height, width, model, ratio, time) 
             console.error("No image URL found for download.");
         }
     };
-
-
-   
-    
-   
 }
 
 document.getElementById("goUpBtn").addEventListener("click", function () {
@@ -843,7 +849,7 @@ document.querySelectorAll(".inPictureControls > #copyButton").forEach(copyBtn =>
 
 
 
-// generateImage(2, "a beautiful kite", "512", "512", "flux", "a realistic depiction", "SD", false, false, false, null, new AbortController());
+
 function typeEnhancedPrompt(msg, wordIndex = 0, callback) {
     const welcomeMessage = document.getElementById("overlay");
     const message = msg;
@@ -870,51 +876,49 @@ function typeEnhancedPrompt(msg, wordIndex = 0, callback) {
 }
 
 
-
 async function promptEnhance(userPrompt, pimpController) {
     console.log("Enhancing prompt:", userPrompt);
-    const seed = Math.floor(Math.random() * 10000);     
 
-    const response = await fetch("https://text.pollinations.ai/openai", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            model: "openai",
-            seed: seed,
-            messages: [
-                {
-                    role: "system",
-                    content: "You are a professional AI prompt enhancer specialized in creating rich, vivid, and detailed prompts for AI art generation. Transform the user's input into a visually immersive and technically optimized prompt between 50 to 100 words. Include visual styles, lighting, composition, mood, and camera perspective if applicable, without changing the core idea."
-                },
-                {
-                    role: "user",
-                    content: userPrompt
-                }
-            ]
-        }),
-        signal: pimpController.signal,
-        mode: "cors"
-    });
+    try {
+        const response = await fetch(`${serverURL}/enhance`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                prompt: userPrompt
+            }),
+            signal: pimpController.signal
+        });
 
-    if (!response.ok) {
-        console.error("Enhancer Error:", response.statusText);
-        notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
+        if (!response.ok) {
+            console.error("Enhancer Error:", response.statusText);
+            notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
+            return userPrompt;
+        }
+
+        const data = await response.json();
+        
+        if (!data.success) {
+            console.error("Enhancer Error:", data.error);
+            notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
+            return data.fallback || userPrompt;
+        }
+
+        console.log(`Prompt enhanced successfully in ${data.processingTime}ms`);
+        return data.enhanced || userPrompt;
+
+    } catch (error) {
+        if (error.name === "AbortError") {
+            console.log("Enhancement request aborted");
+            return userPrompt;
+        }
+        
+        console.error("Enhancement request failed:", error);
+        notify("Enhancement failed, using original prompt");
         return userPrompt;
     }
-
-    const data = await response.json();
-    if (data.error) {
-        console.error("Enhancer Error:", data.error);
-        notify("Oppsie! My brain hurts, bruuh.... i'll generate an image directly");
-        return userPrompt;
-    }
-
-    const enhanced = data.choices?.[0]?.message?.content || "";
-    return enhanced.trim();
 }
-
 
 
 
@@ -956,5 +960,5 @@ return aspectRatioMap[aspectRatio] || { SD: "1024x768", HD: "1280x960", LD: "512
 }
 
 
-
+// generateImage(2, "a beautiful kite", "512", "512", "flux", "a realistic depiction", "SD", false, false, false, null, new AbortController());
 manageTileNumbers();

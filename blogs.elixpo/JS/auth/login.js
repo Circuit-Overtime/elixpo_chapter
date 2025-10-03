@@ -2,74 +2,80 @@ const otpInputs = document.querySelectorAll('#otpLabel input[type="text"]');
 let token = "bljY0G";
 let emailResp = "ayushbhatt633@gmail.com";
 let userInpEmail = "ayushbhatt633@gmail.com";
-const MAX_NOTIFICATIONS = 3;
-let notificationQueue = [];
-let activeNotifications = 0;
+const githubClientID = "Ov23li51zbnVuh5pmkbK"
 
 window.onload = function() {
-    hideElement('inputLabel');
-    showElement('otpLabel');
+    checkExistingAuth();
+    showElement('inputLabel');
+    hideElement('otpLabel');
     checkURLParamsLogin();
+
 };
 
 
 
-function hideElement(id)
-{
-    document.getElementById(id).style.cssText = `
-    opacity: 0;
-    pointer-events: none;
-    filter: blur(2px);
-    transition: opacity 0.3s ease;
-    `
-    setTimeout(() => {
-      document.getElementById(id).style.display = "none";
-    }, 500);
+async function checkExistingAuth() {
+    console.log("🔍 Checking existing authentication...");
+    console.log("🍪 Current browser cookies:", document.cookie);
+    
+    const res = await fetch("http://localhost:5000/api/checkAuth", {
+        credentials: 'include',
+    });
+
+    if (res && res.status === 200) {
+        const data = await res.json();
+        console.log("🔍 Auth check successful:", data);
+        
+        if (data.user) {
+            console.log("👤 User email:", data.user.email);
+            console.log("🔑 User token:", data.user.token);
+            console.log("🆔 User UID:", data.user.uid); 
+            console.log("📋 Full user object:", data.user);
+        }
+        
+    } else {
+        console.log("❌ Auth check failed or user not authenticated");
+    }
 }
 
-function showElement(id)
-{
-    document.getElementById(id).style.display = "block";
-    document.getElementById(id).classList.remove('hidden');
-    setTimeout(() => {
-      document.getElementById(id).style.cssText = `
-      opacity: 1;
-      pointer-events: auto;
-      filter: blur(0px);
-      transition: opacity 0.3s ease;
-      `
-    }, 100);
-}
-
+// hideElement and showElement functions are now in helperFunction.js
 
 function checkURLParamsLogin() {
     const urlParams = new URLSearchParams(window.location.search);
     const tokenParam = urlParams.get('token');
     const operation = urlParams.get('operation');
     const state = urlParams.get('state');
+    const code = urlParams.get('code');
     let callback = urlParams.get('callback');
-    console.log("URL Parameters:", { tokenParam, operation, state, callback });
+    
+    console.log("URL Parameters:", { tokenParam, operation, state, callback, code });
+    
     if (callback === 'true' && operation === 'login' && state === 'elixpo-blogs' && tokenParam) {
         verifyLoginOTP(tokenParam, null, operation, state, otp=null, callback=true);
     }
-    else if(operation != null && operation != "login" || state!= null && state != "elixpo-blogs")
-    {
+    else if(operation != null && operation != "login" || (state != null && !state.startsWith("elixpo-blogs"))) {
         showNotification("Invalid login request. Please try logging in again.");
         resetLoginForm();
     }
 }
 
-
 document.getElementById("loginBtn").addEventListener("click", function() {
     showNotification("Sending OTP via email...");
+    disableElement('loginBtn');
     userInpEmail = document.getElementById("email").value;
     var verifiedEmail = safeInputEmail(userInpEmail);
     if (!verifiedEmail) {
         showNotification("Ooppss crack!! Please enter a valid email address buddy.");
+        enableElement('loginBtn');
+        resetLoginForm();
         return;
     }
-    const response = fetch('http://127.0.0.1:5000/api/loginRequest?email=' + encodeURIComponent(verifiedEmail), {
+    
+    const rememberMe = document.getElementById("rememberMe") ? document.getElementById("rememberMe").checked : false;
+    
+    const response = fetch('http://localhost:5000/api/loginRequest?email=' + encodeURIComponent(verifiedEmail) + '&remember=' + rememberMe, {
         method: 'GET',
+        credentials: 'include', 
         headers: {
             'Content-Type': 'application/json'
         },
@@ -82,6 +88,7 @@ document.getElementById("loginBtn").addEventListener("click", function() {
             [emailResp, token] = (data.data || data.message).split(',');
             sessionStorage.setItem('email', emailResp);
             sessionStorage.setItem('token', token);
+            sessionStorage.setItem('rememberMe', rememberMe);
             showNotification(msg);
             hideElement('inputLabel');
             showElement('otpLabel');
@@ -91,16 +98,14 @@ document.getElementById("loginBtn").addEventListener("click", function() {
     });
 });
 
-
 otpInputs.forEach((input, idx) => {
     input.addEventListener('input', function () {
         this.value = this.value.replace(/[^0-9]/g, '');
         if (this.value.length === 1 && idx < otpInputs.length - 1) {
             otpInputs[idx + 1].focus();
         }
-        // If all inputs are filled, call verifyLoginOTP
         if ([...otpInputs].every(inp => inp.value.length === 1)) {
-            verifyLoginOTP(token, emailResp=emailResp, operation=null, state=null, [...otpInputs].map(inp => inp.value).join(''), callback=false);
+            verifyLoginOTP(token, emailResp, null, null, [...otpInputs].map(inp => inp.value).join(''), false);
         }
     });
 
@@ -111,7 +116,6 @@ otpInputs.forEach((input, idx) => {
     });
 });
 
-
 function resetLoginForm() {
     otpInputs.forEach(input => input.value = '');
     document.getElementById("email").value = '';
@@ -119,6 +123,7 @@ function resetLoginForm() {
     showElement('inputLabel');
     sessionStorage.removeItem('email');
     sessionStorage.removeItem('token');
+    sessionStorage.removeItem('rememberMe');
     token = null;
     emailResp = null;
     userInpEmail = null;
@@ -127,30 +132,49 @@ function resetLoginForm() {
 function verifyLoginOTP(token, emailResp=null, operation=null, state=null, otp=null, callback=false) {
     console.log("Verifying OTP with:", { token, emailResp, operation, state, otp, callback });
     showNotification("Verifying OTP, just a moment...");
+    const rememberMe = sessionStorage.getItem('rememberMe') === 'true';
     if (callback === true) {
         disableElement('loginBtn');
         showNotification("Verifying OTP, just a moment...");
         hideElement('inputLabel');
         hideElement('otpLabel');
         console.log("checking from the callback")
-        const response = fetch(`http://127.0.0.1:5000/api/verifyLoginOTP?token=${encodeURIComponent(token)}&email=${encodeURIComponent(emailResp)}&time=${encodeURIComponent(Date.now())}&state=${encodeURIComponent(state)}&operation=${encodeURIComponent(operation)}&callback=${true}`, 
+        const response = fetch(`http://localhost:5000/api/verifyLoginOTP?token=${encodeURIComponent(token)}&email=${encodeURIComponent(emailResp)}&time=${encodeURIComponent(Date.now())}&state=${encodeURIComponent(state)}&operation=${encodeURIComponent(operation)}&callback=${true}&remember=${rememberMe}`, 
         { method: 'GET',
+            credentials: 'include', 
             headers: {
             'Content-Type': 'application/json'
         },
          })
-        response.then((res) => res.json()).then((data) => {
-        if (data.status) {
-            showNotification(data.message || "🎉 OTP verified! Welcome!");
+        response.then((res) => {
+            console.log("🍪 OTP verification response headers:", [...res.headers.entries()]);
+            const setCookieHeader = res.headers.get('set-cookie');
+            if (setCookieHeader) {
+                console.log("🍪 Set-Cookie header received:", setCookieHeader);
+                document.cookie = setCookieHeader;
+            } else {
+                console.log("⚠️ No Set-Cookie header received in response.");
+            }
+            return res.json();
+        }).then((data) => {
+            console.log("🍪 After OTP verification - cookies:", document.cookie);
+            if (data.status) {
+                showNotification(data.message || "🎉 OTP verified! Welcome!");
+                setTimeout(() => {
+                    console.log("🍪 Cookies after delay:", document.cookie);
+                }, 500);
+                setTimeout(() => {
+                    // console.log("Verified and stored cookie" + document.cookie);
+                    redirectTo("src/feed")
+                }, 1500);
+            } else {
+                showNotification(data.error || "❗ OTP verification failed. Please try again.");
+                resetLoginForm();
+            }
+        }).catch(() => {
+            showNotification("🔥 Network error during OTP verification.");
             resetLoginForm();
-        } else {
-            showNotification(data.error || "❗ OTP verification failed. Please try again.");
-            resetLoginForm();
-        }
-    }).catch(() => {
-        showNotification("🔥 Network error during OTP verification.");
-        resetLoginForm();
-    });
+        });
     return;
     }
 
@@ -161,57 +185,66 @@ function verifyLoginOTP(token, emailResp=null, operation=null, state=null, otp=n
     }
     else 
     {
-        const response = fetch('http://127.0.0.1:5000/api/verifyLoginOTP?otp=' + encodeURIComponent(otp) + '&token=' + encodeURIComponent(token) + '&email=' + encodeURIComponent(emailResp) + '&time=' + encodeURIComponent(Date.now()), 
+        const response = fetch('http://localhost:5000/api/verifyLoginOTP?otp=' + encodeURIComponent(otp) + '&token=' + encodeURIComponent(token) + '&email=' + encodeURIComponent(emailResp) + '&time=' + encodeURIComponent(Date.now()) + '&remember=' + rememberMe, 
         { method: 'GET',
+            credentials: 'include', 
             headers: {
             'Content-Type': 'application/json'
         },
          })
-    response.then((res) => res.json()).then((data) => {
-        if (data.status) {
-            showNotification(data.message);
-            sessionStorage.removeItem('email');
-            sessionStorage.removeItem('token');
-        } else {
-            showNotification(data.error || "❗ Oops! Please try logging in again");
-            resetLoginForm();
-        }
-    }).catch(() => {
-        showNotification("🔥 Network error during OTP verification.");
-    });
-    }
-    
-}
-
-function showNotification(message, duration = 3500) {
-    if (activeNotifications >= MAX_NOTIFICATIONS) {
-        notificationQueue.push({ message, duration });
-        return;
-    }
-    activeNotifications++;
-
-    // Create notification element
-    const notif = document.createElement('div');
-    notif.className = 'notification-instance fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-[#1D202A] text-white px-6 py-3 rounded-lg shadow-lg border border-[#7ba8f0] transition-all duration-300 mb-2';
-    notif.style.position = 'fixed';
-    notif.style.top = `${1.5 + (activeNotifications - 1) * 4}rem`;
-    notif.style.left = '50%';
-    notif.style.transform = 'translateX(-50%)';
-    notif.innerHTML = `<span>${message}</span>`;
-    notif.id = `notification-${Date.now().toString().slice(0, 5)}`;
-    document.body.appendChild(notif);
-    setTimeout(() => {
-        hideElement(notif.id);
-        setTimeout(() => {
-            notif.remove();
-            activeNotifications--;
-            if (notificationQueue.length > 0) {
-            const next = notificationQueue.shift();
-            showNotification(next.message, next.duration);
+    response.then((res) => {
+            console.log("🍪 OTP verification response headers:", [...res.headers.entries()]);
+            const setCookieHeader = res.headers.get('Set-Cookie');
+            if (setCookieHeader) {
+                console.log("🍪 Set-Cookie header received:", setCookieHeader);
+                document.cookie = setCookieHeader;
+            } else {
+                console.log("⚠️ No Set-Cookie header received in response.");
             }
-        }, 500);
-    }, duration);
+            return res.json();
+        }).then((data) => {
+            console.log("🍪 After OTP verification - cookies:", document.cookie);
+            if (data.status) {
+                showNotification(data.message || "🎉 OTP verified! Welcome!");
+                setTimeout(() => {
+                    console.log("🍪 Cookies after delay:", document.cookie);
+                }, 1500);
+                setTimeout(() => {
+                    redirectTo("src/feed")
+                }, 1500);
+            } else {
+                showNotification(data.error || "❗ OTP verification failed. Please try again.");
+                resetLoginForm();
+            }
+        }).catch(() => {
+            showNotification("🔥 Network error during OTP verification.");
+            resetLoginForm();
+        });
+    return;
+    }
 }
+
+function logout() {
+    fetch('http://localhost:5000/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        showNotification(data.message || "✅ Logged out successfully!");
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 1500);
+    })
+    .catch(() => {
+        showNotification("🔥 Error during logout.");
+    });
+}
+
+// showNotification function is now in helperFunction.js
 
 function safeInputEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -225,3 +258,55 @@ function safeInputEmail(email) {
     console.log("Logging in user:", email);
     return email;
 }
+
+// disableElement and enableElement functions are now in helperFunction.js
+
+
+document.getElementById("loginGithub").addEventListener("click", function () {
+  loginWithGitHub();
+});
+
+document.getElementById("loginGoogle").addEventListener("click", function() {
+    loginWithGoogle();
+});
+
+
+function loginWithGoogle() {
+    showNotification("Redirecting to Google for authentication...");
+    disableElement('loginGoogle');
+    
+    const googleClientId = "796328864956-hn8dcs3t1i3kui6qd8pvhhblj5c8c66k.apps.googleusercontent.com";
+    
+    // Google OAuth URL
+    const googleAuthUrl =
+    `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `client_id=${googleClientId}` +
+    `&redirect_uri=${encodeURIComponent("http://localhost:3000/src/auth/callback")}` +
+    `&response_type=code` +
+    `&scope=${encodeURIComponent("openid email profile")}` +
+    `&state=elixpo-blogs-google` +
+    `&access_type=offline` +
+    `&prompt=consent`;
+
+    const popup = window.open(googleAuthUrl, 'googleAuth', 'width=500,height=600,scrollbars=yes,resizable=yes');
+
+    const checkClosed = setInterval(() => {
+        if (popup.closed) {
+            clearInterval(checkClosed);
+            enableElement('loginGoogle');
+            window.location.reload();
+        }
+    }, 1000);
+}
+
+function loginWithGitHub() {
+  showNotification("Redirecting to GitHub for authentication...");
+  disableElement("loginGithub");
+  const githubAuthUrl =
+    `https://github.com/login/oauth/authorize?client_id=${githubClientID}` +
+    `&redirect_uri=${encodeURIComponent("http://localhost:3000/src/auth/callback")}` +
+    `&scope=user:email&state=elixpo-blogs-github`;
+
+  window.location.href = githubAuthUrl;
+}
+

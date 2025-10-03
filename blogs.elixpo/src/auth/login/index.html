@@ -7,6 +7,7 @@
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="stylesheet" href="../../../CSS/auth/login.css">
     <link rel="icon" type="image/x-icon" href="../../../CSS/IMAGES/logo.png">
 </head>
@@ -35,7 +36,7 @@
                 </div>
                 <div class="flex items-center justify-between text-sm mt-2">
                     <label class="flex items-center text-[#888]">
-                        <input type="checkbox" id="rememberCheckbox" class="appearance-none h-5 w-5 rounded-md bg-[#1D202A] border border-[#313647] checked:bg-[#7ba8f0] checked:border-[#7ba8f0] focus:outline-none transition-all duration-200 mr-2 relative" />
+                        <input type="checkbox" id="rememberMe" class="appearance-none h-5 w-5 rounded-md bg-[#1D202A] border border-[#313647] checked:bg-[#7ba8f0] checked:border-[#7ba8f0] focus:outline-none transition-all duration-200 mr-2 relative" />
                         <span class="pointer-events-none absolute left-0 top-0 flex items-center justify-center w-5 h-5">
                         </span>
                         <span> Remember Me </span>
@@ -51,18 +52,27 @@
                 <span class="mx-4 text-[#888] text-[1em] font-bold">Or continue with</span>
                 <div class="flex-grow border-t border-[#1D202A]"></div>
             </div>
-            <div class="flex gap-4">
-                <button class="flex items-center justify-center gap-2 w-1/2 py-2 rounded-lg bg-[#1D202A] text-white border border-[#313647] hover:bg-[#23395d] transition">
-                    <ion-icon name="logo-google" class="text-xl text-[#ff0000]"></ion-icon>
+
+            <div class="flex gap-4 flex-row">
+
+                <button id="loginGoogle"
+                    class="flex items-center justify-center gap-2 w-1/2 py-2 rounded-lg bg-[#1D202A] text-white border border-[#313647] hover:bg-[#23395d] transition">
+                    <ion-icon name="logo-google" class="text-xl text-[#888]"></ion-icon>
                     <span> Google </span>
                 </button>
-                <button class="flex items-center justify-center gap-2 w-1/2 py-2 rounded-lg bg-[#1D202A] text-white border border-[#313647] hover:bg-[#23395d] transition">
+
+                <button id="loginGithub" class="flex items-center justify-center gap-2 w-1/2 py-2 rounded-lg bg-[#1D202A] text-white border border-[#313647] hover:bg-[#23395d] transition">
                     <ion-icon name="logo-github" class="text-xl text-[#888]"></ion-icon>
                     <span> GitHub </span>
                 </button>
+                
+            </div>
+                
             </div>
         </div>
     </div>
+    
+    <script src="../../../JS/linkRedirect.js"></script>
     <script src="../../../JS/auth/helperFunction.js"></script>
     <script src="../../../JS/auth/login.js"> </script>
 </body>

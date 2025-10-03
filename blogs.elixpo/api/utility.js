@@ -1,12 +1,26 @@
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import {collec} from "./initializeFirebase.js";
+import fetch from "node-fetch";
 dotenv.config();
 let deploymentURL = "http://127.0.0.1:3000"
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+
+async function getCountryFromIP(ip) {
+  try {
+    const response = await fetch(`https://ipapi.co/${ip}/json/`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.country_name || null;
+  } catch (error) {
+    console.error("Error fetching country from IP:", error);
+    return null;
+  }
+}
 function generatetoken(email, otp, maxLength = 6) {
   const timestamp = Date.now();
   const hash = crypto
@@ -17,7 +31,48 @@ function generatetoken(email, otp, maxLength = 6) {
   return hash.substring(0, maxLength);
 }
 
+function generateUID(email, maxLength = 12) 
+{
+  const hash = crypto
+    .createHash("sha256")
+    .update(email.toLowerCase()) 
+    .digest("base64")
+    .replace(/[^a-zA-Z0-9]/g, ""); 
 
+  return hash.substring(0, maxLength);
+}
+
+
+async function createFirebaseUser(email, displayName, photoURL, provider, country) {
+  try {
+    const uid = generateUID(email, 12);
+    //check if the user exists in the bloom filter (only for github and google based provider signups)
+
+    const userRef = collec.collection("users").doc(uid);
+    await userRef.set({
+            name: displayName || "",
+            email: email,
+            uid: uid,
+            dateJoined: Date.now(),
+            blogsWritten: {},
+            orgJoined: {},
+            orgSubdomain: "",
+            blogReports: {},
+            profilePicLink: photoURL || "",
+            orgId: "",
+            followers: {},
+            following: {},
+            locale: country,
+            joinedVia: provider,
+            bio: ""
+        });
+    return uid;
+  }
+  catch (error) {
+    console.error("Error creating Firebase user:", error);
+    throw error;
+  }
+}
 
 
 const transporter = nodemailer.createTransport({
@@ -109,7 +164,9 @@ async function sendOTPMail(email, otp, token, state, operation, callback)
   }
 }
 
+
+
 //test mail 
 // sendOTPMail("ayushbhatt633@gmail.com", "123456", "bljY0G", "elixpo-blogs", "login", false)
 
-export { generateOTP, generatetoken, sendOTPMail };
+export { generateOTP, generatetoken, sendOTPMail, createFirebaseUser, generateUID, getCountryFromIP };

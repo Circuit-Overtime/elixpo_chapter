@@ -14,6 +14,7 @@ VOICE_BASE64_MAP = {
     "sage":    "voices_b64/raw_wav/sage.wav",
     "shimmer": "voices_b64/raw_wav/shimmer.wav",
     "verse":   "voices_b64/raw_wav/verse.wav",
+    "ghost":   "voices_b64/raw_wav/ghost.wav",
 }
 
 if __name__ == "__main__":
