@@ -49,7 +49,7 @@ graph TD
 
 # EEPROM Programming Sequence 
 
-```
+```mermaid
 graph TD
     Addr[Address Input] --> EEPROM[28C64 EEPROM Programmer]
     Data[Data Input] --> EEPROM
