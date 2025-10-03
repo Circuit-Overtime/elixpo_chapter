@@ -61,19 +61,19 @@ A special **shoutout** to [Ez-Vivek](https://github.com/ez-vivek) and [CSE-Anwes
 
 ### Projects in the Monorepo
 
-- **Elixpo Art** – AI Art Generation and Enhancement Platform  
-- **Elix Blogs** – Blogging Platform for Tech Articles  
-- **Elixpo Search** – AI-Powered Search Engine  
-- **Elixpo Chat** – AI Chatbot Platform  
-- **Jackey** – Personalized Discord Bot  
-- **Elixpo Sketch** – Real-time WYSIWYG Canvas + Editor  
-- **Elixpo Verse** – A stylish wallpaper with an animated clock  
-- **Inkflow** – Minimalist canvas, developed by [Ez-Vivek](https://github.com/ez-vivek)  
-- **Fing** – Minimalist vibe-coding platform, developed by [Subhro Koley](https://github.com/IgYaHiko/Fing)  
-- **Fing-UI** – React UI library, developed by [Subhro Koley](https://github.com/IgYaHiko/Fing)  
-- **Text-Emoji** – Text-to-emoji converter using a fine-tuned T5-Small model  
-- **Elixpo Portfolio** – My personal portfolio website  
-- **Pollinations** – Improved UI for the flagship project website  
+- [**Elixpo Art**](art.elixpo) – AI Art Generation and Enhancement Platform  
+- [**Elix Blogs**](blogs.elixpo) – Blogging Platform for Tech Articles  
+- [**Elixpo Search**](search) – AI-Powered Search Engine  
+- [**Elixpo Chat**](chat.elixpo) – AI Chatbot Platform  
+- [**Jackey**](jackey.elixpo) – Personalized Discord Bot  
+- [**Elixpo Sketch**](sketch.elixpo) – Real-time WYSIWYG Canvas + Editor  
+- [**Elixpo Verse**](verse.elixpo) – A stylish wallpaper with an animated clock  
+- [**Inkflow**](inkflow) – Minimalist canvas, developed by [Ez-Vivek](https://github.com/ez-vivek)  
+- [**Fing**](fing) – Minimalist vibe-coding platform, developed by [Subhro Koley](https://github.com/IgYaHiko/Fing)  
+- [**Fing-UI**](fing-ui) – React UI library, developed by [Subhro Koley](https://github.com/IgYaHiko/Fing)  
+- [**Text-Emoji**](emoji.transnet) – Text-to-emoji converter using a fine-tuned T5-Small model  
+- [**Elixpo Portfolio**](elixpo) – My personal portfolio website  
+- [**Pollinations**](polli.elixpo) – Improved UI for the flagship project website  
 
 
 💡 Contributions are always welcome! Whether you’re into **AI, LLMs, Data Science, Web Development, or Cloud**, this initiative is a space to **learn, collaborate, and innovate in public**.
