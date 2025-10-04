@@ -1,17 +1,15 @@
-"use client"
-import { Button } from '@/components/ui/button'
-import { UseAuth } from '@/hooks/use-auth'
-import React from 'react'
+import { SubscriptionEntitlementQuery } from '@/convex/query.config'
+import { combineSlug } from '@/lib/utils'
+import { redirect } from 'next/navigation'
 
-const Page = () => {
-  const { handleSignOut } = UseAuth();
-  return (
-    <Button
-    onClick={handleSignOut}
-    variant={"destructive"} >
-        Logout
-    </Button>
-  )
+const Page = async () => {
+  const {entitlement,profileName} = await SubscriptionEntitlementQuery()
+  if(!entitlement._valueJSON) {
+    // redirect(`/billing/${combineSlug(profileName!)}`)
+     redirect(`/dashboard/${combineSlug(profileName!)}`)
+  }
+  redirect(`/dashboard/${combineSlug(profileName!)}`)
+  
 }
 
 export default Page
