@@ -12,7 +12,8 @@ on:
   workflow_dispatch:
     inputs:
       prompt:
-        description: "Custom prompt for Claude"
+        description: "You are a code reviewer. Provide specific instructions for code analysis, quality checks, security review, performance optimization suggestions, and best practices recommendations."
+        default: "Please review this code as an experienced code reviewer. Focus on: 1) Code quality and maintainability 2) Security vulnerabilities 3) Performance issues 4) Best practices adherence 5) Documentation completeness 6) Test coverage suggestions. Provide constructive feedback with specific examples and recommendations for improvement."
         required: false
         type: string
 
@@ -49,7 +50,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
