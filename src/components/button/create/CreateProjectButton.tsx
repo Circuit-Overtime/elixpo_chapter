@@ -12,13 +12,13 @@ type Props = {
 }
 
 const CreateProjectButton = (props: Partial<Props>) => {
-  const {canCreate,createProject,isCreating} = UseProjectCreation()
+ /*  const {canCreate,createProject,isCreating} = UseProjectCreation() */
   return (
     <Button 
-    className='font-mono text-xs rounded-none' 
-    variant={"outline"}>
+    className='font-mono text-xs rounded-full' 
+    variant={"default"}>
         <PlusIcon className='size-3' />
-         Create
+         New Project
     </Button>
   )
 }
