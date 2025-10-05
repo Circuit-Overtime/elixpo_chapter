@@ -5,6 +5,9 @@ import { ThemeProvider } from "@/theme/provider";
 import { Toaster } from "sonner";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import { ConvexClientProvider } from "@/convex/provider";
+import ReduxProvider from "@/redux/provider";
+import { ProfileQuery } from "@/convex/query.config";
+import { ConvexUserRaw, normalizeProfile } from "@/types/user";
 
 
 const poppins = Poppins({
@@ -23,11 +26,15 @@ export const metadata: Metadata = {
   description: "AI-powered wireframing SaaS",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const rawProfile = await ProfileQuery();;
+  const profile = normalizeProfile(
+     rawProfile._valueJSON as unknown as ConvexUserRaw | null
+  )
   return (
     <ConvexAuthNextjsServerProvider>
        <html lang="en">
@@ -40,9 +47,11 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
-        >
+        > 
+         <ReduxProvider preloadedState={{ profile}}>
           <Toaster />
           {children}
+          </ReduxProvider>
         </ThemeProvider>
        </ConvexClientProvider>
         

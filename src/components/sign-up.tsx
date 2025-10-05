@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { LOGO } from '../../public/images/images'
 import { UseAuth } from '@/hooks/use-auth'
 import { Loader2 } from 'lucide-react'
-import GoogleProvider from './oAuth/google'
+import GoogleProvider from './button/oAuth/google'
 
 export default function LoginPage() {
     const {handleSignUp,isLoading,signUpform} = UseAuth();
