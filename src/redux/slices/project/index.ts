@@ -1,6 +1,5 @@
-/* import { createSlice } from "@reduxjs/toolkit";
-import { action } from "../../../../convex/_generated/server";
-import { number } from "zod";
+ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+
 
 interface ProjectProps {
      _id: string;
@@ -31,7 +30,7 @@ const initialState: ProjectState = {
      createError: ""
 }
 
-const slice = createSlice({
+const projectSlice = createSlice({
      name: 'project',
      initialState,
      reducers: {
@@ -39,15 +38,72 @@ const slice = createSlice({
              state.isLoading = true
              state.error = null
           },
-          fetchProjectSuccess: (
-            state
-            action: PayloadAction<(projcets: ProjectProps[];total: number)>
-        ) => {
-              state.isLoading = false;
-              state.project
-          }
+          fetchProjectSuccess: (state, action: PayloadAction<{projects: ProjectProps[]; total: number}>) => {
+             state.isLoading = false;
+             state.project = action.payload.projects;
+             state.totalNumber = action.payload.total;
+             state.error = null;
+             state.lastFetched = Date.now()
+
+          },
+          fetchProjectFailure: (state, action: PayloadAction<string>) => {
+            state.isLoading = false;
+            state.error = action.payload;
+          },
+          createProjectStart: (state) => {
+             state.isCreating = true;
+             state.createError= null
+          },
+          createProjectSuccess: (state) => {
+             state.isCreating = false;
+             state.createError = null;
+          },
+          createProjectFailure: (state,action: PayloadAction<string>) => {
+            state.isCreating = false;
+            state.createError = action.payload;
+          },
+          addProject: (state, action: PayloadAction<ProjectProps>) => {
+              state.project.unshift(action.payload);
+              state.totalNumber = state.totalNumber + 1;
+          },
+          updateProject: (state, action: PayloadAction<ProjectProps>) => {
+              const index = state.project.findIndex(
+                (project) => project._id === action.payload._id
+              )
+              if(index !== -1) {
+                 state.project[index] = {...state.project[index], ...action.payload} 
+              }
+          },
+          removeProjet: (state, action: PayloadAction<string>) => {
+             state.project = state.project.filter((p) => p._id !== action.payload)
+             state.totalNumber = Math.max(0, state.totalNumber - 1);
+          },
+          clearAllProjects: (state) => {
+            state.project = [];
+            state.totalNumber = 0;
+            state.error = null;
+            state.createError = null;
+            state.lastFetched = null;
+          },
+        createError: (state) => {
+           state.error = null;
+           state.createError = null;
+        }
+
      }
 })
 
-export const {} = slice.actions
-export default slice.reducer */
+export const {
+    updateProject,
+    addProject,
+    clearAllProjects, 
+    createError,
+    createProjectFailure,
+    createProjectStart,
+    createProjectSuccess,
+    fetchProjectFailure,
+    fetchProjectStart,
+    fetchProjectSuccess,
+    removeProjet
+} = projectSlice.actions
+export default projectSlice.reducer 

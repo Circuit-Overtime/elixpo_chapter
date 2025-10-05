@@ -65,8 +65,9 @@ const Navbar = () => {
       </div>
 
       {/* Animated shadcn Tabs */}
-      <div className="flex items-center justify-center">
-        <Tabs value={currentTab} onValueChange={handleTabChange}>
+     <div className='hidden md:block'>
+       <div className="flex items-center justify-center ">
+        <Tabs className='' value={currentTab} onValueChange={handleTabChange}>
           <TabsList className="relative flex rounded-full dark:bg-white/10  bg-gray-100 px-0 ">
             {['canvas', 'style-guide'].map((tab) => (
               <TabsTrigger
@@ -89,6 +90,7 @@ const Navbar = () => {
           </TabsList>
         </Tabs>
       </div>
+     </div>
 
       {/* credits */}
     <div className="flex items-center justify-end gap-3">
