@@ -15,6 +15,8 @@ import { motion } from 'framer-motion';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { UseAuth } from '@/hooks/use-auth';
+import { useAppSelector } from '@/redux/store';
+import CreateProjectButton from '../button/create/CreateProjectButton';
 
 const Navbar = () => {
   const router = useRouter();
@@ -27,6 +29,7 @@ const Navbar = () => {
     projectId ? { projectId: projectId as Id<'projects'> } : 'skip'
   );
 
+  const me = useAppSelector((state) => state.profile)
   const currentTab = pathname.includes('canvas')
     ? 'canvas'
     : pathname.includes('style-guide')
@@ -42,12 +45,14 @@ const Navbar = () => {
       router.push(`/dashboard/style-guide${query}`);
     }
   };
+  const hasCanvas = pathname.includes('canvas')
+  const hasCanvasStyleGuide = pathname.includes('style-guide')
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-3 p-5 fixed top-0 right-0 left-0 z-50">
       <div className="flex items-center gap-3">
         <Link
-          href={'/dashboard'}
+          href={`/dashboard/${me.name}`}
           className="dark:border-white dark:border-2 rounded-full h-6 w-6 bg-black justify-center items-center flex"
         >
           <div className="rounded-full h-3 w-3 bg-white" />
@@ -86,26 +91,36 @@ const Navbar = () => {
       </div>
 
       {/* credits */}
-      <div className='flex items-center justify-end gap-2'>
-        <span className='font-mono text-xs'>credits </span>
-        <Button 
-         className='rounded-full p-5'
-         variant={"secondary"}
-        >
-        <CircleQuestionMark className='size-5' />
-        </Button>
+    <div className="flex items-center justify-end gap-3">
+  {/* credits text */}
+  <span className="font-mono text-sm text-muted-foreground">Credits</span>
 
-        <Avatar className='size-10 '>
-          <AvatarImage/>
-          <AvatarFallback>
-            <User className='size-4 ' />
-          </AvatarFallback>
-        </Avatar>
+  {/* help / info button */}
+  <Button
+    size="icon"
+    variant="secondary"
+    className="h-8 w-8 rounded-full flex items-center justify-center"
+  >
+    <CircleQuestionMark className="h-4 w-4" />
+  </Button>
 
-        <Button onClick={handleSignOut} className='font-mono text-xs bg-red-600' variant={'secondary'}>
-          Logout
-        </Button>
-      </div>
+  {/* avatar */}
+  <Avatar className="h-8 w-8">
+    <AvatarImage src={me.image || ''} />
+    <AvatarFallback>
+      <User className="h-4 w-4" />
+    </AvatarFallback>
+  </Avatar>
+
+  {
+    !hasCanvas && !hasCanvasStyleGuide && 
+      (
+       <CreateProjectButton/>
+      )
+    
+  }
+</div>
+
     </div>
   );
 };
