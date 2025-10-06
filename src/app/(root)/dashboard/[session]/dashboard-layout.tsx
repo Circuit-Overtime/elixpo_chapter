@@ -15,6 +15,7 @@ const Layout = async ({children}: Props) => {
     <div>
     <Navbar/>
       {children}
+    
     </div>
   )
 }
