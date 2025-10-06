@@ -2,7 +2,7 @@ import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
 import { getAuthUserId } from "@convex-dev/auth/server"
 
-export const getProjects = query({
+export const  getProjects = query({
      args: {projectId: v.id('projects')},
      handler: async(ctx,{projectId}) => {
          const userId = await getAuthUserId(ctx)
@@ -77,4 +77,30 @@ export const createProject = mutation({
         }
 
      }
+})
+
+export const getUserProject = query({
+   args: {
+     userId: v.id('users'),
+     limit: v.optional(v.number())
+   },
+   handler: async (ctx,{userId, limit=20}) => {
+      const allProject = await ctx.db.query('projects')
+      .withIndex('by_userId',(q) => q.eq('userId',userId))
+      .order('desc')
+      .collect()
+      const slicedProject = allProject.slice(0,limit);
+      return slicedProject.map((project) => ({
+        id: project._id,
+        name: project.name,
+        projectNumber: project.projectNumber,
+        thumbnail: project.thumbnail,
+        lastModified: project.lastModified,
+        createdAt:  project.createdAt,
+        isPublic: project.isPublic
+
+      }))
+   }
+ 
+    
 })
