@@ -11,7 +11,7 @@ interface ProjectProps {
      isPublic: boolean;
 }
 interface ProjectState {
-     project: ProjectProps[];
+     projects: ProjectProps[];
      totalNumber: number;
      isLoading: boolean;
      error: string | null;
@@ -21,7 +21,7 @@ interface ProjectState {
 }
 
 const initialState: ProjectState = {
-     project: [],
+     projects: [],
      totalNumber: 0,
      isLoading: false,
      error: '',
@@ -40,7 +40,7 @@ const projectSlice = createSlice({
           },
           fetchProjectSuccess: (state, action: PayloadAction<{projects: ProjectProps[]; total: number}>) => {
              state.isLoading = false;
-             state.project = action.payload.projects;
+             state.projects = action.payload.projects;
              state.totalNumber = action.payload.total;
              state.error = null;
              state.lastFetched = Date.now()
@@ -63,23 +63,23 @@ const projectSlice = createSlice({
             state.createError = action.payload;
           },
           addProject: (state, action: PayloadAction<ProjectProps>) => {
-              state.project.unshift(action.payload);
+              state.projects.unshift(action.payload);
               state.totalNumber = state.totalNumber + 1;
           },
           updateProject: (state, action: PayloadAction<ProjectProps>) => {
-              const index = state.project.findIndex(
+              const index = state.projects.findIndex(
                 (project) => project._id === action.payload._id
               )
               if(index !== -1) {
-                 state.project[index] = {...state.project[index], ...action.payload} 
+                 state.projects[index] = {...state.projects[index], ...action.payload} 
               }
           },
           removeProjet: (state, action: PayloadAction<string>) => {
-             state.project = state.project.filter((p) => p._id !== action.payload)
+             state.projects = state.projects.filter((p) => p._id !== action.payload)
              state.totalNumber = Math.max(0, state.totalNumber - 1);
           },
           clearAllProjects: (state) => {
-            state.project = [];
+            state.projects = [];
             state.totalNumber = 0;
             state.error = null;
             state.createError = null;

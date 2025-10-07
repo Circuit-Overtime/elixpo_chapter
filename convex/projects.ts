@@ -59,6 +59,7 @@ export const createProject = mutation({
              name: projectName,
              sketchesData,
              projectNumber,
+             thumbnail,
              lastModified: Date.now(),
              createdAt: Date.now(),
              isPublic: false

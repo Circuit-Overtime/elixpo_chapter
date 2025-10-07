@@ -49,7 +49,7 @@ const Navbar = () => {
   const hasCanvasStyleGuide = pathname.includes('style-guide')
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 p-5  top-0 right-0 left-0 z-50 fixed">
+    <div className="grid grid-cols-2 lg:grid-cols-3 p-5  ">
       <div className="flex items-center gap-3">
         <Link
           href={`/dashboard/${me.name}`}
