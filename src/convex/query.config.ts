@@ -45,3 +45,24 @@ export const ProjectQuery = async () => {
        projects
    }
 }
+
+
+export const StyleGuideQuery = async (projectId: string) => {
+    const styleGuide = await preloadQuery(
+      api.projects.getProjectStyleGuide,
+      {projectId: projectId as Id<'projects'>},
+      {token: await convexAuthNextjsToken()}
+    )
+
+    return {styleGuide}
+
+}
+
+export const MoodBoardQuery = async (projectId: string) => {
+       const imges = await preloadQuery(
+         api.moodboard.getMoodBoardImages,
+         {projectId: projectId as Id<'projects'>},
+         {token: await convexAuthNextjsToken()}
+       )
+       return {imges}
+}

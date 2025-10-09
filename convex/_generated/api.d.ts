@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as moodboard from "../moodboard.js";
 import type * as projects from "../projects.js";
 import type * as subscriptions from "../subscriptions.js";
 import type * as user from "../user.js";
@@ -30,6 +31,7 @@ import type * as user from "../user.js";
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
+  moodboard: typeof moodboard;
   projects: typeof projects;
   subscriptions: typeof subscriptions;
   user: typeof user;

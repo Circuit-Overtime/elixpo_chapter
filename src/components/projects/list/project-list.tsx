@@ -22,12 +22,13 @@ const ProjectList = () => {
     )
   }
 
+
   return (
     <div className='space-y-8 px-5 md:px-0'>
       {/* Header */}
       <div className='flex items-center justify-between'>
         <div>
-          <h1 className='text-4xl md:text-5xl font-bold font-[poppins]'><span className='capitalize'>{user?.name}</span>'s Projects</h1>
+          <h1 style={{fontFamily: 'var(--font-montserrat-alternates)'}} className='text-4xl md:text-5xl font-black'><span className='capitalize'>{user?.name}</span>'s Projects</h1>
           <span className='font-mono text-xs md:text-md text-muted-foreground'>
             Manage your design projects and continue where you left off.
           </span>
@@ -47,8 +48,8 @@ const ProjectList = () => {
           <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6'>
             {projects.map((project: any) => (
               <Link
-                key={project._id}
-                href={`/dashboard/${user?.name}/canvas?project=${project._id}`}
+                key={project.id}
+                href={`/dashboard/${user?.name}/canvas?project=${project.id}`}
                 className='group cursor-pointer'
               >
                 <div className='space-y-3'>

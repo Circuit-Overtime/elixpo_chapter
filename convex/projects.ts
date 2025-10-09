@@ -105,3 +105,23 @@ export const getUserProject = query({
  
     
 })
+
+export const getProjectStyleGuide = query({
+     args: {
+        projectId: v.id('projects'),
+    },
+    handler: async (ctx, {projectId}) => {
+         const userId = await getAuthUserId(ctx);
+         if(!userId)  throw new Error("Not Authenticated");
+
+         const projects = await ctx.db.get(projectId)
+         if(!projects) throw new Error('No projects found')
+
+        if(projects?.userId !== userId && !projects.isPublic) {
+             throw new Error("Access Denial")
+        }
+
+        //return parse data
+        return projects.styleGuide ? JSON.parse(projects.styleGuide) : null
+    }
+})
