@@ -11,12 +11,12 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { motion } from 'framer-motion';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { UseAuth } from '@/hooks/use-auth';
 import { useAppSelector } from '@/redux/store';
 import CreateProjectButton from '../button/create/CreateProjectButton';
+import { cn } from '@/lib/utils';
 
 const Navbar = () => {
   const router = useRouter();
@@ -24,10 +24,7 @@ const Navbar = () => {
   const params = useSearchParams();
   const {handleSignOut} = UseAuth()
   const projectId = params.get('project');
-  const project = useQuery(
-    api.projects.getProjects,
-    projectId ? { projectId: projectId as Id<'projects'> } : 'skip'
-  );
+ 
 
   const me = useAppSelector((state) => state.profile)
   const currentTab = pathname.includes('canvas')
@@ -37,14 +34,18 @@ const Navbar = () => {
     : '';
 
   const handleTabChange = (value: string) => {
-    const query = projectId ? `?project=${projectId}` : '';
-    if (value === 'canvas') {
-      router.push(`/dashboard/canvas${query}`);
-    }
-    if (value === 'style-guide') {
-      router.push(`/dashboard/style-guide${query}`);
-    }
-  };
+  const query = projectId ? `?project=${projectId}` : '';
+  const session = me?.name || 'guest'; // or however you get session/user name
+
+  if (value === 'canvas') {
+    router.push(`/dashboard/${session}/canvas${query}`);
+  }
+
+  if (value === 'style-guide') {
+    router.push(`/dashboard/${session}/style-guide${query}`);
+  }
+};
+
   const hasCanvas = pathname.includes('canvas')
   const hasCanvasStyleGuide = pathname.includes('style-guide')
 
@@ -68,23 +69,25 @@ const Navbar = () => {
      <div className='hidden md:block'>
        <div className="flex items-center justify-center ">
         <Tabs className='' value={currentTab} onValueChange={handleTabChange}>
-          <TabsList className="relative flex rounded-full dark:bg-white/10  bg-gray-100 px-0 ">
+          <TabsList className="relative flex  rounded-full dark:bg-white/10 gap-5    ">
             {['canvas', 'style-guide'].map((tab) => (
               <TabsTrigger
                 key={tab}
                 value={tab}
-                className="relative  flex items-center gap-2 rounded-full px-4 py-4  text-sm transition-colors"
+                className={cn(
+                   'flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-medium transition-all duration-300',
+                   'bg-[#0f0f0f] text-white hover:bg-[#1a1a1a] border border-transparent',
+                   // Active state = 3D pressed effect
+                   'data-[state=active]:bg-[#0c0c0c] data-[state=active]:border-white/10',
+                   'data-[state=active]:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.8),inset_-2px_-2px_6px_rgba(255,255,255,0.07),0_1px_4px_rgba(0,0,0,0.6)]',
+                   // optional glow edge when active
+                   'data-[state=active]:after:content-[""] data-[state=active]:after:absolute data-[state=active]:after:inset-0 data-[state=active]:after:rounded-2xl data-[state=active]:after:border data-[state=active]:after:border-white/5 data-[state=active]:after:shadow-[0_0_8px_rgba(255,255,255,0.04)] relative font-mono'
+                 )}
               >
                 {tab === 'canvas' && <Hash className="h-4 w-4" />}
                 {tab === 'style-guide' && <LayoutTemplate className="h-4 w-4" />}
                 {tab === 'canvas' ? 'Canvas' : 'Style Guide'}
-                {currentTab === tab && (
-                  <motion.div
-                    layoutId="active-pill"
-                    className="absolute inset-0 rounded-full dark:hover:bg-white/10 bg-primary/20 dark:bg-white/20" 
-                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                  />
-                )}
+                
               </TabsTrigger>
             ))}
           </TabsList>

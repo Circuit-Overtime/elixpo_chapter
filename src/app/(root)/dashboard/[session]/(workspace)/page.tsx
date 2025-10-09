@@ -1,6 +1,6 @@
 import React from 'react'
-import Layout from './dashboard-layout'
-import { ProfileQuery, ProjectQuery } from '@/convex/query.config'
+import Layout from './layout'
+import { ProjectQuery } from '@/convex/query.config'
 import ProjectProvider from '@/components/projects/list/project-provider'
 import ProjectList from '@/components/projects/list/project-list'
 type Props = {
@@ -9,15 +9,15 @@ type Props = {
      }>
 }
 const Page = async ({params}: Props) => {
-  const {profile,projects} = await ProjectQuery()
+  const {projects} = await ProjectQuery()
   return (
-    <Layout>
+    
     <ProjectProvider initialProject={projects}>
       <div className='container py-5  mx-auto'>
         <ProjectList/>
       </div>
     </ProjectProvider>
-    </Layout>
+   
   )
 }
 
