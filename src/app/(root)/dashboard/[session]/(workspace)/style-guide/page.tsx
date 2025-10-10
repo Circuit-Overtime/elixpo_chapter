@@ -1,11 +1,13 @@
 
+import MoodBoardContent from '@/components/style-guide/moodboard-content'
 import { ThemeContent } from '@/components/style-guide/theme-content'
+import TypographyContent from '@/components/style-guide/typography-content'
 import { TabsContent } from '@/components/ui/tabs'
-import { mockStyleGuide } from '@/constant/mockdata'
+import { mockStyleGuide, mockTypographyGuide } from '@/constant/mockdata'
 import { MoodBoardQuery, StyleGuideQuery } from '@/convex/query.config'
 import { MoodboardImageProps } from '@/redux/api/moodboard'
 import { StyleGuide } from '@/redux/api/style-guide'
-import { Palette } from 'lucide-react'
+import { Palette, TypeIcon } from 'lucide-react'
 import React from 'react'
 
 interface Props {
@@ -41,7 +43,7 @@ const Page = async ({ searchParams }: Props) => {
         className='space-y-8'
         >
          {
-            !guideImage.length ? (
+           !!guide?.colorSection?.length   ? (
                <div className='space-y-8'>
                 <div className='text-center py-25' >
                   <div className='flex-col flex items-center '>
@@ -57,6 +59,20 @@ const Page = async ({ searchParams }: Props) => {
                 <ThemeContent  colorGuide={formattedColorGuide} />
             )
          }
+        </TabsContent>
+
+        <TabsContent
+         value='typography'
+         className='space-y-8'
+        >
+        <TypographyContent typographyGuide={mockTypographyGuide} />
+        </TabsContent>
+
+        <TabsContent
+         value='moodboard'
+         className='space-y-8'
+        >
+        <MoodBoardContent moodboardGuide={guideImage} />
         </TabsContent>
     </div>
   )
