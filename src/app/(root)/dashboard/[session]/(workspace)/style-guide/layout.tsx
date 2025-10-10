@@ -62,7 +62,7 @@ const Layout = ({children}: Props) => {
               </TabsList>
             </div>
         </div>
-        <div className='container mx-auto px-4 sm:px-6 py-6 sm:py-8'>
+        <div className='container mx-auto px-4 sm:px-6 md:px-0 py-6 sm:py-8'>
             {children}
         </div>
      </div>
