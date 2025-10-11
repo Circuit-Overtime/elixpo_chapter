@@ -16,10 +16,10 @@ SMTP_USER = os.getenv("MAIL_USER")
 SMTP_PASSWORD = os.getenv("MAIL_PASS")  
 FROM_EMAIL = SMTP_USER
 SUBJECT = "🎉 [GDG JISU] Invitation as a host for Hacktoberfest x GDG Study Jams Session 13th October 💖"
-to_email = "ayushbhatt633@gmail.com"
+to_email = "karmakarabiroy@gmail.com"
 name = "Abiroy Karmakar"
 print(f"Preparing email for {name} <{to_email}>")
-content = prepareBody(name)
+content = prepareBody()
 msg = EmailMessage()
 msg["Subject"] = SUBJECT
 msg['From'] = formataddr(("Ayushman Bhattacharya", "bhattacharyaa599@gmail.com"))

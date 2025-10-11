@@ -1,4 +1,4 @@
-def prepareBody(name):
+def prepareBody():
     html = """
     <html>
     <head>
@@ -71,7 +71,7 @@ def prepareBody(name):
                 <p>
                     We are thrilled to invite you to be a <b>host</b> for our upcoming 
                     <b>Hacktoberfest x GDG Study Jams Session</b> on <b>13th October 2025</b>. 
-                    Your expertise at being a host makes you an ideal candidate 
+                    Your expertise at being a host makes you an ideal one 
                     to lead this exciting event.
                 </p>
                 
