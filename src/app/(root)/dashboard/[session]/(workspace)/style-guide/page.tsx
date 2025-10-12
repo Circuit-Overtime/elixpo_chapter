@@ -1,7 +1,6 @@
 
-import MoodBoardContent from '@/components/style-guide/moodboard-content'
-import { ThemeContent } from '@/components/style-guide/theme-content'
-import TypographyContent from '@/components/style-guide/typography-content'
+import MoodBoardContent from '@/components/style-guide/moodboard/moodboard-content'
+import { ThemeContent } from '@/components/style-guide/colors/theme-content'
 import { TabsContent } from '@/components/ui/tabs'
 import { mockStyleGuide, mockTypographyGuide } from '@/constant/mockdata'
 import { MoodBoardQuery, StyleGuideQuery } from '@/convex/query.config'
@@ -9,7 +8,7 @@ import { MoodboardImageProps } from '@/redux/api/moodboard'
 import { StyleGuide } from '@/redux/api/style-guide'
 import { Palette, TypeIcon } from 'lucide-react'
 import React from 'react'
-
+import TypographyContent from '@/components/style-guide/typography/typography-content'
 interface Props {
  searchParams: Promise<{
     project: string

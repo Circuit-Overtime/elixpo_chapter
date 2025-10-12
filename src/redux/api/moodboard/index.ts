@@ -1,6 +1,6 @@
 export interface MoodboardImageProps {
      id: string;
-     file?: File | string;
+     file?: File;
      preview: string;
      storageId?: string;
      uploaded: boolean;
