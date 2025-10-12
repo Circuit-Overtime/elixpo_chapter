@@ -1,12 +1,11 @@
+'use client'
 import React, { useEffect, useState } from "react"
 import {MoodboardImageProps} from "../redux/api/moodboard/index"
 import { useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
-import { mutation } from "../../convex/_generated/server"
 import { useMutation } from "convex/react"
 import { api } from "../../convex/_generated/api"
 import { toast } from "sonner"
-import { fa } from "zod/v4/locales"
 import { Id } from "../../convex/_generated/dataModel"
 interface StyleFormData {
      images: MoodboardImageProps[ ]
@@ -29,6 +28,33 @@ export const useMoodBoard = (guideImage: MoodboardImageProps[]) => {
      const removeMoodboardImage = useMutation(
         api.moodboard.removeMoodBoardImage
      )
+     const addMoodBoardImage = useMutation(
+        api.moodboard.addMoodBoardImage
+     )
+
+     const uploadImage = async (file: File): Promise<{storageId: string, url?: string}> => {
+        
+         const uploadUrl = await generateMoodboardUrl();
+          const res = await fetch(uploadUrl,{
+                method: "POST",
+                headers: { 'Content-Type': file.type },
+                body: file
+          }) 
+         if(!res.ok) {
+             throw new Error(
+                `upload failed ${res.statusText}`
+             )
+         }
+         const { storageId } = await res.json();
+         if(projectId) {
+            await addMoodBoardImage({
+                 projectId: projectId as Id<'projects'>,
+                 storageId: storageId as Id<'_storage'>
+            })
+         }
+         return  {storageId}
+        
+     }
      useEffect(() => {
     if (!guideImage || guideImage.length === 0) return;
 
@@ -150,5 +176,78 @@ export const useMoodBoard = (guideImage: MoodboardImageProps[]) => {
              }
          })
      }
+
+     const handleFileInput = (e:React.ChangeEvent<HTMLInputElement>) => {
+         const files = Array.from(e.target.files || [])
+         files.forEach((file) => addImage(file))
+         e.target.value = ''
+     }
    
+     useEffect(() => {
+
+        const uploadPendingImage = async () => {
+            const currImages = getValues('images')
+            for(let i=0; i<currImages.length; i++) {
+                 const img = currImages[i]
+                 if(!img.uploaded && !img.uploading && !img.error) {
+                        const updatedImages = [...currImages]
+                        updatedImages[i] = {...img, uploading: true}
+                        setValue('images',updatedImages)
+                        try {
+                          const {storageId} = await uploadImage(img.file!)
+                          const finalImage = getValues('images')
+                          const finalIndex = finalImage.findIndex(
+                            (i) => i.id === img.id
+                          )
+                          if(finalIndex !== -1) {
+                             finalImage[finalIndex] = {
+                                ...finalImage[finalIndex],
+                                storageId,
+                                uploaded: true,
+                                uploading: false,
+                                isFromServer: true
+
+                             }
+                             setValue('images',[...finalImage])
+                             
+                          }
+                        } catch ( error ) {
+                          console.log(error)
+                          const errorImage = getValues('images')
+                          const errorIndex = errorImage.findIndex((i) => i.id === img.id)
+                          if(errorIndex !== -1) {
+                             errorImage[errorIndex] = {
+                                 ...errorImage[errorIndex],
+                                 uploading: false,
+                                 error: 'upload failed'
+                             }
+                             setValue('images',[...errorImage ])
+                          }
+                        }
+                 }
+            }
+        }
+        if(images.length > 0) {
+             uploadPendingImage()
+        }
+     },[images, setValue, getValues])
+
+     useEffect(() => {
+      return () => {
+         images.forEach((img) => {
+             URL.revokeObjectURL(img.preview)
+         })
+      }
+     },[])
+
+     return {
+         form,
+         images,
+         addImage,
+         removeImage,
+         handleDrag,
+         handleDragDrop,
+         handleFileInput,
+         canAddmore: images.length < 5
+     }
 }

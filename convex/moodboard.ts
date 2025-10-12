@@ -81,3 +81,35 @@ export const removeMoodBoardImage = mutation({
        }
     }  
 })
+
+
+export const addMoodBoardImage = mutation({
+     args: {
+        projectId: v.id('projects'),
+        storageId: v.id('_storage')
+    },
+    handler: async(ctx,{projectId,storageId}) => {
+       const userId = await getAuthUserId(ctx)
+       if(!userId) throw new Error("Not authenticated");
+
+
+       const project = await ctx.db.get(projectId)
+       if(project?.userId !== userId) {
+         throw new Error("not autheticated")
+       }
+
+       const currentImage = project.moodBoardImages || []
+       if(currentImage.length >= 5) {
+         throw new Error("Maxium 5 images are allowed at a time")
+       }
+       const updatedImage = [...currentImage, storageId]
+       await ctx.db.patch(projectId,{
+        moodBoardImages: updatedImage,
+        lastModified: Date.now( )
+       })
+       return {
+        success: true,
+        imageCount: updatedImage.length
+       }
+    }
+})
