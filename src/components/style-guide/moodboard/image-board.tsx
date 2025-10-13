@@ -42,11 +42,11 @@ const ImageBoard = ({
       }}
     >
       <Image
-        alt="mood board image"
+       alt=""
         src={image.preview}
         width={160}
         height={160}
-        className="object-cover rounded-xl w-40 h-40"
+        className="object-cover rounded-xl w-40 h-50"
       />
 
       {/* Upload Status Overlay */}
