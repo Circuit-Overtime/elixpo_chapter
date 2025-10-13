@@ -1,4 +1,4 @@
-from hostEmailBody import prepareBody 
+from nitLead import prepareBody 
 import os
 import json
 import smtplib
@@ -15,9 +15,9 @@ SMTP_PORT = 587
 SMTP_USER = os.getenv("MAIL_USER")  
 SMTP_PASSWORD = os.getenv("MAIL_PASS")  
 FROM_EMAIL = SMTP_USER
-SUBJECT = "🎉 [GDG JISU] Invitation as a host for Hacktoberfest x GDG Study Jams Session 13th October 💖"
-to_email = "karmakarabiroy@gmail.com"
-name = "Abiroy Karmakar"
+SUBJECT = "🎉 [GDG JISU] Invitation as a guest for Hacktoberfest x GDG Study Jams Session 13th October 💖"
+to_email = "iamsamrat05@gmail.com"
+name = "Samrat Talukdar"
 print(f"Preparing email for {name} <{to_email}>")
 content = prepareBody()
 msg = EmailMessage()
