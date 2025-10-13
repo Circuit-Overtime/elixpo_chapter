@@ -42,7 +42,7 @@ export default async function RootLayout({
   )
   return (
     <ConvexAuthNextjsServerProvider>
-       <html lang="en" className="dark" suppressHydrationWarning>
+       <html lang="en" className="dark bg-background" suppressHydrationWarning>
       <body
       
         className={`${poppins.variable} ${montserratAlternates.variable} ${geistMono.variable} antialiased`}

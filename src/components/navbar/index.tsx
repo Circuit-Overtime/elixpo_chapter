@@ -24,15 +24,19 @@ const Navbar = () => {
   const params = useSearchParams();
   const {handleSignOut} = UseAuth()
   const projectId = params.get('project');
- 
-
+  
   const me = useAppSelector((state) => state.profile)
+  const project = useQuery(
+    api.projects.getProjects,
+    projectId ? {projectId: projectId as Id<'projects'>} : "skip"
+
+  )
   const currentTab = pathname.includes('canvas')
     ? 'canvas'
     : pathname.includes('style-guide')
     ? 'style-guide'
     : '';
-
+ 
   const handleTabChange = (value: string) => {
   const query = projectId ? `?project=${projectId}` : '';
   const session = me?.name || 'guest'; // or however you get session/user name
@@ -48,7 +52,7 @@ const Navbar = () => {
 
   const hasCanvas = pathname.includes('canvas')
   const hasCanvasStyleGuide = pathname.includes('style-guide')
-
+  
   return (
     <div className="grid grid-cols-2 lg:grid-cols-3 p-5  ">
       <div className="flex items-center gap-3">
@@ -60,7 +64,7 @@ const Navbar = () => {
         </Link>
         {(currentTab === 'canvas' || currentTab === 'style-guide') && (
           <span className="font-mono text-xs lg:inline-block hidden backdrop-blur-xl dark:bg-white/[0.18] saturate-150 px-4 py-2 rounded-full dark:text-primary/60 dark:border-white/20">
-            Projects {/* | {project?.name} */}
+            Projects/{project?.name}
           </span>
         )}
       </div>

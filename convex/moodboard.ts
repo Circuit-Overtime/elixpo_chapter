@@ -99,7 +99,7 @@ export const addMoodBoardImage = mutation({
        }
 
        const currentImage = project.moodBoardImages || []
-       if(currentImage.length >= 5) {
+       if(currentImage.length >= 6) {
          throw new Error("Maxium 5 images are allowed at a time")
        }
        const updatedImage = [...currentImage, storageId]
