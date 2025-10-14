@@ -194,7 +194,7 @@ Our mission is to advance AI for the benefit of all—respecting ethical standar
 </p>
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=99:ffc,100:302b63&height=200&section=footer"/>
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=99:ffc,100:302b63&height=100&section=footer"/>
 </p>
 
 > ## `Made with ❤️ by Ayushman Bhattacharya & Collabs!`
