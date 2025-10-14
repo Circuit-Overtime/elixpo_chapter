@@ -2,9 +2,9 @@
 
 ![Elixpo Banner](https://github.com/user-attachments/assets/dcf4bafc-8a93-4a45-adcb-4b392197da35)
 
-### Welcome to Elixpo! Begun in 2023 as a college initiative, this open-source series has grown into a collaborative ecosystem of AI-powered tools and developer platforms. In just two years, we've built over 10 projects, engaged a global community, and participated in numerous hackathons and open-source programs.
+### Welcome to Elixpo SOR, begun in 2023 as a college initiative, this open-source series has grown into a collaborative ecosystem of open source projects and collaborative development. In just two years, we've built over 17 projects, engaged a global community, and participated in numerous hackathons and open-source programs.
 
-### **💖 If you believe in open and accessible AI, please leave a ⭐ on the repository!**
+### **💖 If you believe in open and accessible projects, please leave a ⭐ on the repository!**
 
 <div>
 
@@ -37,12 +37,12 @@ At Elixpo, we are dedicated to building a future where AI is **open, ethical, an
 
 ## 🎉 Join Us for Hacktoberfest 2025!
 
-> **Hacktoberfest is live!** We enthusiastically welcome contributions from developers around the world.
->
-> - **Find Issues:** Look for issues tagged with `hacktoberfest` in our [issue tracker](https://github.com/Circuit-Overtime/elixpo_ai_chapter/issues).
-> - **Read the Guidelines:** Before submitting a PR, please review our [**Code of Conduct**](./CODE_OF_CONDUCT.md) and [**Contributing Guidelines**](./CONTRIBUTING.md).
->
-> Let's build something amazing together!
+**Hacktoberfest is live!** We enthusiastically welcome contributions from developers around the world.
+
+- **Find Issues:** Look for issues tagged with `hacktoberfest` in our [issue tracker](https://github.com/Circuit-Overtime/elixpo_ai_chapter/issues).
+- **Read the Guidelines:** Before submitting a PR, please review our [**Code of Conduct**](./CODE_OF_CONDUCT.md) and [**Contributing Guidelines**](./CONTRIBUTING.md).
+
+Let's build something amazing together!
 
 ---
 
