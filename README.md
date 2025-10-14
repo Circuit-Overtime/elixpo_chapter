@@ -1,261 +1,43 @@
-<div align="center">
+# CortexOne
 
-# 🌟 **CortexOne** 🌟
+> A powerful AI desktop application with advanced MCP integration and multi-provider support
 
-### *The Ultimate AI Desktop Experience*
+[![Status](https://img.shields.io/badge/Status-Production-brightgreen?style=flat-square)](https://github.com/Itachi-1824/CortexOne)
+[![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=flat-square)](https://github.com/Itachi-1824/CortexOne/releases)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=flat-square)](https://github.com/Itachi-1824/CortexOne/pulls)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Status-Stable-green?style=for-the-badge&logo=github" alt="Status">
-  <img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge&logo=github" alt="Version">
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge&logo=open-source-initiative" alt="License">
-  <img src="https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=github-actions" alt="Build">
-</p>
+## Overview
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Electron-38.2.1-47848F?style=for-the-badge&logo=electron" alt="Electron">
-  <img src="https://img.shields.io/badge/React-19.2.0-61DAFB?style=for-the-badge&logo=react" alt="React">
-  <img src="https://img.shields.io/badge/TypeScript-5.8.2-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript">
-  <img src="https://img.shields.io/badge/AI_Providers-15+-FF6B35?style=for-the-badge&logo=openai" alt="AI Providers">
-</p>
+CortexOne is a modern desktop AI chat application built with Electron, React, and TypeScript. It provides seamless integration with multiple AI providers and implements the Model Context Protocol (MCP) for advanced tool capabilities, offering a Claude Desktop-inspired experience with enhanced flexibility.
 
----
+### Key Features
 
-### ✨ **Revolutionary AI Chat Interface with MCP Integration**
+- **🤖 Multi-Provider Support** - Connect to 15+ AI providers including OpenAI, Anthropic Claude, Google Gemini, and local Ollama instances
+- **🔧 MCP Integration** - Full Model Context Protocol support with auto-discovery and tool integration
+- **💬 Real-time Streaming** - Live response streaming with typing indicators for natural conversation flow
+- **🧠 Smart Memory System** - Context-aware memory with session summarization and project organization
+- **📁 Project Management** - Hierarchical organization with sessions grouped under projects
+- **⚡ High Performance** - Optimized Electron architecture with React 19 and TypeScript
+- **🎨 Modern UI** - Clean, responsive interface with dark theme and intuitive navigation
 
-*Experience the future of AI interaction with seamless multi-provider support, advanced memory systems, and Claude Desktop-style MCP server management.*
+## Technology Stack
 
-</div>
+- **Frontend**: React 19.2.0, TypeScript 5.8.2
+- **Desktop Framework**: Electron 38.2.1
+- **Build Tool**: Vite 6.2.0
+- **AI Integration**: OpenAI API, Google Generative AI, MCP Protocol
+- **State Management**: Electron Store 11.0.2, Custom React Hooks
+- **Speech Recognition**: Web Speech API (built-in browser support)
 
----
+## Installation
 
-## 🚀 **Key Features**
+### Prerequisites
 
-### 🔧 **Advanced MCP Integration**
-- **Model Context Protocol** servers with auto-discovery
-- **Tool Integration** with 15+ built-in capabilities
-- **Plugin System** with dynamic tool loading
-- **Sequential Thinking** support for complex reasoning
+- Node.js 18.x or higher
+- npm or yarn package manager
 
-### 🎤 **Voice Input & Real-time Streaming**
-- **Speech Recognition** with continuous listening
-- **Live Streaming** responses with typing indicators
-- **Message Queue** for seamless conversation flow
-- **Voice Activity Detection** with smart timeout
-
-### 🧠 **Advanced Memory Management**
-- **Context Awareness** across conversations
-- **Session Summarization** for long-term memory
-- **Project Organization** with hierarchical structure
-- **Memory Compression** for optimal performance
-
-</div>
-
----
-
-## 📊 **Architecture Overview**
-
-```mermaid
-graph TB
-    subgraph "🎨 Frontend Layer"
-        React[React 19 + TypeScript]
-        Vite[Vite + Electron]
-        UI[Custom UI Components]
-    end
-
-    subgraph "🔌 MCP Integration Layer"
-        MCPServers[MCP Server Manager]
-        ToolDiscovery[Tool Discovery Engine]
-        PluginLoader[Plugin Loader]
-    end
-
-    subgraph "🤖 AI Provider Layer"
-        ProviderManager[Multi-Provider Manager]
-        OpenAI[OpenAI Compatible APIs]
-        Anthropic[Anthropic Claude]
-        Google[Google Gemini]
-        Local[Local Ollama]
-    end
-
-    subgraph "💾 Storage Layer"
-        ElectronStore[Electron Store]
-        SessionManager[Session Manager]
-        MemoryService[Memory Service]
-    end
-
-    React --> MCPServers
-    React --> ProviderManager
-    MCPServers --> ToolDiscovery
-    ToolDiscovery --> PluginLoader
-    ProviderManager --> OpenAI
-    ProviderManager --> Anthropic
-    ProviderManager --> Google
-    ProviderManager --> Local
-    React --> ElectronStore
-    ElectronStore --> SessionManager
-    SessionManager --> MemoryService
-```
-
----
-
-## 🔄 **Data Flow Diagram**
-
-```mermaid
-sequenceDiagram
-    participant U as 👤 User
-    participant R as ⚛️ React App
-    participant M as 🔌 MCP Server
-    participant A as 🤖 AI Provider
-    participant S as 💾 Storage
-
-    U->>R: Send Message
-    R->>M: Discover Available Tools
-    M-->>R: Tool Capabilities
-    R->>A: Stream Message + Tools
-    A->>R: Real-time Response
-    Note over R: Process Tool Calls
-    R->>M: Execute Tool (if needed)
-    M-->>R: Tool Results
-    R->>A: Continue Conversation
-    R->>S: Save Session & Memory
-    S-->>R: Confirmation
-```
-
----
-
-## 🏗️ **Component Architecture**
-
-```mermaid
-graph TD
-    A[App Container] --> B[Sidebar Navigation]
-    A --> C[Chat Interface]
-    A --> D[Settings Panel]
-    A --> E[Live Mode View]
-
-    C --> F[Message Components]
-    C --> G[Input Handler]
-    C --> H[Streaming Display]
-
-    D --> I[Provider Manager]
-    D --> J[MCP Server Config]
-    D --> K[Plugin Settings]
-
-    B --> L[Session Manager]
-    B --> M[Project Manager]
-
-    F --> N[Message Renderer]
-    F --> O[Context Menu]
-    F --> P[Tool Integration]
-
-    G --> Q[Voice Recognition]
-    G --> R[Message Queue]
-
-    H --> S[Real-time Updates]
-    H --> T[Typing Indicators]
-```
-
----
-
-## ✨ **Feature Showcase**
-
-<div align="center">
-
-### 🎯 **Core Features**
-
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
-
-<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3); color: white; text-align: center; transition: transform 0.3s ease;">
-
-#### 🌐 **Multi-Provider AI**
-**15+ AI Providers** supported including OpenAI, Anthropic Claude, Google Gemini, Meta Llama, and local Ollama instances. Switch seamlessly between providers with custom configurations.
-
-</div>
-
-<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(240, 147, 251, 0.3); color: white; text-align: center; transition: transform 0.3s ease;">
-
-#### 🔧 **MCP Integration**
-**Model Context Protocol** servers with auto-discovery and tool integration. Built-in support for filesystem access, sequential thinking, and custom tools.
-
-</div>
-
-<div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3); color: white; text-align: center; transition: transform 0.3s ease;">
-
-#### 🎤 **Voice & Streaming**
-**Real-time voice input** with speech recognition and **live streaming responses**. Advanced message queuing for seamless conversation flow.
-
-</div>
-
-<div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(67, 233, 123, 0.3); color: white; text-align: center; transition: transform 0.3s ease;">
-
-#### 🧠 **Smart Memory**
-**Advanced memory system** with session summarization and project-based organization. Context awareness across conversations.
-
-</div>
-
-<div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(250, 112, 154, 0.3); color: white; text-align: center; transition: transform 0.3s ease;">
-
-#### ⚡ **High Performance**
-**Electron-based architecture** with optimized performance and native desktop integration. Built with React 19 and TypeScript.
-
-</div>
-
-<div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(168, 237, 234, 0.3); color: #2c3e50; text-align: center; transition: transform 0.3s ease;">
-
-#### 🎨 **Beautiful UI**
-**Modern, responsive design** with dark theme, custom animations, and intuitive user experience. Premium feel with attention to detail.
-
-</div>
-
-</div>
-
-</div>
-
----
-
-## 🛠️ **Technology Stack**
-
-<div align="center">
-
-### **Frontend & Build Tools**
-<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin: 20px 0;">
-
-<img src="https://img.shields.io/badge/React-19.2.0-61DAFB?style=for-the-badge&logo=react" alt="React">
-<img src="https://img.shields.io/badge/TypeScript-5.8.2-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript">
-<img src="https://img.shields.io/badge/Vite-6.2.0-646CFF?style=for-the-badge&logo=vite" alt="Vite">
-<img src="https://img.shields.io/badge/Electron-38.2.1-47848F?style=for-the-badge&logo=electron" alt="Electron">
-
-</div>
-
-### **AI & Integration**
-<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin: 20px 0;">
-
-<img src="https://img.shields.io/badge/OpenAI-API-412991?style=for-the-badge&logo=openai" alt="OpenAI API">
-<img src="https://img.shields.io/badge/MCP-Model_Context_Protocol-FF6B35?style=for-the-badge&logo=protocol" alt="MCP">
-<img src="https://img.shields.io/badge/Google_Generative_AI-1.22.0-4285F4?style=for-the-badge&logo=google" alt="Google GenAI">
-<img src="https://img.shields.io/badge/Web_Speech_API-Continuous-FF6B35?style=for-the-badge&logo=web-components.org" alt="Speech API">
-
-</div>
-
-### **Storage & State Management**
-<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin: 20px 0;">
-
-<img src="https://img.shields.io/badge/Electron_Store-11.0.2-47848F?style=for-the-badge&logo=electron" alt="Electron Store">
-<img src="https://img.shields.io/badge/Local_Storage-Custom_Hooks-4FC3F7?style=for-the-badge&logo=react" alt="Local Storage">
-<img src="https://img.shields.io/badge/Session_Management-Stateful-9C27B0?style=for-the-badge&logo=redux" alt="Session Management">
-<img src="https://img.shields.io/badge/Memory_Service-Context_Aware-00BCD4?style=for-the-badge&logo=memory" alt="Memory Service">
-
-</div>
-
-</div>
-
-
-## 🚀 **Installation**
-
-### **Prerequisites**
-- **Node.js** 18+ recommended
-- **npm** or **yarn** package manager
-- **Git** for cloning repository
-
-### **Quick Start**
+### Quick Start
 
 ```bash
 # Clone the repository
@@ -267,118 +49,125 @@ npm install
 
 # Start development server
 npm run dev
-
-# Build for production
-npm run build
 ```
 
-### **Development Setup**
+### Building for Production
 
 ```bash
-# Install all dependencies
-npm install
-
-# Start both Vite dev server and Electron
-npm run dev
-
-# Run only Electron (after build)
-npm run start-electron
-
-# Build for production
+# Build the application
 npm run build
+
+# Package for distribution (coming soon)
+npm run package
 ```
 
----
+## Configuration
 
-## 📋 **Configuration**
+### Setting Up AI Providers
 
-### **Provider Setup**
+1. Open **Settings** from the sidebar
+2. Navigate to **Provider Management**
+3. Add your provider configuration:
 
-Configure your AI providers in the settings panel:
-
-```typescript
-// Example provider configuration
+```json
 {
-  "providers": [
-    {
-      "id": "openai-main",
-      "name": "OpenAI GPT-4",
-      "baseURL": "https://api.openai.com/v1",
-      "apiKey": "your-api-key",
-      "models": ["gpt-4o", "gpt-4-turbo"]
-    }
-  ]
+  "id": "openai-gpt4",
+  "name": "OpenAI GPT-4",
+  "baseURL": "https://api.openai.com/v1",
+  "apiKey": "your-api-key-here",
+  "models": ["gpt-4o", "gpt-4-turbo", "gpt-4"]
 }
 ```
 
-### **MCP Server Configuration**
+### Configuring MCP Servers
 
-Set up Model Context Protocol servers:
+CortexOne supports MCP servers similar to Claude Desktop. Configure servers in the settings:
 
-```typescript
+```json
 {
-  "claudeDesktopConfig": {
-    "mcpServers": {
-      "filesystem": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
-        "alwaysAllowTools": ["*"]
-      }
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/directory"],
+      "alwaysAllowTools": ["*"]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     }
   }
 }
 ```
 
----
+**Built-in MCP Support:**
+- Filesystem access
+- Sequential thinking capabilities
+- Custom tool integration
+- Dynamic plugin loading
 
-## 💡 **Usage Examples**
+## Usage
 
-### **Basic Chat**
+### Basic Conversation
 
-```typescript
-// Start a conversation
-const message = "Explain quantum computing in simple terms";
-await handleSendMessage(message);
+1. Create a new session from the sidebar
+2. Select your preferred AI provider and model
+3. Start chatting - responses stream in real-time
+4. Sessions auto-save with generated titles
 
-// Stream response in real-time
-// Response appears character by character with typing indicators
+### Using MCP Tools
+
+When MCP servers are configured, tools are automatically available to the AI:
+
+- The AI can suggest using available tools
+- Tool calls are executed automatically
+- Results are seamlessly integrated into the conversation
+- View tool activity in the message thread
+
+### Project Organization
+
+- Group related conversations under **Projects**
+- Create projects from the sidebar
+- Move sessions between projects
+- Organize by topic, client, or workflow
+
+### Memory System
+
+CortexOne maintains context across conversations:
+
+- **Session Memory**: Automatically summarizes long conversations
+- **Cross-Session Context**: Retrieves relevant information from past chats
+- **Project-Level Memory**: Shares context within project boundaries
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        React Frontend                        │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │  Chat View   │  │   Sidebar    │  │   Settings   │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+┌───────────────────────┴─────────────────────────────────────┐
+│                    Electron Main Process                     │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │              MCP Server Manager                        │ │
+│  │  • Auto-discovery  • Tool Integration  • Lifecycle    │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │           Multi-Provider Manager                       │ │
+│  │  • OpenAI  • Anthropic  • Google  • Ollama           │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │           Storage & Memory Service                     │ │
+│  │  • Session Persistence  • Memory Compression          │ │
+│  └────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### **Tool Integration**
+## Development
 
-```typescript
-// Use MCP tools automatically
-const toolCall = {
-  "function": {
-    "name": "web_search",
-    "arguments": JSON.stringify({ query: "latest AI news" })
-  }
-};
-
-// Execute tool and continue conversation
-await executeAndContinue(sessionId, [toolCall]);
-```
-
-### **Voice Input**
-
-```typescript
-// Enable voice recognition
-const recognition = new SpeechRecognition();
-recognition.continuous = true;
-recognition.interimResults = true;
-
-// Handle voice input
-recognition.onresult = (event) => {
-  const transcript = event.results[event.results.length - 1][0].transcript;
-  handleSendMessage(transcript);
-};
-```
-
----
-
-## 🔧 **Development**
-
-### **Project Structure**
+### Project Structure
 
 ```
 cortexone/
@@ -386,151 +175,111 @@ cortexone/
 │   ├── components/          # React components
 │   │   ├── ChatView.tsx    # Main chat interface
 │   │   ├── Sidebar.tsx     # Navigation sidebar
-│   │   ├── SettingsView.tsx # Settings panel
-│   │   └── modals/         # Modal components
+│   │   ├── SettingsView.tsx # Settings management
+│   │   └── modals/         # Modal dialogs
 │   ├── hooks/              # Custom React hooks
-│   ├── services/           # Business logic services
-│   ├── types/              # TypeScript type definitions
+│   ├── services/           # Business logic
+│   │   ├── memoryService.ts
+│   │   ├── mcpService.ts
+│   │   └── providerService.ts
+│   ├── types/              # TypeScript definitions
 │   └── electron/           # Electron main process
 ├── public/                 # Static assets
-└── dist/                   # Build output
+└── package.json
 ```
 
-### **Available Scripts**
+### Available Scripts
 
 ```bash
-npm run dev          # Start development server
+npm run dev          # Start development environment
 npm run build        # Build for production
 npm run preview      # Preview production build
 npm run lint         # Run ESLint
-npm run type-check   # Run TypeScript compiler
+npm run type-check   # TypeScript type checking
 ```
 
-### **Contributing**
+### Development Guidelines
 
-1. **Fork** the repository
-2. **Create** a feature branch
-3. **Make** your changes
-4. **Test** thoroughly
-5. **Submit** a pull request
+- **Code Style**: Follow TypeScript and React best practices
+- **Type Safety**: Maintain strict TypeScript compliance
+- **Performance**: Keep response times under 100ms where possible
+- **Testing**: Add tests for new features (test suite in development)
 
----
+## Roadmap
 
-## 🌟 **Advanced Features**
+We're actively developing the following features:
 
-### **Memory Management**
+- [ ] **Voice Input & Commands** - Hands-free interaction with continuous speech recognition
+- [ ] **Live Mode** - Real-time collaborative sessions with streaming awareness
+- [ ] **Plugin Marketplace** - Community-driven MCP server and tool discovery
+- [ ] **Image Generation** - Integrated image creation and editing capabilities
+- [ ] **Mobile Companion App** - iOS/Android sync with desktop sessions
+- [ ] **Custom Themes** - User-created color schemes and UI customization
+- [ ] **Offline Mode** - Local-only operation with cached models
+- [ ] **Enhanced Analytics** - Usage statistics and conversation insights
 
-```typescript
-// Automatic session summarization
-if (session.messages.length > 10) {
-  memoryService.addSummary(sessionId, session.messages);
-}
+## Contributing
 
-// Context-aware memory retrieval
-const relevantMemories = await memoryService.getRelevantMemories(query);
-```
+We welcome contributions! Here's how to get started:
 
-### **Plugin System**
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-```typescript
-// Dynamic plugin loading
-const plugins = await fetchPluginsFromServer(serverConfig);
+### Areas We Need Help
 
-// Tool discovery and registration
-const availableTools = await discoverMcpTools(mcpServers);
-```
+- Additional AI provider integrations (Mistral, Cohere, etc.)
+- MCP server implementations
+- UI/UX improvements
+- Documentation and tutorials
+- Bug reports and fixes
 
-### **Session Management**
+## Troubleshooting
 
-```typescript
-// Create new session
-const session = {
-  id: uuidv4(),
-  title: 'New Chat',
-  messages: [],
-  isTemporary: true,
-  projectId: null
-};
+### Common Issues
 
-// Auto-generate titles for completed conversations
-const title = await generateTitle(provider, modelId, firstMessage);
-```
+**MCP Servers Not Loading**
+- Verify Node.js and npx are in your PATH
+- Check server command syntax in settings
+- Review console logs for error messages
 
----
+**API Connection Errors**
+- Confirm API keys are valid and active
+- Check base URLs for custom providers
+- Verify network connectivity
 
-## 📊 **Performance Metrics**
+**Performance Issues**
+- Clear old sessions to reduce memory usage
+- Limit concurrent MCP servers
+- Check for resource-heavy background processes
 
-<div align="center">
+## License
 
-| Feature | Status | Performance |
-|---------|--------|-------------|
-| **Multi-Provider AI** | ✅ Active | < 100ms latency |
-| **MCP Integration** | ✅ Active | < 50ms tool calls |
-| **Voice Recognition** | ✅ Active | Real-time processing |
-| **Memory System** | ✅ Active | Context-aware retrieval |
-| **Streaming Responses** | ✅ Active | < 10ms chunk updates |
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-</div>
+## Acknowledgments
 
----
+- Inspired by [Claude Desktop](https://claude.ai/download) and the MCP protocol
+- Built with [Electron](https://www.electronjs.org/), [React](https://react.dev/), and [Vite](https://vitejs.dev/)
+- AI integration powered by OpenAI, Anthropic, and Google APIs
+- Community contributors and beta testers
 
-## 🤝 **Contributing**
+## Support
 
-We welcome contributions from the community! Here's how you can help:
-
-### **Development Guidelines**
-
-1. **Code Style**: Follow TypeScript best practices
-2. **Testing**: Write tests for new features
-3. **Documentation**: Update README for API changes
-4. **Performance**: Maintain < 100ms response times
-
-### **Areas for Contribution**
-
-- [ ] **Additional AI Providers** (Mistral, Cohere, etc.)
-- [ ] **Mobile Responsiveness** improvements
-- [ ] **Plugin Marketplace** for community tools
-- [ ] **Advanced Memory Algorithms**
-- [ ] **Voice Command System**
-- [ ] **Theme Customization**
-- [ ] **Offline Mode** capabilities
-
----
-
-## 📄 **License**
-
-**MIT License** - see [LICENSE](LICENSE) file for details
-
----
-
-## 🙏 **Acknowledgments**
-
-- **Claude Desktop** for MCP protocol inspiration
-- **OpenAI** for API standards and innovation
-- **Electron Team** for cross-platform desktop capabilities
-- **React Team** for the amazing framework
-- **Community Contributors** for ongoing support
+- **Issues**: [GitHub Issues](https://github.com/Itachi-1824/CortexOne/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Itachi-1824/CortexOne/discussions)
+- **Documentation**: [Wiki](https://github.com/Itachi-1824/CortexOne/wiki)
 
 ---
 
 <div align="center">
 
-### **🌟 Ready to Experience the Future of AI?**
+**Built with ❤️ for the AI community**
 
-**[⬇️ View on GitHub](https://github.com/Itachi-1824/CortexOne)** • **[📖 Documentation](https://github.com/Itachi-1824/CortexOne#readme)** • **[💬 Issues & Discussion](https://github.com/Itachi-1824/CortexOne/issues)**
+⭐ Star this repository if you find CortexOne useful!
 
-<p align="center">
-  <strong>Built with ❤️ for the AI community</strong>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Status-Stable-green?style=flat&logo=github" alt="Stable Release">
-  <img src="https://img.shields.io/badge/PRs-Welcome-green?style=flat&logo=github" alt="PRs Welcome">
-  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat&logo=open-source-initiative" alt="MIT License">
-</p>
-
----
-
-**⭐ Star this repository if you find CortexOne amazing!**
+[Download](https://github.com/Itachi-1824/CortexOne/releases) • [Documentation](https://github.com/Itachi-1824/CortexOne/wiki) • [Report Bug](https://github.com/Itachi-1824/CortexOne/issues)
 
 </div>
