@@ -120,3 +120,81 @@ graph TD
     classDef api fill:#e6ffe6,stroke:#333,stroke-width:2px;
     classDef ai fill:#fff0e6,stroke:#333,stroke-width:2px;
     classDef infra fill:#f9e6ff,stroke:#333,stroke-width:2px;
+  ```
+
+
+
+
+## Development Note
+
+Elixpo is a parallel development initiative with multiple sub-projects evolving simultaneously within this monorepo. We actively welcome external open-source projects—if you’d like your project featured here, submit a proposal! Accepted projects will be listed as contributors and included under the GNU GPL license.  
+
+> Each project follows its own dedicated development track and process, covering diverse fields across computer science. This structure encourages collaboration, innovation, and cross-disciplinary growth within the Elixpo ecosystem.
+
+## Collaborators
+
+We are excited to collaborate with various developers and artists in the open-source community. If you are interested in contributing, please reach out! Together, we aim to enhance the capabilities of this art generator.
+
+## Funding
+
+This project is funded through a mix of personal investment, community contributions, and generous infrastructure support. Our cloud compute and VPS resources are provided by [Pollinations AI](https://pollinations.ai) — special thanks to Thomas Haferlach and the Pollinations team for enabling our large-scale AI workloads.
+
+We are actively seeking sponsors to help us grow and sustain the project. If you or your organization would like to support Elixpo, please visit our [GitHub Sponsors page](https://github.com/sponsors/Circuit-Overtime) or reach out to discuss partnership opportunities.
+
+Your support helps us cover infrastructure costs, accelerate development, and expand our open-source initiatives. Thank you for helping us build a more accessible and collaborative AI ecosystem!
+
+
+#  Recent Releases
+
+Here are some of our latest releases and live demos:
+
+- **Elixpo Art Chrome Extension**  
+  [Available on Chrome Web Store](https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh?authuser=0&hl=en-GB&pli=1)  
+  Easily generate AI art from selected text in your browser.
+
+- **Elixpo Art Platform**  
+  [elixpo.com](https://elixpo.com)  
+  The main platform for AI-powered art generation and sharing.
+
+- **Jackey Discord Bot**  
+  [jackey.elixpo.com](https://jackey.elixpo.com)  
+  A personalized Discord bot for image generation and more.
+
+- **Fine-Tuned Llama Medicine Model**  
+  [ollama.com/Elixpo/LlamaMedicine](https://ollama.com/Elixpo/LlamaMedicine)  
+  Specialized Llama model fine-tuned for medicine-related tasks.
+
+- **Emoji Translator**  
+  [huggingface.co/Elixpo/Emoji-Contextual-Translator](https://huggingface.co/Elixpo/Emoji-Contextual-Translator)  
+  Translate text to context-aware emojis using our custom model.
+
+  - **Elixpo Art Blog**  
+    [elixpo.com/blogs/elixpo_art](https://elixpo.com/blogs/elixpo_art)  
+    In-depth articles and updates about the Elixpo Art platform.
+
+---
+
+# Our Vision
+
+At Elixpo-ai-chapter, we are dedicated to shaping a future where AI is:
+
+- **Open & Accessible**: AI should empower everyone—free from paywalls, proprietary barriers, or exclusivity.
+- **Transparent & Ethical**: We prioritize transparency in our models and workflows, ensuring ethical development and responsible use.
+- **Community-Driven**: Our platform thrives on collaboration, inviting developers, creators, and enthusiasts to contribute and innovate together.
+- **Interconnected**: We’re building an ecosystem where AI tools and services integrate seamlessly, enabling composable and synergistic solutions.
+- **Continuously Evolving**: We embrace rapid advancements in AI, adapting and improving while upholding our core values of openness and accessibility.
+
+Our mission is to advance AI for the benefit of all—respecting ethical standards, fostering responsible innovation, and building a collaborative community. Join us in making AI open, ethical, and impactful for everyone.
+
+# Stargazers
+<p align="left">
+  <a href="https://reporoster.com/stars/dark/Circuit-Overtime/elixpo_chapter">
+    <img src="https://reporoster.com/stars/dark/Circuit-Overtime/elixpo_chapter" alt="Stargazers" />
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=99:ffc,100:302b63&height=200&section=footer"/>
+</p>
+
+> ## `Made with ❤️ by Ayushman Bhattacharya & Collabs!`
