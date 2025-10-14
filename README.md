@@ -30,13 +30,6 @@
 
 ## 🚀 **Key Features**
 
-<div align="center">
-
-### 🌐 **Multi-Provider AI Support**
-<p align="center">
-  <img src="https://img.shields.io/badge/Local-Ollama-000000?style=flat-square&logo=linux" alt="Ollama">
-</p>
-
 ### 🔧 **Advanced MCP Integration**
 - **Model Context Protocol** servers with auto-discovery
 - **Tool Integration** with 15+ built-in capabilities
