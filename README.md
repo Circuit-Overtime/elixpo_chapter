@@ -2,7 +2,7 @@
 
 ![Elixpo Banner](https://github.com/user-attachments/assets/dcf4bafc-8a93-4a45-adcb-4b392197da35)
 
-### Welcome to Elixpo SOR, begun in 2023 as a college initiative, this open-source series has grown into a collaborative ecosystem of open source projects and collaborative development. In just two years, we've built over 17 projects, engaged a global community, and participated in numerous hackathons and open-source programs.
+### Welcome to Elixpo-Chapter, an Open Source Repository (OSR) begun in 2023 as a college initiative, this open-source series has grown into a collaborative ecosystem of open source projects and collaborative development. In just two years, we've built over 17 projects, engaged a global community, and participated in numerous hackathons and open-source programs.
 
 ### **💖 If you believe in open and accessible projects, please leave a ⭐ on the repository!**
 
