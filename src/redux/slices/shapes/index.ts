@@ -13,6 +13,7 @@ export type Tool =
   | "frame"
   | "rect"
   | "ellipse"
+  | "circle"
   | "freedraw"
   | "arrow"
   | "line"
