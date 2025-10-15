@@ -65,12 +65,13 @@ This monorepo hosts a diverse collection of projects, each with its own developm
 | **Elixpo Portfolio**| The personal portfolio of the project founder. | `elixpo` |
 | **Inkflow** | A minimalist canvas developed by [**Ez-Vivek**](https://github.com/ez-vivek). | `inkflow` |
 | **Fing & Fing-UI**| A vibe-coding platform and React UI library by [**Subhro Koley**](https://github.com/IgYaHiko). | `fing`, `fing-ui` |
+| **CortexOne** | An AI-powered desktop application built with Electron, React, and TypeScript. | `itachi.cortexOne` |
 
 
 ## 👑 Key Achievements
 
-- **`10+` Open Source Projects** successfully built and deployed.
-- **`10+` Global Contributors** have shaped the Elixpo ecosystem.
+- **`22+` Open Source Projects** successfully built and deployed.
+- **`20+` Global Contributors** have shaped the Elixpo ecosystem.
 - **`20+` Hackathons** participated in, fostering innovation and rapid development.
 - **Featured in Major Programs** like **GSSOC**, **Pollinations.AI**, and **OSCI**.
 - **Recognized by MS Startup Foundations** with funding in 2024.
