@@ -1,7 +1,7 @@
 'use client'
 
-import { addText, clearSelection, removeShape, setTool, Shape, updateShape } from "@/redux/slices/shapes";
-import { panMove, panStart, Point, screenToWorld, wheelPan, wheelZoom } from "@/redux/slices/viewport";
+import { addArrow, addEllipse, addFrame, addFreeDrawShape, addLine, addRect, addText, clearSelection, removeShape, setTool, Shape, updateShape } from "@/redux/slices/shapes";
+import { handToolDisable, handToolEnable, panEnd, panMove, panStart, Point, screenToWorld, wheelPan, wheelZoom } from "@/redux/slices/viewport";
 import { AppDispatch, useAppSelector } from "@/redux/store"
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux"
@@ -250,7 +250,7 @@ export const useInfiniteCastle = () => {
        }   
     }
     
-   const onPointDown:React.PointerEventHandler<HTMLDivElement> = (e) => {  
+   const onPointerDown:React.PointerEventHandler<HTMLDivElement> = (e) => {  
          const target = e.target as HTMLElement
          const isButton = 
            target.tagName === "BUTTON" ||
@@ -402,7 +402,7 @@ export const useInfiniteCastle = () => {
         }
    }
 
-   const onPointMove: React.PointerEventHandler<HTMLDListElement> = (e) => {
+   const onPointerMove: React.PointerEventHandler<HTMLDListElement> = (e) => {
         const local = getLocalPointFromPtr(e.nativeEvent)
         const world = screenToWorld(local, viewport.translate, viewport.scale)
         if(viewport.mode === 'panning' || viewport.mode === 'shiftPanning') {
@@ -495,7 +495,190 @@ export const useInfiniteCastle = () => {
         } 
    }
    
+   const finalizeDrawingIfAny = (): void => {
+     if(!drawingRef.current) return 
+     drawingRef.current = false
 
+     if(freehandRef.current) {
+         window.cancelAnimationFrame(freehandRef.current)
+         freehandRef.current = null
+     }
+
+
+     const draft = draftShapeRef.current
+     if(draft) {
+         const x = Math.min(draft.startWorld.x,draft.currentWorld.x)
+         const y = Math.min(draft.startWorld.y,draft.currentWorld.y)
+         const w = Math.abs(draft.currentWorld.x - draft.startWorld.x)
+         const h = Math.abs(draft.currentWorld.y - draft.startWorld.y)
+
+         if(w>1 && h>1) {
+             if(draft.type === 'frame') {
+                 console.log('Adding frame shape:', {x,y,w,h});
+                 dispatcher(addFrame({x,y,w,h}))
+                 
+             } else if(draft.type === 'rect') {
+                 console.log('Adding Rectangle')
+                 dispatcher(addRect({x,y,w,h}))
+             } else if(draft.type === 'ellipse') {
+                 console.log('Adding a ellipse');
+                 dispatcher(addEllipse({x,y,w,h}))
+             }else if(draft.type === 'arrow') {
+                 console.log('Adding a arrow')
+                 dispatcher(addArrow({
+                    startX: draft.startWorld.x,
+                    startY: draft.startWorld.y,
+                    endX: draft.currentWorld.x,
+                    endY: draft.currentWorld.y
+                 }))
+             } else if(draft.type === 'line') {
+                 console.log("Adding a ling")
+                 dispatcher(addLine({
+                     startX: draft.startWorld.x,
+                     startY: draft.startWorld.y,
+                     endX: draft.currentWorld.x,
+                     endY: draft.currentWorld.y,
+                 }))
+             }
+         }
+         draftShapeRef.current = null
+     } else if(currentTool === 'freedraw') {
+        const pts = freeDrawPointsRef.current
+        if(pts.length > 1) dispatcher(addFreeDrawShape({points: pts}))
+        freeDrawPointsRef.current = []
+     }
+
+     requestRender()
+   }
+   const onPointerUp: React.PointerEventHandler<HTMLDivElement> = (e): void => {
+        canvasRef.current?.releasePointerCapture?.(e.pointerId)
+        if(viewport.mode === 'panning' || viewport.mode === 'shiftPanning') {
+             dispatcher(panEnd())
+        }
+        if(isMovingRef.current) {
+             isMovingRef.current = false
+             moveStartRef.current = null
+             initialShapePositionsRef.current = {}
+        }
+
+        if(isErasingRef.current) {
+             isErasingRef.current = false
+             erasedShapesRef.current.clear()
+        }
+        finalizeDrawingIfAny()
+   }
+
+   const onPointerCancel: React.PointerEventHandler<HTMLDivElement> = (e ) => {
+      onPointerUp(e)
+   }
+   const onKeyDown = (e:KeyboardEvent):void => {
+     if((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) {
+         e.preventDefault()
+         isSpacePressed.current = true
+         dispatcher(handToolEnable())
+     }
+   }
+
+   const onKeyUp = (e: KeyboardEvent): void => {
+      if(e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+         e.preventDefault()
+         isSpacePressed.current = true
+         dispatcher(handToolDisable())
+      }
+   }
+
+   useEffect(() => {
+      document.addEventListener('keydown',onKeyDown)
+      document.addEventListener('keyup',onKeyUp)
+
+      return () => {
+         document.removeEventListener('keydown', onKeyDown)
+         document.removeEventListener('keyup',onKeyUp)
+         if(freehandRef.current) 
+            window.cancelAnimationFrame(freehandRef.current)
+         if(panRef.current) window.cancelAnimationFrame(panRef.current)
+      }
+   },[]) // eslint-disable-line react-hooks/exhaustive-deps
+
+   useEffect(() => {
+       const handleResizeStart = (e: CustomEvent) => {
+         const {shapeId, corner, bounds } = e.detail
+         resizingRef.current = true 
+         resizeDataRef.current = {
+             shapeId,
+             corner,
+             initalBounds: bounds,
+             startPoint: {x: e.detail.clientX || 0, y: e.detail.clientY || 0},
+
+         }
+       }
+       const handleResizeMove = (e:CustomEvent) => {
+         if(!resizeDataRef.current || !resizingRef.current) return
+         const {corner,initalBounds,shapeId,startPoint} = resizeDataRef.current
+         const {clientX,clientY} = e.detail
+
+         const canvas = canvasRef.current
+         if(!canvas) return
+         const rect = canvas.getBoundingClientRect()
+         const localX = clientX - rect.left
+         const localY = clientY - rect.top
+         const world = screenToWorld(
+             {x: localX, y: localY},
+             viewport.translate,
+             viewport.scale
+         )
+         const shape = entityState.entities[shapeId]
+         if(!shape) return
+
+         const newBounds = {...initalBounds}
+         switch(corner) {
+            case 'nw':
+                newBounds.w = Math.max(
+                     10,
+                     initalBounds.w + (initalBounds.x - world.x)
+                     
+                )
+                newBounds.h = Math.max(
+                    10,
+                    initalBounds.h + (initalBounds.y - world.y)
+                )
+                newBounds.x = world.x
+                newBounds.y = world.y
+                break
+
+            case 'ne':
+                    newBounds.w = Math.max(
+                        10,
+                        world.x - initalBounds.x
+                    )
+                    newBounds.y = world.y
+                    newBounds.h = Math.max(
+                        10,
+                        initalBounds.h + (initalBounds.y - world.y)
+                    )
+                    break
+            
+            case 'sw': 
+              newBounds.w = Math.max(
+                10,
+                initalBounds.w + (initalBounds.x - world.x)
+              )
+              newBounds.h = Math.max(10, world.y  - initalBounds.y)
+              newBounds.x = world.x
+              break 
+
+              case 'se':
+                newBounds.w = Math.max(10, world.x - initalBounds.x)
+                newBounds.h = Math.max(10, world.y - initalBounds.y)
+                break
+         }
+       }
+   },[
+    dispatcher,
+    entityState.entities,
+    viewport.translate,
+    viewport.scale
+   ])
 }
 
 
