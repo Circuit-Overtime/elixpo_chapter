@@ -2,11 +2,11 @@
 
 ![Elixpo Banner](https://github.com/user-attachments/assets/dcf4bafc-8a93-4a45-adcb-4b392197da35)
 
-### Welcome to Elixpo SOR, begun in 2023 as a college initiative, this open-source series has grown into a collaborative ecosystem of open source projects and collaborative development. In just two years, we've built over 17 projects, engaged a global community, and participated in numerous hackathons and open-source programs.
+### Welcome to Elixpo-Chapter, an Open Source Repository (OSR) begun in 2023 as a college initiative, this open-source series has grown into a collaborative ecosystem of open source projects and collaborative development. In just two years, we've built over 17 projects, engaged a global community, and participated in numerous hackathons and open-source programs.
 
 ### **💖 If you believe in open and accessible projects, please leave a ⭐ on the repository!**
 
-<div>
+
 
 ![Built with Pollinations](https://img.shields.io/badge/Built_With-Pollinations-8a2be2?style=for-the-badge&logo=data:image/svg+xml,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%20124%20124%22%3E%3Ccircle%20cx%3D%2262%22%20cy%3D%2262%22%20r%3D%2262%22%20fill%3D%22%23ffffff%22/%3E%3C/svg%3E&logoColor=white&labelColor=6a0dad)
 ![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ed?style=for-the-badge&logo=docker&logoColor=white)
@@ -18,7 +18,7 @@
 ![Chrome Extension](https://img.shields.io/badge/Chrome-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)
 ![Hacktoberfest](https://img.shields.io/badge/Hacktoberfest-OSS-0f172a?style=for-the-badge&logo=hacktoberfest&logoColor=#ff6f61)
 
-</div>
+
 
 ---
 
@@ -65,12 +65,13 @@ This monorepo hosts a diverse collection of projects, each with its own developm
 | **Elixpo Portfolio**| The personal portfolio of the project founder. | `elixpo` |
 | **Inkflow** | A minimalist canvas developed by [**Ez-Vivek**](https://github.com/ez-vivek). | `inkflow` |
 | **Fing & Fing-UI**| A vibe-coding platform and React UI library by [**Subhro Koley**](https://github.com/IgYaHiko). | `fing`, `fing-ui` |
+| **CortexOne** | An AI-powered desktop application built with Electron, React, and TypeScript. | `itachi.cortexOne` |
 
 
 ## 👑 Key Achievements
 
-- **`10+` Open Source Projects** successfully built and deployed.
-- **`10+` Global Contributors** have shaped the Elixpo ecosystem.
+- **`22+` Open Source Projects** successfully built and deployed.
+- **`20+` Global Contributors** have shaped the Elixpo ecosystem.
 - **`20+` Hackathons** participated in, fostering innovation and rapid development.
 - **Featured in Major Programs** like **GSSOC**, **Pollinations.AI**, and **OSCI**.
 - **Recognized by MS Startup Foundations** with funding in 2024.

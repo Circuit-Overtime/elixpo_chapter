@@ -190,7 +190,6 @@ svg {
     background-repeat: no-repeat;
     overflow: auto;
     filter: blur(15px);
-    z-index: -1;
  }
  .particlesWand
  {
