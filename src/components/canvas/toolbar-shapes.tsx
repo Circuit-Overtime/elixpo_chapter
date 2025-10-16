@@ -1,11 +1,10 @@
 'use client'
+
 import { Tool } from '@/redux/slices/shapes'
 import {
   ArrowRight,
   Circle,
   CircleEllipsisIcon,
-  Ellipsis,
-  EllipsisIcon,
   Eraser,
   Hash,
   Minus,
@@ -14,12 +13,13 @@ import {
   RectangleHorizontal,
   Type,
 } from 'lucide-react'
-import React, { useState } from 'react'
+import React from 'react'
 import { Button } from '../ui/button'
 import { cn } from '@/lib/utils'
+import { useInfiniteCastle } from '@/hooks/use-infinite-castle'
 
 const ToolbarShapes = () => {
-  const [activeTool, setActiveTool] = useState<Tool>('select')
+  const { currentTool, selectTool } = useInfiniteCastle()
 
   const options: Array<{
     id: Tool
@@ -29,14 +29,14 @@ const ToolbarShapes = () => {
   }> = [
     {
       id: 'frame',
-      label: 'Frames',
+      label: 'Frame',
       icon: <Hash className='w-4 h-4' />,
       description: 'Draw a frame container',
     },
     {
       id: 'select',
       label: 'Select',
-      icon: <MousePointer className='w-4 h-5' />,
+      icon: <MousePointer className='w-4 h-4' />,
       description: 'Select and move shapes',
     },
     {
@@ -51,15 +51,15 @@ const ToolbarShapes = () => {
       icon: <CircleEllipsisIcon className='w-4 h-4' />,
       description: 'Draw an ellipse',
     },
-     {
+    {
       id: 'circle',
       label: 'Circle',
       icon: <Circle className='w-4 h-4' />,
-      description: 'Draw an ellipse',
+      description: 'Draw a circle',
     },
     {
       id: 'freedraw',
-      label: 'FreeDraw',
+      label: 'Free Draw',
       icon: <Pencil className='w-4 h-4' />,
       description: 'Draw freehand lines',
     },
@@ -96,16 +96,15 @@ const ToolbarShapes = () => {
           <Button
             key={tool.id}
             title={`${tool.label} - ${tool.description}`}
-            variant={'ghost'}
-            onClick={() => setActiveTool(tool.id)}
-            data-state={activeTool === tool.id ? 'active' : 'inactive'}
+            variant='ghost'
+            onClick={() => selectTool(tool.id)}
+            data-state={currentTool === tool.id ? 'active' : 'inactive'}
             className={cn(
               'relative flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-medium transition-all duration-300 font-mono',
               'bg-[#0f0f0f] text-white hover:bg-[#1a1a1a] border border-transparent',
-              // ✅ Active = 3D pressed effect
+              // ✅ Active = pressed/glow effect
               'data-[state=active]:bg-[#0c0c0c] data-[state=active]:border-white/10',
               'data-[state=active]:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.8),inset_-2px_-2px_6px_rgba(255,255,255,0.07),0_1px_4px_rgba(0,0,0,0.6)]',
-              // ✅ Subtle glow edge when active
               'data-[state=active]:after:content-[""] data-[state=active]:after:absolute data-[state=active]:after:inset-0 data-[state=active]:after:rounded-2xl data-[state=active]:after:border data-[state=active]:after:border-white/5 data-[state=active]:after:shadow-[0_0_8px_rgba(255,255,255,0.04)]'
             )}
           >
