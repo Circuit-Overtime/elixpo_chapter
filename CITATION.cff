@@ -1,16 +1,15 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+message: "If our project helps you in any research work, please cite this repository."
 type: software
 title: "Elixpo — A Developer-First Open Source Series"
 abstract: "An open-source ecosystem of AI-powered tools and platforms including art generation, search, chat, and collaborative development tools. Built with a mission to make AI open, ethical, and accessible to everyone."
 authors:
   - family-names: "Bhattacharya"
     given-names: "Ayushman"
-    orcid: "https://orcid.org/0000-0000-0000-0000"
-  - name: "Elixpo Contributors"
-repository-code: "https://github.com/Circuit-Overtime/elixpo_ai_chapter"
+    orcid: "https://orcid.org/0009-0006-5960-6308"
+repository-code: "https://github.com/Circuit-Overtime/elixpo_chapter"
 url: "https://elixpo.com"
-license: GPL-3.0
+license: "GPL-3.0"
 version: "2.0.0"
 date-released: "2025-02-14"
 keywords:
@@ -29,4 +28,4 @@ preferred-citation:
       given-names: "Ayushman"
     - name: "Elixpo Contributors"
   year: 2025
-  url: "https://github.com/Circuit-Overtime/elixpo_ai_chapter"
+  url: "https://github.com/Circuit-Overtime/elixpo_chapter"
