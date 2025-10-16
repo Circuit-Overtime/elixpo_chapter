@@ -3,9 +3,12 @@
 ### Event Date:- 27th October 2025
 ### Event Time:- 10:30am - 4:45pm
 ### Event Venue:- JIS University, Kolkata
+### Registration Link:- [Hacktoberfest Meetup](https://luma.com/3zjevylm)
+### Hacktoberfest Meetup GitHub Page:- [Hacktoberfest GitHub Page](https://gh.io/hacktoberfestmeetup25)
 
+--- 
 
-> **The event has been divided into two sections of the day. The first section is the welcome and felicitation of the core team and seniors of GDG JISU and the second section is the Hacktoberfest Meetup session by Abhisekh Da and the Guest Speakers.**
+> **The event has been divided into two sections of the day. The first section is the welcome and felicitation of the core team and seniors of GDG JISU and the second section is the Hacktoberfest Meetup session by Abhisekh Khuswaha and the Guest Speakers.**
 
 # Phase1 - WELCOME AND FELICITATION SECTION
 
@@ -53,6 +56,8 @@
 - Introduction of Mr. Debojeet Karmakar - Full Stack Developer at Prepverse
 [Felicitation with a Certificate + Pen + Bouquet]
 (Short Speech for 2-3 mins if possible)
+
+---
 
 # Phase 2 - HACKTOBERFEST MEETUP SESSION
 
