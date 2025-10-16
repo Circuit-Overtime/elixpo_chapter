@@ -179,7 +179,7 @@ Here are some of our latest releases and live demos:
 
 # Our Future
 
-At Elixpo-ai-chapter, we are dedicated to shaping a future where AI is:
+At Elixpo_Chapter, we are dedicated to shaping a future where projects are:
 
 - **Open & Accessible**: AI should empower everyone—free from paywalls, proprietary barriers, or exclusivity.
 - **Transparent & Ethical**: We prioritize transparency in our models and workflows, ensuring ethical development and responsible use.
