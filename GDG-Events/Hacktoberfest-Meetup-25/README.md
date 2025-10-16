@@ -1,4 +1,4 @@
-
+![alt text](https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=2,background=white,quality=75,width=280,height=280/gallery-images/r1/2de72242-6d5a-4740-87be-c51b7a941c92)
 # Event Name:- Hacktoberfest Meetup 2025
 ### Event Date:- 27th October 2025
 ### Event Time:- 10:30am - 4:45pm
@@ -8,7 +8,7 @@
 
 --- 
 
-> **The event has been divided into two sections of the day. The first section is the welcome and felicitation of the core team and seniors of GDG JISU and the second section is the Hacktoberfest Meetup session by Abhisekh Khuswaha and the Guest Speakers.**
+> **The event has been divided into two sections of the day. The first section is the welcome and felicitation of the core team and seniors of GDG JISU and the second section is the Hacktoberfest Meetup session by Abhisekh Kushwaha and the Guest Speakers.**
 
 # Phase1 - WELCOME AND FELICITATION SECTION
 
@@ -22,7 +22,7 @@
 ### NOTES OF GRATITUDE TO THE AVAILABLE GUESTS FOR US 
 
 - **Hrittik Roy** - vCluster Platfrom Advocate
-- **Abhisekh Khuswaha** - GitHub Campus Expert
+- **Abhisekh Kushwaha** - GitHub Campus Expert
 - **Debojeet Karmakar** - Full Stack Developer at Prepverse
 - **Samrat Talukdar** - NiT GDG Lead
 - **Nazreen Imam** - GNIT GDG Lead
@@ -50,7 +50,7 @@
 - Introduction of Mr. Hrittik Roy - vCluster Platform Advocate
 [Felicitation with a Certificate + Pen + Bouquet]
 (Short Speech for 2-3 mins if possible)
-- Introduction of Mr. Abhisekh Khuswaha - GitHub Campus Expert
+- Introduction of Mr. Abhisekh Kushwaha - GitHub Campus Expert
 [Felicitation with a Certificate + Pen + Bouquet]
 (Short Speech for 2-3 mins if possible)
 - Introduction of Mr. Debojeet Karmakar - Full Stack Developer at Prepverse
@@ -63,13 +63,13 @@
 
 
 ### 11:30am - 12:50pm
-> **HACKTOBERFEST TALK SESSION BY ABHISEKH KHUSWAHA AND THE GUEST SPEAKERS**
+> **HACKTOBERFEST TALK SESSION BY ABHISEKH Kushwaha AND THE GUEST SPEAKERS**
 
 ---
 ### 1:00pm - 1:50pm - LUNCH BREAK / RECESS
 ---
 ### 2:00pm - 3:30pm
-> **HACKTOBERFEST TALK SESSION BY ABHISEKH KHUSWAHA AND THE GUEST SPEAKERS**
+> **HACKTOBERFEST TALK SESSION BY ABHISEKH Kushwaha AND THE GUEST SPEAKERS**
 ---
 ### 3:30pm - 3:45pm
 > **QUIZ & FUN STUFF & STICKERS + PEN TO THE QUIZ TOP 3 RANKERS**
