@@ -1,6 +1,6 @@
 import React from 'react'
 import Layout from './layout'
-import { ProjectQuery } from '@/convex/query.config'
+import { ProjectQuery, ProjectsQuery } from '@/convex/query.config'
 import ProjectProvider from '@/components/projects/list/project-provider'
 import ProjectList from '@/components/projects/list/project-list'
 type Props = {
@@ -9,7 +9,7 @@ type Props = {
      }>
 }
 const Page = async ({params}: Props) => {
-  const {projects} = await ProjectQuery()
+  const {projects} = await ProjectsQuery()
   return (
     
     <ProjectProvider initialProject={projects}>
