@@ -4,6 +4,8 @@
 
 ### Welcome to Elixpo-Chapter, an Open Source Repository (OSR) begun in 2023 as a college initiative, this open-source series has grown into a collaborative ecosystem of open source projects and collaborative development. In just two years, we've built over 17 projects, engaged a global community, and participated in numerous hackathons and open-source programs.
 
+
+
 ### **💖 If you believe in open and accessible projects, please leave a ⭐ on the repository!**
 
 
@@ -39,7 +41,7 @@ At Elixpo, we are dedicated to building a future where AI is **open, ethical, an
 
 **Hacktoberfest is live!** We enthusiastically welcome contributions from developers around the world.
 
-- **Find Issues:** Look for issues tagged with `hacktoberfest` in our [issue tracker](https://github.com/Circuit-Overtime/elixpo_ai_chapter/issues).
+- **Find Issues:** We have curated issues perfect for new contributors.Look for them which is tagged with `hacktoberfest` in our [issue tracker](https://github.com/Circuit-Overtime/elixpo_ai_chapter/issues).
 - **Read the Guidelines:** Before submitting a PR, please review our [**Code of Conduct**](./CODE_OF_CONDUCT.md) and [**Contributing Guidelines**](./CONTRIBUTING.md).
 
 Let's build something amazing together!
@@ -175,7 +177,7 @@ Here are some of our latest releases and live demos:
 
 ---
 
-# Our Vision
+# Our Future
 
 At Elixpo-ai-chapter, we are dedicated to shaping a future where AI is:
 
