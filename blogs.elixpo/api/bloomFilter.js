@@ -1,5 +1,7 @@
 import { murmurhash3_32_gc } from "./murmurhash3.js";
 import fs from "fs";
+import path from "path";
+
 class BloomFilter {
   constructor(size, numHashes) {
     this.size = size;
@@ -52,9 +54,8 @@ class BloomFilter {
     return Math.pow(probBitSet, k);
   }
 
-  // Save to binary file
   saveToFile(path) {
-    const header = Buffer.alloc(12); // store size, numHashes, count
+    const header = Buffer.alloc(12);
     header.writeUInt32BE(this.size, 0);
     header.writeUInt32BE(this.numHashes, 4);
     header.writeUInt32BE(this.count, 8);
@@ -63,7 +64,6 @@ class BloomFilter {
     fs.writeFileSync(path, buffer);
   }
 
-  // Load from binary file
   static loadFromFile(path) {
     const buffer = fs.readFileSync(path);
 
@@ -82,21 +82,24 @@ class BloomFilter {
 }
 
 class AdaptiveBloom {
-  constructor(expectedItems, targetFPR = 0.01, growthFactor = 2, file = "adaptiveBloom.bin") {
+  constructor(expectedItems, targetFPR = 0.01, growthFactor = 2, file = null) {
     this.targetFPR = targetFPR;
     this.growthFactor = growthFactor;
-    this.file = file;
+    this.file = file || `bloomFilters/adaptiveBloom_${this.getCurrentTimestamp()}.bin`;
     this.filters = [];
 
-    // If saved state exists, load it
-    if (fs.existsSync(file)) {
-      this.loadFromFile(file);
+    if (fs.existsSync(this.file)) {
+      this.loadFromFile(this.file);
     } else {
       const m = Math.ceil(-(expectedItems * Math.log(targetFPR)) / Math.log(2) ** 2);
       const k = Math.round((m / expectedItems) * Math.log(2));
       this.filters.push(new BloomFilter(m, k));
-      this.saveToFile(); // save initial
+      this.saveToFile(); 
     }
+  }
+
+  getCurrentTimestamp() {
+    return Date.now();
   }
 
   add(item) {
@@ -121,7 +124,6 @@ class AdaptiveBloom {
   }
 
   saveToFile() {
-    // Write multiple filters back-to-back
     const buffers = [];
     for (const f of this.filters) {
       const header = Buffer.alloc(12);
@@ -156,5 +158,76 @@ class AdaptiveBloom {
   }
 }
 
-const bloomFilter = new AdaptiveBloom(10000, 0.01);
-export { bloomFilter };
+function loadAllBloomFilters() {
+  const bloomFiltersDir = 'bloomFilters';
+  const allBloomFilters = [];
+  let activeBloomFilter = null;
+
+  if (!fs.existsSync(bloomFiltersDir)) {
+    fs.mkdirSync(bloomFiltersDir, { recursive: true });
+    return { activeBloomFilter: new AdaptiveBloom(10000, 0.01), allBloomFilters: [] };
+  }
+
+  try {
+    const files = fs.readdirSync(bloomFiltersDir);
+    const binFiles = files.filter(file => file.endsWith('.bin'));
+    
+    const sortedFiles = binFiles
+      .map(file => ({
+        filename: file,
+        timestamp: parseInt(file.match(/adaptiveBloom_(\d+)\.bin/)?.[1] || '0')
+      }))
+      .sort((a, b) => b.timestamp - a.timestamp); 
+
+    console.log('📁 Found bloom filter files:', sortedFiles.map(f => `${f.filename} (${f.timestamp})`));
+
+    for (let i = 0; i < sortedFiles.length; i++) {
+      const { filename } = sortedFiles[i];
+      try {
+        const filePath = path.join(bloomFiltersDir, filename);
+        
+        if (filename.startsWith('adaptiveBloom_')) {
+          const adaptiveBloom = new AdaptiveBloom(10000, 0.01, 2, filePath);
+          adaptiveBloom.loadFromFile(filePath);
+          
+          if (i === 0) {
+            // Most recent file becomes active
+            activeBloomFilter = adaptiveBloom;
+            console.log(`✅ Loaded active bloom filter: ${filename}`);
+          } else {
+            // Older files become read-only
+            allBloomFilters.push({
+              type: 'adaptive',
+              filename: filename,
+              filter: adaptiveBloom,
+              timestamp: sortedFiles[i].timestamp
+            });
+            console.log(`📚 Loaded historical bloom filter: ${filename}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Failed to load bloom filter from ${filename}:`, error.message);
+      }
+    }
+
+    // If no active filter found, create a new one
+    if (!activeBloomFilter) {
+      activeBloomFilter = new AdaptiveBloom(10000, 0.01);
+      console.log(`✅ Created new active bloom filter`);
+    }
+
+    console.log(`✅ Loaded ${allBloomFilters.length} historical bloom filters from ${bloomFiltersDir}/`);
+    return { activeBloomFilter, allBloomFilters };
+  } catch (error) {
+    console.error('Error reading bloomFilters directory:', error.message);
+    return { activeBloomFilter: new AdaptiveBloom(10000, 0.01), allBloomFilters: [] };
+  }
+}
+
+const { activeBloomFilter, allBloomFilters } = loadAllBloomFilters();
+const bloomFilter = activeBloomFilter;
+const time = bloomFilter.getCurrentTimestamp();
+console.log(`Current timestamp: ${time}`);
+console.log(`Total bloom filters loaded: ${allBloomFilters.length}`);
+
+export { bloomFilter, allBloomFilters };

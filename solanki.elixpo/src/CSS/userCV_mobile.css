@@ -97,6 +97,7 @@
        position: absolute;
        top: 78%;
        left: 10%;
+       transform: translateX(-50%);
     }
 }
 

@@ -1,6 +1,10 @@
 import { appExpress, router } from "../initializeExpress.js";
-import {registerRequest, verifyRegisterOTP} from './apiRegister.js';
+import {registerRequest, verifyRegisterOTP, registerDisplayName} from './apiRegister.js';
 import {authenticateToken, loginGithub, loginGoogle, loginEmail, verifyLoginOTP} from './apiLogin.js';
+import {checkUsernameRequest } from "./bloomfiltercheck.js";
+import { extractUIDFromCookie } from "./cookieHandler.js";
+import { uploadProfilePic } from "../imageCompressor/uploadpfp.js";
+import { uploadBannerPic } from "../imageCompressor/uploadBanner.js";
 
 router.get("/registerRequest", async (req, res) => {
     const email = req.query.email;
@@ -58,6 +62,36 @@ router.get("/verifyLoginOTP", async (req, res) => {
 router.post("/logout", (req, res) => {
   res.clearCookie("authToken", { httpOnly: true, secure: false, sameSite: "Lax" });
   res.status(200).json({ message: "✅ Logged out successfully!" });
+});
+
+
+router.post("/checkUsername", async (req, res) => {
+  const { username } = req.body;
+  await checkUsernameRequest(username, req, res);
+});
+
+router.post("/registerDisplayName", async (req, res) => { 
+  const { username, uid } = req.body;
+  await registerDisplayName(username, uid, req, res);
+})
+
+
+router.post("/getUID", (req, res) => {
+  const uid = extractUIDFromCookie(req);
+  if (!uid) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  res.status(200).json({ uid });
+});
+
+router.post("/uploadProfilePic", async (req, res) => {
+  const { imgData, uid } = req.body;
+    await uploadProfilePic(req, res, imgData, uid);
+});
+
+router.post("/uploadBannerPic", async (req, res) => {
+  const { imgData, uid } = req.body;
+    await uploadBannerPic(req, res, imgData, uid);
 });
 
 

@@ -21,9 +21,7 @@ async function pimpPrompt(text)
                     let pimpText = await response.text();
                     const unwanted = `\n\n`;
                     pimpText = pimpText.replace(unwanted, "").trim();
-                    // console.log(pimpText);
                     type(pimpText);
-                    // console.log("selected aspect ratio = ", selectedAspectRatio);
                     if(selectedAspectRatio == "1:1")
                     {
                         height = 1024;
@@ -49,7 +47,6 @@ async function pimpPrompt(text)
             } 
             catch(e)
             {
-                // console.log("Error occured", e);
                 type("Well, Falling back to the original sequel of text!");
                 let height = 1024;
                 let width = 1024;
@@ -130,5 +127,4 @@ function downloadImage()
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         })
-        // .catch(error => console.error("Error downloading the image", error));
 }

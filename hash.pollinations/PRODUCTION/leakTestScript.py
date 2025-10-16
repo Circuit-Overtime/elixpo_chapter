@@ -12,7 +12,7 @@ dummy_leak = {
     "token": "dummy-token-123",
     "commit_hash": "abc123def456",
     "diff_info": "dummy diff info",
-    "receiver_email": "ayushbhatt633@gmail.com",  # Use your email for testing
+    "receiver_email": "ayushbhatt633@gmail.com",  
     "timestamp": 1234567890
 }
 
