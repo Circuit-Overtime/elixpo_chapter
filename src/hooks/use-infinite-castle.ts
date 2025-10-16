@@ -1,6 +1,6 @@
 'use client'
 
-import { addArrow, addEllipse, addFrame, addFreeDrawShape, addLine, addRect, addText, clearSelection, removeShape, setTool, Shape, updateShape } from "@/redux/slices/shapes";
+import { addArrow, addEllipse, addFrame, addFreeDrawShape, addLine, addRect, addText, clearSelection, removeShape, setTool, Shape, Tool, updateShape } from "@/redux/slices/shapes";
 import { handToolDisable, handToolEnable, panEnd, panMove, panStart, Point, screenToWorld, wheelPan, wheelZoom } from "@/redux/slices/viewport";
 import { AppDispatch, useAppSelector } from "@/redux/store"
 import React, { useEffect, useRef, useState } from "react";
@@ -672,6 +672,115 @@ export const useInfiniteCastle = () => {
                 newBounds.h = Math.max(10, world.y - initalBounds.y)
                 break
          }
+         if(
+             shape.type === 'frame'||
+             shape.type === 'rect'||
+             shape.type === 'ellipse'
+         ){
+            dispatcher(
+                updateShape({
+                     id: shapeId,
+                     patch: {
+                         x: newBounds.x,
+                         y: newBounds.y,
+                         w: newBounds.w,
+                         h: newBounds.h,
+                     }
+                })
+            )
+         } else if(shape.type === 'freedraw') {
+             const xs = shape.points.map((p: {x: number, y: number}) => p.x)
+             const ys = shape.points.map((p: {x: number, y: number}) => p.y)
+             const actualMinX = Math.min(...xs)
+             const acutalMaX = Math.max(...xs)
+             const acutalMinY = Math.min(...ys)
+             const actualMaxY = Math.max(...ys)
+             const actualWidth = acutalMaX - actualMinX;
+             const actualHeight = actualMaxY - acutalMinY;
+
+             const newActualX = newBounds.x + 5
+             const newActualY = newBounds.y + 5
+             const newActualWidth = Math.max(10, newBounds.w - 10)
+             const newActualHeight = Math.max(10, newBounds.h - 10)
+
+
+             const scaleX = actualWidth > 0 ? newActualWidth / actualWidth : 1
+             const scaleY = actualHeight > 0 ? newActualHeight / actualHeight : 1
+             const scalePoints = shape.points.map(
+                (point: {x: number, y: number}) => ({
+                    x: newActualX + (point.x - actualMinX) * scaleX,
+                    y: newActualY + (point.y - acutalMinY) * scaleY
+                })
+             )
+             dispatcher(
+                updateShape({
+                     id: shapeId,
+                     patch: {
+                         points: scalePoints,
+                     }
+                })
+             )
+
+         } else if(shape.type === 'line' || shape.type === 'arrow') {
+             const actualMinX = Math.min(shape.startX, shape.endX)
+             const actualMaxX = Math.max(shape.startX, shape.endX)
+             const actualMinY = Math.min(shape.startY, shape.endY)
+             const actualMaxY = Math.max(shape.startY, shape.endY)
+             const actualWidth = actualMaxX - actualMinX
+             const actualHeight = actualMaxY - actualMinY
+
+             const newActualX = newBounds.x + 5
+             const newActualY = newBounds.y + 5
+             const newActualWidth = Math.max(10, newBounds.w - 10)
+             const newActualHeight = Math.max(10, newBounds.h - 10)
+
+
+            let newStartX, newStartY, newEndX, newEndY
+
+            if(actualWidth === 0) {
+                 newStartX = newActualX + newActualWidth / 2
+                 newEndX = newActualX + newActualWidth / 2
+                 newStartY = shape.startY < shape.endY ? newActualY : newActualY + newActualHeight
+                 newEndY = shape.startY < shape.endY ? newActualY + newActualHeight : newActualY
+
+            } else if(actualHeight === 0) {
+                newStartY = newActualY + newActualHeight / 2
+                newEndY = newActualY + newActualHeight / 2
+                newStartX = shape.startX < shape.endX ? newActualX : newActualX + newActualWidth
+                newEndX = shape.startX < shape.endX ?   newActualX + newActualWidth : newActualX
+            } else {
+                 const scaleX = newActualWidth / actualWidth
+                 const scaleY = newActualHeight / actualHeight
+
+                 newStartX = newActualX + (shape.startX - actualMinX) * scaleX
+                 newStartY = newActualY + (shape.startY - actualMinY) * scaleY
+                 newEndX = newActualX + (shape.endX - actualMinX) * scaleX
+                 newEndY = newActualY + (shape.endY - actualMinY) * scaleY
+            }
+
+            dispatcher(updateShape({
+                 id: shapeId,
+                 patch: {
+                     startX: newStartX,
+                     startY: newStartY,
+                     endX: newEndX,
+                     endY: newEndY
+                 },
+            }))
+         } 
+       }
+       const handleResizeEnd = () => {
+          resizingRef.current = false
+          resizeDataRef.current = null
+       }
+       window.addEventListener('shape-resize-start', handleResizeStart as EventListener)
+       window.addEventListener('shape-resize-move', handleResizeMove as EventListener)
+       window.addEventListener('shape-resize-end', handleResizeEnd as EventListener)
+
+       return () => { 
+         window.removeEventListener('shape-resize-start', handleResizeStart as EventListener)
+         window.removeEventListener('shape-resize-move', handleResizeMove as EventListener)
+         window.removeEventListener('shape-resize-end', handleResizeEnd as EventListener)
        }
    },[
     dispatcher,
@@ -679,6 +788,50 @@ export const useInfiniteCastle = () => {
     viewport.translate,
     viewport.scale
    ])
+  
+
+const attachCanvasRef = (ref: HTMLDivElement | null): void => {
+       if(canvasRef.current) {
+          canvasRef.current.removeEventListener('wheel',onWheel)
+       }
+       canvasRef.current = ref
+       if(ref) {
+         ref.addEventListener('wheel', onWheel, {passive: false})
+       }
+}
+
+
+
+    const selectTool = (tool: Tool): void => {
+     dispatcher(setTool(tool))
+  }
+ 
+   const getDraftShape = (): DraftShape | null => draftShapeRef.current
+   const getFreeDrawPoints = (): ReadonlyArray<Point> => 
+    freeDrawPointsRef.current
+
+
+   return {
+      viewport,
+      shapes: shapeList,
+      currentTool,
+      selectedShapes,
+
+      onPointerDown,
+      onPointerMove,
+      onPointerUp,
+      onPointerCancel,
+
+      attachCanvasRef,
+      selectTool,
+      getDraftShape,
+      getFreeDrawPoints,
+      isSidebarOpen,
+      hasSelectedText,
+      setIsSidebarOpen
+
+   }
+
 }
 
 
