@@ -7,8 +7,9 @@ import { Toggle } from '@/components/ui/toggle'
 import { cn } from '@/lib/utils'
 import { TextShape, updateShape } from '@/redux/slices/shapes'
 import { useAppSelector } from '@/redux/store'
+import { validateHeaderName } from 'http'
 import { Bold, Italic, Palette, Strikethrough, Underline } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useDispatch } from 'react-redux'
 interface Props {
      isOpen: boolean
@@ -54,11 +55,6 @@ const TextSideBar = ({
             updateTextProperty('fill',color)
        }
   }
-  useEffect(() => {
-  if (selectedTextShape?.fill) {
-    setColorInput(selectedTextShape.fill)
-  }
-}, [selectedTextShape?.fill])
   return (
     <div className={
         cn(
@@ -166,39 +162,35 @@ const TextSideBar = ({
      </div>
 
      <div className='space-y-2'>
-  <Label className='font-mono flex items-center gap-2 text-xs'>
-    <Palette className='w-4 h-4' />
-    Text Color
-  </Label>
+        <Label className='font-mono flex items-center gap-2 text-xs'>
+            <Palette className='w-4 h-4'/>
+            Text Color
+        </Label>
+        <div>
+            <Input
+             value={colorInput}
+             onChange={(e) => handleColorChange(e.target.value)}
+             placeholder='#ffffff'
+             className='w-full text-xs font-mono placeholder:text-xs placeholder:font-mono'
+            />
 
-  <div>
-    <Input
-      value={colorInput}
-      onChange={(e) => handleColorChange(e.target.value)}
-      placeholder='#ffffff'
-      className='w-full text-xs font-mono placeholder:text-xs placeholder:font-mono'
-    />
-
-    <div
-      className='rounded-full border w-10 h-10 mt-4 cursor-pointer'
-      style={{ backgroundColor: colorInput || '#ffffff' }} // ✅ use local state
-      onClick={() => {
-        const input = document.createElement('input')
-        input.type = 'color'
-        input.value = colorInput || '#ffffff'
-
-        input.onchange = (e) => {
-          const color = (e.target as HTMLInputElement).value
-          setColorInput(color)
-          updateTextProperty('fill', color)
-        }
-
-        input.click()
-      }}
-    />
-  </div>
-</div>
-
+            <div
+             className='rounded border w-10 h-10 mt-4 cursor-pointer'
+             style={{backgroundColor: selectedTextShape?.fill || '#ffffff'}}
+             onClick={() => {
+                 const input = document.createElement('input')
+                 input.type = 'color'
+                 input.value = selectedTextShape?.fill || '#ffffff'
+                 input.onchange = (e) => {
+                    const color = (e.target as HTMLInputElement).value
+                    setColorInput(color)
+                    updateTextProperty('fill', validateHeaderName)
+                 }
+                 input.click()
+             }}
+            />
+        </div>
+     </div>
    </div>
    </div>
   )
