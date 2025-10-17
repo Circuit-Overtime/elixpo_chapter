@@ -1,10 +1,14 @@
 'use client'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
+import { Toggle } from '@/components/ui/toggle'
 import { cn } from '@/lib/utils'
 import { TextShape, updateShape } from '@/redux/slices/shapes'
 import { useAppSelector } from '@/redux/store'
-import React from 'react'
+import { Bold, Italic, Palette, Strikethrough, Underline } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 interface Props {
      isOpen: boolean
@@ -34,7 +38,7 @@ const TextSideBar = ({
     .map((id) => shapeEntities[id])
     .find((shape) => shape.type === 'text') as TextShape | undefined
   
-  const updateTextShape = (property: keyof TextShape, value: any) => {
+  const updateTextProperty = (property: keyof TextShape, value: any) => {
              if(!selectedTextShape) return
              dispatch(
                 updateShape({
@@ -43,6 +47,18 @@ const TextSideBar = ({
                 })
              )
   }
+   const [colorInput, setColorInput] = useState(selectedTextShape?.fill || '#ffffff')
+  const handleColorChange = (color: string) => {
+       setColorInput(color)
+       if(/^#[0-9A-F]{6}$/i.test(color) ||/^#[0-9A-F]{3}$/i.test(color)) {
+            updateTextProperty('fill',color)
+       }
+  }
+  useEffect(() => {
+  if (selectedTextShape?.fill) {
+    setColorInput(selectedTextShape.fill)
+  }
+}, [selectedTextShape?.fill])
   return (
     <div className={
         cn(
@@ -50,12 +66,12 @@ const TextSideBar = ({
             true  ? 'translate-x-0' : 'translate-x-full'
         )
     }>
-   <div className='p-3 flex flex-col gap-10 overflow-y-auto max-h-[calc(100vh - 8rem)]'>
+   <div className='p-3 flex flex-col gap-5 overflow-y-auto max-h-[calc(100vh - 8rem)]'>
      <div className='space-y-2'>
         <Label className='font-mono text-xs'>Font Family</Label>
         <Select
          value={selectedTextShape?.fontFamily}
-         onValueChange={(value) => updateTextShape('fontFamily', value)}
+         onValueChange={(value) => updateTextProperty('fontFamily', value)}
         >
             <SelectTrigger className='w-full'>
                 <SelectValue/>
@@ -74,9 +90,117 @@ const TextSideBar = ({
             </SelectContent>
         </Select>
      </div>
+
+     <div className='space-y-2'>
+        <Label className='font-mono text-xs'>
+            Font Size: {selectedShapes?.fontSize||100}px
+        </Label>
+        <Slider
+         /* value={[selectedTextShape?.fontSize]} */
+         onValueChange={([value]) => updateTextProperty('fontSize', value)}
+         min={8}
+         max={128}
+         step={1}
+         className='w-full'
+        />
+     </div>
+
+     <div className='space-y-2'>
+         <Label className='font-mono text-xs'>Font Weight: {selectedShapes?.fontWeight || 700} </Label>
+         <Slider
+          onValueChange={([value]) => updateTextProperty('fontWeight', value)}
+          min={100}
+          max={900}
+          step={100}
+          className='w-full'
+         />
+     </div>
+
+     <div className='space-y-2'>
+        <Label className='font-mono text-xs'>Font Style</Label>
+       <div className='flex items-center justify-start gap-2'>
+         <Toggle
+         /*  pressed={selectedTextShape?.fontWeight > 700} */
+         onPressedChange={(pressed ) => updateTextProperty('fontWeight', pressed ? 700 : 400)}
+         className='data-[state=on]:bg-red-950'
+
+         >
+            <Bold className='w-4 h-4 ' />
+        </Toggle>
+
+        <Toggle
+         className='data-[state=on]:bg-green-950'
+         /* pressed={selectedTextShape?.fontStyle === 'italic'} */
+         onPressedChange={(pressed) => updateTextProperty('fontStyle', pressed ? 'italic' : 'normal')}
+        >
+            <Italic className='w-4 h-4' />
+        </Toggle>
+
+        <Toggle
+       /*  pressed={selectedTextShape?.textDecoration === 'underline'} */
+         onPressedChange={(pressed) => updateTextProperty('textDecoration', pressed ? 'underline' : 'normal')}
+         className='data-[state=on]:bg-blue-950'
+        >
+            <Underline className='w-4 h-4'/>
+        </Toggle>
+
+         <Toggle
+        /*  pressed={selectedTextShape?.textDecoration === 'line-through'}  */
+         onPressedChange={(pressed) => updateTextProperty('textDecoration', pressed ? 'line-through' : 'normal')}
+         className='data-[state=on]:bg-yellow-950'
+        >
+            <Strikethrough className='w-4 h-4'/>
+        </Toggle>
+       </div>
+     </div>
+
+     <div className='space-y-2'>
+      <Label className='text-xs font-mono'>Letter Spacing: {selectedTextShape?.letterSpacing||100}px</Label>
+      <Slider
+       min={-2}
+       max={10}
+       step={0.1}
+       className='w-full'
+       onValueChange={([value]) => updateTextProperty('letterSpacing', value)}
+      />
+     </div>
+
+     <div className='space-y-2'>
+  <Label className='font-mono flex items-center gap-2 text-xs'>
+    <Palette className='w-4 h-4' />
+    Text Color
+  </Label>
+
+  <div>
+    <Input
+      value={colorInput}
+      onChange={(e) => handleColorChange(e.target.value)}
+      placeholder='#ffffff'
+      className='w-full text-xs font-mono placeholder:text-xs placeholder:font-mono'
+    />
+
+    <div
+      className='rounded-full border w-10 h-10 mt-4 cursor-pointer'
+      style={{ backgroundColor: colorInput || '#ffffff' }} // ✅ use local state
+      onClick={() => {
+        const input = document.createElement('input')
+        input.type = 'color'
+        input.value = colorInput || '#ffffff'
+
+        input.onchange = (e) => {
+          const color = (e.target as HTMLInputElement).value
+          setColorInput(color)
+          updateTextProperty('fill', color)
+        }
+
+        input.click()
+      }}
+    />
+  </div>
+</div>
+
    </div>
-    
-    </div>
+   </div>
   )
 }
 
