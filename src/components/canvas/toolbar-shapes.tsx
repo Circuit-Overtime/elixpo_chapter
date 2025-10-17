@@ -21,6 +21,17 @@ import { useInfiniteCastle } from '@/hooks/use-infinite-castle'
 const ToolbarShapes = () => {
   const { currentTool, selectTool } = useInfiniteCastle()
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Current Tool:', currentTool)
+    console.log('Select Tool function exists:', typeof selectTool === 'function')
+  }, [currentTool, selectTool])
+
+  const handleToolSelect = (toolId: Tool) => {
+    console.log('Tool selected:', toolId)
+    selectTool(toolId)
+  }
+
   const options: Array<{
     id: Tool
     label: string
@@ -51,12 +62,13 @@ const ToolbarShapes = () => {
       icon: <CircleEllipsisIcon className='w-4 h-4' />,
       description: 'Draw an ellipse',
     },
-    {
-      id: 'circle',
-      label: 'Circle',
-      icon: <Circle className='w-4 h-4' />,
-      description: 'Draw a circle',
-    },
+    // Remove circle if not supported by your Redux slice
+    // {
+    //   id: 'circle',
+    //   label: 'Circle',
+    //   icon: <Circle className='w-4 h-4' />,
+    //   description: 'Draw a circle',
+    // },
     {
       id: 'freedraw',
       label: 'Free Draw',
@@ -97,7 +109,7 @@ const ToolbarShapes = () => {
             key={tool.id}
             title={`${tool.label} - ${tool.description}`}
             variant='ghost'
-            onClick={() => selectTool(tool.id)}
+            onClick={() => handleToolSelect(tool.id)}
             data-state={currentTool === tool.id ? 'active' : 'inactive'}
             className={cn(
               'relative flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-medium transition-all duration-300 font-mono',
@@ -109,6 +121,7 @@ const ToolbarShapes = () => {
             )}
           >
             {tool.icon}
+            <span className="sr-only">{tool.label}</span>
           </Button>
         ))}
       </div>
