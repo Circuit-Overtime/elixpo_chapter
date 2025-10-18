@@ -1,65 +1,104 @@
-'use client'
-import { useInfiniteCastle } from '@/hooks/use-infinite-castle'
-import React from 'react'
-import TextSideBar from '../text-sidebar/text-sidebar'
-import { cn } from '@/lib/utils'
-import ShapesRenderer from '../shapes/shapes-renderer'
-import { EnhancedDebug } from '@/components/debug'
+"use client";
+import React from "react";
+import { useInfiniteCastle } from "@/hooks/use-infinite-castle";
+import { cn } from "@/lib/utils";
+import ShapesRenderer from "../shapes/shapes-renderer";
+import TextSideBar from "../text-sidebar/text-sidebar";
 
 const InfiniteCastle = () => {
-  const inifiniteCastle = useInfiniteCastle()
+  const {
+    attachCanvasRef,
+    shapes,
+    viewport,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel,
+    isSidebarOpen,
+    hasSelectedText,
+    currentTool
+  } = useInfiniteCastle();
+
   return (
    <>
-   <EnhancedDebug/>
-    <TextSideBar isOpen={inifiniteCastle.isSidebarOpen} />
-    {/* inspiration */}
-    {/* chatwindow */}
-    
+    <TextSideBar isOpen={isSidebarOpen && hasSelectedText} />
      <div
-     ref={inifiniteCastle.attachCanvasRef}
-     role='application'
-     aria-label='Inifinite drawing canvas'
-     onPointerDown={inifiniteCastle.onPointerDown}
-     onPointerCancel={inifiniteCastle.onPointerCancel}
-     onPointerUp={inifiniteCastle.onPointerUp}
-     onPointerMove={inifiniteCastle.onPointerMove}
-     onContextMenu={(e) => e.preventDefault()}
-     draggable={false}
-     style={{touchAction: 'none'}}
-     className={
+      aria-label="Infinite drawing castle"
+      role='application'
+      style={{touchAction: 'none'}}
+      draggable={false}
+       onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+      ref={attachCanvasRef}
+      onContextMenu={(e) => e.preventDefault()}
+      className={
         cn(
-            'relative w-full h-full overflow-hidden select-none z-0',
+            'w-full h-[calc(100vh-10vh)] relative  overflow-hidden select-none z-0',
             {
-                'cursor-grabbing': inifiniteCastle.viewport.mode === 'panning',
-                'cursor-grab': inifiniteCastle.viewport.mode === 'shiftPanning',
-                'cursor-crosshair':
-                 inifiniteCastle.currentTool !== 'select' && inifiniteCastle.viewport === 'idle',
-                 'cursor-default': inifiniteCastle.currentTool === 'select' && inifiniteCastle.viewport === 'idle' 
+                'cursor-grabbing': viewport.mode === 'panning',
+                'cursor-grab': viewport.mode === 'shiftPanning',
+                'cursor-crosshair': currentTool !== 'select' && viewport.mode === 'idle',
+                'cursor-default': currentTool === 'select' && viewport.mode === 'idle'
             }
         )
-     }
-    >   
-        <div 
-        style={{
-            transform: `translate3d(${inifiniteCastle.viewport.translate.x}px, ${inifiniteCastle.viewport.translate.y}px,0) scale${inifiniteCastle.viewport.scale}`,
-            transformOrigin: '0 0',
-            willChange: 'transform'
+      }
+     >
+     <div
+      style={{
+          transform: `translate3d(${viewport.translate.x}px, ${viewport.translate.y}px, 0) scale(${viewport.scale})`,
+          transformOrigin: "0 0",
+          willChange: 'transform'
         }}
-        className='absolute origin-top-left pointer-events-none z-10'
-        >
-            {
-                inifiniteCastle.shapes.map((shape) => (
-                    <ShapesRenderer
-                     key={shape.id}
-                     shape={shape}
-                    />
-                ))
-            }
+      className="absolute origin-top-left pointer-events-none z-10"
 
-        </div>
-    </div> 
-   </>
-  )
-}
+     >
+      {
+        shapes.map((shape) => (
+            <ShapesRenderer shape={shape} key={shape.id} />
+        ))
+      }
+     </div>
+     </div>
+    </>
 
-export default InfiniteCastle
+
+  );
+};
+
+export default InfiniteCastle;
+
+
+
+{/* <div className="w-full h-screen text-white flex items-center justify-center">
+      <div
+        ref={attachCanvasRef}
+        className={cn(
+          "relative w-[90%] h-[90%] overflow-hidden border border-gray-600 rounded-md",
+          "select-none cursor-crosshair"
+        )}
+        style={{
+          transform: `translate3d(${viewport.translate.x}px, ${viewport.translate.y}px, 0) scale(${viewport.scale})`,
+          transformOrigin: "0 0",
+        }}
+        // ✨ attach the event handlers here
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+      >
+        {shapes.length > 0 ? (
+          shapes.map((shape) => (
+            <ShapesRenderer
+             shape={shape}
+             key={shape.id}
+            />
+          ))
+        ) : (
+          <p className="absolute inset-0 flex items-center justify-center text-gray-500">
+            No shapes rendered yet
+          </p>
+        )}
+      </div>
+    </div> */}

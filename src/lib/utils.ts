@@ -19,3 +19,28 @@ export const combineSlug = (name: string, maxLen=80):string => {
         if(s.length > maxLen) s = s.slice(0, maxLen)
         return s 
 }
+export const polylineBox = (
+  points: ReadonlyArray<{ x: number; y: number }>
+) => {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (let i = 0; i < points.length; i++) {
+    const { x, y } = points[i];
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+    if (x > maxX) maxX = x;
+    if (y > maxY) maxY = y;
+  }
+
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+};
