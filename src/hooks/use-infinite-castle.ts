@@ -4,7 +4,7 @@ import {
   addArrow, addEllipse, addFrame, addFreeDrawShape, addLine, addRect, addText, 
   clearSelection, removeShape, setTool, Shape, Tool, updateShape, selectShape // ← ADDED
 } from "@/redux/slices/shapes";
-import { handToolDisable, handToolEnable, panEnd, panMove, panStart, Point, screenToWorld, wheelPan, wheelZoom } from "@/redux/slices/viewport";
+import { handToolDisable, handToolEnable, panEnd, panMove, panStart, Point, screenToWorld,  wheelPan, wheelZoom } from "@/redux/slices/viewport";
 import { AppDispatch, useAppSelector } from "@/redux/store"
 import React, { useCallback, useEffect, useRef, useState } from "react"; // ← ADDED useCallback
 import { useDispatch } from "react-redux"
@@ -37,12 +37,12 @@ export const useInfiniteCastle = () => {
   const currentTool = useAppSelector((state) => state.shapes.tool)
   const selectedShapes = useAppSelector((s) => s.shapes.selected)
   
-  const shapeEntites = useAppSelector((s) => s.shapes.shapes.entities)
+  const shapeEntites = useAppSelector((state) => state.shapes.shapes.entities)
   const hasSelectedText = Object.keys(selectedShapes).some((id) => {
     const shapes = shapeEntites[id]
     return shapes?.type === 'text'
   })
-  
+  console.log("Shapes in canvas:🚀", shapeList);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   useEffect(() => {
@@ -59,6 +59,7 @@ export const useInfiniteCastle = () => {
   const freeDrawPointsRef = useRef<Point[]>([])
   const drawingRef = useRef(false)
   const isSpacePressed = useRef(false)
+ 
   const isMovingRef = useRef(false)
   const moveStartRef = useRef<Point|null>(null)
 
@@ -246,7 +247,7 @@ export const useInfiniteCastle = () => {
     }   
   }, [dispatcher, localPointFromClient])
   
- /*  const onPointerDown: React.PointerEventHandler<HTMLDivElement> = useCallback((e) => {  
+   const onPointerDown: React.PointerEventHandler<HTMLDivElement> = useCallback((e) => {  
     const target = e.target as HTMLElement
     const isButton = 
       target.tagName === "BUTTON" ||
@@ -368,9 +369,11 @@ export const useInfiniteCastle = () => {
   }, [
     currentTool, selectedShapes, entityState.entities, viewport.translate, 
     viewport.scale, dispatcher, getLocalPointFromPtr, getShapeAtPoint, freeHandTick
-  ])
- */
-  const onPointerDown: React.PointerEventHandler<HTMLDivElement> = useCallback((e) => {  
+  ])  
+  
+ 
+ 
+   /* const onPointerDown: React.PointerEventHandler<HTMLDivElement> = useCallback((e) => {  
   console.log('🟢 RAW PointerDown - Button:', e.button, 'Tool:', currentTool)
   
   // TEMPORARY: Always prevent default and handle
@@ -393,7 +396,7 @@ export const useInfiniteCastle = () => {
     requestRender()
   }
 
-}, [currentTool, viewport.translate, viewport.scale, getLocalPointFromPtr])
+}, [currentTool, viewport.translate, viewport.scale, getLocalPointFromPtr])  */
 
   const onPointerMove: React.PointerEventHandler<HTMLDivElement> = useCallback((e) => {
     const local = getLocalPointFromPtr(e.nativeEvent)
@@ -489,7 +492,7 @@ export const useInfiniteCastle = () => {
     entityState.entities, dispatcher, getLocalPointFromPtr, getShapeAtPoint, schedulePanMove
   ])
   
-  const finalizeDrawingIfAny = useCallback((): void => {
+ /*  const finalizeDrawingIfAny = useCallback((): void => {
     if(!drawingRef.current) return 
     drawingRef.current = false
 
@@ -541,7 +544,75 @@ export const useInfiniteCastle = () => {
     }
 
     requestRender()
-  }, [currentTool, dispatcher])
+  }, [currentTool, dispatcher]) */
+
+// In your finalizeDrawingIfAny function, add detailed logging:
+const finalizeDrawingIfAny = useCallback((): void => {
+  console.log('🟢 finalizeDrawingIfAny called, drawingRef:', drawingRef.current)
+  
+  if(!drawingRef.current) return 
+  drawingRef.current = false
+
+  if(freehandRef.current) {
+    window.cancelAnimationFrame(freehandRef.current)
+    freehandRef.current = null
+  }
+
+  const draft = draftShapeRef.current
+  console.log('🟢 Draft shape:', draft)
+  
+  if(draft) {
+    const x = Math.min(draft.startWorld.x, draft.currentWorld.x)
+    const y = Math.min(draft.startWorld.y, draft.currentWorld.y)
+    const w = Math.abs(draft.currentWorld.x - draft.startWorld.x)
+    const h = Math.abs(draft.currentWorld.y - draft.startWorld.y)
+
+    console.log('🟢 Final shape dimensions:', { x, y, w, h })
+
+    if(w > 1 && h > 1) {
+      if(draft.type === 'frame') {
+        console.log('✅ Adding frame shape:', {x, y, w, h});
+        dispatcher(addFrame({x, y, w, h}))
+      } else if(draft.type === 'rect') {
+        console.log('✅ Adding Rectangle', {x, y, w, h})
+        dispatcher(addRect({x, y, w, h}))
+      } else if(draft.type === 'ellipse') {
+        console.log('✅ Adding a ellipse');
+        dispatcher(addEllipse({x, y, w, h}))
+      } else if(draft.type === 'arrow') {
+        console.log('✅ Adding a arrow')
+        dispatcher(addArrow({
+          startX: draft.startWorld.x,
+          startY: draft.startWorld.y,
+          endX: draft.currentWorld.x,
+          endY: draft.currentWorld.y
+        }))
+      } else if(draft.type === 'line') {
+        console.log("✅ Adding a line")
+        dispatcher(addLine({
+          startX: draft.startWorld.x,
+          startY: draft.startWorld.y,
+          endX: draft.currentWorld.x,
+          endY: draft.currentWorld.y,
+        }))
+      }
+    } else {
+      console.log('❌ Shape too small, skipping')
+    }
+    draftShapeRef.current = null
+  } else if(currentTool === 'freedraw') {
+    const pts = freeDrawPointsRef.current
+    console.log('✅ FreeDraw points:', pts.length)
+    if(pts.length > 1) {
+      dispatcher(addFreeDrawShape({points: pts}))
+      console.log('✅ FreeDraw shape added')
+    }
+    freeDrawPointsRef.current = []
+  }
+
+  requestRender()
+  console.log('🟢 finalizeDrawingIfAny completed')
+}, [currentTool, dispatcher])
 
   const onPointerUp: React.PointerEventHandler<HTMLDivElement> = useCallback((e): void => {
     canvasRef.current?.releasePointerCapture?.(e.pointerId)
@@ -799,6 +870,7 @@ export const useInfiniteCastle = () => {
  
   const getDraftShape = (): DraftShape | null => draftShapeRef.current
   const getFreeDrawPoints = (): ReadonlyArray<Point> => freeDrawPointsRef.current
+ 
 
   return {
     viewport,
@@ -816,5 +888,6 @@ export const useInfiniteCastle = () => {
     isSidebarOpen,
     hasSelectedText,
     setIsSidebarOpen,
+    
   }
 }
