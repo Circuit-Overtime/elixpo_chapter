@@ -2,7 +2,8 @@
 
 import { 
   addArrow, addEllipse, addFrame, addFreeDrawShape, addLine, addRect, addText, 
-  clearSelection, removeShape, setTool, Shape, Tool, updateShape, selectShape // ← ADDED
+  clearSelection, removeShape, setTool, Shape, Tool, updateShape, selectShape, // ← ADDED
+  rotateShape
 } from "@/redux/slices/shapes";
 import { handToolDisable, handToolEnable, panEnd, panMove, panStart, Point, screenToWorld,  wheelPan, wheelZoom } from "@/redux/slices/viewport";
 import { AppDispatch, useAppSelector } from "@/redux/store"
@@ -59,7 +60,15 @@ export const useInfiniteCastle = () => {
   const freeDrawPointsRef = useRef<Point[]>([])
   const drawingRef = useRef(false)
   const isSpacePressed = useRef(false)
- 
+  const currentRotationRef = useRef<Record<string, number>>({})
+ const rotatingRef = useRef(false)
+const rotateDataRef = useRef<{
+  shapeId: string
+  startAngle: number
+  startMouseAngle: number
+  center: { x: number; y: number }
+} | null>(null)
+
   const isMovingRef = useRef(false)
   const moveStartRef = useRef<Point|null>(null)
 
@@ -853,6 +862,78 @@ const finalizeDrawingIfAny = useCallback((): void => {
     viewport.translate,
     viewport.scale
    ])
+
+useEffect(() => {
+  const handleRotate = (e: CustomEvent<{ shapeId: string; rotation: number }>) => {
+    const { shapeId, rotation } = e.detail
+    dispatcher(rotateShape({ id: shapeId, rotation })) // use your reducer
+  }
+
+  const handleRotateStart = (e: CustomEvent<{ shapeId: string; bounds: { x: number; y: number; w: number; h: number } }>) => {
+    const { shapeId, bounds } = e.detail
+    const shape = entityState.entities[shapeId]
+    if (!shape) return
+
+    rotatingRef.current = true
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+
+    const center = {
+      x: bounds.x + bounds.w / 2,
+      y: bounds.y + bounds.h / 2,
+    }
+
+    const worldCenter = screenToWorld(center, viewport.translate, viewport.scale)
+
+    rotateDataRef.current = {
+      shapeId,
+      startAngle: shape.rotation || 0,
+      startMouseAngle: 0, // optionally calculate relative to initial mouse
+      center: worldCenter,
+    }
+  }
+
+  const handleRotateMove = (e: CustomEvent<{ clientX: number; clientY: number }>) => {
+    if (!rotatingRef.current || !rotateDataRef.current) return
+    const { shapeId, center } = rotateDataRef.current
+    const { clientX, clientY } = e.detail
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+
+    const localX = clientX - rect.left
+    const localY = clientY - rect.top
+
+    const world = screenToWorld({ x: localX, y: localY }, viewport.translate, viewport.scale)
+
+    const dx = world.x - center.x
+    const dy = world.y - center.y
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI
+
+    dispatcher(rotateShape({ id: shapeId, rotation: angle })) // use reducer
+  }
+
+  const handleRotateEnd = () => {
+    rotatingRef.current = false
+    rotateDataRef.current = null
+  }
+
+  window.addEventListener("shape-rotate-start", handleRotateStart as EventListener)
+  window.addEventListener("shape-rotate-move", handleRotateMove as EventListener)
+  window.addEventListener("shape-rotate-end", handleRotateEnd as EventListener)
+  window.addEventListener("shape-rotate", handleRotate as EventListener)
+
+  return () => {
+    window.removeEventListener("shape-rotate-start", handleRotateStart as EventListener)
+    window.removeEventListener("shape-rotate-move", handleRotateMove as EventListener)
+    window.removeEventListener("shape-rotate-end", handleRotateEnd as EventListener)
+    window.removeEventListener("shape-rotate", handleRotate as EventListener)
+  }
+}, [dispatcher, entityState.entities, viewport.translate, viewport.scale])
+
 
   const attachCanvasRef = useCallback((ref: HTMLDivElement | null): void => {
     if(canvasRef.current) {

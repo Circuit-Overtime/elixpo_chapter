@@ -25,6 +25,7 @@ export interface BaseShape {
   stroke: string;
   strokeWidth: number;
   fill?: string | null;
+  rotation?: number
 }
 export interface FrameShape extends BaseShape {
   type: "frame";
@@ -145,6 +146,7 @@ const makeFrame = (p: {
   stroke: "transparent",
   strokeWidth: 0,
   fill: p.fill ?? "rgba(255, 255, 255, 0.05)",
+  rotation: 0
 });
 
 const makeRect = (p: {
@@ -165,6 +167,7 @@ const makeRect = (p: {
   stroke: p.stroke ?? DEFAULTS.stroke,
   strokeWidth: p.strokeWidth ?? DEFAULTS.strokeWidth,
   fill: p.fill ?? null,
+  rotation: 0
 });
 
 const makeEllipse = (p: {
@@ -185,6 +188,7 @@ const makeEllipse = (p: {
   stroke: p.stroke ?? DEFAULTS.stroke,
   strokeWidth: p.strokeWidth ?? DEFAULTS.strokeWidth,
   fill: p.fill ?? null,
+  rotation: 0
 });
 
 const makeFree = (p: {
@@ -199,6 +203,7 @@ const makeFree = (p: {
   stroke: p.stroke ?? DEFAULTS.stroke,
   strokeWidth: p.strokeWidth ?? DEFAULTS.strokeWidth,
   fill: p.fill ?? null,
+  rotation: 0
 });
 
 const makeArrow = (p: {
@@ -219,6 +224,7 @@ const makeArrow = (p: {
   stroke: p.stroke ?? DEFAULTS.stroke,
   strokeWidth: p.strokeWidth ?? DEFAULTS.strokeWidth,
   fill: p.fill ?? null,
+  rotation: 0
 });
 
 const makeLine = (p: {
@@ -239,6 +245,7 @@ const makeLine = (p: {
   stroke: p.stroke ?? DEFAULTS.stroke,
   strokeWidth: p.strokeWidth ?? DEFAULTS.strokeWidth,
   fill: p.fill ?? null,
+  rotation: 0
 });
 
 const makeText = (p: {
@@ -275,6 +282,7 @@ const makeText = (p: {
   stroke: p.stroke ?? DEFAULTS.stroke,
   strokeWidth: p.strokeWidth ?? DEFAULTS.strokeWidth,
   fill: p.fill ?? "#ffffff",
+  rotation: 0
 });
 
 const makeGeneratedUI = (p: {
@@ -302,6 +310,7 @@ const makeGeneratedUI = (p: {
   stroke: "transparent", // No border for generated UI
   strokeWidth: 0,
   fill: p.fill ?? null,
+  rotation: 0
 });
 
 const shapesSlice = createSlice({
@@ -365,6 +374,13 @@ const shapesSlice = createSlice({
     ) {
       const { id, patch } = action.payload;
       shapesAdapter.updateOne(state.shapes, { id, changes: patch });
+    },
+    rotateShape: (
+        state, 
+        action: PayloadAction<{id: string, rotation: number}>
+    ) => {
+        const {id, rotation} = action.payload
+        shapesAdapter.updateOne(state.shapes, {id, changes: {rotation}})
     },
 
     removeShape(state, action: PayloadAction<string>) {
@@ -437,6 +453,7 @@ export const {
   clearSelection,
   selectAll,
   deleteSelected,
+  rotateShape,
   loadProject,
 } = shapesSlice.actions;
 

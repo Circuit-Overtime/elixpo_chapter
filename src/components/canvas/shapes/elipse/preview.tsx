@@ -1,9 +1,11 @@
 export const ElipsePreview = ({
   startWorld,
   currentWorld,
+  rotation=0
 }: {
   startWorld: { x: number; y: number };
   currentWorld: { x: number; y: number };
+  rotation?: number
 }) => {
   const x = Math.min(startWorld.x, currentWorld.x);
   const y = Math.min(startWorld.y, currentWorld.y);
@@ -18,6 +20,8 @@ export const ElipsePreview = ({
         top: y,
         width: w,
         height: h,
+        transform: `rotate(${rotation}deg)`,
+        transformOrigin: 'center center'
       }}
     />
   );

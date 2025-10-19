@@ -12,6 +12,8 @@ export const Elipse = ({ shape }: { shape: EllipseShape }) => (
       borderWidth: shape.strokeWidth,
       backgroundColor: shape.fill ?? "transparent",
       borderRadius: "50%",
+      transform: `rotate(${shape.rotation || 0}deg)`,
+      transformOrigin: 'center center'
     }}
   />
 );
