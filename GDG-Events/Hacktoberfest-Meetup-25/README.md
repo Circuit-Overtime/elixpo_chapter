@@ -26,6 +26,7 @@
 - **Debojeet Karmakar** - Full Stack Developer at Prepverse
 - **Samrat Talukdar** - NiT GDG Lead
 - **Nazreen Imam** - GNIT GDG Lead
+- **Saugata Sarkar** - Incoming SDE1 at Hyland
 
 ## 11:00am - 11:15am -- [INFO SESSION CORE TEAM 2025 INTRODUCTION]
 - **11:00am - 11:05am** - WORD ON GDG JISU BY OUR CURRENT GDG LEAD - Ayushman Bhattacharya
