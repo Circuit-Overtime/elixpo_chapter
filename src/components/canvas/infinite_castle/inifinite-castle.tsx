@@ -9,6 +9,8 @@ import { ArrowPreview } from "../shapes/arrow/preview";
 import { ElipsePreview } from "../shapes/elipse/preview";
 import { LinePreview } from "../shapes/line/preview";
 import { FreeDrawStrokePreview } from "../shapes/stroke/preview";
+import { SelectionOverlay } from "../shapes/selectionOverlay";
+import { useAppSelector } from "@/redux/store";
 
 const InfiniteCastle = () => {
   const {
@@ -23,11 +25,13 @@ const InfiniteCastle = () => {
     hasSelectedText,
     currentTool,
     getDraftShape,
-    getFreeDrawPoints
+    getFreeDrawPoints,
+
     
   } = useInfiniteCastle();
   const draftShape = getDraftShape()
   const freeDraw = getFreeDrawPoints()
+  const selectedShapes = useAppSelector((s) => s.shapes.selected)
   return (
    <>
     <TextSideBar isOpen={isSidebarOpen && hasSelectedText} />
@@ -66,6 +70,15 @@ const InfiniteCastle = () => {
       {
         shapes.map((shape) => (
             <ShapesRenderer shape={shape} key={shape.id} />
+        ))
+      }
+      {
+        shapes.map((shape) => (
+             <SelectionOverlay
+              key={`selection-${shape.id}`}
+              shape={shape}
+              isSelected={!!selectedShapes[shape.id]}
+             />
         ))
       }
 

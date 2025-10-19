@@ -11,7 +11,9 @@ export const Rectangle = ({ shape }: { shape: RectShape }) => (
       borderColor: shape.stroke,
       borderWidth: shape.strokeWidth,
       backgroundColor: shape.fill ?? "transparent",
-      borderRadius: "8px", // Add rounded corners
+      borderRadius: "8px",
+      transform: `rotate(${shape.rotation || 0}deg)`,
+      transformOrigin: "center center", // Important: rotate around the shape center
     }}
   />
-);
+)
