@@ -4,6 +4,11 @@ import { useInfiniteCastle } from "@/hooks/use-infinite-castle";
 import { cn } from "@/lib/utils";
 import ShapesRenderer from "../shapes/shapes-renderer";
 import TextSideBar from "../text-sidebar/text-sidebar";
+import { RectanglePreview } from "../shapes/rectangle/preview";
+import { ArrowPreview } from "../shapes/arrow/preview";
+import { ElipsePreview } from "../shapes/elipse/preview";
+import { LinePreview } from "../shapes/line/preview";
+import { FreeDrawStrokePreview } from "../shapes/stroke/preview";
 
 const InfiniteCastle = () => {
   const {
@@ -16,9 +21,13 @@ const InfiniteCastle = () => {
     onPointerCancel,
     isSidebarOpen,
     hasSelectedText,
-    currentTool
+    currentTool,
+    getDraftShape,
+    getFreeDrawPoints
+    
   } = useInfiniteCastle();
-
+  const draftShape = getDraftShape()
+  const freeDraw = getFreeDrawPoints()
   return (
    <>
     <TextSideBar isOpen={isSidebarOpen && hasSelectedText} />
@@ -59,6 +68,51 @@ const InfiniteCastle = () => {
             <ShapesRenderer shape={shape} key={shape.id} />
         ))
       }
+
+      {
+        draftShape && draftShape.type === 'rect' && (
+            <RectanglePreview 
+             startWorld={draftShape.startWorld}
+             currentWorld={draftShape.currentWorld}
+            />
+        )
+      }
+
+      {
+        draftShape && draftShape.type === 'arrow' && (
+             <ArrowPreview
+              currentWorld={draftShape.currentWorld}
+              startWorld={draftShape.startWorld}
+
+
+             />
+        )
+      }
+
+      {
+        draftShape && draftShape.type === 'ellipse' && (
+            <ElipsePreview  
+              currentWorld={draftShape.currentWorld}
+              startWorld={draftShape.startWorld}
+            />
+        )
+      }
+      {
+        draftShape && draftShape.type === 'line' && (
+            <LinePreview
+                currentWorld={draftShape.currentWorld}
+                startWorld={draftShape.startWorld}
+            />
+        )
+      }
+      {
+        currentTool === 'freedraw' && freeDraw.length > 1 && (
+            <FreeDrawStrokePreview
+              points={freeDraw}
+            />
+        )
+       }
+      
      </div>
      </div>
     </>
@@ -71,34 +125,3 @@ export default InfiniteCastle;
 
 
 
-{/* <div className="w-full h-screen text-white flex items-center justify-center">
-      <div
-        ref={attachCanvasRef}
-        className={cn(
-          "relative w-[90%] h-[90%] overflow-hidden border border-gray-600 rounded-md",
-          "select-none cursor-crosshair"
-        )}
-        style={{
-          transform: `translate3d(${viewport.translate.x}px, ${viewport.translate.y}px, 0) scale(${viewport.scale})`,
-          transformOrigin: "0 0",
-        }}
-        // ✨ attach the event handlers here
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
-      >
-        {shapes.length > 0 ? (
-          shapes.map((shape) => (
-            <ShapesRenderer
-             shape={shape}
-             key={shape.id}
-            />
-          ))
-        ) : (
-          <p className="absolute inset-0 flex items-center justify-center text-gray-500">
-            No shapes rendered yet
-          </p>
-        )}
-      </div>
-    </div> */}
