@@ -888,6 +888,7 @@ const finalizeDrawingIfAny = useCallback((): void => {
     isSidebarOpen,
     hasSelectedText,
     setIsSidebarOpen,
+    draftShapeRef,
     
   }
 }
