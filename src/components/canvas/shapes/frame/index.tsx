@@ -1,16 +1,17 @@
-import { FrameShape } from "@/redux/slices/shapes";
-import { LiquidGlassButton } from "@/components/ui/";
-import { Brush, Palette } from "lucide-react";
-import { useFrame } from "@/hooks/use-canvas";
+import { FrameShape } from "@/redux/slices/shapes/index";
+import { LiquidGlassButton } from "@/components/button/liquidglassbtn/liquid-glass-btn";
+import { Brush, Palette, SparklesIcon } from "lucide-react";
+import { useCanvas } from "@/hooks/use-canvas";
+
 
 export const Frame = ({
   shape,
   toggleInspiration,
 }: {
   shape: FrameShape;
-  toggleInspiration: () => void;
+  toggleInspiration?: () => void;
 }) => {
-  const { isGenerating, handleGenerateDesign } = useFrame(shape);
+  const { isGenerating, handleGenerateDesign } = useCanvas(shape);
 
   return (
     <>
@@ -25,7 +26,7 @@ export const Frame = ({
         }}
       />
       <div
-        className="absolute pointer-events-none whitespace-nowrap text-xs font-medium text-white/80 select-none"
+        className="absolute font-mono pointer-events-none whitespace-nowrap text-xs font-medium text-white/80 select-none"
         style={{
           left: shape.x,
           top: shape.y - 24, // Position above the frame
@@ -35,10 +36,10 @@ export const Frame = ({
         Frame {shape.frameNumber}
       </div>
       <div
-        className="absolute pointer-events-auto flex gap-4"
+        className="absolute pointer-events-auto flex gap-2"
         style={{
-          left: shape.x + shape.w - 235, // Position at top right, accounting for button width
-          top: shape.y - 36, // Position above the frame with some spacing
+          left: shape.x + shape.w - 240, // Position at top right, accounting for button width
+          top: shape.y - 40, // Position above the frame with some spacing
           zIndex: 1000, // Ensure button is on top
         }}
         onClick={(e) => {
@@ -59,8 +60,8 @@ export const Frame = ({
           disabled={isGenerating}
           className={isGenerating ? "animate-pulse" : ""}
           style={{ pointerEvents: "auto" }}>
-          <Brush size={12} className={isGenerating ? "animate-spin" : ""} />
-          {isGenerating ? "Generating..." : "Generate Design"}
+          <SparklesIcon size={12} className={isGenerating ? "fill-amber-400" : ""} />
+          {isGenerating ? "Generating..." : "Generate"}
         </LiquidGlassButton>
       </div>
     </>
