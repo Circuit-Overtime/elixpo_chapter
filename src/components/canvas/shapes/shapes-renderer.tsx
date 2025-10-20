@@ -6,6 +6,9 @@ import { Elipse } from './elipse';
 import { Line } from './line';
 import { Text } from './text';
 import { Stroke } from './stroke';
+import { Frame } from './frame';
+//TODO: Add frame button
+//TODO: Add generate ui button
 interface Props {
      shape: Shape;
      toggleInspiraton?: () => void;
@@ -15,9 +18,17 @@ interface Props {
 
 }
 const ShapesRenderer = ({
-   shape
+   shape,
+   toggleInspiraton,
+   toggleChat,
+   exportDesign,
+   generateWorkFlow
 }:Props) => {
     switch(shape.type) {
+        case 'frame':
+          return <Frame shape={shape}
+                  toggleInspiration={toggleInspiraton}
+          />
         case 'arrow':
           return <Arrow shape={shape} />
         case 'rect':

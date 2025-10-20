@@ -11,6 +11,7 @@ import { LinePreview } from "../shapes/line/preview";
 import { FreeDrawStrokePreview } from "../shapes/stroke/preview";
 import { SelectionOverlay } from "../shapes/selectionOverlay";
 import { useAppSelector } from "@/redux/store";
+import { FramePreview } from "../shapes/frame/preview";
 
 const InfiniteCastle = () => {
   const {
@@ -67,11 +68,16 @@ const InfiniteCastle = () => {
       className="absolute origin-top-left pointer-events-none z-10"
 
      >
+     {/*  rendering actual shapes */}
       {
         shapes.map((shape) => (
-            <ShapesRenderer shape={shape} key={shape.id} />
+            
+            <ShapesRenderer 
+            
+            shape={shape} key={shape.id} />
         ))
       }
+      {/* rendering selection resize rotate overlay stuff */}
       {
         shapes.map((shape) => (
              <SelectionOverlay
@@ -81,7 +87,15 @@ const InfiniteCastle = () => {
              />
         ))
       }
-
+       {/*   preview stuff */}
+        {
+            draftShape  && draftShape.type === 'frame' && (
+                <FramePreview
+                 currentWorld={draftShape.currentWorld}
+                 startWorld={draftShape.startWorld}
+                />
+            )
+        }
       {
         draftShape && draftShape.type === 'rect' && (
             <RectanglePreview 

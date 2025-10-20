@@ -112,7 +112,7 @@ const ToolbarShapes = () => {
     variant="ghost"
     onClick={() => handleToolSelect(tool.id)}
     data-state={currentTool === tool.id ? 'active' : 'inactive'}
-    title={`${tool.label} - ${tool.description}`} // ✅ Tooltip on hover
+    title={`${tool.label} - ${tool.description}`} 
     className={cn(
       'relative flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-medium transition-all duration-300 font-mono',
       'bg-[#0f0f0f] text-white hover:bg-[#1a1a1a] border border-transparent',
