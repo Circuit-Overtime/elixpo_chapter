@@ -59,7 +59,7 @@ const TextSideBar = ({
     <div className={
         cn(
             'fixed right-5 top-1/2 transform -translate-y-1/2 w-80 backdrop:blur-xl bg-white/[0.08] border border-white/[0.12] p-3 gap-2 saturate-150 rounded-lg z-15 transition-transform duration-300',
-            true  ? 'translate-x-0' : 'translate-x-full'
+            isOpen  ? 'translate-x-0' : 'translate-x-full'
         )
     }>
    <div className='p-3 flex flex-col gap-5 overflow-y-auto max-h-[calc(100vh - 8rem)]'>
