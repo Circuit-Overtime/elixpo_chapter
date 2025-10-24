@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadData() {
     try {
         showLoading(true);
-        const csvResponse = await fetch('https://raw.githubusercontent.com/Circuit-Overtime/elixpo_chapter/main/data.csv');
+        const csvResponse = await fetch('https://raw.githubusercontent.com/Circuit-Overtime/elixpo_chapter/refs/heads/main/gdg.study_jams/data/data.csv');
         const csvText = await csvResponse.text();
         console.log('Loaded CSV from raw.githubusercontent.com');
         allUsers = parseCSV(csvText);
