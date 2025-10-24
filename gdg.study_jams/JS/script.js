@@ -1,4 +1,4 @@
- allUsers = [];
+allUsers = [];
 let filteredUsers = [];
 let currentFilter = 'all';
 
@@ -22,16 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadData() {
     try {
         showLoading(true);
-        const response = await fetch('api.php?action=leaderboard');
-        if (!response.ok) {
-            throw new Error('Failed to load data');
-        }
-        const result = await response.json();
-        if (!result.success) {
-            throw new Error(result.message || 'Failed to load data');
-        }
-        const csvText = result.data.content;
-        console.log('Loading data from secure API');
+        const csvResponse = await fetch('https://raw.githubusercontent.com/Circuit-Overtime/elixpo_chapter/main/data.csv');
+        const csvText = await csvResponse.text();
+        console.log('Loaded CSV from raw.githubusercontent.com');
         allUsers = parseCSV(csvText);
         processUsers();
         updateStats();
