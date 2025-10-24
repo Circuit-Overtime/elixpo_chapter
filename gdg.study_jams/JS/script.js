@@ -22,19 +22,50 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadData() {
     try {
         showLoading(true);
-        const csvResponse = await fetch('https://raw.githubusercontent.com/Circuit-Overtime/gdg.jisu/refs/heads/main/data/data.csv');
+        const csvUrl = 'https://raw.githubusercontent.com/Circuit-Overtime/gdg.jisu/refs/heads/main/data/data.csv';
+        const csvResponse = await fetch(csvUrl);
+        if (!csvResponse.ok) throw new Error(`CSV fetch failed: ${csvResponse.status}`);
         const csvText = await csvResponse.text();
         console.log('Loaded CSV from raw.githubusercontent.com');
+
         allUsers = parseCSV(csvText);
         processUsers();
         updateStats();
         renderLeaderboard(allUsers);
+
+        // Try to fetch last commit time for data.csv and show it
+        try {
+            const commitDate = await fetchLastCommitDate('Circuit-Overtime', 'gdg.jisu', 'data/data.csv', 'main');
+            updateLastUpdated(commitDate);
+        } catch (err) {
+            console.warn('Could not fetch last commit date:', err);
+            updateLastUpdated(); // fallback to now
+        }
+
         showLoading(false);
     } catch (error) {
         console.error('Error loading data:', error);
         showLoading(false);
         showEmptyState(true);
     }
+}
+
+async function fetchLastCommitDate(owner, repo, path, branch = 'main') {
+    const url = `https://api.github.com/repos/${owner}/${repo}/commits?path=${encodeURIComponent(path)}&sha=${encodeURIComponent(branch)}&per_page=1`;
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error(`GitHub API responded with ${res.status}`);
+    }
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) {
+        throw new Error('No commits found for file');
+    }
+    const commit = data[0];
+    const dateStr = commit.commit?.author?.date || commit.commit?.committer?.date;
+    if (!dateStr) {
+        throw new Error('Commit date not found in response');
+    }
+    return new Date(dateStr);
 }
 
 function parseCSV(csvText) {
@@ -306,8 +337,8 @@ function showEmptyState(show) {
     emptyState.style.display = show ? 'flex' : 'none';
 }
 
-function updateLastUpdated() {
-    const now = new Date();
+function updateLastUpdated(date) {
+    const now = (date instanceof Date) ? date : new Date();
     const formatted = now.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
