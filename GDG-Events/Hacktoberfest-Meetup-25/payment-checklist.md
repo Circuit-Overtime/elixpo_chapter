@@ -5,8 +5,7 @@
 | Priyanka Arts        | 2,236        | Pending |
 | Guest Lunch          | 1,540        | Pending |
 | Participant Lunch    | 10,000       | Pending |
-| Pens                 | 140          | Pending |
-| Water Bottles        | 100          | Pending |
+| Pens                 | 140          | Paid |
 | Misc                 | 1,000        | Pending + 320 INR (Core Member Lunch - 120 x 11) |
 
 ## Self Paid Funding Pending
