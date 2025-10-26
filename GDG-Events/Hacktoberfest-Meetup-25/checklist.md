@@ -8,44 +8,44 @@ Invitations
 
 Ask Priyanka Arts
 - [ ] Ask for flex (Priyanka Arts)
-    - [ ] Order placed
+    - [x] Order placed
     - [ ] Order received
     - [ ] Payment made
 - [ ] Ask for ID cards (Priyanka Arts)
-    - [ ] Order placed
+    - [x] Order placed
     - [ ] Order received
     - [ ] Payment made
 - [ ] Ask for stickers (Priyanka Arts)
-    - [ ] Order placed
+    - [x] Order placed
     - [ ] Order received
     - [ ] Payment made
 - [ ] Ask for standee (Priyanka Arts)
-    - [ ] Order placed
+    - [x] Order placed
     - [ ] Order received
     - [ ] Payment made
 - [ ] Ask for certificates (Priyanka Arts)
-    - [ ] Order placed
+    - [x] Order placed
     - [ ] Order received
     - [ ] Payment made
 
 Printing & External Orders
 - [ ] Sealdah print order sent
-    - [ ] Order placed
+    - [x] Order placed
     - [ ] Order received
     - [ ] Payment made
 
 
 - [ ] Invite Thomash Haferlach
-    - [ ] Invite sent
-    - [ ] Talk confirmed
+    - [x] Invite sent
+    - [x] Talk confirmed
     - [ ] Title & abstract received
 - [ ] Invite Elliot
-    - [ ] Invite sent
-    - [ ] Confirmation received
+    - [x] Invite sent
+    - [x] Confirmation received
     - [ ] Title & abstract received
 - [ ] Invite GDG NIT lead
-    - [ ] Invite sent
-    - [ ] Talk confirmed
+    - [x] Invite sent
+    - [x] Talk confirmed
     - [ ] Title & abstract received
 - [ ] Invite GDG GNIT lead
     - [ ] Invite sent
@@ -54,19 +54,19 @@ Printing & External Orders
 
 Sponsors
 - [ ] ISTE sponsor
-    - [ ] Sponsorship confirmed / agreement received
-    - [ ] Funds received
+    - [x] Sponsorship confirmed / agreement received
+    - [x] Funds received
 - [ ] Pollinations sponsor
-    - [ ] Sponsorship confirmed / agreement received
+    - [x] Sponsorship confirmed / agreement received
     - [ ] Funds received
 
 Catering
 - [ ] Guest lunch — Canteen
-    - [ ] Order placed
+    - [x] Order placed
     - [ ] Order received
     - [ ] Payment made
 - [ ] Participant lunch — Mio Amore
-    - [ ] Order placed
+    - [x] Order placed
     - [ ] Order received
     - [ ] Payment made
 
