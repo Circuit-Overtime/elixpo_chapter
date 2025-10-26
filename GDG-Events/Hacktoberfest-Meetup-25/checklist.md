@@ -1,10 +1,10 @@
 # Hacktoberfest Meetup 25 — Checklist
 
 Invitations
-- [ ] Invite HOD sir
-- [ ] Invite Tanaya ma'am
-- [ ] Invite Subarsha sir
-- [ ] Invite Dharmpal sir
+- [x] Invite HOD sir
+- [x] Invite Tanaya ma'am
+- [x] Invite Subarsha sir
+- [x] Invite Dharmpal sir
 
 Ask Priyanka Arts
 - [ ] Ask for flex (Priyanka Arts)
