@@ -19,6 +19,7 @@
 | Anwesha             | 1,000        | Funding (Self Paid Pending) |
 | Amit             | 1,000        | Funding (Self Paid Pending) |
 | Ayusman             | 140        | Funding for Pen (Self Paid Pending) |
+| Abhishk Kushwaha             | 5,000        | Funding (Self Paid Pending) |
 
 ## Sponsor Funds Received
 
