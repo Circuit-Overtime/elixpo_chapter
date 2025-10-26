@@ -3,7 +3,7 @@
 | Item                 | Amount (INR) | Status |
 |----------------------|-------------:|--------|
 | Priyanka Arts        | 2,236        | Pending |
-| Serampore Printing   | — (TBD)      | Pending (Self Paid Shinjan) |
+| Serampore Printing   | 800      | Pending (Self Paid Shinjan) Waiting to be refunded back |
 | Guest Lunch          | 1,540        | Pending |
 | Participant Lunch    | 10,000       | Pending |
 | Pens                 | 140          | Pending |
