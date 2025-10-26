@@ -1,32 +1,49 @@
-# GDG Cloud Skills Leaderboard — Purpose
+GDG Cloud Skills Leaderboard
 
-A lightweight, public leaderboard designed to surface participant progress and engagement for Cloud Skills learning activities. This project exists to make learning achievements visible, encourage friendly competition, and simplify event coordination for GDG on Campus — JISU and similar community initiatives.
+A lightweight, public leaderboard designed to showcase participant progress and engagement in Cloud Skills learning activities. This project helps make learning achievements visible, encourages friendly competition, and simplifies event coordination for GDG on Campus — JISU and similar community initiatives.
 
-Why this exists
-- Provide a clear, at-a-glance ranking of participants based on measurable progress (badges, mini-games).
-- Recognize and motivate learners by showcasing completed work and milestones.
-- Help organizers monitor participation, celebrate top contributors, and identify learners who may need encouragement.
-- Offer simple filtering and search to focus on specific groups (e.g., completed, redeemed access codes).
+Purpose
 
-Key highlights
-- Public-facing and easy to share during events or on community channels.
-- Fast to deploy and view — no complex setup required for basic use.
-- Designed for clarity: ranks, badges, mini-games, redeemed codes, and completion status are emphasized.
-- Supports quick discovery (search) and focused views (filters) for common organizer needs.
+Provide an at-a-glance ranking of participants based on measurable progress, such as badges and mini-games.
 
-Intended audience
-- Community organizers running Cloud Skills or learning-based events.
-- Educators and mentors tracking cohort progress.
-- Participants seeking recognition and a summary of their achievements.
+Recognize and motivate learners by showcasing completed work and milestones.
 
-Privacy and data approach
-- Built to display only the essential public-facing progress indicators (names, counts, statuses).
-- Avoids exposing internal analytics or sensitive personal data.
-- Suitable for community-led, transparent sharing of learning progress.
+Help organizers monitor participation, celebrate top contributors, and identify learners who may need encouragement.
 
-Outcome
-- Encourage engagement through visibility and recognition.
-- Reduce administrative effort in tracking progress.
-- Foster a community-driven environment that highlights achievement and supports learners.
+Offer simple filtering and search to focus on specific groups (e.g., completed activities, redeemed access codes).
 
-> Thank You Samrat Talukdar for the initial idea and motivation behind this project!
+Key Highlights
+
+Public-facing and shareable during events or on community channels.
+
+Fast to deploy and view, requiring minimal setup for basic use.
+
+Clarity-focused design: emphasizes ranks, badges, mini-games, redeemed codes, and completion status.
+
+Supports quick discovery and focused views through search and filters for common organizer needs.
+
+Intended Audience
+
+Community organizers running Cloud Skills or learning-based events.
+
+Educators and mentors tracking cohort progress.
+
+Participants seeking recognition and a summary of their achievements.
+
+Privacy & Data Approach
+
+Displays only essential public-facing progress indicators (names, counts, statuses).
+
+Avoids exposing internal analytics or sensitive personal data.
+
+Suitable for community-led, transparent sharing of learning progress.
+
+Outcomes
+
+Encourage engagement through visibility and recognition.
+
+Reduce administrative effort in tracking progress.
+
+Foster a community-driven environment that highlights achievement and supports learners.
+
+Special thanks to Samrat Talukdar for the initial idea and motivation behind this project!
