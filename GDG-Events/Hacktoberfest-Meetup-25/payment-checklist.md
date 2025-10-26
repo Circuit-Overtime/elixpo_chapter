@@ -14,11 +14,12 @@
 
 | Self Paid Funding | Amount (INR) | Status |
 |-------------------|-------------:|--------|
-| Abhisekh             | 3,000        | Funding (Self Paid) Waiting to be refunded back |
+| Abhisekh             | 3,000 + 150       | Funding (Self Paid) Waiting to be refunded back |
 | Vivek             | 1,000        | Funding (Self Paid) Waiting to be refunded back |
 | Anwesha             | 1,000        | Funding (Self Paid Pending) |
 | Ayusman             | 140        | Funding (Self Paid) Waiting to be refunded back |
 | Abhishk Kushwaha             | 5,000        | Funding (Self Paid Pending) |
+| Abhishk              | 250        | Funding (Self Paid Pending) |
 
 ## Sponsor Funds Received
 
