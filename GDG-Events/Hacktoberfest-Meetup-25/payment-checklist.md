@@ -15,7 +15,7 @@
 | Self Paid Funding | Amount (INR) | Status |
 |-------------------|-------------:|--------|
 | Abhisekh             | 1,000        | Funding (Self Paid Pending) |
-| Vivek             | 1,000        | Funding (Self Paid Pending) |
+| Vivek             | 1,000        | Funding (Self Paid) Waiting to be refunded back |
 | Anwesha             | 1,000        | Funding (Self Paid Pending) |
 | Amit             | 1,000        | Funding (Self Paid Pending) |
 | Ayusman             | 140        | Funding for Pen (Self Paid Pending) |
