@@ -2,6 +2,9 @@
 import prisma from "@/lib/db";
 import { createTRPCRouter, protechedRoute } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
+import { ca } from "date-fns/locale";
+import { z } from "zod";
+
 let revalidatePath: (path: string) => Promise<void> = async () => {};
 (async () => {
   try {
@@ -16,8 +19,11 @@ let revalidatePath: (path: string) => Promise<void> = async () => {};
       };
     }
   }
+  catch (_) {
+    /* no-op */
+  }
 })();
-import { z } from "zod";
+
 
 // Define your template enum as a constant to reuse
 const TEMPLATES = ["REACT", "NEXTJS", "EXPRESS", "HONO", "ANGULAR", "VUE"] as const;
