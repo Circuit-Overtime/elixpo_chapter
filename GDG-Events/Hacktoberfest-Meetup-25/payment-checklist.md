@@ -12,13 +12,12 @@
 
 | Self Paid Funding | Amount (INR) | Status |
 |-------------------|-------------:|--------|
-| Abhisekh Gupta            | 3,000 + 150       | Funding (Self Paid) Waiting to be refunded back |
+| Abhisekh Gupta            | 3,000 + 400        | Funding (Self Paid) Waiting to be refunded back |
 | Vivek Yadav            | 1,000        | Funding (Self Paid) Waiting to be refunded back |
 | Anwesha Chakraborty            | 1,000        | Funding (Self Paid) Waiting to be refunded back |
 | Ayushman Bhattacharya             | 580       | Funding (Self Paid) Waiting to be refunded back |
 | Ayushman Bhattacharya             | 140       | Funding (Self Paid) Refunded Back |
 | Abhishek Kushwaha             | 5,000        | Funding (Self Paid) Waiting to be refunded back |
-| Abhisekh Gupta             | 250        | Funding (Self Paid) Waiting to be refunded back |
 | Vivek Yadav             | 250        | Funding (Self Paid) Waiting to be refunded back |
 
 ## Sponsor Funds Received
