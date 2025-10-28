@@ -2,7 +2,21 @@
 import prisma from "@/lib/db";
 import { createTRPCRouter, protechedRoute } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
-import { revalidatePath } from "next/cache";
+let revalidatePath: (path: string) => Promise<void> = async () => {};
+(async () => {
+  try {
+    const mod = await import("next/cache");
+    if (typeof mod.revalidatePath === "function") {
+      revalidatePath = async (path: string) => {
+        try {
+          mod.revalidatePath(path);
+        } catch (_) {
+          /* no-op */
+        }
+      };
+    }
+  }
+})();
 import { z } from "zod";
 
 // Define your template enum as a constant to reuse
