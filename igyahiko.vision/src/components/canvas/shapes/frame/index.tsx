@@ -56,7 +56,7 @@ export const Frame = ({
         <LiquidGlassButton
           size="sm"
           variant="subtle"
-          onClick={handleGenerateDesign}
+          onClick={() => console.log('hello world clicked generate')}
           disabled={isGenerating}
           className={isGenerating ? "animate-pulse" : ""}
           style={{ pointerEvents: "auto" }}>

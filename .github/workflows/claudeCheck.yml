@@ -1,3 +1,4 @@
+
 name: Claude Code with Router
 
 on:
@@ -12,8 +13,8 @@ on:
   workflow_dispatch:
     inputs:
       prompt:
-        description: "You are a code reviewer. Provide specific instructions for code analysis, quality checks, security review, performance optimization suggestions, and best practices recommendations."
-        default: "Please review this code as an experienced code reviewer. Focus on: 1) Code quality and maintainability 2) Security vulnerabilities 3) Performance issues 4) Best practices adherence 5) Documentation completeness 6) Test coverage suggestions. Provide constructive feedback with specific examples and recommendations for improvement."
+        description: "Code reviewer prompt"
+        default: "Please review this code as an experienced reviewer. Focus on: 1) Code quality 2) Security vulnerabilities 3) Performance 4) Best practices 5) Documentation 6) Test coverage."
         required: false
         type: string
 
@@ -57,14 +58,19 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Cache Bun
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun
+          key: ${{ runner.os }}-bun-cache
+
       - name: Install Bun
         run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> $GITHUB_PATH
-        shell: bash
-
-      - name: Verify Bun Installation
-        run: ~/.bun/bin/bun --version
+          if ! command -v bun >/dev/null 2>&1; then
+            curl -fsSL https://bun.sh/install | bash
+            echo "$HOME/.bun/bin" >> $GITHUB_PATH
+          fi
+          bun --version
         shell: bash
 
       - name: Configure Claude Code Router
@@ -101,7 +107,8 @@ jobs:
         run: |
           echo "🚀 Starting Claude Code Router..."
           ~/.bun/bin/bunx @musistudio/claude-code-router@latest start > router.log 2>&1 &
-          echo "ROUTER_PID=$!" >> $GITHUB_ENV
+          ROUTER_PID=$!
+          echo "ROUTER_PID=$ROUTER_PID" >> $GITHUB_ENV
 
           echo "⏳ Waiting for router to start..."
           for i in {1..30}; do
@@ -111,6 +118,11 @@ jobs:
             fi
             echo "Attempt $i/30..."
             sleep 2
+            if [ $i -eq 30 ]; then
+              echo "❌ Router failed to start after 60s."
+              cat router.log || true
+              exit 1
+            fi
           done
         shell: bash
 
@@ -119,8 +131,8 @@ jobs:
           echo "🌐 Testing router endpoint..."
           curl -v http://localhost:3456/ || true
           echo ""
-          echo "Router logs (tail):"
-          tail -n 20 router.log || true
+          echo "Router logs (last 50 lines):"
+          tail -n 50 router.log || true
         shell: bash
 
       - name: Configure Git Identity
@@ -131,7 +143,6 @@ jobs:
 
       - name: Run Claude Code
         id: claude
-        continue-on-error: true
         uses: anthropics/claude-code-action@beta
         env:
           ANTHROPIC_BASE_URL: http://localhost:3456
@@ -145,8 +156,9 @@ jobs:
           echo "Claude Code exit status: ${{ steps.claude.outcome }}"
           if [ "${{ steps.claude.outcome }}" != "success" ]; then
             echo "❌ Claude Code failed."
-            echo "Router logs:"
-            cat router.log || true
+            echo "Router logs (last 100 lines):"
+            tail -n 100 router.log || true
+            exit 1
           else
             echo "✅ Claude Code executed successfully!"
           fi
