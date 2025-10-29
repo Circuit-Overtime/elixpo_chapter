@@ -13,13 +13,13 @@
 | Self Paid Funding | Amount (INR) | Status |
 |-------------------|-------------:|--------|
 | Abhisekh Gupta            | 3,000 + 400        | Funding (Self Paid) Waiting to be refunded back |
-| Vivek Yadav            | 1,000        | Funding (Self Paid) Waiting to be refunded back |
-| Anwesha Chakraborty            | 1,000        | Funding (Self Paid) Waiting to be refunded back |
-| Ayushman Bhattacharya             | 580       | Funding (Self Paid) Waiting to be refunded back |
-| Ayushman Bhattacharya             | 140       | Funding (Self Paid) Refunded Back |
-| Abhishek Kushwaha             | 5,000        | Funding (Self Paid) Waiting to be refunded back |
-| Vivek Yadav             | 250        | Funding (Self Paid) Waiting to be refunded back |
+| Vivek Yadav + Anwesha Chakraborty           | 2,250        | Funding (Self Paid) Waiting to be refunded back (gpay + cash + print) |
+| Ayushman Bhattacharya             | 580       | Funding (Self Paid) Waiting to be refunded back (paid to shinjan for prints at serampore) |
+| Ayushman Bhattacharya             | 140       | Funding (Self Paid) Already Refunded Back (for pens) |
+| Abhishek Kushwaha             | 5,000        | Funding (Self Paid) Waiting to be refunded back (1/2 price to mio amore) |
 
+### Total Pending (others):- 3400 + 5000 + 2250 = 10,650 INR
+### Extra Cost:- 2500 INR (paid by abhishek kushwaha for extra out of budget snacks at event ==> 50 * 50 INR)
 ## Sponsor Funds Received
 
 | Sponsor Details | Amount (INR) | Status |
