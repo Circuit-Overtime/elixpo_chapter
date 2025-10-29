@@ -19,6 +19,7 @@
 | Abhishek Kushwaha             | 5,000        | Funding (Self Paid) Waiting to be refunded back (1/2 price to mio amore) |
 
 ### Total Pending (others):- 3400 + 5000 + 2250 = 10,650 INR
+### Total Pending (myself):- 580 INR
 ### Extra Cost:- 2500 INR (paid by abhishek kushwaha for extra out of budget snacks at event ==> 50 * 50 INR)
 ## Sponsor Funds Received
 
