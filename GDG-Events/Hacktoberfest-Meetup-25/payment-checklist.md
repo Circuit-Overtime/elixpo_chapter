@@ -22,6 +22,7 @@
 ### Total Pending (myself):- 580 INR
 ### Extra Cost:- 2500 INR (paid by abhishek kushwaha for extra out of budget snacks at event ==> 50 * 50 INR) 
 > [from this 2500 INR only 1500 INR was needed -- so 1000 INR will be paid back by Ayushman Bhattacharya to Abhishek Khuswaha later as a balance]
+### Total Pending (balance):- 1000 INR [abhishek kushwaha from ayushman bhattacharya]
 ## Sponsor Funds Received
 
 | Sponsor Details | Amount (INR) | Status |
