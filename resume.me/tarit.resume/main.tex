@@ -1,0 +1,297 @@
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\usepackage{fontawesome5}
+\usepackage{multicol}
+\usepackage{fontawesome5}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{makecell}
+
+
+\setlength{\multicolsep}{-3.0pt}
+\setlength{\columnsep}{-1pt}
+\input{glyphtounicode}
+\usepackage[margin=1.4cm]{geometry}
+
+\pagestyle{fancy}
+\fancyhf{} 
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\urlstyle{same}
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+\setlength{\footskip}{12pt}
+
+
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large\bfseries
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+
+\pdfgentounicode=1
+
+
+\newcommand{\resumeItem}[1]{\item\small{{#1 \vspace{0pt}}}}
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{1.0\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & \textbf{\small #2} \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{1.001\textwidth}{l@{\extracolsep{\fill}}r}
+      \parbox[t]{0.8\textwidth}{\small #1} & \textbf{\small #2}\\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.0in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}\vspace{0pt}}
+
+\begin{document}
+
+\begin{center}
+    {\Large \scshape Ayushman Bhattacharya} \\[2mm]
+    \faPhone\ 8617755083 ~ 
+    \faEnvelope\ \href{mailto:ayushbhatt633@gmail.com}{ayushbhatt633@gmail.com} ~ 
+    \faLinkedin\ \href{https://linkedin.com/in/elixpo}{linkedin.com/in/elixpo} ~
+    \faGithub\ \href{https://github.com/Circuit-Overtime}{github.com/Circuit-Overtime} ~
+    \faGlobe\ \href{https://elixpo.com}{elixpo.com}
+    \vspace{-8pt}
+\end{center}
+
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {JIS University}{2023 -- Present}
+      {B.Tech Computer Science, GPA: 9.6}{Kolkata, India}
+    \resumeSubheading
+      {TIGPSH}{2021 -- 2023}
+      {Science (PCM), 90\%}{Kolkata, India}
+    \resumeSubheading
+      {TIGPSH}{2009 -- 2020}
+      {General, 95\%}{Kolkata, India}
+  \resumeSubHeadingListEnd
+
+\section{Experience}
+  \resumeSubHeadingListStart
+
+    \resumeSubheading{GDG JISU}{2024 -- 2025}{Web Dev Associate}{Kolkata, India}
+    \resumeItemListStart
+      \resumeItem{Worked on web solutions and community projects under GDG JIS University.}
+    \resumeItemListEnd
+
+        \resumeSubheading{Machine Learning \& Devops Engineer}{2023 -- Present}{Research \& Contributions}{Remote/Berlin}
+    \resumeItemListStart
+      \resumeItem{Contributed ML models and collaborated on an OSS Pollinations!}
+    \resumeItemListEnd
+
+    \resumeSubheading{Modrinth}{2023}{Mod Developer}{Remote}
+    \resumeItemListStart
+      \resumeItem{Developed Minecraft Mods using Java Fabric API.}
+    \resumeItemListEnd
+
+    \resumeSubheading{Discord}{2024 - Present}{Bot Developer}{Remote}
+    \resumeItemListStart
+      \resumeItem{Built and deployed a Discord bot for real-time image generation.}
+    \resumeItemListEnd
+
+        \resumeSubheading{OSCI Mentor}{2025}{Mentor}{Remote}
+    \resumeItemListStart
+      \resumeItem{Mentored open-source contributors during OSCI 2025.}
+    \resumeItemListEnd
+
+        \resumeSubheading{GSSOC Mentor}{2025}{Mentor}{Remote}
+    \resumeItemListStart
+      \resumeItem{Mentored open-source contributors during GSSOC 2025.}
+    \resumeItemListEnd
+
+    \resumeSubheading{OSCI Mentor}{2025}{Mentor}{Remote}
+    \resumeItemListStart
+      \resumeItem{Mentored open-source contributors during OSCI 2025.}
+    \resumeItemListEnd
+
+    \resumeSubheading{GDG Campus Organiser}{2025}{Campus Lead}{Remote}
+    \resumeItemListStart
+      \resumeItem{Became the GDG on Campus organiser for JIS University.}
+    \resumeItemListEnd
+    \resumeSubHeadingListEnd
+
+\section{Projects}
+  \resumeSubHeadingListStart
+    \resumeProjectHeading{\textbf{Elixpo Art} | \emph{\href{https://elixpo.com}{Website}}}{2023}
+    \resumeItemListStart
+      \resumeItem{Web interface for AI art generation.}
+    \resumeItemListEnd
+
+    \resumeSubheading{Full Stack Notes Application}{2023}{Personal Project}{Remote}
+    \resumeItemListStart
+      \resumeItem{Developed a full-stack notes application using Vanilla JS}
+    \resumeItemListEnd
+
+    \resumeSubheading{Full Stack Chat Application}{2023}{Personal Project}{Remote}
+    \resumeItemListStart
+      \resumeItem{Developed a full-stack chat application using Vanilla JS}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{Elixpo Discord Bot}}{2024}
+    \resumeItemListStart
+      \resumeItem{Discord.js bot for real-time AI image generation.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{Cypher}}{2024}
+    \resumeItemListStart
+      \resumeItem{AES-based encrypted password manager.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{8-Bit Computer CPU} | \href{https://github.com/Circuit-Overtime/8Bit-Computer-Programs}{GitHub}}{2024}
+    \resumeItemListStart
+      \resumeItem{RISC-V based breadboard CPU.}
+    \resumeItemListEnd
+
+    \resumeSubheading{Full Stack Blogging Website}{2025}{Personal Project}{Remote}
+    \resumeItemListStart
+      \resumeItem{Developed a full-stack blogging website using Vanilla JS}
+    \resumeItemListEnd
+
+    \resumeSubheading{Python Text to Speech service}{2025}{Personal Project}{Remote}
+    \resumeItemListStart
+      \resumeItem{Developed a Python Text to Speech service using Flask and built a custom HIGGS TTS model for natural inference.s}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{Image Compression Algorithm} | \href{https://github.com/Circuit-Overtime/Image_Compression}{GitHub}}{2025}
+    \resumeItemListStart
+      \resumeItem{Comparative study on compression algorithms.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{Elixpo Search} | \href{https://github.com/Circuit-Overtime/elixpo-search-agent}{GitHub}}{2025}
+    \resumeItemListStart
+      \resumeItem{LangChain-supported semantic search schema.}
+    \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+\section{Leadership \& Volunteering}
+  \resumeSubHeadingListStart
+    \resumeProjectHeading{\textbf{Google Developer Groups (GDG)} | \emph{On Campus Organizer}}{Aug 2025 -- Present}
+    \resumeItemListStart
+      \resumeItem{Leading GDG on Campus community events, developer workshops, and hackathons.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{GirlScript Summer of Code (GSSoC)} | \emph{Mentor}}{2025}
+    \resumeItemListStart
+      \resumeItem{Guided open-source contributors during GSSoC 2025.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{Open Source Connect India} | \emph{Mentor}}{Jul 2025}
+    \resumeItemListStart
+      \resumeItem{Mentored contributors in OSS projects.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{Hexafalls Hackathon} | \emph{Community Manager}}{2025}
+    \resumeItemListStart
+      \resumeItem{Organized and managed hackathon events.}
+    \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+%-----------SKILLS-----------
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+     \textbf{Languages}{: Python, Java, Go, SQL, C, HTML5, CSS, JavaScript, VHDL} \\[1mm]
+     \textbf{Developer Tools}{: AWS, Azure, Docker, Jira, Git, Postman, PowerBI, Kubernetes} \\[1mm]
+     \textbf{Libraries/Frameworks}{: ReactJS, NextJS, VueJS, NodeJS, Spring Boot, PostgreSQL, LangChain} \\[1mm]
+     \textbf{Domains}{: Full Stack Development, MLOps, DevOps, Low-level Programming, System Design}
+    }}
+ \end{itemize}
+
+\section{Awards}
+  \resumeSubHeadingListStart
+    \resumeProjectHeading{\textbf{Gold SOF NCO}}{2019}
+    \resumeItemListStart
+      \resumeItem{Awarded Gold medal in SOF National Cyber Olympiad.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{LSA exe.BIT Runners}}{2020}
+    \resumeItemListStart
+      \resumeItem{Secured runner-up position at exe.BIT, Laxmipat Singhania Academy.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{Techverse 2.0 Winner}}{2023}
+    \resumeItemListStart
+      \resumeItem{Winner at GNIT Techverse 2.0.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{Techverse 3.0 Winner}}{2024}
+    \resumeItemListStart
+      \resumeItem{Winner at GNIT Techverse 3.0.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{3rd, 2nd SOF NCO}}{2014, 2018}
+    \resumeItemListStart
+      \resumeItem{Secured 3rd and 2nd positions in SOF National Cyber Olympiad.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{Java Programming CBT}}{2025}
+    \resumeItemListStart
+      \resumeItem{Completed NPTEL Java Programming Computer Based Training.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{Hacktoberfest OSS}}{2024}
+    \resumeItemListStart
+      \resumeItem{Contributed to open-source projects during Hacktoberfest.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading{\textbf{Hackathon Codecrafters Domain Winner}}{2023}
+    \resumeItemListStart
+      \resumeItem{Domain winner at IEM Codecrafters Hackathon.}
+    \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+
+\section{Publications}
+  \resumeSubHeadingListStart
+
+    \resumeProjectHeading
+      {\makecell[l]{\textbf{Predictive Analysis of Autism Spectrum Disorder (ASD) Traits:} \\
+       \textbf{Integrating Supervised Machine Learning and Exploratory Data Insights} \,|\, \emph{Preprint}}}
+      {2025}
+    \resumeItemListStart
+      \resumeItem{Applied supervised ML and data analysis to ASD trait prediction.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading
+      {\textbf{Decoding the Vulnerabilities of Large AI Models: Practical Demonstrations and Defensive Strategies Against Poisoning, Extraction, and Prompt Injection Attacks} \,|\, \emph{Preprint}}
+      {2025}
+    \resumeItemListStart
+      \resumeItem{Analyzed and demonstrated attacks on large AI models with defensive strategies.}
+    \resumeItemListEnd
+
+    \resumeProjectHeading
+      {\textbf{Exploring Microcode CPU Instructions with RISC 8 Bit Breadboard Computer} \,|\, \emph{International Journal of Enhanced Research in Science Research and Engineering}}
+      {2025}
+    \resumeItemListStart
+      \resumeItem{Published research on microcode CPU instructions using a RISC 8-bit breadboard computer.}
+    \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+
+\end{document}
