@@ -23,6 +23,14 @@
 ### Extra Cost:- 2500 INR (paid by abhishek kushwaha for extra out of budget snacks at event ==> 50 * 50 INR) 
 > [from this 2500 INR only 1500 INR was needed -- so 1000 INR will be paid back by Ayushman Bhattacharya to Abhishek Khuswaha later as a balance]
 ### Total Pending (balance):- 1000 INR [abhishek kushwaha from ayushman bhattacharya]
+
+### Total Amount To be Paid Back:- 3400 + 5000 + 2250 + 1000 = 11,650 INR
+### Total Amount To be Paid Back (myself):- 580 INR + 500 INR = 1,080 INR
+### Remaining Balance after all Payouts = 15895.27 INR (from pollinations sponsor) - 12730 INR (to be paid back) = 3165.27 INR
+
+
+
+
 ## Sponsor Funds Received
 
 | Sponsor Details | Amount (INR) | Status |
