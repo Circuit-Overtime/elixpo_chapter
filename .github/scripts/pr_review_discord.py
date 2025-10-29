@@ -367,8 +367,8 @@ def main():
     print("🚀 Starting PR Review & Comment Generator...")
     
     # Get environment variables
-    github_token = get_env('GITHUB_TOKEN')
-    pollinations_token = get_env('POLLINATIONS_TOKEN') or get_env('POLLINATIONS_TOKEN_DCPRS', required=False)
+    github_token = get_env('PAT_TOKEN')
+    pollinations_token = get_env('POLLI_PAT') or get_env('POLLI_PAT', required=False)
     if not pollinations_token:
         print("⚠️ Warning: Pollinations token not found, skipping Discord announcement")
         pollinations_token = None
