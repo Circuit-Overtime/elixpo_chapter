@@ -45,6 +45,13 @@ async function loadData() {
         console.error('Error loading data:', error);
         showLoading(false);
         showEmptyState(true);
+        emptyState.innerHTML = `
+            <div>
+                <strong>Sorry, Data hasn't updated yet!.</strong>
+                <br>
+                Please try again later.
+            </div>
+        `;
     }
 }
 
@@ -78,11 +85,6 @@ function parseCSV(csvText) {
         let userName = values[0]?.trim() || 'Unknown';
         const userEmail = values[1]?.trim() || '';
         const profileUrl = values[2]?.trim() || '';
-        if (userName === 'gdg.nit@gmail.com') {
-            userName = 'Suman Jash';
-        } else if (userName === 'https://www.cloudskillsboost.google/public_profiles/d1b5eca9-3675-41a9-bf18-b995d8622d29') {
-            userName = 'Mohd Faraz';
-        }
         const user = {
             name: userName,
             email: userEmail,
@@ -353,3 +355,7 @@ window.leaderboardApp = {
     loadData,
     renderLeaderboard
 };
+
+document.getElementById("homeRedirect").addEventListener("click", function() {
+    redirectTo("");
+});
