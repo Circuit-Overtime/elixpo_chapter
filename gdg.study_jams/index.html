@@ -4,112 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="A community-driven leaderboard for the GDG on Campus - JISU, Agarpara Cloud Skills Challenge.">
-    <title>GDG Cloud Skills Leaderboard</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Google Study Jams 2025 Leaderboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <link rel="icon" type="image/x-icon" href="https://media.licdn.com/dms/image/v2/C4D0BAQHrcZnq9pTxJQ/company-logo_100_100/company-logo_100_100/0/1659965576912?e=1762992000&v=beta&t=i1UVNnf2Vj-174BrIV22WDG1sSFVHlxdjQosmYeJ_4Y">
-    <link rel="stylesheet" href="CSS/style.css">
-    
-    <script src="JS/script.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/x-icon" href="https://res.cloudinary.com/startup-grind/image/upload/c_fill,dpr_2,f_auto,g_center,q_auto:good/v1/gcs/platform-data-goog/contentbuilder/GDG_Bevy_DefaultChapterThumbnail_5oO1cMY.png">
 </head>
-<body>
-    <div class="app">
-        <header class="header">
-            <div class="container">
-                <div class="header-content">
-                    <div class="brand">
-                        <img src="https://media.licdn.com/dms/image/v2/C4D0BAQHrcZnq9pTxJQ/company-logo_100_100/company-logo_100_100/0/1659965576912?e=1762992000&v=beta&t=i1UVNnf2Vj-174BrIV22WDG1sSFVHlxdjQosmYeJ_4Y" alt="GDG Logo" class="brand-icon">
-                        <div class="brand-text">
-                            <h1>Cloud Skills Leaderboard</h1>
-                            <p>GDG on Campus - JISU, Agarpara</p>
-                            <p class="last-updated">Last updated: <span id="lastUpdated"></span></p>
-                        </div>
-                    </div>
-                    
-                    <ul class="header-stats">
-                        <li class="stat-item">
-                            <span class="stat-number" id="totalUsers">0</span>
-                            <span class="stat-label">Participants</span>
-                        </li>
-                        <li class="stat-item">
-                            <span class="stat-number" id="completedUsers">0</span>
-                            <span class="stat-label">Completed</span>
-                        </li>
-                    </ul>
-                </div>
+
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex flex-col">
+    <header class="py-8 text-center">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-indigo-700 mb-2">Google Study Jams 2025</h1>
+        <p class="text-lg md:text-xl text-gray-600">Leaderboard Portal</p>
+    </header>
+    <main class="flex-grow flex items-center justify-center">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-3xl px-6">
+            <div class="cursor-pointer group bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center transition transform hover:-translate-y-2 hover:shadow-2xl hover:bg-indigo-50" id="gnitTile">
+                <img src="https://upload.wikimedia.org/wikipedia/en/c/c1/GNIT_Kolkata_logo.png" alt="GNIT Logo" class="w-20 h-20 mb-4 rounded-full border-4 border-indigo-200 group-hover:border-indigo-400 transition">
+                <h2 class="text-2xl font-bold text-indigo-800 mb-2 group-hover:text-indigo-600 transition">GNIT Leaderboard</h2>
+                <p class="text-gray-500 text-center">View the leaderboard for Guru Nanak Institute of Technology participants.</p>
             </div>
-        </header>
-
-        <main class="main">
-            <div class="container">
-                <div class="controls">
-                    <form class="search-form" role="search" onsubmit="return false;">
-                        <label for="searchInput" class="sr-only">Search participants</label>
-                        <div class="search-wrapper">
-                            <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
-                                <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            <input
-                                type="search" 
-                                id="searchInput"
-                                class="search-input"
-                                placeholder="Search participants..."
-                                autocomplete="off"
-                            >
-                        </div>
-                    </form>
-                    
-                    <div class="filter-group" role="group" aria-label="Leaderboard filters">
-                        <button class="filter-btn active" data-filter="all">
-                            All
-                        </button>
-                        <button class="filter-btn" data-filter="completed" id="filterToggle">
-                            Completed <span class="filter-count" id="completedCount">0</span>
-                        </button>
-                        <button class="filter-btn" data-filter="redeemed">
-                            Redeemed <span class="filter-count" id="redeemedCount">0</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="leaderboard">
-                    <div id="loadingState" class="loading" role="status" aria-live="polite">
-                        <div class="loader"></div>
-                        <p>Loading leaderboard...</p>
-                    </div>
-
-                    <div id="emptyState" class="empty" style="display: none;" role="status" aria-live="polite">
-                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" role="img" aria-labelledby="emptyIconTitle" focusable="false">
-                            <title id="emptyIconTitle">Sad face icon</title>
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                            <path d="M8 15h8M9 9h.01M15 9h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                        <p>No participants found</p>
-                    </div>
-
-                    <div class="table-wrapper">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th class="th-rank" scope="col">Rank</th>
-                                    <th class="th-name" scope="col">Participant</th>
-                                    <th class="th-center" scope="col">Badges</th>
-                                    <th class="th-center" scope="col">Games</th>
-                                    <th class="th-center" scope="col">Redeemed</th>
-                                    <th class="th-status" scope="col">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leaderboardBody">
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div  class="cursor-pointer group bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center transition transform hover:-translate-y-2 hover:shadow-2xl hover:bg-indigo-50" id="jisuTile">
+                <img src="https://www.jisuniversity.ac.in/images/logo.png" alt="JISU Logo" class="w-20 h-20 mb-4 rounded-full border-4 border-indigo-200 group-hover:border-indigo-400 transition">
+                <h2 class="text-2xl font-bold text-indigo-800 mb-2 group-hover:text-indigo-600 transition">JISU Leaderboard</h2>
+                <p class="text-gray-500 text-center">View the leaderboard for JIS University participants.</p>
             </div>
-        </main>
-    </div>
+        </div>
+    </main>
+    <footer class="py-6 text-center text-gray-400 text-sm">
+        &copy; 2025 Google Study Jams. All rights reserved.
+    </footer>
+   
 </body>
+<script src="JS/linkRedirect.js"></script>
+<script src="JS/general.js"></script>
 </html>

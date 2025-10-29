@@ -2,7 +2,7 @@ import csv
 import pandas as pd
 from blackListEmails import cancelledList
 def getData():
-    df = pd.read_csv("data/data.csv")
+    df = pd.read_csv("data/jisu/data.csv")
     return df 
 
 
