@@ -8,6 +8,8 @@
 | Pens                 | 140          | Paid |
 | Misc                 | 1,000        | Cancelled out |
 
+--- 
+
 ## Self Paid Funding Pending
 
 | Self Paid Funding | Amount (INR) | Status |
@@ -28,7 +30,7 @@
 ### Total Amount To be Paid Back (myself):- 580 INR + 500 INR = 1,080 INR
 ### Remaining Balance after all Payouts = 15895.27 INR (from pollinations sponsor) - 12730 INR (to be paid back) = 3165.27 INR
 
-
+---
 
 
 ## Sponsor Funds Received
