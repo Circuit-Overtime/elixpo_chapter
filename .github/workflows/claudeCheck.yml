@@ -1,5 +1,4 @@
-
-name: Claude Code with Router
+Name: Claude Code with Router
 
 on:
   issue_comment:
@@ -20,38 +19,33 @@ on:
 
 jobs:
   claude:
+    # FIX 1: Removed hardcoded 'github.repository_owner == 'Circuit-Overtime''
+    # This now allows the workflow to run in any repository it's added to.
     if: |
-      github.repository_owner == 'Circuit-Overtime' &&
-      (
-        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-        github.event_name == 'workflow_dispatch' ||
-        (github.event_name == 'issues' && (github.event.action == 'opened' || github.event.action == 'labeled')) ||
-        (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
-      )
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issues' && (github.event.action == 'opened' || github.event.action == 'labeled')) ||
+      (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
 
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
+    # FIX 2: Reduced permissions to the principle of least privilege.
+    # Removed dangerous and unnecessary permissions like id-token, packages, deployments, etc.
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      statuses: write
-      checks: write
-      discussions: write
-      id-token: write
-      actions: read
-      packages: write
-      deployments: write
-      security-events: write
+      contents: write       # Needed for checkout and for Claude to apply patches
+      pull-requests: write  # Needed for Claude to comment on PRs
+      issues: write         # Needed for Claude to comment on issues
+      statuses: write       # Needed for Claude to update commit statuses
+      checks: write         # Needed for Claude to create review checks
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # No token needed here; it will use the job's GITHUB_TOKEN by default
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -76,7 +70,8 @@ jobs:
       - name: Configure Claude Code Router
         run: |
           mkdir -p $HOME/.claude-code-router
-          cat > $HOME/.claude-code-router/config.json << 'EOF'
+          # FIX 3: Removed single quotes from 'EOF' to allow shell variable expansion
+          cat > $HOME/.claude-code-router/config.json << EOF
           {
             "LOG": true,
             "NON_INTERACTIVE_MODE": true,
@@ -146,9 +141,9 @@ jobs:
         uses: anthropics/claude-code-action@beta
         env:
           ANTHROPIC_BASE_URL: http://localhost:3456
-          ANTHROPIC_API_KEY: "router-bypass"
+          ANTHROPIC_API_KEY: "router-bypass" # This is correct, the action talks to the router
         with:
-          anthropic_api_key: "router-bypass"
+          anthropic_api_key: "router-bypass" # This is also correct, for the same reason
 
       - name: Check Claude Code Result
         if: always()
