@@ -20,6 +20,7 @@ A huge thank you to all the amazing people who have contributed to this project!
 - Deepak. <seadeepie@gmail.com>
 - Dipanjan Sadhukhan <dipanjansadhukhan123@gmail.com>
 - GitHub Actions Bot <actions@github.com>
+- GitHub Actions Bot <github-actions[bot]@users.noreply.github.com>
 - IgYaHiko <subhrokolay2@gmail.com>
 - Ishita Majumdar <129363202+Ishita0807@users.noreply.github.com>
 - Ishita Majumdar <majumdar.ishita2003@gmail.com>
