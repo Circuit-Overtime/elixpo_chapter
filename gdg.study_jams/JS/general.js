@@ -11,3 +11,6 @@ document.getElementById("snuTile").addEventListener("click", function() {
 document.getElementById("tmslTile").addEventListener("click", function() {
     redirectTo("tmsl/");
 });
+document.getElementById("nsecTile").addEventListener("click", function() {
+    redirectTo("nsec/");
+});
