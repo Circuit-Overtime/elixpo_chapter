@@ -22,21 +22,25 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadData() {
     try {
         showLoading(true);
-        const csvUrl = 'https://raw.githubusercontent.com/Circuit-Overtime/gdg.jisu/refs/heads/main/data/jisu/data.csv';
+        const csvUrl = '/../data/jisu/data.csv';
         const csvResponse = await fetch(csvUrl);
         if (!csvResponse.ok) throw new Error(`CSV fetch failed: ${csvResponse.status}`);
         const csvText = await csvResponse.text();
-        console.log('Loaded CSV from raw.githubusercontent.com');
+        console.log('Loaded CSV from local file');
 
         allUsers = parseCSV(csvText);
         processUsers();
         updateStats();
         renderLeaderboard(allUsers);
         try {
-            const commitDate = await fetchLastCommitDate('Circuit-Overtime', 'gdg.jisu', 'data/jisu/data.csv', 'main');
-            updateLastUpdated(commitDate);
+            const lastModified = csvResponse.headers.get('last-modified');
+            if (lastModified) {
+                updateLastUpdated(new Date(lastModified));
+            } else {
+                updateLastUpdated();
+            }
         } catch (err) {
-            console.warn('Could not fetch last commit date:', err);
+            console.warn('Could not fetch file metadata:', err);
             updateLastUpdated(); 
         }
 

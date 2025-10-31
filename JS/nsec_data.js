@@ -33,10 +33,15 @@ async function loadData() {
         updateStats();
         renderLeaderboard(allUsers);
         try {
-            const commitDate = await fetchLastCommitDate('Circuit-Overtime', 'gdg.jisu', 'data/nsec/data.csv', 'main');
-            updateLastUpdated(commitDate);
+            // Get last modified time from response headers
+            const lastModified = csvResponse.headers.get('last-modified');
+            if (lastModified) {
+                updateLastUpdated(new Date(lastModified));
+            } else {
+                updateLastUpdated();
+            }
         } catch (err) {
-            console.warn('Could not fetch last commit date:', err);
+            console.warn('Could not fetch file metadata:', err);
             updateLastUpdated(); 
         }
 
@@ -55,23 +60,6 @@ async function loadData() {
     }
 }
 
-async function fetchLastCommitDate(owner, repo, path, branch = 'main') {
-    const url = `https://api.github.com/repos/${owner}/${repo}/commits?path=${encodeURIComponent(path)}&sha=${encodeURIComponent(branch)}&per_page=1`;
-    const res = await fetch(url);
-    if (!res.ok) {
-        throw new Error(`GitHub API responded with ${res.status}`);
-    }
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) {
-        throw new Error('No commits found for file');
-    }
-    const commit = data[0];
-    const dateStr = commit.commit?.author?.date || commit.commit?.committer?.date;
-    if (!dateStr) {
-        throw new Error('Commit date not found in response');
-    }
-    return new Date(dateStr);
-}
 
 function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
