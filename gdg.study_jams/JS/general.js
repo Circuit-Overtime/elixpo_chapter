@@ -1,16 +1,16 @@
 document.getElementById("gnitTile").addEventListener("click", function() {
-    redirectTo("gnit/");
+    redirectTo("chapter/gnit/");
 });
 
 document.getElementById("jisuTile").addEventListener("click", function() {
-    redirectTo("jisu/");
+    redirectTo("chapter/jisu/");
 });
 document.getElementById("snuTile").addEventListener("click", function() {
-    redirectTo("snu/");
+    redirectTo("chapter/snu/");
 });
 document.getElementById("tmslTile").addEventListener("click", function() {
-    redirectTo("tmsl/");
+    redirectTo("chapter/tmsl/");
 });
 document.getElementById("nsecTile").addEventListener("click", function() {
-    redirectTo("nsec/");
+    redirectTo("chapter/nsec/");
 });
