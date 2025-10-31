@@ -22,11 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadData() {
     try {
         showLoading(true);
-        const csvUrl = 'https://raw.githubusercontent.com/Circuit-Overtime/gdg.jisu/refs/heads/main/data/nsec/data.csv';
+        const csvUrl = '/../data/nsec/data.csv';
         const csvResponse = await fetch(csvUrl);
         if (!csvResponse.ok) throw new Error(`CSV fetch failed: ${csvResponse.status}`);
         const csvText = await csvResponse.text();
-        console.log('Loaded CSV from raw.githubusercontent.com');
+        console.log('Loaded CSV from local file');
 
         allUsers = parseCSV(csvText);
         processUsers();
