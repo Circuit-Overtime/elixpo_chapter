@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Poppins, Montserrat_Alternates } from "next/font/google";
+import { Geist_Mono, Montserrat_Alternates } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/theme/provider";
 import { Toaster } from "sonner";
@@ -15,11 +15,11 @@ const montserratAlternates = Montserrat_Alternates({
   weight: "400"
 });
 
-const poppins = Poppins({
+/* const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"], // choose what you need
   variable: "--font-poppins",
-});
+}); */
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -45,7 +45,7 @@ export default async function RootLayout({
        <html lang="en" className="dark bg-background" suppressHydrationWarning>
       <body
       
-        className={`${poppins.variable} ${montserratAlternates.variable} ${geistMono.variable} antialiased`}
+        className={`${montserratAlternates.variable} ${geistMono.variable} antialiased`}
       >
        <ConvexClientProvider>
         <ThemeProvider

@@ -2,6 +2,8 @@ import { FrameShape } from "@/redux/slices/shapes/index";
 import { LiquidGlassButton } from "@/components/button/liquidglassbtn/liquid-glass-btn";
 import { Brush, Palette, SparklesIcon } from "lucide-react";
 import { useCanvas } from "@/hooks/use-canvas";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 
 export const Frame = ({
@@ -45,24 +47,37 @@ export const Frame = ({
         onClick={(e) => {
           e.stopPropagation();
         }}>
-        <LiquidGlassButton
-          size="sm"
-          variant="subtle"
+        
+         <Button
           onClick={toggleInspiration}
-          style={{ pointerEvents: "auto" }}>
+         disabled={isGenerating}
+         size={'sm'}
+         className={cn(
+          isGenerating ? 'animate-pulse' : "",
+          'font-mono rounded-full cursor-pointer border bg-white/5  border-white/10 hover:bg-white/10 text-white/90 text-xs' 
+         )}
+         variant={'secondary'}
+         
+        >
           <Palette size={12} />
           Inspiration
-        </LiquidGlassButton>
-        <LiquidGlassButton
-          size="sm"
-          variant="subtle"
-          onClick={handleGenerateDesign}
-          disabled={isGenerating}
-          className={isGenerating ? "animate-pulse" : ""}
-          style={{ pointerEvents: "auto" }}>
-          <SparklesIcon size={12} className={isGenerating ? "fill-amber-400" : ""} />
-          {isGenerating ? "Generating..." : "Generate"}
-        </LiquidGlassButton>
+        </Button>
+        <Button
+        onClick={handleGenerateDesign}
+        
+         size={'sm'}
+         className={cn(
+          isGenerating ? 'animate-pulse' : "",
+          'font-mono rounded-full cursor-pointer border bg-white/5  border-white/10 hover:bg-white/10 text-white/90 text-xs'
+         )}
+         variant={'secondary'}
+         
+        >
+           <SparklesIcon size={12} className={isGenerating ? "fill-amber-400" : "fill-amber-500"} />
+          {
+            isGenerating ? "Generating.." : "Generate"
+          }
+        </Button>
       </div>
     </>
   );
