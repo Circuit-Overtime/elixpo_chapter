@@ -645,21 +645,37 @@ const finalizeDrawingIfAny = useCallback((): void => {
     onPointerUp(e)
   }, [onPointerUp])
 
-  const onKeyDown = useCallback((e: KeyboardEvent): void => {
-    if((e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) {
-      e.preventDefault()
-      isSpacePressed.current = true
-      dispatcher(handToolEnable())
-    }
-  }, [dispatcher])
+ const onKeyDown = useCallback((e: KeyboardEvent): void => {
+  const activeElement = document.activeElement as HTMLElement | null;
+  
+  // ✅ If user is typing in an input or textarea, don't block space
+  if (activeElement && 
+     (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable)) {
+    return;
+  }
 
-  const onKeyUp = useCallback((e: KeyboardEvent): void => {
-    if(e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-      e.preventDefault()
-      isSpacePressed.current = false // ← FIXED
-      dispatcher(handToolDisable())
-    }
-  }, [dispatcher])
+  if ((e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) {
+    e.preventDefault()
+    isSpacePressed.current = true
+    dispatcher(handToolEnable())
+  }
+}, [dispatcher])
+
+const onKeyUp = useCallback((e: KeyboardEvent): void => {
+  const activeElement = document.activeElement as HTMLElement | null;
+  
+  if (activeElement && 
+     (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable)) {
+    return;
+  }
+
+  if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+    e.preventDefault()
+    isSpacePressed.current = false
+    dispatcher(handToolDisable())
+  }
+}, [dispatcher])
+
 
   useEffect(() => {
     document.addEventListener('keydown', onKeyDown)
