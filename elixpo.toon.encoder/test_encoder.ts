@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { encodeValue } from './encode/encoders.ts';
-import users from './dummy.json' assert { type: 'json' };
+import users from './dummy_wt_nest.json' assert { type: 'json' };
 
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import { encode } from 'punycode';
 
 dotenv.config();
 const polliToken = process.env.polli_token;
@@ -20,7 +21,7 @@ async function sendPayload() {
       },
       {
         role: "user",
-        content: `Tell me something about David Brown from the data -- ${encodeValue(users , { indent: 2, delimiter: ',', lengthMarker: false })}`,
+        content: `Tell me something about David Brown from the data -- ${JSON.stringify(users)}`,
       },
     ],
     model: "openai",
@@ -34,7 +35,7 @@ async function sendPayload() {
     response_format: {
       type: "text",
     },
-    seed: 0,
+    seed: 42,
     stop: "",
     stream: false,
     stream_options: {
