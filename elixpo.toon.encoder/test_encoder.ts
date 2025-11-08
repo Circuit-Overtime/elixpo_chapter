@@ -1,6 +1,7 @@
-import fs from 'file-sync';
+import fs from 'fs';
 import path from 'path';
 import { encodeValue } from './encode/encoders.ts';
+import users from './dummy.json' assert { type: 'json' };
 
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
@@ -20,7 +21,7 @@ async function sendPayload() {
       },
       {
         role: "user",
-        content: `${encodeToon(dummyData)}`,
+        content: `${encodeValue(users , { indent: 2, delimiter: ',', lengthMarker: false })}`,
       },
     ],
     model: "openai",
