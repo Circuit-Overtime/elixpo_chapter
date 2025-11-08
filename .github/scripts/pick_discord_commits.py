@@ -2,10 +2,11 @@ import requests
 from datetime import datetime, timezone
 
 GITHUB_TOKEN = "" 
-OWNER = "Circuit-Overtime"
-REPO = "elixpo_chapter"
-START_DATE = "2025-11-03T00:00:00Z"
-END_DATE = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")  
+OWNER = "pollinations"
+REPO = "pollinations"
+START_DATE = "2025-10-30T00:00:00Z"
+# END_DATE = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+END_DATE = "2025-11-03T00:00:00Z"  
 
 def get_merged_prs(owner, repo, start_date, end_date, token):
     base_url = "https://api.github.com/search/issues"
