@@ -6,7 +6,6 @@ import users from './dummy.json' assert { type: 'json' };
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 
-const dummyData = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'dummy.json'), 'utf8'));
 dotenv.config();
 const polliToken = process.env.polli_token;
 async function sendPayload() {
@@ -21,7 +20,7 @@ async function sendPayload() {
       },
       {
         role: "user",
-        content: `${encodeValue(users , { indent: 2, delimiter: ',', lengthMarker: false })}`,
+        content: `Tell me something about David Brown from the data -- ${encodeValue(users , { indent: 2, delimiter: ',', lengthMarker: false })}`,
       },
     ],
     model: "openai",
@@ -53,7 +52,7 @@ async function sendPayload() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${polliToken}`,
+        'Authorization': `Bearer ${polliToken}`,
       },
       body: JSON.stringify(payload),
     });
@@ -62,8 +61,9 @@ async function sendPayload() {
       throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    console.log("Response:", data);
+    const data = await response.json() as { choices: { message: { content: string } }[] };
+    console.log("Full response data:", data);
+    console.log("Response:", data.choices[0]?.message?.content);
   } catch (error) {
     console.error("Error sending request:", error.message);
   }
