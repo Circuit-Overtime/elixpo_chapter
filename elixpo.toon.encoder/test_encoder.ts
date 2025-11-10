@@ -65,7 +65,7 @@ async function sendPayload() {
     const data = await response.json() as { choices: { message: { content: string } }[] };
     console.log("Full response data:", data);
     console.log("Response:", data.choices[0]?.message?.content);
-  } catch (error) {
+  } catch (error : any) {
     console.error("Error sending request:", error.message);
   }
 }
