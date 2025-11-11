@@ -37,7 +37,7 @@ def normalizeValue(value) -> JsonValue:
         return None
     
 def isJsonPrimitive(value) -> bool:
-    return isinstance(value, JsonPrimitive) or value is None
+    return value == None or isinstance(value, (str, int, float, bool))
 
 def isJsonObject(value) -> bool:
     return value != None and isinstance(value, dict) and not isinstance(value, list)

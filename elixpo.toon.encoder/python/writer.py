@@ -7,14 +7,14 @@ class LineWriter:
         self.indentationString: str
         self.indentationString = ' ' * indentSize
         
-        def push(depth: Depth, content: str) -> None:
-            indent = self.indentationString * depth
-            self._lines.append(f"{indent}{content}")
+    def push(self, depth: Depth, content: str) -> None:
+        indent = self.indentationString * depth
+        self._lines.append(f"{indent}{content}")
 
-        def pushListItem(depth: Depth, content: str) -> None:
-            self.push(depth, f"{LIST_ITEM_PREFIX}{content}")
+    def pushListItem(self, depth: Depth, content: str) -> None:
+        self.push(depth, f"{LIST_ITEM_PREFIX}{content}")
 
-        def toString() -> str:
-            return '\n'.join(self._lines)
+    def toString(self) -> str:
+        return '\n'.join(self._lines)
         
             

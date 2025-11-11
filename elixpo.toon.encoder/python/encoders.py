@@ -130,7 +130,7 @@ def writeTabularRows(
         options: ResolvedEncodeOptions
 ) -> None:
     for row in rows:
-        values = header.map(lambda key: row[key] if key in row else None)
+        values = [row[key] if key in row else None for key in header]
         joinedValues = encodeAndJoinPrimitives(values, options['delimiter'])
         writer.push(depth, joinedValues)
 
@@ -206,17 +206,17 @@ def encodeObjectAsListItem(
 
 
 def encodeKeyValuePair(key: str, value: JsonValue, writer: LineWriter, depth: Depth, options: ResolvedEncodeOptions) -> None:
-    encodeKey = encodeKey(key)
+    encode_Key = encodeKey(key)
     if(isJsonPrimitive(value)):
-        writer.push(depth, f"{encodeKey} {encodePrimitive(value, options['delimiter'])}")
+        writer.push(depth, f"{encode_Key} {encodePrimitive(value, options['delimiter'])}")
     elif (isJsonArray(value)):
         encodeArray(key, value, writer, depth, options)
     elif (isJsonObject(value)):
         nestedKeys = list(value.keys())
         if(len(nestedKeys) == 0):
-            writer.push(depth, f"{encodeKey}:")
+            writer.push(depth, f"{encode_Key}:")
         else:
-            writer.push(depth, f"{encodeKey}:")
+            writer.push(depth, f"{encode_Key}:")
             encodeObjectAsListItem(value, writer, depth + 1, options)  
 
 
