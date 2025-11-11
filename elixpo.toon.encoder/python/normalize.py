@@ -42,6 +42,8 @@ def isJsonPrimitive(value: object) -> bool:
 def isJsonObject(value: object) -> bool:
     return value != None and isinstance(value, object) and not isinstance(value, list)
 
+def isJsonArray(value) -> JsonArray:
+    return isinstance(value, list)
 
 def isPlainObject(value) -> str:
     if(value == None or not isinstance(value, object)):

@@ -3,10 +3,10 @@ from typing import Optional, Union, Dict, List, any
 from __future__ import annotations
 from constants import Delimiter, DelimiterKey, DEFAULT_DELIMITER
 
-JsonPrimitive = Union[str, int, float, bool, None]
-JsonValue = Union[JsonPrimitive, "JsonObject", "JsonArray"]
-JsonObject = Dict[str, JsonValue]
-JsonArray = List[JsonValue]
+type JsonPrimitive = Union[str, int, float, bool, None]
+type JsonValue = Union[JsonPrimitive, "JsonObject", "JsonArray"]
+type JsonObject = Dict[str, JsonValue]
+type JsonArray = List[JsonValue]
 
 
 
@@ -46,5 +46,6 @@ class EncodeOptions:
     delimiter: Optional[Delimiter] = DEFAULT_DELIMITER
     lengthMarker: Optional[bool] = '#' or False
 
-class Depth(int):
-    pass
+type Depth = int
+
+type ResolvedEncodeOptions = EncodeOptions
