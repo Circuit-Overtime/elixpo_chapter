@@ -5,9 +5,7 @@ class LineWriter:
     def __init__(self, indentSize: Optional[int]):
         self._lines: list[str] = []
         self.indentationString: str
-
-        def LineWriter(indentSize: int):
-            self.indentationString = ' ' * indentSize
+        self.indentationString = ' ' * indentSize
         
         def push(depth: Depth, content: str) -> None:
             indent = self.indentationString * depth
