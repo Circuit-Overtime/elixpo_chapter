@@ -8,8 +8,8 @@ JsonValue = Union[JsonPrimitive, "JsonObject", "JsonArray"]
 JsonObject = Dict[str, JsonValue]
 JsonArray = List[JsonValue]
 
-@dataclass
-class Depth : int
+
+
 
 @dataclass
 class ParsedLine:
@@ -45,3 +45,6 @@ class EncodeOptions:
     indent: Optional[int] = 2
     delimiter: Optional[Delimiter] = DEFAULT_DELIMITER
     lengthMarker: Optional[bool] = '#' or False
+
+class Depth(int):
+    pass
