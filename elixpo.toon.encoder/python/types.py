@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Union, Dict, List, any
 from __future__ import annotations
-
+from constants import Delimiter, DelimiterKey, DEFAULT_DELIMITER
 
 JsonPrimitive = Union[str, int, float, bool, None]
 JsonValue = Union[JsonPrimitive, "JsonObject", "JsonArray"]
@@ -20,15 +20,12 @@ class ParsedLine:
     line_number: int
 
 #dummy class to represent delimeter info
-@dataclass
-class Delimeter:
-    prefix: str
-    suffix: str
+
 @dataclass
 class ArrayHeaderInfo:
     key: Optional[str] = None
     length: int 
-    delimiter: Delimeter
+    delimiter: Delimiter
     fields: Optional[list[str]] = None
     hasLengthMarker: bool
 
@@ -46,5 +43,5 @@ class DecodeOptions:
 @dataclass
 class EncodeOptions:
     indent: Optional[int] = 2
-    delimeter: Optional[Delimeter] = ','
+    delimiter: Optional[Delimiter] = DEFAULT_DELIMITER
     lengthMarker: Optional[bool] = '#' or False

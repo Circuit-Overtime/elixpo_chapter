@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Literal, TypedDict
 from types import MappingProxyType
 
@@ -26,7 +25,7 @@ NEWLINE = '\n'
 CARRIAGE_RETURN = '\r'
 TAB = '\t'
 
-@dataclass
+
 class Delimiters(TypedDict):
     comma: Literal[","]
     tab: Literal["\t"]
@@ -43,3 +42,6 @@ DelimiterKey = Literal["comma", "tab", "pipe"]
 Delimiter = Literal[",", "\t", "|"]
 DEFAULT_DELIMITER: Delimiter = DELIMITERS["comma"]
 
+if __name__ == "__main__":
+    print("All delimiters:", dict(DELIMITERS))
+    print("Default delimiter:", DEFAULT_DELIMITER)
