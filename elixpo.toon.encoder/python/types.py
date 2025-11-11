@@ -1,5 +1,13 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union, Dict, List, any
+from __future__ import annotations
+
+
+JsonPrimitive = Union[str, int, float, bool, None]
+JsonValue = Union[JsonPrimitive, "JsonObject", "JsonArray"]
+JsonObject = Dict[str, JsonValue]
+JsonArray = List[JsonValue]
+
 @dataclass
 class Depth : int
 
