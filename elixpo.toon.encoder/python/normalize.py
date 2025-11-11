@@ -4,11 +4,6 @@ from math import isfinite
 from datetime import datetime
 
 
-def isPlainObject(value) -> str:
-    if(value == None or not isinstance(value, object)):
-        return False
-
-
 def normalizeValue(value) -> JsonValue:
     if(value == None):
         return None
@@ -40,3 +35,25 @@ def normalizeValue(value) -> JsonValue:
 
     else:
         return None
+    
+def isJsonPrimitive(value: object) -> bool:
+    return isinstance(value, JsonPrimitive) or value is None
+
+def isJsonObject(value: object) -> bool:
+    return value != None and isinstance(value, object) and not isinstance(value, list)
+
+
+def isPlainObject(value) -> str:
+    if(value == None or not isinstance(value, object)):
+        return False
+    prototype = type(value)
+    return prototype == None or prototype == object
+
+def isArrayOfPrimitives(value: JsonArray) -> JsonPrimitive:
+    return all(isJsonPrimitive(item) for item in value)
+
+def isArrayOfArrays(value: JsonArray) -> JsonArray:
+    return all(isinstance(item, list) for item in value)
+
+def isArrayOfObjects(value: JsonArray) -> JsonArray:
+    return all(isJsonObject(item) for item in value)
