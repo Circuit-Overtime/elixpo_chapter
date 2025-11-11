@@ -9,7 +9,7 @@ polliToken = os.getenv("polli_token")
 async def sendPayload():
     with open("data/dummy_w_nest.json") as j:
         users = json.load(j)
-    url = "https://enter.pollinations.ai/api/generate/v1/chat/completions";
+    url = "https://enter.pollinations.ai/api/generate/v1/chat/completions"
     payload = {
         "messages": [
             {
