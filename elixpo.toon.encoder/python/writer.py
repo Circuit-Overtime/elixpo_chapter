@@ -1,8 +1,8 @@
 from dataTypes import Depth
 from constants import LIST_ITEM_PREFIX
-
+from typing import Optional
 class LineWriter:
-    def __init__(self, indentSize: int):
+    def __init__(self, indentSize: Optional[int]):
         self._lines: list[str] = []
         self.indentationString: str
 

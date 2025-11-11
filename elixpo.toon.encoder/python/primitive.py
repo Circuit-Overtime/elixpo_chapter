@@ -36,6 +36,7 @@ options = TypedDict('options', {
     'delimiter': Optional[str],
     'lengthMarker': Optional[bool]
     })
+
 def formatHeader(
         length: int,
         options: Optional[options] = None
