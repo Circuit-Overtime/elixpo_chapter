@@ -14,7 +14,7 @@
 
 | Self Paid Funding | Amount (INR) | Status |
 |-------------------|-------------:|--------|
-| Abhisekh Gupta            | 3,000 + 400        | Funding (Self Paid) Waiting to be refunded back |
+| Abhisekh Gupta            | 3,000 + 400        | Funding (Self Paid) PAID BACK [13/11/2025] |
 | Vivek Yadav + Anwesha Chakraborty           | 2,250        | Funding (Self Paid) Waiting to be refunded back (gpay + cash + print) |
 | Ayushman Bhattacharya             | 580 + 500       | Funding (Self Paid) Waiting to be refunded back (paid to shinjan for prints at serampore + advance for order of snacks) |
 | Ayushman Bhattacharya             | 140       | Funding (Self Paid) Already Refunded Back (for pens) |
