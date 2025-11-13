@@ -38,4 +38,4 @@
 | Sponsor Details | Amount (INR) | Status |
 |-------------------|-------------:|--------|
 | ISTE             | 3970 INR        | Received |
-| Pollinations     | 180.99 USD ~ 15895.27 INR         | Pending |
+| Pollinations     | 180.99 USD ~ 15895.27 INR         | Received |
