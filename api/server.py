@@ -25,7 +25,7 @@ logger = logging.getLogger("elixpo-audio")
 POLLINATIONS_TOKEN = os.getenv("POLLI_TOKEN")
 MODEL = os.getenv("MODEL")
 REFERRER = os.getenv("REFERRER")
-POLLINATIONS_ENDPOINT = "https://text.pollinations.ai/openai"
+POLLINATIONS_ENDPOINT = "https://enter.pollinations.ai/api/generate/v1/chat/completions"
 
 
 async def run_audio_pipeline(
@@ -129,13 +129,17 @@ Analyze this request and call the appropriate pipeline function.
                 "messages": messages,
                 "tools": tools,
                 "tool_choice": "auto",
-                "token": POLLINATIONS_TOKEN,
-                "referrer": REFERRER,
-                "private": True,
-                "seed": random.randint(1000, 9999)
+                "n": 1,
+                "seed": random.randint(1000, 9999),
+                "max_tokens": 3000,
+                "temperature": 1,
+                "top_p": 1,
+                "stream": False,
+                "retry": {}
             }
 
-            headers = {"Content-Type": "application/json"}
+            headers = {"Content-Type": "application/json",
+                       "Authorization": f"Bearer {POLLINATIONS_TOKEN}"}
 
             try:
                 response = requests.post(POLLINATIONS_ENDPOINT, headers=headers, json=payload)
