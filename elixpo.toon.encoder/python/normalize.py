@@ -1,61 +1,67 @@
 from dataTypes import JsonArray, JsonObject, JsonPrimitive, JsonValue
-from typing import Union, Optional
+from typing import Any
 from math import isfinite
 from datetime import datetime
 
 
-def normalizeValue(value) -> JsonValue:
-    if(value == None):
+def normalizeValue(value: Any) -> JsonValue:
+    if value is None:
         return None
-    elif isinstance(value, (str,bool)):
+
+    if isinstance(value, (str, bool)):
         return value
-    elif isinstance(value, (int, float)):
+
+    if isinstance(value, (int, float)):
         if value == 0 and str(value).startswith('-'):
             return 0
         if not isfinite(value):
             return None
         return value
-    elif isinstance(value, datetime):
+
+    if isinstance(value, datetime):
         return value.isoformat()
-    
-    elif isinstance(value, list):
+
+    if isinstance(value, list):
         return [normalizeValue(item) for item in value]
-    elif isinstance(value, set):
+
+    if isinstance(value, set):
         return [normalizeValue(item) for item in value]
-    elif isinstance(value, dict):
-        result = {}
+
+    if isinstance(value, dict) and isPlainObject(value):
+        result: dict[str, JsonValue] = {}
         for key, val in value.items():
             result[str(key)] = normalizeValue(val)
         return result
-    elif (isPlainObject(value)):
-        result = dict[str, "JsonValue"] = {}
-        for key, val in value.items():
-            result[str(key)] = normalizeValue(val)
-        return result
 
-    else:
-        return None
-    
-def isJsonPrimitive(value) -> bool:
-    return value == None or isinstance(value, (str, int, float, bool))
+    return None
 
-def isJsonObject(value) -> bool:
-    return value != None and isinstance(value, dict) and not isinstance(value, list)
 
-def isJsonArray(value) -> JsonArray:
+def isJsonPrimitive(value: Any) -> bool:
+    return value is None or isinstance(value, (str, int, float, bool))
+
+
+def isJsonArray(value: Any) -> bool:
     return isinstance(value, list)
 
-def isPlainObject(value) -> str:
-    if(value == None or not isinstance(value, dict)):
+
+def isJsonObject(value: Any) -> bool:
+    return value is not None and isinstance(value, dict) and not isinstance(value, list)
+
+
+def isPlainObject(value: Any) -> bool:
+    if value is None or not isinstance(value, dict):
         return False
     prototype = type(value)
-    return prototype == None or prototype == dict
+    return prototype == dict
 
-def isArrayOfPrimitives(value: JsonArray) -> JsonPrimitive:
+
+def isArrayOfPrimitives(value: JsonArray) -> bool:
     return all(isJsonPrimitive(item) for item in value)
 
-def isArrayOfArrays(value: JsonArray) -> JsonArray:
+
+def isArrayOfArrays(value: JsonArray) -> bool:
     return all(isinstance(item, list) for item in value)
 
-def isArrayOfObjects(value: JsonArray) -> JsonArray:
+
+def isArrayOfObjects(value: JsonArray) -> bool:
     return all(isJsonObject(item) for item in value)
