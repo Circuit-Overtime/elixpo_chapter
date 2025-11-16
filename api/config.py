@@ -3,6 +3,12 @@ AUDIO_TOKENIZER_PATH = "bosonai/higgs-audio-v2-tokenizer"
 SAMPLE_RATE = 24000
 MAX_FILE_SIZE_MB = 5
 MAX_CONCURRENT_REQUESTS = 50
+chat_ml_sample = (
+    "Generate audio following instruction.\n\n"
+    "<|scene_desc_start|>\n"
+    "A cheerful room full of energy, with a warm and friendly tone."
+    "<|scene_desc_end|>"
+)
 
 DEFAULT_SYSTEM_PROMPT = (
     "Generate audio following instruction.\n\n"

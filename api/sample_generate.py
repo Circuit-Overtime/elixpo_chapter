@@ -5,16 +5,14 @@ import torch
 import torchaudio
 import time
 from loguru import logger
-
-from input_samples import INPUT_SAMPLES
-
+from config import chat_ml_sample
 MODEL_PATH = "bosonai/higgs-audio-v2-generation-3B-base"
 AUDIO_TOKENIZER_PATH = "bosonai/higgs-audio-v2-tokenizer"
 
 
 
 def main():
-    input_sample = INPUT_SAMPLES["zero_shot"]()
+    input_sample = chat_ml_sample
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logger.info(f"Using device: {device}")
 
