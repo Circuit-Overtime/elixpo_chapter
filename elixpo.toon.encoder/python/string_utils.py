@@ -1,73 +1,84 @@
 from constants import BACKSLASH, CARRIAGE_RETURN, DOUBLE_QUOTE, NEWLINE, TAB
-from typing import Optional
 
-def escape_string(input_string: str) -> str:
-    escaped = (
-        input_string.replace(BACKSLASH, BACKSLASH * 2)
+
+def escapeString(value: str) -> str:
+    return (
+        value.replace(BACKSLASH, BACKSLASH + BACKSLASH)
         .replace(DOUBLE_QUOTE, BACKSLASH + DOUBLE_QUOTE)
-        .replace(NEWLINE, BACKSLASH + 'n')
-        .replace(CARRIAGE_RETURN, BACKSLASH + 'r')
-        .replace(TAB, BACKSLASH + 't')
+        .replace('\n', BACKSLASH + 'n')
+        .replace('\r', BACKSLASH + 'r')
+        .replace('\t', BACKSLASH + 't')
     )
-    return escaped
+
 
 def unescapeString(value: str) -> str:
     result = ''
     i = 0
-    while (i < len(value)):
-        if(value[i] == BACKSLASH):
-            if(i + 1 >= len(value)):
-                raise SyntaxError('Invalid escape sequence at end of string')
-            next = value[i + 1]
-            if(next == 'n'):
+
+    while i < len(value):
+        if value[i] == BACKSLASH:
+            if i + 1 >= len(value):
+                raise SyntaxError('Invalid escape sequence: backslash at end of string')
+
+            next_char = value[i + 1]
+            if next_char == 'n':
                 result += NEWLINE
                 i += 2
                 continue
-            elif(next == 'r'):
-                result += CARRIAGE_RETURN
-                i += 2
-                continue
-            elif(next == 't'):
+            if next_char == 't':
                 result += TAB
                 i += 2
                 continue
-            elif(next == DOUBLE_QUOTE):
-                result += DOUBLE_QUOTE
+            if next_char == 'r':
+                result += CARRIAGE_RETURN
                 i += 2
                 continue
-            elif(next == BACKSLASH):
+            if next_char == BACKSLASH:
                 result += BACKSLASH
                 i += 2
                 continue
-            else:
-                raise SyntaxError(f'Invalid escape sequence: \\{next}')
+            if next_char == DOUBLE_QUOTE:
+                result += DOUBLE_QUOTE
+                i += 2
+                continue
+
+            raise SyntaxError(f'Invalid escape sequence: \\{next_char}')
+
         result += value[i]
         i += 1
+
     return result
 
+
 def findClosingQuote(content: str, start: int) -> int:
-    i = start + 1 
-    while(i < len(content)):
-        if(content[i] == BACKSLASH and i + 1 < len(content)):
+    i = start + 1
+    while i < len(content):
+        if content[i] == BACKSLASH and i + 1 < len(content):
             i += 2
             continue
-        if(content[i] == DOUBLE_QUOTE):
+        if content[i] == DOUBLE_QUOTE:
             return i
         i += 1
     return -1
 
-def findUnquotedChar(content: str, char: str, start: Optional[int] = 0) -> int:
+
+def findUnquotedChar(content: str, char: str, start: int = 0) -> int:
     inQuotes = False
     i = start
-    while(i < len(content)):
-        if(content[i] == BACKSLASH and i + 1 < len(content) and inQuotes):
+
+    while i < len(content):
+        if content[i] == BACKSLASH and i + 1 < len(content) and inQuotes:
             i += 2
             continue
-        if (content[i] == DOUBLE_QUOTE):
+
+        if content[i] == DOUBLE_QUOTE:
             inQuotes = not inQuotes
             i += 1
             continue
-        if(not inQuotes and content[i] == char):
+
+        if content[i] == char and not inQuotes:
             return i
+
         i += 1
+
     return -1
