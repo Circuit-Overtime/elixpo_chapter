@@ -37,7 +37,12 @@ Response format (exactly like this):
 [SCENE DESCRIPTION HERE - describe voice texture, tone, environment, and speaking style only]
 "<|scene_desc_end|>"
 )
-"""
+""" 
+
+    header = {
+        "Content-Type": "application/json",
+        "Authorization" : f"Bearer {os.getenv('POLLI_TOKEN')}"
+    }
 
     payload = {
         "model": "mistral",
@@ -48,14 +53,13 @@ Response format (exactly like this):
         "temperature": 0.7,
         "stream": False,
         "private": True,
-        "token": os.getenv("POLLI_TOKEN"),
         "referrer": "elixpoart",
         "max_tokens": 200,
         "seed": random.randint(1000, 1000000)
     }
     
     try:
-        response = requests.post("https://text.pollinations.ai/openai", json=payload, timeout=30)
+        response = requests.post("https://enter.pollinations.ai/api/generate/v1/chat/completions", headers=header, json=payload, timeout=30)
         response.raise_for_status()
         data = response.json()
 
@@ -78,7 +82,6 @@ Response format (exactly like this):
         return await _get_fallback_instruction(text)
 
 async def _get_fallback_instruction(text: str) -> str:
-    """Generate a fallback instruction based on text analysis"""
     text_lower = text.lower()
     
     if any(word in text_lower for word in ["exciting", "amazing", "wow", "awesome", "incredible"]):

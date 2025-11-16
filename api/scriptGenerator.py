@@ -31,14 +31,18 @@ async def generate_reply(prompt: str, max_tokens: Optional[int] = 60) -> str:
         "temperature": 0.7,
         "stream": False,
         "private": True,
-        "token": os.getenv("POLLI_TOKEN"),
         "referrer": "elixpoart",
         "max_tokens": max_tokens,
         "seed": random.randint(1000, 1000000)
     }
 
+    header = {
+        "Content-Type": "application/json",
+        "Authorization" : f"Bearer {os.getenv('POLLI_TOKEN')}"
+    }
+
     try:
-        response = requests.post("https://text.pollinations.ai/openai", json=payload, timeout=30)
+        response = requests.post("https://enter.pollinations.ai/api/generate/v1/chat/completions", headers=header, json=payload, timeout=30)
         if response.status_code != 200:
             raise RuntimeError(f"Request failed: {response.status_code}, {response.text}")
 
