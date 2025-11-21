@@ -8,9 +8,10 @@ from typing import Optional, Sequence
 
 
 def encodeValue(value: JsonValue, options: ResolvedEncodeOptions) -> str:
+    if (has_nesting(value) == True):
+        value, key = flatten_json(value)
     if isJsonPrimitive(value):
         return encodePrimitive(value, options['delimiter'])
-
     writer = LineWriter(options['indent'])
 
     if isJsonArray(value):
