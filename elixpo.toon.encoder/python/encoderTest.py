@@ -15,11 +15,16 @@ def count_tokens(text, model="cl100k_base"):
 
 
 
-encoded_original = encodeValue(
+encoded_flat_direct = encodeValue(
     users,
     options={"indent": 2, "delimiter": ", ", "lengthMarker": True}
 )
 
+val, key = flatten_json(users)
+encoded_flat_module = encodeValue(
+    val,
+    options={"indent": 2, "delimiter": ", ", "lengthMarker": True}
+)
 min_str = json.dumps(users, indent=2)
 
 
@@ -30,5 +35,6 @@ min_str = json.dumps(users, indent=2)
 print("==================================================")
 print("Nested JSON token count        :", count_tokens(json.dumps(users, indent=2)))
 print("Minimal Flat JSON token count  :", count_tokens(min_str))
-print("Encoded original: ", count_tokens(encoded_original))
+print("Encoded Direct: ", count_tokens(encoded_flat_direct))
+print("Encoded Module: ", count_tokens(encoded_flat_module))
 print("\nDONE.")
