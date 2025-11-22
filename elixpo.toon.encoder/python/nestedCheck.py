@@ -41,7 +41,7 @@ def flatten_json(data, parent_key="", out=None):
 
     elif isinstance(data, list):
         for idx, item in enumerate(data):
-            new_key = f"{parent_key}[{idx}]"
+            new_key = f"{parent_key}-{idx}"
             flatten_json(item, new_key, out)
 
     else:
@@ -49,6 +49,7 @@ def flatten_json(data, parent_key="", out=None):
 
     return out
 
+
 if __name__ == "__main__":
     flatten = flatten_json(dummy_data)
-    print("Flattened JSON:", flatten)
+    print("Flattened JSON:", json.dumps(flatten, indent=2))
