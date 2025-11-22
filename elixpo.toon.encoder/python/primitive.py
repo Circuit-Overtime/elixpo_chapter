@@ -2,7 +2,7 @@ from typing import Optional, TypedDict
 from dataTypes import JsonPrimitive
 from constants import COMMA, DEFAULT_DELIMITER, DOUBLE_QUOTE, NULL_LITERAL
 from string_utils import escapeString
-from validation import isSafeUnquoted, isValidUnquotedKey
+from encode_validation import isSafeUnquoted, isValidUnquotedKey
 
 
 def encodePrimitive(value: JsonPrimitive, delimiter: Optional[str] = None) -> str:
