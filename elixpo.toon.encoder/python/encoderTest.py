@@ -47,8 +47,6 @@ flatten_toon_tokens_nested = count_tokens(encodeValue(flat_data, options={"inden
 flatten_toon_tokens_non_nested = count_tokens(encodeValue(users_not_nested, options={"indent" : 2, "delimiter": ",", "lengthMarker": True}))
 
 
-
-
 print("=== TOKEN COMPARISON ===")
 print(f"Original non-nested JSON Tokens Count:        {non_nested_tokens} tokens")
 print(f"Original nested JSON Tokens Count:        {nested_tokens} tokens")

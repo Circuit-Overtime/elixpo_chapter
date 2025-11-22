@@ -29,6 +29,8 @@ def has_nesting(data):
     elif isinstance(data, list):
         return any(isinstance(item, dict) and any(isinstance(v, (dict, list)) for v in item.values()) for item in data)
     return False
+import re
+import json
 
 def flatten_json(data, parent_key="", out=None, compacted=False):
     if out is None:
@@ -46,22 +48,75 @@ def flatten_json(data, parent_key="", out=None, compacted=False):
 
     else:
         out[parent_key] = data
+
     if compacted:
-        compacted_out = compact_string(out)
-        return compacted_out
+        return compact_string(out)
     return out
 
 
 def compact_string(flat_dict):
     parts = []
     for k, v in flat_dict.items():
-        if isinstance(v, str):
-            parts.append(f"{k}:{v}")
-        else:
-            parts.append(f"{k}:{v}")
+        parts.append(f"{k}:{v}")
     return "{"+",".join(parts)+"}"
+
+
+def unflatten_json(flat):
+    if isinstance(flat, str):
+        flat = flat.strip("{}")
+        parts = flat.split(",")
+        flat_dict = {}
+        for part in parts:
+            key, value = part.split(":", 1)
+            if value.isdigit():
+                value = int(value)
+            else:
+                try:
+                    value = float(value)
+                except:
+                    pass
+            flat_dict[key] = value
+    else:
+        flat_dict = flat  
+
+    root = {}
+
+    for key, value in flat_dict.items():
+        segments = key.split(".") 
+        current = root
+        for i, seg in enumerate(segments):
+            if "-" in seg:
+                base, idx = seg.split("-")
+                idx = int(idx)
+
+                if base not in current:
+                    current[base] = []
+
+                while len(current[base]) <= idx:
+                    current[base].append(None)
+
+                if i == len(segments) - 1:
+                    current[base][idx] = value
+                else:
+                    if current[base][idx] is None:
+                        current[base][idx] = {}
+                    current = current[base][idx]
+
+            else:
+                if i == len(segments) - 1:
+                    current[seg] = value
+                else:
+                    if seg not in current:
+                        current[seg] = {}
+                    current = current[seg]
+
+    return root
+
+def is_lossless(a, b):
+    return json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
 
 
 if __name__ == "__main__":
     flatten = flatten_json(dummy_data)
-    print("Flattened JSON:", json.dumps(flatten, indent=2))
+    original = unflatten_json(flatten)
+    print(f"Lossless comparison: {is_lossless(dummy_data, original)}")
