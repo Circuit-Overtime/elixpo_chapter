@@ -10,7 +10,8 @@
                     "theme": "dark",
                     "notifications": true,
                     "language": "en"
-                }
+                },
+                "favorites": ["books", "music", "sports"]
             },
             "orders": [
                 {

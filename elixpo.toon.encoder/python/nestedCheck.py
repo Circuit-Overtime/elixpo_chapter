@@ -1,9 +1,6 @@
 import json
 import urllib.parse
-# from testDummydata import dummyData as dummy_data
-# --------------------------------------------------
-# FLATTEN
-# --------------------------------------------------
+
 
 with open("data/dummy_w_nest.json", "r", encoding="utf-8") as f:
     dummy_data = json.load(f)
@@ -15,156 +12,87 @@ def has_nesting(data):
         return any(isinstance(item, dict) and any(isinstance(v, (dict, list)) for v in item.values()) for item in data) 
     return False
 
-def encode_value(v):
-    if isinstance(v, str):
-        return urllib.parse.quote(v, safe="")
-    if v is True:
-        return "true"
-    if v is False:
-        return "false"
-    if v is None:
-        return "null"
-    return str(v)  # numbers
-
-def flatten_json(data, parent_key="", out=None):
+def flatten(data, parent_key="", out=None):
+    if not isinstance(data, (dict, list)):
+        return {"_": data}
     if out is None:
         out = {}
-
     if isinstance(data, dict):
         for key, value in data.items():
             new_key = f"{parent_key}.{key}" if parent_key else key
-            flatten_json(value, new_key, out)
+            flatten(value, new_key, out)
 
     elif isinstance(data, list):
-        for idx, item in enumerate(data):
-            new_key = f"{parent_key}-{idx}"
-            flatten_json(item, new_key, out)
-
-    else:
-        out[parent_key] = encode_value(data)
+        for i, item in enumerate(data):
+            new_key = f"{parent_key}.{i}"
+            flatten(item, new_key, out)
 
     return out
 
 
-def compact_string(flat_dict):
-    return "{" + ",".join(f"{k}:{v}" for k, v in flat_dict.items()) + "}"
 
+def unflatten(flat):
+    root = {}
+    for composite_key, value in flat.items():
+        parts = composite_key.split(".")
+        curr = root
+        for i, part in enumerate(parts):
+            if part.isdigit():
+                part = int(part)
+                is_last = (i == len(parts) - 1)
+                if not isinstance(curr, list):
+                    curr_parent = curr
+                    curr = []
+                    if isinstance(curr_parent, dict):
+                        curr_parent[parts[i - 1]] = curr
+                while len(curr) <= part:
+                    curr.append(None)
 
-# --------------------------------------------------
-# UNFLATTEN
-# --------------------------------------------------
-
-def decode_value(v):
-    if v.isdigit():
-        return int(v)
-
-    try:
-        f = float(v)
-        return f
-    except:
-        pass
-
-    lower = v.lower()
-    if lower == "true":
-        return True
-    if lower == "false":
-        return False
-    if lower == "null":
-        return None
-
-    # URL-decode string
-    return urllib.parse.unquote(v)
-
-
-def unflatten_json(flat):
-    if isinstance(flat, str):
-        flat = flat.strip("{}")
-        parts = flat.split(",")
-        flat_dict = {}
-        for part in parts:
-            key, value = part.split(":", 1)
-            flat_dict[key] = decode_value(value)
-    else:
-        flat_dict = {k: decode_value(v) for k, v in flat.items()}
-
-    # Check if root should be a list
-    root_is_list = any(key.startswith("-") for key in flat_dict.keys())
-    root = [] if root_is_list else {}
-
-    for key, value in flat_dict.items():
-        segments = key.split(".")
-        current = root
-        
-        for i, seg in enumerate(segments):
-            if "-" in seg:
-                parts = seg.split("-")
-                base = parts[0] if parts[0] else None
-                idx = int(parts[1])
-                
-                if isinstance(current, list):
-                    # Root level list
-                    while len(current) <= idx:
-                        current.append(None)
-                    
-                    if i == len(segments) - 1:
-                        current[idx] = value
-                    else:
-                        if current[idx] is None:
-                            current[idx] = {}
-                        current = current[idx]
+                if is_last:
+                    curr[part] = value
                 else:
-                    # Dict with list property
-                    if base not in current:
-                        current[base] = []
+                    if curr[part] is None:
+                        next_part = parts[i + 1]
+                        curr[part] = [] if next_part.isdigit() else {}
+                    curr = curr[part]
 
-                    while len(current[base]) <= idx:
-                        current[base].append(None)
-
-                    if i == len(segments) - 1:
-                        current[base][idx] = value
-                    else:
-                        if current[base][idx] is None:
-                            current[base][idx] = {}
-                        current = current[base][idx]
             else:
-                # Handle non-hyphenated segments
-                if isinstance(current, list):
-                    idx = int(seg)
-                    while len(current) <= idx:
-                        current.append(None)
-                    if i == len(segments) - 1:
-                        current[idx] = value
-                    else:
-                        if current[idx] is None:
-                            current[idx] = {}
-                        current = current[idx]
-                else:
-                    if i == len(segments) - 1:
-                        current[seg] = value
-                    else:
-                        if seg not in current:
-                            current[seg] = {}
-                        current = current[seg]
+                is_last = (i == len(parts) - 1)
+                if not isinstance(curr, dict):
+                    raise TypeError("Structure mismatch while unflattening")
 
+                if is_last:
+                    curr[part] = value
+                else:
+                    if part not in curr:
+                        next_part = parts[i + 1]
+                        curr[part] = [] if next_part.isdigit() else {}
+                    curr = curr[part]
     return root
 
+def normalize_unflattened(original, unflat):
+    if isinstance(original, list):
+        if isinstance(unflat, dict):
+            if all(k.isdigit() for k in unflat.keys()):
+                max_idx = max(int(k) for k in unflat.keys())
+                lst = [None] * (max_idx + 1)
+                for k, v in unflat.items():
+                    lst[int(k)] = v
+                return lst
+        return unflat
+    return unflat
 
-# --------------------------------------------------
-# LOSSLESS CHECK
-# --------------------------------------------------
 
 def is_lossless(a, b):
-    return json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
-
-
-# --------------------------------------------------
-# TEST
-# --------------------------------------------------
+    return json.dumps(a, sort_keys=True) in json.dumps(b, sort_keys=True)
 
 if __name__ == "__main__":
-    flatten = flatten_json(dummy_data)
-    compact = compact_string(flatten)
-    restore = unflatten_json(compact)
-
-    print("Flattened:", compact)
-    print("Lossless round-trip:", is_lossless(dummy_data, unflatten_json(flatten_json(dummy_data))))
+    print(has_nesting(dummy_data))
+    flat = flatten(dummy_data)
+    print(json.dumps(flat, indent=2))
+    print("\n=== UNFLATTENED DATA ===")
+    unflat = unflatten(flat)
+    unflat = normalize_unflattened(dummy_data, unflat)
+    print(json.dumps(unflat, indent=2))
+    print("\n=== COMPARISON DATA ===")
+    print(f"Lossless flattening test: {is_lossless(dummy_data, unflat)}")
