@@ -52,4 +52,6 @@ savings_nested = ((nested_tokens - flatten_toon_tokens_nested) / nested_tokens) 
 savings_non_nested = ((non_nested_tokens - flatten_toon_tokens_non_nested) / non_nested_tokens) * 100
 print(f"\nToken Savings for non-nested: {savings_non_nested:.1f}%")
 print(f"Token Savings for nested: {savings_nested:.1f}%")
-print(f"Loss less flattening test: {is_lossless(unflatten(flatten(users_nested)), users_nested)}")
+flat_data = flatten(users_nested)
+unflat_data = unflatten(flat_data)
+print(f"Loss less flattening test: {is_lossless(users_nested, unflat_data)}")

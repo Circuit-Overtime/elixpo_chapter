@@ -13,62 +13,80 @@ def has_nesting(data):
     return False
 
 def flatten(data, parent_key="", out=None):
-    if not isinstance(data, (dict, list)):
-        return {"_": data}
     if out is None:
         out = {}
     if isinstance(data, dict):
         for key, value in data.items():
             new_key = f"{parent_key}.{key}" if parent_key else key
             flatten(value, new_key, out)
-
     elif isinstance(data, list):
         for i, item in enumerate(data):
             new_key = f"{parent_key}.{i}"
             flatten(item, new_key, out)
+    else:
+        out[parent_key] = data  
 
     return out
 
 
-
 def unflatten(flat):
     root = {}
+
     for composite_key, value in flat.items():
         parts = composite_key.split(".")
         curr = root
+
         for i, part in enumerate(parts):
-            if part.isdigit():
-                part = int(part)
-                is_last = (i == len(parts) - 1)
+            is_last = (i == len(parts) - 1)
+            is_digit = part.isdigit()
+
+            if is_digit:
+                idx = int(part)
+
                 if not isinstance(curr, list):
-                    curr_parent = curr
-                    curr = []
-                    if isinstance(curr_parent, dict):
-                        curr_parent[parts[i - 1]] = curr
-                while len(curr) <= part:
+                    # convert dict into list at this point
+                    parent_key = parts[i-1] if i > 0 else None
+                    new_list = []
+                    if parent_key is None:
+                        # ROOT-LEVEL FIX: replace root with list
+                        root = new_list
+                        curr = new_list
+                    else:
+                        curr[parent_key] = new_list
+                        curr = new_list
+
+                while len(curr) <= idx:
                     curr.append(None)
 
                 if is_last:
-                    curr[part] = value
+                    curr[idx] = value
                 else:
-                    if curr[part] is None:
-                        next_part = parts[i + 1]
-                        curr[part] = [] if next_part.isdigit() else {}
-                    curr = curr[part]
+                    if curr[idx] is None:
+                        next_is_digit = parts[i+1].isdigit()
+                        curr[idx] = [] if next_is_digit else {}
+                    curr = curr[idx]
 
             else:
-                is_last = (i == len(parts) - 1)
                 if not isinstance(curr, dict):
-                    raise TypeError("Structure mismatch while unflattening")
+                    raise TypeError("Mismatch while unflattening")
 
                 if is_last:
                     curr[part] = value
                 else:
                     if part not in curr:
-                        next_part = parts[i + 1]
-                        curr[part] = [] if next_part.isdigit() else {}
+                        next_is_digit = parts[i+1].isdigit()
+                        curr[part] = [] if next_is_digit else {}
                     curr = curr[part]
+    if isinstance(root, dict) and len(root) > 0 and all(k.isdigit() for k in root.keys()):
+        max_i = max(int(k) for k in root.keys())
+        new_root = [None] * (max_i + 1)
+        for k, v in root.items():
+            new_root[int(k)] = v
+        return new_root
+
     return root
+
+    
 
 def normalize_unflattened(original, unflat):
     if isinstance(original, list):
@@ -87,12 +105,12 @@ def is_lossless(a, b):
     return json.dumps(a, sort_keys=True) in json.dumps(b, sort_keys=True)
 
 if __name__ == "__main__":
-    print(has_nesting(dummy_data))
-    flat = flatten(dummy_data)
-    print(json.dumps(flat, indent=2))
-    print("\n=== UNFLATTENED DATA ===")
-    unflat = unflatten(flat)
-    unflat = normalize_unflattened(dummy_data, unflat)
-    print(json.dumps(unflat, indent=2))
-    print("\n=== COMPARISON DATA ===")
-    print(f"Lossless flattening test: {is_lossless(dummy_data, unflat)}")
+        print(has_nesting(dummy_data))
+        flat = flatten(dummy_data)
+        print(json.dumps(flat, indent=2))
+        print("\n=== UNFLATTENED DATA ===")
+        unflat = unflatten(flat)
+        unflat = normalize_unflattened(dummy_data, unflat)
+        # print(json.dumps(unflat, indent=2))
+        print("\n=== COMPARISON DATA ===")
+        print(f"Lossless flattening test: {is_lossless(dummy_data, unflat)}")
