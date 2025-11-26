@@ -699,7 +699,8 @@ async def _close_all_agents():
 
 def shutdown_graceful(timeout=5):
     global _event_loop, _event_loop_thread
-    try:  
+    try:
+        cache_cleanup.stop()  
         if _event_loop is None:
             return
         try:
@@ -780,6 +781,8 @@ class CacheCleanupJob:
         self.cleanup_old_cache()
         print("[CACHE] Cleanup job stopped and final cache cleared")
 
+
+cache_cleanup = CacheCleanupJob(cache_dir=BASE_CACHE_DIR, max_age_minutes=10, check_interval_minutes=5)
 
 if __name__ == "__main__":
     class modelManager(BaseManager): pass
