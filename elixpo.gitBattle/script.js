@@ -1,5 +1,3 @@
-// GitHub Battle Report Generator
-// Main Application Logic
 
 class GitHubBattle {
     constructor() {
