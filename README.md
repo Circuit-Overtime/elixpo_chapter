@@ -18,23 +18,27 @@
 
 ---
 ## 🌟 GitHub Stars Program — Your Support Matters!
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/465db80e-83a8-4607-840d-d7f2239e15cf" alt="GitHub Stars Nomination" width="400"/>
+</p>
 
-![nominations](https://github.com/user-attachments/assets/465db80e-83a8-4607-840d-d7f2239e15cf)
+<h3 align="center">🌟 Nominate Me for the GitHub Stars Program! 🌟</h3>
 
-Hey everyone! I’m putting in a nomination for the GitHub Stars Program. If my Hacktoberfest or Google Developer Groups has ever helped you, or if I’ve made open source a bit easier to navigate in your CS journey, a quick nomination from you would mean the world to me.
-
-It takes less than 20 seconds:
-
-1. Go to [stars.github.com/nominate](https://stars.github.com/nominate/)
-2. Sign in with your GitHub account (required for the nomination to work)
-3. Enter my GitHub username: `Circuit-Overtime` (beside the @ sign) ⭐
-4. Optionally, write a short note (under 180 characters) about how I’ve supported you — please be honest and genuine!
-
-Your support amplifies our reach, inspires contributors, and strengthens the open-source community. If I’ve helped you even once on your dev journey, thank you for taking a moment to back me up. It truly means a lot!
+<p align="center">
+  If Elixpo, my Hacktoberfest work, or Google Developer Groups activities have helped you on your open-source or CS journey, I’d be honored by your nomination.<br>
+  <strong>Your support inspires me and helps grow our community!</strong>
+</p>
 
 
 
+#### **How to Nominate (Takes < 20 seconds):**
 
+1. 👉 Visit [stars.github.com/nominate](https://stars.github.com/nominate/)
+2. 🔑 Sign in with your GitHub account
+3. ✍️ **Enter my GitHub username: <code>Circuit-Overtime</code>**
+4. 💬 Add a short, honest note about how I’ve supported you.
+
+---
 
 <p align="center">
   <a href="https://stars.github.com/nominate/">
@@ -42,7 +46,11 @@ Your support amplifies our reach, inspires contributors, and strengthens the ope
   </a>
 </p>
 
-> **My GitHub Username:** `Circuit-Overtime`
+<p align="center">
+  <em>Thank you for helping amplify open source and supporting our mission! Every nomination makes a difference. 💖</em>
+</p>
+
+
 
 
 ## 🚀 Our Mission & Vision
