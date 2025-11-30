@@ -18,24 +18,19 @@
 
 ---
 
----
+## 🌟 Nominate Me for GitHub Stars Please!
 
-## 🎂✨ Happy Birthday, Anwesha Chakraborty! ✨🎂
+If you value our work and want to help us grow, please consider [Nominate Me for GitHub Stars](https://stars.github.com/nominate/).  
+Your support amplifies our reach, inspires contributors, and strengthens the open-source community!
 
-<div align="center">
-
-<img src="https://img.icons8.com/color/96/000000/birthday-cake.png" alt="Birthday Cake" width="96" />
-
-# 🥳 **Anwesha's Special Day!** 🥳
-
-</div>
-
-> **Wishing a fantastic birthday to Anwesha Chakraborty — our brilliant CSE star, creative mind, and cherished collaborator!**
+> ### **My GitHub Username**: `Circuit-Overtime`
 
 
-> _From all of us at Elixpo: Have a spectacular birthday, Anwesha!_ 🎂🚀
-
---- 
+<p align="center">
+  <a href="https://stars.github.com/nominate/">
+    <img src="https://img.shields.io/badge/Nominate%20Me-GitHub%20Stars-24292f?style=for-the-badge&logo=github&logoColor=white" alt="Nominate for GitHub Stars" />
+  </a>
+</p>
 
 ## 🚀 Our Mission & Vision
 
