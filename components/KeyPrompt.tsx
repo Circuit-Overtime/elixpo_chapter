@@ -41,9 +41,9 @@ export default function KeyPrompt({ slug }: KeyPromptProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4">
       <div className="relative max-w-md w-full">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg blur-3xl opacity-20 -z-10 animate-pulse"></div>
+        <div className="absolute inset-0 bg-linear-to-r from-cyan-500 to-blue-500 rounded-lg blur-3xl opacity-20 -z-10 animate-pulse"></div>
 
         <div className="bg-black/50 backdrop-blur-md border border-cyan-500/30 rounded-2xl p-8 shadow-2xl">
           <div className="flex items-center justify-center mb-8">
@@ -78,7 +78,7 @@ export default function KeyPrompt({ slug }: KeyPromptProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition transform hover:scale-105"
+              className="w-full bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition transform hover:scale-105"
             >
               {loading ? 'Verifying...' : 'Access Card'}
             </button>

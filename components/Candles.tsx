@@ -8,14 +8,13 @@ interface CandlesProps {
   onBlow?: (callback: () => void) => void;
 }
 
-export default function Candles({ count, onBlow }: CandlesProps) {
+export default function Candles({ count }: CandlesProps) {
   const candlesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!candlesRef.current) return;
 
     const candleCount = Math.min(count || 20, 50);
-    const candleWidth = 16;
     const availableSpace = 310 - 10;
     const spaceBetweenCandles = availableSpace / (candleCount - 1);
 

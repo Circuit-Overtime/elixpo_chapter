@@ -79,7 +79,7 @@ export default function CardViewer({
   }, []); 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-black overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-black overflow-hidden">
       {/* Animated background blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
@@ -100,7 +100,7 @@ export default function CardViewer({
         </div>
 
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 text-center px-4">
-          Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">{name}</span>
+          Hello, <span className="text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-400">{name}</span>
         </h1>
 
         <div className="text-center mb-12 h-8">

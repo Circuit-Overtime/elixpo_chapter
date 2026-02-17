@@ -118,8 +118,8 @@ export default function MicrophoneButton({
       onClick={isListening ? stopListening : handleMicrophoneAccess}
       className={`fixed bottom-20 left-1/2 -translate-x-1/2 px-8 py-3 rounded-full font-semibold flex items-center gap-2 transition-all z-40 ${
         isListening
-          ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white shadow-lg shadow-red-500/50'
-          : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg shadow-purple-500/50'
+          ? 'bg-linear-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white shadow-lg shadow-red-500/50'
+          : 'bg-linear-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg shadow-purple-500/50'
       }`}
       aria-label="Microphone access button"
     >
