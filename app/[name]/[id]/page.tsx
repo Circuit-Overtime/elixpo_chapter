@@ -46,7 +46,7 @@ export default function CardDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-purple-900 to-black">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-900 to-black">
         <Loader2 className="w-12 h-12 text-purple-400 animate-spin" />
       </div>
     );
@@ -54,7 +54,7 @@ export default function CardDetailPage() {
 
   if (error || !card) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-purple-900 to-black">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-900 to-black">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-white mb-4">Oops!</h1>
           <p className="text-gray-400 mb-8">{error || 'Card not found'}</p>
@@ -72,6 +72,7 @@ export default function CardDetailPage() {
   return (
     <CardViewer
       name={card.name}
+      slug={params.name as string}
       age={card.age}
       message={card.message}
     />

@@ -5,16 +5,23 @@ CREATE TABLE IF NOT EXISTS birthday_cards (
   age INTEGER NOT NULL,
   message TEXT,
   slug TEXT NOT NULL,
+  public BOOLEAN DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  source TEXT,
+  referrer TEXT,
+  user_agent TEXT,
+  cookie_data TEXT,
+  website TEXT,
   UNIQUE(name, id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_slug ON birthday_cards(slug);
 CREATE INDEX IF NOT EXISTS idx_created_at ON birthday_cards(created_at);
+CREATE INDEX IF NOT EXISTS idx_public ON birthday_cards(public);
 
 
-INSERT INTO birthday_cards (id, name, age, message, slug) VALUES
-  ('ABC123', 'John', 25, 'Happy Birthday! Have an amazing day!', 'john'),
-  ('XYZ789', 'Sarah', 30, 'Wishing you joy and happiness!', 'sarah'),
-  ('DEF456', 'Mike', 28, 'Another year older, another year wiser!', 'mike');
+INSERT INTO birthday_cards (id, name, age, message, slug, public, source) VALUES
+  ('ABC123', 'John', 25, 'Happy Birthday! Have an amazing day!', 'john', 1, 'web'),
+  ('XYZ789', 'Sarah', 30, 'Wishing you joy and happiness!', 'sarah', 1, 'web'),
+  ('DEF456', 'Mike', 28, 'Another year older, another year wiser!', 'mike', 0, 'web');

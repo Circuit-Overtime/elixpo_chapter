@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Candles from './Candles';
 import Confetti from './Confetti';
 import MicrophoneButton from './MicrophoneButton';
-import { RefreshCw, Github, Mail, Instagram } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 interface CardViewerProps {
   name: string;

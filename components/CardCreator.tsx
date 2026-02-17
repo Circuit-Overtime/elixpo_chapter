@@ -39,6 +39,15 @@ export default function CardCreator() {
     setLoading(true);
 
     try {
+      // Collect tracking data
+      const trackingData = {
+        source: typeof window !== 'undefined' ? document.referrer ? 'referrer' : 'direct' : 'unknown',
+        referrer: typeof window !== 'undefined' ? document.referrer || 'none' : 'none',
+        user_agent: typeof window !== 'undefined' ? navigator.userAgent : 'unknown',
+        website: typeof window !== 'undefined' ? window.location.hostname : 'unknown',
+        cookie_data: typeof window !== 'undefined' ? document.cookie : 'none',
+      };
+
       const response = await fetch('/api/cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,6 +57,7 @@ export default function CardCreator() {
           message: formData.message,
           slug: formData.customSlug || undefined,
           public: isPublic,
+          ...trackingData,
         }),
       });
 
@@ -65,7 +75,7 @@ export default function CardCreator() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-linear-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4 relative\">
       {/* Back to Home Button */}
       <Link
         href="/"

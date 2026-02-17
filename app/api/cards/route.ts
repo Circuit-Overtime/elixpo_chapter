@@ -3,7 +3,18 @@ import { generateUniqueId, createSlug } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, age, message, slug, public: isPublic } = await request.json();
+    const { 
+      name, 
+      age, 
+      message, 
+      slug, 
+      public: isPublic,
+      source,
+      referrer,
+      user_agent,
+      website,
+      cookie_data,
+    } = await request.json();
 
     if (!name || !age) {
       return NextResponse.json(
@@ -25,6 +36,11 @@ export async function POST(request: NextRequest) {
       message,
       slug: cardSlug,
       public: isPublic ? 1 : 0,
+      source: source || 'direct',
+      referrer: referrer || 'none',
+      user_agent: user_agent || 'unknown',
+      website: website || 'unknown',
+      cookie_data: cookie_data || 'none',
       created_at: new Date().toISOString(),
     };
 
