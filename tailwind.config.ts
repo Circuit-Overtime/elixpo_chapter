@@ -19,7 +19,7 @@ const config: Config = {
         orbitron: ['Orbitron', 'sans-serif'],
       },
       animation: {
-        blob: 'blob 7s infinite',
+        blob: 'blob 7s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         float: 'float 6s ease-in-out infinite',
       },
       keyframes: {
