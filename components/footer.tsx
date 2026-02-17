@@ -1,6 +1,8 @@
 import { Github } from 'lucide-react';
 
-<footer className="border-t border-gray-800/50 bg-linear-to-r from-gray-950/50 to-gray-900/50 backdrop-blur-md">
+function Footer() {
+    return (
+        <footer className="border-t border-gray-800/50 bg-linear-to-r from-gray-950/50 to-gray-900/50 backdrop-blur-md">
           <div className="max-w-6xl mx-auto px-4 py-12">
             <div className="grid md:grid-cols-3 gap-12 mb-8">
               <div>
@@ -51,3 +53,7 @@ import { Github } from 'lucide-react';
             </div>
           </div>
         </footer>
+    )
+}
+
+export default Footer;

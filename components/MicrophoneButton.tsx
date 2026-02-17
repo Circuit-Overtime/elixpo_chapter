@@ -5,12 +5,10 @@ import { Volume2, Mic } from 'lucide-react';
 
 interface MicrophoneButtonProps {
   onBlowDetected: () => void;
-  onAllCandlesBlow?: () => void;
 }
 
 export default function MicrophoneButton({
   onBlowDetected,
-  onAllCandlesBlow,
 }: MicrophoneButtonProps) {
   const [isListening, setIsListening] = useState(false);
   const [text, setText] = useState('Click Here to Unmute Mic');
