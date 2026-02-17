@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, ArrowLeft } from 'lucide-react';
+import { Sparkles, ArrowLeft, Globe, Lock } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CardCreator() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     age: '',
@@ -46,6 +47,7 @@ export default function CardCreator() {
           age: parseInt(formData.age),
           message: formData.message,
           slug: formData.customSlug || undefined,
+          public: isPublic,
         }),
       });
 
@@ -63,7 +65,7 @@ export default function CardCreator() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4 relative">
       {/* Back to Home Button */}
       <Link
         href="/"
@@ -75,7 +77,7 @@ export default function CardCreator() {
 
       <div className="relative max-w-md w-full">
         {/* Animated background elements */}
-        <div className="absolute inset-0 bg-`linear`-to-r from-pink-500 to-purple-500 rounded-lg blur-3xl opacity-20 -z-10 animate-pulse"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg blur-3xl opacity-20 -z-10 animate-pulse"></div>
 
         <div className="bg-black/50 backdrop-blur-md border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
           <div className="flex items-center justify-center mb-8">
@@ -140,6 +142,47 @@ export default function CardCreator() {
               />
             </div>
 
+            {/* Public/Private Toggle */}
+            <div className="bg-gray-800/30 border border-gray-700/50 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    {isPublic ? (
+                      <>
+                        <Globe className="w-4 h-4 text-blue-400" />
+                        Public Gallery
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-4 h-4 text-gray-400" />
+                        Private
+                      </>
+                    )}
+                  </label>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {isPublic
+                      ? 'Card will appear in the public gallery'
+                      : 'Only accessible via direct link'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPublic(!isPublic)}
+                  className={`relative inline-flex w-12 h-6 rounded-full transition ${
+                    isPublic
+                      ? 'bg-blue-600'
+                      : 'bg-gray-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block w-5 h-5 bg-white rounded-full transition transform ${
+                      isPublic ? 'translate-x-6' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
             {error && (
               <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded-lg">
                 {error}
@@ -149,7 +192,7 @@ export default function CardCreator() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition transform hover:scale-105"
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition transform hover:scale-105"
             >
               {loading ? 'Creating Card...' : 'Create Birthday Card'}
             </button>

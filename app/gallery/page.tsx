@@ -34,7 +34,7 @@ export default function Gallery() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-black overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-purple-950 to-black overflow-hidden">
       {/* Animated background blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
@@ -44,7 +44,7 @@ export default function Gallery() {
 
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Header */}
-        <div className="border-b border-gray-800/50 bg-gradient-to-r from-gray-950/50 to-gray-900/50 backdrop-blur-md">
+        <div className="border-b border-gray-800/50 bg-linear-to-r from-gray-950/50 to-gray-900/50 backdrop-blur-md">
           <div className="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link
@@ -61,7 +61,7 @@ export default function Gallery() {
             </div>
             <Link
               href="/create"
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition transform hover:scale-105 shadow-lg shadow-purple-600/50"
+              className="px-6 py-3 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition transform hover:scale-105 shadow-lg shadow-purple-600/50"
             >
               Create Card
             </Link>
@@ -73,7 +73,7 @@ export default function Gallery() {
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-96">
               <div className="relative w-16 h-16 mb-4">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full animate-spin" style={{ borderRadius: '50%', width: '100%' }}></div>
+                <div className="absolute inset-0 bg-linear-to-r from-purple-600 to-pink-600 rounded-full animate-spin" style={{ borderRadius: '50%', width: '100%' }}></div>
                 <div className="absolute inset-2 bg-gray-950 rounded-full"></div>
               </div>
               <p className="text-gray-300 font-medium">Loading cards...</p>
@@ -95,7 +95,7 @@ export default function Gallery() {
               </p>
               <Link
                 href="/create"
-                className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition transform hover:scale-105 shadow-lg shadow-purple-600/50"
+                className="px-8 py-3 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition transform hover:scale-105 shadow-lg shadow-purple-600/50"
               >
                 Create Your Card
               </Link>
@@ -110,10 +110,10 @@ export default function Gallery() {
                   <Link
                     key={card.id}
                     href={`/${card.slug}/${card.id}`}
-                    className="group relative bg-gradient-to-br from-gray-900/60 to-gray-800/40 backdrop-blur-md border border-gray-700/50 hover:border-purple-500/50 rounded-2xl overflow-hidden transition hover:shadow-xl hover:shadow-purple-600/20"
+                    className="group relative bg-linear-to-br from-gray-900/60 to-gray-800/40 backdrop-blur-md border border-gray-700/50 hover:border-purple-500/50 rounded-2xl overflow-hidden transition hover:shadow-xl hover:shadow-purple-600/20"
                   >
                     {/* Card Preview Content Area */}
-                    <div className="aspect-square bg-gradient-to-br from-purple-900/30 via-blue-900/30 to-pink-900/30 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                    <div className="aspect-square bg-linear-to-br from-purple-900/30 via-blue-900/30 to-pink-900/30 flex flex-col items-center justify-center p-6 relative overflow-hidden">
                       {/* Decorative background */}
                       <div className="absolute inset-0 opacity-10">
                         <div className="absolute top-0 right-0 w-40 h-40 bg-purple-600 rounded-full blur-3xl"></div>
@@ -149,7 +149,7 @@ export default function Gallery() {
         </div>
 
         {/* Footer */}
-        <footer className="border-t border-gray-800/50 bg-gradient-to-r from-gray-950/50 to-gray-900/50 backdrop-blur-md mt-20">
+        <footer className="border-t border-gray-800/50 bg-linear-to-r from-gray-950/50 to-gray-900/50 backdrop-blur-md mt-20">
           <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="flex flex-col md:flex-row items-center justify-between">
               <p className="text-gray-500 text-sm mb-4 md:mb-0">
