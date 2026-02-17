@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function CardCreator() {
   const router = useRouter();
@@ -62,7 +63,16 @@ export default function CardCreator() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4 relative">
+      {/* Back to Home Button */}
+      <Link
+        href="/"
+        className="absolute top-8 left-8 flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition"
+      >
+        <ArrowLeft size={20} />
+        Back Home
+      </Link>
+
       <div className="relative max-w-md w-full">
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg blur-3xl opacity-20 -z-10 animate-pulse"></div>
