@@ -10,14 +10,12 @@ import { RefreshCw } from 'lucide-react';
 interface CardViewerProps {
   name: string;
   age: number;
-  slug: string;
   message?: string;
 }
 
 export default function CardViewer({
   name,
   age,
-  slug,
   message,
 }: CardViewerProps) {
   const router = useRouter();
@@ -72,20 +70,17 @@ export default function CardViewer({
   };
 
   useEffect(() => {
-    // Update flame references when candles are rendered
     flamesRef.current = document.querySelectorAll('.flame');
   }, []); 
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-black overflow-hidden">
-      {/* Animated background blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
 
-      {/* Content */}
       <div className="relative flex flex-col items-center justify-center min-h-screen z-10">
         <div className="absolute top-8 right-8 flex gap-4">
           <button
@@ -105,22 +100,18 @@ export default function CardViewer({
           <p className="text-lg text-gray-300 min-h-6">{displayText}</p>
         </div>
 
-        {/* Cake and Candles */}
         <div className="relative w-full max-w-xl h-64 mb-8 flex items-center justify-center">
           <Candles count={age} onBlow={handleBlowDetected} />
         </div>
 
-        {/* Candles blown info */}
         {candlesBlown > 0 && !allCandlesBlown && (
           <p className="text-sm text-gray-400 mb-4">
             Candles blown: {candlesBlown}/{age}
           </p>
         )}
 
-        {/* Microphone Button */}
         <MicrophoneButton onBlowDetected={handleBlowDetected} />
 
-        {/* Confetti */}
         <Confetti isVisible={showConfetti} />
 
       </div>
