@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS birthday_cards (
 CREATE INDEX IF NOT EXISTS idx_slug ON birthday_cards(slug);
 CREATE INDEX IF NOT EXISTS idx_created_at ON birthday_cards(created_at);
 
--- Insert sample data for testing
+
 INSERT INTO birthday_cards (id, name, age, message, slug) VALUES
   ('ABC123', 'John', 25, 'Happy Birthday! Have an amazing day!', 'john'),
   ('XYZ789', 'Sarah', 30, 'Wishing you joy and happiness!', 'sarah'),

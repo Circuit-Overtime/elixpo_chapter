@@ -8,7 +8,6 @@ import { Loader2 } from 'lucide-react';
 interface CardData {
   id: string;
   name: string;
-  slug: string;
   age: number;
   message?: string;
 }
@@ -73,8 +72,6 @@ export default function CardDetailPage() {
   return (
     <CardViewer
       name={card.name}
-      slug={card.slug}
-      cardId={card.id}
       age={card.age}
       message={card.message}
     />

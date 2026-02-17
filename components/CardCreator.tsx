@@ -65,7 +65,7 @@ export default function CardCreator() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-linear-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4 relative">
       {/* Back to Home Button */}
       <Link
         href="/"
@@ -77,7 +77,7 @@ export default function CardCreator() {
 
       <div className="relative max-w-md w-full">
         {/* Animated background elements */}
-        <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg blur-3xl opacity-20 -z-10 animate-pulse"></div>
+        <div className="absolute inset-0 bg-linear-to-r from-pink-500 to-purple-500 rounded-lg blur-3xl opacity-20 -z-10 animate-pulse"></div>
 
         <div className="bg-black/50 backdrop-blur-md border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
           <div className="flex items-center justify-center mb-8">
@@ -192,7 +192,7 @@ export default function CardCreator() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition transform hover:scale-105"
+              className="w-full bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition transform hover:scale-105"
             >
               {loading ? 'Creating Card...' : 'Create Birthday Card'}
             </button>
