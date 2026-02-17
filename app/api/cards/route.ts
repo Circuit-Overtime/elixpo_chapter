@@ -3,7 +3,7 @@ import { generateUniqueId, createSlug } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, age, message, slug } = await request.json();
+    const { name, age, message, slug, public: isPublic } = await request.json();
 
     if (!name || !age) {
       return NextResponse.json(
@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       age,
       message,
       slug: cardSlug,
+      public: isPublic ? 1 : 0,
       created_at: new Date().toISOString(),
     };
 
@@ -42,6 +43,32 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const slug = searchParams.get('slug');
     const cardId = searchParams.get('id');
+    const publicOnly = searchParams.get('public') === 'true';
+
+    // If fetching public cards for gallery
+    if (publicOnly) {
+      // Fetch from Cloudflare D1: SELECT * FROM birthday_cards WHERE public = 1 ORDER BY created_at DESC LIMIT 50
+      // For now, returning mock data
+      const mockPublicCards = [
+        {
+          id: 'ABC123',
+          name: 'John',
+          slug: 'john',
+          age: 25,
+          public: 1,
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 'DEF456',
+          name: 'Sarah',
+          slug: 'sarah',
+          age: 30,
+          public: 1,
+          created_at: new Date().toISOString(),
+        },
+      ];
+      return NextResponse.json(mockPublicCards);
+    }
 
     if (!slug) {
       return NextResponse.json(
@@ -59,6 +86,7 @@ export async function GET(request: NextRequest) {
       age: 25,
       message: 'Happy Birthday!',
       slug,
+      public: 0,
     };
 
     return NextResponse.json(cardData);

@@ -24,11 +24,13 @@ export async function createCardSchema() {
         age INTEGER NOT NULL,
         message TEXT,
         slug TEXT NOT NULL,
+        public BOOLEAN DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(name, id)
       );
       
       CREATE INDEX IF NOT EXISTS idx_slug ON birthday_cards(slug);
+      CREATE INDEX IF NOT EXISTS idx_public ON birthday_cards(public);
     `);
   } catch (error) {
     console.error('Error creating schema:', error);
