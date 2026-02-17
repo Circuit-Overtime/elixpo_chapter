@@ -2,7 +2,7 @@ import { Github } from 'lucide-react';
 
 function Footer() {
     return (
-        <footer className="border-t border-gray-800/50 bg-gradient-to-r from-gray-950/50 to-gray-900/50 backdrop-blur-md">
+        <footer className="border-t border-gray-800/50 bg-linear-to-r from-gray-950/50 to-gray-900/50 backdrop-blur-md">
           <div className="max-w-6xl mx-auto px-4 py-12">
             <div className="grid md:grid-cols-3 gap-12 mb-8">
               <div>
@@ -43,7 +43,7 @@ function Footer() {
 
             <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between">
               <p className="text-gray-500 text-sm mb-4 md:mb-0">
-                Copyright 2024 LixWish. All rights reserved.
+                Copyright 2026 Elixpo. All rights reserved.
               </p>
               <div className="flex gap-6 text-sm text-gray-500">
                 <a href="#" className="hover:text-white transition">Privacy Policy</a>
