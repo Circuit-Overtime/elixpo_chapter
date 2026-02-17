@@ -10,16 +10,13 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-950 via-purple-950 to-black overflow-hidden">
-      {/* Animated background blobs - more contrast */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animation-delay-2000 animate-blob"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animation-delay-4000 animate-blob"></div>
       </div>
 
-      {/* Content */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Header Section */}
         <div className="flex-1 flex flex-col items-center justify-center px-4 py-20">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center mb-6">
@@ -36,7 +33,6 @@ export default function Home() {
             <p className="text-gray-400 mt-3 max-w-xl">Experience personalized celebration with unique access keys and microphone-powered interactions</p>
           </div>
 
-          {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mb-20">
             <div className="bg-linear-to-br from-purple-900/60 to-purple-800/40 backdrop-blur-md border border-purple-500/50 rounded-2xl p-8 hover:border-purple-400 transition hover:shadow-lg hover:shadow-purple-500/20">
               <div className="p-3 bg-purple-600/30 rounded-lg w-fit mb-4">
@@ -63,7 +59,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Primary CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 mb-24">
             <Link
               href="/create"
@@ -91,13 +86,11 @@ export default function Home() {
             </a>
           </div>
 
-          {/* How It Works Section */}
           <div className="w-full max-w-5xl mb-20">
             <h2 className="text-4xl font-bold text-white text-center mb-4">How It Works</h2>
             <p className="text-gray-300 text-center mb-12 max-w-2xl mx-auto">Simple three-step process to create and share your magical birthday card</p>
             
             <div className="grid md:grid-cols-3 gap-8">
-              {/* Step 1 */}
               <div className="relative">
                 <div className="bg-linear-to-br from-purple-900/70 to-purple-800/50 backdrop-blur-md border border-purple-500/60 rounded-2xl p-8 h-full">
                   <div className="flex items-center justify-center w-12 h-12 bg-linear-to-br from-purple-600 to-purple-500 rounded-full mb-6">
@@ -115,7 +108,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Step 2 */}
               <div className="relative">
                 <div className="bg-linear-to-br from-blue-900/70 to-blue-800/50 backdrop-blur-md border border-blue-500/60 rounded-2xl p-8 h-full">
                   <div className="flex items-center justify-center w-12 h-12 bg-linear-to-br from-blue-600 to-blue-500 rounded-full mb-6">
@@ -133,7 +125,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Step 3 */}
               <div>
                 <div className="bg-linear-to-br from-pink-900/70 to-pink-800/50 backdrop-blur-md border border-pink-500/60 rounded-2xl p-8 h-full">
                   <div className="flex items-center justify-center w-12 h-12 bg-linear-to-br from-pink-600 to-pink-500 rounded-full mb-6">
