@@ -1,26 +1,103 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@layer base {
+  html {
+    font-family: system-ui, -apple-system, sans-serif;
+  }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    @apply bg-black text-white;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .container-branch {
+    @apply absolute h-screen w-screen left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2;
+  }
+}
+
+@layer utilities {
+  .animate-blob {
+    @apply animate-pulse;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent;
+  }
+}
+
+/* Custom animations */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInScale {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.5s ease-out;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Remove default button styles */
+button {
+  @apply cursor-pointer;
+}
+
+/* Remove input styling defaults */
+input,
+textarea {
+  @apply outline-none;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-purple-500 rounded-full hover:bg-purple-600;
+}
+
+/* Selection color */
+::selection {
+  @apply bg-purple-500 text-white;
 }
