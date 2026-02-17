@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
   html {
@@ -8,19 +6,25 @@
   }
 
   body {
-    @apply bg-black text-white;
+    background-color: rgb(0, 0, 0);
+    color: rgb(255, 255, 255);
   }
 }
 
 @layer components {
   .container-branch {
-    @apply absolute h-screen w-screen left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2;
+    position: absolute;
+    height: 100vh;
+    width: 100vw;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
   }
 }
 
 @layer utilities {
   .animate-blob {
-    @apply animate-pulse;
+    animation: pulse 7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   .animation-delay-2000 {
@@ -32,7 +36,9 @@
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent;
+    background: linear-gradient(to right, #a78bfa, #f472b6, #06b6d4);
+    background-clip: text;
+    color: transparent;
   }
 }
 
@@ -74,13 +80,13 @@ html {
 
 /* Remove default button styles */
 button {
-  @apply cursor-pointer;
+  cursor: pointer;
 }
 
 /* Remove input styling defaults */
 input,
 textarea {
-  @apply outline-none;
+  outline: none;
 }
 
 /* Scrollbar styling */
@@ -90,14 +96,20 @@ textarea {
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-900;
+  background: rgb(17, 24, 39);
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-purple-500 rounded-full hover:bg-purple-600;
+  background: rgb(168, 85, 247);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(147, 51, 234);
 }
 
 /* Selection color */
 ::selection {
-  @apply bg-purple-500 text-white;
+  background-color: rgb(168, 85, 247);
+  color: rgb(255, 255, 255);
 }
