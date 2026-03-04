@@ -1,36 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hashString, generateUUID } from '@/lib/crypto';
 import { verifyJWT, createAccessToken, createRefreshToken } from '@/lib/jwt';
-import { getAuthRequestByState, getOAuthClientByIdWithSecret, validateOAuthClient, getRefreshTokenByHash, revokeRefreshToken, createRefreshToken as storeRefreshToken } from '@/lib/db';
+import { getOAuthClientByIdWithSecret, validateOAuthClient, getRefreshTokenByHash, revokeRefreshToken, createRefreshToken as storeRefreshToken, getUserById } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
 
-/**
- * POST /api/auth/token
- * 
- * SSO Token Endpoint
- * 
- * Supports:
- * 1. Authorization Code Flow: grant_type=authorization_code (for SSO clients)
- * 2. Refresh Token Flow: grant_type=refresh_token
- * 
- * Request Body (Authorization Code):
- * {
- *   "grant_type": "authorization_code",
- *   "code": "code_xxxxx",
- *   "client_id": "cli_xxxxx",
- *   "client_secret": "secret_xxxxx",
- *   "redirect_uri": "https://app.example.com/callback"
- * }
- * 
- * Response:
- * {
- *   "access_token": "eyJ...",
- *   "token_type": "Bearer",
- *   "expires_in": 900,
- *   "refresh_token": "eyJ...",
- *   "scope": "openid profile email"
- * }
- */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -38,10 +11,7 @@ export async function POST(request: NextRequest) {
 
     if (!grant_type) {
       return NextResponse.json(
-        {
-          error: 'invalid_request',
-          error_description: 'grant_type is required',
-        },
+        { error: 'invalid_request', error_description: 'grant_type is required' },
         { status: 400 }
       );
     }
@@ -50,10 +20,7 @@ export async function POST(request: NextRequest) {
     if (grant_type === 'authorization_code') {
       if (!code || !client_id || !client_secret || !redirect_uri) {
         return NextResponse.json(
-          {
-            error: 'invalid_request',
-            error_description: 'Missing required parameters: code, client_id, client_secret, redirect_uri',
-          },
+          { error: 'invalid_request', error_description: 'Missing required parameters: code, client_id, client_secret, redirect_uri' },
           { status: 400 }
         );
       }
@@ -65,23 +32,17 @@ export async function POST(request: NextRequest) {
         const client = await getOAuthClientByIdWithSecret(db, client_id);
         if (!client) {
           return NextResponse.json(
-            {
-              error: 'invalid_client',
-              error_description: 'Client not found',
-            },
+            { error: 'invalid_client', error_description: 'Client not found' },
             { status: 401 }
           );
         }
 
-        // 2. Verify client_secret (compare hashes)
+        // 2. Verify client_secret
         const clientSecretHash = hashString(client_secret);
         const isValidSecret = await validateOAuthClient(db, client_id, clientSecretHash);
         if (!isValidSecret) {
           return NextResponse.json(
-            {
-              error: 'invalid_client',
-              error_description: 'Invalid client credentials',
-            },
+            { error: 'invalid_client', error_description: 'Invalid client credentials' },
             { status: 401 }
           );
         }
@@ -90,21 +51,60 @@ export async function POST(request: NextRequest) {
         const redirectUris = JSON.parse((client as any).redirect_uris || '[]');
         if (!redirectUris.includes(redirect_uri)) {
           return NextResponse.json(
-            {
-              error: 'invalid_grant',
-              error_description: 'redirect_uri does not match',
-            },
+            { error: 'invalid_grant', error_description: 'redirect_uri does not match' },
             { status: 400 }
           );
         }
 
-        // 4. For now, generate tokens with placeholder user info
-        // In a full implementation, the authorization code would be stored with the user_id
-        const userId = generateUUID(); // TODO: from auth request lookup
-        const email = `user@${new URL(redirect_uri).hostname}`;
-        const scopes = (scope || 'openid profile email').split(' ');
+        // 4. Look up auth request by code, get the user_id stored during authorization
+        const authRequest = await db.prepare(
+          'SELECT * FROM auth_requests WHERE code = ? AND client_id = ? AND used = 0 AND expires_at > CURRENT_TIMESTAMP'
+        ).bind(code, client_id).first() as any;
 
-        const accessToken = await createAccessToken(userId, email, 'email');
+        if (!authRequest) {
+          return NextResponse.json(
+            { error: 'invalid_grant', error_description: 'Authorization code not found, expired, or already used' },
+            { status: 400 }
+          );
+        }
+
+        // Validate redirect_uri matches what was stored
+        if (authRequest.redirect_uri !== redirect_uri) {
+          return NextResponse.json(
+            { error: 'invalid_grant', error_description: 'redirect_uri mismatch with authorization request' },
+            { status: 400 }
+          );
+        }
+
+        // 5. Mark code as used (single-use)
+        await db.prepare('UPDATE auth_requests SET used = 1 WHERE code = ?').bind(code).run();
+
+        // 6. Get the actual user from DB
+        const userId = authRequest.user_id;
+        if (!userId) {
+          return NextResponse.json(
+            { error: 'invalid_grant', error_description: 'No user associated with this authorization code' },
+            { status: 400 }
+          );
+        }
+
+        const user = await getUserById(db, userId) as any;
+        if (!user) {
+          return NextResponse.json(
+            { error: 'invalid_grant', error_description: 'User not found' },
+            { status: 400 }
+          );
+        }
+
+        const scopes = (scope || authRequest.scopes || 'openid profile email').split(' ');
+
+        const accessToken = await createAccessToken(
+          userId,
+          user.email,
+          'email',
+          parseInt(process.env.JWT_EXPIRATION_MINUTES || '15'),
+          !!(user.is_admin)
+        );
         const refreshTokenJWT = await createRefreshToken(userId, 'email');
 
         // Store refresh token
@@ -130,10 +130,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('[Token] Authorization code flow error:', error);
         return NextResponse.json(
-          {
-            error: 'server_error',
-            error_description: 'Failed to process token request',
-          },
+          { error: 'server_error', error_description: 'Failed to process token request' },
           { status: 500 }
         );
       }
@@ -143,10 +140,7 @@ export async function POST(request: NextRequest) {
     if (grant_type === 'refresh_token') {
       if (!refresh_token || !client_id) {
         return NextResponse.json(
-          {
-            error: 'invalid_request',
-            error_description: 'Missing required parameters: refresh_token, client_id',
-          },
+          { error: 'invalid_request', error_description: 'Missing required parameters: refresh_token, client_id' },
           { status: 400 }
         );
       }
@@ -154,50 +148,46 @@ export async function POST(request: NextRequest) {
       const db = await getDatabase();
 
       try {
-        // 1. Verify refresh token JWT
         const payload = await verifyJWT(refresh_token);
         if (!payload || payload.type !== 'refresh') {
           return NextResponse.json(
-            {
-              error: 'invalid_grant',
-              error_description: 'Invalid or expired refresh token',
-            },
+            { error: 'invalid_grant', error_description: 'Invalid or expired refresh token' },
             { status: 400 }
           );
         }
 
-        // 2. Verify refresh token in DB and not revoked
         const refreshTokenHash = hashString(refresh_token);
         const tokenRecord = await getRefreshTokenByHash(db, refreshTokenHash);
         if (!tokenRecord) {
           return NextResponse.json(
-            {
-              error: 'invalid_grant',
-              error_description: 'Refresh token not found or revoked',
-            },
+            { error: 'invalid_grant', error_description: 'Refresh token not found or revoked' },
             { status: 400 }
           );
         }
 
-        // 3. Verify client_id matches if stored
         if ((tokenRecord as any).client_id && (tokenRecord as any).client_id !== client_id) {
           return NextResponse.json(
-            {
-              error: 'invalid_client',
-              error_description: 'Client ID does not match token',
-            },
+            { error: 'invalid_client', error_description: 'Client ID does not match token' },
             { status: 401 }
           );
         }
 
-        // 4. Issue new access token
-        const newAccessToken = await createAccessToken(payload.sub, payload.email, payload.provider);
+        // Get fresh user data
+        const user = await getUserById(db, payload.sub) as any;
+        const isAdmin = user ? !!(user.is_admin) : false;
+        const email = user ? user.email : payload.email;
 
-        // 5. Optionally rotate refresh token
+        const newAccessToken = await createAccessToken(
+          payload.sub,
+          email,
+          payload.provider,
+          parseInt(process.env.JWT_EXPIRATION_MINUTES || '15'),
+          isAdmin
+        );
+
         const newRefreshToken = await createRefreshToken(payload.sub, payload.provider);
         const newRefreshTokenHash = hashString(newRefreshToken);
 
-        // Revoke old token and store new one
         try {
           await revokeRefreshToken(db, refreshTokenHash);
           await storeRefreshToken(db, {
@@ -209,7 +199,6 @@ export async function POST(request: NextRequest) {
           });
         } catch (storageError) {
           console.error('[Token] Token rotation error:', storageError);
-          // Continue anyway - new access token is still valid
         }
 
         return NextResponse.json(
@@ -224,55 +213,29 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('[Token] Refresh token flow error:', error);
         return NextResponse.json(
-          {
-            error: 'server_error',
-            error_description: 'Failed to refresh token',
-          },
+          { error: 'server_error', error_description: 'Failed to refresh token' },
           { status: 500 }
         );
       }
     }
 
-    // Client Credentials Flow (RFC 6749 Section 4.4)
+    // Client Credentials Flow - not yet implemented
     if (grant_type === 'client_credentials') {
-      if (!client_id || !client_secret) {
-        return NextResponse.json(
-          {
-            error: 'invalid_request',
-            error_description: 'Missing required parameters: client_id, client_secret',
-          },
-          { status: 400 }
-        );
-      }
-
-      // TODO: Implement service-to-service authentication
-      // This allows backend services to call APIs on behalf of themselves
-
       return NextResponse.json(
-        {
-          error: 'unsupported_grant_type',
-          error_description: 'client_credentials not yet implemented',
-        },
+        { error: 'unsupported_grant_type', error_description: 'client_credentials not yet implemented' },
         { status: 501 }
       );
     }
 
-    // Unsupported grant type
     return NextResponse.json(
-      {
-        error: 'unsupported_grant_type',
-        error_description: `grant_type '${grant_type}' is not supported`,
-      },
+      { error: 'unsupported_grant_type', error_description: `grant_type '${grant_type}' is not supported` },
       { status: 400 }
     );
 
   } catch (error) {
     console.error('[Token Endpoint] Error:', error);
     return NextResponse.json(
-      {
-        error: 'server_error',
-        error_description: 'Failed to process token request',
-      },
+      { error: 'server_error', error_description: 'Failed to process token request' },
       { status: 500 }
     );
   }

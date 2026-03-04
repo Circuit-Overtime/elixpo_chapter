@@ -14,7 +14,8 @@
     "db:migrate:local": "wrangler d1 execute elixpo_auth --local < src/workers/schema.sql",
     "db:query": "wrangler d1 execute elixpo_auth",
     "db:query:remote": "wrangler d1 execute elixpo_auth --remote",
-    "db:tables": "wrangler d1 execute elixpo_auth \"SELECT name FROM sqlite_master WHERE type='table';\" --remote"
+    "db:tables": "wrangler d1 execute elixpo_auth \"SELECT name FROM sqlite_master WHERE type='table';\" --remote",
+    "seed:admin": "npx tsx scripts/seed-admin.ts"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20240905.0",

@@ -27,25 +27,12 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const verifyAdmin = async () => {
       try {
-        const token = localStorage.getItem('authToken');
-
-        if (!token) {
-          setSession(null);
-          setLoading(false);
-          if (pathname?.startsWith('/admin') && pathname !== '/admin/login') {
-            router.push('/admin/login');
-          }
-          return;
-        }
-
+        // Use httpOnly cookie-based auth — no localStorage
         const response = await fetch('/api/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include',
         });
 
         if (!response.ok) {
-          localStorage.removeItem('authToken');
           setSession(null);
           if (pathname?.startsWith('/admin') && pathname !== '/admin/login') {
             router.push('/admin/login');
@@ -57,7 +44,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         const user = await response.json();
 
         if (!user.isAdmin) {
-          localStorage.removeItem('authToken');
           setSession(null);
           if (pathname?.startsWith('/admin') && pathname !== '/admin/login') {
             router.push('/admin/login');
@@ -67,18 +53,20 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         }
 
         setSession({
-          userId: user.id,
+          userId: user.id || user.userId,
           email: user.email,
-          isAdmin: user.isAdmin,
+          isAdmin: true,
         });
 
-        // Redirect from login page if already authenticated
         if (pathname === '/admin/login') {
           router.push('/admin');
         }
       } catch (error) {
         console.error('Session verification failed:', error);
         setSession(null);
+        if (pathname?.startsWith('/admin') && pathname !== '/admin/login') {
+          router.push('/admin/login');
+        }
       } finally {
         setLoading(false);
       }
@@ -87,8 +75,12 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     verifyAdmin();
   }, [router, pathname]);
 
-  const logout = () => {
-    localStorage.removeItem('authToken');
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      // ignore
+    }
     setSession(null);
     router.push('/admin/login');
   };

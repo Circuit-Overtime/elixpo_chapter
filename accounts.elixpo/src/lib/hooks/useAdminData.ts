@@ -35,11 +35,7 @@ export function useDashboardStats(timeRange: string = '7d') {
         setLoading(true);
         const response = await fetch(
           `/api/admin/dashboard/stats?range=${timeRange}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            },
-          }
+          { credentials: 'include' }
         );
 
         if (!response.ok) {
@@ -95,11 +91,7 @@ export function useUsers(page: number = 1, search: string = '') {
         setLoading(true);
         const response = await fetch(
           `/api/admin/users?page=${page}&search=${encodeURIComponent(search)}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            },
-          }
+          { credentials: 'include' }
         );
 
         if (!response.ok) {
@@ -156,11 +148,7 @@ export function useApps(page: number = 1, search: string = '') {
         setLoading(true);
         const response = await fetch(
           `/api/admin/apps?page=${page}&search=${encodeURIComponent(search)}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            },
-          }
+          { credentials: 'include' }
         );
 
         if (!response.ok) {

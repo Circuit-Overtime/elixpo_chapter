@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '../../../../src/lib/admin-middleware';
+import { listAdminUsers, countUsers, setUserAdminStatus, setUserActiveStatus, logAdminAction } from '../../../../src/lib/db';
+import { getDatabase } from '../../../../src/lib/d1-client';
+import { generateUUID } from '../../../../src/lib/crypto';
 
 export async function GET(request: NextRequest) {
   const session = await verifyAdminSession(request);
@@ -16,51 +19,28 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search') || '';
+    const offset = (page - 1) * limit;
 
-    // Mock data - replace with actual DB queries
-    const users = [
-      {
-        id: 'user_1',
-        email: 'john@example.com',
-        isAdmin: false,
-        isActive: true,
-        createdAt: '2025-11-01T10:00:00Z',
-        lastLogin: '2025-12-16T15:30:00Z',
-        emailVerified: true,
-        appsCount: 2,
-      },
-      {
-        id: 'user_2',
-        email: 'admin@elixpo.com',
-        isAdmin: true,
-        isActive: true,
-        createdAt: '2025-10-01T08:00:00Z',
-        lastLogin: '2025-12-16T16:00:00Z',
-        emailVerified: true,
-        appsCount: 0,
-      },
-      {
-        id: 'user_3',
-        email: 'jane@example.com',
-        isAdmin: false,
-        isActive: false,
-        createdAt: '2025-12-05T14:00:00Z',
-        lastLogin: '2025-12-10T09:15:00Z',
-        emailVerified: false,
-        appsCount: 1,
-      },
-    ];
+    const db = await getDatabase();
 
-    const filtered = users.filter(
-      (user) =>
-        user.email.toLowerCase().includes(search.toLowerCase())
-    );
+    const [usersResult, total] = await Promise.all([
+      listAdminUsers(db, limit, offset, search),
+      countUsers(db, search),
+    ]);
 
-    const total = filtered.length;
-    const paginatedUsers = filtered.slice((page - 1) * limit, page * limit);
+    const users = (usersResult.results || []).map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      isAdmin: !!(u.is_admin),
+      isActive: !!(u.is_active),
+      createdAt: u.created_at,
+      lastLogin: u.last_login,
+      emailVerified: !!(u.email_verified),
+      role: u.role || 'user',
+    }));
 
     return NextResponse.json({
-      users: paginatedUsers,
+      users,
       pagination: {
         page,
         limit,
@@ -89,7 +69,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { userId, action, data } = body;
+    const { userId, action } = body;
 
     if (!userId || !action) {
       return NextResponse.json(
@@ -98,31 +78,66 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Handle different admin actions
+    const db = await getDatabase();
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
     switch (action) {
-      case 'toggle_admin':
-        // Toggle admin status
+      case 'toggle_admin': {
+        // Fetch current status
+        const userRow = await db.prepare('SELECT is_admin FROM users WHERE id = ?').bind(userId).first() as any;
+        if (!userRow) {
+          return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+        const newAdminStatus = !userRow.is_admin;
+        await setUserAdminStatus(db, userId, newAdminStatus);
+        await logAdminAction(db, {
+          id: generateUUID(),
+          adminId: session.userId,
+          action: 'toggle_admin',
+          resourceType: 'user',
+          resourceId: userId,
+          changes: { is_admin: newAdminStatus },
+          ipAddress,
+          userAgent,
+        });
         return NextResponse.json({
           success: true,
-          message: 'Admin status updated',
+          message: `Admin status ${newAdminStatus ? 'granted' : 'revoked'}`,
           userId,
+          isAdmin: newAdminStatus,
         });
+      }
 
-      case 'suspend':
-        // Suspend user account
-        return NextResponse.json({
-          success: true,
-          message: 'User suspended',
-          userId,
+      case 'suspend': {
+        await setUserActiveStatus(db, userId, false);
+        await logAdminAction(db, {
+          id: generateUUID(),
+          adminId: session.userId,
+          action: 'suspend_user',
+          resourceType: 'user',
+          resourceId: userId,
+          changes: { is_active: false },
+          ipAddress,
+          userAgent,
         });
+        return NextResponse.json({ success: true, message: 'User suspended', userId });
+      }
 
-      case 'activate':
-        // Activate user account
-        return NextResponse.json({
-          success: true,
-          message: 'User activated',
-          userId,
+      case 'activate': {
+        await setUserActiveStatus(db, userId, true);
+        await logAdminAction(db, {
+          id: generateUUID(),
+          adminId: session.userId,
+          action: 'activate_user',
+          resourceType: 'user',
+          resourceId: userId,
+          changes: { is_active: true },
+          ipAddress,
+          userAgent,
         });
+        return NextResponse.json({ success: true, message: 'User activated', userId });
+      }
 
       default:
         return NextResponse.json(
