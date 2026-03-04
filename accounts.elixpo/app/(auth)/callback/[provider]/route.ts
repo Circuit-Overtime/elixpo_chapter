@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { provider: string } }
+  { params }: { params: Promise<{ provider: string }> }
 ) {
-  const { provider } = params;
+  const { provider } = await params;
   
   // Construct the API route URL with all query parameters
   const apiUrl = new URL(`/api/auth/callback/${provider}`, request.url);

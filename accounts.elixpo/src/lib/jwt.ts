@@ -5,6 +5,7 @@ export interface JWTPayload {
   sub: string;
   email: string;
   provider?: 'google' | 'github' | 'email';
+  isAdmin?: boolean;
   iat: number;
   exp: number;
   type: 'access' | 'refresh';
@@ -54,12 +55,14 @@ export async function createAccessToken(
   userId: string,
   email: string,
   provider?: 'google' | 'github' | 'email',
-  expiresInMinutes: number = 15
+  expiresInMinutes: number = 15,
+  isAdmin: boolean = false
 ): Promise<string> {
   const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
     sub: userId,
     email,
     type: 'access',
+    isAdmin,
     ...(provider && { provider }),
   };
 
@@ -83,7 +86,7 @@ export async function createRefreshToken(
 ): Promise<string> {
   const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
     sub: userId,
-    email: '', 
+    email: '',
     type: 'refresh',
     ...(provider && { provider }),
   };

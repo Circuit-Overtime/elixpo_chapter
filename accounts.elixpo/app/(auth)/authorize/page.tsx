@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
@@ -19,7 +19,7 @@ interface AuthConfig {
   providers: Record<string, boolean>;
 }
 
-export default function AuthorizePage() {
+function AuthorizeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authRequest, setAuthRequest] = useState<AuthorizationRequest | null>(null);
@@ -407,5 +407,13 @@ export default function AuthorizePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuthorizePage() {
+  return (
+    <Suspense>
+      <AuthorizeContent />
+    </Suspense>
   );
 }

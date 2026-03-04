@@ -10,10 +10,10 @@ import { getDatabase } from '@/lib/d1-client';
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { client_id: string } }
+  { params }: { params: Promise<{ client_id: string }> }
 ) {
   try {
-    const { client_id } = params;
+    const { client_id } = await params;
     const body = await request.json();
     const { name, redirect_uris, scopes } = body;
 
@@ -67,10 +67,10 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { client_id: string } }
+  { params }: { params: Promise<{ client_id: string }> }
 ) {
   try {
-    const { client_id } = params;
+    const { client_id } = await params;
 
     if (!client_id) {
       return NextResponse.json(
@@ -127,10 +127,10 @@ export async function DELETE(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { client_id: string } }
+  { params }: { params: Promise<{ client_id: string }> }
 ) {
   try {
-    const { client_id } = params;
+    const { client_id } = await params;
     const validateRedirectUri = request.nextUrl.searchParams.get('validate_redirect_uri');
 
     if (!client_id) {

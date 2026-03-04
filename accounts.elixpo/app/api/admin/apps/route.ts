@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '../../../../src/lib/admin-middleware';
+import { getDatabase } from '../../../../src/lib/d1-client';
 
 export async function GET(request: NextRequest) {
   const session = await verifyAdminSession(request);
@@ -17,54 +18,48 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search') || '';
 
-    // Mock data - replace with actual DB queries
-    const apps = [
-      {
-        id: 'app_1',
-        name: 'Mobile Banking App',
-        owner: { id: 'user_1', email: 'owner1@example.com' },
-        status: 'active',
-        createdAt: '2025-12-01T10:00:00Z',
-        requests: 45230,
-        users: 120,
-        lastUsed: '2025-12-16T15:30:00Z',
-        requestCount: 45230,
-      },
-      {
-        id: 'app_2',
-        name: 'E-commerce Platform',
-        owner: { id: 'user_2', email: 'owner2@example.com' },
-        status: 'active',
-        createdAt: '2025-11-15T08:20:00Z',
-        requests: 32140,
-        users: 89,
-        lastUsed: '2025-12-16T14:45:00Z',
-        requestCount: 32140,
-      },
-      {
-        id: 'app_3',
-        name: 'Analytics Dashboard',
-        owner: { id: 'user_3', email: 'owner3@example.com' },
-        status: 'suspended',
-        createdAt: '2025-10-20T14:00:00Z',
-        requests: 8920,
-        users: 23,
-        lastUsed: '2025-12-10T09:15:00Z',
-        requestCount: 8920,
-      },
-    ];
+    const db = await getDatabase();
+    const offset = (page - 1) * limit;
 
-    const filtered = apps.filter(
-      (app) =>
-        app.name.toLowerCase().includes(search.toLowerCase()) ||
-        app.owner.email.toLowerCase().includes(search.toLowerCase())
-    );
+    const [appsResult, countResult] = await Promise.all([
+      search
+        ? db.prepare(
+            `SELECT oc.client_id as id, oc.name, oc.is_active, oc.created_at, oc.last_used, oc.request_count,
+               u.id as owner_id, u.email as owner_email
+             FROM oauth_clients oc
+             LEFT JOIN users u ON oc.owner_id = u.id
+             WHERE oc.name LIKE ? OR u.email LIKE ?
+             ORDER BY oc.created_at DESC LIMIT ? OFFSET ?`
+          ).bind(`%${search}%`, `%${search}%`, limit, offset).all()
+        : db.prepare(
+            `SELECT oc.client_id as id, oc.name, oc.is_active, oc.created_at, oc.last_used, oc.request_count,
+               u.id as owner_id, u.email as owner_email
+             FROM oauth_clients oc
+             LEFT JOIN users u ON oc.owner_id = u.id
+             ORDER BY oc.created_at DESC LIMIT ? OFFSET ?`
+          ).bind(limit, offset).all(),
+      search
+        ? db.prepare(
+            `SELECT COUNT(*) as count FROM oauth_clients oc LEFT JOIN users u ON oc.owner_id = u.id WHERE oc.name LIKE ? OR u.email LIKE ?`
+          ).bind(`%${search}%`, `%${search}%`).first()
+        : db.prepare('SELECT COUNT(*) as count FROM oauth_clients').first(),
+    ]);
 
-    const total = filtered.length;
-    const paginatedApps = filtered.slice((page - 1) * limit, page * limit);
+    const apps = (appsResult.results || []).map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      owner: { id: a.owner_id, email: a.owner_email },
+      status: a.is_active ? 'active' : 'suspended',
+      createdAt: a.created_at,
+      lastUsed: a.last_used,
+      requestCount: a.request_count || 0,
+      requests: a.request_count || 0,
+    }));
+
+    const total = (countResult as any)?.count || 0;
 
     return NextResponse.json({
-      apps: paginatedApps,
+      apps,
       pagination: {
         page,
         limit,

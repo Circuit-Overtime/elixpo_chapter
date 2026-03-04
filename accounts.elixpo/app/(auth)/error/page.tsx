@@ -2,9 +2,10 @@
 
 import { Box, Button, Typography } from '@mui/material';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-const ErrorPage = () => {
+const ErrorContent = () => {
   const searchParams = useSearchParams();
   const error = searchParams.get('error') || 'Authentication Error';
   const description = searchParams.get('description') || 'An error occurred during authentication. Please try again.';
@@ -52,5 +53,11 @@ const ErrorPage = () => {
     </Box>
   );
 };
+
+const ErrorPage = () => (
+  <Suspense>
+    <ErrorContent />
+  </Suspense>
+);
 
 export default ErrorPage;

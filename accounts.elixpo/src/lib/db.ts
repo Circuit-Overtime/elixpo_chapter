@@ -413,3 +413,182 @@ export async function listPrivileges(db: D1Database) {
   const stmt = db.prepare('SELECT * FROM privileges ORDER BY name');
   return await stmt.all();
 }
+
+/**
+ * Admin Dashboard Queries
+ */
+
+export async function getAdminDashboardStats(db: D1Database, daysBack: number = 7) {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysBack);
+  const startIso = startDate.toISOString().split('T')[0];
+
+  const [totalUsersResult, activeUsersResult, totalAppsResult, totalRequestsResult, errorRateResult] = await Promise.all([
+    db.prepare('SELECT COUNT(*) as count FROM users').first(),
+    db.prepare(
+      'SELECT COUNT(*) as count FROM users WHERE last_login > ? AND is_active = 1'
+    ).bind(startDate.toISOString()).first(),
+    db.prepare('SELECT COUNT(*) as count FROM oauth_clients WHERE is_active = 1').first(),
+    db.prepare(
+      'SELECT COALESCE(SUM(requests), 0) as total FROM app_stats WHERE date >= ?'
+    ).bind(startIso).first(),
+    db.prepare(
+      'SELECT COALESCE(SUM(errors), 0) as errors, COALESCE(SUM(requests), 1) as requests, COALESCE(AVG(avg_response_time), 0) as avg_rt FROM app_stats WHERE date >= ?'
+    ).bind(startIso).first(),
+  ]);
+
+  const totalRequests = (totalRequestsResult as any)?.total || 0;
+  const errors = (errorRateResult as any)?.errors || 0;
+  const requests = (errorRateResult as any)?.requests || 1;
+  const avgResponseTime = Math.round((errorRateResult as any)?.avg_rt || 0);
+
+  return {
+    totalUsers: (totalUsersResult as any)?.count || 0,
+    activeUsers: (activeUsersResult as any)?.count || 0,
+    totalApps: (totalAppsResult as any)?.count || 0,
+    totalRequests,
+    avgResponseTime,
+    errorRate: totalRequests > 0 ? errors / requests : 0,
+  };
+}
+
+export async function getRequestTrend(db: D1Database, days: number = 7) {
+  const results = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const row = await db.prepare(
+      'SELECT COALESCE(SUM(requests), 0) as requests, COALESCE(SUM(errors), 0) as errors FROM app_stats WHERE date = ?'
+    ).bind(dateStr).first() as any;
+    results.push({
+      date: dateStr,
+      requests: row?.requests || 0,
+      errors: row?.errors || 0,
+    });
+  }
+  return results;
+}
+
+export async function getTopApps(db: D1Database, limit: number = 5) {
+  const stmt = db.prepare(
+    `SELECT oc.client_id as id, oc.name,
+       COALESCE(SUM(s.requests), 0) as requests,
+       COALESCE(SUM(s.users), 0) as users,
+       CASE WHEN COALESCE(SUM(s.requests), 0) = 0 THEN 0
+            ELSE CAST(COALESCE(SUM(s.errors), 0) AS REAL) / COALESCE(SUM(s.requests), 1)
+       END as errorRate
+     FROM oauth_clients oc
+     LEFT JOIN app_stats s ON oc.client_id = s.client_id
+     WHERE oc.is_active = 1
+     GROUP BY oc.client_id, oc.name
+     ORDER BY requests DESC
+     LIMIT ?`
+  );
+  const result = await stmt.bind(limit).all();
+  return (result.results || []) as any[];
+}
+
+export async function listAdminUsers(
+  db: D1Database,
+  limit: number = 20,
+  offset: number = 0,
+  search: string = ''
+) {
+  if (search) {
+    const stmt = db.prepare(
+      `SELECT id, email, is_admin, is_active, created_at, last_login, email_verified, role
+       FROM users
+       WHERE email LIKE ?
+       ORDER BY created_at DESC
+       LIMIT ? OFFSET ?`
+    );
+    return await stmt.bind(`%${search}%`, limit, offset).all();
+  }
+  const stmt = db.prepare(
+    `SELECT id, email, is_admin, is_active, created_at, last_login, email_verified, role
+     FROM users
+     ORDER BY created_at DESC
+     LIMIT ? OFFSET ?`
+  );
+  return await stmt.bind(limit, offset).all();
+}
+
+export async function countUsers(db: D1Database, search: string = '') {
+  if (search) {
+    const stmt = db.prepare('SELECT COUNT(*) as count FROM users WHERE email LIKE ?');
+    const result = await stmt.bind(`%${search}%`).first();
+    return (result as any)?.count || 0;
+  }
+  const result = await db.prepare('SELECT COUNT(*) as count FROM users').first();
+  return (result as any)?.count || 0;
+}
+
+export async function setUserAdminStatus(db: D1Database, userId: string, isAdmin: boolean) {
+  const stmt = db.prepare(
+    'UPDATE users SET is_admin = ?, role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  );
+  return await stmt.bind(isAdmin ? 1 : 0, isAdmin ? 'admin' : 'user', userId).run();
+}
+
+export async function setUserActiveStatus(db: D1Database, userId: string, isActive: boolean) {
+  const stmt = db.prepare(
+    'UPDATE users SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  );
+  return await stmt.bind(isActive ? 1 : 0, userId).run();
+}
+
+export async function getAdminLogs(db: D1Database, limit: number = 50, offset: number = 0) {
+  const stmt = db.prepare(
+    `SELECT al.*, u.email as admin_email
+     FROM admin_logs al
+     LEFT JOIN users u ON al.admin_id = u.id
+     ORDER BY al.created_at DESC
+     LIMIT ? OFFSET ?`
+  );
+  return await stmt.bind(limit, offset).all();
+}
+
+export async function logAdminAction(
+  db: D1Database,
+  {
+    id,
+    adminId,
+    action,
+    resourceType,
+    resourceId,
+    changes,
+    ipAddress,
+    userAgent,
+    status,
+    errorMessage,
+  }: {
+    id: string;
+    adminId: string;
+    action: string;
+    resourceType?: string;
+    resourceId?: string;
+    changes?: object;
+    ipAddress?: string;
+    userAgent?: string;
+    status?: string;
+    errorMessage?: string;
+  }
+) {
+  const stmt = db.prepare(
+    `INSERT INTO admin_logs (id, admin_id, action, resource_type, resource_id, changes, ip_address, user_agent, status, error_message)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  return await stmt.bind(
+    id,
+    adminId,
+    action,
+    resourceType || null,
+    resourceId || null,
+    changes ? JSON.stringify(changes) : null,
+    ipAddress || null,
+    userAgent || null,
+    status || 'success',
+    errorMessage || null
+  ).run();
+}
