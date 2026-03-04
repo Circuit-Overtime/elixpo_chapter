@@ -26,7 +26,7 @@ import {
   CheckCircle,
   Error,
 } from '@mui/icons-material';
-import { useAdminLogs } from '../../src/lib/hooks/useAdminData';
+import { useAdminLogs } from '../../../src/lib/hooks/useAdminData';
 
 const getActionIcon = (action: string) => {
   switch (action) {
