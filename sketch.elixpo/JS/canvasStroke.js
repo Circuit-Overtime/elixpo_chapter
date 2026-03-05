@@ -1,4 +1,5 @@
 import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransformAction, pushFrameAttachmentAction } from './undoAndRedo.js';
+import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './drawArrow.js';
 
 const strokeColors = document.querySelectorAll(".strokeColors span");
 const strokeThicknesses = document.querySelectorAll(".strokeThickness span");
@@ -308,12 +309,18 @@ class FreehandStroke {
 
     move(dx, dy) {
         this.points = this.points.map(point => [point[0] + dx, point[1] + dy, point[2] || 0.5]);
-        
+
         // Only update frame containment if we're actively dragging the shape itself
         // and not being moved by a parent frame
         if (isDraggingStroke && !this.isBeingMovedByFrame) {
             this.updateFrameContainment();
         }
+
+        this.updateAttachedArrows();
+    }
+
+    updateAttachedArrows() {
+        updateArrowsForShape(this);
     }
 
     updateFrameContainment() {

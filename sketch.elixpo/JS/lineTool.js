@@ -1,4 +1,5 @@
 import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransformAction, pushFrameAttachmentAction } from './undoAndRedo.js';
+import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './drawArrow.js';
 
 // Update event handlers to use the Line class
 let isDrawingLine = false;
@@ -370,15 +371,21 @@ removeSelection() {
             this.controlPoint.x += dx;
             this.controlPoint.y += dy;
         }
-        
+
         // Update without full redraw to prevent jitter
         this.updateLineElement();
         this.updateAnchorPositions();
-        
+
         // Only update frame containment if we're actively dragging the shape itself
         if (isDraggingLine && !this.isBeingMovedByFrame) {
             this.updateFrameContainment();
         }
+
+        this.updateAttachedArrows();
+    }
+
+    updateAttachedArrows() {
+        updateArrowsForShape(this);
     }
 
     updateFrameContainment() {

@@ -1,4 +1,4 @@
-let selectedTool = document.querySelector(".bx-folder-code");
+let selectedTool = document.querySelector(".bxs-pointer");
 let history = [];
 let redoStack = [];
 let shapes = [];
@@ -62,6 +62,7 @@ let isPanningToolActive = false;
 let isFrameToolActive = false;
 let isIconToolActive = false;
 let isCodeToolActive = false;
+let isTextInCodeMode = false;
 
 const paintBrushSideBar = document.getElementById("paintBrushToolBar");
 const lineSideBar = document.getElementById("lineSideBar");
@@ -152,21 +153,17 @@ function toolExtraPopup() {
       disSelectAllTools();
       document.querySelector(".bx-text").classList.add("selected");
       isTextToolActive = true;
+      if (isTextInCodeMode) {
+        isCodeToolActive = true;
+      }
       svg.style.cursor = "text";
       disableAllSideBars();
       textSideBar.classList.remove("hidden");
-
-    }
-    else if(selectedTool.classList.contains("bx-folder-code"))
-    {
-      disableAllTools();
-      disSelectAllTools();
-      document.querySelector(".bx-folder-code").classList.add("selected");
-      isCodeToolActive = true;
-      svg.style.cursor = "text";
-      disableAllSideBars();
-      textSideBar.classList.remove("hidden");
-
+      // Show/hide language selector based on mode
+      const langSelector = document.getElementById("textLanguageSelector");
+      if (langSelector) {
+        langSelector.classList.toggle("hidden", !isTextInCodeMode);
+      }
     }
     else if(selectedTool.classList.contains("bxs-magic-wand"))
     {

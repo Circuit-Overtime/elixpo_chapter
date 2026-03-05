@@ -265,35 +265,39 @@ removeHighlight() {
 move(dx, dy) {
     this.x += dx;
     this.y += dy;
-    
+
     // Move all contained shapes with the frame
     this.containedShapes.forEach(shape => {
         if (shape) {
             // Mark shape as being moved by frame to prevent frame containment updates
             shape.isBeingMovedByFrame = true;
-            
-            // Move the shape
-            shape.x += dx;
-            shape.y += dy;
-            
-            // Update arrows if the shape has them
-            if (typeof shape.updateAttachedArrows === 'function') {
-                shape.updateAttachedArrows();
+
+            // Use shape's own move method for proper handling of all shape types
+            if (typeof shape.move === 'function') {
+                shape.move(dx, dy);
+            } else {
+                shape.x += dx;
+                shape.y += dy;
             }
-            
-            // Force redraw the shape
+
+            // Force redraw for shapes whose move() doesn't auto-redraw
             if (typeof shape.draw === 'function') {
                 shape.draw();
             }
-            
+
+            // Update bounding box for freehand strokes
+            if (typeof shape.updateBoundingBox === 'function') {
+                shape.updateBoundingBox();
+            }
+
             // Remove the flag after movement
             delete shape.isBeingMovedByFrame;
         }
     });
-    
+
     // Update arrows attached to this frame
     this.updateAttachedArrows();
-    
+
     this.draw();
     this.updateClipPath();
 }
@@ -781,39 +785,40 @@ startLabelEdit(labelElement) {
                     break;
                     
                 case 'text':
-                    // Get text bounds for center calculation
-                    const textElement = shape.group ? shape.group.querySelector('text') : null;
-                    if (textElement) {
-                        const bbox = textElement.getBBox();
+                case 'code':
+                    // Get text/code bounds for center calculation
+                    const textOrCodeEl = shape.group ? (shape.group.querySelector('text') || shape.group.querySelector('foreignObject')) : null;
+                    if (textOrCodeEl) {
+                        const bbox = textOrCodeEl.getBBox();
                         const transform = shape.group.transform.baseVal.consolidate();
                         const matrix = transform ? transform.matrix : { e: 0, f: 0 };
-                        
+
                         const textCenterX = bbox.x + matrix.e + bbox.width / 2;
                         const textCenterY = bbox.y + matrix.f + bbox.height / 2;
-                        
+
                         // Calculate relative position
                         const relativeTextX = textCenterX - rotationCenter.x;
                         const relativeTextY = textCenterY - rotationCenter.y;
-                        
+
                         // Apply rotation
                         const newTextCenterX = rotationCenter.x + (relativeTextX * cosAngle - relativeTextY * sinAngle);
                         const newTextCenterY = rotationCenter.y + (relativeTextX * sinAngle + relativeTextY * cosAngle);
-                        
-                        // Update text position
+
+                        // Update position
                         const newTransformX = newTextCenterX - bbox.width / 2;
                         const newTransformY = newTextCenterY - bbox.height / 2;
-                        const newRotation = (shape.rotation || 0) + angleDiff;
-                        
+                        const newShapeRotation = (shape.rotation || 0) + angleDiff;
+
                         const textCenterRelativeX = bbox.width / 2;
                         const textCenterRelativeY = bbox.height / 2;
-                        
+
                         shape.group.setAttribute('transform',
-                            `translate(${newTransformX}, ${newTransformY}) rotate(${newRotation}, ${textCenterRelativeX}, ${textCenterRelativeY})`
+                            `translate(${newTransformX}, ${newTransformY}) rotate(${newShapeRotation}, ${textCenterRelativeX}, ${textCenterRelativeY})`
                         );
-                        
+
                         shape.x = newTransformX;
                         shape.y = newTransformY;
-                        shape.rotation = newRotation;
+                        shape.rotation = newShapeRotation;
                     }
                     break;
                     

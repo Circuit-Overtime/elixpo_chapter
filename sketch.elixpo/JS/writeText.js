@@ -8,7 +8,20 @@ import {
     setTextReferences,
     updateSelectedElement
 } from './undoAndRedo.js';
-import { cleanupAttachments } from './drawArrow.js';
+import { cleanupAttachments, updateAttachedArrows } from './drawArrow.js';
+import {
+    addCodeBlock,
+    wrapCodeElement,
+    selectCodeBlock,
+    deselectCodeBlock,
+    applySyntaxHighlightingToSVG,
+    createHighlightedSVGText,
+    updateCodeBackground,
+    extractTextFromCodeElement,
+    setCodeLanguage,
+    getCodeLanguage,
+    getSelectedCodeBlock
+} from './writeCode.js';
 
 let textSize = "30px";
 let textFont = "lixFont";
@@ -149,20 +162,21 @@ class TextShape {
         const currentTransform = this.group.transform.baseVal.consolidate();
         const currentX = currentTransform ? currentTransform.matrix.e : 0;
         const currentY = currentTransform ? currentTransform.matrix.f : 0;
-        
+
         this.x = currentX + dx;
         this.y = currentY + dy;
-        
+
         // Only update frame containment if we're actively dragging the shape itself
         // and not being moved by a parent frame
         if (isDragging && !this.isBeingMovedByFrame) {
             this.updateFrameContainment();
         }
-        
-        // Update attached arrows
-        if (typeof updateAttachedArrows === 'function') {
-            updateAttachedArrows(this.group);
-        }
+
+        this.updateAttachedArrows();
+    }
+
+    updateAttachedArrows() {
+        updateAttachedArrows(this);
     }
 
     updateFrameContainment() {
@@ -813,6 +827,7 @@ function selectElement(groupElement) {
     console.log("Selected:", selectedElement);
 
     updateSelectedElement(selectedElement);
+    updateCodeToggleForShape('text');
 }
 
 function deselectElement() {
@@ -1431,19 +1446,7 @@ const handleTextMouseUp = function (e) {
     }
 };
 
-function updateAttachedArrows(textGroup) {
-    if (!textGroup || textGroup.type !== 'text') return;
-    
-    // Find all arrows attached to this text
-    shapes.forEach(shape => {
-        if (shape && shape.shapeName === 'arrow' && typeof shape.updateAttachments === 'function') {
-            if ((shape.attachedToStart && shape.attachedToStart.shape === textGroup) ||
-                (shape.attachedToEnd && shape.attachedToEnd.shape === textGroup)) {
-                shape.updateAttachments();
-            }
-        }
-    });
-}
+// updateAttachedArrows is imported from drawArrow.js
 
 
 textColorOptions.forEach((span) => {
@@ -1629,4 +1632,285 @@ textAlignOptions.forEach((span) => {
 });
 
 
-export { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp }; 
+// --- Code/Text Toggle Handler ---
+const textCodeOptions = document.querySelectorAll(".textCodeSpan");
+const languageSelector = document.getElementById("textLanguageSelector");
+const codeLanguageSelect = document.getElementById("codeLanguageSelect");
+
+textCodeOptions.forEach((span) => {
+    span.addEventListener("click", (event) => {
+        event.stopPropagation();
+        textCodeOptions.forEach((el) => el.classList.remove("selected"));
+        span.classList.add("selected");
+
+        const isCodeMode = span.getAttribute("data-id") === "true";
+        isTextInCodeMode = isCodeMode;
+
+        // Show/hide language selector
+        if (languageSelector) {
+            languageSelector.classList.toggle("hidden", !isCodeMode);
+        }
+
+        // Update tool flags
+        if (isTextToolActive) {
+            isCodeToolActive = isCodeMode;
+        }
+
+        // If a shape is selected, convert it
+        if (isCodeMode && selectedElement) {
+            // Convert text → code
+            convertTextToCode(selectedElement);
+        } else if (!isCodeMode && getSelectedCodeBlock()) {
+            // Convert code → text
+            convertCodeToText(getSelectedCodeBlock());
+        }
+    });
+});
+
+// Language selector handler
+if (codeLanguageSelect) {
+    codeLanguageSelect.addEventListener("change", (event) => {
+        const lang = event.target.value;
+        setCodeLanguage(lang);
+
+        // If a code block is selected, re-highlight it with the new language
+        const selectedCode = getSelectedCodeBlock();
+        if (selectedCode) {
+            const codeElement = selectedCode.querySelector('text');
+            if (codeElement) {
+                codeElement.setAttribute("data-language", lang);
+                // Re-render with new language highlighting
+                const content = extractTextFromCodeElement(codeElement);
+                while (codeElement.firstChild) {
+                    codeElement.removeChild(codeElement.firstChild);
+                }
+                const highlighted = applySyntaxHighlightingToSVG(content, lang);
+                createHighlightedSVGText(highlighted, codeElement);
+                updateCodeBackground(selectedCode, codeElement);
+            }
+        }
+    });
+}
+
+function convertTextToCode(textGroupElement) {
+    const textElement = textGroupElement.querySelector('text');
+    if (!textElement) return;
+
+    // Get text content
+    let textContent = "";
+    const tspans = textElement.querySelectorAll('tspan');
+    if (tspans.length > 0) {
+        tspans.forEach((tspan, index) => {
+            textContent += tspan.textContent;
+            if (index < tspans.length - 1) textContent += "\n";
+        });
+    } else {
+        textContent = textElement.textContent || "";
+    }
+
+    // Get position from transform
+    const currentTransform = textGroupElement.transform.baseVal.consolidate();
+    const tx = currentTransform ? currentTransform.matrix.e : 0;
+    const ty = currentTransform ? currentTransform.matrix.f : 0;
+    const fontSize = textElement.getAttribute('font-size') || "25px";
+    const color = textElement.getAttribute('fill') || "#fff";
+
+    // Find and remove old TextShape from shapes array
+    let oldTextShape = null;
+    if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
+        oldTextShape = shapes.find(s => s.shapeName === 'text' && s.group === textGroupElement);
+        if (oldTextShape) {
+            const idx = shapes.indexOf(oldTextShape);
+            if (idx !== -1) shapes.splice(idx, 1);
+        }
+    }
+
+    // Deselect current text
+    deselectElement();
+
+    // Remove old text group from SVG
+    if (textGroupElement.parentNode) {
+        textGroupElement.parentNode.removeChild(textGroupElement);
+    }
+
+    // Create new code block
+    const gElement = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    gElement.setAttribute("data-type", "code-group");
+    gElement.setAttribute("transform", `translate(${tx}, ${ty})`);
+
+    const backgroundRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    backgroundRect.setAttribute("class", "code-background");
+    backgroundRect.setAttribute("x", -10);
+    backgroundRect.setAttribute("y", -10);
+    backgroundRect.setAttribute("width", 300);
+    backgroundRect.setAttribute("height", 60);
+    backgroundRect.setAttribute("fill", "#212121");
+    backgroundRect.setAttribute("stroke", "#666");
+    backgroundRect.setAttribute("stroke-width", "1");
+    backgroundRect.setAttribute("rx", "4");
+    backgroundRect.setAttribute("ry", "4");
+    gElement.appendChild(backgroundRect);
+
+    const codeElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    codeElement.setAttribute("x", 0);
+    codeElement.setAttribute("y", 0);
+    codeElement.setAttribute("fill", color);
+    codeElement.setAttribute("font-size", fontSize);
+    codeElement.setAttribute("font-family", "lixCode");
+    codeElement.setAttribute("text-anchor", "start");
+    codeElement.setAttribute("cursor", "text");
+    codeElement.setAttribute("white-space", "pre");
+    codeElement.setAttribute("dominant-baseline", "hanging");
+    codeElement.setAttribute("data-language", getCodeLanguage());
+    codeElement.setAttribute("data-type", "code");
+
+    const shapeID = `code-${String(Date.now()).slice(0, 8)}-${Math.floor(Math.random() * 10000)}`;
+    gElement.setAttribute("id", shapeID);
+    gElement.setAttribute("data-x", tx);
+    gElement.setAttribute("data-y", ty);
+    codeElement.setAttribute("id", `${shapeID}-code`);
+    gElement.appendChild(codeElement);
+    svg.appendChild(gElement);
+
+    // Apply syntax highlighting and add content
+    if (textContent.trim()) {
+        const lang = getCodeLanguage();
+        const highlighted = applySyntaxHighlightingToSVG(textContent, lang);
+        createHighlightedSVGText(highlighted, codeElement);
+        updateCodeBackground(gElement, codeElement);
+    }
+
+    // Create CodeShape wrapper
+    const codeShape = wrapCodeElement(gElement);
+    if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
+        shapes.push(codeShape);
+    }
+
+    // Push undo action for mode conversion
+    pushModeConvertAction(oldTextShape, textGroupElement, 'text', codeShape, gElement, 'code');
+
+    // Select the new code block
+    selectCodeBlock(gElement);
+}
+
+function convertCodeToText(codeGroupElement) {
+    const codeElement = codeGroupElement.querySelector('text');
+    if (!codeElement) return;
+
+    // Get text content
+    const textContent = extractTextFromCodeElement(codeElement);
+
+    // Get position from transform
+    const currentTransform = codeGroupElement.transform.baseVal.consolidate();
+    const tx = currentTransform ? currentTransform.matrix.e : 0;
+    const ty = currentTransform ? currentTransform.matrix.f : 0;
+    const fontSize = codeElement.getAttribute('font-size') || "30px";
+    const color = codeElement.getAttribute('fill') || "#fff";
+
+    // Find and remove old CodeShape from shapes array
+    let oldCodeShape = null;
+    if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
+        oldCodeShape = shapes.find(s => s.shapeName === 'code' && s.group === codeGroupElement);
+        if (oldCodeShape) {
+            const idx = shapes.indexOf(oldCodeShape);
+            if (idx !== -1) shapes.splice(idx, 1);
+        }
+    }
+
+    // Deselect current code block
+    deselectCodeBlock();
+
+    // Remove old code group from SVG
+    if (codeGroupElement.parentNode) {
+        codeGroupElement.parentNode.removeChild(codeGroupElement);
+    }
+
+    // Create new text shape
+    const gElement = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    gElement.setAttribute("data-type", "text-group");
+    gElement.setAttribute("transform", `translate(${tx}, ${ty})`);
+
+    const textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    textElement.setAttribute("x", 0);
+    textElement.setAttribute("y", 0);
+    textElement.setAttribute("fill", color);
+    textElement.setAttribute("font-size", fontSize);
+    textElement.setAttribute("font-family", textFont);
+    textElement.setAttribute("text-anchor", "start");
+    textElement.setAttribute("cursor", "text");
+    textElement.setAttribute("white-space", "pre");
+    textElement.setAttribute("dominant-baseline", "hanging");
+    textElement.setAttribute("data-type", "text");
+
+    const shapeID = `text-${String(Date.now()).slice(0, 8)}-${Math.floor(Math.random() * 10000)}`;
+    gElement.setAttribute("id", shapeID);
+    gElement.setAttribute("data-x", tx);
+    gElement.setAttribute("data-y", ty);
+    textElement.setAttribute("id", `${shapeID}-text`);
+    gElement.appendChild(textElement);
+    svg.appendChild(gElement);
+
+    // Add text content as tspans
+    if (textContent.trim()) {
+        const lines = textContent.split("\n");
+        const x = textElement.getAttribute("x") || 0;
+        lines.forEach((line, index) => {
+            const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+            tspan.setAttribute("x", x);
+            tspan.setAttribute("dy", index === 0 ? "0" : "1.2em");
+            tspan.textContent = line || " ";
+            textElement.appendChild(tspan);
+        });
+    }
+
+    // Create TextShape wrapper
+    const textShape = wrapTextElement(gElement);
+    if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
+        shapes.push(textShape);
+    }
+
+    // Push undo action for mode conversion
+    pushModeConvertAction(oldCodeShape, codeGroupElement, 'code', textShape, gElement, 'text');
+
+    // Select the new text shape
+    selectElement(gElement);
+}
+
+function pushModeConvertAction(oldShape, oldElement, oldType, newShape, newElement, newType) {
+    pushCreateAction({
+        type: 'modeConvert',
+        oldShape: oldShape,
+        oldElement: oldElement,
+        oldType: oldType,
+        newShape: newShape,
+        newElement: newElement,
+        newType: newType,
+        element: newShape,
+        shapeName: newType
+    });
+}
+
+// Update toggle state when a shape is selected
+function updateCodeToggleForShape(shapeName) {
+    const isCode = shapeName === 'code';
+    textCodeOptions.forEach(el => el.classList.remove("selected"));
+    textCodeOptions.forEach(el => {
+        if ((el.getAttribute("data-id") === "true") === isCode) {
+            el.classList.add("selected");
+        }
+    });
+    if (languageSelector) {
+        languageSelector.classList.toggle("hidden", !isCode);
+    }
+    // Update the language dropdown to match the selected code block
+    if (isCode && codeLanguageSelect) {
+        const selectedCode = getSelectedCodeBlock();
+        if (selectedCode) {
+            const codeEl = selectedCode.querySelector('text');
+            const lang = codeEl?.getAttribute("data-language") || "auto";
+            codeLanguageSelect.value = lang;
+        }
+    }
+}
+
+export { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, updateCodeToggleForShape };
