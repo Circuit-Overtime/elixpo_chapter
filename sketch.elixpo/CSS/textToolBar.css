@@ -362,3 +362,38 @@ textarea::-webkit-scrollbar
 {
     display: none;
 }
+
+.textLanguageSelector {
+    display: flex;
+    align-items: center;
+}
+
+.textLanguageSelector.hidden {
+    display: none;
+}
+
+.textLanguageSelector select {
+    background: #12121d;
+    color: #fff;
+    border: 1px solid #444480;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23fff'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    padding-right: 22px;
+}
+
+.textLanguageSelector select:hover {
+    border-color: #3c09d6;
+}
+
+.textLanguageSelector select:focus {
+    border-color: #3c09d6;
+}

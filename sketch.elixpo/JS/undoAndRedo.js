@@ -509,6 +509,33 @@ export function undo() {
         return;
     }
 
+    // Handle mode conversion undo (code ↔ text)
+    if (action.type === 'create' && action.shape.type === 'modeConvert') {
+        // Undo: remove the new shape, restore the old shape
+        const newShape = action.shape.newShape;
+        const newElement = action.shape.newElement;
+        const oldShape = action.shape.oldShape;
+        const oldElement = action.shape.oldElement;
+
+        // Remove new shape from DOM and shapes array
+        if (newElement && newElement.parentNode) {
+            newElement.parentNode.removeChild(newElement);
+        }
+        const newIdx = shapes.indexOf(newShape);
+        if (newIdx !== -1) shapes.splice(newIdx, 1);
+
+        // Restore old shape to DOM and shapes array
+        if (svg && oldElement) {
+            svg.appendChild(oldElement);
+        }
+        if (oldShape) {
+            shapes.push(oldShape);
+        }
+
+        redoStack.push(action);
+        return;
+    }
+
     if (action.type === 'create') {
     if (action.shape.type === 'text') {
         // Handle text creation undo
@@ -517,11 +544,11 @@ export function undo() {
         } else if (action.shape.parentNode) {
             action.shape.parentNode.removeChild(action.shape);
         }
-        
+
         // Remove from shapes array
         const idx = shapes.indexOf(action.shape.element || action.shape);
         if (idx !== -1) shapes.splice(idx, 1);
-        
+
         // Clean up any arrow attachments to this text
         if (typeof cleanupAttachments === 'function') {
             cleanupAttachments(action.shape.element || action.shape);
@@ -930,6 +957,33 @@ export function redo() {
             action.shape.draw();
         }
         
+        undoStack.push(action);
+        return;
+    }
+
+    // Handle mode conversion redo (code ↔ text)
+    if (action.type === 'create' && action.shape.type === 'modeConvert') {
+        // Redo: remove the old shape, restore the new shape
+        const newShape = action.shape.newShape;
+        const newElement = action.shape.newElement;
+        const oldShape = action.shape.oldShape;
+        const oldElement = action.shape.oldElement;
+
+        // Remove old shape from DOM and shapes array
+        if (oldElement && oldElement.parentNode) {
+            oldElement.parentNode.removeChild(oldElement);
+        }
+        const oldIdx = shapes.indexOf(oldShape);
+        if (oldIdx !== -1) shapes.splice(oldIdx, 1);
+
+        // Restore new shape to DOM and shapes array
+        if (svg && newElement) {
+            svg.appendChild(newElement);
+        }
+        if (newShape) {
+            shapes.push(newShape);
+        }
+
         undoStack.push(action);
         return;
     }

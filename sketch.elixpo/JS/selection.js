@@ -1,3 +1,5 @@
+import { cleanupAttachments } from './drawArrow.js';
+
 let isMultiSelecting = false;
 let multiSelectionStart = { x: 0, y: 0 };
 let multiSelectionRect = null;
@@ -1353,12 +1355,16 @@ function handleMultiSelectionMouseUp(e) {
     }
 
     if (multiSelection.isResizing) {
-        multiSelection.handleResize(e);
+        multiSelection.isResizing = false;
+        multiSelection.resizingAnchorIndex = null;
+        multiSelection.initialPositions.clear();
+        multiSelection.updateControls();
         return true;
     }
 
     if (multiSelection.isRotating) {
-        multiSelection.handleRotation(e);
+        multiSelection.isRotating = false;
+        multiSelection.initialPositions.clear();
         return true;
     }
 
@@ -1373,7 +1379,6 @@ function handleMultiSelectionMouseUp(e) {
         };
 
         if (selectionBounds.width > 5 && selectionBounds.height > 5) {
-            // First, find all shapes in the selection bounds
             let shapesInBounds = [];
             if (typeof shapes !== 'undefined') {
                 shapes.forEach(shape => {
@@ -1383,19 +1388,14 @@ function handleMultiSelectionMouseUp(e) {
                 });
             }
 
-            // If only one shape is selected, let the shape handle its own selection
             if (shapesInBounds.length === 1) {
                 const selectedShape = shapesInBounds[0];
-                
-                // Clear any existing multi-selection
                 multiSelection.clearSelection();
-                
-                // Set the current shape and let it handle its own selection
+
                 if (typeof currentShape !== 'undefined') {
                     currentShape = selectedShape;
                 }
-                
-                // Trigger the shape's own selection handling
+
                 if (typeof selectedShape.addAnchors === 'function') {
                     selectedShape.addAnchors();
                     selectedShape.isSelected = true;
@@ -1403,25 +1403,79 @@ function handleMultiSelectionMouseUp(e) {
                     selectedShape.createSelection();
                     selectedShape.isSelected = true;
                 }
-                
-                // Update sidebar if function exists
+
                 if (typeof selectedShape.updateSidebar === 'function') {
                     selectedShape.updateSidebar();
                 }
             } else if (shapesInBounds.length > 1) {
-                // Multiple shapes selected - use multi-selection
                 multiSelection.selectShapesInRect(selectionBounds);
             }
         }
 
         removeMultiSelectionRect();
         isMultiSelecting = false;
+        isDraggingMultiSelection = false;
         return true;
     }
 
+    // Safety cleanup - always reset flags on mouse up
+    isMultiSelecting = false;
+    isDraggingMultiSelection = false;
     return false;
 }
 
+
+// Safety net: clean up selection rect if mouse is released outside the SVG
+window.addEventListener('mouseup', () => {
+    if (isMultiSelecting) {
+        removeMultiSelectionRect();
+        isMultiSelecting = false;
+        isDraggingMultiSelection = false;
+    }
+});
+
+// Delete key support for multi-selection
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Delete' && multiSelection.selectedShapes.size > 0) {
+        e.preventDefault();
+        deleteSelectedShapes();
+    }
+});
+
+function deleteSelectedShapes() {
+    if (multiSelection.selectedShapes.size === 0) return;
+
+    const shapesToDelete = Array.from(multiSelection.selectedShapes);
+    multiSelection.clearSelection();
+
+    shapesToDelete.forEach(shape => {
+        // Remove from DOM
+        if (shape.group && shape.group.parentNode) {
+            shape.group.parentNode.removeChild(shape.group);
+        } else if (shape.element && shape.element.parentNode) {
+            shape.element.parentNode.removeChild(shape.element);
+        }
+
+        // Remove from parent frame if any
+        if (shape.parentFrame && typeof shape.parentFrame.removeShapeFromFrame === 'function') {
+            shape.parentFrame.removeShapeFromFrame(shape);
+        }
+
+        // Cleanup arrow attachments
+        cleanupAttachments(shape);
+
+        // Destroy frame and release children
+        if (shape.shapeName === 'frame' && typeof shape.destroy === 'function') {
+            shape.destroy();
+        }
+
+        // Remove from shapes array
+        const idx = shapes.indexOf(shape);
+        if (idx !== -1) {
+            shapes.splice(idx, 1);
+        }
+    });
+}
 
 export {
     handleMultiSelectionMouseDown,
@@ -1436,5 +1490,4 @@ export {
     multiSelection,
     isDraggingMultiSelection,
     isMultiSelecting
-
 };

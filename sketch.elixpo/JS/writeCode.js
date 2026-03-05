@@ -7,12 +7,13 @@ import {
     setTextReferences,
     updateSelectedElement
 } from './undoAndRedo.js';
-import { cleanupAttachments } from './drawArrow.js';
+import { cleanupAttachments, updateAttachedArrows } from './drawArrow.js';
 
 let codeTextSize = "25px";
-let codeTextFont = "lixCode"; 
+let codeTextFont = "lixCode";
 let codeTextColor = "#fff";
-let codeTextAlign = "left"; 
+let codeTextAlign = "left";
+let codeLanguage = "auto";
 
 let codeTextColorOptions = document.querySelectorAll(".textColorSpan");
 let codeTextFontOptions = document.querySelectorAll(".textFontSpan");
@@ -163,20 +164,21 @@ class CodeShape {
         const currentTransform = this.group.transform.baseVal.consolidate();
         const currentX = currentTransform ? currentTransform.matrix.e : 0;
         const currentY = currentTransform ? currentTransform.matrix.f : 0;
-        
+
         this.x = currentX + dx;
         this.y = currentY + dy;
-        
+
         // Only update frame containment if we're actively dragging the shape itself
         // and not being moved by a parent frame
         if (isCodeDragging && !this.isBeingMovedByFrame) {
             this.updateFrameContainment();
         }
-        
-        // Update attached arrows
-        if (typeof updateAttachedArrows === 'function') {
-            updateAttachedArrows(this.group);
-        }
+
+        this.updateAttachedArrows();
+    }
+
+    updateAttachedArrows() {
+        updateAttachedArrows(this);
     }
 
     updateFrameContainment() {
@@ -329,6 +331,7 @@ function addCodeBlock(event) {
     codeElement.setAttribute("data-initial-font", codeTextFont);
     codeElement.setAttribute("data-initial-color", codeTextColor);
     codeElement.setAttribute("data-initial-align", codeTextAlign);
+    codeElement.setAttribute("data-language", codeLanguage);
     codeElement.setAttribute("data-type", "code");
     gElement.appendChild(codeElement);
     svg.appendChild(gElement);
@@ -851,7 +854,8 @@ function renderCodeFromEditor(input, codeElement, deleteIfEmpty = false) {
         codeElement.textContent = "";
 
         // Apply syntax highlighting and create SVG tspans
-        const highlightedCode = applySyntaxHighlightingToSVG(code);
+        const storedLang = codeElement.getAttribute("data-language") || "auto";
+        const highlightedCode = applySyntaxHighlightingToSVG(code, storedLang);
         createHighlightedSVGText(highlightedCode, codeElement);
 
         // Update background rectangle to fit content
@@ -912,11 +916,19 @@ function createHighlightedSVGText(highlightResult, parentElement) {
 
 
 
-function applySyntaxHighlightingToSVG(code) {
+function applySyntaxHighlightingToSVG(code, language) {
     if (!window.hljs) {
         return { value: code, language: null };
     }
-    
+
+    const lang = language || codeLanguage;
+    if (lang && lang !== "auto") {
+        try {
+            return window.hljs.highlight(code, { language: lang });
+        } catch (e) {
+            // fallback to auto-detect
+        }
+    }
     return window.hljs.highlightAuto(code);
 }
 
@@ -1404,6 +1416,20 @@ function selectCodeBlock(groupElement) {
     selectedCodeBlock.classList.add("selected");
     createCodeSelectionFeedback(selectedCodeBlock);
     updateSelectedElement(selectedCodeBlock);
+
+    // Update code toggle to reflect code mode
+    const toggleSpans = document.querySelectorAll(".textCodeSpan");
+    toggleSpans.forEach(el => el.classList.remove("selected"));
+    toggleSpans.forEach(el => {
+        if (el.getAttribute("data-id") === "true") el.classList.add("selected");
+    });
+    const langSelector = document.getElementById("textLanguageSelector");
+    if (langSelector) langSelector.classList.remove("hidden");
+    const langSelect = document.getElementById("codeLanguageSelect");
+    if (langSelect) {
+        const codeEl = groupElement.querySelector('text');
+        langSelect.value = codeEl?.getAttribute("data-language") || "auto";
+    }
 }
 
 function deselectCodeBlock() {
@@ -1709,7 +1735,7 @@ const handleCodeMouseMove = (event) => {
     }
 
     // Handle cursor changes for code tool
-    if (isCodeToolActive && !isCodeDragging && !isCodeResizing && !isCodeRotating) {
+    if ((isCodeToolActive || (isTextToolActive && isTextInCodeMode)) && !isCodeDragging && !isCodeResizing && !isCodeRotating) {
         svg.style.cursor = 'text';
         
         // Frame highlighting logic for code tool
@@ -1979,7 +2005,7 @@ const handleCodeMouseDown = function (e) {
             deselectCodeBlock();
         }
 
-    } else if (isCodeToolActive  && e.button === 0) { 
+    } else if ((isCodeToolActive || isTextToolActive)  && e.button === 0) {
         if (targetGroup) {
             const codeElement = targetGroup.querySelector('text');
 
@@ -2001,21 +2027,7 @@ const handleCodeMouseDown = function (e) {
 };
 
 
-// 8. UPDATE updateAttachedArrows function:
-function updateAttachedArrows(codeGroup) {
-    // Fix: Check the data-type attribute instead of type property
-    if (!codeGroup || codeGroup.getAttribute('data-type') !== 'code-group') return;
-    
-    // Find all arrows attached to this code block
-    shapes.forEach(shape => {
-        if (shape && shape.shapeName === 'arrow' && typeof shape.updateAttachments === 'function') {
-            if ((shape.attachedToStart && shape.attachedToStart.shape === codeGroup) ||
-                (shape.attachedToEnd && shape.attachedToEnd.shape === codeGroup)) {
-                shape.updateAttachments();
-            }
-        }
-    });
-}
+// updateAttachedArrows is imported from drawArrow.js
 
 codeTextColorOptions.forEach((span) => {
     span.addEventListener("click", (event) => {
@@ -2257,5 +2269,40 @@ if (!document.getElementById('code-editor-styles')) {
     document.head.appendChild(styleSheet);
 }
 
-export { handleCodeMouseDown, handleCodeMouseMove, handleCodeMouseUp };
+function setCodeLanguage(lang) {
+    codeLanguage = lang;
+    // Update selected code block's language if one is selected
+    if (selectedCodeBlock) {
+        const codeElement = selectedCodeBlock.querySelector('text');
+        if (codeElement) {
+            codeElement.setAttribute("data-language", lang);
+        }
+    }
+}
+
+function getCodeLanguage() {
+    return codeLanguage;
+}
+
+function getSelectedCodeBlock() {
+    return selectedCodeBlock;
+}
+
+export {
+    handleCodeMouseDown,
+    handleCodeMouseMove,
+    handleCodeMouseUp,
+    addCodeBlock,
+    wrapCodeElement,
+    selectCodeBlock,
+    deselectCodeBlock,
+    makeCodeEditable,
+    applySyntaxHighlightingToSVG,
+    createHighlightedSVGText,
+    updateCodeBackground,
+    extractTextFromCodeElement,
+    setCodeLanguage,
+    getCodeLanguage,
+    getSelectedCodeBlock
+};
 

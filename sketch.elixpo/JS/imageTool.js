@@ -1,5 +1,5 @@
 import { pushCreateAction, pushDeleteAction, pushTransformAction, pushFrameAttachmentAction } from './undoAndRedo.js';
-import { updateAttachedArrows, cleanupAttachments } from './drawArrow.js';
+import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './drawArrow.js';
 
 let isDraggingImage = false;
 let imageToPlace = null;
@@ -108,22 +108,23 @@ class ImageShape {
     move(dx, dy) {
         this.x += dx;
         this.y += dy;
-        
+
         // Update transform for rotation
         const centerX = this.x + this.width / 2;
         const centerY = this.y + this.height / 2;
         this.element.setAttribute('transform', `rotate(${this.rotation}, ${centerX}, ${centerY})`);
-        
+
         // Only update frame containment if we're actively dragging the shape itself
         // and not being moved by a parent frame
         if (isDragging && !this.isBeingMovedByFrame) {
             this.updateFrameContainment();
         }
-        
-        // Update attached arrows
-        if (typeof updateAttachedArrows === 'function') {
-            updateAttachedArrows(this.element);
-        }
+
+        this.updateAttachedArrows();
+    }
+
+    updateAttachedArrows() {
+        updateArrowsForShape(this);
     }
 
     updateFrameContainment() {
@@ -865,9 +866,7 @@ function resizeImage(event) {
     selectedImage.setAttribute('transform', `rotate(${imageRotation}, ${newCenterX}, ${newCenterY})`);
 
     // Update attached arrows during resize
-    if (typeof updateAttachedArrows === 'function') {
-        updateAttachedArrows(selectedImage);
-    }
+    updateArrowsForShape(selectedImage);
 
     // Update the selection outline and anchors
     removeSelectionOutline();
@@ -960,9 +959,7 @@ function dragImage(event) {
     }
 
     // Update attached arrows during drag
-    if (typeof updateAttachedArrows === 'function') {
-        updateAttachedArrows(selectedImage);
-    }
+    updateArrowsForShape(selectedImage);
 
     // Update the selection outline and anchors
     removeSelectionOutline();
@@ -1032,9 +1029,7 @@ function rotateImage(event) {
     selectedImage.setAttribute('data-shape-rotation', imageRotation);
 
     // Update attached arrows during rotation
-    if (typeof updateAttachedArrows === 'function') {
-        updateAttachedArrows(selectedImage);
-    }
+    updateArrowsForShape(selectedImage);
 
     // Update the selection outline and anchors
     removeSelectionOutline();
@@ -1116,9 +1111,7 @@ function stopInteracting() {
                     selectedImage.setAttribute('data-shape-rotation', pos.rotation);
                     
                     // Update attached arrows
-                    if (typeof updateAttachedArrows === 'function') {
-                        updateAttachedArrows(selectedImage);
-                    }
+                    updateArrowsForShape(selectedImage);
                 }
             }, oldPosWithFrame, newPosWithFrame);
         }
@@ -1192,9 +1185,7 @@ function stopInteracting() {
         selectedImage.setAttribute('data-shape-rotation', imageRotation);
         
         // Update attached arrows after interaction ends
-        if (typeof updateAttachedArrows === 'function') {
-            updateAttachedArrows(selectedImage);
-        }
+        updateArrowsForShape(selectedImage);
     }
 }
 

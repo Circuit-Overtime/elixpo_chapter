@@ -1,5 +1,5 @@
 import { pushCreateAction, pushDeleteAction, pushTransformAction, pushFrameAttachmentAction } from './undoAndRedo.js';
-import { updateAttachedArrows, cleanupAttachments } from './drawArrow.js';
+import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './drawArrow.js';
 
 let isDraggingIcon = false;
 let iconToPlace = null;
@@ -130,9 +130,7 @@ class IconShape {
         this.element.setAttribute('data-shape-x', this.x);
         this.element.setAttribute('data-shape-y', this.y);
 
-        if (typeof updateAttachedArrows === 'function') {
-            updateAttachedArrows(this.element);
-        }
+        updateArrowsForShape(this);
 
         if (isDragging && !this.isBeingMovedByFrame) {
             this.updateFrameContainment();
@@ -175,6 +173,10 @@ class IconShape {
         return x >= iconX && x <= iconX + iconWidth && y >= iconY && y <= iconY + iconHeight;
     }
 
+    updateAttachedArrows() {
+        updateArrowsForShape(this);
+    }
+
     draw() {
         const scale = this.width / 24;
         const localCenterX = this.width / 2 / scale;
@@ -188,9 +190,7 @@ class IconShape {
         this.element.setAttribute('data-shape-height', this.height);
         this.element.setAttribute('data-shape-rotation', this.rotation);
 
-        if (typeof updateAttachedArrows === 'function') {
-            updateAttachedArrows(this.element);
-        }
+        updateArrowsForShape(this);
     }
 
     removeSelection(params) {
@@ -255,9 +255,7 @@ class IconShape {
         this.element.setAttribute('data-shape-height', pos.height);
         this.element.setAttribute('data-shape-rotation', pos.rotation);
 
-        if (typeof updateAttachedArrows === 'function') {
-            updateAttachedArrows(this.element);
-        }
+        updateArrowsForShape(this);
     }
 }
 
@@ -983,9 +981,7 @@ function resizeIcon(event) {
     const localCenterY = newHeight / 2 / scale;
     selectedIcon.setAttribute('transform', `translate(${newX}, ${newY}) scale(${scale}) rotate(${iconRotation}, ${localCenterX}, ${localCenterY})`);
 
-    if (typeof updateAttachedArrows === 'function') {
-        updateAttachedArrows(selectedIcon);
-    }
+    updateArrowsForShape(selectedIcon);
 
     addSelectionOutline();
 }
@@ -1022,9 +1018,7 @@ function dragIcon(event) {
         }
     }
 
-    if (typeof updateAttachedArrows === 'function') {
-        updateAttachedArrows(selectedIcon);
-    }
+    updateArrowsForShape(selectedIcon);
 
     removeSelection();
     addSelectionOutline();
@@ -1111,9 +1105,7 @@ function rotateIcon(event) {
 
     selectedIcon.setAttribute('data-shape-rotation', iconRotation);
 
-    if (typeof updateAttachedArrows === 'function') {
-        updateAttachedArrows(selectedIcon);
-    }
+    updateArrowsForShape(selectedIcon);
 
     removeSelection();
     addSelectionOutline();
@@ -1246,9 +1238,7 @@ function stopInteracting() {
         selectedIcon.setAttribute('data-shape-height', originalHeight);
         selectedIcon.setAttribute('data-shape-rotation', iconRotation);
 
-        if (typeof updateAttachedArrows === 'function') {
-            updateAttachedArrows(selectedIcon);
-        }
+        updateArrowsForShape(selectedIcon);
     }
 }
 

@@ -460,58 +460,111 @@ class Arrow {
 
 
     static findNearbyShape(point, tolerance = 20) {
-    // console.log('Finding nearby shape for point:', point, 'with tolerance:', tolerance);
     for (let shape of shapes) {
-        // console.log('Checking shape:', shape);
-        
-        // Check if it's an SVG image element (DOM element)
-        if (shape.tagName === 'image' || (shape.getAttribute && shape.getAttribute('type') === 'image')) {
-            console.log('Checking image shape:', shape);
-            const attachment = Arrow.getImageAttachmentPoint(point, shape, tolerance);
-            if (attachment) {
-                // console.log('Found image attachment:', attachment);
-                return { shape, attachment };
-            }
-        }
-        // Check for rectangle objects
-        else if (shape.shapeName === 'rectangle') {
-            const attachment = Arrow.getRectangleAttachmentPoint(point, shape, tolerance);
-            if (attachment) {
-                return { shape, attachment };
-            }
-        } 
-        // Check for circle objects
-        else if (shape.shapeName === 'circle') {
-            const attachment = Arrow.getCircleAttachmentPoint(point, shape, tolerance);
-            if (attachment) {
-                return { shape, attachment };
-            }
-        } 
-        // Check for text objects (DOM elements with type attribute)
-        else if ((shape.getAttribute && shape.getAttribute('type') === 'text') || shape.type === 'text') {
-            const attachment = Arrow.getTextAttachmentPoint(point, shape, tolerance);
-            if (attachment) {
-                return { shape, attachment };
-            }
-        }
-        else if (shape.shapeName === 'frame') {
-            const attachment = Arrow.getFrameAttachmentPoint(point, shape, tolerance);
-            if (attachment) {
-                return { shape, attachment };
-            }
+        // Skip arrows - can't attach to other arrows
+        if (shape.shapeName === 'arrow') continue;
+
+        let attachment = null;
+
+        switch (shape.shapeName) {
+            case 'rectangle':
+                attachment = Arrow.getRectangleAttachmentPoint(point, shape, tolerance);
+                break;
+            case 'circle':
+                attachment = Arrow.getCircleAttachmentPoint(point, shape, tolerance);
+                break;
+            case 'frame':
+                attachment = Arrow.getFrameAttachmentPoint(point, shape, tolerance);
+                break;
+            case 'text':
+            case 'code':
+                // Text and code shapes wrap a group element
+                if (shape.group) {
+                    attachment = Arrow.getTextAttachmentPoint(point, shape.group, tolerance);
+                }
+                break;
+            case 'image':
+                // Image shapes wrap an element
+                if (shape.element) {
+                    attachment = Arrow.getImageAttachmentPoint(point, shape.element, tolerance);
+                }
+                break;
+            case 'icon':
+                if (shape.element) {
+                    attachment = Arrow.getIconAttachmentPoint(point, shape.element, tolerance);
+                }
+                break;
+            case 'freehandStroke':
+                attachment = Arrow.getBoundingBoxAttachmentPoint(point, shape, tolerance);
+                break;
+            case 'line':
+                attachment = Arrow.getLineAttachmentPoint(point, shape, tolerance);
+                break;
         }
 
-         else if (shape.shapeName === 'icon' && shape.element) {
-            console.log('Checking icon shape:', shape.element);
-            const attachment = Arrow.getIconAttachmentPoint(point, shape.element, tolerance);
-            if (attachment) {
-                console.log('Found icon attachment:', attachment);
-                return { shape: shape.element, attachment }; // Return the DOM element for consistency
-            }
+        if (attachment) {
+            return { shape, attachment };
         }
     }
     return null;
 }
+
+    static getBoundingBoxAttachmentPoint(point, shape, tolerance = 20) {
+        const bounds = shape.boundingBox || { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
+        if (!bounds || bounds.width === 0 || bounds.height === 0) return null;
+
+        const sides = [
+            { name: 'top', start: { x: bounds.x, y: bounds.y }, end: { x: bounds.x + bounds.width, y: bounds.y } },
+            { name: 'right', start: { x: bounds.x + bounds.width, y: bounds.y }, end: { x: bounds.x + bounds.width, y: bounds.y + bounds.height } },
+            { name: 'bottom', start: { x: bounds.x + bounds.width, y: bounds.y + bounds.height }, end: { x: bounds.x, y: bounds.y + bounds.height } },
+            { name: 'left', start: { x: bounds.x, y: bounds.y + bounds.height }, end: { x: bounds.x, y: bounds.y } }
+        ];
+
+        let closestSide = null;
+        let minDistance = tolerance;
+        let attachPoint = null;
+
+        sides.forEach(side => {
+            const distance = Arrow.pointToLineSegmentDistance(point, side.start, side.end);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestSide = side.name;
+                attachPoint = Arrow.closestPointOnLineSegment(point, side.start, side.end);
+            }
+        });
+
+        if (closestSide && attachPoint) {
+            const offset = {
+                x: attachPoint.x - bounds.x,
+                y: attachPoint.y - bounds.y,
+                side: closestSide
+            };
+            return { side: closestSide, point: attachPoint, offset };
+        }
+        return null;
+    }
+
+    static getLineAttachmentPoint(point, line, tolerance = 20) {
+        const start = line.startPoint;
+        const end = line.endPoint;
+        if (!start || !end) return null;
+
+        const distance = Arrow.pointToLineSegmentDistance(point, start, end);
+        if (distance >= tolerance) return null;
+
+        const attachPoint = Arrow.closestPointOnLineSegment(point, start, end);
+        // Store as a parametric t value along the line
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const lenSq = dx * dx + dy * dy;
+        const t = lenSq > 0 ? ((attachPoint.x - start.x) * dx + (attachPoint.y - start.y) * dy) / lenSq : 0;
+
+        return {
+            side: 'line',
+            point: attachPoint,
+            offset: { t: Math.max(0, Math.min(1, t)), side: 'line' }
+        };
+    }
 
 static getIconAttachmentPoint(point, iconElement, tolerance = 20) {
     // Check if it's an SVG icon element (group)
@@ -872,7 +925,10 @@ static getFrameAttachmentPoint(point, frame, tolerance = 20) {
     }
 
     static getTextAttachmentPoint(point, textGroup, tolerance = 20) {
-        if (!textGroup || textGroup.type !== 'text') return null;
+        if (!textGroup) return null;
+        // Accept groups with type='text' or type='code'
+        const groupType = textGroup.getAttribute ? textGroup.getAttribute('type') : textGroup.type;
+        if (groupType !== 'text' && groupType !== 'code') return null;
 
         const textElement = textGroup.querySelector('text');
         if (!textElement) return null;
@@ -1007,147 +1063,95 @@ static getFrameAttachmentPoint(point, frame, tolerance = 20) {
     const offset = attachment.offset;
 
     if (shape.shapeName === 'rectangle') {
-        switch (side) {
-            case 'top':
-                return { x: shape.x + offset.x, y: shape.y };
-            case 'bottom':
-                return { x: shape.x + offset.x, y: shape.y + shape.height };
-            case 'left':
-                return { x: shape.x, y: shape.y + offset.y };
-            case 'right':
-                return { x: shape.x + shape.width, y: shape.y + offset.y };
-            default:
-                return { x: shape.x + offset.x, y: shape.y + offset.y };
-        }
-    } else if (shape.shapeName === 'circle') {
+        return Arrow._calcRectAttachedPoint(shape.x, shape.y, shape.width, shape.height, shape.rotation, side, offset);
+    }
+
+    if (shape.shapeName === 'circle') {
         if (side === 'perimeter') {
-            // Recalculate point on ellipse perimeter using stored angle
             return Arrow.getEllipsePerimeterPoint(shape, offset.angle);
         }
-    } else if ((shape.getAttribute && shape.getAttribute('type') === 'text') || shape.type === 'text') {
-        const textElement = shape.querySelector('text');
-        if (!textElement) return { x: 0, y: 0 };
+    }
+
+    if (shape.shapeName === 'text' || shape.shapeName === 'code') {
+        // Text/code shapes use their group's transform
+        const groupEl = shape.group;
+        if (!groupEl) return { x: shape.x || 0, y: shape.y || 0 };
+        const textElement = groupEl.querySelector('text') || groupEl.querySelector('foreignObject');
+        if (!textElement) return { x: shape.x || 0, y: shape.y || 0 };
 
         const bbox = textElement.getBBox();
-        const groupTransform = shape.transform.baseVal.consolidate();
+        const groupTransform = groupEl.transform.baseVal.consolidate();
         const matrix = groupTransform ? groupTransform.matrix : { e: 0, f: 0, a: 1, b: 0, c: 0, d: 1 };
 
-        // Calculate the point on the text box using the stored offset
-        let localPoint = {
-            x: bbox.x + offset.x,
-            y: bbox.y + offset.y
-        };
-
-        // Transform to world coordinates
+        let localPoint = { x: bbox.x + offset.x, y: bbox.y + offset.y };
         return {
             x: localPoint.x * matrix.a + localPoint.y * matrix.c + matrix.e,
             y: localPoint.x * matrix.b + localPoint.y * matrix.d + matrix.f
         };
-    } else if (shape.tagName === 'image' || (shape.getAttribute && shape.getAttribute('type') === 'image')) {
-        // Get image position and dimensions from data attributes
-        const imgX = parseFloat(shape.getAttribute('data-shape-x') || shape.getAttribute('x'));
-        const imgY = parseFloat(shape.getAttribute('data-shape-y') || shape.getAttribute('y'));
-        const imgWidth = parseFloat(shape.getAttribute('data-shape-width') || shape.getAttribute('width'));
-        const imgHeight = parseFloat(shape.getAttribute('data-shape-height') || shape.getAttribute('height'));
-
-        // Get rotation from data attribute or transform attribute
-        let rotation = 0;
-        const dataRotation = shape.getAttribute('data-shape-rotation');
-        if (dataRotation) {
-            rotation = parseFloat(dataRotation) * Math.PI / 180; // Convert to radians
-        } else {
-            const transform = shape.getAttribute('transform');
-            if (transform) {
-                const rotateMatch = transform.match(/rotate\(([^,]+)/);
-                if (rotateMatch) {
-                    rotation = parseFloat(rotateMatch[1]) * Math.PI / 180; // Convert to radians
-                }
-            }
-        }
-
-        // Calculate the point on the image using the stored offset
-        let localPoint = {
-            x: imgX + offset.x,
-            y: imgY + offset.y
-        };
-
-        // Apply rotation if necessary
-        if (rotation !== 0) {
-            const centerX = imgX + imgWidth / 2;
-            const centerY = imgY + imgHeight / 2;
-            const dx = localPoint.x - centerX;
-            const dy = localPoint.y - centerY;
-
-            localPoint = {
-                x: centerX + dx * Math.cos(rotation) - dy * Math.sin(rotation),
-                y: centerY + dx * Math.sin(rotation) + dy * Math.cos(rotation)
-            };
-        }
-
-        return localPoint;
-    }   
-    
-    else if (shape.tagName === 'g' && (shape.getAttribute && shape.getAttribute('type') === 'icon')) {
-        // Handle icon attachment - ADD THIS BLOCK
-        const iconX = parseFloat(shape.getAttribute('data-shape-x') || shape.getAttribute('x'));
-        const iconY = parseFloat(shape.getAttribute('data-shape-y') || shape.getAttribute('y'));
-        const iconWidth = parseFloat(shape.getAttribute('data-shape-width') || shape.getAttribute('width'));
-        const iconHeight = parseFloat(shape.getAttribute('data-shape-height') || shape.getAttribute('height'));
-
-        // Get rotation from data attribute or transform attribute
-        let rotation = 0;
-        const dataRotation = shape.getAttribute('data-shape-rotation');
-        if (dataRotation) {
-            rotation = parseFloat(dataRotation) * Math.PI / 180; // Convert to radians
-        } else {
-            const transform = shape.getAttribute('transform');
-            if (transform) {
-                const rotateMatch = transform.match(/rotate\(([^,]+)/);
-                if (rotateMatch) {
-                    rotation = parseFloat(rotateMatch[1]) * Math.PI / 180; // Convert to radians
-                }
-            }
-        }
-
-        // Calculate the point on the icon using the stored offset
-        let localPoint = {
-            x: iconX + offset.x,
-            y: iconY + offset.y
-        };
-
-        // Apply rotation if necessary
-        if (rotation !== 0) {
-            const centerX = iconX + iconWidth / 2;
-            const centerY = iconY + iconHeight / 2;
-            const dx = localPoint.x - centerX;
-            const dy = localPoint.y - centerY;
-
-            localPoint = {
-                x: centerX + dx * Math.cos(rotation) - dy * Math.sin(rotation),
-                y: centerY + dx * Math.sin(rotation) + dy * Math.cos(rotation)
-            };
-        }
-
-        return localPoint;
     }
 
-    else if (shape.shapeName === 'frame') {
-        switch (side) {
-            case 'top':
-                return { x: shape.x + offset.x, y: shape.y };
-            case 'bottom':
-                return { x: shape.x + offset.x, y: shape.y + shape.height };
-            case 'left':
-                return { x: shape.x, y: shape.y + offset.y };
-            case 'right':
-                return { x: shape.x + shape.width, y: shape.y + offset.y };
-            default:
-                return { x: shape.x + offset.x, y: shape.y + offset.y };
+    if (shape.shapeName === 'image') {
+        return Arrow._calcRectAttachedPoint(shape.x, shape.y, shape.width, shape.height, shape.rotation, side, offset);
+    }
+
+    if (shape.shapeName === 'icon') {
+        return Arrow._calcRectAttachedPoint(shape.x, shape.y, shape.width, shape.height, shape.rotation, side, offset);
+    }
+
+    if (shape.shapeName === 'frame') {
+        return Arrow._calcRectAttachedPoint(shape.x, shape.y, shape.width, shape.height, 0, side, offset);
+    }
+
+    if (shape.shapeName === 'freehandStroke') {
+        const bounds = shape.boundingBox || { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
+        return Arrow._calcRectAttachedPoint(bounds.x, bounds.y, bounds.width, bounds.height, 0, side, offset);
+    }
+
+    if (shape.shapeName === 'line') {
+        if (side === 'line' && offset.t !== undefined) {
+            const t = offset.t;
+            return {
+                x: shape.startPoint.x + t * (shape.endPoint.x - shape.startPoint.x),
+                y: shape.startPoint.y + t * (shape.endPoint.y - shape.startPoint.y)
+            };
         }
     }
 
     return { x: shape.x || 0, y: shape.y || 0 };
 }
+
+    static _calcRectAttachedPoint(rx, ry, rw, rh, rotation, side, offset) {
+        let localPoint;
+        switch (side) {
+            case 'top':
+                localPoint = { x: rx + offset.x, y: ry };
+                break;
+            case 'bottom':
+                localPoint = { x: rx + offset.x, y: ry + rh };
+                break;
+            case 'left':
+                localPoint = { x: rx, y: ry + offset.y };
+                break;
+            case 'right':
+                localPoint = { x: rx + rw, y: ry + offset.y };
+                break;
+            default:
+                localPoint = { x: rx + offset.x, y: ry + offset.y };
+        }
+
+        if (rotation) {
+            const rad = rotation * Math.PI / 180;
+            const cx = rx + rw / 2;
+            const cy = ry + rh / 2;
+            const dx = localPoint.x - cx;
+            const dy = localPoint.y - cy;
+            return {
+                x: cx + dx * Math.cos(rad) - dy * Math.sin(rad),
+                y: cy + dx * Math.sin(rad) + dy * Math.cos(rad)
+            };
+        }
+        return localPoint;
+    }
 
     detachFromShape(isStartPoint) {
         if (isStartPoint) {
@@ -1997,14 +2001,19 @@ function detachSelectedArrow() {
 function updateAttachedArrows(shape) {
     if (!shape) return;
 
-    
+    // If a DOM element was passed (e.g. from text/code/image move), find the wrapper
+    let targetShape = shape;
+    if (shape.nodeType) {
+        targetShape = shapes.find(s => s.group === shape || s.element === shape) || shape;
+    }
+
     shapes.forEach(arrowShape => {
         if (arrowShape instanceof Arrow) {
             let needsUpdate = false;
-            if (arrowShape.attachedToStart && arrowShape.attachedToStart.shape === shape) {
+            if (arrowShape.attachedToStart && arrowShape.attachedToStart.shape === targetShape) {
                 needsUpdate = true;
             }
-            if (arrowShape.attachedToEnd && arrowShape.attachedToEnd.shape === shape) {
+            if (arrowShape.attachedToEnd && arrowShape.attachedToEnd.shape === targetShape) {
                 needsUpdate = true;
             }
 
@@ -2016,22 +2025,30 @@ function updateAttachedArrows(shape) {
 }
 
 function cleanupAttachments(deletedShape) {
-    if (deletedShape.shapeName === 'rectangle' || deletedShape.shapeName === 'circle' ||
-        (deletedShape.getAttribute && deletedShape.getAttribute('type') === 'text') || deletedShape.type === 'text' ||
-        deletedShape.tagName === 'image' || (deletedShape.getAttribute && deletedShape.getAttribute('type') === 'image')) {
-        // Remove attachments to this shape
-        shapes.forEach(shape => {
-            if (shape instanceof Arrow) {
-                if (shape.attachedToStart && shape.attachedToStart.shape === deletedShape) {
-                    shape.detachFromShape(true);
-                }
-                if (shape.attachedToEnd && shape.attachedToEnd.shape === deletedShape) {
-                    shape.detachFromShape(false);
-                }
+    if (!deletedShape) return;
+
+    // If a DOM element was passed, find the wrapper
+    let targetShape = deletedShape;
+    if (deletedShape.nodeType) {
+        targetShape = shapes.find(s => s.group === deletedShape || s.element === deletedShape) || deletedShape;
+    }
+
+    shapes.forEach(shape => {
+        if (shape instanceof Arrow) {
+            let needsDraw = false;
+            if (shape.attachedToStart && shape.attachedToStart.shape === targetShape) {
+                shape.detachFromShape(true);
+                needsDraw = true;
+            }
+            if (shape.attachedToEnd && shape.attachedToEnd.shape === targetShape) {
+                shape.detachFromShape(false);
+                needsDraw = true;
+            }
+            if (needsDraw) {
                 shape.draw();
             }
-        });
-    }
+        }
+    });
 }
 
 // Add keyboard shortcut to detach arrows
