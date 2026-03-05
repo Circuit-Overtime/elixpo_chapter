@@ -1263,6 +1263,10 @@ function handleMultiSelectionMouseDown(e) {
     if (clickedOnShape && clickedShape) {
         // If it's the same shape that's already selected, let individual handlers manage it
         if (currentShape === clickedShape) {
+            // Clear any other multi-selected shapes so only this one remains selected
+            if (multiSelection.selectedShapes.size > 0) {
+                multiSelection.clearSelection();
+            }
             return false; // Let individual shape handlers manage their own interactions
         }
         

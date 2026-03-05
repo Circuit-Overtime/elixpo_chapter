@@ -1,7 +1,5 @@
 import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransformAction, pushFrameAttachmentAction } from './undoAndRedo.js';
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './drawArrow.js';
-
-// Update event handlers to use the Line class
 let isDrawingLine = false;
 let currentLine = null;
 let lineStartX = 0;      
@@ -16,8 +14,6 @@ let lineSktetchRate = 3;
 let isDraggingLine = false;
 let dragOldPosLine = null;
 let copiedShapeData = null;
-
-// Frame attachment variables
 let draggedShapeInitialFrameLine = null;
 let hoveredFrameLine = null;
 
@@ -146,9 +142,9 @@ class Line {
 
         const rc = rough.svg(svg);
         let lineElement;
-        
+
         if (this.isCurved && this.controlPoint) {
-            // Draw curved line using quadratic bezier
+            // Draw curved line using quadratic bezier (plain SVG, no roughness jitter)
             const pathData = `M ${this.startPoint.x} ${this.startPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${this.endPoint.x} ${this.endPoint.y}`;
             lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             lineElement.setAttribute('d', pathData);
@@ -159,8 +155,21 @@ class Line {
             if (this.options.strokeDasharray) {
                 lineElement.setAttribute('stroke-dasharray', this.options.strokeDasharray);
             }
+        } else if (this.isBeingDrawn) {
+            // During drawing: use plain SVG line to avoid roughness regeneration jitter
+            lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            lineElement.setAttribute('x1', this.startPoint.x);
+            lineElement.setAttribute('y1', this.startPoint.y);
+            lineElement.setAttribute('x2', this.endPoint.x);
+            lineElement.setAttribute('y2', this.endPoint.y);
+            lineElement.setAttribute('stroke', this.options.stroke || lineColor);
+            lineElement.setAttribute('stroke-width', this.options.strokeWidth || lineStrokeWidth);
+            lineElement.setAttribute('stroke-linecap', 'round');
+            if (this.options.strokeDasharray) {
+                lineElement.setAttribute('stroke-dasharray', this.options.strokeDasharray);
+            }
         } else {
-            // Draw straight line
+            // Draw straight line with roughness (finalized)
             lineElement = rc.line(
                 this.startPoint.x, this.startPoint.y,
                 this.endPoint.x, this.endPoint.y,
@@ -179,10 +188,6 @@ class Line {
     selectLine() {
     this.isSelected = true;
     this.addAnchors();
-    // Show line sidebar when selected
-    disableAllSideBars();
-    lineSideBar.classList.remove("hidden");
-    this.updateSidebar();
 }
 
 deselectLine() {
@@ -244,13 +249,19 @@ removeSelection() {
     this.group.appendChild(endAnchor);
     this.anchors[1] = endAnchor;
 
-    // Middle anchor for curving
+    // Middle anchor for curving - positioned ON the bezier curve at t=0.5
     const midX = (this.startPoint.x + this.endPoint.x) / 2;
     const midY = (this.startPoint.y + this.endPoint.y) / 2;
-    
+    let anchorMidX = midX, anchorMidY = midY;
+    if (this.isCurved && this.controlPoint) {
+        // Bezier point at t=0.5: 0.25*P0 + 0.5*CP + 0.25*P1
+        anchorMidX = 0.25 * this.startPoint.x + 0.5 * this.controlPoint.x + 0.25 * this.endPoint.x;
+        anchorMidY = 0.25 * this.startPoint.y + 0.5 * this.controlPoint.y + 0.25 * this.endPoint.y;
+    }
+
     const middleAnchor = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    middleAnchor.setAttribute('cx', this.isCurved && this.controlPoint ? this.controlPoint.x : midX);
-    middleAnchor.setAttribute('cy', this.isCurved && this.controlPoint ? this.controlPoint.y : midY);
+    middleAnchor.setAttribute('cx', anchorMidX);
+    middleAnchor.setAttribute('cy', anchorMidY);
     middleAnchor.setAttribute('r', anchorSize / 2);
     middleAnchor.setAttribute('fill', this.isCurved ? '#5B57D1' : '#121212');
     middleAnchor.setAttribute('stroke', '#5B57D1');
@@ -261,6 +272,11 @@ removeSelection() {
     middleAnchor.dataset.index = 2;
     this.group.appendChild(middleAnchor);
     this.anchors[2] = middleAnchor;
+
+    // Show line sidebar
+    disableAllSideBars();
+    lineSideBar.classList.remove("hidden");
+    this.updateSidebar();
     }
 
     isNearAnchor(x, y) {
@@ -296,13 +312,16 @@ removeSelection() {
             this.endPoint.y = newY;
             // Don't auto-update control point to prevent jitter
         } else if (anchorIndex === 2) {
-            // Middle anchor - curve control
+            // Middle anchor - dragged position is ON the curve (bezier t=0.5)
+            // Compute control point: CP = 2*M - 0.5*(P0+P1)
             if (!this.isCurved) {
-                // First time dragging middle anchor - enable curve
                 this.isCurved = true;
-                this.initializeCurveControlPoint();
             }
-            this.controlPoint = { x: newX, y: newY };
+            // Invert bezier formula: CP = 2*M - 0.5*(P0+P1)
+            this.controlPoint = {
+                x: 2 * newX - 0.5 * (this.startPoint.x + this.endPoint.x),
+                y: 2 * newY - 0.5 * (this.startPoint.y + this.endPoint.y)
+            };
         }
         
         // Only redraw the line, not the entire structure
@@ -355,8 +374,14 @@ removeSelection() {
         if (this.anchors[2]) {
             const midX = (this.startPoint.x + this.endPoint.x) / 2;
             const midY = (this.startPoint.y + this.endPoint.y) / 2;
-            this.anchors[2].setAttribute('cx', this.isCurved && this.controlPoint ? this.controlPoint.x : midX);
-            this.anchors[2].setAttribute('cy', this.isCurved && this.controlPoint ? this.controlPoint.y : midY);
+            let anchorMidX = midX, anchorMidY = midY;
+            if (this.isCurved && this.controlPoint) {
+                // Bezier point at t=0.5: 0.25*P0 + 0.5*CP + 0.25*P1
+                anchorMidX = 0.25 * this.startPoint.x + 0.5 * this.controlPoint.x + 0.25 * this.endPoint.x;
+                anchorMidY = 0.25 * this.startPoint.y + 0.5 * this.controlPoint.y + 0.25 * this.endPoint.y;
+            }
+            this.anchors[2].setAttribute('cx', anchorMidX);
+            this.anchors[2].setAttribute('cy', anchorMidY);
             this.anchors[2].setAttribute('fill', this.isCurved ? '#5B57D1' : '#121212');
         }
     }
@@ -523,6 +548,7 @@ const handleMouseDown = (e) => {
                 strokeDasharray: lineStrokeStyle === "dashed" ? "5,5" : (lineStrokeStyle === "dotted" ? "2,12" : "")
             }
         );
+        currentLine.isBeingDrawn = true;
         shapes.push(currentLine);
         currentShape = currentLine;
     } else if (isSelectionToolActive) {
@@ -697,9 +723,13 @@ const handleMouseUp = (e) => {
             currentLine = null;
             currentShape = null;
         } else {
+            // Finalize: apply roughness now that drawing is done
+            currentLine.isBeingDrawn = false;
+            currentLine.draw();
+
             // Push create action for undo/redo
             pushCreateAction(currentLine);
-            
+
             // Check for frame containment and track attachment
             const finalFrame = hoveredFrameLine;
             if (finalFrame) {
@@ -707,6 +737,13 @@ const handleMouseUp = (e) => {
                 // Track the attachment for undo
                 pushFrameAttachmentAction(finalFrame, currentLine, 'attach', null);
             }
+
+            // Auto-select the drawn line and switch to selection tool
+            const drawnLine = currentLine;
+            const selectBtn = document.querySelector(".bxs-pointer");
+            if (selectBtn) selectBtn.click();
+            currentShape = drawnLine;
+            drawnLine.selectLine();
         }
         
         // Clear frame highlighting

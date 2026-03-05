@@ -1,5 +1,5 @@
 import { pushCreateAction, pushDeleteAction, pushTransformAction, pushFrameAttachmentAction } from './undoAndRedo.js';
-import { updateAttachedArrows } from './drawArrow.js';
+import { updateAttachedArrows, cleanupAttachments } from './drawArrow.js';
 let currentFrame = null;
 let isResizing = false;
 let isDragging = false;
@@ -350,10 +350,16 @@ move(dx, dy) {
     this.updateContainedShapes();
 }
     destroy() {
-        // Remove all contained shapes from frame and move back to main SVG
+        // Delete all contained shapes along with the frame
         [...this.containedShapes].forEach(shape => {
-            this.removeShapeFromFrame(shape);
+            const shapeIdx = shapes.indexOf(shape);
+            if (shapeIdx > -1) shapes.splice(shapeIdx, 1);
+            if (shape.group && shape.group.parentNode) {
+                shape.group.parentNode.removeChild(shape.group);
+            }
+            cleanupAttachments(shape.group || shape);
         });
+        this.containedShapes = [];
 
         // Remove clip path
         if (this.clipPath && this.clipPath.parentNode) {
@@ -364,7 +370,7 @@ move(dx, dy) {
         if (this.clipGroup && this.clipGroup.parentNode) {
             this.clipGroup.parentNode.removeChild(this.clipGroup);
         }
-        
+
         if (this.group && this.group.parentNode) {
             this.group.parentNode.removeChild(this.group);
         }
@@ -1002,10 +1008,16 @@ restoreToFrame(shape) {
     }
 
     destroy() {
-        // Remove all contained shapes from frame and move back to main SVG
+        // Delete all contained shapes along with the frame
         [...this.containedShapes].forEach(shape => {
-            this.removeShapeFromFrame(shape);
+            const shapeIdx = shapes.indexOf(shape);
+            if (shapeIdx > -1) shapes.splice(shapeIdx, 1);
+            if (shape.group && shape.group.parentNode) {
+                shape.group.parentNode.removeChild(shape.group);
+            }
+            cleanupAttachments(shape.group || shape);
         });
+        this.containedShapes = [];
 
         // Remove clip path
         if (this.clipPath && this.clipPath.parentNode) {
@@ -1016,7 +1028,7 @@ restoreToFrame(shape) {
         if (this.clipGroup && this.clipGroup.parentNode) {
             this.clipGroup.parentNode.removeChild(this.clipGroup);
         }
-        
+
         if (this.group && this.group.parentNode) {
             this.group.parentNode.removeChild(this.group);
         }

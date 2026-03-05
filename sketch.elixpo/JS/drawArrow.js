@@ -9,7 +9,7 @@ let isDrawingArrow = false;
 let arrowStrokeColor = "#fff";
 let arrowStrokeThickness = 2;
 let arrowOutlineStyle = "solid";
-let arrowCurved = true;
+let arrowCurved = "straight";
 let arrowCurveAmount = 20;
 let arrowHeadLength = 10;
 let arrowHeadAngleDeg = 30;
@@ -24,6 +24,7 @@ let arrowStrokeThicknessValue = document.querySelectorAll(".arrowStrokeThickSpan
 let arrowOutlineStyleValue = document.querySelectorAll(".arrowOutlineStyle");
 let arrowTypeStyleValue = document.querySelectorAll(".arrowTypeStyle");
 let arrowHeadStyleValue = document.querySelectorAll(".arrowHeadStyleSpan");
+let arrowCurveAmountOptions = document.querySelectorAll(".arrowCurveSpan");
 
 // Add coordinate conversion function like in lineTool.js
 function getSVGCoordsFromMouse(e) {
@@ -63,6 +64,7 @@ class Arrow {
         this.attachedToEnd = null;
         this.parentFrame = null;
         this.element = null;
+        this.elbowX = options.elbowX !== undefined ? options.elbowX : null;
         this.group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         this.isSelected = false;
         this.anchors = [];
@@ -71,7 +73,7 @@ class Arrow {
         this.group.setAttribute('id', this.shapeID);
 
         // Initialize control points if curved
-        if (this.arrowCurved && !this.controlPoint1 && !this.controlPoint2) {
+        if (this.arrowCurved === "curved" && !this.controlPoint1 && !this.controlPoint2) {
             this.initializeCurveControlPoints();
         }
 
@@ -161,8 +163,38 @@ class Arrow {
         };
     }
 
+    _buildElbowPath(elbowX, shortenEnd) {
+        const x1 = this.startPoint.x, y1 = this.startPoint.y;
+        const x2 = this.endPoint.x,   y2 = this.endPoint.y;
+        const r = Math.min(
+            Math.abs(this.arrowCurveAmount),
+            Math.abs(elbowX - x1) / 2,
+            Math.abs(x2 - elbowX) / 2,
+            Math.abs(y2 - y1) / 2
+        );
+        const dx = elbowX >= x1 ? 1 : -1;
+        const ex = x2 >= elbowX ? 1 : -1;
+        const dy = y2 >= y1 ? 1 : -1;
+        let endX = x2;
+        if (shortenEnd) {
+            endX = x2 - ex * (this.arrowHeadLength * 0.3);
+        }
+        if (r > 2 && Math.abs(elbowX - x1) > r * 2 && Math.abs(x2 - elbowX) > r * 2 && Math.abs(y2 - y1) > r * 2) {
+            return `M ${x1} ${y1}` +
+                   ` H ${elbowX - dx * r}` +
+                   ` Q ${elbowX} ${y1} ${elbowX} ${y1 + dy * r}` +
+                   ` V ${y2 - dy * r}` +
+                   ` Q ${elbowX} ${y2} ${elbowX + ex * r} ${y2}` +
+                   ` H ${endX}`;
+        }
+        return `M ${x1} ${y1} H ${elbowX} V ${y2} H ${endX}`;
+    }
+
     selectArrow() {
         this.isSelected = true;
+        disableAllSideBars();
+        arrowSideBar.classList.remove("hidden");
+        this.updateSidebar();
         this.draw();
     }
 
@@ -194,7 +226,7 @@ class Arrow {
         }
 
         // Update control points if curved
-        if (this.arrowCurved) {
+        if (this.arrowCurved === "curved") {
             this.initializeCurveControlPoints();
         }
 
@@ -210,7 +242,9 @@ class Arrow {
         let pathData;
         let arrowEndPoint = this.endPoint;
 
-        if (this.arrowCurved && this.controlPoint1 && this.controlPoint2) {
+        const elbowX = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
+
+        if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
             if (isNaN(this.controlPoint1.x) || isNaN(this.controlPoint1.y) ||
                 isNaN(this.controlPoint2.x) || isNaN(this.controlPoint2.y)) {
                 this.initializeCurveControlPoints();
@@ -236,15 +270,19 @@ class Arrow {
                           `${this.controlPoint2.x} ${this.controlPoint2.y}, ` +
                           `${arrowEndPoint.x} ${arrowEndPoint.y}`;
             }
+        } else if (this.arrowCurved === "elbow") {
+            pathData = this._buildElbowPath(elbowX, false);
         } else {
             pathData = `M ${this.startPoint.x} ${this.startPoint.y} L ${this.endPoint.x} ${this.endPoint.y}`;
         }
 
         if (this.arrowHeadStyle === "default") {
             let angle;
-            if (this.arrowCurved && this.controlPoint1 && this.controlPoint2) {
+            if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
                 const tangent = this.getCubicBezierTangent(1.0);
                 angle = Math.atan2(tangent.y, tangent.x);
+            } else if (this.arrowCurved === "elbow") {
+                angle = Math.atan2(0, this.endPoint.x - elbowX);
             } else {
                 const dx = this.endPoint.x - this.startPoint.x;
                 const dy = this.endPoint.y - this.startPoint.y;
@@ -326,17 +364,26 @@ class Arrow {
 
         let anchorPositions = [this.startPoint, this.endPoint];
 
-        if (this.arrowCurved && this.controlPoint1 && this.controlPoint2) {
+        if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
             anchorPositions.push(this.controlPoint1, this.controlPoint2);
-        } else if (!this.arrowCurved) {
+        } else if (this.arrowCurved === "elbow") {
+            const elbowXVal = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
+            const midY = (this.startPoint.y + this.endPoint.y) / 2;
+            anchorPositions.push({ x: elbowXVal, y: midY });
+        } else {
+            // straight — offset end anchor past arrowhead
             const arrowAngle = Math.atan2(this.endPoint.y - this.startPoint.y, this.endPoint.x - this.startPoint.x);
             const arrowHeadClearance = this.arrowHeadLength + anchorSize - 10;
-            const offsetEndAnchor = {
+            anchorPositions[1] = {
                 x: this.endPoint.x + arrowHeadClearance * Math.cos(arrowAngle),
                 y: this.endPoint.y + arrowHeadClearance * Math.sin(arrowAngle)
             };
-            anchorPositions[1] = offsetEndAnchor;
         }
+
+        // Show sidebar
+        disableAllSideBars();
+        arrowSideBar.classList.remove("hidden");
+        this.updateSidebar();
 
         anchorPositions.forEach((point, index) => {
             const anchor = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -435,7 +482,7 @@ class Arrow {
             }
         }
 
-        if (this.arrowCurved) {
+        if (this.arrowCurved === "curved") {
             this.initializeCurveControlPoints();
         }
 
@@ -461,8 +508,8 @@ class Arrow {
 
     static findNearbyShape(point, tolerance = 20) {
     for (let shape of shapes) {
-        // Skip arrows - can't attach to other arrows
-        if (shape.shapeName === 'arrow') continue;
+        // Can't attach to other arrows or lines
+        if (shape.shapeName === 'arrow' || shape.shapeName === 'line') continue;
 
         let attachment = null;
 
@@ -1390,6 +1437,8 @@ updateFrameContainment() {
         } else if (anchorIndex === 1) {
             this.endPoint.x = newViewBoxX;
             this.endPoint.y = newViewBoxY;
+        } else if (anchorIndex === 2 && this.arrowCurved === "elbow") {
+            this.elbowX = newViewBoxX;
         } else if (anchorIndex === 2 && this.controlPoint1) {
             this.controlPoint1.x = newViewBoxX;
             this.controlPoint1.y = newViewBoxY;
@@ -1403,11 +1452,16 @@ updateFrameContainment() {
     contains(viewBoxX, viewBoxY) {
         const tolerance = Math.max(5, this.options.strokeWidth * 2) / currentZoom;
 
-        if (this.arrowCurved && this.controlPoint1 && this.controlPoint2) {
+        if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
             return this.pointToCubicBezierDistance(viewBoxX, viewBoxY) <= tolerance;
+        } else if (this.arrowCurved === "elbow") {
+            const ex = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
+            const d1 = this.pointToLineDistance(viewBoxX, viewBoxY, this.startPoint.x, this.startPoint.y, ex, this.startPoint.y);
+            const d2 = this.pointToLineDistance(viewBoxX, viewBoxY, ex, this.startPoint.y, ex, this.endPoint.y);
+            const d3 = this.pointToLineDistance(viewBoxX, viewBoxY, ex, this.endPoint.y, this.endPoint.x, this.endPoint.y);
+            return Math.min(d1, d2, d3) <= tolerance;
         } else {
-            const distance = this.pointToLineDistance(viewBoxX, viewBoxY, this.startPoint.x, this.startPoint.y, this.endPoint.x, this.endPoint.y);
-            return distance <= tolerance;
+            return this.pointToLineDistance(viewBoxX, viewBoxY, this.startPoint.x, this.startPoint.y, this.endPoint.x, this.endPoint.y) <= tolerance;
         }
     }
 
@@ -1470,12 +1524,18 @@ updateFrameContainment() {
             const wasCurved = this.arrowCurved;
             this.arrowCurved = newOptions.arrowCurved;
 
-            if (this.arrowCurved && !wasCurved) {
+            if (this.arrowCurved === "curved" && wasCurved !== "curved") {
                 this.initializeCurveControlPoints();
-            } else if (!this.arrowCurved && wasCurved) {
+            } else if (this.arrowCurved !== "curved") {
                 this.controlPoint1 = null;
                 this.controlPoint2 = null;
             }
+            if (this.arrowCurved !== "elbow") {
+                this.elbowX = null;
+            }
+        }
+        if (newOptions.elbowX !== undefined) {
+            this.elbowX = newOptions.elbowX;
         }
         if (newOptions.stroke !== undefined) {
             this.options.stroke = newOptions.stroke;
@@ -1498,6 +1558,27 @@ updateFrameContainment() {
         }
 
         this.draw();
+    }
+
+    updateSidebar() {
+        arrowStrokeColorOptions.forEach(span => {
+            span.classList.toggle('selected', span.getAttribute('data-id') === this.options.stroke);
+        });
+        arrowStrokeThicknessValue.forEach(span => {
+            span.classList.toggle('selected', parseInt(span.getAttribute('data-id')) === this.options.strokeWidth);
+        });
+        arrowOutlineStyleValue.forEach(span => {
+            span.classList.toggle('selected', span.getAttribute('data-id') === this.arrowOutlineStyle);
+        });
+        arrowTypeStyleValue.forEach(span => {
+            span.classList.toggle('selected', span.getAttribute('data-id') === this.arrowCurved);
+        });
+        arrowHeadStyleValue.forEach(span => {
+            span.classList.toggle('selected', span.getAttribute('data-id') === this.arrowHeadStyle);
+        });
+        arrowCurveAmountOptions.forEach(span => {
+            span.classList.toggle('selected', parseInt(span.getAttribute('data-id')) === this.arrowCurveAmount);
+        });
     }
 
     destroy() {
@@ -1757,8 +1838,15 @@ if (isDrawingArrow && currentArrow) {
 
         // Push create action for undo/redo
         pushCreateAction(currentArrow);
+
+        // Auto-select the drawn arrow and switch to selection tool
+        const drawnArrow = currentArrow;
+        const selectBtn = document.querySelector(".bxs-pointer");
+        if (selectBtn) selectBtn.click();
+        currentShape = drawnArrow;
+        drawnArrow.selectArrow();
     }
-    
+
     // Clear frame highlighting
     if (hoveredFrameArrow) {
         hoveredFrameArrow.removeHighlight();
@@ -1897,8 +1985,16 @@ arrowTypeStyleValue.forEach((span) => {
         event.stopPropagation();
         arrowTypeStyleValue.forEach((el) => el.classList.remove("selected"));
         span.classList.add("selected");
-        const isCurved = span.getAttribute("data-id") === 'true';
-        updateSelectedArrowStyle({ arrowCurved: isCurved });
+        updateSelectedArrowStyle({ arrowCurved: span.getAttribute("data-id") });
+    });
+});
+
+arrowCurveAmountOptions.forEach((span) => {
+    span.addEventListener("click", (event) => {
+        event.stopPropagation();
+        arrowCurveAmountOptions.forEach((el) => el.classList.remove("selected"));
+        span.classList.add("selected");
+        updateSelectedArrowStyle({ arrowCurveAmount: parseInt(span.getAttribute("data-id")) });
     });
 });
 
