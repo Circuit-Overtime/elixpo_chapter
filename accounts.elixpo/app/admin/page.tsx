@@ -11,6 +11,12 @@ import {
   CircularProgress,
   ToggleButton,
   ToggleButtonGroup,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -19,6 +25,8 @@ import {
   Error as ErrorIcon,
   Speed,
   LocalActivity as Activity,
+  People,
+  CheckCircle,
 } from '@mui/icons-material';
 import { useDashboardStats } from '../../src/lib/hooks/useAdminData';
 
@@ -382,6 +390,108 @@ export default function AdminDashboard() {
                   ))}
                 </Box>
               </ChartCard>
+            </Grid>
+          </Grid>
+
+          {/* Recent Activity Section */}
+          <Grid container spacing={2}>
+            {/* Recent Users */}
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px' }}>
+                <CardContent sx={{ pb: '12px !important' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <People sx={{ color: '#3b82f6', fontSize: '1.2rem' }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff', fontSize: '1rem' }}>
+                      Recent Users
+                    </Typography>
+                  </Box>
+                  {(stats.recentUsers ?? []).length === 0 ? (
+                    <Typography variant="body2" sx={{ color: '#6b7280', textAlign: 'center', py: 2 }}>
+                      No users yet
+                    </Typography>
+                  ) : (
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>Email</TableCell>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>Status</TableCell>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>Joined</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {(stats.recentUsers ?? []).map((user) => (
+                          <TableRow key={user.id} sx={{ '&:hover': { bgcolor: 'rgba(34,197,94,0.04)' } }}>
+                            <TableCell sx={{ color: '#e5e7eb', borderColor: '#2a2a2a', py: 0.75, fontSize: '0.85rem' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                {user.email}
+                                {Boolean(user.is_admin) && (
+                                  <Chip label="admin" size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: 'rgba(34,197,94,0.2)', color: '#22c55e' }} />
+                                )}
+                              </Box>
+                            </TableCell>
+                            <TableCell sx={{ borderColor: '#2a2a2a', py: 0.75 }}>
+                              {Boolean(user.email_verified) ? (
+                                <CheckCircle sx={{ color: '#22c55e', fontSize: '0.9rem' }} />
+                              ) : (
+                                <Chip label="unverified" size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: 'rgba(245,158,11,0.2)', color: '#f59e0b' }} />
+                              )}
+                            </TableCell>
+                            <TableCell sx={{ color: '#6b7280', borderColor: '#2a2a2a', py: 0.75, fontSize: '0.8rem' }}>
+                              {user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Recent OAuth Apps */}
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px' }}>
+                <CardContent sx={{ pb: '12px !important' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <AppsIcon sx={{ color: '#f59e0b', fontSize: '1.2rem' }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff', fontSize: '1rem' }}>
+                      Recent OAuth Apps
+                    </Typography>
+                  </Box>
+                  {(stats.recentApps ?? []).length === 0 ? (
+                    <Typography variant="body2" sx={{ color: '#6b7280', textAlign: 'center', py: 2 }}>
+                      No apps registered yet
+                    </Typography>
+                  ) : (
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>App Name</TableCell>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>Client ID</TableCell>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>Created</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {(stats.recentApps ?? []).map((app) => (
+                          <TableRow key={app.id} sx={{ '&:hover': { bgcolor: 'rgba(34,197,94,0.04)' } }}>
+                            <TableCell sx={{ color: '#e5e7eb', borderColor: '#2a2a2a', py: 0.75, fontSize: '0.85rem' }}>
+                              {app.client_name}
+                            </TableCell>
+                            <TableCell sx={{ borderColor: '#2a2a2a', py: 0.75 }}>
+                              <Typography variant="caption" sx={{ color: '#6b7280', fontFamily: 'monospace' }}>
+                                {app.client_id?.slice(0, 12)}…
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={{ color: '#6b7280', borderColor: '#2a2a2a', py: 0.75, fontSize: '0.8rem' }}>
+                              {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
             </Grid>
           </Grid>
         </>

@@ -1,7 +1,9 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyPassword } from '@/lib/password';
 import { createAccessToken, createRefreshToken } from '@/lib/jwt';
-import { hashString, generateUUID } from '@/lib/crypto';
+import { hashString, generateUUID } from '@/lib/webcrypto';
 import { createLoginRateLimiter } from '@/lib/rate-limit';
 import { getUserByEmail, getUserByEmailWithPassword, getIdentitiesByUserId, createRefreshToken as storeRefreshToken, logAuditEvent, updateUserLastLogin } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
@@ -188,7 +190,7 @@ export async function POST(request: NextRequest) {
 
     // Store refresh token and log success
     try {
-      const refreshTokenHash = hashString(refreshTokenJWT);
+      const refreshTokenHash = await hashString(refreshTokenJWT);
       await storeRefreshToken(db, {
         id: generateUUID(),
         userId: user.id,

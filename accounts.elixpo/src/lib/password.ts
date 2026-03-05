@@ -1,22 +1,47 @@
-import crypto from 'crypto';
 const HASH_ITERATIONS = 100000;
-const HASH_ALGORITHM = 'sha256';
 
 export async function hashPassword(password: string): Promise<string> {
-  const salt = crypto.randomBytes(32).toString('hex');
-  const hash = crypto
-    .pbkdf2Sync(password, salt, HASH_ITERATIONS, 64, HASH_ALGORITHM)
-    .toString('hex');
+  const saltBytes = crypto.getRandomValues(new Uint8Array(32));
+  const salt = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+
+  const hashBuffer = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: HASH_ITERATIONS, hash: 'SHA-256' },
+    keyMaterial,
+    512
+  );
+
+  const hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
   return `${salt}:${hash}`;
 }
 
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   try {
-    const [salt, storedHash] = hash.split(':');
-    const computedHash = crypto
-      .pbkdf2Sync(password, salt, HASH_ITERATIONS, 64, HASH_ALGORITHM)
-      .toString('hex');
-    return computedHash === storedHash;
+    const [salt, expectedHash] = storedHash.split(':');
+
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(password),
+      'PBKDF2',
+      false,
+      ['deriveBits']
+    );
+
+    const hashBuffer = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: HASH_ITERATIONS, hash: 'SHA-256' },
+      keyMaterial,
+      512
+    );
+
+    const computedHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return computedHash === expectedHash;
   } catch (error) {
     console.error('[Password] Verification failed:', error);
     return false;

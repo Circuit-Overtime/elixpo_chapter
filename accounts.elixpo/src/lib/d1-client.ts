@@ -59,116 +59,62 @@ export async function getDatabase(): Promise<D1Database> {
 function createLocalD1Client(accountId: string, apiToken: string, databaseId: string): D1Database {
   const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}`;
 
+  const query = async (sql: string, params: any[] = []) => {
+    const response = await fetch(`${baseUrl}/query`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sql, params }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`D1 Query Error: ${error.errors?.[0]?.message || response.statusText}`);
+    }
+    return response.json();
+  };
+
+  const makeStatement = (sql: string, params: any[] = []): any => ({
+    bind: (...args: any[]) => makeStatement(sql, args),
+    run: async () => {
+      const result = await query(sql, params);
+      return result.result?.[0] || { success: true };
+    },
+    first: async () => {
+      const result = await query(sql, params);
+      return result.result?.[0]?.results?.[0] || null;
+    },
+    all: async () => {
+      const result = await query(sql, params);
+      return { results: result.result?.[0]?.results || [], success: true };
+    },
+  });
+
   return {
-    prepare: (sql: string) => ({
-      bind: (...args: any[]) => ({
-        run: async () => {
-          const response = await fetch(`${baseUrl}/query`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              sql,
-              params: args,
-            }),
-          });
-
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(`D1 Query Error: ${error.errors?.[0]?.message || response.statusText}`);
-          }
-
-          const result = await response.json();
-          return result.result?.[0] || { success: true };
-        },
-        first: async () => {
-          const response = await fetch(`${baseUrl}/query`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              sql,
-              params: args,
-            }),
-          });
-
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(`D1 Query Error: ${error.errors?.[0]?.message || response.statusText}`);
-          }
-
-          const result = await response.json();
-          const results = result.result?.[0]?.results || [];
-          return results[0] || null;
-        },
-        all: async () => {
-          const response = await fetch(`${baseUrl}/query`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              sql,
-              params: args,
-            }),
-          });
-
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(`D1 Query Error: ${error.errors?.[0]?.message || response.statusText}`);
-          }
-
-          const result = await response.json();
-          return {
-            results: result.result?.[0]?.results || [],
-            success: true,
-          };
-        },
-      }),
-    }),
+    prepare: (sql: string) => makeStatement(sql),
     batch: async (statements: any[]) => {
       const response = await fetch(`${baseUrl}/query`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          statements: statements.map(stmt => ({
-            sql: stmt.sql,
-            params: stmt.params || [],
-          })),
+          statements: statements.map(stmt => ({ sql: stmt.sql, params: stmt.params || [] })),
         }),
       });
-
       if (!response.ok) {
         const error = await response.json();
         throw new Error(`D1 Batch Error: ${error.errors?.[0]?.message || response.statusText}`);
       }
-
-      return await response.json();
+      return response.json();
     },
     exec: async (sql: string) => {
       const response = await fetch(`${baseUrl}/query`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ sql }),
       });
-
       if (!response.ok) {
         const error = await response.json();
         throw new Error(`D1 Exec Error: ${error.errors?.[0]?.message || response.statusText}`);
       }
-
-      return await response.json();
+      return response.json();
     },
   } as any;
 }
@@ -180,23 +126,15 @@ function createLocalD1Client(accountId: string, apiToken: string, databaseId: st
 function createInMemoryMockDb(): D1Database {
   const data = new Map<string, any[]>();
 
+  const makeMockStatement = (sql: string): any => ({
+    bind: (..._args: any[]) => makeMockStatement(sql),
+    run: async () => { console.warn(`[Mock DB] run: ${sql.substring(0, 50)}`); return { success: true }; },
+    first: async () => { console.warn(`[Mock DB] first: ${sql.substring(0, 50)}`); return null; },
+    all: async () => { console.warn(`[Mock DB] all: ${sql.substring(0, 50)}`); return { results: [], success: true }; },
+  });
+
   return {
-    prepare: (sql: string) => ({
-      bind: (...args: any[]) => ({
-        run: async () => {
-          console.warn(`[Mock DB] Executing (no persistence): ${sql.substring(0, 50)}...`);
-          return { success: true };
-        },
-        first: async () => {
-          console.warn(`[Mock DB] Query first (no persistence): ${sql.substring(0, 50)}...`);
-          return null;
-        },
-        all: async () => {
-          console.warn(`[Mock DB] Query all (no persistence): ${sql.substring(0, 50)}...`);
-          return { results: [], success: true };
-        },
-      }),
-    }),
+    prepare: (sql: string) => makeMockStatement(sql),
     batch: async () => ({ success: true }),
     exec: async () => ({ success: true }),
   } as any;

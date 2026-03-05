@@ -1,5 +1,7 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { hashString } from '@/lib/crypto';
+import { hashString } from '@/lib/webcrypto';
 import { revokeRefreshToken } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
 
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (refreshToken) {
       try {
         const db = await getDatabase();
-        const tokenHash = hashString(refreshToken);
+        const tokenHash = await hashString(refreshToken);
         await revokeRefreshToken(db, tokenHash);
         console.log('[Logout] Refresh token revoked');
       } catch (error) {

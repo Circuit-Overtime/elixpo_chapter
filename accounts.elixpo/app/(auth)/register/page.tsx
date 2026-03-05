@@ -52,8 +52,27 @@ const RegisterPage = () => {
     }
 
     setLoading(true);
-    // Handle registration logic here
-    setTimeout(() => setLoading(false), 1000);
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, provider: 'email' }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Registration failed');
+        return;
+      }
+
+      window.location.href = '/dashboard/oauth-apps';
+    } catch {
+      setError('Network error, please try again');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSSORegister = (provider: 'google' | 'github') => {

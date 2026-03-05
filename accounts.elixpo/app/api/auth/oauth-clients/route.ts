@@ -1,7 +1,20 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { generateRandomString, hashString } from '@/lib/crypto';
+import { generateRandomString, hashString } from '@/lib/webcrypto';
 import { createOAuthClient, getOAuthClientById } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
+import { verifyJWT } from '@/lib/jwt';
+
+async function getAuth(request: NextRequest) {
+  const token =
+    request.cookies.get('access_token')?.value ||
+    request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!token) return null;
+  const payload = await verifyJWT(token);
+  if (!payload || payload.type !== 'access') return null;
+  return payload;
+}
 
 /**
  * POST /api/auth/oauth-clients
@@ -33,9 +46,12 @@ import { getDatabase } from '@/lib/d1-client';
  * }
  */
 export async function POST(request: NextRequest) {
+  const auth = await getAuth(request);
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   try {
     const body = await request.json();
-    const { name, redirect_uris, logo_uri, description, scopes } = body;
+    const { name, redirect_uris, logo_uri, description, homepage_url, scopes } = body;
 
     // Validate required fields
     if (!name || !redirect_uris || !Array.isArray(redirect_uris) || redirect_uris.length === 0) {
@@ -82,7 +98,7 @@ export async function POST(request: NextRequest) {
     // Generate secure credentials
     const clientId = `cli_${generateRandomString(32)}`;
     const clientSecret = `secret_${generateRandomString(64)}`;
-    const clientSecretHash = hashString(clientSecret);
+    const clientSecretHash = await hashString(clientSecret);
 
     const now = new Date().toISOString();
 
@@ -95,6 +111,9 @@ export async function POST(request: NextRequest) {
         name,
         redirectUris: JSON.stringify(validUris),
         scopes: JSON.stringify(scopes || validScopes),
+        ownerId: auth.sub,
+        description,
+        homepageUrl: homepage_url,
       });
       console.log(`[OAuth Client] Registered: ${name} (${clientId})`);
     } catch (dbError) {
@@ -112,6 +131,7 @@ export async function POST(request: NextRequest) {
         client_secret: clientSecret,
         name,
         redirect_uris: validUris,
+        homepage_url,
         logo_uri,
         description,
         scopes: scopes || validScopes,

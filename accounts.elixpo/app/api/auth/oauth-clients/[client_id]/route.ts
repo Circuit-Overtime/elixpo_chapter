@@ -1,11 +1,14 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getOAuthClientById, updateOAuthClient } from '@/lib/db';
+import { verifyJWT } from '@/lib/jwt';
+import { getOAuthClientById, getOAuthClientByIdWithSecret, updateOAuthClient } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
 
 /**
  * PUT /api/auth/oauth-clients/[client_id]
  * UPDATE /api/auth/oauth-clients/[client_id]
- * 
+ *
  * Update OAuth application details
  */
 export async function PUT(
@@ -13,9 +16,15 @@ export async function PUT(
   { params }: { params: Promise<{ client_id: string }> }
 ) {
   try {
+    const token = request.cookies.get('access_token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const payload = await verifyJWT(token);
+    if (!payload) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+
     const { client_id } = await params;
     const body = await request.json();
-    const { name, redirect_uris, scopes } = body;
+    const { name, redirect_uris, scopes, description, homepage_url, logo_url } = body;
 
     if (!client_id) {
       return NextResponse.json(
@@ -24,20 +33,25 @@ export async function PUT(
       );
     }
 
-    // TODO: Authenticate user and verify ownership of application
-    // const userId = await getUserFromToken(request);
-    // const app = await getOAuthClientById(db, client_id);
-    // if (!app || app.created_by !== userId) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    // }
+    const db = await getDatabase();
 
-    // Update in D1
+    // Verify ownership
+    const app = await getOAuthClientByIdWithSecret(db, client_id) as any;
+    if (!app) {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 });
+    }
+    if (app.owner_id !== payload.sub) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     try {
-      const db = await getDatabase();
       await updateOAuthClient(db, client_id, {
-        ...(name && { name }),
-        ...(redirect_uris && { redirectUris: JSON.stringify(redirect_uris) }),
-        ...(scopes && { scopes: JSON.stringify(scopes) }),
+        ...(name !== undefined && { name }),
+        ...(redirect_uris !== undefined && { redirectUris: JSON.stringify(redirect_uris) }),
+        ...(scopes !== undefined && { scopes: JSON.stringify(scopes) }),
+        ...(description !== undefined && { description }),
+        ...(homepage_url !== undefined && { homepageUrl: homepage_url }),
+        ...(logo_url !== undefined && { logoUrl: logo_url }),
       });
     } catch (error) {
       console.error('[OAuth Client] Database update error:', error);
@@ -47,9 +61,17 @@ export async function PUT(
       );
     }
 
+    const updated = await getOAuthClientById(db, client_id) as any;
     return NextResponse.json({
-      message: 'Application updated successfully',
       client_id,
+      name: updated?.name,
+      description: updated?.description,
+      homepage_url: updated?.homepage_url,
+      redirect_uris: JSON.parse(updated?.redirect_uris || '[]'),
+      scopes: JSON.parse(updated?.scopes || '[]'),
+      is_active: Boolean(updated?.is_active),
+      request_count: updated?.request_count ?? 0,
+      last_used: updated?.last_used,
     });
   } catch (error) {
     console.error('[OAuth Client] Update error:', error);
@@ -62,7 +84,7 @@ export async function PUT(
 
 /**
  * DELETE /api/auth/oauth-clients/[client_id]
- * 
+ *
  * Deactivate an OAuth application
  */
 export async function DELETE(
@@ -70,6 +92,12 @@ export async function DELETE(
   { params }: { params: Promise<{ client_id: string }> }
 ) {
   try {
+    const token = request.cookies.get('access_token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const payload = await verifyJWT(token);
+    if (!payload) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+
     const { client_id } = await params;
 
     if (!client_id) {
@@ -79,21 +107,18 @@ export async function DELETE(
       );
     }
 
-    // TODO: Authenticate user
-    // const userId = await getUserFromToken(request);
-    // if (!userId) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    const db = await getDatabase();
 
-    // TODO: Verify user owns this application
-    // const app = await getOAuthClientById(db, client_id);
-    // if (!app || app.created_by !== userId) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    // }
+    // Verify ownership
+    const app = await getOAuthClientByIdWithSecret(db, client_id) as any;
+    if (!app) {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 });
+    }
+    if (app.owner_id !== payload.sub) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
-    // Deactivate in D1
     try {
-      const db = await getDatabase();
       await updateOAuthClient(db, client_id, { isActive: false });
     } catch (error) {
       console.error('[OAuth Client] Database delete error:', error);
@@ -120,7 +145,7 @@ export async function DELETE(
 
 /**
  * GET /api/auth/oauth-clients/[client_id]
- * 
+ *
  * Get OAuth application details (public info only)
  * Query params:
  *   - validate_redirect_uri: optional redirect URI to validate against registered URIs
@@ -130,6 +155,12 @@ export async function GET(
   { params }: { params: Promise<{ client_id: string }> }
 ) {
   try {
+    const token = request.cookies.get('access_token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const payload = await verifyJWT(token);
+    if (!payload) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+
     const { client_id } = await params;
     const validateRedirectUri = request.nextUrl.searchParams.get('validate_redirect_uri');
 
@@ -144,11 +175,11 @@ export async function GET(
     let app: any = null;
     try {
       const db = await getDatabase();
-      app = await getOAuthClientById(db, client_id);
+      app = await getOAuthClientByIdWithSecret(db, client_id);
       if (!app) {
         return NextResponse.json({ error: 'Application not found' }, { status: 404 });
       }
-      if (!(app as any).is_active) {
+      if (!(app as any).is_active && (app as any).owner_id !== payload.sub) {
         return NextResponse.json({ error: 'Application is inactive' }, { status: 403 });
       }
     } catch (error) {
@@ -159,38 +190,39 @@ export async function GET(
       );
     }
 
-    const appData = {
-      client_id,
-      name: (app as any).name,
-      redirect_uris: JSON.parse((app as any).redirect_uris || '[]'),
-      scopes: JSON.parse((app as any).scopes || '[]'),
-      is_active: (app as any).is_active,
-      created_at: (app as any).created_at,
-    };
+    const redirect_uris = JSON.parse((app as any).redirect_uris || '[]');
+    const scopes = JSON.parse((app as any).scopes || '[]');
 
     // Validate redirect URI if provided
     if (validateRedirectUri) {
-      const isValidRedirectUri = appData.redirect_uris.includes(validateRedirectUri);
-      if (!isValidRedirectUri) {
+      if (!redirect_uris.includes(validateRedirectUri)) {
         return NextResponse.json(
           {
             error: 'Invalid redirect URI',
             message: `The provided redirect_uri is not registered for this application`,
-            registeredUris: appData.redirect_uris,
+            registeredUris: redirect_uris,
           },
           { status: 400 }
         );
       }
     }
 
-    // Return public client info (without secret)
+    // Return full data (owner gets extra fields, others get public subset)
+    const isOwner = (app as any).owner_id === payload.sub;
     return NextResponse.json({
-      client_id: appData.client_id,
-      name: appData.name,
-      redirect_uris: appData.redirect_uris,
-      scopes: appData.scopes,
-      is_active: appData.is_active,
-      created_at: appData.created_at,
+      client_id,
+      name: (app as any).name,
+      redirect_uris,
+      scopes,
+      is_active: Boolean((app as any).is_active),
+      created_at: (app as any).created_at,
+      ...(isOwner && {
+        description: (app as any).description,
+        homepage_url: (app as any).homepage_url,
+        logo_url: (app as any).logo_url,
+        request_count: (app as any).request_count ?? 0,
+        last_used: (app as any).last_used,
+      }),
     });
   } catch (error) {
     console.error('[OAuth Client] Get error:', error);

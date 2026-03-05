@@ -35,12 +35,38 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Handle login logic here
-    setTimeout(() => setLoading(false), 1000);
+    setError('');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, provider: 'email' }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Login failed');
+        return;
+      }
+
+      // Redirect based on admin status
+      if (data.user?.isAdmin) {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/dashboard/oauth-apps';
+      }
+    } catch {
+      setError('Network error, please try again');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSSOLogin = (provider: 'google' | 'github') => {
@@ -72,6 +98,12 @@ const LoginPage = () => {
               <FormControlLabel control={<Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} sx={{ color: 'rgba(255, 255, 255, 0.5)', '&.Mui-checked': { color: '#a3e635' } }} />} label={<Typography sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem' }}>Remember me</Typography>} />
               <Link href="/forgot-password" style={{ color: '#a3e635', textDecoration: 'none', fontSize: '0.9rem' }}>Forgot?</Link>
             </Box>
+
+            {error && (
+              <Typography sx={{ color: '#f87171', fontSize: '0.85rem', mb: 1, textAlign: 'center' }}>
+                {error}
+              </Typography>
+            )}
 
             <Button fullWidth variant="contained" type="submit" disabled={loading} sx={{ background: 'rgba(163, 230, 53, 0.15)', color: '#a3e635', border: '1px solid rgba(163, 230, 53, 0.3)', fontWeight: 600, py: 1.5, textTransform: 'none', fontSize: '1rem', '&:hover': { background: 'rgba(163, 230, 53, 0.25)', borderColor: 'rgba(163, 230, 53, 0.5)' }, '&:disabled': { color: 'rgba(255, 255, 255, 0.4)', borderColor: 'rgba(255, 255, 255, 0.1)' } }}>
               {loading ? 'Signing in...' : 'Sign in'}

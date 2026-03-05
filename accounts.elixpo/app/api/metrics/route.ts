@@ -1,15 +1,17 @@
+export const runtime = 'edge';
+
 /**
  * Prometheus Metrics Endpoint
  * Exposes metrics for Prometheus scraping
- * 
+ *
  * Add to wrangler.toml or your router:
  * GET /metrics - Prometheus metrics in text format
  */
 
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getMetricsText } from '../../../src/lib/prometheus-metrics';
 
-export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {

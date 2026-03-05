@@ -1,5 +1,7 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { generateUUID, hashString } from '@/lib/crypto';
+import { generateUUID, hashString } from '@/lib/webcrypto';
 import { createUser, createIdentity, createRefreshToken, logAuditEvent, updateUserLastLogin, getIdentityByProvider, getUserById } from '@/lib/db';
 import { createAccessToken, createRefreshToken as createRefreshTokenJWT } from '@/lib/jwt';
 import { getOAuthConfig } from '@/lib/oauth-config';
@@ -149,7 +151,7 @@ export async function GET(
       provider.toLowerCase() as 'google' | 'github'
     );
 
-    const refreshTokenHash = hashString(refreshToken);
+    const refreshTokenHash = await hashString(refreshToken);
 
     // In production with D1:
     // await createRefreshToken(env.DB, {
