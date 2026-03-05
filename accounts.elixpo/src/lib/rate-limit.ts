@@ -1,5 +1,5 @@
 import type { D1Database } from '@cloudflare/workers-types';
-import { generateUUID } from './crypto';
+import { generateUUID } from './webcrypto';
 
 export interface RateLimitConfig {
   windowMs: number; 

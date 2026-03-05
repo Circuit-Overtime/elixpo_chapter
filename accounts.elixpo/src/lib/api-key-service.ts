@@ -3,7 +3,6 @@
  * Handles generation, validation, and management of API keys
  */
 
-import crypto from 'crypto';
 import { getDatabase } from './d1-client';
 
 export interface ApiKeyScopes {
@@ -51,11 +50,11 @@ export async function generateApiKey(
   const id = crypto.randomUUID();
   
   // Generate 32-byte random key
-  const keyBuffer = crypto.randomBytes(32);
-  const key = keyBuffer.toString('hex');
-  
+  const keyBytes = crypto.getRandomValues(new Uint8Array(32));
+  const key = Array.from(keyBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+
   // Create hash for storage
-  const keyHash = hashApiKey(key);
+  const keyHash = await hashApiKey(key);
   
   // Create prefix (first 8 chars of key)
   const prefix = key.substring(0, 8);
@@ -114,16 +113,16 @@ export async function validateApiKey(
   key: string
 ): Promise<(ApiKey & { userId: string }) | null> {
   const db = await getDatabase();
-  const keyHash = hashApiKey(key);
+  const keyHash = await hashApiKey(key);
 
   try {
     const result = await db
       .prepare(
-        `SELECT 
-          id, user_id, name, description, prefix, scopes, 
-          rate_limit_requests, rate_limit_window, 
+        `SELECT
+          id, user_id, name, description, prefix, scopes,
+          rate_limit_requests, rate_limit_window,
           last_used_at, created_at, expires_at, revoked, revoked_at
-        FROM api_keys 
+        FROM api_keys
         WHERE key_hash = ? AND revoked = 0`
       )
       .bind(keyHash)
@@ -425,8 +424,9 @@ export async function getApiKeyUsageStats(
 /**
  * Hash API key for storage
  */
-function hashApiKey(key: string): string {
-  return crypto.createHash('sha256').update(key).digest('hex');
+async function hashApiKey(key: string): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(key));
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**

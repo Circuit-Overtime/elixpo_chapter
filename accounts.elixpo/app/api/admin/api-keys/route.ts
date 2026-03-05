@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 /**
  * API Keys Management Endpoint
  * GET: List user's API keys

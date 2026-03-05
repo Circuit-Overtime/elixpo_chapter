@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Drawer,
@@ -17,6 +17,9 @@ import {
   Divider,
   Badge,
   IconButton,
+  Popover,
+  CircularProgress,
+  Button,
 } from '@mui/material';
 import {
   Dashboard,
@@ -26,6 +29,11 @@ import {
   Logout,
   Notifications,
   More,
+  PersonAdd,
+  AppRegistration,
+  VpnKey,
+  Security,
+  DoneAll,
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -37,10 +45,91 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+const notificationIcon = (type: string) => {
+  switch (type) {
+    case 'new_user': return <PersonAdd sx={{ fontSize: '1rem', color: '#3b82f6' }} />;
+    case 'new_oauth_app': return <AppRegistration sx={{ fontSize: '1rem', color: '#f59e0b' }} />;
+    case 'new_api_key': return <VpnKey sx={{ fontSize: '1rem', color: '#8b5cf6' }} />;
+    case 'suspicious_login': return <Security sx={{ fontSize: '1rem', color: '#ef4444' }} />;
+    default: return <Notifications sx={{ fontSize: '1rem', color: '#9ca3af' }} />;
+  }
+};
+
 function AdminLayoutContent({ children }: AdminLayoutProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifLoading, setNotifLoading] = useState(false);
   const pathname = usePathname();
   const { session, logout } = useAdminSession();
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/notifications?unread=true', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadCount(data.unreadCount ?? 0);
+      }
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
+
+  const handleNotifOpen = async (event: React.MouseEvent<HTMLElement>) => {
+    setNotifAnchorEl(event.currentTarget);
+    setNotifLoading(true);
+    try {
+      const res = await fetch('/api/admin/notifications', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications ?? []);
+        setUnreadCount(data.unreadCount ?? 0);
+      }
+    } catch { /* silent */ }
+    setNotifLoading(false);
+  };
+
+  const handleNotifClose = () => setNotifAnchorEl(null);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await fetch('/api/admin/notifications', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAll: true }),
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch { /* silent */ }
+  };
+
+  const handleMarkRead = async (id: string) => {
+    try {
+      await fetch('/api/admin/notifications', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch { /* silent */ }
+  };
 
   const menuItems = [
     { label: 'Dashboard', icon: Dashboard, href: '/admin' },
@@ -241,17 +330,164 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
               Admin Dashboard
             </Typography>
 
-            {/* Notification Icon */}
+            {/* Notification Bell */}
             <IconButton
+              onClick={handleNotifOpen}
               sx={{
                 color: '#9ca3af',
                 '&:hover': { color: '#22c55e' },
               }}
             >
-              <Badge badgeContent={3} sx={{ '& .MuiBadge-badge': { bgcolor: '#ef4444' } }}>
+              <Badge
+                badgeContent={unreadCount > 0 ? unreadCount : null}
+                sx={{ '& .MuiBadge-badge': { bgcolor: '#ef4444', color: '#fff' } }}
+              >
                 <Notifications />
               </Badge>
             </IconButton>
+
+            {/* Notification Popover */}
+            <Popover
+              open={Boolean(notifAnchorEl)}
+              anchorEl={notifAnchorEl}
+              onClose={handleNotifClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    bgcolor: '#1a1a1a',
+                    border: '1px solid #333',
+                    width: 360,
+                    maxHeight: 480,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  },
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  px: 2,
+                  py: 1.5,
+                  borderBottom: '1px solid #333',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>
+                  Notifications
+                  {unreadCount > 0 && (
+                    <Box
+                      component="span"
+                      sx={{
+                        ml: 1,
+                        px: 0.75,
+                        py: 0.25,
+                        bgcolor: '#ef4444',
+                        borderRadius: '999px',
+                        fontSize: '0.7rem',
+                        color: '#fff',
+                      }}
+                    >
+                      {unreadCount}
+                    </Box>
+                  )}
+                </Typography>
+                {unreadCount > 0 && (
+                  <Button
+                    size="small"
+                    startIcon={<DoneAll sx={{ fontSize: '0.9rem' }} />}
+                    onClick={handleMarkAllRead}
+                    sx={{ color: '#22c55e', fontSize: '0.75rem', p: 0.5, minWidth: 0 }}
+                  >
+                    Mark all read
+                  </Button>
+                )}
+              </Box>
+              <Box sx={{ overflowY: 'auto', flex: 1 }}>
+                {notifLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                    <CircularProgress size={24} sx={{ color: '#22c55e' }} />
+                  </Box>
+                ) : notifications.length === 0 ? (
+                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                    <Notifications sx={{ color: '#374151', fontSize: '2rem', mb: 1 }} />
+                    <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                      No notifications
+                    </Typography>
+                  </Box>
+                ) : (
+                  notifications.map((notif) => (
+                    <Box
+                      key={notif.id}
+                      onClick={() => !notif.is_read && handleMarkRead(notif.id)}
+                      sx={{
+                        px: 2,
+                        py: 1.5,
+                        borderBottom: '1px solid #222',
+                        cursor: notif.is_read ? 'default' : 'pointer',
+                        bgcolor: notif.is_read ? 'transparent' : 'rgba(34,197,94,0.04)',
+                        '&:hover': { bgcolor: 'rgba(34, 197, 94, 0.06)' },
+                        display: 'flex',
+                        gap: 1.5,
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          mt: 0.25,
+                          p: 0.75,
+                          borderRadius: '6px',
+                          bgcolor: '#222',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {notificationIcon(notif.type)}
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: notif.is_read ? '#9ca3af' : '#e5e7eb',
+                            fontWeight: notif.is_read ? 400 : 600,
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          {notif.title}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: '#6b7280', display: 'block', mt: 0.25 }}
+                        >
+                          {notif.message}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: '#4b5563', display: 'block', mt: 0.5 }}
+                        >
+                          {new Date(notif.created_at).toLocaleString()}
+                        </Typography>
+                      </Box>
+                      {!notif.is_read && (
+                        <Box
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            bgcolor: '#22c55e',
+                            flexShrink: 0,
+                            mt: 0.75,
+                          }}
+                        />
+                      )}
+                    </Box>
+                  ))
+                )}
+              </Box>
+            </Popover>
 
             {/* User Menu */}
             <Box
@@ -300,9 +536,10 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
                 }}
               >
                 <MenuItem>Profile</MenuItem>
-                <MenuItem>Settings</MenuItem>
+                <MenuItem component={Link} href="/admin/settings">Settings</MenuItem>
                 <Divider sx={{ bgcolor: '#333' }} />
-                <MenuItem onClick={handleLogout} sx={{ color: '#ef4444' }}>
+                <MenuItem onClick={handleLogout} sx={{ color: '#ef4444 !important' }}>
+                  <Logout fontSize="small" sx={{ mr: 1 }} />
                   Logout
                 </MenuItem>
               </Menu>

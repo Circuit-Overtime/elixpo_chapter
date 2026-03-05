@@ -227,19 +227,25 @@ export async function createOAuthClient(
     name,
     redirectUris,
     scopes,
+    ownerId,
+    description,
+    homepageUrl,
   }: {
     clientId: string;
     clientSecretHash: string;
     name: string;
     redirectUris: string; // JSON stringified array
     scopes: string; // JSON stringified array
+    ownerId: string;
+    description?: string;
+    homepageUrl?: string;
   }
 ) {
   const stmt = db.prepare(
-    `INSERT INTO oauth_clients (client_id, client_secret_hash, name, redirect_uris, scopes)
-     VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO oauth_clients (client_id, client_secret_hash, name, redirect_uris, scopes, owner_id, description, homepage_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   );
-  return await stmt.bind(clientId, clientSecretHash, name, redirectUris, scopes).run();
+  return await stmt.bind(clientId, clientSecretHash, name, redirectUris, scopes, ownerId, description ?? null, homepageUrl ?? null).run();
 }
 
 export async function getOAuthClientById(db: D1Database, clientId: string) {
@@ -276,6 +282,9 @@ export async function updateOAuthClient(
     redirectUris?: string;
     scopes?: string;
     isActive?: boolean;
+    description?: string;
+    homepageUrl?: string;
+    logoUrl?: string;
   }
 ) {
   const setClauses: string[] = [];
@@ -296,6 +305,18 @@ export async function updateOAuthClient(
   if (updates.isActive !== undefined) {
     setClauses.push('is_active = ?');
     values.push(updates.isActive ? 1 : 0);
+  }
+  if (updates.description !== undefined) {
+    setClauses.push('description = ?');
+    values.push(updates.description);
+  }
+  if (updates.homepageUrl !== undefined) {
+    setClauses.push('homepage_url = ?');
+    values.push(updates.homepageUrl);
+  }
+  if (updates.logoUrl !== undefined) {
+    setClauses.push('logo_url = ?');
+    values.push(updates.logoUrl);
   }
 
   if (setClauses.length === 0) {
@@ -591,4 +612,59 @@ export async function logAdminAction(
     status || 'success',
     errorMessage || null
   ).run();
+}
+
+export async function listUserOAuthClients(db: D1Database, userId: string) {
+  return db
+    .prepare(
+      `SELECT client_id, name, description, logo_url, redirect_uris, scopes,
+              is_active, created_at, last_used, request_count
+       FROM oauth_clients
+       WHERE owner_id = ?
+       ORDER BY created_at DESC`
+    )
+    .bind(userId)
+    .all();
+}
+
+export async function getUserNotificationPreferences(db: D1Database, userId: string) {
+  return db
+    .prepare(`SELECT * FROM user_notification_preferences WHERE user_id = ?`)
+    .bind(userId)
+    .first();
+}
+
+export async function upsertUserNotificationPreferences(
+  db: D1Database,
+  userId: string,
+  prefs: {
+    email_login_alerts?: boolean;
+    email_app_activity?: boolean;
+    email_weekly_digest?: boolean;
+    email_security_alerts?: boolean;
+  }
+) {
+  const { generateRandomString } = await import('./webcrypto');
+  const token = generateRandomString(32);
+  return db
+    .prepare(
+      `INSERT INTO user_notification_preferences
+         (user_id, email_login_alerts, email_app_activity, email_weekly_digest, email_security_alerts, unsubscribe_token, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+       ON CONFLICT(user_id) DO UPDATE SET
+         email_login_alerts = COALESCE(excluded.email_login_alerts, email_login_alerts),
+         email_app_activity = COALESCE(excluded.email_app_activity, email_app_activity),
+         email_weekly_digest = COALESCE(excluded.email_weekly_digest, email_weekly_digest),
+         email_security_alerts = COALESCE(excluded.email_security_alerts, email_security_alerts),
+         updated_at = CURRENT_TIMESTAMP`
+    )
+    .bind(
+      userId,
+      prefs.email_login_alerts !== undefined ? (prefs.email_login_alerts ? 1 : 0) : 1,
+      prefs.email_app_activity !== undefined ? (prefs.email_app_activity ? 1 : 0) : 0,
+      prefs.email_weekly_digest !== undefined ? (prefs.email_weekly_digest ? 1 : 0) : 0,
+      prefs.email_security_alerts !== undefined ? (prefs.email_security_alerts ? 1 : 0) : 1,
+      token
+    )
+    .run();
 }

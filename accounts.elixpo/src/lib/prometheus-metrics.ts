@@ -1,252 +1,253 @@
 /**
  * Prometheus Metrics Service
- * Tracks application metrics for monitoring and alerting
+ * Edge-compatible implementation that outputs Prometheus text format
  */
 
-import { Registry, Counter, Histogram, Gauge } from 'prom-client';
+type Labels = Record<string, string>;
 
-// Create a single registry
-const register = new Registry();
+function labelString(labels: Labels): string {
+  const pairs = Object.entries(labels).map(([k, v]) => `${k}="${v}"`);
+  return pairs.length ? `{${pairs.join(',')}}` : '';
+}
 
-// Add default metrics
-import { collectDefaultMetrics } from 'prom-client';
-collectDefaultMetrics({ register });
+// --- Counter ---
+class EdgeCounter {
+  private counts = new Map<string, number>();
+  constructor(private name: string, private help: string) {}
 
-/**
- * HTTP Request Metrics
- */
-export const httpRequestDuration = new Histogram({
-  name: 'http_request_duration_seconds',
-  help: 'Duration of HTTP requests in seconds',
-  labelNames: ['method', 'route', 'status'],
-  buckets: [0.1, 0.5, 1, 2, 5],
-  registers: [register],
-});
+  inc(labels: Labels = {}, value = 1) {
+    const key = JSON.stringify(labels);
+    this.counts.set(key, (this.counts.get(key) ?? 0) + value);
+  }
 
-export const httpRequestCounter = new Counter({
-  name: 'http_requests_total',
-  help: 'Total number of HTTP requests',
-  labelNames: ['method', 'route', 'status'],
-  registers: [register],
-});
+  labels(..._: string[]) {
+    return { inc: (v = 1) => this.inc({}, v) };
+  }
 
-/**
- * Authentication Metrics
- */
-export const authAttempts = new Counter({
-  name: 'auth_attempts_total',
-  help: 'Total authentication attempts',
-  labelNames: ['type', 'status'], // type: login, register, oauth
-  registers: [register],
-});
+  text(): string {
+    const lines = [`# HELP ${this.name} ${this.help}`, `# TYPE ${this.name} counter`];
+    for (const [key, val] of this.counts) {
+      const labels = JSON.parse(key) as Labels;
+      lines.push(`${this.name}${labelString(labels)} ${val}`);
+    }
+    return lines.join('\n');
+  }
+}
 
-export const activeUsers = new Gauge({
-  name: 'active_users_total',
-  help: 'Total number of active users',
-  registers: [register],
-});
+// --- Gauge ---
+class EdgeGauge {
+  private values = new Map<string, number>();
+  constructor(private name: string, private help: string) {}
 
-export const emailVerifications = new Counter({
-  name: 'email_verifications_total',
-  help: 'Total email verifications',
-  labelNames: ['status'],
-  registers: [register],
-});
+  set(value: number, labels: Labels = {}) {
+    this.values.set(JSON.stringify(labels), value);
+  }
 
-/**
- * OAuth Metrics
- */
-export const oauthRequestsCounter = new Counter({
-  name: 'oauth_requests_total',
-  help: 'Total OAuth requests',
-  labelNames: ['provider', 'status'],
-  registers: [register],
-});
+  inc(labels: Labels = {}, value = 1) {
+    const key = JSON.stringify(labels);
+    this.values.set(key, (this.values.get(key) ?? 0) + value);
+  }
 
-export const oauthTokensIssued = new Counter({
-  name: 'oauth_tokens_issued_total',
-  help: 'Total OAuth tokens issued',
-  labelNames: ['token_type'],
-  registers: [register],
-});
+  labels(..._: string[]) {
+    return { set: (v: number) => this.set(v), inc: (v = 1) => this.inc({}, v) };
+  }
 
-/**
- * API Key Metrics
- */
-export const apiKeyRequestsCounter = new Counter({
-  name: 'api_key_requests_total',
-  help: 'Total API key requests',
-  labelNames: ['endpoint', 'status'],
-  registers: [register],
-});
+  text(): string {
+    const lines = [`# HELP ${this.name} ${this.help}`, `# TYPE ${this.name} gauge`];
+    for (const [key, val] of this.values) {
+      const labels = JSON.parse(key) as Labels;
+      lines.push(`${this.name}${labelString(labels)} ${val}`);
+    }
+    return lines.join('\n');
+  }
+}
 
-export const apiKeyRequestDuration = new Histogram({
-  name: 'api_key_request_duration_seconds',
-  help: 'API key request duration in seconds',
-  labelNames: ['endpoint'],
-  buckets: [0.01, 0.05, 0.1, 0.5, 1],
-  registers: [register],
-});
+// --- Histogram ---
+class EdgeHistogram {
+  private observations: { labels: Labels; value: number }[] = [];
+  constructor(private name: string, private help: string, private buckets: number[]) {}
 
-/**
- * Database Metrics
- */
-export const dbQueryDuration = new Histogram({
-  name: 'db_query_duration_seconds',
-  help: 'Database query duration in seconds',
-  labelNames: ['query_type'],
-  buckets: [0.01, 0.05, 0.1, 0.5, 1],
-  registers: [register],
-});
+  observe(value: number, labels: Labels = {}) {
+    this.observations.push({ labels, value });
+  }
 
-export const dbConnections = new Gauge({
-  name: 'db_connections_active',
-  help: 'Active database connections',
-  registers: [register],
-});
+  labels(..._: string[]) {
+    return { observe: (v: number) => this.observe(v) };
+  }
 
-/**
- * Error Metrics
- */
-export const errorCounter = new Counter({
-  name: 'errors_total',
-  help: 'Total errors',
-  labelNames: ['error_type', 'endpoint'],
-  registers: [register],
-});
+  text(): string {
+    const lines = [`# HELP ${this.name} ${this.help}`, `# TYPE ${this.name} histogram`];
+    const grouped = new Map<string, number[]>();
+    for (const { labels, value } of this.observations) {
+      const key = JSON.stringify(labels);
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(value);
+    }
+    for (const [key, values] of grouped) {
+      const labels = JSON.parse(key) as Labels;
+      const sum = values.reduce((a, b) => a + b, 0);
+      const count = values.length;
+      for (const le of [...this.buckets, Infinity]) {
+        const leLabel = le === Infinity ? '+Inf' : String(le);
+        const cnt = values.filter(v => v <= le).length;
+        lines.push(`${this.name}_bucket${labelString({ ...labels, le: leLabel })} ${cnt}`);
+      }
+      lines.push(`${this.name}_sum${labelString(labels)} ${sum}`);
+      lines.push(`${this.name}_count${labelString(labels)} ${count}`);
+    }
+    return lines.join('\n');
+  }
+}
 
-export const rateLimitExceeded = new Counter({
-  name: 'rate_limit_exceeded_total',
-  help: 'Rate limit exceeded count',
-  labelNames: ['endpoint', 'ip'],
-  registers: [register],
-});
+// --- Registry ---
+const metrics: Array<EdgeCounter | EdgeGauge | EdgeHistogram> = [];
 
-/**
- * Admin Metrics
- */
-export const adminActions = new Counter({
-  name: 'admin_actions_total',
-  help: 'Total admin actions performed',
-  labelNames: ['action', 'resource', 'status'],
-  registers: [register],
-});
+function register<T extends EdgeCounter | EdgeGauge | EdgeHistogram>(m: T): T {
+  metrics.push(m);
+  return m;
+}
 
-export const adminActivityGauge = new Gauge({
-  name: 'admin_activity_current',
-  help: 'Current admin activity level',
-  registers: [register],
-});
+// HTTP Request Metrics
+export const httpRequestDuration = register(new EdgeHistogram(
+  'http_request_duration_seconds',
+  'Duration of HTTP requests in seconds',
+  [0.1, 0.5, 1, 2, 5]
+));
 
-/**
- * Application Metrics
- */
-export const appRegistrations = new Counter({
-  name: 'app_registrations_total',
-  help: 'Total OAuth app registrations',
-  registers: [register],
-});
+export const httpRequestCounter = register(new EdgeCounter(
+  'http_requests_total',
+  'Total number of HTTP requests'
+));
 
-export const userRegistrations = new Counter({
-  name: 'user_registrations_total',
-  help: 'Total user registrations',
-  labelNames: ['provider'], // direct, google, github, etc
-  registers: [register],
-});
+// Authentication Metrics
+export const authAttempts = register(new EdgeCounter(
+  'auth_attempts_total',
+  'Total authentication attempts'
+));
 
-/**
- * System Metrics
- */
-export const uptime = new Gauge({
-  name: 'system_uptime_seconds',
-  help: 'Application uptime in seconds',
-  registers: [register],
-});
+export const activeUsers = register(new EdgeGauge(
+  'active_users_total',
+  'Total number of active users'
+));
 
-export const systemMemoryUsage = new Gauge({
-  name: 'system_memory_usage_bytes',
-  help: 'System memory usage in bytes',
-  registers: [register],
-});
+export const emailVerifications = register(new EdgeCounter(
+  'email_verifications_total',
+  'Total email verifications'
+));
 
-/**
- * Webhook Metrics
- */
-export const webhookDispatchDuration = new Histogram({
-  name: 'webhook_dispatch_duration_seconds',
-  help: 'Webhook dispatch duration in seconds',
-  labelNames: ['event_type', 'status'],
-  buckets: [0.1, 0.5, 1, 2, 5],
-  registers: [register],
-});
+// OAuth Metrics
+export const oauthRequestsCounter = register(new EdgeCounter(
+  'oauth_requests_total',
+  'Total OAuth requests'
+));
 
-export const webhookFailures = new Counter({
-  name: 'webhook_failures_total',
-  help: 'Total webhook failures',
-  labelNames: ['event_type', 'reason'],
-  registers: [register],
-});
+export const oauthTokensIssued = register(new EdgeCounter(
+  'oauth_tokens_issued_total',
+  'Total OAuth tokens issued'
+));
 
-/**
- * Get Prometheus metrics as text
- */
+// API Key Metrics
+export const apiKeyRequestsCounter = register(new EdgeCounter(
+  'api_key_requests_total',
+  'Total API key requests'
+));
+
+export const apiKeyRequestDuration = register(new EdgeHistogram(
+  'api_key_request_duration_seconds',
+  'API key request duration in seconds',
+  [0.01, 0.05, 0.1, 0.5, 1]
+));
+
+// Database Metrics
+export const dbQueryDuration = register(new EdgeHistogram(
+  'db_query_duration_seconds',
+  'Database query duration in seconds',
+  [0.01, 0.05, 0.1, 0.5, 1]
+));
+
+export const dbConnections = register(new EdgeGauge(
+  'db_connections_active',
+  'Active database connections'
+));
+
+// Error Metrics
+export const errorCounter = register(new EdgeCounter(
+  'errors_total',
+  'Total errors'
+));
+
+export const rateLimitExceeded = register(new EdgeCounter(
+  'rate_limit_exceeded_total',
+  'Rate limit exceeded count'
+));
+
+// Admin Metrics
+export const adminActions = register(new EdgeCounter(
+  'admin_actions_total',
+  'Total admin actions performed'
+));
+
+export const adminActivityGauge = register(new EdgeGauge(
+  'admin_activity_current',
+  'Current admin activity level'
+));
+
+// Application Metrics
+export const appRegistrations = register(new EdgeCounter(
+  'app_registrations_total',
+  'Total OAuth app registrations'
+));
+
+export const userRegistrations = register(new EdgeCounter(
+  'user_registrations_total',
+  'Total user registrations'
+));
+
+// System Metrics
+export const uptime = register(new EdgeGauge(
+  'system_uptime_seconds',
+  'Application uptime in seconds'
+));
+
+export const systemMemoryUsage = register(new EdgeGauge(
+  'system_memory_usage_bytes',
+  'System memory usage in bytes'
+));
+
+// Webhook Metrics
+export const webhookDispatchDuration = register(new EdgeHistogram(
+  'webhook_dispatch_duration_seconds',
+  'Webhook dispatch duration in seconds',
+  [0.1, 0.5, 1, 2, 5]
+));
+
+export const webhookFailures = register(new EdgeCounter(
+  'webhook_failures_total',
+  'Total webhook failures'
+));
+
+// --- Helper functions ---
 export async function getMetricsText(): Promise<string> {
-  return register.metrics();
+  return metrics.map(m => m.text()).join('\n\n') + '\n';
 }
 
-/**
- * Helper to record HTTP request metrics
- */
-export function recordHttpRequest(
-  method: string,
-  route: string,
-  status: number,
-  duration: number
-) {
-  httpRequestDuration.labels(method, route, status.toString()).observe(duration);
-  httpRequestCounter.labels(method, route, status.toString()).inc();
+export function recordHttpRequest(method: string, route: string, status: number, duration: number) {
+  httpRequestDuration.observe(duration, { method, route, status: String(status) });
+  httpRequestCounter.inc({ method, route, status: String(status) });
 }
 
-/**
- * Helper to record database query metrics
- */
 export function recordDbQuery(queryType: string, duration: number) {
-  dbQueryDuration.labels(queryType).observe(duration);
+  dbQueryDuration.observe(duration, { query_type: queryType });
 }
 
-/**
- * Helper to record error metrics
- */
 export function recordError(errorType: string, endpoint: string) {
-  errorCounter.labels(errorType, endpoint).inc();
+  errorCounter.inc({ error_type: errorType, endpoint });
 }
 
-/**
- * Helper to record admin action
- */
 export function recordAdminAction(action: string, resource: string, status: string) {
-  adminActions.labels(action, resource, status).inc();
+  adminActions.inc({ action, resource, status });
 }
 
-/**
- * Update system metrics
- */
 export function updateSystemMetrics() {
-  if (typeof process !== 'undefined' && process.uptime) {
-    uptime.set(process.uptime());
-  }
-
-  if (typeof process !== 'undefined' && process.memoryUsage) {
-    const memUsage = process.memoryUsage();
-    systemMemoryUsage.set(memUsage.heapUsed);
-  }
+  // process is not available in edge runtime — omit
 }
-
-// Update system metrics periodically
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    updateSystemMetrics();
-  }, 30000); // Every 30 seconds
-}
-
-export { register };

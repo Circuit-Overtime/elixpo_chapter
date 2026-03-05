@@ -1,6 +1,8 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyJWT, createAccessToken, createRefreshToken } from '@/lib/jwt';
-import { hashString, generateUUID } from '@/lib/crypto';
+import { hashString, generateUUID } from '@/lib/webcrypto';
 import { getRefreshTokenByHash, revokeRefreshToken, createRefreshToken as storeRefreshToken } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
 
@@ -33,7 +35,7 @@ export async function POST(request: NextRequest) {
     // Check if refresh token is in database and not revoked
     try {
       const db = await getDatabase();
-      const tokenHash = hashString(refreshToken);
+      const tokenHash = await hashString(refreshToken);
       const storedToken = await getRefreshTokenByHash(db, tokenHash);
       if (!storedToken) {
         return NextResponse.json(
@@ -59,8 +61,8 @@ export async function POST(request: NextRequest) {
     // Store new refresh token and revoke old one
     try {
       const db = await getDatabase();
-      const oldTokenHash = hashString(refreshToken);
-      const newTokenHash = hashString(newRefreshToken);
+      const oldTokenHash = await hashString(refreshToken);
+      const newTokenHash = await hashString(newRefreshToken);
 
       await revokeRefreshToken(db, oldTokenHash);
       await storeRefreshToken(db, {

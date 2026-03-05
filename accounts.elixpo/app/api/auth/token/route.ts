@@ -1,5 +1,7 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { hashString, generateUUID } from '@/lib/crypto';
+import { hashString, generateUUID } from '@/lib/webcrypto';
 import { verifyJWT, createAccessToken, createRefreshToken } from '@/lib/jwt';
 import { getOAuthClientByIdWithSecret, validateOAuthClient, getRefreshTokenByHash, revokeRefreshToken, createRefreshToken as storeRefreshToken, getUserById } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. Verify client_secret
-        const clientSecretHash = hashString(client_secret);
+        const clientSecretHash = await hashString(client_secret);
         const isValidSecret = await validateOAuthClient(db, client_id, clientSecretHash);
         if (!isValidSecret) {
           return NextResponse.json(
@@ -108,7 +110,7 @@ export async function POST(request: NextRequest) {
         const refreshTokenJWT = await createRefreshToken(userId, 'email');
 
         // Store refresh token
-        const refreshTokenHash = hashString(refreshTokenJWT);
+        const refreshTokenHash = await hashString(refreshTokenJWT);
         await storeRefreshToken(db, {
           id: generateUUID(),
           userId,
@@ -156,7 +158,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const refreshTokenHash = hashString(refresh_token);
+        const refreshTokenHash = await hashString(refresh_token);
         const tokenRecord = await getRefreshTokenByHash(db, refreshTokenHash);
         if (!tokenRecord) {
           return NextResponse.json(
@@ -186,7 +188,7 @@ export async function POST(request: NextRequest) {
         );
 
         const newRefreshToken = await createRefreshToken(payload.sub, payload.provider);
-        const newRefreshTokenHash = hashString(newRefreshToken);
+        const newRefreshTokenHash = await hashString(newRefreshToken);
 
         try {
           await revokeRefreshToken(db, refreshTokenHash);
