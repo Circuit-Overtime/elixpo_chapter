@@ -809,13 +809,23 @@ const handleMouseUpRect = (e) => {
             currentShape.draw();
             shapes.push(currentShape);
             pushCreateAction(currentShape);
-            
+
             // Check for frame containment and track attachment
             const finalFrame = hoveredFrame;
             if (finalFrame) {
                 finalFrame.addShapeToFrame(currentShape);
                 // Track the attachment for undo
                 pushFrameAttachmentAction(finalFrame, currentShape, 'attach', null);
+            }
+
+            // Auto-select the drawn shape and switch to selection tool
+            const drawnShape = currentShape;
+            const selectBtn = document.querySelector(".bxs-pointer");
+            if (selectBtn) selectBtn.click();
+            currentShape = drawnShape;
+            currentShape.isSelected = true;
+            if (typeof currentShape.addAnchors === 'function') {
+                currentShape.addAnchors();
             }
         }
         

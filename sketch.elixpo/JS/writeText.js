@@ -56,6 +56,14 @@ let hoveredFrameText = null;
 
 setTextReferences(selectedElement, updateSelectionFeedback, svg);
 
+function switchToSelectionTool() {
+    const pointerBtn = document.querySelector(".bxs-pointer");
+    if (pointerBtn) {
+        selectedTool = pointerBtn;
+        toolExtraPopup();
+    }
+}
+
 // Text class to make it consistent with other shapes for frame functionality
 class TextShape {
     constructor(groupElement) {
@@ -340,6 +348,15 @@ function addText(event) {
         shapeName: 'text'
     });
 
+    // Check if text was created inside a frame and add it
+    if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
+        shapes.forEach(shape => {
+            if (shape.shapeName === 'frame' && shape.isShapeInFrame(textShape)) {
+                shape.addShapeToFrame(textShape);
+            }
+        });
+    }
+
     makeTextEditable(textElement, gElement);
 }
 
@@ -430,18 +447,21 @@ function makeTextEditable(textElement, groupElement) {
     const currentFontFamily = textElement.getAttribute("font-family") || "lixFont";
     const currentFill = textElement.getAttribute("fill") || "#fff";
     const currentAnchor = textElement.getAttribute("text-anchor") || "start";
+    input.style.minWidth = "150px";
+    input.style.minHeight = "1.5em";
     input.style.width = "auto";
     input.style.height = "auto";
     input.style.overflow = "visible";
-    input.style.whiteSpace = "nowrap";
+    input.style.whiteSpace = "pre-wrap";
+    input.style.wordBreak = "break-word";
     input.style.fontSize = currentFontSize;
     input.style.fontFamily = currentFontFamily;
     input.style.color = currentFill;
     input.style.lineHeight = "1.2em";
     input.style.textAlign = currentAnchor === "middle" ? "center" : currentAnchor === "end" ? "right" : "left";
     input.style.backgroundColor = "transparent";
-    input.style.border = "none"
-    input.style.outline = "none"
+    input.style.border = "1px dashed rgba(255,255,255,0.3)";
+    input.style.outline = "none";
     document.body.appendChild(input);
 
     const adjustHeight = () => {
@@ -459,11 +479,12 @@ function makeTextEditable(textElement, groupElement) {
     const adjustWidth = () => {
         input.style.width = 'auto';
         const maxWidth = svgRect.width - (screenPt.x);
-        if (input.scrollWidth > maxWidth) {
+        const contentWidth = Math.max(input.scrollWidth, 150);
+        if (contentWidth > maxWidth) {
             input.style.width = maxWidth + 'px';
             input.style.overflowX = 'auto';
         } else {
-            input.style.width = input.scrollWidth + 'px';
+            input.style.width = contentWidth + 'px';
             input.style.overflowX = 'hidden';
         }
     };
@@ -588,10 +609,10 @@ function renderText(input, textElement, deleteIfEmpty = false) {
         }
     }
 
-    if (selectedTool && selectedTool.classList.contains('bxs-pointer') && gElement.parentNode === svg) {
+    // After rendering text, switch to selection tool and auto-select
+    if (gElement.parentNode) {
+        switchToSelectionTool();
         selectElement(gElement);
-    } else if (selectedElement === gElement) {
-        deselectElement();
     }
 }
 
@@ -803,14 +824,13 @@ function startRotation(event) {
     window.addEventListener('mouseup', handleMouseUp);
 }
 
-function removeSelectionFeedback() {
-    if (selectedElement) {
-        const box = selectedElement.querySelector(".selection-box");
-        if (box) box.remove();
-
-        selectedElement.querySelectorAll(".resize-handle").forEach(handle => handle.remove());
-        selectedElement.querySelectorAll(".rotate-anchor").forEach(anchor => anchor.remove());
+function removeSelectionFeedback(element) {
+    const target = element || selectedElement;
+    if (target) {
+        target.querySelectorAll(".selection-box, .resize-handle, .rotate-anchor").forEach(el => el.remove());
     }
+    // Also clean up any orphaned selection elements in all text groups
+    svg.querySelectorAll('g[data-type="text-group"] .selection-box, g[data-type="text-group"] .resize-handle, g[data-type="text-group"] .rotate-anchor').forEach(el => el.remove());
 
     selectionBox = null;
     resizeHandles = {};
@@ -824,10 +844,12 @@ function selectElement(groupElement) {
     selectedElement = groupElement;
     selectedElement.classList.add("selected");
     createSelectionFeedback(selectedElement);
-    console.log("Selected:", selectedElement);
 
     updateSelectedElement(selectedElement);
     updateCodeToggleForShape('text');
+
+    // Show text property panel when text is selected
+    textSideBar.classList.remove("hidden");
 }
 
 function deselectElement() {
@@ -844,10 +866,14 @@ function deselectElement() {
     if (selectedElement) {
         removeSelectionFeedback();
         selectedElement.classList.remove("selected");
-        console.log("Deselected:", selectedElement);
         selectedElement = null;
 
         updateSelectedElement(null);
+
+        // Hide text property panel if we're in selection mode (not text tool)
+        if (isSelectionToolActive) {
+            textSideBar.classList.add("hidden");
+        }
     }
 
     if (isRotating) {
@@ -1305,10 +1331,18 @@ const handleMouseUp = (event) => {
     rotationStartAngle = 0;
     rotationStartTransform = null;
 
-    svg.style.cursor = 'default';
+    // Restore cursor based on context - keep pointer if over selected text
+    svg.style.cursor = isSelectionToolActive ? 'default' : (isTextToolActive ? 'text' : 'default');
+
+    // Ensure selection feedback is refreshed after transforms
+    if (selectedElement) {
+        setTimeout(updateSelectionFeedback, 0);
+    }
 
     svg.removeEventListener('mousemove', handleMouseMove);
     svg.removeEventListener('mouseup', handleMouseUp);
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
 };
 
 function extractRotationFromTransform(element) {
@@ -1335,13 +1369,20 @@ const handleTextMouseDown = function (e) {
          }
     }
 
-    if (isSelectionToolActive && e.button === 0) {
-        const targetGroup = e.target.closest('g[data-type="text-group"]');
+    const targetGroup = e.target.closest('g[data-type="text-group"]');
 
+    if (isSelectionToolActive && e.button === 0) {
         if (targetGroup) {
              if (e.target.closest('.resize-handle')) {
                  return;
              }
+
+            // Double-click on selected text: enter edit mode
+            if (e.detail >= 2 && targetGroup === selectedElement) {
+                enterEditMode(targetGroup);
+                e.stopPropagation();
+                return;
+            }
 
             if (targetGroup === selectedElement) {
                 startDrag(e);
@@ -1354,28 +1395,45 @@ const handleTextMouseDown = function (e) {
         }
 
     } else if (isTextToolActive && e.button === 0) {
-         const targetGroup = e.target.closest('g[data-type="text-group"]');
-
-        if (targetGroup && (e.target.tagName === "text" || e.target.tagName === "tspan")) {
-            let textEl = targetGroup.querySelector('text');
-
-            if (textEl && targetGroup) {
-                console.log("Editing existing text. Group:", targetGroup, "TextEl:", textEl);
-                makeTextEditable(textEl, targetGroup);
-                e.stopPropagation();
-            } else {
-                 console.warn("Could not find text element or group for editing, creating new text instead.");
-                 deselectElement();
-                 addText(e);
+        if (targetGroup) {
+            // Double-click: enter edit mode
+            if (e.detail >= 2) {
+                let textEl = targetGroup.querySelector('text');
+                if (textEl) {
+                    makeTextEditable(textEl, targetGroup);
+                    e.stopPropagation();
+                    return;
+                }
             }
-
+            // Single-click: select and drag (same as selection tool behavior)
+            if (targetGroup === selectedElement) {
+                startDrag(e);
+            } else {
+                selectElement(targetGroup);
+                startDrag(e);
+            }
         } else {
-             console.log("Creating new text.");
              deselectElement();
              addText(e);
         }
     }
 };
+
+function enterEditMode(groupElement) {
+    const textEl = groupElement.querySelector('text');
+    if (!textEl) return;
+
+    // Switch to text tool with property panel
+    const textBtn = document.querySelector(".bx-text");
+    if (textBtn) {
+        selectedTool = textBtn;
+        toolExtraPopup();
+    }
+
+    // Deselect (removes selection feedback) then open editor
+    deselectElement();
+    makeTextEditable(textEl, groupElement);
+}
 
 const handleTextMouseMove = function (e) {
     // Keep lastMousePos in screen coordinates for other functions
@@ -1387,13 +1445,16 @@ const handleTextMouseMove = function (e) {
 
     // Handle cursor changes for text tool
     if (isTextToolActive) {
-        svg.style.cursor = 'text';
+        const targetGroup = e.target.closest('g[data-type="text-group"]');
+        if (targetGroup) {
+            svg.style.cursor = 'pointer';
+        } else {
+            svg.style.cursor = 'text';
+        }
     } else if (isSelectionToolActive) {
         const targetGroup = e.target.closest('g[data-type="text-group"]');
         if (targetGroup) {
-            svg.style.cursor = 'move';
-        } else {
-            svg.style.cursor = 'default';
+            svg.style.cursor = 'pointer';
         }
     }
 
@@ -1427,18 +1488,6 @@ const handleTextMouseMove = function (e) {
 };
 
 const handleTextMouseUp = function (e) {
-    // Handle text deselection when clicking outside
-    if (isSelectionToolActive) {
-        const targetGroup = e.target.closest('g[data-type="text-group"]');
-        const isResizeHandle = e.target.closest('.resize-handle');
-        const isRotateAnchor = e.target.closest('.rotate-anchor');
-        
-        // If we didn't click on text or its controls, deselect
-        if (!targetGroup && !isResizeHandle && !isRotateAnchor && selectedElement) {
-            deselectElement();
-        }
-    }
-
     // Clear frame highlighting when done with text tool operations
     if (hoveredFrameText) {
         hoveredFrameText.removeHighlight();

@@ -435,13 +435,15 @@ function makeCodeEditable(codeElement, groupElement, clickEvent = null) {
     editorContainer.style.padding = "8px";
     editorContainer.style.fontFamily = "monospace";
     editorContainer.style.overflow = "hidden";
+    editorContainer.style.minWidth = "200px";
+    editorContainer.style.minHeight = "40px";
 
     // Create the actual code editor
     let input = document.createElement("div");
     input.className = "svg-code-editor";
     input.contentEditable = true;
     input.style.outline = "none";
-    input.style.minHeight = "20px";
+    input.style.minHeight = "30px";
     input.style.maxHeight = "400px";
     input.style.overflowY = "auto";
     input.style.whiteSpace = "pre";
@@ -873,10 +875,14 @@ function renderCodeFromEditor(input, codeElement, deleteIfEmpty = false) {
         }
     }
 
-    if (selectedTool && selectedTool.classList.contains('bxs-pointer') && gElement.parentNode === svg) {
+    // After rendering code, switch to selection tool and auto-select
+    if (gElement.parentNode) {
+        const pointerBtn = document.querySelector(".bxs-pointer");
+        if (pointerBtn) {
+            selectedTool = pointerBtn;
+            toolExtraPopup();
+        }
         selectCodeBlock(gElement);
-    } else if (selectedCodeBlock === gElement) {
-        deselectCodeBlock();
     }
 }
 
@@ -1097,10 +1103,14 @@ function renderCode(input, codeElement, deleteIfEmpty = false) {
         }
     }
 
-    if (selectedTool && selectedTool.classList.contains('bxs-pointer') && gElement.parentNode === svg) {
+    // After rendering code, switch to selection tool and auto-select
+    if (gElement.parentNode) {
+        const pointerBtn = document.querySelector(".bxs-pointer");
+        if (pointerBtn) {
+            selectedTool = pointerBtn;
+            toolExtraPopup();
+        }
         selectCodeBlock(gElement);
-    } else if (selectedCodeBlock === gElement) {
-        deselectCodeBlock();
     }
 }
 
@@ -1423,6 +1433,9 @@ function selectCodeBlock(groupElement) {
     toggleSpans.forEach(el => {
         if (el.getAttribute("data-id") === "true") el.classList.add("selected");
     });
+    // Show the text/code property panel
+    const textSideBar = document.getElementById("textToolBar");
+    if (textSideBar) textSideBar.classList.remove("hidden");
     const langSelector = document.getElementById("textLanguageSelector");
     if (langSelector) langSelector.classList.remove("hidden");
     const langSelect = document.getElementById("codeLanguageSelect");
@@ -1973,6 +1986,21 @@ function extractRotationFromTransform(element) {
 }
 
 const handleCodeMouseDown = function (e) {
+    // Check for contenteditable code editor (new style)
+    const activeContentEditor = document.querySelector(".svg-code-editor[contenteditable='true']");
+    if (activeContentEditor) {
+        const editorContainer = activeContentEditor.closest('.svg-code-container');
+        if (editorContainer && editorContainer.contains(e.target)) {
+            return;
+        }
+        let codeElement = activeContentEditor.originalCodeElement;
+        if (codeElement) {
+            renderCodeFromEditor(activeContentEditor, codeElement, true);
+        } else if (editorContainer && document.body.contains(editorContainer)) {
+            document.body.removeChild(editorContainer);
+        }
+    }
+    // Check for textarea code editor (legacy style)
     const activeEditor = document.querySelector("textarea.svg-code-editor");
     if (activeEditor && activeEditor.contains(e.target)) {
          return;

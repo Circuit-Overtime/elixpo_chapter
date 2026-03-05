@@ -1,31 +1,30 @@
 .arrowSideBar {
     position: fixed;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    width: 250px;
-    border-top-right-radius: 25px;
-    border-bottom-right-radius: 25px;
-    height: 65%;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    border-radius: 15px;
+    height: auto;
     background-color: #232329;
-    overflow-x: hidden;
-    overflow-y: auto;
-    padding-top: 20px;
-    transition: 0.25s;
-    border-left: 1px solid #000;
-    z-index: 10; /* Added z-index to ensure sidebar is above other elements */
+    overflow: visible;
+    padding: 5px 10px;
+    transition: 0.5s;
+    z-index: 100;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    filter: blur(0px);
+    opacity: 1;
 }
 
 .arrowSideBar.hidden {
     opacity: 0;
-    transform: translateY(-50%) translateX(-100%); /* Modified transform for a smoother hiding effect */
     pointer-events: none;
-    transition: all 0.25s ease-in-out; /* More comprehensive transition */
+    filter: blur(10px);
+    transform: translateX(-50%) translateY(20px);
+    transition: 0.5s;
     z-index: -1;
-}
-
-.arrowSideBar::-webkit-scrollbar {
-    display: none;
 }
 
 /*  Combined Labels  */
@@ -33,59 +32,73 @@
 .arrowThicknessLabel,
 .arrowStyleLabel,
 .arrowTypeLabel,
-.arrowHeadLabel {
-    color: #fff;
-    font-size: 20px;
-    margin-left: 20px;
-    font-family: "Kanit", serif;
-    font-weight: 300;
-    margin-top: 0px;
+.arrowHeadLabel,
+.arrowCurveLabel {
+    display: none;
 }
 
-
-/* Combined containers for colors, backgrounds, thickness, and fill */
+/* Combined containers */
 .arrowColorsarrow,
 .arrowThickness,
 .arrowStyle,
 .arrowType,
-.arrowHead {
-    position: relative;
-    top: 10px;
+.arrowHead,
+.arrowCurve {
+    position: static;
     display: flex;
     justify-content: flex-start;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     height: 40px;
-    margin-bottom: 20px;
     gap: 5px;
-    left: 3%;
-    align-items: center; /* Vertically center items */
-    padding: 0 10px; /* Add some padding for better spacing */
-    box-sizing: border-box; /* Include padding in width calculation */
+    align-items: center;
+    padding: 0 8px;
+    box-sizing: border-box;
+    border-right: 1px solid rgba(255,255,255,0.15);
 }
 
-.arrowColorsarrow, .arrowBackground, .arrowFill {
-    justify-content: flex-start; /* Align items to the start for color options */
-}
-
-.arrowThickness, .arrowStyle {
-     justify-content: left; 
-     gap: 10px;
+.arrowCurve {
+    border-right: none;
 }
 
 
 /* Combined styles for color, background and fill spans */
-.arrowColorsarrow span
- {
+.arrowColorsarrow span {
     position: relative;
     width: 30px;
     height: 30px;
     border-radius: 10px;
-    margin: 0 5px;
-    margin-bottom: 10px;
+    margin: 0 2px;
     cursor: pointer;
     box-sizing: border-box;
     transition: 0.25s;
-    flex-shrink: 0; /* Prevent shrinking */
+    flex-shrink: 0;
+}
+
+/* Curve presets */
+.arrowCurve span {
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #fff;
+    background: #31303B;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    transition: 0.25s;
+    border: 2px solid transparent;
+    flex-shrink: 0;
+}
+.arrowCurve span.selected {
+    background: #444480;
+    border: 2px solid #3c09d6;
+    transition: 0.25s;
+    transform: scale(1.1);
+}
+.arrowCurve span svg {
+    width: 28px;
+    height: 28px;
+    stroke: #fff;
 }
 
 /* Combined selected styles for color background and fill spans */

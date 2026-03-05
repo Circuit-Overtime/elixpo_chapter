@@ -1,32 +1,30 @@
 .lineSideBar {
     position: fixed;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    width: 250px;
-    border-top-right-radius: 25px;
-    border-bottom-right-radius: 25px;
-    height: 70%;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    border-radius: 15px;
+    height: auto;
     background-color: #232329;
-    overflow-x: hidden;
-    overflow-y: auto;
-    padding-top: 20px;
-    transition: 0.25s;
-    border-left: 1px solid #000;
-    z-index: 10; 
-    overflow: hidden;
+    overflow: visible;
+    padding: 5px 10px;
+    transition: 0.5s;
+    z-index: 100;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    filter: blur(0px);
+    opacity: 1;
 }
 
 .lineSideBar.hidden {
     opacity: 0;
-    transform: translateY(-50%) translateX(-100%); /* Modified transform for a smoother hiding effect */
     pointer-events: none;
-    transition: all 0.25s ease-in-out; /* More comprehensive transition */
+    filter: blur(10px);
+    transform: translateX(-50%) translateY(20px);
+    transition: 0.5s;
     z-index: -1;
-}
-
-.lineSideBar::-webkit-scrollbar {
-    display: none;
 }
 
 .lineColorLabel,
@@ -35,12 +33,7 @@
 .lineSlopeLabel,
 .lineEdgeLabel
 {
-    color: #fff;
-    font-size: 20px;
-    margin-left: 20px;
-    font-family: "Kanit", serif;
-    font-weight: 300;
-    margin-top: 0px;
+    display: none;
 }
 
 .lineColor,
@@ -49,38 +42,32 @@
 .lineSlope,
 .lineEdge
 {
-    position: relative;
-    top: 10px;
+    position: static;
     display: flex;
     justify-content: flex-start;
-    flex-wrap: wrap;
-    height: 50px;
-    margin-bottom: 20px;
+    flex-wrap: nowrap;
+    height: 40px;
     gap: 5px;
-    left: 3%;
-    align-items: center; 
-    padding: 0 10px; 
-    box-sizing: border-box; 
-    overflow: hidden;
+    align-items: center;
+    padding: 0 8px;
+    box-sizing: border-box;
+    border-right: 1px solid rgba(255,255,255,0.15);
 }
 
-.lineThickness 
-{
-    justify-content: left; 
-     gap: 10px;
+.lineEdge {
+    border-right: none;
 }
-.lineColor span 
+.lineColor span
 {
     position: relative;
     width: 30px;
     height: 30px;
     border-radius: 10px;
-    margin: 0 5px;
-    margin-bottom: 10px;
+    margin: 0 2px;
     cursor: pointer;
     box-sizing: border-box;
     transition: 0.25s;
-    flex-shrink: 0; /* Prevent shrinking */
+    flex-shrink: 0;
 }
 .lineColor span.selected 
 {
