@@ -387,8 +387,8 @@ move(dx, dy) {
     addFrameLabel() {
     const labelText = document.createElementNS("http://www.w3.org/2000/svg", "text");
     labelText.setAttribute("x", this.x + 5);
-    labelText.setAttribute("y", this.y - 5);
-    labelText.setAttribute("font-size", `${12 / currentZoom}px`);
+    labelText.setAttribute("y", this.y - 10);
+    labelText.setAttribute("font-size", `${16 / currentZoom}px`);
     labelText.setAttribute("fill", this.options.stroke);
     labelText.setAttribute("font-family", "lixFont");
     labelText.textContent = this.frameName || "Frame";
@@ -518,6 +518,77 @@ startLabelEdit(labelElement) {
     selectFrame() {
         this.isSelected = true;
         this.draw();
+        this._showSidebar();
+    }
+
+    _showSidebar() {
+        const sidebar = document.getElementById('frameSideBar');
+        const renameInput = document.getElementById('frameRenameInput');
+        const resizeBtn = document.getElementById('frameResizeToFit');
+        if (!sidebar) return;
+
+        sidebar.classList.remove('hidden');
+
+        if (renameInput) {
+            renameInput.value = this.frameName || 'Frame';
+            // Replace old listener by cloning
+            const newInput = renameInput.cloneNode(true);
+            renameInput.parentNode.replaceChild(newInput, renameInput);
+            newInput.addEventListener('input', () => {
+                const val = newInput.value.trim() || 'Frame';
+                this.frameName = val;
+                if (this.labelElement) this.labelElement.textContent = val;
+            });
+            newInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') newInput.blur();
+            });
+            newInput.addEventListener('mousedown', (e) => e.stopPropagation());
+        }
+
+        if (resizeBtn) {
+            const newBtn = resizeBtn.cloneNode(true);
+            resizeBtn.parentNode.replaceChild(newBtn, resizeBtn);
+            newBtn.addEventListener('click', () => this.resizeToFit());
+        }
+    }
+
+    resizeToFit() {
+        if (this.containedShapes.length === 0) return;
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        this.containedShapes.forEach(shape => {
+            if (shape.shapeName === 'arrow' || shape.shapeName === 'line') {
+                [shape.startPoint, shape.endPoint].filter(Boolean).forEach(p => {
+                    minX = Math.min(minX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxX = Math.max(maxX, p.x);
+                    maxY = Math.max(maxY, p.y);
+                });
+            } else if (typeof shape.x === 'number' && typeof shape.y === 'number') {
+                const w = shape.width || 0;
+                const h = shape.height || 0;
+                minX = Math.min(minX, shape.x);
+                minY = Math.min(minY, shape.y);
+                maxX = Math.max(maxX, shape.x + w);
+                maxY = Math.max(maxY, shape.y + h);
+            }
+        });
+
+        if (!isFinite(minX)) return;
+
+        const padding = 20;
+        const oldState = { x: this.x, y: this.y, width: this.width, height: this.height, rotation: this.rotation };
+
+        this.x = minX - padding;
+        this.y = minY - padding;
+        this.width = (maxX - minX) + padding * 2;
+        this.height = (maxY - minY) + padding * 2;
+
+        pushTransformAction(this, oldState, { x: this.x, y: this.y, width: this.width, height: this.height, rotation: this.rotation });
+        this.draw();
+        this.updateClipPath();
+        this.updateContainedShapes();
     }
 
     removeSelection() {
@@ -529,6 +600,8 @@ startLabelEdit(labelElement) {
         this.anchors = [];
         this.isSelected = false;
         this.draw();
+        const sidebar = document.getElementById('frameSideBar');
+        if (sidebar) sidebar.classList.add('hidden');
     }
 
     addAnchors() {
@@ -1134,6 +1207,16 @@ const handleMouseDown = (e) => {
             pushCreateAction(currentFrame);
             // Check for shapes that should be contained in the new frame
             currentFrame.updateContainedShapes(true); // Apply clipping immediately for new frames
+
+            // Auto-select the new frame and switch to selection tool
+            const placedFrame = currentFrame;
+            const selectBtn = document.querySelector('.bxs-pointer');
+            if (selectBtn) {
+                selectedTool = selectBtn;
+                toolExtraPopup();
+            }
+            currentShape = placedFrame;
+            placedFrame.selectFrame();
         }
         isDrawingFrame = false;
     }

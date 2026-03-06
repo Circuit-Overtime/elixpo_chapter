@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="./CSS/paintbrushSidebar.css">
     <link rel="stylesheet" href="./CSS/arrowSidebar.css">
     <link rel="stylesheet" href="./CSS/textToolBar.css">
+    <link rel="stylesheet" href="./CSS/frameSidebar.css">
     <link rel="icon" type="image/x-icon" href="Images/logo.png">
     
 </head>
@@ -313,27 +314,63 @@
             <span class="strokeColorSpan skyBlue" data-id="#56A2E8"></span>
             <span class="strokeColorSpan darkYellow" data-id="#FFD700"></span>
           </div>
-          <div class="ToolSpacer"></div>
 
           <div class="strokeThickness">
-            <span class="strokeThicknessSpan thin" data-id="2">  </span>
-            <span class="strokeThicknessSpan medium selected" data-id="5">  </span>
-            <span class="strokeThicknessSpan thick" data-id="7">  </span>
+            <span class="strokeThicknessSpan thin" data-id="2"></span>
+            <span class="strokeThicknessSpan medium selected" data-id="5"></span>
+            <span class="strokeThicknessSpan thick" data-id="7"></span>
           </div>
-          <div class="ToolSpacer"></div>
+
           <div class="strokeStyle">
-            <span class="strokeStyleSpan solid selected" data-id="solid"> <svg aria-hidden="true" focusable="false" role="img" viewBox="0 0 20 20" class="" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"><path d="M4.167 10h11.666" stroke="#fff" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"></path></svg> </span>
-            <span class="strokeStyleSpan dashed" data-id="dashed"> <svg aria-hidden="true" focusable="false" role="img" viewBox="0 0 24 24" class="" fill="none" stroke-width="2" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 12h2"></path><path d="M17 12h2"></path><path d="M11 12h2"></path></g></svg> </span>
-            <span class="strokeStyleSpan dotted" data-id="dotted"> <svg aria-hidden="true" focusable="false" role="img" viewBox="0 0 24 24" class="" fill="none" stroke-width="2" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 12v.01"></path><path d="M8 12v.01"></path><path d="M12 12v.01"></path><path d="M16 12v.01"></path><path d="M20 12v.01"></path></g></svg> </span>
+            <span class="strokeStyleSpan solid selected" data-id="solid">
+              <svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12" stroke-width="1.5"/></svg>
+            </span>
+            <span class="strokeStyleSpan dashed" data-id="dashed">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h2M11 12h2M17 12h2" stroke-width="2"/></svg>
+            </span>
+            <span class="strokeStyleSpan dotted" data-id="dotted">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v.01M8 12v.01M12 12v.01M16 12v.01M20 12v.01" stroke-width="2.5"/></svg>
+            </span>
           </div>
-          <div class="ToolSpacer"></div>
+
+          <!-- Taper: uniform / pen / brush -->
+          <div class="strokeTaper">
+            <span class="strokeTaperSpan selected" data-id="0" title="Uniform">
+              <svg viewBox="0 0 24 18" fill="none"><rect x="2" y="7" width="20" height="4" rx="2" fill="#fff"/></svg>
+            </span>
+            <span class="strokeTaperSpan" data-id="0.5" title="Pen taper">
+              <svg viewBox="0 0 24 18" fill="none"><path d="M2 9 Q7 9 12 9 Q17 6 22 9 Q17 12 12 9 Q7 9 2 9Z" fill="#fff"/></svg>
+            </span>
+            <span class="strokeTaperSpan" data-id="0.8" title="Brush taper">
+              <svg viewBox="0 0 24 18" fill="none"><path d="M2 9 Q5 9 12 9 Q18 4 22 9 Q18 14 12 9 Q5 9 2 9Z" fill="#fff"/></svg>
+            </span>
+          </div>
+
+          <!-- Roughness: smooth / medium / rough -->
+          <div class="strokeRoughness">
+            <span class="strokeRoughnessSpan selected" data-id="smooth" title="Smooth">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 12 Q8 7 12 12 Q16 17 21 12"/></svg>
+            </span>
+            <span class="strokeRoughnessSpan" data-id="medium" title="Medium">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 13 Q5 9 7 12 Q9 15 11 11 Q13 7 15 12 Q17 16 19 11 Q21 8 21 10"/></svg>
+            </span>
+            <span class="strokeRoughnessSpan" data-id="rough" title="Rough">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 14 L5 9 L7 14 L9 8 L11 13 L13 7 L15 13 L17 9 L19 14 L21 10"/></svg>
+            </span>
+          </div>
+
           <div class="strokeOpacity" id="strokeOpacity">
             <div class="opacityContainer">
-              <span id="opacityContainerValue"> 100% </span>
+              <span id="opacityContainerValue">100</span>
             </div>
           </div>
         </div>
 
+
+        <div class="frameSideBar hidden" id="frameSideBar">
+            <input type="text" id="frameRenameInput" placeholder="Frame name..." />
+            <button id="frameResizeToFit">⤢ Resize to fit</button>
+        </div>
 
         <div class="toolbar">
             <i class='bx bxs-hand ' ></i>

@@ -3,12 +3,18 @@ import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from
 
 const strokeColors = document.querySelectorAll(".strokeColors span");
 const strokeThicknesses = document.querySelectorAll(".strokeThickness span");
+const strokeStyles = document.querySelectorAll(".strokeStyleSpan");
+const strokeTapers = document.querySelectorAll(".strokeTaperSpan");
+const strokeRoughnesses = document.querySelectorAll(".strokeRoughnessSpan");
 let strokeColor = "#fff";
 let strokeThickness = 2;
+let strokeStyleValue = "solid";
+let strokeThinning = 0;
+let strokeRoughnessValue = "smooth";
 let points = [];
 let isDrawingStroke = false;
 let currentStroke = null;
-let strokeOpacity = 1; 
+let strokeOpacity = 1;
 
 
 let isDraggingStroke = false;
@@ -82,6 +88,9 @@ class FreehandStroke {
             strokeLinecap: "round",
             strokeLinejoin: "round",
             strokeOpacity: strokeOpacity,
+            thinning: strokeThinning,
+            roughness: strokeRoughnessValue,
+            strokeStyle: strokeStyleValue,
             ...options
         };
         this.element = null;
@@ -209,32 +218,70 @@ class FreehandStroke {
     // Enhanced path generation with better curve fitting
     getPathData() {
         if (this.points.length < 2) return '';
-        
-        // Apply multiple smoothing passes for ultra-smooth results
-        let smoothedPoints = this.interpolatePoints(this.points, 1);
-        smoothedPoints = this.smoothPoints(smoothedPoints, 0.6);
-        smoothedPoints = this.smoothPoints(smoothedPoints, 0.4);
-        
+
+        const isRough = this.options.roughness === "rough";
+        const isMedium = this.options.roughness === "medium";
+
+        // Roughness: jitter points before smoothing
+        let pts = this.points;
+        if (isRough || isMedium) {
+            const jitter = isRough ? 3.5 : 1.5;
+            pts = pts.map((p, i) => {
+                if (i === 0 || i === pts.length - 1) return p;
+                return [
+                    p[0] + (Math.random() - 0.5) * jitter,
+                    p[1] + (Math.random() - 0.5) * jitter,
+                    p[2] || 0.5
+                ];
+            });
+        }
+
+        let smoothedPoints = this.interpolatePoints(pts, 1);
+        if (!isRough) {
+            smoothedPoints = this.smoothPoints(smoothedPoints, 0.6);
+            smoothedPoints = this.smoothPoints(smoothedPoints, 0.4);
+        }
+
+        const thinning = this.options.thinning !== undefined ? this.options.thinning : 0;
+        const smoothing = isRough ? 0.3 : isMedium ? 0.6 : 0.9;
+        const streamline = isRough ? 0.1 : isMedium ? 0.25 : 0.4;
+
         const stroke = getStroke(smoothedPoints, {
             size: this.options.strokeWidth,
-            thinning: 0.3, // Reduced for more consistent width
-            smoothing: 0.9, // Increased for smoother curves
-            streamline: 0.4, // Increased for better flow
-            easing: (t) => Math.sin(t * Math.PI * 0.5), // Smoother easing
-            start: { 
-                taper: 5, // Subtle taper for natural start
-                easing: (t) => t * t, 
-                cap: true 
+            thinning: thinning,
+            smoothing: smoothing,
+            streamline: streamline,
+            easing: (t) => Math.sin(t * Math.PI * 0.5),
+            start: {
+                taper: thinning > 0 ? this.options.strokeWidth * 2 : 0,
+                easing: (t) => t * t,
+                cap: thinning === 0
             },
-            end: { 
-                taper: 5, // Subtle taper for natural end
-                easing: (t) => --t * t * t + 1, 
-                cap: true 
+            end: {
+                taper: thinning > 0 ? this.options.strokeWidth * 2 : 0,
+                easing: (t) => --t * t * t + 1,
+                cap: thinning === 0
             },
-            simulatePressure: true
+            simulatePressure: thinning > 0
         });
-        
+
         return getSvgPathFromStroke(stroke);
+    }
+
+    // Simple centerline path used for dashed/dotted overlays
+    getCenterlinePathData() {
+        if (this.points.length < 2) return '';
+        const d = [`M ${this.points[0][0]} ${this.points[0][1]}`];
+        for (let i = 1; i < this.points.length - 1; i++) {
+            const curr = this.points[i];
+            const next = this.points[i + 1];
+            const cpX = curr[0] + (next[0] - curr[0]) * 0.5;
+            const cpY = curr[1] + (next[1] - curr[1]) * 0.5;
+            d.push(`Q ${curr[0]} ${curr[1]} ${cpX} ${cpY}`);
+        }
+        const last = this.points[this.points.length - 1];
+        d.push(`L ${last[0]} ${last[1]}`);
+        return d.join(' ');
     }
 
     // Calculate the bounding box of the stroke
@@ -279,14 +326,31 @@ class FreehandStroke {
         }
 
         // Create the path element
+        // perfect-freehand returns a filled outline — use fill, not stroke
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', this.getPathData());
-        path.setAttribute('stroke', this.options.stroke);
-        path.setAttribute('stroke-width', this.options.strokeWidth);
-        path.setAttribute('fill', this.options.fill);
-        path.setAttribute('stroke-linecap', this.options.strokeLinecap);
-        path.setAttribute('stroke-linejoin', this.options.strokeLinejoin);
-        path.setAttribute('stroke-opacity', this.options.strokeOpacity);
+        const pathData = this.getPathData();
+        path.setAttribute('d', pathData);
+        path.setAttribute('fill', this.options.stroke);
+        path.setAttribute('fill-opacity', this.options.strokeOpacity);
+        path.setAttribute('stroke', 'none');
+
+        // Overlay a dashed/dotted centerline if needed
+        if (this.options.strokeStyle === "dashed" || this.options.strokeStyle === "dotted") {
+            const dashArray = this.options.strokeStyle === "dashed"
+                ? `${this.options.strokeWidth * 3} ${this.options.strokeWidth * 2}`
+                : `${this.options.strokeWidth * 0.5} ${this.options.strokeWidth * 2}`;
+            const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            overlay.setAttribute('d', this.getCenterlinePathData());
+            overlay.setAttribute('fill', 'none');
+            overlay.setAttribute('stroke', this.options.stroke);
+            overlay.setAttribute('stroke-width', this.options.strokeWidth);
+            overlay.setAttribute('stroke-linecap', 'round');
+            overlay.setAttribute('stroke-linejoin', 'round');
+            overlay.setAttribute('stroke-dasharray', dashArray);
+            overlay.setAttribute('stroke-opacity', this.options.strokeOpacity);
+            this.group.appendChild(overlay);
+        }
+
         this.element = path;
         this.group.appendChild(path);
 
@@ -389,30 +453,23 @@ class FreehandStroke {
 
     // Add updateSidebar method similar to Circle class
     updateSidebar() {
-        // Update color selection
         strokeColors.forEach(span => {
-            const color = span.getAttribute('data-id');
-            if (color === this.options.stroke) {
-                span.classList.add('selected');
-            } else {
-                span.classList.remove('selected');
-            }
+            span.classList.toggle('selected', span.getAttribute('data-id') === this.options.stroke);
         });
-
-        // Update thickness selection
         strokeThicknesses.forEach(span => {
-            const thickness = parseInt(span.getAttribute('data-id'), 10);
-            if (thickness === this.options.strokeWidth) {
-                span.classList.add('selected');
-            } else {
-                span.classList.remove('selected');
-            }
+            span.classList.toggle('selected', parseInt(span.getAttribute('data-id'), 10) === this.options.strokeWidth);
         });
-
-        const opacitySlider = document.getElementById("strokeOpacity");
+        strokeStyles.forEach(span => {
+            span.classList.toggle('selected', span.getAttribute('data-id') === this.options.strokeStyle);
+        });
+        strokeTapers.forEach(span => {
+            span.classList.toggle('selected', parseFloat(span.getAttribute('data-id')) === this.options.thinning);
+        });
+        strokeRoughnesses.forEach(span => {
+            span.classList.toggle('selected', span.getAttribute('data-id') === this.options.roughness);
+        });
         const opacityValue = document.getElementById("opacityContainerValue");
-        if (opacitySlider && opacityValue) {
-            opacitySlider.value = (this.options.strokeOpacity * 100).toFixed(0);
+        if (opacityValue) {
             opacityValue.textContent = (this.options.strokeOpacity * 100).toFixed(0);
         }
     }
@@ -1051,6 +1108,54 @@ strokeThicknesses.forEach(span => {
     });
 });
 
+
+strokeStyles.forEach(span => {
+    span.addEventListener("click", () => {
+        strokeStyles.forEach(el => el.classList.remove("selected"));
+        span.classList.add("selected");
+        const val = span.getAttribute("data-id");
+        if (currentShape instanceof FreehandStroke && currentShape.isSelected) {
+            const oldOptions = {...currentShape.options};
+            currentShape.options.strokeStyle = val;
+            currentShape.draw();
+            pushOptionsChangeAction(currentShape, oldOptions);
+        } else {
+            strokeStyleValue = val;
+        }
+    });
+});
+
+strokeTapers.forEach(span => {
+    span.addEventListener("click", () => {
+        strokeTapers.forEach(el => el.classList.remove("selected"));
+        span.classList.add("selected");
+        const val = parseFloat(span.getAttribute("data-id"));
+        if (currentShape instanceof FreehandStroke && currentShape.isSelected) {
+            const oldOptions = {...currentShape.options};
+            currentShape.options.thinning = val;
+            currentShape.draw();
+            pushOptionsChangeAction(currentShape, oldOptions);
+        } else {
+            strokeThinning = val;
+        }
+    });
+});
+
+strokeRoughnesses.forEach(span => {
+    span.addEventListener("click", () => {
+        strokeRoughnesses.forEach(el => el.classList.remove("selected"));
+        span.classList.add("selected");
+        const val = span.getAttribute("data-id");
+        if (currentShape instanceof FreehandStroke && currentShape.isSelected) {
+            const oldOptions = {...currentShape.options};
+            currentShape.options.roughness = val;
+            currentShape.draw();
+            pushOptionsChangeAction(currentShape, oldOptions);
+        } else {
+            strokeRoughnessValue = val;
+        }
+    });
+});
 
 document.getElementById("strokeOpacity").addEventListener("mousedown", (event) => {
     isdraggingOpacity = true;
