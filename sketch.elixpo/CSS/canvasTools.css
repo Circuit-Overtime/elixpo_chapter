@@ -118,10 +118,21 @@
     border-radius: 10px;
     cursor: pointer;
 }
-.choiceBoxes:hover 
+.choiceBoxes:hover
 {
     background: #343448;
     transition: 0.25s;
+}
+.choiceBoxes.selected
+{
+    background: #3a3a5c;
+    border: 1px solid #5B57D1;
+    transition: 0.25s;
+}
+.choiceBoxes.selected i,
+.choiceBoxes.selected p
+{
+    color: #b8a4f4;
 }
 .choiceBoxes .information 
 {

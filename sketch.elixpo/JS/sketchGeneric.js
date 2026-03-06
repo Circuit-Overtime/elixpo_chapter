@@ -70,6 +70,7 @@ const squareSideBar = document.getElementById("squareSideBar");
 const circleSideBar = document.getElementById("circleSideBar");
 const arrowSideBar = document.getElementById("arrowSideBar");
 const textSideBar = document.getElementById("textToolBar");
+const frameSideBar = document.getElementById("frameSideBar");
 
 const ACTION_CREATE = "create";
 const ACTION_DELETE = "delete";
@@ -243,6 +244,7 @@ function disableAllSideBars()
   circleSideBar.classList.add("hidden");
   arrowSideBar.classList.add("hidden");
   textSideBar.classList.add("hidden");
+  if (frameSideBar) frameSideBar.classList.add("hidden");
 }
 function disableAllTools() 
 {
@@ -265,6 +267,13 @@ function disableAllTools()
 
 tools.forEach(tool => tool.addEventListener("click", handleToolSelection));
 function handleToolSelection(event) {
+  // Deselect any currently selected shape before switching tools
+  if (typeof currentShape !== 'undefined' && currentShape && typeof currentShape.removeSelection === 'function') {
+    currentShape.removeSelection();
+    currentShape = null;
+  }
+  if (typeof clearAllSelections === 'function') clearAllSelections();
+
   tools.forEach(t => t.classList.remove("selected"));
   const tool = event.target;
   tool.classList.add("selected");

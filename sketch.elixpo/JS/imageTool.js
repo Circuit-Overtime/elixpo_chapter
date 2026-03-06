@@ -487,6 +487,14 @@ const handleMouseDownImage = async (e) => {
             hoveredFrameImage = null;
         }
 
+        // Auto-select the placed image and switch to selection tool
+        const placedShape = imageShape;
+        const selectBtn = document.querySelector(".bxs-pointer");
+        if (selectBtn) selectBtn.click();
+        currentShape = placedShape;
+        currentShape.isSelected = true;
+        placedShape.selectShape();
+
     } catch (error) {
         console.error("Error placing image:", error);
         isDraggingImage = false;
