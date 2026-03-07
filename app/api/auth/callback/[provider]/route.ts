@@ -258,6 +258,11 @@ async function buildSuccessResponse(
   ipAddress: string,
   userAgent: string
 ) {
+  // Ensure OAuth users are marked as email-verified
+  try {
+    await db.prepare('UPDATE users SET email_verified = 1, email_verified_at = COALESCE(email_verified_at, CURRENT_TIMESTAMP) WHERE id = ? AND email_verified = 0').bind(user.id).run();
+  } catch { /* non-critical */ }
+
   const accessToken = await createAccessToken(
     user.id,
     email,
