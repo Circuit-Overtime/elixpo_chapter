@@ -89,27 +89,27 @@ async function createCloudflareTransport(config: SmtpConfig): Promise<SmtpTransp
 // ---------------------------------------------------------------------------
 
 async function createNodeTransport(config: SmtpConfig): Promise<SmtpTransport> {
-  // Edge runtime sandbox blocks eval('require') and dynamic import of Node builtins.
-  // Use Function constructor to bypass static analysis and sandbox restrictions.
-  let _require: any;
+  // In webpack-bundled code, `require` is replaced by webpack's module system.
+  // Use Function constructor to access the real Node.js require at runtime.
+  let tls: any;
+  let net: any;
+
   try {
-    _require = new Function('return typeof require !== "undefined" ? require : null')();
+    // Access real Node.js require via Function constructor (bypasses webpack)
+    const nodeRequire = new Function('moduleName', 'return require(moduleName)');
+    tls = nodeRequire('tls');
+    net = nodeRequire('net');
   } catch {
-    // noop
-  }
-  if (!_require) {
     try {
-      // Alternative: access require from the module system
-      _require = (globalThis as any).__non_webpack_require__ ?? (globalThis as any).require;
-    } catch {
-      // noop
+      // Second try: Function constructor bypass
+      const _require = new Function('return typeof require !== "undefined" ? require : null')();
+      if (!_require) throw new Error('require is null');
+      tls = _require('tls');
+      net = _require('net');
+    } catch (err) {
+      throw new Error(`Node.js tls/net modules not available: ${err}`);
     }
   }
-
-  if (!_require) throw new Error('Node.js require not available for SMTP fallback');
-
-  const tls = _require('tls');
-  const net = _require('net');
 
   let socket: any;
   let buffer = '';

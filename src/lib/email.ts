@@ -1,4 +1,5 @@
 import { smtpSendMail } from './smtp-client';
+import nodemailer from 'nodemailer';
 
 interface EmailOptions {
   to: string;
@@ -7,44 +8,80 @@ interface EmailOptions {
   text?: string;
 }
 
-export async function sendEmail(options: EmailOptions): Promise<void> {
+/**
+ * Send email via nodemailer (works in Node.js / next dev)
+ */
+async function sendViaNodemailer(options: EmailOptions): Promise<void> {
   const host = process.env.SMTP_HOST || 'smtp.zoho.com';
   const port = parseInt(process.env.SMTP_PORT || '465');
   const user = process.env.SMTP_FROM_EMAIL || 'accounts@elixpo.com';
   const pass = process.env.SMTP_PASS || '';
   const fromName = process.env.SMTP_FROM_NAME || 'Elixpo Accounts';
 
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+
+  await transporter.sendMail({
+    from: `${fromName} <${user}>`,
+    to: options.to,
+    subject: options.subject,
+    html: options.html,
+    text: options.text,
+    headers: {
+      'X-Mailer': 'Elixpo Accounts Platform',
+      'X-Priority': '3',
+    },
+  });
+}
+
+/**
+ * Send email via cloudflare:sockets SMTP client (works in Cloudflare Workers)
+ */
+async function sendViaCloudflare(options: EmailOptions): Promise<void> {
+  const host = process.env.SMTP_HOST || 'smtp.zoho.com';
+  const port = parseInt(process.env.SMTP_PORT || '465');
+  const user = process.env.SMTP_FROM_EMAIL || 'accounts@elixpo.com';
+  const pass = process.env.SMTP_PASS || '';
+  const fromName = process.env.SMTP_FROM_NAME || 'Elixpo Accounts';
+
+  await smtpSendMail(
+    { host, port, secure: port === 465, auth: { user, pass } },
+    {
+      from: `${fromName} <${user}>`,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+      headers: {
+        'X-Mailer': 'Elixpo Accounts Platform',
+        'X-Priority': '3',
+      },
+    }
+  );
+}
+
+export async function sendEmail(options: EmailOptions): Promise<void> {
+  const pass = process.env.SMTP_PASS || '';
   if (!pass) {
     throw new Error('SMTP_PASS is not configured');
   }
 
+  // Try Cloudflare SMTP first (production), fall back to nodemailer (local dev)
   try {
-    await smtpSendMail(
-      { host, port, secure: port === 465, auth: { user, pass } },
-      {
-        from: `${fromName} <${user}>`,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-        headers: {
-          'X-Mailer': 'Elixpo Accounts Platform',
-          'X-Priority': '3',
-        },
-      }
-    );
-    console.log(`[Email] Sent to ${options.to}`);
-  } catch (error) {
-    // In local dev, SMTP sockets may not be available — log the email for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[Email] SMTP unavailable in local dev. Email content logged below:');
-      console.warn(`[Email] To: ${options.to}`);
-      console.warn(`[Email] Subject: ${options.subject}`);
-      if (options.text) console.warn(`[Email] Text: ${options.text}`);
-      return; // Don't throw in dev — treat as sent
+    await sendViaCloudflare(options);
+    console.log(`[Email] Sent via Cloudflare SMTP to ${options.to}`);
+  } catch {
+    try {
+      await sendViaNodemailer(options);
+      console.log(`[Email] Sent via nodemailer to ${options.to}`);
+    } catch (nmError) {
+      console.error('[Email] Both SMTP methods failed:', nmError);
+      throw nmError;
     }
-    console.error('[Email] Send failed:', error);
-    throw error;
   }
 }
 
