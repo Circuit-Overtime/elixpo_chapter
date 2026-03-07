@@ -199,7 +199,7 @@ const OAuthAppsPage = () => {
               OAuth Applications
             </Typography>
             <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-              Register applications to allow users to sign in with their Elixpo account
+              Register applications to allow users to sign in with their SSO based Account.
             </Typography>
           </Box>
           <Button

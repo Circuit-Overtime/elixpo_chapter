@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyJWT } from '@/lib/jwt';
 import { getOAuthClientById, getOAuthClientByIdWithSecret, updateOAuthClient } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
+import { generateRandomString, hashString } from '@/lib/webcrypto';
 
 /**
  * PUT /api/auth/oauth-clients/[client_id]
@@ -99,6 +100,59 @@ export async function PUT(
       { error: 'Failed to update application' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * PATCH /api/auth/oauth-clients/[client_id]
+ *
+ * Regenerate the client secret for an OAuth application
+ * Returns the new secret (shown only once)
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ client_id: string }> }
+) {
+  try {
+    const token = request.cookies.get('access_token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const payload = await verifyJWT(token);
+    if (!payload) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+
+    const { client_id } = await params;
+
+    if (!client_id) {
+      return NextResponse.json({ error: 'client_id is required' }, { status: 400 });
+    }
+
+    const db = await getDatabase();
+
+    // Verify ownership
+    const app = await getOAuthClientByIdWithSecret(db, client_id) as any;
+    if (!app) {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 });
+    }
+    if (app.owner_id !== payload.sub) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Generate new secret
+    const newSecret = `secret_${generateRandomString(64)}`;
+    const newSecretHash = await hashString(newSecret);
+
+    await updateOAuthClient(db, client_id, { clientSecretHash: newSecretHash });
+
+    console.log(`[OAuth Client] Secret regenerated for: ${client_id}`);
+
+    return NextResponse.json({
+      client_id,
+      client_secret: newSecret,
+      _notice: 'Store this secret securely. It will NOT be retrievable after this response.',
+    });
+  } catch (error) {
+    console.error('[OAuth Client] Secret regeneration error:', error);
+    return NextResponse.json({ error: 'Failed to regenerate secret' }, { status: 500 });
   }
 }
 

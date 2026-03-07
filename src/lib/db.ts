@@ -285,11 +285,16 @@ export async function updateOAuthClient(
     description?: string;
     homepageUrl?: string;
     logoUrl?: string;
+    clientSecretHash?: string;
   }
 ) {
   const setClauses: string[] = [];
   const values: (string | number | null)[] = [];
 
+  if (updates.clientSecretHash !== undefined) {
+    setClauses.push('client_secret_hash = ?');
+    values.push(updates.clientSecretHash);
+  }
   if (updates.name !== undefined) {
     setClauses.push('name = ?');
     values.push(updates.name);

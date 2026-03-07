@@ -61,6 +61,9 @@ export default function OAuthAppSettingsPage() {
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
+  const [regeneratedSecret, setRegeneratedSecret] = useState<string | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
+
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -148,6 +151,29 @@ export default function OAuthAppSettingsPage() {
     }
   };
 
+  const handleRegenerateSecret = async () => {
+    if (!confirm('Regenerate client secret? The old secret will stop working immediately. Make sure to update your application with the new secret.')) return;
+    setRegenerating(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/auth/oauth-clients/${clientId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const err: any = await res.json();
+        throw new Error(err.error || 'Failed to regenerate secret');
+      }
+      const data: any = await res.json();
+      setRegeneratedSecret(data.client_secret);
+      setMessage({ text: 'Client secret regenerated. Copy it now — it won\'t be shown again.', type: 'success' });
+    } catch (err: any) {
+      setMessage({ text: err.message, type: 'error' });
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ minHeight: '100vh', background: '#0f0f0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -217,21 +243,48 @@ export default function OAuthAppSettingsPage() {
           </Box>
 
           <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', mb: 0.75 }}>Client Secret</Typography>
-          <Box sx={{ ...monoBox, border: '1px solid rgba(239,68,68,0.2)' }}>
-            <Typography sx={{ color: '#9ca3af', fontFamily: 'monospace', fontSize: '0.85rem', flex: 1 }}>
-              ••••••••••••••••••••••••••••••••
-            </Typography>
-            <Tooltip title="Secret is only shown once at creation">
-              <span>
-                <IconButton size="small" disabled sx={{ color: 'rgba(255,255,255,0.2)' }}>
-                  <RefreshIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
-          </Box>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', mt: 0.5, display: 'block' }}>
-            Client secrets are not recoverable. Create a new app if you've lost your secret.
-          </Typography>
+          {regeneratedSecret ? (
+            <>
+              <Box sx={{ ...monoBox, border: '1px solid rgba(163,230,53,0.4)' }}>
+                <Typography sx={{ color: '#a3e635', fontFamily: 'monospace', fontSize: '0.85rem', flex: 1, wordBreak: 'break-all' }}>
+                  {regeneratedSecret}
+                </Typography>
+                <Tooltip title={copiedField === 'secret' ? 'Copied!' : 'Copy'}>
+                  <IconButton
+                    size="small"
+                    onClick={() => copyToClipboard(regeneratedSecret, 'secret')}
+                    sx={{ color: '#a3e635' }}
+                  >
+                    <ContentCopyIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <Typography variant="caption" sx={{ color: '#a3e635', mt: 0.5, display: 'block' }}>
+                Copy this secret now. It won't be shown again.
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Box sx={{ ...monoBox, border: '1px solid rgba(239,68,68,0.2)' }}>
+                <Typography sx={{ color: '#9ca3af', fontFamily: 'monospace', fontSize: '0.85rem', flex: 1 }}>
+                  ••••••••••••••••••••••••••••••••
+                </Typography>
+                <Tooltip title="Regenerate secret">
+                  <IconButton
+                    size="small"
+                    onClick={handleRegenerateSecret}
+                    disabled={regenerating}
+                    sx={{ color: '#a3e635', '&:hover': { color: '#d9f99d' } }}
+                  >
+                    <RefreshIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', mt: 0.5, display: 'block' }}>
+                Lost your secret? Click the refresh icon to regenerate it.
+              </Typography>
+            </>
+          )}
         </Box>
 
         {/* General Settings */}
