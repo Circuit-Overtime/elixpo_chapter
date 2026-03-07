@@ -60,7 +60,7 @@ const RegisterPage = () => {
         body: JSON.stringify({ email, password, provider: 'email' }),
       });
 
-      const data = await res.json();
+      const data : any = await res.json();
 
       if (!res.ok) {
         setError(data.error || 'Registration failed');
