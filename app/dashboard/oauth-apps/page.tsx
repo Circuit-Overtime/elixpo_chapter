@@ -97,7 +97,7 @@ const OAuthAppsPage = () => {
       const res = await fetch('/api/auth/me', { credentials: 'include' });
       if (res.ok) {
         const data : any = await res.json();
-        setEmailVerified(data.user?.emailVerified ?? false);
+        setEmailVerified(data.emailVerified ?? false);
       }
     } catch {
       // fail silently
