@@ -206,8 +206,9 @@ const ProfilePage = () => {
         credentials: 'include',
       });
       if (!res.ok) {
-        const data: any = await res.json();
-        throw new Error(data.error || 'Failed to delete account');
+        let msg = 'Failed to delete account';
+        try { const data: any = await res.json(); msg = data.error || msg; } catch { /* non-JSON response */ }
+        throw new Error(msg);
       }
       router.push('/');
     } catch (err) {

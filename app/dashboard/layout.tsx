@@ -40,6 +40,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string>('');
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'include' })
@@ -49,6 +50,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       })
       .then((data: any) => {
         if (data?.email) setUserEmail(data.email);
+        if (data?.avatar) setUserAvatar(data.avatar);
       })
       .catch(() => {});
   }, []);
@@ -87,7 +89,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             },
           }}
         >
-          {/* Logo / Brand */}
+          {/* User / Brand */}
           <Box
             sx={{
               p: 2.5,
@@ -97,35 +99,51 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               borderBottom: '1px solid #333',
             }}
           >
-            <Box
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, #a3e635 0%, #65a30d 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.2rem',
-                fontWeight: 'bold',
-                color: '#0f0f0f',
-                flexShrink: 0,
-              }}
-            >
-              E
-            </Box>
+            {userAvatar ? (
+              <Box
+                component="img"
+                src={userAvatar}
+                alt="Avatar"
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  border: '2px solid rgba(163,230,53,0.3)',
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #a3e635 0%, #65a30d 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  color: '#0f0f0f',
+                  flexShrink: 0,
+                }}
+              >
+                {userEmail ? userEmail.charAt(0).toUpperCase() : 'E'}
+              </Box>
+            )}
             <Typography
               variant="h6"
               sx={{
                 fontWeight: 700,
-                fontSize: '1.1rem',
-                background: 'linear-gradient(135deg, #a3e635 0%, #65a30d 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                fontSize: '1rem',
+                color: '#f5f5f4',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
+              title={userEmail}
             >
-              ELIXPO
+              {userEmail ? userEmail.split('@')[0] : 'Elixpo'}
             </Typography>
           </Box>
 
