@@ -61,15 +61,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate redirect URIs are valid URLs
+    if (redirect_uris.length > 10) {
+      return NextResponse.json(
+        { error: 'Maximum of 10 redirect URIs allowed' },
+        { status: 400 }
+      );
+    }
+
+    // Validate redirect URIs are valid URLs (HTTP and HTTPS allowed)
     const validUris: string[] = [];
     for (const uri of redirect_uris) {
       try {
         const parsed = new URL(uri);
-        // Ensure HTTPS in production
-        if (process.env.NODE_ENV === 'production' && parsed.protocol !== 'https:') {
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
           return NextResponse.json(
-            { error: `Redirect URI must use HTTPS in production: ${uri}` },
+            { error: `Redirect URI must use HTTP or HTTPS: ${uri}` },
             { status: 400 }
           );
         }

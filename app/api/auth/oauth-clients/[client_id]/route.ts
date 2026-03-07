@@ -44,6 +44,26 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Validate redirect URIs if provided
+    if (redirect_uris !== undefined) {
+      if (!Array.isArray(redirect_uris) || redirect_uris.length === 0) {
+        return NextResponse.json({ error: 'redirect_uris must be a non-empty array' }, { status: 400 });
+      }
+      if (redirect_uris.length > 10) {
+        return NextResponse.json({ error: 'Maximum of 10 redirect URIs allowed' }, { status: 400 });
+      }
+      for (const uri of redirect_uris) {
+        try {
+          const parsed = new URL(uri);
+          if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+            return NextResponse.json({ error: `Redirect URI must use HTTP or HTTPS: ${uri}` }, { status: 400 });
+          }
+        } catch {
+          return NextResponse.json({ error: `Invalid redirect_uri: ${uri}` }, { status: 400 });
+        }
+      }
+    }
+
     try {
       await updateOAuthClient(db, client_id, {
         ...(name !== undefined && { name }),
