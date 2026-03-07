@@ -13,7 +13,7 @@ let cachedDb: D1Database | null = null as any;
 
 /**
  * Initialize and get D1 Database connection
- * In Cloudflare environment: Uses the runtime binding
+ * In Cloudflare environment: Uses the runtime binding via getRequestContext()
  * In local environment: Uses Cloudflare API
  */
 export async function getDatabase(): Promise<D1Database> {
@@ -22,16 +22,16 @@ export async function getDatabase(): Promise<D1Database> {
     return cachedDb;
   }
 
-  // In Cloudflare environment (Pages/Workers)
-  if (typeof globalThis !== 'undefined' && 'env' in globalThis) {
-    const env = (globalThis as any).env;
-    if (env && env.DB) {
-      cachedDb = env.DB;
-      if (!cachedDb) {
-        throw new Error('D1 Database binding (env.DB) is not available');
-      }
-      return cachedDb;
+  // In Cloudflare Pages environment — use @cloudflare/next-on-pages runtime context
+  try {
+    const { getRequestContext } = await import(/* webpackIgnore: true */ '@cloudflare/next-on-pages');
+    const { env } = getRequestContext() as { env: Record<string, any> };
+    if (env?.DB) {
+      cachedDb = env.DB as D1Database;
+      return cachedDb!;
     }
+  } catch {
+    // Not running in Cloudflare Pages context — fall through
   }
 
   // For local development: Create a mock D1 client that makes API calls
@@ -59,15 +59,15 @@ export async function getDatabase(): Promise<D1Database> {
 function createLocalD1Client(accountId: string, apiToken: string, databaseId: string): D1Database {
   const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}`;
 
-  const query = async (sql: string, params: any[] = []) => {
+  const query = async (sql: string, params: any[] = []): Promise<any> => {
     const response = await fetch(`${baseUrl}/query`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ sql, params }),
     });
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`D1 Query Error: ${error.errors?.[0]?.message || response.statusText}`);
+      const error: any = await response.json();
+      throw new Error(`D1 Query Error: ${error.message || response.statusText}`);
     }
     return response.json();
   };
@@ -99,7 +99,7 @@ function createLocalD1Client(accountId: string, apiToken: string, databaseId: st
         }),
       });
       if (!response.ok) {
-        const error = await response.json();
+        const error: any = await response.json();
         throw new Error(`D1 Batch Error: ${error.errors?.[0]?.message || response.statusText}`);
       }
       return response.json();
@@ -111,7 +111,7 @@ function createLocalD1Client(accountId: string, apiToken: string, databaseId: st
         body: JSON.stringify({ sql }),
       });
       if (!response.ok) {
-        const error = await response.json();
+        const error: any = await response.json();
         throw new Error(`D1 Exec Error: ${error.errors?.[0]?.message || response.statusText}`);
       }
       return response.json();

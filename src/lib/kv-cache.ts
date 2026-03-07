@@ -1,11 +1,17 @@
 import type { KVNamespace } from '@cloudflare/workers-types';
 
-function getKV(): KVNamespace | null {
-  return (globalThis as any).env?.KV ?? null;
+async function getKV(): Promise<KVNamespace | null> {
+  try {
+    const { getRequestContext } = await import(/* webpackIgnore: true */ '@cloudflare/next-on-pages');
+    const { env } = getRequestContext() as { env: Record<string, any> };
+    return (env?.KV as KVNamespace) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function cacheGet<T>(key: string): Promise<T | null> {
-  const kv = getKV();
+  const kv = await getKV();
   if (!kv) return null;
   try {
     const val = await kv.get(key, 'json');
@@ -14,7 +20,7 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
 }
 
 export async function cacheSet(key: string, value: unknown, ttlSeconds: number): Promise<void> {
-  const kv = getKV();
+  const kv = await getKV();
   if (!kv) return;
   try {
     await kv.put(key, JSON.stringify(value), { expirationTtl: ttlSeconds });
@@ -22,7 +28,7 @@ export async function cacheSet(key: string, value: unknown, ttlSeconds: number):
 }
 
 export async function cacheDel(key: string): Promise<void> {
-  const kv = getKV();
+  const kv = await getKV();
   if (!kv) return;
   try { await kv.delete(key); } catch { /* non-fatal */ }
 }
