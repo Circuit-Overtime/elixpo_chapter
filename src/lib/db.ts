@@ -625,7 +625,7 @@ export async function listUserOAuthClients(db: D1Database, userId: string) {
       `SELECT client_id, name, description, logo_url, redirect_uris, scopes,
               is_active, created_at, last_used, request_count
        FROM oauth_clients
-       WHERE owner_id = ?
+       WHERE owner_id = ? AND is_active = 1
        ORDER BY created_at DESC`
     )
     .bind(userId)
