@@ -34,6 +34,10 @@ push_secrets() {
     # NEXT_PUBLIC_ vars are baked at build time, not runtime secrets
     [[ "$key" == NEXT_PUBLIC_* ]] && continue
 
+    # Skip vars already defined in wrangler.toml (would cause "binding already in use" error)
+    [[ "$key" == "ENVIRONMENT" || "$key" == "NODE_ENV" || \
+       "$key" == "JWT_EXPIRATION_MINUTES" || "$key" == "REFRESH_TOKEN_EXPIRATION_DAYS" ]] && continue
+
     echo "  Setting: $key"
     echo "$value" | npx wrangler pages secret put "$key" --project-name "$PROJECT" 2>&1
     count=$((count + 1))
