@@ -62,15 +62,20 @@ class SmtpConnection {
       if (ehlo2.code !== 250) throw new Error(`SMTP EHLO after STARTTLS failed: ${ehlo2.text}`);
     }
 
-    // AUTH LOGIN
-    const authStart = await this.command('AUTH LOGIN');
-    if (authStart.code !== 334) throw new Error(`SMTP AUTH LOGIN failed: ${authStart.text}`);
+    // AUTH — try PLAIN first (Gmail), fall back to LOGIN (Zoho)
+    const plainToken = btoa(`\0${config.auth.user}\0${config.auth.pass}`);
+    const authPlain = await this.command(`AUTH PLAIN ${plainToken}`);
+    if (authPlain.code !== 235) {
+      // Fall back to AUTH LOGIN
+      const authStart = await this.command('AUTH LOGIN');
+      if (authStart.code !== 334) throw new Error(`SMTP AUTH failed: PLAIN=${authPlain.text}, LOGIN=${authStart.text}`);
 
-    const userResp = await this.command(btoa(config.auth.user));
-    if (userResp.code !== 334) throw new Error(`SMTP AUTH user failed: ${userResp.text}`);
+      const userResp = await this.command(btoa(config.auth.user));
+      if (userResp.code !== 334) throw new Error(`SMTP AUTH user failed: ${userResp.text}`);
 
-    const passResp = await this.command(btoa(config.auth.pass));
-    if (passResp.code !== 235) throw new Error(`SMTP AUTH failed: ${passResp.text}`);
+      const passResp = await this.command(btoa(config.auth.pass));
+      if (passResp.code !== 235) throw new Error(`SMTP AUTH failed: ${passResp.text}`);
+    }
   }
 
   async send(mail: MailMessage): Promise<void> {
