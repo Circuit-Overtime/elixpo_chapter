@@ -71,7 +71,12 @@ const RegisterPage = () => {
         return;
       }
 
-      window.location.href = '/dashboard/oauth-apps';
+      // Redirect email/password users to set their display name
+      if (data.needsDisplayName) {
+        window.location.href = '/setup-name';
+      } else {
+        window.location.href = '/dashboard/oauth-apps';
+      }
     } catch {
       setError('Network error, please try again');
     } finally {

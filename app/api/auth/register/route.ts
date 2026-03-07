@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
     if (provider === 'email') {
       // Hash password
       const passwordHash = await hashPassword(password);
+      const displayName = generateRandomDisplayName();
 
       // Create user in D1
       try {
@@ -115,6 +116,7 @@ export async function POST(request: NextRequest) {
           id: userId,
           email,
           passwordHash,
+          displayName,
         });
 
         // Create identity
@@ -237,6 +239,8 @@ export async function POST(request: NextRequest) {
         expires_in: parseInt(process.env.JWT_EXPIRATION_MINUTES || '15') * 60,
         token_type: 'Bearer',
       },
+      // Signal frontend to show display name setup for email/password signups
+      ...(provider === 'email' && { needsDisplayName: true }),
     });
 
     // Set secure cookies
