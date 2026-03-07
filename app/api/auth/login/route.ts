@@ -221,6 +221,7 @@ export async function POST(request: NextRequest) {
         email,
         provider,
         isAdmin: isAdminUser,
+        displayName: user.display_name || null,
       },
       tokens: {
         access_token: accessToken,
@@ -228,6 +229,8 @@ export async function POST(request: NextRequest) {
         expires_in: maxAge,
         token_type: 'Bearer',
       },
+      // If email/password user has no display name, prompt them to set one
+      ...(provider === 'email' && !user.display_name && { needsDisplayName: true }),
     });
 
     // Set secure httpOnly cookies

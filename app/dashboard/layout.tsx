@@ -40,6 +40,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string>('');
+  const [displayName, setDisplayName] = useState<string>('');
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       })
       .then((data: any) => {
         if (data?.email) setUserEmail(data.email);
+        if (data?.displayName) setDisplayName(data.displayName);
         if (data?.avatar) setUserAvatar(data.avatar);
       })
       .catch(() => {});
@@ -128,7 +130,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   flexShrink: 0,
                 }}
               >
-                {userEmail ? userEmail.charAt(0).toUpperCase() : 'E'}
+                {(displayName || userEmail)?.charAt(0).toUpperCase() || 'E'}
               </Box>
             )}
             <Typography
@@ -141,9 +143,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}
-              title={userEmail}
+              title={displayName || userEmail}
             >
-              {userEmail ? userEmail.split('@')[0] : 'Elixpo'}
+              {displayName || (userEmail ? userEmail.split('@')[0] : 'Elixpo')}
             </Typography>
           </Box>
 

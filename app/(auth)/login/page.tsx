@@ -67,6 +67,8 @@ const LoginContent = () => {
       // Otherwise fall back to the default dashboard.
       if (next) {
         window.location.href = next;
+      } else if (data.needsDisplayName) {
+        window.location.href = '/setup-name';
       } else if (data.user?.isAdmin) {
         window.location.href = '/admin';
       } else {

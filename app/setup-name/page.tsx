@@ -81,7 +81,23 @@ const SetupNamePage = () => {
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    // If user has no name yet, assign a random one so the sidebar isn't empty
+    if (!currentName) {
+      try {
+        const adj = ['swift', 'cool', 'bright', 'bold', 'calm', 'keen', 'wild', 'free'];
+        const noun = ['fox', 'bear', 'hawk', 'wolf', 'lynx', 'deer', 'owl', 'hare'];
+        const randomName = `${adj[Math.floor(Math.random() * adj.length)]}-${noun[Math.floor(Math.random() * noun.length)]}`;
+        await fetch('/api/auth/me', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ display_name: randomName }),
+        });
+      } catch {
+        // non-critical
+      }
+    }
     router.push('/dashboard/oauth-apps');
   };
 
