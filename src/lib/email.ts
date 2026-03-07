@@ -447,6 +447,72 @@ export const emailTemplates = {
     return { subject, html, text };
   },
 
+  // OAuth App registered
+  appRegistered: (recipientName: string, appName: string, clientId: string) => {
+    const firstName = recipientName.split(' ')[0];
+    const subject = `OAuth app registered: ${appName}`;
+    const html = buildEmail('App Registered', `
+      <h1 class="title">OAuth application registered</h1>
+      <p>Hello, ${firstName}</p>
+      <p>Your new OAuth application has been successfully registered on Elixpo Accounts.</p>
+
+      <table class="info-table">
+        <tr>
+          <td>App Name</td>
+          <td>${appName}</td>
+        </tr>
+        <tr>
+          <td>Client ID</td>
+          <td><code>${clientId}</code></td>
+        </tr>
+        <tr>
+          <td>Created</td>
+          <td>${new Date().toUTCString()}</td>
+        </tr>
+      </table>
+
+      <p>You can manage your application from the <a href="${APP_URL}/dashboard/oauth-apps" style="color:#22c55e;">Developer Portal</a>.</p>
+
+      <div class="notice">
+        <p><strong>Reminder:</strong> Store your client secret securely. It cannot be retrieved after creation. If lost, you can regenerate it from the dashboard.</p>
+      </div>
+    `);
+    const text = `OAuth app "${appName}" (${clientId}) registered successfully.\n\nManage it at ${APP_URL}/dashboard/oauth-apps`;
+    return { subject, html, text };
+  },
+
+  // OAuth App deleted / deactivated
+  appDeleted: (recipientName: string, appName: string, clientId: string) => {
+    const firstName = recipientName.split(' ')[0];
+    const subject = `OAuth app deactivated: ${appName}`;
+    const html = buildEmail('App Deactivated', `
+      <h1 class="title">OAuth application deactivated</h1>
+      <p>Hello, ${firstName}</p>
+      <p>Your OAuth application has been deactivated and will no longer accept authentication requests.</p>
+
+      <table class="info-table">
+        <tr>
+          <td>App Name</td>
+          <td>${appName}</td>
+        </tr>
+        <tr>
+          <td>Client ID</td>
+          <td><code>${clientId}</code></td>
+        </tr>
+        <tr>
+          <td>Deactivated</td>
+          <td>${new Date().toUTCString()}</td>
+        </tr>
+      </table>
+
+      <div class="notice">
+        <p>If you did not deactivate this application, secure your account immediately and contact us at <a href="mailto:accounts@elixpo.com" style="color:#713f12;">accounts@elixpo.com</a>.</p>
+      </div>
+    `);
+    const text = `OAuth app "${appName}" (${clientId}) has been deactivated.\n\nIf this was not you, contact accounts@elixpo.com immediately.`;
+    return { subject, html, text };
+  },
+
   // Admin: account suspended
   accountSuspended: (recipientName: string, reason?: string) => {
     const firstName = recipientName.split(' ')[0];
