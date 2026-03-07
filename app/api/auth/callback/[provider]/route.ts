@@ -74,13 +74,14 @@ export async function GET(
       );
     }
 
-    // Get OAuth config
+    // Get OAuth config — derive origin from the request so it works in any environment
+    const origin = new URL(request.url).origin;
     const config = getOAuthConfig(provider.toLowerCase(), {
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
       GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
       GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
       GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
-    });
+    }, origin);
 
     if (!config) {
       return NextResponse.redirect(

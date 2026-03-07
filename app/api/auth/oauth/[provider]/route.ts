@@ -19,12 +19,13 @@ export async function GET(
     return NextResponse.json({ error: 'invalid_mode' }, { status: 400 });
   }
 
+  const origin = new URL(request.url).origin;
   const config = getOAuthConfig(provider.toLowerCase(), {
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
-  });
+  }, origin);
 
   if (!config) {
     return NextResponse.redirect(
