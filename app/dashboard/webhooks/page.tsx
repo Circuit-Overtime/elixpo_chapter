@@ -103,7 +103,7 @@ export default function WebhooksPage() {
       setLoading(true);
       const res = await fetch('/api/auth/webhooks', { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch webhooks');
-      const data = await res.json();
+      const data: any = await res.json();
       setWebhooks(data.webhooks || []);
     } catch {
       showSnack('Failed to load webhooks', 'error');
@@ -142,7 +142,7 @@ export default function WebhooksPage() {
         }),
       });
       if (!res.ok) {
-        const err = await res.json();
+        const err: any = await res.json();
         throw new Error(err.error || 'Failed to create webhook');
       }
       setOpenDialog(false);
@@ -177,7 +177,7 @@ export default function WebhooksPage() {
         method: 'POST',
         credentials: 'include',
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (data.success) {
         showSnack(`Test delivered (HTTP ${data.statusCode})`, 'success');
       } else {

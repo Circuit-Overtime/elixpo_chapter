@@ -41,7 +41,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        const user = await response.json();
+        const user: any = await response.json();
 
         if (!user.isAdmin) {
           setSession(null);

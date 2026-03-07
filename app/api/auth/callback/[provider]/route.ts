@@ -369,7 +369,7 @@ async function exchangeCodeForTokens(
       return null;
     }
 
-    return await response.json();
+    return await response.json() as any;
   } catch (err) {
     console.error('Token exchange error:', err);
     return null;
@@ -397,7 +397,7 @@ async function fetchUserInfoFromProvider(
       return null;
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
 
     switch (provider) {
       case 'google':

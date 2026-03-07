@@ -161,7 +161,7 @@ const ProfilePage = () => {
         body: JSON.stringify({ locale, timezone }),
       });
       if (!res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         throw new Error(data.error || 'Failed to update profile');
       }
       setUpdateSuccess('Profile updated successfully.');
@@ -184,7 +184,7 @@ const ProfilePage = () => {
         body: JSON.stringify(notifPrefs),
       });
       if (!res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         throw new Error(data.error || 'Failed to save preferences');
       }
       setNotifSuccess('Notification preferences saved.');
@@ -204,7 +204,7 @@ const ProfilePage = () => {
         credentials: 'include',
       });
       if (!res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         throw new Error(data.error || 'Failed to delete account');
       }
       router.push('/');

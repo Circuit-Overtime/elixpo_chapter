@@ -73,7 +73,7 @@ export default function OAuthAppSettingsPage() {
       try {
         const res = await fetch(`/api/auth/oauth-clients/${clientId}`, { credentials: 'include' });
         if (!res.ok) throw new Error('Not found');
-        const data = await res.json();
+        const data: any = await res.json();
         setApp(data);
         setForm({
           name: data.name || '',
@@ -120,11 +120,11 @@ export default function OAuthAppSettingsPage() {
       });
 
       if (!res.ok) {
-        const err = await res.json();
+        const err: any = await res.json();
         throw new Error(err.error || 'Failed to save');
       }
 
-      const updated = await res.json();
+      const updated: any = await res.json();
       setApp(updated);
       setMessage({ text: 'Application updated successfully', type: 'success' });
     } catch (err: any) {

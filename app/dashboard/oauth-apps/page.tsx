@@ -91,7 +91,7 @@ const OAuthAppsPage = () => {
       setAppLoading(true);
       const response = await fetch('/api/auth/oauth-apps', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch applications');
-      const data = await response.json();
+      const data: any = await response.json();
       setApps(data.apps || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load applications');
@@ -132,11 +132,11 @@ const OAuthAppsPage = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData: any = await response.json();
         throw new Error(errorData.error || 'Failed to create application');
       }
 
-      const data = await response.json();
+      const data: any = await response.json();
       setNewAppData(data);
       setOpenSecretDialog(true);
       setOpenDialog(false);
