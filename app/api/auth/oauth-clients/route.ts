@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
       try {
         const owner = await getUserById(db, auth.sub) as any;
         if (owner?.email) {
-          const ownerName = owner.email.split('@')[0];
+          const ownerName = owner.display_name || owner.email.split('@')[0];
           await sendAppRegisteredEmail(owner.email, ownerName, name, clientId);
         }
       } catch (emailError) {

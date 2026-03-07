@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
 
     // Check if already verified
-    const user = await db.prepare('SELECT email, email_verified FROM users WHERE id = ?').bind(payload.sub).first() as any;
+    const user = await db.prepare('SELECT email, email_verified, display_name FROM users WHERE id = ?').bind(payload.sub).first() as any;
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     if (user.email_verified) return NextResponse.json({ error: 'Email is already verified' }, { status: 400 });
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     ).bind(generateUUID(), payload.sub, user.email, otp, verificationToken, expiresAt).run();
 
     // Send OTP email
-    const recipientName = user.email.split('@')[0];
+    const recipientName = user.display_name || user.email.split('@')[0];
     await sendOTPEmail(user.email, recipientName, otp);
 
     console.log(`[Verification] OTP sent to ${user.email}`);

@@ -210,7 +210,7 @@ export async function DELETE(
     try {
       const owner = await getUserById(db, payload.sub) as any;
       if (owner?.email) {
-        const ownerName = owner.email.split('@')[0];
+        const ownerName = owner.display_name || owner.email.split('@')[0];
         await sendAppDeletedEmail(owner.email, ownerName, app.name, client_id);
       }
     } catch (emailError) {

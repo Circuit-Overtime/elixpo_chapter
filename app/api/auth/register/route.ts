@@ -150,8 +150,7 @@ export async function POST(request: NextRequest) {
             'INSERT INTO email_verification_tokens (id, user_id, email, otp_code, verification_token, expires_at) VALUES (?, ?, ?, ?, ?, ?)'
           ).bind(generateUUID(), userId, email, otpCode, generateUUID(), expiresAt).run();
 
-          const recipientName = email.split('@')[0];
-          await sendOTPEmail(email, recipientName, otpCode);
+          await sendOTPEmail(email, displayName, otpCode);
           console.log(`[Register] Verification OTP sent to ${email}`);
         } catch (otpError) {
           console.error('[Register] Failed to send verification email:', otpError);

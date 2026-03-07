@@ -379,7 +379,7 @@ const ProfilePage = () => {
                   />
                 ) : (
                   <Box sx={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #a3e635 0%, #65a30d 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', fontWeight: 700, color: '#0f0f0f' }}>
-                    {profile.email?.charAt(0).toUpperCase()}
+                    {(profile.displayName || profile.email)?.charAt(0).toUpperCase()}
                   </Box>
                 )}
                 <Box>
@@ -392,6 +392,64 @@ const ProfilePage = () => {
                     )}
                   </Box>
                 </Box>
+              </Box>
+
+              {/* Display Name */}
+              <Box>
+                <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8rem', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Display Name
+                </Typography>
+                {nameMsg && (
+                  <Alert severity={nameMsg.type} sx={{ mb: 1.5, bgcolor: nameMsg.type === 'success' ? 'rgba(163,230,53,0.1)' : 'rgba(239,68,68,0.1)', color: nameMsg.type === 'success' ? '#a3e635' : '#ef4444', border: `1px solid ${nameMsg.type === 'success' ? 'rgba(163,230,53,0.3)' : 'rgba(239,68,68,0.3)'}`, '& .MuiAlert-icon': { color: nameMsg.type === 'success' ? '#a3e635' : '#ef4444' }, py: 0 }}>
+                    {nameMsg.text}
+                  </Alert>
+                )}
+                {!editingName ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px' }}>
+                    <Typography sx={{ color: '#f5f5f4', fontWeight: 500, flex: 1 }}>
+                      {profile.displayName || <span style={{ color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>No display name set</span>}
+                    </Typography>
+                    <Button
+                      size="small"
+                      onClick={() => { setEditingName(true); setNewDisplayName(profile.displayName || ''); setNameMsg(null); }}
+                      startIcon={<EditIcon sx={{ fontSize: '0.9rem' }} />}
+                      sx={{ color: '#a3e635', textTransform: 'none', fontSize: '0.8rem', '&:hover': { backgroundColor: 'rgba(163,230,53,0.08)' } }}
+                    >
+                      Edit
+                    </Button>
+                  </Box>
+                ) : (
+                  <Box>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <TextField
+                        value={newDisplayName}
+                        onChange={(e) => setNewDisplayName(e.target.value)}
+                        placeholder="e.g. John, CoolDev, swift-fox"
+                        inputProps={{ maxLength: 32 }}
+                        size="small"
+                        sx={{ ...textFieldSx, flex: 1 }}
+                        disabled={nameLoading}
+                      />
+                      <Button
+                        onClick={handleUpdateDisplayName}
+                        disabled={nameLoading || !newDisplayName.trim()}
+                        sx={{ background: 'rgba(163,230,53,0.15)', color: '#a3e635', border: '1px solid rgba(163,230,53,0.3)', fontWeight: 600, textTransform: 'none', fontSize: '0.85rem', py: 0.8, '&:hover': { background: 'rgba(163,230,53,0.25)' }, '&:disabled': { color: 'rgba(255,255,255,0.3)' } }}
+                      >
+                        {nameLoading ? 'Saving...' : 'Save'}
+                      </Button>
+                      <Button
+                        onClick={() => { setEditingName(false); setNameMsg(null); }}
+                        disabled={nameLoading}
+                        sx={{ color: 'rgba(255,255,255,0.5)', textTransform: 'none', fontSize: '0.85rem', py: 0.8 }}
+                      >
+                        Cancel
+                      </Button>
+                    </Box>
+                    <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', mt: 0.8 }}>
+                      2-32 characters. You can change this up to 2 times every 2 weeks.
+                    </Typography>
+                  </Box>
+                )}
               </Box>
 
               {/* Sign-in Method */}
