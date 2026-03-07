@@ -1,10 +1,12 @@
-export const runtime = 'edge';
+// runtime = 'edge' omitted — on Cloudflare Pages all routes are edge workers
+// regardless; omitting it lets `next dev` use Node.js runtime so SMTP works locally.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyJWT } from '@/lib/jwt';
-import { getOAuthClientById, getOAuthClientByIdWithSecret, updateOAuthClient } from '@/lib/db';
+import { getOAuthClientById, getOAuthClientByIdWithSecret, updateOAuthClient, getUserById } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
 import { generateRandomString, hashString } from '@/lib/webcrypto';
+import { sendAppDeletedEmail } from '@/lib/email';
 
 /**
  * PUT /api/auth/oauth-clients/[client_id]
@@ -203,6 +205,17 @@ export async function DELETE(
     }
 
     console.log(`[OAuth Client] Deactivated: ${client_id}`);
+
+    // Notify owner via email (fire-and-forget)
+    try {
+      const owner = await getUserById(db, payload.sub) as any;
+      if (owner?.email) {
+        const ownerName = owner.email.split('@')[0];
+        await sendAppDeletedEmail(owner.email, ownerName, app.name, client_id);
+      }
+    } catch (emailError) {
+      console.error('[OAuth Client] Failed to send deactivation email:', emailError);
+    }
 
     return NextResponse.json({
       message: 'Application deactivated successfully',

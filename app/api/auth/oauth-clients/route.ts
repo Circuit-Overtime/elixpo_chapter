@@ -1,10 +1,12 @@
-export const runtime = 'edge';
+// runtime = 'edge' omitted — on Cloudflare Pages all routes are edge workers
+// regardless; omitting it lets `next dev` use Node.js runtime so SMTP works locally.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { generateRandomString, hashString } from '@/lib/webcrypto';
-import { createOAuthClient, getOAuthClientById } from '@/lib/db';
+import { createOAuthClient, getOAuthClientById, getUserById } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
 import { verifyJWT } from '@/lib/jwt';
+import { sendAppRegisteredEmail } from '@/lib/email';
 
 async function getAuth(request: NextRequest) {
   const token =
@@ -122,6 +124,17 @@ export async function POST(request: NextRequest) {
         homepageUrl: homepage_url,
       });
       console.log(`[OAuth Client] Registered: ${name} (${clientId})`);
+
+      // Notify owner via email (fire-and-forget)
+      try {
+        const owner = await getUserById(db, auth.sub) as any;
+        if (owner?.email) {
+          const ownerName = owner.email.split('@')[0];
+          await sendAppRegisteredEmail(owner.email, ownerName, name, clientId);
+        }
+      } catch (emailError) {
+        console.error('[OAuth Client] Failed to send registration email:', emailError);
+      }
     } catch (dbError) {
       console.error('[OAuth Client] Database storage error:', dbError);
       return NextResponse.json(

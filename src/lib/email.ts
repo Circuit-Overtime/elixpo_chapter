@@ -591,3 +591,23 @@ export async function sendApiKeyCreatedEmail(
   const t = emailTemplates.apiKeyCreated(recipientName, keyName, keyPrefix, scopes);
   await sendEmail({ to: email, subject: t.subject, html: t.html, text: t.text });
 }
+
+export async function sendAppRegisteredEmail(
+  email: string,
+  recipientName: string,
+  appName: string,
+  clientId: string
+): Promise<void> {
+  const t = emailTemplates.appRegistered(recipientName, appName, clientId);
+  await sendEmail({ to: email, subject: t.subject, html: t.html, text: t.text });
+}
+
+export async function sendAppDeletedEmail(
+  email: string,
+  recipientName: string,
+  appName: string,
+  clientId: string
+): Promise<void> {
+  const t = emailTemplates.appDeleted(recipientName, appName, clientId);
+  await sendEmail({ to: email, subject: t.subject, html: t.html, text: t.text });
+}
