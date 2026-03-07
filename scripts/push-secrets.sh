@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Reads every KEY=VALUE pair from .env and pushes them as Cloudflare Pages secrets.
-# Usage: ./scripts/push-secrets.sh [project-name]
+# Pushes .env secrets to Cloudflare, builds, and deploys.
+# Usage: ./scripts/push-secrets.sh
 
 set -euo pipefail
 
-PROJECT="${1:-elixpo-accounts}"
+PROJECT="elixpo-accounts"
 ENV_FILE=".env"
 
 if [ ! -f "$ENV_FILE" ]; then
@@ -12,27 +12,37 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 1
 fi
 
-# Skip NEXT_PUBLIC_* vars — they are baked in at build time, not runtime secrets
-# Skip blank lines and comments
+# ── 1. Push secrets ──────────────────────────────────────────────────
+echo "=== Pushing secrets to Cloudflare Pages ==="
 count=0
 while IFS= read -r line; do
-  # Skip empty lines, comments
   [[ -z "$line" || "$line" =~ ^# ]] && continue
 
   key="${line%%=*}"
   value="${line#*=}"
 
-  # Strip surrounding quotes from value if present
+  # Strip surrounding quotes
   value="${value#\"}"
   value="${value%\"}"
 
-  # Skip NEXT_PUBLIC_ vars (client-side only, embedded at build time)
+  # NEXT_PUBLIC_ vars are baked at build time, not runtime secrets
   [[ "$key" == NEXT_PUBLIC_* ]] && continue
 
-  echo "Setting secret: $key"
+  echo "  Setting: $key"
   echo "$value" | npx wrangler pages secret put "$key" --project-name "$PROJECT" 2>&1
   count=$((count + 1))
 done < "$ENV_FILE"
-
+echo "Pushed $count secrets."
 echo ""
-echo "Done — pushed $count secrets to project '$PROJECT'"
+
+# ── 2. Build ─────────────────────────────────────────────────────────
+echo "=== Building for Cloudflare Pages ==="
+npm run pages:build
+echo "Build complete."
+echo ""
+
+# ── 3. Deploy ─────────────────────────────────────────────────────────
+echo "=== Deploying to Cloudflare Pages ==="
+npx wrangler pages deploy .vercel/output/static --project-name "$PROJECT"
+echo ""
+echo "Deploy complete."
