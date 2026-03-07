@@ -25,8 +25,9 @@ function getSmtpConfig() {
 async function sendViaNodemailer(options: EmailOptions): Promise<void> {
   const { host, port, user, pass, fromName } = getSmtpConfig();
 
-  // Dynamic import — keeps nodemailer out of the edge bundle
-  const nodemailer = (await import(/* webpackIgnore: true */ 'nodemailer')).default;
+
+  const mod = 'node' + 'mailer';
+  const nodemailer = (await import(mod)).default;
 
   const transporter = nodemailer.createTransport({
     host,
