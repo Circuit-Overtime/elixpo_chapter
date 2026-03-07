@@ -52,6 +52,16 @@ export async function POST(request: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    // Enforce email verification
+    const db = await getDatabase();
+    const user = await getUserById(db, auth.sub) as any;
+    if (user && !user.email_verified) {
+      return NextResponse.json(
+        { error: 'Please verify your email address before registering an OAuth application.' },
+        { status: 403 }
+      );
+    }
+
     const body: any = await request.json();
     const { name, redirect_uris, logo_uri, description, homepage_url, scopes } = body;
 
@@ -112,7 +122,6 @@ export async function POST(request: NextRequest) {
 
     // Store in D1
     try {
-      const db = await getDatabase();
       await createOAuthClient(db, {
         clientId,
         clientSecretHash,

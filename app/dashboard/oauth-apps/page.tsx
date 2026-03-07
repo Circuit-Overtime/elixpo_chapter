@@ -3,13 +3,14 @@
 import {
   Box, Button, TextField, Typography, Dialog, DialogTitle, DialogContent,
   DialogActions, Table, TableBody, TableCell, TableContainer, TableHead,
-  TableRow, Paper, IconButton, Chip, Alert,
+  TableRow, Paper, IconButton, Chip, Alert, Snackbar,
 } from '@mui/material';
 import { useState, useEffect } from 'react';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import SettingsIcon from '@mui/icons-material/Settings';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Link from 'next/link';
 
 interface OAuthApp {
@@ -75,6 +76,10 @@ const OAuthAppsPage = () => {
   const [secretCopied, setSecretCopied] = useState(false);
   const [idCopied, setIdCopied] = useState(false);
 
+  const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
+  const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({ open: false, message: '', severity: 'success' });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; clientId: string; appName: string }>({ open: false, clientId: '', appName: '' });
+
   const [formData, setFormData] = useState({
     name: '',
     homepage_url: '',
@@ -84,7 +89,24 @@ const OAuthAppsPage = () => {
 
   useEffect(() => {
     fetchApps();
+    fetchVerificationStatus();
   }, []);
+
+  const fetchVerificationStatus = async () => {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (res.ok) {
+        const data : any = await res.json();
+        setEmailVerified(data.user?.emailVerified ?? false);
+      }
+    } catch {
+      // fail silently
+    }
+  };
+
+  const showToast = (message: string, severity: 'success' | 'error' | 'warning') => {
+    setToast({ open: true, message, severity });
+  };
 
   const fetchApps = async () => {
     try {
@@ -162,17 +184,18 @@ const OAuthAppsPage = () => {
   };
 
   const handleDeleteApp = async (clientId: string) => {
-    if (!confirm('Are you sure? This action cannot be undone.')) return;
     try {
       const response = await fetch(`/api/auth/oauth-clients/${clientId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to delete application');
-      setSuccessMessage('Application deleted successfully');
+      showToast('Application deleted successfully', 'success');
+      setDeleteConfirm({ open: false, clientId: '', appName: '' });
       await fetchApps();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete application');
+      showToast(err instanceof Error ? err.message : 'Failed to delete application', 'error');
+      setDeleteConfirm({ open: false, clientId: '', appName: '' });
     }
   };
 
@@ -205,7 +228,13 @@ const OAuthAppsPage = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setOpenDialog(true)}
+            onClick={() => {
+              if (emailVerified === false) {
+                showToast('Please verify your email address before registering an OAuth application.', 'warning');
+                return;
+              }
+              setOpenDialog(true);
+            }}
             sx={{
               background: 'rgba(163, 230, 53, 0.15)',
               color: '#a3e635',
@@ -324,7 +353,7 @@ const OAuthAppsPage = () => {
                           </IconButton>
                           <IconButton
                             size="small"
-                            onClick={() => handleDeleteApp(app.client_id)}
+                            onClick={() => setDeleteConfirm({ open: true, clientId: app.client_id, appName: app.name })}
                             sx={{ color: '#ef4444', '&:hover': { backgroundColor: 'rgba(239, 68, 68, 0.1)' } }}
                             title="Delete Application"
                           >
@@ -432,6 +461,46 @@ const OAuthAppsPage = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, clientId: '', appName: '' })}
+        PaperProps={{ sx: dialogPaperSx }}
+      >
+        <DialogTitle sx={{ color: '#f5f5f4', fontWeight: 700, borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WarningAmberIcon sx={{ color: '#ef4444' }} />
+            Deactivate application
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 1 }}>
+            Are you sure you want to deactivate <strong style={{ color: '#f5f5f4' }}>{deleteConfirm.appName}</strong>?
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.4)' }}>
+            This will immediately stop all OAuth authentication requests for this application. This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', p: 2 }}>
+          <Button onClick={() => setDeleteConfirm({ open: false, clientId: '', appName: '' })} sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleDeleteApp(deleteConfirm.clientId)}
+            variant="contained"
+            sx={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              color: '#ef4444',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              fontWeight: 600,
+              '&:hover': { background: 'rgba(239, 68, 68, 0.25)' },
+            }}
+          >
+            Deactivate
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Secret Credentials Dialog */}
       <Dialog
         open={openSecretDialog}
@@ -517,6 +586,27 @@ const OAuthAppsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Toast Snackbar */}
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={4000}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setToast({ ...toast, open: false })}
+          severity={toast.severity}
+          variant="filled"
+          sx={{
+            ...(toast.severity === 'warning' && { backgroundColor: '#b45309', color: '#fff' }),
+            ...(toast.severity === 'success' && { backgroundColor: '#15803d', color: '#fff' }),
+            ...(toast.severity === 'error' && { backgroundColor: '#b91c1c', color: '#fff' }),
+          }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
