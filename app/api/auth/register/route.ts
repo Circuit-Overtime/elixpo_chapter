@@ -1,5 +1,4 @@
-// runtime = 'edge' omitted — on Cloudflare Pages all routes are edge workers
-// regardless; omitting it lets `next dev` use Node.js runtime so SMTP works locally.
+export const runtime = 'edge';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { generateUUID, hashString } from '@/lib/webcrypto';
