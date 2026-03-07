@@ -33,7 +33,7 @@ async function sendViaNodemailer(options: EmailOptions): Promise<void> {
 
   await transporter.sendMail({
     from: `${fromName} <${user}>`,
-    replyTo: 'noreply@elixpo.com',
+    replyTo: 'accounts@elixpo.com',
     to: options.to,
     subject: options.subject,
     html: options.html,
@@ -62,7 +62,7 @@ async function sendViaCloudflare(options: EmailOptions): Promise<void> {
       headers: {
         'X-Mailer': 'Elixpo Accounts Platform',
         'X-Priority': '3',
-        'Reply-To': 'noreply@elixpo.com',
+        'Reply-To': 'accounts@elixpo.com',
       },
     }
   );
@@ -266,13 +266,13 @@ function buildEmail(title: string, bodyHtml: string): string {
   <div class="wrapper">
     <div class="container">
       <div class="header">
-        <div class="header-logo">ELIXPO<span>.</span></div>
+        <div class="header-logo">ELIXPO <span>ACCOUNTS</span></div>
       </div>
       <div class="body">
         ${bodyHtml}
       </div>
       <div class="footer">
-        <p>This message was sent from Elixpo Accounts &lt;<a href="mailto:accounts@elixpo.com">accounts@elixpo.com</a>&gt;</p>
+        <p>This email was sent by <strong>elixpoo@gmail.com</strong>, a registered worker of <a href="mailto:accounts@elixpo.com" style="color:#22c55e;">accounts@elixpo.com</a>. Please reply to <a href="mailto:accounts@elixpo.com" style="color:#22c55e;">accounts@elixpo.com</a> for any queries.</p>
         <p>
           <a href="${APP_URL}">accounts.elixpo.com</a>
           &nbsp;&middot;&nbsp;
@@ -300,7 +300,7 @@ export const emailTemplates = {
     const subject = `Your Elixpo verification code: ${otpCode}`;
     const html = buildEmail('Email Verification', `
       <h1 class="title">Verify your email address</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>Use the verification code below to confirm your Elixpo account. This code is valid for <strong>${expiryMinutes} minutes</strong> and can only be used once.</p>
 
       <div class="code-block">
@@ -324,7 +324,7 @@ export const emailTemplates = {
     const subject = 'Reset your Elixpo password';
     const html = buildEmail('Password Reset', `
       <h1 class="title">Password reset request</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>We received a request to reset the password associated with this email address. If this was you, click the button below to choose a new password.</p>
 
       <div class="btn-container">
@@ -353,7 +353,7 @@ export const emailTemplates = {
     const subject = 'Welcome to Elixpo — please verify your email';
     const html = buildEmail('Welcome to Elixpo', `
       <h1 class="title">Welcome to Elixpo</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>Thank you for creating an Elixpo account. To activate your account and access all features, please verify your email address by clicking the button below.</p>
 
       <div class="btn-container">
@@ -383,7 +383,7 @@ export const emailTemplates = {
     const subject = 'New sign-in to your Elixpo account';
     const html = buildEmail('Sign-in Notification', `
       <h1 class="title">New sign-in detected</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>A new sign-in to your Elixpo account was recorded. Review the details below.</p>
 
       <table class="info-table">
@@ -417,7 +417,7 @@ export const emailTemplates = {
     const subject = `New API key created: ${keyName}`;
     const html = buildEmail('API Key Created', `
       <h1 class="title">New API key created</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>A new API key has been created for your Elixpo account. Please review the details below.</p>
 
       <table class="info-table">
@@ -453,7 +453,7 @@ export const emailTemplates = {
     const subject = 'Your Elixpo account has been suspended';
     const html = buildEmail('Account Suspended', `
       <h1 class="title">Account suspended</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>Your Elixpo account has been suspended. You will not be able to sign in or use Elixpo services until the suspension is lifted.</p>
 
       ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
