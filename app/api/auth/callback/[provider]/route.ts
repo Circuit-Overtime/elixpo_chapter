@@ -201,6 +201,9 @@ export async function GET(
     try {
       await createUser(db, { id: userId, email });
 
+      // OAuth users have provider-verified emails
+      await db.prepare('UPDATE users SET email_verified = 1, email_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(userId).run();
+
       await createIdentity(db, {
         id: generateUUID(),
         userId,

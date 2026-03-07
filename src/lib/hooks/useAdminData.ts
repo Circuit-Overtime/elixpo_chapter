@@ -33,7 +33,7 @@ export interface DashboardStats {
   recentApps?: Array<{
     id: string;
     client_id: string;
-    client_name: string;
+    name: string;
     owner_id: string;
     created_at: string;
   }>;
