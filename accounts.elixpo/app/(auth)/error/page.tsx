@@ -15,6 +15,9 @@ const ErrorContent = () => {
     'invalid_request': 'Invalid request. Please contact support if the problem persists.',
     'server_error': 'Server error occurred. Please try again later.',
     'unauthorized': 'You are not authorized to access this resource.',
+    'provider_conflict': description,
+    'account_not_found': description,
+    'account_error': description,
   };
 
   const displayMessage = errorMessages[error] || description;

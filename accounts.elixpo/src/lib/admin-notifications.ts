@@ -49,7 +49,7 @@ export async function getAdminNotifications(
     ? `SELECT * FROM admin_notifications WHERE is_read = 0 ORDER BY created_at DESC LIMIT ?`
     : `SELECT * FROM admin_notifications ORDER BY created_at DESC LIMIT ?`;
   const result = await db.prepare(query).bind(limit).all();
-  return (result.results || []) as AdminNotification[];
+  return (result.results || []) as unknown as AdminNotification[];
 }
 
 export async function countUnreadNotifications(db: D1Database): Promise<number> {

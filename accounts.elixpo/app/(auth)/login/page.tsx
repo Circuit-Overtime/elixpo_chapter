@@ -3,6 +3,8 @@
 import { Box, Button, Checkbox, FormControlLabel, TextField, Typography, Divider } from '@mui/material';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 const textFieldSx = {
   '& .MuiOutlinedInput-root': {
@@ -30,7 +32,9 @@ const textFieldSx = {
   '& .MuiInputLabel-root.Mui-focused': { color: '#a3e635' },
 };
 
-const LoginPage = () => {
+const LoginContent = () => {
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -56,8 +60,11 @@ const LoginPage = () => {
         return;
       }
 
-      // Redirect based on admin status
-      if (data.user?.isAdmin) {
+      // If there's a ?next= param (e.g. from /oauth/authorize redirect), go there.
+      // Otherwise fall back to the default dashboard.
+      if (next) {
+        window.location.href = next;
+      } else if (data.user?.isAdmin) {
         window.location.href = '/admin';
       } else {
         window.location.href = '/dashboard/oauth-apps';
@@ -70,13 +77,8 @@ const LoginPage = () => {
   };
 
   const handleSSOLogin = (provider: 'google' | 'github') => {
-    const redirectUri = `${window.location.origin}/api/auth/callback/${provider}`;
-
-    if (provider === 'google') {
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=openid email profile`;
-    } else if (provider === 'github') {
-      window.location.href = `https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email`;
-    }
+    // Redirect through our backend so state cookie is set correctly before going to provider
+    window.location.href = `/api/auth/oauth/${provider}?mode=login`;
   };
 
   return (
@@ -180,5 +182,11 @@ const LoginPage = () => {
     </Box>
   );
 };
+
+const LoginPage = () => (
+  <Suspense>
+    <LoginContent />
+  </Suspense>
+);
 
 export default LoginPage;
