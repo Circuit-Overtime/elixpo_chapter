@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     title: 'Elixpo Accounts — Secure Sign In & Authentication',
     description:
       'Sign in with Google, GitHub, or email. Secure OAuth 2.0 authentication for all Elixpo services.',
-    images: ['/LOGO/logo.png'],
+    images: ['/LOGO/og-image.png'],
   },
   icons: {
     icon: '/LOGO/logo.png',
