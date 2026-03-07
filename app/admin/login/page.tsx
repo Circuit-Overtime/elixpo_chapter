@@ -27,7 +27,7 @@ export default function AdminLogin() {
       try {
         const response = await fetch('/api/auth/me', { credentials: 'include' });
         if (response.ok) {
-          const user = await response.json();
+          const user : any = await response.json();
           if (user.isAdmin) {
             router.push('/admin');
             return;
@@ -56,7 +56,7 @@ export default function AdminLogin() {
         body: JSON.stringify({ email, password, provider: 'email' }),
       });
 
-      const data = await response.json();
+       const data : any = await response.json();
 
       if (!response.ok) {
         setError(data.error || 'Login failed');
