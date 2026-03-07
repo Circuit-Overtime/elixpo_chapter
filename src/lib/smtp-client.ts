@@ -30,7 +30,7 @@ class SmtpConnection {
 
   async connect(config: SmtpConfig): Promise<void> {
     // @ts-ignore — cloudflare:sockets is a Cloudflare Workers built-in module
-    const { connect } = await import('cloudflare:sockets');
+    const { connect } = await import(/* webpackIgnore: true */ 'cloudflare:sockets');
 
     this.socket = connect(
       { hostname: config.host, port: config.port },
