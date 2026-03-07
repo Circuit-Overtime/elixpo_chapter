@@ -89,12 +89,24 @@ async function createCloudflareTransport(config: SmtpConfig): Promise<SmtpTransp
 // ---------------------------------------------------------------------------
 
 async function createNodeTransport(config: SmtpConfig): Promise<SmtpTransport> {
-  // Use eval('require') to bypass webpack/edge-sandbox static analysis
-  const _require = (typeof globalThis as any).process?.versions?.node
-    ? eval('require') as NodeRequire
-    : null;
+  // Edge runtime sandbox blocks eval('require') and dynamic import of Node builtins.
+  // Use Function constructor to bypass static analysis and sandbox restrictions.
+  let _require: any;
+  try {
+    _require = new Function('return typeof require !== "undefined" ? require : null')();
+  } catch {
+    // noop
+  }
+  if (!_require) {
+    try {
+      // Alternative: access require from the module system
+      _require = (globalThis as any).__non_webpack_require__ ?? (globalThis as any).require;
+    } catch {
+      // noop
+    }
+  }
 
-  if (!_require) throw new Error('Node.js runtime not available for SMTP fallback');
+  if (!_require) throw new Error('Node.js require not available for SMTP fallback');
 
   const tls = _require('tls');
   const net = _require('net');

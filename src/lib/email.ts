@@ -35,6 +35,14 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
     );
     console.log(`[Email] Sent to ${options.to}`);
   } catch (error) {
+    // In local dev, SMTP sockets may not be available — log the email for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[Email] SMTP unavailable in local dev. Email content logged below:');
+      console.warn(`[Email] To: ${options.to}`);
+      console.warn(`[Email] Subject: ${options.subject}`);
+      if (options.text) console.warn(`[Email] Text: ${options.text}`);
+      return; // Don't throw in dev — treat as sent
+    }
     console.error('[Email] Send failed:', error);
     throw error;
   }
