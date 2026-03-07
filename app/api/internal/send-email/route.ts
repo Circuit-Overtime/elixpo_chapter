@@ -1,4 +1,5 @@
-// NO runtime = 'edge' here — must be Node.js for nodemailer
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
 import {
   sendEmail,

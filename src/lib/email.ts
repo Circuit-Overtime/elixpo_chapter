@@ -1,5 +1,3 @@
-import nodemailer from 'nodemailer';
-
 interface EmailOptions {
   to: string;
   subject: string;
@@ -8,7 +6,9 @@ interface EmailOptions {
 }
 
 // Zoho Mail SMTP configuration for accounts@elixpo.com
-const getTransporter = () => {
+// nodemailer is loaded dynamically so the module can be bundled for edge runtime
+const getTransporter = async () => {
+  const nodemailer = (await import('nodemailer')).default;
   const host = process.env.SMTP_HOST || 'smtp.zoho.com';
   const port = parseInt(process.env.SMTP_PORT || '587');
   const user = process.env.SMTP_FROM_EMAIL || 'accounts@elixpo.com';
@@ -24,7 +24,6 @@ const getTransporter = () => {
     secure: port === 465,
     auth: { user, pass },
     tls: {
-      // Zoho requires TLS, reject unauthorized certs
       rejectUnauthorized: true,
     },
   });
@@ -32,7 +31,7 @@ const getTransporter = () => {
 
 export async function sendEmail(options: EmailOptions): Promise<void> {
   try {
-    const transporter = getTransporter();
+    const transporter = await getTransporter();
     const fromName = process.env.SMTP_FROM_NAME || 'Elixpo Accounts';
     const fromEmail = process.env.SMTP_FROM_EMAIL || 'accounts@elixpo.com';
 
