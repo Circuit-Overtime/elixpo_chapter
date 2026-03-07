@@ -23,7 +23,8 @@ async function sendViaNodemailer(options: EmailOptions): Promise<void> {
     port,
     secure: port === 465,
     auth: { user, pass },
-  });
+    authMethod: 'LOGIN',
+  } as any);
 
   await transporter.sendMail({
     from: `${fromName} <${user}>`,
