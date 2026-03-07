@@ -76,12 +76,8 @@ const RegisterPage = () => {
   };
 
   const handleSSORegister = (provider: 'google' | 'github') => {
-    const redirectUri = `${window.location.origin}/api/auth/callback/${provider}`;
-    if (provider === 'google') {
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=openid email profile`;
-    } else if (provider === 'github') {
-      window.location.href = `https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email`;
-    }
+    // Redirect through our backend so state cookie is set correctly before going to provider
+    window.location.href = `/api/auth/oauth/${provider}?mode=register`;
   };
 
   return (

@@ -133,7 +133,7 @@ function AuthorizeContent() {
 
       const data = await response.json();
       // Redirect to client with authorization code
-      window.location.href = data.redirectUrl;
+      window.location.href = data.redirect_uri;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authorization failed');
       setIsLoading(false);
