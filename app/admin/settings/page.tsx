@@ -87,7 +87,7 @@ export default function SettingsPage() {
       try {
         const res = await fetch('/api/admin/notification-settings', { credentials: 'include' });
         if (res.ok) {
-          const data = await res.json();
+          const data : any = await res.json();
           setNotifSettings({
             email_new_user: Boolean(data.email_new_user),
             email_new_oauth_app: Boolean(data.email_new_oauth_app),
