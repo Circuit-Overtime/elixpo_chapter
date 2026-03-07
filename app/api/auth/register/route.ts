@@ -9,6 +9,7 @@ import { createRegisterRateLimiter } from '@/lib/rate-limit';
 import { getUserByEmail, getIdentitiesByUserId, createUser, createIdentity, logAuditEvent, createRefreshToken as storeRefreshToken } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
 import { sendOTPEmail } from '@/lib/email';
+import { generateRandomDisplayName } from '@/lib/random-name';
 
 /**
  * POST /api/auth/register
