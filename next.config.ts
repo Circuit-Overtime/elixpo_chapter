@@ -3,10 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: 'standalone',
   eslint: {
-    // eslint-config-next sub-modules (core-web-vitals, typescript) are not
-    // available in this environment — skip ESLint at build time.
     ignoreDuringBuilds: true,
   },
+  // nodemailer uses Node.js TCP sockets (net, stream, fs) which can't be
+  // bundled for Cloudflare edge. Externalize it so webpack skips it.
+  serverExternalPackages: ['nodemailer'],
 };
 
 export default nextConfig;
