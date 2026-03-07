@@ -131,7 +131,7 @@ function AuthorizeContent() {
         throw new Error('Authorization failed');
       }
 
-      const data = await response.json();
+      const data: any = await response.json();
       // Redirect to client with authorization code
       window.location.href = data.redirect_uri;
     } catch (err) {
