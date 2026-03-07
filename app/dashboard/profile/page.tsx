@@ -32,6 +32,7 @@ interface UserProfile {
   provider: string;
   avatar?: string | null;
   emailVerified?: boolean;
+  displayName?: string | null;
 }
 
 interface NotificationPreferences {
@@ -117,6 +118,12 @@ const ProfilePage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  // Display name state
+  const [editingName, setEditingName] = useState(false);
+  const [newDisplayName, setNewDisplayName] = useState('');
+  const [nameLoading, setNameLoading] = useState(false);
+  const [nameMsg, setNameMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Email verification state
   const [verifyStep, setVerifyStep] = useState<'idle' | 'sent' | 'verifying'>('idle');
@@ -279,6 +286,44 @@ const ProfilePage = () => {
       setVerifyMsg({ text: err.message, type: 'error' });
     } finally {
       setVerifyLoading(false);
+    }
+  };
+
+  const handleUpdateDisplayName = async () => {
+    const trimmed = newDisplayName.trim();
+    if (!trimmed || trimmed.length < 2) {
+      setNameMsg({ text: 'Display name must be at least 2 characters.', type: 'error' });
+      return;
+    }
+    if (trimmed.length > 32) {
+      setNameMsg({ text: 'Display name must be 32 characters or less.', type: 'error' });
+      return;
+    }
+    if (!/^[a-zA-Z0-9 _-]+$/.test(trimmed)) {
+      setNameMsg({ text: 'Only letters, numbers, spaces, hyphens and underscores allowed.', type: 'error' });
+      return;
+    }
+    setNameLoading(true);
+    setNameMsg(null);
+    try {
+      const res = await fetch('/api/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ display_name: trimmed }),
+      });
+      if (!res.ok) {
+        const data: any = await res.json();
+        throw new Error(data.error || 'Failed to update display name');
+      }
+      setNameMsg({ text: 'Display name updated!', type: 'success' });
+      setEditingName(false);
+      setNewDisplayName('');
+      fetchProfile();
+    } catch (err: any) {
+      setNameMsg({ text: err.message, type: 'error' });
+    } finally {
+      setNameLoading(false);
     }
   };
 
