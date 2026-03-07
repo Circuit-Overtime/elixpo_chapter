@@ -53,7 +53,7 @@ const LoginContent = () => {
         body: JSON.stringify({ email, password, provider: 'email' }),
       });
 
-      const data = await res.json();
+      const data: any = await res.json();
 
       if (!res.ok) {
         setError(data.error || 'Login failed');
