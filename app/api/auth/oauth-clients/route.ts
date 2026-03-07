@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const body = await request.json();
+    const body: any = await request.json();
     const { name, redirect_uris, logo_uri, description, homepage_url, scopes } = body;
 
     // Validate required fields

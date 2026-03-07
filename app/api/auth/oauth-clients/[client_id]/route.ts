@@ -23,7 +23,7 @@ export async function PUT(
     if (!payload) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
 
     const { client_id } = await params;
-    const body = await request.json();
+    const body: any = await request.json();
     const { name, redirect_uris, scopes, description, homepage_url, logo_url } = body;
 
     if (!client_id) {

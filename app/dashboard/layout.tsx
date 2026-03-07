@@ -47,7 +47,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         if (res.ok) return res.json();
         return null;
       })
-      .then((data) => {
+      .then((data: any) => {
         if (data?.email) setUserEmail(data.email);
       })
       .catch(() => {});

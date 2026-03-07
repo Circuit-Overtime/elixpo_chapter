@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
   const auth = await getAuth(request);
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const body = await request.json();
+  const body: any = await request.json();
   const { url, events, secret } = body as {
     url: string;
     events: string[];

@@ -23,7 +23,7 @@ import { getDatabase } from '@/lib/d1-client';
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: any = await request.json();
     const { email, password, provider, oauth_code } = body;
 
     const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||

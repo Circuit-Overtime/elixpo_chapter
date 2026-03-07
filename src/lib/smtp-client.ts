@@ -34,7 +34,7 @@ class SmtpConnection {
 
     this.socket = connect(
       { hostname: config.host, port: config.port },
-      { secureTransport: config.secure ? 'on' : 'off' }
+      { secureTransport: config.secure ? 'on' : 'off' } as any
     );
 
     this.reader = this.socket.readable.getReader();

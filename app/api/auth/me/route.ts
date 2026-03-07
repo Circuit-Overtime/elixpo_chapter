@@ -93,7 +93,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body: any = await request.json();
     const { locale, timezone } = body as { locale?: string; timezone?: string };
 
     const setClauses: string[] = ['updated_at = CURRENT_TIMESTAMP'];

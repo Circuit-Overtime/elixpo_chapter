@@ -24,7 +24,7 @@ import { getDatabase } from '@/lib/d1-client';
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: any = await request.json();
     const { email, password, provider, provider_id, provider_email } = body;
 
     // Get request metadata for audit log
