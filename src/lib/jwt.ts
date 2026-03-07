@@ -12,7 +12,7 @@ export interface JWTPayload {
 
 
 export async function getSigningKey(): Promise<jose.KeyLike | Uint8Array> {
-  const privateKeyPEM = process.env.JWT_PRIVATE_KEY;
+  const privateKeyPEM = process.env.JWT_PRIVATE_KEY?.replace(/\\n/g, '\n');
   if (!privateKeyPEM) {
     throw new Error('JWT_PRIVATE_KEY not found in environment');
   }
@@ -20,7 +20,7 @@ export async function getSigningKey(): Promise<jose.KeyLike | Uint8Array> {
 }
 
 export async function getVerifyingKey(): Promise<jose.KeyLike | Uint8Array> {
-  const publicKeyPEM = process.env.JWT_PUBLIC_KEY;
+  const publicKeyPEM = process.env.JWT_PUBLIC_KEY?.replace(/\\n/g, '\n');
   if (!publicKeyPEM) {
     throw new Error('JWT_PUBLIC_KEY not found in environment');
   }

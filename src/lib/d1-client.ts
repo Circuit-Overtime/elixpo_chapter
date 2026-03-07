@@ -25,13 +25,26 @@ export async function getDatabase(): Promise<D1Database> {
   // In Cloudflare Pages environment — use @cloudflare/next-on-pages runtime context
   try {
     const { getRequestContext } = await import(/* webpackIgnore: true */ '@cloudflare/next-on-pages');
-    const { env } = getRequestContext() as { env: Record<string, any> };
+    const ctx = getRequestContext();
+    const env = (ctx as any).env;
     if (env?.DB) {
       cachedDb = env.DB as D1Database;
       return cachedDb!;
     }
+    console.warn('[D1] getRequestContext() succeeded but env.DB is missing. Keys:', env ? Object.keys(env) : 'no env');
+  } catch (err) {
+    console.warn('[D1] getRequestContext() failed:', err);
+  }
+
+  // Fallback: try process.env.DB or globalThis.process.env
+  try {
+    const g = globalThis as any;
+    if (g?.process?.env?.DB) {
+      cachedDb = g.process.env.DB as D1Database;
+      return cachedDb!;
+    }
   } catch {
-    // Not running in Cloudflare Pages context — fall through
+    // not available
   }
 
   // For local development: Create a mock D1 client that makes API calls
