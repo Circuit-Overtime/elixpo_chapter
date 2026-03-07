@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyJWT } from '@/lib/jwt';
 import { getUserById } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
+import type { D1Database } from '@cloudflare/workers-types';
 
 async function getUserIdentity(db: D1Database, userId: string) {
   try {
@@ -15,8 +16,6 @@ async function getUserIdentity(db: D1Database, userId: string) {
     return null;
   }
 }
-
-import type { D1Database } from '@cloudflare/workers-types';
 
 /**
  * GET /api/auth/me
