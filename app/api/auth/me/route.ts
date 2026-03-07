@@ -5,6 +5,19 @@ import { verifyJWT } from '@/lib/jwt';
 import { getUserById } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
 
+async function getUserIdentity(db: D1Database, userId: string) {
+  try {
+    return await db
+      .prepare('SELECT provider, provider_email, provider_profile_url FROM identities WHERE user_id = ? ORDER BY created_at ASC LIMIT 1')
+      .bind(userId)
+      .first();
+  } catch {
+    return null;
+  }
+}
+
+import type { D1Database } from '@cloudflare/workers-types';
+
 /**
  * GET /api/auth/me
  * Get current user from access token (cookie or Authorization header)
@@ -45,12 +58,16 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      const identity = await getUserIdentity(db, payload.sub);
+
       return NextResponse.json({
         id: payload.sub,
         userId: payload.sub,
         email: payload.email,
         isAdmin: !!(dbUser as any).is_admin,
-        provider: payload.provider,
+        provider: payload.provider || (identity as any)?.provider || 'email',
+        avatar: (identity as any)?.provider_profile_url || null,
+        emailVerified: !!(dbUser as any).email_verified,
         expiresAt: new Date(payload.exp * 1000),
       });
     } catch (dbError) {
