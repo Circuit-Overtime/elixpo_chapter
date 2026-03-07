@@ -48,7 +48,7 @@ push_secrets() {
 
 do_build() {
   echo "=== Building for Cloudflare Pages ==="
-  sudo npm run build
+  npm run pages:build
   echo "Build complete."
   echo ""
 }
