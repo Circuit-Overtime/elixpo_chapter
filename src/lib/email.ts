@@ -1,5 +1,4 @@
 import { smtpSendMail } from './smtp-client';
-import nodemailer from 'nodemailer';
 
 interface EmailOptions {
   to: string;
@@ -19,10 +18,15 @@ function getSmtpConfig() {
 }
 
 /**
- * Send email via nodemailer (works in Node.js / next dev)
+ * Send email via nodemailer (works in Node.js / next dev).
+ * Dynamically imported so webpack doesn't try to bundle Node.js
+ * built-ins (crypto, path, fs) for the edge runtime build.
  */
 async function sendViaNodemailer(options: EmailOptions): Promise<void> {
   const { host, port, user, pass, fromName } = getSmtpConfig();
+
+  // Dynamic import — keeps nodemailer out of the edge bundle
+  const nodemailer = (await import(/* webpackIgnore: true */ 'nodemailer')).default;
 
   const transporter = nodemailer.createTransport({
     host,
