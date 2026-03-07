@@ -1,3 +1,5 @@
+import { smtpSendMail } from './smtp-client';
+
 interface EmailOptions {
   to: string;
   subject: string;
@@ -5,48 +7,33 @@ interface EmailOptions {
   text?: string;
 }
 
-// Zoho Mail SMTP configuration for accounts@elixpo.com
-// nodemailer is loaded dynamically so the module can be bundled for edge runtime
-const getTransporter = async () => {
-  const nodemailer = (await import('nodemailer')).default;
+export async function sendEmail(options: EmailOptions): Promise<void> {
   const host = process.env.SMTP_HOST || 'smtp.zoho.com';
-  const port = parseInt(process.env.SMTP_PORT || '587');
+  const port = parseInt(process.env.SMTP_PORT || '465');
   const user = process.env.SMTP_FROM_EMAIL || 'accounts@elixpo.com';
   const pass = process.env.SMTP_PASS || '';
+  const fromName = process.env.SMTP_FROM_NAME || 'Elixpo Accounts';
 
   if (!pass) {
     throw new Error('SMTP_PASS is not configured');
   }
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-    tls: {
-      rejectUnauthorized: true,
-    },
-  });
-};
-
-export async function sendEmail(options: EmailOptions): Promise<void> {
   try {
-    const transporter = await getTransporter();
-    const fromName = process.env.SMTP_FROM_NAME || 'Elixpo Accounts';
-    const fromEmail = process.env.SMTP_FROM_EMAIL || 'accounts@elixpo.com';
-
-    const result = await transporter.sendMail({
-      from: `${fromName} <${fromEmail}>`,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-      headers: {
-        'X-Mailer': 'Elixpo Accounts Platform',
-        'X-Priority': '3',
-      },
-    });
-    console.log(`[Email] Sent to ${options.to} — messageId: ${result.messageId}`);
+    await smtpSendMail(
+      { host, port, secure: port === 465, auth: { user, pass } },
+      {
+        from: `${fromName} <${user}>`,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+        headers: {
+          'X-Mailer': 'Elixpo Accounts Platform',
+          'X-Priority': '3',
+        },
+      }
+    );
+    console.log(`[Email] Sent to ${options.to}`);
   } catch (error) {
     console.error('[Email] Send failed:', error);
     throw error;

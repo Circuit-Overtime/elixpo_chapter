@@ -75,17 +75,6 @@ async function sendAdminNotificationEmail(
   resourceType: string,
   resourceName: string
 ) {
-  const nodemailer = (await import('nodemailer')).default;
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.zoho.com',
-    port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: parseInt(process.env.SMTP_PORT || '465') === 465,
-    auth: {
-      user: process.env.SMTP_FROM_EMAIL,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #f1f5f9; padding: 32px; border-radius: 8px;">
       <div style="margin-bottom: 24px;">
@@ -102,8 +91,7 @@ async function sendAdminNotificationEmail(
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `"${process.env.SMTP_FROM_NAME || 'Elixpo Accounts'}" <${process.env.SMTP_FROM_EMAIL}>`,
+  await sendEmail({
     to,
     subject: `[Elixpo Admin] ${subject}`,
     html,
