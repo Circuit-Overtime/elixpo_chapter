@@ -7,6 +7,7 @@ import { hashPassword } from '@/lib/password';
 import { createRegisterRateLimiter } from '@/lib/rate-limit';
 import { getUserByEmail, getIdentitiesByUserId, createUser, createIdentity, logAuditEvent, createRefreshToken as storeRefreshToken } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
+import { sendOTPEmail } from '@/lib/email';
 
 /**
  * POST /api/auth/register
@@ -133,6 +134,25 @@ export async function POST(request: NextRequest) {
           ipAddress,
           userAgent,
         });
+
+        // Send verification OTP email (fire-and-forget)
+        try {
+          const otp = crypto.getRandomValues(new Uint8Array(3));
+          const otpCode = (((otp[0] << 16) | (otp[1] << 8) | otp[2]) % 1000000).toString().padStart(6, '0');
+          const expiryMinutes = parseInt(process.env.EMAIL_VERIFICATION_OTP_EXPIRY_MINUTES || '10');
+          const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString();
+
+          await db.prepare(
+            'INSERT INTO email_verification_tokens (id, user_id, email, otp_code, verification_token, expires_at) VALUES (?, ?, ?, ?, ?, ?)'
+          ).bind(generateUUID(), userId, email, otpCode, generateUUID(), expiresAt).run();
+
+          const recipientName = email.split('@')[0];
+          await sendOTPEmail(email, recipientName, otpCode);
+          console.log(`[Register] Verification OTP sent to ${email}`);
+        } catch (otpError) {
+          console.error('[Register] Failed to send verification email:', otpError);
+          // Non-critical — user can request again from profile
+        }
       } catch (dbError) {
         console.error('[Register] Database error:', dbError);
         // Continue anyway - tokens are still valid

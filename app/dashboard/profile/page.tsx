@@ -118,6 +118,20 @@ const ProfilePage = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  // Email verification state
+  const [verifyStep, setVerifyStep] = useState<'idle' | 'sent' | 'verifying'>('idle');
+  const [verifyCode, setVerifyCode] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyMsg, setVerifyMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [verifyCooldown, setVerifyCooldown] = useState(0);
+
+  useEffect(() => {
+    if (verifyCooldown > 0) {
+      const t = setTimeout(() => setVerifyCooldown(verifyCooldown - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [verifyCooldown]);
+
   useEffect(() => {
     fetchProfile();
     fetchNotifPrefs();
@@ -217,6 +231,57 @@ const ProfilePage = () => {
     }
   };
 
+  const handleSendVerification = async () => {
+    setVerifyLoading(true);
+    setVerifyMsg(null);
+    try {
+      const res = await fetch('/api/auth/send-verification', { method: 'POST', credentials: 'include' });
+      if (!res.ok) {
+        let msg = 'Failed to send verification email';
+        try { const d: any = await res.json(); msg = d.error || msg; } catch {}
+        throw new Error(msg);
+      }
+      setVerifyStep('sent');
+      setVerifyCooldown(60);
+      setVerifyMsg({ text: 'Verification code sent to your email', type: 'success' });
+    } catch (err: any) {
+      setVerifyMsg({ text: err.message, type: 'error' });
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (verifyCode.length !== 6) {
+      setVerifyMsg({ text: 'Please enter the 6-digit code', type: 'error' });
+      return;
+    }
+    setVerifyLoading(true);
+    setVerifyMsg(null);
+    try {
+      const res = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: verifyCode }),
+      });
+      if (!res.ok) {
+        let msg = 'Verification failed';
+        try { const d: any = await res.json(); msg = d.error || msg; } catch {}
+        throw new Error(msg);
+      }
+      setVerifyMsg({ text: 'Email verified successfully!', type: 'success' });
+      setVerifyStep('idle');
+      setVerifyCode('');
+      // Refresh profile to update verified status
+      fetchProfile();
+    } catch (err: any) {
+      setVerifyMsg({ text: err.message, type: 'error' });
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
   const handleNotifToggle = (key: keyof NotificationPreferences) => {
     setNotifPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -304,6 +369,65 @@ const ProfilePage = () => {
                   </Typography>
                 </Box>
               </Box>
+
+              {/* Email Verification */}
+              {!profile.emailVerified && (
+                <Box sx={{ p: 2, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px' }}>
+                  <Typography sx={{ color: '#f59e0b', fontWeight: 600, fontSize: '0.9rem', mb: 1 }}>
+                    Verify your email
+                  </Typography>
+                  {verifyMsg && (
+                    <Alert severity={verifyMsg.type} sx={{ mb: 1.5, bgcolor: verifyMsg.type === 'success' ? 'rgba(163,230,53,0.1)' : 'rgba(239,68,68,0.1)', color: verifyMsg.type === 'success' ? '#a3e635' : '#ef4444', border: `1px solid ${verifyMsg.type === 'success' ? 'rgba(163,230,53,0.3)' : 'rgba(239,68,68,0.3)'}`, '& .MuiAlert-icon': { color: verifyMsg.type === 'success' ? '#a3e635' : '#ef4444' }, py: 0 }}>
+                      {verifyMsg.text}
+                    </Alert>
+                  )}
+                  {verifyStep === 'idle' && (
+                    <Box>
+                      <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.83rem', mb: 1.5 }}>
+                        We&apos;ll send a 6-digit verification code to {profile.email}
+                      </Typography>
+                      <Button
+                        onClick={handleSendVerification}
+                        disabled={verifyLoading || verifyCooldown > 0}
+                        sx={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', fontWeight: 600, textTransform: 'none', fontSize: '0.85rem', '&:hover': { background: 'rgba(245,158,11,0.25)' }, '&:disabled': { color: 'rgba(255,255,255,0.3)' } }}
+                      >
+                        {verifyLoading ? 'Sending...' : verifyCooldown > 0 ? `Resend in ${verifyCooldown}s` : 'Send Verification Code'}
+                      </Button>
+                    </Box>
+                  )}
+                  {verifyStep === 'sent' && (
+                    <Box>
+                      <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.83rem', mb: 1.5 }}>
+                        Enter the 6-digit code sent to {profile.email}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <TextField
+                          value={verifyCode}
+                          onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="000000"
+                          inputProps={{ maxLength: 6, style: { letterSpacing: '6px', fontFamily: 'monospace', fontSize: '1.1rem', textAlign: 'center' } }}
+                          sx={{ ...textFieldSx, width: '160px', '& .MuiOutlinedInput-root': { ...textFieldSx['& .MuiOutlinedInput-root'], '&.Mui-focused fieldset': { borderColor: '#f59e0b' } } }}
+                          disabled={verifyLoading}
+                        />
+                        <Button
+                          onClick={handleVerifyCode}
+                          disabled={verifyLoading || verifyCode.length !== 6}
+                          sx={{ background: 'rgba(163,230,53,0.15)', color: '#a3e635', border: '1px solid rgba(163,230,53,0.3)', fontWeight: 600, textTransform: 'none', fontSize: '0.85rem', py: 1, '&:hover': { background: 'rgba(163,230,53,0.25)' }, '&:disabled': { color: 'rgba(255,255,255,0.3)' } }}
+                        >
+                          {verifyLoading ? 'Verifying...' : 'Verify'}
+                        </Button>
+                      </Box>
+                      <Button
+                        onClick={handleSendVerification}
+                        disabled={verifyLoading || verifyCooldown > 0}
+                        sx={{ mt: 1, color: 'rgba(255,255,255,0.4)', textTransform: 'none', fontSize: '0.8rem', '&:hover': { color: '#f59e0b' } }}
+                      >
+                        {verifyCooldown > 0 ? `Resend in ${verifyCooldown}s` : 'Resend code'}
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              )}
 
               {/* Account ID */}
               <Box>
