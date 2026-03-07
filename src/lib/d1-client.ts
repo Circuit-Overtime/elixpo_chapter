@@ -10,15 +10,16 @@
 import type { D1Database } from '@cloudflare/workers-types';
 
 let cachedDb: D1Database | null = null as any;
+let cachedDbType: 'cloudflare' | 'api' | 'mock' | null = null;
 
 /**
  * Initialize and get D1 Database connection
  * In Cloudflare environment: Uses the runtime binding via getRequestContext()
- * In local environment: Uses Cloudflare API
+ * In local environment: Uses Cloudflare REST API
  */
 export async function getDatabase(): Promise<D1Database> {
-  // Return cached connection if available
-  if (cachedDb) {
+  // Return cached connection if available (but never cache the in-memory mock)
+  if (cachedDb && cachedDbType !== 'mock') {
     return cachedDb;
   }
 
@@ -29,11 +30,11 @@ export async function getDatabase(): Promise<D1Database> {
     const env = (ctx as any).env;
     if (env?.DB) {
       cachedDb = env.DB as D1Database;
+      cachedDbType = 'cloudflare';
       return cachedDb!;
     }
-    console.warn('[D1] getRequestContext() succeeded but env.DB is missing. Keys:', env ? Object.keys(env) : 'no env');
-  } catch (err) {
-    console.warn('[D1] getRequestContext() failed:', err);
+  } catch {
+    // Expected in local dev — fall through to API client
   }
 
   // Fallback: try process.env.DB or globalThis.process.env
@@ -41,28 +42,28 @@ export async function getDatabase(): Promise<D1Database> {
     const g = globalThis as any;
     if (g?.process?.env?.DB) {
       cachedDb = g.process.env.DB as D1Database;
+      cachedDbType = 'cloudflare';
       return cachedDb!;
     }
   } catch {
     // not available
   }
 
-  // For local development: Create a mock D1 client that makes API calls
-  // This requires CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, D1_DATABASE_ID
-  if (process.env.NODE_ENV === 'development') {
-    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-    const apiToken = process.env.CLOUDFLARE_API_TOKEN;
-    const databaseId = process.env.CLOUDFLARE_DATABASE_ID;
+  // Local development: Create a D1 client using Cloudflare REST API
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+  const databaseId = process.env.CLOUDFLARE_DATABASE_ID;
 
-    if (accountId && apiToken && databaseId) {
-      // Create mock D1 client for local development
-      cachedDb = createLocalD1Client(accountId, apiToken, databaseId);
-      return cachedDb;
-    }
+  if (accountId && apiToken && databaseId) {
+    cachedDb = createLocalD1Client(accountId, apiToken, databaseId);
+    cachedDbType = 'api';
+    console.log('[D1] Using Cloudflare REST API client for local development');
+    return cachedDb;
   }
 
   // Fallback: Create in-memory mock (for testing without D1)
   console.warn('[D1] Using in-memory mock database - not suitable for production');
+  cachedDbType = 'mock';
   return createInMemoryMockDb();
 }
 
