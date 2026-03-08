@@ -33,7 +33,7 @@ export interface DashboardStats {
   recentApps?: Array<{
     id: string;
     client_id: string;
-    client_name: string;
+    name: string;
     owner_id: string;
     created_at: string;
   }>;
@@ -57,7 +57,7 @@ export function useDashboardStats(timeRange: string = '7d') {
           throw new Error('Failed to fetch stats');
         }
 
-        const data = await response.json();
+        const data: any = await response.json();
         setStats(data);
         setError(null);
       } catch (err) {
@@ -113,7 +113,7 @@ export function useUsers(page: number = 1, search: string = '') {
           throw new Error('Failed to fetch users');
         }
 
-        const responseData = await response.json();
+        const responseData: any = await response.json();
         setData(responseData);
         setError(null);
       } catch (err) {
@@ -170,7 +170,7 @@ export function useApps(page: number = 1, search: string = '') {
           throw new Error('Failed to fetch apps');
         }
 
-        const responseData = await response.json();
+        const responseData: any = await response.json();
         setData(responseData);
         setError(null);
       } catch (err) {
@@ -227,7 +227,7 @@ export function useAdminLogs(page: number = 1, search: string = '') {
           throw new Error('Failed to fetch logs');
         }
 
-        const responseData = await response.json();
+        const responseData: any = await response.json();
         const filtered = search
           ? {
               ...responseData,

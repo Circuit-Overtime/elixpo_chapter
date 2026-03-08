@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
     const clientId = request.headers.get('x-client-id');
-    const body = await request.json().catch(() => ({}));
+    const body: any = await request.json().catch(() => ({}));
 
     let token: string | null = null;
 

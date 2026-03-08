@@ -17,7 +17,7 @@ export async function PUT(request: NextRequest) {
   const admin = await verifyAdminSession(request);
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const db = await getDatabase();
-  const body = await request.json();
+  const body : any = await request.json();
   await updateNotificationSettings(db, body);
   const settings = await getNotificationSettings(db);
   return NextResponse.json(settings);

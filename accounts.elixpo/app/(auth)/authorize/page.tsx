@@ -58,12 +58,12 @@ function AuthorizeContent() {
         );
 
         if (!clientResponse.ok) {
-          const errorData = await clientResponse.json();
+          const errorData: any = await clientResponse.json();
           setError(errorData.error || 'Application not found or invalid redirect URI');
           return;
         }
 
-        const clientData = await clientResponse.json();
+        const clientData: any = await clientResponse.json();
 
         // Extract domain from redirect URI for favicon
         const redirectUrl = new URL(redirectUri);
@@ -131,7 +131,7 @@ function AuthorizeContent() {
         throw new Error('Authorization failed');
       }
 
-      const data = await response.json();
+      const data: any = await response.json();
       // Redirect to client with authorization code
       window.location.href = data.redirect_uri;
     } catch (err) {

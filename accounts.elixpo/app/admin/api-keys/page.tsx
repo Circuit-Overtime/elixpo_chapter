@@ -109,7 +109,7 @@ export default function ApiKeysPage() {
       });
 
       if (!response.ok) throw new Error('Failed to fetch API keys');
-      const data = await response.json();
+      const data : any = await response.json();
       setApiKeys(data.data || []);
       setError(null);
     } catch (err) {
@@ -149,7 +149,7 @@ export default function ApiKeysPage() {
       });
 
       if (!response.ok) throw new Error('Failed to create API key');
-      const data = await response.json();
+      const data : any = await response.json();
       
       setNewKeyData(data);
       setFormData({

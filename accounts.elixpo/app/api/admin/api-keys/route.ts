@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body: any = await request.json();
     const { name, description, scopes, expiresIn } = body;
 
     // Validate required fields
@@ -142,7 +142,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const body: any = await request.json();
     const { action, ...updates } = body;
 
     if (action === 'revoke') {

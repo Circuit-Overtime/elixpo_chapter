@@ -4,6 +4,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyJWT } from '@/lib/jwt';
 import { getUserById } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
+import type { D1Database } from '@cloudflare/workers-types';
+
+async function getUserIdentity(db: D1Database, userId: string) {
+  try {
+    return await db
+      .prepare('SELECT provider, provider_email, provider_profile_url FROM identities WHERE user_id = ? ORDER BY created_at ASC LIMIT 1')
+      .bind(userId)
+      .first();
+  } catch {
+    return null;
+  }
+}
 
 /**
  * GET /api/auth/me
@@ -45,12 +57,17 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      const identity = await getUserIdentity(db, payload.sub);
+
       return NextResponse.json({
         id: payload.sub,
         userId: payload.sub,
         email: payload.email,
+        displayName: (dbUser as any).display_name || null,
         isAdmin: !!(dbUser as any).is_admin,
-        provider: payload.provider,
+        provider: payload.provider || (identity as any)?.provider || 'email',
+        avatar: (identity as any)?.provider_profile_url || null,
+        emailVerified: !!(dbUser as any).email_verified,
         expiresAt: new Date(payload.exp * 1000),
       });
     } catch (dbError) {
@@ -76,7 +93,8 @@ export async function GET(request: NextRequest) {
 
 /**
  * PATCH /api/auth/me
- * Update current user profile fields (locale, timezone)
+ * Update current user profile fields (locale, timezone, display_name)
+ * display_name: max 2 changes per 14 days
  */
 export async function PATCH(request: NextRequest) {
   try {
@@ -93,11 +111,11 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { locale, timezone } = body as { locale?: string; timezone?: string };
+    const body: any = await request.json();
+    const { locale, timezone, display_name } = body as { locale?: string; timezone?: string; display_name?: string };
 
     const setClauses: string[] = ['updated_at = CURRENT_TIMESTAMP'];
-    const values: (string | null)[] = [];
+    const values: (string | number | null)[] = [];
 
     if (locale !== undefined) {
       setClauses.push('locale = ?');
@@ -108,6 +126,45 @@ export async function PATCH(request: NextRequest) {
       values.push(timezone);
     }
 
+    const db = await getDatabase();
+
+    if (display_name !== undefined) {
+      const trimmed = display_name.trim();
+      if (trimmed.length < 2 || trimmed.length > 32) {
+        return NextResponse.json({ error: 'Display name must be 2-32 characters.' }, { status: 400 });
+      }
+      if (!/^[a-zA-Z0-9 _-]+$/.test(trimmed)) {
+        return NextResponse.json({ error: 'Only letters, numbers, spaces, hyphens and underscores are allowed.' }, { status: 400 });
+      }
+
+      // Rate limit: 2 changes per 14 days
+      const currentUser = await getUserById(db, payload.sub) as any;
+      if (!currentUser) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      const changeCount = currentUser.display_name_change_count || 0;
+      const lastChanged = currentUser.display_name_changed_at ? new Date(currentUser.display_name_changed_at).getTime() : 0;
+      const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
+      const windowExpired = Date.now() - lastChanged > twoWeeksMs;
+
+      // Reset counter if the 2-week window has passed
+      const effectiveCount = windowExpired ? 0 : changeCount;
+
+      if (effectiveCount >= 2) {
+        const resetDate = new Date(lastChanged + twoWeeksMs);
+        return NextResponse.json({
+          error: `You can only change your display name 2 times every 2 weeks. Try again after ${resetDate.toLocaleDateString()}.`,
+        }, { status: 429 });
+      }
+
+      setClauses.push('display_name = ?');
+      values.push(trimmed);
+      setClauses.push('display_name_changed_at = CURRENT_TIMESTAMP');
+      setClauses.push('display_name_change_count = ?');
+      values.push(effectiveCount + 1);
+    }
+
     if (values.length === 0) {
       return NextResponse.json({ error: 'No updatable fields provided' }, { status: 400 });
     }
@@ -115,7 +172,6 @@ export async function PATCH(request: NextRequest) {
     values.push(payload.sub);
 
     try {
-      const db = await getDatabase();
       await db
         .prepare(`UPDATE users SET ${setClauses.join(', ')} WHERE id = ?`)
         .bind(...values)
@@ -130,6 +186,7 @@ export async function PATCH(request: NextRequest) {
         id: payload.sub,
         userId: payload.sub,
         email: payload.email,
+        displayName: (dbUser as any).display_name || null,
         locale: (dbUser as any).locale ?? null,
         timezone: (dbUser as any).timezone ?? null,
         isAdmin: !!(dbUser as any).is_admin,

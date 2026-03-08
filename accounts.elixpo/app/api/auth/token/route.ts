@@ -8,7 +8,7 @@ import { getDatabase } from '@/lib/d1-client';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: any = await request.json();
     const { grant_type, code, client_id, client_secret, redirect_uri, refresh_token, scope } = body;
 
     if (!grant_type) {

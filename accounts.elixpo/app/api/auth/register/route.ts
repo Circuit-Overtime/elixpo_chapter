@@ -7,6 +7,8 @@ import { hashPassword } from '@/lib/password';
 import { createRegisterRateLimiter } from '@/lib/rate-limit';
 import { getUserByEmail, getIdentitiesByUserId, createUser, createIdentity, logAuditEvent, createRefreshToken as storeRefreshToken } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
+import { sendOTPEmail } from '@/lib/email';
+import { generateRandomDisplayName } from '@/lib/random-name';
 
 /**
  * POST /api/auth/register
@@ -24,7 +26,7 @@ import { getDatabase } from '@/lib/d1-client';
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: any = await request.json();
     const { email, password, provider, provider_id, provider_email } = body;
 
     // Get request metadata for audit log
@@ -105,6 +107,7 @@ export async function POST(request: NextRequest) {
     if (provider === 'email') {
       // Hash password
       const passwordHash = await hashPassword(password);
+      const displayName = generateRandomDisplayName();
 
       // Create user in D1
       try {
@@ -112,6 +115,7 @@ export async function POST(request: NextRequest) {
           id: userId,
           email,
           passwordHash,
+          displayName,
         });
 
         // Create identity
@@ -133,6 +137,24 @@ export async function POST(request: NextRequest) {
           ipAddress,
           userAgent,
         });
+
+        // Send verification OTP email (fire-and-forget)
+        try {
+          const otp = crypto.getRandomValues(new Uint8Array(3));
+          const otpCode = (((otp[0] << 16) | (otp[1] << 8) | otp[2]) % 1000000).toString().padStart(6, '0');
+          const expiryMinutes = parseInt(process.env.EMAIL_VERIFICATION_OTP_EXPIRY_MINUTES || '10');
+          const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString();
+
+          await db.prepare(
+            'INSERT INTO email_verification_tokens (id, user_id, email, otp_code, verification_token, expires_at) VALUES (?, ?, ?, ?, ?, ?)'
+          ).bind(generateUUID(), userId, email, otpCode, generateUUID(), expiresAt).run();
+
+          await sendOTPEmail(email, displayName, otpCode);
+          console.log(`[Register] Verification OTP sent to ${email}`);
+        } catch (otpError) {
+          console.error('[Register] Failed to send verification email:', otpError);
+          // Non-critical — user can request again from profile
+        }
       } catch (dbError) {
         console.error('[Register] Database error:', dbError);
         // Continue anyway - tokens are still valid
@@ -215,6 +237,8 @@ export async function POST(request: NextRequest) {
         expires_in: parseInt(process.env.JWT_EXPIRATION_MINUTES || '15') * 60,
         token_type: 'Bearer',
       },
+      // Signal frontend to show display name setup for email/password signups
+      ...(provider === 'email' && { needsDisplayName: true }),
     });
 
     // Set secure cookies

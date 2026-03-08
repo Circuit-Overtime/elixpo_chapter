@@ -48,7 +48,7 @@ push_secrets() {
 
 do_build() {
   echo "=== Building for Cloudflare Pages ==="
-  npm run pages:build
+  sudo npm run pages:build
   echo "Build complete."
   echo ""
 }
@@ -60,7 +60,7 @@ do_deploy() {
   fi
 
   echo "=== Deploying to Cloudflare Pages ==="
-  npx wrangler pages deploy ./.vercel/output/static --project-name "$PROJECT"
+  sudo npx wrangler pages deploy ./.vercel/output/static --project-name "$PROJECT"
   echo "Deploy complete."
   echo ""
 }

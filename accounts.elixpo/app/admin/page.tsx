@@ -475,7 +475,7 @@ export default function AdminDashboard() {
                         {(stats.recentApps ?? []).map((app) => (
                           <TableRow key={app.id} sx={{ '&:hover': { bgcolor: 'rgba(34,197,94,0.04)' } }}>
                             <TableCell sx={{ color: '#e5e7eb', borderColor: '#2a2a2a', py: 0.75, fontSize: '0.85rem' }}>
-                              {app.client_name}
+                              {app.name}
                             </TableCell>
                             <TableCell sx={{ borderColor: '#2a2a2a', py: 0.75 }}>
                               <Typography variant="caption" sx={{ color: '#6b7280', fontFamily: 'monospace' }}>

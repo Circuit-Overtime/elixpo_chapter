@@ -2,9 +2,10 @@ export const runtime = 'edge';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { generateRandomString, hashString } from '@/lib/webcrypto';
-import { createOAuthClient, getOAuthClientById } from '@/lib/db';
+import { createOAuthClient, getOAuthClientById, getUserById } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
 import { verifyJWT } from '@/lib/jwt';
+import { sendAppRegisteredEmail } from '@/lib/email';
 
 async function getAuth(request: NextRequest) {
   const token =
@@ -50,7 +51,17 @@ export async function POST(request: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const body = await request.json();
+    // Enforce email verification
+    const db = await getDatabase();
+    const user = await getUserById(db, auth.sub) as any;
+    if (user && !user.email_verified) {
+      return NextResponse.json(
+        { error: 'Please verify your email address before registering an OAuth application.' },
+        { status: 403 }
+      );
+    }
+
+    const body: any = await request.json();
     const { name, redirect_uris, logo_uri, description, homepage_url, scopes } = body;
 
     // Validate required fields
@@ -61,15 +72,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate redirect URIs are valid URLs
+    if (redirect_uris.length > 10) {
+      return NextResponse.json(
+        { error: 'Maximum of 10 redirect URIs allowed' },
+        { status: 400 }
+      );
+    }
+
+    // Validate redirect URIs are valid URLs (HTTP and HTTPS allowed)
     const validUris: string[] = [];
     for (const uri of redirect_uris) {
       try {
         const parsed = new URL(uri);
-        // Ensure HTTPS in production
-        if (process.env.NODE_ENV === 'production' && parsed.protocol !== 'https:') {
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
           return NextResponse.json(
-            { error: `Redirect URI must use HTTPS in production: ${uri}` },
+            { error: `Redirect URI must use HTTP or HTTPS: ${uri}` },
             { status: 400 }
           );
         }
@@ -104,7 +121,6 @@ export async function POST(request: NextRequest) {
 
     // Store in D1
     try {
-      const db = await getDatabase();
       await createOAuthClient(db, {
         clientId,
         clientSecretHash,
@@ -116,6 +132,17 @@ export async function POST(request: NextRequest) {
         homepageUrl: homepage_url,
       });
       console.log(`[OAuth Client] Registered: ${name} (${clientId})`);
+
+      // Notify owner via email (fire-and-forget)
+      try {
+        const owner = await getUserById(db, auth.sub) as any;
+        if (owner?.email) {
+          const ownerName = owner.display_name || owner.email.split('@')[0];
+          await sendAppRegisteredEmail(owner.email, ownerName, name, clientId);
+        }
+      } catch (emailError) {
+        console.error('[OAuth Client] Failed to send registration email:', emailError);
+      }
     } catch (dbError) {
       console.error('[OAuth Client] Database storage error:', dbError);
       return NextResponse.json(

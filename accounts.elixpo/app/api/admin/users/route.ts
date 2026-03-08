@@ -70,7 +70,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body: any = await request.json();
     const { userId, action } = body;
 
     if (!userId || !action) {
