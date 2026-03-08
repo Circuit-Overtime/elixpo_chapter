@@ -57,19 +57,18 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Validate redirect_uri is a well-formed URL
+  // Validate redirect_uri is a well-formed URL (HTTP and HTTPS allowed)
   let parsedRedirect: URL;
   try {
     parsedRedirect = new URL(redirectUri);
-    if (process.env.NODE_ENV === 'production' && parsedRedirect.protocol !== 'https:') {
-      throw new Error('HTTPS required');
+    if (parsedRedirect.protocol !== 'https:' && parsedRedirect.protocol !== 'http:') {
+      throw new Error('HTTP or HTTPS required');
     }
   } catch {
     return NextResponse.json(
       {
         error: 'invalid_request',
-        error_description: 'redirect_uri must be a valid absolute URL' +
-          (process.env.NODE_ENV === 'production' ? ' using HTTPS' : ''),
+        error_description: 'redirect_uri must be a valid absolute URL using HTTP or HTTPS',
       },
       { status: 400 }
     );
