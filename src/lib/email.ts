@@ -25,9 +25,10 @@ function getSmtpConfig() {
 async function sendViaNodemailer(options: EmailOptions): Promise<void> {
   const { host, port, user, pass, fromName } = getSmtpConfig();
 
-
-  const mod = 'node' + 'mailer';
-  const nodemailer = (await import(mod)).default;
+  // Use absolute path so Node.js can resolve it from .next/server/ output dir.
+  // The dynamic expression also hides it from esbuild static analysis (Cloudflare build).
+  const nodemailerPath = process.cwd() + '/node_modules/nodemailer/lib/nodemailer.js';
+  const nodemailer = (await import(nodemailerPath)).default;
 
   const transporter = nodemailer.createTransport({
     host,
@@ -83,12 +84,13 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
   try {
     await sendViaCloudflare(options);
     console.log(`[Email] Sent via Cloudflare SMTP to ${options.to}`);
-  } catch {
+  } catch (cfError) {
+    console.error('[Email] Cloudflare SMTP failed:', cfError instanceof Error ? cfError.message : cfError);
     try {
       await sendViaNodemailer(options);
       console.log(`[Email] Sent via nodemailer to ${options.to}`);
     } catch (nmError) {
-      console.error('[Email] Both SMTP methods failed:', nmError);
+      console.error('[Email] Nodemailer also failed:', nmError instanceof Error ? nmError.message : nmError);
       throw nmError;
     }
   }
