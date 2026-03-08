@@ -36,12 +36,12 @@ export async function GET(request: NextRequest) {
     let redirectUrl: URL;
     try {
       redirectUrl = new URL(redirectUri);
-      if (process.env.NODE_ENV === 'production' && redirectUrl.protocol !== 'https:') {
-        throw new Error('Must use HTTPS');
+      if (redirectUrl.protocol !== 'https:' && redirectUrl.protocol !== 'http:') {
+        throw new Error('Must use HTTP or HTTPS');
       }
     } catch {
       return NextResponse.json(
-        { error: 'invalid_request', error_description: 'Invalid redirect_uri: must be valid URL with HTTPS' },
+        { error: 'invalid_request', error_description: 'Invalid redirect_uri: must be valid URL with HTTP or HTTPS' },
         { status: 400 }
       );
     }
@@ -161,8 +161,8 @@ export async function POST(request: NextRequest) {
     let redirectUrl: URL;
     try {
       redirectUrl = new URL(redirectUri);
-      if (process.env.NODE_ENV === 'production' && redirectUrl.protocol !== 'https:') {
-        throw new Error('Must use HTTPS');
+      if (redirectUrl.protocol !== 'https:' && redirectUrl.protocol !== 'http:') {
+        throw new Error('Must use HTTP or HTTPS');
       }
     } catch {
       return NextResponse.json(

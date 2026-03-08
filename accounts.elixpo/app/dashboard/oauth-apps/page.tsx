@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import SettingsIcon from '@mui/icons-material/Settings';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Link from 'next/link';
@@ -84,7 +85,7 @@ const OAuthAppsPage = () => {
     name: '',
     homepage_url: '',
     description: '',
-    callback_url: '',
+    redirect_uris: [''],
   });
 
   useEffect(() => {
@@ -133,8 +134,9 @@ const OAuthAppsPage = () => {
       setError('Homepage URL is required');
       return;
     }
-    if (!formData.callback_url.trim()) {
-      setError('Authorization callback URL is required');
+    const uris = formData.redirect_uris.map(u => u.trim()).filter(Boolean);
+    if (uris.length === 0) {
+      setError('At least one redirect URI is required');
       return;
     }
 
@@ -148,7 +150,7 @@ const OAuthAppsPage = () => {
           name: formData.name,
           homepage_url: formData.homepage_url,
           description: formData.description || undefined,
-          redirect_uris: [formData.callback_url],
+          redirect_uris: uris,
           scopes: ['openid', 'profile', 'email'],
         }),
       });
@@ -162,7 +164,7 @@ const OAuthAppsPage = () => {
       setNewAppData(data);
       setOpenSecretDialog(true);
       setOpenDialog(false);
-      setFormData({ name: '', homepage_url: '', description: '', callback_url: '' });
+      setFormData({ name: '', homepage_url: '', description: '', redirect_uris: [''] });
       setSuccessMessage('Application registered successfully!');
       await fetchApps();
     } catch (err) {
@@ -202,7 +204,7 @@ const OAuthAppsPage = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setError('');
-    setFormData({ name: '', homepage_url: '', description: '', callback_url: '' });
+    setFormData({ name: '', homepage_url: '', description: '', redirect_uris: [''] });
   };
 
   const dialogPaperSx = {
@@ -421,17 +423,53 @@ const OAuthAppsPage = () => {
             sx={textFieldSx}
             disabled={loading}
           />
-          <TextField
-            fullWidth
-            label="Authorization callback URL"
-            value={formData.callback_url}
-            onChange={(e) => setFormData({ ...formData, callback_url: e.target.value })}
-            margin="dense"
-            placeholder="https://example.com/auth/callback"
-            helperText="The callback URL in your application where users will be redirected after authorization"
-            sx={textFieldSx}
-            disabled={loading}
-          />
+          <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', mt: 2, mb: 0.5 }}>
+            Redirect URIs
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', display: 'block', mb: 1 }}>
+            The callback URLs where users will be redirected after authorization (up to 5)
+          </Typography>
+          {formData.redirect_uris.map((uri, index) => (
+            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                value={uri}
+                onChange={(e) => {
+                  const updated = [...formData.redirect_uris];
+                  updated[index] = e.target.value;
+                  setFormData({ ...formData, redirect_uris: updated });
+                }}
+                placeholder="https://example.com/auth/callback"
+                sx={textFieldSx}
+                disabled={loading}
+              />
+              {formData.redirect_uris.length > 1 && (
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const updated = formData.redirect_uris.filter((_, i) => i !== index);
+                    setFormData({ ...formData, redirect_uris: updated });
+                  }}
+                  sx={{ color: '#ef4444', '&:hover': { bgcolor: 'rgba(239,68,68,0.1)' } }}
+                  disabled={loading}
+                >
+                  <RemoveCircleOutlineIcon fontSize="small" />
+                </IconButton>
+              )}
+            </Box>
+          ))}
+          {formData.redirect_uris.length < 5 && (
+            <Button
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => setFormData({ ...formData, redirect_uris: [...formData.redirect_uris, ''] })}
+              sx={{ color: '#a3e635', textTransform: 'none', fontSize: '0.8rem', mt: 0.5 }}
+              disabled={loading}
+            >
+              Add URI
+            </Button>
+          )}
 
           {error && (
             <Alert severity="error" sx={{ mt: 2, backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#f87171' }}>

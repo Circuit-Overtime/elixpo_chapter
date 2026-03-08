@@ -72,9 +72,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (redirect_uris.length > 10) {
+    if (redirect_uris.length > 5) {
       return NextResponse.json(
-        { error: 'Maximum of 10 redirect URIs allowed' },
+        { error: 'Maximum of 5 redirect URIs allowed' },
         { status: 400 }
       );
     }

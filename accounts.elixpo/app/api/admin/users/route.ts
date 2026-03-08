@@ -2,9 +2,10 @@ export const runtime = 'edge';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '../../../../src/lib/admin-middleware';
-import { listAdminUsers, countUsers, setUserAdminStatus, setUserActiveStatus, logAdminAction } from '../../../../src/lib/db';
+import { listAdminUsers, countUsers, setUserAdminStatus, setUserActiveStatus, logAdminAction, getUserById } from '../../../../src/lib/db';
 import { getDatabase } from '../../../../src/lib/d1-client';
 import { generateUUID } from '../../../../src/lib/webcrypto';
+import { sendEmail, emailTemplates } from '../../../../src/lib/email';
 
 export async function GET(request: NextRequest) {
   const session = await verifyAdminSession(request);
@@ -123,6 +124,20 @@ export async function PATCH(request: NextRequest) {
           ipAddress,
           userAgent,
         });
+
+        // Send suspension email (fire-and-forget)
+        try {
+          const suspendedUser = await getUserById(db, userId) as any;
+          if (suspendedUser?.email) {
+            const name = suspendedUser.display_name || suspendedUser.email.split('@')[0];
+            const reason = body.reason || undefined;
+            const t = emailTemplates.accountSuspended(name, reason);
+            await sendEmail({ to: suspendedUser.email, subject: t.subject, html: t.html, text: t.text });
+          }
+        } catch (emailErr) {
+          console.error('[Admin] Failed to send suspension email:', emailErr);
+        }
+
         return NextResponse.json({ success: true, message: 'User suspended', userId });
       }
 
@@ -139,6 +154,39 @@ export async function PATCH(request: NextRequest) {
           userAgent,
         });
         return NextResponse.json({ success: true, message: 'User activated', userId });
+      }
+
+      case 'delete': {
+        // Prevent self-deletion
+        if (userId === session.userId) {
+          return NextResponse.json({ error: 'You cannot delete your own account' }, { status: 400 });
+        }
+
+        const targetUser = await getUserById(db, userId) as any;
+        if (!targetUser) {
+          return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        // Delete user's OAuth apps, identities, tokens, then the user
+        await db.prepare('DELETE FROM oauth_clients WHERE owner_id = ?').bind(userId).run();
+        await db.prepare('DELETE FROM identities WHERE user_id = ?').bind(userId).run();
+        await db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').bind(userId).run();
+        await db.prepare('DELETE FROM email_verification_tokens WHERE user_id = ?').bind(userId).run();
+        await db.prepare('DELETE FROM auth_requests WHERE user_id = ?').bind(userId).run();
+        await db.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+
+        await logAdminAction(db, {
+          id: generateUUID(),
+          adminId: session.userId,
+          action: 'delete_user',
+          resourceType: 'user',
+          resourceId: userId,
+          changes: { email: targetUser.email, deleted: true },
+          ipAddress,
+          userAgent,
+        });
+
+        return NextResponse.json({ success: true, message: 'User deleted', userId });
       }
 
       default:

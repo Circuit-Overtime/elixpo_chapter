@@ -99,6 +99,9 @@ export function useUsers(page: number = 1, search: string = '') {
   const [data, setData] = useState<UsersResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refetch = () => setRefreshKey((k) => k + 1);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -125,9 +128,9 @@ export function useUsers(page: number = 1, search: string = '') {
     };
 
     fetchUsers();
-  }, [page, search]);
+  }, [page, search, refreshKey]);
 
-  return { data, loading, error };
+  return { data, loading, error, refetch };
 }
 
 export interface App {
@@ -156,6 +159,9 @@ export function useApps(page: number = 1, search: string = '') {
   const [data, setData] = useState<AppsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refetch = () => setRefreshKey((k) => k + 1);
 
   useEffect(() => {
     const fetchApps = async () => {
@@ -182,9 +188,9 @@ export function useApps(page: number = 1, search: string = '') {
     };
 
     fetchApps();
-  }, [page, search]);
+  }, [page, search, refreshKey]);
 
-  return { data, loading, error };
+  return { data, loading, error, refetch };
 }
 
 export interface AdminLog {

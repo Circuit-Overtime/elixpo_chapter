@@ -4,9 +4,10 @@ import { Box, Button, Checkbox, FormControlLabel, TextField, Typography, Divider
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const textFieldSx = {
   '& .MuiOutlinedInput-root': {
@@ -42,7 +43,34 @@ const LoginContent = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [error, setError] = useState('');
+
+  // Auto-redirect if already logged in (valid cookie session)
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        if (res.ok) {
+          const data: any = await res.json();
+          if (next) {
+            window.location.href = next;
+          } else if (!data.displayName) {
+            window.location.href = '/setup-name';
+          } else if (data.isAdmin) {
+            window.location.href = '/admin';
+          } else {
+            window.location.href = '/dashboard/oauth-apps';
+          }
+          return; // don't set checkingAuth to false — we're navigating away
+        }
+      } catch {
+        // No valid session, show login form
+      }
+      setCheckingAuth(false);
+    };
+    checkExistingSession();
+  }, [next]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +81,7 @@ const LoginContent = () => {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, provider: 'email' }),
+        body: JSON.stringify({ email, password, provider: 'email', rememberMe }),
       });
 
       const data: any = await res.json();
@@ -85,6 +113,14 @@ const LoginContent = () => {
     // Redirect through our backend so state cookie is set correctly before going to provider
     window.location.href = `/api/auth/oauth/${provider}?mode=login`;
   };
+
+  if (checkingAuth) {
+    return (
+      <Box sx={{ minHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)' }}>
+        <CircularProgress sx={{ color: '#a3e635' }} />
+      </Box>
+    );
+  }
 
   return (
 
