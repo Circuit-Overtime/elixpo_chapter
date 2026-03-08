@@ -5,17 +5,30 @@ const MAX_TRAIL_LENGTH = 10;
 const FADE_DURATION = 150;
 let targetedElements = new Set(); // Changed to a Set for multiple elements
 
+// --- Convert screen coordinates to SVG viewBox coordinates ---
+function screenToSVGEraser(clientX, clientY) {
+    const rect = svg.getBoundingClientRect();
+    const viewBox = svg.viewBox.baseVal;
+    const mouseX = clientX - rect.left;
+    const mouseY = clientY - rect.top;
+    return {
+        x: viewBox.x + (mouseX / rect.width) * viewBox.width,
+        y: viewBox.y + (mouseY / rect.height) * viewBox.height
+    };
+}
+
 // --- Function to create the eraser trail ---
 function createEraserTrail(x, y) {
     eraserPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
     eraserPath.setAttribute("fill", "none");
     eraserPath.setAttribute("stroke", "rgba(53, 53, 53, 0.4)");
-    eraserPath.setAttribute("stroke-width", "6");
+    eraserPath.setAttribute("stroke-width", 6 / currentZoom);
     eraserPath.setAttribute("stroke-linecap", "round");
     eraserPath.setAttribute("stroke-linejoin", "round");
 
     svg.appendChild(eraserPath);
-    eraserPoints = [{ x, y }];
+    const svgPt = screenToSVGEraser(x, y);
+    eraserPoints = [svgPt];
     updateEraserPath();
 }
 
@@ -23,11 +36,12 @@ function createEraserTrail(x, y) {
 function updateEraserTrail(x, y) {
     if (!eraserPath || eraserPoints.length === 0) return;
 
+    const svgPt = screenToSVGEraser(x, y);
     let lastPoint = eraserPoints[eraserPoints.length - 1];
     if (!lastPoint) return;
 
-    if (Math.hypot(lastPoint.x - x, lastPoint.y - y) > 2) {
-        eraserPoints.push({ x, y });
+    if (Math.hypot(lastPoint.x - svgPt.x, lastPoint.y - svgPt.y) > 2 / currentZoom) {
+        eraserPoints.push(svgPt);
     }
 
     if (eraserPoints.length > MAX_TRAIL_LENGTH) {
@@ -58,7 +72,7 @@ function updateEraserPath() {
     }
 
     let opacityFactor = Math.max(0.2, eraserPoints.length / MAX_TRAIL_LENGTH);
-    let strokeWidth = Math.max(2, 10 * opacityFactor);
+    let strokeWidth = Math.max(2 / currentZoom, (10 / currentZoom) * opacityFactor);
 
     eraserPath.setAttribute("d", pathData);
     eraserPath.setAttribute("stroke-width", strokeWidth);

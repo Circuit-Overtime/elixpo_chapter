@@ -81,7 +81,7 @@ document.addEventListener("click", function(event) {
   const menuIcon = document.getElementById("menuIcon");
   const menu = document.querySelector(".menu");
 
-  if (event.target === menuIcon) {
+  if (menuIcon.contains(event.target)) {
     menu.classList.toggle("hidden");
   } else {
     menu.classList.add("hidden");

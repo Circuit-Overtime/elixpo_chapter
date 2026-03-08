@@ -6,7 +6,7 @@ import { handleMouseDownLine, handleMouseMoveLine, handleMouseUpLine } from './l
 import { handleFreehandMouseDown, handleFreehandMouseMove, handleFreehandMouseUp } from './canvasStroke.js';
 import { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp } from './writeText.js';
 import { handleMouseDownFrame, handleMouseMoveFrame, handleMouseUpFrame } from './frameHolder.js';
-import { handleMultiSelectionMouseDown, handleMultiSelectionMouseMove, handleMultiSelectionMouseUp, multiSelection, isMultiSelecting} from './selection.js';
+import { handleMultiSelectionMouseDown, handleMultiSelectionMouseMove, handleMultiSelectionMouseUp, removeMultiSelectionRect, multiSelection, isMultiSelecting} from './selection.js';
 import { handleMouseDownIcon, handleMouseMoveIcon, handleMouseUpIcon } from './icons.js';
 import { handleCodeMouseDown, handleCodeMouseMove, handleCodeMouseUp } from './writeCode.js';
 
@@ -272,6 +272,37 @@ const handleMainMouseUp = (e) => {
     }
 };
 
+const handleMainMouseLeave = (e) => {
+    // Stop all active drawing tools when pointer leaves the canvas
+
+    // Fire mouseUp for whichever tool is active to finalize/cancel the operation
+    handleMainMouseUp(e);
+
+    // Selection tool: remove the selection rectangle if mid-drag
+    if (isSelectionToolActive) {
+        removeMultiSelectionRect();
+    }
+
+    // Eraser: stop erasing and clean up trail (globals from eraserTool.js / eraserTrail.js)
+    if (typeof isErasing !== 'undefined' && isErasing) {
+        isErasing = false;
+        if (typeof removeTargetedElements === 'function') removeTargetedElements();
+        if (typeof fadeOutEraserTrail === 'function') fadeOutEraserTrail();
+    }
+
+    // Laser: stop drawing and fade out active laser (globals from laserTool.js)
+    if (typeof isDrawing !== 'undefined' && isDrawing) {
+        isDrawing = false;
+        if (typeof lasers !== 'undefined' && lasers.length > 0 && typeof fadeLaserTrail === 'function') {
+            const lastLaser = lasers[lasers.length - 1];
+            fadeLaserTrail(lastLaser);
+        }
+        hasMoved = false;
+        lastMovePoint = null;
+    }
+};
+
 svg.addEventListener('mousedown', handleMainMouseDown);
 svg.addEventListener('mousemove', handleMainMouseMove);
 svg.addEventListener('mouseup', handleMainMouseUp);
+svg.addEventListener('mouseleave', handleMainMouseLeave);

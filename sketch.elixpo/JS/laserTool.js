@@ -261,7 +261,7 @@ svg.addEventListener("mouseup", (e) => {
         const lastDrawnLaser = lasers[lasers.length - 1];
         fadeLaserTrail(lastDrawnLaser);
     }
-    
+
     // Reset mouse state
     hasMoved = false;
     lastMovePoint = null;
@@ -272,4 +272,19 @@ svg.addEventListener("mouseup", (e) => {
     } else {
        svg.style.cursor = 'default';
     }
+});
+
+svg.addEventListener("mouseleave", (e) => {
+    if (!isDrawing) return;
+
+    isDrawing = false;
+
+    // Trigger final fade for the active laser
+    if (lasers.length > 0) {
+        const lastDrawnLaser = lasers[lasers.length - 1];
+        fadeLaserTrail(lastDrawnLaser);
+    }
+
+    hasMoved = false;
+    lastMovePoint = null;
 });

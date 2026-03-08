@@ -5,72 +5,66 @@
 
 .toolbar {
     position: absolute;
-    top: 50%;
-    left: 2%;
-    transform: translateY(-50%) scale(0.9);
-    border-radius: 15px;
+    top: calc(48px + 10px);
+    left: 10px;
+    bottom: 70px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 6px;
     justify-content: center;
     align-items: center;
     background: #232329;
-    width: 60px;
-    padding-top: 20px;
-    padding-bottom: 20px;
+    width: 46px;
+    padding: 10px 0;
     box-sizing: border-box;
     z-index: 1000;
-    align-items: center;
+    max-height: calc(100vh - 48px - 10px - 70px);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-.toolbar .spacer 
+.toolbar::-webkit-scrollbar {
+    display: none;
+}
+
+.toolbar .spacer
 {
-    height: 5px;
+    height: 1px;
     position: relative;
-    width: 60%;
-    margin-left: 5px;
-    margin-right: 5px;
-    background: #666;
+    width: 55%;
+    background: #555;
 }
 .toolbar i {
-    font-size: 30px;
+    font-size: 22px;
     color: #ffffffad;
-    margin: 0 20px;
+    margin: 0;
+    padding: 5px;
     cursor: pointer;
-    transition: 0.25s;
+    transition: 0.2s;
+    border-radius: 8px;
 }
 
 .toolbar i:hover {
-    font-size: 30px;
     color: #f259efad;
-    margin: 0 20px;
-    cursor: pointer;
-    transition: 0.25s;
+    background: #343448;
+    transition: 0.2s;
 }
 
 .toolbar ion-icon {
-    font-size: 30px;
-    color: #ffffffad;
-    margin: 0 20px;
+    font-size: 22px;
+    color: #c873e4;
+    margin: 0;
+    padding: 5px;
     cursor: pointer;
-    transition: 0.25s;
-    color: #c873e4
-}
-
-.toolbar i:hover 
-{
-    background: #343448;
-    padding: 5px 5px;
+    transition: 0.2s;
     border-radius: 8px;
-    transition: 0.25s;
 }
 
-.toolbar i.selected 
+.toolbar i.selected
 {
     background: #444480;
-    padding: 5px 5px;
-    border-radius: 8px;
-    transition: 0.25s;
+    transition: 0.2s;
 }
 .iconsToolBar.hidden 
 {
@@ -79,12 +73,12 @@
     pointer-events: none;
     transition: 0.25s;
 }
-.iconsToolBar 
+.iconsToolBar
 {
     position: absolute;
-    height: 75%;
-    left: 8%;
-    top: 50%;
+    height: 70%;
+    left: 66px;
+    top: 55%;
     transform: translateY(-50%);
     display: flex;
     z-index: 10;
@@ -253,13 +247,13 @@
 }
 
 
-.footerSection 
+.footerSection
 {
     position: absolute;
-    top: 90%;
+    bottom: 10px;
     left: 0;
     width: 100%;
-    height: 60px;
+    height: 50px;
     display: flex;
     background: transparent;
     flex-direction: row;
@@ -332,117 +326,166 @@
 }
 
 
-.headerSection 
+.headerSection
 {
     position: absolute;
-    top: 3%;
-    right: 0;
-    width: 90%;
-    height: 60px;
-    display: flex;
-    background: transparent;
-    flex-direction: row;
-    align-items: center;
-    justify-content: right;
-    padding-left: 20px;
-    padding-right: 40px;
-    box-sizing: border-box;
-}
-
-.appMenu 
-{
-    position: absolute;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
+    top: 0;
     left: 0;
-    justify-content: flex-start;
-    gap: 10px;
-    background: transparent;
-    height: 20px;
-    width: 350px;
+    width: 100%;
+    height: 48px;
+    display: flex;
+    background: #1a1a20;
+    border-bottom: 1px solid #2c2c35;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
     box-sizing: border-box;
+    z-index: 1001;
 }
 
-.logo 
+.appMenu
 {
-    position: relative;
-    height: 30px;
-    width: 30px;
-    background: url('../images/logo.png') no-repeat center center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    height: 100%;
+}
+
+.hamburgerBtn
+{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: #232329;
+    border: 1px solid #333;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.hamburgerBtn:hover
+{
+    background: #343448;
+    border-color: #444480;
+}
+.hamburgerBtn i
+{
+    font-size: 20px;
+    color: #999;
+    transition: 0.2s;
+}
+.hamburgerBtn:hover i
+{
+    color: #fff;
+}
+
+.logo
+{
+    height: 26px;
+    width: 26px;
+    background: url('../Images/logo.png') no-repeat center center;
     background-size: contain;
 }
 
-.workspaceName input 
+.headerDivider
 {
-    height: 20px;
-    width: 100%;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #fff;
-    font-size: 1.3em;
-    font-family: "lixFont", serif;
-    font-weight: 300;
-    user-select: none;
+    width: 1px;
+    height: 24px;
+    background: #3a3a45;
 }
 
-.outsource 
+.workspaceName input
 {
-    position: relative;
-    height: 100%;
+    height: 28px;
+    width: 180px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    outline: none;
+    color: #ddd;
+    font-size: 0.95em;
+    font-family: "lixFont", serif;
+    font-weight: 400;
+    padding: 0 8px;
+    transition: 0.2s;
+}
+.workspaceName input:hover
+{
+    border-color: #3a3a50;
+    background: #232329;
+}
+.workspaceName input:focus
+{
+    border-color: #5B57D1;
+    background: #232329;
+    color: #fff;
+}
+
+.outsource
+{
     display: flex;
     flex-direction: row;
-    gap: 10px;
-    background: transparent;
+    gap: 8px;
     align-items: center;
-    justify-content: center;
+    height: 100%;
 }
 
-.outsource i 
+.outsource i
 {
-    font-size: 2em;
-    color: #ffc;
+    font-size: 1.4em;
+    color: #888;
     cursor: pointer;
-    transition: 0.25s;
-    margin-left: 20px;
+    transition: 0.2s;
+    padding: 4px;
+    border-radius: 6px;
 }
+.outsource i:hover
+{
+    color: #fff;
+    background: #343448;
+}
+
 .outsourceBtns {
-    padding: 5px 20px;
-    border: 2px solid #2c2c2c;
-    background-color: #1a1a1a;
-    color: #ffffff;
-    font-size: 1rem;
+    padding: 5px 16px;
+    border: 1px solid #333;
+    background-color: #232329;
+    color: #ccc;
+    font-size: 0.85rem;
     font-family: "lixFont";
     cursor: pointer;
-    border-radius: 15px;
-    transition: all 0.4s ease;
+    border-radius: 8px;
+    transition: all 0.25s ease;
     outline: none;
     position: relative;
     overflow: hidden;
-    font-weight: bold;
+    font-weight: 500;
 }
 
 .outsourceBtns.shareBtn:first-child {
     background-color: #5B57D1;
-    border-color: #302e6d;
+    border-color: #4a46b8;
     color: #ffffff;
+    font-weight: 600;
 }
 
 .outsourceBtns.shareBtn:first-child:hover {
     background-color: #6c67f3;
-    border-color: #302e6d;
+    border-color: #5B57D1;
 }
 
 .outsourceBtns.shareBtn:last-of-type {
-    background-color: #343448;
-    border-color: #444480;
-    color: #ffffff;
+    background-color: #2a2a38;
+    border-color: #3a3a50;
+    color: #bbb;
 }
 
 .outsourceBtns.shareBtn:last-of-type:hover {
-    background-color: #444480;
+    background-color: #343448;
     border-color: #5555a0;
+    color: #fff;
 }
 
 .outsourceBtns::after {
@@ -454,7 +497,7 @@
     height: 100%;
     background: radial-gradient(
       circle,
-      rgba(255, 255, 255, 0.25) 0%,
+      rgba(255, 255, 255, 0.15) 0%,
       rgba(255, 255, 255, 0) 70%
     );
     transform: scale(0);
@@ -466,30 +509,12 @@
 }
 
 .outsourceBtns:hover {
-    border-color: #666666;
-    background: #292929;
+    border-color: #555;
 }
 
-#menuIcon 
+#menuIcon
 {
-    position: relative;
-    font-size: 2em;
-    color: #888;
-    cursor: pointer;
-    z-index: 1000;
-    margin-left: 20px;
-    padding: 5px 15px;
-    background: #232329;
-    border-radius: 15px;
-    border: 1px solid #302e6d;
-    transition: 0.25s;
-}
-#menuIcon:hover 
-{
-    background: #343448;
-    color: #fff;
-    transition: 0.25s;
-    border: 1px solid #444480;
+    display: flex;
 }
 
 
