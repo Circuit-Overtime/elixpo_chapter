@@ -1115,6 +1115,8 @@ document.addEventListener('keydown', (e) => {
 });
 
 
+window.Circle = Circle;
+
 export {
     handleMouseDown as handleMouseDownCircle,
     handleMouseMove as handleMouseMoveCircle,

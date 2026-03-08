@@ -1346,6 +1346,8 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+window.Frame = Frame;
+
 export {
     handleMouseDown as handleMouseDownFrame,
     handleMouseMove as handleMouseMoveFrame,

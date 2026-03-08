@@ -914,6 +914,8 @@ function cloneOptions(options) {
     return JSON.parse(JSON.stringify(options));
 }
 
+window.Line = Line;
+
 export {
     handleMouseDown as handleMouseDownLine,
     handleMouseMove as handleMouseMoveLine,

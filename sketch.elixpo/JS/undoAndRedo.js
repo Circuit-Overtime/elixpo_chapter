@@ -1346,3 +1346,13 @@ document.addEventListener('keydown', (e) => {
 // Attach to buttons
 document.getElementById('undo').addEventListener('click', undo);
 document.getElementById('redo').addEventListener('click', redo);
+
+// Expose globally for plain scripts
+window.pushCreateAction = pushCreateAction;
+window.pushDeleteAction = pushDeleteAction;
+window.pushDeleteActionWithAttachments = pushDeleteActionWithAttachments;
+window.pushTransformAction = pushTransformAction;
+window.pushOptionsChangeAction = pushOptionsChangeAction;
+window.pushCreateActionWithAttachments = pushCreateActionWithAttachments;
+window.undo = undo;
+window.redo = redo;
