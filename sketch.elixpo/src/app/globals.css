@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #232329;
+  --color-surface-hover: #343448;
+  --color-surface-active: #444480;
+  --color-surface-dark: #1a1a20;
+  --color-surface-card: #1e1e28;
+  --color-accent: #c873e4;
+  --color-accent-dim: #444480;
+  --color-accent-blue: #5B57D1;
+  --color-accent-blue-hover: #6c67f3;
+  --color-text-primary: #fff;
+  --color-text-secondary: #ddd;
+  --color-text-muted: #888;
+  --color-text-dim: #666;
+  --color-border: #333;
+  --color-border-light: #3a3a50;
+  --color-border-accent: #5555a0;
+}
+
+/* Font faces */
+@font-face {
+  font-family: "lixFont";
+  src: url("./fonts/lixFont.woff2") format("woff2");
+}
+@font-face {
+  font-family: "lixCode";
+  src: url("./fonts/lixCode.ttf") format("truetype");
+}
+@font-face {
+  font-family: "lixDefault";
+  src: url("./fonts/lixDefault.ttf") format("truetype");
+}
+@font-face {
+  font-family: "lixFancy";
+  src: url("./fonts/lixFancy.ttf") format("truetype");
+}
+@font-face {
+  font-family: "lixDocs";
+  src: url("./fonts/lixDocs.ttf") format("truetype");
+}
+
+/* Global utilities */
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+  font-family: "lixFont", sans-serif;
+}
+
+/* Hide scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+pre::-webkit-scrollbar,
+textarea::-webkit-scrollbar {
+  display: none;
+}
