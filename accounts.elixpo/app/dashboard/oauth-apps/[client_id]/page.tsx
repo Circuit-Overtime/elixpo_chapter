@@ -19,6 +19,8 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
 const cardSx = {
   background: 'rgba(255,255,255,0.03)',
@@ -68,7 +70,7 @@ export default function OAuthAppSettingsPage() {
     name: '',
     description: '',
     homepage_url: '',
-    redirect_uris: '',
+    redirect_uris: [''] as string[],
   });
 
   useEffect(() => {
@@ -78,13 +80,14 @@ export default function OAuthAppSettingsPage() {
         if (!res.ok) throw new Error('Not found');
         const data: any = await res.json();
         setApp(data);
+        const uris = Array.isArray(data.redirect_uris)
+          ? data.redirect_uris
+          : (data.redirect_uris ? [data.redirect_uris] : ['']);
         setForm({
           name: data.name || '',
           description: data.description || '',
           homepage_url: data.homepage_url || '',
-          redirect_uris: Array.isArray(data.redirect_uris)
-            ? data.redirect_uris.join('\n')
-            : (data.redirect_uris || ''),
+          redirect_uris: uris.length > 0 ? uris : [''],
         });
       } catch {
         router.push('/dashboard/oauth-apps');
@@ -106,7 +109,6 @@ export default function OAuthAppSettingsPage() {
     setMessage(null);
     try {
       const redirectUris = form.redirect_uris
-        .split('\n')
         .map((u) => u.trim())
         .filter(Boolean);
 
@@ -323,17 +325,50 @@ export default function OAuthAppSettingsPage() {
           <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', display: 'block', mb: 2 }}>
             Scopes: {Array.isArray(app?.scopes) ? app.scopes.join(', ') : (app?.scopes || 'openid profile email')}
           </Typography>
-          <TextField
-            fullWidth
-            label="Redirect URIs"
-            placeholder="https://example.com/callback"
-            value={form.redirect_uris}
-            onChange={(e) => setForm({ ...form, redirect_uris: e.target.value })}
-            multiline
-            rows={3}
-            helperText="One URI per line"
-            sx={textFieldSx}
-          />
+          <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', mb: 0.5 }}>
+            Redirect URIs
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', display: 'block', mb: 1.5 }}>
+            Callback URLs where users are redirected after authorization (up to 5)
+          </Typography>
+          {form.redirect_uris.map((uri, index) => (
+            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                value={uri}
+                onChange={(e) => {
+                  const updated = [...form.redirect_uris];
+                  updated[index] = e.target.value;
+                  setForm({ ...form, redirect_uris: updated });
+                }}
+                placeholder="https://example.com/callback"
+                sx={textFieldSx}
+              />
+              {form.redirect_uris.length > 1 && (
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const updated = form.redirect_uris.filter((_, i) => i !== index);
+                    setForm({ ...form, redirect_uris: updated });
+                  }}
+                  sx={{ color: '#ef4444', '&:hover': { bgcolor: 'rgba(239,68,68,0.1)' } }}
+                >
+                  <RemoveCircleOutlineIcon fontSize="small" />
+                </IconButton>
+              )}
+            </Box>
+          ))}
+          {form.redirect_uris.length < 5 && (
+            <Button
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => setForm({ ...form, redirect_uris: [...form.redirect_uris, ''] })}
+              sx={{ color: '#a3e635', textTransform: 'none', fontSize: '0.8rem', mt: 0.5 }}
+            >
+              Add URI
+            </Button>
+          )}
         </Box>
 
         {/* Stats */}

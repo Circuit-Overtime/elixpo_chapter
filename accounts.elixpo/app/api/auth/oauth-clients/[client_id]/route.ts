@@ -51,8 +51,8 @@ export async function PUT(
       if (!Array.isArray(redirect_uris) || redirect_uris.length === 0) {
         return NextResponse.json({ error: 'redirect_uris must be a non-empty array' }, { status: 400 });
       }
-      if (redirect_uris.length > 10) {
-        return NextResponse.json({ error: 'Maximum of 10 redirect URIs allowed' }, { status: 400 });
+      if (redirect_uris.length > 5) {
+        return NextResponse.json({ error: 'Maximum of 5 redirect URIs allowed' }, { status: 400 });
       }
       for (const uri of redirect_uris) {
         try {

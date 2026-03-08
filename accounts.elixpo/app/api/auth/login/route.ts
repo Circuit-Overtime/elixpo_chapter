@@ -24,7 +24,7 @@ import { getDatabase } from '@/lib/d1-client';
 export async function POST(request: NextRequest) {
   try {
     const body: any = await request.json();
-    const { email, password, provider, oauth_code } = body;
+    const { email, password, provider, oauth_code, rememberMe } = body;
 
     const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
                      request.headers.get('cf-connecting-ip') || 'unknown';
@@ -178,6 +178,9 @@ export async function POST(request: NextRequest) {
     // Get full user for isAdmin flag
     const isAdminUser = !!(user.is_admin);
 
+    // Session duration: 30 days default, 90 days with "remember me"
+    const refreshDays = rememberMe ? 90 : 30;
+
     // Create tokens (include isAdmin in access token)
     const accessToken = await createAccessToken(
       user.id,
@@ -186,7 +189,7 @@ export async function POST(request: NextRequest) {
       parseInt(process.env.JWT_EXPIRATION_MINUTES || '15'),
       isAdminUser
     );
-    const refreshTokenJWT = await createRefreshToken(user.id, provider as any);
+    const refreshTokenJWT = await createRefreshToken(user.id, provider as any, refreshDays);
 
     // Store refresh token and log success
     try {
@@ -195,7 +198,7 @@ export async function POST(request: NextRequest) {
         id: generateUUID(),
         userId: user.id,
         tokenHash: refreshTokenHash,
-        expiresAt: new Date(Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRATION_DAYS || '30') * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + refreshDays * 24 * 60 * 60 * 1000),
       });
 
       await updateUserLastLogin(db, user.id);
@@ -213,7 +216,8 @@ export async function POST(request: NextRequest) {
       console.error('[Login] Database storage error:', dbError);
     }
 
-    const maxAge = parseInt(process.env.JWT_EXPIRATION_MINUTES || '15') * 60;
+    const accessMaxAge = parseInt(process.env.JWT_EXPIRATION_MINUTES || '15') * 60;
+    const refreshMaxAge = refreshDays * 24 * 60 * 60;
 
     const response = NextResponse.json({
       user: {
@@ -226,7 +230,7 @@ export async function POST(request: NextRequest) {
       tokens: {
         access_token: accessToken,
         refresh_token: refreshTokenJWT,
-        expires_in: maxAge,
+        expires_in: accessMaxAge,
         token_type: 'Bearer',
       },
       // If email/password user has no display name, prompt them to set one
@@ -238,7 +242,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge,
+      maxAge: accessMaxAge,
       path: '/',
     });
 
@@ -246,16 +250,16 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: parseInt(process.env.REFRESH_TOKEN_EXPIRATION_DAYS || '30') * 24 * 60 * 60,
+      maxAge: refreshMaxAge,
       path: '/',
     });
 
-    // Non-httpOnly cookie for client-side auth checks
+    // Non-httpOnly cookie for client-side auth checks (lives as long as the session)
     response.cookies.set('user_id', user.id, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge,
+      maxAge: refreshMaxAge,
       path: '/',
     });
 

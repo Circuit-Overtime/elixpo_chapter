@@ -59,9 +59,11 @@ export async function POST(request: NextRequest) {
       'INSERT INTO email_verification_tokens (id, user_id, email, otp_code, verification_token, expires_at) VALUES (?, ?, ?, ?, ?, ?)'
     ).bind(generateUUID(), payload.sub, user.email, otp, verificationToken, expiresAt).run();
 
-    // Send OTP email
+    // Send OTP email with one-click verify link
     const recipientName = user.display_name || user.email.split('@')[0];
-    await sendOTPEmail(user.email, recipientName, otp);
+    const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://accounts.elixpo.com';
+    const verifyLink = `${APP_URL}/verify?token=${verificationToken}`;
+    await sendOTPEmail(user.email, recipientName, otp, verifyLink);
 
     console.log(`[Verification] OTP sent to ${user.email}`);
 

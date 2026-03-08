@@ -145,11 +145,14 @@ export async function POST(request: NextRequest) {
           const expiryMinutes = parseInt(process.env.EMAIL_VERIFICATION_OTP_EXPIRY_MINUTES || '10');
           const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString();
 
+          const verificationToken = generateUUID();
           await db.prepare(
             'INSERT INTO email_verification_tokens (id, user_id, email, otp_code, verification_token, expires_at) VALUES (?, ?, ?, ?, ?, ?)'
-          ).bind(generateUUID(), userId, email, otpCode, generateUUID(), expiresAt).run();
+          ).bind(generateUUID(), userId, email, otpCode, verificationToken, expiresAt).run();
 
-          await sendOTPEmail(email, displayName, otpCode);
+          const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://accounts.elixpo.com';
+          const verifyLink = `${APP_URL}/verify?token=${verificationToken}`;
+          await sendOTPEmail(email, displayName, otpCode, verifyLink);
           console.log(`[Register] Verification OTP sent to ${email}`);
         } catch (otpError) {
           console.error('[Register] Failed to send verification email:', otpError);
