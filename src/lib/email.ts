@@ -299,8 +299,8 @@ function buildEmail(title: string, bodyHtml: string): string {
 
 export const emailTemplates = {
 
-  // Verification OTP
-  otp: (recipientName: string, otpCode: string, expiryMinutes: number = 10) => {
+  // Verification OTP (with optional one-click verify link)
+  otp: (recipientName: string, otpCode: string, expiryMinutes: number = 10, verifyLink?: string) => {
     const firstName = recipientName.split(' ')[0];
     const subject = `Your Elixpo verification code: ${otpCode}`;
     const html = buildEmail('Email Verification', `
@@ -313,13 +313,24 @@ export const emailTemplates = {
         <p class="code-caption">One-time verification code &mdash; expires in ${expiryMinutes} minutes</p>
       </div>
 
+      ${verifyLink ? `
+      <p>Or click the button below to verify instantly:</p>
+      <div class="btn-container">
+        <a href="${verifyLink}" class="btn">Verify Email</a>
+      </div>
+      <p>If the button does not work, copy and paste this link into your browser:</p>
+      <div class="link-fallback">
+        <a href="${verifyLink}">${verifyLink}</a>
+      </div>
+      ` : ''}
+
       <div class="notice">
         <p><strong>Security notice:</strong> Do not share this code with anyone. Elixpo staff will never ask for your verification code by phone, email, or chat.</p>
       </div>
 
       <p>If you did not request this code, you can safely ignore this message. Your account remains secure.</p>
     `);
-    const text = `Your Elixpo verification code is: ${otpCode}\n\nThis code expires in ${expiryMinutes} minutes.\n\nDo not share this code with anyone.`;
+    const text = `Your Elixpo verification code is: ${otpCode}\n\nThis code expires in ${expiryMinutes} minutes.${verifyLink ? `\n\nOr verify directly: ${verifyLink}` : ''}\n\nDo not share this code with anyone.`;
     return { subject, html, text };
   },
 
@@ -349,6 +360,65 @@ export const emailTemplates = {
       <p>If you did not request a password reset, please disregard this email. Your password has not been changed, and your account remains secure. If you believe your account may be at risk, contact us at <a href="mailto:accounts@elixpo.com" style="color:#22c55e;">accounts@elixpo.com</a>.</p>
     `);
     const text = `Reset your Elixpo password:\n${resetLink}\n\nThis link expires in ${expiryHours} hours.\n\nIf you did not request this, ignore this email.`;
+    return { subject, html, text };
+  },
+
+  // Password Reset OTP (forgot-password flow)
+  passwordResetOtp: (recipientName: string, otpCode: string, resetLink: string, expiryMinutes: number = 10) => {
+    const firstName = recipientName.split(' ')[0];
+    const subject = `Your Elixpo password reset code: ${otpCode}`;
+    const html = buildEmail('Password Reset', `
+      <h1 class="title">Password reset request</h1>
+      <p>Hello, ${firstName}</p>
+      <p>We received a request to reset the password for your Elixpo account. Use the code below, or click the button to reset your password.</p>
+
+      <div class="code-block">
+        <div class="otp-value">${otpCode}</div>
+        <p class="code-caption">Password reset code &mdash; expires in ${expiryMinutes} minutes</p>
+      </div>
+
+      <div class="btn-container">
+        <a href="${resetLink}" class="btn">Reset Password</a>
+      </div>
+
+      <p>If the button does not work, copy and paste this link into your browser:</p>
+      <div class="link-fallback">
+        <a href="${resetLink}">${resetLink}</a>
+      </div>
+
+      <div class="notice">
+        <p><strong>Security notice:</strong> If you did not request this reset, you can safely ignore this email. Your password has not been changed.</p>
+      </div>
+    `);
+    const text = `Your Elixpo password reset code is: ${otpCode}\n\nOr reset directly: ${resetLink}\n\nThis code expires in ${expiryMinutes} minutes.\n\nIf you did not request this, ignore this email.`;
+    return { subject, html, text };
+  },
+
+  // Admin Invite
+  adminInvite: (recipientName: string, inviterEmail: string, inviteLink: string) => {
+    const firstName = recipientName.split(' ')[0];
+    const subject = 'You have been invited as an Admin on Elixpo Accounts';
+    const html = buildEmail('Admin Invitation', `
+      <h1 class="title">Admin invitation</h1>
+      <p>Hello, ${firstName}</p>
+      <p>You have been invited by <strong>${inviterEmail}</strong> to become an administrator on Elixpo Accounts.</p>
+
+      <p>Click the button below to accept the invitation and gain admin access:</p>
+
+      <div class="btn-container">
+        <a href="${inviteLink}" class="btn">Accept Invitation</a>
+      </div>
+
+      <p>If the button does not work, copy and paste this link into your browser:</p>
+      <div class="link-fallback">
+        <a href="${inviteLink}">${inviteLink}</a>
+      </div>
+
+      <div class="notice">
+        <p>This invitation link will expire in <strong>48 hours</strong>. If you did not expect this invitation, you can safely ignore this email.</p>
+      </div>
+    `);
+    const text = `You have been invited as an admin on Elixpo Accounts by ${inviterEmail}.\n\nAccept here: ${inviteLink}\n\nThis link expires in 48 hours.`;
     return { subject, html, text };
   },
 
@@ -543,12 +613,14 @@ export const emailTemplates = {
 export async function sendOTPEmail(
   email: string,
   recipientName: string,
-  otpCode: string
+  otpCode: string,
+  verifyLink?: string
 ): Promise<void> {
   const t = emailTemplates.otp(
     recipientName,
     otpCode,
-    parseInt(process.env.EMAIL_VERIFICATION_OTP_EXPIRY_MINUTES || '10')
+    parseInt(process.env.EMAIL_VERIFICATION_OTP_EXPIRY_MINUTES || '10'),
+    verifyLink
   );
   await sendEmail({ to: email, subject: t.subject, html: t.html, text: t.text });
 }
