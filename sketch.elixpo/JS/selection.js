@@ -1492,6 +1492,7 @@ export {
     selectShapesInRect,
     createMultiSelectionControls,
     removeMultiSelectionControls,
+    removeMultiSelectionRect,
     isPointInMultiSelection,
     moveSelectedShapes,
     multiSelection,
