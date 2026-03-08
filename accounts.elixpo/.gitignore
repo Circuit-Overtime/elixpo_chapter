@@ -21,5 +21,4 @@ yarn-error.log*
 .*env
 .vercel
 *.tsbuildinfo
-next-env.d.ts
 create-admin.mjs
