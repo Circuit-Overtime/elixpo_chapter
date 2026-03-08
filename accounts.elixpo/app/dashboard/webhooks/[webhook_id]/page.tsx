@@ -67,7 +67,7 @@ export default function WebhookDetailPage() {
       try {
         const res = await fetch(`/api/auth/webhooks/${webhookId}`, { credentials: 'include' });
         if (!res.ok) throw new Error('Not found');
-        const data = await res.json();
+        const data: any = await res.json();
         setWebhook(data);
         setForm({ url: data.url, events: data.events, is_active: data.is_active });
       } catch {
@@ -90,10 +90,10 @@ export default function WebhookDetailPage() {
         body: JSON.stringify(form),
       });
       if (!res.ok) {
-        const err = await res.json();
+        const err: any = await res.json();
         throw new Error(err.error || 'Failed to save');
       }
-      const updated = await res.json();
+      const updated: any = await res.json();
       setWebhook(updated);
       setMessage({ text: 'Webhook updated successfully', type: 'success' });
     } catch (err: any) {
@@ -111,7 +111,7 @@ export default function WebhookDetailPage() {
         method: 'POST',
         credentials: 'include',
       });
-      const data = await res.json();
+      const data: any = await res.json();
       setMessage({
         text: data.success ? `Test delivered (HTTP ${data.statusCode})` : `Test failed: ${data.message}`,
         type: data.success ? 'success' : 'error',

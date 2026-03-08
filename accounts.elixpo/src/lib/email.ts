@@ -7,36 +7,90 @@ interface EmailOptions {
   text?: string;
 }
 
-export async function sendEmail(options: EmailOptions): Promise<void> {
-  const host = process.env.SMTP_HOST || 'smtp.zoho.com';
-  const port = parseInt(process.env.SMTP_PORT || '465');
-  const user = process.env.SMTP_FROM_EMAIL || 'accounts@elixpo.com';
-  const pass = process.env.SMTP_PASS || '';
-  const fromName = process.env.SMTP_FROM_NAME || 'Elixpo Accounts';
+function getSmtpConfig() {
+  return {
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '465'),
+    user: process.env.SMTP_FROM_EMAIL || 'noreply@elixpo.com',
+    pass: process.env.SMTP_PASS || '',
+    fromName: process.env.SMTP_FROM_NAME || 'Elixpo (noreply)',
+  };
+}
 
+/**
+ * Send email via nodemailer (works in Node.js / next dev).
+ * Dynamically imported so webpack doesn't try to bundle Node.js
+ * built-ins (crypto, path, fs) for the edge runtime build.
+ */
+async function sendViaNodemailer(options: EmailOptions): Promise<void> {
+  const { host, port, user, pass, fromName } = getSmtpConfig();
+
+
+  const mod = 'node' + 'mailer';
+  const nodemailer = (await import(mod)).default;
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+
+  await transporter.sendMail({
+    from: `${fromName} <${user}>`,
+    replyTo: 'accounts@elixpo.com',
+    to: options.to,
+    subject: options.subject,
+    html: options.html,
+    text: options.text,
+    headers: {
+      'X-Mailer': 'Elixpo Accounts Platform',
+      'X-Priority': '3',
+    },
+  });
+}
+
+/**
+ * Send email via cloudflare:sockets SMTP client (works in Cloudflare Workers)
+ */
+async function sendViaCloudflare(options: EmailOptions): Promise<void> {
+  const { host, port, user, pass, fromName } = getSmtpConfig();
+
+  await smtpSendMail(
+    { host, port, secure: port === 465, auth: { user, pass } },
+    {
+      from: `${fromName} <${user}>`,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+      headers: {
+        'X-Mailer': 'Elixpo Accounts Platform',
+        'X-Priority': '3',
+        'Reply-To': 'accounts@elixpo.com',
+      },
+    }
+  );
+}
+
+export async function sendEmail(options: EmailOptions): Promise<void> {
+  const pass = process.env.SMTP_PASS || '';
   if (!pass) {
     throw new Error('SMTP_PASS is not configured');
   }
 
+  // Try Cloudflare SMTP first (production), fall back to nodemailer (local dev)
   try {
-    await smtpSendMail(
-      { host, port, secure: port === 465, auth: { user, pass } },
-      {
-        from: `${fromName} <${user}>`,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-        headers: {
-          'X-Mailer': 'Elixpo Accounts Platform',
-          'X-Priority': '3',
-        },
-      }
-    );
-    console.log(`[Email] Sent to ${options.to}`);
-  } catch (error) {
-    console.error('[Email] Send failed:', error);
-    throw error;
+    await sendViaCloudflare(options);
+    console.log(`[Email] Sent via Cloudflare SMTP to ${options.to}`);
+  } catch {
+    try {
+      await sendViaNodemailer(options);
+      console.log(`[Email] Sent via nodemailer to ${options.to}`);
+    } catch (nmError) {
+      console.error('[Email] Both SMTP methods failed:', nmError);
+      throw nmError;
+    }
   }
 }
 
@@ -217,13 +271,13 @@ function buildEmail(title: string, bodyHtml: string): string {
   <div class="wrapper">
     <div class="container">
       <div class="header">
-        <div class="header-logo">ELIXPO<span>.</span></div>
+        <div class="header-logo">ELIXPO <span>ACCOUNTS</span></div>
       </div>
       <div class="body">
         ${bodyHtml}
       </div>
       <div class="footer">
-        <p>This message was sent from Elixpo Accounts &lt;<a href="mailto:accounts@elixpo.com">accounts@elixpo.com</a>&gt;</p>
+        <p>This email was sent by <strong>elixpoo@gmail.com</strong>, a registered worker of <a href="mailto:accounts@elixpo.com" style="color:#22c55e;">accounts@elixpo.com</a>. Please reply to <a href="mailto:accounts@elixpo.com" style="color:#22c55e;">accounts@elixpo.com</a> for any queries.</p>
         <p>
           <a href="${APP_URL}">accounts.elixpo.com</a>
           &nbsp;&middot;&nbsp;
@@ -251,7 +305,7 @@ export const emailTemplates = {
     const subject = `Your Elixpo verification code: ${otpCode}`;
     const html = buildEmail('Email Verification', `
       <h1 class="title">Verify your email address</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>Use the verification code below to confirm your Elixpo account. This code is valid for <strong>${expiryMinutes} minutes</strong> and can only be used once.</p>
 
       <div class="code-block">
@@ -275,7 +329,7 @@ export const emailTemplates = {
     const subject = 'Reset your Elixpo password';
     const html = buildEmail('Password Reset', `
       <h1 class="title">Password reset request</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>We received a request to reset the password associated with this email address. If this was you, click the button below to choose a new password.</p>
 
       <div class="btn-container">
@@ -304,7 +358,7 @@ export const emailTemplates = {
     const subject = 'Welcome to Elixpo — please verify your email';
     const html = buildEmail('Welcome to Elixpo', `
       <h1 class="title">Welcome to Elixpo</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>Thank you for creating an Elixpo account. To activate your account and access all features, please verify your email address by clicking the button below.</p>
 
       <div class="btn-container">
@@ -334,7 +388,7 @@ export const emailTemplates = {
     const subject = 'New sign-in to your Elixpo account';
     const html = buildEmail('Sign-in Notification', `
       <h1 class="title">New sign-in detected</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>A new sign-in to your Elixpo account was recorded. Review the details below.</p>
 
       <table class="info-table">
@@ -368,7 +422,7 @@ export const emailTemplates = {
     const subject = `New API key created: ${keyName}`;
     const html = buildEmail('API Key Created', `
       <h1 class="title">New API key created</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>A new API key has been created for your Elixpo account. Please review the details below.</p>
 
       <table class="info-table">
@@ -398,13 +452,79 @@ export const emailTemplates = {
     return { subject, html, text };
   },
 
+  // OAuth App registered
+  appRegistered: (recipientName: string, appName: string, clientId: string) => {
+    const firstName = recipientName.split(' ')[0];
+    const subject = `OAuth app registered: ${appName}`;
+    const html = buildEmail('App Registered', `
+      <h1 class="title">OAuth application registered</h1>
+      <p>Hello, ${firstName}</p>
+      <p>Your new OAuth application has been successfully registered on Elixpo Accounts.</p>
+
+      <table class="info-table">
+        <tr>
+          <td>App Name</td>
+          <td>${appName}</td>
+        </tr>
+        <tr>
+          <td>Client ID</td>
+          <td><code>${clientId}</code></td>
+        </tr>
+        <tr>
+          <td>Created</td>
+          <td>${new Date().toUTCString()}</td>
+        </tr>
+      </table>
+
+      <p>You can manage your application from the <a href="${APP_URL}/dashboard/oauth-apps" style="color:#22c55e;">Developer Portal</a>.</p>
+
+      <div class="notice">
+        <p><strong>Reminder:</strong> Store your client secret securely. It cannot be retrieved after creation. If lost, you can regenerate it from the dashboard.</p>
+      </div>
+    `);
+    const text = `OAuth app "${appName}" (${clientId}) registered successfully.\n\nManage it at ${APP_URL}/dashboard/oauth-apps`;
+    return { subject, html, text };
+  },
+
+  // OAuth App deleted / deactivated
+  appDeleted: (recipientName: string, appName: string, clientId: string) => {
+    const firstName = recipientName.split(' ')[0];
+    const subject = `OAuth app deactivated: ${appName}`;
+    const html = buildEmail('App Deactivated', `
+      <h1 class="title">OAuth application deactivated</h1>
+      <p>Hello, ${firstName}</p>
+      <p>Your OAuth application has been deactivated and will no longer accept authentication requests.</p>
+
+      <table class="info-table">
+        <tr>
+          <td>App Name</td>
+          <td>${appName}</td>
+        </tr>
+        <tr>
+          <td>Client ID</td>
+          <td><code>${clientId}</code></td>
+        </tr>
+        <tr>
+          <td>Deactivated</td>
+          <td>${new Date().toUTCString()}</td>
+        </tr>
+      </table>
+
+      <div class="notice">
+        <p>If you did not deactivate this application, secure your account immediately and contact us at <a href="mailto:accounts@elixpo.com" style="color:#713f12;">accounts@elixpo.com</a>.</p>
+      </div>
+    `);
+    const text = `OAuth app "${appName}" (${clientId}) has been deactivated.\n\nIf this was not you, contact accounts@elixpo.com immediately.`;
+    return { subject, html, text };
+  },
+
   // Admin: account suspended
   accountSuspended: (recipientName: string, reason?: string) => {
     const firstName = recipientName.split(' ')[0];
     const subject = 'Your Elixpo account has been suspended';
     const html = buildEmail('Account Suspended', `
       <h1 class="title">Account suspended</h1>
-      <p>Hello ${firstName},</p>
+      <p>Hello, ${firstName}</p>
       <p>Your Elixpo account has been suspended. You will not be able to sign in or use Elixpo services until the suspension is lifted.</p>
 
       ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
@@ -474,5 +594,25 @@ export async function sendApiKeyCreatedEmail(
   scopes: string[]
 ): Promise<void> {
   const t = emailTemplates.apiKeyCreated(recipientName, keyName, keyPrefix, scopes);
+  await sendEmail({ to: email, subject: t.subject, html: t.html, text: t.text });
+}
+
+export async function sendAppRegisteredEmail(
+  email: string,
+  recipientName: string,
+  appName: string,
+  clientId: string
+): Promise<void> {
+  const t = emailTemplates.appRegistered(recipientName, appName, clientId);
+  await sendEmail({ to: email, subject: t.subject, html: t.html, text: t.text });
+}
+
+export async function sendAppDeletedEmail(
+  email: string,
+  recipientName: string,
+  appName: string,
+  clientId: string
+): Promise<void> {
+  const t = emailTemplates.appDeleted(recipientName, appName, clientId);
   await sendEmail({ to: email, subject: t.subject, html: t.html, text: t.text });
 }

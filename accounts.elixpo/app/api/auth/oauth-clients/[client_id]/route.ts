@@ -2,8 +2,10 @@ export const runtime = 'edge';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyJWT } from '@/lib/jwt';
-import { getOAuthClientById, getOAuthClientByIdWithSecret, updateOAuthClient } from '@/lib/db';
+import { getOAuthClientById, getOAuthClientByIdWithSecret, updateOAuthClient, getUserById } from '@/lib/db';
 import { getDatabase } from '@/lib/d1-client';
+import { generateRandomString, hashString } from '@/lib/webcrypto';
+import { sendAppDeletedEmail } from '@/lib/email';
 
 /**
  * PUT /api/auth/oauth-clients/[client_id]
@@ -23,7 +25,7 @@ export async function PUT(
     if (!payload) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
 
     const { client_id } = await params;
-    const body = await request.json();
+    const body: any = await request.json();
     const { name, redirect_uris, scopes, description, homepage_url, logo_url } = body;
 
     if (!client_id) {
@@ -42,6 +44,26 @@ export async function PUT(
     }
     if (app.owner_id !== payload.sub) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Validate redirect URIs if provided
+    if (redirect_uris !== undefined) {
+      if (!Array.isArray(redirect_uris) || redirect_uris.length === 0) {
+        return NextResponse.json({ error: 'redirect_uris must be a non-empty array' }, { status: 400 });
+      }
+      if (redirect_uris.length > 10) {
+        return NextResponse.json({ error: 'Maximum of 10 redirect URIs allowed' }, { status: 400 });
+      }
+      for (const uri of redirect_uris) {
+        try {
+          const parsed = new URL(uri);
+          if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+            return NextResponse.json({ error: `Redirect URI must use HTTP or HTTPS: ${uri}` }, { status: 400 });
+          }
+        } catch {
+          return NextResponse.json({ error: `Invalid redirect_uri: ${uri}` }, { status: 400 });
+        }
+      }
     }
 
     try {
@@ -79,6 +101,59 @@ export async function PUT(
       { error: 'Failed to update application' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * PATCH /api/auth/oauth-clients/[client_id]
+ *
+ * Regenerate the client secret for an OAuth application
+ * Returns the new secret (shown only once)
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ client_id: string }> }
+) {
+  try {
+    const token = request.cookies.get('access_token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const payload = await verifyJWT(token);
+    if (!payload) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+
+    const { client_id } = await params;
+
+    if (!client_id) {
+      return NextResponse.json({ error: 'client_id is required' }, { status: 400 });
+    }
+
+    const db = await getDatabase();
+
+    // Verify ownership
+    const app = await getOAuthClientByIdWithSecret(db, client_id) as any;
+    if (!app) {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 });
+    }
+    if (app.owner_id !== payload.sub) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Generate new secret
+    const newSecret = `secret_${generateRandomString(64)}`;
+    const newSecretHash = await hashString(newSecret);
+
+    await updateOAuthClient(db, client_id, { clientSecretHash: newSecretHash });
+
+    console.log(`[OAuth Client] Secret regenerated for: ${client_id}`);
+
+    return NextResponse.json({
+      client_id,
+      client_secret: newSecret,
+      _notice: 'Store this secret securely. It will NOT be retrievable after this response.',
+    });
+  } catch (error) {
+    console.error('[OAuth Client] Secret regeneration error:', error);
+    return NextResponse.json({ error: 'Failed to regenerate secret' }, { status: 500 });
   }
 }
 
@@ -129,6 +204,17 @@ export async function DELETE(
     }
 
     console.log(`[OAuth Client] Deactivated: ${client_id}`);
+
+    // Notify owner via email (fire-and-forget)
+    try {
+      const owner = await getUserById(db, payload.sub) as any;
+      if (owner?.email) {
+        const ownerName = owner.display_name || owner.email.split('@')[0];
+        await sendAppDeletedEmail(owner.email, ownerName, app.name, client_id);
+      }
+    } catch (emailError) {
+      console.error('[OAuth Client] Failed to send deactivation email:', emailError);
+    }
 
     return NextResponse.json({
       message: 'Application deactivated successfully',

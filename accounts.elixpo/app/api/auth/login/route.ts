@@ -23,7 +23,7 @@ import { getDatabase } from '@/lib/d1-client';
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: any = await request.json();
     const { email, password, provider, oauth_code } = body;
 
     const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
@@ -221,6 +221,7 @@ export async function POST(request: NextRequest) {
         email,
         provider,
         isAdmin: isAdminUser,
+        displayName: user.display_name || null,
       },
       tokens: {
         access_token: accessToken,
@@ -228,6 +229,8 @@ export async function POST(request: NextRequest) {
         expires_in: maxAge,
         token_type: 'Bearer',
       },
+      // If email/password user has no display name, prompt them to set one
+      ...(provider === 'email' && !user.display_name && { needsDisplayName: true }),
     });
 
     // Set secure httpOnly cookies

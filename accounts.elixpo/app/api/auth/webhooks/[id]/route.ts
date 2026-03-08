@@ -53,7 +53,7 @@ export async function PUT(
     .first();
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const body = await request.json();
+  const body: any = await request.json();
   const { url, events, is_active } = body as {
     url?: string;
     events?: string[];

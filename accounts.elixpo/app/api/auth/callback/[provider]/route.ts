@@ -201,6 +201,9 @@ export async function GET(
     try {
       await createUser(db, { id: userId, email });
 
+      // OAuth users have provider-verified emails
+      await db.prepare('UPDATE users SET email_verified = 1, email_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(userId).run();
+
       await createIdentity(db, {
         id: generateUUID(),
         userId,
@@ -255,6 +258,11 @@ async function buildSuccessResponse(
   ipAddress: string,
   userAgent: string
 ) {
+  // Ensure OAuth users are marked as email-verified
+  try {
+    await db.prepare('UPDATE users SET email_verified = 1, email_verified_at = COALESCE(email_verified_at, CURRENT_TIMESTAMP) WHERE id = ? AND email_verified = 0').bind(user.id).run();
+  } catch { /* non-critical */ }
+
   const accessToken = await createAccessToken(
     user.id,
     email,
@@ -369,7 +377,7 @@ async function exchangeCodeForTokens(
       return null;
     }
 
-    return await response.json();
+    return await response.json() as any;
   } catch (err) {
     console.error('Token exchange error:', err);
     return null;
@@ -397,7 +405,7 @@ async function fetchUserInfoFromProvider(
       return null;
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
 
     switch (provider) {
       case 'google':

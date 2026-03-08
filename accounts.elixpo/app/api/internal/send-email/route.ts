@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { type, to, data } = await request.json();
+  const { type, to, data }: any = await request.json();
 
   try {
     switch (type) {

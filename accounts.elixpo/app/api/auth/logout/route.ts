@@ -22,7 +22,7 @@ import { getDatabase } from '@/lib/d1-client';
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json().catch(() => ({}));
+    const body: any = await request.json().catch(() => ({}));
     const refreshToken = body.refresh_token || request.cookies.get('refresh_token')?.value;
     const logoutRedirectUri = body.logout_redirect_uri;
 

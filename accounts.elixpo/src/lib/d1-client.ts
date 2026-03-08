@@ -10,46 +10,60 @@
 import type { D1Database } from '@cloudflare/workers-types';
 
 let cachedDb: D1Database | null = null as any;
+let cachedDbType: 'cloudflare' | 'api' | 'mock' | null = null;
 
 /**
  * Initialize and get D1 Database connection
- * In Cloudflare environment: Uses the runtime binding
- * In local environment: Uses Cloudflare API
+ * In Cloudflare environment: Uses the runtime binding via getRequestContext()
+ * In local environment: Uses Cloudflare REST API
  */
 export async function getDatabase(): Promise<D1Database> {
-  // Return cached connection if available
-  if (cachedDb) {
+  // Return cached connection if available (but never cache the in-memory mock)
+  if (cachedDb && cachedDbType !== 'mock') {
     return cachedDb;
   }
 
-  // In Cloudflare environment (Pages/Workers)
-  if (typeof globalThis !== 'undefined' && 'env' in globalThis) {
-    const env = (globalThis as any).env;
-    if (env && env.DB) {
-      cachedDb = env.DB;
-      if (!cachedDb) {
-        throw new Error('D1 Database binding (env.DB) is not available');
-      }
-      return cachedDb;
+  // In Cloudflare Pages environment — use @cloudflare/next-on-pages runtime context
+  try {
+    const { getRequestContext } = await import(/* webpackIgnore: true */ '@cloudflare/next-on-pages');
+    const ctx = getRequestContext();
+    const env = (ctx as any).env;
+    if (env?.DB) {
+      cachedDb = env.DB as D1Database;
+      cachedDbType = 'cloudflare';
+      return cachedDb!;
     }
+  } catch {
+    // Expected in local dev — fall through to API client
   }
 
-  // For local development: Create a mock D1 client that makes API calls
-  // This requires CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, D1_DATABASE_ID
-  if (process.env.NODE_ENV === 'development') {
-    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-    const apiToken = process.env.CLOUDFLARE_API_TOKEN;
-    const databaseId = process.env.CLOUDFLARE_DATABASE_ID;
-
-    if (accountId && apiToken && databaseId) {
-      // Create mock D1 client for local development
-      cachedDb = createLocalD1Client(accountId, apiToken, databaseId);
-      return cachedDb;
+  // Fallback: try process.env.DB or globalThis.process.env
+  try {
+    const g = globalThis as any;
+    if (g?.process?.env?.DB) {
+      cachedDb = g.process.env.DB as D1Database;
+      cachedDbType = 'cloudflare';
+      return cachedDb!;
     }
+  } catch {
+    // not available
+  }
+
+  // Local development: Create a D1 client using Cloudflare REST API
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+  const databaseId = process.env.CLOUDFLARE_DATABASE_ID;
+
+  if (accountId && apiToken && databaseId) {
+    cachedDb = createLocalD1Client(accountId, apiToken, databaseId);
+    cachedDbType = 'api';
+    console.log('[D1] Using Cloudflare REST API client for local development');
+    return cachedDb;
   }
 
   // Fallback: Create in-memory mock (for testing without D1)
   console.warn('[D1] Using in-memory mock database - not suitable for production');
+  cachedDbType = 'mock';
   return createInMemoryMockDb();
 }
 
@@ -59,15 +73,15 @@ export async function getDatabase(): Promise<D1Database> {
 function createLocalD1Client(accountId: string, apiToken: string, databaseId: string): D1Database {
   const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}`;
 
-  const query = async (sql: string, params: any[] = []) => {
+  const query = async (sql: string, params: any[] = []): Promise<any> => {
     const response = await fetch(`${baseUrl}/query`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ sql, params }),
     });
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`D1 Query Error: ${error.errors?.[0]?.message || response.statusText}`);
+      const error: any = await response.json();
+      throw new Error(`D1 Query Error: ${error.message || response.statusText}`);
     }
     return response.json();
   };
@@ -99,7 +113,7 @@ function createLocalD1Client(accountId: string, apiToken: string, databaseId: st
         }),
       });
       if (!response.ok) {
-        const error = await response.json();
+        const error: any = await response.json();
         throw new Error(`D1 Batch Error: ${error.errors?.[0]?.message || response.statusText}`);
       }
       return response.json();
@@ -111,7 +125,7 @@ function createLocalD1Client(accountId: string, apiToken: string, databaseId: st
         body: JSON.stringify({ sql }),
       });
       if (!response.ok) {
-        const error = await response.json();
+        const error: any = await response.json();
         throw new Error(`D1 Exec Error: ${error.errors?.[0]?.message || response.statusText}`);
       }
       return response.json();

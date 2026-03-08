@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const admin = await verifyAdminSession(request);
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const { id, markAll } = await request.json();
+  
+  const { id, markAll }: any = await request.json();
   const db = await getDatabase();
 
   if (markAll) {

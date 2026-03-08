@@ -77,7 +77,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
     try {
       const res = await fetch('/api/admin/notifications?unread=true', { credentials: 'include' });
       if (res.ok) {
-        const data = await res.json();
+        const data : any = await res.json();
         setUnreadCount(data.unreadCount ?? 0);
       }
     } catch { /* silent */ }
@@ -95,7 +95,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
     try {
       const res = await fetch('/api/admin/notifications', { credentials: 'include' });
       if (res.ok) {
-        const data = await res.json();
+        const data : any = await res.json();
         setNotifications(data.notifications ?? []);
         setUnreadCount(data.unreadCount ?? 0);
       }
