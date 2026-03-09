@@ -1,82 +1,30 @@
 "use client"
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
-import ShapeSidebar from './ShapeSidebar'
-import { useState } from 'react'
+import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
+import { useState, useCallback } from 'react'
 
-const STROKE_COLORS = [
-  { color: '#fff', label: 'White' },
-  { color: '#FF8383', label: 'Red' },
-  { color: '#3A994C', label: 'Green' },
-  { color: '#56A2E8', label: 'Blue' },
-  { color: '#FFD700', label: 'Gold' },
-]
+const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 
-const THICKNESSES = [
-  { value: 2, label: 'Thin' },
-  { value: 5, label: 'Medium' },
-  { value: 7, label: 'Thick' },
-]
+// Map taper UI values to perfect-freehand thinning values
+const TAPER_MAP = { uniform: 0, pen: 0.5, brush: 0.8 }
 
-const STYLES = [
-  {
-    value: 'solid',
-    label: 'Solid',
-    svg: '<svg width="28" height="2" viewBox="0 0 28 2"><line x1="0" y1="1" x2="28" y2="1" stroke="currentColor" stroke-width="2"/></svg>',
-  },
-  {
-    value: 'dashed',
-    label: 'Dashed',
-    svg: '<svg width="28" height="2" viewBox="0 0 28 2"><line x1="0" y1="1" x2="28" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"/></svg>',
-  },
-  {
-    value: 'dotted',
-    label: 'Dotted',
-    svg: '<svg width="28" height="2" viewBox="0 0 28 2"><line x1="0" y1="1" x2="28" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="1 3" stroke-linecap="round"/></svg>',
-  },
-]
-
-const TAPERS = [
-  { value: 'uniform', label: 'Uniform' },
-  { value: 'pen', label: 'Pen' },
-  { value: 'brush', label: 'Brush' },
-]
-
-const ROUGHNESS_OPTIONS = [
-  { value: 'smooth', label: 'Smooth' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'rough', label: 'Rough' },
-]
-
-function ColorSwatches({ colors, selected, onSelect, label }) {
+function ColorGrid({ colors, selected, onSelect }) {
   return (
-    <div className="mb-3">
-      <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5">{label}</p>
-      <div className="flex items-center gap-1.5">
-        {colors.map((c) => (
-          <button
-            key={c.color}
-            title={c.label}
-            onClick={() => onSelect(c.color)}
-            className={`w-6 h-6 rounded-full border-2 transition-all duration-200 ${
-              selected === c.color
-                ? 'border-accent scale-110'
-                : 'border-border hover:border-border-light'
-            }`}
-            style={{ backgroundColor: c.color }}
-          />
-        ))}
-      </div>
+    <div className="grid grid-cols-4 gap-1.5">
+      {colors.map((c) => (
+        <button key={c} onClick={() => onSelect(c)}
+          className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? 'border-[#5B57D1] scale-110' : 'border-white/[0.08] hover:border-white/20'}`}
+          style={{ backgroundColor: c }}
+        />
+      ))}
     </div>
   )
 }
 
-function SvgIcon({ svg }) {
-  return <span dangerouslySetInnerHTML={{ __html: svg }} />
-}
-
 export default function PaintbrushSidebar() {
   const activeTool = useSketchStore((s) => s.activeTool)
+  const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const [strokeColor, setStrokeColor] = useState('#fff')
   const [thickness, setThickness] = useState(2)
   const [lineStyle, setLineStyle] = useState('solid')
@@ -84,111 +32,84 @@ export default function PaintbrushSidebar() {
   const [roughness, setRoughness] = useState('smooth')
   const [opacity, setOpacity] = useState(1)
 
+  const updateStroke = useCallback((v) => { setStrokeColor(v); if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ stroke: v }) }, [])
+  const updateThickness = useCallback((v) => { setThickness(v); if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ strokeWidth: v }) }, [])
+  const updateTaper = useCallback((v) => { setTaper(v); if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ thinning: TAPER_MAP[v] }) }, [])
+  const updateRoughness = useCallback((v) => { setRoughness(v); if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ roughness: v }) }, [])
+  const updateOpacity = useCallback((v) => { setOpacity(v); if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ opacity: v }) }, [])
+
   return (
-    <ShapeSidebar visible={activeTool === TOOLS.FREEHAND} title="Paintbrush">
-      <ColorSwatches
-        colors={STROKE_COLORS}
-        selected={strokeColor}
-        onSelect={setStrokeColor}
-        label="Stroke"
-      />
+    <ShapeSidebar visible={activeTool === TOOLS.FREEHAND || selectedShapeSidebar === 'paintbrush'}>
+      <ToolbarButton tooltip="Stroke color"
+        preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
+      >
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Stroke</p>
+        <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
+      </ToolbarButton>
 
-      {/* Thickness */}
-      <div className="mb-3">
-        <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5">Thickness</p>
+      <Divider />
+
+      <ToolbarButton icon="bxs-edit-alt" tooltip="Stroke width">
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
-          {THICKNESSES.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setThickness(t.value)}
-              className={`flex-1 py-1.5 rounded-lg text-[10px] transition-all duration-200 ${
-                thickness === t.value
-                  ? 'bg-surface-active text-text-primary'
-                  : 'text-text-muted hover:bg-surface-hover'
-              }`}
+          {[1, 2, 4, 7].map((w) => (
+            <button key={w} onClick={() => updateThickness(w)}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
             >
-              {t.label}
+              <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
           ))}
         </div>
-      </div>
+      </ToolbarButton>
 
-      {/* Style */}
-      <div className="mb-3">
-        <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5">Style</p>
-        <div className="flex items-center gap-1">
-          {STYLES.map((s) => (
-            <button
-              key={s.value}
-              title={s.label}
-              onClick={() => setLineStyle(s.value)}
-              className={`flex-1 py-2 flex items-center justify-center rounded-lg transition-all duration-200 ${
-                lineStyle === s.value
-                  ? 'bg-surface-active text-text-primary'
-                  : 'text-text-muted hover:bg-surface-hover'
-              }`}
+      <Divider />
+
+      <ToolbarButton icon="bxs-pen" tooltip="Taper">
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Taper</p>
+        <div className="flex flex-col gap-0.5">
+          {[
+            { v: 'uniform', i: 'bxs-minus-circle', l: 'Uniform' },
+            { v: 'pen', i: 'bxs-pen', l: 'Pen' },
+            { v: 'brush', i: 'bxs-brush', l: 'Brush' },
+          ].map((t) => (
+            <button key={t.v} onClick={() => updateTaper(t.v)}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${taper === t.v ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
             >
-              <SvgIcon svg={s.svg} />
+              <i className={`bx ${t.i} text-sm`} /> {t.l}
             </button>
           ))}
         </div>
-      </div>
+      </ToolbarButton>
 
-      {/* Taper */}
-      <div className="mb-3">
-        <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5">Taper</p>
-        <div className="flex items-center gap-1">
-          {TAPERS.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setTaper(t.value)}
-              className={`flex-1 py-1.5 rounded-lg text-[10px] transition-all duration-200 ${
-                taper === t.value
-                  ? 'bg-surface-active text-text-primary'
-                  : 'text-text-muted hover:bg-surface-hover'
-              }`}
+      <Divider />
+
+      <ToolbarButton icon="bxs-shape-polygon" tooltip="Roughness">
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Roughness</p>
+        <div className="flex flex-col gap-0.5">
+          {[
+            { v: 'smooth', i: 'bxs-droplet', l: 'Smooth' },
+            { v: 'medium', i: 'bxs-leaf', l: 'Medium' },
+            { v: 'rough', i: 'bxs-bolt', l: 'Rough' },
+          ].map((r) => (
+            <button key={r.v} onClick={() => updateRoughness(r.v)}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${roughness === r.v ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
             >
-              {t.label}
+              <i className={`bx ${r.i} text-sm`} /> {r.l}
             </button>
           ))}
         </div>
-      </div>
+      </ToolbarButton>
 
-      {/* Roughness */}
-      <div className="mb-3">
-        <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5">Roughness</p>
-        <div className="flex items-center gap-1">
-          {ROUGHNESS_OPTIONS.map((r) => (
-            <button
-              key={r.value}
-              onClick={() => setRoughness(r.value)}
-              className={`flex-1 py-1.5 rounded-lg text-[10px] transition-all duration-200 ${
-                roughness === r.value
-                  ? 'bg-surface-active text-text-primary'
-                  : 'text-text-muted hover:bg-surface-hover'
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Divider />
 
-      {/* Opacity */}
-      <div>
-        <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5">
-          Opacity ({Math.round(opacity * 100)}%)
-        </p>
+      <ToolbarButton icon="bxs-sun" tooltip="Opacity">
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Opacity {Math.round(opacity * 100)}%</p>
         <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={opacity}
-          onChange={(e) => setOpacity(parseFloat(e.target.value))}
-          className="w-full h-1.5 bg-surface-dark rounded-lg appearance-none cursor-pointer accent-accent-blue"
+          type="range" min="0" max="1" step="0.05" value={opacity}
+          onChange={(e) => updateOpacity(parseFloat(e.target.value))}
+          className="w-28 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#5B57D1]"
         />
-      </div>
+      </ToolbarButton>
     </ShapeSidebar>
   )
 }

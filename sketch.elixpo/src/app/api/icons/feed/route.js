@@ -10,7 +10,7 @@ function getDataArray() {
   const now = Date.now()
   if (cachedData && now - lastLoadTime < RELOAD_INTERVAL) return cachedData
 
-  const metaPath = path.join(process.cwd(), 'ICONS_CONT', 'info', 'icons.json')
+  const metaPath = path.join(process.cwd(), 'public', 'icons', 'info', 'icons.json')
   if (!fs.existsSync(metaPath)) return []
 
   const metadata = JSON.parse(fs.readFileSync(metaPath, 'utf-8'))

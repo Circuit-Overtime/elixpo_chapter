@@ -1,6 +1,7 @@
 "use client"
 
 import useSketchStore from '@/store/useSketchStore'
+import { useCallback } from 'react'
 
 export default function Footer() {
   const zoom = useSketchStore((s) => s.zoom)
@@ -8,11 +9,32 @@ export default function Footer() {
 
   const zoomPercent = Math.round(zoom * 100)
 
+  const handleZoomIn = useCallback(() => {
+    if (window.zoomFromCenter) window.zoomFromCenter(1)
+  }, [])
+
+  const handleZoomOut = useCallback(() => {
+    if (window.zoomFromCenter) window.zoomFromCenter(-1)
+  }, [])
+
+  const handleZoomReset = useCallback(() => {
+    if (window.zoomReset) window.zoomReset()
+  }, [])
+
+  const handleUndo = useCallback(() => {
+    if (window.undo) window.undo()
+  }, [])
+
+  const handleRedo = useCallback(() => {
+    if (window.redo) window.redo()
+  }, [])
+
   return (
     <div className="absolute bottom-2.5 right-5 flex items-center gap-2.5 z-[1000] font-[lixFont]">
       {/* Undo/Redo */}
       <div className="flex items-center bg-surface rounded-lg overflow-hidden">
         <button
+          onClick={handleUndo}
           title="Undo (Ctrl+Z)"
           className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
         >
@@ -20,6 +42,7 @@ export default function Footer() {
         </button>
         <div className="w-px h-5 bg-border-light" />
         <button
+          onClick={handleRedo}
           title="Redo (Ctrl+Shift+Z)"
           className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
         >
@@ -30,7 +53,7 @@ export default function Footer() {
       {/* Zoom controls */}
       <div className="flex items-center bg-surface rounded-lg overflow-hidden">
         <button
-          onClick={() => setZoom(zoom - 0.1)}
+          onClick={handleZoomOut}
           title="Zoom Out (Ctrl+-)"
           className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
         >
@@ -38,15 +61,15 @@ export default function Footer() {
         </button>
         <div className="w-px h-5 bg-border-light" />
         <button
-          onClick={() => setZoom(1)}
+          onClick={handleZoomReset}
           title="Reset Zoom (Ctrl+0)"
-          className="min-w-[52px] h-9 flex items-center justify-center text-text-secondary text-xs px-2 hover:bg-surface-hover transition-all duration-200"
+          className="min-w-[52px] h-9 flex items-center justify-center text-text-secondary text-sm px-2 hover:bg-surface-hover transition-all duration-200"
         >
           {zoomPercent}%
         </button>
         <div className="w-px h-5 bg-border-light" />
         <button
-          onClick={() => setZoom(zoom + 0.1)}
+          onClick={handleZoomIn}
           title="Zoom In (Ctrl++)"
           className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
         >

@@ -83,7 +83,7 @@ export default function SaveModal() {
                     </span>
                   )}
                 </span>
-                <span className="text-text-dim text-[10px]">
+                <span className="text-text-dim text-xs">
                   {option.description}
                 </span>
               </div>

@@ -3,8 +3,8 @@
 // Depends on globals: svg, shapes, currentShape, rough, currentZoom, lastMousePos
 // Depends on globals: isSquareToolActive, isSelectionToolActive
 // Depends on globals: squareSideBar, disableAllSideBars
-import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransformAction, pushFrameAttachmentAction } from '../../JS/undoAndRedo.js';
-import { cleanupAttachments } from '../../JS/drawArrow.js';
+import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransformAction, pushFrameAttachmentAction } from '../core/UndoRedo.js';
+import { cleanupAttachments } from './arrowTool.js';
 
 let isDrawingSquare = false;
 let isDraggingShapeSquare = false;
@@ -583,5 +583,40 @@ document.addEventListener('keydown', (e) => {
 
 window.Rectangle = Rectangle;
 
+// Bridge rectangle tool settings to React sidebar
+window.rectToolSettings = {
+    get strokeColor() { return squareStrokecolor; },
+    set strokeColor(v) { squareStrokecolor = v; },
+    get bgColor() { return squareBackgroundColor; },
+    set bgColor(v) { squareBackgroundColor = v; },
+    get fillStyle() { return squareFillStyleValue; },
+    set fillStyle(v) { squareFillStyleValue = v; },
+    get strokeWidth() { return squareStrokeThicknes; },
+    set strokeWidth(v) { squareStrokeThicknes = v; },
+    get outlineStyle() { return squareOutlineStyle; },
+    set outlineStyle(v) { squareOutlineStyle = v; },
+};
+window.updateSelectedRectStyle = function(changes) {
+    if (currentShape && currentShape.shapeName === 'rectangle' && currentShape.isSelected) {
+        pushOptionsChangeAction(currentShape, { ...currentShape.options });
+        if (changes.stroke !== undefined) { squareStrokecolor = changes.stroke; currentShape.options.stroke = changes.stroke; }
+        if (changes.fill !== undefined) { squareBackgroundColor = changes.fill; currentShape.options.fill = changes.fill; }
+        if (changes.fillStyle !== undefined) { squareFillStyleValue = changes.fillStyle; currentShape.options.fillStyle = changes.fillStyle; }
+        if (changes.strokeWidth !== undefined) { squareStrokeThicknes = changes.strokeWidth; currentShape.options.strokeWidth = changes.strokeWidth; }
+        if (changes.outlineStyle !== undefined) {
+            squareOutlineStyle = changes.outlineStyle;
+            if (changes.outlineStyle === "dashed") currentShape.options.strokeDasharray = "10,10";
+            else if (changes.outlineStyle === "dotted") currentShape.options.strokeDasharray = "2,8";
+            else currentShape.options.strokeDasharray = "";
+        }
+        currentShape.draw();
+    } else {
+        if (changes.stroke !== undefined) squareStrokecolor = changes.stroke;
+        if (changes.fill !== undefined) squareBackgroundColor = changes.fill;
+        if (changes.fillStyle !== undefined) squareFillStyleValue = changes.fillStyle;
+        if (changes.strokeWidth !== undefined) squareStrokeThicknes = changes.strokeWidth;
+        if (changes.outlineStyle !== undefined) squareOutlineStyle = changes.outlineStyle;
+    }
+};
 
 export { handleMouseDownRect, handleMouseMoveRect, handleMouseUpRect };

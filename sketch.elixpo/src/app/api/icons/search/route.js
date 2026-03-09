@@ -11,7 +11,7 @@ function getFuse() {
   const now = Date.now()
   if (fuse && now - lastLoadTime < RELOAD_INTERVAL) return fuse
 
-  const metaPath = path.join(process.cwd(), 'ICONS_CONT', 'info', 'icons.json')
+  const metaPath = path.join(process.cwd(), 'public', 'icons', 'info', 'icons.json')
   if (!fs.existsSync(metaPath)) return null
 
   const metadata = JSON.parse(fs.readFileSync(metaPath, 'utf-8'))

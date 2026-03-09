@@ -68,7 +68,7 @@ export default function AppMenu() {
             {item.label}
           </span>
           {item.shortcut && (
-            <span className="text-text-dim text-[10px]">{item.shortcut}</span>
+            <span className="text-text-dim text-xs">{item.shortcut}</span>
           )}
         </button>
       ))}
@@ -91,7 +91,7 @@ export default function AppMenu() {
 
       {/* Theme toggle */}
       <div className="px-3 py-2">
-        <p className="text-text-dim text-[10px] uppercase tracking-wider mb-2">
+        <p className="text-text-dim text-xs uppercase tracking-wider mb-2">
           Theme
         </p>
         <div className="flex items-center gap-1">
@@ -117,7 +117,7 @@ export default function AppMenu() {
 
       {/* Canvas background */}
       <div className="px-3 py-2">
-        <p className="text-text-dim text-[10px] uppercase tracking-wider mb-2">
+        <p className="text-text-dim text-xs uppercase tracking-wider mb-2">
           Canvas Background
         </p>
         <div className="flex items-center gap-1.5">

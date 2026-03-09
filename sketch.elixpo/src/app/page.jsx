@@ -14,6 +14,7 @@ import ArrowSidebar from '@/components/sidebars/ArrowSidebar'
 import PaintbrushSidebar from '@/components/sidebars/PaintbrushSidebar'
 import TextSidebar from '@/components/sidebars/TextSidebar'
 import FrameSidebar from '@/components/sidebars/FrameSidebar'
+import IconSidebar from '@/components/sidebars/IconSidebar'
 import SVGCanvas from '@/components/canvas/SVGCanvas'
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
 
@@ -22,9 +23,7 @@ export default function Home() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black">
-      {/* CDN libraries needed by canvas engine */}
-      <Script src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js" type="module" strategy="beforeInteractive" />
-      <Script src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js" noModule strategy="beforeInteractive" />
+      {/* CDN libraries needed by canvas engine (boxicons for toolbar icons, highlight.js for code blocks) */}
       <Script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js" strategy="beforeInteractive" />
       <Script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" strategy="beforeInteractive" />
 
@@ -40,8 +39,9 @@ export default function Home() {
       <PaintbrushSidebar />
       <TextSidebar />
       <FrameSidebar />
+      <IconSidebar />
 
-      {/* Canvas */}
+      {/* Canvas (initializes engine via useSketchEngine hook) */}
       <SVGCanvas />
 
       {/* Overlays */}
@@ -49,28 +49,6 @@ export default function Home() {
       <AppMenu />
       <ShortcutsModal />
       <SaveModal />
-
-      {/* Canvas engine scripts (imperative SVG manipulation — will be migrated to engine module later) */}
-      <Script src="/JS/imports.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/sketchGeneric.js" strategy="afterInteractive" />
-      <Script src="/JS/eventListeners.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/drawCircle.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/drawSquare.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/imageTool.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/lineTool.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/canvasStroke.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/writeText.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/writeCode.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/drawArrow.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/frameHolder.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/icons.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/undoAndRedo.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/copyAndPaste.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/zoomFunction.js" strategy="afterInteractive" />
-      <Script src="/JS/selection.js" type="module" strategy="afterInteractive" />
-      <Script src="/JS/laserTool.js" strategy="afterInteractive" />
-      <Script src="/JS/eraserTrail.js" strategy="afterInteractive" />
-      <Script src="/JS/eraserTool.js" strategy="afterInteractive" />
     </div>
   )
 }

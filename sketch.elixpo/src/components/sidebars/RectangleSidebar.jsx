@@ -1,194 +1,160 @@
 "use client"
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
-import ShapeSidebar from './ShapeSidebar'
-import { useState } from 'react'
+import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
+import { useState, useCallback } from 'react'
 
-const STROKE_COLORS = [
-  { color: '#fff', label: 'White' },
-  { color: '#FF8383', label: 'Red' },
-  { color: '#3A994C', label: 'Green' },
-  { color: '#56A2E8', label: 'Blue' },
-  { color: '#FFD700', label: 'Gold' },
-]
-
-const BG_COLORS = [
-  { color: '#f0f0f0', label: 'Light Gray' },
-  { color: '#ffcccb', label: 'Light Red' },
-  { color: '#90ee90', label: 'Light Green' },
-  { color: '#add8e6', label: 'Light Blue' },
-  { color: 'transparent', label: 'None' },
-]
-
-const THICKNESSES = [
-  { value: 2, label: 'Thin' },
-  { value: 5, label: 'Medium' },
-  { value: 7, label: 'Thick' },
-]
-
-const STYLES = [
-  {
-    value: 'solid',
-    label: 'Solid',
-    svg: '<svg width="28" height="2" viewBox="0 0 28 2"><line x1="0" y1="1" x2="28" y2="1" stroke="currentColor" stroke-width="2"/></svg>',
-  },
-  {
-    value: 'dashed',
-    label: 'Dashed',
-    svg: '<svg width="28" height="2" viewBox="0 0 28 2"><line x1="0" y1="1" x2="28" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"/></svg>',
-  },
-  {
-    value: 'dotted',
-    label: 'Dotted',
-    svg: '<svg width="28" height="2" viewBox="0 0 28 2"><line x1="0" y1="1" x2="28" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="1 3" stroke-linecap="round"/></svg>',
-  },
-]
+const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
+const BG_COLORS = ['transparent', '#f0f0f0', '#ffcccb', '#90ee90', '#add8e6', '#FFE4B5', '#DDA0DD', '#2d2d2d']
 
 const FILLS = [
-  {
-    value: 'hachure',
-    label: 'Hachure',
-    svg: '<svg width="20" height="20" viewBox="0 0 20 20"><line x1="0" y1="4" x2="4" y2="0" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="10" x2="10" y2="0" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="16" x2="16" y2="0" stroke="currentColor" stroke-width="1.5"/><line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="20" x2="20" y2="10" stroke="currentColor" stroke-width="1.5"/><line x1="16" y1="20" x2="20" y2="16" stroke="currentColor" stroke-width="1.5"/></svg>',
-  },
-  {
-    value: 'solid',
-    label: 'Solid',
-    svg: '<svg width="20" height="20" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" fill="currentColor" rx="2"/></svg>',
-  },
-  {
-    value: 'dots',
-    label: 'Dots',
-    svg: '<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="4" cy="4" r="1.5" fill="currentColor"/><circle cx="10" cy="4" r="1.5" fill="currentColor"/><circle cx="16" cy="4" r="1.5" fill="currentColor"/><circle cx="4" cy="10" r="1.5" fill="currentColor"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="16" cy="10" r="1.5" fill="currentColor"/><circle cx="4" cy="16" r="1.5" fill="currentColor"/><circle cx="10" cy="16" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/></svg>',
-  },
-  {
-    value: 'cross-hatch',
-    label: 'Cross Hatch',
-    svg: '<svg width="20" height="20" viewBox="0 0 20 20"><line x1="0" y1="4" x2="4" y2="0" stroke="currentColor" stroke-width="1"/><line x1="0" y1="10" x2="10" y2="0" stroke="currentColor" stroke-width="1"/><line x1="0" y1="16" x2="16" y2="0" stroke="currentColor" stroke-width="1"/><line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="1"/><line x1="16" y1="0" x2="0" y2="16" stroke="currentColor" stroke-width="1"/><line x1="20" y1="4" x2="4" y2="20" stroke="currentColor" stroke-width="1"/><line x1="20" y1="10" x2="10" y2="20" stroke="currentColor" stroke-width="1"/></svg>',
-  },
-  {
-    value: 'transparent',
-    label: 'None',
-    svg: '<svg width="20" height="20" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" rx="2" stroke-dasharray="3 2"/></svg>',
-  },
+  { value: 'hachure', label: 'Hachure' },
+  { value: 'solid', label: 'Solid' },
+  { value: 'dots', label: 'Dots' },
+  { value: 'cross-hatch', label: 'Cross' },
+  { value: 'transparent', label: 'None' },
 ]
 
-function ColorSwatches({ colors, selected, onSelect, label }) {
+function ColorGrid({ colors, selected, onSelect }) {
   return (
-    <div className="mb-3">
-      <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5">{label}</p>
-      <div className="flex items-center gap-1.5">
-        {colors.map((c) => (
+    <div className="grid grid-cols-4 gap-1.5">
+      {colors.map((c) => {
+        const isTrans = c === 'transparent'
+        return (
           <button
-            key={c.color}
-            title={c.label}
-            onClick={() => onSelect(c.color)}
-            className={`w-6 h-6 rounded-full border-2 transition-all duration-200 ${
-              selected === c.color
-                ? 'border-accent scale-110'
-                : 'border-border hover:border-border-light'
-            } ${c.color === 'transparent' ? 'bg-surface-dark' : ''}`}
-            style={c.color !== 'transparent' ? { backgroundColor: c.color } : undefined}
+            key={c}
+            onClick={() => onSelect(c)}
+            className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${
+              selected === c ? 'border-[#5B57D1] scale-110' : 'border-white/[0.08] hover:border-white/20'
+            }`}
+            style={!isTrans ? { backgroundColor: c } : undefined}
           >
-            {c.color === 'transparent' && (
-              <svg className="w-full h-full text-text-dim" viewBox="0 0 20 20">
-                <line x1="3" y1="17" x2="17" y2="3" stroke="currentColor" strokeWidth="1.5" />
+            {isTrans && (
+              <svg className="w-full h-full text-[#666]" viewBox="0 0 20 20">
+                <line x1="4" y1="16" x2="16" y2="4" stroke="currentColor" strokeWidth="2" />
               </svg>
             )}
           </button>
-        ))}
-      </div>
+        )
+      })}
     </div>
   )
 }
 
-function SvgIcon({ svg }) {
-  return <span dangerouslySetInnerHTML={{ __html: svg }} />
-}
-
 export default function RectangleSidebar() {
   const activeTool = useSketchStore((s) => s.activeTool)
+  const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const [strokeColor, setStrokeColor] = useState('#fff')
   const [bgColor, setBgColor] = useState('transparent')
   const [thickness, setThickness] = useState(2)
   const [lineStyle, setLineStyle] = useState('solid')
   const [fillStyle, setFillStyle] = useState('hachure')
 
+  const update = useCallback((changes, localSetters) => {
+    Object.entries(localSetters).forEach(([, fn]) => fn())
+    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle(changes)
+  }, [])
+
+  const updateStroke = useCallback((v) => { setStrokeColor(v); if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ stroke: v }) }, [])
+  const updateBg = useCallback((v) => { setBgColor(v); if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ fill: v }) }, [])
+  const updateThickness = useCallback((v) => { setThickness(v); if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ strokeWidth: v }) }, [])
+  const updateStyle = useCallback((v) => { setLineStyle(v); if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ outlineStyle: v }) }, [])
+  const updateFill = useCallback((v) => { setFillStyle(v); if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ fillStyle: v }) }, [])
+
   return (
-    <ShapeSidebar visible={activeTool === TOOLS.RECTANGLE} title="Rectangle">
-      <ColorSwatches
-        colors={STROKE_COLORS}
-        selected={strokeColor}
-        onSelect={setStrokeColor}
-        label="Stroke"
-      />
-      <ColorSwatches
-        colors={BG_COLORS}
-        selected={bgColor}
-        onSelect={setBgColor}
-        label="Background"
-      />
+    <ShapeSidebar visible={activeTool === TOOLS.RECTANGLE || selectedShapeSidebar === 'rectangle'}>
+      {/* Stroke color */}
+      <ToolbarButton
+        tooltip="Stroke color"
+        preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
+      >
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Stroke</p>
+        <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
+      </ToolbarButton>
+
+      <Divider />
+
+      {/* Background */}
+      <ToolbarButton
+        tooltip="Fill color"
+        preview={
+          <span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: bgColor === 'transparent' ? 'transparent' : bgColor }}>
+            {bgColor === 'transparent' && (
+              <svg className="w-full h-full text-[#666]" viewBox="0 0 16 16"><line x1="2" y1="14" x2="14" y2="2" stroke="currentColor" strokeWidth="1.5" /></svg>
+            )}
+          </span>
+        }
+      >
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Background</p>
+        <ColorGrid colors={BG_COLORS} selected={bgColor} onSelect={updateBg} />
+      </ToolbarButton>
+
+      <Divider />
 
       {/* Thickness */}
-      <div className="mb-3">
-        <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5">Thickness</p>
+      <ToolbarButton icon="bxs-edit-alt" tooltip="Stroke width">
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
-          {THICKNESSES.map((t) => (
+          {[1, 2, 4, 7].map((w) => (
             <button
-              key={t.value}
-              onClick={() => setThickness(t.value)}
-              className={`flex-1 py-1.5 rounded-lg text-[10px] transition-all duration-200 ${
-                thickness === t.value
-                  ? 'bg-surface-active text-text-primary'
-                  : 'text-text-muted hover:bg-surface-hover'
+              key={w}
+              onClick={() => updateThickness(w)}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${
+                thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'
               }`}
             >
-              {t.label}
+              <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
           ))}
         </div>
-      </div>
+      </ToolbarButton>
 
-      {/* Style */}
-      <div className="mb-3">
-        <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5">Style</p>
+      <Divider />
+
+      {/* Stroke style */}
+      <ToolbarButton icon="bxs-minus-circle" tooltip="Stroke style">
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Style</p>
         <div className="flex items-center gap-1">
-          {STYLES.map((s) => (
+          {[
+            { v: 'solid', d: '' },
+            { v: 'dashed', d: '6 4' },
+            { v: 'dotted', d: '2 3' },
+          ].map((s) => (
             <button
-              key={s.value}
-              title={s.label}
-              onClick={() => setLineStyle(s.value)}
-              className={`flex-1 py-2 flex items-center justify-center rounded-lg transition-all duration-200 ${
-                lineStyle === s.value
-                  ? 'bg-surface-active text-text-primary'
-                  : 'text-text-muted hover:bg-surface-hover'
+              key={s.v}
+              onClick={() => updateStyle(s.v)}
+              className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${
+                lineStyle === s.v ? 'bg-[#5B57D1]/20' : 'hover:bg-white/[0.06]'
               }`}
             >
-              <SvgIcon svg={s.svg} />
+              <svg width="28" height="4" viewBox="0 0 28 4">
+                <line x1="0" y1="2" x2="28" y2="2" stroke="#fff" strokeWidth="2" strokeDasharray={s.d} strokeLinecap="round" />
+              </svg>
             </button>
           ))}
         </div>
-      </div>
+      </ToolbarButton>
 
-      {/* Fill */}
-      <div>
-        <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5">Fill</p>
-        <div className="flex items-center gap-1">
+      <Divider />
+
+      {/* Fill pattern */}
+      <ToolbarButton icon="bxs-brush" tooltip="Fill style">
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Fill</p>
+        <div className="flex flex-col gap-0.5">
           {FILLS.map((f) => (
             <button
               key={f.value}
-              title={f.label}
-              onClick={() => setFillStyle(f.value)}
-              className={`flex-1 py-1.5 flex items-center justify-center rounded-lg transition-all duration-200 ${
-                fillStyle === f.value
-                  ? 'bg-surface-active text-text-primary'
-                  : 'text-text-muted hover:bg-surface-hover'
+              onClick={() => updateFill(f.value)}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${
+                fillStyle === f.value ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'
               }`}
             >
-              <SvgIcon svg={f.svg} />
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              {f.label}
             </button>
           ))}
         </div>
-      </div>
+      </ToolbarButton>
     </ShapeSidebar>
   )
 }

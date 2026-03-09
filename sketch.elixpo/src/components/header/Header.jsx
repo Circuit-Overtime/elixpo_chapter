@@ -39,14 +39,14 @@ export default function Header() {
         </button>
 
         {/* Share button */}
-        <button className="px-3 py-1.5 bg-accent-blue hover:bg-accent-blue-hover text-text-primary text-xs rounded-lg transition-all duration-200 font-[lixFont]">
+        <button className="px-3.5 py-1.5 bg-accent-blue hover:bg-accent-blue-hover text-text-primary text-sm rounded-lg transition-all duration-200 font-[lixFont]">
           Share
         </button>
 
         {/* Shortcuts button */}
         <button
           onClick={toggleShortcutsModal}
-          className="px-2 py-1.5 bg-surface hover:bg-surface-hover text-text-muted text-xs rounded-lg border border-border transition-all duration-200 font-[lixFont]"
+          className="px-2.5 py-1.5 bg-surface hover:bg-surface-hover text-text-muted text-sm rounded-lg border border-border transition-all duration-200 font-[lixFont]"
         >
           Ctrl+/
         </button>

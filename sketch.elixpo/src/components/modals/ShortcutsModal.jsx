@@ -46,8 +46,8 @@ function ShortcutRow({ keys, action }) {
       <div className="flex items-center gap-1">
         {keys.split('+').map((key, i) => (
           <span key={i}>
-            {i > 0 && <span className="text-text-dim text-[10px] mx-0.5">+</span>}
-            <kbd className="px-1.5 py-0.5 bg-surface-dark rounded text-text-muted text-[10px] border border-border font-[lixFont]">
+            {i > 0 && <span className="text-text-dim text-xs mx-0.5">+</span>}
+            <kbd className="px-1.5 py-0.5 bg-surface-dark rounded text-text-muted text-xs border border-border font-[lixFont]">
               {key.trim()}
             </kbd>
           </span>
@@ -60,7 +60,7 @@ function ShortcutRow({ keys, action }) {
 function ShortcutSection({ title, shortcuts }) {
   return (
     <div>
-      <h3 className="text-text-dim text-[10px] uppercase tracking-wider mb-2">{title}</h3>
+      <h3 className="text-text-dim text-xs uppercase tracking-wider mb-2">{title}</h3>
       {shortcuts.map((s) => (
         <ShortcutRow key={s.action} keys={s.keys} action={s.action} />
       ))}
