@@ -11,9 +11,9 @@
   --color-accent-blue: #5B57D1;
   --color-accent-blue-hover: #6c67f3;
   --color-text-primary: #fff;
-  --color-text-secondary: #ddd;
-  --color-text-muted: #888;
-  --color-text-dim: #666;
+  --color-text-secondary: #e8e8ee;
+  --color-text-muted: #a0a0b0;
+  --color-text-dim: #787888;
   --color-border: #333;
   --color-border-light: #3a3a50;
   --color-border-accent: #5555a0;
@@ -62,4 +62,19 @@ body {
 pre::-webkit-scrollbar,
 textarea::-webkit-scrollbar {
   display: none;
+}
+
+/* Toast slide-up animation */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
 }

@@ -8,24 +8,55 @@ const SAVE_OPTIONS = [
     label: 'Image',
     description: 'Export as PNG',
     icon: 'bxs-image',
-    disabled: false,
   },
   {
     id: 'pdf',
     label: 'PDF Document',
     description: 'Export as PDF',
     icon: 'bxs-file-pdf',
-    disabled: false,
   },
   {
-    id: 'json',
-    label: 'Scene (.json)',
-    description: 'Save scene data',
+    id: 'lixsketch',
+    label: 'Scene (.lixsketch)',
+    description: 'Save scene data for later',
     icon: 'bx-braces',
-    disabled: true,
-    badge: 'Coming Soon',
+  },
+  {
+    id: 'load',
+    label: 'Open Scene',
+    description: 'Load a .lixsketch file',
+    icon: 'bx-folder-open',
   },
 ]
+
+function handleSaveAction(id, toggleModal) {
+  const serializer = window.__sceneSerializer
+  if (!serializer) {
+    console.warn('Scene serializer not initialized yet')
+    return
+  }
+
+  switch (id) {
+    case 'png':
+      serializer.exportPNG()
+      break
+    case 'pdf':
+      serializer.exportPDF()
+      break
+    case 'lixsketch': {
+      const name = useUIStore.getState().workspaceName || 'Untitled'
+      serializer.download(name)
+      break
+    }
+    case 'load':
+      serializer.upload().then((success) => {
+        if (success) toggleModal()
+      }).catch(() => {})
+      return // Don't close modal yet — wait for file load
+  }
+
+  toggleModal()
+}
 
 export default function SaveModal() {
   const saveModalOpen = useUIStore((s) => s.saveModalOpen)
@@ -62,26 +93,15 @@ export default function SaveModal() {
           {SAVE_OPTIONS.map((option) => (
             <button
               key={option.id}
-              disabled={option.disabled}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 ${
-                option.disabled
-                  ? 'border-border opacity-50 cursor-not-allowed'
-                  : 'border-border-light hover:border-accent-blue hover:bg-surface-hover cursor-pointer'
-              }`}
+              onClick={() => handleSaveAction(option.id, toggleSaveModal)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border-light hover:border-accent-blue hover:bg-surface-hover cursor-pointer transition-all duration-200"
             >
               <i
-                className={`bx ${option.icon} text-2xl ${
-                  option.disabled ? 'text-text-dim' : 'text-accent-blue'
-                }`}
+                className={`bx ${option.icon} text-2xl text-accent-blue`}
               />
               <div className="flex flex-col items-start">
-                <span className="text-text-primary text-sm flex items-center gap-2">
+                <span className="text-text-primary text-sm">
                   {option.label}
-                  {option.badge && (
-                    <span className="text-[9px] px-1.5 py-0.5 bg-surface-hover text-text-dim rounded-full border border-border">
-                      {option.badge}
-                    </span>
-                  )}
                 </span>
                 <span className="text-text-dim text-xs">
                   {option.description}

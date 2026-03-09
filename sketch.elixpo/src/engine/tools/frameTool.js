@@ -14,8 +14,6 @@ let frameFillColor = "transparent";
 let frameOpacity = 1;
 let startX, startY;
 let dragOldPosFrame = null;
-let copiedFrameData = null;
-
 
 function getSVGCoordsFromMouse(e) {
     const viewBox = svg.viewBox.baseVal;
@@ -211,47 +209,6 @@ function deleteCurrentFrame() {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Delete' && currentShape && currentShape.shapeName === 'frame') {
         deleteCurrentFrame();
-    }
-});
-
-// Copy/Paste functionality
-function cloneFrameData(frame) {
-    return {
-        x: frame.x,
-        y: frame.y,
-        width: frame.width,
-        height: frame.height,
-        rotation: frame.rotation,
-        options: JSON.parse(JSON.stringify(frame.options))
-    };
-}
-
-document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
-        if (currentShape && currentShape.shapeName === 'frame') {
-            copiedFrameData = cloneFrameData(currentShape);
-        }
-    }
-});
-
-document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-        if (copiedFrameData) {
-            const newFrame = new Frame(
-                copiedFrameData.x + 20,
-                copiedFrameData.y + 20,
-                copiedFrameData.width,
-                copiedFrameData.height,
-                copiedFrameData.options
-            );
-            newFrame.rotation = copiedFrameData.rotation;
-            shapes.push(newFrame);
-            pushCreateAction(newFrame);
-            
-            if (currentShape) currentShape.removeSelection();
-            currentShape = newFrame;
-            newFrame.selectFrame();
-        }
     }
 });
 

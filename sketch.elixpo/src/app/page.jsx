@@ -7,6 +7,7 @@ import Footer from '@/components/footer/Footer'
 import AppMenu from '@/components/menu/AppMenu'
 import ShortcutsModal from '@/components/modals/ShortcutsModal'
 import SaveModal from '@/components/modals/SaveModal'
+import AIModal from '@/components/modals/AIModal'
 import RectangleSidebar from '@/components/sidebars/RectangleSidebar'
 import CircleSidebar from '@/components/sidebars/CircleSidebar'
 import LineSidebar from '@/components/sidebars/LineSidebar'
@@ -49,6 +50,7 @@ export default function Home() {
       <AppMenu />
       <ShortcutsModal />
       <SaveModal />
+      <AIModal />
     </div>
   )
 }

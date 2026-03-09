@@ -27,7 +27,6 @@ let dragOldPosStroke = null;
 let resizingAnchorIndex = null;
 let startRotationMouseAngle = null;
 let startShapeRotation = null;
-let copiedShapeData = null;
 let startX, startY;
 
 // Frame attachment variables
@@ -521,69 +520,6 @@ function cloneStrokeData(stroke) {
         options: cloneOptions(stroke.options)
     };
 }
-
-// Copy/paste functionality
-document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
-        if (currentShape && currentShape.shapeName === 'freehandStroke' && currentShape.isSelected) {
-            copiedShapeData = cloneStrokeData(currentShape);
-        }
-    }
-});
-
-document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-        if (copiedShapeData) {
-            e.preventDefault();
-            let pasteX, pasteY;
-            if (lastMousePos && typeof lastMousePos.x === 'number' && typeof lastMousePos.y === 'number') {
-                const svgPoint = svg.createSVGPoint();
-                svgPoint.x = lastMousePos.x;
-                svgPoint.y = lastMousePos.y;
-                const CTM = svg.getScreenCTM().inverse();
-                const userPoint = svgPoint.matrixTransform(CTM);
-                pasteX = userPoint.x;
-                pasteY = userPoint.y;
-            } else {
-                const svgRect = svg.getBoundingClientRect();
-                pasteX = svgRect.width / 2;
-                pasteY = svgRect.height / 2;
-                const svgPoint = svg.createSVGPoint();
-                svgPoint.x = pasteX;
-                svgPoint.y = pasteY;
-                const CTM = svg.getScreenCTM().inverse();
-                const userPoint = svgPoint.matrixTransform(CTM);
-                pasteX = userPoint.x;
-                pasteY = userPoint.y;
-            }
-
-            shapes.forEach(shape => {
-                if (shape.isSelected) {
-                    shape.removeSelection();
-                }
-            });
-
-            currentShape = null;
-            disableAllSideBars();
-            
-            const offset = 20;
-            const offsetPoints = copiedShapeData.points.map(point => [
-                point[0] + offset, 
-                point[1] + offset, 
-                point[2] || 0.5
-            ]);
-            
-            const newStroke = new FreehandStroke(offsetPoints, cloneOptions(copiedShapeData.options));
-            newStroke.rotation = copiedShapeData.rotation;
-            
-            shapes.push(newStroke);
-            newStroke.isSelected = true;
-            currentShape = newStroke;
-            newStroke.draw();
-            pushCreateAction(newStroke);
-        }
-    }
-});
 
 // Event listeners
 // svg.addEventListener('mousedown', handleMouseDown);

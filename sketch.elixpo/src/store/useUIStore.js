@@ -4,13 +4,16 @@ const useUIStore = create((set, get) => ({
   // --- Modals ---
   shortcutsModalOpen: false,
   saveModalOpen: false,
+  aiModalOpen: false,
 
   toggleShortcutsModal: () =>
     set((s) => ({ shortcutsModalOpen: !s.shortcutsModalOpen })),
   toggleSaveModal: () =>
     set((s) => ({ saveModalOpen: !s.saveModalOpen })),
+  toggleAIModal: () =>
+    set((s) => ({ aiModalOpen: !s.aiModalOpen })),
   closeAllModals: () =>
-    set({ shortcutsModalOpen: false, saveModalOpen: false }),
+    set({ shortcutsModalOpen: false, saveModalOpen: false, aiModalOpen: false }),
 
   // --- Menu ---
   menuOpen: false,

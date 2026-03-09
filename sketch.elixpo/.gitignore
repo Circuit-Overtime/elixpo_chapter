@@ -3,3 +3,4 @@ all_icons/
 .vercel
 .next/
 out/
+.env

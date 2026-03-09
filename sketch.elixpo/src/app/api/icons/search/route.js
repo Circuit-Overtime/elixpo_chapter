@@ -4,18 +4,20 @@ import fs from 'fs'
 import path from 'path'
 
 let fuse = null
+let dataArray = null
 let lastLoadTime = 0
-const RELOAD_INTERVAL = 60_000 // reload metadata every 60s max
+const RELOAD_INTERVAL = 60_000
+const iconsDir = path.join(process.cwd(), 'public', 'icons')
 
-function getFuse() {
+function loadData() {
   const now = Date.now()
-  if (fuse && now - lastLoadTime < RELOAD_INTERVAL) return fuse
+  if (dataArray && fuse && now - lastLoadTime < RELOAD_INTERVAL) return
 
-  const metaPath = path.join(process.cwd(), 'public', 'icons', 'info', 'icons.json')
-  if (!fs.existsSync(metaPath)) return null
+  const metaPath = path.join(iconsDir, 'info', 'icons.json')
+  if (!fs.existsSync(metaPath)) return
 
   const metadata = JSON.parse(fs.readFileSync(metaPath, 'utf-8'))
-  const dataArray = Object.keys(metadata).map((filename) => ({
+  dataArray = Object.keys(metadata).map((filename) => ({
     filename,
     ...metadata[filename],
   }))
@@ -26,20 +28,56 @@ function getFuse() {
     keys: ['filename', 'keywords', 'description', 'category'],
   })
   lastLoadTime = now
-  return fuse
+}
+
+// In-memory SVG cache to avoid repeated disk reads
+const svgCache = new Map()
+
+function readSvg(filename) {
+  if (svgCache.has(filename)) return svgCache.get(filename)
+  try {
+    const filePath = path.join(iconsDir, filename)
+    const content = fs.readFileSync(filePath, 'utf-8')
+    svgCache.set(filename, content)
+    return content
+  } catch {
+    return null
+  }
 }
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const q = (searchParams.get('q') || '').trim().toLowerCase()
+  const category = (searchParams.get('category') || '').trim().toLowerCase()
+  const inline = searchParams.get('inline') === '1'
 
-  if (!q) return NextResponse.json([])
+  loadData()
+  if (!dataArray) return NextResponse.json({ results: [] })
 
-  const fuseInstance = getFuse()
-  if (!fuseInstance) return NextResponse.json([])
+  let results
 
-  const results = fuseInstance.search(q)
-  const top = results.slice(0, 30).map((r) => r.item)
+  if (q) {
+    const fuseResults = fuse.search(q)
+    results = fuseResults.map((r) => r.item)
+    if (category) {
+      results = results.filter((item) => item.category === category)
+    }
+  } else if (category) {
+    results = dataArray.filter((item) => item.category === category)
+  } else {
+    results = dataArray.slice(0, 60)
+  }
 
-  return NextResponse.json(top)
+  const sliced = results.slice(0, 60)
+
+  // If inline requested, bundle SVG content into response
+  if (inline) {
+    const withSvg = sliced.map((item) => ({
+      ...item,
+      svg: readSvg(item.filename),
+    }))
+    return NextResponse.json({ results: withSvg })
+  }
+
+  return NextResponse.json({ results: sliced })
 }
