@@ -86,7 +86,50 @@ export default function useKeyboardShortcuts() {
       }
     }
 
+    // Prevent browser zoom on Ctrl+scroll — engine's ZoomPan.js handles actual zoom
+    function handleWheel(e) {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+      }
+    }
+
+    // Space held = temporary pan tool
+    let spaceHeld = false
+    let toolBeforeSpace = null
+
+    function handleKeyUp(e) {
+      if (e.code === 'Space' && spaceHeld) {
+        spaceHeld = false
+        if (toolBeforeSpace) {
+          useSketchStore.getState().setActiveTool(toolBeforeSpace)
+          toolBeforeSpace = null
+        }
+      }
+    }
+
+    function handleSpaceDown(e) {
+      if (e.code === 'Space' && !spaceHeld) {
+        const tag = e.target.tagName.toLowerCase()
+        if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return
+        e.preventDefault()
+        spaceHeld = true
+        const store = useSketchStore.getState()
+        if (store.activeTool !== TOOLS.PAN) {
+          toolBeforeSpace = store.activeTool
+          store.setActiveTool(TOOLS.PAN)
+        }
+      }
+    }
+
     document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    document.addEventListener('keydown', handleSpaceDown)
+    document.addEventListener('keyup', handleKeyUp)
+    document.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('keydown', handleSpaceDown)
+      document.removeEventListener('keyup', handleKeyUp)
+      document.removeEventListener('wheel', handleWheel)
+    }
   }, [])
 }

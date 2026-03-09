@@ -15,7 +15,7 @@ export async function GET(request) {
 
   // Prevent path traversal
   const safeName = path.basename(name)
-  const filePath = path.join(process.cwd(), 'ICONS_CONT', safeName)
+  const filePath = path.join(process.cwd(), 'public', 'icons', safeName)
 
   try {
     const svg = fs.readFileSync(filePath, 'utf-8')

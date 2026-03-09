@@ -1,6 +1,18 @@
 /* eslint-disable */
 // Rectangle shape class - extracted from drawSquare.js
 // Depends on globals: svg, shapes, rough, currentShape, currentZoom, rc
+
+// Create local rc from globals; tool-state vars default to false
+const rc = rough.svg(svg);
+let isDraggingShapeSquare = false;
+let isResizingShapeSquare = false;
+let isRotatingShapeSquare = false;
+let hoveredFrame = null;
+const SquarecolorOptions = document.querySelectorAll(".squareStrokeSpan");
+const backgroundColorOptionsSquare = document.querySelectorAll(".squareBackgroundSpan");
+const fillStyleOptions = document.querySelectorAll(".squareFillStyleSpan");
+const squareStrokeThicknessValue = document.querySelectorAll(".squareStrokeThickSpan");
+const squareOutlineStyleValue = document.querySelectorAll(".squareOutlineStyle");
 // Depends on globals: squareStrokecolor, squareBackgroundColor, squareFillStyleValue, squareStrokeThicknes, squareOutlineStyle
 // Depends on globals: isDraggingShapeSquare, isResizingShapeSquare, isRotatingShapeSquare
 // Depends on globals: squareSideBar, disableAllSideBars
@@ -14,11 +26,11 @@ class Rectangle {
         this.height = height;
         this.options = {
             roughness: 1.5,
-            stroke: squareStrokecolor,
-            strokeWidth: squareStrokeThicknes,
-            fill: squareBackgroundColor,
-            fillStyle: squareFillStyleValue,
-            strokeDasharray: squareOutlineStyle === "dashed" ? "10,10" : (squareOutlineStyle === "dotted" ? "2,8" : ""),
+            stroke: "#fff",
+            strokeWidth: 2,
+            fill: "transparent",
+            fillStyle: "none",
+            strokeDasharray: "",
             ...options
         };
         this.element = null;
@@ -243,6 +255,7 @@ class Rectangle {
         // Show relevant sidebar
         disableAllSideBars();
         squareSideBar.classList.remove("hidden");
+        if (window.__showSidebarForShape) window.__showSidebarForShape('rectangle');
         this.updateSidebar();
     }
 
@@ -458,55 +471,8 @@ updateFrameContainment() {
     }
 
      // Method to update the sidebar based on the shape's current options
-    updateSidebar() {
-        SquarecolorOptions.forEach(span => {
-            const color = span.getAttribute("data-id");
-            if (color === this.options.stroke) {
-                span.classList.add("selected");
-            } else {
-                span.classList.remove("selected");
-            }
-        });
-        backgroundColorOptionsSquare.forEach(span => {
-             const color = span.getAttribute("data-id");
-            if (color === this.options.fill) {
-                span.classList.add("selected");
-            } else {
-                span.classList.remove("selected");
-            }
-        });
-
-        fillStyleOptions.forEach(span => {
-            const style = span.getAttribute("data-id");
-            if (style === this.options.fillStyle) {
-                 span.classList.add("selected");
-             } else {
-                 span.classList.remove("selected");
-             }
-        });
-
-        squareStrokeThicknessValue.forEach(span => {
-             const thickness = parseInt(span.getAttribute("data-id"));
-            if (thickness === this.options.strokeWidth) {
-                 span.classList.add("selected");
-             } else {
-                 span.classList.remove("selected");
-             }
-        });
-
-        squareOutlineStyleValue.forEach(span => {
-            const style = span.getAttribute("data-id");
-            let currentStyle = "solid";
-            if (this.options.strokeDasharray === "10,10") currentStyle = "dashed";
-            else if (this.options.strokeDasharray === "2,8") currentStyle = "dotted";
-
-            if (style === currentStyle) {
-                span.classList.add("selected");
-            } else {
-                span.classList.remove("selected");
-            }
-        });
-    }
+    // No-op: React sidebar handles UI updates via Zustand store
+    updateSidebar() {}
 }
 
 export { Rectangle };

@@ -19,26 +19,26 @@
   --color-border-accent: #5555a0;
 }
 
-/* Font faces */
+/* Font faces — served from /public/fonts/ */
 @font-face {
   font-family: "lixFont";
-  src: url("./fonts/lixFont.woff2") format("woff2");
+  src: url("/fonts/lixFont.woff2") format("woff2");
 }
 @font-face {
   font-family: "lixCode";
-  src: url("./fonts/lixCode.ttf") format("truetype");
+  src: url("/fonts/lixCode.ttf") format("truetype");
 }
 @font-face {
   font-family: "lixDefault";
-  src: url("./fonts/lixDefault.ttf") format("truetype");
+  src: url("/fonts/lixDefault.ttf") format("truetype");
 }
 @font-face {
   font-family: "lixFancy";
-  src: url("./fonts/lixFancy.ttf") format("truetype");
+  src: url("/fonts/lixFancy.ttf") format("truetype");
 }
 @font-face {
   font-family: "lixDocs";
-  src: url("./fonts/lixDocs.ttf") format("truetype");
+  src: url("/fonts/lixDocs.ttf") format("truetype");
 }
 
 /* Global utilities */
@@ -47,6 +47,7 @@ body {
   overflow: hidden;
   background: #000;
   font-family: "lixFont", sans-serif;
+  font-size: 14px;
 }
 
 /* Hide scrollbars */

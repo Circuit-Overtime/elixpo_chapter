@@ -83,12 +83,18 @@ const useSketchStore = create((set, get) => ({
   // --- Active tool (replaces 15 boolean flags) ---
   activeTool: TOOLS.SELECT,
   activeSidebar: null, // which sidebar to show
+  selectedShapeSidebar: null, // sidebar shown when a shape is selected (overrides activeSidebar)
 
   setActiveTool: (tool) =>
     set({
       activeTool: tool,
       activeSidebar: TOOL_SIDEBARS[tool] || null,
+      selectedShapeSidebar: null,
     }),
+
+  // Called by engine when a shape is selected/deselected
+  setSelectedShapeSidebar: (sidebar) => set({ selectedShapeSidebar: sidebar }),
+  clearSelectedShapeSidebar: () => set({ selectedShapeSidebar: null }),
 
   getCursor: () => {
     const tool = get().activeTool
