@@ -28,7 +28,7 @@ export function ToolbarButton({ icon, preview, children, tooltip }) {
         className={`h-9 flex items-center gap-1.5 px-3 rounded-lg transition-all duration-100 ${
           open
             ? 'bg-white/[0.12] text-white'
-            : 'text-[#999] hover:text-white hover:bg-white/[0.06]'
+            : 'text-text-muted hover:text-white hover:bg-white/[0.06]'
         }`}
       >
         {preview || (icon && <i className={`bx ${icon} text-base`} />)}

@@ -36,7 +36,7 @@ export default function TextSidebar() {
       <ToolbarButton tooltip="Text color"
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: textColor }} />}
       >
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Color</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Color</p>
         <div className="grid grid-cols-4 gap-1.5">
           {TEXT_COLORS.map((c) => (
             <button key={c} onClick={() => setTextColor(c)}
@@ -51,11 +51,11 @@ export default function TextSidebar() {
 
       {/* Font */}
       <ToolbarButton icon="bxs-font-family" tooltip="Font">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Font</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Font</p>
         <div className="flex flex-col gap-0.5">
           {FONTS.map((f) => (
             <button key={f.value} onClick={() => setFont(f.value)}
-              className={`flex items-center px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${font === f.value ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
+              className={`flex items-center px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${font === f.value ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
               style={{ fontFamily: f.value }}
             >
               {f.label}
@@ -68,11 +68,11 @@ export default function TextSidebar() {
 
       {/* Size */}
       <ToolbarButton icon="bxs-chevrons-up" tooltip="Size">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Size</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Size</p>
         <div className="flex items-center gap-1">
           {['S', 'M', 'L', 'XL'].map((s) => (
             <button key={s} onClick={() => setFontSize(s)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-all duration-100 ${fontSize === s ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-all duration-100 ${fontSize === s ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-muted hover:bg-white/[0.06]'}`}
             >{s}</button>
           ))}
         </div>
@@ -82,10 +82,10 @@ export default function TextSidebar() {
 
       {/* Code mode */}
       <ToolbarButton icon="bxs-terminal" tooltip="Code mode">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Code</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Code</p>
         <div className="flex flex-col gap-2">
           <button onClick={() => setCodeMode(!codeMode)}
-            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${codeMode ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
+            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${codeMode ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
           >
             <div className={`w-6 h-3 rounded-full transition-all duration-150 relative ${codeMode ? 'bg-white/30' : 'bg-white/10'}`}>
               <div className={`absolute top-0.5 w-2 h-2 rounded-full bg-white transition-all duration-150 ${codeMode ? 'left-3.5' : 'left-0.5'}`} />
@@ -96,7 +96,7 @@ export default function TextSidebar() {
             <div className="flex flex-wrap gap-1 max-w-[180px]">
               {LANGUAGES.map((lang) => (
                 <button key={lang} onClick={() => setLanguage(lang)}
-                  className={`px-1.5 py-0.5 rounded text-[9px] transition-all duration-100 ${language === lang ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#666] hover:bg-white/[0.06] hover:text-[#aaa]'}`}
+                  className={`px-1.5 py-0.5 rounded text-[9px] transition-all duration-100 ${language === lang ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-dim hover:bg-white/[0.06] hover:text-text-secondary'}`}
                 >{lang}</button>
               ))}
             </div>

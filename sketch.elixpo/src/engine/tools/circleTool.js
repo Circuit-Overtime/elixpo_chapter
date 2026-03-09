@@ -24,8 +24,6 @@ let circleOutlineStyle = "solid";
 let dragOldPosCircle = null;
 let draggedShapeInitialFrameCircle = null;
 let hoveredFrameCircle = null;
-let copiedShapeData = null;
-
 let colorOptionsCircle = document.querySelectorAll(".circleStrokeSpan");
 let backgroundColorOptionsCircle = document.querySelectorAll(".circleBackgroundSpan");
 let fillStyleOptionsCircle = document.querySelectorAll(".circleFillStyleSpan");
@@ -561,86 +559,6 @@ outlineStyleValueCircle.forEach(span => {
         this.classList.add('selected');
     });
 });
-
-function cloneOptions(options) {
-    return JSON.parse(JSON.stringify(options));
-}
-
-function cloneCircleData(circle) {
-    return {
-        x: circle.x,
-        y: circle.y,
-        rx: circle.rx,
-        ry: circle.ry,
-        rotation: circle.rotation,
-        options: cloneOptions(circle.options)
-    };
-}
-
-document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
-        if (currentShape && currentShape.shapeName === 'circle' && currentShape.isSelected) {
-            copiedShapeData = cloneCircleData(currentShape);
-        }
-    }
-});
-
-
-document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-        if (copiedShapeData) {
-            e.preventDefault();
-            let pasteX, pasteY;
-            if (lastMousePos && typeof lastMousePos.x === 'number' && typeof lastMousePos.y === 'number') {
-                const svgPoint = svg.createSVGPoint();
-                svgPoint.x = lastMousePos.x;
-                svgPoint.y = lastMousePos.y;
-                const CTM = svg.getScreenCTM().inverse();
-                const userPoint = svgPoint.matrixTransform(CTM);
-                pasteX = userPoint.x;
-                pasteY = userPoint.y;
-            } else {
-                const svgRect = svg.getBoundingClientRect();
-                pasteX = svgRect.width / 2;
-                pasteY = svgRect.height / 2;
-                const svgPoint = svg.createSVGPoint();
-                svgPoint.x = pasteX;
-                svgPoint.y = pasteY;
-                const CTM = svg.getScreenCTM().inverse();
-                const userPoint = svgPoint.matrixTransform(CTM);
-                pasteX = userPoint.x;
-                pasteY = userPoint.y;
-            }
-
-            let newX = pasteX + 10;
-            let newY = pasteY + 10;
-
-            shapes.forEach(shape => {
-                if (shape.isSelected) {
-                    shape.removeSelection();
-                }
-            });
-
-            currentShape = null;
-            disableAllSideBars();
-            const newCircle = new Circle(
-                newX,
-                newY,
-                copiedShapeData.rx,
-                copiedShapeData.ry,
-                cloneOptions(copiedShapeData.options)
-            );
-            newCircle.rotation = copiedShapeData.rotation;
-            shapes.push(newCircle);
-            newCircle.isSelected = true;
-            currentShape = newCircle;
-            newCircle.draw();
-            pushCreateAction(newCircle);
-            newCircle.addAnchors();
-        }
-    }
-});
-
 
 window.Circle = Circle;
 

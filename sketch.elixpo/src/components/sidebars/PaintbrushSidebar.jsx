@@ -43,18 +43,18 @@ export default function PaintbrushSidebar() {
       <ToolbarButton tooltip="Stroke color"
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Stroke</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Stroke</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
       <Divider />
 
       <ToolbarButton icon="bxs-edit-alt" tooltip="Stroke width">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Width</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-muted hover:bg-white/[0.06]'}`}
             >
               <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
@@ -65,7 +65,7 @@ export default function PaintbrushSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-pen" tooltip="Taper">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Taper</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Taper</p>
         <div className="flex flex-col gap-0.5">
           {[
             { v: 'uniform', i: 'bxs-minus-circle', l: 'Uniform' },
@@ -73,7 +73,7 @@ export default function PaintbrushSidebar() {
             { v: 'brush', i: 'bxs-brush', l: 'Brush' },
           ].map((t) => (
             <button key={t.v} onClick={() => updateTaper(t.v)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${taper === t.v ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${taper === t.v ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
             >
               <i className={`bx ${t.i} text-sm`} /> {t.l}
             </button>
@@ -84,7 +84,7 @@ export default function PaintbrushSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-shape-polygon" tooltip="Roughness">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Roughness</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Roughness</p>
         <div className="flex flex-col gap-0.5">
           {[
             { v: 'smooth', i: 'bxs-droplet', l: 'Smooth' },
@@ -92,7 +92,7 @@ export default function PaintbrushSidebar() {
             { v: 'rough', i: 'bxs-bolt', l: 'Rough' },
           ].map((r) => (
             <button key={r.v} onClick={() => updateRoughness(r.v)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${roughness === r.v ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${roughness === r.v ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
             >
               <i className={`bx ${r.i} text-sm`} /> {r.l}
             </button>
@@ -103,7 +103,7 @@ export default function PaintbrushSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-sun" tooltip="Opacity">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Opacity {Math.round(opacity * 100)}%</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Opacity {Math.round(opacity * 100)}%</p>
         <input
           type="range" min="0" max="1" step="0.05" value={opacity}
           onChange={(e) => updateOpacity(parseFloat(e.target.value))}

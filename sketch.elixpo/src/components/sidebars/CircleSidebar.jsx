@@ -30,7 +30,7 @@ function ColorGrid({ colors, selected, onSelect }) {
             style={!isTrans ? { backgroundColor: c } : undefined}
           >
             {isTrans && (
-              <svg className="w-full h-full text-[#666]" viewBox="0 0 20 20">
+              <svg className="w-full h-full text-text-dim" viewBox="0 0 20 20">
                 <line x1="4" y1="16" x2="16" y2="4" stroke="currentColor" strokeWidth="2" />
               </svg>
             )}
@@ -62,7 +62,7 @@ export default function CircleSidebar() {
         tooltip="Stroke color"
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Stroke</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Stroke</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
@@ -72,22 +72,22 @@ export default function CircleSidebar() {
         tooltip="Fill color"
         preview={
           <span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: bgColor === 'transparent' ? 'transparent' : bgColor }}>
-            {bgColor === 'transparent' && <svg className="w-full h-full text-[#666]" viewBox="0 0 16 16"><line x1="2" y1="14" x2="14" y2="2" stroke="currentColor" strokeWidth="1.5" /></svg>}
+            {bgColor === 'transparent' && <svg className="w-full h-full text-text-dim" viewBox="0 0 16 16"><line x1="2" y1="14" x2="14" y2="2" stroke="currentColor" strokeWidth="1.5" /></svg>}
           </span>
         }
       >
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Background</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Background</p>
         <ColorGrid colors={BG_COLORS} selected={bgColor} onSelect={updateBg} />
       </ToolbarButton>
 
       <Divider />
 
       <ToolbarButton icon="bxs-edit-alt" tooltip="Stroke width">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Width</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-muted hover:bg-white/[0.06]'}`}
             >
               <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
@@ -98,7 +98,7 @@ export default function CircleSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-minus-circle" tooltip="Stroke style">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Style</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Style</p>
         <div className="flex items-center gap-1">
           {[{ v: 'solid', d: '' }, { v: 'dashed', d: '6 4' }, { v: 'dotted', d: '2 3' }].map((s) => (
             <button key={s.v} onClick={() => updateStyle(s.v)}
@@ -113,11 +113,11 @@ export default function CircleSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-brush" tooltip="Fill style">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Fill</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Fill</p>
         <div className="flex flex-col gap-0.5">
           {FILLS.map((f) => (
             <button key={f.value} onClick={() => updateFill(f.value)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${fillStyle === f.value ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${fillStyle === f.value ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-current" />
               {f.label}

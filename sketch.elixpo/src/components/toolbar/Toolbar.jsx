@@ -1,6 +1,7 @@
 "use client"
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
+import useUIStore from '@/store/useUIStore'
 
 const TOOL_ITEMS = [
   { tool: TOOLS.PAN, icon: 'bxs-hand', title: 'Pan (H)' },
@@ -24,6 +25,7 @@ const TOOL_ITEMS = [
 export default function Toolbar() {
   const activeTool = useSketchStore((s) => s.activeTool)
   const setActiveTool = useSketchStore((s) => s.setActiveTool)
+  const toggleAIModal = useUIStore((s) => s.toggleAIModal)
 
   return (
     <div className="absolute top-[60px] left-2.5 w-[46px] rounded-xl bg-surface z-[1000] flex flex-col items-center py-1.5 gap-0.5 font-[lixFont]">
@@ -44,6 +46,7 @@ export default function Toolbar() {
             <button
               key="ai"
               title={item.title}
+              onClick={toggleAIModal}
               className="w-[38px] h-[38px] flex items-center justify-center rounded-lg text-text-muted hover:text-accent hover:bg-surface-hover transition-all duration-200"
             >
               <svg

@@ -81,11 +81,11 @@ export default function ArrowSidebar() {
     <ShapeSidebar visible={activeTool === TOOLS.ARROW || selectedShapeSidebar === 'arrow'}>
       {/* Head style */}
       <ToolbarButton icon="bxs-right-arrow" tooltip="Arrow head">
-        <p className="text-xs text-[#ccc] uppercase tracking-wider mb-2">Head</p>
+        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Head</p>
         <div className="flex items-center gap-1">
           {HEAD_STYLES.map((h) => (
             <button key={h.value} onClick={() => updateHead(h.value)}
-              className={`w-10 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${headStyle === h.value ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#ccc] hover:bg-white/[0.06]'}`}
+              className={`w-10 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${headStyle === h.value ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-secondary hover:bg-white/[0.06]'}`}
             >
               <SvgIcon svg={h.svg} />
             </button>
@@ -98,18 +98,18 @@ export default function ArrowSidebar() {
       <ToolbarButton tooltip="Stroke color"
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
-        <p className="text-xs text-[#ccc] uppercase tracking-wider mb-2">Stroke</p>
+        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Stroke</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
       <Divider />
 
       <ToolbarButton icon="bxs-edit-alt" tooltip="Stroke width">
-        <p className="text-xs text-[#ccc] uppercase tracking-wider mb-2">Width</p>
+        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#ccc] hover:bg-white/[0.06]'}`}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-secondary hover:bg-white/[0.06]'}`}
             >
               <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
@@ -120,7 +120,7 @@ export default function ArrowSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-minus-circle" tooltip="Stroke style">
-        <p className="text-xs text-[#ccc] uppercase tracking-wider mb-2">Style</p>
+        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Style</p>
         <div className="flex items-center gap-1">
           {[{ v: 'solid', d: '' }, { v: 'dashed', d: '6 4' }, { v: 'dotted', d: '2 3' }].map((s) => (
             <button key={s.v} onClick={() => updateOutline(s.v)}
@@ -136,7 +136,7 @@ export default function ArrowSidebar() {
 
       {/* Arrow type */}
       <ToolbarButton icon="bxs-share-alt" tooltip="Arrow type">
-        <p className="text-xs text-[#ccc] uppercase tracking-wider mb-2">Type</p>
+        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Type</p>
         <div className="flex flex-col gap-0.5">
           {[
             { v: 'straight', i: 'bxs-right-arrow-alt', l: 'Straight' },
@@ -144,7 +144,7 @@ export default function ArrowSidebar() {
             { v: 'elbow', i: 'bxs-network-chart', l: 'Elbow' },
           ].map((a) => (
             <button key={a.v} onClick={() => updateType(a.v)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${arrowType === a.v ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${arrowType === a.v ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
             >
               <i className={`bx ${a.i} text-sm`} /> {a.l}
             </button>
@@ -152,11 +152,11 @@ export default function ArrowSidebar() {
           {arrowType === 'curved' && (
             <>
               <div className="w-full h-px bg-white/[0.08] my-1" />
-              <p className="text-[9px] text-[#666] uppercase tracking-wider mb-1">Curvature</p>
+              <p className="text-[9px] text-text-dim uppercase tracking-wider mb-1">Curvature</p>
               <div className="flex items-center gap-1">
                 {[{ v: 8, l: 'Lo' }, { v: 20, l: 'Md' }, { v: 40, l: 'Hi' }].map((c) => (
                   <button key={c.v} onClick={() => updateCurvature(c.v)}
-                    className={`flex-1 py-1 rounded-md text-xs text-center transition-all duration-100 ${curvature === c.v ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#ccc] hover:bg-white/[0.06]'}`}
+                    className={`flex-1 py-1 rounded-md text-xs text-center transition-all duration-100 ${curvature === c.v ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-secondary hover:bg-white/[0.06]'}`}
                   >{c.l}</button>
                 ))}
               </div>

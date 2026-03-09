@@ -2,6 +2,7 @@
 // Multi-selection system - copied from selection.js
 
 import { cleanupAttachments } from '../tools/arrowTool.js';
+import { pushTransformAction } from './UndoRedo.js';
 
 let isMultiSelecting = false;
 let multiSelectionStart = { x: 0, y: 0 };
@@ -179,7 +180,54 @@ class MultiSelection {
         this.dragStart = { x: 0, y: 0 };
         this.rotationCenter = { x: 0, y: 0 };
         this.startRotationMouseAngle = 0;
+        this._undoSnapshots = new Map(); // Stores initial state for undo tracking
         this.initialRotation = 0;
+    }
+
+    // Capture current state of all selected shapes for undo
+    _snapshotForUndo() {
+        this._undoSnapshots.clear();
+        this.selectedShapes.forEach(shape => {
+            this._undoSnapshots.set(shape, this._captureShapeState(shape));
+        });
+    }
+
+    _captureShapeState(shape) {
+        switch (shape.shapeName) {
+            case 'line':
+            case 'arrow':
+                return {
+                    startPoint: { ...shape.startPoint },
+                    endPoint: { ...shape.endPoint },
+                    x: shape.x, y: shape.y,
+                    width: shape.width || 0, height: shape.height || 0,
+                    rotation: shape.rotation || 0
+                };
+            case 'circle':
+                return { x: shape.x, y: shape.y, rx: shape.rx, ry: shape.ry, rotation: shape.rotation || 0, width: shape.width, height: shape.height };
+            case 'freehandStroke':
+                return { x: shape.x, y: shape.y, width: shape.width, height: shape.height, rotation: shape.rotation || 0, points: JSON.parse(JSON.stringify(shape.points)) };
+            default:
+                return { x: shape.x || 0, y: shape.y || 0, width: shape.width || 0, height: shape.height || 0, rotation: shape.rotation || 0 };
+        }
+    }
+
+    // Push undo actions for all shapes that changed
+    _pushUndoForAll() {
+        this.selectedShapes.forEach(shape => {
+            const oldState = this._undoSnapshots.get(shape);
+            if (!oldState) return;
+            const newState = this._captureShapeState(shape);
+            // Check if anything actually changed
+            const changed = Object.keys(oldState).some(key => {
+                if (key === 'points' || key === 'startPoint' || key === 'endPoint') return JSON.stringify(oldState[key]) !== JSON.stringify(newState[key]);
+                return oldState[key] !== newState[key];
+            });
+            if (changed) {
+                pushTransformAction(shape, oldState, newState);
+            }
+        });
+        this._undoSnapshots.clear();
     }
 
     addShape(shape) {
@@ -503,6 +551,9 @@ class MultiSelection {
 
         this.storeInitialPositions();
 
+        // Snapshot for undo tracking
+        this._snapshotForUndo();
+
         const onMouseMove = (event) => {
             if (this.isRotating) {
                 this.handleRotation(event);
@@ -512,6 +563,10 @@ class MultiSelection {
         const onMouseUp = () => {
             this.isRotating = false;
             this.initialPositions.clear();
+
+            // Push undo for all rotated shapes
+            this._pushUndoForAll();
+
             if (typeof svg !== 'undefined') {
                 svg.removeEventListener('mousemove', onMouseMove);
                 svg.removeEventListener('mouseup', onMouseUp);
@@ -910,6 +965,9 @@ createRotatedControls(angleDiff = 0) {
         this.isResizing = true;
         this.resizingAnchorIndex = anchorIndex;
 
+        // Snapshot for undo tracking
+        this._snapshotForUndo();
+
         this.initialPositions.clear();
         const initialBounds = this.getBounds();
 
@@ -966,6 +1024,10 @@ createRotatedControls(angleDiff = 0) {
             this.isResizing = false;
             this.resizingAnchorIndex = null;
             this.initialPositions.clear();
+
+            // Push undo for all resized shapes
+            this._pushUndoForAll();
+
             if (typeof svg !== 'undefined') {
                 svg.removeEventListener('mousemove', onMouseMove);
                 svg.removeEventListener('mouseup', onMouseUp);
@@ -1119,6 +1181,9 @@ createRotatedControls(angleDiff = 0) {
         const { x, y } = getSVGCoordsFromMouse(e);
         this.dragStart = { x, y };
 
+        // Snapshot for undo tracking
+        this._snapshotForUndo();
+
         this.initialPositions.clear();
         this.selectedShapes.forEach(shape => {
             let shapeData;
@@ -1184,6 +1249,10 @@ createRotatedControls(angleDiff = 0) {
         isDraggingMultiSelection = false;
         this.isDragging = false;
         this.initialPositions.clear();
+
+        // Push undo for all moved shapes
+        this._pushUndoForAll();
+
         if (typeof svg !== 'undefined') {
             svg.style.cursor = 'default';
         }
@@ -1365,6 +1434,7 @@ function handleMultiSelectionMouseUp(e) {
         multiSelection.isResizing = false;
         multiSelection.resizingAnchorIndex = null;
         multiSelection.initialPositions.clear();
+        multiSelection._pushUndoForAll();
         multiSelection.updateControls();
         return true;
     }
@@ -1372,6 +1442,7 @@ function handleMultiSelectionMouseUp(e) {
     if (multiSelection.isRotating) {
         multiSelection.isRotating = false;
         multiSelection.initialPositions.clear();
+        multiSelection._pushUndoForAll();
         return true;
     }
 

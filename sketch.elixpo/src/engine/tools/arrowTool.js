@@ -19,7 +19,6 @@ let arrowHeadAngleDeg = 30;
 let arrowHeadStyle = "default";
 let startX, startY;
 let dragOldPosArrow = null;
-let copiedShapeData = null;
 let draggedShapeInitialFrameArrow = null;
 let hoveredFrameArrow = null;
 let arrowStrokeColorOptions = document.querySelectorAll(".arrowStrokeSpan");
@@ -451,72 +450,6 @@ arrowHeadStyleValue.forEach((span) => {
         const newHeadStyle = span.getAttribute("data-id");
         updateSelectedArrowStyle({ arrowHeadStyle: newHeadStyle });
     });
-});
-
-// Add copy/paste functionality like in lineTool.js
-function cloneOptions(options) {
-    return JSON.parse(JSON.stringify(options));
-}
-
-function cloneArrowData(arrow) {
-    return {
-        startPoint: { x: arrow.startPoint.x, y: arrow.startPoint.y },
-        endPoint: { x: arrow.endPoint.x, y: arrow.endPoint.y },
-        controlPoint1: arrow.controlPoint1 ? { x: arrow.controlPoint1.x, y: arrow.controlPoint1.y } : null,
-        controlPoint2: arrow.controlPoint2 ? { x: arrow.controlPoint2.x, y: arrow.controlPoint2.y } : null,
-        options: cloneOptions(arrow.options),
-        arrowOutlineStyle: arrow.arrowOutlineStyle,
-        arrowHeadStyle: arrow.arrowHeadStyle,
-        arrowCurved: arrow.arrowCurved,
-        arrowCurveAmount: arrow.arrowCurveAmount
-    };
-}
-
-document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
-        if (currentShape && currentShape.shapeName === 'arrow' && currentShape.isSelected) {
-            copiedShapeData = cloneArrowData(currentShape);
-        }
-    }
-});
-
-document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-        if (copiedShapeData) {
-            e.preventDefault();
-
-            shapes.forEach(shape => {
-                if (shape.isSelected && shape.removeSelection) {
-                    shape.removeSelection();
-                }
-            });
-
-            currentShape = null;
-            disableAllSideBars();
-
-            const offset = 20;
-            const newArrow = new Arrow(
-                { x: copiedShapeData.startPoint.x + offset, y: copiedShapeData.startPoint.y + offset },
-                { x: copiedShapeData.endPoint.x + offset, y: copiedShapeData.endPoint.y + offset },
-                {
-                    ...cloneOptions(copiedShapeData.options),
-                    arrowOutlineStyle: copiedShapeData.arrowOutlineStyle,
-                    arrowHeadStyle: copiedShapeData.arrowHeadStyle,
-                    arrowCurved: copiedShapeData.arrowCurved,
-                    arrowCurveAmount: copiedShapeData.arrowCurveAmount,
-                    controlPoint1: copiedShapeData.controlPoint1 ?
-                        { x: copiedShapeData.controlPoint1.x + offset, y: copiedShapeData.controlPoint1.y + offset } : null,
-                    controlPoint2: copiedShapeData.controlPoint2 ?
-                        { x: copiedShapeData.controlPoint2.x + offset, y: copiedShapeData.controlPoint2.y + offset } : null
-                }
-            );
-
-            shapes.push(newArrow);
-            newArrow.selectArrow();
-            currentShape = newArrow;
-            pushCreateAction(newArrow);
-        }
-    }
 });
 
 function detachSelectedArrow() {

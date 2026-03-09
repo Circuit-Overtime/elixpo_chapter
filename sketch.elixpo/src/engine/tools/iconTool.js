@@ -111,9 +111,11 @@ const handleMouseMoveIcon = (e) => {
                 if (frame.isShapeInFrame(tempIconBounds)) {
                     frame.highlightFrame();
                     hoveredFrameIcon = frame;
+                    if (window.__iconShapeState) window.__iconShapeState.hoveredFrameIcon = frame;
                 } else if (hoveredFrameIcon === frame) {
                     frame.removeHighlight();
                     hoveredFrameIcon = null;
+                    if (window.__iconShapeState) window.__iconShapeState.hoveredFrameIcon = null;
                 }
             }
         });
@@ -313,6 +315,26 @@ const handleMouseDownIcon = async (e) => {
         const allChildren = originalSvgElement.children;
         for (let i = 0; i < allChildren.length; i++) {
             const clonedChild = allChildren[i].cloneNode(true);
+
+            // Apply white fill/stroke so icons are visible on dark canvas
+            const applyWhiteStyle = (element) => {
+                if (element.nodeType === 1) {
+                    const fill = element.getAttribute('fill');
+                    const stroke = element.getAttribute('stroke');
+                    // Replace black/dark fills with white; leave 'none'/'transparent' alone
+                    if (!fill || fill === '#000' || fill === '#000000' || fill === 'black' || fill === 'currentColor') {
+                        element.setAttribute('fill', '#ffffff');
+                    }
+                    if (stroke === '#000' || stroke === '#000000' || stroke === 'black' || stroke === 'currentColor') {
+                        element.setAttribute('stroke', '#ffffff');
+                    }
+                    for (let j = 0; j < element.children.length; j++) {
+                        applyWhiteStyle(element.children[j]);
+                    }
+                }
+            };
+            applyWhiteStyle(clonedChild);
+
             finalIconGroup.appendChild(clonedChild);
         }
 
@@ -355,6 +377,7 @@ const handleMouseDownIcon = async (e) => {
         if (hoveredFrameIcon) {
             hoveredFrameIcon.removeHighlight();
             hoveredFrameIcon = null;
+            if (window.__iconShapeState) window.__iconShapeState.hoveredFrameIcon = null;
         }
 
         console.log('Icon placed successfully:', finalIconGroup);
@@ -372,10 +395,16 @@ const handleMouseDownIcon = async (e) => {
     }
 
     // Auto-select placed icon and switch to selection tool
-    // requestAnimationFrame ensures the icon is painted before addSelectionOutline runs
     if (placedIconShape) {
-        const selectBtn = document.querySelector(".bxs-pointer");
-        if (selectBtn) selectBtn.click();
+        // Switch to select tool via Zustand store bridge
+        if (window.__sketchStoreApi) {
+            window.__sketchStoreApi.setActiveTool('select');
+        } else {
+            const selectBtn = document.querySelector(".bxs-pointer");
+            if (selectBtn) selectBtn.click();
+        }
+        window.isSelectionToolActive = true;
+        window.isIconToolActive = false;
         currentShape = placedIconShape;
         currentShape.isSelected = true;
         requestAnimationFrame(() => {
@@ -473,6 +502,7 @@ function startDrag(event) {
     if (!isSelectionToolActive || !selectedIcon) return;
     
     isDragging = true;
+    if (window.__iconShapeState) window.__iconShapeState.isDragging = true;
 
     let iconShape = null;
     if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
@@ -552,7 +582,15 @@ function selectIcon(event) {
         originalWidth = parseFloat(selectedIcon.getAttribute('width')) || placedIconSize;
         originalHeight = parseFloat(selectedIcon.getAttribute('height')) || placedIconSize;
 
-        console.log('Icon selected with dimensions:', { originalX, originalY, originalWidth, originalHeight });
+        // Set currentShape so EventDispatcher routes subsequent events to icon handler
+        const iconShape = (typeof shapes !== 'undefined' && Array.isArray(shapes))
+            ? shapes.find(s => s.shapeName === 'icon' && s.element === selectedIcon)
+            : null;
+        if (iconShape) {
+            currentShape = iconShape;
+            currentShape.isSelected = true;
+            if (window.__showSidebarForShape) window.__showSidebarForShape('icon');
+        }
     }
 }
 
@@ -812,7 +850,8 @@ function stopDrag(event) {
     
     console.log("stop dragging icon");
     isDragging = false;
-    
+    if (window.__iconShapeState) window.__iconShapeState.isDragging = false;
+
     document.removeEventListener('mousemove', dragIcon);
     document.removeEventListener('mouseup', stopDrag);
     window.removeEventListener('mouseup', stopDrag);
@@ -989,9 +1028,11 @@ function stopInteracting() {
     if (hoveredFrameIcon) {
         hoveredFrameIcon.removeHighlight();
         hoveredFrameIcon = null;
+        if (window.__iconShapeState) window.__iconShapeState.hoveredFrameIcon = null;
     }
 
     isDragging = false;
+    if (window.__iconShapeState) window.__iconShapeState.isDragging = false;
     isRotatingIcon = false;
 
     const svg = getSVGElement();
@@ -1339,5 +1380,19 @@ function handleIconClick(event, filename) {
 
 
 
-renderIconsFromServer()
+// Bridge for React sidebar to trigger icon placement
+window.prepareIconPlacement = function(svgContent) {
+    iconToPlace = svgContent;
+    isDraggingIcon = true;
+    window.isIconToolActive = true;
+    document.body.style.cursor = 'crosshair';
+};
+
+// Bridge for IconShape to call selectIcon and removeSelection
+window.__iconToolSelectIcon = selectIcon;
+window.__iconToolRemoveSelection = removeSelection;
+
+// Try to render legacy icons but don't fail if elements missing
+try { renderIconsFromServer(); } catch(e) { /* React handles icon UI */ }
+
 export { handleMouseDownIcon, handleMouseMoveIcon, handleMouseUpIcon, startDrag, stopDrag}

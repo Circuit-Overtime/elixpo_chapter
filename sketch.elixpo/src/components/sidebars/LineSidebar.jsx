@@ -39,18 +39,18 @@ export default function LineSidebar() {
       <ToolbarButton tooltip="Stroke color"
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Stroke</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Stroke</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
       <Divider />
 
       <ToolbarButton icon="bxs-edit-alt" tooltip="Stroke width">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Width</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-muted hover:bg-white/[0.06]'}`}
             >
               <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
@@ -61,7 +61,7 @@ export default function LineSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-minus-circle" tooltip="Stroke style">
-        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Style</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Style</p>
         <div className="flex items-center gap-1">
           {[{ v: 'solid', d: '' }, { v: 'dashed', d: '6 4' }, { v: 'dotted', d: '2 3' }].map((s) => (
             <button key={s.v} onClick={() => updateStyle(s.v)}
@@ -93,7 +93,7 @@ export default function LineSidebar() {
         <div className="flex flex-col gap-0.5">
           {[{ v: 'smooth', i: 'bxs-droplet', l: 'Smooth' }, { v: 'rough', i: 'bxs-bolt', l: 'Rough' }].map((e) => (
             <button key={e.v} onClick={() => updateEdge(e.v)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${edge === e.v ? 'bg-accent-blue text-white' : 'text-[#aaa] hover:bg-white/6'}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${edge === e.v ? 'bg-accent-blue text-white' : 'text-text-secondary hover:bg-white/6'}`}
             >
               <i className={`bx ${e.i} text-sm`} /> {e.l}
             </button>
