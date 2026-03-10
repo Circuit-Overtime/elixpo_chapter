@@ -403,8 +403,6 @@ const handleMouseDownIcon = async (e) => {
             const selectBtn = document.querySelector(".bxs-pointer");
             if (selectBtn) selectBtn.click();
         }
-        window.isSelectionToolActive = true;
-        window.isIconToolActive = false;
         currentShape = placedIconShape;
         currentShape.isSelected = true;
         requestAnimationFrame(() => {

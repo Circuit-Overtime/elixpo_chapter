@@ -2,7 +2,7 @@
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 const TEXT_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 
@@ -12,6 +12,8 @@ const FONTS = [
   { value: 'lixDefault', label: 'Default' },
   { value: 'lixFancy', label: 'Fancy' },
 ]
+
+const SIZE_MAP = { S: '20px', M: '30px', L: '48px', XL: '72px' }
 
 const LANGUAGES = [
   'javascript', 'typescript', 'python', 'java', 'c', 'cpp', 'csharp',
@@ -28,6 +30,27 @@ export default function TextSidebar() {
   const [codeMode, setCodeMode] = useState(false)
   const [language, setLanguage] = useState('javascript')
 
+  const updateColor = useCallback((c) => {
+    setTextColor(c)
+    if (window.updateSelectedTextStyle) window.updateSelectedTextStyle({ color: c })
+  }, [])
+
+  const updateFont = useCallback((f) => {
+    setFont(f)
+    if (window.updateSelectedTextStyle) window.updateSelectedTextStyle({ font: f })
+  }, [])
+
+  const updateSize = useCallback((s) => {
+    setFontSize(s)
+    if (window.updateSelectedTextStyle) window.updateSelectedTextStyle({ fontSize: SIZE_MAP[s] })
+  }, [])
+
+  const toggleCodeMode = useCallback(() => {
+    const next = !codeMode
+    setCodeMode(next)
+    window.isTextInCodeMode = next
+  }, [codeMode])
+
   const visible = activeTool === TOOLS.TEXT || activeTool === TOOLS.CODE || selectedShapeSidebar === 'text'
 
   return (
@@ -39,7 +62,7 @@ export default function TextSidebar() {
         <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Color</p>
         <div className="grid grid-cols-4 gap-1.5">
           {TEXT_COLORS.map((c) => (
-            <button key={c} onClick={() => setTextColor(c)}
+            <button key={c} onClick={() => updateColor(c)}
               className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${textColor === c ? 'border-[#5B57D1] scale-110' : 'border-white/[0.08] hover:border-white/20'}`}
               style={{ backgroundColor: c }}
             />
@@ -54,7 +77,7 @@ export default function TextSidebar() {
         <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Font</p>
         <div className="flex flex-col gap-0.5">
           {FONTS.map((f) => (
-            <button key={f.value} onClick={() => setFont(f.value)}
+            <button key={f.value} onClick={() => updateFont(f.value)}
               className={`flex items-center px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${font === f.value ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
               style={{ fontFamily: f.value }}
             >
@@ -71,7 +94,7 @@ export default function TextSidebar() {
         <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Size</p>
         <div className="flex items-center gap-1">
           {['S', 'M', 'L', 'XL'].map((s) => (
-            <button key={s} onClick={() => setFontSize(s)}
+            <button key={s} onClick={() => updateSize(s)}
               className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-all duration-100 ${fontSize === s ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-muted hover:bg-white/[0.06]'}`}
             >{s}</button>
           ))}
@@ -84,7 +107,7 @@ export default function TextSidebar() {
       <ToolbarButton icon="bxs-terminal" tooltip="Code mode">
         <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Code</p>
         <div className="flex flex-col gap-2">
-          <button onClick={() => setCodeMode(!codeMode)}
+          <button onClick={toggleCodeMode}
             className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${codeMode ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
           >
             <div className={`w-6 h-3 rounded-full transition-all duration-150 relative ${codeMode ? 'bg-white/30' : 'bg-white/10'}`}>

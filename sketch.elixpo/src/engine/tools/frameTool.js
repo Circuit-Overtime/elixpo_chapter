@@ -120,8 +120,11 @@ const handleMouseDown = (e) => {
 
             // Auto-select the new frame and switch to selection tool
             const placedFrame = currentFrame;
-            window.isSelectionToolActive = true;
-            toolExtraPopup();
+            if (window.__sketchStoreApi) {
+                window.__sketchStoreApi.setActiveTool('select');
+            } else {
+                window.isSelectionToolActive = true;
+            }
             currentShape = placedFrame;
             placedFrame.selectFrame();
         }

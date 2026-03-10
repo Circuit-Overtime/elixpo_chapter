@@ -344,6 +344,27 @@ class SketchEngine {
         if (toolName === 'text' && window.isTextInCodeMode) {
             window.isCodeToolActive = true;
         }
+
+        // Set appropriate cursor for the active tool
+        const cursorMap = {
+            select: 'default',
+            pan: 'grab',
+            rectangle: 'crosshair',
+            circle: 'crosshair',
+            line: 'crosshair',
+            arrow: 'crosshair',
+            freehand: 'crosshair',
+            text: 'crosshair',
+            code: 'crosshair',
+            eraser: 'crosshair',
+            laser: 'crosshair',
+            image: 'crosshair',
+            frame: 'crosshair',
+            icon: 'crosshair',
+        };
+        if (this.svg) {
+            this.svg.style.cursor = cursorMap[toolName] || 'default';
+        }
     }
 
     cleanup() {

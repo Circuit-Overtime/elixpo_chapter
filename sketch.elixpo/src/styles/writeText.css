@@ -49,13 +49,25 @@
     display: none;
 }
 
-#freehand-canvas > g 
+#freehand-canvas > g
 {
     user-select: none;
- 
 }
 
+/* Prevent native browser text selection on SVG text elements during mouse drag */
+#freehand-canvas text,
+#freehand-canvas tspan {
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: painted;
+}
 
+/* Embedded shape labels */
+.shape-label {
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+}
 
 .syntax-highlight-overlay {
     font-family: 'lixCode', 'Courier New', monospace !important;

@@ -42,8 +42,16 @@ class Rectangle {
         this.selectionPadding = 8;
         this.selectionOutline = null;
         this.shapeName = 'rectangle';
-        this.shapeID = `rectangle-${String(Date.now()).slice(0, 8)}-${Math.floor(Math.random() * 10000)}`; 
+        this.shapeID = `rectangle-${String(Date.now()).slice(0, 8)}-${Math.floor(Math.random() * 10000)}`;
         this.group.setAttribute('id', this.shapeID);
+
+        // Embedded label support
+        this.label = options.label || '';
+        this.labelElement = null;
+        this.labelColor = options.labelColor || '#e0e0e0';
+        this.labelFontSize = options.labelFontSize || 14;
+        this._isEditingLabel = false;
+
          if (!this.group.parentNode) {
              svg.appendChild(this.group);
          }
@@ -53,13 +61,14 @@ class Rectangle {
             options: null
         };
         this.isBeingDrawn = false;
-        this.draw(); 
+        this._setupLabelDblClick();
+        this.draw();
     }
     draw() {
         const childrenToRemove = [];
         for (let i = 0; i < this.group.children.length; i++) {
             const child = this.group.children[i];
-            if (child !== this.element) { 
+            if (child !== this.element && child !== this.labelElement) {
                  childrenToRemove.push(child);
             }
         }
@@ -69,7 +78,7 @@ class Rectangle {
         const isInitialDraw = this.element === null;
         const optionsChanged = optionsString !== this._lastDrawn.options;
         const sizeChanged = this.width !== this._lastDrawn.width || this.height !== this._lastDrawn.height;
-        
+
         // Only regenerate rough element if it's not being actively drawn OR if options changed OR initial draw
         if (isInitialDraw || optionsChanged || (!this.isBeingDrawn && sizeChanged)) {
             if (this.element && this.element.parentNode === this.group) {
@@ -78,17 +87,20 @@ class Rectangle {
             const roughRect = rc.rectangle(0, 0, this.width, this.height, this.options);
             this.element = roughRect;
             this.group.appendChild(roughRect);
-        
+
             // Cache the values
             this._lastDrawn.width = this.width;
             this._lastDrawn.height = this.height;
             this._lastDrawn.options = optionsString;
         }
 
+        // Update embedded label
+        this._updateLabelElement();
+
         const rotateCenterX = this.width / 2;
         const rotateCenterY = this.height / 2;
         this.group.setAttribute('transform', `translate(${this.x}, ${this.y}) rotate(${this.rotation}, ${rotateCenterX}, ${rotateCenterY})`);
-        
+
         if (this.isSelected) {
             this.addAnchors();
         }
@@ -96,6 +108,137 @@ class Rectangle {
             this.updateAttachedArrows();
             svg.appendChild(this.group);
         }
+    }
+
+    _updateLabelElement() {
+        if (!this.label) {
+            // Remove label element if label is empty
+            if (this.labelElement && this.labelElement.parentNode === this.group) {
+                this.group.removeChild(this.labelElement);
+                this.labelElement = null;
+            }
+            return;
+        }
+
+        if (!this.labelElement) {
+            this.labelElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            this.labelElement.setAttribute('class', 'shape-label');
+            this.labelElement.setAttribute('pointer-events', 'none');
+        }
+
+        // Position at center of rectangle
+        this.labelElement.setAttribute('x', this.width / 2);
+        this.labelElement.setAttribute('y', this.height / 2);
+        this.labelElement.setAttribute('text-anchor', 'middle');
+        this.labelElement.setAttribute('dominant-baseline', 'central');
+        this.labelElement.setAttribute('fill', this.labelColor);
+        this.labelElement.setAttribute('font-size', this.labelFontSize);
+        this.labelElement.setAttribute('font-family', 'lixFont, sans-serif');
+        this.labelElement.textContent = this.label;
+
+        // Ensure label is after the rough element (on top)
+        if (this.labelElement.parentNode !== this.group) {
+            // Insert after element but before any anchors
+            if (this.element && this.element.nextSibling) {
+                this.group.insertBefore(this.labelElement, this.element.nextSibling);
+            } else {
+                this.group.appendChild(this.labelElement);
+            }
+        }
+    }
+
+    _setupLabelDblClick() {
+        this.group.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            this.startLabelEdit();
+        });
+    }
+
+    startLabelEdit() {
+        if (this._isEditingLabel) return;
+        this._isEditingLabel = true;
+
+        // Hide label element during editing
+        if (this.labelElement) {
+            this.labelElement.setAttribute('visibility', 'hidden');
+        }
+
+        // Create foreignObject for inline editing
+        const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+        const padding = 8;
+        fo.setAttribute('x', padding);
+        fo.setAttribute('y', padding);
+        fo.setAttribute('width', Math.max(this.width - padding * 2, 40));
+        fo.setAttribute('height', Math.max(this.height - padding * 2, 30));
+
+        const input = document.createElement('div');
+        input.setAttribute('contenteditable', 'true');
+        input.style.cssText = `
+            width: 100%; height: 100%;
+            background: transparent; border: none; outline: none;
+            color: ${this.labelColor}; font-size: ${this.labelFontSize}px;
+            font-family: lixFont, sans-serif; text-align: center;
+            display: flex; align-items: center; justify-content: center;
+            white-space: pre-wrap; word-break: break-word;
+            overflow: hidden; cursor: text;
+        `;
+        input.textContent = this.label;
+
+        fo.appendChild(input);
+        // Insert before anchors but after element and label
+        this.group.appendChild(fo);
+
+        // Focus and select all text
+        setTimeout(() => {
+            input.focus();
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(input);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }, 10);
+
+        const finishEdit = () => {
+            const newText = input.textContent.trim();
+            this.label = newText;
+            this._isEditingLabel = false;
+
+            if (fo.parentNode) {
+                fo.parentNode.removeChild(fo);
+            }
+
+            if (this.labelElement) {
+                this.labelElement.setAttribute('visibility', 'visible');
+            }
+
+            this.draw();
+        };
+
+        input.addEventListener('blur', finishEdit);
+        input.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                input.blur();
+            }
+            if (e.key === 'Escape') {
+                input.textContent = this.label; // revert
+                input.blur();
+            }
+        });
+
+        // Prevent mouse events from propagating to canvas
+        input.addEventListener('mousedown', (e) => e.stopPropagation());
+        input.addEventListener('mousemove', (e) => e.stopPropagation());
+        input.addEventListener('mouseup', (e) => e.stopPropagation());
+    }
+
+    setLabel(text, color, fontSize) {
+        this.label = text || '';
+        if (color) this.labelColor = color;
+        if (fontSize) this.labelFontSize = fontSize;
+        this.draw();
     }
 
     setDrawingState(isDrawing) {

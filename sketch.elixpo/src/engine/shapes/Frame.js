@@ -2,6 +2,8 @@
 // Frame shape class - extracted from frameHolder.js
 // Depends on globals: svg, shapes, currentShape, currentZoom
 
+import { cleanupAttachments } from '../tools/arrowTool.js';
+
 function getSVGCoordsFromMouse(e) {
     const viewBox = svg.viewBox.baseVal;
     const rect = svg.getBoundingClientRect();
@@ -149,21 +151,29 @@ class Frame {
     addShapeToFrame(shape) {
     if (shape && !this.containedShapes.includes(shape)) {
         const oldFrame = shape.parentFrame;
-        
+
         // Remove from other frames first
         shapes.forEach(otherFrame => {
             if (otherFrame.shapeName === 'frame' && otherFrame !== this) {
                 otherFrame.removeShapeFromFrame(shape);
             }
         });
-        
+
         this.containedShapes.push(shape);
         shape.parentFrame = this;
-        
+
         // Only move to clipped group if not currently being dragged
         if (shape.group && shape.group.parentNode && !shape.isDraggedOutTemporarily) {
             shape.group.parentNode.removeChild(shape.group);
             this.clipGroup.appendChild(shape.group);
+        }
+
+        // For sub-frames, also move their clipGroup into our clipGroup
+        if (shape.shapeName === 'frame' && shape.clipGroup) {
+            if (shape.clipGroup.parentNode) {
+                shape.clipGroup.parentNode.removeChild(shape.clipGroup);
+            }
+            this.clipGroup.appendChild(shape.clipGroup);
         }
     }
 }
@@ -175,13 +185,19 @@ class Frame {
         if (shape.parentFrame === this) {
             shape.parentFrame = null;
         }
-        
+
         // Move shape's group back to main SVG if it's in the clipped group
         if (shape.group && shape.group.parentNode === this.clipGroup) {
             this.clipGroup.removeChild(shape.group);
             svg.appendChild(shape.group);
         }
-        
+
+        // For sub-frames, also move their clipGroup back to main SVG
+        if (shape.shapeName === 'frame' && shape.clipGroup && shape.clipGroup.parentNode === this.clipGroup) {
+            this.clipGroup.removeChild(shape.clipGroup);
+            svg.appendChild(shape.clipGroup);
+        }
+
         delete shape.isDraggedOutTemporarily;
     }
 }
@@ -213,7 +229,13 @@ class Frame {
 updateContainedShapes(applyClipping = true) {
     // Check all shapes to see if they should be in this frame
     shapes.forEach(shape => {
-        if (shape !== this && shape.shapeName !== 'frame') {
+        if (shape !== this) {
+            // Skip frames that are larger than or equal to this frame (prevent parent containing child loops)
+            if (shape.shapeName === 'frame') {
+                const shapeArea = (shape.width || 0) * (shape.height || 0);
+                const thisArea = (this.width || 0) * (this.height || 0);
+                if (shapeArea >= thisArea) return;
+            }
             const isInFrame = this.isShapeInFrame(shape);
             const isAlreadyContained = this.containedShapes.includes(shape);
             
@@ -341,14 +363,23 @@ move(dx, dy) {
     this.updateContainedShapes();
 }
     destroy() {
-        // Delete all contained shapes along with the frame
+        // Release contained shapes back to main SVG as individual shapes
         [...this.containedShapes].forEach(shape => {
-            const shapeIdx = shapes.indexOf(shape);
-            if (shapeIdx > -1) shapes.splice(shapeIdx, 1);
-            if (shape.group && shape.group.parentNode) {
-                shape.group.parentNode.removeChild(shape.group);
+            if (shape.group) {
+                if (shape.group.parentNode === this.clipGroup) {
+                    this.clipGroup.removeChild(shape.group);
+                }
+                svg.appendChild(shape.group);
             }
-            cleanupAttachments(shape.group || shape);
+            // For sub-frames, also release their clipGroup back to main SVG
+            if (shape.shapeName === 'frame' && shape.clipGroup) {
+                if (shape.clipGroup.parentNode === this.clipGroup) {
+                    this.clipGroup.removeChild(shape.clipGroup);
+                }
+                svg.appendChild(shape.clipGroup);
+            }
+            shape.parentFrame = null;
+            delete shape.isBeingMovedByFrame;
         });
         this.containedShapes = [];
 
@@ -357,7 +388,7 @@ move(dx, dy) {
             this.clipPath.parentNode.removeChild(this.clipPath);
         }
 
-        // Remove groups
+        // Remove groups (clipGroup should be empty now)
         if (this.clipGroup && this.clipGroup.parentNode) {
             this.clipGroup.parentNode.removeChild(this.clipGroup);
         }
@@ -513,6 +544,11 @@ startLabelEdit(labelElement) {
     }
 
     _showSidebar() {
+        // React sidebar bridge
+        if (window.__showSidebarForShape) {
+            window.__showSidebarForShape('frame');
+        }
+
         const sidebar = document.getElementById('frameSideBar');
         const renameInput = document.getElementById('frameRenameInput');
         const resizeBtn = document.getElementById('frameResizeToFit');
@@ -937,6 +973,9 @@ startLabelEdit(labelElement) {
         const dx = currentPos.x - startPos.x;
         const dy = currentPos.y - startPos.y;
 
+        // Store old frame for scale calculation
+        const oldX = this.x, oldY = this.y, oldW = this.width, oldH = this.height;
+
         switch (anchorIndex) {
             case 0: // Top-left
                 this.x = initialFrame.x + dx;
@@ -973,7 +1012,89 @@ startLabelEdit(labelElement) {
                 this.width = Math.max(10, initialFrame.width - dx);
                 break;
         }
-        
+
+        // Scale contained shapes proportionally so nothing falls out
+        if (oldW > 0 && oldH > 0) {
+            const scaleX = this.width / oldW;
+            const scaleY = this.height / oldH;
+
+            if (Math.abs(scaleX - 1) > 0.001 || Math.abs(scaleY - 1) > 0.001) {
+                this.containedShapes.forEach(shape => {
+                    if (!shape) return;
+                    shape.isBeingMovedByFrame = true;
+
+                    switch (shape.shapeName) {
+                        case 'rectangle':
+                        case 'image':
+                        case 'icon':
+                        case 'code': {
+                            const relX = (shape.x - oldX) / oldW;
+                            const relY = (shape.y - oldY) / oldH;
+                            const relW = shape.width / oldW;
+                            const relH = shape.height / oldH;
+                            shape.x = this.x + relX * this.width;
+                            shape.y = this.y + relY * this.height;
+                            shape.width = relW * this.width;
+                            shape.height = relH * this.height;
+                            if (typeof shape.draw === 'function') shape.draw();
+                            break;
+                        }
+                        case 'circle': {
+                            const relCX = (shape.x - oldX) / oldW;
+                            const relCY = (shape.y - oldY) / oldH;
+                            shape.x = this.x + relCX * this.width;
+                            shape.y = this.y + relCY * this.height;
+                            shape.rx = (shape.rx / oldW) * this.width;
+                            shape.ry = (shape.ry / oldH) * this.height;
+                            shape.width = shape.rx * 2;
+                            shape.height = shape.ry * 2;
+                            if (typeof shape.draw === 'function') shape.draw();
+                            break;
+                        }
+                        case 'arrow':
+                        case 'line': {
+                            const relSX = (shape.startPoint.x - oldX) / oldW;
+                            const relSY = (shape.startPoint.y - oldY) / oldH;
+                            const relEX = (shape.endPoint.x - oldX) / oldW;
+                            const relEY = (shape.endPoint.y - oldY) / oldH;
+                            shape.startPoint.x = this.x + relSX * this.width;
+                            shape.startPoint.y = this.y + relSY * this.height;
+                            shape.endPoint.x = this.x + relEX * this.width;
+                            shape.endPoint.y = this.y + relEY * this.height;
+                            if (shape.controlPoint1) {
+                                const relC1X = (shape.controlPoint1.x - oldX) / oldW;
+                                const relC1Y = (shape.controlPoint1.y - oldY) / oldH;
+                                shape.controlPoint1.x = this.x + relC1X * this.width;
+                                shape.controlPoint1.y = this.y + relC1Y * this.height;
+                            }
+                            if (shape.controlPoint2) {
+                                const relC2X = (shape.controlPoint2.x - oldX) / oldW;
+                                const relC2Y = (shape.controlPoint2.y - oldY) / oldH;
+                                shape.controlPoint2.x = this.x + relC2X * this.width;
+                                shape.controlPoint2.y = this.y + relC2Y * this.height;
+                            }
+                            if (typeof shape.draw === 'function') shape.draw();
+                            break;
+                        }
+                        case 'text': {
+                            const tx = shape.x || 0;
+                            const ty = shape.y || 0;
+                            const relTX = (tx - oldX) / oldW;
+                            const relTY = (ty - oldY) / oldH;
+                            shape.x = this.x + relTX * this.width;
+                            shape.y = this.y + relTY * this.height;
+                            break;
+                        }
+                    }
+
+                    if (typeof shape.updateAttachedArrows === 'function') {
+                        shape.updateAttachedArrows();
+                    }
+                    delete shape.isBeingMovedByFrame;
+                });
+            }
+        }
+
         // Update contained shapes visibility
         this.updateContainedShapes();
     }
@@ -1072,14 +1193,23 @@ restoreToFrame(shape) {
     }
 
     destroy() {
-        // Delete all contained shapes along with the frame
+        // Release contained shapes back to main SVG as individual shapes
         [...this.containedShapes].forEach(shape => {
-            const shapeIdx = shapes.indexOf(shape);
-            if (shapeIdx > -1) shapes.splice(shapeIdx, 1);
-            if (shape.group && shape.group.parentNode) {
-                shape.group.parentNode.removeChild(shape.group);
+            if (shape.group) {
+                if (shape.group.parentNode === this.clipGroup) {
+                    this.clipGroup.removeChild(shape.group);
+                }
+                svg.appendChild(shape.group);
             }
-            cleanupAttachments(shape.group || shape);
+            // For sub-frames, also release their clipGroup back to main SVG
+            if (shape.shapeName === 'frame' && shape.clipGroup) {
+                if (shape.clipGroup.parentNode === this.clipGroup) {
+                    this.clipGroup.removeChild(shape.clipGroup);
+                }
+                svg.appendChild(shape.clipGroup);
+            }
+            shape.parentFrame = null;
+            delete shape.isBeingMovedByFrame;
         });
         this.containedShapes = [];
 
@@ -1088,7 +1218,7 @@ restoreToFrame(shape) {
             this.clipPath.parentNode.removeChild(this.clipPath);
         }
 
-        // Remove groups
+        // Remove groups (clipGroup should be empty now)
         if (this.clipGroup && this.clipGroup.parentNode) {
             this.clipGroup.parentNode.removeChild(this.clipGroup);
         }

@@ -35,7 +35,13 @@ export default function useKeyboardShortcuts() {
         if (key === 'a' && !e.shiftKey) {
           e.preventDefault()
           store.setActiveTool(TOOLS.SELECT)
-          // Select all will be handled by engine
+          // Select all shapes via engine's multiSelection
+          if (window.multiSelection && window.shapes) {
+            window.multiSelection.clearSelection()
+            window.shapes.forEach(shape => {
+              window.multiSelection.addShape(shape)
+            })
+          }
           return
         }
         if (key === 'g' && !e.shiftKey) {

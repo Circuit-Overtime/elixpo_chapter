@@ -500,6 +500,12 @@ class MultiSelection {
 
     move(dx, dy) {
     this.selectedShapes.forEach(shape => {
+        // Skip shapes whose parent frame is also selected — the frame's move()
+        // will already move them, so moving them independently causes double-move offset
+        if (shape.parentFrame && this.selectedShapes.has(shape.parentFrame)) {
+            return;
+        }
+
         switch (shape.shapeName) {
             case 'rectangle':
             case 'circle':
@@ -948,6 +954,27 @@ createRotatedControls(angleDiff = 0) {
         svg.appendChild(this.group);
     }
 
+    // Draw faint individual outlines for each selected shape
+    if (this.selectedShapes.size > 1) {
+        this.selectedShapes.forEach(shape => {
+            const b = this.getShapeBounds(shape);
+            if (!b || b.width === 0 && b.height === 0) return;
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', b.x - 3);
+            rect.setAttribute('y', b.y - 3);
+            rect.setAttribute('width', b.width + 6);
+            rect.setAttribute('height', b.height + 6);
+            rect.setAttribute('fill', 'none');
+            rect.setAttribute('stroke', '#5B57D1');
+            rect.setAttribute('stroke-width', 1);
+            rect.setAttribute('stroke-opacity', 0.35);
+            rect.setAttribute('stroke-dasharray', '4 3');
+            rect.setAttribute('rx', 3);
+            rect.setAttribute('style', 'pointer-events: none;');
+            this.group.appendChild(rect);
+        });
+    }
+
     const expandedX = this.bounds.x - this.selectionPadding;
     const expandedY = this.bounds.y - this.selectionPadding;
     const expandedWidth = this.bounds.width + 2 * this.selectionPadding;
@@ -1317,22 +1344,58 @@ function handleMultiSelectionMouseDown(e) {
         return false; // Let individual shape handlers manage their own anchors
     }
 
-    // Check if clicking on any shape
+    // Check if clicking on any shape — prioritise non-frame shapes so that
+    // shapes inside frames (text, icons, etc.) can still be selected/interacted with.
     let clickedOnShape = false;
     let clickedShape = null;
     if (typeof shapes !== 'undefined') {
+        let fallbackFrame = null;
         for (let i = shapes.length - 1; i >= 0; i--) {
             const shape = shapes[i];
             if (shape.contains && shape.contains(x, y)) {
-                clickedOnShape = true;
-                clickedShape = shape;
-                break;
+                if (shape.shapeName === 'frame') {
+                    // Pick the smallest (most specific/innermost) frame
+                    if (!fallbackFrame) {
+                        fallbackFrame = shape;
+                    } else {
+                        const area = (shape.width || 0) * (shape.height || 0);
+                        const existingArea = (fallbackFrame.width || 0) * (fallbackFrame.height || 0);
+                        if (area < existingArea) {
+                            fallbackFrame = shape;
+                        }
+                    }
+                } else {
+                    clickedOnShape = true;
+                    clickedShape = shape;
+                    break;
+                }
             }
+        }
+        // If no non-frame shape was found, use the smallest frame
+        if (!clickedOnShape && fallbackFrame) {
+            clickedOnShape = true;
+            clickedShape = fallbackFrame;
         }
     }
 
     // If clicking on a shape
     if (clickedOnShape && clickedShape) {
+        // Ctrl+click: toggle shape in/out of multi-selection
+        if (e.ctrlKey || e.metaKey) {
+            if (multiSelection.selectedShapes.has(clickedShape)) {
+                multiSelection.removeShape(clickedShape);
+            } else {
+                // If there's a current individually-selected shape, add it to multi-selection first
+                if (currentShape && currentShape !== clickedShape && !multiSelection.selectedShapes.has(currentShape)) {
+                    multiSelection.addShape(currentShape);
+                    if (typeof currentShape.removeSelection === 'function') currentShape.removeSelection();
+                }
+                multiSelection.addShape(clickedShape);
+            }
+            currentShape = null;
+            return true;
+        }
+
         // If it's the same shape that's already selected, let individual handlers manage it
         if (currentShape === clickedShape) {
             // Clear any other multi-selected shapes so only this one remains selected
@@ -1341,18 +1404,18 @@ function handleMultiSelectionMouseDown(e) {
             }
             return false; // Let individual shape handlers manage their own interactions
         }
-        
-        // If it's a different shape, deselect current and select the new one
+
+        // Normal click (no Ctrl): deselect everything and select only the clicked shape
         if (currentShape && typeof currentShape.removeSelection === 'function') {
             currentShape.removeSelection();
         }
-        
+
         // Clear multi-selection
         multiSelection.clearSelection();
-        
+
         // Set new current shape
         currentShape = clickedShape;
-        
+
         // Trigger the shape's own selection handling
         if (typeof clickedShape.addAnchors === 'function') {
             clickedShape.addAnchors();
@@ -1360,14 +1423,19 @@ function handleMultiSelectionMouseDown(e) {
         } else if (typeof clickedShape.createSelection === 'function') {
             clickedShape.createSelection();
             clickedShape.isSelected = true;
+        } else if (typeof clickedShape.selectShape === 'function') {
+            clickedShape.selectShape();
+            clickedShape.isSelected = true;
+        } else if (typeof clickedShape.selectFrame === 'function') {
+            clickedShape.selectFrame();
         }
-        
+
         // Update sidebar if function exists
         if (typeof clickedShape.updateSidebar === 'function') {
             clickedShape.updateSidebar();
         }
-        
-        return false; // Return false so individual handlers can also process the event
+
+        return false; // Let individual handlers also process for drag setup
     }
 
     // If not clicking on a shape, deselect everything and start multi-selection
@@ -1514,7 +1582,10 @@ window.addEventListener('mouseup', () => {
 
 // Delete key support for multi-selection
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Delete' && multiSelection.selectedShapes.size > 0) {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && multiSelection.selectedShapes.size > 0) {
+        // Don't delete if user is typing in an input
+        const tag = e.target.tagName.toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
         e.preventDefault();
         deleteSelectedShapes();
     }
