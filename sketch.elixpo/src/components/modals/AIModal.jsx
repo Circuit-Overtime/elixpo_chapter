@@ -61,9 +61,18 @@ function DiagramPreview({ svgMarkup }) {
 
   const handleWheel = useCallback((e) => {
     e.preventDefault()
+    e.stopPropagation()
     const delta = e.deltaY > 0 ? 0.9 : 1.1
     setZoom(z => Math.max(0.3, Math.min(3, z * delta)))
   }, [])
+
+  // Attach wheel listener natively (non-passive) so preventDefault() works
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [handleWheel])
 
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return
@@ -90,7 +99,6 @@ function DiagramPreview({ svgMarkup }) {
     <div
       ref={containerRef}
       className="w-full h-[clamp(200px,40vh,400px)] rounded-xl bg-[#111] border border-white/[0.06] overflow-hidden cursor-grab active:cursor-grabbing relative select-none"
-      onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

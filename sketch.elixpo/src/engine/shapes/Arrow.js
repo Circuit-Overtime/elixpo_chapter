@@ -51,14 +51,22 @@ class Arrow {
         this.shapeID = `arrow-${String(Date.now()).slice(0, 8)}-${Math.floor(Math.random() * 10000)}`;
         this.group.setAttribute('id', this.shapeID);
 
+        // Embedded label support
+        this.label = options.label || '';
+        this.labelElement = null;
+        this.labelColor = options.labelColor || '#e0e0e0';
+        this.labelFontSize = options.labelFontSize || 12;
+        this._isEditingLabel = false;
+        this._hitArea = null;
+        this._labelBg = null;
+
         // Initialize control points if curved
         if (this.arrowCurved === "curved" && !this.controlPoint1 && !this.controlPoint2) {
             this.initializeCurveControlPoints();
         }
 
-        
-
         svg.appendChild(this.group);
+        this._setupLabelDblClick();
         this.draw();
     }
 
@@ -214,9 +222,14 @@ class Arrow {
     }
 
     draw() {
-        while (this.group.firstChild) {
-            this.group.removeChild(this.group.firstChild);
+        const childrenToRemove = [];
+        for (let i = 0; i < this.group.children.length; i++) {
+            const child = this.group.children[i];
+            if (child !== this.labelElement && child !== this._hitArea && child !== this._labelBg) {
+                childrenToRemove.push(child);
+            }
         }
+        childrenToRemove.forEach(child => this.group.removeChild(child));
         this.anchors = [];
 
         let pathData;
@@ -296,10 +309,205 @@ class Arrow {
         this.element = arrowPath;
         this.group.appendChild(this.element);
 
+        // Hit area - thicker invisible path for dblclick detection
+        {
+            let hitPathData;
+            if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
+                hitPathData = `M ${this.startPoint.x} ${this.startPoint.y} C ${this.controlPoint1.x} ${this.controlPoint1.y}, ${this.controlPoint2.x} ${this.controlPoint2.y}, ${this.endPoint.x} ${this.endPoint.y}`;
+            } else if (this.arrowCurved === "elbow") {
+                const ex = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
+                hitPathData = `M ${this.startPoint.x} ${this.startPoint.y} L ${ex} ${this.startPoint.y} L ${ex} ${this.endPoint.y} L ${this.endPoint.x} ${this.endPoint.y}`;
+            } else {
+                hitPathData = `M ${this.startPoint.x} ${this.startPoint.y} L ${this.endPoint.x} ${this.endPoint.y}`;
+            }
+            if (!this._hitArea) {
+                this._hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this._hitArea.setAttribute('fill', 'none');
+                this._hitArea.setAttribute('stroke', 'transparent');
+                this._hitArea.setAttribute('stroke-width', '20');
+                this._hitArea.setAttribute('style', 'pointer-events: stroke;');
+                this.group.appendChild(this._hitArea);
+            }
+            this._hitArea.setAttribute('d', hitPathData);
+        }
+
+        // Update embedded label at midpoint
+        this._updateLabelElement();
+
         if (this.isSelected) {
             this.addAnchors();
             this.addAttachmentIndicators();
         }
+    }
+
+    _getMidpoint() {
+        if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
+            const p = this.getCubicBezierPoint(0.5);
+            return { x: p.x, y: p.y };
+        }
+        if (this.arrowCurved === "elbow") {
+            const ex = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
+            return { x: ex, y: (this.startPoint.y + this.endPoint.y) / 2 };
+        }
+        return {
+            x: (this.startPoint.x + this.endPoint.x) / 2,
+            y: (this.startPoint.y + this.endPoint.y) / 2
+        };
+    }
+
+    _updateLabelElement() {
+        if (!this.label) {
+            if (this.labelElement && this.labelElement.parentNode === this.group) {
+                this.group.removeChild(this.labelElement);
+                this.labelElement = null;
+            }
+            if (this._labelBg && this._labelBg.parentNode === this.group) {
+                this.group.removeChild(this._labelBg);
+                this._labelBg = null;
+            }
+            return;
+        }
+
+        if (!this.labelElement) {
+            this.labelElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            this.labelElement.setAttribute('class', 'shape-label');
+            this.labelElement.setAttribute('pointer-events', 'none');
+        }
+
+        const mid = this._getMidpoint();
+        this.labelElement.setAttribute('x', mid.x);
+        this.labelElement.setAttribute('y', mid.y);
+        this.labelElement.setAttribute('text-anchor', 'middle');
+        this.labelElement.setAttribute('dominant-baseline', 'central');
+        this.labelElement.setAttribute('fill', this.labelColor);
+        this.labelElement.setAttribute('font-size', this.labelFontSize);
+        this.labelElement.setAttribute('font-family', 'lixFont, sans-serif');
+        this.labelElement.textContent = this.label;
+
+        // Background knockout rect - hides the arrow behind the text
+        const canvasBg = window.getComputedStyle(svg).backgroundColor || '#000';
+        if (!this._labelBg) {
+            this._labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            this._labelBg.setAttribute('pointer-events', 'none');
+        }
+        this._labelBg.setAttribute('fill', canvasBg);
+        const hPadding = 4;
+        const vPadding = 1;
+        const charWidth = this.labelFontSize * 0.6;
+        const bgW = this.label.length * charWidth + hPadding * 2;
+        const bgH = this.labelFontSize + vPadding * 2;
+        this._labelBg.setAttribute('x', mid.x - bgW / 2);
+        this._labelBg.setAttribute('y', mid.y - bgH / 2);
+        this._labelBg.setAttribute('width', bgW);
+        this._labelBg.setAttribute('height', bgH);
+        this._labelBg.setAttribute('rx', 2);
+
+        // Re-append bg then text at end so they render ON TOP of the arrow path
+        if (this._labelBg.parentNode === this.group) this.group.removeChild(this._labelBg);
+        if (this.labelElement.parentNode === this.group) this.group.removeChild(this.labelElement);
+        this.group.appendChild(this._labelBg);
+        this.group.appendChild(this.labelElement);
+    }
+
+    _setupLabelDblClick() {
+        this.group.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            this.startLabelEdit();
+        });
+    }
+
+    startLabelEdit() {
+        if (this._isEditingLabel) return;
+        this._isEditingLabel = true;
+
+        if (this.labelElement) {
+            this.labelElement.setAttribute('visibility', 'hidden');
+        }
+        if (this._labelBg) {
+            this._labelBg.setAttribute('visibility', 'hidden');
+        }
+
+        // Get midpoint in screen coords via CTM
+        const mid = this._getMidpoint();
+        const ctm = this.group.getScreenCTM();
+        if (!ctm) { this._isEditingLabel = false; return; }
+
+        const pt = svg.createSVGPoint();
+        pt.x = mid.x; pt.y = mid.y;
+        const screenMid = pt.matrixTransform(ctm);
+
+        const editW = 160;
+        const editH = 28;
+
+        // Create HTML overlay centered on the midpoint
+        const overlay = document.createElement('div');
+        overlay.className = 'shape-label-editor';
+        overlay.style.cssText = `
+            position: fixed; z-index: 10000;
+            left: ${screenMid.x - editW / 2}px; top: ${screenMid.y - editH / 2}px;
+            width: ${editW}px; height: ${editH}px;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: auto;
+        `;
+
+        const canvasBg = window.getComputedStyle(svg).backgroundColor || '#000';
+        const input = document.createElement('div');
+        input.setAttribute('contenteditable', 'true');
+        input.style.cssText = `
+            width: 100%; height: 100%;
+            background: ${canvasBg}; border: none;
+            outline: none; padding: 2px 6px;
+            color: ${this.labelColor}; font-size: ${this.labelFontSize}px;
+            font-family: lixFont, sans-serif; text-align: center;
+            display: flex; align-items: center; justify-content: center;
+            white-space: pre-wrap; word-break: break-word;
+            cursor: text;
+        `;
+        if (this.label) {
+            input.textContent = this.label;
+        } else {
+            input.innerHTML = '&nbsp;';
+        }
+
+        overlay.appendChild(input);
+        document.body.appendChild(overlay);
+
+        setTimeout(() => {
+            input.focus();
+            const sel = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(input);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }, 10);
+
+        const finishEdit = () => {
+            const newText = input.textContent.trim().replace(/\u00A0/g, '');
+            this.label = newText;
+            this._isEditingLabel = false;
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            if (this.labelElement) this.labelElement.removeAttribute('visibility');
+            if (this._labelBg) this._labelBg.removeAttribute('visibility');
+            this.draw();
+        };
+
+        input.addEventListener('blur', finishEdit);
+        input.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); input.blur(); }
+            if (e.key === 'Escape') { input.textContent = this.label; input.blur(); }
+        });
+        input.addEventListener('mousedown', (e) => e.stopPropagation());
+        input.addEventListener('mousemove', (e) => e.stopPropagation());
+        input.addEventListener('mouseup', (e) => e.stopPropagation());
+    }
+
+    setLabel(text, color, fontSize) {
+        this.label = text || '';
+        if (color) this.labelColor = color;
+        if (fontSize) this.labelFontSize = fontSize;
+        this.draw();
     }
 
     getCubicBezierPoint(t) {
@@ -345,7 +553,9 @@ class Arrow {
         let anchorPositions = [this.startPoint, this.endPoint];
 
         if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
-            anchorPositions.push(this.controlPoint1, this.controlPoint2);
+            // Show a single on-curve anchor at t=0.5 for intuitive dragging
+            const midOnCurve = this.getCubicBezierPoint(0.5);
+            anchorPositions.push(midOnCurve);
         } else if (this.arrowCurved === "elbow") {
             const elbowXVal = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
             const midY = (this.startPoint.y + this.endPoint.y) / 2;
@@ -1240,6 +1450,8 @@ static getFrameAttachmentPoint(point, frame, tolerance = 20) {
     if (isDragging && !this.isBeingMovedByFrame) {
         this.updateFrameContainment();
     }
+
+    this.draw();
 }
 
 updateFrameContainment() {
@@ -1420,12 +1632,34 @@ updateFrameContainment() {
             this.endPoint.y = newViewBoxY;
         } else if (anchorIndex === 2 && this.arrowCurved === "elbow") {
             this.elbowX = newViewBoxX;
-        } else if (anchorIndex === 2 && this.controlPoint1) {
-            this.controlPoint1.x = newViewBoxX;
-            this.controlPoint1.y = newViewBoxY;
-        } else if (anchorIndex === 3 && this.controlPoint2) {
-            this.controlPoint2.x = newViewBoxX;
-            this.controlPoint2.y = newViewBoxY;
+        } else if (anchorIndex === 2 && this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
+            // On-curve midpoint anchor dragged — inversely compute control points
+            // B(0.5) = 0.125*P0 + 0.375*CP1 + 0.375*CP2 + 0.125*P3
+            // Keep curve symmetric: offset both control points equally from the line
+            const dx = this.endPoint.x - this.startPoint.x;
+            const dy = this.endPoint.y - this.startPoint.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const perpX = -dy / dist;
+            const perpY = dx / dist;
+
+            // Desired midpoint offset from line midpoint
+            const lineMidX = (this.startPoint.x + this.endPoint.x) / 2;
+            const lineMidY = (this.startPoint.y + this.endPoint.y) / 2;
+            const offsetX = newViewBoxX - lineMidX;
+            const offsetY = newViewBoxY - lineMidY;
+            // Project offset onto perpendicular to get curve amount
+            const curveAmount = offsetX * perpX + offsetY * perpY;
+
+            // Recompute control points with this curve amount
+            const t1 = 0.33, t2 = 0.67;
+            this.controlPoint1 = {
+                x: this.startPoint.x + t1 * dx + perpX * curveAmount * (4 / 3),
+                y: this.startPoint.y + t1 * dy + perpY * curveAmount * (4 / 3)
+            };
+            this.controlPoint2 = {
+                x: this.startPoint.x + t2 * dx + perpX * curveAmount * (4 / 3),
+                y: this.startPoint.y + t2 * dy + perpY * curveAmount * (4 / 3)
+            };
         }
         this.draw();
     }

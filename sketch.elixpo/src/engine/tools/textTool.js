@@ -1791,4 +1791,7 @@ window.updateSelectedTextStyle = function(changes) {
     }
 };
 
-export { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, updateCodeToggleForShape };
+// Expose deselectElement for external callers (Selection.js blank canvas click)
+window.__deselectTextElement = deselectElement;
+
+export { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, updateCodeToggleForShape, deselectElement as deselectTextElement };

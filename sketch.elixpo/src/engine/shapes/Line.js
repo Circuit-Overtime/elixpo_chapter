@@ -1,10 +1,12 @@
 /* eslint-disable */
 // Line shape class - extracted from lineTool.js
 // Depends on globals: svg, shapes, rough, currentShape, currentZoom
+import { updateAttachedArrows as updateArrowsForShape } from '../tools/arrowTool.js';
 
 const rc = rough.svg(svg);
 const lineColor = "#fff";
 const lineStrokeWidth = 2;
+let hoveredFrameLine = null;
 
 class Line {
     constructor(startPoint, endPoint, options = {}) {
@@ -25,8 +27,18 @@ class Line {
         
         // Frame attachment properties
         this.parentFrame = null;
-        
+
+        // Embedded label support
+        this.label = options.label || '';
+        this.labelElement = null;
+        this.labelColor = options.labelColor || '#e0e0e0';
+        this.labelFontSize = options.labelFontSize || 12;
+        this._isEditingLabel = false;
+        this._hitArea = null;
+        this._labelBg = null;
+
         svg.appendChild(this.group);
+        this._setupLabelDblClick();
         this.draw();
     }
 
@@ -105,16 +117,20 @@ class Line {
     }
 
     draw() {
-        // Clear existing elements but preserve structure to avoid jitter
-        while (this.group.firstChild) {
-            this.group.removeChild(this.group.firstChild);
+        // Clear existing elements but preserve label and hit area
+        const childrenToRemove = [];
+        for (let i = 0; i < this.group.children.length; i++) {
+            const child = this.group.children[i];
+            if (child !== this.labelElement && child !== this._hitArea && child !== this._labelBg) {
+                childrenToRemove.push(child);
+            }
         }
+        childrenToRemove.forEach(child => this.group.removeChild(child));
 
         const rc = rough.svg(svg);
         let lineElement;
 
         if (this.isCurved && this.controlPoint) {
-            // Draw curved line using quadratic bezier (plain SVG, no roughness jitter)
             const pathData = `M ${this.startPoint.x} ${this.startPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${this.endPoint.x} ${this.endPoint.y}`;
             lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             lineElement.setAttribute('d', pathData);
@@ -126,7 +142,6 @@ class Line {
                 lineElement.setAttribute('stroke-dasharray', this.options.strokeDasharray);
             }
         } else if (this.isBeingDrawn) {
-            // During drawing: use plain SVG line to avoid roughness regeneration jitter
             lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             lineElement.setAttribute('x1', this.startPoint.x);
             lineElement.setAttribute('y1', this.startPoint.y);
@@ -139,20 +154,206 @@ class Line {
                 lineElement.setAttribute('stroke-dasharray', this.options.strokeDasharray);
             }
         } else {
-            // Draw straight line with roughness (finalized)
             lineElement = rc.line(
                 this.startPoint.x, this.startPoint.y,
                 this.endPoint.x, this.endPoint.y,
                 this.options
             );
         }
-        
+
         this.element = lineElement;
         this.group.appendChild(lineElement);
+
+        // Hit area - thicker invisible path for dblclick detection
+        if (!this._hitArea) {
+            this._hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            this._hitArea.setAttribute('fill', 'none');
+            this._hitArea.setAttribute('stroke', 'transparent');
+            this._hitArea.setAttribute('stroke-width', '20');
+            this._hitArea.setAttribute('style', 'pointer-events: stroke;');
+            this.group.appendChild(this._hitArea);
+        }
+        if (this.isCurved && this.controlPoint) {
+            this._hitArea.setAttribute('d', `M ${this.startPoint.x} ${this.startPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${this.endPoint.x} ${this.endPoint.y}`);
+        } else {
+            this._hitArea.setAttribute('d', `M ${this.startPoint.x} ${this.startPoint.y} L ${this.endPoint.x} ${this.endPoint.y}`);
+        }
+
+        // Update embedded label at midpoint
+        this._updateLabelElement();
 
         if (this.isSelected) {
             this.addAnchors();
         }
+    }
+
+    _getMidpoint() {
+        if (this.isCurved && this.controlPoint) {
+            // Quadratic bezier midpoint at t=0.5
+            const t = 0.5;
+            const mx = (1 - t) * (1 - t) * this.startPoint.x + 2 * (1 - t) * t * this.controlPoint.x + t * t * this.endPoint.x;
+            const my = (1 - t) * (1 - t) * this.startPoint.y + 2 * (1 - t) * t * this.controlPoint.y + t * t * this.endPoint.y;
+            return { x: mx, y: my };
+        }
+        return {
+            x: (this.startPoint.x + this.endPoint.x) / 2,
+            y: (this.startPoint.y + this.endPoint.y) / 2
+        };
+    }
+
+    _updateLabelElement() {
+        if (!this.label) {
+            if (this.labelElement && this.labelElement.parentNode === this.group) {
+                this.group.removeChild(this.labelElement);
+                this.labelElement = null;
+            }
+            if (this._labelBg && this._labelBg.parentNode === this.group) {
+                this.group.removeChild(this._labelBg);
+                this._labelBg = null;
+            }
+            return;
+        }
+
+        if (!this.labelElement) {
+            this.labelElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            this.labelElement.setAttribute('class', 'shape-label');
+            this.labelElement.setAttribute('pointer-events', 'none');
+        }
+
+        const mid = this._getMidpoint();
+        this.labelElement.setAttribute('x', mid.x);
+        this.labelElement.setAttribute('y', mid.y);
+        this.labelElement.setAttribute('text-anchor', 'middle');
+        this.labelElement.setAttribute('dominant-baseline', 'central');
+        this.labelElement.setAttribute('fill', this.labelColor);
+        this.labelElement.setAttribute('font-size', this.labelFontSize);
+        this.labelElement.setAttribute('font-family', 'lixFont, sans-serif');
+        this.labelElement.textContent = this.label;
+
+        // Background knockout rect - hides the line behind the text
+        const canvasBg = window.getComputedStyle(svg).backgroundColor || '#000';
+        if (!this._labelBg) {
+            this._labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            this._labelBg.setAttribute('pointer-events', 'none');
+        }
+        this._labelBg.setAttribute('fill', canvasBg);
+        const hPadding = 4;
+        const vPadding = 1;
+        const charWidth = this.labelFontSize * 0.6;
+        const bgW = this.label.length * charWidth + hPadding * 2;
+        const bgH = this.labelFontSize + vPadding * 2;
+        this._labelBg.setAttribute('x', mid.x - bgW / 2);
+        this._labelBg.setAttribute('y', mid.y - bgH / 2);
+        this._labelBg.setAttribute('width', bgW);
+        this._labelBg.setAttribute('height', bgH);
+        this._labelBg.setAttribute('rx', 2);
+
+        // Re-append bg then text at end so they render ON TOP of the line path
+        if (this._labelBg.parentNode === this.group) this.group.removeChild(this._labelBg);
+        if (this.labelElement.parentNode === this.group) this.group.removeChild(this.labelElement);
+        this.group.appendChild(this._labelBg);
+        this.group.appendChild(this.labelElement);
+    }
+
+    _setupLabelDblClick() {
+        this.group.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            this.startLabelEdit();
+        });
+    }
+
+    startLabelEdit() {
+        if (this._isEditingLabel) return;
+        this._isEditingLabel = true;
+
+        if (this.labelElement) {
+            this.labelElement.setAttribute('visibility', 'hidden');
+        }
+        if (this._labelBg) {
+            this._labelBg.setAttribute('visibility', 'hidden');
+        }
+
+        // Get midpoint in screen coords via CTM
+        const mid = this._getMidpoint();
+        const ctm = this.group.getScreenCTM();
+        if (!ctm) { this._isEditingLabel = false; return; }
+
+        const pt = svg.createSVGPoint();
+        pt.x = mid.x; pt.y = mid.y;
+        const screenMid = pt.matrixTransform(ctm);
+
+        const editW = 160;
+        const editH = 28;
+
+        // Create HTML overlay centered on the midpoint
+        const overlay = document.createElement('div');
+        overlay.className = 'shape-label-editor';
+        overlay.style.cssText = `
+            position: fixed; z-index: 10000;
+            left: ${screenMid.x - editW / 2}px; top: ${screenMid.y - editH / 2}px;
+            width: ${editW}px; height: ${editH}px;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: auto;
+        `;
+
+        const canvasBg = window.getComputedStyle(svg).backgroundColor || '#000';
+        const input = document.createElement('div');
+        input.setAttribute('contenteditable', 'true');
+        input.style.cssText = `
+            width: 100%; height: 100%;
+            background: ${canvasBg}; border: none;
+            outline: none; padding: 2px 6px;
+            color: ${this.labelColor}; font-size: ${this.labelFontSize}px;
+            font-family: lixFont, sans-serif; text-align: center;
+            display: flex; align-items: center; justify-content: center;
+            white-space: pre-wrap; word-break: break-word;
+            cursor: text;
+        `;
+        if (this.label) {
+            input.textContent = this.label;
+        } else {
+            input.innerHTML = '&nbsp;';
+        }
+
+        overlay.appendChild(input);
+        document.body.appendChild(overlay);
+
+        setTimeout(() => {
+            input.focus();
+            const sel = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(input);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }, 10);
+
+        const finishEdit = () => {
+            const newText = input.textContent.trim().replace(/\u00A0/g, '');
+            this.label = newText;
+            this._isEditingLabel = false;
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            if (this.labelElement) this.labelElement.removeAttribute('visibility');
+            if (this._labelBg) this._labelBg.removeAttribute('visibility');
+            this.draw();
+        };
+
+        input.addEventListener('blur', finishEdit);
+        input.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); input.blur(); }
+            if (e.key === 'Escape') { input.textContent = this.label; input.blur(); }
+        });
+        input.addEventListener('mousedown', (e) => e.stopPropagation());
+        input.addEventListener('mousemove', (e) => e.stopPropagation());
+        input.addEventListener('mouseup', (e) => e.stopPropagation());
+    }
+
+    setLabel(text, color, fontSize) {
+        this.label = text || '';
+        if (color) this.labelColor = color;
+        if (fontSize) this.labelFontSize = fontSize;
+        this.draw();
     }
 
     selectLine() {
@@ -295,9 +496,21 @@ removeSelection() {
             };
         }
         
-        // Only redraw the line, not the entire structure
+        // Redraw line, hit area, and label
         this.updateLineElement();
         this.updateAnchorPositions();
+
+        // Update hit area path
+        if (this._hitArea) {
+            if (this.isCurved && this.controlPoint) {
+                this._hitArea.setAttribute('d', `M ${this.startPoint.x} ${this.startPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${this.endPoint.x} ${this.endPoint.y}`);
+            } else {
+                this._hitArea.setAttribute('d', `M ${this.startPoint.x} ${this.startPoint.y} L ${this.endPoint.x} ${this.endPoint.y}`);
+            }
+        }
+
+        // Update label position at new midpoint
+        this._updateLabelElement();
     }
 
     updateLineElement() {
@@ -372,8 +585,20 @@ removeSelection() {
         this.updateLineElement();
         this.updateAnchorPositions();
 
-        // Only update frame containment if we're actively dragging the shape itself
-        if (isDraggingLine && !this.isBeingMovedByFrame) {
+        // Update hit area path
+        if (this._hitArea) {
+            if (this.isCurved && this.controlPoint) {
+                this._hitArea.setAttribute('d', `M ${this.startPoint.x} ${this.startPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${this.endPoint.x} ${this.endPoint.y}`);
+            } else {
+                this._hitArea.setAttribute('d', `M ${this.startPoint.x} ${this.startPoint.y} L ${this.endPoint.x} ${this.endPoint.y}`);
+            }
+        }
+
+        // Update label position
+        this._updateLabelElement();
+
+        // Only update frame containment if not being moved by a parent frame
+        if (!this.isBeingMovedByFrame) {
             this.updateFrameContainment();
         }
 
@@ -398,7 +623,7 @@ removeSelection() {
         });
         
         // If we have a parent frame and we're being dragged, temporarily remove clipping
-        if (this.parentFrame && isDraggingLine) {
+        if (this.parentFrame) {
             this.parentFrame.temporarilyRemoveFromFrame(this);
         }
         

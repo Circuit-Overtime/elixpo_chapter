@@ -49,6 +49,7 @@ class Circle {
         this.labelColor = options.labelColor || '#e0e0e0';
         this.labelFontSize = options.labelFontSize || 14;
         this._isEditingLabel = false;
+        this._hitArea = null;
 
         if(!this.group.parentNode) {
             svg.appendChild(this.group);
@@ -83,7 +84,7 @@ class Circle {
         const childrenToRemove = [];
         for (let i = 0; i < this.group.children.length; i++) {
             const child = this.group.children[i];
-            if (child !== this.element && child !== this.labelElement) {
+            if (child !== this.element && child !== this.labelElement && child !== this._hitArea) {
                 childrenToRemove.push(child);
             }
         }
@@ -108,6 +109,19 @@ class Circle {
             this._lastDrawn.ry = this.ry;
             this._lastDrawn.options = optionsString;
         }
+
+        // Hit area for dblclick detection
+        if (!this._hitArea) {
+            this._hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            this._hitArea.setAttribute('fill', 'transparent');
+            this._hitArea.setAttribute('stroke', 'none');
+            this._hitArea.setAttribute('style', 'pointer-events: all;');
+            this.group.insertBefore(this._hitArea, this.group.firstChild);
+        }
+        this._hitArea.setAttribute('cx', 0);
+        this._hitArea.setAttribute('cy', 0);
+        this._hitArea.setAttribute('rx', this.rx);
+        this._hitArea.setAttribute('ry', this.ry);
 
         // Update embedded label
         this._updateLabelElement();
@@ -495,45 +509,70 @@ class Circle {
             this.labelElement.setAttribute('visibility', 'hidden');
         }
 
-        const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-        const editW = Math.max(this.rx * 1.6, 40);
-        const editH = Math.max(this.ry * 1.2, 30);
-        fo.setAttribute('x', -editW / 2);
-        fo.setAttribute('y', -editH / 2);
-        fo.setAttribute('width', editW);
-        fo.setAttribute('height', editH);
+        // Get shape's screen position via CTM
+        const ctm = this.group.getScreenCTM();
+        if (!ctm) { this._isEditingLabel = false; return; }
 
+        // Map the ellipse bounding box to screen coords
+        const pt1 = svg.createSVGPoint();
+        pt1.x = -this.rx; pt1.y = -this.ry;
+        const screenTL = pt1.matrixTransform(ctm);
+        const pt2 = svg.createSVGPoint();
+        pt2.x = this.rx; pt2.y = this.ry;
+        const screenBR = pt2.matrixTransform(ctm);
+
+        const screenW = Math.abs(screenBR.x - screenTL.x);
+        const screenH = Math.abs(screenBR.y - screenTL.y);
+        const screenX = Math.min(screenTL.x, screenBR.x);
+        const screenY = Math.min(screenTL.y, screenBR.y);
+
+        // Create HTML overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'shape-label-editor';
+        overlay.style.cssText = `
+            position: fixed; z-index: 10000;
+            left: ${screenX}px; top: ${screenY}px;
+            width: ${screenW}px; height: ${screenH}px;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: auto;
+        `;
+
+        const canvasBg = window.getComputedStyle(svg).backgroundColor || '#000';
         const input = document.createElement('div');
         input.setAttribute('contenteditable', 'true');
         input.style.cssText = `
-            width: 100%; height: 100%;
-            background: transparent; border: none; outline: none;
-            color: ${this.labelColor}; font-size: ${this.labelFontSize}px;
+            max-width: ${screenW - 8}px; min-width: 30px; min-height: 20px;
+            background: ${canvasBg}; border: none;
+            outline: none; padding: 2px 6px;
+            color: ${this.labelColor}; font-size: ${Math.max(12, this.labelFontSize * (screenW / Math.max(this.rx * 2, 1)))}px;
             font-family: lixFont, sans-serif; text-align: center;
-            display: flex; align-items: center; justify-content: center;
             white-space: pre-wrap; word-break: break-word;
-            overflow: hidden; cursor: text;
+            cursor: text;
         `;
-        input.textContent = this.label;
+        if (this.label) {
+            input.textContent = this.label;
+        } else {
+            input.innerHTML = '&nbsp;';
+        }
 
-        fo.appendChild(input);
-        this.group.appendChild(fo);
+        overlay.appendChild(input);
+        document.body.appendChild(overlay);
 
         setTimeout(() => {
             input.focus();
-            const selection = window.getSelection();
+            const sel = window.getSelection();
             const range = document.createRange();
             range.selectNodeContents(input);
-            selection.removeAllRanges();
-            selection.addRange(range);
+            sel.removeAllRanges();
+            sel.addRange(range);
         }, 10);
 
         const finishEdit = () => {
-            const newText = input.textContent.trim();
+            const newText = input.textContent.trim().replace(/\u00A0/g, '');
             this.label = newText;
             this._isEditingLabel = false;
 
-            if (fo.parentNode) fo.parentNode.removeChild(fo);
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
             if (this.labelElement) this.labelElement.setAttribute('visibility', 'visible');
             this.draw();
         };

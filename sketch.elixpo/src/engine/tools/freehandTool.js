@@ -558,6 +558,28 @@ window.updateSelectedFreehandStyle = function(changes) {
     }
 };
 
+// Safety net: if mouseup fires outside the SVG canvas (e.g. on toolbar/overlay),
+// ensure we stop drawing so the stroke doesn't continue when pointer re-enters.
+window.addEventListener('mouseup', () => {
+    if (isDrawingStroke) {
+        isDrawingStroke = false;
+        lastPoint = null;
+        if (currentStroke && currentStroke.points && currentStroke.points.length >= 2) {
+            currentStroke.draw();
+        }
+        currentStroke = null;
+    }
+});
+
+// Also listen for visibility change (e.g. alt-tab while drawing)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && isDrawingStroke) {
+        isDrawingStroke = false;
+        lastPoint = null;
+        currentStroke = null;
+    }
+});
+
 export
 {
     handleMouseDown as handleFreehandMouseDown,
