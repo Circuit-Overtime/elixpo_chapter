@@ -52,6 +52,60 @@ function removeMultiSelectionRect() {
         multiSelectionRect.parentNode.removeChild(multiSelectionRect);
     }
     multiSelectionRect = null;
+    // Clean up any drag-select highlights
+    clearDragSelectHighlights();
+}
+
+// Track elements highlighted during drag-select
+let dragSelectHighlights = [];
+
+function highlightShapesInSelectionRect(currentX, currentY) {
+    // Clear previous highlights
+    clearDragSelectHighlights();
+
+    if (!multiSelectionStart) return;
+
+    const selBounds = {
+        x: Math.min(multiSelectionStart.x, currentX),
+        y: Math.min(multiSelectionStart.y, currentY),
+        width: Math.abs(currentX - multiSelectionStart.x),
+        height: Math.abs(currentY - multiSelectionStart.y)
+    };
+
+    // Minimum size check to avoid highlighting on click
+    if (selBounds.width < 5 && selBounds.height < 5) return;
+
+    if (typeof shapes !== 'undefined') {
+        shapes.forEach(shape => {
+            if (isShapeInSelectionRect(shape, selBounds)) {
+                // Add a semi-transparent overlay to the shape's group
+                if (shape.group) {
+                    const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    const bbox = shape.group.getBBox();
+                    overlay.setAttribute('x', bbox.x - 2);
+                    overlay.setAttribute('y', bbox.y - 2);
+                    overlay.setAttribute('width', bbox.width + 4);
+                    overlay.setAttribute('height', bbox.height + 4);
+                    overlay.setAttribute('fill', 'rgba(91, 87, 209, 0.12)');
+                    overlay.setAttribute('stroke', '#5B57D1');
+                    overlay.setAttribute('stroke-width', '1');
+                    overlay.setAttribute('stroke-opacity', '0.4');
+                    overlay.setAttribute('rx', '3');
+                    overlay.setAttribute('style', 'pointer-events: none;');
+                    overlay.setAttribute('class', 'drag-select-highlight');
+                    shape.group.appendChild(overlay);
+                    dragSelectHighlights.push(overlay);
+                }
+            }
+        });
+    }
+}
+
+function clearDragSelectHighlights() {
+    dragSelectHighlights.forEach(el => {
+        if (el.parentNode) el.parentNode.removeChild(el);
+    });
+    dragSelectHighlights = [];
 }
 
 function isShapeInSelectionRect(shape, selectionBounds) {
@@ -1445,6 +1499,10 @@ function handleMultiSelectionMouseDown(e) {
             currentShape.removeSelection();
             currentShape = null;
         }
+        // Also deselect any active text editor (textTool's selectedElement)
+        if (window.__deselectTextElement) {
+            window.__deselectTextElement();
+        }
         if (typeof disableAllSideBars === 'function') {
             disableAllSideBars();
         }
@@ -1479,6 +1537,8 @@ function handleMultiSelectionMouseMove(e) {
 
     if (isMultiSelecting) {
         updateMultiSelectionRect(x, y);
+        // Live highlight shapes that fall within the selection rectangle
+        highlightShapesInSelectionRect(x, y);
         return true;
     }
 

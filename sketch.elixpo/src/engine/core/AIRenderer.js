@@ -434,13 +434,17 @@ export function renderAIDiagram(diagram) {
             }
         }
 
-        // Edge label near connector midpoint
-        if (edge.label) {
-            const mx = (spN.x + epN.x) / 2;
-            const my = (spN.y + epN.y) / 2 - 18;
-            // Use a muted version of edge color, or default label color
+        // Edge label — use embedded label on connector if available
+        if (edge.label && connector) {
             const edgeLabelColor = edgeStroke === '#e0e0e0' ? '#a0a0b0' : edgeStroke;
-            createLabel(edge.label, mx, my, 11, edgeLabelColor, frame);
+            if (typeof connector.setLabel === 'function') {
+                connector.setLabel(edge.label, edgeLabelColor, 11);
+            } else {
+                // Fallback: separate TextShape
+                const mx = (spN.x + epN.x) / 2;
+                const my = (spN.y + epN.y) / 2 - 18;
+                createLabel(edge.label, mx, my, 11, edgeLabelColor, frame);
+            }
         }
     }
 
@@ -935,12 +939,31 @@ export function generatePreviewSVG(diagram, width = 500, height = 350) {
         }
 
         const eDash = e.lineStyle === 'dashed' ? ' stroke-dasharray="5 3"' : e.lineStyle === 'dotted' ? ' stroke-dasharray="2 2"' : '';
-        svgContent += `<line x1="${f.cx}" y1="${f.cy}" x2="${t.cx}" y2="${t.cy}" stroke="${eColor}" stroke-width="1.5"${eDash} marker-end="${markerId}" />`;
+
+        // Render curved path if nodes aren't aligned (creates a natural curve)
+        const dx = t.cx - f.cx;
+        const dy = t.cy - f.cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        let mx = (f.cx + t.cx) / 2;
+        let my = (f.cy + t.cy) / 2;
+
+        if (dist > 0 && Math.abs(dy) > 10 && Math.abs(dx) > 10) {
+            // Curved edge: perpendicular offset for a quadratic Bezier
+            const perpX = -dy / dist;
+            const perpY = dx / dist;
+            const curveAmt = dist * 0.15;
+            const cpx = mx + perpX * curveAmt;
+            const cpy = my + perpY * curveAmt;
+            // Quadratic bezier midpoint for label
+            mx = 0.25 * f.cx + 0.5 * cpx + 0.25 * t.cx;
+            my = 0.25 * f.cy + 0.5 * cpy + 0.25 * t.cy;
+            svgContent += `<path d="M ${f.cx} ${f.cy} Q ${cpx} ${cpy} ${t.cx} ${t.cy}" fill="none" stroke="${eColor}" stroke-width="1.5"${eDash} marker-end="${markerId}" />`;
+        } else {
+            svgContent += `<line x1="${f.cx}" y1="${f.cy}" x2="${t.cx}" y2="${t.cy}" stroke="${eColor}" stroke-width="1.5"${eDash} marker-end="${markerId}" />`;
+        }
 
         if (e.label) {
-            const mx = (f.cx + t.cx) / 2;
-            const my = (f.cy + t.cy) / 2 - 8;
-            svgContent += `<text x="${mx}" y="${my}" text-anchor="middle" fill="${eColor === '#666' ? '#888' : eColor}" font-size="9" font-family="lixFont, sans-serif">${escapeXml(e.label)}</text>`;
+            svgContent += `<text x="${mx}" y="${my - 8}" text-anchor="middle" fill="${eColor === '#666' ? '#888' : eColor}" font-size="9" font-family="lixFont, sans-serif">${escapeXml(e.label)}</text>`;
         }
     });
 
@@ -1089,13 +1112,45 @@ export function generateFramePreviewSVG(frame, width = 500, height = 350) {
                 const sp = shape.startPoint, ep = shape.endPoint;
                 if (sp && ep) {
                     const stroke = shape.options?.stroke || '#e0e0e0';
-                    svgContent += `<line x1="${sp.x * scale + offX}" y1="${sp.y * scale + offY}" x2="${ep.x * scale + offX}" y2="${ep.y * scale + offY}" stroke="${stroke}" stroke-width="1.5" marker-end="url(#frame-preview-arrow)" />`;
+                    const sx1 = sp.x * scale + offX, sy1 = sp.y * scale + offY;
+                    const sx2 = ep.x * scale + offX, sy2 = ep.y * scale + offY;
+                    // Render curved if arrow has control points
+                    if (shape.arrowCurved === 'curved' && shape.controlPoint1 && shape.controlPoint2) {
+                        const cp1x = shape.controlPoint1.x * scale + offX;
+                        const cp1y = shape.controlPoint1.y * scale + offY;
+                        const cp2x = shape.controlPoint2.x * scale + offX;
+                        const cp2y = shape.controlPoint2.y * scale + offY;
+                        svgContent += `<path d="M ${sx1} ${sy1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${sx2} ${sy2}" fill="none" stroke="${stroke}" stroke-width="1.5" marker-end="url(#frame-preview-arrow)" />`;
+                    } else {
+                        svgContent += `<line x1="${sx1}" y1="${sy1}" x2="${sx2}" y2="${sy2}" stroke="${stroke}" stroke-width="1.5" marker-end="url(#frame-preview-arrow)" />`;
+                    }
+                    // Arrow label
+                    if (shape.label) {
+                        const amx = (sx1 + sx2) / 2, amy = (sy1 + sy2) / 2 - 8;
+                        const afs = Math.max(7, (shape.labelFontSize || 11) * scale);
+                        svgContent += `<text x="${amx}" y="${amy}" text-anchor="middle" fill="${shape.labelColor || stroke}" font-size="${afs}" font-family="lixFont, sans-serif">${escapeXml(shape.label)}</text>`;
+                    }
                 }
             } else if (shape.shapeName === 'line') {
                 const sp = shape.startPoint, ep = shape.endPoint;
                 if (sp && ep) {
                     const stroke = shape.options?.stroke || '#e0e0e0';
-                    svgContent += `<line x1="${sp.x * scale + offX}" y1="${sp.y * scale + offY}" x2="${ep.x * scale + offX}" y2="${ep.y * scale + offY}" stroke="${stroke}" stroke-width="1.5" />`;
+                    const sx1 = sp.x * scale + offX, sy1 = sp.y * scale + offY;
+                    const sx2 = ep.x * scale + offX, sy2 = ep.y * scale + offY;
+                    // Render curved if line has control point
+                    if (shape.isCurved && shape.controlPoint) {
+                        const cpx = shape.controlPoint.x * scale + offX;
+                        const cpy = shape.controlPoint.y * scale + offY;
+                        svgContent += `<path d="M ${sx1} ${sy1} Q ${cpx} ${cpy} ${sx2} ${sy2}" fill="none" stroke="${stroke}" stroke-width="1.5" />`;
+                    } else {
+                        svgContent += `<line x1="${sx1}" y1="${sy1}" x2="${sx2}" y2="${sy2}" stroke="${stroke}" stroke-width="1.5" />`;
+                    }
+                    // Line label
+                    if (shape.label) {
+                        const lmx = (sx1 + sx2) / 2, lmy = (sy1 + sy2) / 2 - 8;
+                        const lfs = Math.max(7, (shape.labelFontSize || 11) * scale);
+                        svgContent += `<text x="${lmx}" y="${lmy}" text-anchor="middle" fill="${shape.labelColor || stroke}" font-size="${lfs}" font-family="lixFont, sans-serif">${escapeXml(shape.label)}</text>`;
+                    }
                 }
             } else if (shape.shapeName === 'icon') {
                 const ix = parseFloat(shape.group?.getAttribute('data-shape-x') || '0');
