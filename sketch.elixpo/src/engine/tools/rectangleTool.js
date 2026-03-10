@@ -62,12 +62,10 @@ function deleteCurrentShape() {
 
 // --- Main event handlers ---
 const handleMouseDownRect = (e) => {
-    const mouseX = e.offsetX;
-    const mouseY = e.offsetY;
+    const { x: mouseX, y: mouseY } = getSVGCoordsFromMouse(e);
     if (isSquareToolActive) {
-        const { x, y } = getSVGCoordsFromMouse(e);
-        startX = x;
-        startY = y;
+        startX = mouseX;
+        startY = mouseY;
         isDrawingSquare = true;
 
         if (currentShape) {
@@ -181,8 +179,7 @@ const handleMouseDownRect = (e) => {
 
 
 const handleMouseMoveRect = (e) => {
-    const mouseX = e.offsetX;
-    const mouseY = e.offsetY;
+    const { x: mouseX, y: mouseY } = getSVGCoordsFromMouse(e);
     const svgRect = svg.getBoundingClientRect();
     lastMousePos = {
         x: e.clientX - svgRect.left, 
@@ -190,7 +187,6 @@ const handleMouseMoveRect = (e) => {
     };
 
     if (isDrawingSquare && isSquareToolActive && currentShape) {
-        const { x: mouseX, y: mouseY } = getSVGCoordsFromMouse(e);
         let width = mouseX - startX;
         let height = mouseY - startY;
         currentShape.x = width < 0 ? startX + width : startX;

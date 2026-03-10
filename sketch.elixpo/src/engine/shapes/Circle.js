@@ -37,12 +37,19 @@ class Circle {
         this.selectionPadding = 8;
         this.selectionOutline = null;
         this.shapeName = "circle";
-        this.shapeID = `circle-${String(Date.now()).slice(0, 8)}-${Math.floor(Math.random() * 10000)}`; 
+        this.shapeID = `circle-${String(Date.now()).slice(0, 8)}-${Math.floor(Math.random() * 10000)}`;
         this.group.setAttribute('id', this.shapeID);
-        
+
         // Frame attachment properties
         this.parentFrame = null;
-        
+
+        // Embedded label support
+        this.label = options.label || '';
+        this.labelElement = null;
+        this.labelColor = options.labelColor || '#e0e0e0';
+        this.labelFontSize = options.labelFontSize || 14;
+        this._isEditingLabel = false;
+
         if(!this.group.parentNode) {
             svg.appendChild(this.group);
         }
@@ -51,6 +58,7 @@ class Circle {
             height: null,
             options: null
         };
+        this._setupLabelDblClick();
         this.draw();
     }
 
@@ -75,7 +83,7 @@ class Circle {
         const childrenToRemove = [];
         for (let i = 0; i < this.group.children.length; i++) {
             const child = this.group.children[i];
-            if (child !== this.element) { 
+            if (child !== this.element && child !== this.labelElement) {
                 childrenToRemove.push(child);
             }
         }
@@ -91,7 +99,7 @@ class Circle {
             if (this.element && this.element.parentNode === this.group) {
                 this.group.removeChild(this.element);
             }
-            
+
             const roughEllipse = rc.ellipse(0, 0, this.rx * 2, this.ry * 2, this.options);
             this.element = roughEllipse;
             this.group.appendChild(roughEllipse);
@@ -100,6 +108,9 @@ class Circle {
             this._lastDrawn.ry = this.ry;
             this._lastDrawn.options = optionsString;
         }
+
+        // Update embedded label
+        this._updateLabelElement();
 
         this.group.setAttribute('transform', `translate(${this.x}, ${this.y}) rotate(${this.rotation}, 0, 0)`);
         if (this.isSelected) {
@@ -434,6 +445,117 @@ class Circle {
             }
         });
     }
+    _updateLabelElement() {
+        if (!this.label) {
+            if (this.labelElement && this.labelElement.parentNode === this.group) {
+                this.group.removeChild(this.labelElement);
+                this.labelElement = null;
+            }
+            return;
+        }
+
+        if (!this.labelElement) {
+            this.labelElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            this.labelElement.setAttribute('class', 'shape-label');
+            this.labelElement.setAttribute('pointer-events', 'none');
+        }
+
+        // Circle center is at (0, 0) in local coords
+        this.labelElement.setAttribute('x', 0);
+        this.labelElement.setAttribute('y', 0);
+        this.labelElement.setAttribute('text-anchor', 'middle');
+        this.labelElement.setAttribute('dominant-baseline', 'central');
+        this.labelElement.setAttribute('fill', this.labelColor);
+        this.labelElement.setAttribute('font-size', this.labelFontSize);
+        this.labelElement.setAttribute('font-family', 'lixFont, sans-serif');
+        this.labelElement.textContent = this.label;
+
+        if (this.labelElement.parentNode !== this.group) {
+            if (this.element && this.element.nextSibling) {
+                this.group.insertBefore(this.labelElement, this.element.nextSibling);
+            } else {
+                this.group.appendChild(this.labelElement);
+            }
+        }
+    }
+
+    _setupLabelDblClick() {
+        this.group.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            this.startLabelEdit();
+        });
+    }
+
+    startLabelEdit() {
+        if (this._isEditingLabel) return;
+        this._isEditingLabel = true;
+
+        if (this.labelElement) {
+            this.labelElement.setAttribute('visibility', 'hidden');
+        }
+
+        const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+        const editW = Math.max(this.rx * 1.6, 40);
+        const editH = Math.max(this.ry * 1.2, 30);
+        fo.setAttribute('x', -editW / 2);
+        fo.setAttribute('y', -editH / 2);
+        fo.setAttribute('width', editW);
+        fo.setAttribute('height', editH);
+
+        const input = document.createElement('div');
+        input.setAttribute('contenteditable', 'true');
+        input.style.cssText = `
+            width: 100%; height: 100%;
+            background: transparent; border: none; outline: none;
+            color: ${this.labelColor}; font-size: ${this.labelFontSize}px;
+            font-family: lixFont, sans-serif; text-align: center;
+            display: flex; align-items: center; justify-content: center;
+            white-space: pre-wrap; word-break: break-word;
+            overflow: hidden; cursor: text;
+        `;
+        input.textContent = this.label;
+
+        fo.appendChild(input);
+        this.group.appendChild(fo);
+
+        setTimeout(() => {
+            input.focus();
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(input);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }, 10);
+
+        const finishEdit = () => {
+            const newText = input.textContent.trim();
+            this.label = newText;
+            this._isEditingLabel = false;
+
+            if (fo.parentNode) fo.parentNode.removeChild(fo);
+            if (this.labelElement) this.labelElement.setAttribute('visibility', 'visible');
+            this.draw();
+        };
+
+        input.addEventListener('blur', finishEdit);
+        input.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); input.blur(); }
+            if (e.key === 'Escape') { input.textContent = this.label; input.blur(); }
+        });
+        input.addEventListener('mousedown', (e) => e.stopPropagation());
+        input.addEventListener('mousemove', (e) => e.stopPropagation());
+        input.addEventListener('mouseup', (e) => e.stopPropagation());
+    }
+
+    setLabel(text, color, fontSize) {
+        this.label = text || '';
+        if (color) this.labelColor = color;
+        if (fontSize) this.labelFontSize = fontSize;
+        this.draw();
+    }
+
     rotate(angle) {
         angle = angle % 360;
         if (angle < 0) angle += 360;

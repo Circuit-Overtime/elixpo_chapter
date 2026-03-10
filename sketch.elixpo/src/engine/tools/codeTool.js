@@ -671,8 +671,11 @@ function renderCodeFromEditor(input, codeElement, deleteIfEmpty = false) {
 
     // After rendering code, switch to selection tool and auto-select
     if (gElement.parentNode) {
-        window.isSelectionToolActive = true;
-        toolExtraPopup();
+        if (window.__sketchStoreApi) {
+            window.__sketchStoreApi.setActiveTool('select');
+        } else {
+            window.isSelectionToolActive = true;
+        }
         selectCodeBlock(gElement);
     }
 }
@@ -896,8 +899,11 @@ function renderCode(input, codeElement, deleteIfEmpty = false) {
 
     // After rendering code, switch to selection tool and auto-select
     if (gElement.parentNode) {
-        window.isSelectionToolActive = true;
-        toolExtraPopup();
+        if (window.__sketchStoreApi) {
+            window.__sketchStoreApi.setActiveTool('select');
+        } else {
+            window.isSelectionToolActive = true;
+        }
         selectCodeBlock(gElement);
     }
 }

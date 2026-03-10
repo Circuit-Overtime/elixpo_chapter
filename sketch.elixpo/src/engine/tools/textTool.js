@@ -60,8 +60,11 @@ setTextReferences(selectedElement, updateSelectionFeedback, svg);
 
 
 function switchToSelectionTool() {
-    window.isSelectionToolActive = true;
-    toolExtraPopup();
+    if (window.__sketchStoreApi) {
+        window.__sketchStoreApi.setActiveTool('select');
+    } else {
+        window.isSelectionToolActive = true;
+    }
 }
 
 
@@ -251,6 +254,10 @@ function makeTextEditable(textElement, groupElement) {
     const currentFontFamily = textElement.getAttribute("font-family") || "lixFont";
     const currentFill = textElement.getAttribute("fill") || "#fff";
     const currentAnchor = textElement.getAttribute("text-anchor") || "start";
+    // Scale font-size by zoom so the textarea matches what the user sees on canvas
+    const rawSize = parseFloat(currentFontSize) || 30;
+    const scaledFontSize = `${rawSize * svgZoomFactor}px`;
+
     input.style.minWidth = "150px";
     input.style.minHeight = "1.5em";
     input.style.width = "auto";
@@ -258,7 +265,7 @@ function makeTextEditable(textElement, groupElement) {
     input.style.overflow = "visible";
     input.style.whiteSpace = "pre-wrap";
     input.style.wordBreak = "break-word";
-    input.style.fontSize = currentFontSize;
+    input.style.fontSize = scaledFontSize;
     input.style.fontFamily = currentFontFamily;
     input.style.color = currentFill;
     input.style.lineHeight = "1.2em";
@@ -1762,5 +1769,26 @@ function updateCodeToggleForShape(shapeName) {
         }
     }
 }
+
+// React sidebar bridge — update currently selected text/code shape
+window.updateSelectedTextStyle = function(changes) {
+    const el = selectedElement || (window.currentShape && window.currentShape.shapeName === 'text' ? window.currentShape.group : null);
+    if (!el) return;
+    const textElement = el.querySelector('text');
+    if (!textElement) return;
+
+    if (changes.color) {
+        textElement.setAttribute('fill', changes.color);
+        textColor = changes.color;
+    }
+    if (changes.font) {
+        textElement.setAttribute('font-family', changes.font);
+        textFont = changes.font;
+    }
+    if (changes.fontSize) {
+        textElement.setAttribute('font-size', changes.fontSize);
+        textSize = changes.fontSize;
+    }
+};
 
 export { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, updateCodeToggleForShape };
