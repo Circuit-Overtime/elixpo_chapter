@@ -126,8 +126,12 @@ class Circle {
         this._updateLabelElement();
 
         this.group.setAttribute('transform', `translate(${this.x}, ${this.y}) rotate(${this.rotation}, 0, 0)`);
-        if (this.isSelected && !this._skipAnchors) {
-            this.addAnchors();
+        if (this.isSelected) {
+            if (this._skipAnchors) {
+                this.updateSelectionControls();
+            } else {
+                this.addAnchors();
+            }
         }
         if (!this.group.parentNode) {
             svg.appendChild(this.group);
@@ -337,6 +341,48 @@ class Circle {
         circleSideBar.classList.remove("hidden");
         if (window.__showSidebarForShape) window.__showSidebarForShape('circle');
         this.updateSidebar();
+    }
+
+    updateSelectionControls() {
+        if (!this.selectionOutline || this.anchors.length === 0) return;
+
+        const anchorSize = 10;
+        const expandedX = -this.rx - this.selectionPadding;
+        const expandedY = -this.ry - this.selectionPadding;
+        const expandedWidth = this.rx * 2 + 2 * this.selectionPadding;
+        const expandedHeight = this.ry * 2 + 2 * this.selectionPadding;
+
+        const positions = [
+            { x: expandedX, y: expandedY },
+            { x: expandedX + expandedWidth, y: expandedY },
+            { x: expandedX, y: expandedY + expandedHeight },
+            { x: expandedX + expandedWidth, y: expandedY + expandedHeight },
+            { x: expandedX + expandedWidth / 2, y: expandedY },
+            { x: expandedX + expandedWidth / 2, y: expandedY + expandedHeight },
+            { x: expandedX, y: expandedHeight / 2 + expandedY },
+            { x: expandedX + expandedWidth, y: expandedHeight / 2 + expandedY }
+        ];
+
+        positions.forEach((pos, i) => {
+            if (this.anchors[i]) {
+                this.anchors[i].setAttribute('x', pos.x - anchorSize / 2);
+                this.anchors[i].setAttribute('y', pos.y - anchorSize / 2);
+            }
+        });
+
+        const outlinePoints = [
+            [positions[0].x, positions[0].y],
+            [positions[1].x, positions[1].y],
+            [positions[3].x, positions[3].y],
+            [positions[2].x, positions[2].y],
+            [positions[0].x, positions[0].y]
+        ];
+        this.selectionOutline.setAttribute('points', outlinePoints.map(p => p.join(',')).join(' '));
+
+        if (this.rotationAnchor) {
+            this.rotationAnchor.setAttribute('cx', expandedX + expandedWidth / 2);
+            this.rotationAnchor.setAttribute('cy', expandedY - 30);
+        }
     }
 
         removeSelection() {

@@ -1,5 +1,6 @@
 'use client'
 
+import { useParams } from 'next/navigation'
 import Script from 'next/script'
 import Header from '@/components/header/Header'
 import Toolbar from '@/components/toolbar/Toolbar'
@@ -22,27 +23,26 @@ import IconSidebar from '@/components/sidebars/IconSidebar'
 import SVGCanvas from '@/components/canvas/SVGCanvas'
 import MultiSelectActions from '@/components/canvas/MultiSelectActions'
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
-import useSessionID from '@/hooks/useSessionID'
 import useGuestProfile from '@/hooks/useGuestProfile'
 import useAuth from '@/hooks/useAuth'
+import useCollaboration from '@/hooks/useCollaboration'
 
-export default function Home() {
+export default function RoomPage() {
+  const { roomId } = useParams()
+
   useAuth()
   useKeyboardShortcuts()
-  useSessionID()
   useGuestProfile()
+  useCollaboration(roomId)
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black">
-      {/* CDN libraries needed by canvas engine (boxicons for toolbar icons, highlight.js for code blocks) */}
       <Script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js" strategy="beforeInteractive" />
       <Script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" strategy="beforeInteractive" />
 
-      {/* UI Shell */}
       <Header />
       <Toolbar />
 
-      {/* Sidebars */}
       <RectangleSidebar />
       <CircleSidebar />
       <LineSidebar />
@@ -52,10 +52,8 @@ export default function Home() {
       <FrameSidebar />
       <IconSidebar />
 
-      {/* Canvas (initializes engine via useSketchEngine hook) */}
       <SVGCanvas />
 
-      {/* Overlays */}
       <MultiSelectActions />
       <Footer />
       <AppMenu />

@@ -1099,9 +1099,7 @@ document.addEventListener('keydown', (e) => {
 
 async function fetchIconsFromServer() {
     try {
-        const apiUrl = location.hostname === "localhost"
-        ? "http://localhost:3002/feed?offset=0&limit=20"
-        : "/feed&offset=0&limit=20";
+        const apiUrl = "/api/icons/feed?offset=0&limit=20";
         
         const response = await fetch(apiUrl);
         if (!response.ok) {
@@ -1122,11 +1120,7 @@ async function renderIconsFromServer() {
 
         for (const icon of icons) {
             try {
-                const apiUrl = location.hostname === "localhost"
-                ? `http://localhost:3002/serve?name=${encodeURIComponent(icon.filename)}`
-                : `/api/iconsFetch?action=serve&name=${encodeURIComponent(icon.filename)}`;
-                
-                const response = await fetch(apiUrl);
+                const response = await fetch(`/api/icons/serve?name=${encodeURIComponent(icon.filename)}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -1150,9 +1144,7 @@ async function renderIconsFromServer() {
 
 async function searchAndRenderIcons(query) {
     try {
-        const apiUrl = location.hostname === "localhost"
-        ? `http://localhost:3002/search?q=${encodeURIComponent(query)}`
-        : `/api/iconsFetch?action=search&q=${encodeURIComponent(query)}`;
+        const apiUrl = `/api/icons/search?q=${encodeURIComponent(query)}`;
         
         const response = await fetch(apiUrl);
         if (!response.ok) {
@@ -1164,11 +1156,7 @@ async function searchAndRenderIcons(query) {
 
         for (const icon of searchResults) {
             try {
-                const serveApiUrl = location.hostname === "localhost"
-                ? `http://localhost:3002/serve?name=${encodeURIComponent(icon.filename)}`
-                : `/api/iconsFetch?action=serve&name=${encodeURIComponent(icon.filename)}`;
-                
-                const svgResponse = await fetch(serveApiUrl);
+                const svgResponse = await fetch(`/api/icons/serve?name=${encodeURIComponent(icon.filename)}`);
                 if (!svgResponse.ok) {
                     throw new Error(`HTTP error! status: ${svgResponse.status}`);
                 }

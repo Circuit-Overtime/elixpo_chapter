@@ -3,12 +3,15 @@
 import { useState, useRef, useEffect } from 'react'
 import useUIStore from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
+import useAuthStore from '@/store/useAuthStore'
 import { useProfileStore } from '@/hooks/useGuestProfile'
 
 function ProfileDropdown() {
   const profile = useProfileStore((s) => s.profile)
   const setDisplayName = useProfileStore((s) => s.setDisplayName)
   const regenerateProfile = useProfileStore((s) => s.regenerateProfile)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const authUser = useAuthStore((s) => s.user)
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -21,22 +24,29 @@ function ProfileDropdown() {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  if (!profile) return null
+  // Use auth user if signed in, otherwise guest profile
+  const displayName = isAuthenticated ? (authUser?.displayName || authUser?.email) : profile?.displayName
+  const avatar = isAuthenticated ? authUser?.avatar : profile?.avatar
+  const isGuest = !isAuthenticated
+
+  if (!profile && !isAuthenticated) return null
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-surface-hover transition-all duration-200"
-        title={profile.displayName}
+        title={displayName}
       >
-        <img
-          src={profile.avatar}
-          alt=""
-          className="w-6 h-6 rounded-md"
-        />
+        {avatar ? (
+          <img src={avatar} alt="" className="w-6 h-6 rounded-md" />
+        ) : (
+          <div className="w-6 h-6 rounded-md bg-accent-blue/20 flex items-center justify-center">
+            <i className="bx bx-user text-xs text-accent-blue" />
+          </div>
+        )}
         <span className="text-text-muted text-xs max-w-[80px] truncate hidden sm:block">
-          {profile.displayName}
+          {displayName}
         </span>
         <i className={`bx bx-chevron-down text-text-dim text-xs transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -44,28 +54,43 @@ function ProfileDropdown() {
       {open && (
         <div className="absolute top-full right-0 mt-2 w-[220px] bg-surface/90 backdrop-blur-lg border border-border-light rounded-xl p-3 z-[1002] font-[lixFont]">
           <div className="flex items-center gap-2.5 mb-3">
-            <img src={profile.avatar} alt="" className="w-10 h-10 rounded-lg" />
+            {avatar ? (
+              <img src={avatar} alt="" className="w-10 h-10 rounded-lg" />
+            ) : (
+              <div className="w-10 h-10 rounded-lg bg-accent-blue/20 flex items-center justify-center">
+                <i className="bx bx-user text-lg text-accent-blue" />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
-              <input
-                type="text"
-                value={profile.displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-transparent text-text-primary text-sm outline-none border-b border-transparent focus:border-accent-blue transition-all"
-                spellCheck={false}
-              />
+              {isGuest ? (
+                <input
+                  type="text"
+                  value={profile?.displayName || ''}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full bg-transparent text-text-primary text-sm outline-none border-b border-transparent focus:border-accent-blue transition-all"
+                  spellCheck={false}
+                />
+              ) : (
+                <p className="text-text-primary text-sm truncate">{displayName}</p>
+              )}
               <span className="text-text-dim text-[10px]">
-                {profile.isGuest ? 'Guest' : 'Signed in'}
+                {isGuest ? 'Guest' : 'Signed in'}
               </span>
+              {!isGuest && authUser?.email && (
+                <p className="text-text-dim text-[10px] truncate">{authUser.email}</p>
+              )}
             </div>
           </div>
 
-          <button
-            onClick={() => { regenerateProfile(); setOpen(false) }}
-            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
-          >
-            <i className="bx bx-refresh text-sm" />
-            New identity
-          </button>
+          {isGuest && (
+            <button
+              onClick={() => { regenerateProfile(); setOpen(false) }}
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+            >
+              <i className="bx bx-refresh text-sm" />
+              New identity
+            </button>
+          )}
         </div>
       )}
     </div>

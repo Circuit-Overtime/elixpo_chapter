@@ -91,11 +91,7 @@ function DiagramPreview({ svgMarkup, className }) {
   return (
     <div
       ref={containerRef}
-      className={`rounded-xl bg-[#111] border border-white/[0.06] overflow-hidden cursor-grab active:cursor-grabbing relative select-none ${className || 'w-full h-[clamp(200px,40vh,400px)]'}`}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      className={`rounded-xl bg-[#111] border border-white/[0.06] overflow-hidden relative select-none ${className || 'w-full h-[clamp(200px,40vh,400px)]'}`}
     >
       <div
         style={{
@@ -103,10 +99,20 @@ function DiagramPreview({ svgMarkup, className }) {
           transformOrigin: 'center center',
           width: '100%', height: '100%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
         }}
         dangerouslySetInnerHTML={{ __html: svgMarkup }}
       />
-      <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/50 rounded-lg px-1.5 py-0.5">
+      {/* Transparent overlay to capture all drag/pan events above the SVG */}
+      <div
+        className="absolute inset-0 cursor-grab active:cursor-grabbing"
+        style={{ zIndex: 1 }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      />
+      <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/50 rounded-lg px-1.5 py-0.5" style={{ zIndex: 2 }}>
         <button onClick={() => setZoom(z => Math.max(0.3, z * 0.8))} className="text-text-dim hover:text-white text-xs px-1">-</button>
         <span className="text-text-dim text-[10px] w-8 text-center">{Math.round(zoom * 100)}%</span>
         <button onClick={() => setZoom(z => Math.min(3, z * 1.2))} className="text-text-dim hover:text-white text-xs px-1">+</button>
@@ -120,7 +126,7 @@ export default function AIModal() {
   const aiModalOpen = useUIStore((s) => s.aiModalOpen)
   const toggleAIModal = useUIStore((s) => s.toggleAIModal)
 
-  const [mode, setMode] = useState('describe')
+  const [mode, setMode] = useState('code')
   const [prompt, setPrompt] = useState('')
   const [toast, setToast] = useState({ status: null, message: '' })
 
@@ -150,6 +156,12 @@ export default function AIModal() {
   const [mermaidError, setMermaidError] = useState('')
   const mermaidDebounceRef = useRef(null)
 
+  // LixScript code mode state
+  const [lixCode, setLixCode] = useState('')
+  const [lixPreviewSVG, setLixPreviewSVG] = useState('')
+  const [lixErrors, setLixErrors] = useState([])
+  const lixDebounceRef = useRef(null)
+
   const editInputRef = useRef(null)
 
   // Auto-dismiss success toast
@@ -177,7 +189,7 @@ export default function AIModal() {
       }
 
       setEditingFrame(frame)
-      setMode('describe')
+      setMode('code')
       setPrompt('')
       setChatHistory([])
       if (window.__aiFramePreview) {
@@ -229,6 +241,30 @@ export default function AIModal() {
     return () => { if (mermaidDebounceRef.current) clearTimeout(mermaidDebounceRef.current) }
   }, [mermaidCode, mode])
 
+  // Live LixScript preview (debounced)
+  useEffect(() => {
+    if (mode !== 'code') return
+    if (!lixCode.trim()) {
+      setLixPreviewSVG('')
+      setLixErrors([])
+      return
+    }
+    if (lixDebounceRef.current) clearTimeout(lixDebounceRef.current)
+    lixDebounceRef.current = setTimeout(() => {
+      if (window.__lixscriptParse && window.__lixscriptPreview) {
+        const parsed = window.__lixscriptParse(lixCode)
+        setLixErrors(parsed.errors || [])
+        if (parsed.errors.length === 0) {
+          const svg = window.__lixscriptPreview(lixCode)
+          setLixPreviewSVG(svg || '')
+        } else {
+          setLixPreviewSVG('')
+        }
+      }
+    }, 300)
+    return () => { if (lixDebounceRef.current) clearTimeout(lixDebounceRef.current) }
+  }, [lixCode, mode])
+
   useEffect(() => {
     if (previewDiagram && editInputRef.current) editInputRef.current.focus()
   }, [previewDiagram])
@@ -243,6 +279,9 @@ export default function AIModal() {
     setMermaidCode('')
     setMermaidPreviewSVG('')
     setMermaidError('')
+    setLixCode('')
+    setLixPreviewSVG('')
+    setLixErrors([])
   }, [])
 
   const resetGraph = useCallback(() => {
@@ -303,9 +342,10 @@ export default function AIModal() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: currentPrompt, mode: 'text',
+          prompt: currentPrompt,
+          mode: 'lixscript',
           history: chatHistory.length > 0 ? chatHistory : undefined,
-          previousDiagram: previewDiagram || undefined,
+          previousLixCode: lixCode || undefined,
         }),
       })
       let data
@@ -319,19 +359,25 @@ export default function AIModal() {
         setIsGenerating(false)
         return
       }
-      if (!data.diagram?.nodes?.length) {
+
+      // AI returned LixScript code — switch to code tab and populate
+      if (data.lixscript) {
+        setMode('code')
+        setLixCode(data.lixscript)
+        setChatHistory([...messages, { role: 'assistant', content: data.lixscript }])
+      } else if (data.diagram?.nodes?.length) {
+        // Fallback: JSON diagram mode
+        setPreviewDiagram(data.diagram)
+        if (window.__aiPreview) setPreviewSVG(window.__aiPreview(data.diagram))
+        setChatHistory([...messages, { role: 'assistant', content: JSON.stringify(data.diagram) }])
+      } else {
         setToast({ status: 'error', message: 'Empty diagram. Try rephrasing.' })
-        setIsGenerating(false)
-        return
       }
-      setPreviewDiagram(data.diagram)
-      if (window.__aiPreview) setPreviewSVG(window.__aiPreview(data.diagram))
-      setChatHistory([...messages, { role: 'assistant', content: JSON.stringify(data.diagram) }])
     } catch {
       setToast({ status: 'error', message: 'Connection failed.' })
     }
     setIsGenerating(false)
-  }, [prompt, mode, chatHistory, previewDiagram])
+  }, [prompt, mode, chatHistory, lixCode])
 
   // --- Diagram editing ---
   const handleEdit = useCallback(async (directText) => {
@@ -438,6 +484,21 @@ export default function AIModal() {
     resetPreview()
   }, [mermaidCode, mermaidPreviewSVG, handleClose, resetPreview])
 
+  // --- Place LixScript ---
+  const handlePlaceLixScript = useCallback(() => {
+    if (!lixCode.trim() || lixErrors.length > 0) return
+    handleClose()
+    if (window.__lixscriptExecute) {
+      const result = window.__lixscriptExecute(lixCode)
+      if (!result.success) {
+        setToast({ status: 'error', message: result.errors?.[0]?.message || 'Failed to execute LixScript' })
+        return
+      }
+    }
+    setToast({ status: 'success', message: '' })
+    resetPreview()
+  }, [lixCode, lixErrors, handleClose, resetPreview])
+
   // --- Place graph ---
   const handlePlaceGraph = useCallback(() => {
     const validEquations = equations.filter(eq => eq.expression && eq.expression.trim())
@@ -495,7 +556,8 @@ export default function AIModal() {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       if (mode === 'graph') handlePlaceGraph()
       else if (mode === 'mermaid') handlePlaceMermaid()
-      else previewDiagram ? handlePlace() : handleGenerate()
+      else if (mode === 'code') handlePlaceLixScript()
+      else if (previewDiagram) handlePlace()
     }
   }
 
@@ -505,6 +567,7 @@ export default function AIModal() {
 
   const isFrameEdit = !!editingFrame
   const isGraphMode = mode === 'graph'
+  const isCodeMode = mode === 'code'
   const hasValidEquations = equations.some(eq => eq.expression && eq.expression.trim())
 
   return (
@@ -550,9 +613,14 @@ export default function AIModal() {
                     </>
                   ) : (
                     <h2 className="text-text-primary text-lg font-medium flex items-center gap-2.5">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGraphMode ? 'text-[#4A90D9]' : mode === 'mermaid' ? 'text-[#2ECC71]' : 'text-accent'}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGraphMode ? 'text-[#4A90D9]' : isCodeMode ? 'text-[#F39C12]' : mode === 'mermaid' ? 'text-[#2ECC71]' : 'text-accent'}>
                         {isGraphMode ? (
                           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        ) : isCodeMode ? (
+                          <>
+                            <polyline points="16 18 22 12 16 6" />
+                            <polyline points="8 6 2 12 8 18" />
+                          </>
                         ) : mode === 'mermaid' ? (
                           <>
                             <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -568,7 +636,7 @@ export default function AIModal() {
                           </>
                         )}
                       </svg>
-                      {isGraphMode ? 'Graph Editor' : mode === 'mermaid' ? 'Mermaid Editor' : 'AI Diagram Generator'}
+                      {isGraphMode ? 'Graph Editor' : isCodeMode ? 'LixScript Editor' : mode === 'mermaid' ? 'Mermaid Editor' : 'AI Diagram Generator'}
                     </h2>
                   )}
                 </div>
@@ -583,7 +651,7 @@ export default function AIModal() {
             {!previewDiagram && !isFrameEdit && (
               <div className="flex gap-1 mb-4 bg-surface-dark rounded-xl p-1">
                 {[
-                  { value: 'describe', label: 'Describe' },
+                  { value: 'code', label: 'LixScript', beta: true },
                   { value: 'mermaid', label: 'Mermaid' },
                   { value: 'graph', label: 'Graph' },
                 ].map((t) => (
@@ -593,7 +661,7 @@ export default function AIModal() {
                     className={`flex-1 px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
                       mode === t.value ? 'bg-surface-active text-text-primary' : 'text-text-muted hover:text-text-primary'
                     }`}
-                  >{t.label}</button>
+                  >{t.label}{t.beta && <span className="ml-1.5 px-1.5 py-0.5 text-[9px] rounded-md bg-orange-500/20 text-orange-400 font-medium uppercase leading-none">Beta</span>}</button>
                 ))}
               </div>
             )}
@@ -633,7 +701,7 @@ export default function AIModal() {
                   </div>
 
                   {/* Place button */}
-                  <div className="mt-auto pt-4">
+                  <div className="mt-auto  pt-2">
                     <div className="flex items-center justify-between">
                       <span className="text-text-dim text-xs">Ctrl + Enter to place</span>
                       <button
@@ -662,6 +730,139 @@ export default function AIModal() {
                   ) : (
                     <div className="flex-1 flex items-center justify-center rounded-xl bg-[#111] border border-white/[0.06]">
                       <p className="text-text-dim text-sm">Type Mermaid code to see a live preview</p>
+                    </div>
+                  )}
+                  <p className="text-text-dim text-[10px] mt-1">Scroll to zoom, drag to pan</p>
+                </div>
+              </div>
+
+            ) : /* ============ CODE MODE (LixScript) ============ */
+            isCodeMode && !previewDiagram && !isFrameEdit ? (
+              <div className="flex gap-4 h-[calc(100%-100px)]">
+                {/* Left panel - AI prompt + Code editor */}
+                <div className="w-[45%] min-w-[280px] flex flex-col">
+                  {/* AI Prompt Input */}
+                  <div className="mb-3">
+                    <p className="text-text-muted text-xs uppercase tracking-wider mb-2">
+                      <i className="bx bx-bot mr-1" />Describe with AI
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            handleGenerate()
+                          }
+                        }}
+                        placeholder='e.g. "User auth flow with login, 2FA, dashboard"'
+                        className="flex-1 bg-surface-dark border border-border rounded-xl px-4 py-2.5 text-text-primary text-sm focus:outline-none focus:border-accent-blue placeholder:text-text-dim"
+                        disabled={isGenerating}
+                      />
+                      <button
+                        onClick={handleGenerate}
+                        disabled={!prompt.trim() || isGenerating}
+                        className={`px-4 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center gap-2 ${
+                          !prompt.trim() || isGenerating ? 'bg-surface-hover text-text-dim cursor-not-allowed' : 'bg-accent-blue text-white hover:bg-accent-blue/80'
+                        }`}
+                      >
+                        {isGenerating ? (
+                          <div className="relative w-4 h-4"><div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white animate-spin" /></div>
+                        ) : (
+                          <i className="bx bx-send text-base" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-text-muted text-xs uppercase tracking-wider">LixScript Code</p>
+                    <a href="/docs" target="_blank" rel="noopener noreferrer" className="text-accent-blue/70 hover:text-accent-blue text-[10px] flex items-center gap-1 transition-colors">
+                      <i className="bx bx-book-open text-xs" />Learn LixScript syntax
+                    </a>
+                  </div>
+                  <textarea
+                    value={lixCode}
+                    onChange={(e) => setLixCode(e.target.value)}
+                    placeholder={'// Write LixScript or use AI above\n\nrect start at 100, 100 size 200x65 {\n  stroke: #4A90D9\n  label: "Start"\n}\n\nrect process at start.x, start.bottom + 120 size 200x65 {\n  stroke: #2ECC71\n  label: "Process"\n}\n\narrow a1 from start.bottom to process.top {\n  stroke: #e0e0e0\n}'}
+                    className="flex-1 min-h-[280px] bg-surface-dark border border-border rounded-xl px-4 py-3 text-text-primary text-sm leading-relaxed resize-none focus:outline-none focus:border-accent-blue placeholder:text-text-dim font-mono"
+                    autoFocus
+                    spellCheck={false}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Tab') {
+                        e.preventDefault()
+                        const start = e.target.selectionStart
+                        const end = e.target.selectionEnd
+                        const val = e.target.value
+                        setLixCode(val.substring(0, start) + '  ' + val.substring(end))
+                        setTimeout(() => { e.target.selectionStart = e.target.selectionEnd = start + 2 }, 0)
+                        return
+                      }
+                      handleKeyDown(e)
+                    }}
+                  />
+
+                  {/* Quick examples */}
+                  <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                    <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Quick Examples</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: 'Flowchart', code: '// Simple flowchart\n$blue = #4A90D9\n$green = #2ECC71\n$gray = #e0e0e0\n\nrect start at 150, 50 size 180x55 {\n  stroke: $blue\n  label: "Start"\n}\n\nrect process at start.x, start.bottom + 120 size 180x55 {\n  stroke: $green\n  label: "Process"\n}\n\ncircle decision at process.x, process.bottom + 120 size 100x100 {\n  stroke: #E74C3C\n  label: "OK?"\n}\n\nrect end at decision.x, decision.bottom + 120 size 180x55 {\n  stroke: #9B59B6\n  label: "End"\n}\n\narrow a1 from start.bottom to process.top {\n  stroke: $gray\n}\n\narrow a2 from process.bottom to decision.top {\n  stroke: $gray\n}\n\narrow a3 from decision.bottom to end.top {\n  stroke: $gray\n  label: "Yes"\n}' },
+                        { label: 'Architecture', code: '// System architecture\n$gray = #e0e0e0\n\nrect client at 50, 100 size 180x55 {\n  stroke: #4A90D9\n  fill: #4A90D9\n  fillStyle: solid\n  label: "Client"\n  labelColor: #fff\n}\n\nrect api at client.right + 220, client.y size 180x55 {\n  stroke: #2ECC71\n  label: "API Server"\n}\n\nrect db at api.right + 220, api.y size 180x55 {\n  stroke: #E74C3C\n  label: "Database"\n}\n\narrow a1 from client.right to api.left {\n  stroke: $gray\n  label: "REST"\n}\n\narrow a2 from api.right to db.left {\n  stroke: $gray\n  label: "Query"\n}' },
+                        { label: 'Shapes', code: '// Shape showcase\n\nrect r1 at 50, 50 size 160x55 {\n  stroke: #4A90D9\n  label: "Rectangle"\n}\n\ncircle c1 at r1.right + 220, r1.y size 100x100 {\n  stroke: #E74C3C\n  label: "Circle"\n}\n\ntext t1 at c1.right + 220, c1.y {\n  content: "Hello LixScript!"\n  color: #F39C12\n  fontSize: 20\n}\n\nline l1 from 50, 200 to 550, 200 {\n  stroke: #555\n  style: dashed\n}' },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          onClick={() => setLixCode(preset.code)}
+                          className="px-2 py-1 rounded-lg text-[10px] text-text-dim border border-white/[0.06] hover:border-white/[0.15] hover:text-text-secondary transition-all"
+                        >{preset.label}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Place button */}
+                  <div className="mt-auto mb-5 pt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-dim text-xs">Ctrl + Enter to place</span>
+                      <button
+                        onClick={handlePlaceLixScript}
+                        disabled={!lixPreviewSVG || lixErrors.length > 0}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                          !lixPreviewSVG || lixErrors.length > 0 ? 'bg-surface-hover text-text-dim cursor-not-allowed' : 'bg-accent-blue text-white hover:bg-accent-blue/80'
+                        }`}
+                      >
+                        <i className="bx bx-check text-base" />
+                        Place on Canvas
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right panel - Live preview */}
+                <div className="flex-1 flex flex-col min-w-0">
+                  <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Preview</p>
+                  {lixErrors.length > 0 ? (
+                    <div className="flex-1 flex flex-col rounded-xl bg-[#111] border border-white/[0.06] p-4 overflow-y-auto">
+                      <div className="flex items-center gap-2 mb-3">
+                        <i className="bx bx-error-circle text-red-400 text-lg" />
+                        <span className="text-red-400 text-sm font-medium">{lixErrors.length} error{lixErrors.length > 1 ? 's' : ''}</span>
+                      </div>
+                      {lixErrors.map((err, i) => (
+                        <p key={i} className="text-red-400/80 text-[11px] font-mono mb-1">
+                          <span className="text-red-400/50">line {err.line}:</span> {err.message}
+                        </p>
+                      ))}
+                    </div>
+                  ) : lixPreviewSVG ? (
+                    <DiagramPreview svgMarkup={lixPreviewSVG} className="flex-1 min-h-[300px]" />
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center rounded-xl bg-[#111] border border-white/[0.06]">
+                      <div className="text-center px-6">
+                        <p className="text-text-dim text-sm mb-2">Write LixScript code to see a live preview</p>
+                        <p className="text-text-dim/50 text-[10px]">Full docs at /docs/lixscript.md</p>
+                      </div>
                     </div>
                   )}
                   <p className="text-text-dim text-[10px] mt-1">Scroll to zoom, drag to pan</p>
@@ -803,45 +1004,7 @@ export default function AIModal() {
                 </div>
               </div>
 
-            ) : !previewDiagram ? (
-              /* ============ INITIAL PROMPT ============ */
-              <div className="flex flex-col h-[calc(100%-100px)]">
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={
-                    isFrameEdit
-                      ? `Describe changes to "${editingFrame?.frameName || 'this frame'}"...\n\ne.g. "Add an error handling step after validation"`
-                      : mode === 'describe'
-                      ? 'Describe a diagram...\n\ne.g. "User authentication flow with login, 2FA verification, and dashboard redirect"'
-                      : 'Paste Mermaid syntax...\n\ngraph TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[Action]\n  B -->|No| D[End]'
-                  }
-                  className={`w-full flex-1 bg-surface-dark border border-border rounded-xl px-4 sm:px-5 py-3 sm:py-4 text-text-primary text-sm leading-relaxed resize-none focus:outline-none focus:border-accent-blue placeholder:text-text-dim ${
-                    mode === 'mermaid' ? 'font-mono' : ''
-                  }`}
-                  autoFocus
-                  disabled={isGenerating}
-                />
-                <div className="flex items-center justify-between mt-5 shrink-0">
-                  <span className="text-text-dim text-xs">Ctrl + Enter to generate</span>
-                  <button
-                    onClick={handleGenerate}
-                    disabled={!prompt.trim() || isGenerating}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                      !prompt.trim() || isGenerating ? 'bg-surface-hover text-text-dim cursor-not-allowed' : 'bg-accent-blue text-white hover:bg-accent-blue/80'
-                    }`}
-                  >
-                    {isGenerating && (
-                      <div className="relative w-4 h-4">
-                        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white animate-spin" />
-                      </div>
-                    )}
-                    {isGenerating ? 'Generating...' : 'Preview Diagram'}
-                  </button>
-                </div>
-              </div>
-            ) : (
+            ) : previewDiagram ? (
               /* ============ PREVIEW MODE ============ */
               <div className="flex flex-col h-[calc(100%-100px)]">
                 <div className="flex-1 flex flex-col min-h-0 mb-4">
@@ -921,7 +1084,7 @@ export default function AIModal() {
                   </div>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}

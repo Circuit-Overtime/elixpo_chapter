@@ -331,9 +331,13 @@ class Arrow {
         // Update embedded label at midpoint
         this._updateLabelElement();
 
-        if (this.isSelected && !this._skipAnchors) {
-            this.addAnchors();
-            this.addAttachmentIndicators();
+        if (this.isSelected) {
+            if (this._skipAnchors) {
+                this.updateSelectionControls();
+            } else {
+                this.addAnchors();
+                this.addAttachmentIndicators();
+            }
         }
     }
 
@@ -690,6 +694,39 @@ class Arrow {
         } else {
             this._arrowHeadEl.setAttribute("points", `${pts.x3},${pts.y3} ${tip.x},${tip.y} ${pts.x4},${pts.y4}`);
         }
+    }
+
+    updateSelectionControls() {
+        if (!this.anchors || this.anchors.length === 0) return;
+
+        const anchorSize = 5 / currentZoom;
+
+        let anchorPositions = [this.startPoint, this.endPoint];
+
+        if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
+            const midOnCurve = this.getCubicBezierPoint(0.5);
+            anchorPositions.push(midOnCurve);
+        } else if (this.arrowCurved === "elbow") {
+            const elbowXVal = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
+            const midY = (this.startPoint.y + this.endPoint.y) / 2;
+            anchorPositions.push({ x: elbowXVal, y: midY });
+        } else {
+            // straight — offset end anchor past arrowhead
+            const arrowAngle = Math.atan2(this.endPoint.y - this.startPoint.y, this.endPoint.x - this.startPoint.x);
+            const arrowHeadClearance = this.arrowHeadLength + anchorSize - 10;
+            anchorPositions[1] = {
+                x: this.endPoint.x + arrowHeadClearance * Math.cos(arrowAngle),
+                y: this.endPoint.y + arrowHeadClearance * Math.sin(arrowAngle)
+            };
+        }
+
+        anchorPositions.forEach((point, index) => {
+            if (this.anchors[index]) {
+                this.anchors[index].setAttribute("cx", point.x);
+                this.anchors[index].setAttribute("cy", point.y);
+                this.anchors[index].setAttribute("r", anchorSize);
+            }
+        });
     }
 
     addAnchors() {
