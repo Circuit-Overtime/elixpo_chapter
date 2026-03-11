@@ -1,22 +1,18 @@
+export const runtime = 'edge'
+
 import { NextResponse } from 'next/server'
 import Fuse from 'fuse.js'
-import fs from 'fs'
-import path from 'path'
 
 let fuse = null
 let dataArray = null
-let lastLoadTime = 0
-const RELOAD_INTERVAL = 60_000
-const iconsDir = path.join(process.cwd(), 'public', 'icons')
 
-function loadData() {
-  const now = Date.now()
-  if (dataArray && fuse && now - lastLoadTime < RELOAD_INTERVAL) return
+async function loadData(origin) {
+  if (dataArray && fuse) return
 
-  const metaPath = path.join(iconsDir, 'info', 'icons.json')
-  if (!fs.existsSync(metaPath)) return
+  const res = await fetch(`${origin}/icons/info/icons.json`)
+  if (!res.ok) return
 
-  const metadata = JSON.parse(fs.readFileSync(metaPath, 'utf-8'))
+  const metadata = await res.json()
   dataArray = Object.keys(metadata).map((filename) => ({
     filename,
     ...metadata[filename],
@@ -27,31 +23,16 @@ function loadData() {
     threshold: 0.4,
     keys: ['filename', 'keywords', 'description', 'category'],
   })
-  lastLoadTime = now
-}
-
-// In-memory SVG cache to avoid repeated disk reads
-const svgCache = new Map()
-
-function readSvg(filename) {
-  if (svgCache.has(filename)) return svgCache.get(filename)
-  try {
-    const filePath = path.join(iconsDir, filename)
-    const content = fs.readFileSync(filePath, 'utf-8')
-    svgCache.set(filename, content)
-    return content
-  } catch {
-    return null
-  }
 }
 
 export async function GET(request) {
-  const { searchParams } = new URL(request.url)
-  const q = (searchParams.get('q') || '').trim().toLowerCase()
-  const category = (searchParams.get('category') || '').trim().toLowerCase()
-  const inline = searchParams.get('inline') === '1'
+  const url = new URL(request.url)
+  const origin = url.origin
+  const q = (url.searchParams.get('q') || '').trim().toLowerCase()
+  const category = (url.searchParams.get('category') || '').trim().toLowerCase()
+  const inline = url.searchParams.get('inline') === '1'
 
-  loadData()
+  await loadData(origin)
   if (!dataArray) return NextResponse.json({ results: [] })
 
   let results
@@ -70,12 +51,18 @@ export async function GET(request) {
 
   const sliced = results.slice(0, 60)
 
-  // If inline requested, bundle SVG content into response
   if (inline) {
-    const withSvg = sliced.map((item) => ({
-      ...item,
-      svg: readSvg(item.filename),
-    }))
+    const withSvg = await Promise.all(
+      sliced.map(async (item) => {
+        try {
+          const svgRes = await fetch(`${origin}/icons/${item.filename}`)
+          const svg = svgRes.ok ? await svgRes.text() : null
+          return { ...item, svg }
+        } catch {
+          return { ...item, svg: null }
+        }
+      })
+    )
     return NextResponse.json({ results: withSvg })
   }
 

@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import { NextResponse } from 'next/server'
 
 const ELIXPO_AUTH_URL = 'https://accounts.elixpo.com'

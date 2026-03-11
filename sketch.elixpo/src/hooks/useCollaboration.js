@@ -5,7 +5,7 @@ import useCollabStore from '@/store/useCollabStore'
 import useAuthStore from '@/store/useAuthStore'
 import { useProfileStore } from '@/hooks/useGuestProfile'
 
-const COLLAB_URL = process.env.NEXT_PUBLIC_COLLAB_URL || 'ws://localhost:8787'
+import { COLLAB_URL } from '@/lib/env'
 const PING_INTERVAL = 25000
 const RECONNECT_BASE = 1000
 const RECONNECT_MAX = 30000

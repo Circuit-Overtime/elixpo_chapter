@@ -262,32 +262,61 @@ function parseProperties(shape, lines, variables, errors) {
 function resolveShapeRefs(shapes) {
   const shapeMap = new Map()
 
-  // First pass: collect all shapes with known positions
-  for (const s of shapes) {
-    if (typeof s.x === 'number' && typeof s.y === 'number') {
-      shapeMap.set(s.id, s)
+  // Iteratively resolve deferred expressions until no more progress
+  // This handles chained references like: A(absolute) → B(refs A) → C(refs B) → D(refs C)
+  const MAX_PASSES = 10
+  for (let pass = 0; pass < MAX_PASSES; pass++) {
+    let progress = false
+
+    // Collect all shapes with known (numeric) positions
+    for (const s of shapes) {
+      if (typeof s.x === 'number' && typeof s.y === 'number' && !shapeMap.has(s.id)) {
+        shapeMap.set(s.id, s)
+        progress = true
+      }
     }
+
+    // Try to resolve any remaining deferred expressions
+    let anyUnresolved = false
+    for (const s of shapes) {
+      if (s.x && typeof s.x === 'object' && s.x.expr) {
+        const resolved = resolveExpr(s.x.expr, shapeMap)
+        if (typeof resolved === 'number' && !isNaN(resolved)) {
+          s.x = resolved
+          progress = true
+        } else {
+          anyUnresolved = true
+        }
+      }
+      if (s.y && typeof s.y === 'object' && s.y.expr) {
+        const resolved = resolveExpr(s.y.expr, shapeMap)
+        if (typeof resolved === 'number' && !isNaN(resolved)) {
+          s.y = resolved
+          progress = true
+        } else {
+          anyUnresolved = true
+        }
+      }
+    }
+
+    if (!anyUnresolved || !progress) break
   }
 
-  // Second pass: resolve deferred expressions
+  // Final fallback: force-resolve any remaining deferred expressions to 0
   for (const s of shapes) {
-    if (s.x && typeof s.x === 'object' && s.x.expr) {
-      s.x = resolveExpr(s.x.expr, shapeMap)
-    }
-    if (s.y && typeof s.y === 'object' && s.y.expr) {
-      s.y = resolveExpr(s.y.expr, shapeMap)
-    }
+    if (s.x && typeof s.x === 'object' && s.x.expr) s.x = 0
+    if (s.y && typeof s.y === 'object' && s.y.expr) s.y = 0
   }
 }
 
 function resolveExpr(expr, shapeMap) {
   // Match: shapeId.prop [+/- offset]
   const m = expr.match(/^(\w+)\.(\w+)(?:\s*([+-])\s*([\d.]+))?$/)
-  if (!m) return 0
+  if (!m) return NaN
 
   const [, ref, prop, op, offsetStr] = m
   const shape = shapeMap.get(ref)
-  if (!shape) return 0
+  if (!shape) return NaN
 
   let val = 0
   switch (prop) {
@@ -974,49 +1003,59 @@ export function previewLixScript(parsed) {
       }
 
       case 'arrow': {
-        const from = resolvePreviewPoint(def.from)
-        const to = resolvePreviewPoint(def.to)
+        const fromOrig = resolvePreviewPoint(def.from)
+        const toOrig = resolvePreviewPoint(def.to)
         const stroke = props.stroke || '#fff'
         const sw = props.strokeWidth || 2
         const dash = props.style === 'dashed' ? ' stroke-dasharray="10,10"' : props.style === 'dotted' ? ' stroke-dasharray="2,8"' : ''
         const curve = props.curve || 'straight'
         const markerId = `ah-${def.id}`
+        const headLen = 10 // arrowhead marker size
 
-        // Per-arrow colored arrowhead marker
-        svgContent += `<defs><marker id="${markerId}" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="${stroke}" /></marker></defs>`
+        // Pull back arrow endpoint so the tip lands at the shape edge, not inside it
+        const to = shortenEndpoint(fromOrig, toOrig, headLen)
+        const from = fromOrig
+
+        // Per-arrow colored arrowhead marker — refX=0 so tip is at the shortened line end
+        svgContent += `<defs><marker id="${markerId}" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="${stroke}" /></marker></defs>`
 
         if (curve === 'curved') {
           // Compute a quadratic bezier control point perpendicular to the line
-          const mx = (from.x + to.x) / 2
-          const my = (from.y + to.y) / 2
-          const dx = to.x - from.x
-          const dy = to.y - from.y
+          const mx = (from.x + toOrig.x) / 2
+          const my = (from.y + toOrig.y) / 2
+          const dx = toOrig.x - from.x
+          const dy = toOrig.y - from.y
           const dist = Math.sqrt(dx * dx + dy * dy) || 1
           const amt = props.curveAmount || Math.min(dist * 0.3, 80)
           // Perpendicular offset (always curve to the same side)
           const cpx = mx + (dy / dist) * amt
           const cpy = my - (dx / dist) * amt
-          svgContent += `<path d="M${from.x},${from.y} Q${cpx},${cpy} ${to.x},${to.y}" stroke="${stroke}" stroke-width="${sw}" fill="none"${dash} marker-end="url(#${markerId})" />`
+          // Shorten the bezier endpoint
+          const toShort = shortenEndpoint({ x: cpx, y: cpy }, toOrig, headLen)
+          svgContent += `<path d="M${from.x},${from.y} Q${cpx},${cpy} ${toShort.x},${toShort.y}" stroke="${stroke}" stroke-width="${sw}" fill="none"${dash} marker-end="url(#${markerId})" />`
           if (props.label) {
             // Label at the curve midpoint (t=0.5 on quadratic bezier)
-            const lx = 0.25 * from.x + 0.5 * cpx + 0.25 * to.x
-            const ly = 0.25 * from.y + 0.5 * cpy + 0.25 * to.y - 8
+            const lx = 0.25 * from.x + 0.5 * cpx + 0.25 * toOrig.x
+            const ly = 0.25 * from.y + 0.5 * cpy + 0.25 * toOrig.y - 8
             svgContent += `<text x="${lx}" y="${ly}" text-anchor="middle" fill="${props.labelColor || '#a0a0b0'}" font-size="11" font-family="sans-serif">${escapeXml(props.label)}</text>`
           }
         } else if (curve === 'elbow') {
           // Simple elbow: go vertical then horizontal (or vice versa)
-          const midY = from.y + (to.y - from.y) / 2
-          svgContent += `<path d="M${from.x},${from.y} L${from.x},${midY} L${to.x},${midY} L${to.x},${to.y}" stroke="${stroke}" stroke-width="${sw}" fill="none"${dash} marker-end="url(#${markerId})" />`
+          const midY = from.y + (toOrig.y - from.y) / 2
+          // Shorten the last segment endpoint
+          const lastFrom = { x: toOrig.x, y: midY }
+          const toShort = shortenEndpoint(lastFrom, toOrig, headLen)
+          svgContent += `<path d="M${from.x},${from.y} L${from.x},${midY} L${toOrig.x},${midY} L${toShort.x},${toShort.y}" stroke="${stroke}" stroke-width="${sw}" fill="none"${dash} marker-end="url(#${markerId})" />`
           if (props.label) {
-            const lx = (from.x + to.x) / 2
+            const lx = (from.x + toOrig.x) / 2
             const ly = midY - 8
             svgContent += `<text x="${lx}" y="${ly}" text-anchor="middle" fill="${props.labelColor || '#a0a0b0'}" font-size="11" font-family="sans-serif">${escapeXml(props.label)}</text>`
           }
         } else {
           svgContent += `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="${stroke}" stroke-width="${sw}"${dash} marker-end="url(#${markerId})" />`
           if (props.label) {
-            const lx = (from.x + to.x) / 2
-            const ly = (from.y + to.y) / 2 - 10
+            const lx = (from.x + toOrig.x) / 2
+            const ly = (from.y + toOrig.y) / 2 - 10
             svgContent += `<text x="${lx}" y="${ly}" text-anchor="middle" fill="${props.labelColor || '#a0a0b0'}" font-size="11" font-family="sans-serif">${escapeXml(props.label)}</text>`
           }
         }
@@ -1031,18 +1070,33 @@ export function previewLixScript(parsed) {
         break
       }
 
-      case 'frame':
+      case 'frame': {
+        const frameName = props.name || def.id
         svgContent += `<rect x="${def.x || 0}" y="${def.y || 0}" width="${def.width || 600}" height="${def.height || 400}" stroke="${props.stroke || '#555'}" stroke-width="1" fill="transparent" stroke-dasharray="8,4" rx="8" />`
-        if (props.name) {
-          svgContent += `<text x="${(def.x || 0) + 10}" y="${(def.y || 0) - 8}" fill="#888" font-size="12" font-family="sans-serif">${escapeXml(props.name)}</text>`
-        }
+        svgContent += `<text x="${(def.x || 0) + 10}" y="${(def.y || 0) - 8}" fill="#888" font-size="12" font-family="sans-serif">${escapeXml(frameName)}</text>`
         break
+      }
     }
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX - pad} ${minY - pad} ${vw} ${vh}" width="100%" height="100%" style="background: transparent;">
     ${svgContent}
   </svg>`
+}
+
+/**
+ * Pull back an arrow endpoint so the arrowhead tip lands at the target edge,
+ * rather than the line extending into the shape.
+ */
+function shortenEndpoint(from, to, amount) {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const dist = Math.sqrt(dx * dx + dy * dy)
+  if (dist < amount * 2) return to // too short to shorten
+  return {
+    x: to.x - (dx / dist) * amount,
+    y: to.y - (dy / dist) * amount,
+  }
 }
 
 function escapeXml(str) {

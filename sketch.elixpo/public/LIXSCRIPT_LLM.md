@@ -5,11 +5,12 @@
 ## Critical Rules
 
 1. Output ONLY valid LixScript. No markdown, no explanation.
-2. Shapes must NEVER overlap. Use generous spacing: 150px vertical, 250px horizontal minimum.
-3. Every shape must be large enough for its label: min 200x65 for rects, 110x110 for circles.
-4. Use `curve: curved` for any arrow that isn't straight-down. Always curve backward/retry arrows.
-5. Use relative positioning (`node1.bottom + 150`) not absolute coordinates for 2nd+ shapes.
+2. Shapes must NEVER overlap. Use generous spacing: **150px vertical, 250px horizontal minimum** between shape edges.
+3. Every shape must be large enough for its label: **min 200x65 for rects, 110x110 for circles**. Scale up ~20px per extra word.
+4. Use `curve: curved` for any arrow that isn't straight-down or sideways. Always curve backward/retry arrows.
+5. Use relative positioning (`node1.bottom + 150`) not absolute coordinates for 2nd+ shapes. Chained references are supported (A→B→C→D).
 6. Connect all shapes with arrows — no orphans.
+7. Start first shape at **(200, 60)**. Use bright stroke colors only — no dark colors (#333, #000).
 
 ## Syntax
 

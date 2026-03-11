@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useCallback, useEffect } from 'react'
+import Link from 'next/link'
 import { LIXSCRIPT_LLM_SPEC } from '@/lib/lixscript-llm-spec'
+import { blogPosts } from '@/content/blog'
 
 function CopyButton({ text, label = 'Copy' }) {
   const [copied, setCopied] = useState(false)
@@ -109,7 +111,7 @@ export default function DocsPage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['overview', 'quickstart', 'shapes', 'arrows', 'positioning', 'frames', 'styling', 'api', 'llm']
+      const sections = ['overview', 'quickstart', 'shapes', 'arrows', 'positioning', 'frames', 'styling', 'api', 'llm', 'blog']
       for (const id of sections) {
         const el = document.getElementById(id)
         if (el) {
@@ -139,7 +141,7 @@ export default function DocsPage() {
           <div className="flex items-center gap-3">
             <a href="/" className="text-text-muted text-sm hover:text-text-primary transition-colors">
               <i className="bx bx-arrow-back mr-1" />
-              Back to Canvas
+              Back to Home
             </a>
           </div>
         </div>
@@ -147,7 +149,7 @@ export default function DocsPage() {
 
       <div className="flex max-w-[1400px] mx-auto pt-14">
         {/* Sidebar */}
-        <nav className="hidden lg:block w-64 shrink-0 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto p-4 border-r border-white/[0.06]">
+        <nav className="hidden lg:block w-64 shrink-0 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto docs-scroll p-4 border-r border-white/[0.06]">
           <div className="space-y-1">
             <p className="text-text-dim text-[10px] uppercase tracking-widest px-3 pt-3 pb-2">Getting Started</p>
             <NavItem href="#overview" label="Overview" icon="bx-info-circle" active={activeSection === 'overview'} />
@@ -163,6 +165,19 @@ export default function DocsPage() {
             <p className="text-text-dim text-[10px] uppercase tracking-widest px-3 pt-5 pb-2">Integration</p>
             <NavItem href="#api" label="JavaScript API" icon="bx-code-alt" active={activeSection === 'api'} />
             <NavItem href="#llm" label="LLM Spec" icon="bx-bot" active={activeSection === 'llm'} />
+
+            <p className="text-text-dim text-[10px] uppercase tracking-widest px-3 pt-5 pb-2">Blog</p>
+            <NavItem href="#blog" label="All Posts" icon="bx-news" active={activeSection === 'blog'} />
+            {blogPosts.map(post => (
+              <Link
+                key={post.slug}
+                href={`/docs/blog/${post.slug}`}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] transition-all"
+              >
+                <i className={`${post.icon} text-base text-text-dim`} />
+                <span className="truncate">{post.title.split(':')[0]}</span>
+              </Link>
+            ))}
           </div>
 
           {/* LLM copy button in sidebar */}
@@ -186,7 +201,7 @@ export default function DocsPage() {
         </nav>
 
         {/* Main content */}
-        <main id="docs-scroll" className="flex-1 min-w-0 overflow-y-auto h-[calc(100vh-56px)] px-6 lg:px-12 py-8">
+        <main id="docs-scroll" className="flex-1 min-w-0 overflow-y-auto docs-scroll h-[calc(100vh-56px)] px-6 lg:px-12 py-8">
           {/* Hero */}
           <div id="overview" className="mb-12">
             <div className="flex items-start justify-between mb-4">
@@ -611,6 +626,36 @@ arrow a5 from error.top to login.right {
   style: dashed
   label: "Retry"
 }`} />
+          </div>
+
+          {/* Blog */}
+          <div id="blog" className="mb-16">
+            <h2 className="text-xl font-semibold text-text-primary mb-2">Blog</h2>
+            <p className="text-text-muted text-sm mb-6">Deep dives into how LixSketch works — architecture, security, and design decisions.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {blogPosts.map(post => (
+                <Link
+                  key={post.slug}
+                  href={`/docs/blog/${post.slug}`}
+                  className="group p-5 rounded-xl border border-white/[0.06] hover:border-accent-blue/30 hover:bg-white/[0.02] transition-all duration-200"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center shrink-0">
+                      <i className={`${post.icon} text-base text-accent-blue`} />
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {post.tags.map(tag => (
+                        <span key={tag} className="px-1.5 py-0.5 text-[9px] rounded bg-surface-card text-text-dim uppercase tracking-wider">{tag}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <h3 className="text-text-primary text-sm font-medium mb-1.5 group-hover:text-accent-blue transition-colors">{post.title}</h3>
+                  <p className="text-text-dim text-xs leading-relaxed mb-2">{post.description}</p>
+                  <p className="text-text-dim text-[10px]">{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                </Link>
+              ))}
+            </div>
           </div>
 
           {/* Footer */}

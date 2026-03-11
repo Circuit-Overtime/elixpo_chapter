@@ -1,6 +1,6 @@
+export const runtime = 'edge'
+
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
@@ -14,18 +14,19 @@ export async function GET(request) {
   }
 
   // Prevent path traversal
-  const safeName = path.basename(name)
-  const filePath = path.join(process.cwd(), 'public', 'icons', safeName)
+  const safeName = name.replace(/[^a-zA-Z0-9._-]/g, '')
+  const origin = new URL(request.url).origin
 
   try {
-    const svg = fs.readFileSync(filePath, 'utf-8')
+    const res = await fetch(`${origin}/icons/${safeName}`)
+    if (!res.ok) {
+      return NextResponse.json({ error: 'SVG file not found.' }, { status: 404 })
+    }
+    const svg = await res.text()
     return new NextResponse(svg, {
       headers: { 'Content-Type': 'text/plain' },
     })
   } catch {
-    return NextResponse.json(
-      { error: 'SVG file not found.' },
-      { status: 404 }
-    )
+    return NextResponse.json({ error: 'SVG file not found.' }, { status: 404 })
   }
 }

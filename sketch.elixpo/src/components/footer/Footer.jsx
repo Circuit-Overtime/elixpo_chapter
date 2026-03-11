@@ -34,7 +34,7 @@ export default function Footer() {
   if (viewMode || zenMode) return null
 
   return (
-    <div className="absolute bottom-2.5 right-5 flex items-center gap-2.5 z-[1000] font-[lixFont]">
+    <div className="absolute bottom-1 right-5 flex items-center gap-2.5 z-[1000] font-[lixFont]">
       {/* Undo/Redo */}
       <div className="flex items-center bg-surface rounded-lg overflow-hidden">
         <button

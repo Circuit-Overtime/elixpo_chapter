@@ -127,10 +127,16 @@ export default function Header() {
       <div className="flex items-center gap-3">
         {/* Logo */}
         <div
-          className="w-[26px] h-[26px] bg-contain bg-no-repeat bg-center"
+          onClick={() => {
+            if (window.location.pathname === '/') {
+              window.location.reload()
+            } else {
+              window.location.href = '/'
+            }
+          }}
+          className="w-[26px] h-[26px] bg-contain bg-no-repeat bg-center cursor-pointer"
           style={{ backgroundImage: "url('/Images/logo.png')" }}
         />
-
         {/* Divider */}
         <div className="w-px h-5 bg-[#2c2c35]" />
 

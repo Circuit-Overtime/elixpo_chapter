@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
+    "framer-motion": "^12.35.2",
     "fuse.js": "^7.1.0",
-    "next": "^15.5.12",
+    "next": "^15.5.2",
     "perfect-freehand": "^1.2.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

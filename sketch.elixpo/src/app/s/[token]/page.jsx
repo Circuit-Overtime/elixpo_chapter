@@ -6,7 +6,7 @@ import { WORKER_URL } from '@/store/useAuthStore'
 import useSketchStore from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
 import { decrypt } from '@/utils/encryption'
-import Home from '../../page'
+import CanvasPage from '../../c/[sessionId]/page'
 
 /**
  * Shareable link page: /s/{token}#key={encryptionKey}
@@ -125,7 +125,7 @@ export default function SharedScenePage() {
   // Render the full app with a loading/error overlay
   return (
     <>
-      <Home />
+      <CanvasPage />
 
       {/* Loading overlay */}
       {loading && (
@@ -146,7 +146,7 @@ export default function SharedScenePage() {
             <h2 className="text-text-primary text-base font-medium mb-2">Cannot Load Scene</h2>
             <p className="text-text-dim text-sm mb-4">{error}</p>
             <a
-              href="/"
+              href="/c/new"
               className="inline-block px-4 py-2 bg-accent-blue hover:bg-accent-blue-hover text-text-primary text-sm rounded-lg transition-all duration-200"
             >
               Start Fresh

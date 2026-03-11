@@ -1,11 +1,11 @@
 "use client"
 
 import { create } from 'zustand'
+import { WORKER_URL } from '@/lib/env'
 
 const STORAGE_KEY = 'lixsketch-auth'
 const COOKIE_NAME = 'lixsketch-session'
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 // 7 days
-const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL
 const ELIXPO_AUTH_URL = 'https://accounts.elixpo.com'
 
 function loadAuth() {
