@@ -143,7 +143,9 @@ class Line {
             if (this.options.strokeDasharray) {
                 lineElement.setAttribute('stroke-dasharray', this.options.strokeDasharray);
             }
-        } else if (this.isBeingDrawn) {
+        } else if (this.isBeingDrawn || this.options.strokeDasharray) {
+            // Use plain SVG for lines being drawn OR dashed/dotted lines
+            // (RoughJS ignores strokeDasharray, so dashed styles must bypass it)
             lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             lineElement.setAttribute('x1', this.startPoint.x);
             lineElement.setAttribute('y1', this.startPoint.y);
@@ -505,7 +507,7 @@ removeSelection() {
 
         const rc = rough.svg(svg);
         let lineElement;
-        
+
         if (this.isCurved && this.controlPoint) {
             const pathData = `M ${this.startPoint.x} ${this.startPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${this.endPoint.x} ${this.endPoint.y}`;
             lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -517,6 +519,17 @@ removeSelection() {
             if (this.options.strokeDasharray) {
                 lineElement.setAttribute('stroke-dasharray', this.options.strokeDasharray);
             }
+        } else if (this.options.strokeDasharray) {
+            // Dashed/dotted lines must use plain SVG (RoughJS ignores strokeDasharray)
+            lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            lineElement.setAttribute('x1', this.startPoint.x);
+            lineElement.setAttribute('y1', this.startPoint.y);
+            lineElement.setAttribute('x2', this.endPoint.x);
+            lineElement.setAttribute('y2', this.endPoint.y);
+            lineElement.setAttribute('stroke', this.options.stroke || lineColor);
+            lineElement.setAttribute('stroke-width', this.options.strokeWidth || lineStrokeWidth);
+            lineElement.setAttribute('stroke-linecap', 'round');
+            lineElement.setAttribute('stroke-dasharray', this.options.strokeDasharray);
         } else {
             lineElement = rc.line(
                 this.startPoint.x, this.startPoint.y,
@@ -524,7 +537,7 @@ removeSelection() {
                 this.options
             );
         }
-        
+
         this.element = lineElement;
         this.group.insertBefore(lineElement, this.group.firstChild);
     }

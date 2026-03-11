@@ -106,15 +106,19 @@ export function renderFlowchartSVG(diagram, opts = {}) {
             x: nx, y: ny, w: nw, h: nh,
             cx: nx + nw / 2, cy: ny + nh / 2,
             type: n.type, label: n.label,
+            fill: n.fill, stroke: n.stroke, strokeWidth: n.strokeWidth,
         });
     });
 
     let svg = '';
     const defs = [];
 
-    // Arrow markers
+    // Arrow markers (normal, dotted, thick)
     defs.push(`<marker id="fc-arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
       <path d="M1,1 L9,3.5 L1,6" fill="none" stroke="${THEME.edgeStroke}" stroke-width="1.5" stroke-linejoin="round" />
+    </marker>`);
+    defs.push(`<marker id="fc-arrow-thick" markerWidth="12" markerHeight="9" refX="11" refY="4.5" orient="auto">
+      <path d="M1,1 L11,4.5 L1,8" fill="none" stroke="${THEME.edgeStroke}" stroke-width="2" stroke-linejoin="round" />
     </marker>`);
 
     // Background
@@ -158,7 +162,21 @@ export function renderFlowchartSVG(diagram, opts = {}) {
         if (!f || !t) return;
 
         const directed = e.directed !== false;
-        const markerEnd = directed ? ' marker-end="url(#fc-arrow)"' : '';
+        const edgeStyle = e.style || 'normal';
+        let strokeW, dashArr, markerRef;
+        if (edgeStyle === 'thick') {
+            strokeW = 3;
+            dashArr = '';
+            markerRef = directed ? ' marker-end="url(#fc-arrow-thick)"' : '';
+        } else if (edgeStyle === 'dotted') {
+            strokeW = 1.5;
+            dashArr = ' stroke-dasharray="5 3"';
+            markerRef = directed ? ' marker-end="url(#fc-arrow)"' : '';
+        } else {
+            strokeW = 1.5;
+            dashArr = '';
+            markerRef = directed ? ' marker-end="url(#fc-arrow)"' : '';
+        }
         const eStroke = e.stroke || THEME.edgeStroke;
 
         // Compute connection points
@@ -183,18 +201,29 @@ export function renderFlowchartSVG(diagram, opts = {}) {
             const cpy = my + perpY * curveAmt;
             mx = 0.25 * sp.x + 0.5 * cpx + 0.25 * ep.x;
             my = 0.25 * sp.y + 0.5 * cpy + 0.25 * ep.y;
-            svg += `<path d="M ${sp.x} ${sp.y} Q ${cpx} ${cpy} ${ep.x} ${ep.y}" fill="none" stroke="${eStroke}" stroke-width="1.5"${markerEnd} />`;
+            svg += `<path d="M ${sp.x} ${sp.y} Q ${cpx} ${cpy} ${ep.x} ${ep.y}" fill="none" stroke="${eStroke}" stroke-width="${strokeW}"${dashArr}${markerRef} />`;
         } else {
-            svg += `<line x1="${sp.x}" y1="${sp.y}" x2="${ep.x}" y2="${ep.y}" stroke="${eStroke}" stroke-width="1.5"${markerEnd} />`;
+            svg += `<line x1="${sp.x}" y1="${sp.y}" x2="${ep.x}" y2="${ep.y}" stroke="${eStroke}" stroke-width="${strokeW}"${dashArr}${markerRef} />`;
         }
 
-        // Edge label
+        // Edge label (supports multi-line via \n)
         if (e.label) {
             const labelFontSize = Math.max(8, 10 * scale);
-            const labelW = measureText(e.label, labelFontSize) + 8;
-            // Small background for readability
-            svg += `<rect x="${mx - labelW / 2}" y="${my - labelFontSize / 2 - 4}" width="${labelW}" height="${labelFontSize + 6}" rx="3" fill="${THEME.bg}" opacity="0.85" />`;
-            svg += `<text x="${mx}" y="${my + 1}" text-anchor="middle" dominant-baseline="central" fill="${THEME.edgeText}" font-size="${labelFontSize}" font-family="${FONT_FAMILY}">${escapeXml(e.label)}</text>`;
+            const labelLines = e.label.split('\n');
+            const maxLineW = Math.max(...labelLines.map(l => measureText(l, labelFontSize)));
+            const labelW = maxLineW + 12;
+            const labelH = labelLines.length * (labelFontSize + 3) + 6;
+            svg += `<rect x="${mx - labelW / 2}" y="${my - labelH / 2}" width="${labelW}" height="${labelH}" rx="3" fill="${THEME.bg}" opacity="0.85" />`;
+            if (labelLines.length === 1) {
+                svg += `<text x="${mx}" y="${my + 1}" text-anchor="middle" dominant-baseline="central" fill="${THEME.edgeText}" font-size="${labelFontSize}" font-family="${FONT_FAMILY}">${escapeXml(e.label)}</text>`;
+            } else {
+                const startY = my - ((labelLines.length - 1) * (labelFontSize + 3)) / 2;
+                svg += `<text x="${mx}" text-anchor="middle" fill="${THEME.edgeText}" font-size="${labelFontSize}" font-family="${FONT_FAMILY}">`;
+                labelLines.forEach((ln, idx) => {
+                    svg += `<tspan x="${mx}" dy="${idx === 0 ? 0 : labelFontSize + 3}" y="${idx === 0 ? startY : ''}">${escapeXml(ln)}</tspan>`;
+                });
+                svg += `</text>`;
+            }
         }
 
         svg += `</g>`;
@@ -207,32 +236,45 @@ export function renderFlowchartSVG(diagram, opts = {}) {
 
         const nStroke = n.stroke || THEME.nodeStroke;
         const nFill = n.fill || THEME.nodeBg;
+        const nStrokeWidth = n.strokeWidth || 1.8;
         const fontSize = Math.max(9, Math.min(13, 12 * scale));
 
         svg += `<g data-fc-type="node" data-fc-id="${escapeXml(n.id)}">`;
 
         if (n.type === 'circle') {
-            // Circle: (( ))
             const r = Math.min(d.w, d.h) / 2;
-            svg += `<circle cx="${d.cx}" cy="${d.cy}" r="${r}" fill="${nFill}" stroke="${nStroke}" stroke-width="1.8" />`;
+            svg += `<circle cx="${d.cx}" cy="${d.cy}" r="${r}" fill="${nFill}" stroke="${nStroke}" stroke-width="${nStrokeWidth}" />`;
         } else if (n.type === 'diamond') {
-            // Diamond/rhombus: { }
             const hw = d.w / 2 * 0.85;
             const hh = d.h / 2 * 0.85;
-            svg += `<polygon points="${d.cx},${d.cy - hh} ${d.cx + hw},${d.cy} ${d.cx},${d.cy + hh} ${d.cx - hw},${d.cy}" fill="${nFill}" stroke="${nStroke}" stroke-width="1.8" />`;
+            svg += `<polygon points="${d.cx},${d.cy - hh} ${d.cx + hw},${d.cy} ${d.cx},${d.cy + hh} ${d.cx - hw},${d.cy}" fill="${nFill}" stroke="${nStroke}" stroke-width="${nStrokeWidth}" />`;
+        } else if (n.type === 'asymmetric') {
+            // Flag/asymmetric shape: pointed left, flat right
+            const notchX = d.x + 15 * scale;
+            svg += `<polygon points="${d.x},${d.y} ${d.x + d.w},${d.y} ${d.x + d.w},${d.y + d.h} ${d.x},${d.y + d.h} ${notchX},${d.cy}" fill="${nFill}" stroke="${nStroke}" stroke-width="${nStrokeWidth}" />`;
         } else if (n.type === 'roundrect') {
-            // Rounded rectangle: ( )
-            svg += `<rect x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" rx="${12 * scale}" fill="${nFill}" stroke="${nStroke}" stroke-width="1.8" />`;
+            svg += `<rect x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" rx="${12 * scale}" fill="${nFill}" stroke="${nStroke}" stroke-width="${nStrokeWidth}" />`;
         } else {
-            // Default rectangle: [ ]
-            svg += `<rect x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" rx="${3 * scale}" fill="${nFill}" stroke="${nStroke}" stroke-width="1.8" />`;
+            svg += `<rect x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" rx="${3 * scale}" fill="${nFill}" stroke="${nStroke}" stroke-width="${nStrokeWidth}" />`;
         }
 
-        // Node label
+        // Node label (supports multi-line via \n)
         if (n.label) {
-            let labelFill = nStroke;
+            let labelFill = nFill && nFill !== 'transparent' && nFill !== THEME.nodeBg ? getContrastColor(nFill) : nStroke;
             if (isColorTooDark(labelFill)) labelFill = '#d0d0d0';
-            svg += `<text x="${d.cx}" y="${d.cy}" text-anchor="middle" dominant-baseline="central" fill="${labelFill}" font-size="${fontSize}" font-family="${FONT_FAMILY}">${escapeXml(n.label)}</text>`;
+
+            const labelLines = n.label.split('\n');
+            if (labelLines.length === 1) {
+                svg += `<text x="${d.cx}" y="${d.cy}" text-anchor="middle" dominant-baseline="central" fill="${labelFill}" font-size="${fontSize}" font-family="${FONT_FAMILY}" font-weight="500">${escapeXml(n.label)}</text>`;
+            } else {
+                const lineH = fontSize + 3;
+                const startY = d.cy - ((labelLines.length - 1) * lineH) / 2;
+                svg += `<text text-anchor="middle" fill="${labelFill}" font-size="${fontSize}" font-family="${FONT_FAMILY}" font-weight="500">`;
+                labelLines.forEach((ln, idx) => {
+                    svg += `<tspan x="${d.cx}" y="${startY + idx * lineH}">${escapeXml(ln)}</tspan>`;
+                });
+                svg += `</text>`;
+            }
         }
 
         svg += `</g>`;
@@ -266,7 +308,7 @@ function getEdgePoint(node, target) {
         return { x: node.cx + dx * t * 0.95, y: node.cy + dy * t * 0.95 };
     }
 
-    // Rectangle / rounded rect - exit from edges
+    // Rectangle / rounded rect / asymmetric - exit from edges
     const hw = node.w / 2;
     const hh = node.h / 2;
 
@@ -280,12 +322,33 @@ function getEdgePoint(node, target) {
 
 function isColorTooDark(hex) {
     if (!hex || hex === 'transparent' || hex === 'none') return false;
-    const c = hex.replace('#', '');
-    if (c.length < 6) return false;
-    const r = parseInt(c.substring(0, 2), 16);
-    const g = parseInt(c.substring(2, 4), 16);
-    const b = parseInt(c.substring(4, 6), 16);
-    return (0.299 * r + 0.587 * g + 0.114 * b) < 80;
+    const rgb = parseColor(hex);
+    if (!rgb) return false;
+    return (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) < 80;
+}
+
+function parseColor(hex) {
+    if (!hex || hex === 'transparent' || hex === 'none') return null;
+    let c = hex.replace('#', '');
+    // Support 3-char shorthand (#9f6 → #99ff66)
+    if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+    if (c.length < 6) return null;
+    return {
+        r: parseInt(c.substring(0, 2), 16),
+        g: parseInt(c.substring(2, 4), 16),
+        b: parseInt(c.substring(4, 6), 16),
+    };
+}
+
+function getLuminance(hex) {
+    const rgb = parseColor(hex);
+    if (!rgb) return 0;
+    return 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
+}
+
+function getContrastColor(bgHex) {
+    // Pick dark or light text based on background luminance
+    return getLuminance(bgHex) > 140 ? '#1a1a2e' : '#f0f0f0';
 }
 
 /**

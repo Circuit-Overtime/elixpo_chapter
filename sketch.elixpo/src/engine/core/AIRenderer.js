@@ -41,18 +41,34 @@ export function parseMermaid(src) {
 
     const nodesMap = new Map();
     const edges = [];
+    const classDefs = new Map();   // classDef name -> { fill, stroke, strokeWidth }
+    const classAssigns = [];        // { nodeIds: [...], className }
+
+    // Clean <br/> and <br> tags in labels → newline marker
+    function cleanLabel(label) {
+        return label.replace(/<br\s*\/?>/gi, '\n').replace(/"/g, '');
+    }
 
     function parseNodeRef(raw) {
         raw = raw.trim();
         if (!raw) return null;
         let id, label, type;
 
+        // Circle: id((label))
         let m = raw.match(/^(\w+)\(\((.+?)\)\)$/);
         if (m) { id = m[1]; label = m[2]; type = 'circle'; }
+        // Diamond: id{label}
         if (!m) { m = raw.match(/^(\w+)\{(.+?)\}$/); if (m) { id = m[1]; label = m[2]; type = 'diamond'; } }
+        // Asymmetric/flag: id>label]
+        if (!m) { m = raw.match(/^(\w+)>(.+?)\]$/); if (m) { id = m[1]; label = m[2]; type = 'asymmetric'; } }
+        // Rounded rect: id(label)
         if (!m) { m = raw.match(/^(\w+)\((.+?)\)$/); if (m) { id = m[1]; label = m[2]; type = 'roundrect'; } }
+        // Rectangle: id[label]
         if (!m) { m = raw.match(/^(\w+)\[(.+?)\]$/); if (m) { id = m[1]; label = m[2]; type = 'rectangle'; } }
+        // Plain id
         if (!m) { id = raw; label = raw; type = 'rectangle'; }
+
+        label = cleanLabel(label);
 
         if (!nodesMap.has(id)) {
             nodesMap.set(id, { id, type, label });
@@ -70,6 +86,30 @@ export function parseMermaid(src) {
     for (let i = startIdx; i < lines.length; i++) {
         const line = lines[i].replace(/;$/, '').trim();
         if (!line) continue;
+
+        // classDef: classDef green fill:#9f6,stroke:#333,stroke-width:2px;
+        const classDefMatch = line.match(/^classDef\s+(\w+)\s+(.+)$/i);
+        if (classDefMatch) {
+            const name = classDefMatch[1];
+            const propsStr = classDefMatch[2].replace(/;$/, '');
+            const props = {};
+            for (const part of propsStr.split(',')) {
+                const [key, val] = part.split(':').map(s => s.trim());
+                if (key === 'fill') props.fill = val;
+                else if (key === 'stroke') props.stroke = val;
+                else if (key === 'stroke-width') props.strokeWidth = parseFloat(val);
+            }
+            classDefs.set(name, props);
+            continue;
+        }
+
+        // class assignment: class sq,e green
+        const classMatch = line.match(/^class\s+(.+?)\s+(\w+)$/i);
+        if (classMatch) {
+            const nodeIds = classMatch[1].split(',').map(s => s.trim());
+            classAssigns.push({ nodeIds, className: classMatch[2] });
+            continue;
+        }
 
         // Subgraph start: subgraph ID ["Label"]
         const sgMatch = line.match(/^subgraph\s+(\w+)(?:\s*\[?"?(.+?)"?\]?)?$/i);
@@ -89,16 +129,43 @@ export function parseMermaid(src) {
             continue;
         }
 
+        // Helper to add edge nodes to current subgraph
+        function addToSubgraph(fromId, toId) {
+            if (currentSubgraph) {
+                if (fromId && !currentSubgraph.nodeIds.includes(fromId)) currentSubgraph.nodeIds.push(fromId);
+                if (toId && !currentSubgraph.nodeIds.includes(toId)) currentSubgraph.nodeIds.push(toId);
+            }
+        }
+
         // Labeled edge: A -- text --> B
         let match = line.match(/^(.+?)\s*--\s*(.+?)\s*-->\s*(.+)$/);
         if (match) {
             const fromId = parseNodeRef(match[1].trim());
             const toId = parseNodeRef(match[3].trim());
-            if (fromId && toId) edges.push({ from: fromId, to: toId, label: match[2].trim(), directed: true });
-            if (currentSubgraph) {
-                if (fromId && !currentSubgraph.nodeIds.includes(fromId)) currentSubgraph.nodeIds.push(fromId);
-                if (toId && !currentSubgraph.nodeIds.includes(toId)) currentSubgraph.nodeIds.push(toId);
-            }
+            if (fromId && toId) edges.push({ from: fromId, to: toId, label: cleanLabel(match[2].trim()), directed: true, style: 'normal' });
+            addToSubgraph(fromId, toId);
+            continue;
+        }
+
+        // Dotted arrow: A -.-> B (with optional |label|)
+        match = line.match(/^(.+?)\s*-\.->?\s*(?:\|([^|]*)\|)?\s*(.+)$/);
+        if (match) {
+            const fromId = parseNodeRef(match[1].trim());
+            const toId = parseNodeRef(match[3].trim());
+            const edgeLabel = match[2] ? cleanLabel(match[2].trim()) : undefined;
+            if (fromId && toId) edges.push({ from: fromId, to: toId, label: edgeLabel, directed: true, style: 'dotted' });
+            addToSubgraph(fromId, toId);
+            continue;
+        }
+
+        // Thick arrow: A ==> B (with optional |label|)
+        match = line.match(/^(.+?)\s*==>\s*(?:\|([^|]*)\|)?\s*(.+)$/);
+        if (match) {
+            const fromId = parseNodeRef(match[1].trim());
+            const toId = parseNodeRef(match[3].trim());
+            const edgeLabel = match[2] ? cleanLabel(match[2].trim()) : undefined;
+            if (fromId && toId) edges.push({ from: fromId, to: toId, label: edgeLabel, directed: true, style: 'thick' });
+            addToSubgraph(fromId, toId);
             continue;
         }
 
@@ -107,26 +174,20 @@ export function parseMermaid(src) {
         if (match && !match[2].includes('>')) {
             const fromId = parseNodeRef(match[1].trim());
             const toId = parseNodeRef(match[4].trim());
-            const edgeLabel = match[3] ? match[3].trim() : undefined;
-            if (fromId && toId) edges.push({ from: fromId, to: toId, label: edgeLabel, directed: false });
-            if (currentSubgraph) {
-                if (fromId && !currentSubgraph.nodeIds.includes(fromId)) currentSubgraph.nodeIds.push(fromId);
-                if (toId && !currentSubgraph.nodeIds.includes(toId)) currentSubgraph.nodeIds.push(toId);
-            }
+            const edgeLabel = match[3] ? cleanLabel(match[3].trim()) : undefined;
+            if (fromId && toId) edges.push({ from: fromId, to: toId, label: edgeLabel, directed: false, style: 'normal' });
+            addToSubgraph(fromId, toId);
             continue;
         }
 
-        // Directed edge: A --> B, A ==> B, A -.-> B (with optional |label|)
-        match = line.match(/^(.+?)\s*(-{1,2}>|={1,2}>|-.->|-->)\s*(?:\|([^|]*)\|)?\s*(.+)$/);
+        // Directed edge: A --> B (with optional |label|)
+        match = line.match(/^(.+?)\s*(-{1,2}>|-->)\s*(?:\|([^|]*)\|)?\s*(.+)$/);
         if (match) {
             const fromId = parseNodeRef(match[1].trim());
             const toId = parseNodeRef(match[4].trim());
-            const edgeLabel = match[3] ? match[3].trim() : undefined;
-            if (fromId && toId) edges.push({ from: fromId, to: toId, label: edgeLabel, directed: true });
-            if (currentSubgraph) {
-                if (fromId && !currentSubgraph.nodeIds.includes(fromId)) currentSubgraph.nodeIds.push(fromId);
-                if (toId && !currentSubgraph.nodeIds.includes(toId)) currentSubgraph.nodeIds.push(toId);
-            }
+            const edgeLabel = match[3] ? cleanLabel(match[3].trim()) : undefined;
+            if (fromId && toId) edges.push({ from: fromId, to: toId, label: edgeLabel, directed: true, style: 'normal' });
+            addToSubgraph(fromId, toId);
             continue;
         }
 
@@ -138,6 +199,20 @@ export function parseMermaid(src) {
     }
 
     if (nodesMap.size === 0) return null;
+
+    // Apply classDef styles to nodes
+    for (const assign of classAssigns) {
+        const style = classDefs.get(assign.className);
+        if (!style) continue;
+        for (const nid of assign.nodeIds) {
+            const node = nodesMap.get(nid);
+            if (node) {
+                if (style.fill) node.fill = style.fill;
+                if (style.stroke) node.stroke = style.stroke;
+                if (style.strokeWidth) node.strokeWidth = style.strokeWidth;
+            }
+        }
+    }
 
     // Topological BFS layering
     const nodeIds = Array.from(nodesMap.keys());
@@ -170,6 +245,7 @@ export function parseMermaid(src) {
         layerGroups.get(layer).push(id);
     });
 
+    // Compute dynamic node sizes based on label length
     const nodes = [];
     Array.from(layerGroups.keys()).sort((a, b) => a - b).forEach((layerIdx, li) => {
         const group = layerGroups.get(layerIdx);
@@ -178,7 +254,16 @@ export function parseMermaid(src) {
             const nd = nodesMap.get(id);
             const x = isHorizontal ? li * H_SPACING : startOffset + gi * H_SPACING;
             const y = isHorizontal ? startOffset + gi * V_SPACING : li * V_SPACING;
-            nodes.push({ id: nd.id, type: nd.type, label: nd.label, x, y, width: NODE_W, height: NODE_H });
+            // Compute node size based on label lines
+            const labelLines = (nd.label || '').split('\n');
+            const maxLineLen = Math.max(...labelLines.map(l => l.length));
+            const nw = Math.max(NODE_W, maxLineLen * 10 + 40);
+            const nh = Math.max(NODE_H, labelLines.length * 20 + 20);
+            nodes.push({
+                id: nd.id, type: nd.type, label: nd.label,
+                x, y, width: nw, height: nh,
+                fill: nd.fill, stroke: nd.stroke, strokeWidth: nd.strokeWidth,
+            });
         });
     });
 
@@ -189,6 +274,7 @@ export function parseMermaid(src) {
         edges: edges.map(e => ({
             from: e.from, to: e.to, label: e.label,
             directed: e.directed !== false,
+            style: e.style || 'normal',
         })),
         subgraphs: subgraphs.length > 0 ? subgraphs.map(sg => ({
             id: sg.id, label: sg.label, nodes: sg.nodeIds,
