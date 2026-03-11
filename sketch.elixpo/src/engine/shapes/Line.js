@@ -186,8 +186,12 @@ class Line {
         // Update embedded label at midpoint
         this._updateLabelElement();
 
-        if (this.isSelected && !this._skipAnchors) {
-            this.addAnchors();
+        if (this.isSelected) {
+            if (this._skipAnchors) {
+                this.updateSelectionControls();
+            } else {
+                this.addAnchors();
+            }
         }
     }
 
@@ -358,6 +362,35 @@ class Line {
         if (color) this.labelColor = color;
         if (fontSize) this.labelFontSize = fontSize;
         this.draw();
+    }
+
+    updateSelectionControls() {
+        if (this.anchors.length === 0) return;
+
+        // Update start anchor
+        if (this.anchors[0]) {
+            this.anchors[0].setAttribute('cx', this.startPoint.x);
+            this.anchors[0].setAttribute('cy', this.startPoint.y);
+        }
+
+        // Update end anchor
+        if (this.anchors[1]) {
+            this.anchors[1].setAttribute('cx', this.endPoint.x);
+            this.anchors[1].setAttribute('cy', this.endPoint.y);
+        }
+
+        // Update middle anchor
+        if (this.anchors[2]) {
+            const midX = (this.startPoint.x + this.endPoint.x) / 2;
+            const midY = (this.startPoint.y + this.endPoint.y) / 2;
+            let anchorMidX = midX, anchorMidY = midY;
+            if (this.isCurved && this.controlPoint) {
+                anchorMidX = 0.25 * this.startPoint.x + 0.5 * this.controlPoint.x + 0.25 * this.endPoint.x;
+                anchorMidY = 0.25 * this.startPoint.y + 0.5 * this.controlPoint.y + 0.25 * this.endPoint.y;
+            }
+            this.anchors[2].setAttribute('cx', anchorMidX);
+            this.anchors[2].setAttribute('cy', anchorMidY);
+        }
     }
 
     selectLine() {

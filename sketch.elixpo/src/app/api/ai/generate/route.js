@@ -5,12 +5,18 @@ import {
   USER_PROMPT_MERMAID,
   USER_PROMPT_EDIT,
 } from '@/engine/core/ai-system-prompt.js'
+import {
+  LIXSCRIPT_LLM_SPEC,
+  LIXSCRIPT_USER_PROMPT,
+  LIXSCRIPT_EDIT_PROMPT,
+  LIXSCRIPT_MERMAID_PROMPT,
+} from '@/lib/lixscript-llm-spec.js'
 
 const POLLINATIONS_URL = 'https://gen.pollinations.ai/v1/chat/completions'
 
 export async function POST(request) {
   try {
-    const { prompt, mode, history, previousDiagram } = await request.json()
+    const { prompt, mode, history, previousDiagram, previousLixCode } = await request.json()
 
     if (!prompt || !prompt.trim()) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
@@ -21,21 +27,36 @@ export async function POST(request) {
       return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
     }
 
+    // Determine if this is a LixScript generation request
+    const isLixScript = mode === 'lixscript'
+
     // Build the user message based on context
+    let systemPrompt
     let userMessage
-    if (previousDiagram && previousDiagram.nodes) {
-      // Edit mode — modify existing diagram
-      userMessage = USER_PROMPT_EDIT(prompt, previousDiagram)
-    } else if (mode === 'mermaid') {
-      userMessage = USER_PROMPT_MERMAID(prompt)
+
+    if (isLixScript) {
+      systemPrompt = LIXSCRIPT_LLM_SPEC
+      if (previousLixCode) {
+        userMessage = LIXSCRIPT_EDIT_PROMPT(prompt, previousLixCode)
+      } else {
+        userMessage = LIXSCRIPT_USER_PROMPT(prompt)
+      }
     } else {
-      userMessage = USER_PROMPT_TEXT(prompt)
+      systemPrompt = SYSTEM_PROMPT
+      if (previousDiagram && previousDiagram.nodes) {
+        userMessage = USER_PROMPT_EDIT(prompt, previousDiagram)
+      } else if (mode === 'mermaid') {
+        userMessage = USER_PROMPT_MERMAID(prompt)
+      } else {
+        userMessage = USER_PROMPT_TEXT(prompt)
+      }
     }
 
     console.log('[AI Generate] Request:', {
       mode,
+      isLixScript,
       promptLength: prompt.length,
-      isEdit: !!previousDiagram,
+      isEdit: isLixScript ? !!previousLixCode : !!previousDiagram,
       historyLength: history?.length || 0,
     })
 
@@ -43,11 +64,10 @@ export async function POST(request) {
     const timeout = setTimeout(() => controller.abort(), 45000)
 
     // Build messages array with conversation history for context
-    const messages = [{ role: 'system', content: SYSTEM_PROMPT }]
+    const messages = [{ role: 'system', content: systemPrompt }]
 
     // Include relevant history for multi-turn edits
     if (history && Array.isArray(history) && history.length > 0) {
-      // Only include the last few turns to keep context manageable
       const recentHistory = history.slice(-4)
       recentHistory.forEach(msg => {
         if (msg.role === 'user' || msg.role === 'assistant') {
@@ -65,9 +85,9 @@ export async function POST(request) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gemini-fast',
+        model: 'claude-fast',
         messages,
-        temperature: 0.2,
+        temperature: 0.3,
       }),
       signal: controller.signal,
     })
@@ -84,8 +104,6 @@ export async function POST(request) {
     }
 
     const data = await response.json()
-    console.log('[AI Generate] Raw API response:', JSON.stringify(data, null, 2))
-
     const content = data.choices?.[0]?.message?.content
 
     if (!content) {
@@ -93,9 +111,25 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Empty AI response' }, { status: 500 })
     }
 
-    console.log('[AI Generate] Model output:', content)
+    console.log('[AI Generate] Model output:', content.slice(0, 200))
 
-    // Parse the JSON from the response (strip markdown fences if present)
+    // LixScript mode — return the code directly
+    if (isLixScript) {
+      // Strip markdown fences if the model wrapped it
+      const cleaned = content
+        .replace(/```(?:lixscript|text|plaintext)?\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .trim()
+
+      if (!cleaned || cleaned.length < 10) {
+        return NextResponse.json({ error: 'AI returned empty LixScript. Try rephrasing.' }, { status: 500 })
+      }
+
+      console.log('[AI Generate] LixScript success:', cleaned.length, 'chars')
+      return NextResponse.json({ lixscript: cleaned })
+    }
+
+    // JSON diagram mode — parse and validate
     let diagram
     try {
       const cleaned = content
@@ -108,7 +142,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'AI returned invalid format. Try again.' }, { status: 500 })
     }
 
-    // Validate structure
     if (!diagram.nodes || !Array.isArray(diagram.nodes) || diagram.nodes.length === 0) {
       console.error('[AI Generate] Invalid diagram structure:', diagram)
       return NextResponse.json({ error: 'AI returned empty diagram. Try rephrasing.' }, { status: 500 })

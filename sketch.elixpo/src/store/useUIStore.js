@@ -123,8 +123,13 @@ const useUIStore = create((set, get) => ({
   closeMenu: () => set({ menuOpen: false }),
 
   // --- Workspace ---
-  workspaceName: 'Untitled',
-  setWorkspaceName: (name) => set({ workspaceName: name }),
+  workspaceName: '',
+  setWorkspaceName: (name) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lixsketch-workspace-name', name)
+    }
+    set({ workspaceName: name })
+  },
 
   // --- Session / Encryption ---
   sessionEncryptionKey: null,

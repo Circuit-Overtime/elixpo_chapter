@@ -293,6 +293,10 @@ class SketchEngine {
             const layerOrder = await import('./core/LayerOrder.js');
             if (layerOrder.initLayerOrder) layerOrder.initLayerOrder();
 
+            // Initialize LixScript programmatic diagram engine
+            const lixScript = await import('./core/LixScriptParser.js');
+            if (lixScript.initLixScriptBridge) lixScript.initLixScriptBridge();
+
             this._initialized = true;
             console.log('[SketchEngine] Initialized successfully');
         } catch (err) {
