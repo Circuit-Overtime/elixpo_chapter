@@ -22,3 +22,4 @@ yarn-error.log*
 .vercel
 *.tsbuildinfo
 create-admin.mjs
+wrangler.toml
