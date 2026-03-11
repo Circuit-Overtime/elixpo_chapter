@@ -369,7 +369,8 @@ class Rectangle {
             anchor.setAttribute('fill', '#121212');
             anchor.setAttribute('stroke', '#5B57D1');
             anchor.setAttribute('stroke-width', anchorStrokeWidth);
-            anchor.setAttribute('style', 'pointer-events: all;'); 
+            anchor.setAttribute('vector-effect', 'non-scaling-stroke');
+            anchor.setAttribute('style', 'pointer-events: all;');
 
             anchor.addEventListener('mouseover', function () {
                 const index = this.getAttribute('data-index');
@@ -396,6 +397,7 @@ class Rectangle {
         this.rotationAnchor.setAttribute('fill', '#121212');
         this.rotationAnchor.setAttribute('stroke', '#5B57D1');
         this.rotationAnchor.setAttribute('stroke-width', anchorStrokeWidth);
+        this.rotationAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
         this.rotationAnchor.setAttribute('style', 'pointer-events: all;');
         this.group.appendChild(this.rotationAnchor);
 
@@ -417,7 +419,8 @@ class Rectangle {
         outline.setAttribute('stroke', '#5B57D1');
         outline.setAttribute('stroke-width', 1.5);
         outline.setAttribute('stroke-dasharray', '4 2');
-        outline.setAttribute('style', 'pointer-events: none;'); 
+        outline.setAttribute('vector-effect', 'non-scaling-stroke');
+        outline.setAttribute('style', 'pointer-events: none;');
         this.group.appendChild(outline);
         this.selectionOutline = outline;
 

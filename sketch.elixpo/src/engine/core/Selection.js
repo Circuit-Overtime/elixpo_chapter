@@ -463,6 +463,7 @@ class MultiSelection {
         this.outline.setAttribute('stroke', '#5B57D1');
         this.outline.setAttribute('stroke-width', 2);
         this.outline.setAttribute('stroke-dasharray', '8 4');
+        this.outline.setAttribute('vector-effect', 'non-scaling-stroke');
         this.outline.setAttribute('style', 'pointer-events: none;');
         this.group.appendChild(this.outline);
     }
@@ -492,6 +493,7 @@ class MultiSelection {
             anchor.setAttribute('fill', '#121212');
             anchor.setAttribute('stroke', '#5B57D1');
             anchor.setAttribute('stroke-width', 2);
+            anchor.setAttribute('vector-effect', 'non-scaling-stroke');
             anchor.setAttribute('style', 'pointer-events: all; cursor: pointer;');
 
             const cursors = ['nw-resize', 'ne-resize', 'sw-resize', 'se-resize', 'n-resize', 's-resize', 'w-resize', 'e-resize'];
@@ -515,6 +517,7 @@ class MultiSelection {
         this.rotationAnchor.setAttribute('fill', '#121212');
         this.rotationAnchor.setAttribute('stroke', '#5B57D1');
         this.rotationAnchor.setAttribute('stroke-width', 2);
+        this.rotationAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
         this.rotationAnchor.setAttribute('style', 'pointer-events: all; cursor: grab;');
 
         this.rotationAnchor.addEventListener('mousedown', (e) => this.startRotation(e));
@@ -527,6 +530,7 @@ class MultiSelection {
         this.rotationLine.setAttribute('stroke', '#5B57D1');
         this.rotationLine.setAttribute('stroke-width', 1);
         this.rotationLine.setAttribute('stroke-dasharray', '3 3');
+        this.rotationLine.setAttribute('vector-effect', 'non-scaling-stroke');
         this.rotationLine.setAttribute('style', 'pointer-events: none;');
 
         this.group.appendChild(this.rotationLine);
@@ -1380,8 +1384,21 @@ function handleMultiSelectionMouseDown(e) {
         }
 
         if (multiSelection.isPointInBounds(x, y)) {
-            multiSelection.startDrag(e);
-            return true;
+            // Only start drag if clicking on a shape that's part of the selection
+            // This allows clicking through empty areas of the selection rectangle
+            let clickedOnSelectedShape = false;
+            for (const shape of multiSelection.selectedShapes) {
+                if (shape.contains && shape.contains(x, y)) {
+                    clickedOnSelectedShape = true;
+                    break;
+                }
+            }
+            if (clickedOnSelectedShape) {
+                multiSelection.startDrag(e);
+                return true;
+            }
+            // Click was in bounds but not on a selected shape — fall through
+            // to allow clicking on other shapes or starting a new selection
         }
     }
 
@@ -1678,10 +1695,77 @@ function deleteSelectedShapes() {
     });
 }
 
+/**
+ * Create a frame around all currently multi-selected shapes.
+ */
+function frameSelectedShapes() {
+    if (multiSelection.selectedShapes.size < 2) return;
+
+    const bounds = multiSelection.getBounds();
+    if (!bounds) return;
+
+    const padding = 20;
+    const fx = bounds.x - padding;
+    const fy = bounds.y - padding;
+    const fw = bounds.width + padding * 2;
+    const fh = bounds.height + padding * 2;
+
+    // Import Frame class dynamically (it's on window from SketchEngine init)
+    const FrameClass = window.Frame;
+    if (!FrameClass) {
+        console.warn('[Selection] Frame class not available');
+        return;
+    }
+
+    const frame = new FrameClass(fx, fy, fw, fh);
+    shapes.push(frame);
+
+    // Push undo action for frame creation
+    if (window.historyStack) {
+        window.historyStack.push({
+            type: window.ACTION_CREATE || 'create',
+            shape: frame,
+            shapeName: 'frame'
+        });
+    }
+
+    // Add each selected shape into the frame
+    const shapesToFrame = Array.from(multiSelection.selectedShapes);
+    multiSelection.clearSelection();
+
+    for (const shape of shapesToFrame) {
+        frame.addShapeToFrame(shape);
+    }
+
+    // Reorder DOM: frame group should be behind the contained shapes
+    const frameEl = frame.group;
+    if (frameEl && frameEl.parentNode) {
+        // Move frame before its first contained shape in the shapes array
+        const frameIdx = shapes.indexOf(frame);
+        if (frameIdx > 0) {
+            shapes.splice(frameIdx, 1);
+            // Find earliest contained shape index
+            let earliest = shapes.length;
+            for (const s of shapesToFrame) {
+                const idx = shapes.indexOf(s);
+                if (idx >= 0 && idx < earliest) earliest = idx;
+            }
+            shapes.splice(earliest, 0, frame);
+        }
+    }
+
+    // Select the new frame
+    if (typeof frame.selectFrame === 'function') {
+        frame.selectFrame();
+    }
+    currentShape = frame;
+}
+
 // Expose for plain scripts (sketchGeneric.js is not a module)
 window.clearAllSelections = clearAllSelections;
 window.multiSelection = multiSelection;
 window.deleteSelectedShapes = deleteSelectedShapes;
+window.frameSelectedShapes = frameSelectedShapes;
 
 export {
     handleMultiSelectionMouseDown,

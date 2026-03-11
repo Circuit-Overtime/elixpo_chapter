@@ -6,6 +6,8 @@ import { useCallback } from 'react'
 export default function Footer() {
   const zoom = useSketchStore((s) => s.zoom)
   const setZoom = useSketchStore((s) => s.setZoom)
+  const viewMode = useSketchStore((s) => s.viewMode)
+  const zenMode = useSketchStore((s) => s.zenMode)
 
   const zoomPercent = Math.round(zoom * 100)
 
@@ -28,6 +30,8 @@ export default function Footer() {
   const handleRedo = useCallback(() => {
     if (window.redo) window.redo()
   }, [])
+
+  if (viewMode || zenMode) return null
 
   return (
     <div className="absolute bottom-2.5 right-5 flex items-center gap-2.5 z-[1000] font-[lixFont]">

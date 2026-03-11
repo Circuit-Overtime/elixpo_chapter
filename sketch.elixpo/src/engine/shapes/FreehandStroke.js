@@ -555,7 +555,8 @@ class FreehandStroke {
         anchor.setAttribute('fill', '#121212');
         anchor.setAttribute('stroke', '#5B57D1');
         anchor.setAttribute('stroke-width', anchorStrokeWidth);
-        
+        anchor.setAttribute('vector-effect', 'non-scaling-stroke');
+
         // Set proper cursor for each anchor direction, accounting for rotation
         const rotatedCursor = this.getRotatedCursor(pos.cursor, this.rotation);
         anchor.style.cursor = rotatedCursor;
@@ -577,6 +578,7 @@ class FreehandStroke {
     rotationAnchor.setAttribute('fill', '#121212');
     rotationAnchor.setAttribute('stroke', '#5B57D1');
     rotationAnchor.setAttribute('stroke-width', anchorStrokeWidth);
+    rotationAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
     rotationAnchor.setAttribute('class', 'rotation-anchor');
     rotationAnchor.style.cursor = 'grab';
     rotationAnchor.style.pointerEvents = 'all';
@@ -598,6 +600,7 @@ class FreehandStroke {
     outline.setAttribute('fill', 'none');
     outline.setAttribute('stroke', '#5B57D1');
     outline.setAttribute('stroke-width', 1.5);
+    outline.setAttribute('vector-effect', 'non-scaling-stroke');
     outline.setAttribute('stroke-dasharray', '4 2');
     outline.setAttribute('style', 'pointer-events: none;');
     this.group.appendChild(outline);
@@ -611,6 +614,7 @@ class FreehandStroke {
     rotationLine.setAttribute('y2', expandedY);
     rotationLine.setAttribute('stroke', '#5B57D1');
     rotationLine.setAttribute('stroke-width', 1);
+    rotationLine.setAttribute('vector-effect', 'non-scaling-stroke');
     rotationLine.setAttribute('stroke-dasharray', '2 2');
     rotationLine.setAttribute('style', 'pointer-events: none;');
     this.group.appendChild(rotationLine);

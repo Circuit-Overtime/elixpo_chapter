@@ -19,6 +19,18 @@ import { IconShape } from '../shapes/IconShape.js';
 
 const FORMAT_VERSION = 1;
 
+// Generate a unique session ID for each scene
+let _sessionID = null;
+export function getSessionID() {
+    if (!_sessionID) {
+        _sessionID = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+    return _sessionID;
+}
+export function resetSessionID() {
+    _sessionID = null;
+}
+
 function cloneOptions(options) {
     return JSON.parse(JSON.stringify(options));
 }
@@ -294,6 +306,7 @@ export function saveScene(workspaceName = 'Untitled') {
     const scene = {
         format: 'lixsketch',
         version: FORMAT_VERSION,
+        sessionID: getSessionID(),
         name: workspaceName,
         createdAt: new Date().toISOString(),
         viewport: window.currentViewBox ? { ...window.currentViewBox } : null,
@@ -411,7 +424,7 @@ export function downloadScene(workspaceName = 'Untitled') {
 
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}.lixsketch`;
+    a.download = `${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}.lixjson`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -421,11 +434,26 @@ export function downloadScene(workspaceName = 'Untitled') {
 // ============================================================
 // UPLOAD: Open file picker and load .lixsketch file
 // ============================================================
+// Validate scene JSON structure before loading
+export function validateScene(data) {
+    if (!data || typeof data !== 'object') return { valid: false, error: 'Not a valid JSON object' };
+    if (data.format !== 'lixsketch') return { valid: false, error: 'Not a LixSketch scene file (missing format field)' };
+    if (!data.version || data.version > FORMAT_VERSION) return { valid: false, error: `Unsupported version: ${data.version}` };
+    if (!Array.isArray(data.shapes)) return { valid: false, error: 'Invalid scene: missing shapes array' };
+    return {
+        valid: true,
+        name: data.name || 'Untitled',
+        shapeCount: data.shapes.length,
+        sessionID: data.sessionID || null,
+        createdAt: data.createdAt || null,
+    };
+}
+
 export function uploadScene() {
     return new Promise((resolve, reject) => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.lixsketch,.json';
+        input.accept = '.lixjson,.json';
         input.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return resolve(false);
@@ -434,11 +462,18 @@ export function uploadScene() {
             reader.onload = (ev) => {
                 try {
                     const data = JSON.parse(ev.target.result);
+                    const validation = validateScene(data);
+                    if (!validation.valid) {
+                        console.error('[SceneSerializer] Invalid file:', validation.error);
+                        resolve({ success: false, error: validation.error });
+                        return;
+                    }
+                    resetSessionID(); // New session for loaded scene
                     const result = loadScene(data);
-                    resolve(result);
+                    resolve({ success: result, validation });
                 } catch (err) {
                     console.error('[SceneSerializer] Failed to parse file:', err);
-                    reject(err);
+                    resolve({ success: false, error: 'Failed to parse JSON file' });
                 }
             };
             reader.readAsText(file);
@@ -491,6 +526,61 @@ export function exportAsPNG() {
 }
 
 // ============================================================
+// COPY to clipboard as PNG
+// ============================================================
+export function copyAsPNG() {
+    const svgEl = window.svg;
+    if (!svgEl) return;
+
+    const clone = svgEl.cloneNode(true);
+    const selectionEls = clone.querySelectorAll('[data-selection], .selection-handle, .resize-handle, .rotation-handle');
+    selectionEls.forEach(el => el.remove());
+
+    const svgData = new XMLSerializer().serializeToString(clone);
+    const canvas = document.createElement('canvas');
+    const vb = svgEl.viewBox.baseVal;
+    canvas.width = vb.width * 2;
+    canvas.height = vb.height * 2;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+
+    const img = new Image();
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    img.onload = () => {
+        ctx.fillStyle = '#121212';
+        ctx.fillRect(0, 0, vb.width, vb.height);
+        ctx.drawImage(img, 0, 0, vb.width, vb.height);
+        URL.revokeObjectURL(url);
+
+        canvas.toBlob(blob => {
+            if (!blob) return;
+            navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+            ]).catch(err => console.warn('[SceneSerializer] Clipboard write failed:', err));
+        }, 'image/png');
+    };
+    img.src = url;
+}
+
+// ============================================================
+// COPY to clipboard as SVG
+// ============================================================
+export function copyAsSVG() {
+    const svgEl = window.svg;
+    if (!svgEl) return;
+
+    const clone = svgEl.cloneNode(true);
+    const selectionEls = clone.querySelectorAll('[data-selection], .selection-handle, .resize-handle, .rotation-handle');
+    selectionEls.forEach(el => el.remove());
+
+    const svgData = new XMLSerializer().serializeToString(clone);
+    navigator.clipboard.writeText(svgData)
+        .catch(err => console.warn('[SceneSerializer] Clipboard write failed:', err));
+}
+
+// ============================================================
 // EXPORT as PDF (uses browser print)
 // ============================================================
 export function exportAsPDF() {
@@ -532,5 +622,7 @@ export function initSceneSerializer() {
         upload: uploadScene,
         exportPNG: exportAsPNG,
         exportPDF: exportAsPDF,
+        copyAsPNG,
+        copyAsSVG,
     };
 }

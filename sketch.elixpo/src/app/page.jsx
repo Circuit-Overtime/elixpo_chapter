@@ -8,6 +8,9 @@ import AppMenu from '@/components/menu/AppMenu'
 import ShortcutsModal from '@/components/modals/ShortcutsModal'
 import SaveModal from '@/components/modals/SaveModal'
 import AIModal from '@/components/modals/AIModal'
+import CommandPalette from '@/components/modals/CommandPalette'
+import HelpModal from '@/components/modals/HelpModal'
+import ExportImageModal from '@/components/modals/ExportImageModal'
 import RectangleSidebar from '@/components/sidebars/RectangleSidebar'
 import CircleSidebar from '@/components/sidebars/CircleSidebar'
 import LineSidebar from '@/components/sidebars/LineSidebar'
@@ -17,10 +20,15 @@ import TextSidebar from '@/components/sidebars/TextSidebar'
 import FrameSidebar from '@/components/sidebars/FrameSidebar'
 import IconSidebar from '@/components/sidebars/IconSidebar'
 import SVGCanvas from '@/components/canvas/SVGCanvas'
+import MultiSelectActions from '@/components/canvas/MultiSelectActions'
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
+import useSessionID from '@/hooks/useSessionID'
+import useGuestProfile from '@/hooks/useGuestProfile'
 
 export default function Home() {
   useKeyboardShortcuts()
+  useSessionID()
+  useGuestProfile()
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black">
@@ -46,11 +54,15 @@ export default function Home() {
       <SVGCanvas />
 
       {/* Overlays */}
+      <MultiSelectActions />
       <Footer />
       <AppMenu />
       <ShortcutsModal />
       <SaveModal />
       <AIModal />
+      <CommandPalette />
+      <HelpModal />
+      <ExportImageModal />
     </div>
   )
 }

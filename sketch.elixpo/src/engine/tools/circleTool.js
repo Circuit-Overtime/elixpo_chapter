@@ -2,6 +2,7 @@
 // Circle tool event handlers - extracted from drawCircle.js
 import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransformAction, pushFrameAttachmentAction } from '../core/UndoRedo.js';
 import { cleanupAttachments } from './arrowTool.js';
+import { calculateSnap, clearSnapGuides } from '../core/SnapGuides.js';
 
 let isDrawingCircle = false;
 let isDraggingShapeCircle = false;
@@ -250,6 +251,16 @@ const handleMouseMove = (e) => {
         currentShape.move(dx, dy);
         startX = svgMouseX;
         startY = svgMouseY;
+
+        // Snap guides
+        if (window.__sketchStoreApi && window.__sketchStoreApi.getState().snapToObjects) {
+            const snap = calculateSnap(currentShape);
+            if (snap.dx || snap.dy) {
+                currentShape.move(snap.dx, snap.dy);
+            }
+        } else {
+            clearSnapGuides();
+        }
     }
        
     else if(isResizingShapeCircle && currentShape && currentShape.isSelected)
@@ -347,8 +358,7 @@ const handleMouseUp = (e) => {
 
             // Auto-select the drawn shape and switch to selection tool
             const drawnShape = currentShape;
-            const selectBtn = document.querySelector(".bxs-pointer");
-            if (selectBtn) selectBtn.click();
+            if (window.__sketchStoreApi) window.__sketchStoreApi.setActiveTool('select', { afterDraw: true });
             currentShape = drawnShape;
             currentShape.isSelected = true;
             if (typeof currentShape.addAnchors === 'function') {
@@ -440,6 +450,7 @@ const handleMouseUp = (e) => {
         hoveredFrameCircle = null;
     }
 
+    clearSnapGuides();
     isDrawingCircle = false;
     isDraggingShapeCircle = false;
     isResizingShapeCircle = false;

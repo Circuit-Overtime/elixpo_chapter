@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
+import useSketchStore from '@/store/useSketchStore'
 
 /**
  * A toolbar button that opens a popover panel above it on click.
@@ -61,10 +62,13 @@ function Divider() {
  * Bottom toolbar container - appears when tool/shape is active
  */
 export default function ShapeSidebar({ visible, children }) {
+  const viewMode = useSketchStore((s) => s.viewMode)
+  const show = visible && !viewMode
+
   return (
     <div
       className={`absolute bottom-14 left-1/2 -translate-x-1/2 bg-[#1c1c1c] border border-white/[0.1] rounded-xl px-2 py-1.5 z-[999] font-[lixFont] transition-all duration-200 ${
-        visible
+        show
           ? 'opacity-100 pointer-events-auto translate-y-0'
           : 'opacity-0 pointer-events-none translate-y-2'
       }`}
@@ -76,4 +80,48 @@ export default function ShapeSidebar({ visible, children }) {
   )
 }
 
-export { Divider }
+/**
+ * Layer ordering controls - add to any shape sidebar
+ */
+function LayerControls() {
+  const doLayer = (method) => {
+    const shape = window.currentShape
+    if (!shape || !window.__layerOrder) return
+    window.__layerOrder[method](shape)
+  }
+
+  return (
+    <div className="flex items-center gap-0.5">
+      <button
+        onClick={() => doLayer('sendToBack')}
+        title="Send to back"
+        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
+      >
+        <i className="bx bx-chevrons-down text-base" />
+      </button>
+      <button
+        onClick={() => doLayer('sendBackward')}
+        title="Send backward"
+        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
+      >
+        <i className="bx bx-chevron-down text-base" />
+      </button>
+      <button
+        onClick={() => doLayer('bringForward')}
+        title="Bring forward"
+        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
+      >
+        <i className="bx bx-chevron-up text-base" />
+      </button>
+      <button
+        onClick={() => doLayer('bringToFront')}
+        title="Bring to front"
+        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
+      >
+        <i className="bx bx-chevrons-up text-base" />
+      </button>
+    </div>
+  )
+}
+
+export { Divider, LayerControls }

@@ -121,7 +121,7 @@ const handleMouseDown = (e) => {
             // Auto-select the new frame and switch to selection tool
             const placedFrame = currentFrame;
             if (window.__sketchStoreApi) {
-                window.__sketchStoreApi.setActiveTool('select');
+                window.__sketchStoreApi.setActiveTool('select', { afterDraw: true });
             } else {
                 window.isSelectionToolActive = true;
             }

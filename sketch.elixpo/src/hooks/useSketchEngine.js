@@ -23,8 +23,9 @@ export default function useSketchEngine(svgRef, ready = true) {
         window.__sketchStoreApi = {
           setSelectedShapeSidebar: (sidebar) => useSketchStore.getState().setSelectedShapeSidebar(sidebar),
           clearSelectedShapeSidebar: () => useSketchStore.getState().clearSelectedShapeSidebar(),
-          setActiveTool: (tool) => useSketchStore.getState().setActiveTool(tool),
+          setActiveTool: (tool, opts) => useSketchStore.getState().setActiveTool(tool, opts),
           setZoom: (zoom) => useSketchStore.setState({ zoom }),
+          getState: () => useSketchStore.getState(),
         }
 
         const { SketchEngine } = await import('@/engine/SketchEngine')

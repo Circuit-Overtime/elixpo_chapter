@@ -18,7 +18,18 @@ export default function useKeyboardShortcuts() {
         }
         if (key === '/') {
           e.preventDefault()
-          useUIStore.getState().toggleShortcutsModal()
+          useUIStore.getState().toggleCommandPalette()
+          return
+        }
+        if (key === 'o') {
+          e.preventDefault()
+          const serializer = window.__sceneSerializer
+          if (serializer) serializer.upload()
+          return
+        }
+        if (key === 'e' && e.shiftKey) {
+          e.preventDefault()
+          useUIStore.getState().toggleExportImageModal()
           return
         }
       }
@@ -119,8 +130,34 @@ export default function useKeyboardShortcuts() {
         return
       }
 
+      // Alt shortcuts
+      if (e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (key === 'z') {
+          e.preventDefault()
+          useSketchStore.getState().toggleZenMode()
+          return
+        }
+        if (key === 'r') {
+          e.preventDefault()
+          useSketchStore.getState().toggleViewMode()
+          return
+        }
+        if (key === 's') {
+          e.preventDefault()
+          useSketchStore.getState().toggleSnapToObjects()
+          return
+        }
+        return
+      }
+
       // Tool switching shortcuts (no modifier keys)
       if (!e.shiftKey && !e.altKey) {
+        if (key === 'q') {
+          e.preventDefault()
+          store.toggleToolLock()
+          return
+        }
+
         const tool = SHORTCUT_MAP[key]
         if (tool) {
           e.preventDefault()
@@ -129,7 +166,28 @@ export default function useKeyboardShortcuts() {
         }
 
         if (e.key === 'Escape') {
+          // Exit view mode or zen mode first
+          if (store.viewMode) {
+            store.toggleViewMode()
+            return
+          }
+          if (store.zenMode) {
+            store.toggleZenMode()
+            return
+          }
           const uiStore = useUIStore.getState()
+          if (uiStore.commandPaletteOpen) {
+            uiStore.toggleCommandPalette()
+            return
+          }
+          if (uiStore.exportImageModalOpen) {
+            uiStore.toggleExportImageModal()
+            return
+          }
+          if (uiStore.helpModalOpen) {
+            uiStore.toggleHelpModal()
+            return
+          }
           if (uiStore.shortcutsModalOpen) {
             uiStore.toggleShortcutsModal()
             return
