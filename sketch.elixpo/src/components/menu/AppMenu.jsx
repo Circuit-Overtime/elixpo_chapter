@@ -14,6 +14,7 @@ const CANVAS_BACKGROUNDS = [
 ]
 
 const LINKS = [
+  { label: 'Documentation', icon: 'bx-book-open', href: '/docs' },
   { label: 'GitHub', icon: 'bxl-github', href: 'https://github.com/elixpo/lixsketch' },
   { label: 'Report An Issue', icon: 'bx-bug', href: 'https://github.com/elixpo/lixsketch/issues' },
 ]
@@ -245,18 +246,21 @@ export default function AppMenu() {
         <hr className="border-border-light my-1.5" />
 
         {/* Links */}
-        {LINKS.map((link) => (
-          <a
-            key={link.label}
-            href={link.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
-          >
-            <i className={`bx ${link.icon} text-sm`} />
-            {link.label}
-          </a>
-        ))}
+        {LINKS.map((link) => {
+          const isExternal = link.href.startsWith('http')
+          return (
+            <a
+              key={link.label}
+              href={link.href}
+              {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              onClick={closeMenu}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+            >
+              <i className={`bx ${link.icon} text-sm`} />
+              {link.label}
+            </a>
+          )
+        })}
 
         <hr className="border-border-light my-1.5" />
 

@@ -7,7 +7,7 @@ import { generateWorkspaceName } from '@/utils/nameGenerator'
 /**
  * Manages session ID in the URL and auto-generates workspace names.
  *
- * URL format: /<sessionID>#key=<encryptionKey>
+ * URL format: /c/<sessionID>#key=<encryptionKey>
  * - sessionID is the scene identifier (stored in pathname)
  * - key is the E2E encryption key (stored in fragment, never sent to server)
  *
@@ -18,17 +18,19 @@ export default function useSessionID() {
     const path = window.location.pathname
     const segments = path.split('/').filter(Boolean)
 
-    // Check if we already have a session ID in the URL
-    let sessionID = segments[0] || null
+    // Expect URL format: /c/<sessionId>
+    let sessionID = null
+
+    if (segments[0] === 'c' && segments[1]) {
+      sessionID = segments[1]
+    }
 
     if (!sessionID) {
-      // Generate new session ID
+      // Generate new session ID and redirect to /c/<id>
       sessionID = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-
-      // Push to URL without reload — preserve query params and hash
       const search = window.location.search
       const hash = window.location.hash
-      window.history.replaceState(null, '', `/${sessionID}${search}${hash}`)
+      window.history.replaceState(null, '', `/c/${sessionID}${search}${hash}`)
     }
 
     // Store on window for the engine
@@ -50,7 +52,10 @@ export default function useSessionID() {
  */
 export function getSessionID() {
   if (typeof window === 'undefined') return null
-  return window.__sessionID || window.location.pathname.split('/').filter(Boolean)[0] || null
+  if (window.__sessionID) return window.__sessionID
+  const segments = window.location.pathname.split('/').filter(Boolean)
+  if (segments[0] === 'c' && segments[1]) return segments[1]
+  return null
 }
 
 /**
@@ -61,7 +66,7 @@ export function getShareableLink(encryptionKey) {
   const origin = window.location.origin
   const sessionID = getSessionID()
   if (encryptionKey) {
-    return `${origin}/${sessionID}#key=${encryptionKey}`
+    return `${origin}/c/${sessionID}#key=${encryptionKey}`
   }
-  return `${origin}/${sessionID}`
+  return `${origin}/c/${sessionID}`
 }

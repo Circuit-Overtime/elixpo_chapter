@@ -95,7 +95,7 @@ async function handleAuthCallback(request: Request, env: Env): Promise<Response>
   const state = url.searchParams.get('state');
   const error = url.searchParams.get('error');
   // The app origin to redirect back to after auth
-  const appOrigin = url.searchParams.get('app_origin') || env.APP_ORIGIN || 'http://localhost:3000';
+  const appOrigin = url.searchParams.get('app_origin') || env.APP_ORIGIN || 'https://sketch.elixpo.com';
 
   if (error) {
     return Response.redirect(`${appOrigin}?auth_error=${encodeURIComponent(error)}`, 302);

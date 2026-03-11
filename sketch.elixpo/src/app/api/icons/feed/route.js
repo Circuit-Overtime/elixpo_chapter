@@ -1,33 +1,29 @@
+export const runtime = 'edge'
+
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
 
 let cachedData = null
-let lastLoadTime = 0
-const RELOAD_INTERVAL = 60_000
 
-function getDataArray() {
-  const now = Date.now()
-  if (cachedData && now - lastLoadTime < RELOAD_INTERVAL) return cachedData
+async function getDataArray(origin) {
+  if (cachedData) return cachedData
 
-  const metaPath = path.join(process.cwd(), 'public', 'icons', 'info', 'icons.json')
-  if (!fs.existsSync(metaPath)) return []
+  const res = await fetch(`${origin}/icons/info/icons.json`)
+  if (!res.ok) return []
 
-  const metadata = JSON.parse(fs.readFileSync(metaPath, 'utf-8'))
+  const metadata = await res.json()
   cachedData = Object.keys(metadata).map((filename) => ({
     filename,
     ...metadata[filename],
   }))
-  lastLoadTime = now
   return cachedData
 }
 
 export async function GET(request) {
-  const { searchParams } = new URL(request.url)
-  const offset = parseInt(searchParams.get('offset') || '0', 10)
-  const limit = parseInt(searchParams.get('limit') || '5', 10)
+  const url = new URL(request.url)
+  const offset = parseInt(url.searchParams.get('offset') || '0', 10)
+  const limit = parseInt(url.searchParams.get('limit') || '5', 10)
 
-  const dataArray = getDataArray()
+  const dataArray = await getDataArray(url.origin)
   const paginated = dataArray.slice(offset, offset + limit)
 
   return NextResponse.json({

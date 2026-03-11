@@ -157,7 +157,14 @@ export default function HelpModal() {
 
         {/* Footer links */}
         <hr className="border-border-light mx-6" />
-        <div className="flex items-center gap-3 px-6 py-4">
+        <div className="flex items-center gap-3 px-6 py-4 flex-wrap">
+          <a
+            href="/docs"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-blue/10 hover:bg-accent-blue/20 border border-accent-blue/20 text-accent-blue text-xs transition-all duration-200"
+          >
+            <i className="bx bx-book-open text-sm" />
+            Documentation
+          </a>
           <a
             href="https://github.com/elixpo/lixsketch"
             target="_blank"

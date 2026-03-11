@@ -2,7 +2,14 @@ import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false
+  reactStrictMode: false,
+  webpack: (config) => {
+    config.module.rules.push({
+      test: /\.md$/,
+      type: 'asset/source',
+    })
+    return config
+  },
 };
 
 if (process.env.NODE_ENV === 'development') {

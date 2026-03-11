@@ -6,12 +6,12 @@ LixScript is a declarative DSL for programmatically creating diagrams in LixSket
 
 ```lixscript
 // A simple flowchart
-rect start at 100, 50 size 160x55 {
+rect start at 200, 60 size 200x65 {
   stroke: #4A90D9
   label: "Start"
 }
 
-rect end at 100, 170 size 160x55 {
+rect end at start.x, start.bottom + 150 size 200x65 {
   stroke: #2ECC71
   label: "End"
 }
@@ -189,17 +189,17 @@ Each point is `x,y` or `x,y,pressure` (pressure 0-1, default 0.5).
 Reference other shapes' positions for dynamic layout:
 
 ```lixscript
-rect node1 at 100, 100 size 160x60 {
+rect node1 at 200, 60 size 200x65 {
   label: "First"
 }
 
-// Place node2 to the right of node1 with 40px gap
-rect node2 at node1.right + 40, node1.y size 160x60 {
+// Place node2 to the right of node1 with 250px gap
+rect node2 at node1.right + 250, node1.y size 200x65 {
   label: "Second"
 }
 
-// Place node3 below node1
-rect node3 at node1.x, node1.bottom + 30 size 160x60 {
+// Place node3 below node1 with 150px gap
+rect node3 at node1.x, node1.bottom + 150 size 200x65 {
   label: "Third"
 }
 ```
@@ -250,31 +250,29 @@ $blue = #4A90D9
 $green = #2ECC71
 $red = #E74C3C
 $gray = #e0e0e0
-$w = 170
-$h = 55
 
 // Nodes
-rect login at 200, 50 size 170x55 {
+rect login at 200, 60 size 200x65 {
   stroke: $blue
   label: "Login Page"
 }
 
-rect validate at 200, 160 size 170x55 {
+rect validate at login.x, login.bottom + 150 size 260x70 {
   stroke: $blue
-  label: "Validate Creds"
+  label: "Validate Credentials"
 }
 
-circle check at 200, 300 size 80x80 {
+circle check at validate.x, validate.bottom + 150 size 110x110 {
   stroke: $red
   label: "Valid?"
 }
 
-rect dashboard at 200, 430 size 170x55 {
+rect dashboard at check.x, check.bottom + 150 size 200x65 {
   stroke: $green
   label: "Dashboard"
 }
 
-rect error at 420, 300 size 140x55 {
+rect error at check.right + 250, check.y size 200x65 {
   stroke: $red
   label: "Show Error"
 }
@@ -296,6 +294,7 @@ arrow a3 from check.bottom to dashboard.top {
 
 arrow a4 from check.right to error.left {
   stroke: $red
+  curve: curved
   label: "No"
 }
 
@@ -306,8 +305,8 @@ arrow a5 from error.top to login.right {
   label: "Retry"
 }
 
-// Group everything
-frame authFlow at 130, 10 size 480x520 {
+// Frame is auto-created if omitted — or define one explicitly:
+frame authFlow at 130, 10 size 780x750 {
   name: "Auth Flow"
 }
 ```
