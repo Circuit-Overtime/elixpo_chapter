@@ -1,7 +1,7 @@
 "use client"
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
-import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
+import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSidebar'
 import { useState, useCallback } from 'react'
 
 const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
@@ -164,6 +164,8 @@ export default function ArrowSidebar() {
           )}
         </div>
       </ToolbarButton>
+      <Divider />
+      <LayerControls />
     </ShapeSidebar>
   )
 }

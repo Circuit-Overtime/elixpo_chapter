@@ -75,6 +75,7 @@ export const SHORTCUT_MAP = {
   9: TOOLS.IMAGE,
   e: TOOLS.ERASER,
   0: TOOLS.ERASER,
+  i: TOOLS.ICON,
   f: TOOLS.FRAME,
   k: TOOLS.LASER,
 }
@@ -85,12 +86,17 @@ const useSketchStore = create((set, get) => ({
   activeSidebar: null, // which sidebar to show
   selectedShapeSidebar: null, // sidebar shown when a shape is selected (overrides activeSidebar)
 
-  setActiveTool: (tool) =>
+  setActiveTool: (tool, { afterDraw } = {}) => {
+    // In view mode, only pan is allowed
+    if (get().viewMode && tool !== TOOLS.PAN) return
+    // Tool lock: don't switch to SELECT after drawing
+    if (afterDraw && tool === TOOLS.SELECT && get().toolLock) return
     set({
       activeTool: tool,
       activeSidebar: TOOL_SIDEBARS[tool] || null,
       selectedShapeSidebar: null,
-    }),
+    })
+  },
 
   // Called by engine when a shape is selected/deselected
   setSelectedShapeSidebar: (sidebar) => set({ selectedShapeSidebar: sidebar }),
@@ -177,6 +183,24 @@ const useSketchStore = create((set, get) => ({
   // --- Grid ---
   gridEnabled: false,
   toggleGrid: () => set((s) => ({ gridEnabled: !s.gridEnabled })),
+
+  // --- Modes ---
+  viewMode: false,
+  zenMode: false,
+  toolLock: false,
+  snapToObjects: false,
+
+  toggleViewMode: () => {
+    const entering = !get().viewMode
+    if (entering) {
+      set({ viewMode: true, zenMode: false, activeTool: TOOLS.PAN, activeSidebar: null, selectedShapeSidebar: null })
+    } else {
+      set({ viewMode: false, activeTool: TOOLS.SELECT, activeSidebar: null })
+    }
+  },
+  toggleZenMode: () => set((s) => ({ zenMode: !s.zenMode, viewMode: false })),
+  toggleToolLock: () => set((s) => ({ toolLock: !s.toolLock })),
+  toggleSnapToObjects: () => set((s) => ({ snapToObjects: !s.snapToObjects })),
 
   // --- RoughJS refs (set once after mount) ---
   roughCanvas: null,

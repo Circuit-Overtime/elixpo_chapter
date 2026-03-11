@@ -2,6 +2,7 @@
 // Line tool event handlers - extracted from lineTool.js
 import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransformAction, pushFrameAttachmentAction } from '../core/UndoRedo.js';
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './arrowTool.js';
+import { calculateSnap, clearSnapGuides } from '../core/SnapGuides.js';
 
 let isDrawingLine = false;
 let currentLine = null;
@@ -236,6 +237,16 @@ const handleMouseMove = (e) => {
         currentShape.move(dx, dy);
         startX = x;
         startY = y;
+
+        // Snap guides
+        if (window.__sketchStoreApi && window.__sketchStoreApi.getState().snapToObjects) {
+            const snap = calculateSnap(currentShape);
+            if (snap.dx || snap.dy) {
+                currentShape.move(snap.dx, snap.dy);
+            }
+        } else {
+            clearSnapGuides();
+        }
     }
 };
 
@@ -273,8 +284,7 @@ const handleMouseUp = (e) => {
 
             // Auto-select the drawn line and switch to selection tool
             const drawnLine = currentLine;
-            const selectBtn = document.querySelector(".bxs-pointer");
-            if (selectBtn) selectBtn.click();
+            if (window.__sketchStoreApi) window.__sketchStoreApi.setActiveTool('select', { afterDraw: true });
             currentShape = drawnLine;
             drawnLine.selectLine();
         }
@@ -348,6 +358,7 @@ const handleMouseUp = (e) => {
         hoveredFrameLine = null;
     }
     
+    clearSnapGuides();
     isDraggingLine = false;
 };
 

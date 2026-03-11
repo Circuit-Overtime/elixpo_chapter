@@ -42,12 +42,26 @@ function IconCell({ icon, onClick }) {
 
 export default function IconSidebar() {
   const activeTool = useSketchStore((s) => s.activeTool)
+  const setActiveTool = useSketchStore((s) => s.setActiveTool)
   const visible = activeTool === TOOLS.ICON
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(null)
   const [icons, setIcons] = useState([])
   const [loading, setLoading] = useState(false)
   const debounceRef = useRef(null)
+
+  // Close on Escape
+  useEffect(() => {
+    if (!visible) return
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        setActiveTool(TOOLS.SELECT)
+      }
+    }
+    document.addEventListener('keydown', handler, true)
+    return () => document.removeEventListener('keydown', handler, true)
+  }, [visible, setActiveTool])
 
   const fetchIcons = useCallback(async (searchQuery, cat) => {
     setLoading(true)
@@ -108,7 +122,16 @@ export default function IconSidebar() {
     >
       {/* Header */}
       <div className="px-3.5 pt-3.5 pb-2 shrink-0">
-        <h3 className="text-white/90 text-sm font-medium mb-2.5">Icons</h3>
+        <div className="flex items-center justify-between mb-2.5">
+          <h3 className="text-white/90 text-sm font-medium">Icons</h3>
+          <button
+            onClick={() => setActiveTool(TOOLS.SELECT)}
+            className="w-6 h-6 flex items-center justify-center rounded-md text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors duration-100"
+            title="Close (Esc)"
+          >
+            <i className="bx bx-x text-lg" />
+          </button>
+        </div>
 
         {/* Search */}
         <div className="flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-lg px-2.5 py-2">

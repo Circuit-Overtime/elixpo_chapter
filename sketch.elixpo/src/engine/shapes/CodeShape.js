@@ -39,8 +39,9 @@ class CodeShape {
         // Frame attachment properties
         this.parentFrame = null;
         
-        // Update group attributes
+        // Update group attributes — ensure data-type is set for codeTool interaction
         this.group.setAttribute('type', 'code');
+        this.group.setAttribute('data-type', 'code-group');
         this.group.shapeName = 'code';
         this.group.shapeID = this.shapeID;
     }

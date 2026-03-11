@@ -34,8 +34,9 @@ class TextShape {
         // Frame attachment properties
         this.parentFrame = null;
         
-        // Update group attributes
+        // Update group attributes — ensure data-type is set for textTool interaction
         this.group.setAttribute('type', 'text');
+        this.group.setAttribute('data-type', 'text-group');
         this.group.shapeName = 'text';
         this.group.shapeID = this.shapeID;
     }

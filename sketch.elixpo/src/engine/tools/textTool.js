@@ -61,7 +61,7 @@ setTextReferences(selectedElement, updateSelectionFeedback, svg);
 
 function switchToSelectionTool() {
     if (window.__sketchStoreApi) {
-        window.__sketchStoreApi.setActiveTool('select');
+        window.__sketchStoreApi.setActiveTool('select', { afterDraw: true });
     } else {
         window.isSelectionToolActive = true;
     }

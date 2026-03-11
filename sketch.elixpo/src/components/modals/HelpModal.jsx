@@ -1,0 +1,183 @@
+"use client"
+
+import { useState } from 'react'
+import useUIStore from '@/store/useUIStore'
+
+const TOOL_SHORTCUTS = [
+  { keys: 'H', action: 'Pan' },
+  { keys: 'V / 1', action: 'Selection' },
+  { keys: 'R / 2', action: 'Rectangle' },
+  { keys: '3', action: 'Diamond' },
+  { keys: 'O / 4', action: 'Circle' },
+  { keys: 'A / 5', action: 'Arrow' },
+  { keys: 'L / 6', action: 'Line' },
+  { keys: 'P / 7', action: 'Freehand' },
+  { keys: 'T / 8', action: 'Text' },
+  { keys: '9', action: 'Image' },
+  { keys: 'E / 0', action: 'Eraser' },
+  { keys: 'F', action: 'Frame' },
+  { keys: 'K', action: 'Laser' },
+]
+
+const ACTION_SHORTCUTS = [
+  { keys: 'Ctrl+A', action: 'Select All' },
+  { keys: 'Ctrl+G', action: 'Group' },
+  { keys: 'Ctrl+Shift+G', action: 'Ungroup' },
+  { keys: 'Ctrl+D', action: 'Duplicate' },
+  { keys: 'Ctrl+S', action: 'Save As' },
+  { keys: 'Ctrl+C', action: 'Copy' },
+  { keys: 'Ctrl+V', action: 'Paste' },
+  { keys: 'Ctrl+Z', action: 'Undo' },
+  { keys: 'Ctrl+Shift+Z', action: 'Redo' },
+  { keys: 'Esc', action: 'Deselect' },
+  { keys: 'Del / Backspace', action: 'Delete' },
+  { keys: 'Space (hold)', action: 'Pan' },
+  { keys: 'Shift (hold)', action: 'Straight Draw' },
+]
+
+const VIEW_SHORTCUTS = [
+  { keys: 'Ctrl++', action: 'Zoom In' },
+  { keys: 'Ctrl+-', action: 'Zoom Out' },
+  { keys: 'Ctrl+0', action: 'Reset Zoom' },
+  { keys: "Ctrl+'", action: 'Toggle Grid' },
+  { keys: 'Ctrl+/', action: 'Command Palette' },
+]
+
+const TABS = [
+  { id: 'shortcuts', label: 'Shortcuts' },
+  { id: 'about', label: 'About' },
+]
+
+function ShortcutRow({ keys, action }) {
+  return (
+    <div className="flex items-center justify-between py-1.5">
+      <span className="text-text-secondary text-xs">{action}</span>
+      <div className="flex items-center gap-1">
+        {keys.split('+').map((key, i) => (
+          <span key={i}>
+            {i > 0 && <span className="text-text-dim text-xs mx-0.5">+</span>}
+            <kbd className="px-1.5 py-0.5 bg-surface-dark rounded text-text-muted text-xs border border-border font-[lixFont]">
+              {key.trim()}
+            </kbd>
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ShortcutSection({ title, shortcuts }) {
+  return (
+    <div>
+      <h3 className="text-text-dim text-xs uppercase tracking-wider mb-2">{title}</h3>
+      {shortcuts.map((s) => (
+        <ShortcutRow key={s.action} keys={s.keys} action={s.action} />
+      ))}
+    </div>
+  )
+}
+
+export default function HelpModal() {
+  const open = useUIStore((s) => s.helpModalOpen)
+  const toggleHelpModal = useUIStore((s) => s.toggleHelpModal)
+  const [activeTab, setActiveTab] = useState('shortcuts')
+
+  if (!open) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center font-[lixFont]"
+      onClick={toggleHelpModal}
+    >
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+      <div
+        className="relative bg-surface-card border border-border-light rounded-2xl w-full max-w-[640px] mx-4 max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-3">
+          <h2 className="text-text-primary text-base font-medium">Help</h2>
+          <button
+            onClick={toggleHelpModal}
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+          >
+            <i className="bx bx-x text-xl" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center gap-1 px-6 pb-3">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs transition-all duration-200 ${
+                activeTab === tab.id
+                  ? 'bg-surface-hover text-text-primary'
+                  : 'text-text-muted hover:text-text-secondary hover:bg-surface-hover/50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <hr className="border-border-light mx-6" />
+
+        {/* Content - scrollable */}
+        <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-4">
+          {activeTab === 'shortcuts' && (
+            <div className="grid grid-cols-2 gap-6">
+              {/* Left column - Tools */}
+              <ShortcutSection title="Tools" shortcuts={TOOL_SHORTCUTS} />
+
+              {/* Right column - Actions + View */}
+              <div className="flex flex-col gap-4">
+                <ShortcutSection title="Actions" shortcuts={ACTION_SHORTCUTS} />
+                <ShortcutSection title="View" shortcuts={VIEW_SHORTCUTS} />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'about' && (
+            <div className="flex flex-col gap-4 text-text-secondary text-xs leading-relaxed">
+              <p>
+                <span className="text-text-primary font-medium">LixSketch</span> is an
+                open-source alternative to app.eraser.io, combining an infinite canvas
+                drawing tool with a docs editor.
+              </p>
+              <p>
+                Built with vanilla JS, SVG, RoughJS and Perfect-Freehand for a hand-drawn
+                aesthetic. Fully open source.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer links */}
+        <hr className="border-border-light mx-6" />
+        <div className="flex items-center gap-3 px-6 py-4">
+          <a
+            href="https://github.com/elixpo/lixsketch"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text-secondary text-xs transition-all duration-200"
+          >
+            <i className="bx bxl-github text-sm" />
+            View Repository
+          </a>
+          <a
+            href="https://github.com/elixpo/lixsketch/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text-secondary text-xs transition-all duration-200"
+          >
+            <i className="bx bx-bug text-sm" />
+            Report An Issue
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -2,7 +2,7 @@
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
-import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
+import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSidebar'
 import { useState, useCallback, useEffect } from 'react'
 
 export default function FrameSidebar() {
@@ -96,6 +96,8 @@ export default function FrameSidebar() {
           </svg>
         )}
       </button>
+      <Divider />
+      <LayerControls />
     </ShapeSidebar>
   )
 }

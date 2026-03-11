@@ -670,7 +670,7 @@ function renderCodeFromEditor(input, codeElement, deleteIfEmpty = false) {
     // After rendering code, switch to selection tool and auto-select
     if (gElement.parentNode) {
         if (window.__sketchStoreApi) {
-            window.__sketchStoreApi.setActiveTool('select');
+            window.__sketchStoreApi.setActiveTool('select', { afterDraw: true });
         } else {
             window.isSelectionToolActive = true;
         }
@@ -892,7 +892,7 @@ function renderCode(input, codeElement, deleteIfEmpty = false) {
     // After rendering code, switch to selection tool and auto-select
     if (gElement.parentNode) {
         if (window.__sketchStoreApi) {
-            window.__sketchStoreApi.setActiveTool('select');
+            window.__sketchStoreApi.setActiveTool('select', { afterDraw: true });
         } else {
             window.isSelectionToolActive = true;
         }

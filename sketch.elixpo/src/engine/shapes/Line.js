@@ -402,6 +402,7 @@ removeSelection() {
     startAnchor.setAttribute('fill', '#121212');
     startAnchor.setAttribute('stroke', '#5B57D1');
     startAnchor.setAttribute('stroke-width', anchorStrokeWidth);
+    startAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
     startAnchor.setAttribute('class', 'anchor line-anchor');
     startAnchor.style.cursor = 'grab';
     startAnchor.style.pointerEvents = 'all';
@@ -417,6 +418,7 @@ removeSelection() {
     endAnchor.setAttribute('fill', '#121212');
     endAnchor.setAttribute('stroke', '#5B57D1');
     endAnchor.setAttribute('stroke-width', anchorStrokeWidth);
+    endAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
     endAnchor.setAttribute('class', 'anchor line-anchor');
     endAnchor.style.cursor = 'grab';
     endAnchor.style.pointerEvents = 'all';
@@ -441,6 +443,7 @@ removeSelection() {
     middleAnchor.setAttribute('fill', this.isCurved ? '#5B57D1' : '#121212');
     middleAnchor.setAttribute('stroke', '#5B57D1');
     middleAnchor.setAttribute('stroke-width', anchorStrokeWidth);
+    middleAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
     middleAnchor.setAttribute('class', 'anchor line-middle-anchor');
     middleAnchor.style.cursor = 'grab';
     middleAnchor.style.pointerEvents = 'all';

@@ -2,6 +2,7 @@
 // Freehand tool event handlers - extracted from canvasStroke.js
 import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransformAction, pushFrameAttachmentAction } from '../core/UndoRedo.js';
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './arrowTool.js';
+import { calculateSnap, clearSnapGuides } from '../core/SnapGuides.js';
 
 
 const strokeColors = document.querySelectorAll(".strokeColors span");
@@ -302,6 +303,16 @@ function handleMouseMove(e) {
         currentShape.move(dx, dy);
         startX = x;
         startY = y;
+
+        // Snap guides
+        if (window.__sketchStoreApi && window.__sketchStoreApi.getState().snapToObjects) {
+            const snap = calculateSnap(currentShape);
+            if (snap.dx || snap.dy) {
+                currentShape.move(snap.dx, snap.dy);
+            }
+        } else {
+            clearSnapGuides();
+        }
     } else if (isResizingStroke && currentShape && currentShape.isSelected) {
         currentShape.updatePosition(resizingAnchorIndex, x, y);
     } else if (isRotatingStroke && currentShape && currentShape.isSelected) {
@@ -410,6 +421,7 @@ function handleMouseUp(e) {
     if (currentShape && typeof currentShape.finalizeMove === 'function') {
         currentShape.finalizeMove();
     }
+    clearSnapGuides();
     isDraggingStroke = false;
     isResizingStroke = false;
     isRotatingStroke = false;

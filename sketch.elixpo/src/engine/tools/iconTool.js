@@ -397,12 +397,7 @@ const handleMouseDownIcon = async (e) => {
     // Auto-select placed icon and switch to selection tool
     if (placedIconShape) {
         // Switch to select tool via Zustand store bridge
-        if (window.__sketchStoreApi) {
-            window.__sketchStoreApi.setActiveTool('select');
-        } else {
-            const selectBtn = document.querySelector(".bxs-pointer");
-            if (selectBtn) selectBtn.click();
-        }
+        if (window.__sketchStoreApi) window.__sketchStoreApi.setActiveTool('select', { afterDraw: true });
         currentShape = placedIconShape;
         currentShape.isSelected = true;
         requestAnimationFrame(() => {

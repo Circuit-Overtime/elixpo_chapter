@@ -289,6 +289,10 @@ class SketchEngine {
             const sceneSerializer = await import('./core/SceneSerializer.js');
             if (sceneSerializer.initSceneSerializer) sceneSerializer.initSceneSerializer();
 
+            // Initialize layer ordering
+            const layerOrder = await import('./core/LayerOrder.js');
+            if (layerOrder.initLayerOrder) layerOrder.initLayerOrder();
+
             this._initialized = true;
             console.log('[SketchEngine] Initialized successfully');
         } catch (err) {

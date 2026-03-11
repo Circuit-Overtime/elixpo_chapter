@@ -5,6 +5,7 @@
 // Depends on globals: squareSideBar, disableAllSideBars
 import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransformAction, pushFrameAttachmentAction } from '../core/UndoRedo.js';
 import { cleanupAttachments } from './arrowTool.js';
+import { calculateSnap, clearSnapGuides } from '../core/SnapGuides.js';
 
 let isDrawingSquare = false;
 let isDraggingShapeSquare = false;
@@ -226,11 +227,20 @@ const handleMouseMoveRect = (e) => {
         });
         
     } else if (isDraggingShapeSquare && currentShape && currentShape.isSelected) {
-        const dx = mouseX - startX;
-        const dy = mouseY - startY;
+        let dx = mouseX - startX;
+        let dy = mouseY - startY;
         currentShape.move(dx, dy);
         startX = mouseX;
-        startY = mouseY; 
+        startY = mouseY;
+        // Snap guides
+        if (window.__sketchStoreApi && window.__sketchStoreApi.getState().snapToObjects) {
+            const snap = calculateSnap(currentShape);
+            if (snap.dx || snap.dy) {
+                currentShape.move(snap.dx, snap.dy);
+            }
+        } else {
+            clearSnapGuides();
+        }
     } else if (isResizingShapeSquare && currentShape && currentShape.isSelected && resizingAnchorIndexSquare !== null) {
         currentShape.updatePosition(resizingAnchorIndexSquare, mouseX, mouseY);
         currentShape._skipAnchors = true;
@@ -315,8 +325,7 @@ const handleMouseUpRect = (e) => {
 
             // Auto-select the drawn shape and switch to selection tool
             const drawnShape = currentShape;
-            const selectBtn = document.querySelector(".bxs-pointer");
-            if (selectBtn) selectBtn.click();
+            if (window.__sketchStoreApi) window.__sketchStoreApi.setActiveTool('select', { afterDraw: true });
             currentShape = drawnShape;
             currentShape.isSelected = true;
             if (typeof currentShape.addAnchors === 'function') {
@@ -399,6 +408,7 @@ const handleMouseUpRect = (e) => {
     resizingAnchorIndexSquare = null;
     startRotationMouseAngleSquare = 0;
     startShapeRotationSquare = 0;
+    clearSnapGuides();
     svg.style.cursor = 'default';
 };
 

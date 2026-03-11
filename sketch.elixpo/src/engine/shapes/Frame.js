@@ -666,6 +666,7 @@ startLabelEdit(labelElement) {
     outline.setAttribute('fill', 'none');
     outline.setAttribute('stroke', '#5B57D1');
     outline.setAttribute('stroke-width', 1.5);
+    outline.setAttribute('vector-effect', 'non-scaling-stroke');
     outline.setAttribute('stroke-dasharray', '4 2');
     outline.setAttribute('style', 'pointer-events: none;');
 
@@ -691,7 +692,8 @@ startLabelEdit(labelElement) {
             anchor.setAttribute("fill", "#121212");  
             anchor.setAttribute("stroke", "#5B57D1"); 
             anchor.setAttribute("stroke-width", anchorStrokeWidth);
-            
+            anchor.setAttribute("vector-effect", "non-scaling-stroke");
+
             // Add rotation line
             const rotationLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
             rotationLine.setAttribute("x1", this.x + this.width / 2);
@@ -700,7 +702,8 @@ startLabelEdit(labelElement) {
             rotationLine.setAttribute("y2", position.y);
             rotationLine.setAttribute("stroke", "#5B57D1"); 
             rotationLine.setAttribute("stroke-width", anchorStrokeWidth);
-            
+            rotationLine.setAttribute("vector-effect", "non-scaling-stroke");
+
             // Apply rotation to rotation line if needed
             if (this.rotation !== 0) {
                 const centerX = this.x + this.width / 2;
@@ -719,6 +722,7 @@ startLabelEdit(labelElement) {
             anchor.setAttribute("fill", "#121212");  
             anchor.setAttribute("stroke", "#5B57D1"); 
             anchor.setAttribute("stroke-width", anchorStrokeWidth);
+            anchor.setAttribute("vector-effect", "non-scaling-stroke");
         }
 
         // Apply rotation to anchor if needed

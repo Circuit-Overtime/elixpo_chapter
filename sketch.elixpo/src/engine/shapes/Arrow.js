@@ -737,6 +737,7 @@ class Arrow {
             }
 
             anchor.setAttribute("stroke-width", anchorStrokeWidth);
+            anchor.setAttribute("vector-effect", "non-scaling-stroke");
             anchor.setAttribute("class", "anchor arrow-anchor");
             anchor.setAttribute("data-index", index);
             anchor.style.cursor = "grab";

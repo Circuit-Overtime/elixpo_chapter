@@ -330,8 +330,7 @@ const handleMouseDownImage = async (e) => {
 
         // Auto-select the placed image and switch to selection tool
         const placedShape = imageShape;
-        const selectBtn = document.querySelector(".bxs-pointer");
-        if (selectBtn) selectBtn.click();
+        if (window.__sketchStoreApi) window.__sketchStoreApi.setActiveTool('select', { afterDraw: true });
         currentShape = placedShape;
         currentShape.isSelected = true;
         placedShape.selectShape();

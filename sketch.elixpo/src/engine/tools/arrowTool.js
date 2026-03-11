@@ -1,6 +1,7 @@
 /* eslint-disable */
 // Arrow tool event handlers - extracted from drawArrow.js
 import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransformAction, pushFrameAttachmentAction } from '../core/UndoRedo.js';
+import { calculateSnap, clearSnapGuides } from '../core/SnapGuides.js';
 
 
 let arrowStartX, arrowStartY;
@@ -224,6 +225,17 @@ const handleMouseMove = (e) => {
         currentShape.move(dx, dy);
         startX = x;
         startY = y;
+
+        // Snap guides
+        if (window.__sketchStoreApi && window.__sketchStoreApi.getState().snapToObjects) {
+            const snap = calculateSnap(currentShape);
+            if (snap.dx || snap.dy) {
+                currentShape.move(snap.dx, snap.dy);
+            }
+        } else {
+            clearSnapGuides();
+        }
+
         svg.style.cursor = 'grabbing';
     } else if (isSelectionToolActive && currentShape && currentShape.isSelected) {
         // Provide visual feedback when hovering over anchors or the arrow
@@ -292,8 +304,7 @@ if (isDrawingArrow && currentArrow) {
 
         // Auto-select the drawn arrow and switch to selection tool
         const drawnArrow = currentArrow;
-        const selectBtn = document.querySelector(".bxs-pointer");
-        if (selectBtn) selectBtn.click();
+        if (window.__sketchStoreApi) window.__sketchStoreApi.setActiveTool('select', { afterDraw: true });
         currentShape = drawnArrow;
         drawnArrow.selectArrow();
     }
@@ -366,6 +377,7 @@ if (hoveredFrameArrow) {
     hoveredFrameArrow = null;
 }
 
+clearSnapGuides();
 isDrawingArrow = false;
 isResizing = false;
 isDragging = false;
