@@ -67,13 +67,15 @@ class Rectangle {
     }
     draw() {
         const childrenToRemove = [];
+        const preserveSet = this._skipAnchors ? new Set([...this.anchors, this.selectionOutline, this.rotationAnchor].filter(Boolean)) : null;
         for (let i = 0; i < this.group.children.length; i++) {
             const child = this.group.children[i];
             if (child !== this.element && child !== this.labelElement && child !== this._hitArea) {
-                 childrenToRemove.push(child);
+                if (preserveSet && preserveSet.has(child)) continue;
+                childrenToRemove.push(child);
             }
         }
-         childrenToRemove.forEach(child => this.group.removeChild(child));
+        childrenToRemove.forEach(child => this.group.removeChild(child));
 
         const optionsString = JSON.stringify(this.options);
         const isInitialDraw = this.element === null;
@@ -115,7 +117,7 @@ class Rectangle {
         const rotateCenterY = this.height / 2;
         this.group.setAttribute('transform', `translate(${this.x}, ${this.y}) rotate(${this.rotation}, ${rotateCenterX}, ${rotateCenterY})`);
 
-        if (this.isSelected) {
+        if (this.isSelected && !this._skipAnchors) {
             this.addAnchors();
         }
         if (!this.group.parentNode) {
@@ -506,15 +508,19 @@ class Rectangle {
 move(dx, dy) {
     this.x += dx;
     this.y += dy;
+
+    // Fast path: just update the transform — no need to rebuild RoughJS element
+    const rotateCenterX = this.width / 2;
+    const rotateCenterY = this.height / 2;
+    this.group.setAttribute('transform', `translate(${this.x}, ${this.y}) rotate(${this.rotation}, ${rotateCenterX}, ${rotateCenterY})`);
+
     this.updateAttachedArrows();
-    
+
     // Only update frame containment if we're actively dragging the shape itself
     // and not being moved by a parent frame
     if (isDraggingShapeSquare && !this.isBeingMovedByFrame) {
         this.updateFrameContainment();
     }
-
-    this.draw();
 }
 
 updateFrameContainment() {

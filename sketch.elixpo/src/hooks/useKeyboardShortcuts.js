@@ -59,6 +59,63 @@ export default function useKeyboardShortcuts() {
           // Duplicate — handled by engine
           return
         }
+        if (key === "'") {
+          e.preventDefault()
+          useSketchStore.getState().toggleGrid()
+          return
+        }
+        return
+      }
+
+      // Delete / Backspace — delete selected shape(s)
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault()
+
+        // Multi-selection delete
+        if (window.multiSelection && window.multiSelection.selectedShapes && window.multiSelection.selectedShapes.size > 0) {
+          if (typeof window.deleteSelectedShapes === 'function') {
+            window.deleteSelectedShapes()
+          }
+          return
+        }
+
+        // Single shape delete via engine's currentShape
+        if (window.currentShape) {
+          const shape = window.currentShape
+          const shapes = window.shapes
+
+          // Remove from shapes array
+          if (shapes) {
+            const idx = shapes.indexOf(shape)
+            if (idx !== -1) shapes.splice(idx, 1)
+          }
+
+          // Cleanup arrow attachments
+          if (typeof window.cleanupAttachments === 'function') {
+            window.cleanupAttachments(shape)
+          }
+
+          // Remove from parent frame
+          if (shape.parentFrame && typeof shape.parentFrame.removeShapeFromFrame === 'function') {
+            shape.parentFrame.removeShapeFromFrame(shape)
+          }
+
+          // Remove from DOM
+          const el = shape.group || shape.element
+          if (el && el.parentNode) {
+            el.parentNode.removeChild(el)
+          }
+
+          // Push undo action
+          if (typeof window.pushDeleteAction === 'function') {
+            window.pushDeleteAction(shape)
+          }
+
+          window.currentShape = null
+          if (typeof window.disableAllSideBars === 'function') {
+            window.disableAllSideBars()
+          }
+        }
         return
       }
 

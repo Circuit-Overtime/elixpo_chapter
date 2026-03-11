@@ -336,7 +336,11 @@ class FreehandStroke {
     }
 
     move(dx, dy) {
-        this.points = this.points.map(point => [point[0] + dx, point[1] + dy, point[2] || 0.5]);
+        // Accumulate offset for transform-based movement (avoids full path rebuild)
+        this._moveOffsetX = (this._moveOffsetX || 0) + dx;
+        this._moveOffsetY = (this._moveOffsetY || 0) + dy;
+        const rot = this.rotation ? `rotate(${this.rotation} ${this._rotCenterX || 0} ${this._rotCenterY || 0})` : '';
+        this.group.setAttribute('transform', `translate(${this._moveOffsetX}, ${this._moveOffsetY}) ${rot}`);
 
         // Only update frame containment if we're actively dragging the shape itself
         // and not being moved by a parent frame
@@ -345,6 +349,18 @@ class FreehandStroke {
         }
 
         this.updateAttachedArrows();
+    }
+
+    // Call after drag ends to bake the offset into actual point coordinates
+    finalizeMove() {
+        if (this._moveOffsetX || this._moveOffsetY) {
+            const ox = this._moveOffsetX || 0;
+            const oy = this._moveOffsetY || 0;
+            this.points = this.points.map(point => [point[0] + ox, point[1] + oy, point[2] || 0.5]);
+            this._moveOffsetX = 0;
+            this._moveOffsetY = 0;
+            this.draw();
+        }
     }
 
     updateAttachedArrows() {

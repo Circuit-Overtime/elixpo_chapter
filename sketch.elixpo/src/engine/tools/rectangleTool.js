@@ -228,13 +228,14 @@ const handleMouseMoveRect = (e) => {
     } else if (isDraggingShapeSquare && currentShape && currentShape.isSelected) {
         const dx = mouseX - startX;
         const dy = mouseY - startY;
-        currentShape.move(dx, dy); 
-        startX = mouseX; 
-        startY = mouseY;
-        currentShape.draw(); 
+        currentShape.move(dx, dy);
+        startX = mouseX;
+        startY = mouseY; 
     } else if (isResizingShapeSquare && currentShape && currentShape.isSelected && resizingAnchorIndexSquare !== null) {
         currentShape.updatePosition(resizingAnchorIndexSquare, mouseX, mouseY);
-        currentShape.draw(); 
+        currentShape._skipAnchors = true;
+        currentShape.draw();
+        currentShape._skipAnchors = false;
     } else if (isRotatingShapeSquare && currentShape && currentShape.isSelected) {
         const CTM = currentShape.group.getCTM();
         if (CTM) {
@@ -246,11 +247,13 @@ const handleMouseMoveRect = (e) => {
             const angleDiff = currentRotationMouseAngle - startRotationMouseAngleSquare;
             let newRotation = startShapeRotationSquare + angleDiff;
              const snapAngle = 15;
-             if (e.shiftKey) { 
+             if (e.shiftKey) {
                   newRotation = Math.round(newRotation / snapAngle) * snapAngle;
              }
             currentShape.rotate(newRotation);
-            currentShape.draw(); 
+            currentShape._skipAnchors = true;
+            currentShape.draw();
+            currentShape._skipAnchors = false;
             svg.style.cursor = 'grabbing'; 
         } else {
              isRotatingShapeSquare = false;

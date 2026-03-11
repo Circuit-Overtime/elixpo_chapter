@@ -250,16 +250,17 @@ const handleMouseMove = (e) => {
         currentShape.move(dx, dy);
         startX = svgMouseX;
         startY = svgMouseY;
-        currentShape.draw();
     }
        
-    else if(isResizingShapeCircle && currentShape && currentShape.isSelected) 
+    else if(isResizingShapeCircle && currentShape && currentShape.isSelected)
     {
         currentShape.updatePosition(resizingAnchorIndexCircle, svgMouseX, svgMouseY);
+        currentShape._skipAnchors = true;
         currentShape.draw();
+        currentShape._skipAnchors = false;
     }
-    else if (isRotatingShapeCircle && currentShape && currentShape.isSelected) 
-    { 
+    else if (isRotatingShapeCircle && currentShape && currentShape.isSelected)
+    {
         const CTM = currentShape.group.getCTM();
         if(CTM) {
             const svgPoint = svg.createSVGPoint();
@@ -270,11 +271,13 @@ const handleMouseMove = (e) => {
             const angleDiff = currentMouseAngle - startRotationMouseAngleCircle;
             let newRotation = startShapeRotationCircle + angleDiff;
             const snapAngle = 15;
-            if (e.shiftKey) { 
+            if (e.shiftKey) {
                 newRotation = Math.round(newRotation / snapAngle) * snapAngle;
             }
             currentShape.rotate(newRotation);
-            currentShape.draw(); 
+            currentShape._skipAnchors = true;
+            currentShape.draw();
+            currentShape._skipAnchors = false;
             svg.style.cursor = 'grabbing'; 
         }
         else 

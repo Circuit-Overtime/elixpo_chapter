@@ -10,13 +10,17 @@ export default function FrameSidebar() {
   const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const toggleAIModal = useUIStore((s) => s.toggleAIModal)
   const [frameName, setFrameName] = useState('Frame 1')
+  const [isGraph, setIsGraph] = useState(false)
 
-  // Sync name from the actual selected frame when sidebar opens
+  // Sync name and type from the actual selected frame when sidebar opens
   useEffect(() => {
     if (selectedShapeSidebar === 'frame' || activeTool === TOOLS.FRAME) {
-      const shape = window.currentShape
-      if (shape && shape.shapeName === 'frame' && shape.frameName) {
-        setFrameName(shape.frameName)
+      const shape = typeof window !== 'undefined' ? window.currentShape : null
+      if (shape && shape.shapeName === 'frame') {
+        if (shape.frameName) setFrameName(shape.frameName)
+        setIsGraph(shape._frameType === 'graph')
+      } else {
+        setIsGraph(false)
       }
     }
   }, [selectedShapeSidebar, activeTool])
@@ -72,15 +76,25 @@ export default function FrameSidebar() {
 
       <Divider />
 
-      {/* AI Edit — opens AI modal pre-seeded for editing this frame's diagram */}
+      {/* AI Edit / Graph Edit — opens AI modal pre-seeded for editing this frame */}
       <button
         onClick={handleAIEdit}
-        title="AI Edit"
-        className="h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted hover:text-[#FFD700] hover:bg-white/[0.06] transition-all duration-100"
+        title={isGraph ? 'Edit Graph' : 'AI Edit'}
+        className={`h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted transition-all duration-100 ${
+          isGraph
+            ? 'hover:text-[#4A90D9] hover:bg-[#4A90D9]/10'
+            : 'hover:text-[#FFD700] hover:bg-white/[0.06]'
+        }`}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-          <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" />
-        </svg>
+        {isGraph ? (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+        ) : (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+            <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" />
+          </svg>
+        )}
       </button>
     </ShapeSidebar>
   )

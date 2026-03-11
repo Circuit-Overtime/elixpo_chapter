@@ -1,13 +1,21 @@
 /* eslint-disable */
-// Eraser trail visualization - copied from eraserTrail.js
+// Eraser trail visualization - smooth trail with fade
 // Depends on globals: svg, currentZoom
 
 let isErasing = false;
 let eraserPath = null;
+let eraserGlow = null;
 let eraserPoints = [];
-const MAX_TRAIL_LENGTH = 10;
-const FADE_DURATION = 150;
 let targetedElements = new Set();
+
+const MAX_TRAIL_LENGTH = 16;
+const FADE_DURATION = 200;
+const MIN_POINT_DISTANCE = 1.5;
+const SMOOTHING_WINDOW = 3;
+
+let fadeAnimationId = null;
+let fadeStartTime = null;
+let fadeInitialPoints = null;
 
 // Getter/setter for isErasing so eraserTool can share state
 function getIsErasing() { return isErasing; }
@@ -16,94 +24,211 @@ function getTargetedElements() { return targetedElements; }
 
 // --- Convert screen coordinates to SVG viewBox coordinates ---
 function screenToSVGEraser(clientX, clientY) {
-    const rect = svg.getBoundingClientRect();
-    const viewBox = svg.viewBox.baseVal;
-    const mouseX = clientX - rect.left;
-    const mouseY = clientY - rect.top;
-    return {
-        x: viewBox.x + (mouseX / rect.width) * viewBox.width,
-        y: viewBox.y + (mouseY / rect.height) * viewBox.height
-    };
+    const CTM = svg.getScreenCTM();
+    if (!CTM) return { x: 0, y: 0 };
+    try {
+        const inv = CTM.inverse();
+        return {
+            x: (clientX - CTM.e) * inv.a + (clientY - CTM.f) * inv.c,
+            y: (clientX - CTM.e) * inv.b + (clientY - CTM.f) * inv.d
+        };
+    } catch (e) {
+        return {
+            x: (clientX - CTM.e) / CTM.a,
+            y: (clientY - CTM.f) / CTM.d
+        };
+    }
 }
 
-// --- Function to create the eraser trail ---
+// Smooth points using moving average to remove micro-jitter
+function smoothPoints(points) {
+    if (points.length <= 2) return points;
+    const half = Math.floor(SMOOTHING_WINDOW / 2);
+    const result = [points[0]];
+    for (let i = 1; i < points.length - 1; i++) {
+        let sx = 0, sy = 0, count = 0;
+        for (let j = Math.max(0, i - half); j <= Math.min(points.length - 1, i + half); j++) {
+            sx += points[j].x;
+            sy += points[j].y;
+            count++;
+        }
+        result.push({ x: sx / count, y: sy / count });
+    }
+    result.push(points[points.length - 1]);
+    return result;
+}
+
+// Build smooth SVG path using Catmull-Rom → cubic bezier
+function buildSmoothPath(rawPoints) {
+    if (rawPoints.length === 0) return '';
+    if (rawPoints.length === 1) return `M ${rawPoints[0].x} ${rawPoints[0].y}`;
+
+    const points = smoothPoints(rawPoints);
+
+    let d = `M ${points[0].x} ${points[0].y}`;
+
+    if (points.length === 2) {
+        d += ` L ${points[1].x} ${points[1].y}`;
+        return d;
+    }
+
+    const tension = 0.4;
+    for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[i === 0 ? 0 : i - 1];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = points[i + 2] || p2;
+
+        const cp1x = p1.x + (p2.x - p0.x) * tension / 3;
+        const cp1y = p1.y + (p2.y - p0.y) * tension / 3;
+        const cp2x = p2.x - (p3.x - p1.x) * tension / 3;
+        const cp2y = p2.y - (p3.y - p1.y) * tension / 3;
+
+        d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+    return d;
+}
+
+// Safely remove an SVG element
+function safeRemove(el) {
+    if (el && el.parentNode) {
+        el.parentNode.removeChild(el);
+    }
+}
+
+// Remove all trail elements and reset state
+function cleanupTrail() {
+    if (fadeAnimationId) {
+        cancelAnimationFrame(fadeAnimationId);
+        fadeAnimationId = null;
+    }
+    fadeStartTime = null;
+    fadeInitialPoints = null;
+    safeRemove(eraserPath);
+    safeRemove(eraserGlow);
+    eraserPath = null;
+    eraserGlow = null;
+    eraserPoints = [];
+}
+
+// --- Create the eraser trail ---
 function createEraserTrail(x, y) {
+    // Clean up any leftover trail first
+    cleanupTrail();
+
+    // Outer glow
+    eraserGlow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    eraserGlow.setAttribute("fill", "none");
+    eraserGlow.setAttribute("stroke", "rgba(80, 80, 80, 0.15)");
+    eraserGlow.setAttribute("stroke-width", 14 / currentZoom);
+    eraserGlow.setAttribute("stroke-linecap", "round");
+    eraserGlow.setAttribute("stroke-linejoin", "round");
+    eraserGlow.style.pointerEvents = "none";
+    svg.appendChild(eraserGlow);
+
+    // Core path
     eraserPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
     eraserPath.setAttribute("fill", "none");
-    eraserPath.setAttribute("stroke", "rgba(53, 53, 53, 0.4)");
-    eraserPath.setAttribute("stroke-width", 6 / currentZoom);
+    eraserPath.setAttribute("stroke", "rgba(53, 53, 53, 0.5)");
+    eraserPath.setAttribute("stroke-width", 5 / currentZoom);
     eraserPath.setAttribute("stroke-linecap", "round");
     eraserPath.setAttribute("stroke-linejoin", "round");
-
+    eraserPath.style.pointerEvents = "none";
     svg.appendChild(eraserPath);
+
     const svgPt = screenToSVGEraser(x, y);
     eraserPoints = [svgPt];
-    updateEraserPath();
 }
 
-// --- Function to update the eraser trail path ---
+// --- Update the eraser trail with new point ---
 function updateEraserTrail(x, y) {
-    if (!eraserPath || eraserPoints.length === 0) return;
+    if (!eraserPath) return;
 
     const svgPt = screenToSVGEraser(x, y);
-    let lastPoint = eraserPoints[eraserPoints.length - 1];
-    if (!lastPoint) return;
+    const last = eraserPoints[eraserPoints.length - 1];
 
-    if (Math.hypot(lastPoint.x - svgPt.x, lastPoint.y - svgPt.y) > 2 / currentZoom) {
-        eraserPoints.push(svgPt);
+    if (last) {
+        const dist = Math.hypot(last.x - svgPt.x, last.y - svgPt.y);
+        if (dist < MIN_POINT_DISTANCE / currentZoom) return;
     }
+
+    eraserPoints.push(svgPt);
 
     if (eraserPoints.length > MAX_TRAIL_LENGTH) {
         eraserPoints.shift();
     }
 
-    updateEraserPath();
+    renderTrail(eraserPoints, 1.0);
 }
 
-// --- Function to update the eraser path ---
-function updateEraserPath() {
-    if (!eraserPath || eraserPoints.length < 3) return;
+// Render the trail with given points and opacity multiplier
+function renderTrail(points, opacityMul) {
+    if (!eraserPath || points.length < 2) return;
 
-    let pathData = `M ${eraserPoints[0].x} ${eraserPoints[0].y}`;
-    for (let i = 1; i < eraserPoints.length - 2; i++) {
-        let p0 = eraserPoints[i - 1];
-        let p1 = eraserPoints[i];
-        let p2 = eraserPoints[i + 1];
-        let p3 = eraserPoints[i + 2];
+    const pathD = buildSmoothPath(points);
+    const coreW = Math.max(1.5 / currentZoom, (5 / currentZoom) * opacityMul);
+    const glowW = Math.max(3 / currentZoom, (14 / currentZoom) * opacityMul);
+    const coreOpacity = 0.5 * opacityMul;
+    const glowOpacity = 0.15 * opacityMul;
 
-        let cp1x = p1.x + (p2.x - p0.x) / 6;
-        let cp1y = p1.y + (p2.y - p0.y) / 6;
-        let cp2x = p2.x - (p3.x - p1.x) / 6;
-        let cp2y = p2.y - (p3.y - p1.y) / 6;
+    eraserPath.setAttribute("d", pathD);
+    eraserPath.setAttribute("stroke", `rgba(53, 53, 53, ${coreOpacity})`);
+    eraserPath.setAttribute("stroke-width", coreW);
 
-        pathData += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    if (eraserGlow) {
+        eraserGlow.setAttribute("d", pathD);
+        eraserGlow.setAttribute("stroke", `rgba(80, 80, 80, ${glowOpacity})`);
+        eraserGlow.setAttribute("stroke-width", glowW);
+    }
+}
+
+// --- Fade out the eraser trail using rAF ---
+function fadeOutEraserTrail() {
+    if (!eraserPath) {
+        cleanupTrail();
+        return;
     }
 
-    let opacityFactor = Math.max(0.2, eraserPoints.length / MAX_TRAIL_LENGTH);
-    let strokeWidth = Math.max(2 / currentZoom, (10 / currentZoom) * opacityFactor);
+    // Cancel any existing fade
+    if (fadeAnimationId) {
+        cancelAnimationFrame(fadeAnimationId);
+    }
 
-    eraserPath.setAttribute("d", pathData);
-    eraserPath.setAttribute("stroke-width", strokeWidth);
-    eraserPath.setAttribute("stroke", `rgba(53, 53, 53, ${opacityFactor})`);
-}
+    fadeStartTime = performance.now();
+    fadeInitialPoints = [...eraserPoints];
 
-// --- Function to fade out the eraser trail ---
-function fadeOutEraserTrail() {
-    if (!eraserPath) return;
+    function fadeStep() {
+        const now = performance.now();
+        const elapsed = now - fadeStartTime;
+        const progress = Math.min(1, elapsed / FADE_DURATION);
 
-    let fadeInterval = setInterval(() => {
-        if (eraserPoints.length > 0) {
-            eraserPoints.shift();
-            updateEraserPath();
-        } else {
-            clearInterval(fadeInterval);
-            if (eraserPath.parentNode) {
-                svg.removeChild(eraserPath);
-            }
-            eraserPath = null;
+        // Cubic ease out for smooth fade
+        const opacity = 1 - progress * progress * progress;
+
+        if (opacity <= 0.01 || progress >= 1) {
+            cleanupTrail();
+            return;
         }
-    }, FADE_DURATION / MAX_TRAIL_LENGTH);
+
+        renderTrail(fadeInitialPoints, opacity);
+        fadeAnimationId = requestAnimationFrame(fadeStep);
+    }
+
+    fadeAnimationId = requestAnimationFrame(fadeStep);
 }
 
-export { createEraserTrail, updateEraserTrail, fadeOutEraserTrail, getIsErasing, setIsErasing, getTargetedElements };
+// Failsafe: force cleanup any lingering trails (called on tool switch, etc.)
+function forceCleanupEraserTrail() {
+    cleanupTrail();
+    isErasing = false;
+}
 
+export {
+    createEraserTrail,
+    updateEraserTrail,
+    fadeOutEraserTrail,
+    forceCleanupEraserTrail,
+    getIsErasing,
+    setIsErasing,
+    getTargetedElements
+};

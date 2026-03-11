@@ -217,7 +217,7 @@ function handleMouseDown(e) {
 }
 
 function handleMouseMove(e) {
-    const { x, y } = getSvgCoordinates(e);
+    let { x, y } = getSvgCoordinates(e);
     const currentTime = Date.now();
     
     // Keep lastMousePos in screen coordinates for other functions
@@ -229,7 +229,24 @@ function handleMouseMove(e) {
     
     if (isDrawingStroke && isPaintToolActive) {
         const pressure = e.pressure || 0.5;
-        
+
+        // Shift key constrains to straight line from start point
+        if (e.shiftKey && points.length > 0) {
+            const startX = points[0][0], startY = points[0][1];
+            const dx = x - startX, dy = y - startY;
+            const angle = Math.atan2(dy, dx);
+            const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            x = startX + dist * Math.cos(snapAngle);
+            y = startY + dist * Math.sin(snapAngle);
+            // Reset points to just start + current for straight line
+            points = [points[0], [x, y, pressure]];
+            lastPoint = [x, y, pressure];
+            currentStroke.points = points;
+            currentStroke.draw();
+            return;
+        }
+
         if (lastPoint) {
             const dx = x - lastPoint[0];
             const dy = y - lastPoint[1];
@@ -285,7 +302,6 @@ function handleMouseMove(e) {
         currentShape.move(dx, dy);
         startX = x;
         startY = y;
-        currentShape.draw();
     } else if (isResizingStroke && currentShape && currentShape.isSelected) {
         currentShape.updatePosition(resizingAnchorIndex, x, y);
     } else if (isRotatingStroke && currentShape && currentShape.isSelected) {
@@ -390,6 +406,10 @@ function handleMouseUp(e) {
         hoveredFrameStroke = null;
     }
     
+    // Bake accumulated move offset into point coordinates
+    if (currentShape && typeof currentShape.finalizeMove === 'function') {
+        currentShape.finalizeMove();
+    }
     isDraggingStroke = false;
     isResizingStroke = false;
     isRotatingStroke = false;

@@ -160,10 +160,20 @@ const handleMouseMove = (e) => {
     const { x, y } = getSVGCoordsFromMouse(e);
 
     if (isDrawingArrow && currentArrow) {
-            currentArrow.endPoint = { x, y };
+            let endX = x, endY = y;
+            if (e.shiftKey) {
+                const dx = x - currentArrow.startPoint.x;
+                const dy = y - currentArrow.startPoint.y;
+                const angle = Math.atan2(dy, dx);
+                const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                endX = currentArrow.startPoint.x + dist * Math.cos(snapAngle);
+                endY = currentArrow.startPoint.y + dist * Math.sin(snapAngle);
+            }
+            currentArrow.endPoint = { x: endX, y: endY };
 
             // Check for potential attachment and show preview
-            const nearbyShape = Arrow.findNearbyShape({ x, y });
+            const nearbyShape = Arrow.findNearbyShape({ x: endX, y: endY });
             if (nearbyShape) {
                 // Snap to attachment point
                 currentArrow.endPoint = nearbyShape.attachment.point;
@@ -214,7 +224,6 @@ const handleMouseMove = (e) => {
         currentShape.move(dx, dy);
         startX = x;
         startY = y;
-        currentShape.draw();
         svg.style.cursor = 'grabbing';
     } else if (isSelectionToolActive && currentShape && currentShape.isSelected) {
         // Provide visual feedback when hovering over anchors or the arrow
@@ -264,12 +273,10 @@ if (isDrawingArrow && currentArrow) {
 
         if (startAttachment) {
             currentArrow.attachToShape(true, startAttachment.shape, startAttachment.attachment);
-            console.log(`Arrow start attached to ${startAttachment.shape.shapeName}`);
         }
 
         if (endAttachment) {
             currentArrow.attachToShape(false, endAttachment.shape, endAttachment.attachment);
-            console.log(`Arrow end attached to ${endAttachment.shape.shapeName}`);
         }
 
         // Check for frame containment and track attachment
@@ -467,7 +474,6 @@ function detachSelectedArrow() {
             currentShape.draw();
 
             // Add to undo/redo if needed
-            console.log("Arrow detached from shapes");
         }
     }
 }
@@ -551,6 +557,9 @@ window.arrowToolSettings = {
 window.updateSelectedArrowStyle = updateSelectedArrowStyle;
 
 // Export the cleanup function
+// Expose cleanupAttachments globally for centralized delete
+window.cleanupAttachments = cleanupAttachments;
+
 export {
     handleMouseDown as handleMouseDownArrow,
     handleMouseMove as handleMouseMoveArrow,

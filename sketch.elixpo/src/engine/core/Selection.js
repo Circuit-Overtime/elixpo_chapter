@@ -560,30 +560,8 @@ class MultiSelection {
             return;
         }
 
-        switch (shape.shapeName) {
-            case 'rectangle':
-            case 'circle':
-            case 'freehandStroke':
-            case 'frame':
-                if (typeof shape.move === 'function') {
-                    shape.move(dx, dy);
-                    shape.draw();
-                }
-                break;
-            case 'line':
-            case 'arrow':
-                if (typeof shape.move === 'function') {
-                    shape.move(dx, dy);
-                    shape.draw();
-                }
-                break;
-            case 'text':
-            case 'image':
-            case 'icon':
-                if (typeof shape.move === 'function') {
-                    shape.move(dx, dy);
-                }
-                break;
+        if (typeof shape.move === 'function') {
+            shape.move(dx, dy);
         }
 
         if (typeof shape.updateAttachedArrows === 'function') {
@@ -1198,7 +1176,9 @@ createRotatedControls(angleDiff = 0) {
                     shape.y = newBounds.y + relY * newBounds.height;
                     shape.width = relW * newBounds.width;
                     shape.height = relH * newBounds.height;
+                    shape._skipAnchors = true;
                     shape.draw();
+                    shape._skipAnchors = false;
                     break;
 
                 case 'circle':
@@ -1209,7 +1189,9 @@ createRotatedControls(angleDiff = 0) {
                     shape.y = newBounds.y + relYCircle * newBounds.height;
                     shape.rx = initialData.rx * scaleX;
                     shape.ry = initialData.ry * scaleY;
+                    shape._skipAnchors = true;
                     shape.draw();
+                    shape._skipAnchors = false;
                     break;
 
                 case 'line':
@@ -1244,7 +1226,9 @@ createRotatedControls(angleDiff = 0) {
                     if (shape.height !== undefined) shape.height = relHDefault * newBounds.height;
 
                     if (typeof shape.draw === 'function') {
+                        shape._skipAnchors = true;
                         shape.draw();
+                        shape._skipAnchors = false;
                     }
             }
 
@@ -1329,6 +1313,14 @@ createRotatedControls(angleDiff = 0) {
         if (!this.isDragging) return;
         isDraggingMultiSelection = false;
         this.isDragging = false;
+
+        // Finalize freehand stroke moves (bake transform offset into points)
+        this.selectedShapes.forEach(shape => {
+            if (typeof shape.finalizeMove === 'function') {
+                shape.finalizeMove();
+            }
+        });
+
         this.initialPositions.clear();
 
         // Push undo for all moved shapes
@@ -1689,6 +1681,7 @@ function deleteSelectedShapes() {
 // Expose for plain scripts (sketchGeneric.js is not a module)
 window.clearAllSelections = clearAllSelections;
 window.multiSelection = multiSelection;
+window.deleteSelectedShapes = deleteSelectedShapes;
 
 export {
     handleMultiSelectionMouseDown,

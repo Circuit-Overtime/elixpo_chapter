@@ -2,7 +2,7 @@
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 const TEXT_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 
@@ -30,6 +30,15 @@ export default function TextSidebar() {
   const [codeMode, setCodeMode] = useState(false)
   const [language, setLanguage] = useState('javascript')
 
+  // Sync code mode state from engine when a shape is selected
+  useEffect(() => {
+    window.__onCodeModeChanged = (isCode) => {
+      setCodeMode(isCode)
+      window.isTextInCodeMode = isCode
+    }
+    return () => { window.__onCodeModeChanged = null }
+  }, [])
+
   const updateColor = useCallback((c) => {
     setTextColor(c)
     if (window.updateSelectedTextStyle) window.updateSelectedTextStyle({ color: c })
@@ -49,7 +58,19 @@ export default function TextSidebar() {
     const next = !codeMode
     setCodeMode(next)
     window.isTextInCodeMode = next
+    if (next) {
+      // Convert selected text → code
+      if (window.__convertTextToCode) window.__convertTextToCode()
+    } else {
+      // Convert selected code → text
+      if (window.__convertCodeToText) window.__convertCodeToText()
+    }
   }, [codeMode])
+
+  const updateLanguage = useCallback((lang) => {
+    setLanguage(lang)
+    if (window.__setCodeLanguage) window.__setCodeLanguage(lang)
+  }, [])
 
   const visible = activeTool === TOOLS.TEXT || activeTool === TOOLS.CODE || selectedShapeSidebar === 'text'
 
@@ -70,22 +91,26 @@ export default function TextSidebar() {
         </div>
       </ToolbarButton>
 
-      <Divider />
+      {!codeMode && (
+        <>
+          <Divider />
 
-      {/* Font */}
-      <ToolbarButton icon="bxs-font-family" tooltip="Font">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Font</p>
-        <div className="flex flex-col gap-0.5">
-          {FONTS.map((f) => (
-            <button key={f.value} onClick={() => updateFont(f.value)}
-              className={`flex items-center px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${font === f.value ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
-              style={{ fontFamily: f.value }}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </ToolbarButton>
+          {/* Font */}
+          <ToolbarButton icon="bxs-font-family" tooltip="Font">
+            <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Font</p>
+            <div className="flex flex-col gap-0.5">
+              {FONTS.map((f) => (
+                <button key={f.value} onClick={() => updateFont(f.value)}
+                  className={`flex items-center px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${font === f.value ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
+                  style={{ fontFamily: f.value }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </ToolbarButton>
+        </>
+      )}
 
       <Divider />
 
@@ -118,7 +143,7 @@ export default function TextSidebar() {
           {codeMode && (
             <div className="flex flex-wrap gap-1 max-w-[180px]">
               {LANGUAGES.map((lang) => (
-                <button key={lang} onClick={() => setLanguage(lang)}
+                <button key={lang} onClick={() => updateLanguage(lang)}
                   className={`px-1.5 py-0.5 rounded text-[9px] transition-all duration-100 ${language === lang ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-dim hover:bg-white/[0.06] hover:text-text-secondary'}`}
                 >{lang}</button>
               ))}

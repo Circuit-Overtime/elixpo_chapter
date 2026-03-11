@@ -406,7 +406,6 @@ export function pushTransformAction(shape, oldPos, newPos) {
     
     // Clear redo stack when new action is performed
     redoStack.length = 0;
-    console.log(undoStack);
 }
 
 export function pushOptionsChangeAction(shape, oldOptions) {
@@ -788,7 +787,6 @@ export function undo() {
             action.shape.isSelected = false;
             action.shape.draw();
             
-            console.log("Arrow undo: restored position and attachments");
 
             
         } 
@@ -1240,7 +1238,6 @@ export function redo() {
             action.shape.isSelected = false;
             action.shape.draw();
             
-            console.log("Arrow redo: restored position and attachments");
         } 
         else if (action.shape.type === 'icon') {
             action.shape.restore(action.newPos);
