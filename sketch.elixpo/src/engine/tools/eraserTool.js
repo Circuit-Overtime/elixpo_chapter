@@ -1,9 +1,12 @@
 /* eslint-disable */
 // Eraser tool - extracted from eraserTool.js
 // Depends on globals: svg, isEraserToolActive, ACTION_DELETE, historyStack, redoStack, clearAllSelections
-import { createEraserTrail, updateEraserTrail, fadeOutEraserTrail, getIsErasing, setIsErasing, getTargetedElements } from '../core/EraserTrail.js';
+import { createEraserTrail, updateEraserTrail, fadeOutEraserTrail, forceCleanupEraserTrail, getIsErasing, setIsErasing, getTargetedElements } from '../core/EraserTrail.js';
 
 const eraserCursorSVG = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="#222" stroke="white" stroke-width="2"/></svg>')}`;
+
+// Expose force cleanup on window so SketchEngine can call it on tool switch
+window.forceCleanupEraserTrail = forceCleanupEraserTrail;
 
 // Walk up from any element to find its top-level SVG child (direct child of svg)
 function findTopLevelGroup(element) {
@@ -27,9 +30,9 @@ function handleElementHighlight(clientX, clientY) {
   // Find the top-level SVG child group for this element
   let elementToHighlight = findTopLevelGroup(element);
 
-  // Skip the eraser trail path itself
+  // Skip the eraser trail paths and any pointer-events:none elements
   if (!elementToHighlight) return;
-  if (elementToHighlight.tagName === 'path' && elementToHighlight.getAttribute('stroke')?.includes('53, 53, 53')) return;
+  if (elementToHighlight.style.pointerEvents === 'none') return;
 
   if (!targetedElements.has(elementToHighlight)) {
       targetedElements.add(elementToHighlight);

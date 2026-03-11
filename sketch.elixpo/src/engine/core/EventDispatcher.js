@@ -305,11 +305,9 @@ const handleMainMouseLeave = (e) => {
     // Always clean up any stray selection rectangle when pointer leaves canvas
     removeMultiSelectionRect();
 
-    // Eraser: stop erasing and clean up trail (globals from eraserTool.js / eraserTrail.js)
-    if (typeof isErasing !== 'undefined' && isErasing) {
-        isErasing = false;
-        if (typeof removeTargetedElements === 'function') removeTargetedElements();
-        if (typeof fadeOutEraserTrail === 'function') fadeOutEraserTrail();
+    // Eraser: force cleanup any lingering trail
+    if (typeof window.forceCleanupEraserTrail === 'function') {
+        window.forceCleanupEraserTrail();
     }
 
     // Laser: stop drawing and fade out active laser (globals from laserTool.js)
@@ -319,8 +317,6 @@ const handleMainMouseLeave = (e) => {
             const lastLaser = lasers[lasers.length - 1];
             fadeLaserTrail(lastLaser);
         }
-        hasMoved = false;
-        lastMovePoint = null;
     }
 };
 

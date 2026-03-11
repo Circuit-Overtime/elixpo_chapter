@@ -99,8 +99,10 @@ const useSketchStore = create((set, get) => ({
   getCursor: () => {
     const tool = get().activeTool
     if (tool === TOOLS.ERASER) {
-      // Return custom eraser cursor data URI
       return `url("data:image/svg+xml;base64,${typeof btoa !== 'undefined' ? btoa('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="#222" stroke="white" stroke-width="2"/></svg>') : ''}") 10 10, auto`
+    }
+    if (tool === TOOLS.LASER) {
+      return `url("data:image/svg+xml;base64,${typeof btoa !== 'undefined' ? btoa('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1971c2" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>') : ''}") 0 0, auto`
     }
     return TOOL_CURSORS[tool] || 'crosshair'
   },
@@ -169,8 +171,12 @@ const useSketchStore = create((set, get) => ({
   setPanStart: (p) => set({ panStart: p }),
 
   // --- Canvas background ---
-  canvasBackground: '#000',
+  canvasBackground: '#13171C',
   setCanvasBackground: (color) => set({ canvasBackground: color }),
+
+  // --- Grid ---
+  gridEnabled: false,
+  toggleGrid: () => set((s) => ({ gridEnabled: !s.gridEnabled })),
 
   // --- RoughJS refs (set once after mount) ---
   roughCanvas: null,

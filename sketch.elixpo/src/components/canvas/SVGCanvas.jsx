@@ -4,10 +4,13 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import useSketchEngine from '@/hooks/useSketchEngine'
 
+const GRID_SIZE = 20
+
 export default function SVGCanvas() {
   const [svgReady, setSvgReady] = useState(false)
   const svgRef = useRef(null)
   const canvasBackground = useSketchStore((s) => s.canvasBackground)
+  const gridEnabled = useSketchStore((s) => s.gridEnabled)
   const getCursor = useSketchStore((s) => s.getCursor)
   const cursor = getCursor()
 
@@ -44,6 +47,11 @@ export default function SVGCanvas() {
   // Initialize the imperative sketch engine on this SVG element
   useSketchEngine(svgRef, svgReady)
 
+  // Expose grid state to engine
+  useEffect(() => {
+    window.__gridEnabled = gridEnabled
+  }, [gridEnabled])
+
   return (
     <svg
       id="freehand-canvas"
@@ -55,6 +63,48 @@ export default function SVGCanvas() {
       }}
       viewBox={viewBox}
       suppressHydrationWarning
-    />
+    >
+      {gridEnabled && (
+        <defs>
+          <pattern
+            id="grid-small"
+            width={GRID_SIZE}
+            height={GRID_SIZE}
+            patternUnits="userSpaceOnUse"
+          >
+            <path
+              d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
+              fill="none"
+              stroke="rgba(255,255,255,0.06)"
+              strokeWidth="0.5"
+            />
+          </pattern>
+          <pattern
+            id="grid-large"
+            width={GRID_SIZE * 5}
+            height={GRID_SIZE * 5}
+            patternUnits="userSpaceOnUse"
+          >
+            <rect width={GRID_SIZE * 5} height={GRID_SIZE * 5} fill="url(#grid-small)" />
+            <path
+              d={`M ${GRID_SIZE * 5} 0 L 0 0 0 ${GRID_SIZE * 5}`}
+              fill="none"
+              stroke="rgba(255,255,255,0.12)"
+              strokeWidth="0.8"
+            />
+          </pattern>
+        </defs>
+      )}
+      {gridEnabled && (
+        <rect
+          x="-100000"
+          y="-100000"
+          width="200000"
+          height="200000"
+          fill="url(#grid-large)"
+          style={{ pointerEvents: 'none' }}
+        />
+      )}
+    </svg>
   )
 }

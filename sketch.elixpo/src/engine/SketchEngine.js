@@ -155,6 +155,9 @@ class SketchEngine {
             if (sidebar && window.__sketchStoreApi) {
                 window.__sketchStoreApi.setSelectedShapeSidebar(sidebar);
             }
+            // Tell sidebar whether the selected shape is code mode
+            window.__selectedShapeIsCode = (shapeName === 'code');
+            if (window.__onCodeModeChanged) window.__onCodeModeChanged(shapeName === 'code');
         };
     }
 
@@ -278,6 +281,10 @@ class SketchEngine {
             const aiRenderer = await import('./core/AIRenderer.js');
             if (aiRenderer.initAIRenderer) aiRenderer.initAIRenderer();
 
+            // Initialize graph engine bridge
+            const graphEngine = await import('./core/GraphEngine.js');
+            if (graphEngine.initGraphEngine) graphEngine.initGraphEngine();
+
             // Initialize scene serializer bridge
             const sceneSerializer = await import('./core/SceneSerializer.js');
             if (sceneSerializer.initSceneSerializer) sceneSerializer.initSceneSerializer();
@@ -304,6 +311,11 @@ class SketchEngine {
         }
         if (typeof window.disableAllSideBars === 'function') {
             window.disableAllSideBars();
+        }
+
+        // Force cleanup eraser trail when switching tools
+        if (typeof window.forceCleanupEraserTrail === 'function') {
+            window.forceCleanupEraserTrail();
         }
 
         window.isPaintToolActive = false;

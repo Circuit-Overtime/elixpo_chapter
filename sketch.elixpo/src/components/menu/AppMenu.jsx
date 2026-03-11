@@ -23,7 +23,6 @@ const MENU_ITEMS = [
 const LINKS = [
   { label: 'GitHub', icon: 'bxl-github', href: '#' },
   { label: 'Report An Issue', icon: 'bx-bug', href: '#' },
-  { label: 'Follow Us', icon: 'bxl-twitter', href: '#' },
 ]
 
 export default function AppMenu() {
@@ -36,6 +35,8 @@ export default function AppMenu() {
   const setCanvasBackground = useSketchStore((s) => s.setCanvasBackground)
   const clearShapes = useSketchStore((s) => s.clearShapes)
   const clearHistory = useSketchStore((s) => s.clearHistory)
+  const gridEnabled = useSketchStore((s) => s.gridEnabled)
+  const toggleGrid = useSketchStore((s) => s.toggleGrid)
 
   const handleItemClick = (item) => {
     if (item.action === 'save') {
@@ -49,13 +50,21 @@ export default function AppMenu() {
   }
 
   return (
-    <div
-      className={`absolute top-14 right-4 w-[220px] bg-surface/75 backdrop-blur-lg rounded-2xl z-[1000] border border-border-light p-2 font-[lixFont] transition-all duration-200 ${
-        menuOpen
-          ? 'opacity-100 blur-0 pointer-events-auto'
-          : 'opacity-0 blur-[20px] pointer-events-none'
-      }`}
-    >
+    <>
+      {/* Invisible backdrop to close menu on outside click */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-[999]"
+          onClick={closeMenu}
+        />
+      )}
+      <div
+        className={`absolute top-14 right-4 w-[220px] bg-surface/75 backdrop-blur-lg rounded-2xl z-[1000] border border-border-light p-2 font-[lixFont] transition-all duration-200 ${
+          menuOpen
+            ? 'opacity-100 blur-0 pointer-events-auto'
+            : 'opacity-0 blur-[20px] pointer-events-none'
+        }`}
+      >
       {/* Menu items */}
       {MENU_ITEMS.map((item) => (
         <button
@@ -72,6 +81,20 @@ export default function AppMenu() {
           )}
         </button>
       ))}
+
+      {/* Grid toggle */}
+      <button
+        onClick={toggleGrid}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+      >
+        <span className="flex items-center gap-2">
+          <i className={`bx bx-grid-alt text-sm`} />
+          Show Grid
+        </span>
+        <div className={`w-7 h-4 rounded-full transition-all duration-150 relative ${gridEnabled ? 'bg-accent-blue' : 'bg-white/10'}`}>
+          <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all duration-150 ${gridEnabled ? 'left-3.5' : 'left-0.5'}`} />
+        </div>
+      </button>
 
       <hr className="border-border-light my-1.5" />
 
@@ -137,5 +160,6 @@ export default function AppMenu() {
         </div>
       </div>
     </div>
+    </>
   )
 }

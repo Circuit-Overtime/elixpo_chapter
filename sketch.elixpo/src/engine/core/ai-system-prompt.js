@@ -53,8 +53,15 @@ You MUST respond with ONLY a valid JSON object — no markdown fences, no explan
   // Visual styling (all optional)
   "stroke":          "string — edge color (default '#e0e0e0')",
   "strokeWidth":     "number — edge thickness (default 1.5)",
-  "lineStyle":       "string — 'solid' | 'dashed' | 'dotted' (default 'solid')"
+  "lineStyle":       "string — 'solid' | 'dashed' | 'dotted' (default 'solid')",
+  "arrowHeadStyle":  "string — 'default' | 'outline' | 'solid' | 'square' (default 'default', only for directed edges)"
 }
+
+Arrow head styles (only apply when "directed": true):
+  • "default" — open V-shaped polyline head (two angled lines meeting at tip)
+  • "outline" — closed hollow triangle head (stroke only, no fill)
+  • "solid"   — closed filled triangle head (filled with stroke color)
+  • "square"  — rectangular head perpendicular to the arrow shaft
 
 ─── SubgraphObject ───────────────────────
 

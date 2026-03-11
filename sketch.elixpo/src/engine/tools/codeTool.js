@@ -51,6 +51,14 @@ setTextReferences(selectedCodeBlock, updateCodeSelectionFeedback, svg);
 // Convert group element to our CodeShape class
 function wrapCodeElement(groupElement) {
     const codeShape = new CodeShape(groupElement);
+    // Double-click to edit code block (works with any tool)
+    groupElement.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const codeElement = groupElement.querySelector('text');
+        if (codeElement) {
+            makeCodeEditable(codeElement, groupElement, e);
+        }
+    });
     return codeShape;
 }
 
@@ -95,11 +103,11 @@ function addCodeBlock(event) {
     backgroundRect.setAttribute("y", -10); // Padding
     backgroundRect.setAttribute("width", 300); // Initial width
     backgroundRect.setAttribute("height", 60); // Initial height
-    backgroundRect.setAttribute("fill", "#212121"); // Dark background
-    backgroundRect.setAttribute("stroke", "#666");
+    backgroundRect.setAttribute("fill", "#161b22"); // GitHub dark background
+    backgroundRect.setAttribute("stroke", "#30363d");
     backgroundRect.setAttribute("stroke-width", "1");
-    backgroundRect.setAttribute("rx", "4"); // Rounded corners
-    backgroundRect.setAttribute("ry", "4");
+    backgroundRect.setAttribute("rx", "6"); // Rounded corners
+    backgroundRect.setAttribute("ry", "6");
     gElement.appendChild(backgroundRect);
 
     // Create SVG text element
@@ -204,10 +212,8 @@ function adjustCodeEditorSize(editor) {
 
 
 function makeCodeEditable(codeElement, groupElement, clickEvent = null) {
-    console.log("Making code editable");
 
     if (document.querySelector(".svg-code-editor")) {
-        console.log("Already editing another code block.");
         return;
     }
 
@@ -223,10 +229,10 @@ function makeCodeEditable(codeElement, groupElement, clickEvent = null) {
     editorContainer.className = "svg-code-container";
     editorContainer.style.position = "absolute";
     editorContainer.style.zIndex = "10000";
-    editorContainer.style.backgroundColor = "#1e1e1e";
-    editorContainer.style.border = "1px solid #666";
-    editorContainer.style.borderRadius = "4px";
-    editorContainer.style.padding = "8px";
+    editorContainer.style.backgroundColor = "#161b22";
+    editorContainer.style.border = "1px solid #30363d";
+    editorContainer.style.borderRadius = "6px";
+    editorContainer.style.padding = "12px";
     editorContainer.style.fontFamily = "monospace";
     editorContainer.style.overflow = "hidden";
     editorContainer.style.minWidth = "200px";
@@ -241,16 +247,15 @@ function makeCodeEditable(codeElement, groupElement, clickEvent = null) {
     input.style.maxHeight = "400px";
     input.style.overflowY = "auto";
     input.style.whiteSpace = "pre";
-    input.style.fontFamily = "Consolas, 'Courier New', monospace";
+    input.style.fontFamily = "lixCode, Consolas, 'Courier New', monospace";
     input.style.fontSize = codeElement.getAttribute("font-size") || codeTextSize;
-    input.style.color = "#d4d4d4";
+    input.style.color = "#c9d1d9";
     input.style.lineHeight = "1.4";
     input.style.tabSize = "4";
     input.style.background = "transparent";
 
     // FIXED: Use the improved text extraction
     let codeContent = extractTextFromCodeElement(codeElement);
-    console.log("Extracted code content:", JSON.stringify(codeContent)); // Debug log
 
     // Set initial content with plain text (no highlighting initially)
     input.textContent = codeContent;
@@ -391,7 +396,6 @@ function makeCodeEditable(codeElement, groupElement, clickEvent = null) {
 
 function applySyntaxHighlightingImproved(editor) {
     if (!window.hljs) {
-        console.warn("Highlight.js not loaded");
         return;
     }
 
@@ -447,7 +451,6 @@ function applySyntaxHighlightingImproved(editor) {
             editor.setAttribute('data-language', result.language);
         }
     } catch (error) {
-        console.warn("Error in syntax highlighting:", error);
     } finally {
         // Always clear the highlighting flag
         if (editor.setHighlighting) {
@@ -502,12 +505,10 @@ function restoreCursorPositionImproved(editor, targetOffset) {
             selection.addRange(range);
         }
     } catch (error) {
-        console.warn("Could not restore cursor position:", error);
         // Final fallback: just focus the editor
         try {
             editor.focus();
         } catch (focusError) {
-            console.warn("Could not focus editor:", focusError);
         }
     }
 }
@@ -580,7 +581,6 @@ function extractTextFromCodeElement(codeElement) {
 function renderCodeFromEditor(input, codeElement, deleteIfEmpty = false) {
     const editorContainer = input.closest('.svg-code-container');
     if (!editorContainer || !document.body.contains(editorContainer)) {
-        console.warn("RenderCode called but editor container is already removed.");
         return;
     }
 
@@ -602,12 +602,10 @@ function renderCodeFromEditor(input, codeElement, deleteIfEmpty = false) {
     document.body.removeChild(editorContainer);
 
     if (!gElement || !codeElement) {
-        console.error("RenderCode cannot find original group or code element.");
         return;
     }
 
     if (!gElement.parentNode) {
-        console.warn("RenderCode: Group element no longer attached to SVG.");
         if (selectedCodeBlock === gElement) {
             deselectCodeBlock();
         }
@@ -735,7 +733,6 @@ function applySyntaxHighlightingToSVG(code, language) {
 
 function applySyntaxHighlighting(editor) {
     if (!window.hljs) {
-        console.warn("Highlight.js not loaded");
         return;
     }
 
@@ -762,7 +759,6 @@ function applySyntaxHighlighting(editor) {
     // Add detected language info (optional)
     if (result.language) {
         editor.setAttribute('data-language', result.language);
-        console.log(`Detected language: ${result.language}`);
     }
 }
 
@@ -800,14 +796,12 @@ function restoreCursorPosition(editor, position) {
             sel.addRange(range);
         }
     } catch (error) {
-        console.warn("Could not restore cursor position:", error);
     }
 }
 
 
 function renderCode(input, codeElement, deleteIfEmpty = false) {
     if (!input || !document.body.contains(input)) {
-         console.warn("RenderCode called but input textarea is already removed.");
          return;
     }
 
@@ -821,12 +815,10 @@ function renderCode(input, codeElement, deleteIfEmpty = false) {
     document.body.removeChild(input);
 
     if (!gElement || !codeElement) {
-        console.error("RenderCode cannot find original group or code element.");
         return;
     }
 
     if (!gElement.parentNode) {
-        console.warn("RenderCode: Group element no longer attached to SVG.");
         if (selectedCodeBlock === gElement) {
              deselectCodeBlock();
         }
@@ -951,34 +943,34 @@ function processHighlightedNodes(node, parentTspan) {
 
 
 function applyHighlightColor(tspan, className) {
-    // VS Code Dark Theme colors
+    // GitHub Dark Dimmed theme colors
     if (className.includes('hljs-keyword') || className.includes('hljs-built_in')) {
-        tspan.setAttribute("fill", "#569cd6"); // Blue
+        tspan.setAttribute("fill", "#ff7b72"); // Red (keywords)
     } else if (className.includes('hljs-string') || className.includes('hljs-template-string')) {
-        tspan.setAttribute("fill", "#ce9178"); // Orange
+        tspan.setAttribute("fill", "#a5d6ff"); // Light blue (strings)
     } else if (className.includes('hljs-comment')) {
-        tspan.setAttribute("fill", "#6a9955"); // Green
+        tspan.setAttribute("fill", "#8b949e"); // Gray (comments)
         tspan.setAttribute("font-style", "italic");
     } else if (className.includes('hljs-number') || className.includes('hljs-literal')) {
-        tspan.setAttribute("fill", "#b5cea8"); // Light green
+        tspan.setAttribute("fill", "#79c0ff"); // Blue (numbers/literals)
     } else if (className.includes('hljs-function') || className.includes('hljs-title')) {
-        tspan.setAttribute("fill", "#dcdcaa"); // Yellow
+        tspan.setAttribute("fill", "#d2a8ff"); // Purple (functions)
     } else if (className.includes('hljs-variable') || className.includes('hljs-name')) {
-        tspan.setAttribute("fill", "#9cdcfe"); // Light blue
+        tspan.setAttribute("fill", "#ffa657"); // Orange (variables)
     } else if (className.includes('hljs-type') || className.includes('hljs-class')) {
-        tspan.setAttribute("fill", "#4ec9b0"); // Teal
+        tspan.setAttribute("fill", "#f0883e"); // Orange (types)
     } else if (className.includes('hljs-operator') || className.includes('hljs-punctuation')) {
-        tspan.setAttribute("fill", "#d4d4d4"); // Light gray
+        tspan.setAttribute("fill", "#c9d1d9"); // Light gray (operators)
     } else if (className.includes('hljs-property') || className.includes('hljs-attribute')) {
-        tspan.setAttribute("fill", "#92c5f8"); // Light blue
+        tspan.setAttribute("fill", "#79c0ff"); // Blue (properties)
     } else if (className.includes('hljs-tag')) {
-        tspan.setAttribute("fill", "#569cd6"); // Blue for HTML tags
+        tspan.setAttribute("fill", "#7ee787"); // Green (HTML tags)
     } else if (className.includes('hljs-meta') || className.includes('hljs-doctag')) {
-        tspan.setAttribute("fill", "#9b9b9b"); // Gray
+        tspan.setAttribute("fill", "#8b949e"); // Gray (meta)
     } else if (className.includes('hljs-regexp')) {
-        tspan.setAttribute("fill", "#d16969"); // Red
+        tspan.setAttribute("fill", "#a5d6ff"); // Light blue (regex)
     } else {
-        tspan.setAttribute("fill", codeTextColor); // Default color
+        tspan.setAttribute("fill", "#c9d1d9"); // GitHub default text color
     }
 }
 
@@ -989,7 +981,6 @@ function createCodeSelectionFeedback(groupElement) {
 
     const backgroundRect = groupElement.querySelector('.code-background');
     if (!backgroundRect) {
-         console.warn("Cannot create selection feedback: background rect not found in group.");
          return;
     }
 
@@ -1116,7 +1107,6 @@ function updateCodeSelectionFeedback() {
     if (wasHidden) selectedCodeBlock.style.display = 'none';
 
     if (bbox.width === 0 && bbox.height === 0 && codeElement.textContent.trim() !== "") {
-        console.warn("BBox calculation resulted in zero dimensions. Feedback may be incorrect.");
     }
 
     const padding = 8;
@@ -1227,16 +1217,8 @@ function selectCodeBlock(groupElement) {
     toggleSpans.forEach(el => {
         if (el.getAttribute("data-id") === "true") el.classList.add("selected");
     });
-    // Show the text/code property panel
-    const textSideBar = document.getElementById("textToolBar");
-    if (textSideBar) textSideBar.classList.remove("hidden");
-    const langSelector = document.getElementById("textLanguageSelector");
-    if (langSelector) langSelector.classList.remove("hidden");
-    const langSelect = document.getElementById("codeLanguageSelect");
-    if (langSelect) {
-        const codeEl = groupElement.querySelector('text');
-        langSelect.value = codeEl?.getAttribute("data-language") || "auto";
-    }
+    // Show the text/code property panel via React bridge (pass 'code' to set code mode)
+    if (window.__showSidebarForShape) window.__showSidebarForShape('code');
 }
 
 function deselectCodeBlock() {
@@ -1320,7 +1302,6 @@ function startCodeResize(event, anchor) {
     
     const codeElement = selectedCodeBlock.querySelector('text');
     if (!codeElement) {
-        console.error("Cannot start resize: code element not found.");
         isCodeResizing = false;
         return;
     }
@@ -1655,7 +1636,6 @@ const handleCodeMouseUp = (event) => {
 
             selectedCodeBlock.setAttribute("data-x", finalTranslateX);
             selectedCodeBlock.setAttribute("data-y", finalTranslateY);
-            console.log("Code Drag End - Final Pos:", finalTranslateX, finalTranslateY);
         }
 
         draggedCodeInitialFrame = null;
@@ -1693,7 +1673,6 @@ const handleCodeMouseUp = (event) => {
 
                 selectedCodeBlock.setAttribute("data-x", finalTranslateX);
                 selectedCodeBlock.setAttribute("data-y", finalTranslateY);
-                console.log("Code Resize End - Final Font Size:", finalFontSize);
             }
 
             clearTimeout(selectedCodeBlock.updateFeedbackTimeout);
@@ -1725,7 +1704,6 @@ const handleCodeMouseUp = (event) => {
                 );
             }
 
-            console.log("Code Rotation End");
         }
         updateCodeSelectionFeedback();
     }
@@ -1832,16 +1810,13 @@ const handleCodeMouseDown = function (e) {
             const codeElement = targetGroup.querySelector('text');
 
             if (codeElement && (e.target.tagName === "text" || e.target.tagName === "tspan")) {
-                console.log("Editing existing code. Group:", targetGroup);
                 makeCodeEditable(codeElement, targetGroup, e); // Pass click event for position
                 e.stopPropagation();
             } else {
-                 console.warn("Could not find code element for editing, creating new code block instead.");
                  deselectCodeBlock();
                  addCodeBlock(e);
             }
         } else {
-             console.log("Creating new code block.");
              deselectCodeBlock();
              addCodeBlock(e);
         }
@@ -1860,7 +1835,6 @@ codeTextColorOptions.forEach((span) => {
         const newColor = span.getAttribute("data-id");
         const oldColor = codeTextColor;
         codeTextColor = newColor;
-        console.log("Set Default Code Text Color:", codeTextColor);
 
         if (selectedCodeBlock) {
             const codeEditor = selectedCodeBlock.querySelector('.svg-code-editor');
@@ -1905,7 +1879,6 @@ codeTextFontOptions.forEach((span) => {
         const newFont = span.getAttribute("data-id");
         const oldFont = codeTextFont;
         codeTextFont = newFont;
-        console.log("Set Default Code Text Font:", codeTextFont);
 
         if (selectedCodeBlock) {
             const codeEditor = selectedCodeBlock.querySelector('.svg-code-editor');
@@ -1951,7 +1924,6 @@ codeTextSizeOptions.forEach((span) => {
         const newSize = span.getAttribute("data-id") + "px";
         const oldSize = codeTextSize;
         codeTextSize = newSize;
-        console.log("Set Default Code Text Size:", codeTextSize);
 
         if (selectedCodeBlock) {
             const codeEditor = selectedCodeBlock.querySelector('.svg-code-editor');
@@ -1998,7 +1970,6 @@ codeTextAlignOptions.forEach((span) => {
         const newAlign = span.getAttribute("data-id");
         const oldAlign = codeTextAlign;
         codeTextAlign = newAlign;
-        console.log("Set Default Code Text Align:", codeTextAlign);
 
         if (selectedCodeBlock) {
             const codeEditor = selectedCodeBlock.querySelector('.svg-code-editor');
@@ -2045,7 +2016,7 @@ const editorStyles = `
 
 .svg-code-editor {
     scrollbar-width: thin;
-    scrollbar-color: #666 #2d2d2d;
+    scrollbar-color: #484f58 #161b22;
 }
 
 .svg-code-editor::-webkit-scrollbar {
@@ -2054,17 +2025,17 @@ const editorStyles = `
 }
 
 .svg-code-editor::-webkit-scrollbar-track {
-    background: #2d2d2d;
-    border-radius: 4px;
+    background: #161b22;
+    border-radius: 6px;
 }
 
 .svg-code-editor::-webkit-scrollbar-thumb {
-    background: #666;
-    border-radius: 4px;
+    background: #484f58;
+    border-radius: 6px;
 }
 
 .svg-code-editor::-webkit-scrollbar-thumb:hover {
-    background: #888;
+    background: #6e7681;
 }
 
 /* Language detection indicator */

@@ -82,21 +82,20 @@ class Circle {
 
     draw() {
         const childrenToRemove = [];
+        const preserveSet = this._skipAnchors ? new Set([...this.anchors, this.selectionOutline, this.rotationAnchor].filter(Boolean)) : null;
         for (let i = 0; i < this.group.children.length; i++) {
             const child = this.group.children[i];
             if (child !== this.element && child !== this.labelElement && child !== this._hitArea) {
+                if (preserveSet && preserveSet.has(child)) continue;
                 childrenToRemove.push(child);
             }
         }
         childrenToRemove.forEach(child => this.group.removeChild(child));
-        if (this.element && this.element.parentNode === this.group) {
-            this.group.removeChild(this.element);
-            this.element = null;
-        }
         const optionsString = JSON.stringify(this.options);
         const isInitialDraw = this.element === null;
+        const sizeChanged = this.rx !== this._lastDrawn.rx || this.ry !== this._lastDrawn.ry;
         const optionsChanged = optionsString !== this._lastDrawn.options;
-        if (isInitialDraw || optionsChanged) {
+        if (isInitialDraw || optionsChanged || sizeChanged) {
             if (this.element && this.element.parentNode === this.group) {
                 this.group.removeChild(this.element);
             }
@@ -127,7 +126,7 @@ class Circle {
         this._updateLabelElement();
 
         this.group.setAttribute('transform', `translate(${this.x}, ${this.y}) rotate(${this.rotation}, 0, 0)`);
-        if (this.isSelected) {
+        if (this.isSelected && !this._skipAnchors) {
             this.addAnchors();
         }
         if (!this.group.parentNode) {
@@ -138,15 +137,17 @@ class Circle {
     move(dx, dy) {
         this.x += dx;
         this.y += dy;
+
+        // Fast path: just update the transform — no need to rebuild RoughJS element
+        this.group.setAttribute('transform', `translate(${this.x}, ${this.y}) rotate(${this.rotation}, 0, 0)`);
+
         this.updateAttachedArrows();
-        
+
         // Only update frame containment if we're actively dragging the shape itself
         // and not being moved by a parent frame
         if (isDraggingShapeCircle && !this.isBeingMovedByFrame) {
             this.updateFrameContainment();
         }
-
-        this.draw();
     }
 
     updateFrameContainment() {
