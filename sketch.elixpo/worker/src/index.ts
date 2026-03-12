@@ -74,10 +74,40 @@ export default {
       return handleSceneDelete(request, env);
     }
 
-    // --- Image upload route ---
+    // --- Workspace routes ---
+
+    if (url.pathname === '/api/scenes/list' && request.method === 'GET') {
+      return handleSceneList(request, env);
+    }
+
+    if (url.pathname === '/api/scenes/cleanup' && request.method === 'POST') {
+      return handleSceneCleanup(request, env);
+    }
+
+    // --- Image routes ---
 
     if (url.pathname === '/api/images/sign' && request.method === 'POST') {
       return handleImageSign(request, env);
+    }
+
+    if (url.pathname === '/api/images/delete' && request.method === 'DELETE') {
+      return handleImageDelete(request, env);
+    }
+
+    // --- AI quota routes ---
+
+    if (url.pathname === '/api/ai/quota' && request.method === 'GET') {
+      return handleAIQuota(request, env);
+    }
+
+    if (url.pathname === '/api/ai/usage' && request.method === 'POST') {
+      return handleAIUsage(request, env);
+    }
+
+    // --- User quota summary ---
+
+    if (url.pathname === '/api/user/quota-summary' && request.method === 'GET') {
+      return handleQuotaSummary(request, env);
     }
 
     // Health check
@@ -86,6 +116,31 @@ export default {
     }
 
     return json({ error: 'Not found' }, 404);
+  },
+
+  // Scheduled cleanup: runs via Cloudflare Cron Trigger (e.g. daily)
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil((async () => {
+      try {
+        const staleScenes = await env.DB.prepare(
+          `SELECT id, session_id FROM scenes
+           WHERE last_accessed_at < datetime('now', '-1 month')
+              OR (last_accessed_at IS NULL AND created_at < datetime('now', '-1 month'))`
+        ).all<{ id: string; session_id: string }>();
+
+        if (!staleScenes.results || staleScenes.results.length === 0) return;
+
+        for (const scene of staleScenes.results) {
+          try {
+            await deleteCloudinaryFolder(scene.session_id, env);
+          } catch {}
+          await env.DB.prepare(`DELETE FROM scenes WHERE id = ?`).bind(scene.id).run();
+        }
+        console.log(`[Scheduled Cleanup] Deleted ${staleScenes.results.length} stale workspaces`);
+      } catch (err) {
+        console.error('[Scheduled Cleanup] Error:', err);
+      }
+    })());
   },
 };
 
@@ -244,7 +299,7 @@ async function handleAuthMe(request: Request, env: Env): Promise<Response> {
       isAdmin: sessionData.isAdmin,
     },
     activeRooms: roomCount?.count || 0,
-    maxRooms: 10, // free plan
+    maxRooms: 1, // 1 room per user
   });
 }
 
@@ -316,6 +371,44 @@ async function handleSceneSave(request: Request, env: Env): Promise<Response> {
       return json({ error: 'Missing sessionId or encryptedData' }, 400);
     }
 
+    const ownerType = body.createdBy && !body.createdBy.startsWith('guest-') ? 'user' : 'guest';
+    const maxWorkspaces = ownerType === 'user' ? 3 : 1;
+
+    // Check if updating an existing workspace
+    const existing = await env.DB.prepare(
+      `SELECT id FROM scenes WHERE session_id = ?`
+    ).bind(body.sessionId).first<{ id: string }>();
+
+    if (existing) {
+      const sizeBytes = new Blob([body.encryptedData]).size;
+      await env.DB.prepare(
+        `UPDATE scenes SET encrypted_data = ?, workspace_name = ?, updated_at = datetime('now'),
+         last_accessed_at = datetime('now'), size_bytes = ?, owner_type = ? WHERE id = ?`
+      ).bind(body.encryptedData, body.workspaceName || 'Untitled', sizeBytes, ownerType, existing.id).run();
+
+      const perm = await env.DB.prepare(
+        `SELECT token FROM scene_permissions WHERE scene_id = ?`
+      ).bind(existing.id).first<{ token: string }>();
+
+      return json({ sceneId: existing.id, token: perm?.token || null });
+    }
+
+    // New workspace — enforce limit
+    if (body.createdBy) {
+      const count = await env.DB.prepare(
+        `SELECT COUNT(*) as count FROM scenes WHERE created_by = ? AND owner_type = ?`
+      ).bind(body.createdBy, ownerType).first<{ count: number }>();
+
+      if (count && count.count >= maxWorkspaces) {
+        return json({
+          error: 'WORKSPACE_LIMIT',
+          message: `You can have at most ${maxWorkspaces} workspace${maxWorkspaces > 1 ? 's' : ''}.`,
+          maxWorkspaces,
+          currentCount: count.count,
+        }, 429);
+      }
+    }
+
     const sceneId = crypto.randomUUID();
     const token = generateToken();
     const permissionId = crypto.randomUUID();
@@ -323,26 +416,13 @@ async function handleSceneSave(request: Request, env: Env): Promise<Response> {
 
     await env.DB.batch([
       env.DB.prepare(
-        `INSERT INTO scenes (id, session_id, workspace_name, encrypted_data, permission, created_by, size_bytes)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
-      ).bind(
-        sceneId,
-        body.sessionId,
-        body.workspaceName || 'Untitled',
-        body.encryptedData,
-        body.permission || 'view',
-        body.createdBy || null,
-        sizeBytes
-      ),
+        `INSERT INTO scenes (id, session_id, workspace_name, encrypted_data, permission, created_by, size_bytes, owner_type, last_accessed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      ).bind(sceneId, body.sessionId, body.workspaceName || 'Untitled', body.encryptedData, body.permission || 'view', body.createdBy || null, sizeBytes, ownerType),
       env.DB.prepare(
         `INSERT INTO scene_permissions (id, scene_id, token, permission)
          VALUES (?, ?, ?, ?)`
-      ).bind(
-        permissionId,
-        sceneId,
-        token,
-        body.permission || 'view'
-      ),
+      ).bind(permissionId, sceneId, token, body.permission || 'view'),
     ]);
 
     return json({ sceneId, token }, 201);
@@ -433,6 +513,118 @@ async function handleSceneDelete(request: Request, env: Env): Promise<Response> 
 }
 
 // =============================================================================
+// Workspace List Handler
+// =============================================================================
+
+async function handleSceneList(request: Request, env: Env): Promise<Response> {
+  try {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId');
+    const guestId = url.searchParams.get('guestId');
+
+    if (!userId && !guestId) {
+      return json({ error: 'Missing userId or guestId' }, 400);
+    }
+
+    const identifier = userId || guestId;
+    const ownerType = userId ? 'user' : 'guest';
+
+    const scenes = await env.DB.prepare(
+      `SELECT s.id, s.session_id, s.workspace_name, s.created_at, s.updated_at,
+              s.last_accessed_at, s.size_bytes, s.view_count,
+              sp.token
+       FROM scenes s
+       LEFT JOIN scene_permissions sp ON sp.scene_id = s.id
+       WHERE s.created_by = ? AND s.owner_type = ?
+       ORDER BY s.last_accessed_at DESC`
+    ).bind(identifier, ownerType).all();
+
+    // Workspace limit: guests=1, free authenticated=3
+    const maxWorkspaces = userId ? 3 : 1;
+
+    return json({
+      workspaces: scenes.results || [],
+      maxWorkspaces,
+      count: scenes.results?.length || 0,
+    });
+  } catch (err) {
+    return json({ error: 'Failed to list workspaces' }, 500);
+  }
+}
+
+// =============================================================================
+// Workspace Cleanup Handler (delete stale workspaces > 1 month)
+// =============================================================================
+
+async function handleSceneCleanup(request: Request, env: Env): Promise<Response> {
+  try {
+    // Find scenes not accessed in over 1 month
+    const staleScenes = await env.DB.prepare(
+      `SELECT id, session_id FROM scenes
+       WHERE last_accessed_at < datetime('now', '-1 month')
+          OR (last_accessed_at IS NULL AND created_at < datetime('now', '-1 month'))`
+    ).all<{ id: string; session_id: string }>();
+
+    if (!staleScenes.results || staleScenes.results.length === 0) {
+      return json({ deleted: 0, message: 'No stale workspaces found' });
+    }
+
+    const deletedSessionIds: string[] = [];
+
+    for (const scene of staleScenes.results) {
+      // Delete Cloudinary folder for this session
+      try {
+        await deleteCloudinaryFolder(scene.session_id, env);
+      } catch (err) {
+        console.error(`[Cleanup] Failed to delete Cloudinary folder for ${scene.session_id}:`, err);
+      }
+
+      // Delete from DB (cascade deletes scene_permissions)
+      await env.DB.prepare(`DELETE FROM scenes WHERE id = ?`).bind(scene.id).run();
+      deletedSessionIds.push(scene.session_id);
+    }
+
+    return json({
+      deleted: deletedSessionIds.length,
+      sessionIds: deletedSessionIds,
+    });
+  } catch (err) {
+    return json({ error: 'Failed to cleanup workspaces' }, 500);
+  }
+}
+
+async function deleteCloudinaryFolder(sessionId: string, env: Env): Promise<void> {
+  const cloudName = 'elixpo';
+  const timestamp = Math.floor(Date.now() / 1000);
+  const folder = `lixsketch/${sessionId}`;
+
+  // Delete all resources in the folder
+  const deleteParams = `prefix=${folder}&timestamp=${timestamp}`;
+  const signature = await cloudinarySign(deleteParams, env.CLOUDINARY_SECRET);
+
+  await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/resources/image/upload?prefix=${encodeURIComponent(folder)}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Basic ${btoa(`${env.CLOUDINARY_KEY}:${env.CLOUDINARY_SECRET}`)}`,
+      },
+    }
+  );
+
+  // Also try to delete the folder itself
+  await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/folders/${encodeURIComponent(folder)}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Basic ${btoa(`${env.CLOUDINARY_KEY}:${env.CLOUDINARY_SECRET}`)}`,
+      },
+    }
+  );
+}
+
+// =============================================================================
 // Image Upload Handler (Cloudinary signed upload)
 // =============================================================================
 
@@ -468,6 +660,59 @@ async function handleImageSign(request: Request, env: Env): Promise<Response> {
   }
 }
 
+// =============================================================================
+// Image Delete Handler (delete from Cloudinary)
+// =============================================================================
+
+async function handleImageDelete(request: Request, env: Env): Promise<Response> {
+  try {
+    const body = await request.json() as {
+      publicId?: string;
+      sessionId?: string;
+    };
+
+    if (!body.publicId && !body.sessionId) {
+      return json({ error: 'Missing publicId or sessionId' }, 400);
+    }
+
+    const cloudName = 'elixpo';
+
+    if (body.publicId) {
+      // Delete a single image by public_id
+      const timestamp = Math.floor(Date.now() / 1000);
+      const paramsToSign = `public_id=${body.publicId}&timestamp=${timestamp}`;
+      const signature = await cloudinarySign(paramsToSign, env.CLOUDINARY_SECRET);
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            public_id: body.publicId,
+            signature,
+            api_key: env.CLOUDINARY_KEY,
+            timestamp,
+          }),
+        }
+      );
+
+      const result = await res.json() as { result: string };
+      return json({ success: true, result: result.result });
+    }
+
+    if (body.sessionId) {
+      // Delete all images for a session
+      await deleteCloudinaryFolder(body.sessionId, env);
+      return json({ success: true });
+    }
+
+    return json({ error: 'No action taken' }, 400);
+  } catch (err) {
+    return json({ error: 'Failed to delete image' }, 500);
+  }
+}
+
 async function cloudinarySign(params: string, apiSecret: string): Promise<string> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -481,6 +726,187 @@ async function cloudinarySign(params: string, apiSecret: string): Promise<string
   // Cloudinary expects hex-encoded SHA-1, but with Web Crypto we use SHA-256
   // Actually, Cloudinary uses SHA-1 by default but accepts SHA-256 with signature_algorithm param
   return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// =============================================================================
+// AI Quota Handlers
+// =============================================================================
+
+const AI_LIMITS: Record<string, number> = {
+  guest: 5,
+  free: 10,
+  pro: 50,
+  team: -1, // unlimited
+};
+
+async function handleAIQuota(request: Request, env: Env): Promise<Response> {
+  try {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId');
+    const guestId = url.searchParams.get('guestId');
+
+    if (!userId && !guestId) {
+      return json({ error: 'Missing userId or guestId' }, 400);
+    }
+
+    let tier = 'guest';
+    if (userId) {
+      const user = await env.DB.prepare(
+        `SELECT tier FROM users WHERE id = ?`
+      ).bind(userId).first<{ tier: string }>();
+      tier = user?.tier || 'free';
+    }
+
+    const limit = AI_LIMITS[tier] ?? 10;
+    const col = userId ? 'user_id' : 'guest_id';
+    const identifier = userId || guestId;
+
+    const result = await env.DB.prepare(
+      `SELECT COUNT(*) as count FROM ai_usage
+       WHERE ${col} = ? AND used_at >= date('now')`
+    ).bind(identifier).first<{ count: number }>();
+
+    const used = result?.count || 0;
+
+    return json({
+      used,
+      limit: limit === -1 ? 'unlimited' : limit,
+      remaining: limit === -1 ? 'unlimited' : Math.max(0, limit - used),
+      tier,
+    });
+  } catch (err) {
+    return json({ error: 'Failed to fetch AI quota' }, 500);
+  }
+}
+
+async function handleAIUsage(request: Request, env: Env): Promise<Response> {
+  try {
+    const body = await request.json() as {
+      userId?: string;
+      guestId?: string;
+      mode?: string;
+    };
+
+    if (!body.userId && !body.guestId) {
+      return json({ error: 'Missing userId or guestId' }, 400);
+    }
+
+    let tier = 'guest';
+    if (body.userId) {
+      const user = await env.DB.prepare(
+        `SELECT tier FROM users WHERE id = ?`
+      ).bind(body.userId).first<{ tier: string }>();
+      tier = user?.tier || 'free';
+    }
+
+    const limit = AI_LIMITS[tier] ?? 10;
+    const col = body.userId ? 'user_id' : 'guest_id';
+    const identifier = body.userId || body.guestId;
+
+    // Check current usage
+    const result = await env.DB.prepare(
+      `SELECT COUNT(*) as count FROM ai_usage
+       WHERE ${col} = ? AND used_at >= date('now')`
+    ).bind(identifier).first<{ count: number }>();
+
+    const used = result?.count || 0;
+
+    if (limit !== -1 && used >= limit) {
+      return json({ error: 'Daily AI limit reached', quotaExceeded: true, used, limit }, 429);
+    }
+
+    // Record usage
+    const id = crypto.randomUUID();
+    await env.DB.prepare(
+      `INSERT INTO ai_usage (id, user_id, guest_id, mode) VALUES (?, ?, ?, ?)`
+    ).bind(id, body.userId || null, body.guestId || null, body.mode || 'lixscript').run();
+
+    return json({
+      used: used + 1,
+      limit: limit === -1 ? 'unlimited' : limit,
+      remaining: limit === -1 ? 'unlimited' : Math.max(0, limit - used - 1),
+    });
+  } catch (err) {
+    return json({ error: 'Failed to record AI usage' }, 500);
+  }
+}
+
+// =============================================================================
+// User Quota Summary Handler
+// =============================================================================
+
+async function handleQuotaSummary(request: Request, env: Env): Promise<Response> {
+  try {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId');
+    const guestId = url.searchParams.get('guestId');
+
+    if (!userId && !guestId) {
+      return json({ error: 'Missing userId or guestId' }, 400);
+    }
+
+    const identifier = userId || guestId;
+    const ownerType = userId ? 'user' : 'guest';
+
+    // Get tier
+    let tier = 'guest';
+    let email: string | null = null;
+    let displayName: string | null = null;
+    if (userId) {
+      const user = await env.DB.prepare(
+        `SELECT tier, email, display_name FROM users WHERE id = ?`
+      ).bind(userId).first<{ tier: string; email: string; display_name: string }>();
+      tier = user?.tier || 'free';
+      email = user?.email || null;
+      displayName = user?.display_name || null;
+    }
+
+    // AI usage today
+    const aiCol = userId ? 'user_id' : 'guest_id';
+    const aiResult = await env.DB.prepare(
+      `SELECT COUNT(*) as count FROM ai_usage
+       WHERE ${aiCol} = ? AND used_at >= date('now')`
+    ).bind(identifier).first<{ count: number }>();
+    const aiUsed = aiResult?.count || 0;
+    const aiLimit = AI_LIMITS[tier] ?? 10;
+
+    // Workspace count
+    const wsResult = await env.DB.prepare(
+      `SELECT COUNT(*) as count FROM scenes
+       WHERE created_by = ? AND owner_type = ?`
+    ).bind(identifier, ownerType).first<{ count: number }>();
+    const workspaceCount = wsResult?.count || 0;
+    const workspaceLimit = userId ? 3 : 1;
+
+    // Image storage (sum of size_bytes for user's scenes)
+    const storageResult = await env.DB.prepare(
+      `SELECT COALESCE(SUM(size_bytes), 0) as total FROM scenes
+       WHERE created_by = ? AND owner_type = ?`
+    ).bind(identifier, ownerType).first<{ total: number }>();
+    const storageUsed = storageResult?.total || 0;
+
+    return json({
+      tier,
+      email,
+      displayName,
+      isGuest: !userId,
+      ai: {
+        used: aiUsed,
+        limit: aiLimit === -1 ? 'unlimited' : aiLimit,
+        remaining: aiLimit === -1 ? 'unlimited' : Math.max(0, aiLimit - aiUsed),
+      },
+      workspaces: {
+        used: workspaceCount,
+        limit: workspaceLimit,
+      },
+      storage: {
+        usedBytes: storageUsed,
+        limitBytes: 5 * 1024 * 1024, // 5MB per room
+      },
+    });
+  } catch (err) {
+    return json({ error: 'Failed to fetch quota summary' }, 500);
+  }
 }
 
 // =============================================================================

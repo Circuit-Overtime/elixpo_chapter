@@ -712,15 +712,14 @@ function resizeIcon(event) {
     if (!selectedIcon || !currentAnchor) return;
 
     const { x: currentMouseX, y: currentMouseY } = getSVGCoordsFromMouse(event);
-    
-    const centerX = originalX + originalWidth / 2;
-    const centerY = originalY + originalHeight / 2;
+
     const rotation = currentAnchor.iconRotation || 0;
     const rotationRad = (rotation * Math.PI) / 180;
 
     const rawDeltaX = currentMouseX - currentAnchor.startMouseX;
     const rawDeltaY = currentMouseY - currentAnchor.startMouseY;
 
+    // Rotate delta to local (unrotated) space
     const deltaX = rawDeltaX * Math.cos(-rotationRad) - rawDeltaY * Math.sin(-rotationRad);
     const deltaY = rawDeltaX * Math.sin(-rotationRad) + rawDeltaY * Math.cos(-rotationRad);
 
@@ -729,12 +728,13 @@ function resizeIcon(event) {
     let newX = originalX;
     let newY = originalY;
 
-    const scaleFactor = 1.0;
+    // Track which corner is fixed (relative to original rect)
+    let fixedRelX, fixedRelY;
 
     switch (currentAnchor.style.cursor) {
         case "nw-resize":
-            newWidth = Math.max(minIconSize, originalWidth - deltaX * scaleFactor);
-            newHeight = Math.max(minIconSize, originalHeight - deltaY * scaleFactor);
+            newWidth = Math.max(minIconSize, originalWidth - deltaX);
+            newHeight = Math.max(minIconSize, originalHeight - deltaY);
             if (aspect_ratio_lock) {
                 const scale = Math.min(newWidth / originalWidth, newHeight / originalHeight);
                 newWidth = originalWidth * scale;
@@ -742,10 +742,11 @@ function resizeIcon(event) {
             }
             newX = originalX + (originalWidth - newWidth);
             newY = originalY + (originalHeight - newHeight);
+            fixedRelX = originalWidth; fixedRelY = originalHeight;
             break;
         case "ne-resize":
-            newWidth = Math.max(minIconSize, originalWidth + deltaX * scaleFactor);
-            newHeight = Math.max(minIconSize, originalHeight - deltaY * scaleFactor);
+            newWidth = Math.max(minIconSize, originalWidth + deltaX);
+            newHeight = Math.max(minIconSize, originalHeight - deltaY);
             if (aspect_ratio_lock) {
                 const scale = Math.max(newWidth / originalWidth, newHeight / originalHeight);
                 newWidth = originalWidth * scale;
@@ -753,10 +754,11 @@ function resizeIcon(event) {
             }
             newX = originalX;
             newY = originalY + (originalHeight - newHeight);
+            fixedRelX = 0; fixedRelY = originalHeight;
             break;
         case "sw-resize":
-            newWidth = Math.max(minIconSize, originalWidth - deltaX * scaleFactor);
-            newHeight = Math.max(minIconSize, originalHeight + deltaY * scaleFactor);
+            newWidth = Math.max(minIconSize, originalWidth - deltaX);
+            newHeight = Math.max(minIconSize, originalHeight + deltaY);
             if (aspect_ratio_lock) {
                 const scale = Math.max(newWidth / originalWidth, newHeight / originalHeight);
                 newWidth = originalWidth * scale;
@@ -764,10 +766,11 @@ function resizeIcon(event) {
             }
             newX = originalX + (originalWidth - newWidth);
             newY = originalY;
+            fixedRelX = originalWidth; fixedRelY = 0;
             break;
         case "se-resize":
-            newWidth = Math.max(minIconSize, originalWidth + deltaX * scaleFactor);
-            newHeight = Math.max(minIconSize, originalHeight + deltaY * scaleFactor);
+            newWidth = Math.max(minIconSize, originalWidth + deltaX);
+            newHeight = Math.max(minIconSize, originalHeight + deltaY);
             if (aspect_ratio_lock) {
                 const scale = Math.max(newWidth / originalWidth, newHeight / originalHeight);
                 newWidth = originalWidth * scale;
@@ -775,7 +778,37 @@ function resizeIcon(event) {
             }
             newX = originalX;
             newY = originalY;
+            fixedRelX = 0; fixedRelY = 0;
             break;
+    }
+
+    // Compensate for rotation center shift when rotated
+    if (rotation !== 0) {
+        const cosR = Math.cos(rotationRad);
+        const sinR = Math.sin(rotationRad);
+
+        // Compute rotated world position of the fixed corner in the original rect
+        const oldCX = originalX + originalWidth / 2;
+        const oldCY = originalY + originalHeight / 2;
+        const odx = (originalX + fixedRelX) - oldCX;
+        const ody = (originalY + fixedRelY) - oldCY;
+        const fixedWorldX = oldCX + odx * cosR - ody * sinR;
+        const fixedWorldY = oldCY + odx * sinR + ody * cosR;
+
+        // Determine where the fixed corner sits in the new rect
+        const fixedNewRelX = fixedRelX === 0 ? 0 : newWidth;
+        const fixedNewRelY = fixedRelY === 0 ? 0 : newHeight;
+
+        // Solve for new origin so the fixed corner stays in place
+        const ncx = newWidth / 2;
+        const ncy = newHeight / 2;
+        const ndx = fixedNewRelX - ncx;
+        const ndy = fixedNewRelY - ncy;
+        const rotX = ncx + ndx * cosR - ndy * sinR;
+        const rotY = ncy + ndx * sinR + ndy * cosR;
+
+        newX = fixedWorldX - rotX;
+        newY = fixedWorldY - rotY;
     }
 
     selectedIcon.setAttribute('width', newWidth);
@@ -790,10 +823,10 @@ function resizeIcon(event) {
 
     const vbWidth = parseFloat(selectedIcon.getAttribute('data-viewbox-width')) || 24;
     const vbHeight = parseFloat(selectedIcon.getAttribute('data-viewbox-height')) || 24;
-    const scale = newWidth / Math.max(vbWidth, vbHeight);
-    const localCenterX = newWidth / 2 / scale;
-    const localCenterY = newHeight / 2 / scale;
-    selectedIcon.setAttribute('transform', `translate(${newX}, ${newY}) scale(${scale}) rotate(${iconRotation}, ${localCenterX}, ${localCenterY})`);
+    const iconScale = newWidth / Math.max(vbWidth, vbHeight);
+    const localCenterX = newWidth / 2 / iconScale;
+    const localCenterY = newHeight / 2 / iconScale;
+    selectedIcon.setAttribute('transform', `translate(${newX}, ${newY}) scale(${iconScale}) rotate(${iconRotation}, ${localCenterX}, ${localCenterY})`);
 
     updateArrowsForShape(selectedIcon);
 

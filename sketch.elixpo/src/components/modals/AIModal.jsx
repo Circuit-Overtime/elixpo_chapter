@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import useUIStore from '@/store/useUIStore'
+import useAuthStore from '@/store/useAuthStore'
+import { WORKER_URL } from '@/lib/env'
 
 const GRAPH_COLORS = [
   '#4A90D9', '#E74C3C', '#2ECC71', '#F39C12', '#9B59B6',
@@ -154,6 +156,10 @@ export default function AIModal() {
   const [editPrompt, setEditPrompt] = useState('')
   const [chatHistory, setChatHistory] = useState([])
 
+  // AI quota state
+  const [aiQuota, setAiQuota] = useState({ used: 0, limit: 10, remaining: 10 })
+  const abortRef = useRef(null)
+
   // Frame editing
   const [editingFrame, setEditingFrame] = useState(null)
 
@@ -214,6 +220,31 @@ export default function AIModal() {
         setPreviewDiagram({ nodes: [{ id: '_existing' }], edges: [], _fromFrame: true })
       }
     }
+  }, [aiModalOpen])
+
+  // Fetch AI quota on modal open
+  useEffect(() => {
+    if (!aiModalOpen) return
+    const authState = useAuthStore.getState()
+    const params = new URLSearchParams()
+    if (authState.isAuthenticated && authState.user?.id) {
+      params.set('userId', authState.user.id)
+    } else {
+      const guestId = localStorage.getItem('lixsketch-guest-session') || 'anonymous'
+      params.set('guestId', guestId)
+    }
+    fetch(`${WORKER_URL}/api/ai/quota?${params}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.used !== undefined) {
+          setAiQuota({
+            used: data.used,
+            limit: data.limit === 'unlimited' ? Infinity : data.limit,
+            remaining: data.remaining === 'unlimited' ? Infinity : data.remaining,
+          })
+        }
+      })
+      .catch(() => {})
   }, [aiModalOpen])
 
   // Live graph preview (debounced)
@@ -352,7 +383,16 @@ export default function AIModal() {
       return
     }
 
+    // Check quota before generating
+    if (aiQuota.remaining !== Infinity && aiQuota.remaining <= 0) {
+      setToast({ status: 'error', message: `Daily AI limit reached (${aiQuota.used}/${aiQuota.limit}). Upgrade for more.` })
+      return
+    }
+
     setIsGenerating(true)
+    const controller = new AbortController()
+    abortRef.current = controller
+
     try {
       const messages = [...chatHistory, { role: 'user', content: currentPrompt }]
       const res = await fetch('/api/ai/generate', {
@@ -364,18 +404,50 @@ export default function AIModal() {
           history: chatHistory.length > 0 ? chatHistory : undefined,
           previousLixCode: lixCode || undefined,
         }),
+        signal: controller.signal,
       })
       let data
       try { data = await res.json() } catch {
         setToast({ status: 'error', message: 'Invalid server response' })
         setIsGenerating(false)
+        abortRef.current = null
         return
       }
       if (!res.ok || data.error) {
-        setToast({ status: 'error', message: data.error || `Failed (${res.status})` })
+        if (data.quotaExceeded) {
+          setToast({ status: 'error', message: `Daily AI limit reached (${data.used}/${data.limit}). Upgrade for more.` })
+        } else {
+          setToast({ status: 'error', message: data.error || `Failed (${res.status})` })
+        }
         setIsGenerating(false)
+        abortRef.current = null
         return
       }
+
+      // Record usage after successful generation
+      const authState = useAuthStore.getState()
+      const usageBody = { mode: 'lixscript' }
+      if (authState.isAuthenticated && authState.user?.id) {
+        usageBody.userId = authState.user.id
+      } else {
+        usageBody.guestId = localStorage.getItem('lixsketch-guest-session') || 'anonymous'
+      }
+      fetch(`${WORKER_URL}/api/ai/usage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(usageBody),
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.used !== undefined) {
+            setAiQuota({
+              used: d.used,
+              limit: d.limit === 'unlimited' ? Infinity : d.limit,
+              remaining: d.remaining === 'unlimited' ? Infinity : d.remaining,
+            })
+          }
+        })
+        .catch(() => {})
 
       // AI returned LixScript code — switch to code tab and populate
       if (data.lixscript) {
@@ -390,11 +462,16 @@ export default function AIModal() {
       } else {
         setToast({ status: 'error', message: 'Empty diagram. Try rephrasing.' })
       }
-    } catch {
-      setToast({ status: 'error', message: 'Connection failed.' })
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        setToast({ status: null, message: '' })
+      } else {
+        setToast({ status: 'error', message: 'Connection failed.' })
+      }
     }
     setIsGenerating(false)
-  }, [prompt, mode, chatHistory, lixCode])
+    abortRef.current = null
+  }, [prompt, mode, chatHistory, lixCode, aiQuota])
 
   // --- Diagram editing ---
   const handleEdit = useCallback(async (directText) => {
@@ -778,20 +855,41 @@ export default function AIModal() {
                         className="flex-1 bg-surface-dark border border-border rounded-xl px-4 py-2.5 text-text-primary text-sm focus:outline-none focus:border-accent-blue placeholder:text-text-dim"
                         disabled={isGenerating}
                       />
-                      <button
-                        onClick={handleGenerate}
-                        disabled={!prompt.trim() || isGenerating}
-                        className={`px-4 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center gap-2 ${
-                          !prompt.trim() || isGenerating ? 'bg-surface-hover text-text-dim cursor-not-allowed' : 'bg-accent-blue text-white hover:bg-accent-blue/80'
-                        }`}
-                      >
-                        {isGenerating ? (
-                          <div className="relative w-4 h-4"><div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white animate-spin" /></div>
-                        ) : (
+                      {isGenerating ? (
+                        <button
+                          onClick={() => { abortRef.current?.abort(); setIsGenerating(false) }}
+                          className="px-4 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center gap-2 bg-red-500/80 text-white hover:bg-red-500"
+                        >
+                          <i className="bx bx-stop text-base" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleGenerate}
+                          disabled={!prompt.trim()}
+                          className={`px-4 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center gap-2 ${
+                            !prompt.trim() ? 'bg-surface-hover text-text-dim cursor-not-allowed' : 'bg-accent-blue text-white hover:bg-accent-blue/80'
+                          }`}
+                        >
                           <i className="bx bx-send text-base" />
-                        )}
-                      </button>
+                        </button>
+                      )}
                     </div>
+                    {aiQuota.limit !== Infinity && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <div className="flex-1 h-1 rounded-full bg-surface-hover overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{
+                              width: `${Math.min(100, (aiQuota.used / aiQuota.limit) * 100)}%`,
+                              backgroundColor: aiQuota.remaining <= 2 ? '#EF4444' : '#4A90D9',
+                            }}
+                          />
+                        </div>
+                        <span className={`text-[10px] ${aiQuota.remaining <= 2 ? 'text-red-400' : 'text-text-dim'}`}>
+                          {aiQuota.remaining}/{aiQuota.limit}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between mb-2">

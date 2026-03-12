@@ -7,6 +7,7 @@ import { WORKER_URL } from '@/store/useAuthStore'
 import useAuthStore from '@/store/useAuthStore'
 import { getSessionID } from '@/hooks/useSessionID'
 import { encrypt, generateKey } from '@/utils/encryption'
+import { useProfileStore } from '@/hooks/useGuestProfile'
 
 const LOCAL_SAVE_KEY = 'lixsketch-autosave'
 const LOCAL_SAVE_META_KEY = 'lixsketch-autosave-meta'
@@ -157,7 +158,8 @@ export default function useAutoSave() {
             encryptedData,
             permission: 'edit',
             workspaceName,
-            createdBy: authState.user?.id || 'anonymous',
+            createdBy: authState.user?.id || useProfileStore.getState().profile?.id || 'anonymous',
+            ownerType: authState.isAuthenticated ? 'user' : 'guest',
           }),
         })
 

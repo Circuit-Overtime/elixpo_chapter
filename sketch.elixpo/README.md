@@ -1,7 +1,6 @@
 ## LixSketch - The Canvas You Can Trust 🖌️
 ### LixSketch is an open source freemium platfor for collaborative canvas for technical presentation / modelling on web + IDE + pwa (under development)
 
-<img width="1322" height="609" alt="image" src="https://github.com/user-attachments/assets/a0142409-0e19-450c-b5d7-1dddc7289e95" />
+<img width="1322" height="612" alt="og-image" src="https://github.com/user-attachments/assets/a96e85be-dce9-464c-8451-5513ad521dd6" />
 
-
-With  💖 from Team Elixpo
+> With  💖 from Team Elixpo

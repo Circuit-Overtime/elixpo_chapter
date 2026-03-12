@@ -27,6 +27,7 @@ import useSessionID from '@/hooks/useSessionID'
 import useGuestProfile from '@/hooks/useGuestProfile'
 import useAuth from '@/hooks/useAuth'
 import useAutoSave from '@/hooks/useAutoSave'
+import ContextMenu from '@/components/canvas/ContextMenu'
 
 export default function CanvasPage() {
   useEffect(() => {
@@ -68,6 +69,16 @@ export default function CanvasPage() {
       <CommandPalette />
       <HelpModal />
       <ExportImageModal />
+      <ContextMenu />
+
+      {/* Quick-save toast */}
+      <div
+        id="save-toast"
+        className="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-9999 px-4 py-2 rounded-xl bg-surface/80 backdrop-blur-md border border-border-light text-text-secondary text-xs font-[lixFont] pointer-events-none animate-fade-in"
+      >
+        <i className="bx bx-check text-green-400 mr-1.5" />
+        Saved
+      </div>
     </div>
   )
 }

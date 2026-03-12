@@ -20,11 +20,11 @@ function IconCell({ icon, onClick }) {
     <button
       onClick={onClick}
       title={name}
-      className="w-11 h-11 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors duration-100"
+      className="w-11 h-11 flex items-center justify-center rounded-lg hover:bg-white/10 cursor-pointer transition-colors duration-100"
     >
       {icon.svg ? (
         <div
-          className="w-6 h-6 [&>svg]:w-full [&>svg]:h-full [&>svg]:fill-white/90"
+          className="w-6 h-6 pointer-events-none [&>svg]:w-full [&>svg]:h-full [&>svg]:fill-white/90"
           style={{ filter: 'brightness(0) invert(1)' }}
           dangerouslySetInnerHTML={{ __html: icon.svg }}
         />
@@ -32,7 +32,7 @@ function IconCell({ icon, onClick }) {
         <img
           src={`/icons/${encodeURIComponent(icon.filename)}`}
           alt=""
-          className="w-6 h-6 invert"
+          className="w-6 h-6 invert pointer-events-none"
           loading="lazy"
         />
       )}
@@ -82,16 +82,13 @@ export default function IconSidebar() {
     setLoading(false)
   }, [])
 
-  useEffect(() => {
-    if (visible) fetchIcons('', category)
-  }, [visible, category, fetchIcons])
-
+  // Fetch icons when visibility, query, or category changes (debounced for query typing)
   useEffect(() => {
     if (!visible) return
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       fetchIcons(query, category)
-    }, 300)
+    }, query ? 300 : 0)
     return () => clearTimeout(debounceRef.current)
   }, [query, visible, category, fetchIcons])
 
@@ -186,7 +183,7 @@ export default function IconSidebar() {
             No icons found
           </div>
         ) : (
-          <div className="grid grid-cols-5 gap-0.5">
+          <div className="flex flex-wrap gap-0.5">
             {icons.map((icon, i) => (
               <IconCell
                 key={icon.filename || i}

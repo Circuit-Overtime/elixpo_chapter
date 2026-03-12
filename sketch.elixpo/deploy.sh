@@ -7,7 +7,7 @@ set -euo pipefail
 # Commands:
 #   deploy      Build & deploy Next.js to Cloudflare Pages
 #   worker      Deploy the collab Worker
-#   secrets     Upload all non-public .env vars as Worker secrets
+#   secrets     Upload .env vars as secrets to Worker + Pages
 #   all         secrets + worker + deploy
 #   build       Build Pages only (no deploy)
 
@@ -28,9 +28,16 @@ load_env() {
   set +a
 }
 
+# Pull D1 and KV IDs from .env (loaded by load_env)
+get_binding_ids() {
+  load_env
+  D1_DB_ID="${D1_DATABASE_ID:?D1_DATABASE_ID not set in .env}"
+  KV_ID="${KV_NAMESPACE_ID:?KV_NAMESPACE_ID not set in .env}"
+}
+
 # ── Commands ─────────────────────────────────────────────────
 
-# Upload every non-NEXT_PUBLIC_ var from .env as a Worker secret
+# Upload secrets to both Worker and Pages project
 secrets() {
   echo "==> Uploading secrets from .env..."
   load_env
@@ -41,11 +48,13 @@ secrets() {
     # Skip infra IDs that aren't secrets
     [[ "$key" =~ ^(CLOUDFLARE_ACCOUNT|D1_DATABASE_ID|KV_NAMESPACE_ID)$ ]] && continue
 
-    echo "  -> $key"
-    echo "$value" | sudo npx wrangler secret put "$key" 2>/dev/null
+    echo "  -> $key (worker)"
+    printf '%s\n' "$value" | sudo npx wrangler versions secret put "$key" --name lixsketch-collab || echo "    [warn] worker secret failed for $key"
+    echo "  -> $key (pages)"
+    printf '%s\n' "$value" | sudo npx wrangler pages secret put "$key" --project-name "$PAGES_PROJECT" || echo "    [warn] pages secret failed for $key"
   done < "$ENV_FILE"
 
-  echo "==> Secrets uploaded."
+  echo "==> Secrets uploaded to Worker + Pages."
 }
 
 # Build Next.js for Cloudflare Pages
@@ -86,7 +95,7 @@ usage() {
   echo "Commands:"
   echo "  deploy    Build & deploy Next.js to Cloudflare Pages"
   echo "  worker    Deploy the collab Worker"
-  echo "  secrets   Upload .env vars as Worker secrets"
+  echo "  secrets   Upload .env vars to Worker + Pages"
   echo "  build     Build Pages only (no deploy)"
   echo "  all       secrets + worker + deploy"
   echo ""

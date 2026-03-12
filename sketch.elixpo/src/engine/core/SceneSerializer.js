@@ -113,6 +113,10 @@ function serializeShape(shape) {
                 width: shape.width, height: shape.height,
                 rotation: shape.rotation,
                 frameName: shape.frameName,
+                fillStyle: shape.fillStyle || 'transparent',
+                fillColor: shape.fillColor || '#1e1e28',
+                gridSize: shape.gridSize || 20,
+                gridColor: shape.gridColor || 'rgba(255,255,255,0.06)',
                 options: cloneOptions(shape.options),
                 containedShapeIDs: shape.containedShapes
                     ? Array.from(shape.containedShapes).map(s => s.shapeID)
@@ -224,10 +228,15 @@ function deserializeShape(data) {
         }
 
         case 'frame': {
-            const shape = new Frame(data.x, data.y, data.width, data.height, data.options || {});
-            if (data.frameName) shape.setTitle(data.frameName);
+            const frameOpts = { ...(data.options || {}), frameName: data.frameName || 'Frame' };
+            if (data.fillStyle) frameOpts.fillStyle = data.fillStyle;
+            if (data.fillColor) frameOpts.fillColor = data.fillColor;
+            if (data.gridSize) frameOpts.gridSize = data.gridSize;
+            if (data.gridColor) frameOpts.gridColor = data.gridColor;
+            const shape = new Frame(data.x, data.y, data.width, data.height, frameOpts);
             if (data.rotation) shape.rotation = data.rotation;
             if (data.shapeID) shape.shapeID = data.shapeID;
+            shape.draw();
             return shape;
         }
 

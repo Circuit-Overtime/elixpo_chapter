@@ -4,12 +4,16 @@ import { NextResponse } from 'next/server'
 
 const ELIXPO_AUTH_URL = 'https://accounts.elixpo.com'
 
+// Deduplicate: track codes already exchanged to prevent double-spend
+// Stores the resulting redirect URL so duplicate requests get the same outcome
+const processedCodes = new Map() // code -> redirectUrl
+
 export async function GET(request) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
   const error = url.searchParams.get('error')
   const errorDesc = url.searchParams.get('error_description')
-  const appOrigin = url.origin // same origin since callback is on our Next.js app
+  const appOrigin = url.origin
 
   if (error) {
     console.error('[auth/callback] OAuth error:', error, errorDesc)
@@ -20,6 +24,15 @@ export async function GET(request) {
     console.error('[auth/callback] No code in callback')
     return NextResponse.redirect(new URL('/?auth_error=missing_code', appOrigin))
   }
+
+  // If we already processed this code, return the cached redirect
+  if (processedCodes.has(code)) {
+    console.log('[auth/callback] Duplicate request for same code, returning cached redirect')
+    return NextResponse.redirect(new URL(processedCodes.get(code), appOrigin))
+  }
+
+  // Mark code as in-flight immediately to block racing duplicates
+  processedCodes.set(code, `/?auth_error=duplicate_request`)
 
   // redirect_uri must match EXACTLY what was sent to /oauth/authorize
   const redirectUri = `${appOrigin}/api/auth/callback`
@@ -74,7 +87,6 @@ export async function GET(request) {
   const profile = await userRes.json()
   console.log('[auth/callback] Got profile:', { id: profile.id, email: profile.email, displayName: profile.displayName })
 
-  // Elixpo /api/auth/me returns: { id, userId, email, displayName, isAdmin, provider, avatar, emailVerified }
   const userParam = encodeURIComponent(JSON.stringify({
     id: profile.id || profile.userId,
     email: profile.email,
@@ -83,11 +95,16 @@ export async function GET(request) {
     isAdmin: profile.isAdmin || false,
   }))
 
-  // Use the access_token as our session token (it's a JWT from Elixpo)
   const sessionToken = tokens.access_token
 
-  // Store refresh token in an httpOnly cookie for later token refresh
-  const response = NextResponse.redirect(new URL(`/?auth_token=${encodeURIComponent(sessionToken)}&auth_user=${userParam}`, appOrigin))
+  const redirectPath = `/?auth_token=${encodeURIComponent(sessionToken)}&auth_user=${userParam}`
+
+  // Cache the successful redirect so duplicate requests get the same result
+  processedCodes.set(code, redirectPath)
+  // Clean up after 30 seconds
+  setTimeout(() => processedCodes.delete(code), 30000)
+
+  const response = NextResponse.redirect(new URL(redirectPath, appOrigin))
 
   if (tokens.refresh_token) {
     response.cookies.set('lixsketch-refresh-token', tokens.refresh_token, {

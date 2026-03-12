@@ -1,10 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import LandingNav from '@/components/landing/LandingNav'
 import LandingFooter from '@/components/landing/LandingFooter'
+import useAuth from '@/hooks/useAuth'
+import useAuthStore from '@/store/useAuthStore'
 
 // ── WebGL Particle Constellation ──────────────────────────────────────────────
 // Lightweight dot-grid with faint connections. Runs at native RAF, ~0.5ms/frame.
@@ -339,6 +342,24 @@ function ToolbarPreview() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const router = useRouter()
+
+  // Process auth callback params (auth_token, auth_user) from OAuth redirect
+  useAuth()
+
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
+  // After auth callback is processed, redirect authenticated users to their canvas
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Get the guest session or generate a new one
+      const guestSession = localStorage.getItem('lixsketch-guest-session')
+      const sessionId = guestSession || `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+      if (!guestSession) localStorage.setItem('lixsketch-guest-session', sessionId)
+      router.replace(`/c/${sessionId}`)
+    }
+  }, [isAuthenticated, router])
+
   const { scrollYProgress } = useScroll()
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.92])
   const heroBlur = useTransform(scrollYProgress, [0, 0.15], [0, 8])

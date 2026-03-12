@@ -24,9 +24,9 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Scene not found or link expired' }, { status: 404 })
     }
 
-    // Increment view count
+    // Increment view count and update last accessed time
     await DB.prepare(
-      `UPDATE scenes SET view_count = view_count + 1 WHERE session_id = ?`
+      `UPDATE scenes SET view_count = view_count + 1, last_accessed_at = datetime('now') WHERE session_id = ?`
     ).bind(perm.session_id).run()
 
     return NextResponse.json({

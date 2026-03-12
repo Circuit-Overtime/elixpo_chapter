@@ -12,24 +12,120 @@ class ImageShape {
         this.element = element;
         this.shapeName = 'image';
         this.shapeID = element.shapeID || `image-${String(Date.now()).slice(0, 8)}-${Math.floor(Math.random() * 10000)}`;
-        
+
         // Frame attachment properties
         this.parentFrame = null;
-        
+
+        // Upload pipeline state
+        this.uploadStatus = 'pending'; // 'pending' | 'uploading' | 'done' | 'failed'
+        this.uploadAbortController = null;
+        this._uploadIndicator = null;
+
         // Update element attributes
         this.element.setAttribute('type', 'image');
         this.element.shapeID = this.shapeID;
-        
+
         // Create a group wrapper for the image to work with frames properly
         this.group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         this.group.setAttribute('id', this.shapeID);
-        
+
         // Move the image element into the group
         if (this.element.parentNode) {
             this.element.parentNode.removeChild(this.element);
         }
         this.group.appendChild(this.element);
         svg.appendChild(this.group);
+    }
+
+    showUploadIndicator() {
+        if (this._uploadIndicator) return;
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'upload-indicator');
+
+        const x = this.x + 6;
+        const y = this.y + 6;
+
+        // Background circle
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        bg.setAttribute('cx', x + 10);
+        bg.setAttribute('cy', y + 10);
+        bg.setAttribute('r', 12);
+        bg.setAttribute('fill', 'rgba(0,0,0,0.7)');
+        g.appendChild(bg);
+
+        // Caution/loading icon (⚡ style triangle)
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        icon.setAttribute('points', `${x+10},${y+3} ${x+17},${y+16} ${x+3},${y+16}`);
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', '#FBBF24');
+        icon.setAttribute('stroke-width', '1.5');
+        icon.setAttribute('stroke-linejoin', 'round');
+        g.appendChild(icon);
+
+        // Exclamation mark inside
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x + 10);
+        line.setAttribute('y1', y + 8);
+        line.setAttribute('x2', x + 10);
+        line.setAttribute('y2', y + 12);
+        line.setAttribute('stroke', '#FBBF24');
+        line.setAttribute('stroke-width', '1.5');
+        line.setAttribute('stroke-linecap', 'round');
+        g.appendChild(line);
+
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('cx', x + 10);
+        dot.setAttribute('cy', y + 14.5);
+        dot.setAttribute('r', 0.8);
+        dot.setAttribute('fill', '#FBBF24');
+        g.appendChild(dot);
+
+        // Pulsing animation
+        const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+        animate.setAttribute('attributeName', 'opacity');
+        animate.setAttribute('values', '1;0.4;1');
+        animate.setAttribute('dur', '1.5s');
+        animate.setAttribute('repeatCount', 'indefinite');
+        g.appendChild(animate);
+
+        // Apply same transform as image (rotation)
+        const transform = this.element.getAttribute('transform');
+        if (transform) g.setAttribute('transform', transform);
+
+        g.style.pointerEvents = 'none';
+        this.group.appendChild(g);
+        this._uploadIndicator = g;
+    }
+
+    removeUploadIndicator() {
+        if (this._uploadIndicator && this._uploadIndicator.parentNode) {
+            this._uploadIndicator.parentNode.removeChild(this._uploadIndicator);
+        }
+        this._uploadIndicator = null;
+    }
+
+    updateUploadIndicatorPosition() {
+        if (!this._uploadIndicator) return;
+        const x = this.x + 6;
+        const y = this.y + 6;
+
+        const bg = this._uploadIndicator.querySelector('circle');
+        if (bg) { bg.setAttribute('cx', x + 10); bg.setAttribute('cy', y + 10); }
+
+        const icon = this._uploadIndicator.querySelector('polygon');
+        if (icon) icon.setAttribute('points', `${x+10},${y+3} ${x+17},${y+16} ${x+3},${y+16}`);
+
+        const line = this._uploadIndicator.querySelector('line');
+        if (line) {
+            line.setAttribute('x1', x + 10); line.setAttribute('y1', y + 8);
+            line.setAttribute('x2', x + 10); line.setAttribute('y2', y + 12);
+        }
+
+        const dots = this._uploadIndicator.querySelectorAll('circle');
+        if (dots[1]) { dots[1].setAttribute('cx', x + 10); dots[1].setAttribute('cy', y + 14.5); }
+
+        const transform = this.element.getAttribute('transform');
+        if (transform) this._uploadIndicator.setAttribute('transform', transform);
     }
     
     // Position and dimension properties for frame compatibility
@@ -159,8 +255,10 @@ class ImageShape {
 
     // Add methods for frame compatibility
     removeSelection() {
-        // Remove any selection UI if needed
-        removeSelectionOutline();
+        // Remove selection outlines from SVG
+        svg.querySelectorAll(".selection-outline").forEach(el => el.remove());
+        // Remove resize/rotation anchors if present
+        svg.querySelectorAll(".resize-anchor, .rotation-anchor").forEach(el => el.remove());
     }
 
     selectShape() {

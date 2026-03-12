@@ -607,73 +607,60 @@ updateFrameContainment() {
 
     updatePosition(anchorIndex, newMouseX, newMouseY) {
         const CTM = this.group.getCTM();
-        if (!CTM) return; 
+        if (!CTM) return;
         const inverseCTM = CTM.inverse();
         const svgPoint = svg.createSVGPoint();
         svgPoint.x = newMouseX;
         svgPoint.y = newMouseY;
-        const transformedPoint = svgPoint.matrixTransform(inverseCTM);
-        let oldX = 0; 
-        let oldY = 0; 
-        let oldWidth = this.width;
-        let oldHeight = this.height;
+        const localMouse = svgPoint.matrixTransform(inverseCTM);
 
-        let newLocalX = 0; 
-        let newLocalY = 0; 
-        let newWidth = oldWidth;
-        let newHeight = oldHeight;
+        const oldW = this.width;
+        const oldH = this.height;
 
+        // Determine fixed point in old local coords and compute raw new dimensions
+        let fixedOldX, fixedOldY, rawW, rawH;
         switch (anchorIndex) {
-            case 0: 
-                newLocalX = transformedPoint.x;
-                newLocalY = transformedPoint.y;
-                newWidth = oldWidth - newLocalX;
-                newHeight = oldHeight - newLocalY;
-                break;
-            case 1: 
-                newLocalY = transformedPoint.y;
-                newWidth = transformedPoint.x - oldX;
-                newHeight = oldHeight - newLocalY;
-                break;
-            case 2: 
-                newLocalX = transformedPoint.x;
-                newWidth = oldWidth - newLocalX;
-                newHeight = transformedPoint.y - oldY;
-                break;
-            case 3: 
-                newWidth = transformedPoint.x - oldX;
-                newHeight = transformedPoint.y - oldY;
-                break;
-            case 4: 
-                newLocalY = transformedPoint.y;
-                newHeight = oldHeight - newLocalY;
-                break;
-            case 5: 
-                newHeight = transformedPoint.y - oldY;
-                break;
-            case 6: 
-                newLocalX = transformedPoint.x;
-                newWidth = oldWidth - newLocalX;
-                break;
-            case 7: 
-                newWidth = transformedPoint.x - oldX;
-                break;
-        }
-        if (newWidth < 0) {
-            this.x += newLocalX + newWidth; 
-            this.width = Math.abs(newWidth);
-        } else {
-             this.x += newLocalX; 
-             this.width = newWidth;
+            case 0: fixedOldX = oldW; fixedOldY = oldH; rawW = oldW - localMouse.x; rawH = oldH - localMouse.y; break;
+            case 1: fixedOldX = 0;    fixedOldY = oldH; rawW = localMouse.x;        rawH = oldH - localMouse.y; break;
+            case 2: fixedOldX = oldW; fixedOldY = 0;    rawW = oldW - localMouse.x; rawH = localMouse.y;        break;
+            case 3: fixedOldX = 0;    fixedOldY = 0;    rawW = localMouse.x;        rawH = localMouse.y;        break;
+            case 4: fixedOldX = 0;    fixedOldY = oldH; rawW = oldW;                rawH = oldH - localMouse.y; break;
+            case 5: fixedOldX = 0;    fixedOldY = 0;    rawW = oldW;                rawH = localMouse.y;        break;
+            case 6: fixedOldX = oldW; fixedOldY = 0;    rawW = oldW - localMouse.x; rawH = oldH;               break;
+            case 7: fixedOldX = 0;    fixedOldY = 0;    rawW = localMouse.x;        rawH = oldH;               break;
         }
 
-        if (newHeight < 0) {
-            this.y += newLocalY + newHeight; 
-            this.height = Math.abs(newHeight);
-        } else {
-            this.y += newLocalY; 
-            this.height = newHeight;
-        }
+        // Get world position of the fixed point using current CTM
+        const fp = svg.createSVGPoint();
+        fp.x = fixedOldX;
+        fp.y = fixedOldY;
+        const fixedWorld = fp.matrixTransform(CTM);
+
+        // Handle negative dimensions (dragged past opposite edge)
+        const newW = Math.abs(rawW);
+        const newH = Math.abs(rawH);
+
+        // Fixed point in new local coords (flips if dimension went negative)
+        const fixedNewX = fixedOldX === 0 ? (rawW >= 0 ? 0 : newW) : (rawW >= 0 ? newW : 0);
+        const fixedNewY = fixedOldY === 0 ? (rawH >= 0 ? 0 : newH) : (rawH >= 0 ? newH : 0);
+
+        // Solve for new x, y so the fixed corner stays in place
+        // Transform: translate(x, y) rotate(θ, newW/2, newH/2)
+        const rad = this.rotation * Math.PI / 180;
+        const cosR = Math.cos(rad);
+        const sinR = Math.sin(rad);
+        const ncx = newW / 2;
+        const ncy = newH / 2;
+        const dx = fixedNewX - ncx;
+        const dy = fixedNewY - ncy;
+        const rotX = ncx + dx * cosR - dy * sinR;
+        const rotY = ncy + dx * sinR + dy * cosR;
+
+        this.x = fixedWorld.x - rotX;
+        this.y = fixedWorld.y - rotY;
+        this.width = newW;
+        this.height = newH;
+
         this.updateAttachedArrows();
     }
 
