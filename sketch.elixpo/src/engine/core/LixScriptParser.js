@@ -259,7 +259,7 @@ function parseProperties(shape, lines, variables, errors) {
 // RESOLVER — resolve deferred expressions & shape references
 // ============================================================
 
-function resolveShapeRefs(shapes) {
+export function resolveShapeRefs(shapes) {
   const shapeMap = new Map()
 
   // Iteratively resolve deferred expressions until no more progress

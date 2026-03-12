@@ -53,7 +53,33 @@ body.canvas-mode {
   overflow: hidden;
 }
 
-/* Hide scrollbars */
+/* ── Global custom scrollbar ────────────────────────────────── */
+/* Applies to body and all scrollable elements site-wide */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a3a;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8B88E8;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a3a transparent;
+}
+
+/* Hide scrollbars on specific elements */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -62,14 +88,16 @@ body.canvas-mode {
   scrollbar-width: none;
 }
 
-pre::-webkit-scrollbar,
-textarea::-webkit-scrollbar {
+/* Canvas mode — hide scrollbars on textareas/pre inside the canvas */
+body.canvas-mode pre::-webkit-scrollbar,
+body.canvas-mode textarea::-webkit-scrollbar {
   display: none;
 }
 
-/* Custom scrollbar for docs */
+/* ── Docs/blog thin scrollbar ──────────────────────────────── */
 .docs-scroll::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
+  height: 5px;
 }
 .docs-scroll::-webkit-scrollbar-track {
   background: transparent;
@@ -79,11 +107,31 @@ textarea::-webkit-scrollbar {
   border-radius: 3px;
 }
 .docs-scroll::-webkit-scrollbar-thumb:hover {
-  background: #5B57D1;
+  background: #8B88E8;
 }
 .docs-scroll {
   scrollbar-width: thin;
   scrollbar-color: #3a3a50 transparent;
+}
+
+/* ── LixScript preview scrollbar ───────────────────────────── */
+.lixscript-preview::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.lixscript-preview::-webkit-scrollbar-track {
+  background: #0a0a12;
+}
+.lixscript-preview::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 3px;
+}
+.lixscript-preview::-webkit-scrollbar-thumb:hover {
+  background: #8B88E8;
+}
+.lixscript-preview {
+  scrollbar-width: thin;
+  scrollbar-color: #30363d #0a0a12;
 }
 
 /* Toast slide-up animation */

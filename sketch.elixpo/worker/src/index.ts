@@ -70,6 +70,10 @@ export default {
       return handleSceneLoad(request, env);
     }
 
+    if (url.pathname === '/api/scenes/delete' && request.method === 'DELETE') {
+      return handleSceneDelete(request, env);
+    }
+
     // --- Image upload route ---
 
     if (url.pathname === '/api/images/sign' && request.method === 'POST') {
@@ -384,6 +388,47 @@ async function handleSceneLoad(request: Request, env: Env): Promise<Response> {
     });
   } catch (err) {
     return json({ error: 'Failed to load scene' }, 500);
+  }
+}
+
+async function handleSceneDelete(request: Request, env: Env): Promise<Response> {
+  try {
+    const body = await request.json() as {
+      token: string;
+      sessionId: string;
+    };
+
+    if (!body.token || !body.sessionId) {
+      return json({ error: 'Missing token or sessionId' }, 400);
+    }
+
+    // Verify the token belongs to the session before deleting
+    const perm = await env.DB.prepare(
+      `SELECT sp.scene_id, s.session_id
+       FROM scene_permissions sp
+       JOIN scenes s ON sp.scene_id = s.id
+       WHERE sp.token = ?`
+    ).bind(body.token).first<{
+      scene_id: string;
+      session_id: string;
+    }>();
+
+    if (!perm) {
+      return json({ error: 'Scene not found' }, 404);
+    }
+
+    if (perm.session_id !== body.sessionId) {
+      return json({ error: 'Unauthorized — session mismatch' }, 403);
+    }
+
+    // Delete the scene (cascade deletes scene_permissions)
+    await env.DB.prepare(
+      `DELETE FROM scenes WHERE id = ?`
+    ).bind(perm.scene_id).run();
+
+    return json({ success: true });
+  } catch (err) {
+    return json({ error: 'Failed to delete scene' }, 500);
   }
 }
 

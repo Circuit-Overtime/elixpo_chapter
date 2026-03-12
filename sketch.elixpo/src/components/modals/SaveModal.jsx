@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import useUIStore from '@/store/useUIStore'
 import useAuthStore, { WORKER_URL } from '@/store/useAuthStore'
+import useCollabStore from '@/store/useCollabStore'
 import { getSessionID } from '@/hooks/useSessionID'
 import { useProfileStore } from '@/hooks/useGuestProfile'
 import { generateKey, encrypt } from '@/utils/encryption'
@@ -49,16 +50,19 @@ export default function SaveModal() {
   const workspaceName = useUIStore((s) => s.workspaceName)
   const setWorkspaceName = useUIStore((s) => s.setWorkspaceName)
   const [shareLink, setShareLink] = useState('')
+  const [shareToken, setShareToken] = useState('')
   const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [permission, setPermission] = useState('view')
+  const [revoking, setRevoking] = useState(false)
 
   // Live collab state
   const [collabLink, setCollabLink] = useState('')
   const [collabCopied, setCollabCopied] = useState(false)
   const [startingCollab, setStartingCollab] = useState(false)
   const [collabError, setCollabError] = useState('')
+  const collabConnected = useCollabStore((s) => s.connected)
 
   if (!saveModalOpen) return null
 
@@ -110,6 +114,7 @@ export default function SaveModal() {
       const origin = window.location.origin
       const link = `${origin}/s/${token}#key=${key}`
       setShareLink(link)
+      setShareToken(token)
       setCopied(false)
     } catch (err) {
       console.error('[SaveModal] Failed to save scene:', err)
@@ -165,6 +170,45 @@ export default function SaveModal() {
       setCollabCopied(true)
       setTimeout(() => setCollabCopied(false), 2000)
     })
+  }
+
+  const handleStopSharing = async () => {
+    if (!shareToken) return
+    setRevoking(true)
+    setSaveError('')
+
+    try {
+      const sessionId = getSessionID()
+      const res = await fetch(`${WORKER_URL}/api/scenes/delete`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: shareToken, sessionId }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to revoke')
+      }
+
+      setShareLink('')
+      setShareToken('')
+      setCopied(false)
+    } catch (err) {
+      console.error('[SaveModal] Failed to stop sharing:', err)
+      setSaveError(err.message || 'Failed to stop sharing')
+    } finally {
+      setRevoking(false)
+    }
+  }
+
+  const handleEndSession = () => {
+    const ws = useCollabStore.getState().ws
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.close()
+    }
+    useCollabStore.getState().reset()
+    setCollabLink('')
+    setCollabCopied(false)
   }
 
   return (
@@ -235,25 +279,35 @@ export default function SaveModal() {
           )}
 
           {shareLink ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={shareLink}
-                readOnly
-                className="flex-1 bg-surface text-text-secondary text-xs border border-border-light rounded-lg px-2.5 py-2 outline-none truncate"
-                onClick={(e) => e.target.select()}
-              />
+            <>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={shareLink}
+                  readOnly
+                  className="flex-1 bg-surface text-text-secondary text-xs border border-border-light rounded-lg px-2.5 py-2 outline-none truncate"
+                  onClick={(e) => e.target.select()}
+                />
+                <button
+                  onClick={handleCopyLink}
+                  className={`shrink-0 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 ${
+                    copied
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-accent-blue hover:bg-accent-blue-hover text-text-primary'
+                  }`}
+                >
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
               <button
-                onClick={handleCopyLink}
-                className={`shrink-0 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 ${
-                  copied
-                    ? 'bg-green-500/20 text-green-400'
-                    : 'bg-accent-blue hover:bg-accent-blue-hover text-text-primary'
-                }`}
+                onClick={handleStopSharing}
+                disabled={revoking}
+                className="w-full mt-2 py-2 rounded-lg border border-red-500/30 text-red-400 text-xs cursor-pointer hover:bg-red-500/10 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
-                {copied ? 'Copied!' : 'Copy'}
+                <i className={`bx ${revoking ? 'bx-loader-alt animate-spin' : 'bx-link-external'} text-sm`} />
+                {revoking ? 'Revoking...' : 'Stop Sharing'}
               </button>
-            </div>
+            </>
           ) : (
             <button
               onClick={handleGenerateLink}
@@ -287,26 +341,43 @@ export default function SaveModal() {
             </span>
           </div>
 
-          {collabLink ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={collabLink}
-                readOnly
-                className="flex-1 bg-surface text-text-secondary text-xs border border-border-light rounded-lg px-2.5 py-2 outline-none truncate"
-                onClick={(e) => e.target.select()}
-              />
+          {collabLink || collabConnected ? (
+            <>
+              {collabLink && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={collabLink}
+                    readOnly
+                    className="flex-1 bg-surface text-text-secondary text-xs border border-border-light rounded-lg px-2.5 py-2 outline-none truncate"
+                    onClick={(e) => e.target.select()}
+                  />
+                  <button
+                    onClick={handleCopyCollabLink}
+                    className={`shrink-0 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 ${
+                      collabCopied
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-accent-blue hover:bg-accent-blue-hover text-text-primary'
+                    }`}
+                  >
+                    {collabCopied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              )}
+              {collabConnected && (
+                <div className="flex items-center gap-1.5 mt-2 text-[10px] text-green-400/80">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  Live — connected to room
+                </div>
+              )}
               <button
-                onClick={handleCopyCollabLink}
-                className={`shrink-0 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 ${
-                  collabCopied
-                    ? 'bg-green-500/20 text-green-400'
-                    : 'bg-accent-blue hover:bg-accent-blue-hover text-text-primary'
-                }`}
+                onClick={handleEndSession}
+                className="w-full mt-2 py-2 rounded-lg border border-red-500/30 text-red-400 text-xs cursor-pointer hover:bg-red-500/10 transition-all duration-200 flex items-center justify-center gap-1.5"
               >
-                {collabCopied ? 'Copied!' : 'Copy'}
+                <i className="bx bx-power-off text-sm" />
+                End Session
               </button>
-            </div>
+            </>
           ) : (
             <button
               onClick={handleStartCollab}
