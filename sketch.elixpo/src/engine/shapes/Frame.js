@@ -24,6 +24,10 @@ class Frame {
         this.height = height;
         this.rotation = options.rotation || 0;
         this.frameName = options.frameName || "Frame";
+        this.fillStyle = options.fillStyle || "transparent"; // 'transparent' | 'solid' | 'grid'
+        this.fillColor = options.fillColor || "#1e1e28";
+        this.gridSize = options.gridSize || 20;
+        this.gridColor = options.gridColor || "rgba(255,255,255,0.06)";
         this.options = {
             stroke: options.stroke || "#555",
             strokeWidth: options.strokeWidth || 1,
@@ -75,6 +79,50 @@ class Frame {
         }
         this.anchors = [];
 
+        // Ensure defs exists for grid pattern
+        let defs = svg.querySelector('defs');
+        if (!defs) {
+            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            svg.appendChild(defs);
+        }
+
+        // Determine fill based on fillStyle
+        let fillValue = "transparent";
+        if (this.fillStyle === 'solid') {
+            fillValue = this.fillColor;
+        } else if (this.fillStyle === 'grid') {
+            // Create or update a grid pattern unique to this frame
+            const patternId = `frame-grid-${this.shapeID}`;
+            let pattern = defs.querySelector(`#${patternId}`);
+            if (!pattern) {
+                pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+                pattern.setAttribute('id', patternId);
+                pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+                defs.appendChild(pattern);
+            }
+            // Update pattern attributes
+            pattern.setAttribute('x', this.x);
+            pattern.setAttribute('y', this.y);
+            pattern.setAttribute('width', this.gridSize);
+            pattern.setAttribute('height', this.gridSize);
+            // Clear and rebuild pattern content
+            while (pattern.firstChild) pattern.removeChild(pattern.firstChild);
+            // Background fill
+            const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bgRect.setAttribute('width', this.gridSize);
+            bgRect.setAttribute('height', this.gridSize);
+            bgRect.setAttribute('fill', this.fillColor);
+            pattern.appendChild(bgRect);
+            // Grid lines
+            const gridPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            gridPath.setAttribute('d', `M ${this.gridSize} 0 L 0 0 0 ${this.gridSize}`);
+            gridPath.setAttribute('fill', 'none');
+            gridPath.setAttribute('stroke', this.gridColor);
+            gridPath.setAttribute('stroke-width', '0.5');
+            pattern.appendChild(gridPath);
+            fillValue = `url(#${patternId})`;
+        }
+
         // Create the frame rectangle
         const frameRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         frameRect.setAttribute("x", this.x);
@@ -83,9 +131,9 @@ class Frame {
         frameRect.setAttribute("height", this.height);
         frameRect.setAttribute("stroke", this.options.stroke);
         frameRect.setAttribute("stroke-width", this.options.strokeWidth);
-        frameRect.setAttribute("fill", this.options.fill);
+        frameRect.setAttribute("fill", fillValue);
         frameRect.setAttribute("opacity", this.options.opacity);
-        frameRect.setAttribute("stroke-dasharray", "5,5"); 
+        frameRect.setAttribute("stroke-dasharray", "5,5");
         frameRect.classList.add("frame-rect");
 
         // Apply rotation
@@ -315,51 +363,22 @@ move(dx, dy) {
     this.updateClipPath();
 }
 
-    handleResize(anchorIndex, currentPos, startPos, initialFrame) {
+    handleResizeLegacy(anchorIndex, currentPos, startPos, initialFrame) {
+    // Legacy version - superseded by the handleResize below with contained shapes scaling
     const dx = currentPos.x - startPos.x;
     const dy = currentPos.y - startPos.y;
 
     switch (anchorIndex) {
-        case 0: // Top-left
-            this.x = initialFrame.x + dx;
-            this.y = initialFrame.y + dy;
-            this.width = Math.max(10, initialFrame.width - dx);
-            this.height = Math.max(10, initialFrame.height - dy);
-            break;
-        case 1: // Top-middle
-            this.y = initialFrame.y + dy;
-            this.height = Math.max(10, initialFrame.height - dy);
-            break;
-        case 2: // Top-right
-            this.y = initialFrame.y + dy;
-            this.width = Math.max(10, initialFrame.width + dx);
-            this.height = Math.max(10, initialFrame.height - dy);
-            break;
-        case 3: // Right-middle
-            this.width = Math.max(10, initialFrame.width + dx);
-            break;
-        case 4: // Bottom-right
-            this.width = Math.max(10, initialFrame.width + dx);
-            this.height = Math.max(10, initialFrame.height + dy);
-            break;
-        case 5: // Bottom-middle
-            this.height = Math.max(10, initialFrame.height + dy);
-            break;
-        case 6: // Bottom-left
-            this.x = initialFrame.x + dx;
-            this.width = Math.max(10, initialFrame.width - dx);
-            this.height = Math.max(10, initialFrame.height + dy);
-            break;
-        case 7: // Left-middle
-            this.x = initialFrame.x + dx;
-            this.width = Math.max(10, initialFrame.width - dx);
-            break;
+        case 0: this.x = initialFrame.x + dx; this.y = initialFrame.y + dy; this.width = Math.max(10, initialFrame.width - dx); this.height = Math.max(10, initialFrame.height - dy); break;
+        case 1: this.y = initialFrame.y + dy; this.height = Math.max(10, initialFrame.height - dy); break;
+        case 2: this.y = initialFrame.y + dy; this.width = Math.max(10, initialFrame.width + dx); this.height = Math.max(10, initialFrame.height - dy); break;
+        case 3: this.width = Math.max(10, initialFrame.width + dx); break;
+        case 4: this.width = Math.max(10, initialFrame.width + dx); this.height = Math.max(10, initialFrame.height + dy); break;
+        case 5: this.height = Math.max(10, initialFrame.height + dy); break;
+        case 6: this.x = initialFrame.x + dx; this.width = Math.max(10, initialFrame.width - dx); this.height = Math.max(10, initialFrame.height + dy); break;
+        case 7: this.x = initialFrame.x + dx; this.width = Math.max(10, initialFrame.width - dx); break;
     }
-    
-    // Update arrows attached to this frame when resizing
     this.updateAttachedArrows();
-    
-    // Update contained shapes visibility
     this.updateContainedShapes();
 }
     destroy() {
@@ -974,48 +993,107 @@ startLabelEdit(labelElement) {
     }
 
     handleResize(anchorIndex, currentPos, startPos, initialFrame) {
-        const dx = currentPos.x - startPos.x;
-        const dy = currentPos.y - startPos.y;
+        const rawDx = currentPos.x - startPos.x;
+        const rawDy = currentPos.y - startPos.y;
+
+        // Rotate delta to local (unrotated) space when frame is rotated
+        const rad = (this.rotation || 0) * Math.PI / 180;
+        const cosR = Math.cos(rad);
+        const sinR = Math.sin(rad);
+        const dx = rawDx * cosR + rawDy * sinR;
+        const dy = -rawDx * sinR + rawDy * cosR;
 
         // Store old frame for scale calculation
         const oldX = this.x, oldY = this.y, oldW = this.width, oldH = this.height;
 
+        // Compute new dimensions using local-space deltas
+        let newW, newH;
+        // Fixed corner relative to initial frame origin: (fixRelX, fixRelY)
+        let fixRelX, fixRelY;
+
         switch (anchorIndex) {
             case 0: // Top-left
-                this.x = initialFrame.x + dx;
-                this.y = initialFrame.y + dy;
-                this.width = Math.max(10, initialFrame.width - dx);
-                this.height = Math.max(10, initialFrame.height - dy);
+                newW = Math.max(10, initialFrame.width - dx);
+                newH = Math.max(10, initialFrame.height - dy);
+                fixRelX = initialFrame.width; fixRelY = initialFrame.height;
                 break;
             case 1: // Top-middle
-                this.y = initialFrame.y + dy;
-                this.height = Math.max(10, initialFrame.height - dy);
+                newW = initialFrame.width;
+                newH = Math.max(10, initialFrame.height - dy);
+                fixRelX = 0; fixRelY = initialFrame.height;
                 break;
             case 2: // Top-right
-                this.y = initialFrame.y + dy;
-                this.width = Math.max(10, initialFrame.width + dx);
-                this.height = Math.max(10, initialFrame.height - dy);
+                newW = Math.max(10, initialFrame.width + dx);
+                newH = Math.max(10, initialFrame.height - dy);
+                fixRelX = 0; fixRelY = initialFrame.height;
                 break;
             case 3: // Right-middle
-                this.width = Math.max(10, initialFrame.width + dx);
+                newW = Math.max(10, initialFrame.width + dx);
+                newH = initialFrame.height;
+                fixRelX = 0; fixRelY = 0;
                 break;
             case 4: // Bottom-right
-                this.width = Math.max(10, initialFrame.width + dx);
-                this.height = Math.max(10, initialFrame.height + dy);
+                newW = Math.max(10, initialFrame.width + dx);
+                newH = Math.max(10, initialFrame.height + dy);
+                fixRelX = 0; fixRelY = 0;
                 break;
             case 5: // Bottom-middle
-                this.height = Math.max(10, initialFrame.height + dy);
+                newW = initialFrame.width;
+                newH = Math.max(10, initialFrame.height + dy);
+                fixRelX = 0; fixRelY = 0;
                 break;
             case 6: // Bottom-left
-                this.x = initialFrame.x + dx;
-                this.width = Math.max(10, initialFrame.width - dx);
-                this.height = Math.max(10, initialFrame.height + dy);
+                newW = Math.max(10, initialFrame.width - dx);
+                newH = Math.max(10, initialFrame.height + dy);
+                fixRelX = initialFrame.width; fixRelY = 0;
                 break;
             case 7: // Left-middle
-                this.x = initialFrame.x + dx;
-                this.width = Math.max(10, initialFrame.width - dx);
+                newW = Math.max(10, initialFrame.width - dx);
+                newH = initialFrame.height;
+                fixRelX = initialFrame.width; fixRelY = 0;
                 break;
         }
+
+        // Compute new position using fixed-corner constraint
+        if (this.rotation && this.rotation !== 0) {
+            // Compute rotated world position of the fixed corner in the initial frame
+            const iCX = initialFrame.x + initialFrame.width / 2;
+            const iCY = initialFrame.y + initialFrame.height / 2;
+            const odx = (initialFrame.x + fixRelX) - iCX;
+            const ody = (initialFrame.y + fixRelY) - iCY;
+            const fixedWorldX = iCX + odx * cosR - ody * sinR;
+            const fixedWorldY = iCY + odx * sinR + ody * cosR;
+
+            // Where the fixed corner sits in new rect (relative to new origin)
+            const fixNewRelX = (fixRelX === 0) ? 0 : newW;
+            const fixNewRelY = (fixRelY === 0) ? 0 : newH;
+
+            // Solve for new origin
+            const ncx = newW / 2;
+            const ncy = newH / 2;
+            const ndx = fixNewRelX - ncx;
+            const ndy = fixNewRelY - ncy;
+            const rotX = ncx + ndx * cosR - ndy * sinR;
+            const rotY = ncy + ndx * sinR + ndy * cosR;
+
+            this.x = fixedWorldX - rotX;
+            this.y = fixedWorldY - rotY;
+        } else {
+            // No rotation - use simple axis-aligned position calculation
+            switch (anchorIndex) {
+                case 0: this.x = initialFrame.x + (initialFrame.width - newW); this.y = initialFrame.y + (initialFrame.height - newH); break;
+                case 1: this.y = initialFrame.y + (initialFrame.height - newH); break;
+                case 2: this.y = initialFrame.y + (initialFrame.height - newH); break;
+                case 3: break;
+                case 4: break;
+                case 5: break;
+                case 6: this.x = initialFrame.x + (initialFrame.width - newW); break;
+                case 7: this.x = initialFrame.x + (initialFrame.width - newW); break;
+            }
+        }
+
+        this.width = newW;
+        this.height = newH;
 
         // Scale contained shapes proportionally so nothing falls out
         if (oldW > 0 && oldH > 0) {

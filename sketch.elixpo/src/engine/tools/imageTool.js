@@ -2,18 +2,19 @@
 // Image tool event handlers - extracted from imageTool.js
 import { pushCreateAction, pushDeleteAction, pushTransformAction, pushFrameAttachmentAction } from '../core/UndoRedo.js';
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './arrowTool.js';
+import { compressImage } from '../../utils/imageCompressor.js';
 
 
 let isDraggingImage = false;
 let imageToPlace = null;
 let imageX = 0;
 let imageY = 0;
-let scaleFactor = 0.2; 
-let currentImageElement = null; 
+let scaleFactor = 0.2;
+let currentImageElement = null;
 
 let selectedImage = null;
 let originalX, originalY, originalWidth, originalHeight;
-let currentAnchor = null; 
+let currentAnchor = null;
 let isDragging = false;
 let isRotatingImage = false;
 let dragOffsetX, dragOffsetY;
@@ -21,17 +22,107 @@ let startRotationMouseAngle = null;
 let startImageRotation = null;
 let imageRotation = 0;
 let aspect_ratio_lock = true;
-const minImageSize = 20; 
+const minImageSize = 20;
 
 // Frame attachment variables
 let draggedShapeInitialFrameImage = null;
 let hoveredFrameImage = null;
+
+// Per-room image size limit: 5MB total
+const ROOM_IMAGE_LIMIT_BYTES = 5 * 1024 * 1024;
+if (!window.__roomImageBytesUsed) window.__roomImageBytesUsed = 0;
 
 
 // Convert SVG element to our ImageShape class
 function wrapImageElement(element) {
     const imageShape = new ImageShape(element);
     return imageShape;
+}
+
+/**
+ * Async image upload pipeline:
+ * 1. Show loading indicator on the image
+ * 2. Compress the image adaptively
+ * 3. Get a signed upload URL from the worker
+ * 4. Upload compressed image to Cloudinary
+ * 5. Replace the base64 href with Cloudinary URL
+ * 6. Remove loading indicator
+ */
+async function uploadImageToCloudinary(imageShape) {
+    const workerUrl = window.__WORKER_URL;
+    const sessionId = window.__sessionID;
+    if (!workerUrl || !sessionId) return;
+
+    const href = imageShape.element.getAttribute('href') || '';
+    if (!href.startsWith('data:')) return; // already a URL, skip
+
+    imageShape.uploadStatus = 'uploading';
+    imageShape.uploadAbortController = new AbortController();
+    const signal = imageShape.uploadAbortController.signal;
+
+    imageShape.showUploadIndicator();
+
+    try {
+        // Step 1: Compress
+        const compressed = await compressImage(href);
+        if (signal.aborted) return;
+
+        // Step 2: Get signed upload params
+        const signRes = await fetch(`${workerUrl}/api/images/sign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId,
+                filename: `img_${Date.now()}`,
+            }),
+            signal,
+        });
+        if (!signRes.ok) throw new Error('Failed to get upload signature');
+        const signData = await signRes.json();
+        if (signal.aborted) return;
+
+        // Step 3: Upload to Cloudinary
+        const formData = new FormData();
+        formData.append('file', compressed.blob);
+        formData.append('api_key', signData.apiKey);
+        formData.append('timestamp', String(signData.timestamp));
+        formData.append('signature', signData.signature);
+        formData.append('folder', signData.folder);
+        formData.append('public_id', signData.publicId);
+
+        const uploadRes = await fetch(
+            `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`,
+            { method: 'POST', body: formData, signal }
+        );
+        if (!uploadRes.ok) throw new Error('Cloudinary upload failed');
+        const uploadData = await uploadRes.json();
+        if (signal.aborted) return;
+
+        // Step 4: Replace base64 with Cloudinary URL
+        const cloudUrl = uploadData.secure_url || uploadData.url;
+        imageShape.element.setAttribute('href', cloudUrl);
+        imageShape.element.setAttribute('data-href', cloudUrl);
+        imageShape.element.setAttribute('data-cloudinary-id', uploadData.public_id);
+
+        // Update file size tracking with actual compressed size
+        const oldSize = imageShape.element.__fileSize || 0;
+        const newSize = uploadData.bytes || compressed.compressedSize;
+        imageShape.element.__fileSize = newSize;
+        window.__roomImageBytesUsed = Math.max(0, (window.__roomImageBytesUsed || 0) - oldSize + newSize);
+
+        imageShape.uploadStatus = 'done';
+        console.log(`[ImageUpload] Uploaded to Cloudinary: ${cloudUrl} (${(newSize / 1024).toFixed(1)}KB)`);
+    } catch (err) {
+        if (signal.aborted) {
+            console.log('[ImageUpload] Upload aborted (image deleted)');
+            return;
+        }
+        console.warn('[ImageUpload] Upload failed:', err);
+        imageShape.uploadStatus = 'failed';
+    } finally {
+        imageShape.removeUploadIndicator();
+        imageShape.uploadAbortController = null;
+    }
 }
 
 document.getElementById("importImage")?.addEventListener('click', () => {
@@ -48,17 +139,35 @@ document.getElementById("importImage")?.addEventListener('click', () => {
     // Add the input to the document temporarily
     document.body.appendChild(fileInput);
     
+    let fileSelected = false;
+
     // Handle file selection
     fileInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (file) {
+            fileSelected = true;
             handleImageUpload(file);
         }
-        
-        // Clean up - remove the input element
         document.body.removeChild(fileInput);
     });
-    
+
+    // Detect cancel
+    const onFocus = () => {
+        window.removeEventListener('focus', onFocus);
+        setTimeout(() => {
+            if (!fileSelected) {
+                isImageToolActive = false;
+                if (window.__sketchEngine?.setActiveTool) {
+                    window.__sketchEngine.setActiveTool('select');
+                }
+                if (fileInput.parentNode) {
+                    document.body.removeChild(fileInput);
+                }
+            }
+        }, 300);
+    };
+    window.addEventListener('focus', onFocus);
+
     // Trigger the file picker
     fileInput.click();
 });
@@ -95,11 +204,19 @@ const handleImageUpload = (file) => {
         return;
     }
 
-    
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    // Per-room 5MB total image limit
+    if (window.__roomImageBytesUsed + file.size > ROOM_IMAGE_LIMIT_BYTES) {
+        const usedMB = (window.__roomImageBytesUsed / (1024 * 1024)).toFixed(2);
+        const fileMB = (file.size / (1024 * 1024)).toFixed(2);
+        alert(`Room image limit reached (5 MB). Used: ${usedMB} MB, this file: ${fileMB} MB. Delete some images to free space.`);
+        isImageToolActive = false;
+        return;
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB per file (matches room limit)
     if (file.size > maxSize) {
         console.error('File size too large');
-        alert('Image file is too large. Please select an image smaller than 10MB.');
+        alert('Image file is too large. Please select an image smaller than 5 MB.');
         return;
     }
 
@@ -107,8 +224,11 @@ const handleImageUpload = (file) => {
 
     const reader = new FileReader();
     
+    // Store file size for room limit tracking
+    window.__pendingImageFileSize = file.size;
+
     reader.onload = (e) => {
-        imageToPlace = e.target.result; 
+        imageToPlace = e.target.result;
         isDraggingImage = true;
         console.log('Image loaded and ready to place');
     };
@@ -319,6 +439,12 @@ const handleMouseDownImage = async (e) => {
             }
         });
 
+        // Track image size for room limit
+        const placedFileSize = window.__pendingImageFileSize || 0;
+        finalImage.__fileSize = placedFileSize;
+        window.__roomImageBytesUsed = (window.__roomImageBytesUsed || 0) + placedFileSize;
+        window.__pendingImageFileSize = 0;
+
         // Add click event to the newly added image
         finalImage.addEventListener('click', selectImage);
 
@@ -334,6 +460,11 @@ const handleMouseDownImage = async (e) => {
         currentShape = placedShape;
         currentShape.isSelected = true;
         placedShape.selectShape();
+
+        // Fire async upload pipeline (compress + upload to Cloudinary)
+        uploadImageToCloudinary(imageShape).catch(err => {
+            console.warn('[ImageTool] Upload pipeline error:', err);
+        });
 
     } catch (error) {
         console.error("Error placing image:", error);
@@ -454,15 +585,12 @@ function addSelectionOutline() {
 }
 
 function removeSelectionOutline() {
-    // Remove the selection outline
-    const outline = svg.querySelector(".selection-outline");
-    if (outline) {
-        svg.removeChild(outline);
-    }
+    // Remove ALL selection outlines (querySelectorAll to prevent stacking)
+    svg.querySelectorAll(".selection-outline").forEach(el => el.remove());
 
     // Remove resize anchors
     removeResizeAnchors();
-    
+
     // Remove rotation anchor
     removeRotationAnchor();
 
@@ -545,10 +673,7 @@ function addRotationAnchor(x, y, width, height, centerX, centerY) {
 }
 
 function removeRotationAnchor() {
-    const rotationAnchor = svg.querySelector(".rotation-anchor");
-    if (rotationAnchor) {
-        svg.removeChild(rotationAnchor);
-    }
+    svg.querySelectorAll(".rotation-anchor").forEach(el => el.remove());
 }
 
 function addAnchor(x, y, cursor) {
@@ -612,27 +737,18 @@ function resizeImage(event) {
 
     const { x: globalX, y: globalY } = getSVGCoordsFromMouse(event);
 
-    // Get the current image center for rotation calculations
-    const imgX = parseFloat(selectedImage.getAttribute('x'));
-    const imgY = parseFloat(selectedImage.getAttribute('y'));
-    const imgWidth = parseFloat(selectedImage.getAttribute("width"));
-    const imgHeight = parseFloat(selectedImage.getAttribute('height'));
-    const centerX = imgX + imgWidth / 2;
-    const centerY = imgY + imgHeight / 2;
+    // Use ORIGINAL center for consistent inverse rotation (avoids drift)
+    const centerX = originalX + originalWidth / 2;
+    const centerY = originalY + originalHeight / 2;
 
     // Convert mouse position to local coordinates accounting for rotation
     let localX = globalX;
     let localY = globalY;
-    
+
     if (imageRotation !== 0) {
-        // Convert rotation to radians
         const rotationRad = (imageRotation * Math.PI) / 180;
-        
-        // Translate to origin (center of image)
         const translatedX = globalX - centerX;
         const translatedY = globalY - centerY;
-        
-        // Apply inverse rotation
         localX = translatedX * Math.cos(-rotationRad) - translatedY * Math.sin(-rotationRad) + centerX;
         localY = translatedX * Math.sin(-rotationRad) + translatedY * Math.cos(-rotationRad) + centerY;
     }
@@ -647,39 +763,42 @@ function resizeImage(event) {
     let newY = originalY;
     const aspectRatio = originalHeight / originalWidth;
 
+    // Track which corner is fixed (relative to original rect)
+    let fixedRelX, fixedRelY;
+
     switch (currentAnchor.style.cursor) {
         case "nw-resize":
             newWidth = originalWidth - dx;
             newHeight = originalHeight - dy;
             if (aspect_ratio_lock) {
                 newHeight = newWidth * aspectRatio;
-                // Adjust dy to maintain aspect ratio
                 dy = originalHeight - newHeight;
             }
             newX = originalX + (originalWidth - newWidth);
             newY = originalY + (originalHeight - newHeight);
+            fixedRelX = originalWidth; fixedRelY = originalHeight;
             break;
         case "ne-resize":
             newWidth = dx;
             newHeight = originalHeight - dy;
             if (aspect_ratio_lock) {
                 newHeight = newWidth * aspectRatio;
-                // Adjust dy to maintain aspect ratio
                 dy = originalHeight - newHeight;
             }
             newX = originalX;
             newY = originalY + (originalHeight - newHeight);
+            fixedRelX = 0; fixedRelY = originalHeight;
             break;
         case "sw-resize":
             newWidth = originalWidth - dx;
             newHeight = dy;
             if (aspect_ratio_lock) {
                 newHeight = newWidth * aspectRatio;
-                // Adjust dy to maintain aspect ratio
                 dy = newHeight;
             }
             newX = originalX + (originalWidth - newWidth);
             newY = originalY;
+            fixedRelX = originalWidth; fixedRelY = 0;
             break;
         case "se-resize":
             newWidth = dx;
@@ -689,12 +808,43 @@ function resizeImage(event) {
             }
             newX = originalX;
             newY = originalY;
+            fixedRelX = 0; fixedRelY = 0;
             break;
     }
 
     // Ensure minimum size
     newWidth = Math.max(minImageSize, newWidth);
     newHeight = Math.max(minImageSize, newHeight);
+
+    // Compensate for rotation center shift when rotated
+    if (imageRotation !== 0) {
+        const rad = (imageRotation * Math.PI) / 180;
+        const cosR = Math.cos(rad);
+        const sinR = Math.sin(rad);
+
+        // Compute rotated world position of the fixed corner in the original rect
+        const oldCX = originalX + originalWidth / 2;
+        const oldCY = originalY + originalHeight / 2;
+        const odx = (originalX + fixedRelX) - oldCX;
+        const ody = (originalY + fixedRelY) - oldCY;
+        const fixedWorldX = oldCX + odx * cosR - ody * sinR;
+        const fixedWorldY = oldCY + odx * sinR + ody * cosR;
+
+        // Determine where the fixed corner sits in the new rect (relative to new origin)
+        const fixedNewRelX = fixedRelX === 0 ? 0 : newWidth;
+        const fixedNewRelY = fixedRelY === 0 ? 0 : newHeight;
+
+        // Solve for new origin so the fixed corner stays in place
+        const ncx = newWidth / 2;
+        const ncy = newHeight / 2;
+        const ndx = fixedNewRelX - ncx;
+        const ndy = fixedNewRelY - ncy;
+        const rotX = ncx + ndx * cosR - ndy * sinR;
+        const rotY = ncy + ndx * sinR + ndy * cosR;
+
+        newX = fixedWorldX - rotX;
+        newY = fixedWorldY - rotY;
+    }
 
     // Apply the new dimensions and position
     selectedImage.setAttribute('width', newWidth);
@@ -1041,17 +1191,44 @@ function stopInteracting() {
 function deleteCurrentImage() {
     if (selectedImage) {
         // Find the ImageShape wrapper
-        let imageShape = null;
-        if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
-            imageShape = shapes.find(shape => shape.shapeName === 'image' && shape.element === selectedImage);
-            if (imageShape) {
-                const idx = shapes.indexOf(imageShape);
-                if (idx !== -1) shapes.splice(idx, 1);
-                
-                // Remove the group (which contains the image)
-                if (imageShape.group && imageShape.group.parentNode) {
-                    imageShape.group.parentNode.removeChild(imageShape.group);
+        let imageShape = (typeof shapes !== 'undefined' && Array.isArray(shapes))
+            ? shapes.find(s => s.shapeName === 'image' && s.element === selectedImage)
+            : null;
+
+        // Abort any in-progress upload
+        if (imageShape?.uploadAbortController) {
+            imageShape.uploadAbortController.abort();
+            imageShape.removeUploadIndicator();
+        }
+
+        // Release image bytes from room limit
+        const freedBytes = selectedImage.__fileSize || 0;
+        window.__roomImageBytesUsed = Math.max(0, (window.__roomImageBytesUsed || 0) - freedBytes);
+
+        // If image is hosted on Cloudinary, delete it from storage
+        const imgHref = selectedImage.getAttribute('href') || selectedImage.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '';
+        if (imgHref.includes('cloudinary.com') || imgHref.includes('res.cloudinary')) {
+            const match = imgHref.match(/\/upload\/(?:v\d+\/)?(lixsketch\/.+?)(?:\.\w+)?$/);
+            if (match) {
+                const publicId = match[1];
+                const workerUrl = window.__WORKER_URL;
+                if (workerUrl) {
+                    fetch(`${workerUrl}/api/images/delete`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ publicId }),
+                    }).catch(err => console.warn('[ImageTool] Cloudinary cleanup failed:', err));
                 }
+            }
+        }
+
+        if (imageShape) {
+            const idx = shapes.indexOf(imageShape);
+            if (idx !== -1) shapes.splice(idx, 1);
+
+            // Remove the group (which contains the image)
+            if (imageShape.group && imageShape.group.parentNode) {
+                imageShape.group.parentNode.removeChild(imageShape.group);
             }
         }
         
@@ -1081,5 +1258,47 @@ document.addEventListener('keydown', (e) => {
         deleteCurrentImage();
     }
 });
+
+// Window bridge: allow React UI to trigger the file picker
+window.openImageFilePicker = function() {
+    isImageToolActive = true;
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+
+    let fileSelected = false;
+
+    fileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            fileSelected = true;
+            handleImageUpload(file);
+        }
+        document.body.removeChild(fileInput);
+    });
+
+    // Detect cancel: when focus returns to window without a file being selected
+    const onFocus = () => {
+        window.removeEventListener('focus', onFocus);
+        // Delay to let 'change' fire first if a file was selected
+        setTimeout(() => {
+            if (!fileSelected) {
+                // User cancelled — switch back to select tool
+                isImageToolActive = false;
+                if (window.__sketchEngine?.setActiveTool) {
+                    window.__sketchEngine.setActiveTool('select');
+                }
+                if (fileInput.parentNode) {
+                    document.body.removeChild(fileInput);
+                }
+            }
+        }, 300);
+    };
+    window.addEventListener('focus', onFocus);
+
+    fileInput.click();
+};
 
 export { handleMouseDownImage, handleMouseMoveImage, handleMouseUpImage };

@@ -104,16 +104,16 @@ export default function AppMenu() {
           <span className="text-text-dim text-xs">Ctrl+O</span>
         </button>
 
-        {/* Save As */}
+        {/* Save & Share */}
         <button
           onClick={() => { toggleSaveModal(); closeMenu() }}
           className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-save text-sm" />
-            Save As
+            Save &amp; Share
           </span>
-          <span className="text-text-dim text-xs">Ctrl+S</span>
+          <span className="text-text-dim text-xs">Ctrl+Shift+S</span>
         </button>
 
         {/* Export Image */}

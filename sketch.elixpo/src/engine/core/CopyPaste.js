@@ -574,6 +574,10 @@ function handleMouseMoveForPaste(e) {
 function initCopyPaste() {
     document.addEventListener('keydown', handleCopyPasteKeydown);
     document.addEventListener('mousemove', handleMouseMoveForPaste);
+
+    // Expose for context menu
+    window.copySelected = copySelected;
+    window.pasteClipboard = pasteClipboard;
 }
 
 export { initCopyPaste, copySelected, pasteClipboard };

@@ -40,7 +40,7 @@ const useAuthStore = create((set, get) => ({
   sessionToken: null,
   isAuthenticated: false,
   activeRooms: 0,
-  maxRooms: 10,
+  maxRooms: 1,
   loading: false,
 
   init: () => {

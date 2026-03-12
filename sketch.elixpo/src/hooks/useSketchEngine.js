@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import useSketchStore from '@/store/useSketchStore'
+import { WORKER_URL } from '@/lib/env'
 
 /**
  * Hook that initializes the SketchEngine on the provided SVG element
@@ -34,6 +35,8 @@ export default function useSketchEngine(svgRef, ready = true) {
         const engine = new SketchEngine(svgRef.current)
         await engine.init()
         engineRef.current = engine
+        window.__sketchEngine = engine
+        window.__WORKER_URL = WORKER_URL
 
         // Sync current tool immediately after init
         const currentTool = useSketchStore.getState().activeTool

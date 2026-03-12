@@ -26,11 +26,22 @@ export default function useSessionID() {
     }
 
     if (!sessionID) {
-      // Generate new session ID and redirect to /c/<id>
-      sessionID = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+      // For guests: try to reuse their saved workspace session ID
+      const savedGuestSession = localStorage.getItem('lixsketch-guest-session')
+      if (savedGuestSession) {
+        sessionID = savedGuestSession
+      } else {
+        // Generate new session ID
+        sessionID = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+        // Persist for guest reuse (guests get 1 workspace)
+        localStorage.setItem('lixsketch-guest-session', sessionID)
+      }
       const search = window.location.search
       const hash = window.location.hash
       window.history.replaceState(null, '', `/c/${sessionID}${search}${hash}`)
+    } else {
+      // If navigating to a specific session, update the guest session store
+      localStorage.setItem('lixsketch-guest-session', sessionID)
     }
 
     // Store on window for the engine

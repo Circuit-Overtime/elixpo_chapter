@@ -74,20 +74,22 @@ export class RoomDurableObject {
       });
     }
 
-    // Check IP-based room limit for guests (non-authenticated)
-    const isGuest = !url.searchParams.get('authToken');
-    if (isGuest && this.sessions.size === 0) {
-      // First connection = room creation. Check if this IP already has a room
-      const existingRoom = await this.env.KV.get(`ip-rooms:${clientIp}`);
+    // 1 room per user (guest or authenticated)
+    const authToken = url.searchParams.get('authToken');
+    const isGuest = !authToken;
+    if (this.sessions.size === 0) {
+      // First connection = room creation. Check if this user already has a room
+      const limitKey = isGuest ? `ip-rooms:${clientIp}` : `user-rooms:${authToken}`;
+      const existingRoom = await this.env.KV.get(limitKey);
       if (existingRoom && existingRoom !== roomId) {
         return new Response(JSON.stringify({ error: 'ROOM_LIMIT_REACHED' }), {
           status: 429,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      // Reserve this IP
+      // Reserve this slot
       const ttlSeconds = parseInt(this.env.ROOM_TTL_HOURS || '3') * 3600;
-      await this.env.KV.put(`ip-rooms:${clientIp}`, roomId, { expirationTtl: ttlSeconds });
+      await this.env.KV.put(limitKey, roomId, { expirationTtl: ttlSeconds });
     }
 
     // Assign color
