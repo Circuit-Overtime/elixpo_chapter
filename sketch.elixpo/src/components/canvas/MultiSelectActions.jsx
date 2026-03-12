@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 
 export default function MultiSelectActions() {
   const [count, setCount] = useState(0)
+  const [canFrame, setCanFrame] = useState(true)
 
   useEffect(() => {
     // Poll multi-selection state (lightweight — only checks a Set size)
@@ -11,6 +12,16 @@ export default function MultiSelectActions() {
       const ms = window.multiSelection
       const n = ms ? ms.selectedShapes.size : 0
       setCount((prev) => (prev !== n ? n : prev))
+
+      // Check if all selected shapes are frames — if so, hide "Frame it"
+      if (ms && n >= 2) {
+        const allFrames = Array.from(ms.selectedShapes).every(
+          (s) => s.shapeName === 'frame'
+        )
+        setCanFrame(!allFrames)
+      } else {
+        setCanFrame(true)
+      }
     }, 200)
     return () => clearInterval(interval)
   }, [])
@@ -30,14 +41,18 @@ export default function MultiSelectActions() {
         <span className="text-text-muted text-xs">
           {count} selected
         </span>
-        <div className="w-px h-4 bg-border-light" />
-        <button
-          onClick={handleFrame}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-accent-blue hover:bg-accent-blue/10 transition-all duration-150"
-        >
-          <i className="bx bx-crop text-sm" />
-          Frame it
-        </button>
+        {canFrame && (
+          <>
+            <div className="w-px h-4 bg-border-light" />
+            <button
+              onClick={handleFrame}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-accent-blue hover:bg-accent-blue/10 transition-all duration-150"
+            >
+              <i className="bx bx-crop text-sm" />
+              Frame it
+            </button>
+          </>
+        )}
       </div>
     </div>
   )

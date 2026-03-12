@@ -25,6 +25,7 @@ const ACTION_SHORTCUTS = [
   { keys: 'Ctrl+D', action: 'Duplicate' },
   { keys: 'Ctrl+S', action: 'Quick Save' },
   { keys: 'Ctrl+Shift+S', action: 'Save & Share' },
+  { keys: 'Ctrl+F', action: 'Find on Canvas' },
   { keys: 'Ctrl+C', action: 'Copy' },
   { keys: 'Ctrl+V', action: 'Paste' },
   { keys: 'Ctrl+Z', action: 'Undo' },

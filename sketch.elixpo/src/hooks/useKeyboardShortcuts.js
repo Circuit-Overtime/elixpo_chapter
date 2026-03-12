@@ -57,6 +57,11 @@ export default function useKeyboardShortcuts() {
           useUIStore.getState().toggleExportImageModal()
           return
         }
+        if (key === 'f' && !e.shiftKey) {
+          e.preventDefault()
+          useUIStore.getState().toggleFindBar()
+          return
+        }
       }
 
       // Skip if user is typing in an input, textarea, or contenteditable
@@ -201,6 +206,10 @@ export default function useKeyboardShortcuts() {
             return
           }
           const uiStore = useUIStore.getState()
+          if (uiStore.findBarOpen) {
+            uiStore.closeFindBar()
+            return
+          }
           if (uiStore.commandPaletteOpen) {
             uiStore.toggleCommandPalette()
             return
