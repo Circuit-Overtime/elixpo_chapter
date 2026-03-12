@@ -3,6 +3,7 @@
 
 import { cleanupAttachments } from '../tools/arrowTool.js';
 import { pushTransformAction } from './UndoRedo.js';
+import { calculateSnap, clearSnapGuides } from './SnapGuides.js';
 
 let isMultiSelecting = false;
 let multiSelectionStart = { x: 0, y: 0 };
@@ -1305,18 +1306,51 @@ createRotatedControls(angleDiff = 0) {
         if (!this.isDragging) return;
         isDraggingMultiSelection = true;
         const { x, y } = getSVGCoordsFromMouse(e);
-        const dx = x - this.dragStart.x;
-        const dy = y - this.dragStart.y;
+        let dx = x - this.dragStart.x;
+        let dy = y - this.dragStart.y;
+
+        // Shift-constrain: lock to horizontal or vertical axis
+        if (e.shiftKey) {
+            if (Math.abs(dx) > Math.abs(dy)) {
+                dy = 0;
+            } else {
+                dx = 0;
+            }
+        }
 
         this.move(dx, dy);
 
-        this.dragStart = { x, y };
+        // Snap guides for multi-selection
+        if (window.__sketchStoreApi && window.__sketchStoreApi.getState().snapToObjects) {
+            const bounds = this.getBounds();
+            if (bounds) {
+                // Create a virtual shape representing the multi-selection bounding box
+                const virtualShape = {
+                    shapeName: 'rectangle',
+                    x: bounds.x,
+                    y: bounds.y,
+                    width: bounds.width,
+                    height: bounds.height,
+                };
+                const snap = calculateSnap(virtualShape);
+                if (snap.dx || snap.dy) {
+                    this.move(snap.dx, snap.dy);
+                }
+            }
+        } else {
+            clearSnapGuides();
+        }
+
+        this.dragStart = { x: x, y: y };
     }
 
     endDrag() {
         if (!this.isDragging) return;
         isDraggingMultiSelection = false;
         this.isDragging = false;
+
+        // Clear snap guides on drag end
+        clearSnapGuides();
 
         // Finalize freehand stroke moves (bake transform offset into points)
         this.selectedShapes.forEach(shape => {
@@ -1518,6 +1552,13 @@ function handleMultiSelectionMouseDown(e) {
         
         multiSelectionStart = { x, y };
         isMultiSelecting = true;
+        // Prevent native text selection during drag-select
+        if (typeof svg !== 'undefined') {
+            svg.style.userSelect = 'none';
+            svg.style.webkitUserSelect = 'none';
+        }
+        document.body.style.userSelect = 'none';
+        document.body.style.webkitUserSelect = 'none';
         createMultiSelectionRect(x, y);
         clearAllSelections();
         return true;
@@ -1556,6 +1597,24 @@ function handleMultiSelectionMouseMove(e) {
             svg.style.cursor = 'move';
         }
         return true;
+    }
+
+    // Show move cursor when hovering over any shape in selection mode
+    if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
+        const overShape = shapes.some(shape => {
+            if (typeof shape.contains === 'function') {
+                return shape.contains(x, y);
+            }
+            return false;
+        });
+        if (overShape && typeof svg !== 'undefined') {
+            svg.style.cursor = 'move';
+            return false;
+        }
+    }
+
+    if (typeof svg !== 'undefined' && svg.style.cursor === 'move') {
+        svg.style.cursor = 'default';
     }
 
     return false;
@@ -1630,12 +1689,25 @@ function handleMultiSelectionMouseUp(e) {
         removeMultiSelectionRect();
         isMultiSelecting = false;
         isDraggingMultiSelection = false;
+        // Restore text selection after drag-select
+        document.body.style.userSelect = '';
+        document.body.style.webkitUserSelect = '';
+        if (typeof svg !== 'undefined') {
+            svg.style.userSelect = '';
+            svg.style.webkitUserSelect = '';
+        }
         return true;
     }
 
     // Safety cleanup - always reset flags on mouse up
     isMultiSelecting = false;
     isDraggingMultiSelection = false;
+    document.body.style.userSelect = '';
+    document.body.style.webkitUserSelect = '';
+    if (typeof svg !== 'undefined') {
+        svg.style.userSelect = '';
+        svg.style.webkitUserSelect = '';
+    }
     return false;
 }
 
@@ -1646,6 +1718,8 @@ window.addEventListener('mouseup', () => {
         removeMultiSelectionRect();
         isMultiSelecting = false;
         isDraggingMultiSelection = false;
+        document.body.style.userSelect = '';
+        document.body.style.webkitUserSelect = '';
     }
 });
 

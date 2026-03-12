@@ -90,7 +90,7 @@ worker() {
 # ── Entrypoint ───────────────────────────────────────────────
 
 usage() {
-  echo "Usage: ./deploy.sh [command]"
+  echo "Usage: ./deploy.sh [command ...]"
   echo ""
   echo "Commands:"
   echo "  deploy    Build & deploy Next.js to Cloudflare Pages"
@@ -99,19 +99,31 @@ usage() {
   echo "  build     Build Pages only (no deploy)"
   echo "  all       secrets + worker + deploy"
   echo ""
+  echo "Multiple commands can be chained: ./deploy.sh build deploy"
   echo "Default: deploy"
 }
 
-case "${1:-deploy}" in
-  deploy)  deploy ;;
-  worker)  worker ;;
-  secrets) secrets ;;
-  build)   build ;;
-  all)     secrets; worker; deploy ;;
-  -h|--help|help) usage ;;
-  *)
-    echo "Unknown command: $1"
-    usage
-    exit 1
-    ;;
-esac
+run_command() {
+  case "$1" in
+    deploy)  deploy ;;
+    worker)  worker ;;
+    secrets) secrets ;;
+    build)   build ;;
+    all)     secrets; worker; deploy ;;
+    -h|--help|help) usage ;;
+    *)
+      echo "Unknown command: $1"
+      usage
+      exit 1
+      ;;
+  esac
+}
+
+# Default to deploy if no args
+if [ $# -eq 0 ]; then
+  deploy
+else
+  for cmd in "$@"; do
+    run_command "$cmd"
+  done
+fi

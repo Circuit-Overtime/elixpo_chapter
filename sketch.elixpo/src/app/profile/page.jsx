@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, useInView } from 'framer-motion'
 import Link from 'next/link'
@@ -112,7 +112,7 @@ function UsageBar({ used, limit, color = '#4A90D9', label, unit = '' }) {
 
 // ── Workspace card ───────────────────────────────────────────────────────────
 
-function WorkspaceCard({ workspace, index }) {
+function WorkspaceCard({ workspace, index, onDelete }) {
   const sizeKB = ((workspace.size_bytes || 0) / 1024).toFixed(1)
   const lastAccessed = workspace.last_accessed_at
     ? new Date(workspace.last_accessed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -120,6 +120,22 @@ function WorkspaceCard({ workspace, index }) {
   const created = workspace.created_at
     ? new Date(workspace.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : '—'
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true)
+      return
+    }
+    setDeleting(true)
+    try {
+      await onDelete(workspace)
+    } finally {
+      setDeleting(false)
+      setConfirmDelete(false)
+    }
+  }
 
   return (
     <motion.div
@@ -175,6 +191,25 @@ function WorkspaceCard({ workspace, index }) {
                 <i className="bx bx-link text-sm" />
               </button>
             )}
+            <button
+              onClick={handleDelete}
+              onMouseLeave={() => setConfirmDelete(false)}
+              disabled={deleting}
+              className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                confirmDelete
+                  ? 'text-red-400 border border-red-500/40 bg-red-500/10 hover:bg-red-500/20'
+                  : 'text-text-dim border border-white/10 hover:border-red-500/30 hover:text-red-400'
+              } ${deleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={confirmDelete ? 'Click again to confirm' : 'Delete workspace'}
+            >
+              {deleting ? (
+                <i className="bx bx-loader-alt bx-spin text-sm" />
+              ) : confirmDelete ? (
+                <span className="text-[10px] font-medium">Confirm?</span>
+              ) : (
+                <i className="bx bx-trash text-sm" />
+              )}
+            </button>
           </div>
         </div>
       </RoughCard>
@@ -207,6 +242,12 @@ export default function ProfilePage() {
 
   const headerRef = useRef(null)
   const headerInView = useInView(headerRef, { once: true })
+
+  // Generate a fresh session ID for the "New" workspace button
+  const newSessionId = useMemo(
+    () => `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    []
+  )
 
   // Init auth on mount
   useEffect(() => { init() }, [init])
@@ -246,6 +287,36 @@ export default function ProfilePage() {
     }
     fetchData()
   }, [isAuthenticated, user?.id])
+
+  const handleDeleteWorkspace = async (workspace) => {
+    try {
+      const profile = useProfileStore.getState().profile
+      const createdBy = isAuthenticated && user?.id ? user.id : (profile?.id || localStorage.getItem('lixsketch-guest-session'))
+
+      const res = await fetch(`${WORKER_URL}/api/scenes/delete`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: workspace.session_id,
+          createdBy,
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to delete')
+      }
+
+      // Remove from local state
+      setWorkspaces((prev) => prev.filter((ws) => ws.session_id !== workspace.session_id))
+      // Update quota count
+      if (quotaData) {
+        setQuotaData((prev) => prev ? { ...prev, workspaceCount: Math.max(0, (prev.workspaceCount || 1) - 1) } : prev)
+      }
+    } catch (err) {
+      console.error('[Profile] Failed to delete workspace:', err)
+    }
+  }
 
   const tier = quotaData?.tier || (isAuthenticated ? 'free' : 'guest')
   const tierStyle = TIER_COLORS[tier] || TIER_COLORS.guest
@@ -393,7 +464,7 @@ export default function ProfilePage() {
                 </h2>
                 {workspaces.length < (isAuthenticated ? 3 : 1) && (
                   <Link
-                    href="/c/new"
+                    href={`/c/${newSessionId}?new=1`}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-accent-blue border border-accent-blue/20 hover:bg-accent-blue/10 transition-all"
                   >
                     <i className="bx bx-plus text-sm" />
@@ -408,7 +479,7 @@ export default function ProfilePage() {
                     <i className="bx bx-folder-open text-3xl text-text-dim mb-2" />
                     <p className="text-text-dim text-sm mb-3">No workspaces yet</p>
                     <Link
-                      href="/c/new"
+                      href={`/c/${newSessionId}?new=1`}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-accent-blue hover:bg-accent-blue/80 text-white text-xs rounded-lg transition-all"
                     >
                       <i className="bx bx-pencil text-sm" />
@@ -419,7 +490,7 @@ export default function ProfilePage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {workspaces.map((ws, i) => (
-                    <WorkspaceCard key={ws.id || ws.session_id} workspace={ws} index={i} />
+                    <WorkspaceCard key={ws.id || ws.session_id} workspace={ws} index={i} onDelete={handleDeleteWorkspace} />
                   ))}
                 </div>
               )}

@@ -54,6 +54,13 @@ export default function useAutoSave() {
         return
       }
 
+      // Skip restore for brand-new workspaces
+      if (window.__isNewWorkspace) {
+        hasRestored.current = true
+        console.log('[AutoSave] New workspace — starting with blank canvas')
+        return
+      }
+
       const saved = localStorage.getItem(LOCAL_SAVE_KEY)
       if (!saved) {
         hasRestored.current = true
@@ -62,7 +69,10 @@ export default function useAutoSave() {
 
       try {
         const sceneData = JSON.parse(saved)
-        if (sceneData && sceneData.format === 'lixsketch' && sceneData.shapes?.length > 0) {
+        // Only restore if the saved scene matches the current session
+        const currentSessionID = window.__sessionID
+        if (sceneData && sceneData.format === 'lixsketch' && sceneData.shapes?.length > 0
+            && (!currentSessionID || !sceneData.sessionID || sceneData.sessionID === currentSessionID)) {
           serializer.load(sceneData)
           console.log(`[AutoSave] Restored ${sceneData.shapes.length} shapes from local save`)
 
@@ -92,7 +102,7 @@ export default function useAutoSave() {
     const save = () => {
       const serializer = window.__sceneSerializer
       const shapes = window.shapes
-      if (!serializer || !shapes || shapes.length === 0) return
+      if (!serializer || !shapes) return
 
       try {
         const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
@@ -122,6 +132,65 @@ export default function useAutoSave() {
     }
   }, [isInRoom])
 
+  // Save new workspace to DB immediately so it appears in the user's profile
+  useEffect(() => {
+    if (isInRoom) return
+    if (!WORKER_URL) return
+    if (!window.__isNewWorkspace) return
+
+    const saveNewWorkspace = async () => {
+      const serializer = window.__sceneSerializer
+      if (!serializer || !window.svg) {
+        setTimeout(saveNewWorkspace, 1000)
+        return
+      }
+
+      try {
+        const authState = useAuthStore.getState()
+        const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
+        const sceneData = serializer.save(workspaceName)
+        const sceneJSON = JSON.stringify(sceneData)
+
+        const key = await generateKey()
+        const encryptedData = await encrypt(sceneJSON, key)
+
+        const sessionId = getSessionID()
+        const createdBy = authState.isAuthenticated
+          ? (authState.user?.id || 'anonymous')
+          : (useProfileStore.getState().profile?.id || localStorage.getItem('lixsketch-guest-session') || 'anonymous')
+
+        const res = await fetch(`${WORKER_URL}/api/scenes/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            encryptedData,
+            permission: 'edit',
+            workspaceName,
+            createdBy,
+            ownerType: authState.isAuthenticated ? 'user' : 'guest',
+          }),
+        })
+
+        if (res.ok) {
+          console.log('[AutoSave] New workspace saved to cloud')
+          // Store encryption key for this session
+          useUIStore.getState().setSessionEncryptionKey?.(key)
+        } else {
+          const err = await res.json().catch(() => ({}))
+          console.warn('[AutoSave] Failed to save new workspace:', err.error || err.message)
+        }
+      } catch (err) {
+        console.warn('[AutoSave] Failed to save new workspace:', err)
+      }
+
+      // Clear the flag so it doesn't re-run
+      window.__isNewWorkspace = false
+    }
+
+    setTimeout(saveNewWorkspace, 2000)
+  }, [isInRoom])
+
   // Deferred cloud sync every 5 minutes (only if authenticated)
   useEffect(() => {
     if (isInRoom) return
@@ -132,7 +201,7 @@ export default function useAutoSave() {
       if (!authState.isAuthenticated) return
 
       const shapes = window.shapes
-      if (!shapes || shapes.length === 0) return
+      if (!shapes) return
 
       const now = Date.now()
       if (now - lastCloudSync.current < CLOUD_SYNC_INTERVAL) return

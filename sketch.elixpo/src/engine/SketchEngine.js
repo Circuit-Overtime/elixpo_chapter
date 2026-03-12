@@ -260,6 +260,11 @@ class SketchEngine {
                 resizeShapes, resizeCode
             };
 
+            // Re-bind event listeners to the current SVG element
+            if (eventDispatcher.initEventDispatcher) {
+                eventDispatcher.initEventDispatcher(this.svg);
+            }
+
             // Import standalone tools
             await Promise.all([
                 import('./tools/eraserTool.js'),
@@ -393,6 +398,10 @@ class SketchEngine {
     }
 
     cleanup() {
+        // Remove event listeners from the SVG element
+        if (this._modules.core?.eventDispatcher?.cleanupEventDispatcher) {
+            this._modules.core.eventDispatcher.cleanupEventDispatcher();
+        }
         window.shapes = [];
         window.currentShape = null;
         window.lastMousePos = null;

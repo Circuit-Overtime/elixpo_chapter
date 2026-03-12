@@ -121,7 +121,7 @@ function addText(event) {
     textElement.setAttribute("font-size", textSize);
     textElement.setAttribute("font-family", textFont);
     textElement.setAttribute("text-anchor", textAlignElement);
-    textElement.setAttribute("cursor", "text");
+    textElement.setAttribute("cursor", "default");
     textElement.setAttribute("white-space", "pre");
     textElement.setAttribute("dominant-baseline", "hanging");
     textElement.textContent = "";
@@ -207,40 +207,17 @@ function makeTextEditable(textElement, groupElement) {
 
     const svgRect = svg.getBoundingClientRect();
 
-    let groupTransformMatrix = svg.createSVGMatrix();
-    if (groupElement && groupElement.transform && groupElement.transform.baseVal) {
-        const transformList = groupElement.transform.baseVal;
-        if (transformList.numberOfItems > 0) {
-            const consolidatedTransform = transformList.consolidate();
-            if (consolidatedTransform) {
-                groupTransformMatrix = consolidatedTransform.matrix;
-            } else {
-                console.warn("Could not consolidate transform for group:", groupElement);
-                try {
-                    if (transformList.length > 0) {
-                       groupTransformMatrix = transformList.getItem(0).matrix;
-                    }
-                } catch (err) {
-                    console.error("Failed to get any transform matrix.", err);
-                }
-            }
-        } else {
-            console.warn("Group element transform list is empty:", groupElement);
-        }
-    } else {
-         console.warn("Group element, transform, or baseVal is missing or invalid:", groupElement);
-    }
-
+    // Use the group element's own screenCTM which includes group transform + SVG viewBox transform
     const textBBox = textElement.getBBox();
-
     let pt = svg.createSVGPoint();
     pt.x = textBBox.x;
     pt.y = textBBox.y;
 
-    let screenPt = pt.matrixTransform(groupTransformMatrix.multiply(svg.getScreenCTM()));
+    const groupCTM = groupElement.getScreenCTM() || svg.getScreenCTM();
+    let screenPt = pt.matrixTransform(groupCTM);
 
-    input.style.left = `${screenPt.x + svgRect.left}px`;
-    input.style.top = `${screenPt.y + svgRect.top}px`;
+    input.style.left = `${screenPt.x}px`;
+    input.style.top = `${screenPt.y}px`;
 
     const svgZoomFactor = svg.getScreenCTM() ? svg.getScreenCTM().a : 1;
     const screenWidth = textBBox.width * svgZoomFactor;
@@ -330,6 +307,10 @@ function makeTextEditable(textElement, groupElement) {
     document.addEventListener('mousedown', handleClickOutside, true);
     input.handleClickOutside = handleClickOutside;
 
+    // Set text cursor on the element during edit mode
+    const textEl = groupElement.querySelector('text');
+    if (textEl) textEl.setAttribute("cursor", "text");
+
     groupElement.style.display = "none";
 }
 
@@ -346,6 +327,9 @@ function renderText(input, textElement, deleteIfEmpty = false) {
     }
 
     document.body.removeChild(input);
+
+    // Reset cursor back to default after edit mode ends
+    if (textElement) textElement.setAttribute("cursor", "default");
 
     if (!gElement || !textElement) {
         return;
@@ -652,6 +636,14 @@ function selectElement(groupElement) {
     updateSelectedElement(selectedElement);
     updateCodeToggleForShape('text');
 
+    // Update global currentShape so EventDispatcher can route to other tools later
+    if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
+        const wrapper = shapes.find(s => s.element === groupElement || s.group === groupElement);
+        if (wrapper) {
+            currentShape = wrapper;
+        }
+    }
+
     // Show text property panel when text is selected
     if (window.__showSidebarForShape) window.__showSidebarForShape('text');
 }
@@ -673,6 +665,11 @@ function deselectElement() {
         selectedElement = null;
 
         updateSelectedElement(null);
+
+        // Clear global currentShape if it was a text shape
+        if (currentShape && (currentShape.shapeName === 'text' || currentShape.shapeName === 'code')) {
+            currentShape = null;
+        }
 
         // Hide text property panel if we're in selection mode (not text tool)
         if (isSelectionToolActive) {
@@ -1246,12 +1243,12 @@ const handleTextMouseMove = function (e) {
         if (targetGroup) {
             svg.style.cursor = 'pointer';
         } else {
-            svg.style.cursor = 'text';
+            svg.style.cursor = 'crosshair';
         }
     } else if (isSelectionToolActive) {
         const targetGroup = e.target.closest('g[data-type="text-group"]');
         if (targetGroup) {
-            svg.style.cursor = 'pointer';
+            svg.style.cursor = 'default';
         }
     }
 
@@ -1600,7 +1597,7 @@ function convertTextToCode(textGroupElement) {
     codeElement.setAttribute("font-size", fontSize);
     codeElement.setAttribute("font-family", "lixCode");
     codeElement.setAttribute("text-anchor", "start");
-    codeElement.setAttribute("cursor", "text");
+    codeElement.setAttribute("cursor", "default");
     codeElement.setAttribute("white-space", "pre");
     codeElement.setAttribute("dominant-baseline", "hanging");
     codeElement.setAttribute("data-language", getCodeLanguage());
@@ -1679,7 +1676,7 @@ function convertCodeToText(codeGroupElement) {
     textElement.setAttribute("font-size", fontSize);
     textElement.setAttribute("font-family", textFont);
     textElement.setAttribute("text-anchor", "start");
-    textElement.setAttribute("cursor", "text");
+    textElement.setAttribute("cursor", "default");
     textElement.setAttribute("white-space", "pre");
     textElement.setAttribute("dominant-baseline", "hanging");
     textElement.setAttribute("data-type", "text");

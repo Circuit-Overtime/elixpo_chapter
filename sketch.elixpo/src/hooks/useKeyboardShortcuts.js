@@ -21,7 +21,7 @@ export default function useKeyboardShortcuts() {
           // Quick save to localStorage (+ cloud if authenticated)
           const serializer = window.__sceneSerializer
           const shapes = window.shapes
-          if (serializer && shapes && shapes.length > 0) {
+          if (serializer && shapes) {
             const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
             const sceneData = serializer.save(workspaceName)
             try {
