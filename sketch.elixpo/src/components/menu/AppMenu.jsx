@@ -144,6 +144,7 @@ export default function AppMenu() {
 
         {/* Find Text */}
         <button
+          onClick={() => { useUIStore.getState().toggleFindBar(); closeMenu() }}
           className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
@@ -234,12 +235,16 @@ export default function AppMenu() {
 
         {/* Reset The Canvas */}
         <button
-          onClick={() => { clearShapes(); clearHistory(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          onClick={() => {
+            const serializer = window.__sceneSerializer
+            if (serializer?.resetCanvas) serializer.resetCanvas()
+            clearShapes(); clearHistory(); closeMenu()
+          }}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-red-400 text-xs hover:bg-red-500/10 cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-reset text-sm" />
-            Reset The Canvas
+            Reset Canvas
           </span>
         </button>
 

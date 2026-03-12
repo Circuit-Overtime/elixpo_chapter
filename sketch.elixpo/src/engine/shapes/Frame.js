@@ -201,19 +201,22 @@ class Frame {
         const oldFrame = shape.parentFrame;
 
         // Remove from other frames first
-        shapes.forEach(otherFrame => {
-            if (otherFrame.shapeName === 'frame' && otherFrame !== this) {
-                otherFrame.removeShapeFromFrame(shape);
-            }
-        });
+        if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
+            shapes.forEach(otherFrame => {
+                if (otherFrame.shapeName === 'frame' && otherFrame !== this) {
+                    otherFrame.removeShapeFromFrame(shape);
+                }
+            });
+        }
 
         this.containedShapes.push(shape);
         shape.parentFrame = this;
 
         // Only move to clipped group if not currently being dragged
-        if (shape.group && shape.group.parentNode && !shape.isDraggedOutTemporarily) {
-            shape.group.parentNode.removeChild(shape.group);
-            this.clipGroup.appendChild(shape.group);
+        const el = shape.group || shape.element;
+        if (el && el.parentNode && !shape.isDraggedOutTemporarily) {
+            el.parentNode.removeChild(el);
+            this.clipGroup.appendChild(el);
         }
 
         // For sub-frames, also move their clipGroup into our clipGroup
@@ -234,10 +237,11 @@ class Frame {
             shape.parentFrame = null;
         }
 
-        // Move shape's group back to main SVG if it's in the clipped group
-        if (shape.group && shape.group.parentNode === this.clipGroup) {
-            this.clipGroup.removeChild(shape.group);
-            svg.appendChild(shape.group);
+        // Move shape's group/element back to main SVG if it's in the clipped group
+        const el = shape.group || shape.element;
+        if (el && el.parentNode === this.clipGroup) {
+            this.clipGroup.removeChild(el);
+            svg.appendChild(el);
         }
 
         // For sub-frames, also move their clipGroup back to main SVG
@@ -276,6 +280,7 @@ class Frame {
 
 updateContainedShapes(applyClipping = true) {
     // Check all shapes to see if they should be in this frame
+    if (typeof shapes === 'undefined' || !Array.isArray(shapes)) return;
     shapes.forEach(shape => {
         if (shape !== this) {
             // Skip frames that are larger than or equal to this frame (prevent parent containing child loops)
@@ -286,14 +291,17 @@ updateContainedShapes(applyClipping = true) {
             }
             const isInFrame = this.isShapeInFrame(shape);
             const isAlreadyContained = this.containedShapes.includes(shape);
-            
+
             if (isInFrame && !isAlreadyContained) {
                 this.addShapeToFrame(shape);
                 // Don't apply clipping if we're not supposed to
-                if (!applyClipping && shape.group && shape.group.parentNode === this.clipGroup) {
-                    this.clipGroup.removeChild(shape.group);
-                    svg.appendChild(shape.group);
-                    shape.isDraggedOutTemporarily = true;
+                if (!applyClipping) {
+                    const el = shape.group || shape.element;
+                    if (el && el.parentNode === this.clipGroup) {
+                        this.clipGroup.removeChild(el);
+                        svg.appendChild(el);
+                        shape.isDraggedOutTemporarily = true;
+                    }
                 }
             } else if (!isInFrame && isAlreadyContained) {
                 this.removeShapeFromFrame(shape);
@@ -384,11 +392,12 @@ move(dx, dy) {
     destroy() {
         // Release contained shapes back to main SVG as individual shapes
         [...this.containedShapes].forEach(shape => {
-            if (shape.group) {
-                if (shape.group.parentNode === this.clipGroup) {
-                    this.clipGroup.removeChild(shape.group);
+            const el = shape.group || shape.element;
+            if (el) {
+                if (el.parentNode === this.clipGroup) {
+                    this.clipGroup.removeChild(el);
                 }
-                svg.appendChild(shape.group);
+                svg.appendChild(el);
             }
             // For sub-frames, also release their clipGroup back to main SVG
             if (shape.shapeName === 'frame' && shape.clipGroup) {
@@ -1184,9 +1193,10 @@ startLabelEdit(labelElement) {
     temporarilyRemoveFromFrame(shape) {
     if (shape && shape.parentFrame === this) {
         // Move shape back to main SVG temporarily (without removing from containedShapes array)
-        if (shape.group && shape.group.parentNode === this.clipGroup) {
-            this.clipGroup.removeChild(shape.group);
-            svg.appendChild(shape.group);
+        const el = shape.group || shape.element;
+        if (el && el.parentNode === this.clipGroup) {
+            this.clipGroup.removeChild(el);
+            svg.appendChild(el);
         }
         shape.isDraggedOutTemporarily = true;
     }
@@ -1196,9 +1206,10 @@ startLabelEdit(labelElement) {
 restoreToFrame(shape) {
     if (shape && shape.parentFrame === this && shape.isDraggedOutTemporarily) {
         // Move shape back to clipped group
-        if (shape.group && shape.group.parentNode === svg) {
-            svg.removeChild(shape.group);
-            this.clipGroup.appendChild(shape.group);
+        const el = shape.group || shape.element;
+        if (el && el.parentNode === svg) {
+            svg.removeChild(el);
+            this.clipGroup.appendChild(el);
         }
         delete shape.isDraggedOutTemporarily;
     }
@@ -1277,11 +1288,12 @@ restoreToFrame(shape) {
     destroy() {
         // Release contained shapes back to main SVG as individual shapes
         [...this.containedShapes].forEach(shape => {
-            if (shape.group) {
-                if (shape.group.parentNode === this.clipGroup) {
-                    this.clipGroup.removeChild(shape.group);
+            const el = shape.group || shape.element;
+            if (el) {
+                if (el.parentNode === this.clipGroup) {
+                    this.clipGroup.removeChild(el);
                 }
-                svg.appendChild(shape.group);
+                svg.appendChild(el);
             }
             // For sub-frames, also release their clipGroup back to main SVG
             if (shape.shapeName === 'frame' && shape.clipGroup) {

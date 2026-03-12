@@ -356,9 +356,16 @@ export default function ContextMenu() {
           <CheckMenuItem label="Snap to objects" shortcut="Alt+S" checked={snapToObjects} onClick={handleToggleSnap} />
 
           <Separator />
+          <MenuItem label="Find on canvas" shortcut="Ctrl+F" onClick={() => { useUIStore.getState().toggleFindBar(); close() }} />
           <MenuItem label="Zen mode" shortcut="Alt+Z" onClick={handleZenMode} />
           <MenuItem label="View mode" shortcut="Alt+R" onClick={handleViewMode} />
-          <MenuItem label="Canvas & Shape properties" shortcut="Alt+/" onClick={handleCanvasProperties} />
+
+          <Separator />
+          <MenuItem label="Reset canvas" danger onClick={() => {
+            const serializer = window.__sceneSerializer
+            if (serializer?.resetCanvas) serializer.resetCanvas()
+            close()
+          }} />
         </>
       )}
     </div>

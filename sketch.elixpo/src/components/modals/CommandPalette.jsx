@@ -7,7 +7,7 @@ import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 const COMMANDS = [
   // --- App ---
   { label: 'Library', icon: 'bx-library', section: 'App' },
-  { label: 'Find on canvas', icon: 'bx-search', section: 'App', shortcut: 'Ctrl+F' },
+  { label: 'Find on canvas', icon: 'bx-search', section: 'App', shortcut: 'Ctrl+F', action: 'findOnCanvas' },
   { label: 'Live collaboration...', icon: 'bx-group', section: 'App' },
   { label: 'Share', icon: 'bx-share-alt', section: 'App' },
   { label: 'Toggle theme', icon: 'bx-sun', section: 'App', action: 'toggleTheme' },
@@ -29,7 +29,7 @@ const COMMANDS = [
   { label: 'Toggle grid', icon: 'bx-grid-alt', section: 'Editor', shortcut: "Ctrl+'", action: 'toggleGrid' },
   { label: 'Shortcuts & help', icon: 'bx-help-circle', section: 'Editor', shortcut: '?', action: 'help' },
   { label: 'Select all', icon: 'bx-select-multiple', section: 'Editor', shortcut: 'Ctrl+A', action: 'selectAll' },
-  { label: 'Clear canvas', icon: 'bx-trash', section: 'Editor', shortcut: 'Ctrl+Delete', action: 'clearCanvas' },
+  { label: 'Reset canvas', icon: 'bx-trash', section: 'Editor', shortcut: 'Ctrl+Delete', action: 'resetCanvas' },
   { label: 'Canvas background', icon: 'bx-palette', section: 'Editor', action: 'openMenu' },
 
   // --- Tools ---
@@ -181,9 +181,17 @@ export default function CommandPalette() {
           window.shapes.forEach(shape => window.multiSelection.addShape(shape))
         }
         break
-      case 'clearCanvas':
+      case 'resetCanvas': {
+        const serializer = window.__sceneSerializer
+        if (serializer?.resetCanvas) {
+          serializer.resetCanvas()
+        }
         useSketchStore.getState().clearShapes()
         useSketchStore.getState().clearHistory()
+        break
+      }
+      case 'findOnCanvas':
+        useUIStore.getState().toggleFindBar()
         break
       case 'help':
         useUIStore.getState().toggleHelpModal()
