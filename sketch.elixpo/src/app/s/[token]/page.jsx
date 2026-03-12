@@ -80,7 +80,7 @@ export default function SharedScenePage() {
       // Load the scene
       const serializer = window.__sceneSerializer
       if (serializer) {
-        serializer.loadScene(sceneData)
+        serializer.load(sceneData)
       }
 
       // Apply permission
