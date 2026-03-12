@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 
 interface AuthorizationRequest {
   clientId: string;
@@ -195,60 +194,48 @@ function AuthorizeContent() {
 
           <div className="p-8">
             <div className="flex items-center justify-center mb-8">
-              <div className="text-center">
-                <div className="flex flex-col items-center mb-4">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg mb-3" style={{ background: 'linear-gradient(135deg, rgba(163, 230, 53, 0.2) 0%, rgba(163, 230, 53, 0.1) 100%)', border: '2px solid rgba(163, 230, 53, 0.3)' }}>
-                    <svg
-                      className="w-8 h-8"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      style={{ color: '#a3e635' }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
+              <div className="flex flex-row flex-nowrap items-center gap-5">
+                {/* Elixpo Accounts (Left) */}
+                <div className="flex flex-col items-center shrink-0">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg mb-2 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(163, 230, 53, 0.2) 0%, rgba(163, 230, 53, 0.1) 100%)', border: '2px solid rgba(163, 230, 53, 0.3)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/LOGO/logo.png" alt="Elixpo Accounts" width={32} height={32} style={{ borderRadius: '50%', objectFit: 'cover' }} />
                   </div>
-                  <p className="text-sm font-semibold mb-0.5" style={{ color: '#f5f5f4' }}>Elixpo Accounts</p>
-                  <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Your Identity Provider</p>
+                  <p className="text-xs font-semibold mb-0.5 whitespace-nowrap" style={{ color: '#f5f5f4' }}>Elixpo Accounts</p>
+                  <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Identity Provider</p>
                 </div>
 
-                {/* Handshake Arrow */}
-                <div className="flex items-center justify-center mb-4">
-                  <div className="flex gap-2">
-                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#a3e635' }}></div>
-                    <div className="w-8 h-0.5" style={{ background: 'linear-gradient(90deg, #a3e635 0%, rgba(163, 230, 53, 0.4) 100%)' }}></div>
-                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#a3e635' }}></div>
+                {/* Handshake connector */}
+                <div className="flex flex-col items-center gap-1 shrink-0" style={{ marginTop: '-18px' }}>
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#a3e635' }}></div>
+                    <div style={{ width: '32px', height: '2px', background: 'linear-gradient(90deg, #a3e635, rgba(163, 230, 53, 0.3), #a3e635)' }}></div>
+                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#a3e635' }}></div>
                   </div>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'rgba(163, 230, 53, 0.5)' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
                 </div>
 
                 {/* Client Application (Right) */}
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg mb-3 overflow-hidden" style={{ background: 'rgba(255, 255, 255, 0.05)', border: '2px solid rgba(163, 230, 53, 0.2)' }}>
+                <div className="flex flex-col items-center shrink-0">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg mb-2 overflow-hidden" style={{ background: 'rgba(255, 255, 255, 0.05)', border: '2px solid rgba(163, 230, 53, 0.2)' }}>
                     {clientFavicon ? (
-                      <Image
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
                         src={clientFavicon}
                         alt={authRequest.clientName}
-                        width={40}
-                        height={40}
-                        onError={() => {
-                          // Fallback icon
-                          setClientFavicon(null);
-                        }}
+                        width={32}
+                        height={32}
+                        onError={() => setClientFavicon(null)}
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(163, 230, 53, 0.2) 0%, rgba(163, 230, 53, 0.1) 100%)' }}>
-                        <span className="text-sm font-bold" style={{ color: '#a3e635' }}>
-                          {authRequest.clientName.charAt(0)}
-                        </span>
-                      </div>
+                      <span className="text-lg font-bold" style={{ color: '#a3e635' }}>
+                        {authRequest.clientName.charAt(0).toUpperCase()}
+                      </span>
                     )}
                   </div>
-                  <p className="text-sm font-semibold mb-0.5" style={{ color: '#f5f5f4' }}>{authRequest.clientName}</p>
+                  <p className="text-xs font-semibold mb-0.5 whitespace-nowrap" style={{ color: '#f5f5f4' }}>{authRequest.clientName}</p>
                   <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Requesting Access</p>
                 </div>
               </div>
