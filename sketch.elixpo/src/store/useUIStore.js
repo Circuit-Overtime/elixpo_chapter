@@ -137,8 +137,31 @@ const useUIStore = create((set, get) => ({
   },
 
   // --- Session / Encryption ---
+  // Key is persisted in localStorage keyed by session ID so it survives page refreshes.
+  // This ensures re-saving a workspace uses the same key, keeping old share links valid.
   sessionEncryptionKey: null,
-  setSessionEncryptionKey: (key) => set({ sessionEncryptionKey: key }),
+  setSessionEncryptionKey: (key, sessionId) => {
+    if (typeof window !== 'undefined' && sessionId) {
+      localStorage.setItem(`lixsketch-enc-key-${sessionId}`, key)
+    }
+    set({ sessionEncryptionKey: key })
+  },
+  loadEncryptionKeyForSession: (sessionId) => {
+    if (typeof window !== 'undefined' && sessionId) {
+      const stored = localStorage.getItem(`lixsketch-enc-key-${sessionId}`)
+      if (stored) {
+        set({ sessionEncryptionKey: stored })
+        return stored
+      }
+    }
+    return null
+  },
+  clearEncryptionKeyForSession: (sessionId) => {
+    if (typeof window !== 'undefined' && sessionId) {
+      localStorage.removeItem(`lixsketch-enc-key-${sessionId}`)
+    }
+    set({ sessionEncryptionKey: null })
+  },
 
   // --- Theme ---
   theme: 'dark',

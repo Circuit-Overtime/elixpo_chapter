@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import LandingNav from '@/components/landing/LandingNav'
@@ -342,23 +341,8 @@ function ToolbarPreview() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function LandingPage() {
-  const router = useRouter()
-
   // Process auth callback params (auth_token, auth_user) from OAuth redirect
   useAuth()
-
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-
-  // After auth callback is processed, redirect authenticated users to their canvas
-  useEffect(() => {
-    if (isAuthenticated) {
-      // Get the guest session or generate a new one
-      const guestSession = localStorage.getItem('lixsketch-guest-session')
-      const sessionId = guestSession || `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-      if (!guestSession) localStorage.setItem('lixsketch-guest-session', sessionId)
-      router.replace(`/c/${sessionId}`)
-    }
-  }, [isAuthenticated, router])
 
   const { scrollYProgress } = useScroll()
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.92])
@@ -648,6 +632,71 @@ export default function LandingPage() {
             <i className="bx bx-palette text-2xl" />
             Launch Canvas
           </Link>
+        </motion.div>
+      </section>
+
+      {/* InkFlowa v1 Showcase */}
+      <section className="py-20 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#8B88E8]/[0.03] to-transparent pointer-events-none" />
+
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-80px' }}
+          variants={blurUp}
+          transition={{ duration: 0.7 }}
+          className="max-w-4xl mx-auto relative z-10"
+        >
+          <div className="bg-surface-card/40 border border-border-light rounded-2xl p-8 md:p-10 backdrop-blur-sm">
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-1 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#8B88E8]/20 bg-[#8B88E8]/5 text-[#8B88E8] text-xs mb-4">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#8B88E8]" />
+                  Our v1 Product
+                </div>
+                <h3 className="text-2xl md:text-3xl font-light text-text-primary mb-3">
+                  InkFlow
+                </h3>
+                <p className="text-text-muted text-sm md:text-base leading-relaxed mb-6 max-w-md">
+                  Where it all started. InkFlow was our first take at a canvas — the foundation that led to LixSketch. Check out the original.
+                </p>
+                <a
+                  href="https://inkflowa.vercel.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#8B88E8]/10 hover:bg-[#8B88E8]/20 border border-[#8B88E8]/30 text-[#8B88E8] rounded-xl text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#8B88E8]/10"
+                >
+                  <i className="bx bx-link-external text-lg" />
+                  Visit InkFlow
+                </a>
+              </div>
+
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={perspectiveTilt}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="w-full md:w-[320px] shrink-0"
+              >
+                <div className="bg-surface-dark rounded-xl border border-border-light overflow-hidden shadow-xl">
+                  <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border-light">
+                    <div className="w-2 h-2 rounded-full bg-red-400/50" />
+                    <div className="w-2 h-2 rounded-full bg-yellow-400/50" />
+                    <div className="w-2 h-2 rounded-full bg-green-400/50" />
+                    <span className="text-text-dim text-[10px] ml-1.5">inkflowa.vercel.app</span>
+                  </div>
+                  <div className="h-44 bg-[#0d0d0d] flex items-center justify-center relative overflow-hidden">
+                    <RoughCanvas className="absolute inset-0 w-full h-full opacity-40" />
+                    <div className="relative z-10 text-center">
+                      <i className="bx bx-pen text-4xl text-[#8B88E8]/60 mb-2" />
+                      <p className="text-text-dim text-xs">InkFlowa v1</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
         </motion.div>
       </section>
 

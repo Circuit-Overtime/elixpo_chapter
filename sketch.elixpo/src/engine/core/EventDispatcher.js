@@ -73,36 +73,57 @@ const handleMainMouseDown = (e) => {
         if (handleMultiSelectionMouseDown(e)) {
             return; // Multi-selection handled the event
         }
-        
+
+        // Remember previous shape to detect deselection
+        const prevShape = currentShape;
+        let handled = false;
+
         // If multi-selection didn't handle it, proceed with shape-specific selection
         if (currentShape?.shapeName === 'rectangle') {
             handleMouseDownRect(e);
+            handled = true;
         } else if (currentShape?.shapeName === 'arrow') {
             handleMouseDownArrow(e);
+            handled = true;
         } else if (currentShape?.shapeName === 'circle') {
             handleMouseDownCircle(e);
+            handled = true;
         } else if (currentShape?.shapeName === 'image') {
             handleMouseDownImage(e);
+            handled = true;
         }
         else if (currentShape?.shapeName === 'line') {
             handleMouseDownLine(e);
+            handled = true;
         }
         else if (currentShape?.shapeName === 'freehandStroke') {
             handleFreehandMouseDown(e);
+            handled = true;
         }
         else if (currentShape?.shapeName === 'text') {
             handleTextMouseDown(e);
+            handled = true;
         }
         else if (currentShape?.shapeName === 'frame') {
             handleMouseDownFrame(e);
+            handled = true;
         }
         else if (currentShape?.shapeName === 'icon') {
             handleMouseDownIcon(e);
+            handled = true;
         }
         else if( currentShape?.shapeName === 'code') {
             handleCodeMouseDown(e);
+            handled = true;
         }
-        else {
+
+        // If the handler deselected (currentShape cleared) but didn't select something new,
+        // fall through to try all handlers so clicking another shape type works
+        if (handled && prevShape && !currentShape) {
+            handled = false;
+        }
+
+        if (!handled) {
             const originalCurrentShape = currentShape;
             handleMouseDownRect(e);
             if (currentShape && currentShape !== originalCurrentShape) return;
@@ -320,8 +341,31 @@ const handleMainMouseLeave = (e) => {
     }
 };
 
-svg.addEventListener('mousedown', handleMainMouseDown);
-svg.addEventListener('mousemove', handleMainMouseMove);
-svg.addEventListener('mouseup', handleMainMouseUp);
-svg.addEventListener('mouseleave', handleMainMouseLeave);
-export { handleMainMouseDown, handleMainMouseMove, handleMainMouseUp, handleMainMouseLeave };
+let _boundSvg = null;
+
+function initEventDispatcher(svgEl) {
+    if (_boundSvg) cleanupEventDispatcher();
+    const target = svgEl || svg;
+    target.addEventListener('mousedown', handleMainMouseDown);
+    target.addEventListener('mousemove', handleMainMouseMove);
+    target.addEventListener('mouseup', handleMainMouseUp);
+    target.addEventListener('mouseleave', handleMainMouseLeave);
+    _boundSvg = target;
+}
+
+function cleanupEventDispatcher() {
+    if (_boundSvg) {
+        _boundSvg.removeEventListener('mousedown', handleMainMouseDown);
+        _boundSvg.removeEventListener('mousemove', handleMainMouseMove);
+        _boundSvg.removeEventListener('mouseup', handleMainMouseUp);
+        _boundSvg.removeEventListener('mouseleave', handleMainMouseLeave);
+        _boundSvg = null;
+    }
+}
+
+// Auto-init if svg is already available (first load)
+if (typeof svg !== 'undefined' && svg) {
+    initEventDispatcher(svg);
+}
+
+export { handleMainMouseDown, handleMainMouseMove, handleMainMouseUp, handleMainMouseLeave, initEventDispatcher, cleanupEventDispatcher };

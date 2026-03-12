@@ -20,19 +20,19 @@ function IconCell({ icon, onClick }) {
     <button
       onClick={onClick}
       title={name}
-      className="w-11 h-11 flex items-center justify-center rounded-lg hover:bg-white/10 cursor-pointer transition-colors duration-100"
+      style={{ width: '44px', height: '44px', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', cursor: 'pointer', background: 'transparent', border: 'none', padding: 0 }}
+      className="hover:bg-white/10 transition-colors duration-100"
     >
       {icon.svg ? (
         <div
-          className="w-6 h-6 pointer-events-none [&>svg]:w-full [&>svg]:h-full [&>svg]:fill-white/90"
-          style={{ filter: 'brightness(0) invert(1)' }}
+          style={{ width: '24px', height: '24px', overflow: 'hidden', flexShrink: 0, pointerEvents: 'none', filter: 'brightness(0) invert(1)' }}
           dangerouslySetInnerHTML={{ __html: icon.svg }}
         />
       ) : (
         <img
           src={`/icons/${encodeURIComponent(icon.filename)}`}
           alt=""
-          className="w-6 h-6 invert pointer-events-none"
+          style={{ width: '24px', height: '24px', pointerEvents: 'none', filter: 'invert(1)' }}
           loading="lazy"
         />
       )}
@@ -183,7 +183,7 @@ export default function IconSidebar() {
             No icons found
           </div>
         ) : (
-          <div className="flex flex-wrap gap-0.5">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '2px' }}>
             {icons.map((icon, i) => (
               <IconCell
                 key={icon.filename || i}

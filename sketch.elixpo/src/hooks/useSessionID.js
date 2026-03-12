@@ -17,43 +17,59 @@ export default function useSessionID() {
   useEffect(() => {
     const path = window.location.pathname
     const segments = path.split('/').filter(Boolean)
+    const searchParams = new URLSearchParams(window.location.search)
+    const isExplicitNew = searchParams.get('new') === '1'
+    const isPathNew = segments[0] === 'c' && segments[1] === 'new'
+    const isNewWorkspace = isExplicitNew || isPathNew
 
     // Expect URL format: /c/<sessionId>
     let sessionID = null
 
-    if (segments[0] === 'c' && segments[1]) {
+    if (segments[0] === 'c' && segments[1] && segments[1] !== 'new') {
       sessionID = segments[1]
     }
 
-    if (!sessionID) {
-      // For guests: try to reuse their saved workspace session ID
-      const savedGuestSession = localStorage.getItem('lixsketch-guest-session')
-      if (savedGuestSession) {
-        sessionID = savedGuestSession
-      } else {
-        // Generate new session ID
+    // If this is a brand-new workspace (?new=1 or /c/new), always start fresh
+    if (isNewWorkspace || !sessionID) {
+      if (!sessionID) {
+        // /c/new or no session — generate a fresh ID
         sessionID = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-        // Persist for guest reuse (guests get 1 workspace)
-        localStorage.setItem('lixsketch-guest-session', sessionID)
       }
-      const search = window.location.search
+
+      if (isNewWorkspace) {
+        // Clear old autosave so the new workspace starts with a blank canvas
+        localStorage.removeItem('lixsketch-autosave')
+        localStorage.removeItem('lixsketch-autosave-meta')
+      }
+
+      // Persist for guest reuse
+      localStorage.setItem('lixsketch-guest-session', sessionID)
+
+      // Clean URL: remove ?new=1 param, keep hash
       const hash = window.location.hash
-      window.history.replaceState(null, '', `/c/${sessionID}${search}${hash}`)
+      window.history.replaceState(null, '', `/c/${sessionID}${hash}`)
     } else {
-      // If navigating to a specific session, update the guest session store
+      // Navigating to an existing session
       localStorage.setItem('lixsketch-guest-session', sessionID)
     }
 
     // Store on window for the engine
     window.__sessionID = sessionID
+    // Flag so other hooks know this is a fresh workspace
+    window.__isNewWorkspace = isNewWorkspace
 
     // Restore workspace name from localStorage, or generate on first visit
     const store = useUIStore.getState()
-    const saved = localStorage.getItem('lixsketch-workspace-name')
-    if (saved) {
-      store.setWorkspaceName(saved)
-    } else {
+    if (isNewWorkspace) {
+      // New workspace always gets a fresh name
       store.setWorkspaceName(generateWorkspaceName())
+    } else {
+      const saved = localStorage.getItem('lixsketch-workspace-name')
+      if (saved) {
+        store.setWorkspaceName(saved)
+      } else {
+        store.setWorkspaceName(generateWorkspaceName())
+      }
     }
   }, [])
 }

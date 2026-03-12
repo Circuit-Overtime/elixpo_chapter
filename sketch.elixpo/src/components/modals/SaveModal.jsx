@@ -110,11 +110,18 @@ export default function SaveModal() {
     setSaveError('')
 
     try {
+      const sessionId = getSessionID()
+
+      // Try to load persisted key for this session first
       let key = useUIStore.getState().sessionEncryptionKey
       if (!key) {
-        key = await generateKey()
-        useUIStore.getState().setSessionEncryptionKey(key)
+        key = useUIStore.getState().loadEncryptionKeyForSession(sessionId)
       }
+      if (!key) {
+        key = await generateKey()
+      }
+      // Always persist key for this session
+      useUIStore.getState().setSessionEncryptionKey(key, sessionId)
 
       const serializer = window.__sceneSerializer
       if (!serializer) {
@@ -127,7 +134,6 @@ export default function SaveModal() {
       const sceneJson = JSON.stringify(sceneData)
       const encryptedData = await encrypt(sceneJson, key)
 
-      const sessionId = getSessionID()
       const profile = useProfileStore.getState().profile
       const authUser = useAuthStore.getState().user
 
@@ -191,6 +197,8 @@ export default function SaveModal() {
       setShareLink('')
       setShareToken('')
       setCopied(false)
+      // Clear the persisted encryption key since the workspace is deleted
+      useUIStore.getState().clearEncryptionKeyForSession(sessionId)
     } catch (err) {
       console.error('[SaveModal] Failed to stop sharing:', err)
       setSaveError(err.message || 'Failed to stop sharing')
@@ -206,13 +214,16 @@ export default function SaveModal() {
     setCollabError('')
 
     try {
+      const sessionId = getSessionID()
+
       let key = useUIStore.getState().sessionEncryptionKey
       if (!key) {
-        key = await generateKey()
-        useUIStore.getState().setSessionEncryptionKey(key)
+        key = useUIStore.getState().loadEncryptionKeyForSession(sessionId)
       }
-
-      const sessionId = getSessionID()
+      if (!key) {
+        key = await generateKey()
+      }
+      useUIStore.getState().setSessionEncryptionKey(key, sessionId)
       const roomId = sessionId
       const origin = window.location.origin
       const link = `${origin}/room/${roomId}#key=${key}`

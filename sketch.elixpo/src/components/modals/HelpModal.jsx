@@ -92,7 +92,7 @@ export default function HelpModal() {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       <div
-        className="relative bg-surface-card border border-border-light rounded-2xl w-full max-w-[640px] mx-4 max-h-[80vh] flex flex-col"
+        className="relative bg-surface-card border border-border-light rounded-2xl w-full max-w-[800px] mx-4 max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
