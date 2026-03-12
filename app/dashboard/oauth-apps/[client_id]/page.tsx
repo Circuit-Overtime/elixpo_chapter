@@ -371,31 +371,6 @@ export default function OAuthAppSettingsPage() {
           )}
         </Box>
 
-        {/* Stats */}
-        {(app?.request_count !== undefined || app?.last_used) && (
-          <Box sx={cardSx}>
-            <Typography sx={{ color: '#f5f5f4', fontWeight: 600, mb: 2 }}>Usage</Typography>
-            <Box sx={{ display: 'flex', gap: 4 }}>
-              {app?.request_count !== undefined && (
-                <Box>
-                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#a3e635' }}>
-                    {(app.request_count || 0).toLocaleString()}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>Total requests</Typography>
-                </Box>
-              )}
-              {app?.last_used && (
-                <Box>
-                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#f5f5f4', fontSize: '1rem', mt: 0.5 }}>
-                    {new Date(app.last_used).toLocaleDateString()}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>Last used</Typography>
-                </Box>
-              )}
-            </Box>
-          </Box>
-        )}
-
         {/* Save */}
         <Box sx={{ mb: 4 }}>
           <Button

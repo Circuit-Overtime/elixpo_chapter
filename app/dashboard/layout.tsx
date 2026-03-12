@@ -12,6 +12,7 @@ import {
   ListItemText,
   Typography,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import { Apps, Person, Webhook, Logout } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -42,20 +43,26 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [userEmail, setUserEmail] = useState<string>('');
   const [displayName, setDisplayName] = useState<string>('');
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'include' })
       .then((res) => {
         if (res.ok) return res.json();
+        // Not authenticated — redirect to login
+        router.push('/login');
         return null;
       })
       .then((data: any) => {
         if (data?.email) setUserEmail(data.email);
         if (data?.displayName) setDisplayName(data.displayName);
         if (data?.avatar) setUserAvatar(data.avatar);
+        if (data) setAuthChecked(true);
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => {
+        router.push('/login');
+      });
+  }, [router]);
 
   const handleLogout = async () => {
     try {
@@ -70,6 +77,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   const isActive = (href: string) => pathname.startsWith(href);
+
+  if (!authChecked) {
+    return (
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#0f0f0f' }}>
+        <CircularProgress sx={{ color: '#a3e635' }} />
+      </Box>
+    );
+  }
 
   return (
     <ThemeProvider theme={darkTheme}>
