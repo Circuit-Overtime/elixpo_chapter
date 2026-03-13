@@ -44,9 +44,3 @@ Elixpome is the personalized portfolio platform for members of the Elixpo organi
 <a href="https://github.com/ez-vivek">
   <img src="https://github.com/ez-vivek.png" width="60" style="border-radius:50%" alt="Vivek" />
 </a>
-
-## License
-
-MIT
-
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:E2D9C8,100:1B1B19&height=120&section=footer" />
