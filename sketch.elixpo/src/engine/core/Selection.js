@@ -450,6 +450,7 @@ class MultiSelection {
     }
 
     createOutline(x, y, width, height) {
+        const zoom = window.currentZoom || 1;
         const outlinePoints = [
             [x, y],
             [x + width, y],
@@ -463,14 +464,15 @@ class MultiSelection {
         this.outline.setAttribute('fill', 'none');
         this.outline.setAttribute('stroke', '#5B57D1');
         this.outline.setAttribute('stroke-width', 2);
-        this.outline.setAttribute('stroke-dasharray', '8 4');
+        this.outline.setAttribute('stroke-dasharray', `${8 / zoom} ${4 / zoom}`);
         this.outline.setAttribute('vector-effect', 'non-scaling-stroke');
         this.outline.setAttribute('style', 'pointer-events: none;');
         this.group.appendChild(this.outline);
     }
 
     createResizeAnchors(x, y, width, height) {
-        const anchorSize = 12;
+        const zoom = window.currentZoom || 1;
+        const anchorSize = 12 / zoom;
         const anchorPositions = [
             { x: x, y: y, index: 0 },
             { x: x + width, y: y, index: 1 },
@@ -508,12 +510,13 @@ class MultiSelection {
     }
 
     createRotationAnchor(x, y, width, height) {
-        const rotationAnchorPos = { x: x + width / 2, y: y - 30 };
+        const zoom = window.currentZoom || 1;
+        const rotationAnchorPos = { x: x + width / 2, y: y - 30 / zoom };
 
         this.rotationAnchor = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         this.rotationAnchor.setAttribute('cx', rotationAnchorPos.x);
         this.rotationAnchor.setAttribute('cy', rotationAnchorPos.y);
-        this.rotationAnchor.setAttribute('r', 8);
+        this.rotationAnchor.setAttribute('r', 8 / zoom);
         this.rotationAnchor.setAttribute('class', 'multi-selection-rotation-anchor');
         this.rotationAnchor.setAttribute('fill', '#121212');
         this.rotationAnchor.setAttribute('stroke', '#5B57D1');
@@ -530,7 +533,7 @@ class MultiSelection {
         this.rotationLine.setAttribute('y2', y);
         this.rotationLine.setAttribute('stroke', '#5B57D1');
         this.rotationLine.setAttribute('stroke-width', 1);
-        this.rotationLine.setAttribute('stroke-dasharray', '3 3');
+        this.rotationLine.setAttribute('stroke-dasharray', `${3 / zoom} ${3 / zoom}`);
         this.rotationLine.setAttribute('vector-effect', 'non-scaling-stroke');
         this.rotationLine.setAttribute('style', 'pointer-events: none;');
 

@@ -127,6 +127,19 @@ function ProfileDropdown() {
   )
 }
 
+function SaveStatusDot() {
+  const saveStatus = useUIStore((s) => s.saveStatus)
+  if (saveStatus === 'idle') return null
+
+  const isCloud = saveStatus === 'cloud'
+  return (
+    <span
+      className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-300 ${isCloud ? 'bg-green-400' : 'bg-yellow-400'}`}
+      title={isCloud ? 'Synced to cloud — Ctrl+S to force sync' : 'Saved locally — auto-syncs every 10min or press Ctrl+S'}
+    />
+  )
+}
+
 export default function Header() {
   const workspaceName = useUIStore((s) => s.workspaceName)
   const setWorkspaceName = useUIStore((s) => s.setWorkspaceName)
@@ -178,10 +191,13 @@ export default function Header() {
           className="bg-transparent text-text-secondary text-sm border-none outline-none w-40 px-1.5 py-1 rounded hover:bg-surface-hover/50 focus:bg-surface-hover/50 transition-all duration-200 font-[lixFont]"
           spellCheck={false}
         />
+
       </div>
 
       {/* Right side */}
       <div className="flex items-center gap-2">
+        {/* Save status dot */}
+        <SaveStatusDot />
         {/* E2E Shield badge */}
         <div
           className="flex items-center gap-1 px-2 py-1 rounded-md bg-green-500/10 text-green-400/80 cursor-default select-none"

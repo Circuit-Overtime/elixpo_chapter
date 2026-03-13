@@ -688,10 +688,15 @@ export function resetCanvas() {
         window.disableAllSideBars();
     }
 
-    // Clear auto-save
+    // Clear auto-save (both legacy and session-scoped keys)
     try {
         localStorage.removeItem('lixsketch-autosave');
         localStorage.removeItem('lixsketch-autosave-meta');
+        const sid = window.__sessionID;
+        if (sid) {
+            localStorage.removeItem(`lixsketch-autosave-${sid}`);
+            localStorage.removeItem(`lixsketch-autosave-meta-${sid}`);
+        }
     } catch (_) {}
 
     console.log('[SceneSerializer] Canvas reset');

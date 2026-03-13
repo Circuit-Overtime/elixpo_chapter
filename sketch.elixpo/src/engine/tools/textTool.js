@@ -417,8 +417,9 @@ function createSelectionFeedback(groupElement) {
 
     const bbox = textElement.getBBox();
 
-    const padding = 8;
-    const handleSize = 10;
+    const zoom = window.currentZoom || 1;
+    const padding = 8 / zoom;
+    const handleSize = 10 / zoom;
     const handleOffset = handleSize / 2;
     const anchorStrokeWidth = 2;
 
@@ -442,7 +443,7 @@ function createSelectionFeedback(groupElement) {
     selectionBox.setAttribute("fill", "none");
     selectionBox.setAttribute("stroke", "#5B57D1");
     selectionBox.setAttribute("stroke-width", "1.5");
-    selectionBox.setAttribute("stroke-dasharray", "4 2");
+    selectionBox.setAttribute("stroke-dasharray", `${4 / zoom} ${2 / zoom}`);
     selectionBox.setAttribute("vector-effect", "non-scaling-stroke");
     selectionBox.setAttribute("pointer-events", "none");
     groupElement.appendChild(selectionBox);
@@ -531,8 +532,9 @@ function updateSelectionFeedback() {
     if (bbox.width === 0 && bbox.height === 0 && textElement.textContent.trim() !== "") {
     }
 
-    const padding = 8;
-    const handleSize = 10;
+    const zoom2 = window.currentZoom || 1;
+    const padding = 8 / zoom2;
+    const handleSize = 10 / zoom2;
     const handleOffset = handleSize / 2;
 
     const selX = bbox.x - padding;
@@ -1160,7 +1162,10 @@ const handleTextMouseDown = function (e) {
     if (activeEditor && !activeEditor.contains(e.target)) {
          let textElement = activeEditor.originalTextElement;
          if (textElement) {
+            // renderText switches to selection tool and auto-selects the text as a side effect.
+            // Return early so we don't continue with stale tool state.
             renderText(activeEditor, textElement, true);
+            return;
          } else if (document.body.contains(activeEditor)){
              document.body.removeChild(activeEditor);
          }
@@ -1220,8 +1225,13 @@ function enterEditMode(groupElement) {
     const textEl = groupElement.querySelector('text');
     if (!textEl) return;
 
-    // Switch to text tool with property panel
-    window.isTextToolActive = true;
+    // Switch to text tool with property panel (go through store to clear other flags)
+    if (window.__sketchStoreApi) {
+        window.__sketchStoreApi.setActiveTool('text');
+    } else {
+        window.isTextToolActive = true;
+        window.isSelectionToolActive = false;
+    }
     toolExtraPopup();
 
     // Deselect (removes selection feedback) then open editor

@@ -102,6 +102,7 @@ const useUIStore = create((set, get) => ({
   helpModalOpen: false,
   exportImageModalOpen: false,
   findBarOpen: false,
+  canvasPropertiesOpen: false,
 
   toggleShortcutsModal: () =>
     set((s) => ({ shortcutsModalOpen: !s.shortcutsModalOpen })),
@@ -119,8 +120,10 @@ const useUIStore = create((set, get) => ({
     set((s) => ({ findBarOpen: !s.findBarOpen })),
   closeFindBar: () =>
     set({ findBarOpen: false }),
+  toggleCanvasProperties: () =>
+    set((s) => ({ canvasPropertiesOpen: !s.canvasPropertiesOpen })),
   closeAllModals: () =>
-    set({ shortcutsModalOpen: false, saveModalOpen: false, aiModalOpen: false, commandPaletteOpen: false, helpModalOpen: false, exportImageModalOpen: false, findBarOpen: false }),
+    set({ shortcutsModalOpen: false, saveModalOpen: false, aiModalOpen: false, commandPaletteOpen: false, helpModalOpen: false, exportImageModalOpen: false, findBarOpen: false, canvasPropertiesOpen: false }),
 
   // --- Menu ---
   menuOpen: false,
@@ -135,6 +138,11 @@ const useUIStore = create((set, get) => ({
     }
     set({ workspaceName: name })
   },
+
+  // --- Save Status ---
+  // 'idle' | 'local' | 'cloud'
+  saveStatus: 'idle',
+  setSaveStatus: (status) => set({ saveStatus: status }),
 
   // --- Session / Encryption ---
   // Key is persisted in localStorage keyed by session ID so it survives page refreshes.

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import useUIStore from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
 import useAuthStore from '@/store/useAuthStore'
+import { triggerCloudSync } from '@/hooks/useAutoSave'
 
 const CANVAS_BACKGROUNDS = [
   { color: '#000', label: 'Black' },
@@ -104,6 +105,30 @@ export default function AppMenu() {
           <span className="text-text-dim text-xs">Ctrl+O</span>
         </button>
 
+        {/* Quick Save */}
+        <button
+          onClick={() => {
+            const serializer = window.__sceneSerializer
+            if (serializer) {
+              const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
+              const sceneData = serializer.save(workspaceName)
+              const sessionId = window.__sessionID
+              const key = sessionId ? `lixsketch-autosave-${sessionId}` : 'lixsketch-autosave'
+              localStorage.setItem(key, JSON.stringify(sceneData))
+              useUIStore.getState().setSaveStatus('local')
+              triggerCloudSync()
+            }
+            closeMenu()
+          }}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+        >
+          <span className="flex items-center gap-2">
+            <i className="bx bx-check-circle text-sm" />
+            Quick Save
+          </span>
+          <span className="text-text-dim text-xs">Ctrl+S</span>
+        </button>
+
         {/* Save & Share */}
         <button
           onClick={() => { toggleSaveModal(); closeMenu() }}
@@ -152,6 +177,17 @@ export default function AppMenu() {
             Find Text
           </span>
           <span className="text-text-dim text-xs">Ctrl+F</span>
+        </button>
+
+        {/* Canvas Properties */}
+        <button
+          onClick={() => { useUIStore.getState().toggleCanvasProperties(); closeMenu() }}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+        >
+          <span className="flex items-center gap-2">
+            <i className="bx bx-info-circle text-sm" />
+            Canvas Properties
+          </span>
         </button>
 
         {/* Help */}

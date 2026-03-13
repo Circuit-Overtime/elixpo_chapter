@@ -12,6 +12,7 @@ import AIModal from '@/components/modals/AIModal'
 import CommandPalette from '@/components/modals/CommandPalette'
 import HelpModal from '@/components/modals/HelpModal'
 import ExportImageModal from '@/components/modals/ExportImageModal'
+import CanvasPropertiesModal from '@/components/modals/CanvasPropertiesModal'
 import RectangleSidebar from '@/components/sidebars/RectangleSidebar'
 import CircleSidebar from '@/components/sidebars/CircleSidebar'
 import LineSidebar from '@/components/sidebars/LineSidebar'
@@ -70,6 +71,7 @@ export default function CanvasPage() {
       <CommandPalette />
       <HelpModal />
       <ExportImageModal />
+      <CanvasPropertiesModal />
       <ContextMenu />
       <FindBar />
 

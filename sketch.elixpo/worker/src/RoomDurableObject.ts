@@ -197,6 +197,23 @@ export class RoomDurableObject {
         }
         break;
 
+      case 'kick':
+        // Only the room admin can kick users
+        if (user.userId !== this.roomState?.ownerId) {
+          this.sendTo(ws, { type: 'error', code: 'NOT_AUTHORIZED' });
+          break;
+        }
+        // Find the target user's WebSocket
+        for (const [targetWs, targetUser] of this.sessions) {
+          if (targetUser.userId === msg.userId) {
+            this.sendTo(targetWs, { type: 'kicked', reason: 'Removed by admin' });
+            try { targetWs.close(1000, 'kicked'); } catch {}
+            this.handleDisconnect(targetWs);
+            break;
+          }
+        }
+        break;
+
       case 'ping':
         this.sendTo(ws, { type: 'pong' });
         break;

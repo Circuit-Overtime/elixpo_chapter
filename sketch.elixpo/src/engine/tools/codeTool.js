@@ -990,8 +990,9 @@ function createCodeSelectionFeedback(groupElement) {
     const width = parseFloat(backgroundRect.getAttribute('width'));
     const height = parseFloat(backgroundRect.getAttribute('height'));
 
-    const padding = 8;
-    const handleSize = 10;
+    const zoom = window.currentZoom || 1;
+    const padding = 8 / zoom;
+    const handleSize = 10 / zoom;
     const handleOffset = handleSize / 2;
 
     const selX = x - padding;
@@ -1109,8 +1110,9 @@ function updateCodeSelectionFeedback() {
     if (bbox.width === 0 && bbox.height === 0 && codeElement.textContent.trim() !== "") {
     }
 
-    const padding = 8;
-    const handleSize = 10;
+    const zoom = window.currentZoom || 1;
+    const padding = 8 / zoom;
+    const handleSize = 10 / zoom;
     const handleOffset = handleSize / 2;
 
     const selX = bbox.x - padding;
