@@ -603,7 +603,8 @@ function removeSelectionOutline() {
 }
 
 function addResizeAnchors(x, y, width, height, centerX, centerY) {
-    const anchorSize = 10; // Size of the resize anchors
+    const zoom = window.currentZoom || 1;
+    const anchorSize = 10 / zoom;
     const anchorStrokeWidth = 2;
 
     const positions = [
@@ -677,7 +678,7 @@ function removeRotationAnchor() {
 }
 
 function addAnchor(x, y, cursor) {
-    const anchorSize = 8;
+    const anchorSize = 8 / (window.currentZoom || 1);
     const anchor = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     anchor.setAttribute("x", x);
     anchor.setAttribute("y", y);

@@ -2,11 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import useUIStore from '@/store/useUIStore'
-import useAuthStore, { WORKER_URL } from '@/store/useAuthStore'
 import useCollabStore from '@/store/useCollabStore'
 import { getSessionID } from '@/hooks/useSessionID'
-import { useProfileStore } from '@/hooks/useGuestProfile'
-import { generateKey, encrypt } from '@/utils/encryption'
+import { generateKey } from '@/utils/encryption'
 
 // ── Export helpers ────────────────────────────────────────────
 
@@ -59,15 +57,6 @@ export default function SaveModal() {
   const workspaceName = useUIStore((s) => s.workspaceName)
   const setWorkspaceName = useUIStore((s) => s.setWorkspaceName)
 
-  // Share link state
-  const [shareLink, setShareLink] = useState('')
-  const [shareToken, setShareToken] = useState('')
-  const [copied, setCopied] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState('')
-  const [permission, setPermission] = useState('view')
-  const [revoking, setRevoking] = useState(false)
-
   // Live collab state
   const [collabLink, setCollabLink] = useState('')
   const [collabCopied, setCollabCopied] = useState(false)
@@ -102,110 +91,6 @@ export default function SaveModal() {
   }, [saveModalOpen, bgMode, getBgColor])
 
   if (!saveModalOpen) return null
-
-  // ── Share handlers ──
-
-  const handleGenerateLink = async () => {
-    setSaving(true)
-    setSaveError('')
-
-    try {
-      const sessionId = getSessionID()
-
-      // Try to load persisted key for this session first
-      let key = useUIStore.getState().sessionEncryptionKey
-      if (!key) {
-        key = useUIStore.getState().loadEncryptionKeyForSession(sessionId)
-      }
-      if (!key) {
-        key = await generateKey()
-      }
-      // Always persist key for this session
-      useUIStore.getState().setSessionEncryptionKey(key, sessionId)
-
-      const serializer = window.__sceneSerializer
-      if (!serializer) {
-        setSaveError('Scene not ready')
-        setSaving(false)
-        return
-      }
-
-      const sceneData = serializer.save()
-      const sceneJson = JSON.stringify(sceneData)
-      const encryptedData = await encrypt(sceneJson, key)
-
-      const profile = useProfileStore.getState().profile
-      const authUser = useAuthStore.getState().user
-
-      const res = await fetch(`${WORKER_URL}/api/scenes/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          encryptedData,
-          permission,
-          workspaceName: workspaceName || 'Untitled',
-          createdBy: authUser?.id || profile?.id || null,
-        }),
-      })
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Failed to save')
-      }
-
-      const { token } = await res.json()
-      const origin = window.location.origin
-      const link = `${origin}/s/${token}#key=${key}`
-      setShareLink(link)
-      setShareToken(token)
-      setCopied(false)
-    } catch (err) {
-      console.error('[SaveModal] Failed to save scene:', err)
-      setSaveError(err.message || 'Failed to save scene')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleCopyLink = () => {
-    if (!shareLink) return
-    navigator.clipboard.writeText(shareLink).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
-
-  const handleStopSharing = async () => {
-    if (!shareToken) return
-    setRevoking(true)
-    setSaveError('')
-
-    try {
-      const sessionId = getSessionID()
-      const res = await fetch(`${WORKER_URL}/api/scenes/delete`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: shareToken, sessionId }),
-      })
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Failed to revoke')
-      }
-
-      setShareLink('')
-      setShareToken('')
-      setCopied(false)
-      // Clear the persisted encryption key since the workspace is deleted
-      useUIStore.getState().clearEncryptionKeyForSession(sessionId)
-    } catch (err) {
-      console.error('[SaveModal] Failed to stop sharing:', err)
-      setSaveError(err.message || 'Failed to stop sharing')
-    } finally {
-      setRevoking(false)
-    }
-  }
 
   // ── Collab handlers ──
 
@@ -456,84 +341,6 @@ export default function SaveModal() {
                 .lixjson Scene
               </button>
             </div>
-          </div>
-
-          {/* ── Shareable Link ── */}
-          <div className="p-3.5 rounded-xl border border-border-light bg-surface/50">
-            <div className="flex items-center gap-2 mb-2.5">
-              <i className="bx bx-link text-lg text-accent-blue" />
-              <span className="text-text-primary text-sm font-medium">Shareable Link</span>
-              <span className="ml-auto flex items-center gap-1 text-[10px] text-green-400/80">
-                <i className="bx bxs-shield text-xs" />
-                E2E Encrypted
-              </span>
-            </div>
-
-            {!shareLink && (
-              <div className="flex items-center gap-1.5 mb-2.5">
-                {['view', 'edit'].map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPermission(p)}
-                    className={`flex-1 py-1.5 rounded-lg text-xs cursor-pointer transition-all duration-200 ${
-                      permission === p
-                        ? 'bg-accent-blue/20 text-accent-blue'
-                        : 'bg-surface text-text-muted hover:bg-surface-hover'
-                    }`}
-                  >
-                    {p === 'view' ? 'View only' : 'Can edit'}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {shareLink ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={shareLink}
-                    readOnly
-                    className="flex-1 bg-surface text-text-secondary text-xs border border-border-light rounded-lg px-2.5 py-2 outline-none truncate"
-                    onClick={(e) => e.target.select()}
-                  />
-                  <button
-                    onClick={handleCopyLink}
-                    className={`shrink-0 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 ${
-                      copied
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-accent-blue hover:bg-accent-blue-hover text-text-primary'
-                    }`}
-                  >
-                    {copied ? 'Copied!' : 'Copy'}
-                  </button>
-                </div>
-                <button
-                  onClick={handleStopSharing}
-                  disabled={revoking}
-                  className="w-full mt-2 py-2 rounded-lg border border-red-500/30 text-red-400 text-xs cursor-pointer hover:bg-red-500/10 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1.5"
-                >
-                  <i className={`bx ${revoking ? 'bx-loader-alt animate-spin' : 'bx-link-external'} text-sm`} />
-                  {revoking ? 'Revoking...' : 'Stop Sharing'}
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={handleGenerateLink}
-                disabled={saving}
-                className="w-full py-2.5 rounded-lg bg-accent-blue hover:bg-accent-blue-hover text-text-primary text-sm cursor-pointer transition-all duration-200 disabled:opacity-50"
-              >
-                {saving ? 'Saving to cloud...' : 'Share Workspace'}
-              </button>
-            )}
-
-            {saveError && (
-              <p className="text-red-400 text-[10px] mt-2">{saveError}</p>
-            )}
-
-            <p className="text-text-dim text-[10px] mt-2 leading-relaxed">
-              Scene is encrypted and saved to the cloud. The encryption key stays in the URL fragment and is never sent to the server.
-            </p>
           </div>
 
           {/* ── Live Collaborate ── */}

@@ -168,6 +168,22 @@ export default function useCollaboration(roomId) {
           break
         }
 
+        case 'kicked':
+          console.warn('[Collab] Kicked from room:', msg.reason)
+          intentionalClose.current = true
+          ws.close()
+          store.reset()
+          // Show a notification to the user
+          if (typeof window !== 'undefined') {
+            const toast = document.getElementById('save-toast')
+            if (toast) {
+              toast.innerHTML = '<i class="bx bx-block text-red-400 mr-1.5"></i>You were removed from the session'
+              toast.classList.remove('hidden')
+              setTimeout(() => toast.classList.add('hidden'), 4000)
+            }
+          }
+          break
+
         case 'room-expired':
         case 'room-closed':
           console.warn('[Collab] Room closed:', msg.type)

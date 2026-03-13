@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import useSketchStore, { TOOLS, SHORTCUT_MAP } from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
+import { triggerCloudSync } from '@/hooks/useAutoSave'
 
 export default function useKeyboardShortcuts() {
   useEffect(() => {
@@ -18,7 +19,7 @@ export default function useKeyboardShortcuts() {
         }
         if (key === 's' && !e.shiftKey) {
           e.preventDefault()
-          // Quick save to localStorage (+ cloud if authenticated)
+          // Quick save to localStorage + cloud sync
           const serializer = window.__sceneSerializer
           const shapes = window.shapes
           if (serializer && shapes) {
@@ -31,7 +32,10 @@ export default function useKeyboardShortcuts() {
                 savedAt: Date.now(),
                 shapeCount: shapes.length,
               }))
+              useUIStore.getState().setSaveStatus('local')
             } catch {}
+            // Trigger cloud sync immediately
+            triggerCloudSync()
             // Show brief visual feedback
             const el = document.getElementById('save-toast')
             if (el) {

@@ -390,21 +390,45 @@ move(dx, dy) {
     this.updateContainedShapes();
 }
     destroy() {
-        // Release contained shapes back to main SVG as individual shapes
+        const isDiagramFrame = !!this._diagramType;
+
         [...this.containedShapes].forEach(shape => {
-            const el = shape.group || shape.element;
-            if (el) {
-                if (el.parentNode === this.clipGroup) {
-                    this.clipGroup.removeChild(el);
+            if (isDiagramFrame) {
+                // Diagram/graph frame: destroy contained shapes with the frame
+                if (typeof window.cleanupAttachments === 'function') {
+                    window.cleanupAttachments(shape);
                 }
-                svg.appendChild(el);
-            }
-            // For sub-frames, also release their clipGroup back to main SVG
-            if (shape.shapeName === 'frame' && shape.clipGroup) {
-                if (shape.clipGroup.parentNode === this.clipGroup) {
-                    this.clipGroup.removeChild(shape.clipGroup);
+                const el = shape.group || shape.element;
+                if (el && el.parentNode) {
+                    el.parentNode.removeChild(el);
                 }
-                svg.appendChild(shape.clipGroup);
+                if (shape.shapeName === 'frame') {
+                    if (shape.clipGroup && shape.clipGroup.parentNode) {
+                        shape.clipGroup.parentNode.removeChild(shape.clipGroup);
+                    }
+                    if (shape.clipPath && shape.clipPath.parentNode) {
+                        shape.clipPath.parentNode.removeChild(shape.clipPath);
+                    }
+                }
+                const idx = shapes.indexOf(shape);
+                if (idx > -1) {
+                    shapes.splice(idx, 1);
+                }
+            } else {
+                // Regular frame: release contained shapes back to canvas
+                const el = shape.group || shape.element;
+                if (el) {
+                    if (el.parentNode === this.clipGroup) {
+                        this.clipGroup.removeChild(el);
+                    }
+                    svg.appendChild(el);
+                }
+                if (shape.shapeName === 'frame' && shape.clipGroup) {
+                    if (shape.clipGroup.parentNode === this.clipGroup) {
+                        this.clipGroup.removeChild(shape.clipGroup);
+                    }
+                    svg.appendChild(shape.clipGroup);
+                }
             }
             shape.parentFrame = null;
             delete shape.isBeingMovedByFrame;
@@ -1286,21 +1310,45 @@ restoreToFrame(shape) {
     }
 
     destroy() {
-        // Release contained shapes back to main SVG as individual shapes
+        const isDiagramFrame = !!this._diagramType;
+
         [...this.containedShapes].forEach(shape => {
-            const el = shape.group || shape.element;
-            if (el) {
-                if (el.parentNode === this.clipGroup) {
-                    this.clipGroup.removeChild(el);
+            if (isDiagramFrame) {
+                // Diagram/graph frame: destroy contained shapes with the frame
+                if (typeof window.cleanupAttachments === 'function') {
+                    window.cleanupAttachments(shape);
                 }
-                svg.appendChild(el);
-            }
-            // For sub-frames, also release their clipGroup back to main SVG
-            if (shape.shapeName === 'frame' && shape.clipGroup) {
-                if (shape.clipGroup.parentNode === this.clipGroup) {
-                    this.clipGroup.removeChild(shape.clipGroup);
+                const el = shape.group || shape.element;
+                if (el && el.parentNode) {
+                    el.parentNode.removeChild(el);
                 }
-                svg.appendChild(shape.clipGroup);
+                if (shape.shapeName === 'frame') {
+                    if (shape.clipGroup && shape.clipGroup.parentNode) {
+                        shape.clipGroup.parentNode.removeChild(shape.clipGroup);
+                    }
+                    if (shape.clipPath && shape.clipPath.parentNode) {
+                        shape.clipPath.parentNode.removeChild(shape.clipPath);
+                    }
+                }
+                const idx = shapes.indexOf(shape);
+                if (idx > -1) {
+                    shapes.splice(idx, 1);
+                }
+            } else {
+                // Regular frame: release contained shapes back to canvas
+                const el = shape.group || shape.element;
+                if (el) {
+                    if (el.parentNode === this.clipGroup) {
+                        this.clipGroup.removeChild(el);
+                    }
+                    svg.appendChild(el);
+                }
+                if (shape.shapeName === 'frame' && shape.clipGroup) {
+                    if (shape.clipGroup.parentNode === this.clipGroup) {
+                        this.clipGroup.removeChild(shape.clipGroup);
+                    }
+                    svg.appendChild(shape.clipGroup);
+                }
             }
             shape.parentFrame = null;
             delete shape.isBeingMovedByFrame;

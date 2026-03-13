@@ -23,7 +23,7 @@ const ACTION_SHORTCUTS = [
   { keys: 'Ctrl+G', action: 'Group' },
   { keys: 'Ctrl+Shift+G', action: 'Ungroup' },
   { keys: 'Ctrl+D', action: 'Duplicate' },
-  { keys: 'Ctrl+S', action: 'Quick Save' },
+  { keys: 'Ctrl+S', action: 'Quick Save (local + cloud sync)' },
   { keys: 'Ctrl+Shift+S', action: 'Save & Share' },
   { keys: 'Ctrl+F', action: 'Find on Canvas' },
   { keys: 'Ctrl+C', action: 'Copy' },

@@ -587,7 +587,8 @@ function addResizeAnchors(x, y, width, height, centerX, centerY, iconWidth, rota
     const svg = getSVGElement();
     if (!svg) return;
 
-    const anchorSize = Math.max(8, Math.min(16, iconWidth * 0.15));
+    const zoom = window.currentZoom || 1;
+    const anchorSize = Math.max(8, Math.min(16, iconWidth * 0.15)) / zoom;
     const anchorStrokeWidth = Math.max(1.5, anchorSize * 0.15);
 
     const positions = [

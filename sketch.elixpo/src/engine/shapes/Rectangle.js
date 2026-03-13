@@ -311,7 +311,8 @@ class Rectangle {
         return directions[finalIndex];
     }
     addAnchors() {
-        const anchorSize = 10;
+        const zoom = window.currentZoom || 1;
+        const anchorSize = 10 / zoom;
         const anchorStrokeWidth = 2;
         const self = this;
         const expandedX = -this.selectionPadding; 
@@ -392,11 +393,11 @@ class Rectangle {
             this.group.appendChild(anchor);
             this.anchors[i] = anchor;
         });
-        const rotationAnchorPos = { x: expandedX + expandedWidth / 2, y: expandedY - 30 };
+        const rotationAnchorPos = { x: expandedX + expandedWidth / 2, y: expandedY - 30 / zoom };
         this.rotationAnchor = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         this.rotationAnchor.setAttribute('cx', rotationAnchorPos.x);
         this.rotationAnchor.setAttribute('cy', rotationAnchorPos.y);
-        this.rotationAnchor.setAttribute('r', 8);
+        this.rotationAnchor.setAttribute('r', 8 / zoom);
         this.rotationAnchor.setAttribute('class', 'rotate-anchor');
         this.rotationAnchor.setAttribute('fill', '#121212');
         this.rotationAnchor.setAttribute('stroke', '#5B57D1');

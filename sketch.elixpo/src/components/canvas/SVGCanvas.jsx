@@ -60,6 +60,8 @@ export default function SVGCanvas() {
       style={{
         background: canvasBackground,
         cursor,
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
       }}
       viewBox={viewBox}
       suppressHydrationWarning
