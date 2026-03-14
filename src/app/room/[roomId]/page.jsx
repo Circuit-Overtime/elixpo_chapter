@@ -31,6 +31,7 @@ import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
 import useGuestProfile from '@/hooks/useGuestProfile'
 import useAuth from '@/hooks/useAuth'
 import useCollaboration from '@/hooks/useCollaboration'
+import CanvasLoadingOverlay from '@/components/canvas/CanvasLoadingOverlay'
 import ContextMenu from '@/components/canvas/ContextMenu'
 import FindBar from '@/components/canvas/FindBar'
 
@@ -81,6 +82,7 @@ export default function RoomPage() {
       <ImageGenerateModal />
       <ContextMenu />
       <FindBar />
+      <CanvasLoadingOverlay />
 
       {/* Quick-save toast */}
       <div

@@ -93,65 +93,121 @@ export default function useAutoSave() {
     if (hasRestored.current) return
     if (isInRoom) return // don't restore in collab rooms
 
-    const tryRestore = () => {
+    // Show loading overlay
+    useUIStore.getState().setCanvasLoading(true, 'Restoring canvas...')
+
+    const tryRestore = async () => {
       const serializer = window.__sceneSerializer
       const shapes = window.shapes
 
       if (!serializer || !window.svg) {
-        // Engine not ready yet, retry
         setTimeout(tryRestore, 500)
         return
       }
 
       engineReady.current = true
 
-      // Only restore if canvas is empty (no shapes yet)
       if (shapes && shapes.length > 0) {
         hasRestored.current = true
+        useUIStore.getState().setCanvasLoading(false)
         return
       }
 
-      // Skip restore for brand-new workspaces
       if (window.__isNewWorkspace) {
         hasRestored.current = true
         console.log('[AutoSave] New workspace — starting with blank canvas')
+        useUIStore.getState().setCanvasLoading(false)
         return
       }
 
-      // Try session-scoped key first, then fall back to legacy global key
-      const saved = localStorage.getItem(getLocalSaveKey()) || localStorage.getItem('lixsketch-autosave')
-      if (!saved) {
-        hasRestored.current = true
-        return
-      }
-
+      // --- Single-session localStorage strategy ---
+      // Clean up localStorage entries for OTHER sessions (keep only current)
+      const currentKey = getLocalSaveKey()
+      const currentMetaKey = getLocalSaveMetaKey()
       try {
-        const sceneData = JSON.parse(saved)
-        if (sceneData && sceneData.format === 'lixsketch' && sceneData.shapes?.length > 0) {
-          serializer.load(sceneData)
-          console.log(`[AutoSave] Restored ${sceneData.shapes.length} shapes from local save`)
+        const keysToRemove = []
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && key.startsWith(LOCAL_SAVE_KEY_PREFIX) && key !== currentKey && key !== currentMetaKey && key !== 'lixsketch-autosave' && key !== 'lixsketch-autosave-meta') {
+            keysToRemove.push(key)
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k))
+      } catch {}
 
-          // Restore workspace name if available
-          const meta = localStorage.getItem(getLocalSaveMetaKey())
-          if (meta) {
-            const { workspaceName } = JSON.parse(meta)
-            if (workspaceName) {
-              useUIStore.getState().setWorkspaceName(workspaceName)
+      // Try session-scoped key first, then legacy global key
+      const saved = localStorage.getItem(currentKey) || localStorage.getItem('lixsketch-autosave')
+      let restoredFromLocal = false
+
+      if (saved) {
+        try {
+          const sceneData = JSON.parse(saved)
+          if (sceneData && sceneData.format === 'lixsketch' && sceneData.shapes?.length > 0) {
+            serializer.load(sceneData)
+            restoredFromLocal = true
+            console.log(`[AutoSave] Restored ${sceneData.shapes.length} shapes from local cache`)
+
+            const meta = localStorage.getItem(currentMetaKey) || localStorage.getItem('lixsketch-autosave-meta')
+            if (meta) {
+              try {
+                const { workspaceName } = JSON.parse(meta)
+                if (workspaceName) useUIStore.getState().setWorkspaceName(workspaceName)
+              } catch {}
+            }
+            useUIStore.getState().setSaveStatus('local')
+          }
+        } catch (err) {
+          console.warn('[AutoSave] Failed to restore from local:', err)
+        }
+      }
+
+      // If no local data, try loading from cloud DB
+      if (!restoredFromLocal && WORKER_URL) {
+        try {
+          useUIStore.getState().setCanvasLoading(true, 'Fetching from cloud...')
+          const sessionId = getSessionID()
+          const res = await fetch(`${WORKER_URL}/api/scenes/load?sessionId=${sessionId}`)
+          if (res.ok) {
+            const data = await res.json()
+            if (data.encryptedData) {
+              // Try decrypting with stored key
+              const encKey = useUIStore.getState().loadEncryptionKeyForSession(sessionId)
+              if (encKey) {
+                try {
+                  const { decrypt } = await import('@/utils/encryption')
+                  const decrypted = await decrypt(data.encryptedData, encKey)
+                  const sceneData = JSON.parse(decrypted)
+                  if (sceneData && sceneData.format === 'lixsketch' && sceneData.shapes?.length > 0) {
+                    serializer.load(sceneData)
+                    // Cache to localStorage for fast reload next time
+                    localStorage.setItem(currentKey, JSON.stringify(sceneData))
+                    console.log(`[AutoSave] Restored ${sceneData.shapes.length} shapes from cloud`)
+                    useUIStore.getState().setSaveStatus('cloud')
+                  }
+                } catch (decErr) {
+                  console.warn('[AutoSave] Failed to decrypt cloud data:', decErr)
+                }
+              }
+            }
+            if (data.workspaceName) {
+              useUIStore.getState().setWorkspaceName(data.workspaceName)
             }
           }
-          // Mark as locally saved, then sync to cloud
-          useUIStore.getState().setSaveStatus('local')
-          // Trigger cloud sync after restore
-          setTimeout(() => triggerCloudSync(), 3000)
+        } catch (err) {
+          console.warn('[AutoSave] Cloud fetch failed:', err)
         }
-      } catch (err) {
-        console.warn('[AutoSave] Failed to restore:', err)
       }
+
+      // Trigger background cloud sync after restore
+      if (restoredFromLocal) {
+        setTimeout(() => triggerCloudSync(), 3000)
+      }
+
       hasRestored.current = true
+      useUIStore.getState().setCanvasLoading(false)
     }
 
-    // Delay to let engine initialize
-    setTimeout(tryRestore, 1000)
+    setTimeout(tryRestore, 800)
   }, [isInRoom])
 
   // Mark as 'local' immediately when the user changes the canvas after a cloud sync
