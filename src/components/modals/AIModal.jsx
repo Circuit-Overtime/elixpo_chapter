@@ -5,6 +5,74 @@ import useUIStore from '@/store/useUIStore'
 import useAuthStore from '@/store/useAuthStore'
 import { WORKER_URL } from '@/lib/env'
 
+function DiagramLoadingAnimation({ color = '#4A90D9' }) {
+  const c2 = color === '#4A90D9' ? '#9B59B6' : '#4A90D9'
+  const c3 = '#2ECC71'
+  return (
+    <div className="flex flex-col items-center justify-center gap-5">
+      <style>{`
+        @keyframes dg-glob {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+          25% { transform: translate(12px, -8px) scale(1.15); opacity: 0.9; }
+          50% { transform: translate(-6px, 10px) scale(0.9); opacity: 0.6; }
+          75% { transform: translate(-10px, -5px) scale(1.1); opacity: 0.85; }
+        }
+        @keyframes dg-glob-2 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+          25% { transform: translate(-10px, 6px) scale(1.1); opacity: 0.85; }
+          50% { transform: translate(8px, -10px) scale(0.95); opacity: 0.7; }
+          75% { transform: translate(6px, 8px) scale(1.15); opacity: 0.9; }
+        }
+        @keyframes dg-glob-3 {
+          0%, 100% { transform: translate(0, 0) scale(1.05); opacity: 0.65; }
+          25% { transform: translate(8px, 10px) scale(0.9); opacity: 0.8; }
+          50% { transform: translate(-12px, -4px) scale(1.1); opacity: 0.55; }
+          75% { transform: translate(4px, -12px) scale(1); opacity: 0.9; }
+        }
+        @keyframes dg-icon-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+      `}</style>
+      <div className="relative w-20 h-20">
+        <div className="absolute rounded-full" style={{
+          width: 38, height: 38, top: 2, left: 2,
+          background: `radial-gradient(circle, ${color}99 0%, transparent 70%)`,
+          filter: 'blur(10px)', animation: 'dg-glob 3.5s ease-in-out infinite', willChange: 'transform, opacity',
+        }} />
+        <div className="absolute rounded-full" style={{
+          width: 34, height: 34, top: 14, right: 0,
+          background: `radial-gradient(circle, ${c2}8C 0%, transparent 70%)`,
+          filter: 'blur(10px)', animation: 'dg-glob-2 4s ease-in-out infinite', willChange: 'transform, opacity',
+        }} />
+        <div className="absolute rounded-full" style={{
+          width: 32, height: 32, bottom: 0, left: 10,
+          background: `radial-gradient(circle, ${c3}80 0%, transparent 70%)`,
+          filter: 'blur(10px)', animation: 'dg-glob-3 3.8s ease-in-out infinite', willChange: 'transform, opacity',
+        }} />
+        <div className="absolute inset-0 flex items-center justify-center" style={{ animation: 'dg-icon-float 2.5s ease-in-out infinite' }}>
+          <div className="w-9 h-9 rounded-lg bg-black/30 backdrop-blur-sm border border-white/[0.08] flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <line x1="10" y1="6.5" x2="14" y2="6.5" />
+              <line x1="6.5" y1="10" x2="6.5" y2="14" />
+              <line x1="14" y1="17.5" x2="10" y2="17.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: color, animationDelay: '0ms' }} />
+        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: c2, animationDelay: '150ms' }} />
+        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: c3, animationDelay: '300ms' }} />
+      </div>
+      <p className="text-text-dim text-sm">Generating diagram...</p>
+    </div>
+  )
+}
+
 const GRAPH_COLORS = [
   '#4A90D9', '#E74C3C', '#2ECC71', '#F39C12', '#9B59B6',
   '#1ABC9C', '#E67E22', '#3498DB', '#E91E63', '#00BCD4',
@@ -1036,7 +1104,11 @@ export default function AIModal() {
                 {/* Right panel - Live preview */}
                 <div className="flex-1 flex flex-col min-w-0">
                   <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Preview</p>
-                  {researchErrors.length > 0 ? (
+                  {isGenerating ? (
+                    <div className="flex-1 flex items-center justify-center rounded-xl bg-[#111] border border-white/[0.06]">
+                      <DiagramLoadingAnimation color="#9B59B6" />
+                    </div>
+                  ) : researchErrors.length > 0 ? (
                     <div className="flex-1 flex flex-col rounded-xl bg-[#111] border border-white/[0.06] p-4 overflow-y-auto">
                       <div className="flex items-center gap-2 mb-3">
                         <i className="bx bx-error-circle text-red-400 text-lg" />
@@ -1268,7 +1340,11 @@ export default function AIModal() {
                 {/* Right panel - Live preview */}
                 <div className="flex-1 flex flex-col min-w-0">
                   <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Preview</p>
-                  {lixErrors.length > 0 ? (
+                  {isGenerating ? (
+                    <div className="flex-1 flex items-center justify-center rounded-xl bg-[#111] border border-white/[0.06]">
+                      <DiagramLoadingAnimation color="#4A90D9" />
+                    </div>
+                  ) : lixErrors.length > 0 ? (
                     <div className="flex-1 flex flex-col rounded-xl bg-[#111] border border-white/[0.06] p-4 overflow-y-auto">
                       <div className="flex items-center gap-2 mb-3">
                         <i className="bx bx-error-circle text-red-400 text-lg" />

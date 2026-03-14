@@ -150,6 +150,7 @@ class SketchEngine {
                 'text': 'text',
                 'code': 'text',
                 'frame': 'frame',
+                'image': 'image',
             };
             const sidebar = sidebarMap[shapeName];
             if (sidebar && window.__sketchStoreApi) {

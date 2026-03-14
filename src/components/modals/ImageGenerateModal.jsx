@@ -6,9 +6,12 @@ import useAuthStore from '@/store/useAuthStore'
 import { WORKER_URL } from '@/lib/env'
 
 const MODELS = [
-  { id: 'zimage', label: 'ZImage', desc: 'Fast, high quality' },
-  { id: 'flux', label: 'Flux', desc: 'Detailed, artistic' },
   { id: 'gptimage', label: 'GPT Image', desc: 'Photorealistic' },
+  { id: 'flux', label: 'Flux', desc: 'Detailed, artistic' },
+  { id: 'zimage', label: 'ZImage', desc: 'Fast, high quality' },
+  { id: 'dirtberry', label: 'Dirtberry', desc: 'Creative, stylized' },
+  { id: 'grok-imagine', label: 'Grok Imagine', desc: 'Expressive, bold' },
+  { id: 'klien', label: 'Klien', desc: 'Clean, precise' },
 ]
 
 const SIZES = [
@@ -115,7 +118,7 @@ export default function ImageGenerateModal() {
 
   const [prompt, setPrompt] = useState('')
   const [negativePrompt, setNegativePrompt] = useState('')
-  const [model, setModel] = useState('zimage')
+  const [model, setModel] = useState('gptimage')
   const [sizeIdx, setSizeIdx] = useState(0)
   const [enhance, setEnhance] = useState(true)
   const [seed, setSeed] = useState(-1)
@@ -299,13 +302,20 @@ export default function ImageGenerateModal() {
     const maskCanvas = maskCanvasRef.current
     const img = new Image()
     img.onload = () => {
-      const scale = Math.min(600 / img.width, 400 / img.height, 1)
-      const w = img.width * scale
-      const h = img.height * scale
+      const container = canvas.parentElement
+      const maxW = container ? container.clientWidth - 16 : 500
+      const maxH = 280
+      const scale = Math.min(maxW / img.width, maxH / img.height, 1)
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
       canvas.width = w
       canvas.height = h
+      canvas.style.width = w + 'px'
+      canvas.style.height = h + 'px'
       maskCanvas.width = w
       maskCanvas.height = h
+      maskCanvas.style.width = w + 'px'
+      maskCanvas.style.height = h + 'px'
 
       const ctx = canvas.getContext('2d')
       ctx.drawImage(img, 0, 0, w, h)
@@ -328,7 +338,7 @@ export default function ImageGenerateModal() {
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
     mctx.globalCompositeOperation = 'source-over'
-    mctx.fillStyle = 'rgba(139, 92, 246, 0.4)'
+    mctx.fillStyle = 'rgba(139, 92, 246, 0.18)'
     mctx.beginPath()
     mctx.arc(x, y, brushSize / 2, 0, Math.PI * 2)
     mctx.fill()
@@ -342,7 +352,7 @@ export default function ImageGenerateModal() {
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
     mctx.globalCompositeOperation = 'source-over'
-    mctx.fillStyle = 'rgba(139, 92, 246, 0.4)'
+    mctx.fillStyle = 'rgba(139, 92, 246, 0.18)'
     mctx.beginPath()
     mctx.arc(x, y, brushSize / 2, 0, Math.PI * 2)
     mctx.fill()
@@ -373,7 +383,7 @@ export default function ImageGenerateModal() {
       const authState = useAuthStore.getState()
       const reqBody = {
         prompt: editPrompt.trim(),
-        model: 'nanobanana',
+        model: 'gptimage',
         width: generatedImage.width,
         height: generatedImage.height,
         enhance: true,
@@ -497,17 +507,18 @@ export default function ImageGenerateModal() {
                 </div>
 
                 {/* Canvas with mask overlay */}
-                <div className="relative flex justify-center rounded-xl bg-[#111] border border-white/[0.06] overflow-hidden" style={{ minHeight: 200 }}>
-                  <canvas ref={canvasRef} className="max-w-full max-h-[280px]" />
-                  <canvas
-                    ref={maskCanvasRef}
-                    className="absolute inset-0 cursor-crosshair max-w-full max-h-[280px]"
-                    style={{ left: '50%', transform: 'translateX(-50%)' }}
-                    onMouseDown={startDraw}
-                    onMouseMove={draw}
-                    onMouseUp={stopDraw}
-                    onMouseLeave={stopDraw}
-                  />
+                <div className="flex justify-center rounded-xl bg-[#111] border border-white/[0.06] overflow-hidden p-2" style={{ minHeight: 200 }}>
+                  <div className="relative inline-block">
+                    <canvas ref={canvasRef} className="block" />
+                    <canvas
+                      ref={maskCanvasRef}
+                      className="absolute top-0 left-0 cursor-crosshair"
+                      onMouseDown={startDraw}
+                      onMouseMove={draw}
+                      onMouseUp={stopDraw}
+                      onMouseLeave={stopDraw}
+                    />
+                  </div>
                 </div>
 
                 {/* Edit prompt */}

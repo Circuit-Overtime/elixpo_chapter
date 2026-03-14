@@ -535,7 +535,18 @@ function selectImage(event) {
      // Add drag event listeners to the selected image
      selectedImage.addEventListener('mousedown', startDrag);
      selectedImage.addEventListener('mouseup', stopDrag);
-     selectedImage.addEventListener('mouseleave', stopDrag); //Stop drag if mouse leaves the image
+     selectedImage.addEventListener('mouseleave', stopDrag);
+
+    // Set currentShape for sidebar + layer controls
+    const imageShape = (typeof shapes !== 'undefined' && Array.isArray(shapes))
+        ? shapes.find(s => s.shapeName === 'image' && s.element === selectedImage)
+        : null;
+    if (imageShape) {
+        window.currentShape = imageShape;
+    }
+    if (typeof window.__showSidebarForShape === 'function') {
+        window.__showSidebarForShape('image');
+    }
 }
 
 function addSelectionOutline() {
