@@ -272,6 +272,9 @@ function RoughLixScriptCanvas({ parsed }) {
         ctx.restore()
       }
 
+      // Collect images to load async after drawing shapes
+      const pendingImages = []
+
       // Draw each shape with RoughJS
       for (const def of defs) {
         const props = def.props || {}
@@ -325,44 +328,99 @@ function RoughLixScriptCanvas({ parsed }) {
             const from = resolvePoint(def.from)
             const toOrig = resolvePoint(def.to)
             const headLen = 10
-            const dx = toOrig.x - from.x, dy = toOrig.y - from.y
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1
+            const isCurved = props.curve === 'curved' || props.curve === 'elbow'
+            const curveAmount = parseFloat(props.curveAmount) || 50
 
-            // Shorten endpoint for arrowhead
-            const to = dist < headLen * 2 ? toOrig : {
-              x: toOrig.x - (dx / dist) * headLen,
-              y: toOrig.y - (dy / dist) * headLen,
-            }
+            if (isCurved) {
+              // Compute control point perpendicular to the midpoint
+              const midX = (from.x + toOrig.x) / 2
+              const midY = (from.y + toOrig.y) / 2
+              const adx = toOrig.x - from.x, ady = toOrig.y - from.y
+              const len = Math.sqrt(adx * adx + ady * ady) || 1
+              // Perpendicular direction (rotate 90°)
+              const nx = -ady / len, ny = adx / len
+              const cpX = midX + nx * curveAmount
+              const cpY = midY + ny * curveAmount
 
-            // Draw line with RoughJS
-            rc.line(from.x, from.y, to.x, to.y, {
-              stroke, strokeWidth: sw, roughness: 1.2, bowing: 0.5,
-            })
+              // Draw curved line
+              ctx.save()
+              ctx.beginPath()
+              ctx.moveTo(from.x, from.y)
+              ctx.quadraticCurveTo(cpX, cpY, toOrig.x, toOrig.y)
+              ctx.strokeStyle = stroke
+              ctx.lineWidth = sw
+              if (props.style === 'dashed') ctx.setLineDash([8, 4])
+              else if (props.style === 'dotted') ctx.setLineDash([2, 4])
+              ctx.stroke()
+              ctx.setLineDash([])
+              ctx.restore()
 
-            // Draw arrowhead manually (filled triangle)
-            const angle = Math.atan2(toOrig.y - from.y, toOrig.x - from.x)
-            const a1x = toOrig.x - headLen * Math.cos(angle - Math.PI / 7)
-            const a1y = toOrig.y - headLen * Math.sin(angle - Math.PI / 7)
-            const a2x = toOrig.x - headLen * Math.cos(angle + Math.PI / 7)
-            const a2y = toOrig.y - headLen * Math.sin(angle + Math.PI / 7)
+              // Arrowhead — tangent at endpoint of quadratic bezier
+              // Tangent at t=1: 2*(P2 - CP)
+              const tangentX = toOrig.x - cpX
+              const tangentY = toOrig.y - cpY
+              const tAngle = Math.atan2(tangentY, tangentX)
+              const a1x = toOrig.x - headLen * Math.cos(tAngle - Math.PI / 7)
+              const a1y = toOrig.y - headLen * Math.sin(tAngle - Math.PI / 7)
+              const a2x = toOrig.x - headLen * Math.cos(tAngle + Math.PI / 7)
+              const a2y = toOrig.y - headLen * Math.sin(tAngle + Math.PI / 7)
 
-            ctx.save()
-            ctx.beginPath()
-            ctx.moveTo(toOrig.x, toOrig.y)
-            ctx.lineTo(a1x, a1y)
-            ctx.lineTo(a2x, a2y)
-            ctx.closePath()
-            ctx.fillStyle = stroke
-            ctx.fill()
-            ctx.restore()
+              ctx.save()
+              ctx.beginPath()
+              ctx.moveTo(toOrig.x, toOrig.y)
+              ctx.lineTo(a1x, a1y)
+              ctx.lineTo(a2x, a2y)
+              ctx.closePath()
+              ctx.fillStyle = stroke
+              ctx.fill()
+              ctx.restore()
 
-            // Label with background cutout
-            if (props.label) {
-              const lx = (from.x + toOrig.x) / 2
-              const ly = (from.y + toOrig.y) / 2
-              drawLabel(props.label, lx, ly,
-                '11px lixFont, sans-serif',
-                props.labelColor || '#a0a0b0', 'center', 'middle')
+              // Label at the curve apex (control point area)
+              if (props.label) {
+                // Point on quadratic bezier at t=0.5
+                const lx = 0.25 * from.x + 0.5 * cpX + 0.25 * toOrig.x
+                const ly = 0.25 * from.y + 0.5 * cpY + 0.25 * toOrig.y
+                drawLabel(props.label, lx, ly,
+                  '11px lixFont, sans-serif',
+                  props.labelColor || '#a0a0b0', 'center', 'middle')
+              }
+            } else {
+              // Straight arrow
+              const dx = toOrig.x - from.x, dy = toOrig.y - from.y
+              const dist = Math.sqrt(dx * dx + dy * dy) || 1
+
+              const to = dist < headLen * 2 ? toOrig : {
+                x: toOrig.x - (dx / dist) * headLen,
+                y: toOrig.y - (dy / dist) * headLen,
+              }
+
+              rc.line(from.x, from.y, to.x, to.y, {
+                stroke, strokeWidth: sw, roughness: 1.2, bowing: 0.5,
+              })
+
+              const angle = Math.atan2(toOrig.y - from.y, toOrig.x - from.x)
+              const a1x = toOrig.x - headLen * Math.cos(angle - Math.PI / 7)
+              const a1y = toOrig.y - headLen * Math.sin(angle - Math.PI / 7)
+              const a2x = toOrig.x - headLen * Math.cos(angle + Math.PI / 7)
+              const a2y = toOrig.y - headLen * Math.sin(angle + Math.PI / 7)
+
+              ctx.save()
+              ctx.beginPath()
+              ctx.moveTo(toOrig.x, toOrig.y)
+              ctx.lineTo(a1x, a1y)
+              ctx.lineTo(a2x, a2y)
+              ctx.closePath()
+              ctx.fillStyle = stroke
+              ctx.fill()
+              ctx.restore()
+
+              if (props.label) {
+                const lx = (from.x + toOrig.x) / 2
+                const ly = (from.y + toOrig.y) / 2
+                drawLabel(props.label, lx, ly,
+                  '11px lixFont, sans-serif',
+                  props.labelColor || '#a0a0b0', 'center', 'middle')
+              }
             }
             break
           }
@@ -378,6 +436,17 @@ function RoughLixScriptCanvas({ parsed }) {
 
           case 'frame': {
             const x = def.x || 0, y = def.y || 0, w = def.width || 600, h = def.height || 400
+            // Draw frame background image if present
+            if (props.imageURL) {
+              pendingImages.push({ src: props.imageURL, x, y, w, h, fit: props.imageFit || 'cover' })
+            }
+            // Draw filled background if specified
+            if (props.fillStyle === 'solid' && props.fillColor) {
+              ctx.save()
+              ctx.fillStyle = props.fillColor
+              ctx.fillRect(x, y, w, h)
+              ctx.restore()
+            }
             rc.rectangle(x, y, w, h, {
               stroke: props.stroke || '#555',
               strokeWidth: 1,
@@ -392,6 +461,148 @@ function RoughLixScriptCanvas({ parsed }) {
             }
             break
           }
+
+          case 'image': {
+            const x = def.x || 0, y = def.y || 0, w = def.width || 200, h = def.height || 200
+            const src = props.src || props.href || props.url || ''
+            if (src) {
+              pendingImages.push({ src, x, y, w, h, fit: props.fit || 'contain' })
+            }
+            // Draw placeholder border
+            rc.rectangle(x, y, w, h, {
+              stroke: '#555',
+              strokeWidth: 0.8,
+              roughness: 1,
+              bowing: 0.5,
+              strokeLineDash: [4, 4],
+            })
+            break
+          }
+
+          case 'icon': {
+            const x = def.x || 0, y = def.y || 0
+            const size = def.width || 32
+            const color = props.color || props.fill || '#ffffff'
+            const svgContent = props.svg || ''
+            if (svgContent) {
+              // Parse inline SVG and draw paths
+              const vbW = parseFloat(props.viewBoxWidth) || 24
+              const vbH = parseFloat(props.viewBoxHeight) || 24
+              const iconScale = size / Math.max(vbW, vbH)
+              ctx.save()
+              ctx.translate(x, y)
+              ctx.scale(iconScale, iconScale)
+              // Render SVG paths via Path2D
+              const tempDiv = document.createElement('div')
+              tempDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>`
+              const paths = tempDiv.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse')
+              for (const el of paths) {
+                const d = el.getAttribute('d')
+                if (d) {
+                  const path = new Path2D(d)
+                  const elFill = el.getAttribute('fill')
+                  const elStroke = el.getAttribute('stroke')
+                  if (elFill && elFill !== 'none') {
+                    ctx.fillStyle = (elFill === 'currentColor' || elFill === '#000' || elFill === '#000000') ? color : elFill
+                    ctx.fill(path)
+                  }
+                  if (elStroke && elStroke !== 'none') {
+                    ctx.strokeStyle = (elStroke === 'currentColor' || elStroke === '#000' || elStroke === '#000000') ? color : elStroke
+                    ctx.lineWidth = parseFloat(el.getAttribute('stroke-width')) || 1.5
+                    ctx.stroke(path)
+                  }
+                  if (!elFill && !elStroke) {
+                    ctx.fillStyle = color
+                    ctx.fill(path)
+                  }
+                }
+                // Handle <circle>
+                if (el.tagName === 'circle') {
+                  const cx = parseFloat(el.getAttribute('cx')) || 0
+                  const cy = parseFloat(el.getAttribute('cy')) || 0
+                  const r = parseFloat(el.getAttribute('r')) || 5
+                  ctx.beginPath()
+                  ctx.arc(cx, cy, r, 0, Math.PI * 2)
+                  const cFill = el.getAttribute('fill')
+                  if (cFill !== 'none') {
+                    ctx.fillStyle = (!cFill || cFill === 'currentColor') ? color : cFill
+                    ctx.fill()
+                  }
+                  const cStroke = el.getAttribute('stroke')
+                  if (cStroke && cStroke !== 'none') {
+                    ctx.strokeStyle = (cStroke === 'currentColor') ? color : cStroke
+                    ctx.lineWidth = parseFloat(el.getAttribute('stroke-width')) || 1.5
+                    ctx.stroke()
+                  }
+                }
+              }
+              ctx.restore()
+            } else {
+              // Fallback: draw a small circle placeholder
+              rc.circle(x + (size / 2), y + (size / 2), size * 0.8, {
+                stroke: props.color || '#888',
+                strokeWidth: 1,
+                roughness: 1.5,
+              })
+            }
+            break
+          }
+        }
+      }
+
+      // Load and draw images after all shapes are rendered
+      if (pendingImages.length > 0) {
+        for (const imgDef of pendingImages) {
+          const img = new Image()
+          img.crossOrigin = 'anonymous'
+          img.onload = () => {
+            if (!mounted) return
+            ctx.save()
+            // Clip to the target rect
+            ctx.beginPath()
+            ctx.rect(imgDef.x, imgDef.y, imgDef.w, imgDef.h)
+            ctx.clip()
+
+            if (imgDef.fit === 'cover') {
+              // Scale to cover the rect, crop overflow
+              const imgAspect = img.width / img.height
+              const boxAspect = imgDef.w / imgDef.h
+              let drawW, drawH, drawX, drawY
+              if (imgAspect > boxAspect) {
+                drawH = imgDef.h
+                drawW = drawH * imgAspect
+                drawX = imgDef.x - (drawW - imgDef.w) / 2
+                drawY = imgDef.y
+              } else {
+                drawW = imgDef.w
+                drawH = drawW / imgAspect
+                drawX = imgDef.x
+                drawY = imgDef.y - (drawH - imgDef.h) / 2
+              }
+              ctx.drawImage(img, drawX, drawY, drawW, drawH)
+            } else if (imgDef.fit === 'fill') {
+              ctx.drawImage(img, imgDef.x, imgDef.y, imgDef.w, imgDef.h)
+            } else {
+              // contain — fit within bounds
+              const imgAspect = img.width / img.height
+              const boxAspect = imgDef.w / imgDef.h
+              let drawW, drawH, drawX, drawY
+              if (imgAspect > boxAspect) {
+                drawW = imgDef.w
+                drawH = drawW / imgAspect
+                drawX = imgDef.x
+                drawY = imgDef.y + (imgDef.h - drawH) / 2
+              } else {
+                drawH = imgDef.h
+                drawW = drawH * imgAspect
+                drawX = imgDef.x + (imgDef.w - drawW) / 2
+                drawY = imgDef.y
+              }
+              ctx.drawImage(img, drawX, drawY, drawW, drawH)
+            }
+            ctx.restore()
+          }
+          img.src = imgDef.src
         }
       }
     }

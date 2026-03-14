@@ -131,7 +131,7 @@ $amber = #F39C12
 $teal = #1ABC9C
 $gray = #e0e0e0
 
-rect action at 200, 60 size 300x65 {
+rect action at 200, 60 size 200x85 {
   stroke: $blue
   fill: $blue
   fillStyle: solid
@@ -145,17 +145,17 @@ rect action at 200, 60 size 300x65 {
 text sources at action.x + 10, action.bottom + 20 {
   content: "upload / AI generate / paste / LixScript"
   color: #888
-  fontSize: 11
+  fontSize: 10
 }
 
-rect compress at action.x, action.bottom + 100 size 300x65 {
+rect compress at action.x, action.bottom + 100 size 200x85 {
   stroke: $amber
   roughness: 0
   label: "Compress → place on canvas"
   labelColor: $amber
 }
 
-rect upload at compress.x, compress.bottom + 130 size 300x65 {
+rect upload at compress.x, compress.bottom + 130 size 200x85 {
   stroke: $teal
   fill: $teal
   fillStyle: solid
@@ -166,18 +166,19 @@ rect upload at compress.x, compress.bottom + 130 size 300x65 {
   shadeOpacity: 0.25
 }
 
-rect save at upload.x, upload.bottom + 130 size 300x65 {
+rect save at upload.x, upload.bottom + 130 size 200x85 {
   stroke: $green
   roughness: 0
   label: "Autosave to localStorage (tiny URL)"
   labelColor: $green
 }
 
-rect reload at save.x, save.bottom + 130 size 300x65 {
+rect reload at save.x, save.bottom + 130 size 200x85 {
   stroke: $blue
   fill: $blue
   fillStyle: solid
   roughness: 0
+  fontSize: 3
   label: "Page reload → CDN load (fast)"
   labelColor: #ffffff
   shadeColor: $blue
@@ -208,13 +209,15 @@ arrow a4 from save.bottom to reload.top {
   labelColor: #888
 }
 
-arrow a5 from reload.left to action.left {
+arrow a5 from reload.right to action.right {
   stroke: $green
   curve: curved
+  curveAmount: 120
   style: dashed
-  label: "cycle repeats"
+  label: "Cycle"
   labelColor: $green
 }
+
 ```
 
 The same cycle applies to LixScript-generated images — the parser creates an `ImageShape`, which triggers the upload pipeline. By the next autosave tick, the `href` is already a Cloudinary URL.
@@ -240,7 +243,7 @@ LixScript — our declarative DSL for programmatic diagrams — also plugs into 
 
 ```lixscript
 image diagram at 100, 200 size 300x200 {
-  src: "https://res.cloudinary.com/elixpo/image/upload/v.../diagram.png"
+  src: "/Images/blog_image.png"
   fit: contain
 }
 ```
@@ -257,25 +260,12 @@ frame header at 50, 50 size 600x200 {
   stroke: #4A90D9
   fillStyle: solid
   fillColor: #1a1a2e
-  imageURL: "https://example.com/background.jpg"
+  imageURL: "/Images/blog_image.png"
   imageFit: cover
 }
 ```
 
 The `imageFit` property maps to SVG's `preserveAspectRatio`: `cover` slices to fill, `contain` fits within bounds, `fill` stretches to exact dimensions. This is useful for research paper illustrations where frames represent architectural components with visual context — a CNN block with a sample feature map, or a data pipeline stage with an example output.
-
-### Icons via Inline SVG
-
-LixScript also supports inline SVG icons, which are useful for annotating architecture diagrams:
-
-```lixscript
-icon dbIcon at 400, 100 size 32x32 {
-  svg: "<circle cx='12' cy='5' r='4' /><path d='M12 9c-5 0-8 2-8 4v2h16v-2c0-2-3-4-8-4z' />"
-  color: #4A90D9
-}
-```
-
-Icons are lightweight SVG groups — no image compression or upload needed. The AI diagram generator uses these to add visual markers to flowcharts and system architecture diagrams.
 
 ### The Full LixScript → Canvas → Cloud Cycle
 
