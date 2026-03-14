@@ -62,6 +62,9 @@ export async function triggerCloudSync() {
     if (res.ok) {
       useUIStore.getState().setSaveStatus('cloud')
       console.log('[AutoSave] Cloud sync triggered via Ctrl+S')
+    } else if (res.status === 429) {
+      const data = await res.json().catch(() => ({}))
+      console.warn(`[AutoSave] Workspace limit reached (${data.currentCount}/${data.maxWorkspaces}). ${data.message || 'Delete an existing workspace to save new ones.'}`)
     }
   } catch (err) {
     console.warn('[AutoSave] Cloud sync (Ctrl+S) failed:', err)
@@ -274,6 +277,9 @@ export default function useAutoSave() {
           console.log('[AutoSave] New workspace saved to cloud')
           // Store encryption key for this session
           useUIStore.getState().setSessionEncryptionKey?.(key)
+        } else if (res.status === 429) {
+          const data = await res.json().catch(() => ({}))
+          console.warn(`[AutoSave] Workspace limit reached (${data.currentCount}/${data.maxWorkspaces}). ${data.message || 'Delete an existing workspace to create a new one.'}`)
         } else {
           const err = await res.json().catch(() => ({}))
           console.warn('[AutoSave] Failed to save new workspace:', err.error || err.message)
@@ -334,6 +340,9 @@ export default function useAutoSave() {
           lastCloudSync.current = now
           useUIStore.getState().setSaveStatus('cloud')
           console.log('[AutoSave] Cloud sync complete')
+        } else if (res.status === 429) {
+          const data = await res.json().catch(() => ({}))
+          console.warn(`[AutoSave] Workspace limit reached (${data.currentCount}/${data.maxWorkspaces}). ${data.message || 'Delete an existing workspace to save new ones.'}`)
         }
       } catch (err) {
         console.warn('[AutoSave] Cloud sync failed:', err)
