@@ -196,8 +196,9 @@ export function calculateSnap(movingShape, shiftKey = false) {
         }
     }
 
-    // Snap to viewport center/edges when Shift is held or shape is alone
-    if (shiftKey || otherShapeCount === 0) {
+    // Snap to viewport center/edges when Shift is held, shape is alone,
+    // or no shape-to-shape snap was found yet
+    if (shiftKey || otherShapeCount === 0 || (!snapX && !snapY)) {
         const canvasGuides = getCanvasGuides();
         for (const guide of canvasGuides) {
             const guideXs = [guide.left, guide.cx, guide.right];

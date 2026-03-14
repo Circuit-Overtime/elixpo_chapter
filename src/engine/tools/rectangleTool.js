@@ -234,7 +234,7 @@ const handleMouseMoveRect = (e) => {
         startY = mouseY;
         // Snap guides
         if (window.__sketchStoreApi && window.__sketchStoreApi.getState().snapToObjects) {
-            const snap = calculateSnap(currentShape);
+            const snap = calculateSnap(currentShape, e.shiftKey);
             if (snap.dx || snap.dy) {
                 currentShape.move(snap.dx, snap.dy);
             }
