@@ -731,6 +731,23 @@ export default function MarkdownRenderer({ content, canvasStyle }) {
       continue
     }
 
+    // Image — ![alt](src)
+    const imgMatch = line.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/)
+    if (imgMatch) {
+      elements.push(
+        <div key={elements.length} className="my-6 flex justify-center">
+          <img
+            src={imgMatch[2]}
+            alt={imgMatch[1]}
+            className="max-w-full rounded-xl border border-white/[0.06] shadow-lg"
+            loading="lazy"
+          />
+        </div>
+      )
+      i++
+      continue
+    }
+
     // Paragraph — canvas text style
     elements.push(
       <p key={elements.length} className={`${textColor} text-sm leading-relaxed my-3 ${font}`}>

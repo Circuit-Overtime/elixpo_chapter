@@ -120,17 +120,104 @@ We track total image bytes per room via `window.__roomImageBytesUsed`. Each uplo
 
 ## The Serialization Cycle
 
-Here's the full lifecycle of an image through save/load:
+Here's the full lifecycle of an image through save/load, visualized as a LixScript diagram:
 
+```lixscript
+// Image serialization lifecycle
+$blue = #4A90D9
+$green = #2ECC71
+$red = #E74C3C
+$amber = #F39C12
+$teal = #1ABC9C
+$gray = #e0e0e0
+
+rect action at 200, 60 size 300x65 {
+  stroke: $blue
+  fill: $blue
+  fillStyle: solid
+  roughness: 0
+  label: "User action"
+  labelColor: #ffffff
+  shadeColor: $blue
+  shadeOpacity: 0.25
+}
+
+text sources at action.x + 10, action.bottom + 20 {
+  content: "upload / AI generate / paste / LixScript"
+  color: #888
+  fontSize: 11
+}
+
+rect compress at action.x, action.bottom + 100 size 300x65 {
+  stroke: $amber
+  roughness: 0
+  label: "Compress → place on canvas"
+  labelColor: $amber
+}
+
+rect upload at compress.x, compress.bottom + 130 size 300x65 {
+  stroke: $teal
+  fill: $teal
+  fillStyle: solid
+  roughness: 0
+  label: "Upload → CDN URL replaces base64"
+  labelColor: #ffffff
+  shadeColor: $teal
+  shadeOpacity: 0.25
+}
+
+rect save at upload.x, upload.bottom + 130 size 300x65 {
+  stroke: $green
+  roughness: 0
+  label: "Autosave to localStorage (tiny URL)"
+  labelColor: $green
+}
+
+rect reload at save.x, save.bottom + 130 size 300x65 {
+  stroke: $blue
+  fill: $blue
+  fillStyle: solid
+  roughness: 0
+  label: "Page reload → CDN load (fast)"
+  labelColor: #ffffff
+  shadeColor: $blue
+  shadeOpacity: 0.25
+}
+
+arrow a1 from action.bottom to compress.top {
+  stroke: $gray
+  label: "base64 data URI"
+  labelColor: #888
+}
+
+arrow a2 from compress.bottom to upload.top {
+  stroke: $gray
+  label: "≤300KB blob"
+  labelColor: #888
+}
+
+arrow a3 from upload.bottom to save.top {
+  stroke: $gray
+  label: "href = cloudinary URL"
+  labelColor: #888
+}
+
+arrow a4 from save.bottom to reload.top {
+  stroke: $gray
+  label: "JSON + URL strings"
+  labelColor: #888
+}
+
+arrow a5 from reload.left to action.left {
+  stroke: $green
+  curve: curved
+  style: dashed
+  label: "cycle repeats"
+  labelColor: $green
+}
 ```
-Create → base64 href → upload → Cloudinary URL href
-                                        ↓
-                              Autosave to localStorage (tiny URL string)
-                                        ↓
-                              Page reload → deserialize → <image href="cloudinary-url" />
-                                        ↓
-                              Image loads directly from CDN (no re-upload needed)
-```
+
+The same cycle applies to LixScript-generated images — the parser creates an `ImageShape`, which triggers the upload pipeline. By the next autosave tick, the `href` is already a Cloudinary URL.
 
 On reload, images load from Cloudinary's CDN — fast, cached, and globally distributed. The canvas restore is nearly instant because localStorage only stores URLs, not pixel data.
 
@@ -144,3 +231,204 @@ On reload, images load from Cloudinary's CDN — fast, cached, and globally dist
 6. **Graceful degradation** — if upload fails, the base64 image still works (just takes more localStorage space)
 
 This architecture lets LixSketch handle dozens of images per canvas without performance degradation, while keeping autosave reliable and cloud sync efficient.
+
+## Images in LixScript
+
+LixScript — our declarative DSL for programmatic diagrams — also plugs into the image pipeline. You can place images and set frame backgrounds directly from code:
+
+### Standalone Images
+
+```lixscript
+image diagram at 100, 200 size 300x200 {
+  src: "https://res.cloudinary.com/elixpo/image/upload/v.../diagram.png"
+  fit: contain
+}
+```
+
+The `image` shape type accepts a `src` URL (or base64 data URI), position, size, and a `fit` mode (`cover`, `contain`, or `fill`). When the LixScript engine creates the shape, it goes through the same `ImageShape` class — and if the `src` is a data URI, the upload pipeline kicks in automatically.
+
+### Frame Backgrounds
+
+Frames support background images via the `imageURL` property:
+
+```lixscript
+frame header at 50, 50 size 600x200 {
+  name: "Hero Section"
+  stroke: #4A90D9
+  fillStyle: solid
+  fillColor: #1a1a2e
+  imageURL: "https://example.com/background.jpg"
+  imageFit: cover
+}
+```
+
+The `imageFit` property maps to SVG's `preserveAspectRatio`: `cover` slices to fill, `contain` fits within bounds, `fill` stretches to exact dimensions. This is useful for research paper illustrations where frames represent architectural components with visual context — a CNN block with a sample feature map, or a data pipeline stage with an example output.
+
+### Icons via Inline SVG
+
+LixScript also supports inline SVG icons, which are useful for annotating architecture diagrams:
+
+```lixscript
+icon dbIcon at 400, 100 size 32x32 {
+  svg: "<circle cx='12' cy='5' r='4' /><path d='M12 9c-5 0-8 2-8 4v2h16v-2c0-2-3-4-8-4z' />"
+  color: #4A90D9
+}
+```
+
+Icons are lightweight SVG groups — no image compression or upload needed. The AI diagram generator uses these to add visual markers to flowcharts and system architecture diagrams.
+
+### The Full LixScript → Canvas → Cloud Cycle
+
+When AI generates a LixScript diagram containing images or frame backgrounds, here's the full cycle visualized as a LixScript diagram:
+
+```lixscript
+// LixScript → Canvas → Cloud pipeline
+$blue = #4A90D9
+$purple = #9B59B6
+$green = #2ECC71
+$amber = #F39C12
+$teal = #1ABC9C
+$gray = #e0e0e0
+
+rect ai at 200, 60 size 280x65 {
+  stroke: $purple
+  fill: $purple
+  fillStyle: solid
+  roughness: 0
+  label: "AI generates LixScript"
+  labelColor: #ffffff
+  shadeColor: $purple
+  shadeOpacity: 0.25
+}
+
+rect parser at ai.x, ai.bottom + 140 size 280x65 {
+  stroke: $blue
+  fill: $blue
+  fillStyle: solid
+  roughness: 0
+  label: "Parser creates shapes"
+  labelColor: #ffffff
+  shadeColor: $blue
+  shadeOpacity: 0.25
+}
+
+rect compress at parser.x, parser.bottom + 140 size 280x65 {
+  stroke: $amber
+  fill: $amber
+  fillStyle: solid
+  roughness: 0
+  label: "Compress images (300KB)"
+  labelColor: #ffffff
+  shadeColor: $amber
+  shadeOpacity: 0.25
+}
+
+rect place at compress.x, compress.bottom + 140 size 280x65 {
+  stroke: $green
+  fill: $green
+  fillStyle: solid
+  roughness: 0
+  label: "Place on SVG canvas"
+  labelColor: #ffffff
+  shadeColor: $green
+  shadeOpacity: 0.25
+}
+
+rect upload at place.right + 280, place.y size 280x65 {
+  stroke: $teal
+  fill: $teal
+  fillStyle: solid
+  roughness: 0
+  label: "Upload to Cloudinary"
+  labelColor: #ffffff
+  shadeColor: $teal
+  shadeOpacity: 0.25
+}
+
+rect replace at upload.x, upload.bottom + 140 size 280x65 {
+  stroke: $teal
+  roughness: 0
+  label: "Replace base64 → CDN URL"
+  labelColor: $teal
+}
+
+rect autosave at replace.x, replace.bottom + 140 size 280x65 {
+  stroke: $blue
+  roughness: 0
+  label: "Autosave to localStorage"
+  labelColor: $blue
+}
+
+rect reload at autosave.x, autosave.bottom + 140 size 280x65 {
+  stroke: $green
+  fill: $green
+  fillStyle: solid
+  roughness: 0
+  label: "Page reload → CDN load"
+  labelColor: #ffffff
+  shadeColor: $green
+  shadeOpacity: 0.25
+}
+
+// Vertical flow (left column)
+arrow a1 from ai.bottom to parser.top {
+  stroke: $gray
+  label: "rect, circle, image, icon"
+  labelColor: #888
+}
+
+arrow a2 from parser.bottom to compress.top {
+  stroke: $gray
+  label: "data:image/png;base64..."
+  labelColor: #888
+}
+
+arrow a3 from compress.bottom to place.top {
+  stroke: $gray
+  label: "≤300KB blob"
+  labelColor: #888
+}
+
+// Branch right to async upload
+arrow a4 from place.right to upload.left {
+  stroke: $amber
+  curve: curved
+  label: "async (background)"
+  labelColor: $amber
+}
+
+// Vertical flow (right column)
+arrow a5 from upload.bottom to replace.top {
+  stroke: $gray
+  label: "secure_url"
+  labelColor: #888
+}
+
+arrow a6 from replace.bottom to autosave.top {
+  stroke: $gray
+  label: "tiny URL string"
+  labelColor: #888
+}
+
+arrow a7 from autosave.bottom to reload.top {
+  stroke: $gray
+  label: "JSON → shapes + CDN images"
+  labelColor: #888
+}
+
+// Loop back from reload to canvas
+arrow a8 from reload.left to place.right {
+  stroke: $green
+  curve: curved
+  style: dashed
+  label: "restored"
+  labelColor: $green
+}
+
+frame pipeline at 130, 10 size 830x1230 {
+  name: "LixScript → Canvas → Cloud"
+  stroke: #555
+}
+```
+
+This means an AI-generated research paper illustration with embedded images and annotated frames persists across sessions just like hand-drawn content — same pipeline, same reliability.
