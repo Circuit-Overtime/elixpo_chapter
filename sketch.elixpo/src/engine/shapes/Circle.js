@@ -50,6 +50,14 @@ class Circle {
         this.labelFontSize = options.labelFontSize || 14;
         this._isEditingLabel = false;
         this._hitArea = null;
+        this._labelBg = null;
+
+        // Shading / gradient support for research paper style diagrams
+        this.shadeColor = options.shadeColor || null;
+        this.shadeOpacity = options.shadeOpacity !== undefined ? options.shadeOpacity : 0.15;
+        this.shadeDirection = options.shadeDirection || 'bottom';
+        this._shadeEllipse = null;
+        this._shadeGradient = null;
 
         if(!this.group.parentNode) {
             svg.appendChild(this.group);
@@ -85,7 +93,7 @@ class Circle {
         const preserveSet = this._skipAnchors ? new Set([...this.anchors, this.selectionOutline, this.rotationAnchor].filter(Boolean)) : null;
         for (let i = 0; i < this.group.children.length; i++) {
             const child = this.group.children[i];
-            if (child !== this.element && child !== this.labelElement && child !== this._hitArea) {
+            if (child !== this.element && child !== this.labelElement && child !== this._hitArea && child !== this._labelBg && child !== this._shadeEllipse) {
                 if (preserveSet && preserveSet.has(child)) continue;
                 childrenToRemove.push(child);
             }
@@ -121,6 +129,9 @@ class Circle {
         this._hitArea.setAttribute('cy', 0);
         this._hitArea.setAttribute('rx', this.rx);
         this._hitArea.setAttribute('ry', this.ry);
+
+        // Shading / gradient overlay
+        this._updateShade();
 
         // Update embedded label
         this._updateLabelElement();
@@ -510,11 +521,76 @@ class Circle {
             }
         });
     }
+    _updateShade() {
+        if (!this.shadeColor) {
+            if (this._shadeEllipse && this._shadeEllipse.parentNode === this.group) {
+                this.group.removeChild(this._shadeEllipse);
+                this._shadeEllipse = null;
+            }
+            if (this._shadeGradient && this._shadeGradient.parentNode) {
+                this._shadeGradient.parentNode.removeChild(this._shadeGradient);
+                this._shadeGradient = null;
+            }
+            return;
+        }
+
+        let defs = svg.querySelector('defs');
+        if (!defs) {
+            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            svg.appendChild(defs);
+        }
+
+        const gradId = `shade-${this.shapeID}`;
+        if (!this._shadeGradient) {
+            this._shadeGradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+            this._shadeGradient.setAttribute('id', gradId);
+            defs.appendChild(this._shadeGradient);
+        }
+
+        // Radial gradient for circles - center to edge fade
+        this._shadeGradient.setAttribute('cx', '50%');
+        this._shadeGradient.setAttribute('cy', '50%');
+        this._shadeGradient.setAttribute('r', '50%');
+
+        while (this._shadeGradient.firstChild) this._shadeGradient.removeChild(this._shadeGradient.firstChild);
+        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop1.setAttribute('offset', '0%');
+        stop1.setAttribute('stop-color', this.shadeColor);
+        stop1.setAttribute('stop-opacity', this.shadeOpacity);
+        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop2.setAttribute('offset', '100%');
+        stop2.setAttribute('stop-color', this.shadeColor);
+        stop2.setAttribute('stop-opacity', '0');
+        this._shadeGradient.appendChild(stop1);
+        this._shadeGradient.appendChild(stop2);
+
+        if (!this._shadeEllipse) {
+            this._shadeEllipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            this._shadeEllipse.setAttribute('pointer-events', 'none');
+        }
+        this._shadeEllipse.setAttribute('cx', 0);
+        this._shadeEllipse.setAttribute('cy', 0);
+        this._shadeEllipse.setAttribute('rx', this.rx);
+        this._shadeEllipse.setAttribute('ry', this.ry);
+        this._shadeEllipse.setAttribute('fill', `url(#${gradId})`);
+
+        if (this._shadeEllipse.parentNode === this.group) this.group.removeChild(this._shadeEllipse);
+        if (this.element && this.element.nextSibling) {
+            this.group.insertBefore(this._shadeEllipse, this.element.nextSibling);
+        } else {
+            this.group.appendChild(this._shadeEllipse);
+        }
+    }
+
     _updateLabelElement() {
         if (!this.label) {
             if (this.labelElement && this.labelElement.parentNode === this.group) {
                 this.group.removeChild(this.labelElement);
                 this.labelElement = null;
+            }
+            if (this._labelBg && this._labelBg.parentNode === this.group) {
+                this.group.removeChild(this._labelBg);
+                this._labelBg = null;
             }
             return;
         }
@@ -535,13 +611,29 @@ class Circle {
         this.labelElement.setAttribute('font-family', 'lixFont, sans-serif');
         this.labelElement.textContent = this.label;
 
-        if (this.labelElement.parentNode !== this.group) {
-            if (this.element && this.element.nextSibling) {
-                this.group.insertBefore(this.labelElement, this.element.nextSibling);
-            } else {
-                this.group.appendChild(this.labelElement);
-            }
+        // Background padding rect behind text (like arrows have)
+        const canvasBg = window.getComputedStyle(svg).backgroundColor || '#000';
+        if (!this._labelBg) {
+            this._labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            this._labelBg.setAttribute('pointer-events', 'none');
         }
+        this._labelBg.setAttribute('fill', canvasBg);
+        const hPadding = 6;
+        const vPadding = 2;
+        const charWidth = this.labelFontSize * 0.6;
+        const bgW = this.label.length * charWidth + hPadding * 2;
+        const bgH = this.labelFontSize + vPadding * 2;
+        this._labelBg.setAttribute('x', -bgW / 2);
+        this._labelBg.setAttribute('y', -bgH / 2);
+        this._labelBg.setAttribute('width', bgW);
+        this._labelBg.setAttribute('height', bgH);
+        this._labelBg.setAttribute('rx', 3);
+
+        // Re-append bg then text on top
+        if (this._labelBg.parentNode === this.group) this.group.removeChild(this._labelBg);
+        if (this.labelElement.parentNode === this.group) this.group.removeChild(this.labelElement);
+        this.group.appendChild(this._labelBg);
+        this.group.appendChild(this.labelElement);
     }
 
     _setupLabelDblClick() {

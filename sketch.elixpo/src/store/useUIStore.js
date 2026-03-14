@@ -103,6 +103,7 @@ const useUIStore = create((set, get) => ({
   exportImageModalOpen: false,
   findBarOpen: false,
   canvasPropertiesOpen: false,
+  imageGenerateModalOpen: false,
 
   toggleShortcutsModal: () =>
     set((s) => ({ shortcutsModalOpen: !s.shortcutsModalOpen })),
@@ -122,8 +123,12 @@ const useUIStore = create((set, get) => ({
     set({ findBarOpen: false }),
   toggleCanvasProperties: () =>
     set((s) => ({ canvasPropertiesOpen: !s.canvasPropertiesOpen })),
+  toggleImageGenerateModal: () =>
+    set((s) => ({ imageGenerateModalOpen: !s.imageGenerateModalOpen })),
+  closeImageGenerateModal: () =>
+    set({ imageGenerateModalOpen: false }),
   closeAllModals: () =>
-    set({ shortcutsModalOpen: false, saveModalOpen: false, aiModalOpen: false, commandPaletteOpen: false, helpModalOpen: false, exportImageModalOpen: false, findBarOpen: false, canvasPropertiesOpen: false }),
+    set({ shortcutsModalOpen: false, saveModalOpen: false, aiModalOpen: false, commandPaletteOpen: false, helpModalOpen: false, exportImageModalOpen: false, findBarOpen: false, canvasPropertiesOpen: false, imageGenerateModalOpen: false }),
 
   // --- Menu ---
   menuOpen: false,
