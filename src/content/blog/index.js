@@ -37,6 +37,14 @@ export const blogPosts = [
     date: '2026-03-10',
     tags: ['design', 'rendering'],
   },
+  {
+    slug: 'image-pipeline',
+    title: 'The Image Pipeline: From Pixels to Canvas to Cloud',
+    description: 'How LixSketch handles images from file uploads, AI generation, clipboard pastes, and frame backgrounds — compress, place, upload, replace.',
+    icon: 'bx bx-image-alt',
+    date: '2026-03-14',
+    tags: ['images', 'architecture', 'cloudinary'],
+  },
 ]
 
 export function getBlogPost(slug) {
