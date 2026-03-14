@@ -185,6 +185,16 @@ export default function AIModal() {
   const [lixErrors, setLixErrors] = useState([])
   const lixDebounceRef = useRef(null)
 
+<<<<<<< HEAD
+  // Research paper mode state
+  const [researchPrompt, setResearchPrompt] = useState('')
+  const [researchLixCode, setResearchLixCode] = useState('')
+  const [researchPreviewSVG, setResearchPreviewSVG] = useState('')
+  const [researchErrors, setResearchErrors] = useState([])
+  const researchDebounceRef = useRef(null)
+
+=======
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   const editInputRef = useRef(null)
 
   // Auto-dismiss success toast
@@ -289,6 +299,33 @@ export default function AIModal() {
     return () => { if (mermaidDebounceRef.current) clearTimeout(mermaidDebounceRef.current) }
   }, [mermaidCode, mode])
 
+<<<<<<< HEAD
+  // Live research paper LixScript preview (debounced)
+  useEffect(() => {
+    if (mode !== 'research') return
+    if (!researchLixCode.trim()) {
+      setResearchPreviewSVG('')
+      setResearchErrors([])
+      return
+    }
+    if (researchDebounceRef.current) clearTimeout(researchDebounceRef.current)
+    researchDebounceRef.current = setTimeout(() => {
+      if (window.__lixscriptParse && window.__lixscriptPreview) {
+        const parsed = window.__lixscriptParse(researchLixCode)
+        setResearchErrors(parsed.errors || [])
+        if (parsed.errors.length === 0) {
+          const svg = window.__lixscriptPreview(researchLixCode)
+          setResearchPreviewSVG(svg || '')
+        } else {
+          setResearchPreviewSVG('')
+        }
+      }
+    }, 300)
+    return () => { if (researchDebounceRef.current) clearTimeout(researchDebounceRef.current) }
+  }, [researchLixCode, mode])
+
+=======
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   // Live LixScript preview (debounced)
   useEffect(() => {
     if (mode !== 'code') return
@@ -330,6 +367,13 @@ export default function AIModal() {
     setLixCode('')
     setLixPreviewSVG('')
     setLixErrors([])
+<<<<<<< HEAD
+    setResearchPrompt('')
+    setResearchLixCode('')
+    setResearchPreviewSVG('')
+    setResearchErrors([])
+=======
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   }, [])
 
   const resetGraph = useCallback(() => {
@@ -472,6 +516,110 @@ export default function AIModal() {
     setIsGenerating(false)
     abortRef.current = null
   }, [prompt, mode, chatHistory, lixCode, aiQuota])
+<<<<<<< HEAD
+
+  // --- Research paper generation ---
+  const handleResearchGenerate = useCallback(async () => {
+    if (!researchPrompt.trim()) return
+
+    if (aiQuota.remaining !== Infinity && aiQuota.remaining <= 0) {
+      setToast({ status: 'error', message: `Daily AI limit reached (${aiQuota.used}/${aiQuota.limit}). Upgrade for more.` })
+      return
+    }
+
+    setIsGenerating(true)
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    try {
+      const messages = [...chatHistory, { role: 'user', content: researchPrompt.trim() }]
+      const res = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: researchPrompt.trim(),
+          mode: 'research-lixscript',
+          history: chatHistory.length > 0 ? chatHistory : undefined,
+          previousLixCode: researchLixCode || undefined,
+        }),
+        signal: controller.signal,
+      })
+      let data
+      try { data = await res.json() } catch {
+        setToast({ status: 'error', message: 'Invalid server response' })
+        setIsGenerating(false)
+        abortRef.current = null
+        return
+      }
+      if (!res.ok || data.error) {
+        if (data.quotaExceeded) {
+          setToast({ status: 'error', message: `Daily AI limit reached (${data.used}/${data.limit}). Upgrade for more.` })
+        } else {
+          setToast({ status: 'error', message: data.error || `Failed (${res.status})` })
+        }
+        setIsGenerating(false)
+        abortRef.current = null
+        return
+      }
+
+      // Record usage
+      const authState = useAuthStore.getState()
+      const usageBody = { mode: 'research-lixscript' }
+      if (authState.isAuthenticated && authState.user?.id) {
+        usageBody.userId = authState.user.id
+      } else {
+        usageBody.guestId = localStorage.getItem('lixsketch-guest-session') || 'anonymous'
+      }
+      fetch(`${WORKER_URL}/api/ai/usage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(usageBody),
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.used !== undefined) {
+            setAiQuota({
+              used: d.used,
+              limit: d.limit === 'unlimited' ? Infinity : d.limit,
+              remaining: d.remaining === 'unlimited' ? Infinity : d.remaining,
+            })
+          }
+        })
+        .catch(() => {})
+
+      if (data.lixscript) {
+        setResearchLixCode(data.lixscript)
+        setChatHistory([...messages, { role: 'assistant', content: data.lixscript }])
+      } else {
+        setToast({ status: 'error', message: 'Empty response. Try rephrasing.' })
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        setToast({ status: null, message: '' })
+      } else {
+        setToast({ status: 'error', message: 'Connection failed.' })
+      }
+    }
+    setIsGenerating(false)
+    abortRef.current = null
+  }, [researchPrompt, chatHistory, researchLixCode, aiQuota])
+
+  // --- Place research paper LixScript ---
+  const handlePlaceResearch = useCallback(() => {
+    if (!researchLixCode.trim() || researchErrors.length > 0) return
+    handleClose()
+    if (window.__lixscriptExecute) {
+      const result = window.__lixscriptExecute(researchLixCode)
+      if (!result.success) {
+        setToast({ status: 'error', message: result.errors?.[0]?.message || 'Failed to execute LixScript' })
+        return
+      }
+    }
+    setToast({ status: 'success', message: '' })
+    resetPreview()
+  }, [researchLixCode, researchErrors, handleClose, resetPreview])
+=======
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
 
   // --- Diagram editing ---
   const handleEdit = useCallback(async (directText) => {
@@ -651,6 +799,10 @@ export default function AIModal() {
       if (mode === 'graph') handlePlaceGraph()
       else if (mode === 'mermaid') handlePlaceMermaid()
       else if (mode === 'code') handlePlaceLixScript()
+<<<<<<< HEAD
+      else if (mode === 'research') handlePlaceResearch()
+=======
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
       else if (previewDiagram) handlePlace()
     }
   }
@@ -662,6 +814,10 @@ export default function AIModal() {
   const isFrameEdit = !!editingFrame
   const isGraphMode = mode === 'graph'
   const isCodeMode = mode === 'code'
+<<<<<<< HEAD
+  const isResearchMode = mode === 'research'
+=======
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   const hasValidEquations = equations.some(eq => eq.expression && eq.expression.trim())
 
   return (
@@ -707,9 +863,22 @@ export default function AIModal() {
                     </>
                   ) : (
                     <h2 className="text-text-primary text-lg font-medium flex items-center gap-2.5">
+<<<<<<< HEAD
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGraphMode ? 'text-[#4A90D9]' : isResearchMode ? 'text-[#9B59B6]' : isCodeMode ? 'text-[#F39C12]' : mode === 'mermaid' ? 'text-[#2ECC71]' : 'text-accent'}>
+                        {isGraphMode ? (
+                          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        ) : isResearchMode ? (
+                          <>
+                            <rect x="2" y="3" width="20" height="14" rx="2" />
+                            <line x1="8" y1="21" x2="16" y2="21" />
+                            <line x1="12" y1="17" x2="12" y2="21" />
+                            <path d="M6 8h4M6 11h3M14 8h4M14 11h4" strokeWidth="1.5" />
+                          </>
+=======
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGraphMode ? 'text-[#4A90D9]' : isCodeMode ? 'text-[#F39C12]' : mode === 'mermaid' ? 'text-[#2ECC71]' : 'text-accent'}>
                         {isGraphMode ? (
                           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
                         ) : isCodeMode ? (
                           <>
                             <polyline points="16 18 22 12 16 6" />
@@ -730,7 +899,11 @@ export default function AIModal() {
                           </>
                         )}
                       </svg>
+<<<<<<< HEAD
+                      {isGraphMode ? 'Graph Editor' : isResearchMode ? 'Research Paper Illustrator' : isCodeMode ? 'LixScript Editor' : mode === 'mermaid' ? 'Mermaid Editor' : 'AI Diagram Generator'}
+=======
                       {isGraphMode ? 'Graph Editor' : isCodeMode ? 'LixScript Editor' : mode === 'mermaid' ? 'Mermaid Editor' : 'AI Diagram Generator'}
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
                     </h2>
                   )}
                 </div>
@@ -746,6 +919,10 @@ export default function AIModal() {
               <div className="flex gap-1 mb-4 bg-surface-dark rounded-xl p-1">
                 {[
                   { value: 'code', label: 'LixScript', beta: true },
+<<<<<<< HEAD
+                  { value: 'research', label: 'Research Paper', beta: true },
+=======
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
                   { value: 'mermaid', label: 'Mermaid' },
                   { value: 'graph', label: 'Graph' },
                 ].map((t) => (
@@ -760,8 +937,172 @@ export default function AIModal() {
               </div>
             )}
 
-            {/* ============ MERMAID MODE (side-by-side) ============ */}
-            {mode === 'mermaid' && !previewDiagram && !isFrameEdit ? (
+            {/* ============ RESEARCH PAPER MODE ============ */}
+            {isResearchMode && !previewDiagram && !isFrameEdit ? (
+              <div className="flex gap-4 h-[calc(100%-100px)]">
+                {/* Left panel - AI prompt + Code editor */}
+                <div className="w-[45%] min-w-[280px] flex flex-col overflow-y-auto no-scrollbar">
+                  {/* AI Prompt Input */}
+                  <div className="mb-3">
+                    <p className="text-text-muted text-xs uppercase tracking-wider mb-2">
+                      <i className="bx bx-bot mr-1" />Describe Architecture
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={researchPrompt}
+                        onChange={(e) => setResearchPrompt(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            handleResearchGenerate()
+                          }
+                        }}
+                        placeholder='e.g. "Full UNet architecture" or "Transformer encoder-decoder"'
+                        className="flex-1 bg-surface-dark border border-border rounded-xl px-4 py-2.5 text-text-primary text-sm focus:outline-none focus:border-[#9B59B6] placeholder:text-text-dim"
+                        disabled={isGenerating}
+                      />
+                      {isGenerating ? (
+                        <button
+                          onClick={() => { abortRef.current?.abort(); setIsGenerating(false) }}
+                          className="px-4 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center gap-2 bg-red-500/80 text-white hover:bg-red-500"
+                        >
+                          <i className="bx bx-stop text-base" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleResearchGenerate}
+                          disabled={!researchPrompt.trim()}
+                          className={`px-4 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center gap-2 ${
+                            !researchPrompt.trim() ? 'bg-surface-hover text-text-dim cursor-not-allowed' : 'bg-[#9B59B6] text-white hover:bg-[#9B59B6]/80'
+                          }`}
+                        >
+                          <i className="bx bx-send text-base" />
+                        </button>
+                      )}
+                    </div>
+                    {aiQuota.limit !== Infinity && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <div className="flex-1 h-1 rounded-full bg-surface-hover overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{
+                              width: `${Math.min(100, (aiQuota.used / aiQuota.limit) * 100)}%`,
+                              backgroundColor: aiQuota.remaining <= 2 ? '#EF4444' : '#9B59B6',
+                            }}
+                          />
+                        </div>
+                        <span className={`text-[10px] ${aiQuota.remaining <= 2 ? 'text-red-400' : 'text-text-dim'}`}>
+                          {aiQuota.remaining}/{aiQuota.limit}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick architecture presets */}
+                  <div className="mb-3 pb-3 border-b border-white/[0.06]">
+                    <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Architecture Templates</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: 'UNet', prompt: 'Full UNet architecture with encoder path (4 downsampling blocks with Conv+BN+ReLU), bottleneck, decoder path (4 upsampling blocks), and skip connections between encoder and decoder at each level. Show channel dimensions 64→128→256→512→1024→512→256→128→64' },
+                        { label: 'Transformer', prompt: 'Full Transformer architecture with encoder stack (Multi-Head Attention, Add & Norm, Feed-Forward, Add & Norm) and decoder stack (Masked MHA, Add & Norm, Cross-Attention, Add & Norm, FFN, Add & Norm). Show input embeddings, positional encoding, and output linear + softmax' },
+                        { label: 'ResNet Block', prompt: 'ResNet residual block architecture showing Conv→BN→ReLU→Conv→BN with skip connection bypass, followed by addition and ReLU. Show 3 stacked residual blocks with downsampling' },
+                        { label: 'GPT', prompt: 'GPT architecture with token embedding, positional embedding, N stacked transformer decoder blocks (Masked Self-Attention → Add & Norm → FFN → Add & Norm with residual connections), final Layer Norm → Linear → Softmax' },
+                        { label: 'VAE', prompt: 'Variational Autoencoder with encoder network producing mu and sigma parameters, reparameterization trick sampling from latent space, decoder network reconstructing input, and KL divergence + reconstruction loss' },
+                        { label: 'GAN', prompt: 'Generative Adversarial Network with Generator (noise input → upsampling blocks → generated image) and Discriminator (image input → downsampling blocks → real/fake classification), showing adversarial training loop' },
+                        { label: 'Diffusion', prompt: 'Diffusion model (DDPM) showing forward process (gradual noise addition to image), reverse process (UNet denoiser predicting noise at each step), and conditioning input for guided generation' },
+                        { label: 'CNN Pipeline', prompt: 'Standard CNN classification pipeline: Input Image → Conv+ReLU → MaxPool → Conv+ReLU → MaxPool → Conv+ReLU → Global Average Pool → Dense → Dropout → Softmax Output. Show feature map dimensions at each stage' },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          onClick={() => { setResearchPrompt(preset.prompt); }}
+                          className="px-2.5 py-1 rounded-lg text-[10px] text-[#9B59B6]/70 border border-[#9B59B6]/20 hover:border-[#9B59B6]/40 hover:text-[#9B59B6] transition-all"
+                        >{preset.label}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-text-muted text-xs uppercase tracking-wider">Generated LixScript</p>
+                    <span className="text-[#9B59B6]/50 text-[9px] uppercase tracking-wider">Research Paper Mode</span>
+                  </div>
+                  <textarea
+                    value={researchLixCode}
+                    onChange={(e) => setResearchLixCode(e.target.value)}
+                    placeholder={'// Use AI above to generate research paper diagrams\n// Or write LixScript manually with shading:\n\nrect conv1 at 200, 60 size 220x50 {\n  stroke: #4A90D9\n  fill: #4A90D9\n  fillStyle: solid\n  roughness: 0\n  label: "Conv2D 64"\n  labelColor: #ffffff\n  shadeColor: #4A90D9\n  shadeOpacity: 0.25\n}'}
+                    className="flex-1 min-h-[200px] bg-surface-dark border border-border rounded-xl px-4 py-3 text-text-primary text-sm leading-relaxed resize-none focus:outline-none focus:border-[#9B59B6] placeholder:text-text-dim font-mono"
+                    spellCheck={false}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Tab') {
+                        e.preventDefault()
+                        const start = e.target.selectionStart
+                        const end = e.target.selectionEnd
+                        const val = e.target.value
+                        setResearchLixCode(val.substring(0, start) + '  ' + val.substring(end))
+                        setTimeout(() => { e.target.selectionStart = e.target.selectionEnd = start + 2 }, 0)
+                        return
+                      }
+                      handleKeyDown(e)
+                    }}
+                  />
+
+                  {/* Place button - sticky at bottom */}
+                  <div className="sticky bottom-0 pt-3 pb-1 mt-3 bg-surface-card border-t border-white/[0.06]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-dim text-xs">Ctrl + Enter to place</span>
+                      <button
+                        onClick={handlePlaceResearch}
+                        disabled={!researchPreviewSVG || researchErrors.length > 0}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                          !researchPreviewSVG || researchErrors.length > 0 ? 'bg-surface-hover text-text-dim cursor-not-allowed' : 'bg-[#9B59B6] text-white hover:bg-[#9B59B6]/80'
+                        }`}
+                      >
+                        <i className="bx bx-check text-base" />
+                        Place on Canvas
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right panel - Live preview */}
+                <div className="flex-1 flex flex-col min-w-0">
+                  <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Preview</p>
+                  {researchErrors.length > 0 ? (
+                    <div className="flex-1 flex flex-col rounded-xl bg-[#111] border border-white/[0.06] p-4 overflow-y-auto">
+                      <div className="flex items-center gap-2 mb-3">
+                        <i className="bx bx-error-circle text-red-400 text-lg" />
+                        <span className="text-red-400 text-sm font-medium">{researchErrors.length} error{researchErrors.length > 1 ? 's' : ''}</span>
+                      </div>
+                      {researchErrors.map((err, i) => (
+                        <p key={i} className="text-red-400/80 text-[11px] font-mono mb-1">
+                          <span className="text-red-400/50">line {err.line}:</span> {err.message}
+                        </p>
+                      ))}
+                    </div>
+                  ) : researchPreviewSVG ? (
+                    <DiagramPreview svgMarkup={researchPreviewSVG} className="flex-1 min-h-[300px]" />
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center rounded-xl bg-[#111] border border-white/[0.06]">
+                      <div className="text-center px-6">
+                        <div className="mb-4">
+                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9B59B6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto opacity-30">
+                            <rect x="2" y="3" width="20" height="14" rx="2" />
+                            <line x1="8" y1="21" x2="16" y2="21" />
+                            <line x1="12" y1="17" x2="12" y2="21" />
+                          </svg>
+                        </div>
+                        <p className="text-text-dim text-sm mb-1">Research Paper Illustrations</p>
+                        <p className="text-text-dim/50 text-[10px]">Generate publication-ready architecture diagrams</p>
+                        <p className="text-text-dim/40 text-[10px] mt-1">UNet, Transformer, ResNet, GPT, VAE, GAN, and custom architectures</p>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-text-dim text-[10px] mt-1">Scroll to zoom, drag to pan</p>
+                </div>
+              </div>
+
+            ) : /* ============ MERMAID MODE (side-by-side) ============ */
+            mode === 'mermaid' && !previewDiagram && !isFrameEdit ? (
               <div className="flex gap-4 h-[calc(100%-100px)]">
                 {/* Left panel - Code editor */}
                 <div className="w-[45%] min-w-[280px] flex flex-col">

@@ -346,6 +346,13 @@ export function renderAIDiagram(diagram) {
             fillStyle: node.fillStyle || 'none',
             roughness: node.roughness ?? 1,
             strokeDasharray: node.strokeDasharray || '',
+            // Shading support
+            shadeColor: node.shadeColor || null,
+            shadeOpacity: node.shadeOpacity !== undefined ? node.shadeOpacity : 0.15,
+            shadeDirection: node.shadeDirection || 'bottom',
+            // Label styling
+            labelColor: node.labelColor || undefined,
+            labelFontSize: node.labelFontSize || undefined,
         };
 
         try {
@@ -389,21 +396,22 @@ export function renderAIDiagram(diagram) {
 
         // Node label — use embedded label for rect/circle, separate TextShape for icons
         if (node.label) {
-            let labelColor = node.stroke || '#e0e0e0';
+            let labelColor = node.labelColor || node.stroke || '#e0e0e0';
             if (isColorTooDark(labelColor)) {
                 labelColor = '#e0e0e0';
             }
+            const labelFontSize = node.labelFontSize || 14;
 
             if (node.type === 'icon') {
                 // Icons: place label below the icon as a separate TextShape
                 const labelY = cy + nh / 2 + 18;
-                createLabel(node.label, cx, labelY, 14, labelColor, frame);
+                createLabel(node.label, cx, labelY, labelFontSize, labelColor, frame);
             } else if (shape && typeof shape.setLabel === 'function') {
                 // Rectangles, circles, diamonds: use embedded label
-                shape.setLabel(node.label, labelColor, 14);
+                shape.setLabel(node.label, labelColor, labelFontSize);
             } else {
                 // Fallback: separate TextShape
-                createLabel(node.label, cx, cy, 14, labelColor, frame);
+                createLabel(node.label, cx, cy, labelFontSize, labelColor, frame);
             }
         }
     }

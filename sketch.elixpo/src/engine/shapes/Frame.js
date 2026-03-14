@@ -149,6 +149,11 @@ class Frame {
         // Add label
         this.addFrameLabel();
 
+        // Re-attach frame image if present
+        if (this._frameImageURL) {
+            this.setImageFromURL(this._frameImageURL, this._frameImageFit || 'cover');
+        }
+
         // Add selection anchors if selected
         if (this.isSelected) {
             this.addAnchors();
@@ -1375,6 +1380,77 @@ restoreToFrame(shape) {
         }
         if (currentShape === this) {
             currentShape = null;
+        }
+    }
+
+    /**
+     * Set a background image for this frame from a URL.
+     * The image will fit/cover the frame dimensions.
+     * @param {string} url - Image URL
+     * @param {string} fit - 'cover' (default) | 'contain' | 'fill'
+     */
+    setImageFromURL(url, fit = 'cover') {
+        if (!url) {
+            // Remove existing frame image
+            if (this._frameImage && this._frameImage.parentNode) {
+                this._frameImage.parentNode.removeChild(this._frameImage);
+                this._frameImage = null;
+            }
+            this._frameImageURL = null;
+            return;
+        }
+
+        this._frameImageURL = url;
+        this._frameImageFit = fit;
+
+        if (!this._frameImage) {
+            this._frameImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+            this._frameImage.setAttribute('pointer-events', 'none');
+            this._frameImage.setAttribute('preserveAspectRatio',
+                fit === 'cover' ? 'xMidYMid slice' :
+                fit === 'contain' ? 'xMidYMid meet' : 'none'
+            );
+        }
+
+        this._frameImage.setAttribute('href', url);
+        this._frameImage.setAttribute('x', this.x);
+        this._frameImage.setAttribute('y', this.y);
+        this._frameImage.setAttribute('width', this.width);
+        this._frameImage.setAttribute('height', this.height);
+
+        if (this.rotation !== 0) {
+            const centerX = this.x + this.width / 2;
+            const centerY = this.y + this.height / 2;
+            this._frameImage.setAttribute('transform', `rotate(${this.rotation}, ${centerX}, ${centerY})`);
+        }
+
+        // Insert image right after the frame rect (below contained shapes)
+        if (this._frameImage.parentNode === this.group) {
+            this.group.removeChild(this._frameImage);
+        }
+        if (this.element && this.element.nextSibling) {
+            this.group.insertBefore(this._frameImage, this.element.nextSibling);
+        } else {
+            this.group.appendChild(this._frameImage);
+        }
+    }
+
+    /**
+     * Update frame image position/size (called during move/resize)
+     */
+    _updateFrameImage() {
+        if (!this._frameImage) return;
+        this._frameImage.setAttribute('x', this.x);
+        this._frameImage.setAttribute('y', this.y);
+        this._frameImage.setAttribute('width', this.width);
+        this._frameImage.setAttribute('height', this.height);
+
+        if (this.rotation !== 0) {
+            const centerX = this.x + this.width / 2;
+            const centerY = this.y + this.height / 2;
+            this._frameImage.setAttribute('transform', `rotate(${this.rotation}, ${centerX}, ${centerY})`);
+        } else {
+            this._frameImage.removeAttribute('transform');
         }
     }
 }
