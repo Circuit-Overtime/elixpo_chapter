@@ -60,7 +60,7 @@ secrets() {
 # Build Next.js for Cloudflare Pages
 build() {
   echo "==> Building for Cloudflare Pages..."
-  sudo npm version patch
+  sudo npm version patch --no-git-tag-version
   sudo npx @cloudflare/next-on-pages
 
   echo "==> Build complete (.vercel/output/static)"
