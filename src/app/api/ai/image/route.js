@@ -1,6 +1,7 @@
 export const runtime = 'edge'
 
 import { NextResponse } from 'next/server'
+import { getCloudflareBindings } from '@/lib/cloudflare'
 
 const POLLINATIONS_GEN_URL = 'https://gen.pollinations.ai/v1/images/generations'
 const POLLINATIONS_EDIT_URL = 'https://gen.pollinations.ai/v1/images/edits'
@@ -24,9 +25,8 @@ const IMAGE_EDIT_LIMITS = {
  */
 function tryGetDB() {
   try {
-    const { getRequestContext } = require('@cloudflare/next-on-pages')
-    const { env } = getRequestContext()
-    return env?.DB || null
+    const { DB } = getCloudflareBindings()
+    return DB || null
   } catch {
     return null
   }
