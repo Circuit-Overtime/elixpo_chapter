@@ -72,7 +72,7 @@ const handleMouseDown = (e) => {
                 currentShape.selectFrame();
 
                 // Check for anchor interaction
-                const anchorIndex = currentShape.isNearAnchor(x, y);
+                const anchorIndex = typeof currentShape.isNearAnchor === 'function' ? currentShape.isNearAnchor(x, y) : null;
                 if (anchorIndex !== null) {
                     activeAnchor = anchorIndex;
                     isResizing = true;
