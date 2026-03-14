@@ -1,9 +1,9 @@
 export const runtime = 'edge'
 
 import { NextResponse } from 'next/server'
-import { getCloudflareBindings } from '@/lib/cloudflare'
 
-const POLLINATIONS_IMAGE_URL = 'https://image.pollinations.ai/'
+const POLLINATIONS_GEN_URL = 'https://gen.pollinations.ai/v1/images/generations'
+const POLLINATIONS_EDIT_URL = 'https://gen.pollinations.ai/v1/images/edits'
 
 const IMAGE_GEN_LIMITS = {
   guest: 5,
@@ -20,26 +20,23 @@ const IMAGE_EDIT_LIMITS = {
 }
 
 /**
- * POST /api/ai/image
- * Generate an image or edit an existing image via Pollinations API.
- *
- * Body:
- *   prompt: string (required)
- *   model: 'zimage' | 'flux' | 'gptimage' | 'nanobanana' (default 'zimage')
- *   width: number (default 768, max 768)
- *   height: number (default 768, max 768)
- *   enhance: boolean (default true)
- *   negative_prompt: string (optional)
- *   seed: number (optional, -1 for random)
- *   referenceImage: string (optional, URL for editing)
- *   userId: string (optional)
- *   guestId: string (optional)
+ * Try to get Cloudflare D1 bindings. Returns null if unavailable (local dev).
  */
+function tryGetDB() {
+  try {
+    const { getRequestContext } = require('@cloudflare/next-on-pages')
+    const { env } = getRequestContext()
+    return env?.DB || null
+  } catch {
+    return null
+  }
+}
+
 export async function POST(request) {
   try {
     const body = await request.json()
     const {
-      prompt, model = 'zimage', width = 768, height = 768,
+      prompt, model = 'flux', width = 768, height = 768,
       enhance = true, negative_prompt, seed,
       referenceImage, userId, guestId,
     } = body
@@ -53,97 +50,164 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Image API not configured' }, { status: 500 })
     }
 
-    // --- Quota check ---
-    const { DB } = getCloudflareBindings()
+    // --- Quota check (skip if DB unavailable in local dev) ---
+    const DB = tryGetDB()
     const isEdit = !!referenceImage
     const quotaMode = isEdit ? 'image-edit' : 'image-gen'
-
+    let used = 0
     let tier = 'guest'
-    if (userId) {
-      const user = await DB.prepare(`SELECT tier FROM users WHERE id = ?`).bind(userId).first()
-      tier = user?.tier || 'free'
+    let limit = (isEdit ? IMAGE_EDIT_LIMITS : IMAGE_GEN_LIMITS).guest
+
+    if (DB) {
+      if (userId) {
+        const user = await DB.prepare(`SELECT tier FROM users WHERE id = ?`).bind(userId).first()
+        tier = user?.tier || 'free'
+      }
+
+      const limits = isEdit ? IMAGE_EDIT_LIMITS : IMAGE_GEN_LIMITS
+      limit = limits[tier] ?? 10
+      const col = userId ? 'user_id' : 'guest_id'
+      const identifier = userId || guestId
+
+      if (identifier) {
+        const result = await DB.prepare(
+          `SELECT COUNT(*) as count FROM ai_usage
+           WHERE ${col} = ? AND mode = ? AND used_at >= date('now')`
+        ).bind(identifier, quotaMode).first()
+        used = result?.count || 0
+
+        if (limit !== -1 && used >= limit) {
+          return NextResponse.json({
+            error: `Daily ${isEdit ? 'image edit' : 'image generation'} limit reached (${used}/${limit})`,
+            quotaExceeded: true, used, limit,
+          }, { status: 429 })
+        }
+      }
     }
 
-    const limits = isEdit ? IMAGE_EDIT_LIMITS : IMAGE_GEN_LIMITS
-    const limit = limits[tier] ?? 10
-    const col = userId ? 'user_id' : 'guest_id'
-    const identifier = userId || guestId
+    // --- Clamp dimensions ---
+    const clampedW = Math.min(Math.max(width, 256), 1024)
+    const clampedH = Math.min(Math.max(height, 256), 1024)
+    const size = `${clampedW}x${clampedH}`
 
-    if (!identifier) {
-      return NextResponse.json({ error: 'Missing userId or guestId' }, { status: 400 })
+    let dataUrl, contentType
+
+    if (isEdit) {
+      // --- Image Edit via /v1/images/edits ---
+      console.log('[AI Image] Editing:', { model: 'nanobanana', prompt: prompt.slice(0, 80), size })
+
+      const editBody = {
+        prompt: prompt.trim(),
+        model: model || 'nanobanana',
+        size,
+        image: referenceImage,
+      }
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 120000)
+
+      const res = await fetch(POLLINATIONS_EDIT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(editBody),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeout)
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '')
+        console.error('[AI Image] Edit failed:', res.status, errText)
+        return NextResponse.json(
+          { error: 'Image edit failed. Try a different prompt.' },
+          { status: 502 }
+        )
+      }
+
+      const data = await res.json()
+      if (data.data?.[0]?.b64_json) {
+        contentType = 'image/png'
+        dataUrl = `data:${contentType};base64,${data.data[0].b64_json}`
+      } else if (data.data?.[0]?.url) {
+        // If URL returned, fetch and convert to base64
+        const imgRes = await fetch(data.data[0].url)
+        const imgBuf = await imgRes.arrayBuffer()
+        const base64 = btoa(new Uint8Array(imgBuf).reduce((d, b) => d + String.fromCharCode(b), ''))
+        contentType = imgRes.headers.get('content-type') || 'image/png'
+        dataUrl = `data:${contentType};base64,${base64}`
+      } else {
+        return NextResponse.json({ error: 'Unexpected response from image API' }, { status: 502 })
+      }
+    } else {
+      // --- Image Generation via /v1/images/generations ---
+      console.log('[AI Image] Generating:', { model, prompt: prompt.slice(0, 80), size })
+
+      const genBody = {
+        prompt: prompt.trim(),
+        model,
+        n: 1,
+        size,
+        response_format: 'b64_json',
+      }
+      if (negative_prompt) genBody.negative_prompt = negative_prompt
+      if (seed !== undefined && seed !== -1) genBody.seed = seed
+      if (enhance !== undefined) genBody.enhance = enhance
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 120000)
+
+      const res = await fetch(POLLINATIONS_GEN_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(genBody),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeout)
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '')
+        console.error('[AI Image] Generation failed:', res.status, errText)
+        return NextResponse.json(
+          { error: 'Image generation failed. Try a different prompt or model.' },
+          { status: 502 }
+        )
+      }
+
+      const data = await res.json()
+      if (data.data?.[0]?.b64_json) {
+        contentType = 'image/png'
+        dataUrl = `data:${contentType};base64,${data.data[0].b64_json}`
+      } else if (data.data?.[0]?.url) {
+        const imgRes = await fetch(data.data[0].url)
+        const imgBuf = await imgRes.arrayBuffer()
+        const base64 = btoa(new Uint8Array(imgBuf).reduce((d, b) => d + String.fromCharCode(b), ''))
+        contentType = imgRes.headers.get('content-type') || 'image/png'
+        dataUrl = `data:${contentType};base64,${base64}`
+      } else {
+        return NextResponse.json({ error: 'Unexpected response from image API' }, { status: 502 })
+      }
     }
 
-    const result = await DB.prepare(
-      `SELECT COUNT(*) as count FROM ai_usage
-       WHERE ${col} = ? AND mode = ? AND used_at >= date('now')`
-    ).bind(identifier, quotaMode).first()
-
-    const used = result?.count || 0
-    if (limit !== -1 && used >= limit) {
-      return NextResponse.json({
-        error: `Daily ${isEdit ? 'image edit' : 'image generation'} limit reached (${used}/${limit})`,
-        quotaExceeded: true, used, limit,
-      }, { status: 429 })
+    // --- Record usage (skip if no DB) ---
+    if (DB) {
+      try {
+        const id = crypto.randomUUID()
+        await DB.prepare(
+          `INSERT INTO ai_usage (id, user_id, guest_id, mode) VALUES (?, ?, ?, ?)`
+        ).bind(id, userId || null, guestId || null, quotaMode).run()
+      } catch (e) {
+        console.warn('[AI Image] Failed to record usage:', e.message)
+      }
     }
 
-    // --- Build Pollinations URL ---
-    const clampedW = Math.min(Math.max(width, 256), 768)
-    const clampedH = Math.min(Math.max(height, 256), 768)
-
-    const params = new URLSearchParams({
-      model,
-      width: String(clampedW),
-      height: String(clampedH),
-      enhance: String(enhance),
-      safe: 'true',
-      seed: String(seed ?? -1),
-      nologo: 'true',
-      nofeed: 'true',
-    })
-
-    if (negative_prompt) params.set('negative_prompt', negative_prompt)
-    if (referenceImage) params.set('image', referenceImage)
-
-    const encodedPrompt = encodeURIComponent(prompt.trim())
-    const imageUrl = `${POLLINATIONS_IMAGE_URL}${encodedPrompt}?${params.toString()}`
-
-    console.log('[AI Image] Generating:', { model, prompt: prompt.slice(0, 80), width: clampedW, height: clampedH, isEdit })
-
-    // Fetch the image
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 120000) // 2 min timeout for image gen
-
-    const imgResponse = await fetch(imageUrl, {
-      headers: { 'Authorization': `Bearer ${apiKey}` },
-      signal: controller.signal,
-    })
-
-    clearTimeout(timeout)
-
-    if (!imgResponse.ok) {
-      const errText = await imgResponse.text().catch(() => '')
-      console.error('[AI Image] Generation failed:', imgResponse.status, errText)
-      return NextResponse.json(
-        { error: 'Image generation failed. Try a different prompt or model.' },
-        { status: 502 }
-      )
-    }
-
-    // Convert to base64 data URL
-    const imageBuffer = await imgResponse.arrayBuffer()
-    const base64 = btoa(
-      new Uint8Array(imageBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-    )
-    const contentType = imgResponse.headers.get('content-type') || 'image/jpeg'
-    const dataUrl = `data:${contentType};base64,${base64}`
-
-    // --- Record usage ---
-    const id = crypto.randomUUID()
-    await DB.prepare(
-      `INSERT INTO ai_usage (id, user_id, guest_id, mode) VALUES (?, ?, ?, ?)`
-    ).bind(id, userId || null, guestId || null, quotaMode).run()
-
-    console.log('[AI Image] Success, size:', imageBuffer.byteLength, 'bytes')
+    console.log('[AI Image] Success')
 
     return NextResponse.json({
       imageUrl: dataUrl,
@@ -170,7 +234,7 @@ export async function POST(request) {
  */
 export async function GET(request) {
   try {
-    const { DB } = getCloudflareBindings()
+    const DB = tryGetDB()
     const url = new URL(request.url)
     const userId = url.searchParams.get('userId')
     const guestId = url.searchParams.get('guestId')
@@ -178,6 +242,17 @@ export async function GET(request) {
 
     if (!userId && !guestId) {
       return NextResponse.json({ error: 'Missing userId or guestId' }, { status: 400 })
+    }
+
+    // If no DB, return unlimited (local dev)
+    if (!DB) {
+      return NextResponse.json({
+        used: 0,
+        limit: 'unlimited',
+        remaining: 'unlimited',
+        tier: 'free',
+        type: type === 'edit' ? 'image-edit' : 'image-gen',
+      })
     }
 
     let tier = 'guest'
