@@ -1,6 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
+import { useEffect } from 'react'
 import Script from 'next/script'
 import Header from '@/components/header/Header'
 import Toolbar from '@/components/toolbar/Toolbar'
@@ -12,6 +13,7 @@ import AIModal from '@/components/modals/AIModal'
 import CommandPalette from '@/components/modals/CommandPalette'
 import HelpModal from '@/components/modals/HelpModal'
 import ExportImageModal from '@/components/modals/ExportImageModal'
+import CanvasPropertiesModal from '@/components/modals/CanvasPropertiesModal'
 import RectangleSidebar from '@/components/sidebars/RectangleSidebar'
 import CircleSidebar from '@/components/sidebars/CircleSidebar'
 import LineSidebar from '@/components/sidebars/LineSidebar'
@@ -29,9 +31,16 @@ import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
 import useGuestProfile from '@/hooks/useGuestProfile'
 import useAuth from '@/hooks/useAuth'
 import useCollaboration from '@/hooks/useCollaboration'
+import ContextMenu from '@/components/canvas/ContextMenu'
+import FindBar from '@/components/canvas/FindBar'
 
 export default function RoomPage() {
   const { roomId } = useParams()
+
+  useEffect(() => {
+    document.body.classList.add('canvas-mode')
+    return () => document.body.classList.remove('canvas-mode')
+  }, [])
 
   useAuth()
   useKeyboardShortcuts()
@@ -67,8 +76,20 @@ export default function RoomPage() {
       <CommandPalette />
       <HelpModal />
       <ExportImageModal />
-      <ImageGenerateModal />
+      <CanvasPropertiesModal />
       <ImageSourcePicker />
+      <ImageGenerateModal />
+      <ContextMenu />
+      <FindBar />
+
+      {/* Quick-save toast */}
+      <div
+        id="save-toast"
+        className="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-9999 px-4 py-2 rounded-xl bg-surface/80 backdrop-blur-md border border-border-light text-text-secondary text-xs font-[lixFont] pointer-events-none animate-fade-in"
+      >
+        <i className="bx bx-check text-green-400 mr-1.5" />
+        Saved
+      </div>
     </div>
   )
 }

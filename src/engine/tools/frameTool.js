@@ -45,15 +45,32 @@ const handleMouseDown = (e) => {
         shapes.push(currentFrame);
         currentShape = currentFrame;
     } else if (isSelectionToolActive) {
-        // Handle frame selection
+        // Handle frame selection — but first check if a contained shape was clicked
         for (let i = shapes.length - 1; i >= 0; i--) {
             if (shapes[i].shapeName === 'frame' && shapes[i].contains(x, y)) {
-                if (currentShape && currentShape !== shapes[i]) {
+                const clickedFrame = shapes[i];
+
+                // Check if click is on a shape inside this frame — let shape handlers deal with it
+                let clickedContainedShape = false;
+                if (clickedFrame.containedShapes && clickedFrame.containedShapes.length > 0) {
+                    for (let j = clickedFrame.containedShapes.length - 1; j >= 0; j--) {
+                        const inner = clickedFrame.containedShapes[j];
+                        if (inner.contains && inner.contains(x, y)) {
+                            clickedContainedShape = true;
+                            break;
+                        }
+                    }
+                }
+                // If a contained shape was clicked, don't select the frame — let the
+                // EventDispatcher fall through to shape-specific handlers
+                if (clickedContainedShape) return;
+
+                if (currentShape && currentShape !== clickedFrame) {
                     currentShape.removeSelection();
                 }
-                currentShape = shapes[i];
+                currentShape = clickedFrame;
                 currentShape.selectFrame();
-                
+
                 // Check for anchor interaction
                 const anchorIndex = currentShape.isNearAnchor(x, y);
                 if (anchorIndex !== null) {
@@ -74,7 +91,7 @@ const handleMouseDown = (e) => {
                 return;
             }
         }
-        
+
         // If no frame was clicked, deselect current
         if (currentShape && currentShape.shapeName === 'frame') {
             currentShape.removeSelection();

@@ -879,7 +879,7 @@ export default function AIModal() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
           <div
-            className="relative bg-surface-card border border-border-light rounded-2xl p-5 sm:p-6 mx-3 overflow-y-auto no-scrollbar transition-all duration-300 w-[92vw] max-w-[1200px] h-[88vh] max-h-[88vh]"
+            className="relative bg-surface-card border border-border-light rounded-2xl p-5 sm:p-6 mx-3 overflow-hidden transition-all duration-300 w-[92vw] max-w-[1200px] h-[88vh] max-h-[88vh]"
             style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
             onClick={(e) => e.stopPropagation()}
           >

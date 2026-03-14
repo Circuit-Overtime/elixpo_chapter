@@ -157,6 +157,51 @@ export default function FrameSidebar() {
 
       <Divider />
 
+      <ToolbarButton icon="bx-image-alt" tooltip="Background image">
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Background Image</p>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => {
+              const input = document.createElement('input')
+              input.type = 'file'
+              input.accept = 'image/*'
+              input.onchange = (e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = (ev) => {
+                  const shape = window.currentShape
+                  if (shape?.shapeName === 'frame' && shape.setImageFromURL) {
+                    shape.setImageFromURL(ev.target.result, 'cover')
+                  }
+                }
+                reader.readAsDataURL(file)
+              }
+              input.click()
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-white transition-all duration-100"
+          >
+            <i className="bx bx-upload text-sm" />
+            Set Image
+          </button>
+          <button
+            onClick={() => {
+              const shape = window.currentShape
+              if (shape?.shapeName === 'frame' && shape.setImageFromURL) {
+                shape.setImageFromURL(null)
+                shape.draw()
+              }
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-red-400 transition-all duration-100"
+          >
+            <i className="bx bx-x text-sm" />
+            Remove
+          </button>
+        </div>
+      </ToolbarButton>
+
+      <Divider />
+
       <ToolbarButton icon="bxs-expand" tooltip="Actions">
         <button onClick={resizeToFit} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-white transition-all duration-100">
           <i className="bx bxs-expand text-sm" />

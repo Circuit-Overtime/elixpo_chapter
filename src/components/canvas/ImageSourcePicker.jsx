@@ -12,7 +12,6 @@ export default function ImageSourcePicker() {
 
   // Derive visibility directly from Zustand — no intermediate state
   const visible = activeTool === 'image'
-  console.log('[ImageSourcePicker] activeTool:', activeTool, 'visible:', visible)
 
   const handleGenerateAI = useCallback(() => {
     setActiveTool('select')
@@ -75,12 +74,7 @@ export default function ImageSourcePicker() {
     }
   }, [visible, setActiveTool, handleGenerateAI, handleUpload])
 
-  if (!visible) {
-    console.log('[ImageSourcePicker] NOT visible, returning null')
-    return null
-  }
-
-  console.log('[ImageSourcePicker] RENDERING picker UI')
+  if (!visible) return null
 
   // Compute position on each render when visible
   let posX = 65
