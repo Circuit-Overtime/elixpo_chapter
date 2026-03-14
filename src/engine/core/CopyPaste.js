@@ -569,11 +569,83 @@ function handleMouseMoveForPaste(e) {
 }
 
 // ============================================================
+// PASTE IMAGE FROM CLIPBOARD (external images, screenshots)
+// ============================================================
+function handlePasteEvent(e) {
+    // Don't intercept if user is typing
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+        if (item.type.startsWith('image/')) {
+            e.preventDefault();
+            const blob = item.getAsFile();
+            if (!blob) return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const dataUrl = ev.target.result;
+                placeImageFromDataUrl(dataUrl);
+            };
+            reader.readAsDataURL(blob);
+            return; // only handle first image
+        }
+    }
+}
+
+function placeImageFromDataUrl(dataUrl) {
+    const svgEl = getSVGElement();
+    if (!svgEl || !window.ImageShape) return;
+
+    const img = new Image();
+    img.onload = () => {
+        const aspectRatio = img.height / img.width;
+        const displayW = Math.min(400, img.width);
+        const displayH = displayW * aspectRatio;
+
+        // Place at center of current viewport
+        const vb = svgEl.viewBox.baseVal;
+        const cx = vb.x + vb.width / 2;
+        const cy = vb.y + vb.height / 2;
+
+        const imgEl = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        imgEl.setAttribute('href', dataUrl);
+        imgEl.setAttribute('x', cx - displayW / 2);
+        imgEl.setAttribute('y', cy - displayH / 2);
+        imgEl.setAttribute('width', displayW);
+        imgEl.setAttribute('height', displayH);
+        imgEl.setAttribute('data-shape-x', cx - displayW / 2);
+        imgEl.setAttribute('data-shape-y', cy - displayH / 2);
+        imgEl.setAttribute('data-shape-width', displayW);
+        imgEl.setAttribute('data-shape-height', displayH);
+        imgEl.setAttribute('type', 'image');
+        imgEl.setAttribute('preserveAspectRatio', 'none');
+
+        svgEl.appendChild(imgEl);
+        const imageShape = new ImageShape(imgEl);
+        if (window.shapes) window.shapes.push(imageShape);
+        if (window.pushCreateAction) window.pushCreateAction(imageShape);
+
+        // Compress and upload to Cloudinary
+        if (window.uploadImageToCloudinary) {
+            window.uploadImageToCloudinary(imageShape);
+        }
+
+        console.log('[CopyPaste] Pasted image from clipboard');
+    };
+    img.src = dataUrl;
+}
+
+// ============================================================
 // INIT: Set up event listeners
 // ============================================================
 function initCopyPaste() {
     document.addEventListener('keydown', handleCopyPasteKeydown);
     document.addEventListener('mousemove', handleMouseMoveForPaste);
+    document.addEventListener('paste', handlePasteEvent);
 
     // Expose for context menu
     window.copySelected = copySelected;

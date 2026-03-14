@@ -1275,6 +1275,9 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// Expose upload pipeline globally so generated/pasted images can use it
+window.uploadImageToCloudinary = uploadImageToCloudinary;
+
 // Window bridge: allow React UI to trigger the file picker
 window.openImageFilePicker = function() {
     isImageToolActive = true;

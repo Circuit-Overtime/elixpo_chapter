@@ -301,6 +301,11 @@ export default function ImageGenerateModal() {
       const imageShape = new window.ImageShape(imgEl)
       window.shapes.push(imageShape)
       if (window.pushCreateAction) window.pushCreateAction(imageShape)
+
+      // Compress and upload to Cloudinary so localStorage only stores the URL
+      if (window.uploadImageToCloudinary) {
+        window.uploadImageToCloudinary(imageShape)
+      }
     }
 
     handleClose()
