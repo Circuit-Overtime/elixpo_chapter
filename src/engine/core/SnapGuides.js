@@ -1,13 +1,18 @@
 /**
  * SnapGuides - Shows thin red alignment guides when moving shapes
- * to help users align shapes with each other.
+ * to help users align shapes with each other and the viewport.
  */
 
-const SNAP_THRESHOLD = 10; // pixels in canvas coords
+const SNAP_THRESHOLD = 6; // pixels — how close before snapping
+const BREAK_THRESHOLD = 12; // pixels — how far mouse must move to break free
 const GUIDE_COLOR = '#ff4444';
 const GUIDE_WIDTH = 1;
 
 let guideLayer = null;
+
+// Track active snaps so we can implement break-out
+let activeSnapX = null; // { guideValue, mouseAtSnap }
+let activeSnapY = null;
 
 function ensureGuideLayer() {
     if (guideLayer && guideLayer.parentNode) return guideLayer;
@@ -82,7 +87,6 @@ function getShapeBounds(shape) {
             cy: bbox.y + bbox.height / 2,
         };
     }
-    // Lines / arrows — use start/end points
     if (name === 'line' || name === 'arrow') {
         const sx = shape.startPoint?.x ?? 0;
         const sy = shape.startPoint?.y ?? 0;
@@ -102,7 +106,6 @@ function getShapeBounds(shape) {
 
 /**
  * Get the canvas viewport reference points for global alignment.
- * Returns edges and center of the visible viewport.
  */
 function getCanvasGuides() {
     const vb = window.currentViewBox;
@@ -130,12 +133,12 @@ function getCanvasGuides() {
 
 /**
  * Calculate snap offsets and draw guides.
- * Call this during shape drag. Returns { dx, dy } snap offset to apply.
+ * Returns { dx, dy } snap offset to apply.
  *
- * When Shift is held or the shape is alone, also snaps to viewport
- * center and edges (global canvas guidelines).
+ * Uses a break-out system: once snapped, the shape stays on the guide
+ * until the mouse moves BREAK_THRESHOLD away, then it breaks free.
  */
-export function calculateSnap(movingShape, shiftKey = false) {
+export function calculateSnap(movingShape, shiftKey = false, mouseX, mouseY) {
     clearGuides();
 
     const shapes = window.shapes;
@@ -144,12 +147,23 @@ export function calculateSnap(movingShape, shiftKey = false) {
     const moving = getShapeBounds(movingShape);
     if (!moving) return { dx: 0, dy: 0 };
 
+    // Check if we should break out of an active snap
+    if (activeSnapX && mouseX !== undefined) {
+        if (Math.abs(mouseX - activeSnapX.mouseAtSnap) > BREAK_THRESHOLD) {
+            activeSnapX = null;
+        }
+    }
+    if (activeSnapY && mouseY !== undefined) {
+        if (Math.abs(mouseY - activeSnapY.mouseAtSnap) > BREAK_THRESHOLD) {
+            activeSnapY = null;
+        }
+    }
+
     let snapX = null;
     let snapY = null;
     let bestDistX = SNAP_THRESHOLD;
     let bestDistY = SNAP_THRESHOLD;
 
-    // Edges and centers to check for the moving shape
     const movingXs = [moving.left, moving.cx, moving.right];
     const movingYs = [moving.top, moving.cy, moving.bottom];
 
@@ -159,7 +173,6 @@ export function calculateSnap(movingShape, shiftKey = false) {
     const extendX1 = vb ? vb.x : 0;
     const extendX2 = vb ? vb.x + vb.width : 10000;
 
-    // Count other non-moving shapes for "alone" detection
     let otherShapeCount = 0;
 
     for (const shape of shapes) {
@@ -173,7 +186,6 @@ export function calculateSnap(movingShape, shiftKey = false) {
         const otherXs = [other.left, other.cx, other.right];
         const otherYs = [other.top, other.cy, other.bottom];
 
-        // Check vertical alignment (X axis snap)
         for (const mx of movingXs) {
             for (const ox of otherXs) {
                 const dist = Math.abs(mx - ox);
@@ -184,7 +196,6 @@ export function calculateSnap(movingShape, shiftKey = false) {
             }
         }
 
-        // Check horizontal alignment (Y axis snap)
         for (const my of movingYs) {
             for (const oy of otherYs) {
                 const dist = Math.abs(my - oy);
@@ -196,8 +207,7 @@ export function calculateSnap(movingShape, shiftKey = false) {
         }
     }
 
-    // Snap to viewport center/edges when Shift is held, shape is alone,
-    // or no shape-to-shape snap was found yet
+    // Viewport guides when alone, no snap found, or shift held
     if (shiftKey || otherShapeCount === 0 || (!snapX && !snapY)) {
         const canvasGuides = getCanvasGuides();
         for (const guide of canvasGuides) {
@@ -228,21 +238,36 @@ export function calculateSnap(movingShape, shiftKey = false) {
     let dx = 0;
     let dy = 0;
 
-    if (snapX) {
+    // Apply X snap only if not broken out of a previous X snap
+    if (snapX && !activeSnapX) {
         dx = snapX.offset;
         drawGuide(snapX.x, snapX.extendY1, snapX.x, snapX.extendY2);
+        if (mouseX !== undefined) {
+            activeSnapX = { guideValue: snapX.x, mouseAtSnap: mouseX };
+        }
+    } else if (activeSnapX) {
+        // Still in an active snap — hold position by drawing guide but no offset
+        drawGuide(activeSnapX.guideValue, extendY1, activeSnapX.guideValue, extendY2);
     }
-    if (snapY) {
+
+    if (snapY && !activeSnapY) {
         dy = snapY.offset;
         drawGuide(snapY.extendX1, snapY.y, snapY.extendX2, snapY.y);
+        if (mouseY !== undefined) {
+            activeSnapY = { guideValue: snapY.y, mouseAtSnap: mouseY };
+        }
+    } else if (activeSnapY) {
+        drawGuide(extendX1, activeSnapY.guideValue, extendX2, activeSnapY.guideValue);
     }
 
     return { dx, dy };
 }
 
 /**
- * Clear all snap guides. Call on mouseUp.
+ * Clear all snap guides and reset snap state. Call on mouseUp.
  */
 export function clearSnapGuides() {
     clearGuides();
+    activeSnapX = null;
+    activeSnapY = null;
 }

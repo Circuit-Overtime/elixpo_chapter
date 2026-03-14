@@ -205,6 +205,7 @@ export async function POST(request) {
       } catch (e) {
         console.warn('[AI Image] Failed to record usage:', e.message)
       }
+      
     }
 
     console.log('[AI Image] Success')

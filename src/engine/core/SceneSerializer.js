@@ -445,6 +445,17 @@ export function loadScene(sceneData) {
     }
 
     console.log(`[SceneSerializer] Loaded ${window.shapes.length} shapes from "${sceneData.name}"`);
+
+    // Re-sync tool flags so shapes are interactable after restore
+    if (window.__sketchEngine && typeof window.__sketchEngine.setActiveTool === 'function') {
+        const store = window.__sketchStoreApi;
+        const currentTool = store ? store.getState().activeTool : 'select';
+        window.__sketchEngine.setActiveTool(currentTool);
+    } else {
+        // Fallback: ensure selection tool is active
+        window.isSelectionToolActive = true;
+    }
+
     return true;
 }
 

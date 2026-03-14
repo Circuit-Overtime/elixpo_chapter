@@ -1335,7 +1335,7 @@ createRotatedControls(angleDiff = 0) {
                     width: bounds.width,
                     height: bounds.height,
                 };
-                const snap = calculateSnap(virtualShape);
+                const snap = calculateSnap(virtualShape, e.shiftKey, e.clientX, e.clientY);
                 if (snap.dx || snap.dy) {
                     this.move(snap.dx, snap.dy);
                 }
