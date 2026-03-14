@@ -80,9 +80,9 @@ deploy() {
 
   echo "==> Pages deploy complete."
 
-  # Commit version bump + source changes (skip build artifacts, .env, node_modules)
+  # Commit version bump + source changes
   VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "unknown")
-  git add -A -- ':!.vercel' ':!node_modules' ':!.env' ':!.env.*'
+  git add -A
   if git diff --cached --quiet; then
     echo "==> No changes to commit."
   else

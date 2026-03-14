@@ -93,8 +93,11 @@ export default function useAutoSave() {
     if (hasRestored.current) return
     if (isInRoom) return // don't restore in collab rooms
 
-    // Show loading overlay
-    useUIStore.getState().setCanvasLoading(true, 'Restoring canvas...')
+    // Show loading overlay (skip on localhost for faster dev)
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    if (!isLocalhost) {
+      useUIStore.getState().setCanvasLoading(true, 'Restoring canvas...')
+    }
 
     const tryRestore = async () => {
       const serializer = window.__sceneSerializer
