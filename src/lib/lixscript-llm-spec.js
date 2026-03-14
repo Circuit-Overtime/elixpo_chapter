@@ -7,7 +7,8 @@ Nothing should be crumpled or overlapping. Use curves for non-straight arrows. K
 
 Syntax: rect/circle <id> at <x>, <y> size <w>x<h> {props} | arrow/line <id> from <src> to <tgt> {props} | text <id> at <x>, <y> {content:"t"} | frame <id> at <x>, <y> size <w>x<h> {props} | image <id> at <x>, <y> size <w>x<h> {src:"url"} | icon <id> at <x>, <y> size <w>x<h> {svg:"<path .../>", color:"#fff"} | $var = val | //comment
 
-SHAPE PROPS: stroke fill fillStyle(none|solid|hachure|cross-hatch|dots) roughness(0-3) style(solid|dashed|dotted) label labelColor labelFontSize rotation
+SHAPE PROPS: stroke fill fillStyle(none|solid|hachure|cross-hatch|dots) roughness(0-3) style(solid|dashed|dotted) label labelColor labelFontSize rotation zIndex(layer order, higher=front)
+CANVAS SIZE: $canvasWidth = N and $canvasHeight = N (optional, controls preview canvas dimensions)
 SHADING PROPS: shadeColor shadeOpacity(0-1) shadeDirection(top|bottom|left|right)
 ARROW PROPS: curve(straight|curved|elbow) curveAmount head headLength
 FRAME PROPS: frameName fillStyle(transparent|solid|grid) fillColor stroke imageURL(url) imageFit(cover|contain|fill)

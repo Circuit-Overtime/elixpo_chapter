@@ -199,7 +199,15 @@ function RoughLixScriptCanvas({ parsed }) {
         return { x: 0, y: 0 }
       }
 
-      // Calculate bounds
+      // Check for explicit canvas size via $canvasWidth / $canvasHeight variables
+      // Usage in LixScript: $canvasWidth = 800  $canvasHeight = 600
+      let explicitW = 0, explicitH = 0
+      if (parsed.variables) {
+        explicitW = parseFloat(parsed.variables.canvasWidth) || 0
+        explicitH = parseFloat(parsed.variables.canvasHeight) || 0
+      }
+
+      // Calculate bounds from shapes
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
       for (const def of defs) {
         if (def.type === 'arrow' || def.type === 'line') {
@@ -214,14 +222,16 @@ function RoughLixScriptCanvas({ parsed }) {
       }
       if (!isFinite(minX)) { minX = 0; minY = 0; maxX = 400; maxY = 300 }
 
-      const pad = 50
-      const sceneW = maxX - minX + pad * 2
-      const sceneH = maxY - minY + pad * 2
+      const pad = 60
 
-      // Size canvas to fit container width, scale proportionally
+      // Use explicit dimensions if provided via $canvasWidth / $canvasHeight variables
+      const sceneW = explicitW > 0 ? explicitW : (maxX - minX + pad * 2)
+      const sceneH = explicitH > 0 ? explicitH : (maxY - minY + pad * 2)
+
+      // Size canvas to fit container width, let height grow as needed
       const containerW = container.offsetWidth
-      const scale = Math.min(containerW / sceneW, 2)
-      const canvasW = sceneW * scale
+      const scale = Math.min(containerW / sceneW, 1.5)
+      const canvasW = Math.max(sceneW * scale, containerW)
       const canvasH = sceneH * scale
 
       const dpr = window.devicePixelRatio || 1
@@ -241,42 +251,92 @@ function RoughLixScriptCanvas({ parsed }) {
       const LABEL_PAD_X = 6
       const LABEL_PAD_Y = 3
 
-      // Helper: draw text with a background rect that "cuts through" lines behind it
-      function drawLabel(text, x, y, font, color, align, baseline) {
+      /**
+       * Draw text with background padding. Supports multiline word-wrap
+       * when maxWidth is provided (used for labels inside shapes).
+       */
+      function drawLabel(text, x, y, font, color, align, baseline, maxWidth) {
         ctx.save()
         ctx.font = font
         ctx.textAlign = align || 'center'
         ctx.textBaseline = baseline || 'middle'
-        const metrics = ctx.measureText(text)
-        const tw = metrics.width
-        // Approximate text height from font size
         const fontSize = parseInt(font) || 14
-        const th = fontSize * 1.15
+        const lineHeight = fontSize * 1.3
 
-        // Calculate background rect position based on alignment
-        let bgX = x - tw / 2 - LABEL_PAD_X
+        // Word-wrap into lines if maxWidth is set
+        let lines
+        if (maxWidth && maxWidth > 0) {
+          lines = []
+          const words = text.split(' ')
+          let currentLine = ''
+          for (const word of words) {
+            const test = currentLine ? currentLine + ' ' + word : word
+            if (ctx.measureText(test).width > maxWidth - LABEL_PAD_X * 2 && currentLine) {
+              lines.push(currentLine)
+              currentLine = word
+            } else {
+              currentLine = test
+            }
+          }
+          if (currentLine) lines.push(currentLine)
+        } else {
+          lines = [text]
+        }
+
+        const totalTextH = lines.length * lineHeight
+        // Find widest line
+        let maxLineW = 0
+        for (const line of lines) {
+          const w = ctx.measureText(line).width
+          if (w > maxLineW) maxLineW = w
+        }
+
+        // Background rect position
+        let bgX = x - maxLineW / 2 - LABEL_PAD_X
         if (align === 'left' || align === 'start') bgX = x - LABEL_PAD_X
-        else if (align === 'right' || align === 'end') bgX = x - tw - LABEL_PAD_X
+        else if (align === 'right' || align === 'end') bgX = x - maxLineW - LABEL_PAD_X
 
-        let bgY = y - th / 2 - LABEL_PAD_Y
+        let bgY = y - totalTextH / 2 - LABEL_PAD_Y
         if (baseline === 'top' || baseline === 'hanging') bgY = y - LABEL_PAD_Y
-        else if (baseline === 'bottom') bgY = y - th - LABEL_PAD_Y
+        else if (baseline === 'bottom') bgY = y - totalTextH - LABEL_PAD_Y
 
-        // Draw background cutout
+        // Draw background
         ctx.fillStyle = BG
-        ctx.fillRect(bgX, bgY, tw + LABEL_PAD_X * 2, th + LABEL_PAD_Y * 2)
+        ctx.fillRect(bgX, bgY, maxLineW + LABEL_PAD_X * 2, totalTextH + LABEL_PAD_Y * 2)
 
-        // Draw text
+        // Draw each line
         ctx.fillStyle = color
-        ctx.fillText(text, x, y)
+        let startY
+        if (baseline === 'top' || baseline === 'hanging') {
+          startY = y + lineHeight / 2
+        } else if (baseline === 'bottom') {
+          startY = y - totalTextH + lineHeight / 2
+        } else {
+          // middle
+          startY = y - totalTextH / 2 + lineHeight / 2
+        }
+        ctx.textBaseline = 'middle'
+        for (let li = 0; li < lines.length; li++) {
+          ctx.fillText(lines[li], x, startY + li * lineHeight)
+        }
         ctx.restore()
       }
 
       // Collect images to load async after drawing shapes
       const pendingImages = []
 
+      // Sort shapes by layer for correct z-order:
+      // Default layer: frames=-10, lines/arrows=0, rects/circles=10, images=15, text/icons=20
+      // Explicit zIndex prop overrides the default
+      const defaultLayer = { frame: -10, line: 0, arrow: 0, rect: 10, circle: 10, ellipse: 10, image: 15, text: 20, icon: 20 }
+      const sorted = [...defs].sort((a, b) => {
+        const zA = (a.props?.zIndex !== undefined ? parseFloat(a.props.zIndex) : defaultLayer[a.type]) || 0
+        const zB = (b.props?.zIndex !== undefined ? parseFloat(b.props.zIndex) : defaultLayer[b.type]) || 0
+        return zA - zB
+      })
+
       // Draw each shape with RoughJS
-      for (const def of defs) {
+      for (const def of sorted) {
         const props = def.props || {}
         const stroke = props.stroke || '#fff'
         const sw = props.strokeWidth || 2
@@ -294,7 +354,7 @@ function RoughLixScriptCanvas({ parsed }) {
             if (props.label) {
               drawLabel(props.label, x + w / 2, y + h / 2,
                 `${props.labelFontSize || 14}px lixFont, sans-serif`,
-                props.labelColor || '#e0e0e0', 'center', 'middle')
+                props.labelColor || '#e0e0e0', 'center', 'middle', w)
             }
             break
           }
@@ -311,7 +371,7 @@ function RoughLixScriptCanvas({ parsed }) {
             if (props.label) {
               drawLabel(props.label, cx, cy,
                 `${props.labelFontSize || 14}px lixFont, sans-serif`,
-                props.labelColor || '#e0e0e0', 'center', 'middle')
+                props.labelColor || '#e0e0e0', 'center', 'middle', w * 0.85)
             }
             break
           }
@@ -612,7 +672,7 @@ function RoughLixScriptCanvas({ parsed }) {
   }, [parsed])
 
   return (
-    <div ref={containerRef} className="bg-[#0a0a12] p-6 flex items-center justify-center min-h-48 overflow-auto lixscript-preview">
+    <div ref={containerRef} className="bg-[#0a0a12] p-6 flex items-center justify-center overflow-auto lixscript-preview">
       <canvas ref={canvasRef} />
     </div>
   )

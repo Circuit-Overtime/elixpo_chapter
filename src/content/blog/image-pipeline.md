@@ -131,7 +131,7 @@ $amber = #F39C12
 $teal = #1ABC9C
 $gray = #e0e0e0
 
-rect action at 200, 60 size 200x85 {
+rect action at 200, 60 size 200x65 {
   stroke: $blue
   fill: $blue
   fillStyle: solid
@@ -148,14 +148,14 @@ text sources at action.x + 10, action.bottom + 20 {
   fontSize: 10
 }
 
-rect compress at action.x, action.bottom + 100 size 200x85 {
+rect compress at action.x, action.bottom + 100 size 200x65 {
   stroke: $amber
   roughness: 0
   label: "Compress → place on canvas"
   labelColor: $amber
 }
 
-rect upload at compress.x, compress.bottom + 130 size 200x85 {
+rect upload at compress.x, compress.bottom + 130 size 200x65 {
   stroke: $teal
   fill: $teal
   fillStyle: solid
@@ -166,14 +166,14 @@ rect upload at compress.x, compress.bottom + 130 size 200x85 {
   shadeOpacity: 0.25
 }
 
-rect save at upload.x, upload.bottom + 130 size 200x85 {
+rect save at upload.x, upload.bottom + 130 size 200x65 {
   stroke: $green
   roughness: 0
   label: "Autosave to localStorage (tiny URL)"
   labelColor: $green
 }
 
-rect reload at save.x, save.bottom + 130 size 200x85 {
+rect reload at save.x, save.bottom + 130 size 200x65 {
   stroke: $blue
   fill: $blue
   fillStyle: solid
@@ -212,7 +212,7 @@ arrow a4 from save.bottom to reload.top {
 arrow a5 from reload.right to action.right {
   stroke: $green
   curve: curved
-  curveAmount: 120
+  curveAmount: 100
   style: dashed
   label: "Cycle"
   labelColor: $green
