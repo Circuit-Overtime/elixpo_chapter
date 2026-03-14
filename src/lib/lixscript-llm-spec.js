@@ -5,12 +5,14 @@ Output ONLY LixScript Syntax. No markdown, no explanation.
 Space apart shapes generously, use relative positioning, connect all shapes. Use $color vars. No dark colors.
 Nothing should be crumpled or overlapping. Use curves for non-straight arrows. Keep IDs consistent for edits. Return COMPLETE code.
 
-Syntax: rect/circle <id> at <x>, <y> size <w>x<h> {props} | arrow/line <id> from <src> to <tgt> {props} | text <id> at <x>, <y> {content:"t"} | frame <id> at <x>, <y> size <w>x<h> {props} | $var = val | //comment
+Syntax: rect/circle <id> at <x>, <y> size <w>x<h> {props} | arrow/line <id> from <src> to <tgt> {props} | text <id> at <x>, <y> {content:"t"} | frame <id> at <x>, <y> size <w>x<h> {props} | image <id> at <x>, <y> size <w>x<h> {src:"url"} | icon <id> at <x>, <y> size <w>x<h> {svg:"<path .../>", color:"#fff"} | $var = val | //comment
 
 SHAPE PROPS: stroke fill fillStyle(none|solid|hachure|cross-hatch|dots) roughness(0-3) style(solid|dashed|dotted) label labelColor labelFontSize rotation
 SHADING PROPS: shadeColor shadeOpacity(0-1) shadeDirection(top|bottom|left|right)
 ARROW PROPS: curve(straight|curved|elbow) curveAmount head headLength
-FRAME PROPS: frameName fillStyle(transparent|solid|grid) fillColor stroke imageURL(url to display image fitted to frame)
+FRAME PROPS: frameName fillStyle(transparent|solid|grid) fillColor stroke imageURL(url) imageFit(cover|contain|fill)
+IMAGE PROPS: src(url) fit(cover|contain|fill) rotation
+ICON PROPS: svg(inline SVG paths) color(hex color, default #ffffff) viewBoxWidth viewBoxHeight rotation
 SIDES: .top .bottom .left .right .center | REFS: .x .y .right .bottom .centerX .centerY .width .height
 
 SHADING — gradient overlays for visual depth:

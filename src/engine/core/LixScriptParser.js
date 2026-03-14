@@ -523,6 +523,8 @@ function createShape(def, errors) {
       case 'ellipse': return createCircle(def, errors)
       case 'text': return createText(def, errors)
       case 'freehand': return createFreehand(def, errors)
+      case 'image': return createImage(def, errors)
+      case 'icon': return createIcon(def, errors)
       default:
         errors.push({ line: def.line, message: `Unknown shape type: ${def.type}` })
         return null
@@ -531,6 +533,152 @@ function createShape(def, errors) {
     errors.push({ line: def.line, message: `Shape '${def.id}' failed: ${err.message}` })
     return null
   }
+}
+
+/**
+ * Create an image shape from a LixScript definition.
+ * Usage: image myImg at 100, 200 size 300x200 { src: "https://..." }
+ */
+function createImage(def, errors) {
+  const ImageShape = window.ImageShape
+  if (!ImageShape) {
+    errors.push({ line: def.line, message: 'ImageShape class not available' })
+    return null
+  }
+
+  const src = def.props.src || def.props.href || def.props.url || ''
+  if (!src) {
+    errors.push({ line: def.line, message: `Image '${def.id}' requires a src property` })
+    return null
+  }
+
+  const svgEl = document.getElementById('freehand-canvas')
+  if (!svgEl) return null
+
+  const x = def.x || 0
+  const y = def.y || 0
+  const w = def.width || 200
+  const h = def.height || 200
+
+  const imgEl = document.createElementNS('http://www.w3.org/2000/svg', 'image')
+  imgEl.setAttribute('href', src)
+  imgEl.setAttribute('x', x)
+  imgEl.setAttribute('y', y)
+  imgEl.setAttribute('width', w)
+  imgEl.setAttribute('height', h)
+  imgEl.setAttribute('data-shape-x', x)
+  imgEl.setAttribute('data-shape-y', y)
+  imgEl.setAttribute('data-shape-width', w)
+  imgEl.setAttribute('data-shape-height', h)
+  imgEl.setAttribute('type', 'image')
+  imgEl.setAttribute('preserveAspectRatio', def.props.fit === 'contain' ? 'xMidYMid meet' : def.props.fit === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet')
+
+  svgEl.appendChild(imgEl)
+  const shape = new ImageShape(imgEl)
+  if (def.props.rotation) shape.rotation = parseFloat(def.props.rotation)
+  shape.shapeID = def.id || shape.shapeID
+
+  window.shapes.push(shape)
+  if (window.pushCreateAction) window.pushCreateAction(shape)
+
+  return shape
+}
+
+/**
+ * Create an icon shape from a LixScript definition.
+ * Usage: icon myIcon at 100, 200 size 48x48 { name: "AWS_Lambda_64" }
+ *   or:  icon myIcon at 100, 200 size 48x48 { svg: "<path d='...' />" }
+ */
+function createIcon(def, errors) {
+  const IconShape = window.IconShape
+  if (!IconShape) {
+    errors.push({ line: def.line, message: 'IconShape class not available' })
+    return null
+  }
+
+  const svgEl = document.getElementById('freehand-canvas')
+  if (!svgEl) return null
+
+  const x = def.x || 0
+  const y = def.y || 0
+  const size = def.width || 48
+  const color = def.props.color || def.props.fill || '#ffffff'
+
+  // Build the inner SVG content
+  let innerSVG = ''
+  if (def.props.svg) {
+    // Inline SVG path(s)
+    innerSVG = def.props.svg
+  } else if (def.props.name) {
+    // Named icon — use a simple placeholder circle+text until loaded
+    // The AI should provide inline SVG paths for reliability
+    innerSVG = `<circle cx="12" cy="12" r="10" fill="none" stroke="${color}" stroke-width="1.5"/><text x="12" y="16" text-anchor="middle" fill="${color}" font-size="10" font-family="sans-serif">${(def.props.name || '?').charAt(0)}</text>`
+  } else {
+    errors.push({ line: def.line, message: `Icon '${def.id}' requires a name or svg property` })
+    return null
+  }
+
+  const vbWidth = parseFloat(def.props.viewBoxWidth) || 24
+  const vbHeight = parseFloat(def.props.viewBoxHeight) || 24
+  const scale = size / Math.max(vbWidth, vbHeight)
+  const localCenterX = size / 2 / scale
+  const localCenterY = size / 2 / scale
+  const rotation = def.props.rotation || 0
+
+  const iconGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+  iconGroup.setAttribute('transform', `translate(${x}, ${y}) scale(${scale}) rotate(${rotation}, ${localCenterX}, ${localCenterY})`)
+  iconGroup.setAttribute('data-viewbox-width', vbWidth)
+  iconGroup.setAttribute('data-viewbox-height', vbHeight)
+  iconGroup.setAttribute('x', x)
+  iconGroup.setAttribute('y', y)
+  iconGroup.setAttribute('width', size)
+  iconGroup.setAttribute('height', size)
+  iconGroup.setAttribute('type', 'icon')
+  iconGroup.setAttribute('data-shape-x', x)
+  iconGroup.setAttribute('data-shape-y', y)
+  iconGroup.setAttribute('data-shape-width', size)
+  iconGroup.setAttribute('data-shape-height', size)
+  iconGroup.setAttribute('data-shape-rotation', rotation)
+  iconGroup.setAttribute('style', 'cursor: pointer; pointer-events: all;')
+
+  // Transparent hit area
+  const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+  bgRect.setAttribute('x', 0)
+  bgRect.setAttribute('y', 0)
+  bgRect.setAttribute('width', vbWidth)
+  bgRect.setAttribute('height', vbHeight)
+  bgRect.setAttribute('fill', 'transparent')
+  bgRect.setAttribute('stroke', 'none')
+  bgRect.setAttribute('style', 'pointer-events: all;')
+  iconGroup.appendChild(bgRect)
+
+  // Parse and insert SVG content
+  const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  tempSvg.innerHTML = innerSVG
+  while (tempSvg.firstChild) {
+    const child = tempSvg.firstChild
+    // Apply color to paths/circles/etc
+    if (child.nodeType === 1) {
+      const fill = child.getAttribute('fill')
+      const stroke = child.getAttribute('stroke')
+      if (!fill || fill === 'currentColor' || fill === '#000' || fill === '#000000' || fill === 'black') {
+        child.setAttribute('fill', color)
+      }
+      if (stroke === 'currentColor' || stroke === '#000' || stroke === '#000000' || stroke === 'black') {
+        child.setAttribute('stroke', color)
+      }
+    }
+    iconGroup.appendChild(child)
+  }
+
+  svgEl.appendChild(iconGroup)
+  const shape = new IconShape(iconGroup)
+  shape.shapeID = def.id || shape.shapeID
+
+  window.shapes.push(shape)
+  if (window.pushCreateAction) window.pushCreateAction(shape)
+
+  return shape
 }
 
 function createRect(def, errors) {
