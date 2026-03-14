@@ -483,19 +483,12 @@ function createFrame(def, errors) {
     const h = def.height || 400
 
     const frame = new Frame(x, y, w, h, {
-<<<<<<< HEAD
       frameName: def.props.frameName || def.props.name || def.id,
       stroke: def.props.stroke || '#555',
       strokeWidth: def.props.strokeWidth || 1,
       fill: def.props.fill || 'transparent',
       fillStyle: def.props.fillStyle || 'transparent',
       fillColor: def.props.fillColor || '#1e1e28',
-=======
-      frameName: def.props.name || def.id,
-      stroke: def.props.stroke || '#555',
-      strokeWidth: def.props.strokeWidth || 1,
-      fill: def.props.fill || 'transparent',
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
       opacity: def.props.opacity || 1,
       rotation: def.props.rotation || 0,
     })
@@ -507,14 +500,11 @@ function createFrame(def, errors) {
     frame._frameType = 'lixscript'
     frame._lixscriptSource = true
 
-<<<<<<< HEAD
     // Set image from URL if provided
     if (def.props.imageURL && typeof frame.setImageFromURL === 'function') {
       frame.setImageFromURL(def.props.imageURL, def.props.imageFit || 'cover')
     }
 
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
     return frame
   } catch (err) {
     errors.push({ line: def.line, message: `Frame creation failed: ${err.message}` })
@@ -562,12 +552,9 @@ function createRect(def, errors) {
     fillStyle: def.props.fillStyle || 'none',
     roughness: def.props.roughness !== undefined ? def.props.roughness : 1.5,
     strokeDasharray: resolveStrokeStyle(def.props.style),
-<<<<<<< HEAD
     shadeColor: def.props.shadeColor || null,
     shadeOpacity: def.props.shadeOpacity !== undefined ? parseFloat(def.props.shadeOpacity) : 0.15,
     shadeDirection: def.props.shadeDirection || 'bottom',
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   })
 
   if (def.props.rotation) rect.rotation = def.props.rotation
@@ -607,12 +594,9 @@ function createCircle(def, errors) {
     fillStyle: def.props.fillStyle || 'none',
     roughness: def.props.roughness !== undefined ? def.props.roughness : 1.5,
     strokeDasharray: resolveStrokeStyle(def.props.style),
-<<<<<<< HEAD
     shadeColor: def.props.shadeColor || null,
     shadeOpacity: def.props.shadeOpacity !== undefined ? parseFloat(def.props.shadeOpacity) : 0.15,
     shadeDirection: def.props.shadeDirection || 'bottom',
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   })
 
   if (def.props.rotation) circle.rotation = def.props.rotation

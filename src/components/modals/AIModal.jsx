@@ -185,7 +185,6 @@ export default function AIModal() {
   const [lixErrors, setLixErrors] = useState([])
   const lixDebounceRef = useRef(null)
 
-<<<<<<< HEAD
   // Research paper mode state
   const [researchPrompt, setResearchPrompt] = useState('')
   const [researchLixCode, setResearchLixCode] = useState('')
@@ -193,8 +192,6 @@ export default function AIModal() {
   const [researchErrors, setResearchErrors] = useState([])
   const researchDebounceRef = useRef(null)
 
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   const editInputRef = useRef(null)
 
   // Auto-dismiss success toast
@@ -299,7 +296,6 @@ export default function AIModal() {
     return () => { if (mermaidDebounceRef.current) clearTimeout(mermaidDebounceRef.current) }
   }, [mermaidCode, mode])
 
-<<<<<<< HEAD
   // Live research paper LixScript preview (debounced)
   useEffect(() => {
     if (mode !== 'research') return
@@ -324,8 +320,6 @@ export default function AIModal() {
     return () => { if (researchDebounceRef.current) clearTimeout(researchDebounceRef.current) }
   }, [researchLixCode, mode])
 
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   // Live LixScript preview (debounced)
   useEffect(() => {
     if (mode !== 'code') return
@@ -367,13 +361,10 @@ export default function AIModal() {
     setLixCode('')
     setLixPreviewSVG('')
     setLixErrors([])
-<<<<<<< HEAD
     setResearchPrompt('')
     setResearchLixCode('')
     setResearchPreviewSVG('')
     setResearchErrors([])
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   }, [])
 
   const resetGraph = useCallback(() => {
@@ -516,7 +507,6 @@ export default function AIModal() {
     setIsGenerating(false)
     abortRef.current = null
   }, [prompt, mode, chatHistory, lixCode, aiQuota])
-<<<<<<< HEAD
 
   // --- Research paper generation ---
   const handleResearchGenerate = useCallback(async () => {
@@ -618,8 +608,6 @@ export default function AIModal() {
     setToast({ status: 'success', message: '' })
     resetPreview()
   }, [researchLixCode, researchErrors, handleClose, resetPreview])
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
 
   // --- Diagram editing ---
   const handleEdit = useCallback(async (directText) => {
@@ -799,10 +787,7 @@ export default function AIModal() {
       if (mode === 'graph') handlePlaceGraph()
       else if (mode === 'mermaid') handlePlaceMermaid()
       else if (mode === 'code') handlePlaceLixScript()
-<<<<<<< HEAD
       else if (mode === 'research') handlePlaceResearch()
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
       else if (previewDiagram) handlePlace()
     }
   }
@@ -814,10 +799,7 @@ export default function AIModal() {
   const isFrameEdit = !!editingFrame
   const isGraphMode = mode === 'graph'
   const isCodeMode = mode === 'code'
-<<<<<<< HEAD
   const isResearchMode = mode === 'research'
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   const hasValidEquations = equations.some(eq => eq.expression && eq.expression.trim())
 
   return (
@@ -863,7 +845,6 @@ export default function AIModal() {
                     </>
                   ) : (
                     <h2 className="text-text-primary text-lg font-medium flex items-center gap-2.5">
-<<<<<<< HEAD
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGraphMode ? 'text-[#4A90D9]' : isResearchMode ? 'text-[#9B59B6]' : isCodeMode ? 'text-[#F39C12]' : mode === 'mermaid' ? 'text-[#2ECC71]' : 'text-accent'}>
                         {isGraphMode ? (
                           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
@@ -874,11 +855,6 @@ export default function AIModal() {
                             <line x1="12" y1="17" x2="12" y2="21" />
                             <path d="M6 8h4M6 11h3M14 8h4M14 11h4" strokeWidth="1.5" />
                           </>
-=======
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGraphMode ? 'text-[#4A90D9]' : isCodeMode ? 'text-[#F39C12]' : mode === 'mermaid' ? 'text-[#2ECC71]' : 'text-accent'}>
-                        {isGraphMode ? (
-                          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
                         ) : isCodeMode ? (
                           <>
                             <polyline points="16 18 22 12 16 6" />
@@ -899,11 +875,7 @@ export default function AIModal() {
                           </>
                         )}
                       </svg>
-<<<<<<< HEAD
                       {isGraphMode ? 'Graph Editor' : isResearchMode ? 'Research Paper Illustrator' : isCodeMode ? 'LixScript Editor' : mode === 'mermaid' ? 'Mermaid Editor' : 'AI Diagram Generator'}
-=======
-                      {isGraphMode ? 'Graph Editor' : isCodeMode ? 'LixScript Editor' : mode === 'mermaid' ? 'Mermaid Editor' : 'AI Diagram Generator'}
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
                     </h2>
                   )}
                 </div>
@@ -919,10 +891,7 @@ export default function AIModal() {
               <div className="flex gap-1 mb-4 bg-surface-dark rounded-xl p-1">
                 {[
                   { value: 'code', label: 'LixScript', beta: true },
-<<<<<<< HEAD
                   { value: 'research', label: 'Research Paper', beta: true },
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
                   { value: 'mermaid', label: 'Mermaid' },
                   { value: 'graph', label: 'Graph' },
                 ].map((t) => (
