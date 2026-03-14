@@ -180,17 +180,6 @@ function WorkspaceCard({ workspace, index, onDelete }) {
             >
               Open
             </Link>
-            {workspace.token && (
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/s/${workspace.token}`)
-                }}
-                className="px-3 py-1.5 rounded-lg text-xs text-text-dim border border-white/10 hover:border-white/20 hover:text-text-secondary transition-all"
-                title="Copy share link"
-              >
-                <i className="bx bx-link text-sm" />
-              </button>
-            )}
             <button
               onClick={handleDelete}
               onMouseLeave={() => setConfirmDelete(false)}

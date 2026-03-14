@@ -21,8 +21,11 @@ import PaintbrushSidebar from '@/components/sidebars/PaintbrushSidebar'
 import TextSidebar from '@/components/sidebars/TextSidebar'
 import FrameSidebar from '@/components/sidebars/FrameSidebar'
 import IconSidebar from '@/components/sidebars/IconSidebar'
+import ImageSidebar from '@/components/sidebars/ImageSidebar'
 import SVGCanvas from '@/components/canvas/SVGCanvas'
 import MultiSelectActions from '@/components/canvas/MultiSelectActions'
+import ImageSourcePicker from '@/components/canvas/ImageSourcePicker'
+import ImageGenerateModal from '@/components/modals/ImageGenerateModal'
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
 import useSessionID from '@/hooks/useSessionID'
 import useGuestProfile from '@/hooks/useGuestProfile'
@@ -59,6 +62,7 @@ export default function CanvasPage() {
       <TextSidebar />
       <FrameSidebar />
       <IconSidebar />
+      <ImageSidebar />
 
       <SVGCanvas />
 
@@ -72,6 +76,8 @@ export default function CanvasPage() {
       <HelpModal />
       <ExportImageModal />
       <CanvasPropertiesModal />
+      <ImageSourcePicker />
+      <ImageGenerateModal />
       <ContextMenu />
       <FindBar />
 

@@ -150,6 +150,7 @@ class SketchEngine {
                 'text': 'text',
                 'code': 'text',
                 'frame': 'frame',
+                'image': 'image',
             };
             const sidebar = sidebarMap[shapeName];
             if (sidebar && window.__sketchStoreApi) {
@@ -370,15 +371,9 @@ class SketchEngine {
             window.isCodeToolActive = true;
         }
 
-<<<<<<< HEAD
         // Show image source picker when image tool is activated
         if (toolName === 'image' && window.__showImageSourcePicker) {
             window.__showImageSourcePicker();
-=======
-        // Auto-open file picker when image tool is activated
-        if (toolName === 'image' && window.openImageFilePicker) {
-            window.openImageFilePicker();
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
         }
 
         // Set appropriate cursor for the active tool

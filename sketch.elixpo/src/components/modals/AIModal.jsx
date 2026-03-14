@@ -5,6 +5,74 @@ import useUIStore from '@/store/useUIStore'
 import useAuthStore from '@/store/useAuthStore'
 import { WORKER_URL } from '@/lib/env'
 
+function DiagramLoadingAnimation({ color = '#4A90D9' }) {
+  const c2 = color === '#4A90D9' ? '#9B59B6' : '#4A90D9'
+  const c3 = '#2ECC71'
+  return (
+    <div className="flex flex-col items-center justify-center gap-5">
+      <style>{`
+        @keyframes dg-glob {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+          25% { transform: translate(12px, -8px) scale(1.15); opacity: 0.9; }
+          50% { transform: translate(-6px, 10px) scale(0.9); opacity: 0.6; }
+          75% { transform: translate(-10px, -5px) scale(1.1); opacity: 0.85; }
+        }
+        @keyframes dg-glob-2 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+          25% { transform: translate(-10px, 6px) scale(1.1); opacity: 0.85; }
+          50% { transform: translate(8px, -10px) scale(0.95); opacity: 0.7; }
+          75% { transform: translate(6px, 8px) scale(1.15); opacity: 0.9; }
+        }
+        @keyframes dg-glob-3 {
+          0%, 100% { transform: translate(0, 0) scale(1.05); opacity: 0.65; }
+          25% { transform: translate(8px, 10px) scale(0.9); opacity: 0.8; }
+          50% { transform: translate(-12px, -4px) scale(1.1); opacity: 0.55; }
+          75% { transform: translate(4px, -12px) scale(1); opacity: 0.9; }
+        }
+        @keyframes dg-icon-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+      `}</style>
+      <div className="relative w-20 h-20">
+        <div className="absolute rounded-full" style={{
+          width: 38, height: 38, top: 2, left: 2,
+          background: `radial-gradient(circle, ${color}99 0%, transparent 70%)`,
+          filter: 'blur(10px)', animation: 'dg-glob 3.5s ease-in-out infinite', willChange: 'transform, opacity',
+        }} />
+        <div className="absolute rounded-full" style={{
+          width: 34, height: 34, top: 14, right: 0,
+          background: `radial-gradient(circle, ${c2}8C 0%, transparent 70%)`,
+          filter: 'blur(10px)', animation: 'dg-glob-2 4s ease-in-out infinite', willChange: 'transform, opacity',
+        }} />
+        <div className="absolute rounded-full" style={{
+          width: 32, height: 32, bottom: 0, left: 10,
+          background: `radial-gradient(circle, ${c3}80 0%, transparent 70%)`,
+          filter: 'blur(10px)', animation: 'dg-glob-3 3.8s ease-in-out infinite', willChange: 'transform, opacity',
+        }} />
+        <div className="absolute inset-0 flex items-center justify-center" style={{ animation: 'dg-icon-float 2.5s ease-in-out infinite' }}>
+          <div className="w-9 h-9 rounded-lg bg-black/30 backdrop-blur-sm border border-white/[0.08] flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <line x1="10" y1="6.5" x2="14" y2="6.5" />
+              <line x1="6.5" y1="10" x2="6.5" y2="14" />
+              <line x1="14" y1="17.5" x2="10" y2="17.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: color, animationDelay: '0ms' }} />
+        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: c2, animationDelay: '150ms' }} />
+        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: c3, animationDelay: '300ms' }} />
+      </div>
+      <p className="text-text-dim text-sm">Generating diagram...</p>
+    </div>
+  )
+}
+
 const GRAPH_COLORS = [
   '#4A90D9', '#E74C3C', '#2ECC71', '#F39C12', '#9B59B6',
   '#1ABC9C', '#E67E22', '#3498DB', '#E91E63', '#00BCD4',
@@ -185,7 +253,6 @@ export default function AIModal() {
   const [lixErrors, setLixErrors] = useState([])
   const lixDebounceRef = useRef(null)
 
-<<<<<<< HEAD
   // Research paper mode state
   const [researchPrompt, setResearchPrompt] = useState('')
   const [researchLixCode, setResearchLixCode] = useState('')
@@ -193,8 +260,6 @@ export default function AIModal() {
   const [researchErrors, setResearchErrors] = useState([])
   const researchDebounceRef = useRef(null)
 
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   const editInputRef = useRef(null)
 
   // Auto-dismiss success toast
@@ -299,7 +364,6 @@ export default function AIModal() {
     return () => { if (mermaidDebounceRef.current) clearTimeout(mermaidDebounceRef.current) }
   }, [mermaidCode, mode])
 
-<<<<<<< HEAD
   // Live research paper LixScript preview (debounced)
   useEffect(() => {
     if (mode !== 'research') return
@@ -324,8 +388,6 @@ export default function AIModal() {
     return () => { if (researchDebounceRef.current) clearTimeout(researchDebounceRef.current) }
   }, [researchLixCode, mode])
 
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   // Live LixScript preview (debounced)
   useEffect(() => {
     if (mode !== 'code') return
@@ -367,13 +429,10 @@ export default function AIModal() {
     setLixCode('')
     setLixPreviewSVG('')
     setLixErrors([])
-<<<<<<< HEAD
     setResearchPrompt('')
     setResearchLixCode('')
     setResearchPreviewSVG('')
     setResearchErrors([])
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   }, [])
 
   const resetGraph = useCallback(() => {
@@ -516,7 +575,6 @@ export default function AIModal() {
     setIsGenerating(false)
     abortRef.current = null
   }, [prompt, mode, chatHistory, lixCode, aiQuota])
-<<<<<<< HEAD
 
   // --- Research paper generation ---
   const handleResearchGenerate = useCallback(async () => {
@@ -618,8 +676,6 @@ export default function AIModal() {
     setToast({ status: 'success', message: '' })
     resetPreview()
   }, [researchLixCode, researchErrors, handleClose, resetPreview])
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
 
   // --- Diagram editing ---
   const handleEdit = useCallback(async (directText) => {
@@ -799,10 +855,7 @@ export default function AIModal() {
       if (mode === 'graph') handlePlaceGraph()
       else if (mode === 'mermaid') handlePlaceMermaid()
       else if (mode === 'code') handlePlaceLixScript()
-<<<<<<< HEAD
       else if (mode === 'research') handlePlaceResearch()
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
       else if (previewDiagram) handlePlace()
     }
   }
@@ -814,10 +867,7 @@ export default function AIModal() {
   const isFrameEdit = !!editingFrame
   const isGraphMode = mode === 'graph'
   const isCodeMode = mode === 'code'
-<<<<<<< HEAD
   const isResearchMode = mode === 'research'
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
   const hasValidEquations = equations.some(eq => eq.expression && eq.expression.trim())
 
   return (
@@ -829,7 +879,7 @@ export default function AIModal() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
           <div
-            className="relative bg-surface-card border border-border-light rounded-2xl p-5 sm:p-6 mx-3 overflow-y-auto no-scrollbar transition-all duration-300 w-[92vw] max-w-[1200px] h-[88vh] max-h-[88vh]"
+            className="relative bg-surface-card border border-border-light rounded-2xl p-5 sm:p-6 mx-3 overflow-hidden transition-all duration-300 w-[92vw] max-w-[1200px] h-[88vh] max-h-[88vh]"
             style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -863,7 +913,6 @@ export default function AIModal() {
                     </>
                   ) : (
                     <h2 className="text-text-primary text-lg font-medium flex items-center gap-2.5">
-<<<<<<< HEAD
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGraphMode ? 'text-[#4A90D9]' : isResearchMode ? 'text-[#9B59B6]' : isCodeMode ? 'text-[#F39C12]' : mode === 'mermaid' ? 'text-[#2ECC71]' : 'text-accent'}>
                         {isGraphMode ? (
                           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
@@ -874,11 +923,6 @@ export default function AIModal() {
                             <line x1="12" y1="17" x2="12" y2="21" />
                             <path d="M6 8h4M6 11h3M14 8h4M14 11h4" strokeWidth="1.5" />
                           </>
-=======
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGraphMode ? 'text-[#4A90D9]' : isCodeMode ? 'text-[#F39C12]' : mode === 'mermaid' ? 'text-[#2ECC71]' : 'text-accent'}>
-                        {isGraphMode ? (
-                          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
                         ) : isCodeMode ? (
                           <>
                             <polyline points="16 18 22 12 16 6" />
@@ -899,11 +943,7 @@ export default function AIModal() {
                           </>
                         )}
                       </svg>
-<<<<<<< HEAD
                       {isGraphMode ? 'Graph Editor' : isResearchMode ? 'Research Paper Illustrator' : isCodeMode ? 'LixScript Editor' : mode === 'mermaid' ? 'Mermaid Editor' : 'AI Diagram Generator'}
-=======
-                      {isGraphMode ? 'Graph Editor' : isCodeMode ? 'LixScript Editor' : mode === 'mermaid' ? 'Mermaid Editor' : 'AI Diagram Generator'}
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
                     </h2>
                   )}
                 </div>
@@ -919,10 +959,7 @@ export default function AIModal() {
               <div className="flex gap-1 mb-4 bg-surface-dark rounded-xl p-1">
                 {[
                   { value: 'code', label: 'LixScript', beta: true },
-<<<<<<< HEAD
                   { value: 'research', label: 'Research Paper', beta: true },
-=======
->>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
                   { value: 'mermaid', label: 'Mermaid' },
                   { value: 'graph', label: 'Graph' },
                 ].map((t) => (
@@ -1067,7 +1104,11 @@ export default function AIModal() {
                 {/* Right panel - Live preview */}
                 <div className="flex-1 flex flex-col min-w-0">
                   <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Preview</p>
-                  {researchErrors.length > 0 ? (
+                  {isGenerating ? (
+                    <div className="flex-1 flex items-center justify-center rounded-xl bg-[#111] border border-white/[0.06]">
+                      <DiagramLoadingAnimation color="#9B59B6" />
+                    </div>
+                  ) : researchErrors.length > 0 ? (
                     <div className="flex-1 flex flex-col rounded-xl bg-[#111] border border-white/[0.06] p-4 overflow-y-auto">
                       <div className="flex items-center gap-2 mb-3">
                         <i className="bx bx-error-circle text-red-400 text-lg" />
@@ -1299,7 +1340,11 @@ export default function AIModal() {
                 {/* Right panel - Live preview */}
                 <div className="flex-1 flex flex-col min-w-0">
                   <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Preview</p>
-                  {lixErrors.length > 0 ? (
+                  {isGenerating ? (
+                    <div className="flex-1 flex items-center justify-center rounded-xl bg-[#111] border border-white/[0.06]">
+                      <DiagramLoadingAnimation color="#4A90D9" />
+                    </div>
+                  ) : lixErrors.length > 0 ? (
                     <div className="flex-1 flex flex-col rounded-xl bg-[#111] border border-white/[0.06] p-4 overflow-y-auto">
                       <div className="flex items-center gap-2 mb-3">
                         <i className="bx bx-error-circle text-red-400 text-lg" />
