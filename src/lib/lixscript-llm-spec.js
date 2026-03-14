@@ -5,6 +5,7 @@ Output ONLY LixScript Syntax. No markdown, no explanation.
 Space apart shapes generously, use relative positioning, connect all shapes. Use $color vars. No dark colors.
 Nothing should be crumpled or overlapping. Use curves for non-straight arrows. Keep IDs consistent for edits. Return COMPLETE code.
 
+<<<<<<< HEAD
 Syntax: rect/circle <id> at <x>, <y> size <w>x<h> {props} | arrow/line <id> from <src> to <tgt> {props} | text <id> at <x>, <y> {content:"t"} | frame <id> at <x>, <y> size <w>x<h> {props} | $var = val | //comment
 
 SHAPE PROPS: stroke fill fillStyle(none|solid|hachure|cross-hatch|dots) roughness(0-3) style(solid|dashed|dotted) label labelColor labelFontSize rotation
@@ -20,12 +21,20 @@ SHADING — gradient overlays for visual depth:
 - Use with fillStyle: solid for rich colored blocks
 - Use to distinguish layer types in neural network diagrams
 
+=======
+Syntax: rect/circle <id> at <x>, <y> size <w>x<h> {props} | arrow/line <id> from <src> to <tgt> {props} | text <id> at <x>, <y> {content:"t"} | $var = val | //comment
+
+PROPS: stroke fill fillStyle(none|solid|hachure|cross-hatch|dots) roughness(0-3) style(solid|dashed|dotted) label labelColor labelFontSize rotation | Arrow: curve(straight|curved|elbow) curveAmount head headLength
+SIDES: .top .bottom .left .right .center | REFS: .x .y .right .bottom .centerX .centerY .width .height
+
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
 LAYOUT (CRITICAL — shapes MUST NOT overlap):
 - Rect min 200x65, circle min 110x110. Scale up ~20px per extra word in label.
 - Vertical gap: 150px between shape edges. Horizontal gap: 250px between shape edges.
 - Use relative pos: "rect b at a.x, a.bottom + 150 size 200x65"
 - Start first shape at (200, 60). Curve backward/diagonal arrows. Dash optional/error flows.
 - Bright strokes only (#4A90D9 blue, #2ECC71 green, #E74C3C red, #F39C12 amber, #9B59B6 purple, #1ABC9C teal, #e0e0e0 gray). No dark colors.
+<<<<<<< HEAD
 - When using solid fill, always set labelColor to #ffffff for readability.
 
 RESEARCH PAPER STYLE:
@@ -37,6 +46,8 @@ RESEARCH PAPER STYLE:
 - Color-code by component type:
   Conv: #4A90D9, Pool: #2ECC71, Dense: #E74C3C, Norm: #F39C12,
   Attention: #9B59B6, Embed: #1ABC9C, Input/Output: #3498DB
+=======
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
 
 EXAMPLE:
 $b = #4A90D9
@@ -84,6 +95,7 @@ arrow a5 from err.top to login.right {
   curve: curved
   style: dashed
   label: "Retry"
+<<<<<<< HEAD
 }
 
 RESEARCH PAPER EXAMPLE (shaded blocks):
@@ -130,6 +142,8 @@ arrow a1 from input.bottom to conv1.top {
 arrow a2 from conv1.bottom to pool1.top {
   stroke: $w
   label: "224×224×64"
+=======
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
 }`
 
 export const LIXSCRIPT_USER_PROMPT = (prompt) =>
@@ -147,6 +161,7 @@ export const LIXSCRIPT_MERMAID_PROMPT = (mermaidCode) =>
   `Convert Mermaid→LixScript. [text]→rect, (text)→circle, {text}→circle. 150px V-gaps, 250px H-gaps. Min rect 200x65, circle 110x110. Relative pos. Curve non-straight arrows.
 
 ${mermaidCode}`
+<<<<<<< HEAD
 
 export const LIXSCRIPT_RESEARCH_PROMPT = (prompt) =>
   `Create a RESEARCH PAPER quality LixScript illustration for: ${prompt}
@@ -170,3 +185,5 @@ export const LIXSCRIPT_RESEARCH_EDIT_PROMPT = (prompt, previousCode) =>
 ${previousCode}
 
 Return COMPLETE updated code. Keep IDs, spacing, and research paper style (roughness:0, solid fills, shading).`
+=======
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99

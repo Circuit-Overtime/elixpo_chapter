@@ -15,8 +15,11 @@ import {
   LIXSCRIPT_USER_PROMPT,
   LIXSCRIPT_EDIT_PROMPT,
   LIXSCRIPT_MERMAID_PROMPT,
+<<<<<<< HEAD
   LIXSCRIPT_RESEARCH_PROMPT,
   LIXSCRIPT_RESEARCH_EDIT_PROMPT,
+=======
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
 } from '@/lib/lixscript-llm-spec.js'
 
 const POLLINATIONS_URL = 'https://gen.pollinations.ai/v1/chat/completions'
@@ -34,15 +37,21 @@ export async function POST(request) {
       return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
     }
 
+<<<<<<< HEAD
     // Determine generation mode
     const isLixScript = mode === 'lixscript'
     const isResearchPaper = mode === 'research'
     const isResearchLixScript = mode === 'research-lixscript'
+=======
+    // Determine if this is a LixScript generation request
+    const isLixScript = mode === 'lixscript'
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
 
     // Build the user message based on context
     let systemPrompt
     let userMessage
 
+<<<<<<< HEAD
     if (isResearchLixScript) {
       // Research paper mode generating LixScript
       systemPrompt = LIXSCRIPT_LLM_SPEC
@@ -60,6 +69,9 @@ export async function POST(request) {
         userMessage = RESEARCH_PAPER_USER_PROMPT(prompt)
       }
     } else if (isLixScript) {
+=======
+    if (isLixScript) {
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
       systemPrompt = LIXSCRIPT_LLM_SPEC
       if (previousLixCode) {
         userMessage = LIXSCRIPT_EDIT_PROMPT(prompt, previousLixCode)
@@ -80,10 +92,15 @@ export async function POST(request) {
     console.log('[AI Generate] Request:', {
       mode,
       isLixScript,
+<<<<<<< HEAD
       isResearchPaper,
       isResearchLixScript,
       promptLength: prompt.length,
       isEdit: (isLixScript || isResearchLixScript) ? !!previousLixCode : !!previousDiagram,
+=======
+      promptLength: prompt.length,
+      isEdit: isLixScript ? !!previousLixCode : !!previousDiagram,
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
       historyLength: history?.length || 0,
     })
 
@@ -140,8 +157,13 @@ export async function POST(request) {
 
     console.log('[AI Generate] Model output:', content.slice(0, 200))
 
+<<<<<<< HEAD
     // LixScript mode (including research-lixscript) — return the code directly
     if (isLixScript || isResearchLixScript) {
+=======
+    // LixScript mode — return the code directly
+    if (isLixScript) {
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
       // Strip markdown fences if the model wrapped it
       const cleaned = content
         .replace(/```(?:lixscript|text|plaintext)?\s*/gi, '')
@@ -156,7 +178,11 @@ export async function POST(request) {
       return NextResponse.json({ lixscript: cleaned })
     }
 
+<<<<<<< HEAD
     // JSON diagram mode (including research paper) — parse and validate
+=======
+    // JSON diagram mode — parse and validate
+>>>>>>> 7073836883f58aab478091470a92b25b3fc82a99
     let diagram
     try {
       const cleaned = content
