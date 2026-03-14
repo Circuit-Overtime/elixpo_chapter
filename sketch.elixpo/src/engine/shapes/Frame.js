@@ -1406,11 +1406,13 @@ restoreToFrame(shape) {
         if (!this._frameImage) {
             this._frameImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
             this._frameImage.setAttribute('pointer-events', 'none');
-            this._frameImage.setAttribute('preserveAspectRatio',
-                fit === 'cover' ? 'xMidYMid slice' :
-                fit === 'contain' ? 'xMidYMid meet' : 'none'
-            );
         }
+        // Always update preserveAspectRatio when fit changes
+        this._frameImage.setAttribute('preserveAspectRatio',
+            fit === 'cover' ? 'xMidYMid slice' :
+            fit === 'contain' ? 'xMidYMid meet' :
+            fit === 'center' ? 'xMidYMid meet' : 'none'
+        );
 
         this._frameImage.setAttribute('href', url);
         this._frameImage.setAttribute('x', this.x);

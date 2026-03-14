@@ -5,43 +5,32 @@ import useUIStore from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
 
 export default function ImageSourcePicker() {
-  const [visible, setVisible] = useState(false)
-  const [position, setPosition] = useState({ x: 100, y: 300 })
   const ref = useRef(null)
   const toggleImageGenerateModal = useUIStore((s) => s.toggleImageGenerateModal)
+  const activeTool = useSketchStore((s) => s.activeTool)
   const setActiveTool = useSketchStore((s) => s.setActiveTool)
 
-  const close = useCallback(() => {
-    setVisible(false)
-  }, [])
+  // Derive visibility directly from Zustand — no intermediate state
+  const visible = activeTool === 'image'
 
   const handleGenerateAI = useCallback(() => {
-    close()
     setActiveTool('select')
     toggleImageGenerateModal()
-  }, [close, setActiveTool, toggleImageGenerateModal])
+  }, [setActiveTool, toggleImageGenerateModal])
 
   const handleUpload = useCallback(() => {
-    close()
+    setActiveTool('select')
     if (window.openImageFilePicker) {
       window.openImageFilePicker()
     }
-  }, [close])
+  }, [setActiveTool])
 
-  // Register the global bridge function
+  // Keep the global bridge for engine calls
   useEffect(() => {
     window.__showImageSourcePicker = () => {
-      // Find the image tool button in the toolbar by its title
-      const imageBtn = document.querySelector('button[title="Image (9)"]')
-      if (imageBtn) {
-        const rect = imageBtn.getBoundingClientRect()
-        setPosition({ x: rect.right + 10, y: rect.top - 10 })
-      } else {
-        setPosition({ x: 65, y: window.innerHeight / 2 - 50 })
-      }
-      setVisible(true)
+      // The picker now shows automatically via Zustand activeTool,
+      // but keep this bridge so the engine call doesn't error
     }
-
     return () => {
       delete window.__showImageSourcePicker
     }
@@ -53,23 +42,19 @@ export default function ImageSourcePicker() {
 
     const handleClick = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
-        close()
         setActiveTool('select')
       }
     }
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        close()
         setActiveTool('select')
       }
-      // G = Generate with AI
       if (e.key === 'g' || e.key === 'G') {
         e.preventDefault()
         e.stopPropagation()
         handleGenerateAI()
       }
-      // U = Upload from device
       if (e.key === 'u' || e.key === 'U') {
         e.preventDefault()
         e.stopPropagation()
@@ -81,21 +66,33 @@ export default function ImageSourcePicker() {
     const timer = setTimeout(() => {
       document.addEventListener('mousedown', handleClick)
       document.addEventListener('keydown', handleKeyDown, true)
-    }, 50)
+    }, 100)
     return () => {
       clearTimeout(timer)
       document.removeEventListener('mousedown', handleClick)
       document.removeEventListener('keydown', handleKeyDown, true)
     }
-  }, [visible, close, setActiveTool, handleGenerateAI, handleUpload])
+  }, [visible, setActiveTool, handleGenerateAI, handleUpload])
 
   if (!visible) return null
+
+  // Compute position on each render when visible
+  let posX = 65
+  let posY = typeof window !== 'undefined' ? window.innerHeight / 2 - 50 : 300
+  if (typeof document !== 'undefined') {
+    const imageBtn = document.querySelector('button[title="Image (9)"]')
+    if (imageBtn) {
+      const rect = imageBtn.getBoundingClientRect()
+      posX = rect.right + 10
+      posY = rect.top - 10
+    }
+  }
 
   return (
     <div
       ref={ref}
       className="fixed z-[1100] font-[lixFont]"
-      style={{ left: position.x, top: position.y }}
+      style={{ left: posX, top: posY }}
     >
       <div className="bg-surface-card border border-border-light rounded-xl p-1.5 shadow-2xl shadow-black/40 flex flex-col gap-1 min-w-[200px]">
         <button
@@ -110,7 +107,7 @@ export default function ImageSourcePicker() {
           </div>
           <div className="flex-1 text-left">
             <div className="text-sm font-medium">Generate with AI</div>
-            <div className="text-[10px] text-text-dim">Create from a prompt</div>
+            <div className="text-[10px] text-text-dim">10 generations &middot; 5 edits free</div>
           </div>
           <kbd className="text-[10px] text-text-dim bg-surface-dark px-1.5 py-0.5 rounded">G</kbd>
         </button>

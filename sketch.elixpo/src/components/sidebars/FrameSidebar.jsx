@@ -4,6 +4,7 @@ import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
 import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSidebar'
 import { useState, useCallback, useEffect } from 'react'
+import { compressImage } from '@/utils/imageCompressor'
 
 const FILL_STYLES = [
   { id: 'transparent', label: 'None', icon: 'bx-x' },
@@ -153,6 +154,88 @@ export default function FrameSidebar() {
             </div>
           </>
         )}
+      </ToolbarButton>
+
+      <Divider />
+
+      <ToolbarButton icon="bx-image-alt" tooltip="Background image">
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Background Image</p>
+        <div className="flex gap-1.5 mb-2">
+          <button
+            onClick={() => {
+              const input = document.createElement('input')
+              input.type = 'file'
+              input.accept = 'image/*'
+              input.onchange = async (e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = async (ev) => {
+                  const shape = window.currentShape
+                  if (!shape?.shapeName === 'frame' || !shape.setImageFromURL) return
+                  // Compress heavily before setting
+                  try {
+                    const compressed = await compressImage(ev.target.result, { maxWidth: 1280, quality: 0.5 })
+                    shape.setImageFromURL(compressed.dataUrl, shape._frameImageFit || 'cover')
+                  } catch {
+                    shape.setImageFromURL(ev.target.result, shape._frameImageFit || 'cover')
+                  }
+                }
+                reader.readAsDataURL(file)
+              }
+              input.click()
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-white transition-all duration-100"
+          >
+            <i className="bx bx-upload text-sm" />
+            Set Image
+          </button>
+          <button
+            onClick={() => {
+              const shape = window.currentShape
+              if (shape?.shapeName === 'frame' && shape.setImageFromURL) {
+                shape.setImageFromURL(null)
+                shape.draw()
+              }
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-red-400 transition-all duration-100"
+          >
+            <i className="bx bx-x text-sm" />
+            Remove
+          </button>
+        </div>
+        {/* Fit controls — only show when frame has an image */}
+        {(() => {
+          const shape = typeof window !== 'undefined' ? window.currentShape : null
+          if (!shape?.shapeName === 'frame' || !shape?._frameImageURL) return null
+          return (
+            <>
+              <p className="text-xs text-text-muted uppercase tracking-wider mb-1.5">Fit</p>
+              <div className="flex gap-1">
+                {[
+                  { id: 'cover', label: 'Cover' },
+                  { id: 'contain', label: 'Contain' },
+                  { id: 'fill', label: 'Stretch' },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => {
+                      const s = window.currentShape
+                      if (s?.shapeName === 'frame' && s.setImageFromURL && s._frameImageURL) {
+                        s.setImageFromURL(s._frameImageURL, f.id)
+                      }
+                    }}
+                    className={`px-2 py-1 rounded-md text-[10px] transition-all ${
+                      shape._frameImageFit === f.id
+                        ? 'bg-white/[0.12] text-white'
+                        : 'text-text-muted hover:text-white hover:bg-white/[0.06]'
+                    }`}
+                  >{f.label}</button>
+                ))}
+              </div>
+            </>
+          )
+        })()}
       </ToolbarButton>
 
       <Divider />
