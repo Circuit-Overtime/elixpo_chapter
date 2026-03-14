@@ -23,8 +23,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Add remotes (idempotent)
+      - name: Sync subtrees
         run: |
+
           repos=(
             "art.elixpo https://github.com/elixpo/elixpoart.git"
             "jackey.elixpo https://github.com/elixpo/elixpojackey.git"
@@ -36,46 +37,39 @@ jobs:
             "accounts.elixpo https://github.com/elixpo/elixpoaccounts.git"
           )
 
+          COAUTHOR=$'\n\nCo-authored-by: Circuit-Overtime <ayushbhatt633@gmail.com>'
+
           for entry in "${repos[@]}"; do
             name=${entry%% *}
             url=${entry#* }
+
+            echo "Processing $name"
+
             if git remote get-url "$name" >/dev/null 2>&1; then
-              echo "remote $name already exists"
+              echo "remote exists"
             else
-              echo "adding remote $name -> $url"
               git remote add "$name" "$url"
             fi
-            git fetch "$name" >/dev/null 2>&1 || true
+
+            git fetch "$name"
+
             if [ -d "$name" ] || git ls-tree --name-only HEAD | grep -qx "$name"; then
-              echo "subtree $name already present, skipping add"
+              echo "Pulling subtree updates for $name"
+
+              git subtree pull \
+                --prefix="$name" \
+                "$name" main \
+                -m "Sync $name$COAUTHOR" || true
+
             else
-              echo "adding subtree $name from $name/main"
-              git subtree add --prefix="$name" "$name" main -m "Add $name" || true
+              echo "Adding subtree $name"
+
+              git subtree add \
+                --prefix="$name" \
+                "$name" main \
+                -m "Add $name$COAUTHOR"
             fi
           done
 
-      - name: Fetch all subtree remotes
-        run: |
-          git fetch art.elixpo
-          git fetch jackey.elixpo
-          git fetch chat.elixpo
-          git fetch blogs.elixpo
-          git fetch verse.elixpo
-          git fetch sketch.elixpo
-          git fetch me.elixpo
-          git fetch accounts.elixpo
-
-      - name: Pull subtrees
-        run: |
-          git subtree pull --prefix=art.elixpo art.elixpo main -m "Sync art.elixpo" || true
-          git subtree pull --prefix=jackey.elixpo jackey.elixpo main -m "Sync jackey.elixpo" || true
-          git subtree pull --prefix=chat.elixpo chat.elixpo main -m "Sync chat.elixpo" || true
-          git subtree pull --prefix=blogs.elixpo blogs.elixpo main -m "Sync blogs.elixpo" || true
-          git subtree pull --prefix=verse.elixpo verse.elixpo main -m "Sync verse.elixpo" || true
-          git subtree pull --prefix=sketch.elixpo sketch.elixpo main -m "Sync sketch.elixpo" || true
-          git subtree pull --prefix=me.elixpo me.elixpo main -m "Sync me.elixpo" || true
-          git subtree pull --prefix=accounts.elixpo accounts.elixpo main -m "Sync accounts.elixpo" || true
-
       - name: Push updates
-        run: |
-          git push origin main
+        run: git push origin main
