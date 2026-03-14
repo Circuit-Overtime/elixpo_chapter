@@ -479,19 +479,23 @@ const handleMouseDownImage = async (e) => {
 };
 
 const handleMouseUpImage = (e) => {
-    // Handle image deselection when clicking outside
-    if (isSelectionToolActive) {
-        // Check if we clicked on an image or image-related element
+    // Only deselect if the user actually clicked (mousedown+mouseup) on a non-image area
+    // of the SVG canvas — not when the mouse just leaves to the UI
+    if (isSelectionToolActive && selectedImage) {
         const clickedElement = e.target;
+        const isOnSVG = clickedElement === svg || clickedElement.ownerSVGElement === svg;
         const isImageElement = clickedElement.tagName === 'image';
-        const isAnchorElement = clickedElement.classList.contains('resize-anchor') || 
+        const isAnchorElement = clickedElement.classList.contains('resize-anchor') ||
                                clickedElement.classList.contains('rotation-anchor') ||
                                clickedElement.classList.contains('selection-outline');
-        
-        // If we didn't click on an image or its controls, deselect
-        if (!isImageElement && !isAnchorElement && selectedImage) {
+
+        // Only deselect if mouseup is directly on the SVG background (not on any shape/anchor)
+        if (isOnSVG && !isImageElement && !isAnchorElement && clickedElement === svg && !isDragging && !isRotatingImage && !currentAnchor) {
             removeSelectionOutline();
             selectedImage = null;
+            if (window.__sketchStoreApi) {
+                window.__sketchStoreApi.clearSelectedShapeSidebar();
+            }
         }
     }
     

@@ -108,6 +108,7 @@ function LoadingAnimation() {
         <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-bounce" style={{ animationDelay: '300ms' }} />
       </div>
       <p className="text-text-dim text-sm">Generating image...</p>
+      <p className="text-text-dim/50 text-[10px]">This can take up to 15 seconds</p>
     </div>
   )
 }
@@ -142,6 +143,17 @@ export default function ImageGenerateModal() {
   // Quota
   const [genQuota, setGenQuota] = useState({ used: 0, limit: 10, remaining: 10 })
   const [editQuota, setEditQuota] = useState({ used: 0, limit: 5, remaining: 5 })
+
+  // Pick up image edit reference from canvas selection
+  useEffect(() => {
+    if (!isOpen) return
+    if (window.__editImageRef) {
+      const ref = window.__editImageRef
+      setGeneratedImage({ imageUrl: ref.imageUrl, width: ref.width, height: ref.height })
+      setEditMode(true)
+      window.__editImageRef = null
+    }
+  }, [isOpen])
 
   // Fetch quotas on open
   useEffect(() => {
@@ -179,6 +191,7 @@ export default function ImageGenerateModal() {
     if (isGenerating && abortRef.current) {
       abortRef.current.abort()
     }
+    window.__editImageRef = null
     closeModal()
     setError('')
     setEditMode(false)
@@ -657,7 +670,7 @@ export default function ImageGenerateModal() {
                 {/* Generate / Stop button */}
                 <div className="mt-auto pt-3 border-t border-white/[0.06]">
                   <div className="flex items-center justify-between">
-                    <span className="text-text-dim text-xs">Enter or Ctrl+Enter to generate</span>
+                    <span className="text-text-dim text-xs">Enter to generate &middot; may take up to 15s</span>
                     {isGenerating ? (
                       <button
                         onClick={() => { abortRef.current?.abort(); setIsGenerating(false) }}
