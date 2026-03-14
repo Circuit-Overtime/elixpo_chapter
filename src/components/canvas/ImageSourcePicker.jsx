@@ -110,7 +110,7 @@ export default function ImageSourcePicker() {
           </div>
           <div className="flex-1 text-left">
             <div className="text-sm font-medium">Generate with AI</div>
-            <div className="text-[10px] text-text-dim">Create from a prompt</div>
+            <div className="text-[10px] text-text-dim">10 generations &middot; 5 edits free</div>
           </div>
           <kbd className="text-[10px] text-text-dim bg-surface-dark px-1.5 py-0.5 rounded">G</kbd>
         </button>
