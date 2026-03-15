@@ -79,6 +79,17 @@ deploy() {
     --branch "$PAGES_BRANCH"
 
   echo "==> Pages deploy complete."
+
+  # Commit version bump + source changes
+  VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "unknown")
+  git add -A
+  if git diff --cached --quiet; then
+    echo "==> No changes to commit."
+  else
+    git commit -m "deploy: v${VERSION}"
+    git push origin main
+    echo "==> Pushed v${VERSION} to origin/main."
+  fi
 }
 
 # Deploy the collab Worker

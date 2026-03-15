@@ -11,12 +11,14 @@ import e2eEncryption from '@/content/blog/e2e-encryption.md'
 import websocketCollaboration from '@/content/blog/websocket-collaboration.md'
 import lixscriptDsl from '@/content/blog/lixscript-dsl.md'
 import roughjsCanvas from '@/content/blog/roughjs-canvas.md'
+import imagePipeline from '@/content/blog/image-pipeline.md'
 
 const contentMap = {
   'e2e-encryption': e2eEncryption,
   'websocket-collaboration': websocketCollaboration,
   'lixscript-dsl': lixscriptDsl,
   'roughjs-canvas': roughjsCanvas,
+  'image-pipeline': imagePipeline,
 }
 
 // ── Dot grid background (matches canvas feel) ────────────────────────────────
