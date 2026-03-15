@@ -176,6 +176,11 @@ const useUIStore = create((set, get) => ({
     set({ sessionEncryptionKey: null })
   },
 
+  // --- Canvas Loading ---
+  canvasLoading: false,
+  canvasLoadingMessage: 'Loading canvas...',
+  setCanvasLoading: (loading, message) => set({ canvasLoading: loading, canvasLoadingMessage: message || 'Loading canvas...' }),
+
   // --- Theme ---
   theme: 'dark',
   setTheme: (newTheme) => {

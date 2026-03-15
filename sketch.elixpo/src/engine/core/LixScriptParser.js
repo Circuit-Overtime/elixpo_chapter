@@ -76,7 +76,7 @@ export function parseLixScript(source) {
       }
 
       // Shape declarations
-      const shapeMatch = line.match(/^(rect|circle|ellipse|arrow|line|text|frame|freehand)\s+(\w+)\s+(.+)$/)
+      const shapeMatch = line.match(/^(rect|circle|ellipse|arrow|line|text|frame|freehand|image|icon)\s+(\w+)\s+(.+)$/)
       if (shapeMatch) {
         const [, type, id, rest] = shapeMatch
         const shape = parseShapeDeclaration(type, id, rest, lineNum, errors, variables)

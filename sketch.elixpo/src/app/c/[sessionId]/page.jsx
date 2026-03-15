@@ -31,6 +31,7 @@ import useSessionID from '@/hooks/useSessionID'
 import useGuestProfile from '@/hooks/useGuestProfile'
 import useAuth from '@/hooks/useAuth'
 import useAutoSave from '@/hooks/useAutoSave'
+import CanvasLoadingOverlay from '@/components/canvas/CanvasLoadingOverlay'
 import ContextMenu from '@/components/canvas/ContextMenu'
 import FindBar from '@/components/canvas/FindBar'
 
@@ -80,6 +81,7 @@ export default function CanvasPage() {
       <ImageGenerateModal />
       <ContextMenu />
       <FindBar />
+      <CanvasLoadingOverlay />
 
       {/* Quick-save toast */}
       <div
