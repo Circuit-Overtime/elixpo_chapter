@@ -1,0 +1,27 @@
+{
+  "intro": {
+    "heading": "ANWESHA",
+    "subheading": "ABOUT!",
+    "description": "Welcome to Anwesha's corner of the internet! She's a developer, dreamer, and full-time birthday queen. When she's not coding, she's probably planning her next adventure or eating cake. More about her as you scroll down!",
+    "portraitImage": "/assets/anwesha/about/ptr-11.png"
+  },
+  "fancySection": {
+    "banner": "FIRST SIGHT!",
+    "subtitle": "Collabs & Meets!",
+    "content": "Anwesha's Heart.exe is Running... She fell in love with code, then fell in love with someone who codes. Together, they built projects, broke things, fixed things, and laughed through it all.",
+    "highlights": [
+      "Birthday Girl in Love",
+      "Code Queen",
+      "Cake Enthusiast"
+    ],
+    "contactNote": "Want to wish her happy birthday or collaborate? Reach out!",
+    "shoutouts": ["Ayushman Bhattacharya", "Vivek Yadav"],
+    "shoutoutText": "for being the most amazing people in her journey! Happy Birthday Anwesha!"
+  },
+  "images": {
+    "gallery": [
+      "/assets/anwesha/about/sq-22.png",
+      "/assets/anwesha/about/sq-11.png"
+    ]
+  }
+}

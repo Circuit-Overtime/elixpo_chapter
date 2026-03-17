@@ -1,0 +1,14 @@
+{
+  "name": "ANWESHA",
+  "siteName": "Anwesha",
+  "siteDescription": "Designer at Elixpo",
+  "location": "WB,IN",
+  "email": "anwesha@elixpo.com",
+  "socials": [
+    { "platform": "github", "url": "https://github.com/CSE-Anwesha", "icon": "logo-github" },
+    { "platform": "linkedin", "url": "https://linkedin.com/in/anwe", "icon": "logo-linkedin" },
+    { "platform": "instagram", "url": "https://instagram.com/itz_anwesha_", "icon": "logo-instagram" },
+    { "platform": "youtube", "url": "https://youtube.com/@elixpo", "icon": "logo-youtube" }
+  ],
+  "menuItems": ["Home", "About", "Projects", "Publications"]
+}
