@@ -1,8 +1,13 @@
 'use client';
 
-import { Box, Button, Checkbox, FormControlLabel, TextField, Typography, Divider } from '@mui/material';
+import { Box, Button, Checkbox, FormControlLabel, TextField, Typography, Divider, IconButton, InputAdornment } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const textFieldSx = {
   '& .MuiOutlinedInput-root': {
@@ -30,28 +35,92 @@ const textFieldSx = {
   '& .MuiInputLabel-root.Mui-focused': { color: '#a3e635' },
 };
 
-const LoginPage = () => {
+const LoginContent = () => {
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [error, setError] = useState('');
+
+  // Auto-redirect if already logged in (valid cookie session)
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        if (res.ok) {
+          const data: any = await res.json();
+          if (next) {
+            window.location.href = next;
+          } else if (!data.displayName) {
+            window.location.href = '/setup-name';
+          } else if (data.isAdmin) {
+            window.location.href = '/admin';
+          } else {
+            window.location.href = '/dashboard/oauth-apps';
+          }
+          return; // don't set checkingAuth to false — we're navigating away
+        }
+      } catch {
+        // No valid session, show login form
+      }
+      setCheckingAuth(false);
+    };
+    checkExistingSession();
+  }, [next]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Handle login logic here
-    setTimeout(() => setLoading(false), 1000);
+    setError('');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, provider: 'email', rememberMe }),
+      });
+
+      const data: any = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Login failed');
+        return;
+      }
+
+      // If there's a ?next= param (e.g. from /oauth/authorize redirect), go there.
+      // Otherwise fall back to the default dashboard.
+      if (next) {
+        window.location.href = next;
+      } else if (data.needsDisplayName) {
+        window.location.href = '/setup-name';
+      } else if (data.user?.isAdmin) {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/dashboard/oauth-apps';
+      }
+    } catch {
+      setError('Network error, please try again');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSSOLogin = (provider: 'google' | 'github') => {
-    const redirectUri = `${window.location.origin}/api/auth/callback/${provider}`;
-
-    if (provider === 'google') {
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=openid email profile`;
-    } else if (provider === 'github') {
-      window.location.href = `https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email`;
-    }
+    // Redirect through our backend so state cookie is set correctly before going to provider
+    window.location.href = `/api/auth/oauth/${provider}?mode=login`;
   };
+
+  if (checkingAuth) {
+    return (
+      <Box sx={{ minHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)' }}>
+        <CircularProgress sx={{ color: '#a3e635' }} />
+      </Box>
+    );
+  }
 
   return (
 
@@ -65,13 +134,19 @@ const LoginPage = () => {
 
           <form onSubmit={handleSubmit}>
             <TextField fullWidth label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} margin="dense" sx={textFieldSx} required />
-            <TextField fullWidth label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} margin="dense" sx={textFieldSx} required />
+            <TextField fullWidth label="Password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} margin="dense" sx={textFieldSx} required InputProps={{ endAdornment: (<InputAdornment position="end"><IconButton onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: 'rgba(255,255,255,0.4)' }}>{showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}</IconButton></InputAdornment>) }} />
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1, mb: 2 }}>
               
               <FormControlLabel control={<Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} sx={{ color: 'rgba(255, 255, 255, 0.5)', '&.Mui-checked': { color: '#a3e635' } }} />} label={<Typography sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem' }}>Remember me</Typography>} />
               <Link href="/forgot-password" style={{ color: '#a3e635', textDecoration: 'none', fontSize: '0.9rem' }}>Forgot?</Link>
             </Box>
+
+            {error && (
+              <Typography sx={{ color: '#f87171', fontSize: '0.85rem', mb: 1, textAlign: 'center' }}>
+                {error}
+              </Typography>
+            )}
 
             <Button fullWidth variant="contained" type="submit" disabled={loading} sx={{ background: 'rgba(163, 230, 53, 0.15)', color: '#a3e635', border: '1px solid rgba(163, 230, 53, 0.3)', fontWeight: 600, py: 1.5, textTransform: 'none', fontSize: '1rem', '&:hover': { background: 'rgba(163, 230, 53, 0.25)', borderColor: 'rgba(163, 230, 53, 0.5)' }, '&:disabled': { color: 'rgba(255, 255, 255, 0.4)', borderColor: 'rgba(255, 255, 255, 0.1)' } }}>
               {loading ? 'Signing in...' : 'Sign in'}
@@ -148,5 +223,11 @@ const LoginPage = () => {
     </Box>
   );
 };
+
+const LoginPage = () => (
+  <Suspense>
+    <LoginContent />
+  </Suspense>
+);
 
 export default LoginPage;

@@ -1,0 +1,124 @@
+{
+  "title": "Elixpo Accounts — Overview",
+  "uid": "elixpo-overview",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTP Request Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[1m])",
+          "legendFormat": "{{method}} {{route}} {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "HTTP Request Duration (p95)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95 {{route}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Auth Attempts",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(auth_attempts_total[1m])",
+          "legendFormat": "{{type}} — {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Active Users",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 8, "w": 6, "h": 4 },
+      "targets": [
+        { "expr": "active_users_total", "legendFormat": "Active Users" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Error Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(errors_total[1m])",
+          "legendFormat": "{{error_type}} — {{endpoint}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Rate Limit Exceeded",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(rate_limit_exceeded_total[1m])",
+          "legendFormat": "{{endpoint}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "OAuth Tokens Issued",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(oauth_tokens_issued_total[1m])",
+          "legendFormat": "{{token_type}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Admin Actions",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(admin_actions_total[1m])",
+          "legendFormat": "{{action}} — {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Memory Usage",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 32, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "system_memory_usage_bytes / 1024 / 1024",
+          "legendFormat": "Heap Used (MB)"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Process Uptime",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 32, "w": 6, "h": 4 },
+      "targets": [
+        { "expr": "system_uptime_seconds", "legendFormat": "Uptime (s)" }
+      ]
+    }
+  ]
+}

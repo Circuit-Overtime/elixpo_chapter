@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #232329;
+  --color-surface-hover: #343448;
+  --color-surface-active: #444480;
+  --color-surface-dark: #1a1a20;
+  --color-surface-card: #1e1e28;
+  --color-accent: #c873e4;
+  --color-accent-dim: #444480;
+  --color-accent-blue: #5B57D1;
+  --color-accent-blue-hover: #6c67f3;
+  --color-text-primary: #fff;
+  --color-text-secondary: #e8e8ee;
+  --color-text-muted: #a0a0b0;
+  --color-text-dim: #787888;
+  --color-border: #333;
+  --color-border-light: #3a3a50;
+  --color-border-accent: #5555a0;
+}
+
+/* Font faces — served from /public/fonts/ */
+@font-face {
+  font-family: "lixFont";
+  src: url("/fonts/lixFont.woff2") format("woff2");
+}
+@font-face {
+  font-family: "lixCode";
+  src: url("/fonts/lixCode.ttf") format("truetype");
+}
+@font-face {
+  font-family: "lixDefault";
+  src: url("/fonts/lixDefault.ttf") format("truetype");
+}
+@font-face {
+  font-family: "lixFancy";
+  src: url("/fonts/lixFancy.ttf") format("truetype");
+}
+@font-face {
+  font-family: "lixDocs";
+  src: url("/fonts/lixDocs.ttf") format("truetype");
+}
+
+/* Global utilities */
+body {
+  margin: 0;
+  background: #13171C;
+  font-family: "lixFont", sans-serif;
+  font-size: 14px;
+}
+
+body.canvas-mode {
+  overflow: hidden;
+}
+
+/* ── Global custom scrollbar ────────────────────────────────── */
+/* Applies to body and all scrollable elements site-wide */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a3a;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8B88E8;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a3a transparent;
+}
+
+/* Hide scrollbars on specific elements */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Canvas mode — hide scrollbars on textareas/pre inside the canvas */
+body.canvas-mode pre::-webkit-scrollbar,
+body.canvas-mode textarea::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Docs/blog thin scrollbar ──────────────────────────────── */
+.docs-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.docs-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.docs-scroll::-webkit-scrollbar-thumb {
+  background: #3a3a50;
+  border-radius: 3px;
+}
+.docs-scroll::-webkit-scrollbar-thumb:hover {
+  background: #8B88E8;
+}
+.docs-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a50 transparent;
+}
+
+/* ── LixScript preview scrollbar ───────────────────────────── */
+.lixscript-preview::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.lixscript-preview::-webkit-scrollbar-track {
+  background: #0a0a12;
+}
+.lixscript-preview::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 3px;
+}
+.lixscript-preview::-webkit-scrollbar-thumb:hover {
+  background: #8B88E8;
+}
+.lixscript-preview {
+  scrollbar-width: thin;
+  scrollbar-color: #30363d #0a0a12;
+}
+
+/* Toast slide-up animation */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}
