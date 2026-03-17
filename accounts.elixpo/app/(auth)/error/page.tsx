@@ -2,9 +2,10 @@
 
 import { Box, Button, Typography } from '@mui/material';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-const ErrorPage = () => {
+const ErrorContent = () => {
   const searchParams = useSearchParams();
   const error = searchParams.get('error') || 'Authentication Error';
   const description = searchParams.get('description') || 'An error occurred during authentication. Please try again.';
@@ -14,6 +15,9 @@ const ErrorPage = () => {
     'invalid_request': 'Invalid request. Please contact support if the problem persists.',
     'server_error': 'Server error occurred. Please try again later.',
     'unauthorized': 'You are not authorized to access this resource.',
+    'provider_conflict': description,
+    'account_not_found': description,
+    'account_error': description,
   };
 
   const displayMessage = errorMessages[error] || description;
@@ -52,5 +56,11 @@ const ErrorPage = () => {
     </Box>
   );
 };
+
+const ErrorPage = () => (
+  <Suspense>
+    <ErrorContent />
+  </Suspense>
+);
 
 export default ErrorPage;

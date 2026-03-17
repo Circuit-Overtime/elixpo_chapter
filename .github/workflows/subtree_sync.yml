@@ -23,8 +23,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Add remotes (idempotent)
+      - name: Sync subtrees
         run: |
+
           repos=(
             "art.elixpo https://github.com/elixpo/elixpoart.git"
             "jackey.elixpo https://github.com/elixpo/elixpojackey.git"
@@ -37,24 +38,41 @@ jobs:
             "search.elixpo https://github.com/pollinations/lixsearch.git" 
           )
 
+          COAUTHOR=$'\n\nCo-authored-by: Circuit-Overtime <ayushbhatt633@gmail.com>'
+
           for entry in "${repos[@]}"; do
             name=${entry%% *}
             url=${entry#* }
+
+            echo "Processing $name"
+
             if git remote get-url "$name" >/dev/null 2>&1; then
-              echo "remote $name already exists"
+              echo "remote exists"
             else
-              echo "adding remote $name -> $url"
               git remote add "$name" "$url"
             fi
-            git fetch "$name" >/dev/null 2>&1 || true
+
+            git fetch "$name"
+
             if [ -d "$name" ] || git ls-tree --name-only HEAD | grep -qx "$name"; then
-              echo "subtree $name already present, skipping add"
+              echo "Pulling subtree updates for $name"
+
+              git subtree pull \
+                --prefix="$name" \
+                "$name" main \
+                -m "Sync $name$COAUTHOR" || true
+
             else
-              echo "adding subtree $name from $name/main"
-              git subtree add --prefix="$name" "$name" main -m "Add $name" || true
+              echo "Adding subtree $name"
+
+              git subtree add \
+                --prefix="$name" \
+                "$name" main \
+                -m "Add $name$COAUTHOR"
             fi
           done
 
+<<<<<<< HEAD
       - name: Fetch all subtree remotes
         run: |
           git fetch art.elixpo
@@ -91,6 +109,7 @@ jobs:
           pull_or_readd accounts.elixpo accounts.elixpo
           pull_or_readd search.elixpo search.elixpo
 
+=======
+>>>>>>> 35c564c6244e5a83864ce66224445e5a16074e06
       - name: Push updates
-        run: |
-          git push origin main
+        run: git push origin main
