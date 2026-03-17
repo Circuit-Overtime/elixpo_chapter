@@ -69,15 +69,27 @@ jobs:
 
       - name: Pull subtrees
         run: |
-          git subtree pull --prefix=art.elixpo art.elixpo main -m "Sync art.elixpo" || true
-          git subtree pull --prefix=jackey.elixpo jackey.elixpo main -m "Sync jackey.elixpo" || true
-          git subtree pull --prefix=chat.elixpo chat.elixpo main -m "Sync chat.elixpo" || true
-          git subtree pull --prefix=blogs.elixpo blogs.elixpo main -m "Sync blogs.elixpo" || true
-          git subtree pull --prefix=verse.elixpo verse.elixpo main -m "Sync verse.elixpo" || true
-          git subtree pull --prefix=sketch.elixpo sketch.elixpo main -m "Sync sketch.elixpo" || true
-          git subtree pull --prefix=me.elixpo me.elixpo main -m "Sync me.elixpo" || true
-          git subtree pull --prefix=accounts.elixpo accounts.elixpo main -m "Sync accounts.elixpo" || true
-          git subtree pull --prefix=search.elixpo search.elixpo main -m "Sync search.elixpo" || true
+          pull_or_readd() {
+            local prefix=$1
+            local remote=$2
+            if git subtree pull --prefix="$prefix" "$remote" main -m "Sync $prefix"; then
+              return 0
+            fi
+            echo "subtree pull failed for $prefix (possibly force-pushed remote), re-adding..."
+            git rm -rf "$prefix/" 2>/dev/null || true
+            git commit -m "Remove $prefix for re-sync" 2>/dev/null || true
+            git subtree add --prefix="$prefix" "$remote" main -m "Re-add $prefix"
+          }
+
+          pull_or_readd art.elixpo art.elixpo
+          pull_or_readd jackey.elixpo jackey.elixpo
+          pull_or_readd chat.elixpo chat.elixpo
+          pull_or_readd blogs.elixpo blogs.elixpo
+          pull_or_readd verse.elixpo verse.elixpo
+          pull_or_readd sketch.elixpo sketch.elixpo
+          pull_or_readd me.elixpo me.elixpo
+          pull_or_readd accounts.elixpo accounts.elixpo
+          pull_or_readd search.elixpo search.elixpo
 
       - name: Push updates
         run: |
