@@ -25,7 +25,6 @@ jobs:
 
       - name: Sync subtrees
         run: |
-
           repos=(
             "art.elixpo https://github.com/elixpo/elixpoart.git"
             "jackey.elixpo https://github.com/elixpo/elixpojackey.git"
@@ -35,19 +34,19 @@ jobs:
             "sketch.elixpo https://github.com/elixpo/elixposketch.git"
             "me.elixpo https://github.com/elixpo/elixpome.git"
             "accounts.elixpo https://github.com/elixpo/elixpoaccounts.git"
-            "search.elixpo https://github.com/pollinations/lixsearch.git" 
+            "search.elixpo https://github.com/pollinations/lixsearch.git"
           )
 
           COAUTHOR=$'\n\nCo-authored-by: Circuit-Overtime <ayushbhatt633@gmail.com>'
 
-          for entry in "${repos[@]}"; do
-            name=${entry%% *}
-            url=${entry#* }
+          sync_subtree() {
+            local name=$1
+            local url=$2
 
-            echo "Processing $name"
+            echo "==> Processing $name"
 
             if git remote get-url "$name" >/dev/null 2>&1; then
-              echo "remote exists"
+              echo "    remote already exists"
             else
               git remote add "$name" "$url"
             fi
@@ -55,58 +54,26 @@ jobs:
             git fetch "$name"
 
             if [ -d "$name" ] || git ls-tree --name-only HEAD | grep -qx "$name"; then
-              echo "Pulling subtree updates for $name"
-
-              git subtree pull \
-                --prefix="$name" \
-                "$name" main \
-                -m "Sync $name$COAUTHOR" || true
-
+              echo "    pulling subtree updates..."
+              if git subtree pull --prefix="$name" "$name" main -m "Sync $name$COAUTHOR"; then
+                return 0
+              fi
+              echo "    pull failed (remote likely force-pushed) — aborting merge and re-adding..."
+              git merge --abort 2>/dev/null || git reset --merge 2>/dev/null || true
+              git rm -rf "$name/" 2>/dev/null || true
+              git commit -m "Remove $name for re-sync$COAUTHOR"
+              git subtree add --prefix="$name" "$name" main -m "Re-add $name$COAUTHOR"
             else
-              echo "Adding subtree $name"
-
-              git subtree add \
-                --prefix="$name" \
-                "$name" main \
-                -m "Add $name$COAUTHOR"
+              echo "    adding subtree for the first time..."
+              git subtree add --prefix="$name" "$name" main -m "Add $name$COAUTHOR"
             fi
-          done
-
-      - name: Fetch all subtree remotes
-        run: |
-          git fetch art.elixpo
-          git fetch jackey.elixpo
-          git fetch chat.elixpo
-          git fetch blogs.elixpo
-          git fetch verse.elixpo
-          git fetch sketch.elixpo
-          git fetch me.elixpo
-          git fetch accounts.elixpo
-          git fetch search.elixpo
-
-      - name: Pull subtrees
-        run: |
-          pull_or_readd() {
-            local prefix=$1
-            local remote=$2
-            if git subtree pull --prefix="$prefix" "$remote" main -m "Sync $prefix"; then
-              return 0
-            fi
-            echo "subtree pull failed for $prefix (possibly force-pushed remote), re-adding..."
-            git rm -rf "$prefix/" 2>/dev/null || true
-            git commit -m "Remove $prefix for re-sync" 2>/dev/null || true
-            git subtree add --prefix="$prefix" "$remote" main -m "Re-add $prefix"
           }
 
-          pull_or_readd art.elixpo art.elixpo
-          pull_or_readd jackey.elixpo jackey.elixpo
-          pull_or_readd chat.elixpo chat.elixpo
-          pull_or_readd blogs.elixpo blogs.elixpo
-          pull_or_readd verse.elixpo verse.elixpo
-          pull_or_readd sketch.elixpo sketch.elixpo
-          pull_or_readd me.elixpo me.elixpo
-          pull_or_readd accounts.elixpo accounts.elixpo
-          pull_or_readd search.elixpo search.elixpo
+          for entry in "${repos[@]}"; do
+            name=${entry%% *}
+            url=${entry#* }
+            sync_subtree "$name" "$url"
+          done
 
       - name: Push updates
         run: git push origin main
