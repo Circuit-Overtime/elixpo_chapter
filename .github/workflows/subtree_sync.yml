@@ -34,6 +34,7 @@ jobs:
             "sketch.elixpo https://github.com/elixpo/elixposketch.git"
             "me.elixpo https://github.com/elixpo/elixpome.git"
             "accounts.elixpo https://github.com/elixpo/elixpoaccounts.git"
+            "search.elixpo https://github.com/pollinations/lixsearch.git" 
           )
 
           for entry in "${repos[@]}"; do
@@ -64,6 +65,7 @@ jobs:
           git fetch sketch.elixpo
           git fetch me.elixpo
           git fetch accounts.elixpo
+          git fetch search.elixpo
 
       - name: Pull subtrees
         run: |
@@ -75,6 +77,7 @@ jobs:
           git subtree pull --prefix=sketch.elixpo sketch.elixpo main -m "Sync sketch.elixpo" || true
           git subtree pull --prefix=me.elixpo me.elixpo main -m "Sync me.elixpo" || true
           git subtree pull --prefix=accounts.elixpo accounts.elixpo main -m "Sync accounts.elixpo" || true
+          git subtree pull --prefix=search.elixpo search.elixpo main -m "Sync search.elixpo" || true
 
       - name: Push updates
         run: |
