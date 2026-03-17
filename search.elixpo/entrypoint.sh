@@ -1,30 +1,33 @@
 #!/bin/bash
 set -e
 
-echo "[ENTRYPOINT] Starting ElixpoSearch services..."
+# LixSearch Entrypoint Script
+# Supports load_balancer, ipc, and worker modes
 
-# Start IPC Service in background
-echo "[ENTRYPOINT] Starting IPC Service..."
-python3 -m api.ipcService.main &
-IPC_PID=$!
-echo "[ENTRYPOINT] IPC Service started with PID $IPC_PID"
+APP_MODE=${APP_MODE:-worker}
+WORKER_PORT=${WORKER_PORT:-9002}
+WORKER_ID=${WORKER_ID:-1}
+LOG_LEVEL=${LOG_LEVEL:-INFO}
+IPC_PORT=${IPC_PORT:-9510}
 
-# Wait for IPC Service to be ready (port 5010)
-echo "[ENTRYPOINT] Waiting for IPC Service to be ready on port 5010..."
-max_attempts=30
-attempt=0
-while ! nc -z localhost 5010 2>/dev/null; do
-    attempt=$((attempt + 1))
-    if [ $attempt -ge $max_attempts ]; then
-        echo "[ENTRYPOINT] IPC Service failed to start within timeout"
-        kill $IPC_PID 2>/dev/null || true
-        exit 1
-    fi
-    echo "[ENTRYPOINT] Waiting for IPC Service... (attempt $attempt/$max_attempts)"
-    sleep 1
-done
-echo "[ENTRYPOINT] IPC Service is ready!"
+echo "Starting LixSearch in $APP_MODE mode..."
+echo "Log level: $LOG_LEVEL"
 
-# Start Flask App in foreground
-echo "[ENTRYPOINT] Starting Flask App..."
-exec python3 api/app.py
+cd /app
+
+# Ensure data directories exist
+mkdir -p /app/data/cache/conversation /app/data/conversations /app/data/embeddings /app/tmp/cache /app/logs
+
+if [ "$APP_MODE" = "load_balancer" ]; then
+    echo "Starting Load Balancer on port 9000..."
+    exec python lixsearch/load_balancer.py
+elif [ "$APP_MODE" = "ipc" ]; then
+    echo "Starting IPC Service on port $IPC_PORT..."
+    exec python lixsearch/ipcService/main.py
+elif [ "$APP_MODE" = "worker" ]; then
+    echo "Starting Worker $WORKER_ID on port $WORKER_PORT..."
+    exec python lixsearch/app/main.py
+else
+    echo "Unknown APP_MODE: $APP_MODE"
+    exit 1
+fi

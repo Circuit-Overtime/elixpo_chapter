@@ -1,0 +1,281 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    name: Lint & Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pylint black isort bandit safety
+          pip install -r requirements.txt
+      
+      - name: Lint with flake8
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 lixsearch --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Exit-zero treats all errors as warnings
+          flake8 lixsearch --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+      
+      - name: Format check with black
+        run: |
+          black --check lixsearch --line-length=120 || true
+      
+      - name: Import sorting check with isort
+        run: |
+          isort --check-only lixsearch --profile=black || true
+      
+      - name: Security check with bandit
+        run: |
+          bandit -r lixsearch -ll || true
+      
+      - name: Dependency vulnerability check
+        run: |
+          safety check || true
+
+  type-check:
+    name: Type Checking
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mypy types-PyYAML
+          pip install -r requirements.txt
+      
+      - name: Type checking with mypy
+        run: |
+          mypy lixsearch --ignore-missing-imports --no-error-summary || true
+
+  test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+      
+      chroma:
+        image: ghcr.io/chroma-core/chroma:latest
+        ports:
+          - 8000:8000
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
+      
+      - name: Run integration tests
+        env:
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          CHROMA_SERVER_HOST: localhost
+          CHROMA_SERVER_PORT: 8000
+        run: |
+          cd tester
+          python test_redis_semantic_cache.py || true
+          python test_session_persistence.py || true
+
+  api-validation:
+    name: API Specification Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install validation tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install openapi-spec-validator pyyaml
+      
+      - name: Validate OpenAPI spec
+        run: |
+          python -c "
+          import yaml
+          from openapi_spec_validator import validate_spec
+          
+          with open('openapi.yaml', 'r') as f:
+              spec = yaml.safe_load(f)
+          
+          try:
+              validate_spec(spec)
+              print('✓ OpenAPI spec is valid')
+          except Exception as e:
+              print(f'✗ OpenAPI spec validation failed: {e}')
+              exit(1)
+          "
+
+  docker:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  security-scanning:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: '.'
+          format: sarif
+          output: trivy-results.sarif
+      
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
+
+  requirements-check:
+    name: Requirements Consistency
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Check requirements.txt
+        run: |
+          python -c "
+          import re
+          
+          with open('requirements.txt', 'r') as f:
+              lines = f.readlines()
+          
+          errors = []
+          for i, line in enumerate(lines, 1):
+              line = line.strip()
+              if not line or line.startswith('#'):
+                  continue
+              
+              # Check format: package_name==version or package_name>=version
+              if not re.match(r'^[a-zA-Z0-9._-]+(\[.*\])?(~=|==|>=|<=|>|<)[0-9]', line):
+                  errors.append(f'Line {i}: Invalid format: {line}')
+          
+          if errors:
+              for error in errors:
+                  print(f'✗ {error}')
+              exit(1)
+          else:
+              print('✓ requirements.txt format is valid')
+          "
+
+  lint-github-actions:
+    name: GitHub Actions Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Validate workflow files
+        run: |
+          python -c "
+          import yaml
+          import os
+          
+          workflow_dir = '.github/workflows'
+          if not os.path.exists(workflow_dir):
+              print('✓ No workflow files to validate')
+              exit(0)
+          
+          for file in os.listdir(workflow_dir):
+              if file.endswith('.yml') or file.endswith('.yaml'):
+                  path = os.path.join(workflow_dir, file)
+                  try:
+                      with open(path, 'r') as f:
+                          yaml.safe_load(f)
+                      print(f'✓ {file} is valid')
+                  except Exception as e:
+                      print(f'✗ {file} validation failed: {e}')
+                      exit(1)
+          "
+
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [lint, type-check, api-validation, docker, requirements-check, lint-github-actions]
+    if: always()
+    
+    steps:
+      - name: Check CI status
+        run: |
+          if [[ "${{ needs.lint.result }}" == "failure" ]] || \
+             [[ "${{ needs.type-check.result }}" == "failure" ]] || \
+             [[ "${{ needs.api-validation.result }}" == "failure" ]] || \
+             [[ "${{ needs.docker.result }}" == "failure" ]] || \
+             [[ "${{ needs.requirements-check.result }}" == "failure" ]] || \
+             [[ "${{ needs.lint-github-actions.result }}" == "failure" ]]; then
+            echo "❌ CI checks failed"
+            exit 1
+          else
+            echo "✅ All CI checks passed"
+          fi

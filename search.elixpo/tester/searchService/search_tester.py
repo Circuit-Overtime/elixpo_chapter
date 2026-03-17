@@ -97,15 +97,18 @@ class SearchEndpointTester:
                 if verbose:
                     if event_type == "info":
                         print(f"ℹ️  {event_data}")
-                    elif event_type == "final":
-                        print(f"\n✅ Final Response:")
+                    elif event_type == "RESPONSE":
+                        print(f"\n✅ Response chunk ({len(event_data)} chars):")
                         print(f"{'─'*80}")
                         preview = event_data[:500] if len(event_data) > 500 else event_data
                         print(preview)
                         if len(event_data) > 500:
                             print(f"\n... (truncated, {len(event_data)} chars total)")
                         print(f"{'─'*80}\n")
-                        final_response = event_data
+                        if final_response is None:
+                            final_response = event_data
+                        else:
+                            final_response += event_data
                     elif event_type == "error":
                         print(f"❌ Error: {event_data}")
                 
