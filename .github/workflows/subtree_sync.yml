@@ -72,7 +72,6 @@ jobs:
             fi
           done
 
-<<<<<<< HEAD
       - name: Fetch all subtree remotes
         run: |
           git fetch art.elixpo
@@ -109,7 +108,5 @@ jobs:
           pull_or_readd accounts.elixpo accounts.elixpo
           pull_or_readd search.elixpo search.elixpo
 
-=======
->>>>>>> 35c564c6244e5a83864ce66224445e5a16074e06
       - name: Push updates
         run: git push origin main
