@@ -1,0 +1,25 @@
+{
+  "heading": "PUBLICATIONS",
+  "description": "Explore our latest publications, showcasing the innovative research and insights from Elixpo.",
+  "images": [
+    "/assets/ayushman/publication/sq-1.png",
+    "/assets/ayushman/about/ptr-11.png"
+  ],
+  "papers": [
+    {
+      "title": "Exploring Microcode CPU Instructions with RISC-V Breadboard Computer",
+      "year": "2025",
+      "isNew": true
+    },
+    {
+      "title": "Decoding the Vulnerabilities of Large AI Models: Practical Demonstrations and Defensive Strategies Against Poisoning, Extraction, and Prompt Injection Attacks",
+      "year": "2025",
+      "isNew": false
+    },
+    {
+      "title": "Predictive Analysis of Autism Spectrum Disorder (ASD) Traits: Integrating Supervised Machine Learning and Exploratory Data Insights",
+      "year": "2024",
+      "isNew": false
+    }
+  ]
+}

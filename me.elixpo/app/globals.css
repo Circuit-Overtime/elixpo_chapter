@@ -1,0 +1,544 @@
+@import url("https://fonts.googleapis.com/css2?family=Amarante&family=Bitcount+Grid+Double:wght@100..900&family=Changa+One:ital@0;1&family=Pathway+Gothic+One&display=swap");
+
+@import "tailwindcss";
+@source not "../ayushman";
+@source not "../anwesha";
+
+/* ===== FONTS ===== */
+
+@font-face {
+  font-family: "Canopee";
+  src: url("/assets/ayushman/FONT/Canopee Regular.otf") format("opentype");
+}
+
+/* ===== GLOBAL RESETS ===== */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* ===== SCROLLBAR HIDING ===== */
+.appContainer::-webkit-scrollbar,
+.spotlight::-webkit-scrollbar,
+.recommendationSection::-webkit-scrollbar,
+.workExperience::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.appContainer,
+.spotlight,
+.recommendationSection,
+.workExperience,
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ===== DEV-S SCROLLBAR ===== */
+.descriptionRow2::-webkit-scrollbar {
+  width: 6px;
+}
+.descriptionRow2::-webkit-scrollbar-track {
+  background: transparent;
+}
+.descriptionRow2::-webkit-scrollbar-thumb {
+  background: #999;
+  border-radius: 3px;
+}
+.descriptionRow2::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+.descriptionRow2 {
+  scrollbar-width: thin;
+  scrollbar-color: #999 transparent;
+}
+
+/* ===== NAVBAR ===== */
+.name {
+  font-family: "Bitcount Grid Double", system-ui;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+.location {
+  font-family: "Bitcount Grid Double", system-ui;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+.navBar ion-icon {
+  font-size: 1.5rem;
+}
+@media (min-width: 640px) {
+  .navBar ion-icon {
+    font-size: 1.75rem;
+  }
+}
+@media (min-width: 768px) {
+  .navBar ion-icon {
+    font-size: 2rem;
+  }
+}
+
+/* ===== MENU OVERLAY ===== */
+.menuItem {
+  text-align: center;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  margin-top: 0;
+  margin-bottom: 0;
+  font-family: Canopee, sans-serif;
+  font-size: 2rem;
+  font-weight: 400;
+}
+@media (min-width: 640px) {
+  .menuItem {
+    font-size: 2.5rem;
+  }
+}
+@media (min-width: 768px) {
+  .menuItem {
+    font-size: 3rem;
+  }
+}
+@media (min-width: 1024px) {
+  .menuItem {
+    font-size: 4rem;
+  }
+}
+@media (min-width: 1280px) {
+  .menuItem {
+    font-size: 5rem;
+  }
+}
+.menuItem.selected {
+  color: #96b59f;
+  text-decoration: underline;
+}
+
+/* ===== CANVAS (curtain effect) ===== */
+#above-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 100;
+  pointer-events: none;
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* ===== HEADINGS & TEXT ===== */
+.headingText {
+  font-family: "Canopee", system-ui;
+}
+.descriptionText {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.nameContainer {
+  font-family: "Canopee";
+  font-optical-sizing: auto;
+  font-weight: 700;
+}
+.nameContainer p {
+  fill: none;
+  stroke: #96b59f;
+  stroke-miterlimit: 10;
+}
+.text1 {
+  font-family: "Canopee";
+}
+.description1 {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.col2text {
+  font-family: "Canopee";
+  font-weight: 500;
+}
+.col2text::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 60%;
+  height: 3px;
+  background: #03280d4a;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ===== SPOTLIGHT ===== */
+.spotlight {
+  min-width: 0;
+  width: 100%;
+  padding: 40px;
+}
+.hoverScale {
+  background-size: 300px !important;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: background-size 0.25s ease;
+}
+.hoverScale:hover {
+  background-size: 320px !important;
+}
+@media (min-width: 640px) {
+  .hoverScale {
+    background-size: 350px !important;
+  }
+  .hoverScale:hover {
+    background-size: 380px !important;
+  }
+}
+@media (min-width: 768px) {
+  .hoverScale {
+    background-size: 400px !important;
+  }
+  .hoverScale:hover {
+    background-size: 450px !important;
+  }
+}
+.featuredDescription {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.featureName {
+  font-family: "Amarante";
+  font-optical-sizing: auto;
+}
+.newTag {
+  font-family: monospace;
+  font-weight: 700;
+}
+.featuredTileSpecialText {
+  font-family: "Canopee";
+  position: relative;
+  padding-bottom: 10px;
+}
+.featuredTileSpecialDesc {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+
+/* ===== WEBSITE SECTION ===== */
+.websiteTextContainer,
+.webCol1Row1Text1,
+.slide2text1 {
+  font-family: "Canopee";
+  font-weight: 500;
+  position: relative;
+  padding-bottom: 10px;
+}
+.webDescription1,
+.webDescription2,
+.webDescription3 {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.webCol2text1 {
+  font-family: "Canopee";
+  font-weight: 500;
+  position: relative;
+  padding-bottom: 10px;
+}
+.visitCircle {
+  font-family: "Bitcount Grid Double", system-ui;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* ===== RECOMMENDATIONS ===== */
+.quote {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.userName {
+  font-family: "Canopee";
+}
+.userDesig {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+
+/* ===== TECH SECTION ===== */
+.text1row1col1techTracks {
+  font-family: "Canopee";
+  font-weight: 500;
+  position: relative;
+  padding-bottom: 10px;
+}
+.descriptionRow2 {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+
+/* ===== CONTACT BANNER (scrolling) ===== */
+@keyframes scroll-horizontal {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.animate-scroll {
+  animation: scroll-horizontal 10s linear infinite;
+}
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+.contactMeText {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.contactMeBox {
+  font-family: "Canopee";
+  font-weight: 500;
+  position: relative;
+}
+
+/* ===== FOOTER ===== */
+.footerName {
+  font-family: "Bitcount Grid Double", system-ui;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* ===== ABOUT PAGE ===== */
+.jobSpotlight {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.publicationText {
+  font-family: "Canopee", system-ui;
+}
+.aboutSectionText {
+  font-family: "Canopee", system-ui;
+}
+.aboutFancyDescription {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+
+/* ===== PROJECTS PAGE ===== */
+.projectsHeaderText {
+  font-family: "Canopee";
+  position: relative;
+  padding-bottom: 10px;
+}
+.projectName {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+
+/* ===== PUBLICATIONS PAGE ===== */
+.paperTitle {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.paperDate {
+  font-family: "Canopee", system-ui;
+}
+
+/* ===== CONNECT PAGE ===== */
+.emailText {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.emailProvoke {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+.submitButton {
+  font-family: "Pathway Gothic One", sans-serif;
+}
+#name:focus {
+  background-size: cover;
+  background-repeat: repeat;
+  animation: shine-brown 1.2s linear infinite;
+}
+#name::placeholder {
+  color: #888;
+}
+@keyframes shine-brown {
+  0% {
+    background-position-x: 0;
+  }
+  100% {
+    background-position-x: 200px;
+  }
+}
+textarea::-webkit-scrollbar {
+  width: 10px;
+  background: #f8f1de;
+  border-radius: 8px;
+}
+textarea::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #e2d9c8 60%, #ffc300 100%);
+  border-radius: 8px;
+  border: 2px solid #e6ddc6;
+  box-shadow: 0 2px 6px #c8c1ae33;
+}
+textarea::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #ffc300 60%, #e2d9c8 100%);
+}
+textarea::-webkit-scrollbar-track {
+  background: #f8f1de;
+  border-radius: 8px;
+  box-shadow: inset 0 0 4px #e6ddc6;
+}
+
+/* ===== TOAST NOTIFICATION ===== */
+/* handled via tailwind classes in component */
+
+/* ===== RESPONSIVE OVERRIDES (from homePage.css) ===== */
+@media (max-width: 639px) {
+  .nameContainer {
+    font-size: 2rem !important;
+    height: 200px !important;
+    letter-spacing: 2px !important;
+  }
+  .nameContainer p {
+    font-size: 2rem !important;
+    word-break: break-word;
+  }
+  .text1 p {
+    font-size: 1.5rem !important;
+    line-height: 1.2 !important;
+  }
+  .col2text {
+    font-size: 1rem !important;
+    line-height: 1.3 !important;
+  }
+  .websiteTextContainer p {
+    font-size: 2rem !important;
+    word-break: break-word;
+  }
+  .webCol2text1 > div:first-child {
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+  }
+  .webCol2text1 > div:last-child {
+    font-size: 1.5rem !important;
+    line-height: 1.2 !important;
+  }
+  .webCol2text1 div {
+    font-size: 1.25rem !important;
+    line-height: 50px !important;
+  }
+  .text1row1col1techTracks {
+    font-size: 1.5rem !important;
+    line-height: 1.3 !important;
+    text-align: center !important;
+  }
+  .descriptionRow2 {
+    font-size: 0.875rem !important;
+    line-height: 1.4 !important;
+  }
+  .contactMeText {
+    font-size: 1rem !important;
+  }
+  .contactMeBox {
+    font-size: 1rem !important;
+  }
+  .contactMeBox p {
+    line-height: 1.3 !important;
+  }
+  .footerName {
+    font-size: 1.25rem !important;
+  }
+  .socialIcon {
+    font-size: 1.125rem !important;
+  }
+  .appContainer {
+    padding: 1rem !important;
+    max-width: 100% !important;
+  }
+  .punchlineSection {
+    padding: 1rem !important;
+    gap: 1.25rem !important;
+  }
+  .column1 {
+    padding: 1rem !important;
+    border-right: none !important;
+    border-bottom: 2px solid #888 !important;
+    margin-bottom: 1rem !important;
+  }
+  .websiteSection {
+    padding: 0.5rem !important;
+  }
+  .websiteContainer {
+    gap: 1.25rem !important;
+  }
+  .webCol1 {
+    padding: 0.5rem !important;
+    border-right: none !important;
+    border-bottom: 2px solid #888 !important;
+    margin-bottom: 1rem !important;
+  }
+  .webCol2 {
+    padding: 0.5rem !important;
+  }
+  .slide1 {
+    padding: 0.5rem !important;
+    border-right: none !important;
+    border-bottom: 2px solid #888 !important;
+    margin-bottom: 1rem !important;
+    margin-right: 0 !important;
+  }
+  .techTracks {
+    padding: 1rem !important;
+  }
+  .row1col1 {
+    gap: 1rem !important;
+  }
+  .image1row1col1techTracks {
+    width: 60px !important;
+    height: 200px !important;
+    margin: 0 auto !important;
+  }
+  .row2row1 {
+    gap: 1.25rem !important;
+  }
+  .text1row1col1techTracks {
+    gap: 1rem !important;
+    line-height: 40px !important;
+  }
+  .row2row2 {
+    gap: 1.25rem !important;
+  }
+  .visitCircle {
+    width: 100% !important;
+    margin: 0 auto !important;
+    margin-top: 2.5rem !important;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 767px) {
+  .nameContainer {
+    font-size: 3rem !important;
+    height: 250px !important;
+  }
+  .text1 p {
+    font-size: 2rem !important;
+  }
+  .col2text {
+    font-size: 1.25rem !important;
+  }
+  .websiteTextContainer p {
+    font-size: 3rem !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .nameContainer {
+    font-size: 4rem !important;
+    height: 300px !important;
+  }
+  .text1 p {
+    font-size: 2.5rem !important;
+  }
+  .col2text {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* ===== HIDDEN UTILITY (for menu) ===== */
+.menuHidden {
+  opacity: 0;
+  pointer-events: none;
+}

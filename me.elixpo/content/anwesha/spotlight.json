@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Anwesha's Birthday Bash",
+    "date": "2025-07-06",
+    "description": "Today is the day! Anwesha's birthday celebration is live. Join us for cake, code, and lots of love. The spotlight is on her — our favorite birthday girl who debugs hearts and compiles smiles!",
+    "image": "/assets/anwesha/spotlight/elixpo-art.png"
+  },
+  {
+    "title": "Love at First Byte",
+    "date": "2025-02-14",
+    "description": "On this Valentine's Day, Anwesha discovered that the only thing better than a perfect function is a perfect partner. She merged her heart with happiness and pushed it to the main branch of life!",
+    "image": "/assets/anwesha/spotlight/elixpo-hackathon.png"
+  },
+  {
+    "title": "Portfolio Panic",
+    "date": "2025-04-01",
+    "description": "April Fools! Anwesha tried to deploy her portfolio but accidentally pushed her love letters instead. The internet loved it. Now her README has more stars than her repos!",
+    "image": "/assets/anwesha/spotlight/elixpoSearchPicture.png"
+  },
+  {
+    "title": "Falling for Bugs",
+    "date": "2025-04-06",
+    "description": "Anwesha spent all night debugging, only to realize the real bug was in her heart — it kept looping back to the same person. Infinite love loop detected!",
+    "image": "/assets/anwesha/spotlight/asciiArt.png"
+  }
+]

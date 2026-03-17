@@ -1,0 +1,65 @@
+{
+  "intro": {
+    "heroName": "ANWESHA",
+    "tagline": "Love",
+    "taglineSuffix": "ENGINEER!",
+    "description": "Welcome to Anwesha's world — where every line of code is a love letter, every bug is a romantic subplot, and every deploy is a grand gesture!",
+    "highlights": [
+      "Fell in love",
+      "Learnt Github",
+      "Fell in love x2",
+      "Married Ayushman",
+      "No Kids"
+    ],
+    "images": {
+      "portrait": "/assets/anwesha/punchlineSection/vr-pic1.png",
+      "landscape": "/assets/anwesha/punchlineSection/hz-pic1.png"
+    }
+  },
+  "websiteSection": {
+    "designedBy": "This website was built with love, laughter, and a little bit of chaos by Ayushman as a birthday surprise for Anwesha. Every pixel was placed with care, every animation was crafted with affection, and every bug was... well, let's just say it's a feature!",
+    "futurePlans": "The future plan is simple: more cake, more code, and more celebrations! Anwesha's portfolio will grow with her journey — documenting not just projects, but memories, milestones, and moments that make life worth coding for.",
+    "codeStory": "Once upon a time, a coder fell in love with another coder. Together, they built not just projects, but a life full of adventures, late-night debugging sessions, and way too many inside jokes.\n\nThis portfolio is a testament to that journey — a celebration of love, friendship, and the beautiful chaos that comes with building things together.\n\nHappy Birthday, Anwesha! May your code always compile on the first try, and may your life be as beautiful as a perfectly styled CSS grid.",
+    "images": {
+      "owl": "/assets/anwesha/websiteSection/hz-owl1.png",
+      "humanThink": "/assets/anwesha/websiteSection/human-think1.png",
+      "seal": "/assets/anwesha/websiteSection/sq-seal1.png"
+    }
+  },
+  "techSection": {
+    "heading": "THE LOVEY CUTIEPIE",
+    "subheading": "DEV-S",
+    "description": "Anwesha is not just a developer — she's a full-stack romantic! From frontend feelings to backend butterflies, she's got it all covered. Her code reviews come with heart emojis, and her pull requests always pass the vibe check.",
+    "skills": [
+      { "type": "icon", "src": "https://img.icons8.com/fluency/144/javascript.png", "alt": "JavaScript" },
+      { "type": "icon", "src": "https://img.icons8.com/fluency/144/node-js.png", "alt": "Node.js" },
+      { "type": "icon", "src": "https://img.icons8.com/ios/100/express-js.png", "alt": "Express.js" },
+      { "type": "text", "label": "KUBERNETES" },
+      { "type": "icon", "src": "https://img.icons8.com/ios-filled/150/postgreesql.png", "alt": "PostgreSQL" },
+      { "type": "icon", "src": "https://img.icons8.com/color/144/mongodb.png", "alt": "MongoDB" },
+      { "type": "icon", "src": "https://img.icons8.com/color/144/mysql-logo.png", "alt": "MySQL" },
+      { "type": "icon", "src": "https://img.icons8.com/color/144/tensorflow.png", "alt": "TensorFlow" },
+      { "type": "icon", "src": "https://img.icons8.com/fluency/144/pytorch.png", "alt": "PyTorch" },
+      { "type": "text", "label": "GIT + GIT-OPS" },
+      { "type": "icon", "src": "https://img.icons8.com/ios/50/kubernetes.png", "alt": "Kubernetes" },
+      { "type": "icon", "src": "https://img.icons8.com/color/144/docker.png", "alt": "Docker" },
+      { "type": "text", "label": "NLP + ML-OPS" },
+      { "type": "icon", "src": "https://img.icons8.com/ios-filled/100/artificial-intelligence.png", "alt": "AI" },
+      { "type": "text", "label": "System Design" },
+      { "type": "icon", "src": "https://img.icons8.com/color/144/redis.png", "alt": "Redis" },
+      { "type": "icon", "src": "https://img.icons8.com/color/144/elasticsearch.png", "alt": "Elasticsearch" },
+      { "type": "text", "label": "GCP + AWS" },
+      { "type": "icon", "src": "https://img.icons8.com/color/144/google-cloud.png", "alt": "Google Cloud" },
+      { "type": "icon", "src": "https://img.icons8.com/color/144/amazon-web-services.png", "alt": "AWS" },
+      { "type": "text", "label": "CP --" },
+      { "type": "icon", "src": "https://img.icons8.com/color/144/c-plus-plus-logo.png", "alt": "C++" },
+      { "type": "icon", "src": "https://img.icons8.com/color/144/c-programming.png", "alt": "C" },
+      { "type": "icon", "src": "https://img.icons8.com/color/144/python.png", "alt": "Python" }
+    ],
+    "images": {
+      "wand": "/assets/anwesha/techTracks/wand-1.png",
+      "landscape": "/assets/anwesha/techTracks/hz-image1.png",
+      "banner": "/assets/anwesha/hrz-image1.png"
+    }
+  }
+}
