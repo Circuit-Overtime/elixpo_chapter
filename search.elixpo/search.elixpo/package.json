@@ -1,36 +1,68 @@
 {
-  "name": "elixpo-search",
-  "type": "module",
-  "version": "1.0.0",
-  "description": "Elixpo Search Frontend",
-  "dependencies": {
-    "cookie-parser": "^1.4.7",
-    "crypto": "^1.0.1",
-    "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "lru-cache": "^11.2.2",
-    "multer": "^2.0.2",
-    "redis": "^5.8.3",
-    "sharp": "^0.34.4"
+  "name": "@elixpo/lixsearch-landing",
+  "version": "3.2.5",
+  "private": true,
+  "description": "LixSearch — an open-source AI-powered search engine that searches the web, fetches content, and synthesizes answers with real sources and citations.",
+  "author": {
+    "name": "Ayushman Bhattacharya",
+    "email": "ayushman@elixpo.com",
+    "url": "https://github.com/elixpo"
   },
-  "devDependencies": {
-    "@types/node": "^20.10.6",
-    "browser-sync": "^3.0.4",
-    "concurrently": "^8.2.2",
-    "connect-history-api-fallback": "^2.0.0",
-    "gulp": "^5.0.1",
-    "gulp-sourcemaps": "^3.0.0",
-    "gulp-typescript": "^6.0.0-alpha.1",
-    "http-proxy-middleware": "^2.0.6",
-    "lite-server": "^2.6.1",
-    "nodemon": "^3.1.10",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+  "contributors": [
+    {
+      "name": "Pollinations.ai",
+      "url": "https://pollinations.ai"
+    }
+  ],
+  "license": "MIT",
+  "homepage": "https://search.elixpo.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pollinations/lixsearch"
+  },
+  "bugs": {
+    "url": "https://github.com/pollinations/lixsearch/issues"
+  },
+  "keywords": [
+    "lixsearch",
+    "elixpo",
+    "ai-search",
+    "search-engine",
+    "rag",
+    "semantic-search",
+    "pollinations",
+    "next.js",
+    "cloudflare-pages"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
   "scripts": {
-    "dev": "gulp dev",
-    "build": "gulp build",
-    "serve": "gulp",
-    "clean": "rm -rf dist"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "deploy": "./deploy.sh",
+    "deploy:build": "./deploy.sh build",
+    "deploy:publish": "./deploy.sh deploy"
+  },
+  "dependencies": {
+    "lucide-react": "^0.400.0",
+    "next": "^15.3.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^15.3.3",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.5.0",
+    "wrangler": "^4.73.0"
   }
 }

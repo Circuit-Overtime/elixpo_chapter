@@ -1,0 +1,300 @@
+import logging
+import asyncio
+import signal
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from quart import Quart, request, jsonify, send_file, render_template_string
+from quart_cors import cors
+from sessions.main import get_session_manager
+from ragService.main import get_retrieval_system
+from chatEngine.main import initialize_chat_engine
+from commons.requestID import RequestIDMiddleware
+from app.gateways import health, search, session, chat, stats, websocket, surf, discover, completions, image, export
+logger = logging.getLogger("lixsearch-api")
+
+
+def _run_archive_cleanup() -> None:
+    """Clean up expired conversation archives (>30 days old)."""
+    try:
+        from sessions.hybrid_conversation_cache import _get_archive
+        archive = _get_archive()
+        removed = archive.cleanup_expired()
+        if removed:
+            logger.info(f"[APP] Archive cleanup: removed {removed} expired sessions")
+    except Exception as e:
+        logger.warning(f"[APP] Archive cleanup error: {e}")
+
+
+def _run_redis_memory_check() -> None:
+    """Log Redis memory usage and warn if approaching limit."""
+    try:
+        from pipeline.config import create_redis_client
+        client = create_redis_client(db=0)
+        info = client.info("memory")
+        used = info.get("used_memory", 0)
+        maxmem = info.get("maxmemory", 0)
+        if maxmem > 0:
+            usage_pct = (used / maxmem) * 100
+            if usage_pct > 85:
+                logger.warning(
+                    f"[APP] Redis memory pressure: {usage_pct:.0f}% "
+                    f"({info.get('used_memory_human')}/{info.get('maxmemory_human')})"
+                )
+            else:
+                logger.debug(f"[APP] Redis memory: {usage_pct:.0f}%")
+    except Exception as e:
+        logger.debug(f"[APP] Redis memory check failed: {e}")
+
+
+class lixSearch:
+    
+    def __init__(self):
+        self.app = Quart(__name__)
+        self.pipeline_initialized = False
+        self.initialization_lock = asyncio.Lock()
+        
+        self._setup_cors()
+        self._setup_middleware()
+        self._register_routes()
+        self._register_error_handlers()
+        self._register_lifecycle_hooks()
+    
+    def _setup_cors(self):
+        cors(self.app, allow_origin="*", allow_headers=["Content-Type", "Authorization", "X-Request-ID", "X-API-Key"])
+    
+    def _setup_middleware(self):
+        middleware = RequestIDMiddleware(self.app.asgi_app)
+        self.app.asgi_app = middleware
+    
+    def _register_routes(self):
+        async def health_check_wrapper():
+            return await health.health_check(self.pipeline_initialized)
+        
+        async def search_wrapper():
+            return await search.search(self.pipeline_initialized)
+        
+        async def chat_wrapper():
+            return await chat.chat(self.pipeline_initialized)
+        
+        async def session_chat_wrapper(session_id):
+            return await chat.session_chat(session_id, self.pipeline_initialized)
+        
+        async def chat_completions_wrapper(session_id):
+            return await chat.chat_completions(session_id, self.pipeline_initialized)
+        
+        _public_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'public')
+
+        async def scalar_ui():
+            html = '''<!DOCTYPE html>
+<html>
+<head>
+    <title>lixSearch API</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title> LixSearch API Docs </title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <style>* { margin: 0; padding: 0; } body { margin: 0; }</style>
+</head>
+<body>
+    <script id="api-reference" data-url="/openapi.json" data-configuration='{"theme":"kepler","layout":"modern","hideDarkModeToggle":false,"searchHotKey":"k","defaultOpenAllTags":false}'></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+</body>
+</html>'''
+            return html, 200, {"Content-Type": "text/html"}
+
+        async def serve_favicon():
+            favicon_path = os.path.join(_public_dir, 'images', 'icon.png')
+            return await send_file(favicon_path, mimetype='image/png')
+        
+        self.app.route('/api/health', methods=['GET'])(health_check_wrapper)
+        self.app.route('/api/search', methods=['POST', 'GET'])(search_wrapper)
+
+        async def completions_wrapper():
+            return await completions.chat_completions(self.pipeline_initialized)
+        self.app.route('/v1/chat/completions', methods=['POST'])(completions_wrapper)
+
+        async def models_list():
+            """GET /v1/models — OpenAI-compatible model listing."""
+            from pipeline.config import RESPONSE_MODEL
+            return jsonify({
+                "object": "list",
+                "data": [
+                    {
+                        "id": RESPONSE_MODEL,
+                        "object": "model",
+                        "created": 1700000000,
+                        "owned_by": "elixpo",
+                    }
+                ],
+            })
+        self.app.route('/v1/models', methods=['GET'])(models_list)
+        self.app.route('/api/session/create', methods=['POST'])(session.create_session)
+        self.app.route('/api/session/<session_id>', methods=['GET'])(session.get_session_info)
+        self.app.route('/api/session/<session_id>/summary', methods=['GET'])(session.get_session_summary)
+        self.app.route('/api/session/<session_id>', methods=['DELETE'])(session.delete_session)
+        self.app.route('/api/chat', methods=['POST'])(chat_wrapper)
+        self.app.route('/api/session/<session_id>/chat', methods=['POST'])(session_chat_wrapper)
+        self.app.route('/api/session/<session_id>/chat/completions', methods=['POST'])(chat_completions_wrapper)
+        self.app.route('/api/session/<session_id>/history', methods=['GET'])(chat.get_chat_history)
+        self.app.route('/api/stats', methods=['GET'])(stats.get_stats)
+        self.app.websocket('/ws/search')(websocket.websocket_search)
+        
+        # Scalar API documentation UI
+        self.app.route('/docs', methods=['GET'])(scalar_ui)
+        self.app.route('/api/docs', methods=['GET'])(scalar_ui)
+        self.app.route('/favicon.png', methods=['GET'])(serve_favicon)
+        
+        # OpenAPI spec endpoints
+        _openapi_spec_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'openapi.yaml')
+
+        async def openapi_spec_json():
+            import yaml
+            try:
+                with open(_openapi_spec_path, 'r') as f:
+                    spec = yaml.safe_load(f)
+                return jsonify(spec)
+            except Exception as e:
+                logger.error(f"[APP] Failed to load OpenAPI spec: {e}")
+                return jsonify({"error": "OpenAPI spec not found"}), 404
+
+        async def openapi_spec_yaml():
+            try:
+                with open(_openapi_spec_path, 'r') as f:
+                    content = f.read()
+                return content, 200, {"Content-Type": "text/yaml; charset=utf-8"}
+            except Exception as e:
+                logger.error(f"[APP] Failed to load OpenAPI spec: {e}")
+                return "OpenAPI spec not found", 404
+
+        self.app.route('/openapi.json', methods=['GET'])(openapi_spec_json)
+        self.app.route('/openapi.yaml', methods=['GET'])(openapi_spec_yaml)
+
+        async def surf_wrapper():
+            return await surf.surf(self.pipeline_initialized)
+
+        async def discover_generate_wrapper():
+            return await discover.generate_discover(self.pipeline_initialized)
+
+        self.app.route('/api/surf', methods=['POST', 'GET'])(surf_wrapper)
+        self.app.route('/api/discover/generate', methods=['POST'])(discover_generate_wrapper)
+
+        # Image proxy endpoint (serves generated images by ID)
+        async def serve_image_wrapper(image_id):
+            return await image.serve_image(image_id)
+        self.app.route('/api/image/<image_id>', methods=['GET'])(serve_image_wrapper)
+
+        # PDF export endpoint
+        self.app.route('/api/export/pdf', methods=['POST'])(export.export_pdf)
+    
+    def _register_error_handlers(self):
+        @self.app.errorhandler(404)
+        async def not_found(error):
+            return jsonify({"error": "Not found"}), 404
+        
+        @self.app.errorhandler(500)
+        async def internal_error(error):
+            request_id = request.headers.get("X-Request-ID", "")
+            logger.error(f"[{request_id}] Internal error: {error}", exc_info=True)
+            return jsonify({
+                "error": "Internal server error",
+                "request_id": request_id
+            }), 500
+    
+    def _register_lifecycle_hooks(self):
+        @self.app.before_serving
+        async def startup():
+            async with self.initialization_lock:
+                if self.pipeline_initialized:
+                    return
+
+                logger.info("[APP] Initializing lixSearch (IPC service must be started manually)...")
+                try:
+                    session_manager = get_session_manager()
+                    retrieval_system = get_retrieval_system()
+                    initialize_chat_engine(session_manager, retrieval_system)
+
+                    # Pre-connect to IPC so first request doesn't pay the cost
+                    try:
+                        from ipcService.coreServiceManager import CoreServiceManager
+                        CoreServiceManager.get_instance()
+                        logger.info("[APP] IPC CoreServiceManager pre-connected")
+                    except Exception as e:
+                        logger.warning(f"[APP] IPC pre-connect failed (will retry on first request): {e}")
+
+                    self.pipeline_initialized = True
+                    logger.info("[APP] lixSearch initialized and ready")
+                except Exception as e:
+                    logger.error(f"[APP] Initialization failed: {e}", exc_info=True)
+                    raise
+
+                # Run conversation archive TTL cleanup on startup (async, non-blocking)
+                try:
+                    from pipeline.config import HYBRID_STARTUP_CLEANUP
+                    if HYBRID_STARTUP_CLEANUP:
+                        await asyncio.to_thread(_run_archive_cleanup)
+                except Exception as e:
+                    logger.warning(f"[APP] Archive startup cleanup failed (non-fatal): {e}")
+
+                # Start periodic maintenance task (cleanup + Redis memory monitoring)
+                async def _periodic_maintenance():
+                    """Run every 6 hours: archive cleanup + Redis memory check."""
+                    while True:
+                        await asyncio.sleep(6 * 3600)
+                        try:
+                            await asyncio.to_thread(_run_archive_cleanup)
+                            await asyncio.to_thread(_run_redis_memory_check)
+                        except Exception as e:
+                            logger.warning(f"[APP] Periodic maintenance error: {e}")
+
+                asyncio.create_task(_periodic_maintenance())
+
+        @self.app.after_serving
+        async def shutdown():
+            logger.info("[APP] Shutting down lixSearch — flushing active sessions to disk...")
+            try:
+                await asyncio.to_thread(_run_archive_cleanup)
+            except Exception as e:
+                logger.warning(f"[APP] Shutdown cleanup error: {e}")
+            logger.info("[APP] Shutdown complete")
+    
+    def run(self, host: str = "0.0.0.0", port: int = 8000, workers: int = 1):
+        import hypercorn.asyncio
+        from hypercorn.config import Config
+        
+        config = Config()
+        config.bind = [f"{host}:{port}"]
+        config.workers = workers
+        
+        logger.info("[APP] Starting lixSearch...")
+        logger.info(f"[APP] Listening on http://{host}:{port}")
+        
+        asyncio.run(hypercorn.asyncio.serve(self.app, config))
+
+
+def create_app() -> lixSearch:
+    return lixSearch()
+
+
+if __name__ == "__main__":
+    import os
+    import logging
+    
+    # Configure logging
+    logging.basicConfig(
+        level=os.getenv('LOG_LEVEL', 'INFO'),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    
+    # Get configuration
+    host = os.getenv('HOST', '0.0.0.0')
+    port = int(os.getenv('WORKER_PORT', '9002'))
+    workers = int(os.getenv('WORKERS', '1'))
+    
+    logger.info(f"[APP] Initializing with WORKER_PORT={port}, WORKERS={workers}")
+    
+    # Create and run app
+    app_instance = create_app()
+    app_instance.run(host=host, port=port, workers=workers)

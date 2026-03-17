@@ -35,7 +35,7 @@ def test_search_sse():
             if line:
                 decoded_line = line.decode("utf-8").strip()
                 print(decoded_line)
-                if "final" in decoded_line or "Didn't Wait" in decoded_line:
+                if "DONE" in decoded_line or "Didn't Wait" in decoded_line:
                     break
 
 

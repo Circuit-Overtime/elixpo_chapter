@@ -1,0 +1,108 @@
+cff-version: 1.2.0
+type: software
+title: "lixSearch: Intelligent Multi-Worker Search & RAG System"
+abstract: "A production-grade, horizontally-scalable search and Retrieval-Augmented Generation (RAG) system featuring 10-worker load-balanced architecture, dedicated vector database server, semantic caching, and advanced optimization strategies for sub-100ms cache hits and 50x throughput improvement."
+
+authors:
+  - family-names: "Pollinations"
+    name-particle: ""
+    given-names: "Team"
+    affiliation: "Pollinations"
+    
+contact:
+  - family-names: "Pollinations"
+    name-particle: ""
+    given-names: "Support"
+    email: "hello@elixpo.ai"
+    website: "https://elixpo.ai"
+
+date-released: 2026-02-25
+identifiers:
+  - type: "url"
+    value: "https://github.com/pollinations/lixsearch"
+  - type: "swh"
+    value: "swh:1:rel:..."
+
+keywords:
+  - "search"
+  - "RAG"
+  - "retrieval-augmented-generation"
+  - "vector-database"
+  - "semantic-search"
+  - "load-balancing"
+  - "web-search"
+  - "LLM"
+  - "embeddings"
+  - "chroma"
+  - "python"
+
+license: "MIT"
+license-url: "https://opensource.org/licenses/MIT"
+
+repository-code: "https://github.com/pollinations/lixsearch"
+url: "https://github.com/pollinations/lixsearch"
+
+version: "1.0.0"
+
+repository: "https://github.com/pollinations/lixsearch"
+repository-artifact: "https://hub.docker.com/r/pollinations/lixsearch"
+
+preferred-citation:
+  type: "software"
+  authors:
+    - family-names: "Ayushman Bhattacharya"
+      name-particle: ""
+      given-names: "Team"
+  title: "lixSearch: Intelligent Multi-Worker Search & RAG System"
+  version: "1.0.0"
+  date-released: 2026-02-25
+  url: "https://github.com/pollinations/lixsearch"
+  license: "MIT"
+  repository-code: "https://github.com/pollinations/lixsearch"
+
+references:
+  - type: "software"
+    title: "Chroma: AI-native open-source vector database"
+    authors:
+      - family-names: "Chroma"
+        given-names: "Team"
+    url: "https://github.com/chroma-core/chroma"
+    license: "Apache-2.0"
+    date-released: 2023-01-01
+
+  - type: "software"
+    title: "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks"
+    authors:
+      - family-names: "Reimers"
+        given-names: "Nils"
+      - family-names: "Gurevych"
+        given-names: "Iryna"
+    repository-code: "https://github.com/UKPLab/sentence-transformers"
+    url: "https://github.com/UKPLab/sentence-transformers"
+    date-released: 2019-08-26
+
+  - type: "software"
+    title: "Quart: Async Python web microframework"
+    authors:
+      - family-names: "Quart"
+        given-names: "Contributors"
+    repository-code: "https://github.com/pallets/quart"
+    url: "https://quart.palletsprojects.com"
+    license: "MIT"
+
+  - type: "software"
+    title: "Playwright: Browser automation library"
+    authors:
+      - family-names: "Microsoft"
+        given-names: "Playwright Team"
+    repository-code: "https://github.com/microsoft/playwright"
+    url: "https://playwright.dev"
+    license: "Apache-2.0"
+
+  - type: "software"
+    title: "ChromaDB Embeddings"
+    authors:
+      - family-names: "BeautifulSoup"
+        given-names: "Contributors"
+    url: "https://www.crummy.com/software/BeautifulSoup/"
+    license: "MIT"

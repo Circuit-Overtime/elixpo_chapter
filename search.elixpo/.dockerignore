@@ -11,5 +11,4 @@ __pycache__/
 *.zip
 *.tar
 *.gz
-*.ipynb
 node_modules/
