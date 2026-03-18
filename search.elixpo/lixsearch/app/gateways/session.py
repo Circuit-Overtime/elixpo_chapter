@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 from quart import request, jsonify
 from sessions.main import get_session_manager
+from sessions.hybrid_conversation_cache import HybridConversationCache
 from pipeline.config import X_REQ_ID_SLICE_SIZE
 from app.utils import validate_session_id
 
@@ -41,26 +42,24 @@ async def get_session_info(session_id: str):
 
     try:
         logger.info(f"[{request_id}] get_session_info session={session_id}")
+
+        # Always pull conversation history from the persistent hybrid cache
+        # (Redis hot window + disk cold archive) — this is the source of truth.
+        cache = HybridConversationCache(session_id)
+        messages = cache.get_full()
+
+        # Also check in-memory SessionData for metadata (query, urls, etc.)
         session_manager = get_session_manager()
         session_data = session_manager.get_session(session_id)
 
-        if session_data:
+        if messages or session_data:
+            summary = session_manager.get_session_summary(session_id) if session_data else {}
+            summary["messages"] = messages or []
+            summary["conversation_turns"] = len(messages) if messages else 0
             return jsonify({
                 "session_id": session_id,
-                "query": session_data.query,
-                "summary": session_manager.get_session_summary(session_id),
-                "request_id": request_id,
-                "timestamp": datetime.utcnow().isoformat()
-            })
-
-        # Session not in memory — try disk archive (evicted sessions)
-        disk_data = session_manager.get_session_from_disk(session_id)
-        if disk_data:
-            logger.info(f"[{request_id}] session={session_id} recovered from disk archive")
-            return jsonify({
-                "session_id": session_id,
-                "summary": disk_data,
-                "source": "disk_archive",
+                "query": session_data.query if session_data else (messages[0].get("content", "") if messages else ""),
+                "summary": summary,
                 "request_id": request_id,
                 "timestamp": datetime.utcnow().isoformat()
             })
@@ -81,23 +80,21 @@ async def get_session_summary(session_id: str):
 
     try:
         logger.info(f"[{request_id}] Getting summary for session: {session_id}")
+
+        # Always pull from persistent hybrid cache (Redis + disk)
+        cache = HybridConversationCache(session_id)
+        messages = cache.get_full()
+
         session_manager = get_session_manager()
         session_data = session_manager.get_session(session_id)
 
-        if session_data:
+        if messages or session_data:
+            summary = session_manager.get_session_summary(session_id) if session_data else {}
+            summary["messages"] = messages or []
+            summary["conversation_turns"] = len(messages) if messages else 0
             return jsonify({
                 "session_id": session_id,
-                "summary": session_manager.get_session_summary(session_id),
-                "request_id": request_id
-            })
-
-        # Fallback to disk archive
-        disk_data = session_manager.get_session_from_disk(session_id)
-        if disk_data:
-            return jsonify({
-                "session_id": session_id,
-                "summary": disk_data,
-                "source": "disk_archive",
+                "summary": summary,
                 "request_id": request_id
             })
 

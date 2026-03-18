@@ -378,17 +378,25 @@ class HybridConversationCache:
     def get_full(self) -> List[Dict]:
         """
         Return complete conversation history (Redis hot + disk cold).
-        Disk is source of truth for full history since hot msgs are
-        migrated to disk on eviction.
+
+        Persists any Redis-only messages to disk first so nothing is
+        lost if the eviction daemon hasn't run yet.
         """
         disk_turns = self.archive.load_all(self.session_id) or []
-        hot_turns = self.get_context()
+        hot_turns = self._get_from_redis() if self._redis else []
 
-        # Merge: disk is older, hot is more recent; deduplicate by timestamp
-        seen_ts: set = {t.get("timestamp") for t in disk_turns}
-        for turn in hot_turns:
-            if turn.get("timestamp") not in seen_ts:
-                disk_turns.append(turn)
+        # Find hot messages not yet on disk (by timestamp) and persist them
+        disk_ts: set = {t.get("timestamp") for t in disk_turns}
+        new_turns = [t for t in hot_turns if t.get("timestamp") not in disk_ts]
+        if new_turns:
+            try:
+                self.archive.append_turns(self.session_id, new_turns)
+            except Exception as e:
+                logger.debug(f"[HybridCache] session={self.session_id} persist in get_full: {e}")
+
+        # Merge all
+        for turn in new_turns:
+            disk_turns.append(turn)
 
         disk_turns.sort(key=lambda t: t.get("timestamp", 0))
         return disk_turns
