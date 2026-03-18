@@ -1,4 +1,5 @@
 *.env
+dump.rdb
 /venv
 clipenv/
 model/

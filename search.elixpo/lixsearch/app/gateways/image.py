@@ -1,38 +1,96 @@
+"""
+Image storage and serving — disk-backed, shared across all app replicas.
+Images are stored on the shared cache-data volume so any container can serve them.
+"""
 import logging
+import os
 import time
 import threading
 from quart import Response
 
 logger = logging.getLogger("lixsearch-api")
 
-# In-memory image store: {image_id: (bytes, content_type, created_at)}
-_image_store: dict = {}
-_store_lock = threading.Lock()
-IMAGE_TTL_SECONDS = 3600  # 1 hour
+IMAGE_DIR = os.environ.get("IMAGE_STORE_DIR", "./data/cache/images")
+IMAGE_TTL_SECONDS = int(os.environ.get("IMAGE_TTL_SECONDS", "86400"))  # 24h default
+
+os.makedirs(IMAGE_DIR, exist_ok=True)
+
+_cleanup_lock = threading.Lock()
+_last_cleanup = 0.0
+
+
+def _ext_from_content_type(ct: str) -> str:
+    return {
+        "image/png": ".png",
+        "image/jpeg": ".jpg",
+        "image/webp": ".webp",
+        "image/gif": ".gif",
+    }.get(ct, ".png")
+
+
+def _content_type_from_ext(ext: str) -> str:
+    return {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+        ".gif": "image/gif",
+    }.get(ext, "image/png")
 
 
 def store_image(image_id: str, data: bytes, content_type: str = "image/png") -> None:
-    with _store_lock:
-        _image_store[image_id] = (data, content_type, time.time())
+    """Write image bytes to shared disk volume."""
+    ext = _ext_from_content_type(content_type)
+    path = os.path.join(IMAGE_DIR, f"{image_id}{ext}")
+    with open(path, "wb") as f:
+        f.write(data)
+    logger.debug(f"[Image] Stored {image_id} ({len(data)} bytes, {content_type})")
 
 
-def _cleanup_expired():
+def _cleanup_expired_images() -> None:
+    """Remove images older than IMAGE_TTL_SECONDS. Runs at most once per 10 min."""
+    global _last_cleanup
     now = time.time()
-    with _store_lock:
-        expired = [k for k, (_, _, ts) in _image_store.items() if now - ts > IMAGE_TTL_SECONDS]
-        for k in expired:
-            del _image_store[k]
-    if expired:
-        logger.debug(f"[Image] Cleaned up {len(expired)} expired images")
+    if now - _last_cleanup < 600:
+        return
+    with _cleanup_lock:
+        if now - _last_cleanup < 600:
+            return
+        _last_cleanup = now
+        removed = 0
+        try:
+            for fname in os.listdir(IMAGE_DIR):
+                fpath = os.path.join(IMAGE_DIR, fname)
+                if not os.path.isfile(fpath):
+                    continue
+                age = now - os.path.getmtime(fpath)
+                if age > IMAGE_TTL_SECONDS:
+                    os.remove(fpath)
+                    removed += 1
+        except Exception as e:
+            logger.warning(f"[Image] Cleanup error: {e}")
+        if removed:
+            logger.info(f"[Image] Cleaned up {removed} expired images")
 
 
 async def serve_image(image_id: str):
-    _cleanup_expired()
-    with _store_lock:
-        entry = _image_store.get(image_id)
-    if not entry:
-        return Response("Image not found", status=404)
-    data, content_type, _ = entry
-    return Response(data, content_type=content_type, headers={
-        "Cache-Control": "public, max-age=3600",
-    })
+    """Serve an image by ID from disk."""
+    _cleanup_expired_images()
+
+    # Find the file regardless of extension
+    for fname in os.listdir(IMAGE_DIR):
+        name, ext = os.path.splitext(fname)
+        if name == image_id:
+            fpath = os.path.join(IMAGE_DIR, fname)
+            try:
+                with open(fpath, "rb") as f:
+                    data = f.read()
+                content_type = _content_type_from_ext(ext)
+                return Response(data, content_type=content_type, headers={
+                    "Cache-Control": "public, max-age=86400",
+                })
+            except Exception as e:
+                logger.error(f"[Image] Failed to read {fpath}: {e}")
+                return Response("Image read error", status=500)
+
+    return Response("Image not found", status=404)
