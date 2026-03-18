@@ -300,7 +300,7 @@ class HybridConversationCache:
     def get_context(self) -> List[Dict]:
         """Return recent messages from Redis hot window (chronological order).
         Falls back to full disk archive if Redis is empty (e.g. after LRU eviction),
-        so the caller's token-budget trimmer can decide how much history to use."""
+        and re-hydrates the Redis hot window so subsequent requests are fast."""
         _update_last_activity(self.session_id)
         if self._redis:
             messages = self._get_from_redis()
@@ -308,14 +308,30 @@ class HybridConversationCache:
                 # Refresh TTL on access so active sessions never expire
                 self._refresh_redis_ttl()
                 return messages
-            # Redis available but empty — session may have been evicted to disk
-            # Return ALL disk messages (not capped) so pipeline token-budget trimmer works
+            # Redis available but empty — session was evicted to disk
+            # Load from disk and re-hydrate Redis hot window
             disk_messages = self.archive.load_all(self.session_id) or []
             if disk_messages:
                 logger.info(
                     f"[HybridCache] session={self.session_id} Redis empty, "
-                    f"recovered {len(disk_messages)} messages from disk"
+                    f"recovered {len(disk_messages)} messages from disk — re-hydrating Redis"
                 )
+                # Re-populate Redis with the most recent messages (up to hot_window_size)
+                recent = disk_messages[-self.hot_window_size:]
+                for msg in recent:
+                    try:
+                        ts = msg.get("timestamp", time.time())
+                        turn_id = int(ts * 1000) % (2**31)
+                        ctx_key = self._ctx_key
+                        msg_key = f"{ctx_key}:{turn_id}"
+                        pipe = self._redis.pipeline()
+                        pipe.setex(msg_key, self.redis_ttl, json.dumps(msg).encode("utf-8"))
+                        pipe.lpush(self._order_key, turn_id)
+                        pipe.expire(self._order_key, self.redis_ttl)
+                        pipe.execute()
+                    except Exception as e:
+                        logger.debug(f"[HybridCache] Re-hydrate failed for msg: {e}")
+                        break
             return disk_messages
         # Redis unavailable — disk-only fallback (full archive)
         return self.archive.load_all(self.session_id) or []

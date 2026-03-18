@@ -351,9 +351,9 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
         ]
 
         # Inject conversation history — from external chat_history (OpenAI messages)
-        # or from session context (Redis/disk), with dynamic token budget
+        # or from session context (Redis/disk), with adaptive token budget
         _injected_history = 0
-        _history_token_budget = HISTORY_TOKEN_BUDGET
+        _history_token_budget = HISTORY_TOKEN_BUDGET_DETAILED if (is_detailed_mode or is_deep_search) else HISTORY_TOKEN_BUDGET
         _history_tokens_used = 0
 
         if chat_history:

@@ -190,5 +190,26 @@ tools = [
                 "required": ["session_id"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "export_to_pdf",
+            "description": "Export the current response or provided content as a professionally formatted PDF document. Use when user asks to save, export, download, or create a PDF of the answer.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "description": "Markdown content to export as PDF"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Title for the PDF document"
+                    }
+                },
+                "required": ["content"]
+            }
+        }
     }
 ]
