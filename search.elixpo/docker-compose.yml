@@ -169,6 +169,7 @@ services:
       - IPC_HOST=ipc-service
       - IPC_PORT=9510
       - IPC_AUTHKEY=${IPC_AUTHKEY:-changeme_ipc_secret}
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-https://search.elixpo.com}
     volumes:
       - embedding-models:/app/models:ro
       - embeddings-data:/app/data/embeddings

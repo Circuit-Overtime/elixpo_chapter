@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔍 lixSearch
+<h1 style="display: flex; align-items: center; justify-content: center; gap: 10px; color: #6391F8;"> <img src="./public/images/icon.png" height="48px" width=48px" alt="searchIcon"> LixSearch </h1>
 
 **Intelligent search assistant with real-time web research, RAG, and OpenAI-compatible API**
 

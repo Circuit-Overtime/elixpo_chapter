@@ -17,6 +17,9 @@ load_dotenv()
 # Round-robin iterator between the two image models
 _model_cycle = itertools.cycle([IMAGE_MODEL1, IMAGE_MODEL2])
 
+# Base URL for constructing full image links in API responses
+_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://search.elixpo.com").rstrip("/")
+
 
 async def create_image_from_prompt(prompt: str) -> str:
     model = next(_model_cycle)
@@ -34,13 +37,14 @@ async def create_image_from_prompt(prompt: str) -> str:
     response.raise_for_status()
     print(f"Image generated with {model} in {time.perf_counter() - t0:.2f} seconds")
 
-    # Store image in memory and return self-domain URL
+    # Store image on shared disk volume
     from app.gateways.image import store_image
     image_id = str(uuid.uuid4())
     content_type = response.headers.get("Content-Type", "image/png")
     store_image(image_id, response.content, content_type)
 
-    return f"/api/image/{image_id}"
+    # Return full URL so it works for external API consumers
+    return f"{_BASE_URL}/api/image/{image_id}"
 
 
 if __name__ == "__main__":
