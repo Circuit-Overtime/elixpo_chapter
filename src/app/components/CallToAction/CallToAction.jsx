@@ -1,26 +1,48 @@
+'use client';
+
+import { motion } from 'framer-motion';
 import styles from './CallToAction.module.css';
 import Button from '../shared/Button';
-import ScrollReveal from '../shared/ScrollReveal';
 
 export default function CallToAction() {
   return (
     <section className={styles.section}>
       <div className={styles.brushTop} aria-hidden="true" />
-      <div className={styles.inner}>
-        <ScrollReveal>
-          <h2 className={styles.title}>
-            Ready to <span className={styles.accent}>Create?</span>
-          </h2>
-          <p className={styles.subtitle}>
-            Join thousands of creators using Elixpo Art to bring their ideas to life.
-            No sign-up needed — start generating for free, right now.
-          </p>
-          <div className={styles.buttons}>
-            <Button variant="primary" href="/generate">Start Creating Free</Button>
-            <Button variant="secondary" href="/learn">View Documentation</Button>
-          </div>
-        </ScrollReveal>
-      </div>
+
+      {/* Animated color orbs */}
+      <div className={styles.orb1} aria-hidden="true" />
+      <div className={styles.orb2} aria-hidden="true" />
+      <div className={styles.orb3} aria-hidden="true" />
+
+      <motion.div
+        className={styles.inner}
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <h2 className={styles.title}>
+          Ready to{' '}
+          <motion.span
+            className={styles.accent}
+            animate={{
+              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+          >
+            Create?
+          </motion.span>
+        </h2>
+        <p className={styles.subtitle}>
+          Join thousands of creators using Elixpo Art to bring their ideas to life.
+          No sign-up needed — start generating for free, right now.
+        </p>
+        <div className={styles.buttons}>
+          <Button variant="primary" href="/generate">Start Creating Free</Button>
+          <Button variant="secondary" href="/learn">View Documentation</Button>
+        </div>
+      </motion.div>
+
       <div className={styles.brushBottom} aria-hidden="true" />
     </section>
   );

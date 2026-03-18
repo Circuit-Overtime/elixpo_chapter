@@ -40,13 +40,13 @@
   opacity: 0.7;
 }
 
-/* Bold colors like the Leonardo screenshot */
-.c1 { color: #f4c801; }
-.c2 { color: #10b981; }
-.c3 { color: #8d49fd; }
+/* Bold colors — dark-theme optimized */
+.c1 { color: #06d6a0; }
+.c2 { color: #8d49fd; }
+.c3 { color: #22d3ee; }
 .c4 { color: #ec4899; }
 .c5 { color: #5691f3; }
-.c6 { color: #f97316; }
+.c6 { color: #a968ff; }
 
 /* Radial vignette to make center content pop */
 .hero::after {
