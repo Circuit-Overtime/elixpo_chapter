@@ -6,16 +6,17 @@
   justify-content: center;
   overflow: hidden;
   padding-top: 72px;
+  background: #000;
 }
 
-/* 3D perspective text background (Leonardo-style) */
+/* 3D perspective text background — bold colored like Leonardo */
 .perspectiveContainer {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  perspective: 600px;
+  perspective: 500px;
   overflow: hidden;
 }
 
@@ -23,35 +24,61 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  transform: rotateX(25deg) scale(1.4);
+  transform: rotateX(30deg) scale(1.6);
   transform-style: preserve-3d;
-  gap: 0;
 }
 
 .pLine {
   font-family: var(--font-family-display);
-  font-size: clamp(4rem, 12vw, 10rem);
+  font-size: clamp(5rem, 16vw, 14rem);
   font-weight: 900;
-  line-height: 0.9;
-  color: transparent;
-  -webkit-text-stroke: 2px rgba(141, 73, 253, 0.15);
+  line-height: 0.88;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: -0.02em;
   user-select: none;
   white-space: nowrap;
+  opacity: 0.7;
 }
 
-.pLine:nth-child(even) {
-  -webkit-text-stroke-color: rgba(86, 145, 243, 0.12);
-}
+/* Bold colors like the Leonardo screenshot */
+.c1 { color: #f4c801; }
+.c2 { color: #10b981; }
+.c3 { color: #8d49fd; }
+.c4 { color: #ec4899; }
+.c5 { color: #5691f3; }
+.c6 { color: #f97316; }
 
-/* Dark overlay gradient so center content is legible */
+/* Radial vignette to make center content pop */
 .hero::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, rgba(10, 15, 28, 0.92) 0%, rgba(10, 15, 28, 0.7) 60%, rgba(10, 15, 28, 0.95) 100%);
+  background:
+    radial-gradient(ellipse 60% 50% at center, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.55) 50%, rgba(0, 0, 0, 0.92) 100%);
   z-index: 1;
+}
+
+/* Brush stroke transitions */
+.brushTop {
+  position: absolute;
+  top: -10px;
+  left: -5%;
+  width: 110%;
+  height: 40px;
+  background: var(--color-bg-primary);
+  z-index: 3;
+  transform: rotate(-0.5deg);
+}
+
+.brushBottom {
+  position: absolute;
+  bottom: -10px;
+  left: -5%;
+  width: 110%;
+  height: 40px;
+  background: var(--color-bg-primary);
+  z-index: 3;
+  transform: rotate(0.5deg);
 }
 
 /* Center content */
@@ -69,12 +96,13 @@
   gap: var(--spacing-sm);
   padding: 0.4rem 1rem;
   border-radius: var(--radius-full);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin-bottom: var(--spacing-2xl);
   animation: fadeIn 0.6s ease;
+  backdrop-filter: blur(8px);
 }
 
 .dot {
@@ -87,12 +115,12 @@
 
 .headline {
   font-family: var(--font-family-display);
-  font-size: clamp(2rem, 5vw, var(--font-size-6xl));
-  font-weight: 800;
-  line-height: 1.05;
+  font-size: clamp(2.2rem, 5.5vw, var(--font-size-7xl));
+  font-weight: 900;
+  line-height: 1;
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-lg);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   animation: slideInUp 0.6s ease 0.1s both;
 }
 
@@ -104,11 +132,11 @@
 }
 
 .subtitle {
-  font-size: var(--font-size-lg);
-  color: var(--color-text-tertiary);
-  max-width: 520px;
+  font-size: var(--font-size-xl);
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 500px;
   margin: 0 auto var(--spacing-2xl);
-  line-height: 1.6;
+  line-height: 1.5;
   animation: slideInUp 0.6s ease 0.2s both;
 }
 
@@ -117,58 +145,17 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
-  margin-bottom: var(--spacing-3xl);
   animation: slideInUp 0.6s ease 0.3s both;
-}
-
-/* Stats */
-.stats {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-xl);
-  animation: slideInUp 0.6s ease 0.4s both;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.statNumber {
-  font-family: var(--font-family-display);
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.statLabel {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.divider {
-  width: 1px;
-  height: 36px;
-  background: var(--color-border);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .perspectiveText {
-    transform: rotateX(20deg) scale(1.1);
+    transform: rotateX(25deg) scale(1.2);
   }
 
   .pLine {
-    font-size: clamp(2.5rem, 15vw, 5rem);
-  }
-
-  .stats {
-    gap: var(--spacing-lg);
+    font-size: clamp(3rem, 18vw, 6rem);
   }
 
   .ctas {
@@ -179,10 +166,6 @@
 
 @media (max-width: 480px) {
   .perspectiveText {
-    transform: rotateX(15deg) scale(0.9);
-  }
-
-  .statNumber {
-    font-size: var(--font-size-xl);
+    transform: rotateX(20deg) scale(1);
   }
 }

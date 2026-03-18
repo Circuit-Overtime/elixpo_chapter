@@ -1,76 +1,72 @@
 import styles from './Features.module.css';
 import SectionHeader from '../shared/SectionHeader';
+import ScrollReveal from '../shared/ScrollReveal';
 
 const features = [
   {
     icon: '🖼️',
-    title: 'Text to Image Generation',
-    description: 'Write your idea as a simple text prompt and get a beautiful image in seconds.',
-    color: 'purple',
+    title: 'Text to Image',
+    description: 'Type a prompt, get stunning art. Powered by multiple AI models.',
+    color: '#8d49fd',
+  },
+  {
+    icon: '🎬',
+    title: 'Text to Video',
+    description: 'Generate short AI videos from text descriptions.',
+    color: '#ec4899',
   },
   {
     icon: '🎨',
-    title: '15+ Art Themes',
-    description: 'Choose from a variety of themes — Cyberpunk, Ghibli, Synthwave, Baroque and more.',
-    color: 'blue',
+    title: '15+ Art Styles',
+    description: 'Cyberpunk, Ghibli, Synthwave, Baroque, Impressionism and more.',
+    color: '#10b981',
   },
   {
     icon: '🧠',
-    title: '8 AI Models',
-    description: 'Select from Flux, Turbo, Kontext, NanoBanana and other specialized models.',
-    color: 'teal',
+    title: 'Smart Prompts',
+    description: 'AI refines your ideas into detailed, optimized prompts.',
+    color: '#f4c801',
   },
   {
-    icon: '✨',
-    title: 'LLM Prompt Enhancement',
-    description: 'Let AI refine your prompts for more accurate, detailed, and stunning results.',
-    color: 'gold',
+    icon: '⚡',
+    title: '8 AI Models',
+    description: 'Flux, Turbo, Kontext, NanoBanana — pick the right engine.',
+    color: '#5691f3',
   },
   {
     icon: '🔒',
     title: 'Private Mode',
-    description: 'Generate images without saving your data — your privacy and security guaranteed.',
-    color: 'green',
-  },
-  {
-    icon: '🧩',
-    title: 'Ecosystem Extensions',
-    description: 'Discord bot, Chrome extension, and API integrations for your projects.',
-    color: 'pink',
+    description: 'Generate without storing data. Your creations, your rules.',
+    color: '#f97316',
   },
 ];
-
-const colorMap = {
-  purple: 'var(--color-primary)',
-  blue: 'var(--color-secondary)',
-  teal: '#06b6d4',
-  gold: 'var(--color-gold)',
-  green: '#10b981',
-  pink: '#ec4899',
-};
 
 export default function Features() {
   return (
     <section className={styles.section}>
-      <SectionHeader
-        badge="Features"
-        title="Open Source & Free AI Art Generator"
-        subtitle="Powerful creative tools at your fingertips — no cost, no limits"
-      />
+      <ScrollReveal>
+        <SectionHeader
+          badge="Features"
+          title="Everything you need to create"
+          subtitle="Free, open source, and built for artists"
+        />
+      </ScrollReveal>
 
       <div className={styles.grid}>
-        {features.map((f) => (
-          <div key={f.title} className={styles.card}>
-            <div
-              className={styles.iconWrap}
-              style={{ background: `${colorMap[f.color]}20`, borderColor: `${colorMap[f.color]}30` }}
-            >
-              <span className={styles.icon}>{f.icon}</span>
+        {features.map((f, i) => (
+          <ScrollReveal key={f.title} delay={i * 0.08}>
+            <div className={styles.card}>
+              <div
+                className={styles.iconWrap}
+                style={{ background: `${f.color}15`, borderColor: `${f.color}30` }}
+              >
+                <span className={styles.icon}>{f.icon}</span>
+              </div>
+              <h3 className={styles.cardTitle}>{f.title}</h3>
+              <p className={styles.cardDesc}>{f.description}</p>
+              <div className={styles.accentBar} style={{ background: f.color }} />
             </div>
-            <h3 className={styles.cardTitle}>{f.title}</h3>
-            <p className={styles.cardDesc}>{f.description}</p>
-            <div className={styles.accentBar} style={{ background: colorMap[f.color] }} />
-          </div>
+          </ScrollReveal>
         ))}
       </div>
     </section>

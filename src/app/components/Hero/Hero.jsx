@@ -4,17 +4,21 @@ import Button from '../shared/Button';
 export default function Hero() {
   return (
     <section className={styles.hero}>
-      {/* Background perspective text */}
+      {/* Giant perspective text background */}
       <div className={styles.perspectiveContainer} aria-hidden="true">
         <div className={styles.perspectiveText}>
-          <span className={styles.pLine}>YOUR</span>
-          <span className={styles.pLine}>IDEAS</span>
-          <span className={styles.pLine}>YOUR</span>
-          <span className={styles.pLine}>TOOLS</span>
-          <span className={styles.pLine}>YOURS</span>
-          <span className={styles.pLine}>TO CREATE</span>
+          <span className={`${styles.pLine} ${styles.c1}`}>YOUR</span>
+          <span className={`${styles.pLine} ${styles.c2}`}>IDEAS</span>
+          <span className={`${styles.pLine} ${styles.c3}`}>YOUR</span>
+          <span className={`${styles.pLine} ${styles.c4}`}>TOOLS</span>
+          <span className={`${styles.pLine} ${styles.c5}`}>YOURS</span>
+          <span className={`${styles.pLine} ${styles.c6}`}>TO CREATE</span>
         </div>
       </div>
+
+      {/* Brush strokes */}
+      <div className={styles.brushTop} aria-hidden="true" />
+      <div className={styles.brushBottom} aria-hidden="true" />
 
       {/* Center content overlay */}
       <div className={styles.content}>
@@ -29,29 +33,12 @@ export default function Hero() {
         </h1>
 
         <p className={styles.subtitle}>
-          Transform your ideas into stunning art with 15+ themes, 8+ AI models, and a growing creative ecosystem.
+          Transform text into stunning images and video. 15+ styles. 8+ AI models. Completely free.
         </p>
 
         <div className={styles.ctas}>
           <Button variant="primary" href="/generate">Start now</Button>
           <Button variant="secondary" href="/api">Developer API</Button>
-        </div>
-
-        <div className={styles.stats}>
-          <div className={styles.stat}>
-            <span className={styles.statNumber}>25K+</span>
-            <span className={styles.statLabel}>Images Created</span>
-          </div>
-          <div className={styles.divider} />
-          <div className={styles.stat}>
-            <span className={styles.statNumber}>15+</span>
-            <span className={styles.statLabel}>Art Themes</span>
-          </div>
-          <div className={styles.divider} />
-          <div className={styles.stat}>
-            <span className={styles.statNumber}>4</span>
-            <span className={styles.statLabel}>AI Models</span>
-          </div>
         </div>
       </div>
     </section>
