@@ -62,7 +62,7 @@ LEAKED_TOOL_RE = re.compile(
     r"(?:Functions?\.)?"
     r"(?:web_search|fetch_full_text|query_conversation_cache|get_session_conversation_history|"
     r"cleanQuery|transcribe_audio|generate_prompt_from_image|replyFromImage|image_search|"
-    r"youtubeMetadata|get_local_time|create_image|optimized_tool_execution|"
+    r"youtubeMetadata|get_local_time|create_image|export_to_pdf|optimized_tool_execution|"
     r"memoized_results|semantic_cache|cache_hit|cache_miss)"
     r"(?::\d+)?",
     re.IGNORECASE,
@@ -75,7 +75,8 @@ VISION_MODEL = "gemini-fast"
 RESPONSE_MODEL = "lixsearch"
 LLM_MAX_TOKENS = 1500
 LLM_MAX_TOKENS_DETAILED = 4096
-HISTORY_TOKEN_BUDGET = int(os.getenv("HISTORY_TOKEN_BUDGET", "6000"))  # max tokens for conversation history injection
+HISTORY_TOKEN_BUDGET = int(os.getenv("HISTORY_TOKEN_BUDGET", "10000"))  # max tokens for conversation history injection
+HISTORY_TOKEN_BUDGET_DETAILED = int(os.getenv("HISTORY_TOKEN_BUDGET_DETAILED", "16000"))  # budget for detailed/deep search modes
 LLM_TEMPERATURE = 0.7
 LLM_TOP_P = 1.0
 

@@ -12,7 +12,7 @@ from sessions.main import get_session_manager
 from ragService.main import get_retrieval_system
 from chatEngine.main import initialize_chat_engine
 from commons.requestID import RequestIDMiddleware
-from app.gateways import health, search, session, chat, stats, websocket, surf, discover, completions, image, export
+from app.gateways import health, search, session, chat, stats, websocket, surf, discover, completions, image, export, content
 logger = logging.getLogger("lixsearch-api")
 
 
@@ -29,7 +29,7 @@ def _run_archive_cleanup() -> None:
 
 
 def _run_redis_memory_check() -> None:
-    """Log Redis memory usage and warn if approaching limit."""
+    """Log Redis memory usage, warn if high, and flush expired keys."""
     try:
         from pipeline.config import create_redis_client
         client = create_redis_client(db=0)
@@ -43,10 +43,43 @@ def _run_redis_memory_check() -> None:
                     f"[APP] Redis memory pressure: {usage_pct:.0f}% "
                     f"({info.get('used_memory_human')}/{info.get('maxmemory_human')})"
                 )
+                # Trigger active expiry scan on all DBs
+                for db in range(3):
+                    try:
+                        db_client = create_redis_client(db=db)
+                        expired = 0
+                        cursor = 0
+                        while True:
+                            cursor, keys = db_client.scan(cursor=cursor, count=200)
+                            for key in keys:
+                                if db_client.ttl(key) == -1:
+                                    # Key has no TTL — skip (persistent)
+                                    pass
+                            if cursor == 0:
+                                break
+                        logger.debug(f"[APP] Redis DB{db} scan complete")
+                    except Exception:
+                        pass
             else:
                 logger.debug(f"[APP] Redis memory: {usage_pct:.0f}%")
+        else:
+            logger.debug(f"[APP] Redis memory: {info.get('used_memory_human', 'unknown')} (no maxmemory set)")
     except Exception as e:
         logger.debug(f"[APP] Redis memory check failed: {e}")
+
+
+def _run_content_cleanup() -> None:
+    """Clean up expired images and content files."""
+    try:
+        from app.gateways.image import _cleanup_expired_images
+        _cleanup_expired_images()
+    except Exception as e:
+        logger.debug(f"[APP] Image cleanup error: {e}")
+    try:
+        from app.gateways.content import _cleanup_expired_content
+        _cleanup_expired_content()
+    except Exception as e:
+        logger.debug(f"[APP] Content cleanup error: {e}")
 
 
 class lixSearch:
@@ -188,6 +221,11 @@ class lixSearch:
 
         # PDF export endpoint
         self.app.route('/api/export/pdf', methods=['POST'])(export.export_pdf)
+
+        # Content serving endpoint (PDFs and other generated content)
+        async def serve_content_wrapper(content_id):
+            return await content.serve_content(content_id)
+        self.app.route('/api/content/<content_id>', methods=['GET'])(serve_content_wrapper)
     
     def _register_error_handlers(self):
         @self.app.errorhandler(404)
@@ -240,12 +278,14 @@ class lixSearch:
 
                 # Start periodic maintenance task (cleanup + Redis memory monitoring)
                 async def _periodic_maintenance():
-                    """Run every 6 hours: archive cleanup + Redis memory check."""
+                    """Run every 6 hours: archive cleanup + content cleanup + Redis memory check."""
                     while True:
                         await asyncio.sleep(6 * 3600)
                         try:
                             await asyncio.to_thread(_run_archive_cleanup)
+                            await asyncio.to_thread(_run_content_cleanup)
                             await asyncio.to_thread(_run_redis_memory_check)
+                            logger.info("[APP] Periodic maintenance completed")
                         except Exception as e:
                             logger.warning(f"[APP] Periodic maintenance error: {e}")
 

@@ -4,6 +4,7 @@ from pipeline.tools import tools
 from functionCalls.getTimeZone import get_local_time
 from functionCalls.getImagePrompt import generate_prompt_from_image, replyFromImage
 from functionCalls.generateImage import create_image_from_prompt
+from functionCalls.generatePDF import create_pdf_from_content
 import asyncio
 import time
 import json
@@ -243,6 +244,28 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
             except Exception as e:
                 logger.error(f"Image generation error: {e}")
                 yield f"[ERROR] Image generation failed: {str(e)[:ERROR_MESSAGE_TRUNCATE]}"
+
+        elif function_name == "export_to_pdf":
+            content = function_args.get("content", "")
+            title = function_args.get("title")
+            from pipeline.sse_messages import get_status_message
+            web_event = emit_event_func("INFO", "<TASK>Generating PDF document</TASK>")
+            if web_event:
+                yield web_event
+            try:
+                pdf_url = await create_pdf_from_content(content, title)
+                if "generated_pdfs" not in memoized_results:
+                    memoized_results["generated_pdfs"] = []
+                memoized_results["generated_pdfs"].append(pdf_url)
+                result = f"PDF exported successfully.\nDownload: {pdf_url}"
+                logger.info(f"[Pipeline] Generated PDF: {pdf_url}")
+                done_event = emit_event_func("INFO", "<TASK>PDF ready for download</TASK>")
+                if done_event:
+                    yield done_event
+                yield result
+            except Exception as e:
+                logger.error(f"PDF generation error: {e}")
+                yield f"[ERROR] PDF generation failed: {str(e)[:ERROR_MESSAGE_TRUNCATE]}"
 
         elif function_name == "image_search":
             start_time = time.time()

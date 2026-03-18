@@ -10,8 +10,8 @@ from quart import Response
 
 logger = logging.getLogger("lixsearch-api")
 
-IMAGE_DIR = os.environ.get("IMAGE_STORE_DIR", "./data/cache/images")
-IMAGE_TTL_SECONDS = int(os.environ.get("IMAGE_TTL_SECONDS", "86400"))  # 24h default
+IMAGE_DIR = os.environ.get("IMAGE_STORE_DIR", "/app/data/cache/images")
+IMAGE_TTL_SECONDS = int(os.environ.get("IMAGE_TTL_SECONDS", "604800"))  # 7 days default
 
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
