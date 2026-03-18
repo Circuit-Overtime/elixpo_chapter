@@ -1,0 +1,171 @@
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding-top: 72px;
+  background: #000;
+}
+
+/* 3D perspective text background — bold colored like Leonardo */
+.perspectiveContainer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 500px;
+  overflow: hidden;
+}
+
+.perspectiveText {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: rotateX(30deg) scale(1.6);
+  transform-style: preserve-3d;
+}
+
+.pLine {
+  font-family: var(--font-family-display);
+  font-size: clamp(5rem, 16vw, 14rem);
+  font-weight: 900;
+  line-height: 0.88;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  user-select: none;
+  white-space: nowrap;
+  opacity: 0.7;
+}
+
+/* Bold colors like the Leonardo screenshot */
+.c1 { color: #f4c801; }
+.c2 { color: #10b981; }
+.c3 { color: #8d49fd; }
+.c4 { color: #ec4899; }
+.c5 { color: #5691f3; }
+.c6 { color: #f97316; }
+
+/* Radial vignette to make center content pop */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at center, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.55) 50%, rgba(0, 0, 0, 0.92) 100%);
+  z-index: 1;
+}
+
+/* Brush stroke transitions */
+.brushTop {
+  position: absolute;
+  top: -10px;
+  left: -5%;
+  width: 110%;
+  height: 40px;
+  background: var(--color-bg-primary);
+  z-index: 3;
+  transform: rotate(-0.5deg);
+}
+
+.brushBottom {
+  position: absolute;
+  bottom: -10px;
+  left: -5%;
+  width: 110%;
+  height: 40px;
+  background: var(--color-bg-primary);
+  z-index: 3;
+  transform: rotate(0.5deg);
+}
+
+/* Center content */
+.content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 720px;
+  padding: var(--spacing-xl);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-2xl);
+  animation: fadeIn 0.6s ease;
+  backdrop-filter: blur(8px);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.headline {
+  font-family: var(--font-family-display);
+  font-size: clamp(2.2rem, 5.5vw, var(--font-size-7xl));
+  font-weight: 900;
+  line-height: 1;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
+  letter-spacing: -0.02em;
+  animation: slideInUp 0.6s ease 0.1s both;
+}
+
+.gradientText {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-size: var(--font-size-xl);
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 500px;
+  margin: 0 auto var(--spacing-2xl);
+  line-height: 1.5;
+  animation: slideInUp 0.6s ease 0.2s both;
+}
+
+.ctas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  animation: slideInUp 0.6s ease 0.3s both;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .perspectiveText {
+    transform: rotateX(25deg) scale(1.2);
+  }
+
+  .pLine {
+    font-size: clamp(3rem, 18vw, 6rem);
+  }
+
+  .ctas {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .perspectiveText {
+    transform: rotateX(20deg) scale(1);
+  }
+}
