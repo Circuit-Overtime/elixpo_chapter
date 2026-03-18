@@ -27,7 +27,7 @@
     "lite-server": "^2.6.1",
     "marked": "^14.1.1",
     "multer": "^2.0.2",
-    "next": "^16.1.1",
+    "next": "^15.5.13",
     "node-fetch": "^2.7.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
@@ -36,6 +36,7 @@
     "uuid": "^11.0.3"
   },
   "devDependencies": {
+    "@types/react": "^19.2.14",
     "@vitejs/plugin-react": "^5.1.2",
     "nodemon": "^3.0.1",
     "typescript": "^5.9.3"
