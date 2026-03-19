@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import styles from './CallToAction.module.css';
-import Button from '../shared/Button';
+
 
 export default function CallToAction() {
   return (
@@ -38,8 +38,8 @@ export default function CallToAction() {
           No sign-up needed — start generating for free, right now.
         </p>
         <div className={styles.buttons}>
-          <Button variant="primary" href="/generate">Start Creating Free</Button>
-          <Button variant="secondary" href="/learn">View Documentation</Button>
+          <a href="/generate" className={styles.ctaBtn}>Start Creating Free</a>
+          <a href="/learn" className={styles.ctaBtn}>View Documentation</a>
         </div>
       </motion.div>
 

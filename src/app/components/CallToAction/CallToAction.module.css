@@ -105,6 +105,55 @@
   gap: var(--spacing-md);
 }
 
+/* CTA button — flat, circle-fill from bottom on hover */
+.ctaBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2rem;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-accent);
+  font-family: var(--font-family-primary);
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: color 0.4s ease, border-color 0.4s ease;
+  z-index: 0;
+}
+
+.ctaBtn::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50px;
+  background: var(--color-accent);
+  transform: translateX(-50%);
+  transition: width 0.45s ease, height 0.45s ease;
+  z-index: -1;
+}
+
+.ctaBtn:hover {
+  color: var(--color-bg-primary);
+  border-color: var(--color-accent);
+}
+
+.ctaBtn:hover::before {
+  width: 300%;
+  height: 300%;
+}
+
+.ctaBtn:active {
+  transform: scale(0.97);
+}
+
 @media (max-width: 768px) {
   .title {
     font-size: var(--font-size-3xl);
