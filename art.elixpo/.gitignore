@@ -3,3 +3,4 @@ node_modules/
 .venv/
 .env
 .next/
+pollinations_docs

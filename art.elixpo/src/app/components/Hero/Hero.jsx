@@ -1,5 +1,4 @@
 import styles from './Hero.module.css';
-import Button from '../shared/Button';
 
 export default function Hero() {
   return (
@@ -24,7 +23,7 @@ export default function Hero() {
       <div className={styles.content}>
         <div className={styles.badge}>
           <span className={styles.dot} />
-          Introducing Elixpo Art v5.0
+          Introducing Elixpo Art
         </div>
 
         <h1 className={styles.headline}>
@@ -37,8 +36,7 @@ export default function Hero() {
         </p>
 
         <div className={styles.ctas}>
-          <Button variant="primary" href="/generate">Start now</Button>
-          <Button variant="secondary" href="/api">Developer API</Button>
+          <a href="/generate" className={styles.heroBtn}>Start now</a>
         </div>
       </div>
     </section>

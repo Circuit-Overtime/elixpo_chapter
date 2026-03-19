@@ -7,7 +7,7 @@
 }
 
 .blobPurple,
-.blobGold {
+.blobCyan {
   position: absolute;
   border-radius: 50%;
   filter: blur(100px);
@@ -24,10 +24,10 @@
   left: -80px;
 }
 
-.blobGold {
+.blobCyan {
   width: 350px;
   height: 350px;
-  background: var(--color-gold);
+  background: var(--color-cyan);
   bottom: -80px;
   right: -60px;
 }
