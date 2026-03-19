@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar/Navbar';
+import { saveToLibrary } from '../../lib/library';
 import styles from './Session.module.css';
 
 const IMAGE_MODELS = [
@@ -147,6 +148,9 @@ export default function SessionPage({ params }) {
 
       // Save session
       saveSession({ ...p, seed: usedSeed, resultSrc: blobUrl, generationTime: genTime });
+
+      // Save to library with a thumbnail
+      saveThumbnailToLibrary(blob, { ...p, seed: usedSeed, generationTime: genTime });
     } catch (err) {
       setError(err.message || 'Generation failed');
     } finally {

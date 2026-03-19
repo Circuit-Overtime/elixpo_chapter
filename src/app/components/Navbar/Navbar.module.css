@@ -296,7 +296,7 @@
 }
 
 @media (max-width: 768px) {
-  .links, .actions { display: none; }
+  .links { display: none; }
   .hamburger { display: flex; }
   .mobileMenu { display: flex; }
 }

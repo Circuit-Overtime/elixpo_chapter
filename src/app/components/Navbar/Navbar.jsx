@@ -19,12 +19,34 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
+  const checkAuth = () => {
+    setSignedIn(isSignedIn());
+    setUser(getUser());
+  };
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', onScroll, { passive: true });
-    setSignedIn(isSignedIn());
-    setUser(getUser());
-    return () => window.removeEventListener('scroll', onScroll);
+
+    // Check auth on mount
+    checkAuth();
+
+    // Re-check when localStorage changes (e.g. after callback saves auth)
+    const onStorage = (e) => {
+      if (e.key === 'elixpo_auth') checkAuth();
+    };
+    window.addEventListener('storage', onStorage);
+
+    // Also poll briefly in case of same-tab navigation from callback
+    const interval = setInterval(checkAuth, 1000);
+    const timeout = setTimeout(() => clearInterval(interval), 5000);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('storage', onStorage);
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, []);
 
   // Close user menu on outside click
