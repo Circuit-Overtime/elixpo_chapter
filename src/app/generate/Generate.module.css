@@ -576,6 +576,45 @@
   transform: translateX(-50%) translateY(0);
 }
 
+/* ─── Usage bar ─── */
+.usageBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.usageLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.usageLink {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: opacity var(--animation-fast);
+}
+
+.usageLink:hover { opacity: 0.8; }
+
+.limitWarning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  padding: 0.5rem 1rem;
+  background: rgba(236, 72, 153, 0.1);
+  border: 1px solid rgba(236, 72, 153, 0.25);
+  border-radius: var(--radius-lg);
+  color: #ec4899;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
   .optionsBar {

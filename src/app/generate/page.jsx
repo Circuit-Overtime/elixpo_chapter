@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar/Navbar';
+import { isSignedIn, canGuestGenerate, getGuestRemaining, incrementGuestUsage, getGuestSessionId, getSignInUrl } from '../lib/auth';
 import styles from './Generate.module.css';
 
 const MODELS = [
@@ -90,9 +91,14 @@ export default function GeneratePage() {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploadedPreview, setUploadedPreview] = useState(null);
   const [aiWorking, setAiWorking] = useState(false);
+  const [limitWarning, setLimitWarning] = useState('');
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const starMenuRef = useRef(null);
+
+  const imgRemaining = getGuestRemaining('images');
+  const vidRemaining = getGuestRemaining('videos');
+  const signedIn = isSignedIn();
 
   const selectedModel = MODELS.find((m) => m.id === model);
   const selectedVideoModel = VIDEO_MODELS.find((m) => m.id === videoModel);
@@ -179,9 +185,25 @@ export default function GeneratePage() {
 
   const handleGenerate = async () => {
     if (!prompt.trim() || generating) return;
-    setGenerating(true);
 
-    const sessionId = crypto.randomUUID();
+    const genType = mode === 'video' ? 'videos' : 'images';
+    if (!canGuestGenerate(genType)) {
+      setLimitWarning(
+        mode === 'video'
+          ? 'Guest video limit reached. Sign in for unlimited access.'
+          : 'Guest image limit reached. Sign in for unlimited access.'
+      );
+      return;
+    }
+
+    setGenerating(true);
+    setLimitWarning('');
+
+    // Guests get a single session ID, signed-in users get unique ones
+    const sessionId = signedIn ? crypto.randomUUID() : getGuestSessionId();
+
+    // Track usage for guests
+    if (!signedIn) incrementGuestUsage(genType);
     const { w, h } = selectedAspect;
 
     let imageUrl = null;
@@ -493,6 +515,28 @@ export default function GeneratePage() {
               </button>
             </div>
           </div>
+
+          {/* Usage counter for guests */}
+          {!signedIn && (
+            <div className={styles.usageBar}>
+              <span className={styles.usageLabel}>
+                {mode === 'video'
+                  ? `${vidRemaining} video generation${vidRemaining !== 1 ? 's' : ''} remaining`
+                  : `${imgRemaining} image generation${imgRemaining !== 1 ? 's' : ''} remaining`}
+              </span>
+              <a href={getSignInUrl()} className={styles.usageLink}>Sign in for unlimited</a>
+            </div>
+          )}
+
+          {/* Limit warning */}
+          {limitWarning && (
+            <div className={styles.limitWarning}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              {limitWarning}
+            </div>
+          )}
         </div>
       </main>
     </div>

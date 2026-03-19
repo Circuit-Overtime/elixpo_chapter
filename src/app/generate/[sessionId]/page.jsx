@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar/Navbar';
 import styles from './Session.module.css';
 
-const MODELS = [
+const IMAGE_MODELS = [
   { id: 'flux', label: 'Flux' },
   { id: 'gptimage', label: 'GPT Image' },
   { id: 'seedream5', label: 'Seedream 5' },
@@ -14,12 +14,17 @@ const MODELS = [
   { id: 'imagen-4', label: 'Imagen 4' },
   { id: 'zimage', label: 'Z-Image' },
   { id: 'klein', label: 'Klein' },
+];
+
+const VIDEO_MODELS = [
   { id: 'veo', label: 'Veo' },
   { id: 'seedance', label: 'Seedance' },
   { id: 'seedance-pro', label: 'Seedance Pro' },
   { id: 'wan', label: 'Wan' },
   { id: 'ltx-2', label: 'LTX-2' },
 ];
+
+const ALL_MODELS = [...IMAGE_MODELS, ...VIDEO_MODELS];
 
 const POLLINATIONS_BASE = 'https://gen.pollinations.ai';
 const POLLI_TOKEN = process.env.NEXT_PUBLIC_POLLINATIONS_API_IMAGE;
@@ -306,7 +311,8 @@ export default function SessionPage({ params }) {
     }
   };
 
-  const sel = MODELS.find((m) => m.id === model) || { label: model };
+  const sel = ALL_MODELS.find((m) => m.id === model) || { label: model };
+  const activeModels = mode === 'video' ? VIDEO_MODELS : IMAGE_MODELS;
 
   return (
     <div className={styles.page}>
@@ -425,7 +431,7 @@ export default function SessionPage({ params }) {
                     </button>
                     {modelOpen && (
                       <div className={styles.modelDropdown}>
-                        {MODELS.map((m) => (
+                        {activeModels.map((m) => (
                           <button key={m.id} className={`${styles.modelOption} ${model === m.id ? styles.modelOptionActive : ''}`}
                             onClick={() => { setModel(m.id); setModelOpen(false); }}>{m.label}</button>
                         ))}
@@ -508,15 +514,15 @@ export default function SessionPage({ params }) {
                 </div>
               </div>
 
-              {/* Actions — collapsible */}
-              <div className={styles.section}>
-                <button className={styles.collapseHeader} onClick={() => setActionsOpen(!actionsOpen)}>
-                  <h3 className={styles.sectionLabel}>Actions</h3>
-                  <svg className={`${styles.collapseChevron} ${actionsOpen ? styles.collapseOpen : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9" />
+              {/* Actions — popup */}
+              <div className={styles.actionsWrap}>
+                <button className={styles.actionsToggle} onClick={() => setActionsOpen(!actionsOpen)}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
                   </svg>
+                  Actions
                 </button>
-                {actionsOpen && <div className={styles.actionList}>
+                {actionsOpen && <div className={styles.actionsPopup}><div className={styles.actionList}>
                   <button className={styles.actionBtn} onClick={startRemix} disabled={loading || !resultSrc || mode === 'video'}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
@@ -568,7 +574,7 @@ export default function SessionPage({ params }) {
                     </svg>
                     New Generation
                   </button>
-                </div>}
+                </div></div>}
               </div>
             </div>
           )}

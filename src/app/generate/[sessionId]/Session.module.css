@@ -650,26 +650,52 @@
   color: var(--color-text-primary);
 }
 
-/* Collapsible header */
-.collapseHeader {
+/* ─── Actions popup ─── */
+.actionsWrap {
+  position: relative;
+}
+
+.actionsToggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.4rem;
   width: 100%;
-  background: none;
-  border: none;
-  padding: 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
   cursor: pointer;
+  transition: all var(--animation-fast);
 }
 
-.collapseChevron {
-  color: var(--color-text-tertiary);
-  transition: transform 0.2s ease;
-  transform: rotate(-90deg);
+.actionsToggle:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
 }
 
-.collapseOpen {
-  transform: rotate(0deg);
+.actionsPopup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xs);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  max-height: 320px;
+  overflow-y: auto;
+  animation: popupIn 0.15s ease;
+}
+
+@keyframes popupIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Action list — single column */
