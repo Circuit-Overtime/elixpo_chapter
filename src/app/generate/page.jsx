@@ -61,7 +61,11 @@ export default function GeneratePage() {
   const [modelOpen, setModelOpen] = useState(false);
   const [styleOpen, setStyleOpen] = useState(false);
   const [durationOpen, setDurationOpen] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [uploadedPreview, setUploadedPreview] = useState(null);
+  const [randomizing, setRandomizing] = useState(false);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const selectedModel = MODELS.find((m) => m.id === model);
   const selectedVideoModel = VIDEO_MODELS.find((m) => m.id === videoModel);
@@ -69,22 +73,56 @@ export default function GeneratePage() {
   const selectedStyle = STYLES.find((s) => s.id === style);
   const selectedDuration = DURATIONS.find((d) => d.id === duration);
 
-  const handleEnhance = async () => {
-    if (!prompt.trim() || enhancing) return;
-    setEnhancing(true);
+  const RANDOM_SUBJECTS = [
+    'a celestial dragon coiled around a dying star',
+    'an ancient library floating in the clouds at sunset',
+    'a cyberpunk samurai standing in neon rain',
+    'a crystal palace growing from a frozen waterfall',
+    'a bioluminescent deep-sea city with jellyfish lanterns',
+    'a time traveler stepping through a shattered mirror',
+    'a forest of giant mushrooms under aurora borealis',
+    'an ethereal phoenix rising from volcanic glass',
+    'a steampunk airship docked at a sky island',
+    'a witch brewing potions in a cozy treehouse',
+    'a massive titan sleeping beneath a mountain range',
+    'an underwater temple guarded by spectral whales',
+    'a lone astronaut discovering alien flowers on Mars',
+    'a floating marketplace above a city of canals',
+    'a knight made of starlight fighting shadow creatures',
+  ];
+
+  const handleRandomPrompt = async () => {
+    if (randomizing) return;
+    setRandomizing(true);
+    const subject = RANDOM_SUBJECTS[Math.floor(Math.random() * RANDOM_SUBJECTS.length)];
     try {
       const res = await fetch(`${API_BASE}/enhance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.trim() }),
+        body: JSON.stringify({ prompt: subject }),
       });
       const data = await res.json();
-      if (data.enhanced) setPrompt(data.enhanced);
+      setPrompt(data.enhanced || subject);
     } catch {
-      /* silent fail */
+      setPrompt(subject);
     } finally {
-      setEnhancing(false);
+      setRandomizing(false);
     }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadedImage(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setUploadedPreview(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const clearUploadedImage = () => {
+    setUploadedImage(null);
+    setUploadedPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleGenerate = async () => {
@@ -134,13 +172,46 @@ export default function GeneratePage() {
             Describe your vision and let AI bring it to life
           </p>
 
+          {/* Uploaded image preview */}
+          {uploadedPreview && (
+            <div className={styles.uploadPreview}>
+              <img src={uploadedPreview} alt="Uploaded" className={styles.uploadThumb} />
+              <span className={styles.uploadLabel}>
+                {mode === 'video' ? 'Start frame' : 'Reference image'}
+              </span>
+              <button className={styles.uploadRemove} onClick={clearUploadedImage} title="Remove">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+
           {/* Prompt input bar */}
           <div className={styles.promptBar}>
-            <svg className={styles.promptIcon} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path d="M21 15l-5-5L5 21" />
-            </svg>
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: 'none' }}
+            />
+            <div className={styles.tooltipWrap}>
+              <button
+                className={styles.promptIconBtn}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
+              </button>
+              <span className={styles.tooltip}>
+                {mode === 'video' ? 'Upload start frame' : 'Upload reference image'}
+              </span>
+            </div>
             <input
               ref={inputRef}
               type="text"
@@ -337,17 +408,19 @@ export default function GeneratePage() {
                 </>
               )}
 
-              {/* Enhance button */}
-              <button
-                className={styles.enhanceBtn}
-                onClick={handleEnhance}
-                disabled={enhancing || !prompt.trim()}
-                title="Enhance prompt with AI"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
-                </svg>
-              </button>
+              {/* Random prompt button */}
+              <div className={styles.tooltipWrap}>
+                <button
+                  className={`${styles.enhanceBtn} ${randomizing ? styles.enhanceSpin : ''}`}
+                  onClick={handleRandomPrompt}
+                  disabled={randomizing}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+                  </svg>
+                </button>
+                <span className={styles.tooltip}>Random prompt</span>
+              </div>
 
               {/* Generate button */}
               <button

@@ -83,6 +83,51 @@
   margin-bottom: var(--spacing-2xl);
 }
 
+/* ─── Upload preview ─── */
+.uploadPreview {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-sm);
+}
+
+.uploadThumb {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.uploadLabel {
+  flex: 1;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.uploadRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color var(--animation-fast);
+}
+
+.uploadRemove:hover {
+  color: var(--color-text-primary);
+}
+
 /* ─── Prompt bar ─── */
 .promptBar {
   width: 100%;
@@ -101,9 +146,21 @@
   border-color: var(--color-border-hover);
 }
 
-.promptIcon {
+.promptIconBtn {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
   color: var(--color-text-tertiary);
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--animation-fast);
+}
+
+.promptIconBtn:hover {
+  color: var(--color-accent);
 }
 
 .promptInput {
@@ -308,8 +365,11 @@
 }
 
 .enhanceBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
+  cursor: wait;
+}
+
+.enhanceSpin svg {
+  animation: spin 0.8s linear infinite;
 }
 
 /* Generate button — icon only */
@@ -354,6 +414,48 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ─── Tooltip ─── */
+.tooltipWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.35rem 0.65rem;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateX(-50%) translateY(4px);
+  z-index: 200;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--color-bg-tertiary);
+}
+
+.tooltipWrap:hover .tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ─── Responsive ─── */
