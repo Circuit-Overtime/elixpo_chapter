@@ -540,6 +540,39 @@
   display: inline-flex;
 }
 
+/* Floating edit button on preview */
+.editFloatBtn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  background: rgba(10, 15, 28, 0.75);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  transition: all 0.25s ease;
+  z-index: 3;
+}
+
+.imageWrap:hover .editFloatBtn {
+  opacity: 1;
+}
+
+.editFloatBtn:hover {
+  background: rgba(10, 15, 28, 0.9);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 .remixCanvas {
   position: absolute;
   top: 0;

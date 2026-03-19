@@ -412,6 +412,16 @@ export default function SessionPage({ params }) {
                         onTouchEnd={onBrushUp}
                       />
                     )}
+                    {/* Edit button floating on preview */}
+                    {!remixMode && (
+                      <button className={styles.editFloatBtn} onClick={startRemix} title="Edit image">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                        Edit
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -565,12 +575,6 @@ export default function SessionPage({ params }) {
                   Actions
                 </button>
                 {actionsOpen && <div className={styles.actionsPopup}><div className={styles.actionList}>
-                  <button className={styles.actionBtn} onClick={startRemix} disabled={loading || !resultSrc || mode === 'video'}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
-                    </svg>
-                    Remix
-                  </button>
                   <button className={styles.actionBtn} disabled>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="3" y="3" width="18" height="18" rx="2" />
