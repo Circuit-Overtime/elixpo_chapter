@@ -10,7 +10,7 @@ info:
     - **OpenAI-compatible**: The `/v1/chat/completions` endpoint follows the OpenAI chat completions spec — drop-in replacement for any OpenAI-compatible client.
     - **Streaming**: All search and chat endpoints support Server-Sent Events (SSE) for real-time token streaming.
     - **Sessions**: Conversations are stateful. Each `session_id` maintains context across queries with a two-tier cache (Redis hot + Huffman-compressed disk archive).
-    - **Deep Search**: Optional multi-step research mode that decomposes complex queries into sub-queries for comprehensive answers.
+    - **Deep Search**: Automatic multi-step research mode — the pipeline detects complex queries and decomposes them into sub-queries for comprehensive answers. No explicit flag needed.
 
     ## Quick Start
 
@@ -33,10 +33,6 @@ info:
 servers:
   - url: https://search.elixpo.com
     description: Production
-  - url: http://localhost:10001
-    description: Local (via nginx)
-  - url: http://localhost:9002
-    description: Direct worker (development)
 
 tags:
   - name: OpenAI Compatible
@@ -77,7 +73,10 @@ paths:
 
         **Extensions** (non-standard fields):
         - `session_id`: Explicit session ID for context persistence across requests
-        - `deep_search`: Enable multi-step deep research mode
+
+        **Deep Search**: The pipeline automatically detects complex, multi-faceted queries and
+        activates deep research mode — no explicit parameter needed. Deep search decomposes the
+        query into sub-topics, researches each independently, and synthesizes a comprehensive answer.
       tags:
         - OpenAI Compatible
       requestBody:
@@ -118,14 +117,13 @@ paths:
                           image_url:
                             url: "https://example.com/photo.jpg"
                   stream: false
-              deep_search:
-                summary: Deep research mode
+              complex_research:
+                summary: Complex query (auto-triggers deep search)
                 value:
                   messages:
                     - role: user
                       content: "Compare the economic policies of the G7 nations in 2025"
                   stream: true
-                  deep_search: true
       responses:
         '200':
           description: Chat completion response
@@ -210,13 +208,6 @@ paths:
             enum: ['true', 'false']
             default: 'true'
           description: Enable SSE streaming (`true`) or return complete JSON (`false`)
-        - name: deep_search
-          in: query
-          schema:
-            type: string
-            enum: ['true', 'false']
-            default: 'false'
-          description: Enable deep research mode (decomposes query into sub-queries)
         - name: image_url
           in: query
           schema:
@@ -277,10 +268,6 @@ paths:
                   type: boolean
                   default: true
                   description: Enable SSE streaming
-                deep_search:
-                  type: boolean
-                  default: false
-                  description: Enable deep research mode
                 image_url:
                   type: string
                   format: uri
@@ -303,12 +290,11 @@ paths:
                   query: "What is quantum computing?"
                   session_id: "sess-abc123"
                   stream: true
-              deep:
-                summary: Deep search with images
+              with_images:
+                summary: Search with images
                 value:
                   query: "Identify this architecture style"
                   session_id: "sess-abc123"
-                  deep_search: true
                   images: ["https://example.com/building.jpg"]
       responses:
         '200':
@@ -932,12 +918,6 @@ components:
           description: |
             **Extension.** Explicit session ID for context persistence.
             If omitted, a deterministic ID is generated from the first user message.
-        deep_search:
-          type: boolean
-          default: false
-          description: |
-            **Extension.** Enable deep research mode — decomposes complex queries into
-            sub-queries and synthesizes a comprehensive answer.
 
     ChatCompletionResponse:
       type: object

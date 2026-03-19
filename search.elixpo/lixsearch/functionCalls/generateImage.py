@@ -22,29 +22,42 @@ _BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://search.elixpo.com").rstrip("/"
 
 
 async def create_image_from_prompt(prompt: str) -> str:
+    """Generate an image and return its URL immediately.
+
+    The image ID and URL are created upfront.  The actual upstream fetch +
+    disk write runs in a background task so the pipeline doesn't block
+    waiting for it.  The serve endpoint will wait briefly for the file to
+    appear if a client requests it before the background task finishes.
+    """
     model = next(_model_cycle)
     seed = random.randint(0, 10000)
-    t0 = time.perf_counter()
-    upstream_url = f"{POLLINATIONS_ENDPOINT_IMAGE}{quote(prompt)}?model={model}&height=512&width=512&seed={seed}&quality=hd&enhance=true"
-
-    headers = {
-        "Authorization": f"Bearer {os.getenv('TOKEN')}"
-    }
-
-    response = await asyncio.to_thread(
-        requests.get, upstream_url, headers=headers, timeout=60
-    )
-    response.raise_for_status()
-    print(f"Image generated with {model} in {time.perf_counter() - t0:.2f} seconds")
-
-    # Store image on shared disk volume
-    from app.gateways.image import store_image
     image_id = str(uuid.uuid4())
-    content_type = response.headers.get("Content-Type", "image/png")
-    store_image(image_id, response.content, content_type)
+    url = f"{_BASE_URL}/api/image/{image_id}"
 
-    # Return full URL so it works for external API consumers
-    return f"{_BASE_URL}/api/image/{image_id}"
+    upstream_url = (
+        f"{POLLINATIONS_ENDPOINT_IMAGE}{quote(prompt)}"
+        f"?model=dirtberry-pro&height=512&width=512&seed={seed}&quality=hd&enhance=true"
+    )
+    headers = {"Authorization": f"Bearer {os.getenv('TOKEN')}"}
+
+    async def _fetch_and_store():
+        t0 = time.perf_counter()
+        try:
+            response = await asyncio.to_thread(
+                requests.get, upstream_url, headers=headers, timeout=60
+            )
+            response.raise_for_status()
+            from app.gateways.image import store_image
+            content_type = response.headers.get("Content-Type", "image/png")
+            store_image(image_id, response.content, content_type)
+            print(f"Image generated with {model} in {time.perf_counter() - t0:.2f} seconds")
+        except Exception as e:
+            print(f"Background image generation failed: {e}")
+
+    # Fire and forget — pipeline continues immediately
+    asyncio.create_task(_fetch_and_store())
+
+    return url
 
 
 if __name__ == "__main__":

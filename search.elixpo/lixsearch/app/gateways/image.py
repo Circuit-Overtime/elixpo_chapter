@@ -74,23 +74,34 @@ def _cleanup_expired_images() -> None:
 
 
 async def serve_image(image_id: str):
-    """Serve an image by ID from disk."""
+    """Serve an image by ID from disk.
+
+    If the file isn't on disk yet (background generation still in progress),
+    waits up to ~30s with exponential back-off before returning 404.
+    """
+    import asyncio
+
     _cleanup_expired_images()
 
-    # Find the file regardless of extension
-    for fname in os.listdir(IMAGE_DIR):
-        name, ext = os.path.splitext(fname)
-        if name == image_id:
-            fpath = os.path.join(IMAGE_DIR, fname)
-            try:
-                with open(fpath, "rb") as f:
-                    data = f.read()
-                content_type = _content_type_from_ext(ext)
-                return Response(data, content_type=content_type, headers={
-                    "Cache-Control": "public, max-age=86400",
-                })
-            except Exception as e:
-                logger.error(f"[Image] Failed to read {fpath}: {e}")
-                return Response("Image read error", status=500)
+    # Try to find the file, with back-off for in-progress generation
+    delays = [0.5, 1, 2, 3, 4, 5, 5, 5, 5]  # ~30s total
+    for attempt in range(len(delays) + 1):
+        for fname in os.listdir(IMAGE_DIR):
+            name, ext = os.path.splitext(fname)
+            if name == image_id:
+                fpath = os.path.join(IMAGE_DIR, fname)
+                try:
+                    with open(fpath, "rb") as f:
+                        data = f.read()
+                    content_type = _content_type_from_ext(ext)
+                    return Response(data, content_type=content_type, headers={
+                        "Cache-Control": "public, max-age=86400",
+                    })
+                except Exception as e:
+                    logger.error(f"[Image] Failed to read {fpath}: {e}")
+                    return Response("Image read error", status=500)
+
+        if attempt < len(delays):
+            await asyncio.sleep(delays[attempt])
 
     return Response("Image not found", status=404)

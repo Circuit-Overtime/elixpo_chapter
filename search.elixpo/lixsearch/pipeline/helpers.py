@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 from pipeline.config import (
     LEAKED_TOOL_RE,
+    LEAKED_XML_TAG_RE,
     FETCH_MIN_USEFUL_CHARS,
     INTERNAL_LEAK_PATTERNS,
     LLM_MODEL,
@@ -29,7 +30,12 @@ POLLINATIONS_TOKEN = os.getenv("TOKEN")
 def _scrub_tool_names(text: str) -> str:
     if not text:
         return text
-    return LEAKED_TOOL_RE.sub("", text).strip()
+    # Strip hallucinated XML tags but keep the text content inside them
+    # e.g. <parameter name="content">actual content</parameter> → actual content
+    text = LEAKED_XML_TAG_RE.sub("", text)
+    # Strip leaked tool/internal names
+    text = LEAKED_TOOL_RE.sub("", text)
+    return text.strip()
 
 
 def get_user_message(operation: str) -> str:

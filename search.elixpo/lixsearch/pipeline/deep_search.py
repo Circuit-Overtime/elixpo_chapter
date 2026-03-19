@@ -52,9 +52,9 @@ async def _evaluate_deep_search_need(query: str, headers: dict) -> bool:
                 POLLINATIONS_ENDPOINT,
                 json=payload,
                 headers=headers,
-                timeout=15
+                timeout=8
             ),
-            timeout=18.0
+            timeout=10.0
         )
         response.raise_for_status()
         content = response.json()["choices"][0]["message"]["content"].strip()
