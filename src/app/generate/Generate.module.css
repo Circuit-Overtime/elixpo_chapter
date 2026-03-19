@@ -312,46 +312,25 @@
   cursor: not-allowed;
 }
 
-/* Generate button */
+/* Generate button — icon only */
 .generateBtn {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-xs);
-  padding: 0.45rem 1.4rem;
+  width: 32px;
+  height: 32px;
   border: 1px solid var(--color-accent);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-accent);
-  font-family: var(--font-family-primary);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
   cursor: pointer;
-  overflow: hidden;
-  transition: color 0.35s ease, border-color 0.35s ease;
-  z-index: 0;
+  transition: all var(--animation-fast);
   flex-shrink: 0;
 }
 
-.generateBtn::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 0;
-  background: var(--color-accent);
-  transition: height 0.35s ease;
-  z-index: -1;
-}
-
 .generateBtn:hover:not(:disabled) {
+  background: var(--color-accent);
   color: var(--color-bg-primary);
-}
-
-.generateBtn:hover:not(:disabled)::before {
-  height: 100%;
 }
 
 .generateBtn:disabled {
@@ -360,7 +339,7 @@
 }
 
 .generateBtn:active:not(:disabled) {
-  transform: scale(0.97);
+  transform: scale(0.95);
 }
 
 /* Spinner */
