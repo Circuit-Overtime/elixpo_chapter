@@ -145,7 +145,57 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
+  margin-bottom: var(--spacing-2xl);
   animation: slideInUp 0.6s ease 0.3s both;
+}
+
+/* Hero CTA — flat, themed, circle-fill hover */
+.heroBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2rem;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-accent);
+  font-family: var(--font-family-primary);
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: color 0.4s ease, border-color 0.4s ease;
+  z-index: 0;
+}
+
+.heroBtn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: var(--color-accent);
+  transform: translate(-50%, -50%);
+  transition: width 0.45s ease, height 0.45s ease;
+  z-index: -1;
+}
+
+.heroBtn:hover {
+  color: var(--color-bg-primary);
+  border-color: var(--color-accent);
+}
+
+.heroBtn:hover::before {
+  width: 300%;
+  height: 300%;
+}
+
+.heroBtn:active {
+  transform: scale(0.97);
 }
 
 /* Responsive */

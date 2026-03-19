@@ -7,7 +7,6 @@ const navLinks = [
   { label: 'Create', href: '/generate' },
   { label: 'Blueprints', href: '/blueprints' },
   { label: 'Gallery', href: '/gallery' },
-  { label: 'Learn', href: '/learn' },
   { label: 'Pricing', href: '/pricing' },
 ];
 
@@ -24,10 +23,9 @@ export default function Navbar() {
   return (
     <nav className={`${styles.nav} ${scrolled ? styles.scrolled : ''}`}>
       <div className={styles.inner}>
-        {/* Brand */}
         <a href="/" className={styles.brand}>
           <img
-            src="https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/bigstar.png?alt=media&token=53c5945b-2b37-4c3e-972c-7bd1b0b9e4f1"
+            src="../../public/logo.png"
             alt="Elixpo"
             className={styles.logo}
           />
