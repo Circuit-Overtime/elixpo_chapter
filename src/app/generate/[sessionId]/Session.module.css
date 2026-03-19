@@ -391,7 +391,7 @@
 .sidebarToggle:hover { color: var(--color-text-primary); }
 
 .sidebarContent {
-  padding: var(--spacing-2xl) var(--spacing-md) var(--spacing-md);
+  padding: var(--spacing-2xl) var(--spacing-md) var(--spacing-2xl);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);

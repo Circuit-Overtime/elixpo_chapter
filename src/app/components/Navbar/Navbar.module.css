@@ -6,6 +6,7 @@
   z-index: 1000;
   height: 72px;
   transition: all var(--animation-normal);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .scrolled {
