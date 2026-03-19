@@ -97,39 +97,149 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-xl);
 }
 
-.loadingRing {
+/* RGB Globe */
+.globe {
   position: relative;
-  width: 64px;
-  height: 64px;
+  width: 120px;
+  height: 120px;
 }
 
-.ringSegment {
+.globeCore {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(6, 214, 160, 0.4));
+  box-shadow:
+    0 0 20px rgba(6, 214, 160, 0.5),
+    0 0 60px rgba(141, 73, 253, 0.3);
+  animation: corePulse 2s ease-in-out infinite;
+}
+
+@keyframes corePulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+}
+
+.globeRing {
   position: absolute;
   inset: 0;
-  border: 2px solid transparent;
   border-radius: 50%;
+  border: 1.5px solid transparent;
 }
 
-.ringSegment:nth-child(1) {
-  border-top-color: var(--color-accent);
-  animation: spin 1s linear infinite;
+.globeRing:nth-child(1) {
+  border-color: rgba(6, 214, 160, 0.5);
+  animation: ringOrbit1 3s linear infinite;
 }
 
-.ringSegment:nth-child(2) {
-  border-right-color: var(--color-primary);
-  animation: spin 1.5s linear infinite reverse;
+.globeRing:nth-child(2) {
+  inset: 10px;
+  border-color: rgba(141, 73, 253, 0.5);
+  animation: ringOrbit2 4s linear infinite reverse;
 }
 
-.ringSegment:nth-child(3) {
-  border-bottom-color: var(--color-cyan);
-  animation: spin 2s linear infinite;
+.globeRing:nth-child(3) {
+  inset: 20px;
+  border-color: rgba(34, 211, 238, 0.5);
+  animation: ringOrbit3 5s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@keyframes ringOrbit1 {
+  0%   { transform: rotateX(60deg) rotateZ(0deg); }
+  100% { transform: rotateX(60deg) rotateZ(360deg); }
+}
+
+@keyframes ringOrbit2 {
+  0%   { transform: rotateX(75deg) rotateY(45deg) rotateZ(0deg); }
+  100% { transform: rotateX(75deg) rotateY(45deg) rotateZ(360deg); }
+}
+
+@keyframes ringOrbit3 {
+  0%   { transform: rotateX(45deg) rotateY(-30deg) rotateZ(0deg); }
+  100% { transform: rotateX(45deg) rotateY(-30deg) rotateZ(360deg); }
+}
+
+/* Orbiting particles */
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+}
+
+.particle:nth-child(4) {
+  background: #06d6a0;
+  box-shadow: 0 0 8px #06d6a0;
+  animation: orbit1 2.5s linear infinite;
+}
+
+.particle:nth-child(5) {
+  background: #8d49fd;
+  box-shadow: 0 0 8px #8d49fd;
+  animation: orbit2 3s linear infinite;
+}
+
+.particle:nth-child(6) {
+  background: #22d3ee;
+  box-shadow: 0 0 8px #22d3ee;
+  animation: orbit3 3.5s linear infinite;
+}
+
+.particle:nth-child(7) {
+  background: #ec4899;
+  box-shadow: 0 0 8px #ec4899;
+  animation: orbit4 2.8s linear infinite;
+}
+
+.particle:nth-child(8) {
+  background: #5691f3;
+  box-shadow: 0 0 8px #5691f3;
+  animation: orbit5 4s linear infinite;
+}
+
+.particle:nth-child(9) {
+  background: #a968ff;
+  box-shadow: 0 0 8px #a968ff;
+  animation: orbit6 3.2s linear infinite;
+}
+
+@keyframes orbit1 {
+  0%   { transform: rotate(0deg) translateX(50px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(50px) rotate(-360deg); }
+}
+
+@keyframes orbit2 {
+  0%   { transform: rotate(60deg) rotate(0deg) translateX(45px) rotate(0deg); }
+  100% { transform: rotate(60deg) rotate(360deg) translateX(45px) rotate(-360deg); }
+}
+
+@keyframes orbit3 {
+  0%   { transform: rotate(120deg) rotate(0deg) translateX(55px) rotate(0deg); }
+  100% { transform: rotate(120deg) rotate(360deg) translateX(55px) rotate(-360deg); }
+}
+
+@keyframes orbit4 {
+  0%   { transform: rotate(180deg) rotate(0deg) translateX(40px) rotate(0deg); }
+  100% { transform: rotate(180deg) rotate(360deg) translateX(40px) rotate(-360deg); }
+}
+
+@keyframes orbit5 {
+  0%   { transform: rotate(240deg) rotate(0deg) translateX(48px) rotate(0deg); }
+  100% { transform: rotate(240deg) rotate(360deg) translateX(48px) rotate(-360deg); }
+}
+
+@keyframes orbit6 {
+  0%   { transform: rotate(300deg) rotate(0deg) translateX(52px) rotate(0deg); }
+  100% { transform: rotate(300deg) rotate(360deg) translateX(52px) rotate(-360deg); }
 }
 
 .loadingText {

@@ -7,12 +7,21 @@ import styles from './Session.module.css';
 
 const MODELS = [
   { id: 'flux', label: 'Flux' },
-  { id: 'turbo', label: 'Turbo' },
+  { id: 'gptimage', label: 'GPT Image' },
+  { id: 'seedream5', label: 'Seedream 5' },
   { id: 'nanobanana', label: 'Nano Banana' },
   { id: 'kontext', label: 'Kontext' },
+  { id: 'imagen-4', label: 'Imagen 4' },
+  { id: 'zimage', label: 'Z-Image' },
+  { id: 'klein', label: 'Klein' },
+  { id: 'veo', label: 'Veo' },
+  { id: 'seedance', label: 'Seedance' },
+  { id: 'seedance-pro', label: 'Seedance Pro' },
+  { id: 'wan', label: 'Wan' },
+  { id: 'ltx-2', label: 'LTX-2' },
 ];
 
-const API_BASE = 'http://localhost:3005';
+const POLLINATIONS_BASE = 'https://gen.pollinations.ai';
 
 export default function SessionPage({ params }) {
   const { sessionId } = use(params);
@@ -24,17 +33,19 @@ export default function SessionPage({ params }) {
   const [width, setWidth] = useState(1024);
   const [height, setHeight] = useState(576);
   const [mode, setMode] = useState('image');
+  const [duration, setDuration] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
 
-  const [imageData, setImageData] = useState(null);
+  const [resultSrc, setResultSrc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [startTime, setStartTime] = useState(null);
   const [generationTime, setGenerationTime] = useState(null);
 
   const [modelOpen, setModelOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const hasGenerated = useRef(false);
 
-  // Load session params and generate
   useEffect(() => {
     if (hasGenerated.current) return;
     hasGenerated.current = true;
@@ -46,52 +57,85 @@ export default function SessionPage({ params }) {
       return;
     }
 
-    const params = JSON.parse(stored);
-    setPrompt(params.prompt);
-    setModel(params.model);
-    setWidth(params.width);
-    setHeight(params.height);
-    setMode(params.mode || 'image');
+    const p = JSON.parse(stored);
+    setPrompt(p.prompt);
+    setModel(p.model);
+    setWidth(p.width);
+    setHeight(p.height);
+    setMode(p.mode || 'image');
+    setDuration(p.duration);
+    setImageUrl(p.imageUrl);
 
-    generate(params);
+    generate(p);
   }, [sessionId]);
 
-  const generate = async (params) => {
+  const buildPollinationsUrl = (p) => {
+    const encodedPrompt = encodeURIComponent(p.prompt);
+    const isVideo = p.mode === 'video';
+    const base = isVideo
+      ? `${POLLINATIONS_BASE}/video/${encodedPrompt}`
+      : `${POLLINATIONS_BASE}/image/${encodedPrompt}`;
+
+    const params = new URLSearchParams();
+    params.set('model', p.model);
+    params.set('width', p.width);
+    params.set('height', p.height);
+    params.set('nologo', 'true');
+    params.set('seed', Math.floor(Math.random() * 2147483647));
+    params.set('enhance', 'true');
+    params.set('referrer', 'elixpoart');
+
+    if (isVideo && p.duration) {
+      params.set('duration', p.duration);
+    }
+
+    if (p.imageUrl) {
+      params.set('image', p.imageUrl);
+    }
+
+    return `${base}?${params.toString()}`;
+  };
+
+  const generate = async (p) => {
     setLoading(true);
     setError(null);
-    setImageData(null);
+    setResultSrc(null);
+    setGenerationTime(null);
+    setStartTime(Date.now());
 
-    try {
-      const res = await fetch(`${API_BASE}/generate-image`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: params.prompt,
-          model: params.model,
-          width: params.width,
-          height: params.height,
-          seed: Math.floor(Math.random() * 10000),
-        }),
-      });
+    const url = buildPollinationsUrl(p);
 
-      const data = await res.json();
-
-      if (data.success) {
-        setImageData(data.imageData);
-        setGenerationTime(data.generationTime);
-      } else {
-        setError(data.error || 'Generation failed');
+    if (p.mode === 'video') {
+      // For video, fetch the blob and create an object URL
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Generation failed (${res.status})`);
+        const blob = await res.blob();
+        setResultSrc(URL.createObjectURL(blob));
+        setGenerationTime(Date.now() - Date.now() + (Date.now() - startTime));
+      } catch (err) {
+        setError(err.message || 'Video generation failed');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError('Failed to connect to generation server');
-    } finally {
-      setLoading(false);
+    } else {
+      // For images, use fetch to get the blob for better error handling
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Generation failed (${res.status})`);
+        const blob = await res.blob();
+        setResultSrc(URL.createObjectURL(blob));
+      } catch (err) {
+        setError(err.message || 'Image generation failed');
+      } finally {
+        setLoading(false);
+        setGenerationTime(Date.now() - (startTime || Date.now()));
+      }
     }
   };
 
   const handleRegenerate = () => {
-    const params = { prompt, model, width, height, mode };
-    generate(params);
+    generate({ prompt, model, width, height, mode, duration, imageUrl });
   };
 
   const handleNewGeneration = () => {
@@ -105,17 +149,19 @@ export default function SessionPage({ params }) {
         width,
         height,
         mode,
+        duration,
+        imageUrl: null,
         timestamp: Date.now(),
       })
     );
     router.push(`/generate/${newSessionId}`);
   };
 
-  const handleDownload = () => {
-    if (!imageData) return;
+  const handleDownload = async () => {
+    if (!resultSrc) return;
     const link = document.createElement('a');
-    link.href = imageData;
-    link.download = `elixpo-${sessionId.slice(0, 8)}.png`;
+    link.href = resultSrc;
+    link.download = `elixpo-${sessionId.slice(0, 8)}.${mode === 'video' ? 'mp4' : 'png'}`;
     link.click();
   };
 
@@ -130,13 +176,12 @@ export default function SessionPage({ params }) {
     }
   };
 
-  const selectedModel = MODELS.find((m) => m.id === model);
+  const selectedModel = MODELS.find((m) => m.id === model) || { label: model };
 
   return (
     <div className={styles.page}>
       <Navbar />
 
-      {/* Top bar */}
       <div className={styles.topBar}>
         <div className={styles.topBarInner}>
           <span className={styles.topTitle}>AI Creation</span>
@@ -150,18 +195,26 @@ export default function SessionPage({ params }) {
       </div>
 
       <div className={styles.layout}>
-        {/* Main content - image display */}
         <div className={styles.content}>
           <div className={styles.imageContainer}>
             {loading && (
               <div className={styles.loadingState}>
-                <div className={styles.loadingRing}>
-                  <div className={styles.ringSegment} />
-                  <div className={styles.ringSegment} />
-                  <div className={styles.ringSegment} />
+                {/* RGB Globe animation */}
+                <div className={styles.globe}>
+                  <div className={styles.globeRing} />
+                  <div className={styles.globeRing} />
+                  <div className={styles.globeRing} />
+                  <div className={styles.globeCore} />
+                  {/* Orbiting particles */}
+                  <div className={styles.particle} />
+                  <div className={styles.particle} />
+                  <div className={styles.particle} />
+                  <div className={styles.particle} />
+                  <div className={styles.particle} />
+                  <div className={styles.particle} />
                 </div>
                 <p className={styles.loadingText}>Generating your creation...</p>
-                <p className={styles.loadingHint}>This may take a few moments</p>
+                <p className={styles.loadingHint}>This may take up to a minute</p>
               </div>
             )}
 
@@ -179,12 +232,22 @@ export default function SessionPage({ params }) {
               </div>
             )}
 
-            {imageData && (
-              <img
-                src={imageData}
-                alt={prompt}
-                className={styles.generatedImage}
-              />
+            {resultSrc && !loading && (
+              mode === 'video' ? (
+                <video
+                  src={resultSrc}
+                  className={styles.generatedImage}
+                  controls
+                  autoPlay
+                  loop
+                />
+              ) : (
+                <img
+                  src={resultSrc}
+                  alt={prompt}
+                  className={styles.generatedImage}
+                />
+              )
             )}
           </div>
 
@@ -200,7 +263,6 @@ export default function SessionPage({ params }) {
                 rows={1}
               />
               <div className={styles.promptActions}>
-                {/* Model selector inline */}
                 <div className={styles.inlineModel}>
                   <button
                     className={styles.modelBtn}
@@ -261,7 +323,6 @@ export default function SessionPage({ params }) {
 
           {sidebarOpen && (
             <div className={styles.sidebarContent}>
-              {/* Prompt section */}
               <div className={styles.sidebarSection}>
                 <div className={styles.sectionHeader}>
                   <h3 className={styles.sectionTitle}>Prompt</h3>
@@ -275,7 +336,6 @@ export default function SessionPage({ params }) {
                 <p className={styles.promptText}>{prompt}</p>
               </div>
 
-              {/* Details */}
               <div className={styles.sidebarSection}>
                 <div className={styles.detailRow}>
                   <span className={styles.detailLabel}>Model</span>
@@ -285,6 +345,12 @@ export default function SessionPage({ params }) {
                   <span className={styles.detailLabel}>Resolution</span>
                   <span className={styles.detailValue}>{width}x{height}</span>
                 </div>
+                {duration && (
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Duration</span>
+                    <span className={styles.detailValue}>{duration}s</span>
+                  </div>
+                )}
                 {generationTime && (
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Time</span>
@@ -293,7 +359,6 @@ export default function SessionPage({ params }) {
                 )}
               </div>
 
-              {/* Actions */}
               <div className={styles.sidebarSection}>
                 <button className={styles.actionBtn} onClick={handleRegenerate} disabled={loading}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -301,7 +366,7 @@ export default function SessionPage({ params }) {
                   </svg>
                   Remix
                 </button>
-                <button className={styles.actionBtn} onClick={handleDownload} disabled={!imageData}>
+                <button className={styles.actionBtn} onClick={handleDownload} disabled={!resultSrc}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                     <polyline points="7 10 12 15 17 10" />
@@ -311,9 +376,7 @@ export default function SessionPage({ params }) {
                 </button>
                 <button
                   className={styles.actionBtn}
-                  onClick={() => {
-                    setNewPrompt(prompt);
-                  }}
+                  onClick={() => setNewPrompt(prompt)}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 20h9" />

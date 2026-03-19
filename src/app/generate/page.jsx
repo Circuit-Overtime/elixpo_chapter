@@ -6,10 +6,14 @@ import Navbar from '../components/Navbar/Navbar';
 import styles from './Generate.module.css';
 
 const MODELS = [
-  { id: 'flux', label: 'Flux', desc: 'Balanced quality' },
-  { id: 'turbo', label: 'Turbo', desc: 'Fast generation' },
+  { id: 'flux', label: 'Flux', desc: 'Fast & reliable' },
+  { id: 'gptimage', label: 'GPT Image', desc: 'OpenAI quality' },
+  { id: 'seedream5', label: 'Seedream 5', desc: 'High detail' },
   { id: 'nanobanana', label: 'Nano Banana', desc: 'Stylized art' },
   { id: 'kontext', label: 'Kontext', desc: 'Context-aware' },
+  { id: 'imagen-4', label: 'Imagen 4', desc: 'Google quality' },
+  { id: 'zimage', label: 'Z-Image', desc: 'Turbo speed' },
+  { id: 'klein', label: 'Klein', desc: 'Compact model' },
 ];
 
 const ASPECTS = [
@@ -33,7 +37,11 @@ const DURATIONS = [
 ];
 
 const VIDEO_MODELS = [
-  { id: 'hailuo', label: 'Hailuo 2.3', desc: 'Coming soon' },
+  { id: 'veo', label: 'Veo', desc: 'Google video' },
+  { id: 'seedance', label: 'Seedance', desc: 'Balanced' },
+  { id: 'seedance-pro', label: 'Seedance Pro', desc: 'High quality' },
+  { id: 'wan', label: 'Wan', desc: 'Fast video' },
+  { id: 'ltx-2', label: 'LTX-2', desc: 'Lightweight' },
 ];
 
 const STYLES = [
@@ -132,15 +140,34 @@ export default function GeneratePage() {
     const sessionId = crypto.randomUUID();
     const { w, h } = selectedAspect;
 
+    // Upload reference image if present
+    let imageUrl = null;
+    if (uploadedImage) {
+      try {
+        const formData = new FormData();
+        formData.append('file', uploadedImage);
+        const uploadRes = await fetch(`${API_BASE}/upload-to-uguu`, {
+          method: 'POST',
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.url) imageUrl = uploadData.url;
+      } catch {
+        /* continue without reference image */
+      }
+    }
+
     sessionStorage.setItem(
       `gen_${sessionId}`,
       JSON.stringify({
         prompt: prompt.trim(),
-        model,
+        model: mode === 'video' ? videoModel : model,
         width: w,
         height: h,
         style,
         mode,
+        duration: mode === 'video' ? duration : null,
+        imageUrl,
         timestamp: Date.now(),
       })
     );
