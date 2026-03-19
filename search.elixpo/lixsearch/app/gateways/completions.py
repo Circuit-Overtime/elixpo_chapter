@@ -95,7 +95,7 @@ async def chat_completions(pipeline_initialized: bool):
         ],
         "stream": true,                    // optional, default false
         "session_id": "...",               // optional, auto-generated if missing
-        "deep_search": false               // optional extension
+        // deep search is auto-detected from query complexity
     }
     """
     if not pipeline_initialized:
@@ -114,7 +114,6 @@ async def chat_completions(pipeline_initialized: bool):
 
         stream = data.get("stream", False)
         session_id = data.get("session_id", "").strip() if data.get("session_id") else ""
-        deep_search = str(data.get("deep_search", "false")).lower() in ("true", "1", "yes")
 
         # Extract the last user message as the query
         user_query = ""
@@ -159,7 +158,7 @@ async def chat_completions(pipeline_initialized: bool):
         logger.info(
             f"[{request_id}] /v1/chat/completions session={session_id} "
             f"query={user_query[:LOG_MESSAGE_QUERY_TRUNCATE]}... "
-            f"stream={stream} history={len(chat_history)} images={len(image_urls)} deep_search={deep_search}"
+            f"stream={stream} history={len(chat_history)} images={len(image_urls)}"
         )
 
         if stream:
@@ -180,7 +179,6 @@ async def chat_completions(pipeline_initialized: bool):
                     user_images=image_urls if image_urls else None,
                     event_id=request_id,
                     session_id=session_id,
-                    deep_search=deep_search,
                     chat_history=chat_history if chat_history else None,
                 ):
                     chunk_str = chunk if isinstance(chunk, str) else chunk.decode("utf-8")
@@ -225,7 +223,6 @@ async def chat_completions(pipeline_initialized: bool):
                 user_images=image_urls if image_urls else None,
                 event_id=None,
                 session_id=session_id,
-                deep_search=deep_search,
                 chat_history=chat_history if chat_history else None,
             ):
                 if chunk:

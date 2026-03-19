@@ -54,7 +54,6 @@ async def search(pipeline_initialized: bool):
             image_url = request.args.get("image_url") or request.args.get("image")
             images_param = request.args.getlist("images")
             stream_param = request.args.get("stream", "true").lower()
-            deep_search_param = request.args.get("deep_search", "false").lower()
         else:
             data = await request.get_json()
             session_id = data.get("session_id", "").strip()
@@ -62,7 +61,6 @@ async def search(pipeline_initialized: bool):
             image_url = data.get("image_url") or data.get("image")
             images_param = data.get("images", [])
             stream_param = str(data.get("stream", "true")).lower()
-            deep_search_param = str(data.get("deep_search", "false")).lower()
 
         # Normalize images: support both single `image` and `images` array (max 3)
         image_urls = []
@@ -90,13 +88,12 @@ async def search(pipeline_initialized: bool):
                 return jsonify({"error": f"Invalid image_url: {img_url}"}), 400
 
         stream_mode = stream_param not in ("false", "0", "no")
-        deep_search_mode = deep_search_param in ("true", "1", "yes")
 
         request_id = request.headers.get("X-Request-ID", str(uuid.uuid4())[:X_REQ_ID_SLICE_SIZE])
 
         logger.info(
             f"[{request_id}] search session={session_id} query={query[:LOG_MESSAGE_QUERY_TRUNCATE]}... "
-            f"stream={stream_mode} images={len(image_urls)} deep_search={deep_search_mode}"
+            f"stream={stream_mode} images={len(image_urls)}"
         )
 
         if stream_mode:
@@ -107,7 +104,6 @@ async def search(pipeline_initialized: bool):
                     user_images=image_urls,
                     event_id=request_id,
                     session_id=session_id,
-                    deep_search=deep_search_mode,
                 ):
                     chunk_str = chunk if isinstance(chunk, str) else chunk.decode('utf-8')
 
@@ -149,7 +145,6 @@ async def search(pipeline_initialized: bool):
                 user_images=image_urls,
                 event_id=None,
                 session_id=session_id,
-                deep_search=deep_search_mode,
             ):
                 if chunk:
                     response_content = chunk  # non-streaming mode: pipeline yields raw text

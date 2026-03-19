@@ -62,9 +62,15 @@ LEAKED_TOOL_RE = re.compile(
     r"(?:Functions?\.)?"
     r"(?:web_search|fetch_full_text|query_conversation_cache|get_session_conversation_history|"
     r"cleanQuery|transcribe_audio|generate_prompt_from_image|replyFromImage|image_search|"
-    r"youtubeMetadata|get_local_time|create_image|export_to_pdf|optimized_tool_execution|"
-    r"memoized_results|semantic_cache|cache_hit|cache_miss)"
+    r"youtubeMetadata|get_local_time|create_image|export_to_pdf|deep_research|"
+    r"optimized_tool_execution|memoized_results|semantic_cache|cache_hit|cache_miss)"
     r"(?::\d+)?",
+    re.IGNORECASE,
+)
+
+# Matches hallucinated XML tags the model sometimes emits (structure only, not content)
+LEAKED_XML_TAG_RE = re.compile(
+    r"</?(?:function_calls|invoke|parameter)\b[^>]*>",
     re.IGNORECASE,
 )
 

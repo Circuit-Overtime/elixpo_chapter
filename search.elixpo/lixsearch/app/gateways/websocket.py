@@ -32,15 +32,13 @@ async def websocket_search():
                 })
                 continue
 
-            deep_search = str(data.get("deep_search", "false")).lower() in ("true", "1", "yes")
-            logger.info(f"[{request_id}] WS Query: {query[:LOG_MESSAGE_QUERY_TRUNCATE]} deep_search={deep_search}")
+            logger.info(f"[{request_id}] WS Query: {query[:LOG_MESSAGE_QUERY_TRUNCATE]}")
 
             async for chunk in run_elixposearch_pipeline(
                 user_query=query,
                 user_image=data.get("image_url"),
                 event_id=request_id,
                 session_id=session_id,
-                deep_search=deep_search,
             ):
                 lines = chunk.split('\n')
                 event_type = None
