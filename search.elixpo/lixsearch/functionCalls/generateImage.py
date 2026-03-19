@@ -22,12 +22,11 @@ _BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://search.elixpo.com").rstrip("/"
 
 
 async def create_image_from_prompt(prompt: str) -> str:
-    """Generate an image and return its URL immediately.
+    """Generate an image, store it on disk, and return the full public URL.
 
-    The image ID and URL are created upfront.  The actual upstream fetch +
-    disk write runs in a background task so the pipeline doesn't block
-    waiting for it.  The serve endpoint will wait briefly for the file to
-    appear if a client requests it before the background task finishes.
+    The upstream fetch runs in a thread so it doesn't block the event loop,
+    but this function AWAITS completion — the caller gets the URL only after
+    the image is actually stored and ready to serve.
     """
     model = next(_model_cycle)
     seed = random.randint(0, 10000)
@@ -36,32 +35,61 @@ async def create_image_from_prompt(prompt: str) -> str:
 
     upstream_url = (
         f"{POLLINATIONS_ENDPOINT_IMAGE}{quote(prompt)}"
-        f"?model=dirtberry-pro&height=512&width=512&seed={seed}&quality=hd&enhance=true"
+        f"?model={model}&height=462&width=768&seed={seed}&quality=hd&enhance=true"
     )
     headers = {"Authorization": f"Bearer {os.getenv('TOKEN')}"}
 
-    async def _fetch_and_store():
-        t0 = time.perf_counter()
-        try:
-            response = await asyncio.to_thread(
-                requests.get, upstream_url, headers=headers, timeout=60
-            )
-            response.raise_for_status()
-            from app.gateways.image import store_image
-            content_type = response.headers.get("Content-Type", "image/png")
-            store_image(image_id, response.content, content_type)
-            print(f"Image generated with {model} in {time.perf_counter() - t0:.2f} seconds")
-        except Exception as e:
-            print(f"Background image generation failed: {e}")
+    t0 = time.perf_counter()
+    try:
+        response = await asyncio.to_thread(
+            requests.get, upstream_url, headers=headers, timeout=60
+        )
+        response.raise_for_status()
 
-    # Fire and forget — pipeline continues immediately
-    asyncio.create_task(_fetch_and_store())
+        content_type = response.headers.get("Content-Type", "image/png")
+
+        # Verify we actually got image bytes, not an error page
+        if not content_type.startswith("image/"):
+            raise ValueError(f"Expected image, got Content-Type: {content_type}")
+        if len(response.content) < 1000:
+            raise ValueError(f"Response too small to be an image: {len(response.content)} bytes")
+
+        from app.gateways.image import store_image
+        store_image(image_id, response.content, content_type)
+        elapsed = time.perf_counter() - t0
+        print(f"[Image] Upstream: {upstream_url[:120]}")
+        print(f"[Image] Generated with {model} in {elapsed:.2f}s ({len(response.content)} bytes) -> {image_id}")
+
+    except requests.exceptions.Timeout:
+        print(f"[Image] TIMEOUT: Upstream took >60s for model={model}")
+        raise RuntimeError(f"Image generation timed out (model={model})")
+    except requests.exceptions.HTTPError as e:
+        print(f"[Image] HTTP ERROR: {e.response.status_code} from {model} — {e.response.text[:200]}")
+        raise RuntimeError(f"Image generation failed: HTTP {e.response.status_code}")
+    except ValueError as e:
+        print(f"[Image] INVALID RESPONSE: {e}")
+        raise RuntimeError(str(e))
+    except Exception as e:
+        print(f"[Image] FAILED: {type(e).__name__}: {e}")
+        raise
 
     return url
 
 
 if __name__ == "__main__":
     async def main():
-        url = await create_image_from_prompt("an oil painting with japaneese script of a cat sitting on a windowsill, looking outside at a rainy day")
-        print(url)
+        prompt = (
+            "A lone celestial sorceress standing atop a crystalline tower, "
+            "her flowing iridescent robes dissolving into trails of stardust, "
+            "overlooking an endless ocean of glowing nebulae and floating ancient ruins, "
+            "dramatic golden-hour lighting piercing through cosmic clouds, "
+            "ultra-detailed digital painting, cinematic atmosphere"
+        )
+        print(f"Generating image for: {prompt[:60]}...")
+        try:
+            url = await create_image_from_prompt(prompt)
+            print(f"Success: {url}")
+        except Exception as e:
+            print(f"Failed: {e}")
+
     asyncio.run(main())

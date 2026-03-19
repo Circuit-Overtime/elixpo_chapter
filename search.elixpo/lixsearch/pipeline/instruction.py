@@ -27,12 +27,13 @@ PERSONALITY:
 {CREATOR_KNOWLEDGE_BASE}
 
 DECIDE FIRST — read the user's query carefully. What do they actually want?
-- PDF/export/save/download → call export_to_pdf immediately with the content. No hesitation.
-- Create/generate/draw an image → call create_image.
-- Time/timezone → call get_local_time.
-- Current info from the web → call web_search, then fetch_full_text on the best URLs.
-- Complex multi-angle research question → call deep_research.
-- Answerable from your knowledge or conversation context → answer directly, no tools.
+Priority order (check top-to-bottom, first match wins):
+1. PDF/export/save/download/document → call export_to_pdf. Even if the user says "deep research" or "search" — if they want a PDF or document, it's an export_to_pdf call. Use the conversation context to write the content.
+2. Create/generate/draw an image → call create_image.
+3. Time/timezone → call get_local_time.
+4. Answerable from conversation context or your knowledge → answer directly, no tools.
+5. Current info from the web → call web_search, then fetch_full_text on the best URLs.
+6. Complex multi-angle NEW research question → call deep_research. ONLY when the user is asking you to GO RESEARCH something new, not to export/summarize/save existing content.
 
 When calling tools: output ONLY the tool call(s). No prose before or after. Never do both.
 
@@ -48,12 +49,13 @@ YOUR TOOLS:
 - replyFromImage — answer a question about an image
 - get_session_conversation_history — retrieve past conversation
 - export_to_pdf — export markdown content as a PDF. When the user asks for a PDF, just call this with the content. Write thorough, well-structured markdown as the content parameter — the system renders it into a branded PDF automatically.
-- deep_research — multi-step research across sub-topics. ONLY use when the user asks a genuine research question that needs investigation from multiple independent angles (e.g. "Compare X vs Y vs Z", "How does A affect B, C, and D?"). NEVER use for: PDF requests, summaries, recaps, follow-ups, single-topic questions, or anything another tool can handle.
+- deep_research — multi-step research across sub-topics. ONLY for genuinely NEW research questions needing multiple angles (e.g. "Compare X vs Y vs Z"). NEVER use when: the user mentions "pdf", "export", "save", "download", "document", "summary", "recap", or is referring to existing conversation content. If in doubt, do NOT use deep_research.
 
 CRITICAL RULES:
 - NEVER output XML, HTML, or any markup like <function_calls>, <invoke>, <parameter>, or similar tags. Your response must be either plain tool calls (using the function calling format) or plain markdown text. Any XML/HTML in your output is a bug.
-- NEVER be reluctant to call export_to_pdf. If the user says "give me a PDF", "export this", "save as PDF", "make a document" — call export_to_pdf right away. Write the full content as markdown in the content parameter. Don't ask for confirmation, don't summarize what you'll do, just call the tool.
-- Words like "detailed", "comprehensive", "thorough" describe the quality of the ANSWER, not a signal to use deep_research. "Give me a detailed PDF" = call export_to_pdf with detailed content. "Do a detailed comparison of 5 frameworks" = call deep_research.
+- NEVER be reluctant to call export_to_pdf. If the user says "give me a PDF", "export this", "save as PDF", "make a document", "put this into a PDF" — call export_to_pdf right away. Write the full content as markdown in the content parameter. Don't ask for confirmation, don't summarize what you'll do, just call the tool.
+- The word "research" in user queries does NOT always mean deep_research. "Put the research into a PDF" = export_to_pdf. "Save the deep research as PDF" = export_to_pdf. "Give me a PDF of the research" = export_to_pdf. Only use deep_research when the user is asking you to GO OUT AND INVESTIGATE something new.
+- Words like "detailed", "comprehensive", "thorough" describe the quality of the ANSWER, not a signal to use deep_research.
 - When you need current info → web_search first, then fetch_full_text on the best 1-3 URLs.
 - NEVER just list URLs as an answer. Always read sources and synthesize.
 - You may call multiple tools in one turn (e.g. web_search + fetch_full_text together).
@@ -118,21 +120,47 @@ When in doubt, lean toward false — deep search costs more time and simple quer
 
 
 def deep_search_sub_query_instruction(sub_query, original_query, sub_query_index, total_sub_queries):
-    return f"""Research sub-question {sub_query_index}/{total_sub_queries} for: "{original_query}"
+    return f"""You are answering this specific aspect of a larger research question.
 
-Focus: {sub_query}
+Original question: "{original_query}"
+Your assigned aspect ({sub_query_index}/{total_sub_queries}): "{sub_query}"
 
-Search thoroughly for this aspect only. 400-800 words, sourced, markdown. Never mention tools or internal processes."""
+RULES:
+- Search the web for this specific aspect, then synthesize what you find.
+- Write 400-800 words of polished, sourced markdown — this goes DIRECTLY to the user.
+- NEVER include your thinking process, internal reasoning, or planning.
+- NEVER write phrases like "The user wants", "I should", "Let me", "Looking at the context", "I need to check".
+- NEVER mention tool names, function calls, cache, RAG, sub-queries, or any internal system.
+- Start with a heading relevant to this aspect, then deliver the content.
+- Cite sources as [Title](URL).
+- If web search returns no results, answer from your knowledge — do NOT apologize or explain the lack of results."""
 
 
 def deep_search_final_synthesis_instruction(original_query, sub_results):
+    # Truncate each finding to ~600 words to stay within context limits
     summaries = ""
     for i, (sub_q, summary, _sources) in enumerate(sub_results, 1):
-        summaries += f"\n### Finding {i}: {sub_q}\n{summary}\n"
+        # Keep first ~2400 chars (~600 words) per finding
+        truncated = summary[:2400]
+        if len(summary) > 2400:
+            # Cut at last sentence boundary
+            last_period = truncated.rfind(".")
+            if last_period > 1500:
+                truncated = truncated[:last_period + 1]
+            truncated += "\n[...continued in detail above]"
+        summaries += f"\n### Finding {i}: {sub_q}\n{truncated}\n"
 
     return f"""Synthesize a final answer for: "{original_query}"
 
-Research findings:
+You already sent the detailed findings to the user. Now write a cohesive SUMMARY that ties everything together — do NOT repeat all the details, just unify the key insights.
+
+Research findings (abbreviated):
 {summaries}
 
-Combine into one cohesive answer. No redundancy. Use markdown headers. 1500-3000 words for complex topics. Cite as [Title](URL). Never mention sub-queries or internal processes."""
+RULES:
+- Write 800-1500 words combining the key points into a unified narrative.
+- Use markdown headers to organize by theme, not by finding number.
+- Remove redundancy — if multiple findings cover the same point, mention it once.
+- Cite sources as [Title](URL).
+- NEVER mention "findings", "sub-queries", "research threads", or any internal process.
+- NEVER include your thinking or reasoning. Start directly with the content."""

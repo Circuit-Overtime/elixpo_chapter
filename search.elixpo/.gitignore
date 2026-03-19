@@ -1,35 +1,51 @@
+# Secrets
 *.env
-dump.rdb
-/venv
-clipenv/
-model/
-playwright_user_data/
-/PRODUCTION/src/__pycache__'
-searchenv/
-PRODUCTION/k8s/secret.yaml
-/PRODUCTION/src/__pycache__
+.dev.vars
+
+# Runtime data (bind-mounted into Docker)
+/data/
+
+# Python
+/venv/
 __pycache__/
 *.pyc
-minikube-linux-amd64
+
+# Node
+node_modules/
+.next/
+out/
+
+# Build artifacts
+dump.rdb
+*.rdb
+
+# IDE / OS
+.*json
+
+# Legacy dirs (may still exist locally)
+model/
+clipenv/
+searchenv/
 pip_cache/
-.next
+cache/
+chroma/
+embeddings/
+session_embeddings/
 searchSessions/
 tmp_cache/
 audio_cache/
-.*json
-node_modules/
 cached_audio/
-out/
 nltk_data/
 model_cache/
-cache/
-chroma/
-session_embeddings/
-embeddings/
-*.rdb\
-.next
-.wrangler
-data/
+playwright_user_data/
+minikube-linux-amd64
+
+# Cloudflare
+.wrangler/
 wrangler.toml
 search.elixpo/wrangler.toml
-.dev.vars
+
+# Legacy
+/PRODUCTION/src/__pycache__
+PRODUCTION/k8s/secret.yaml
+data/

@@ -191,19 +191,40 @@ def _decompose_query(query: str) -> list[str]:
 
 
 async def _decompose_query_with_llm(query: str, headers: dict, max_parts: int = TOPIC_DECOMPOSITION_MAX_PARTS) -> list[str]:
+    # Extract the core subject from the query (strip filler like "do a deep research on")
+    _subject_clean = re.sub(
+        r"^(?:do (?:a )?)?(?:deep |detailed |comprehensive |thorough )?(?:research|search|dive|analysis|investigation)?\s*(?:on|about|into|for|regarding)?\s*",
+        "", query, flags=re.IGNORECASE
+    ).strip() or query
+
     decomposition_prompt = [
         {
             "role": "system",
             "content": (
-                f"You are a query decomposition engine. Break the following query into "
-                f"2 to {max_parts} focused sub-topics for comprehensive research. "
-                f"Return ONLY a JSON array of strings, each being a focused sub-question. "
-                f'Example: ["What is X?", "How does X compare to Y?", "Recent developments in X"]'
+                f"You are a query decomposition engine. The user wants to research: \"{_subject_clean}\"\n\n"
+                f"Break this into {max_parts} specific, DISTINCT research angles.\n\n"
+                f"STRICT RULES:\n"
+                f"1. Every sub-question MUST contain the subject \"{_subject_clean}\" (or its key terms).\n"
+                f"2. Each sub-question must explore a DIFFERENT angle — no duplicates or overlapping questions.\n"
+                f"3. Sub-questions must be concrete and web-searchable.\n"
+                f"4. Never generate generic filler like \"history of AI\" or \"future trends in technology\".\n"
+                f"5. Return ONLY a JSON array of {max_parts} strings.\n\n"
+                f'Example for subject "elixpo_chapter":\n'
+                f'["What is elixpo_chapter and who created it?", '
+                f'"What are the main projects and repositories under elixpo_chapter?", '
+                f'"How has elixpo_chapter grown as an open source community — contributors, stars, forks?", '
+                f'"What technology stack does elixpo_chapter use and what problems does it solve?"]\n\n'
+                f'Example for subject "Rust programming language":\n'
+                f'["What are Rust\'s key features and advantages over C/C++?", '
+                f'"Which major companies and projects use Rust in production?", '
+                f'"What is the current state of Rust\'s ecosystem — crates, tooling, community size?"]\n\n'
+                f"BAD — these are all generic and don't mention the subject:\n"
+                f'["What is open source?", "History of programming", "Future of AI"]'
             )
         },
         {
             "role": "user",
-            "content": query
+            "content": f"Decompose research on: {_subject_clean}"
         }
     ]
 
@@ -239,8 +260,31 @@ async def _decompose_query_with_llm(query: str, headers: dict, max_parts: int = 
         parts = json.loads(content)
         if isinstance(parts, list) and all(isinstance(p, str) for p in parts):
             valid = [p.strip() for p in parts if 10 <= len(p.strip()) <= 200]
+
+            # Deduplicate: remove sub-queries that are too similar to each other
             if valid:
-                logger.info(f"[DECOMPOSITION] LLM decomposed query into {len(valid)} sub-topics")
+                deduped = [valid[0]]
+                for sq in valid[1:]:
+                    sq_lower = sq.lower()
+                    is_dup = False
+                    for existing in deduped:
+                        # Check word overlap — if >70% of words match, it's a duplicate
+                        sq_words = set(sq_lower.split())
+                        ex_words = set(existing.lower().split())
+                        if sq_words and ex_words:
+                            overlap = len(sq_words & ex_words) / min(len(sq_words), len(ex_words))
+                            if overlap > 0.7:
+                                is_dup = True
+                                break
+                    if not is_dup:
+                        deduped.append(sq)
+
+                if len(deduped) < len(valid):
+                    logger.info(f"[DECOMPOSITION] Deduped {len(valid)} → {len(deduped)} sub-queries")
+                valid = deduped
+
+            if valid:
+                logger.info(f"[DECOMPOSITION] LLM decomposed query into {len(valid)} sub-topics: {valid}")
                 return valid[:max_parts]
     except Exception as e:
         logger.warning(f"[DECOMPOSITION] LLM decomposition failed: {e}")

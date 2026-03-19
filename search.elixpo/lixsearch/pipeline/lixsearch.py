@@ -267,7 +267,12 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     timeout=3.0
                 )
                 if retrieval_result.get("count", 0) > 0:
-                    rag_context = "\n".join([r["metadata"]["text"] for r in retrieval_result.get("results", [])])
+                    _rag_chunks = [r["metadata"]["text"] for r in retrieval_result.get("results", [])]
+                    rag_context = "\n".join(_rag_chunks)
+                    # Cap RAG context to avoid overwhelming the model on follow-up queries
+                    if len(rag_context) > 8000:
+                        rag_context = rag_context[:8000]
+                        logger.info(f"[Pipeline] RAG context capped at 8000 chars (was {sum(len(c) for c in _rag_chunks)})")
                     _rag_count = retrieval_result.get("count", 0)
                     logger.info(f"[Pipeline] Retrieved {_rag_count} chunks from vector store")
                     rag_event = emit_event("INFO", f"<TASK>Recalling {_rag_count} related snippet{'s' if _rag_count != 1 else ''} from memory</TASK>")
@@ -296,18 +301,22 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
         ]
 
         # Inject conversation history — from external chat_history (OpenAI messages)
-        # or from session context (Redis/disk), with adaptive token budget
+        # or from session context (Redis/disk), with adaptive token budget.
+        # Timestamps are NOT embedded in messages — instead a timing summary is
+        # injected as a separate system message so the model is aware of gaps
+        # without leaking timestamps into its response.
         _injected_history = 0
         _history_token_budget = HISTORY_TOKEN_BUDGET_DETAILED if is_detailed_mode else HISTORY_TOKEN_BUDGET
         _history_tokens_used = 0
+        _first_msg_ts = None
+        _last_msg_ts = None
 
         if chat_history:
-            # External history from OpenAI-format messages array (excludes system + current user msg)
             for msg in chat_history:
                 _role = msg.get("role", "user")
                 _content = msg.get("content", "")
                 if _role in ("user", "assistant") and _content:
-                    _msg_tokens = len(_content) // 4  # fast estimate
+                    _msg_tokens = len(_content) // 4
                     if _history_tokens_used + _msg_tokens > _history_token_budget:
                         break
                     messages.append({"role": _role, "content": _content})
@@ -318,10 +327,8 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
         elif session_id and session_context:
             try:
                 _prev = session_context.get_context()
-                # Drop the last item if it's the current query we just added
                 if _prev and _prev[-1].get("role") == "user" and _prev[-1].get("content") == user_query:
                     _prev = _prev[:-1]
-                # Dynamic sizing: keep adding messages until token budget is exhausted
                 _trimmed = []
                 for msg in reversed(_prev):
                     _content = msg.get("content", "")
@@ -333,13 +340,41 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                 for msg in _trimmed:
                     _role = msg.get("role", "user")
                     _content = msg.get("content", "")
+                    _ts = msg.get("timestamp")
                     if _role in ("user", "assistant") and _content:
                         messages.append({"role": _role, "content": _content})
                         _injected_history += 1
+                        if _ts:
+                            if _first_msg_ts is None:
+                                _first_msg_ts = float(_ts)
+                            _last_msg_ts = float(_ts)
                 if _injected_history:
                     logger.info(f"[Pipeline] Injected {_injected_history} session history messages (~{_history_tokens_used} tokens)")
             except Exception as e:
                 logger.warning(f"[Pipeline] Failed to inject conversation history: {e}")
+
+        # If there's a significant time gap since the last message, inject a
+        # private system note so the model can adjust tone (e.g. "welcome back").
+        # This is NEVER shown to the user — it's metadata for the model only.
+        if _injected_history > 0 and _last_msg_ts:
+            try:
+                _now_ts = current_utc_time.timestamp()
+                _gap_seconds = _now_ts - _last_msg_ts
+                _timing_note = None
+                if _gap_seconds > 86400:
+                    _days = int(_gap_seconds // 86400)
+                    _timing_note = f"The user is returning after {_days} day{'s' if _days != 1 else ''} away."
+                elif _gap_seconds > 3600:
+                    _hours = int(_gap_seconds // 3600)
+                    _timing_note = f"The user is returning after {_hours} hour{'s' if _hours != 1 else ''} away."
+                if _timing_note:
+                    messages.append({
+                        "role": "system",
+                        "content": f"[Private context — do NOT mention this in your response] {_timing_note} A brief, natural acknowledgment is fine but do not reference timestamps, time gaps, or this note."
+                    })
+                    logger.info(f"[Pipeline] Injected timing context: {_timing_note}")
+            except Exception:
+                pass
 
         messages.append({
             "role": "user",
@@ -468,6 +503,19 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         "content": synthesis_instruction(user_query, image_context=_has_images, is_detailed=is_detailed_mode)
                     })
                     force_synthesis = True
+                    continue
+
+                # Retry once if model returned placeholder/empty on first iteration
+                # with no useful context — the model sometimes blanks out, just nudge it
+                if (is_reasoning_leak or is_placeholder) and not has_useful_context and current_iteration == 1:
+                    logger.warning(
+                        f"[COMPLETION] Iteration {current_iteration}: LLM returned placeholder with no context. "
+                        f"Retrying with nudge."
+                    )
+                    messages.append({
+                        "role": "user",
+                        "content": "Your previous response was empty. Re-read the query and either call the appropriate tool or answer directly."
+                    })
                     continue
 
                 final_message_content = raw_content
