@@ -1,13 +1,17 @@
 services:
-  # Redis - Caching & semantic cache layer
+  # ── Redis — cache & session storage ──────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: lixsearch-redis
-    command: redis-server --port 9530 --dir /data --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-changeme_redis_secret}
+    command: >
+      redis-server --port 9530 --dir /data
+      --appendonly yes
+      --maxmemory 2gb --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-changeme_redis_secret}
     environment:
       - REDIS_REPL_DISKLESS_SYNC=yes
     volumes:
-      - redis-data:/data
+      - ./data/redis:/data
     networks:
       - elixpo-network
     expose:
@@ -25,7 +29,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Chroma Vector Database Server
+  # ── ChromaDB — vector store ──────────────────────────────────────────
   chroma-server:
     image: chromadb/chroma:1.5.2
     container_name: lixsearch-chroma
@@ -33,7 +37,7 @@ services:
     environment:
       - ANONYMIZED_TELEMETRY=FALSE
     volumes:
-      - embeddings-data:/chroma_data
+      - ./data/embeddings:/chroma_data
     networks:
       - elixpo-network
     expose:
@@ -51,8 +55,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # IPC Service - Core embedding service & search agent manager
-  # Provides multiprocessing manager for inter-service communication
+  # ── IPC Service — embeddings + Playwright search agents ──────────────
   ipc-service:
     build:
       context: .
@@ -76,9 +79,9 @@ services:
       - IPC_PORT=9510
       - IPC_AUTHKEY=${IPC_AUTHKEY:-changeme_ipc_secret}
     volumes:
-      - embedding-models:/app/models:ro
-      - embeddings-data:/app/data/embeddings
-      - logs:/app/logs
+      - ./data/models:/app/models:ro
+      - ./data/embeddings:/app/data/embeddings
+      - ./data/logs:/app/logs
     networks:
       - elixpo-network
     expose:
@@ -101,8 +104,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Nginx Load Balancer - External entry point for all requests
-  # Routes to multiple lixsearch-app instances with health checks
+  # ── Nginx — external entry point ─────────────────────────────────────
   nginx:
     image: nginx:latest
     container_name: lixsearch-nginx
@@ -117,7 +119,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf.template:ro
       - ./search.elixpo/out:/usr/share/nginx/html:ro
-      - nginx-cache:/var/cache/nginx
+      - ./data/nginx-cache:/var/cache/nginx
     networks:
       - elixpo-network
     restart: unless-stopped
@@ -138,9 +140,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # scalable app service - auto-scaled by autoscale.sh (max 5 replicas)
-  # manual scale: docker compose up -d --scale lixsearch-app=3 --no-recreate
-  # swarm scale:  docker service scale lixsearch_lixsearch-app=3
+  # ── App Workers — scalable Quart/Hypercorn instances ─────────────────
   lixsearch-app:
     build:
       context: .
@@ -170,13 +170,15 @@ services:
       - IPC_PORT=9510
       - IPC_AUTHKEY=${IPC_AUTHKEY:-changeme_ipc_secret}
       - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-https://search.elixpo.com}
+      - IMAGE_STORE_DIR=/app/data/cache/images
+      - CONTENT_STORE_DIR=/app/data/cache/content
     volumes:
-      - embedding-models:/app/models:ro
-      - embeddings-data:/app/data/embeddings
-      - cache-data:/app/data/cache
-      - conversations-data:/app/data/conversations
-      - logs:/app/logs
-      - app-tmp-cache:/app/tmp/cache
+      - ./data/models:/app/models:ro
+      - ./data/embeddings:/app/data/embeddings
+      - ./data/cache:/app/data/cache
+      - ./data/conversations:/app/data/conversations
+      - ./data/logs:/app/logs
+      - ./data/tmp-cache:/app/tmp/cache
     networks:
       - elixpo-network
     expose:
@@ -217,24 +219,6 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
-
-volumes:
-  redis-data:
-    driver: local
-  embeddings-data:
-    driver: local
-  embedding-models:
-    driver: local
-  cache-data:
-    driver: local
-  conversations-data:
-    driver: local
-  logs:
-    driver: local
-  nginx-cache:
-    driver: local
-  app-tmp-cache:
-    driver: local
 
 networks:
   elixpo-network:

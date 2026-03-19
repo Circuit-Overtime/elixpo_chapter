@@ -58,11 +58,14 @@ COPY public /app/public
 COPY version.cfg requirements.txt openapi.yaml /app/
 
 RUN chmod +x /app/entrypoint.sh && \
-    mkdir -p /app/logs /app/cache /app/data/cache/conversation /app/data/conversations /app/data/embeddings /app/tmp/cache
+    mkdir -p /app/logs /app/models \
+             /app/data/cache/images /app/data/cache/content /app/data/cache/conversation \
+             /app/data/conversations /app/data/embeddings \
+             /app/tmp/cache
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
     CMD curl -f http://localhost:${WORKER_PORT:-9002}/api/health || exit 1
 
-EXPOSE 9000 9001 9002 9003 9004 9005 9006 9007 9008 9009 9010 9011 9510 9530
+EXPOSE 9002 9510
 
 ENTRYPOINT ["/app/entrypoint.sh"]
