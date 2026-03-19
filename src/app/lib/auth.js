@@ -20,7 +20,7 @@ export function getSignInUrl() {
 }
 
 export async function exchangeCode(code) {
-  const res = await fetch(`${ACCOUNTS_BASE}/api/auth/token`, {
+  const res = await fetch('/api/auth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -35,7 +35,7 @@ export async function exchangeCode(code) {
 }
 
 export async function fetchUser(accessToken) {
-  const res = await fetch(`${ACCOUNTS_BASE}/api/auth/me`, {
+  const res = await fetch('/api/auth/me', {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok) throw new Error('Failed to fetch user');
@@ -43,7 +43,7 @@ export async function fetchUser(accessToken) {
 }
 
 export async function refreshToken(token) {
-  const res = await fetch(`${ACCOUNTS_BASE}/api/auth/token`, {
+  const res = await fetch('/api/auth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
