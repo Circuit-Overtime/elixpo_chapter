@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar/Navbar';
 import styles from './Generate.module.css';
@@ -53,6 +53,24 @@ const STYLES = [
   { id: 'anime', label: 'Anime' },
 ];
 
+const RANDOM_SUBJECTS = [
+  'a celestial dragon coiled around a dying star',
+  'an ancient library floating in the clouds at sunset',
+  'a cyberpunk samurai standing in neon rain',
+  'a crystal palace growing from a frozen waterfall',
+  'a bioluminescent deep-sea city with jellyfish lanterns',
+  'a time traveler stepping through a shattered mirror',
+  'a forest of giant mushrooms under aurora borealis',
+  'an ethereal phoenix rising from volcanic glass',
+  'a steampunk airship docked at a sky island',
+  'a witch brewing potions in a cozy treehouse',
+  'a massive titan sleeping beneath a mountain range',
+  'an underwater temple guarded by spectral whales',
+  'a lone astronaut discovering alien flowers on Mars',
+  'a floating marketplace above a city of canals',
+  'a knight made of starlight fighting shadow creatures',
+];
+
 const API_BASE = 'http://localhost:3005';
 
 export default function GeneratePage() {
@@ -62,18 +80,19 @@ export default function GeneratePage() {
   const [model, setModel] = useState('flux');
   const [aspect, setAspect] = useState('16:9');
   const [style, setStyle] = useState('dynamic');
-  const [enhancing, setEnhancing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [duration, setDuration] = useState('6');
-  const [videoModel, setVideoModel] = useState('hailuo');
+  const [videoModel, setVideoModel] = useState('veo');
   const [modelOpen, setModelOpen] = useState(false);
   const [styleOpen, setStyleOpen] = useState(false);
   const [durationOpen, setDurationOpen] = useState(false);
+  const [starMenuOpen, setStarMenuOpen] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploadedPreview, setUploadedPreview] = useState(null);
-  const [randomizing, setRandomizing] = useState(false);
+  const [aiWorking, setAiWorking] = useState(false);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
+  const starMenuRef = useRef(null);
 
   const selectedModel = MODELS.find((m) => m.id === model);
   const selectedVideoModel = VIDEO_MODELS.find((m) => m.id === videoModel);
@@ -81,27 +100,28 @@ export default function GeneratePage() {
   const selectedStyle = STYLES.find((s) => s.id === style);
   const selectedDuration = DURATIONS.find((d) => d.id === duration);
 
-  const RANDOM_SUBJECTS = [
-    'a celestial dragon coiled around a dying star',
-    'an ancient library floating in the clouds at sunset',
-    'a cyberpunk samurai standing in neon rain',
-    'a crystal palace growing from a frozen waterfall',
-    'a bioluminescent deep-sea city with jellyfish lanterns',
-    'a time traveler stepping through a shattered mirror',
-    'a forest of giant mushrooms under aurora borealis',
-    'an ethereal phoenix rising from volcanic glass',
-    'a steampunk airship docked at a sky island',
-    'a witch brewing potions in a cozy treehouse',
-    'a massive titan sleeping beneath a mountain range',
-    'an underwater temple guarded by spectral whales',
-    'a lone astronaut discovering alien flowers on Mars',
-    'a floating marketplace above a city of canals',
-    'a knight made of starlight fighting shadow creatures',
-  ];
+  // Close star menu on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (starMenuRef.current && !starMenuRef.current.contains(e.target)) {
+        setStarMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const closeAllDropdowns = () => {
+    setModelOpen(false);
+    setStyleOpen(false);
+    setDurationOpen(false);
+    setStarMenuOpen(false);
+  };
 
   const handleRandomPrompt = async () => {
-    if (randomizing) return;
-    setRandomizing(true);
+    if (aiWorking) return;
+    setAiWorking(true);
+    setStarMenuOpen(false);
     const subject = RANDOM_SUBJECTS[Math.floor(Math.random() * RANDOM_SUBJECTS.length)];
     try {
       const res = await fetch(`${API_BASE}/enhance`, {
@@ -114,8 +134,32 @@ export default function GeneratePage() {
     } catch {
       setPrompt(subject);
     } finally {
-      setRandomizing(false);
+      setAiWorking(false);
     }
+  };
+
+  const handleImprovePrompt = async () => {
+    if (aiWorking || !prompt.trim()) return;
+    setAiWorking(true);
+    setStarMenuOpen(false);
+    try {
+      const res = await fetch(`${API_BASE}/enhance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt.trim() }),
+      });
+      const data = await res.json();
+      if (data.enhanced) setPrompt(data.enhanced);
+    } catch {
+      /* silent */
+    } finally {
+      setAiWorking(false);
+    }
+  };
+
+  const handleDescribeImage = () => {
+    setStarMenuOpen(false);
+    fileInputRef.current?.click();
   };
 
   const handleImageUpload = (e) => {
@@ -140,7 +184,6 @@ export default function GeneratePage() {
     const sessionId = crypto.randomUUID();
     const { w, h } = selectedAspect;
 
-    // Upload reference image if present
     let imageUrl = null;
     if (uploadedImage) {
       try {
@@ -152,9 +195,7 @@ export default function GeneratePage() {
         });
         const uploadData = await uploadRes.json();
         if (uploadData.url) imageUrl = uploadData.url;
-      } catch {
-        /* continue without reference image */
-      }
+      } catch { /* continue */ }
     }
 
     sessionStorage.setItem(
@@ -187,8 +228,10 @@ export default function GeneratePage() {
       <Navbar />
 
       <main className={styles.main}>
-        <div className={styles.bgOrb1} aria-hidden="true" />
-        <div className={styles.bgOrb2} aria-hidden="true" />
+        {/* Ambient background blobs */}
+        <div className={styles.bgBlob1} aria-hidden="true" />
+        <div className={styles.bgBlob2} aria-hidden="true" />
+        <div className={styles.bgBlob3} aria-hidden="true" />
         <div className={styles.gridOverlay} aria-hidden="true" />
 
         <div className={styles.center}>
@@ -206,7 +249,7 @@ export default function GeneratePage() {
               <span className={styles.uploadLabel}>
                 {mode === 'video' ? 'Start frame' : 'Reference image'}
               </span>
-              <button className={styles.uploadRemove} onClick={clearUploadedImage} title="Remove">
+              <button className={styles.uploadRemove} onClick={clearUploadedImage}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
@@ -216,7 +259,6 @@ export default function GeneratePage() {
 
           {/* Prompt input bar */}
           <div className={styles.promptBar}>
-            {/* Hidden file input */}
             <input
               ref={fileInputRef}
               type="file"
@@ -248,16 +290,16 @@ export default function GeneratePage() {
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
             />
+            {aiWorking && <span className={styles.promptSpinner} />}
           </div>
 
-          {/* Options bar — separate row below prompt */}
+          {/* Options bar */}
           <div className={styles.optionsBar}>
             <div className={styles.optionsLeft}>
-              {/* Mode toggle */}
               <div className={styles.modeToggle}>
                 <button
                   className={`${styles.modeBtn} ${mode === 'image' ? styles.modeActive : ''}`}
-                  onClick={() => setMode('image')}
+                  onClick={() => { setMode('image'); closeAllDropdowns(); }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -268,7 +310,7 @@ export default function GeneratePage() {
                 </button>
                 <button
                   className={`${styles.modeBtn} ${mode === 'video' ? styles.modeActive : ''}`}
-                  onClick={() => setMode('video')}
+                  onClick={() => { setMode('video'); closeAllDropdowns(); }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="5 3 19 12 5 21 5 3" />
@@ -279,7 +321,6 @@ export default function GeneratePage() {
             </div>
 
             <div className={styles.optionsRight}>
-              {/* Aspect ratio — different set for video */}
               <div className={styles.aspectGroup}>
                 {(mode === 'video' ? VIDEO_ASPECTS : ASPECTS).map((a) => (
                   <button
@@ -295,68 +336,40 @@ export default function GeneratePage() {
 
               {mode === 'video' ? (
                 <>
-                  {/* Duration selector */}
                   <div className={styles.dropdownWrap}>
-                    <button
-                      className={styles.optionBtn}
-                      onClick={() => { setDurationOpen(!durationOpen); setModelOpen(false); }}
-                    >
+                    <button className={styles.optionBtn} onClick={() => { setDurationOpen(!durationOpen); setModelOpen(false); }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
+                        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                       </svg>
                       {selectedDuration.label}
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
                     </button>
-
                     {durationOpen && (
                       <div className={styles.dropdown}>
                         {DURATIONS.map((d) => (
-                          <button
-                            key={d.id}
-                            className={`${styles.dropdownItem} ${duration === d.id ? styles.dropdownItemActive : ''}`}
-                            onClick={() => { setDuration(d.id); setDurationOpen(false); }}
-                          >
+                          <button key={d.id} className={`${styles.dropdownItem} ${duration === d.id ? styles.dropdownItemActive : ''}`}
+                            onClick={() => { setDuration(d.id); setDurationOpen(false); }}>
                             {d.label}
-                            {duration === d.id && (
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            )}
+                            {duration === d.id && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>}
                           </button>
                         ))}
                       </div>
                     )}
                   </div>
-
-                  {/* Video model selector */}
                   <div className={styles.dropdownWrap}>
-                    <button
-                      className={styles.optionBtn}
-                      onClick={() => { setModelOpen(!modelOpen); setDurationOpen(false); }}
-                    >
+                    <button className={styles.optionBtn} onClick={() => { setModelOpen(!modelOpen); setDurationOpen(false); }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                        <circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
                       </svg>
                       {selectedVideoModel.label}
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
                     </button>
-
                     {modelOpen && (
                       <div className={styles.dropdown}>
                         {VIDEO_MODELS.map((m) => (
-                          <button
-                            key={m.id}
-                            className={`${styles.dropdownItem} ${videoModel === m.id ? styles.dropdownItemActive : ''}`}
-                            onClick={() => { setVideoModel(m.id); setModelOpen(false); }}
-                          >
-                            <span>{m.label}</span>
-                            <span className={styles.dropdownDesc}>{m.desc}</span>
+                          <button key={m.id} className={`${styles.dropdownItem} ${videoModel === m.id ? styles.dropdownItemActive : ''}`}
+                            onClick={() => { setVideoModel(m.id); setModelOpen(false); }}>
+                            <span>{m.label}</span><span className={styles.dropdownDesc}>{m.desc}</span>
                           </button>
                         ))}
                       </div>
@@ -365,68 +378,41 @@ export default function GeneratePage() {
                 </>
               ) : (
                 <>
-                  {/* Style selector (image only) */}
                   <div className={styles.dropdownWrap}>
-                    <button
-                      className={styles.optionBtn}
-                      onClick={() => { setStyleOpen(!styleOpen); setModelOpen(false); }}
-                    >
+                    <button className={styles.optionBtn} onClick={() => { setStyleOpen(!styleOpen); setModelOpen(false); setStarMenuOpen(false); }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="3" />
                         <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
                       </svg>
                       {selectedStyle.label}
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
                     </button>
-
                     {styleOpen && (
                       <div className={styles.dropdown}>
                         {STYLES.map((s) => (
-                          <button
-                            key={s.id}
-                            className={`${styles.dropdownItem} ${style === s.id ? styles.dropdownItemActive : ''}`}
-                            onClick={() => { setStyle(s.id); setStyleOpen(false); }}
-                          >
+                          <button key={s.id} className={`${styles.dropdownItem} ${style === s.id ? styles.dropdownItemActive : ''}`}
+                            onClick={() => { setStyle(s.id); setStyleOpen(false); }}>
                             {s.label}
-                            {style === s.id && (
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            )}
+                            {style === s.id && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>}
                           </button>
                         ))}
                       </div>
                     )}
                   </div>
-
-                  {/* Image model selector */}
                   <div className={styles.dropdownWrap}>
-                    <button
-                      className={styles.optionBtn}
-                      onClick={() => { setModelOpen(!modelOpen); setStyleOpen(false); }}
-                    >
+                    <button className={styles.optionBtn} onClick={() => { setModelOpen(!modelOpen); setStyleOpen(false); setStarMenuOpen(false); }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                        <circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
                       </svg>
                       {selectedModel.label}
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
                     </button>
-
                     {modelOpen && (
                       <div className={styles.dropdown}>
                         {MODELS.map((m) => (
-                          <button
-                            key={m.id}
-                            className={`${styles.dropdownItem} ${model === m.id ? styles.dropdownItemActive : ''}`}
-                            onClick={() => { setModel(m.id); setModelOpen(false); }}
-                          >
-                            <span>{m.label}</span>
-                            <span className={styles.dropdownDesc}>{m.desc}</span>
+                          <button key={m.id} className={`${styles.dropdownItem} ${model === m.id ? styles.dropdownItemActive : ''}`}
+                            onClick={() => { setModel(m.id); setModelOpen(false); }}>
+                            <span>{m.label}</span><span className={styles.dropdownDesc}>{m.desc}</span>
                           </button>
                         ))}
                       </div>
@@ -435,18 +421,58 @@ export default function GeneratePage() {
                 </>
               )}
 
-              {/* Random prompt button */}
-              <div className={styles.tooltipWrap}>
+              {/* Star menu */}
+              <div className={styles.starMenuWrap} ref={starMenuRef}>
                 <button
-                  className={`${styles.enhanceBtn} ${randomizing ? styles.enhanceSpin : ''}`}
-                  onClick={handleRandomPrompt}
-                  disabled={randomizing}
+                  className={`${styles.enhanceBtn} ${aiWorking ? styles.enhanceSpin : ''}`}
+                  onClick={() => { setStarMenuOpen(!starMenuOpen); setModelOpen(false); setStyleOpen(false); setDurationOpen(false); }}
+                  disabled={aiWorking}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
                   </svg>
                 </button>
-                <span className={styles.tooltip}>Random prompt</span>
+
+                {starMenuOpen && (
+                  <div className={styles.starDropdown}>
+                    <button className={styles.starItem} onClick={handleRandomPrompt}>
+                      <div className={styles.starItemIcon}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+                        </svg>
+                      </div>
+                      <div className={styles.starItemText}>
+                        <span className={styles.starItemTitle}>New Random Prompt</span>
+                        <span className={styles.starItemDesc}>Generate a random prompt with AI.</span>
+                      </div>
+                    </button>
+                    <button className={styles.starItem} onClick={handleImprovePrompt} disabled={!prompt.trim()}>
+                      <div className={styles.starItemIcon}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                      </div>
+                      <div className={styles.starItemText}>
+                        <span className={styles.starItemTitle}>Improve Prompt</span>
+                        <span className={styles.starItemDesc}>Improve your current prompt.</span>
+                      </div>
+                    </button>
+                    <button className={styles.starItem} onClick={handleDescribeImage}>
+                      <div className={styles.starItemIcon}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <path d="M21 15l-5-5L5 21" />
+                        </svg>
+                      </div>
+                      <div className={styles.starItemText}>
+                        <span className={styles.starItemTitle}>Describe With AI</span>
+                        <span className={styles.starItemDesc}>Upload an image and generate its description.</span>
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Generate button */}

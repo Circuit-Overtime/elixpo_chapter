@@ -39,7 +39,7 @@ export default function SessionPage({ params }) {
   const [resultSrc, setResultSrc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [startTime, setStartTime] = useState(null);
+  const [genStart, setGenStart] = useState(null);
   const [generationTime, setGenerationTime] = useState(null);
 
   const [modelOpen, setModelOpen] = useState(false);
@@ -69,31 +69,25 @@ export default function SessionPage({ params }) {
     generate(p);
   }, [sessionId]);
 
-  const buildPollinationsUrl = (p) => {
-    const encodedPrompt = encodeURIComponent(p.prompt);
+  const buildUrl = (p) => {
+    const encoded = encodeURIComponent(p.prompt);
     const isVideo = p.mode === 'video';
     const base = isVideo
-      ? `${POLLINATIONS_BASE}/video/${encodedPrompt}`
-      : `${POLLINATIONS_BASE}/image/${encodedPrompt}`;
+      ? `${POLLINATIONS_BASE}/video/${encoded}`
+      : `${POLLINATIONS_BASE}/image/${encoded}`;
 
-    const params = new URLSearchParams();
-    params.set('model', p.model);
-    params.set('width', p.width);
-    params.set('height', p.height);
-    params.set('nologo', 'true');
-    params.set('seed', Math.floor(Math.random() * 2147483647));
-    params.set('enhance', 'true');
-    params.set('referrer', 'elixpoart');
+    const q = new URLSearchParams();
+    q.set('model', p.model);
+    q.set('width', p.width);
+    q.set('height', p.height);
+    q.set('nologo', 'true');
+    q.set('seed', Math.floor(Math.random() * 2147483647));
+    q.set('enhance', 'true');
+    q.set('referrer', 'elixpoart');
+    if (isVideo && p.duration) q.set('duration', p.duration);
+    if (p.imageUrl) q.set('image', p.imageUrl);
 
-    if (isVideo && p.duration) {
-      params.set('duration', p.duration);
-    }
-
-    if (p.imageUrl) {
-      params.set('image', p.imageUrl);
-    }
-
-    return `${base}?${params.toString()}`;
+    return `${base}?${q.toString()}`;
   };
 
   const generate = async (p) => {
@@ -101,36 +95,20 @@ export default function SessionPage({ params }) {
     setError(null);
     setResultSrc(null);
     setGenerationTime(null);
-    setStartTime(Date.now());
+    const start = Date.now();
+    setGenStart(start);
 
-    const url = buildPollinationsUrl(p);
-
-    if (p.mode === 'video') {
-      // For video, fetch the blob and create an object URL
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Generation failed (${res.status})`);
-        const blob = await res.blob();
-        setResultSrc(URL.createObjectURL(blob));
-        setGenerationTime(Date.now() - Date.now() + (Date.now() - startTime));
-      } catch (err) {
-        setError(err.message || 'Video generation failed');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      // For images, use fetch to get the blob for better error handling
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Generation failed (${res.status})`);
-        const blob = await res.blob();
-        setResultSrc(URL.createObjectURL(blob));
-      } catch (err) {
-        setError(err.message || 'Image generation failed');
-      } finally {
-        setLoading(false);
-        setGenerationTime(Date.now() - (startTime || Date.now()));
-      }
+    try {
+      const url = buildUrl(p);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Generation failed (${res.status})`);
+      const blob = await res.blob();
+      setResultSrc(URL.createObjectURL(blob));
+      setGenerationTime(Date.now() - start);
+    } catch (err) {
+      setError(err.message || 'Generation failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,78 +118,50 @@ export default function SessionPage({ params }) {
 
   const handleNewGeneration = () => {
     if (!newPrompt.trim()) return;
-    const newSessionId = crypto.randomUUID();
+    const id = crypto.randomUUID();
     sessionStorage.setItem(
-      `gen_${newSessionId}`,
-      JSON.stringify({
-        prompt: newPrompt.trim(),
-        model,
-        width,
-        height,
-        mode,
-        duration,
-        imageUrl: null,
-        timestamp: Date.now(),
-      })
+      `gen_${id}`,
+      JSON.stringify({ prompt: newPrompt.trim(), model, width, height, mode, duration, imageUrl: null, timestamp: Date.now() })
     );
-    router.push(`/generate/${newSessionId}`);
+    router.push(`/generate/${id}`);
   };
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!resultSrc) return;
-    const link = document.createElement('a');
-    link.href = resultSrc;
-    link.download = `elixpo-${sessionId.slice(0, 8)}.${mode === 'video' ? 'mp4' : 'png'}`;
-    link.click();
+    const a = document.createElement('a');
+    a.href = resultSrc;
+    a.download = `elixpo-${sessionId.slice(0, 8)}.${mode === 'video' ? 'mp4' : 'png'}`;
+    a.click();
   };
 
-  const handleCopyPrompt = () => {
-    navigator.clipboard.writeText(prompt);
-  };
+  const handleCopyPrompt = () => navigator.clipboard.writeText(prompt);
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleNewGeneration();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleNewGeneration(); }
   };
 
-  const selectedModel = MODELS.find((m) => m.id === model) || { label: model };
+  const sel = MODELS.find((m) => m.id === model) || { label: model };
 
   return (
     <div className={styles.page}>
       <Navbar />
 
-      <div className={styles.topBar}>
-        <div className={styles.topBarInner}>
-          <span className={styles.topTitle}>AI Creation</span>
-          <div className={styles.topMeta}>
-            <span className={`${styles.statusDot} ${loading ? styles.statusLoading : styles.statusDone}`} />
-            <span className={styles.sessionLabel}>
-              Session {sessionId.slice(0, 8)}
-            </span>
-          </div>
-        </div>
-      </div>
-
       <div className={styles.layout}>
+        {/* Main content */}
         <div className={styles.content}>
           <div className={styles.imageContainer}>
+            {/* Ambient blobs behind content */}
+            <div className={styles.ambientBlob1} aria-hidden="true" />
+            <div className={styles.ambientBlob2} aria-hidden="true" />
+
             {loading && (
               <div className={styles.loadingState}>
-                {/* RGB Globe animation */}
-                <div className={styles.globe}>
-                  <div className={styles.globeRing} />
-                  <div className={styles.globeRing} />
-                  <div className={styles.globeRing} />
-                  <div className={styles.globeCore} />
-                  {/* Orbiting particles */}
-                  <div className={styles.particle} />
-                  <div className={styles.particle} />
-                  <div className={styles.particle} />
-                  <div className={styles.particle} />
-                  <div className={styles.particle} />
-                  <div className={styles.particle} />
+                <div className={styles.brushCanvas}>
+                  <div className={styles.brushBlob} />
+                  <div className={styles.brushBlob} />
+                  <div className={styles.brushBlob} />
+                  <div className={styles.brushBlob} />
+                  <div className={styles.brushBlob} />
                 </div>
                 <p className={styles.loadingText}>Generating your creation...</p>
                 <p className={styles.loadingHint}>This may take up to a minute</p>
@@ -226,27 +176,15 @@ export default function SessionPage({ params }) {
                   <line x1="9" y1="9" x2="15" y2="15" />
                 </svg>
                 <p className={styles.errorText}>{error}</p>
-                <button className={styles.retryBtn} onClick={handleRegenerate}>
-                  Try Again
-                </button>
+                <button className={styles.retryBtn} onClick={handleRegenerate}>Try Again</button>
               </div>
             )}
 
             {resultSrc && !loading && (
               mode === 'video' ? (
-                <video
-                  src={resultSrc}
-                  className={styles.generatedImage}
-                  controls
-                  autoPlay
-                  loop
-                />
+                <video src={resultSrc} className={styles.generatedImage} controls autoPlay loop />
               ) : (
-                <img
-                  src={resultSrc}
-                  alt={prompt}
-                  className={styles.generatedImage}
-                />
+                <img src={resultSrc} alt={prompt} className={styles.generatedImage} />
               )
             )}
           </div>
@@ -264,40 +202,23 @@ export default function SessionPage({ params }) {
               />
               <div className={styles.promptActions}>
                 <div className={styles.inlineModel}>
-                  <button
-                    className={styles.modelBtn}
-                    onClick={() => setModelOpen(!modelOpen)}
-                  >
+                  <button className={styles.modelBtn} onClick={() => setModelOpen(!modelOpen)}>
                     <span className={styles.modelLabel}>Model</span>
-                    <span className={styles.modelName}>{selectedModel.label}</span>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
+                    <span className={styles.modelName}>{sel.label}</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
                   </button>
-
                   {modelOpen && (
                     <div className={styles.modelDropdown}>
                       {MODELS.map((m) => (
-                        <button
-                          key={m.id}
-                          className={`${styles.modelOption} ${model === m.id ? styles.modelOptionActive : ''}`}
-                          onClick={() => {
-                            setModel(m.id);
-                            setModelOpen(false);
-                          }}
-                        >
+                        <button key={m.id} className={`${styles.modelOption} ${model === m.id ? styles.modelOptionActive : ''}`}
+                          onClick={() => { setModel(m.id); setModelOpen(false); }}>
                           {m.label}
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-
-                <button
-                  className={styles.generateBtn}
-                  onClick={handleNewGeneration}
-                  disabled={!newPrompt.trim()}
-                >
+                <button className={styles.generateBtn} onClick={handleNewGeneration} disabled={!newPrompt.trim()}>
                   Generate
                 </button>
               </div>
@@ -305,28 +226,29 @@ export default function SessionPage({ params }) {
           </div>
         </div>
 
-        {/* Right sidebar */}
+        {/* Right sidebar / Property panel */}
         <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
-          <button
-            className={styles.sidebarClose}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            title={sidebarOpen ? 'Close panel' : 'Open panel'}
-          >
+          <button className={styles.sidebarToggle} onClick={() => setSidebarOpen(!sidebarOpen)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              {sidebarOpen ? (
-                <path d="M18 6L6 18M6 6l12 12" />
-              ) : (
-                <path d="M4 6h16M4 12h16M4 18h16" />
-              )}
+              {sidebarOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
             </svg>
           </button>
 
           {sidebarOpen && (
             <div className={styles.sidebarContent}>
-              <div className={styles.sidebarSection}>
-                <div className={styles.sectionHeader}>
-                  <h3 className={styles.sectionTitle}>Prompt</h3>
-                  <button className={styles.iconBtn} onClick={handleCopyPrompt} title="Copy prompt">
+              {/* Session info */}
+              <div className={styles.sessionBlock}>
+                <div className={styles.sessionRow}>
+                  <span className={`${styles.statusDot} ${loading ? styles.statusLoading : styles.statusDone}`} />
+                  <span className={styles.sessionId}>{sessionId.slice(0, 8)}</span>
+                </div>
+              </div>
+
+              {/* Prompt */}
+              <div className={styles.section}>
+                <div className={styles.sectionHead}>
+                  <h3 className={styles.sectionLabel}>Prompt</h3>
+                  <button className={styles.iconBtn} onClick={handleCopyPrompt} title="Copy">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="9" y="9" width="13" height="13" rx="2" />
                       <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
@@ -336,54 +258,70 @@ export default function SessionPage({ params }) {
                 <p className={styles.promptText}>{prompt}</p>
               </div>
 
-              <div className={styles.sidebarSection}>
-                <div className={styles.detailRow}>
-                  <span className={styles.detailLabel}>Model</span>
-                  <span className={styles.detailValue}>{selectedModel?.label}</span>
-                </div>
-                <div className={styles.detailRow}>
-                  <span className={styles.detailLabel}>Resolution</span>
-                  <span className={styles.detailValue}>{width}x{height}</span>
-                </div>
-                {duration && (
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Duration</span>
-                    <span className={styles.detailValue}>{duration}s</span>
+              {/* Properties */}
+              <div className={styles.section}>
+                <h3 className={styles.sectionLabel}>Properties</h3>
+                <div className={styles.propGrid}>
+                  <div className={styles.propItem}>
+                    <span className={styles.propKey}>Model</span>
+                    <span className={styles.propVal}>{sel?.label}</span>
                   </div>
-                )}
-                {generationTime && (
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Time</span>
-                    <span className={styles.detailValue}>{(generationTime / 1000).toFixed(1)}s</span>
+                  <div className={styles.propItem}>
+                    <span className={styles.propKey}>Resolution</span>
+                    <span className={styles.propVal}>{width}x{height}</span>
                   </div>
-                )}
+                  {duration && (
+                    <div className={styles.propItem}>
+                      <span className={styles.propKey}>Duration</span>
+                      <span className={styles.propVal}>{duration}s</span>
+                    </div>
+                  )}
+                  {generationTime && (
+                    <div className={styles.propItem}>
+                      <span className={styles.propKey}>Gen Time</span>
+                      <span className={styles.propVal}>{(generationTime / 1000).toFixed(1)}s</span>
+                    </div>
+                  )}
+                  <div className={styles.propItem}>
+                    <span className={styles.propKey}>Mode</span>
+                    <span className={styles.propVal}>{mode === 'video' ? 'Video' : 'Image'}</span>
+                  </div>
+                </div>
               </div>
 
-              <div className={styles.sidebarSection}>
-                <button className={styles.actionBtn} onClick={handleRegenerate} disabled={loading}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
-                  </svg>
-                  Remix
-                </button>
-                <button className={styles.actionBtn} onClick={handleDownload} disabled={!resultSrc}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                  Download
-                </button>
-                <button
-                  className={styles.actionBtn}
-                  onClick={() => setNewPrompt(prompt)}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-                  </svg>
-                  Iterate
-                </button>
+              {/* Actions */}
+              <div className={styles.section}>
+                <h3 className={styles.sectionLabel}>Actions</h3>
+                <div className={styles.actionGrid}>
+                  <button className={styles.actionBtn} onClick={handleRegenerate} disabled={loading}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+                    </svg>
+                    Remix
+                  </button>
+                  <button className={styles.actionBtn} onClick={handleDownload} disabled={!resultSrc}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Download
+                  </button>
+                  <button className={styles.actionBtn} onClick={() => setNewPrompt(prompt)}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                    </svg>
+                    Iterate
+                  </button>
+                  <button className={styles.actionBtn} onClick={() => router.push('/generate')}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    New
+                  </button>
+                </div>
               </div>
             </div>
           )}
