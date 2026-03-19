@@ -12,7 +12,7 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
-  padding: 72px var(--spacing-xl) var(--spacing-xl);
+  padding: 52px var(--spacing-xl) var(--spacing-xl);
 }
 
 /* ─── Ambient background blobs ─── */
@@ -635,7 +635,7 @@
 
 @media (max-width: 480px) {
   .main {
-    padding: 72px var(--spacing-sm) var(--spacing-sm);
+    padding: 52px var(--spacing-sm) var(--spacing-sm);
   }
 
   .promptBar {
