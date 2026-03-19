@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getSignInUrl, isSignedIn, getUser, clearAuth } from '../../lib/auth';
 import styles from './Navbar.module.css';
 
@@ -17,6 +17,7 @@ export default function Navbar() {
   const [signedIn, setSignedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -24,6 +25,15 @@ export default function Navbar() {
     setSignedIn(isSignedIn());
     setUser(getUser());
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Close user menu on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setUserMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const handleSignOut = () => {
@@ -52,17 +62,54 @@ export default function Navbar() {
 
         <div className={styles.actions}>
           {signedIn ? (
-            <div className={styles.userWrap}>
-              <button className={styles.userBtn} onClick={() => setUserMenuOpen(!userMenuOpen)}>
-                <span className={styles.userAvatar}>
+            <div className={styles.userWrap} ref={menuRef}>
+              <button className={styles.pfpBtn} onClick={() => setUserMenuOpen(!userMenuOpen)}>
+                <span className={styles.pfp}>
                   {(user?.displayName || 'U')[0].toUpperCase()}
                 </span>
-                <span className={styles.userName}>{user?.displayName || 'User'}</span>
               </button>
+
               {userMenuOpen && (
                 <div className={styles.userMenu}>
-                  <a href="/generate" className={styles.userMenuItem}>My Creations</a>
-                  <button className={styles.userMenuItem} onClick={handleSignOut}>Sign Out</button>
+                  {/* User info header */}
+                  <div className={styles.userHeader}>
+                    <span className={styles.pfpLarge}>
+                      {(user?.displayName || 'U')[0].toUpperCase()}
+                    </span>
+                    <div className={styles.userInfo}>
+                      <span className={styles.userName}>{user?.displayName || 'User'}</span>
+                      <span className={styles.userEmail}>{user?.email || ''}</span>
+                    </div>
+                  </div>
+
+                  <div className={styles.menuDivider} />
+
+                  <a href="/settings" className={styles.menuItem}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                    Settings
+                  </a>
+                  <a href="/generate" className={styles.menuItem}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="M21 15l-5-5L5 21" />
+                    </svg>
+                    My Creations
+                  </a>
+
+                  <div className={styles.menuDivider} />
+
+                  <button className={styles.menuItem} onClick={handleSignOut}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    Sign Out
+                  </button>
                 </div>
               )}
             </div>
@@ -89,7 +136,10 @@ export default function Navbar() {
           ))}
           <div className={styles.mobileActions}>
             {signedIn ? (
-              <button className={styles.signInBtn} onClick={handleSignOut}>Sign Out</button>
+              <>
+                <a href="/settings" className={styles.mobileLink}>Settings</a>
+                <button className={styles.signInBtn} onClick={handleSignOut}>Sign Out</button>
+              </>
             ) : (
               <a href={getSignInUrl()} className={styles.signInBtn}>Sign In</a>
             )}
