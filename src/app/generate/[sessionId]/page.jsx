@@ -174,6 +174,44 @@ export default function SessionPage({ params }) {
     }));
   };
 
+  const saveThumbnailToLibrary = async (blob, data) => {
+    try {
+      // Create a small thumbnail (300px wide) to keep localStorage lightweight
+      const bitmap = await createImageBitmap(blob);
+      const scale = 300 / bitmap.width;
+      const canvas = document.createElement('canvas');
+      canvas.width = 300;
+      canvas.height = Math.round(bitmap.height * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const thumbnail = canvas.toDataURL('image/jpeg', 0.7);
+
+      saveToLibrary({
+        sessionId,
+        thumbnail,
+        prompt: data.prompt || prompt,
+        model: data.model || model,
+        width: data.width || width,
+        height: data.height || height,
+        mode: data.mode || mode,
+        duration: data.duration || duration,
+        seed: data.seed || seed,
+        generationTime: data.generationTime || generationTime,
+      });
+    } catch {
+      // Fallback — save without thumbnail
+      saveToLibrary({
+        sessionId,
+        prompt: data.prompt || prompt,
+        model: data.model || model,
+        width: data.width || width,
+        height: data.height || height,
+        mode: data.mode || mode,
+        seed: data.seed || seed,
+      });
+    }
+  };
+
   const handleRegenerate = () => {
     generate({ prompt, model, width, height, mode, duration, imageUrl });
   };
