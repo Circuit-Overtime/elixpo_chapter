@@ -25,7 +25,7 @@ export default function Navbar() {
       <div className={styles.inner}>
         <a href="/" className={styles.brand}>
           <img
-            src="../../public/logo.png"
+            src="/logo.png"
             alt="Elixpo"
             className={styles.logo}
           />
