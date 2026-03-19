@@ -130,13 +130,11 @@
   content: '';
   position: absolute;
   bottom: 0;
-  left: 50%;
-  width: 0;
+  left: 0;
+  width: 100%;
   height: 0;
-  border-radius: 50px;
   background: var(--color-accent);
-  transform: translateX(-50%);
-  transition: width 0.45s ease, height 0.45s ease;
+  transition: height 0.4s ease;
   z-index: -1;
 }
 
@@ -146,8 +144,7 @@
 }
 
 .ctaBtn:hover::before {
-  width: 300%;
-  height: 300%;
+  height: 100%;
 }
 
 .ctaBtn:active {

@@ -145,11 +145,11 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
-  margin-bottom: var(--spacing-2xl);
+  margin-bottom: var(--spacing-4xl);
   animation: slideInUp 0.6s ease 0.3s both;
 }
 
-/* Hero CTA — flat, themed, circle-fill hover */
+/* Hero CTA — flat, themed, fill from bottom on hover */
 .heroBtn {
   position: relative;
   display: inline-flex;
@@ -174,13 +174,11 @@
   content: '';
   position: absolute;
   bottom: 0;
-  left: 50%;
-  width: 0;
+  left: 0;
+  width: 100%;
   height: 0;
-  border-radius: 50px;
   background: var(--color-accent);
-  transform: translateX(-50%);
-  transition: width 0.45s ease, height 0.45s ease;
+  transition: height 0.4s ease;
   z-index: -1;
 }
 
@@ -190,8 +188,7 @@
 }
 
 .heroBtn:hover::before {
-  width: 300%;
-  height: 300%;
+  height: 100%;
 }
 
 .heroBtn:active {
