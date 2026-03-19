@@ -3,10 +3,10 @@
 import styles from './BoldStats.module.css';
 
 const stats = [
-  { number: '6', label: 'INDUSTRIES', color: '#f4c801' },
-  { number: '235', label: 'COUNTRIES AND TERRITORIES', color: '#10b981' },
+  { number: '6', label: 'INDUSTRIES', color: '#06d6a0' },
+  { number: '235', label: 'COUNTRIES AND TERRITORIES', color: '#8d49fd' },
   { number: '80+', label: 'GEN AI MODELS INTEGRATED', color: '#ec4899' },
-  { number: '4K', label: 'MEDIA ASSETS GENERATED', color: '#5691f3' },
+  { number: '4K', label: 'MEDIA ASSETS GENERATED', color: '#22d3ee' },
 ];
 
 export default function BoldStats() {

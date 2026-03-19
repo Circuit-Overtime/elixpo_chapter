@@ -2,7 +2,7 @@
   position: relative;
   z-index: 1;
   overflow: hidden;
-  background: #000;
+  background: #050810;
 }
 
 .brushTop {
@@ -22,9 +22,47 @@
   left: -5%;
   width: 110%;
   height: 50px;
-  background: var(--color-bg-primary);
+  background: var(--color-bg-secondary);
   transform: rotate(1deg);
   z-index: 2;
+}
+
+/* Animated color orbs */
+.orb1 {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(141, 73, 253, 0.2) 0%, transparent 70%);
+  top: -100px;
+  left: -100px;
+  animation: float 15s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.orb2 {
+  position: absolute;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(6, 214, 160, 0.15) 0%, transparent 70%);
+  bottom: -80px;
+  right: -80px;
+  animation: float 18s ease-in-out infinite reverse;
+  pointer-events: none;
+}
+
+.orb3 {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.12) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse 6s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .inner {
@@ -46,7 +84,8 @@
 }
 
 .accent {
-  background: var(--gradient-accent);
+  background: linear-gradient(90deg, #8d49fd, #06d6a0, #22d3ee, #ec4899, #8d49fd);
+  background-size: 300% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -64,6 +103,52 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
+}
+
+/* CTA button — flat, circle-fill from bottom on hover */
+.ctaBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2rem;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-accent);
+  font-family: var(--font-family-primary);
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: color 0.4s ease, border-color 0.4s ease;
+  z-index: 0;
+}
+
+.ctaBtn::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  background: var(--color-accent);
+  transition: height 0.4s ease;
+  z-index: -1;
+}
+
+.ctaBtn:hover {
+  color: var(--color-bg-primary);
+  border-color: var(--color-accent);
+}
+
+.ctaBtn:hover::before {
+  height: 100%;
+}
+
+.ctaBtn:active {
+  transform: scale(0.97);
 }
 
 @media (max-width: 768px) {

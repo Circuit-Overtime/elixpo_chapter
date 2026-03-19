@@ -1,0 +1,544 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Navbar from '../components/Navbar/Navbar';
+import { isSignedIn, canGuestGenerate, getGuestRemaining, incrementGuestUsage, getGuestSessionId, getSignInUrl } from '../lib/auth';
+import styles from './Generate.module.css';
+
+const MODELS = [
+  { id: 'flux', label: 'Flux', desc: 'Fast & reliable' },
+  { id: 'gptimage', label: 'GPT Image', desc: 'OpenAI quality' },
+  { id: 'seedream5', label: 'Seedream 5', desc: 'High detail' },
+  { id: 'nanobanana', label: 'Nano Banana', desc: 'Stylized art' },
+  { id: 'kontext', label: 'Kontext', desc: 'Context-aware' },
+  { id: 'imagen-4', label: 'Imagen 4', desc: 'Google quality' },
+  { id: 'zimage', label: 'Z-Image', desc: 'Turbo speed' },
+  { id: 'klein', label: 'Klein', desc: 'Compact model' },
+];
+
+const ASPECTS = [
+  { id: '1:1', w: 1024, h: 1024, label: '1:1' },
+  { id: '16:9', w: 1024, h: 576, label: '16:9' },
+  { id: '9:16', w: 576, h: 1024, label: '9:16' },
+  { id: '4:3', w: 1024, h: 768, label: '4:3' },
+  { id: '3:4', w: 768, h: 1024, label: '3:4' },
+];
+
+const VIDEO_ASPECTS = [
+  { id: '1:1', w: 1024, h: 1024, label: '1:1' },
+  { id: '16:9', w: 1024, h: 576, label: '16:9' },
+  { id: '9:16', w: 576, h: 1024, label: '9:16' },
+];
+
+const DURATIONS = [
+  { id: '4', label: '4s' },
+  { id: '6', label: '6s' },
+  { id: '10', label: '10s' },
+];
+
+const VIDEO_MODELS = [
+  { id: 'veo', label: 'Veo', desc: 'Google video' },
+  { id: 'seedance', label: 'Seedance', desc: 'Balanced' },
+  { id: 'seedance-pro', label: 'Seedance Pro', desc: 'High quality' },
+  { id: 'wan', label: 'Wan', desc: 'Fast video' },
+  { id: 'ltx-2', label: 'LTX-2', desc: 'Lightweight' },
+];
+
+const STYLES = [
+  { id: 'dynamic', label: 'Dynamic' },
+  { id: 'cinematic', label: 'Cinematic' },
+  { id: 'creative', label: 'Creative' },
+  { id: 'vibrant', label: 'Vibrant' },
+  { id: 'portrait', label: 'Portrait' },
+  { id: 'anime', label: 'Anime' },
+];
+
+const RANDOM_SUBJECTS = [
+  'a celestial dragon coiled around a dying star',
+  'an ancient library floating in the clouds at sunset',
+  'a cyberpunk samurai standing in neon rain',
+  'a crystal palace growing from a frozen waterfall',
+  'a bioluminescent deep-sea city with jellyfish lanterns',
+  'a time traveler stepping through a shattered mirror',
+  'a forest of giant mushrooms under aurora borealis',
+  'an ethereal phoenix rising from volcanic glass',
+  'a steampunk airship docked at a sky island',
+  'a witch brewing potions in a cozy treehouse',
+  'a massive titan sleeping beneath a mountain range',
+  'an underwater temple guarded by spectral whales',
+  'a lone astronaut discovering alien flowers on Mars',
+  'a floating marketplace above a city of canals',
+  'a knight made of starlight fighting shadow creatures',
+];
+
+const API_BASE = 'http://localhost:3005';
+
+export default function GeneratePage() {
+  const router = useRouter();
+  const [mode, setMode] = useState('image');
+  const [prompt, setPrompt] = useState('');
+  const [model, setModel] = useState('flux');
+  const [aspect, setAspect] = useState('16:9');
+  const [style, setStyle] = useState('dynamic');
+  const [generating, setGenerating] = useState(false);
+  const [duration, setDuration] = useState('6');
+  const [videoModel, setVideoModel] = useState('veo');
+  const [modelOpen, setModelOpen] = useState(false);
+  const [styleOpen, setStyleOpen] = useState(false);
+  const [durationOpen, setDurationOpen] = useState(false);
+  const [starMenuOpen, setStarMenuOpen] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [uploadedPreview, setUploadedPreview] = useState(null);
+  const [aiWorking, setAiWorking] = useState(false);
+  const [limitWarning, setLimitWarning] = useState('');
+  const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const starMenuRef = useRef(null);
+
+  const imgRemaining = getGuestRemaining('images');
+  const vidRemaining = getGuestRemaining('videos');
+  const signedIn = isSignedIn();
+
+  const selectedModel = MODELS.find((m) => m.id === model);
+  const selectedVideoModel = VIDEO_MODELS.find((m) => m.id === videoModel);
+  const selectedAspect = (mode === 'video' ? VIDEO_ASPECTS : ASPECTS).find((a) => a.id === aspect) || ASPECTS[1];
+  const selectedStyle = STYLES.find((s) => s.id === style);
+  const selectedDuration = DURATIONS.find((d) => d.id === duration);
+
+  // Close star menu on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (starMenuRef.current && !starMenuRef.current.contains(e.target)) {
+        setStarMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const closeAllDropdowns = () => {
+    setModelOpen(false);
+    setStyleOpen(false);
+    setDurationOpen(false);
+    setStarMenuOpen(false);
+  };
+
+  const handleRandomPrompt = async () => {
+    if (aiWorking) return;
+    setAiWorking(true);
+    setStarMenuOpen(false);
+    const subject = RANDOM_SUBJECTS[Math.floor(Math.random() * RANDOM_SUBJECTS.length)];
+    try {
+      const res = await fetch(`${API_BASE}/enhance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: subject }),
+      });
+      const data = await res.json();
+      setPrompt(data.enhanced || subject);
+    } catch {
+      setPrompt(subject);
+    } finally {
+      setAiWorking(false);
+    }
+  };
+
+  const handleImprovePrompt = async () => {
+    if (aiWorking || !prompt.trim()) return;
+    setAiWorking(true);
+    setStarMenuOpen(false);
+    try {
+      const res = await fetch(`${API_BASE}/enhance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt.trim() }),
+      });
+      const data = await res.json();
+      if (data.enhanced) setPrompt(data.enhanced);
+    } catch {
+      /* silent */
+    } finally {
+      setAiWorking(false);
+    }
+  };
+
+  const handleDescribeImage = () => {
+    setStarMenuOpen(false);
+    fileInputRef.current?.click();
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadedImage(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setUploadedPreview(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const clearUploadedImage = () => {
+    setUploadedImage(null);
+    setUploadedPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleGenerate = async () => {
+    if (!prompt.trim() || generating) return;
+
+    const genType = mode === 'video' ? 'videos' : 'images';
+    if (!canGuestGenerate(genType)) {
+      setLimitWarning(
+        mode === 'video'
+          ? 'Guest video limit reached. Sign in for unlimited access.'
+          : 'Guest image limit reached. Sign in for unlimited access.'
+      );
+      return;
+    }
+
+    setGenerating(true);
+    setLimitWarning('');
+
+    // Guests get a single session ID, signed-in users get unique ones
+    const sessionId = signedIn ? crypto.randomUUID() : getGuestSessionId();
+
+    // Track usage for guests
+    if (!signedIn) incrementGuestUsage(genType);
+    const { w, h } = selectedAspect;
+
+    let imageUrl = null;
+    if (uploadedImage) {
+      try {
+        const formData = new FormData();
+        formData.append('file', uploadedImage);
+        const uploadRes = await fetch(`${API_BASE}/upload-to-uguu`, {
+          method: 'POST',
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.url) imageUrl = uploadData.url;
+      } catch { /* continue */ }
+    }
+
+    sessionStorage.setItem(
+      `gen_${sessionId}`,
+      JSON.stringify({
+        prompt: prompt.trim(),
+        model: mode === 'video' ? videoModel : model,
+        width: w,
+        height: h,
+        style,
+        mode,
+        duration: mode === 'video' ? duration : null,
+        imageUrl,
+        timestamp: Date.now(),
+      })
+    );
+
+    router.push(`/generate/${sessionId}`);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleGenerate();
+    }
+  };
+
+  return (
+    <div className={styles.page}>
+      <Navbar />
+
+      <main className={styles.main}>
+        {/* Ambient background blobs */}
+        <div className={styles.bgBlob1} aria-hidden="true" />
+        <div className={styles.bgBlob2} aria-hidden="true" />
+        <div className={styles.bgBlob3} aria-hidden="true" />
+        <div className={styles.gridOverlay} aria-hidden="true" />
+
+        <div className={styles.center}>
+          <h1 className={styles.title}>
+            What will you <span className={styles.accent}>create</span> today?
+          </h1>
+          <p className={styles.subtitle}>
+            Describe your vision and let AI bring it to life
+          </p>
+
+          {/* Uploaded image preview */}
+          {uploadedPreview && (
+            <div className={styles.uploadPreview}>
+              <img src={uploadedPreview} alt="Uploaded" className={styles.uploadThumb} />
+              <span className={styles.uploadLabel}>
+                {mode === 'video' ? 'Start frame' : 'Reference image'}
+              </span>
+              <button className={styles.uploadRemove} onClick={clearUploadedImage}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Prompt input bar */}
+          <div className={styles.promptBar}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: 'none' }}
+            />
+            <div className={styles.tooltipWrap}>
+              <button
+                className={styles.promptIconBtn}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
+              </button>
+              <span className={styles.tooltip}>
+                {mode === 'video' ? 'Upload start frame' : 'Upload reference image'}
+              </span>
+            </div>
+            <input
+              ref={inputRef}
+              type="text"
+              className={styles.promptInput}
+              placeholder="Type a prompt..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            {aiWorking && <span className={styles.promptSpinner} />}
+          </div>
+
+          {/* Options bar */}
+          <div className={styles.optionsBar}>
+            <div className={styles.optionsLeft}>
+              <div className={styles.modeToggle}>
+                <button
+                  className={`${styles.modeBtn} ${mode === 'image' ? styles.modeActive : ''}`}
+                  onClick={() => { setMode('image'); closeAllDropdowns(); }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
+                  Image
+                </button>
+                <button
+                  className={`${styles.modeBtn} ${mode === 'video' ? styles.modeActive : ''}`}
+                  onClick={() => { setMode('video'); closeAllDropdowns(); }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                  Video
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.optionsRight}>
+              <div className={styles.aspectGroup}>
+                {(mode === 'video' ? VIDEO_ASPECTS : ASPECTS).map((a) => (
+                  <button
+                    key={a.id}
+                    className={`${styles.aspectBtn} ${aspect === a.id ? styles.aspectActive : ''}`}
+                    onClick={() => setAspect(a.id)}
+                    title={`${a.w}x${a.h}`}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+
+              {mode === 'video' ? (
+                <>
+                  <div className={styles.dropdownWrap}>
+                    <button className={styles.optionBtn} onClick={() => { setDurationOpen(!durationOpen); setModelOpen(false); }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      {selectedDuration.label}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                    </button>
+                    {durationOpen && (
+                      <div className={styles.dropdown}>
+                        {DURATIONS.map((d) => (
+                          <button key={d.id} className={`${styles.dropdownItem} ${duration === d.id ? styles.dropdownItemActive : ''}`}
+                            onClick={() => { setDuration(d.id); setDurationOpen(false); }}>
+                            {d.label}
+                            {duration === d.id && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className={styles.dropdownWrap}>
+                    <button className={styles.optionBtn} onClick={() => { setModelOpen(!modelOpen); setDurationOpen(false); }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                      </svg>
+                      {selectedVideoModel.label}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                    </button>
+                    {modelOpen && (
+                      <div className={styles.dropdown}>
+                        {VIDEO_MODELS.map((m) => (
+                          <button key={m.id} className={`${styles.dropdownItem} ${videoModel === m.id ? styles.dropdownItemActive : ''}`}
+                            onClick={() => { setVideoModel(m.id); setModelOpen(false); }}>
+                            <span>{m.label}</span><span className={styles.dropdownDesc}>{m.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.dropdownWrap}>
+                    <button className={styles.optionBtn} onClick={() => { setStyleOpen(!styleOpen); setModelOpen(false); setStarMenuOpen(false); }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                      </svg>
+                      {selectedStyle.label}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                    </button>
+                    {styleOpen && (
+                      <div className={styles.dropdown}>
+                        {STYLES.map((s) => (
+                          <button key={s.id} className={`${styles.dropdownItem} ${style === s.id ? styles.dropdownItemActive : ''}`}
+                            onClick={() => { setStyle(s.id); setStyleOpen(false); }}>
+                            {s.label}
+                            {style === s.id && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className={styles.dropdownWrap}>
+                    <button className={styles.optionBtn} onClick={() => { setModelOpen(!modelOpen); setStyleOpen(false); setStarMenuOpen(false); }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                      </svg>
+                      {selectedModel.label}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                    </button>
+                    {modelOpen && (
+                      <div className={styles.dropdown}>
+                        {MODELS.map((m) => (
+                          <button key={m.id} className={`${styles.dropdownItem} ${model === m.id ? styles.dropdownItemActive : ''}`}
+                            onClick={() => { setModel(m.id); setModelOpen(false); }}>
+                            <span>{m.label}</span><span className={styles.dropdownDesc}>{m.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Star menu */}
+              <div className={styles.starMenuWrap} ref={starMenuRef}>
+                <button
+                  className={`${styles.enhanceBtn} ${aiWorking ? styles.enhanceSpin : ''}`}
+                  onClick={() => { setStarMenuOpen(!starMenuOpen); setModelOpen(false); setStyleOpen(false); setDurationOpen(false); }}
+                  disabled={aiWorking}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+                  </svg>
+                </button>
+
+                {starMenuOpen && (
+                  <div className={styles.starDropdown}>
+                    <button className={styles.starItem} onClick={handleRandomPrompt}>
+                      <div className={styles.starItemIcon}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+                        </svg>
+                      </div>
+                      <div className={styles.starItemText}>
+                        <span className={styles.starItemTitle}>New Random Prompt</span>
+                        <span className={styles.starItemDesc}>Generate a random prompt with AI.</span>
+                      </div>
+                    </button>
+                    <button className={styles.starItem} onClick={handleImprovePrompt} disabled={!prompt.trim()}>
+                      <div className={styles.starItemIcon}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                      </div>
+                      <div className={styles.starItemText}>
+                        <span className={styles.starItemTitle}>Improve Prompt</span>
+                        <span className={styles.starItemDesc}>Improve your current prompt.</span>
+                      </div>
+                    </button>
+                    <button className={styles.starItem} onClick={handleDescribeImage}>
+                      <div className={styles.starItemIcon}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <path d="M21 15l-5-5L5 21" />
+                        </svg>
+                      </div>
+                      <div className={styles.starItemText}>
+                        <span className={styles.starItemTitle}>Describe With AI</span>
+                        <span className={styles.starItemDesc}>Upload an image and generate its description.</span>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Generate button */}
+              <button
+                className={styles.generateBtn}
+                onClick={handleGenerate}
+                disabled={!prompt.trim() || generating}
+                title="Generate"
+              >
+                {generating ? (
+                  <span className={styles.spinner} />
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Usage counter for guests */}
+          {!signedIn && (
+            <div className={styles.usageBar}>
+              <span className={styles.usageLabel}>
+                {mode === 'video'
+                  ? `${vidRemaining} video generation${vidRemaining !== 1 ? 's' : ''} remaining`
+                  : `${imgRemaining} image generation${imgRemaining !== 1 ? 's' : ''} remaining`}
+              </span>
+              <a href={getSignInUrl()} className={styles.usageLink}>Sign in for unlimited</a>
+            </div>
+          )}
+
+          {/* Limit warning */}
+          {limitWarning && (
+            <div className={styles.limitWarning}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              {limitWarning}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

@@ -9,10 +9,10 @@
   --color-secondary: #5691f3;
   --color-secondary-light: #7fa8f5;
   --color-secondary-dark: #4580f0;
-  --color-accent: #7f56f3;
-  --color-accent-light: #9d7af7;
-  --color-accent-dark: #6640e0;
-  --color-gold: #f4c801;
+  --color-accent: #06d6a0;
+  --color-accent-light: #34ebc0;
+  --color-accent-dark: #05b384;
+  --color-cyan: #22d3ee;
 
   /* Backgrounds */
   --color-bg-primary: #0a0f1c;
@@ -25,7 +25,7 @@
   --color-text-primary: #ffffff;
   --color-text-secondary: #e5e7eb;
   --color-text-tertiary: #9ca3af;
-  --color-text-accent: #f4c801;
+  --color-text-accent: #06d6a0;
 
   /* Borders & surfaces */
   --color-border: rgba(255, 255, 255, 0.1);
@@ -36,7 +36,7 @@
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #8d49fd 0%, #5691f3 100%);
   --gradient-secondary: linear-gradient(135deg, #7f56f3 0%, #8d49fd 100%);
-  --gradient-accent: linear-gradient(135deg, #f4c801 0%, #ff8c00 100%);
+  --gradient-accent: linear-gradient(135deg, #06d6a0 0%, #22d3ee 100%);
   --gradient-surface: linear-gradient(135deg, rgba(141, 73, 253, 0.1) 0%, rgba(86, 145, 243, 0.05) 100%);
 
   /* Typography */
@@ -81,7 +81,7 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-glow: 0 0 20px rgba(141, 73, 253, 0.3);
-  --shadow-glow-accent: 0 0 30px rgba(244, 200, 1, 0.3);
+  --shadow-glow-accent: 0 0 30px rgba(6, 214, 160, 0.3);
 
   /* Animations */
   --animation-fast: 150ms ease;
