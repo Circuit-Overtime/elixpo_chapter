@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, use } from 'react';
+import { useState, useEffect, useRef, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar/Navbar';
 import styles from './Session.module.css';
@@ -36,16 +36,37 @@ export default function SessionPage({ params }) {
   const [mode, setMode] = useState('image');
   const [duration, setDuration] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
+  const [seed, setSeed] = useState(0);
 
   const [resultSrc, setResultSrc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [genStart, setGenStart] = useState(null);
   const [generationTime, setGenerationTime] = useState(null);
 
   const [modelOpen, setModelOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(true);
   const hasGenerated = useRef(false);
+  const moreMenuRef = useRef(null);
+
+  // Remix brush state
+  const [remixMode, setRemixMode] = useState(false);
+  const [brushSize, setBrushSize] = useState(40);
+  const [remixPrompt, setRemixPrompt] = useState('');
+  const [remixLoading, setRemixLoading] = useState(false);
+  const canvasRef = useRef(null);
+  const imgRef = useRef(null);
+  const isDrawing = useRef(false);
+
+  // Close more menu on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target)) setMoreMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   useEffect(() => {
     if (hasGenerated.current) return;
@@ -66,11 +87,19 @@ export default function SessionPage({ params }) {
     setMode(p.mode || 'image');
     setDuration(p.duration);
     setImageUrl(p.imageUrl);
+    if (p.seed) setSeed(p.seed);
+    if (p.resultSrc) {
+      setResultSrc(p.resultSrc);
+      setGenerationTime(p.generationTime);
+      setSeed(p.seed);
+      setLoading(false);
+      return;
+    }
 
     generate(p);
   }, [sessionId]);
 
-  const buildUrl = (p) => {
+  const buildUrl = (p, useSeed) => {
     const encoded = encodeURIComponent(p.prompt);
     const isVideo = p.mode === 'video';
     const base = isVideo
@@ -82,13 +111,13 @@ export default function SessionPage({ params }) {
     q.set('width', p.width);
     q.set('height', p.height);
     q.set('nologo', 'true');
-    q.set('seed', Math.floor(Math.random() * 2147483647));
+    q.set('seed', useSeed || Math.floor(Math.random() * 2147483647));
     q.set('enhance', 'true');
     q.set('referrer', 'elixpoart');
     if (isVideo && p.duration) q.set('duration', p.duration);
     if (p.imageUrl) q.set('image', p.imageUrl);
 
-    return `${base}?${q.toString()}`;
+    return { url: `${base}?${q.toString()}`, seed: parseInt(q.get('seed')) };
   };
 
   const generate = async (p) => {
@@ -97,22 +126,43 @@ export default function SessionPage({ params }) {
     setResultSrc(null);
     setGenerationTime(null);
     const start = Date.now();
-    setGenStart(start);
 
     try {
-      const url = buildUrl(p);
+      const { url, seed: usedSeed } = buildUrl(p);
+      setSeed(usedSeed);
       const headers = {};
       if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
       const res = await fetch(url, { headers });
       if (!res.ok) throw new Error(`Generation failed (${res.status})`);
       const blob = await res.blob();
-      setResultSrc(URL.createObjectURL(blob));
-      setGenerationTime(Date.now() - start);
+      const blobUrl = URL.createObjectURL(blob);
+      const genTime = Date.now() - start;
+      setResultSrc(blobUrl);
+      setGenerationTime(genTime);
+
+      // Save session
+      saveSession({ ...p, seed: usedSeed, resultSrc: blobUrl, generationTime: genTime });
     } catch (err) {
       setError(err.message || 'Generation failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  const saveSession = (data) => {
+    sessionStorage.setItem(`gen_${sessionId}`, JSON.stringify({
+      prompt: data.prompt || prompt,
+      model: data.model || model,
+      width: data.width || width,
+      height: data.height || height,
+      mode: data.mode || mode,
+      duration: data.duration || duration,
+      imageUrl: data.imageUrl || imageUrl,
+      seed: data.seed || seed,
+      resultSrc: data.resultSrc || resultSrc,
+      generationTime: data.generationTime || generationTime,
+      timestamp: Date.now(),
+    }));
   };
 
   const handleRegenerate = () => {
@@ -122,10 +172,9 @@ export default function SessionPage({ params }) {
   const handleNewGeneration = () => {
     if (!newPrompt.trim()) return;
     const id = crypto.randomUUID();
-    sessionStorage.setItem(
-      `gen_${id}`,
-      JSON.stringify({ prompt: newPrompt.trim(), model, width, height, mode, duration, imageUrl: null, timestamp: Date.now() })
-    );
+    sessionStorage.setItem(`gen_${id}`, JSON.stringify({
+      prompt: newPrompt.trim(), model, width, height, mode, duration, imageUrl: null, timestamp: Date.now(),
+    }));
     router.push(`/generate/${id}`);
   };
 
@@ -137,10 +186,124 @@ export default function SessionPage({ params }) {
     a.click();
   };
 
-  const handleCopyPrompt = () => navigator.clipboard.writeText(prompt);
+  const handleCopyImage = async () => {
+    if (!resultSrc) return;
+    try {
+      const res = await fetch(resultSrc);
+      const blob = await res.blob();
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    } catch { /* clipboard may not support image */ }
+    setMoreMenuOpen(false);
+  };
+
+  const handleCopySeed = () => {
+    navigator.clipboard.writeText(String(seed));
+    setMoreMenuOpen(false);
+  };
+
+  const handleCopyPrompt = () => {
+    navigator.clipboard.writeText(prompt);
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleNewGeneration(); }
+  };
+
+  // ── Remix brush logic ──
+  const startRemix = () => {
+    setRemixMode(true);
+    setMoreMenuOpen(false);
+    // Init canvas after render
+    requestAnimationFrame(() => initCanvas());
+  };
+
+  const initCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }, []);
+
+  const getCanvasCoords = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+  };
+
+  const onBrushDown = (e) => {
+    e.preventDefault();
+    isDrawing.current = true;
+    const { x, y } = getCanvasCoords(e);
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(6, 214, 160, 0.35)';
+    ctx.beginPath();
+    ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+  };
+
+  const onBrushMove = (e) => {
+    if (!isDrawing.current) return;
+    e.preventDefault();
+    const { x, y } = getCanvasCoords(e);
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = 'rgba(6, 214, 160, 0.35)';
+    ctx.beginPath();
+    ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+  };
+
+  const onBrushUp = () => { isDrawing.current = false; };
+
+  const cancelRemix = () => {
+    setRemixMode(false);
+    setRemixPrompt('');
+  };
+
+  const submitRemix = async () => {
+    if (!remixPrompt.trim() || !resultSrc) return;
+    setRemixLoading(true);
+
+    try {
+      // Use gptimage model for editing with the current image as reference
+      const editPrompt = `${remixPrompt.trim()}`;
+      const encoded = encodeURIComponent(editPrompt);
+      const q = new URLSearchParams();
+      q.set('model', 'gptimage');
+      q.set('width', width);
+      q.set('height', height);
+      q.set('nologo', 'true');
+      q.set('referrer', 'elixpoart');
+      q.set('image', resultSrc);
+
+      const url = `${POLLINATIONS_BASE}/image/${encoded}?${q.toString()}`;
+      const headers = {};
+      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error('Edit failed');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      setResultSrc(blobUrl);
+      setModel('gptimage');
+      setRemixMode(false);
+      setRemixPrompt('');
+      saveSession({ prompt: editPrompt, model: 'gptimage', resultSrc: blobUrl });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRemixLoading(false);
+    }
   };
 
   const sel = MODELS.find((m) => m.id === model) || { label: model };
@@ -150,10 +313,8 @@ export default function SessionPage({ params }) {
       <Navbar />
 
       <div className={styles.layout}>
-        {/* Main content */}
         <div className={styles.content}>
           <div className={styles.imageContainer}>
-            {/* Ambient blobs behind content */}
             <div className={styles.ambientBlob1} aria-hidden="true" />
             <div className={styles.ambientBlob2} aria-hidden="true" />
 
@@ -171,7 +332,7 @@ export default function SessionPage({ params }) {
               </div>
             )}
 
-            {error && (
+            {error && !loading && (
               <div className={styles.errorState}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="1.5">
                   <circle cx="12" cy="12" r="10" />
@@ -184,49 +345,100 @@ export default function SessionPage({ params }) {
             )}
 
             {resultSrc && !loading && (
-              mode === 'video' ? (
-                <video src={resultSrc} className={styles.generatedImage} controls autoPlay loop />
-              ) : (
-                <img src={resultSrc} alt={prompt} className={styles.generatedImage} />
-              )
+              <div className={styles.imageWrap}>
+                {mode === 'video' ? (
+                  <video src={resultSrc} className={styles.generatedImage} controls autoPlay loop />
+                ) : (
+                  <>
+                    <img ref={imgRef} src={resultSrc} alt={prompt} className={styles.generatedImage} onLoad={remixMode ? initCanvas : undefined} />
+                    {remixMode && (
+                      <canvas
+                        ref={canvasRef}
+                        className={styles.remixCanvas}
+                        onMouseDown={onBrushDown}
+                        onMouseMove={onBrushMove}
+                        onMouseUp={onBrushUp}
+                        onMouseLeave={onBrushUp}
+                        onTouchStart={onBrushDown}
+                        onTouchMove={onBrushMove}
+                        onTouchEnd={onBrushUp}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
             )}
           </div>
 
-          {/* Bottom prompt bar */}
-          <div className={styles.bottomBar}>
-            <div className={styles.promptBar}>
-              <textarea
-                className={styles.promptInput}
-                placeholder="Type a prompt..."
-                value={newPrompt}
-                onChange={(e) => setNewPrompt(e.target.value)}
-                onKeyDown={handleKeyDown}
-                rows={1}
-              />
-              <div className={styles.promptActions}>
-                <div className={styles.inlineModel}>
-                  <button className={styles.modelBtn} onClick={() => setModelOpen(!modelOpen)}>
-                    <span className={styles.modelLabel}>Model</span>
-                    <span className={styles.modelName}>{sel.label}</span>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
-                  </button>
-                  {modelOpen && (
-                    <div className={styles.modelDropdown}>
-                      {MODELS.map((m) => (
-                        <button key={m.id} className={`${styles.modelOption} ${model === m.id ? styles.modelOptionActive : ''}`}
-                          onClick={() => { setModel(m.id); setModelOpen(false); }}>
-                          {m.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <button className={styles.generateBtn} onClick={handleNewGeneration} disabled={!newPrompt.trim()}>
-                  Generate
+          {/* Remix bar */}
+          {remixMode && (
+            <div className={styles.remixBar}>
+              <div className={styles.remixTools}>
+                <label className={styles.brushLabel}>
+                  Brush
+                  <input
+                    type="range"
+                    min="10"
+                    max="100"
+                    value={brushSize}
+                    onChange={(e) => setBrushSize(Number(e.target.value))}
+                    className={styles.brushSlider}
+                  />
+                  <span className={styles.brushVal}>{brushSize}px</span>
+                </label>
+              </div>
+              <div className={styles.remixPromptRow}>
+                <input
+                  type="text"
+                  className={styles.remixInput}
+                  placeholder="Describe the changes..."
+                  value={remixPrompt}
+                  onChange={(e) => setRemixPrompt(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') submitRemix(); }}
+                />
+                <button className={styles.remixSubmit} onClick={submitRemix} disabled={!remixPrompt.trim() || remixLoading}>
+                  {remixLoading ? 'Editing...' : 'Apply'}
                 </button>
+                <button className={styles.remixCancel} onClick={cancelRemix}>Cancel</button>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Bottom prompt bar (hidden during remix) */}
+          {!remixMode && (
+            <div className={styles.bottomBar}>
+              <div className={styles.promptBar}>
+                <textarea
+                  className={styles.promptInput}
+                  placeholder="Type a prompt..."
+                  value={newPrompt}
+                  onChange={(e) => setNewPrompt(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  rows={1}
+                />
+                <div className={styles.promptActions}>
+                  <div className={styles.inlineModel}>
+                    <button className={styles.modelBtn} onClick={() => setModelOpen(!modelOpen)}>
+                      <span className={styles.modelLabel}>Model</span>
+                      <span className={styles.modelName}>{sel.label}</span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                    </button>
+                    {modelOpen && (
+                      <div className={styles.modelDropdown}>
+                        {MODELS.map((m) => (
+                          <button key={m.id} className={`${styles.modelOption} ${model === m.id ? styles.modelOptionActive : ''}`}
+                            onClick={() => { setModel(m.id); setModelOpen(false); }}>{m.label}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button className={styles.generateBtn} onClick={handleNewGeneration} disabled={!newPrompt.trim()}>
+                    Generate
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right sidebar / Property panel */}
@@ -239,7 +451,7 @@ export default function SessionPage({ params }) {
 
           {sidebarOpen && (
             <div className={styles.sidebarContent}>
-              {/* Session info */}
+              {/* Session */}
               <div className={styles.sessionBlock}>
                 <div className={styles.sessionRow}>
                   <span className={`${styles.statusDot} ${loading ? styles.statusLoading : styles.statusDone}`} />
@@ -273,6 +485,10 @@ export default function SessionPage({ params }) {
                     <span className={styles.propKey}>Resolution</span>
                     <span className={styles.propVal}>{width}x{height}</span>
                   </div>
+                  <div className={styles.propItem}>
+                    <span className={styles.propKey}>Seed</span>
+                    <span className={styles.propVal}>{seed}</span>
+                  </div>
                   {duration && (
                     <div className={styles.propItem}>
                       <span className={styles.propKey}>Duration</span>
@@ -292,15 +508,36 @@ export default function SessionPage({ params }) {
                 </div>
               </div>
 
-              {/* Actions */}
+              {/* Actions — collapsible */}
               <div className={styles.section}>
-                <h3 className={styles.sectionLabel}>Actions</h3>
-                <div className={styles.actionGrid}>
-                  <button className={styles.actionBtn} onClick={handleRegenerate} disabled={loading}>
+                <button className={styles.collapseHeader} onClick={() => setActionsOpen(!actionsOpen)}>
+                  <h3 className={styles.sectionLabel}>Actions</h3>
+                  <svg className={`${styles.collapseChevron} ${actionsOpen ? styles.collapseOpen : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                {actionsOpen && <div className={styles.actionList}>
+                  <button className={styles.actionBtn} onClick={startRemix} disabled={loading || !resultSrc || mode === 'video'}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
                     </svg>
                     Remix
+                  </button>
+                  <button className={styles.actionBtn} disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <path d="M9 3v18" /><path d="M15 3v18" /><path d="M3 9h18" /><path d="M3 15h18" />
+                    </svg>
+                    Remove Background
+                    <span className={styles.comingSoon}>Soon</span>
+                  </button>
+                  <button className={styles.actionBtn} disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                    </svg>
+                    Edit with Canvas
+                    <span className={styles.comingSoon}>Soon</span>
                   </button>
                   <button className={styles.actionBtn} onClick={handleDownload} disabled={!resultSrc}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -308,23 +545,30 @@ export default function SessionPage({ params }) {
                       <polyline points="7 10 12 15 17 10" />
                       <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
-                    Download
+                    Download Image
                   </button>
-                  <button className={styles.actionBtn} onClick={() => setNewPrompt(prompt)}>
+                  <button className={styles.actionBtn} onClick={handleCopyImage} disabled={!resultSrc}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                      <rect x="9" y="9" width="13" height="13" rx="2" />
+                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
                     </svg>
-                    Iterate
+                    Copy Image
+                  </button>
+                  <button className={styles.actionBtn} onClick={handleCopySeed} disabled={!seed}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                    Copy Seed
                   </button>
                   <button className={styles.actionBtn} onClick={() => router.push('/generate')}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="12" y1="5" x2="12" y2="19" />
                       <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
-                    New
+                    New Generation
                   </button>
-                </div>
+                </div>}
               </div>
             </div>
           )}
