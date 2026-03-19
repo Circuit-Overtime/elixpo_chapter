@@ -83,103 +83,85 @@
   margin-bottom: var(--spacing-2xl);
 }
 
-/* Mode toggle */
-.modeToggle {
-  display: flex;
-  gap: 2px;
-  padding: 3px;
-  background: var(--color-bg-tertiary);
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--spacing-xl);
-}
-
-.modeBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: 0.5rem 1.25rem;
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-text-tertiary);
-  font-family: var(--font-family-primary);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--animation-fast);
-}
-
-.modeBtn:hover {
-  color: var(--color-text-secondary);
-}
-
-.modeActive {
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-sm);
-}
-
-/* Prompt card */
-.promptCard {
+/* ─── Prompt bar ─── */
+.promptBar {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.85rem 1.25rem;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
+  border-radius: var(--radius-full);
   transition: border-color var(--animation-normal);
+  margin-bottom: var(--spacing-md);
 }
 
-.promptCard:focus-within {
+.promptBar:focus-within {
   border-color: var(--color-border-hover);
 }
 
+.promptIcon {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+}
+
 .promptInput {
-  width: 100%;
-  min-height: 100px;
-  padding: var(--spacing-lg);
+  flex: 1;
   background: transparent;
   border: none;
   color: var(--color-text-primary);
   font-family: var(--font-family-primary);
   font-size: var(--font-size-base);
-  line-height: 1.6;
-  resize: none;
   outline: none;
+  min-width: 0;
 }
 
 .promptInput::placeholder {
   color: var(--color-text-tertiary);
 }
 
-/* Toolbar */
-.toolbar {
+/* ─── Options bar ─── */
+.optionsBar {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-top: 1px solid var(--color-border);
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
+  padding: 0.5rem 0.75rem;
+  background: rgba(17, 24, 39, 0.6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  backdrop-filter: blur(8px);
 }
 
-.toolbarLeft {
+.optionsLeft {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
 }
 
-.toolbarRight {
+.optionsRight {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
 }
 
-/* Tool button (enhance) */
-.toolBtn {
+/* Mode toggle (Image / Video) */
+.modeToggle {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-lg);
+}
+
+.modeBtn {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--color-border);
+  gap: 0.3rem;
+  padding: 0.4rem 0.85rem;
+  border: none;
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-text-tertiary);
@@ -190,14 +172,14 @@
   transition: all var(--animation-fast);
 }
 
-.toolBtn:hover:not(:disabled) {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
+.modeBtn:hover {
+  color: var(--color-text-secondary);
 }
 
-.toolBtn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.modeActive {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-hover);
 }
 
 /* Aspect ratio group */
@@ -210,7 +192,7 @@
 }
 
 .aspectBtn {
-  padding: 0.3rem 0.6rem;
+  padding: 0.3rem 0.55rem;
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -231,85 +213,103 @@
   color: var(--color-text-primary);
 }
 
-/* Model selector */
-.modelSelector {
+/* Dropdown wrapper (for model + style selectors) */
+.dropdownWrap {
   position: relative;
 }
 
-.modelBtn {
+.optionBtn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.75rem;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-text-secondary);
   font-family: var(--font-family-primary);
   font-size: var(--font-size-xs);
+  font-weight: 500;
   cursor: pointer;
   transition: border-color var(--animation-fast);
+  white-space: nowrap;
 }
 
-.modelBtn:hover {
+.optionBtn:hover {
   border-color: var(--color-border-hover);
 }
 
-.modelLabel {
-  color: var(--color-text-tertiary);
-  font-weight: 400;
-}
-
-.modelName {
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.modelDropdown {
+.dropdown {
   position: absolute;
   bottom: calc(100% + 8px);
   right: 0;
-  min-width: 200px;
+  min-width: 180px;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xs);
-  z-index: 50;
+  z-index: 100;
   box-shadow: var(--shadow-xl);
 }
 
-.modelOption {
+.dropdownItem {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
-  padding: 0.6rem 0.75rem;
+  padding: 0.55rem 0.75rem;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-sm);
+  text-align: left;
   cursor: pointer;
   transition: background var(--animation-fast);
 }
 
-.modelOption:hover {
+.dropdownItem:hover {
   background: var(--color-surface-hover);
-}
-
-.modelOptionActive {
-  background: var(--color-surface);
-}
-
-.modelOptionName {
-  font-family: var(--font-family-primary);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
   color: var(--color-text-primary);
 }
 
-.modelOptionDesc {
-  font-family: var(--font-family-primary);
+.dropdownItemActive {
+  background: var(--color-surface);
+  color: var(--color-accent);
+}
+
+.dropdownDesc {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
+  margin-left: auto;
+  padding-left: var(--spacing-sm);
+}
+
+/* Enhance button */
+.enhanceBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: all var(--animation-fast);
+  flex-shrink: 0;
+}
+
+.enhanceBtn:hover:not(:disabled) {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.enhanceBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 /* Generate button */
@@ -319,9 +319,9 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  padding: 0.5rem 1.5rem;
+  padding: 0.45rem 1.4rem;
   border: 1px solid var(--color-accent);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--color-accent);
   font-family: var(--font-family-primary);
@@ -331,6 +331,7 @@
   overflow: hidden;
   transition: color 0.35s ease, border-color 0.35s ease;
   z-index: 0;
+  flex-shrink: 0;
 }
 
 .generateBtn::before {
@@ -354,7 +355,7 @@
 }
 
 .generateBtn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -376,17 +377,18 @@
   to { transform: rotate(360deg); }
 }
 
-/* Responsive */
+/* ─── Responsive ─── */
 @media (max-width: 768px) {
-  .toolbar {
+  .optionsBar {
     flex-direction: column;
     align-items: stretch;
     gap: var(--spacing-sm);
+    border-radius: var(--radius-xl);
   }
 
-  .toolbarRight {
+  .optionsRight {
     flex-wrap: wrap;
-    justify-content: space-between;
+    gap: var(--spacing-xs);
   }
 
   .aspectGroup {
@@ -403,8 +405,7 @@
     padding: 72px var(--spacing-sm) var(--spacing-sm);
   }
 
-  .promptInput {
-    min-height: 80px;
-    padding: var(--spacing-md);
+  .promptBar {
+    padding: 0.7rem 1rem;
   }
 }
