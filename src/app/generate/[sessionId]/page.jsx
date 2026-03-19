@@ -22,6 +22,7 @@ const MODELS = [
 ];
 
 const POLLINATIONS_BASE = 'https://gen.pollinations.ai';
+const POLLI_TOKEN = process.env.NEXT_PUBLIC_POLLINATIONS_API_IMAGE;
 
 export default function SessionPage({ params }) {
   const { sessionId } = use(params);
@@ -100,7 +101,9 @@ export default function SessionPage({ params }) {
 
     try {
       const url = buildUrl(p);
-      const res = await fetch(url);
+      const headers = {};
+      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
+      const res = await fetch(url, { headers });
       if (!res.ok) throw new Error(`Generation failed (${res.status})`);
       const blob = await res.blob();
       setResultSrc(URL.createObjectURL(blob));
