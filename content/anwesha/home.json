@@ -25,7 +25,7 @@
     "codeStory": "Once upon a time, a coder fell in love with some code.A journey of transformation from the world of cells and microscopes to the realm of code, algorithms, and terminals. This is the story of embracing change, overcoming challenges, and discovering that your passion can evolve in unexpected and exciting ways.",
     "images": {
       "owl": "/assets/anwesha/websiteSection/hz-owl1.png",
-      "humanThink": "/assets/anwesha/websiteSection/human-think1.png",
+      "humanThink": "https://github.com/elixpo/elixpome/blob/c6227fa504b7ffe1c6ec08a88ac73589d8d36433/public/assets/anwesha/about/Bio.jpeg",
       "seal": "/assets/anwesha/websiteSection/sq-seal1.png"
     }
   },
