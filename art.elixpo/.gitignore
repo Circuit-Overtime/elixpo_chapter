@@ -4,3 +4,7 @@ node_modules/
 .env
 .next/
 pollinations_docs
+wrangler.toml
+.next
+out/
+output/
