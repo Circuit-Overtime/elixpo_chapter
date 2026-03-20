@@ -1,9 +1,9 @@
 .page {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(141, 73, 253, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(86, 145, 243, 0.04) 0%, transparent 60%),
-    var(--color-bg-primary);
+    radial-gradient(ellipse 80% 50% at 15% 5%, rgba(86, 145, 243, 0.07) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(141, 73, 253, 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #060a14 0%, #0a0f1e 40%, #0d1425 100%);
   display: flex;
   flex-direction: column;
 }
@@ -107,17 +107,33 @@
 }
 
 .accent {
-  background: var(--gradient-accent);
+  background: linear-gradient(135deg, #5691f3, #7b6cf6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  position: relative;
+}
+
+.accent::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: -4px;
+  right: -4px;
+  height: 10px;
+  background: linear-gradient(90deg, rgba(86, 145, 243, 0.2), rgba(141, 73, 253, 0.15), rgba(6, 214, 160, 0.1));
+  border-radius: 50%;
+  z-index: -1;
+  filter: blur(1px);
+  transform: rotate(-1deg);
 }
 
 .subtitle {
-  font-size: var(--font-size-base);
+  font-size: 1.1rem;
   color: var(--color-text-tertiary);
   text-align: center;
   margin-bottom: var(--spacing-2xl);
+  font-family: var(--font-family-accent);
 }
 
 /* ─── Upload preview (multi-image) ─── */
@@ -253,10 +269,11 @@
   justify-content: space-between;
   gap: var(--spacing-md);
   padding: 0.5rem 0.75rem;
-  background: rgba(17, 24, 39, 0.6);
-  border: 1px solid var(--color-border);
+  background: linear-gradient(145deg, rgba(14, 18, 32, 0.8) 0%, rgba(10, 14, 26, 0.9) 100%);
+  border: 1px solid rgba(86, 145, 243, 0.06);
   border-radius: var(--radius-2xl);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .optionsLeft {
@@ -362,12 +379,14 @@
   bottom: calc(100% + 8px);
   right: 0;
   min-width: 180px;
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  background: rgba(8, 12, 24, 0.97);
+  border: 1px solid rgba(86, 145, 243, 0.1);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xs);
   z-index: 100;
-  box-shadow: var(--shadow-xl);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 1px rgba(86, 145, 243, 0.2);
+  backdrop-filter: blur(20px);
+  animation: dropIn 0.15s ease;
 }
 
 .dropdownItem {
@@ -398,8 +417,8 @@
 }
 
 .dropdownItemActive {
-  background: var(--color-surface);
-  color: var(--color-accent);
+  background: rgba(86, 145, 243, 0.1);
+  color: #5691f3;
 }
 
 .dropdownDesc {
@@ -445,12 +464,13 @@
   bottom: calc(100% + 10px);
   right: 0;
   width: 280px;
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  background: rgba(8, 12, 24, 0.97);
+  border: 1px solid rgba(86, 145, 243, 0.1);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xs);
   z-index: 150;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 1px rgba(86, 145, 243, 0.2);
+  backdrop-filter: blur(20px);
   animation: dropIn 0.15s ease;
 }
 
@@ -520,18 +540,19 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid var(--color-accent);
+  border: none;
   border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-accent);
+  background: linear-gradient(135deg, #5691f3 0%, #7b6cf6 100%);
+  color: #fff;
   cursor: pointer;
   transition: all var(--animation-fast);
   flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(86, 145, 243, 0.3);
 }
 
 .generateBtn:hover:not(:disabled) {
-  background: var(--color-accent);
-  color: var(--color-bg-primary);
+  box-shadow: 0 4px 18px rgba(86, 145, 243, 0.45);
+  transform: translateY(-1px);
 }
 
 .generateBtn:disabled {

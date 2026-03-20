@@ -38,8 +38,12 @@ export async function POST(request) {
     });
 
     if (!res.ok) {
-      const errText = await res.text();
-      return NextResponse.json({ error: `Generation failed (${res.status}): ${errText}` }, { status: res.status });
+      let userMessage = 'Generation failed. Please try again.';
+      if (res.status === 403) userMessage = 'This prompt was flagged by content moderation. Try rephrasing or using a different model.';
+      else if (res.status === 429) userMessage = 'Too many requests. Please wait a moment and try again.';
+      else if (res.status === 402) userMessage = 'Service quota exceeded. Please try again later.';
+      else if (res.status >= 500) userMessage = 'The generation service is temporarily unavailable. Please try again.';
+      return NextResponse.json({ error: userMessage, code: res.status }, { status: res.status });
     }
 
     const data = await res.json();

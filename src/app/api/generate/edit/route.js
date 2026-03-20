@@ -31,8 +31,11 @@ export async function POST(request) {
     });
 
     if (!res.ok) {
-      const errText = await res.text();
-      return NextResponse.json({ error: `Edit failed (${res.status}): ${errText}` }, { status: res.status });
+      let userMessage = 'Edit failed. Please try again.';
+      if (res.status === 403) userMessage = 'This edit was flagged by content moderation. Try rephrasing your description.';
+      else if (res.status === 429) userMessage = 'Too many requests. Please wait a moment.';
+      else if (res.status >= 500) userMessage = 'The editing service is temporarily unavailable.';
+      return NextResponse.json({ error: userMessage, code: res.status }, { status: res.status });
     }
 
     const data = await res.json();

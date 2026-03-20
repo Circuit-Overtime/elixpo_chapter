@@ -32,7 +32,11 @@ export async function POST(request) {
 
     const res = await fetch(videoUrl, { headers });
     if (!res.ok) {
-      return NextResponse.json({ error: `Video generation failed (${res.status})` }, { status: res.status });
+      let userMessage = 'Video generation failed. Please try again.';
+      if (res.status === 403) userMessage = 'This prompt was flagged by content moderation. Try rephrasing.';
+      else if (res.status === 429) userMessage = 'Too many requests. Please wait a moment.';
+      else if (res.status >= 500) userMessage = 'The video service is temporarily unavailable.';
+      return NextResponse.json({ error: userMessage, code: res.status }, { status: res.status });
     }
 
     const blob = await res.blob();

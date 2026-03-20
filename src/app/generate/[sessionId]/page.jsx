@@ -540,12 +540,13 @@ export default function SessionPage({ params }) {
 
             {loading && (
               <div className={styles.loadingState}>
-                <div className={styles.brushCanvas}>
-                  <div className={styles.brushBlob} />
-                  <div className={styles.brushBlob} />
-                  <div className={styles.brushBlob} />
-                  <div className={styles.brushBlob} />
-                  <div className={styles.brushBlob} />
+                <div className={styles.diffusionFrame}>
+                  <div className={styles.diffusionNoise} />
+                  <div className={styles.diffusionGradient} />
+                  <div className={styles.diffusionShimmer} />
+                  <div className={styles.diffusionCenter}>
+                    <div className={styles.diffusionRing} />
+                  </div>
                 </div>
                 <p className={styles.loadingText}>Generating your creation...</p>
                 <p className={styles.loadingHint}>This may take up to a minute</p>
@@ -554,13 +555,33 @@ export default function SessionPage({ params }) {
 
             {error && !loading && (
               <div className={styles.errorState}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="1.5">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>
+                <div className={styles.errorIcon}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                </div>
+                <p className={styles.errorTitle}>Something went wrong</p>
                 <p className={styles.errorText}>{error}</p>
-                <button className={styles.retryBtn} onClick={handleRegenerate}>Try Again</button>
+                <div className={styles.errorActions}>
+                  <button className={styles.retryBtn} onClick={handleRegenerate}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 105.64-11.36L1 10" />
+                    </svg>
+                    Try Again
+                  </button>
+                  <button className={styles.retryAltBtn} onClick={() => {
+                    const alt = model === 'flux' ? 'gptimage' : 'flux';
+                    setModel(alt);
+                    generate({ prompt, model: alt, width, height, mode, duration, imageUrl });
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" /><path d="M2 12h20" />
+                    </svg>
+                    Try Different Model
+                  </button>
+                </div>
               </div>
             )}
 
@@ -707,7 +728,7 @@ export default function SessionPage({ params }) {
               {/* Session */}
               <div className={styles.sessionBlock}>
                 <div className={styles.sessionRow}>
-                  <span className={`${styles.statusDot} ${loading ? styles.statusLoading : styles.statusDone}`} />
+                  <span className={`${styles.statusDot} ${loading ? styles.statusLoading : error ? styles.statusError : styles.statusDone}`} />
                   <span className={styles.sessionId}>{sessionId.slice(0, 8)}</span>
                 </div>
                 {resultSrc && (
