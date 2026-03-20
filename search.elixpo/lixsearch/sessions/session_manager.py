@@ -9,7 +9,6 @@ from typing import List, Tuple
 from pipeline.config import EMBEDDING_DIMENSION, X_REQ_ID_SLICE_SIZE, LOG_MESSAGE_QUERY_TRUNCATE
 
 
-
 class SessionManager:
     def __init__(self, max_sessions: int = 1000, ttl_minutes: int = 30, embedding_dim: int = None):
         if embedding_dim is None:
@@ -116,7 +115,7 @@ class SessionManager:
             }
 
     def get_session_from_disk(self, session_id: str) -> Optional[Dict]:
-        """Load session conversation data from disk archive (for evicted sessions)."""
+
         try:
             from sessions.hybrid_conversation_cache import HybridConversationCache
             cache = HybridConversationCache(session_id)
@@ -151,6 +150,4 @@ class SessionManager:
             session = self.sessions.get(session_id)
             if session:
                 session.set_search_context(context)
-
-
 

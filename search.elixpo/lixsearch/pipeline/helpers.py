@@ -1,4 +1,3 @@
-"""Pipeline helper functions — text processing, sanitization, query decomposition, and fetch evaluation."""
 
 import re
 import json
@@ -36,6 +35,108 @@ def _scrub_tool_names(text: str) -> str:
     # Strip leaked tool/internal names
     text = LEAKED_TOOL_RE.sub("", text)
     return text.strip()
+
+
+# Regex patterns for leaked tool call tokens from model APIs
+_TOOL_CALL_TOKEN_RE = re.compile(
+    r"<\|tool_call_argument_begin\|>"
+    r"|<\|tool_call_argument_end\|>"
+    r"|<\|tool_sep\|>"
+    r"|<\|tool_call_begin\|>"
+    r"|<\|tool_call_end\|>"
+)
+
+# Matches a tool name token like <|tool_call_name:export_to_pdf|>
+_TOOL_NAME_TOKEN_RE = re.compile(r"<\|tool_call_name:(\w+)\|>")
+
+
+def extract_leaked_tool_call(content: str) -> tuple:
+
+    if not content or "<|tool_call" not in content:
+        return None, None
+
+    try:
+        # Try to extract tool name from token
+        name_match = _TOOL_NAME_TOKEN_RE.search(content)
+        function_name = name_match.group(1) if name_match else None
+
+        # Extract the JSON arguments between the tokens
+        # Strip all special tokens to get the raw JSON
+        json_str = _TOOL_CALL_TOKEN_RE.sub("", content)
+        if name_match:
+            json_str = _TOOL_NAME_TOKEN_RE.sub("", json_str)
+
+        json_str = json_str.strip()
+        if not json_str:
+            return None, None
+
+        # Try to parse the JSON — it may be truncated, so find the outermost {}
+        brace_start = json_str.find("{")
+        if brace_start == -1:
+            return None, None
+
+        json_str = json_str[brace_start:]
+
+        # Try parsing as-is first
+        try:
+            args = json.loads(json_str)
+        except json.JSONDecodeError:
+            # JSON might be truncated — try to find the best closing brace
+            # by counting brace depth
+            depth = 0
+            last_valid = -1
+            in_string = False
+            escape_next = False
+            for i, ch in enumerate(json_str):
+                if escape_next:
+                    escape_next = False
+                    continue
+                if ch == '\\' and in_string:
+                    escape_next = True
+                    continue
+                if ch == '"' and not escape_next:
+                    in_string = not in_string
+                    continue
+                if in_string:
+                    continue
+                if ch == '{':
+                    depth += 1
+                elif ch == '}':
+                    depth -= 1
+                    if depth == 0:
+                        last_valid = i
+                        break
+
+            if last_valid > 0:
+                try:
+                    args = json.loads(json_str[:last_valid + 1])
+                except json.JSONDecodeError:
+                    return None, None
+            else:
+                return None, None
+
+        if not isinstance(args, dict):
+            return None, None
+
+        # Infer tool name from args if not found in tokens
+        if not function_name:
+            if "content" in args and ("title" in args or len(args) <= 2):
+                function_name = "export_to_pdf"
+            elif "query" in args and len(args) == 1:
+                function_name = "web_search"
+            elif "image_query" in args:
+                function_name = "image_search"
+            elif "prompt" in args and len(args) == 1:
+                function_name = "create_image"
+            else:
+                return None, None
+
+        logger.info(f"[RECOVERY] Extracted leaked tool call: {function_name}({list(args.keys())})")
+        return function_name, args
+
+    except Exception as e:
+        logger.debug(f"[RECOVERY] Failed to parse leaked tool call: {e}")
+        return None, None
 
 
 def get_user_message(operation: str) -> str:

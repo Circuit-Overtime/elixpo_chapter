@@ -1,18 +1,3 @@
-"""
-Robustness and Adversarial Testing Framework for lixSearch
-
-Addresses security vulnerabilities:
-1. Prompt injection - direct and indirect
-2. Output contamination - malicious content in fetched URLs
-3. Cache poisoning - corrupted embeddings/cached results
-4. Instruction hijacking - tool output misinterpretation
-
-Includes:
-- Tool output sanitization formal policy
-- Instruction filtering classifier
-- Embedding anomaly detection for cache poisoning
-- Evaluation metrics for contamination probability
-"""
 
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
@@ -24,7 +9,7 @@ from datetime import datetime
 
 
 class RiskLevel(Enum):
-    """Risk level classification."""
+
     LOW = "low"           # < 5% contamination risk
     MEDIUM = "medium"     # 5-15% risk
     HIGH = "high"         # 15-50% risk
@@ -32,7 +17,7 @@ class RiskLevel(Enum):
 
 
 class InjectionType(Enum):
-    """Types of prompt injection attacks."""
+
     DIRECT = "direct"               # Direct injection in user query
     INDIRECT = "indirect"           # Injection via fetched content
     CHAINED = "chained"             # Multiple injection points
@@ -41,7 +26,7 @@ class InjectionType(Enum):
 
 @dataclass
 class SanitizationPolicy:
-    """Formal sanitization policy for tool outputs."""
+
     
     max_output_length: int = 50000
     remove_html: bool = True
@@ -57,9 +42,7 @@ class SanitizationPolicy:
 
 
 class ToolOutputSanitizer:
-    """
-    Sanitizes tool outputs to prevent indirect prompt injection.
-    """
+
     
     def __init__(self, policy: Optional[SanitizationPolicy] = None):
         self.policy = policy or SanitizationPolicy()
@@ -82,11 +65,7 @@ class ToolOutputSanitizer:
         )
     
     def sanitize(self, output: str, source: str = "unknown") -> Tuple[str, Dict]:
-        """
-        Sanitize tool output.
-        
-        Returns (sanitized_output, sanitization_report)
-        """
+
         if not output:
             return "", {"source": source, "issues": []}
         
@@ -150,7 +129,7 @@ class ToolOutputSanitizer:
         return result, report
     
     def _detect_injection_patterns(self, text: str) -> List[str]:
-        """Detect known injection patterns in text."""
+
         detected = []
         
         for pattern_name, pattern in self.injection_patterns.items():
@@ -161,7 +140,7 @@ class ToolOutputSanitizer:
         return detected
     
     def _remove_dangerous_html(self, text: str) -> str:
-        """Remove script, iframe, and other dangerous HTML tags."""
+
         dangerous_tags = ["script", "iframe", "object", "embed", "form"]
         result = text
         
@@ -172,7 +151,7 @@ class ToolOutputSanitizer:
         return result
     
     def _decode_html_entities(self, text: str) -> str:
-        """Decode HTML entities to reveal hidden content."""
+
         import html
         try:
             return html.unescape(text)
@@ -180,7 +159,7 @@ class ToolOutputSanitizer:
             return text
     
     def _limit_urls(self, text: str, max_urls: int) -> str:
-        """Limit number of URLs in text."""
+
         urls = re.findall(r'https?://[^\s<>"{}|\\^`\[\]]*', text)
         
         if len(urls) > max_urls:
@@ -191,15 +170,13 @@ class ToolOutputSanitizer:
         return text
     
     def _remove_control_characters(self, text: str) -> str:
-        """Remove control characters that could encode attacks."""
+
         printable = set(string.printable)
         return "".join(c for c in text if c in printable or ord(c) > 127)
 
 
 class InstructionFilterClassifier:
-    """
-    Classifies whether text contains hidden instructions or command attempts.
-    """
+
     
     def __init__(self):
         self.instruction_keywords = {
@@ -222,11 +199,7 @@ class InstructionFilterClassifier:
         }
     
     def classify_instruction_safety(self, text: str) -> Tuple[bool, Dict]:
-        """
-        Classify if text contains hidden instructions.
-        
-        Returns (is_safe, classification_report)
-        """
+
         text_lower = text.lower()
         report = {
             "is_safe": True,
@@ -262,9 +235,7 @@ class InstructionFilterClassifier:
 
 
 class EmbeddingAnomalyDetector:
-    """
-    Detects anomalous embeddings that may indicate cache poisoning.
-    """
+
     
     def __init__(self, threshold_zscore: float = 3.0):
         self.threshold_zscore = threshold_zscore
@@ -275,11 +246,7 @@ class EmbeddingAnomalyDetector:
         }
     
     def is_anomalous(self, embedding: List[float], context: str = "unknown") -> Tuple[bool, Dict]:
-        """
-        Check if embedding is anomalous.
-        
-        Returns (is_anomalous, analysis_report)
-        """
+
         import numpy as np
         
         embedding_array = np.array(embedding)
@@ -341,7 +308,7 @@ class EmbeddingAnomalyDetector:
         return report["is_anomalous"], report
     
     def update_normal_distribution(self, embeddings: List[List[float]]):
-        """Update normal distribution parameters from clean embeddings."""
+
         import numpy as np
         
         if not embeddings:
@@ -358,9 +325,7 @@ class EmbeddingAnomalyDetector:
 
 
 class AdversarialTestSuite:
-    """
-    Suite of adversarial tests to evaluate system robustness.
-    """
+
     
     def __init__(self):
         self.sanitizer = ToolOutputSanitizer()
@@ -369,7 +334,7 @@ class AdversarialTestSuite:
         self.test_results: List[Dict] = []
     
     def generate_injection_test_cases(self) -> List[Dict]:
-        """Generate test cases for prompt injection attempts."""
+
         test_cases = [
             {
                 "name": "Direct system prompt injection",
@@ -406,7 +371,7 @@ class AdversarialTestSuite:
         return test_cases
     
     def test_output_sanitization(self) -> Dict:
-        """Test sanitization of various malicious outputs."""
+
         test_cases = self.generate_injection_test_cases()
         results = []
         
@@ -443,7 +408,7 @@ class AdversarialTestSuite:
         }
     
     def test_instruction_filtering(self) -> Dict:
-        """Test instruction filtering classifier."""
+
         test_cases = [
             ("This is normal question about weather", True),
             ("Please answer my question about dogs", True),
@@ -482,9 +447,7 @@ class AdversarialTestSuite:
         }
     
     def get_robustness_score(self) -> Dict:
-        """
-        Comprehensive robustness evaluation.
-        """
+
         sanitization = self.test_output_sanitization()
         instruction = self.test_instruction_filtering()
         
@@ -510,7 +473,7 @@ class AdversarialTestSuite:
         }
     
     def _generate_recommendations(self, robustness_score: float) -> List[str]:
-        """Generate recommendations based on robustness score."""
+
         recommendations = []
         
         if robustness_score < 0.7:

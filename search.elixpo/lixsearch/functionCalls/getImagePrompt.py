@@ -21,7 +21,7 @@ def image_url_to_base64(image_url):
 
 
 def _call_vision_model(messages, max_tokens=300):
-    """Call vision model and return content string. Raises on failure."""
+
     api_url = POLLINATIONS_ENDPOINT
     headers = {
         "Content-Type": "application/json",
@@ -41,7 +41,7 @@ def _call_vision_model(messages, max_tokens=300):
 
 
 async def describe_image(imgURL: str) -> str:
-    """Describe the image for the user — used when only an image is provided with no query."""
+
     imageBase64 = await asyncio.to_thread(image_url_to_base64, imgURL)
     try:
         instruction = """Analyze this image and describe what you see in detail.
@@ -69,7 +69,7 @@ Rules:
 
 
 async def generate_prompt_from_image(imgURL: str) -> str:
-    """Generate a search query from an image — used for image search tool."""
+
     imageBase64 = await asyncio.to_thread(image_url_to_base64, imgURL)
     try:
         instruction = """TASK: Generate a single-line search query for the provided image.
@@ -137,7 +137,7 @@ NOW GENERATE ONLY THE SEARCH QUERY FOR THIS IMAGE - NO OTHER TEXT:"""
 
 
 async def replyFromImage(imgURL: str, query: str) -> str:
-    """Analyze image in context of user's query."""
+
     imageBase64 = await asyncio.to_thread(image_url_to_base64, imgURL)
     try:
         instruction = """You are a helpful assistant. Analyze the image and answer the user's query based on what you see. Be descriptive but concise.

@@ -58,10 +58,7 @@ class EmbeddingService:
     
     @staticmethod
     def _select_device() -> str:
-        """
-        Select the best available device for embeddings.
-        Tries CUDA first, then falls back to CPU with proper error handling.
-        """
+
         try:
             # Check if CUDA is available
             if torch.cuda.is_available():

@@ -86,9 +86,6 @@ class searchPortManager:
             }
 
 
-
-
-
 class SearchAgentPool:
     def __init__(self, pool_size=SEARCH_AGENT_POOL_SIZE, max_tabs_per_agent=SEARCH_AGENT_MAX_TABS):
         self.pool_size = pool_size
@@ -548,7 +545,7 @@ class accessSearchAgents:
         pass
     
     def health_check(self):
-        """Check if the service is healthy and ready."""
+
         return {
             "status": "healthy",
             "agent_pool_initialized": agent_pool.initialized,
@@ -642,8 +639,6 @@ def _ensure_background_loop():
     return _event_loop
 
 
-
-
 def run_async_on_bg_loop(coro):
     loop = _ensure_background_loop()
     future = asyncio.run_coroutine_threadsafe(coro, loop)
@@ -705,8 +700,6 @@ def shutdown_graceful(timeout=5):
 
 
 atexit.register(shutdown_graceful)
-
-
 
 
 port_manager = searchPortManager(start_port=10000, end_port=19999)

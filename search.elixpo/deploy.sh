@@ -122,7 +122,7 @@ scale_containers() {
 stop_services() {
     check_docker
     info "Stopping all services..."
-    docker compose -f "$COMPOSE_FILE" down
+    docker compose -f "$COMPOSE_FILE" down --remove-orphans
     success "Services stopped"
 }
 
@@ -133,7 +133,7 @@ clean_volumes() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         info "Removing containers and volumes..."
-        docker compose -f "$COMPOSE_FILE" down -v
+        docker compose -f "$COMPOSE_FILE" down -v --remove-orphans
         success "Cleaned up"
     fi
 }
@@ -197,7 +197,7 @@ check_health() {
 restart_services() {
     check_docker
     info "Restarting all services..."
-    docker compose -f "$COMPOSE_FILE" restart
+    docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --force-recreate
     sleep 10
     success "Services restarted"
     check_health

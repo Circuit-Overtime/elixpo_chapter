@@ -1,4 +1,3 @@
-"""Deep search pipeline — multi-query research with progressive synthesis."""
 
 import json
 import random
@@ -41,7 +40,7 @@ _AD_URL_PATTERNS = ("doubleclick.net", "clickserve.", "dartsearch.net", "googlea
 
 
 def _is_clean_url(url: str) -> bool:
-    """Return True if the URL is a real source, not an ad/tracking redirect."""
+
     if not url or len(url) > 300:
         return False
     lower = url.lower()
@@ -61,12 +60,7 @@ _REASONING_PATTERNS = _re.compile(
 
 
 def _strip_reasoning_leak(text: str) -> str:
-    """Remove internal reasoning that leaked into the beginning of a response.
 
-    Scans line by line; once a line starts with a markdown heading (#), bold
-    (**), list item (- or 1.), or doesn't match reasoning patterns, everything
-    from that line onward is kept.
-    """
     if not text:
         return text
 
@@ -400,12 +394,7 @@ async def _deep_search_final_synthesis(
     sub_results: list,
     headers: dict,
 ) -> str:
-    """Combine sub-query results into a cohesive final answer.
 
-    If the full synthesis fails (context too large / timeout), retries with
-    a trimmed version. Returns empty string on total failure — the caller
-    already streamed the individual sub-results so the user still has content.
-    """
     system_msg = (
         "You are lixSearch. Write a cohesive summary that ties together research findings. "
         "Never mention sub-queries, research threads, findings, or internal processes. "
@@ -592,7 +581,7 @@ async def _run_deep_search_pipeline(
 
     # Run ALL sub-queries in parallel — results stream as they complete
     async def _run_sub(sq_idx, sub_query):
-        """Execute a single sub-query and return its result."""
+
         logger.info(f"[DeepSearch] Sub-query {sq_idx}/{len(sub_queries)}: '{sub_query[:80]}'")
         try:
             sq_response, sq_sources, sq_images = await asyncio.wait_for(
@@ -671,9 +660,6 @@ async def _run_deep_search_pipeline(
         else:
             yield source_block
 
-    # ── Final synthesis (only if >1 sub-result, skip if content is already rich) ──
-    # Sub-results are already streamed to the user. Synthesis is a bonus summary
-    # that ties them together — NOT required. If it fails, user still has full content.
     if len(all_sub_results) > 1:
         # Only attempt synthesis if total content isn't already too large
         _total_chars = sum(len(r[1]) for r in all_sub_results)

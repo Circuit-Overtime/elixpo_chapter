@@ -1,7 +1,3 @@
-"""
-Content storage and serving — disk-backed, shared across all app replicas.
-Stores generated PDFs (and potentially other content types) on the shared volume.
-"""
 import logging
 import os
 import time
@@ -20,7 +16,7 @@ _last_cleanup = 0.0
 
 
 def store_content(content_id: str, data: bytes, extension: str = ".pdf") -> None:
-    """Write content bytes to shared disk volume."""
+
     path = os.path.join(CONTENT_DIR, f"{content_id}{extension}")
     with open(path, "wb") as f:
         f.write(data)
@@ -37,7 +33,7 @@ def _content_type_from_ext(ext: str) -> str:
 
 
 def _cleanup_expired_content() -> None:
-    """Remove content older than CONTENT_TTL_SECONDS. Runs at most once per 30 min."""
+
     global _last_cleanup
     now = time.time()
     if now - _last_cleanup < 1800:
@@ -63,7 +59,7 @@ def _cleanup_expired_content() -> None:
 
 
 async def serve_content(content_id: str):
-    """Serve content by ID from disk."""
+
     _cleanup_expired_content()
 
     for fname in os.listdir(CONTENT_DIR):

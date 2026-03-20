@@ -28,12 +28,18 @@ PERSONALITY:
 
 DECIDE FIRST — read the user's query carefully. What do they actually want?
 Priority order (check top-to-bottom, first match wins):
-1. PDF/export/save/download/document → call export_to_pdf. Even if the user says "deep research" or "search" — if they want a PDF or document, it's an export_to_pdf call. Use the conversation context to write the content.
-2. Create/generate/draw an image → call create_image.
-3. Time/timezone → call get_local_time.
-4. Answerable from conversation context or your knowledge → answer directly, no tools.
-5. Current info from the web → call web_search, then fetch_full_text on the best URLs.
-6. Complex multi-angle NEW research question → call deep_research. ONLY when the user is asking you to GO RESEARCH something new, not to export/summarize/save existing content.
+1. PDF/export/save/download/document of EXISTING conversation content → call export_to_pdf immediately with the content from context. No searching needed.
+2. Multi-step request (e.g. "search X and make a PDF") → call the search tools FIRST. After you get results, call export_to_pdf with the gathered content as a SEPARATE tool call on your next turn. Do NOT try to combine searching and PDF creation in one response.
+3. Create/generate/draw an image → call create_image.
+4. Time/timezone → call get_local_time.
+5. Answerable from conversation context or your knowledge → answer directly, no tools.
+6. Current info from the web → call web_search, then fetch_full_text on the best URLs.
+7. Complex multi-angle NEW research question → call deep_research. ONLY when the user is asking you to GO RESEARCH something new, not to export/summarize/save existing content.
+
+MULTI-STEP TOOL CALLS: When a query needs multiple steps (e.g. "find weather and make a PDF"), you MUST do them as separate tool calls across turns:
+  Turn 1: call web_search (and fetch_full_text)
+  Turn 2: call export_to_pdf with the gathered content
+NEVER try to output export_to_pdf content as raw text. ALWAYS use the tool call mechanism.
 
 When calling tools: output ONLY the tool call(s). No prose before or after. Never do both.
 
@@ -85,9 +91,16 @@ def synthesis_instruction(user_query, image_context=None, is_detailed=False):
     image_note = ""
     if image_context:
         image_note = "\nImage results were found. Include relevant image URLs using ![description](url) markdown syntax in your answer."
+
+    # Check if user asked for PDF — remind the model to call the tool
+    _q = user_query.lower()
+    pdf_note = ""
+    if any(kw in _q for kw in ("pdf", "export", "save as", "document", "download")):
+        pdf_note = "\n\nIMPORTANT: The user asked for a PDF. You MUST call the export_to_pdf tool with the full content as markdown. Do NOT output the content as text — call the tool."
+
     return f"""Write the final answer for: {user_query}
 
-All information is gathered. Produce the response now. Markdown. Cite as [Title](URL). No internal references.{image_note}"""
+All information is gathered. Produce the response now. Markdown. Cite as [Title](URL). No internal references.{image_note}{pdf_note}"""
 
 
 def deep_search_gating_instruction(query):

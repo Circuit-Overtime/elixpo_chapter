@@ -1,15 +1,3 @@
-"""
-Pure canonical Huffman codec for conversation compression.
-Optimized for speed – bit-level streaming, no external dependencies.
-
-Wire format:
-    [4B]  MAGIC  "HCv1"
-    [4B]  original_length (uint32 LE)
-    [2B]  num_symbols     (uint16 LE)
-    [2B each] (symbol, bit_length) pairs, sorted by (length, symbol)
-    [4B]  padding_bits    (uint32 LE)
-    [N B] compressed bitstream (MSB-first)
-"""
 import heapq
 import struct
 from typing import Dict, List, Optional, Tuple
@@ -31,7 +19,7 @@ class _HNode:
 
 
 def _build_lengths(data: bytes) -> Dict[int, int]:
-    """Return {symbol: bit_length} via Huffman tree."""
+
     freq: Dict[int, int] = {}
     for b in data:
         freq[b] = freq.get(b, 0) + 1
@@ -68,11 +56,7 @@ def _build_lengths(data: bytes) -> Dict[int, int]:
 
 
 def _canonical_codes(lengths: Dict[int, int]) -> Dict[int, Tuple[int, int]]:
-    """
-    Assign canonical Huffman codes from a {symbol: bit_length} map.
-    Returns {symbol: (code_int, bit_length)}.
-    Canonical order: sorted by (bit_length, symbol).
-    """
+
     # Sort by (length, symbol)
     sorted_syms: List[Tuple[int, int]] = sorted(lengths.items(), key=lambda x: (x[1], x[0]))
 
@@ -126,9 +110,6 @@ class HuffmanCodec:
             padding = 8 - bit_len
             out_bytes.append((bit_buf << padding) & 0xFF)
 
-        # ── Build header ───────────────────────────────────────────────
-        # Symbols stored in canonical order (sorted by length, symbol) so
-        # the decoder can reconstruct identical canonical codes.
         sorted_syms = sorted(lengths.items(), key=lambda x: (x[1], x[0]))
         num_symbols = len(sorted_syms)
 
@@ -211,10 +192,10 @@ class HuffmanCodec:
 
 
 def encode_str(text: str) -> bytes:
-    """Encode a UTF-8 string to Huffman-compressed bytes."""
+
     return HuffmanCodec.encode(text.encode("utf-8"))
 
 
 def decode_bytes(data: bytes) -> str:
-    """Decode Huffman-compressed bytes back to a UTF-8 string."""
+
     return HuffmanCodec.decode(data).decode("utf-8")

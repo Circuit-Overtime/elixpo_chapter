@@ -1,23 +1,3 @@
-"""
-HybridConversationCache – two-tier conversation storage.
-
-Tier 1 (Hot):  Redis DB 2 – recent messages, fast O(1) access
-Tier 2 (Cold): Disk       – full history, Huffman-compressed, persistent
-
-Key behaviours:
-- add_message()   → write to Redis hot window; track last_activity per session
-- get_context()   → return hot window (recent); optionally enrich from disk
-- get_full()      → load everything from disk (returns all turns)
-- smart_context() → recent from Redis + semantic search from disk when needed
-- LRU eviction    → background thread migrates inactive sessions to disk after 2h idle
-- TTL cleanup     → sessions on disk are removed after 14 days inactive (checked on startup)
-
-Design for throughput:
-- Redis operations: O(1) with pipeline where possible
-- Disk I/O only on cold path (eviction / full history load)
-- Per-session threading locks for all write paths
-- Background daemon thread for LRU eviction (non-blocking)
-"""
 import threading
 import time
 import json
@@ -51,9 +31,6 @@ except ImportError:
     logger.error("[HybridCache] redis-py not installed – Redis tier unavailable")
 
 
-# ────────────────────────────────────────────────────────────────────────────
-#  Singleton archive (one per process – shared across all sessions)
-# ────────────────────────────────────────────────────────────────────────────
 _archive: Optional[ConversationArchive] = None
 _archive_lock = threading.Lock()
 
@@ -70,9 +47,6 @@ def _get_archive() -> ConversationArchive:
     return _archive
 
 
-# ────────────────────────────────────────────────────────────────────────────
-#  LRU eviction background thread
-# ────────────────────────────────────────────────────────────────────────────
 _eviction_registry: Dict[str, float] = {}   # session_id → last_activity ts
 _eviction_registry_lock = threading.Lock()
 _eviction_thread_started = False
@@ -85,7 +59,7 @@ def _update_last_activity(session_id: str) -> None:
 
 
 def _eviction_loop(redis_client, evict_after_seconds: int, check_interval: int = 60) -> None:
-    """Background daemon: migrate inactive sessions from Redis to disk."""
+
     logger.info(
         f"[HybridCache] LRU eviction loop started: evict after {evict_after_seconds}s, "
         f"check every {check_interval}s"
@@ -111,7 +85,7 @@ def _eviction_loop(redis_client, evict_after_seconds: int, check_interval: int =
 
 
 def _migrate_to_disk(session_id: str, redis_client) -> None:
-    """Read Redis hot window for session and flush to disk archive."""
+
     archive = _get_archive()
     key = f"{REDIS_KEY_PREFIX}:session_context:{session_id}"
     order_key = f"{REDIS_KEY_PREFIX}:session_order:{session_id}"
@@ -162,21 +136,8 @@ def _start_eviction_thread(redis_client, evict_after_seconds: int) -> None:
             logger.info("[HybridCache] LRU eviction daemon started")
 
 
-# ────────────────────────────────────────────────────────────────────────────
-#  HybridConversationCache
-# ────────────────────────────────────────────────────────────────────────────
-
 class HybridConversationCache:
-    """
-    Per-session hybrid conversation cache (Redis hot + disk cold).
 
-    Usage:
-        cache = HybridConversationCache(session_id)
-        cache.add_message("user", "hello")
-        msgs = cache.get_context()          # recent from Redis
-        all_msgs = cache.get_full()         # all from disk
-        best = cache.smart_context(query)   # recent + semantic disk search
-    """
 
     def __init__(
         self,
@@ -227,10 +188,7 @@ class HybridConversationCache:
     # ── Core write ───────────────────────────────────────────────────────
 
     def add_message(self, role: str, content: str, metadata: Optional[Dict] = None, embedding=None) -> int:
-        """
-        Add a message to the hot Redis window.
-        Returns current hot window size.
-        """
+
         _update_last_activity(self.session_id)
         ts = time.time()
         turn_id = int(ts * 1000) % (2**31)
@@ -257,7 +215,7 @@ class HybridConversationCache:
                 return 1
 
     def _add_to_redis(self, msg: Dict, turn_id: int) -> int:
-        """Write message to Redis with LRU window enforcement."""
+
         try:
             ctx_key = self._ctx_key
             order_key = self._order_key
@@ -298,9 +256,7 @@ class HybridConversationCache:
     # ── Context retrieval ────────────────────────────────────────────────
 
     def get_context(self) -> List[Dict]:
-        """Return recent messages from Redis hot window (chronological order).
-        Falls back to full disk archive if Redis is empty (e.g. after LRU eviction),
-        and re-hydrates the Redis hot window so subsequent requests are fast."""
+
         _update_last_activity(self.session_id)
         if self._redis:
             messages = self._get_from_redis()
@@ -337,7 +293,7 @@ class HybridConversationCache:
         return self.archive.load_all(self.session_id) or []
 
     def _get_from_redis(self) -> List[Dict]:
-        """Read hot window from Redis."""
+
         try:
             ctx_key = self._ctx_key
             order_key = self._order_key
@@ -359,7 +315,7 @@ class HybridConversationCache:
             return []
 
     def _refresh_redis_ttl(self) -> None:
-        """Refresh TTL on all Redis keys for this session so active sessions never expire."""
+
         try:
             ctx_key = self._ctx_key
             order_key = self._order_key
@@ -376,12 +332,7 @@ class HybridConversationCache:
             logger.debug(f"[HybridCache] session={self.session_id} TTL refresh failed: {e}")
 
     def get_full(self) -> List[Dict]:
-        """
-        Return complete conversation history (Redis hot + disk cold).
 
-        Persists any Redis-only messages to disk first so nothing is
-        lost if the eviction daemon hasn't run yet.
-        """
         disk_turns = self.archive.load_all(self.session_id) or []
         hot_turns = self._get_from_redis() if self._redis else []
 
@@ -402,14 +353,7 @@ class HybridConversationCache:
         return disk_turns
 
     def smart_context(self, query: str, query_embedding=None, recent_k: int = 10, disk_k: int = 5) -> Dict[str, List[Dict]]:
-        """
-        Intelligent context assembly:
-        1. Always include recent_k hot messages from Redis (or disk if evicted)
-        2. If query_embedding provided or recent messages are sparse,
-           also retrieve disk_k semantically relevant turns from disk
 
-        Returns {"recent": [...], "relevant": [...]}
-        """
         recent = self.get_context()[-recent_k:]
         relevant: List[Dict] = []
 
@@ -433,7 +377,7 @@ class HybridConversationCache:
         return {"recent": recent, "relevant": relevant}
 
     def get_formatted_context(self, max_lines: int = 50) -> str:
-        """Formatted string of recent messages (for logging/display)."""
+
         messages = self.get_context()
         lines = []
         for msg in messages:
@@ -448,7 +392,7 @@ class HybridConversationCache:
     # ── Flush / evict ────────────────────────────────────────────────────
 
     def flush_to_disk(self) -> bool:
-        """Manually flush the hot window to disk and clear Redis."""
+
         if not self._redis:
             return True
         try:
@@ -461,7 +405,7 @@ class HybridConversationCache:
             return False
 
     def clear(self) -> bool:
-        """Clear Redis hot window for this session (disk is preserved)."""
+
         try:
             if self._redis:
                 ctx_key = self._ctx_key
@@ -484,7 +428,7 @@ class HybridConversationCache:
             return False
 
     def delete_session(self) -> bool:
-        """Remove all data for this session (Redis + disk)."""
+
         self.clear()
         return self.archive.delete_session(self.session_id)
 

@@ -39,11 +39,7 @@ except ImportError:
 
 
 class URLEmbeddingCache:
-    """
-    Persistent URL embedding cache (24h TTL).
-    Stores single embedding per URL, reused across all sessions.
-    Default: Redis DB 1
-    """
+
     
     def __init__(
         self,
@@ -71,11 +67,11 @@ class URLEmbeddingCache:
             raise
     
     def _get_key(self, url: str) -> str:
-        """Generate Redis key: url_embedding:URL_HASH"""
+
         return f"{REDIS_KEY_PREFIX}:url_embedding:{url}"
     
     def get(self, url: str) -> Optional[np.ndarray]:
-        """Retrieve cached URL embedding"""
+
         with self.lock:
             try:
                 key = self._get_key(url)
@@ -90,7 +86,7 @@ class URLEmbeddingCache:
                 return None
     
     def set(self, url: str, embedding: np.ndarray) -> bool:
-        """Store URL embedding with TTL"""
+
         with self.lock:
             try:
                 key = self._get_key(url)
@@ -108,7 +104,7 @@ class URLEmbeddingCache:
                 return False
     
     def batch_set(self, url_embeddings: Dict[str, np.ndarray]) -> Dict[str, bool]:
-        """Store multiple embeddings efficiently"""
+
         results = {}
         with self.lock:
             for url, embedding in url_embeddings.items():
@@ -131,18 +127,7 @@ class URLEmbeddingCache:
 
 
 class SessionContextWindow:
-    """
-    Per-session conversation context window backed by HybridConversationCache.
 
-    Tier 1 (hot):  Redis – recent messages, <50ms latency
-    Tier 2 (cold): Disk  – full history, Huffman-compressed, 30-day TTL
-
-    LRU eviction: sessions inactive for SESSION_LRU_EVICT_AFTER_MINUTES are
-    automatically migrated from Redis to disk by a background daemon thread.
-
-    smart_context(): returns recent hot messages + semantically relevant disk
-    turns for long conversations that exceed the context window.
-    """
 
     def __init__(
         self,
@@ -174,40 +159,35 @@ class SessionContextWindow:
         )
 
     def add_message(self, role: str, content: str, metadata: Optional[Dict] = None) -> int:
-        """Add message to hot window. Returns current hot window size."""
+
         return self._hybrid.add_message(role, content, metadata)
 
     def get_context(self) -> List[Dict]:
-        """Retrieve recent messages from hot window (chronological order)."""
+
         return self._hybrid.get_context()
 
     def get_full_history(self) -> List[Dict]:
-        """Retrieve complete conversation history (Redis hot + disk cold)."""
+
         return self._hybrid.get_full()
 
     def smart_context(self, query: str, query_embedding=None, recent_k: int = 10, disk_k: int = 5) -> Dict:
-        """
-        Intelligent context for long conversations.
-        Returns {"recent": [...], "relevant": [...]} where:
-          - recent: last recent_k messages from hot window
-          - relevant: semantically matching turns from disk (lazy, on-demand)
-        """
+
         return self._hybrid.smart_context(query, query_embedding, recent_k, disk_k)
 
     def get_formatted_context(self, max_lines: int = 50) -> str:
-        """Formatted string of recent messages."""
+
         return self._hybrid.get_formatted_context(max_lines)
 
     def clear(self) -> bool:
-        """Clear hot window (disk archive preserved)."""
+
         return self._hybrid.clear()
 
     def flush_to_disk(self) -> bool:
-        """Explicitly flush hot window to disk."""
+
         return self._hybrid.flush_to_disk()
 
     def get_stats(self) -> Dict:
-        """Get hybrid cache statistics."""
+
         stats = self._hybrid.get_stats()
         stats["ttl_seconds"] = self.ttl_seconds
         stats["max_tokens"] = self.max_tokens
@@ -215,13 +195,7 @@ class SessionContextWindow:
 
 
 class SemanticCacheRedis:
-    """
-    Semantic query cache per sessionID (short-lived, 5min TTL).
-    Stores URL + query_embedding → retrieval results.
-    Key format: semantic_cache:SESSION_ID:URL
-    Ensures each session can scale independently.
-    Default: Redis DB 0, TTL 300s, similarity 0.90, max 50 queries/URL
-    """
+
     
     def __init__(
         self, 
@@ -252,14 +226,11 @@ class SemanticCacheRedis:
             raise
     
     def _get_redis_key(self, url: str) -> str:
-        """Redis key: semantic_cache:SESSION_ID:URL"""
+
         return f"{REDIS_KEY_PREFIX}:semantic_cache:{self.session_id}:{url}"
     
     def get(self, url: str, query_embedding: np.ndarray) -> Optional[Dict]:
-        """
-        Get cached semantic response for URL + query.
-        Returns closest matching response if similarity >= threshold.
-        """
+
         with self.lock:
             try:
                 redis_key = self._get_redis_key(url)
@@ -296,10 +267,7 @@ class SemanticCacheRedis:
                 return None
     
     def set(self, url: str, query_embedding: np.ndarray, response: Dict) -> None:
-        """
-        Store semantic response for URL + query embedding.
-        Maintains max_items_per_url recent queries.
-        """
+
         with self.lock:
             try:
                 redis_key = self._get_redis_key(url)
@@ -329,7 +297,7 @@ class SemanticCacheRedis:
                 logger.warning(f"[semanticCacheRedis.SemanticCacheRedis] session={self.session_id} Set error: {e}")
     
     def clear_session(self) -> bool:
-        """Clear all semantic cache entries for this session"""
+
         with self.lock:
             try:
                 pattern = f"{REDIS_KEY_PREFIX}:semantic_cache:{self.session_id}:*"
@@ -343,7 +311,7 @@ class SemanticCacheRedis:
                 return False
     
     def get_stats(self) -> Dict:
-        """Get cache statistics for this session"""
+
         try:
             info = self.redis_client.info("memory")
             pattern = f"{REDIS_KEY_PREFIX}:semantic_cache:{self.session_id}:*"
@@ -363,11 +331,11 @@ class SemanticCacheRedis:
             return {"session_id": self.session_id, "status": "error"}
     
     def load_for_request(self, request_id: str) -> None:
-        """Legacy method: No-op (Redis backend handles persistence automatically)"""
+
         logger.debug(f"[semanticCacheRedis.SemanticCacheRedis] session={self.session_id} load_for_request({request_id}) is no-op (Redis persistent)")
     
     def save_for_request(self, request_id: str) -> None:
-        """Legacy method: No-op (Redis backend handles persistence automatically via TTL)"""
+
         logger.debug(f"[semanticCacheRedis.SemanticCacheRedis] session={self.session_id} save_for_request({request_id}) is no-op (Redis persistent)")
 
 
