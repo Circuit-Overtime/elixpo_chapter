@@ -42,6 +42,11 @@
       { "type": "text", "label": "Figma" },
       { "type": "text", "label": "LangChain" },
       { "type": "text", "label": "RAG Systems" }
-    ]
+    ],
+    "images": {
+      "wand": "/assets/vivek/techTracks/wand-1.png",
+      "landscape": "/assets/vivek/techTracks/hz-image1.png",
+      "banner": "/assets/vivek/hrz-image1.png"
+    }
   }
 }

@@ -215,7 +215,7 @@ export default function LandingClient({ profiles }) {
                   className="text-[#1B1B19] text-3xl sm:text-4xl tracking-wide"
                   style={{ fontFamily: "Canopee, serif" }}
                 >
-                  {profile.name}
+                  {profile.siteName}
                 </h2>
                 <p className="text-[#888] text-xs mt-2 tracking-[1px]">
                   {profile.siteDescription}
