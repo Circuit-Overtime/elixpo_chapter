@@ -1,0 +1,41 @@
+{
+  "headline": "Built for everyone",
+  "subheadline": "Thousands of teams, from startups to enterprises, use Elixpo to orchestrate their projects.",
+  "categories": [
+    {
+      "title": "For Developers",
+      "description": "Use a single unified system for all your codebases, deployments, and CI/CD pipelines.",
+      "icon": "code",
+      "image": "/images/features/developers.png"
+    },
+    {
+      "title": "For Managers & Leaders",
+      "description": "Get always up-to-date data and monitor performance across all your projects.",
+      "icon": "chart",
+      "image": "/images/features/managers.png"
+    },
+    {
+      "title": "For Design Teams",
+      "description": "Elixpo helps design teams by streamlining assets, managing workflows, and tracking revisions.",
+      "icon": "palette",
+      "image": "/images/features/designers.png"
+    }
+  ],
+  "highlights": [
+    {
+      "title": "Real-time Collaboration",
+      "description": "Work together seamlessly with live updates and instant sync across all team members.",
+      "image": "/images/features/collab.png"
+    },
+    {
+      "title": "Advanced Analytics",
+      "description": "Deep insights into project progress, team velocity, and resource allocation.",
+      "image": "/images/features/analytics.png"
+    },
+    {
+      "title": "Smart Integrations",
+      "description": "Connect with the tools you already use. 100+ integrations available out of the box.",
+      "image": "/images/features/integrations.png"
+    }
+  ]
+}

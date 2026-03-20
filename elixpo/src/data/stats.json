@@ -1,0 +1,9 @@
+{
+  "headline": "Trusted by teams worldwide",
+  "items": [
+    { "value": "10K+", "label": "Active Teams" },
+    { "value": "50M+", "label": "Tasks Completed" },
+    { "value": "99.9%", "label": "Uptime" },
+    { "value": "150+", "label": "Integrations" }
+  ]
+}

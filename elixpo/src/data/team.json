@@ -1,0 +1,18 @@
+{
+  "headline": "Core Solutions",
+  "subheadline": "Streamline your project processes in one centralized platform, enhancing team transparency.",
+  "cta": {
+    "label": "Learn more",
+    "href": "/features"
+  },
+  "members": [
+    { "name": "Alex Chen", "role": "Lead Developer", "image": "/images/team/member1.jpg" },
+    { "name": "Sarah Kim", "role": "Product Designer", "image": "/images/team/member2.jpg" },
+    { "name": "James Okafor", "role": "Backend Engineer", "image": "/images/team/member3.jpg" },
+    { "name": "Maria Santos", "role": "DevOps Lead", "image": "/images/team/member4.jpg" },
+    { "name": "Liam Patel", "role": "Frontend Developer", "image": "/images/team/member5.jpg" },
+    { "name": "Emma Liu", "role": "Data Scientist", "image": "/images/team/member6.jpg" },
+    { "name": "Noah Bergmann", "role": "QA Engineer", "image": "/images/team/member7.jpg" },
+    { "name": "Ava Johnson", "role": "Project Manager", "image": "/images/team/member8.jpg" }
+  ]
+}
