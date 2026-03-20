@@ -1,5 +1,6 @@
 .page {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background:
     radial-gradient(ellipse 90% 60% at 15% 5%, rgba(86, 145, 243, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse 70% 50% at 85% 90%, rgba(141, 73, 253, 0.07) 0%, transparent 50%),
@@ -9,11 +10,12 @@
   flex-direction: column;
 }
 
-/* Layout — right below navbar */
+/* Layout — right below navbar, fits 100vh */
 .layout {
   display: flex;
-  flex: 1;
+  height: calc(100vh - 0px);
   padding-top: 52px;
+  overflow: hidden;
 }
 
 /* ─── Main content ─── */
@@ -23,6 +25,7 @@
   flex-direction: column;
   min-width: 0;
   position: relative;
+  overflow: hidden;
 }
 
 .imageContainer {
@@ -30,8 +33,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-lg);
-  min-height: 400px;
+  padding: var(--spacing-md);
+  min-height: 0;
   position: relative;
   overflow: hidden;
 }
@@ -77,7 +80,7 @@
   position: relative;
   z-index: 1;
   max-width: 100%;
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 160px);
   border-radius: var(--radius-lg);
   object-fit: contain;
   animation: imageReveal 0.6s ease;
@@ -91,106 +94,102 @@
   to { opacity: 1; transform: scale(1); filter: blur(0); }
 }
 
-/* ─── Diffusion Loading Effect ─── */
-.loadingState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-lg);
+/* ─── Bokeh Loading Effect (full preview) ─── */
+.bokehFill {
+  position: absolute;
+  inset: 0;
   z-index: 1;
-}
-
-.diffusionFrame {
-  position: relative;
-  width: 320px;
-  height: 200px;
-  border-radius: var(--radius-lg);
   overflow: hidden;
-  background: rgba(6, 10, 20, 0.8);
-  border: 1px solid rgba(86, 145, 243, 0.08);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
-}
-
-.diffusionNoise {
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-conic-gradient(rgba(141, 73, 253, 0.08) 0% 25%, transparent 0% 50%) 0 0 / 4px 4px,
-    repeating-conic-gradient(rgba(86, 145, 243, 0.06) 0% 25%, transparent 0% 50%) 2px 2px / 4px 4px;
-  animation: noiseShift 0.3s steps(3) infinite;
-  opacity: 0.8;
-}
-
-.diffusionGradient {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 50% at 30% 40%, rgba(141, 73, 253, 0.2) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 60% at 70% 60%, rgba(86, 145, 243, 0.15) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(6, 214, 160, 0.08) 0%, transparent 50%);
-  animation: diffusionPulse 4s ease-in-out infinite;
-}
-
-.diffusionShimmer {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.03) 45%,
-    rgba(255, 255, 255, 0.06) 50%,
-    rgba(255, 255, 255, 0.03) 55%,
-    transparent 70%
-  );
-  animation: shimmerSlide 2.5s ease-in-out infinite;
-}
-
-.diffusionCenter {
-  position: absolute;
-  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(10, 14, 26, 0.6) 0%, rgba(6, 10, 20, 0.95) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.diffusionRing {
-  width: 48px;
-  height: 48px;
-  border: 2px solid transparent;
-  border-top-color: rgba(86, 145, 243, 0.4);
-  border-right-color: rgba(141, 73, 253, 0.2);
+.bokehOrb {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--s);
+  height: var(--s);
   border-radius: 50%;
-  animation: spin 1.2s linear infinite;
+  background: radial-gradient(circle, var(--c) 0%, transparent 70%);
+  filter: blur(40px);
+  animation: bokehFloat var(--d) ease-in-out infinite alternate;
+  pointer-events: none;
 }
 
-@keyframes noiseShift {
-  0% { transform: translate(0, 0); }
-  33% { transform: translate(-2px, 1px); }
-  66% { transform: translate(1px, -2px); }
-  100% { transform: translate(0, 0); }
+@keyframes bokehFloat {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+  50% { transform: translate(20px, -15px) scale(1.2); opacity: 1; }
+  100% { transform: translate(-15px, 20px) scale(0.9); opacity: 0.5; }
 }
 
-@keyframes diffusionPulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
+.bokehShimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 25%,
+    rgba(255, 255, 255, 0.02) 40%,
+    rgba(255, 255, 255, 0.04) 50%,
+    rgba(255, 255, 255, 0.02) 60%,
+    transparent 75%
+  );
+  animation: bokehShimmerSlide 3s ease-in-out infinite;
 }
 
-@keyframes shimmerSlide {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+@keyframes bokehShimmerSlide {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
 }
 
-.loadingText {
+.bokehContent {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.bokehTitle {
   font-family: var(--font-family-display);
-  font-size: var(--font-size-lg);
-  color: var(--color-text-primary);
-  font-weight: 600;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: center;
+  margin: 0;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
 }
 
-.loadingHint {
+.bokehDots {
+  display: flex;
+  gap: 6px;
+}
+
+.bokehDots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(86, 145, 243, 0.6);
+  animation: bokehDotPulse 1.4s ease-in-out infinite;
+}
+
+.bokehDots span:nth-child(2) { animation-delay: 0.2s; }
+.bokehDots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bokehDotPulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.3); }
+}
+
+.bokehHint {
   font-family: var(--font-family-accent);
-  font-size: 0.95rem;
-  color: var(--color-text-tertiary);
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4);
 }
 
 /* ─── Error state ─── */
