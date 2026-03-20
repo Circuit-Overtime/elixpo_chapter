@@ -28,8 +28,7 @@ const VIDEO_MODELS = [
 
 const ALL_MODELS = [...IMAGE_MODELS, ...VIDEO_MODELS];
 
-const POLLINATIONS_BASE = 'https://gen.pollinations.ai';
-const POLLI_TOKEN = process.env.NEXT_PUBLIC_POLLINATIONS_API_IMAGE;
+const API_BASE = '/api';
 
 export default function SessionPage({ params }) {
   const { sessionId } = use(params);
@@ -41,6 +40,7 @@ export default function SessionPage({ params }) {
   const [width, setWidth] = useState(1024);
   const [height, setHeight] = useState(576);
   const [mode, setMode] = useState('image');
+  const [genStyle, setGenStyle] = useState(null);
   const [duration, setDuration] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
   const [seed, setSeed] = useState(0);
@@ -110,33 +110,63 @@ export default function SessionPage({ params }) {
   // Read query params for property overrides
   const searchParams = useSearchParams();
 
+  // Build shareable URL params (excludes reference images)
+  const updateUrlParams = (params) => {
+    const q = new URLSearchParams();
+    if (params.prompt) q.set('prompt', params.prompt);
+    if (params.model) q.set('model', params.model);
+    if (params.width) q.set('width', String(params.width));
+    if (params.height) q.set('height', String(params.height));
+    if (params.mode) q.set('mode', params.mode);
+    if (params.seed) q.set('seed', String(params.seed));
+    if (params.style) q.set('style', params.style);
+    if (params.mode === 'video' && params.duration) q.set('duration', String(params.duration));
+    const newUrl = `/generate/${sessionId}?${q.toString()}`;
+    window.history.replaceState(null, '', newUrl);
+  };
+
   useEffect(() => {
     if (hasGenerated.current) return;
     hasGenerated.current = true;
 
     const stored = sessionStorage.getItem(`gen_${sessionId}`);
-    if (!stored) {
+
+    // Build params from sessionStorage or URL query params
+    let p;
+    if (stored) {
+      p = JSON.parse(stored);
+      // Query params override stored values
+      if (searchParams.get('model')) p.model = searchParams.get('model');
+      if (searchParams.get('width')) p.width = Number(searchParams.get('width'));
+      if (searchParams.get('height')) p.height = Number(searchParams.get('height'));
+      if (searchParams.get('mode')) p.mode = searchParams.get('mode');
+      if (searchParams.get('duration')) p.duration = Number(searchParams.get('duration'));
+      if (searchParams.get('seed')) p.seed = Number(searchParams.get('seed'));
+      if (searchParams.get('style')) p.style = searchParams.get('style');
+    } else if (searchParams.get('prompt')) {
+      // URL-only visit — build session from query params (shareable link)
+      p = {
+        prompt: searchParams.get('prompt'),
+        model: searchParams.get('model') || 'flux',
+        width: Number(searchParams.get('width')) || 1024,
+        height: Number(searchParams.get('height')) || 576,
+        mode: searchParams.get('mode') || 'image',
+        duration: searchParams.get('duration') ? Number(searchParams.get('duration')) : null,
+        seed: searchParams.get('seed') ? Number(searchParams.get('seed')) : null,
+        style: searchParams.get('style') || null,
+      };
+    } else {
       setError('Session not found. Please start a new generation.');
       setLoading(false);
       return;
     }
-
-    const p = JSON.parse(stored);
-
-    // Query params override stored values
-    if (searchParams.get('model')) p.model = searchParams.get('model');
-    if (searchParams.get('width')) p.width = Number(searchParams.get('width'));
-    if (searchParams.get('height')) p.height = Number(searchParams.get('height'));
-    if (searchParams.get('mode')) p.mode = searchParams.get('mode');
-    if (searchParams.get('duration')) p.duration = Number(searchParams.get('duration'));
-    if (searchParams.get('seed')) p.seed = Number(searchParams.get('seed'));
-    if (searchParams.get('image')) p.imageUrl = searchParams.get('image');
 
     setPrompt(p.prompt);
     setModel(p.model);
     setWidth(p.width);
     setHeight(p.height);
     setMode(p.mode || 'image');
+    if (p.style) setGenStyle(p.style);
     setDuration(p.duration);
     setImageUrl(p.imageUrl);
     if (p.seed) setSeed(p.seed);
@@ -145,32 +175,12 @@ export default function SessionPage({ params }) {
       setGenerationTime(p.generationTime);
       setSeed(p.seed);
       setLoading(false);
+      updateUrlParams(p);
       return;
     }
 
     generate(p);
   }, [sessionId]);
-
-  const buildUrl = (p, useSeed) => {
-    const encoded = encodeURIComponent(p.prompt);
-    const isVideo = p.mode === 'video';
-    const base = isVideo
-      ? `${POLLINATIONS_BASE}/video/${encoded}`
-      : `${POLLINATIONS_BASE}/image/${encoded}`;
-
-    const q = new URLSearchParams();
-    q.set('model', p.model);
-    q.set('width', p.width);
-    q.set('height', p.height);
-    q.set('nologo', 'true');
-    q.set('seed', useSeed || Math.floor(Math.random() * 2147483647));
-    q.set('enhance', 'true');
-    q.set('referrer', 'elixpoart');
-    if (isVideo && p.duration) q.set('duration', p.duration);
-    if (p.imageUrl) q.set('image', p.imageUrl);
-
-    return { url: `${base}?${q.toString()}`, seed: parseInt(q.get('seed')) };
-  };
 
   const generate = async (p) => {
     setLoading(true);
@@ -180,23 +190,51 @@ export default function SessionPage({ params }) {
     const start = Date.now();
 
     try {
-      const { url, seed: usedSeed } = buildUrl(p);
+      const isVideo = p.mode === 'video';
+      const usedSeed = p.seed || Math.floor(Math.random() * 2147483647);
       setSeed(usedSeed);
-      const headers = {};
-      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error(`Generation failed (${res.status})`);
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
+
+      let blobUrl;
+      if (isVideo) {
+        const res = await fetch(`${API_BASE}/generate/video`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: p.prompt, model: p.model, width: p.width, height: p.height,
+            duration: p.duration, imageUrl: p.imageUrl,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Video generation failed');
+        blobUrl = data.videoData;
+      } else {
+        const res = await fetch(`${API_BASE}/generate/image`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: p.prompt, model: p.model, width: p.width, height: p.height,
+            seed: usedSeed, style: p.style, imageUrl: p.imageUrl, imageUrls: p.imageUrls,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Generation failed');
+        blobUrl = data.imageData || data.imageUrl;
+        if (data.seed) setSeed(data.seed);
+      }
+
       const genTime = Date.now() - start;
       setResultSrc(blobUrl);
       setGenerationTime(genTime);
 
-      // Save session
       saveSession({ ...p, seed: usedSeed, resultSrc: blobUrl, generationTime: genTime });
+      updateUrlParams({ ...p, seed: usedSeed });
 
-      // Save to library with a thumbnail
-      saveThumbnailToLibrary(blob, { ...p, seed: usedSeed, generationTime: genTime });
+      // Create blob for thumbnail
+      try {
+        const thumbRes = await fetch(blobUrl);
+        const blob = await thumbRes.blob();
+        saveThumbnailToLibrary(blob, { ...p, seed: usedSeed, generationTime: genTime });
+      } catch {}
     } catch (err) {
       setError(err.message || 'Generation failed');
     } finally {
@@ -327,21 +365,14 @@ export default function SessionPage({ params }) {
     setLoading(true);
     try {
       const editPrompt = 'Remove the background completely, make it transparent, keep only the main subject';
-      const encoded = encodeURIComponent(editPrompt);
-      const q = new URLSearchParams();
-      q.set('model', 'gptimage');
-      q.set('width', width);
-      q.set('height', height);
-      q.set('nologo', 'true');
-      q.set('referrer', 'elixpoart');
-      q.set('image', resultSrc);
-      const url = `${POLLINATIONS_BASE}/image/${encoded}?${q.toString()}`;
-      const headers = {};
-      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error('Background removal failed');
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
+      const res = await fetch(`${API_BASE}/generate/edit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: editPrompt, imageUrl: resultSrc, model: 'gptimage', width, height }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Background removal failed');
+      const blobUrl = data.imageData || data.imageUrl;
       setResultSrc(blobUrl);
       setModel('gptimage');
       saveSession({ prompt: editPrompt, model: 'gptimage', resultSrc: blobUrl });
@@ -364,21 +395,14 @@ export default function SessionPage({ params }) {
     setLoading(true);
     try {
       const editPrompt = 'Edit the character pose in this image, adjust the body position naturally while keeping the same character and style';
-      const encoded = encodeURIComponent(editPrompt);
-      const q = new URLSearchParams();
-      q.set('model', 'gptimage');
-      q.set('width', width);
-      q.set('height', height);
-      q.set('nologo', 'true');
-      q.set('referrer', 'elixpoart');
-      q.set('image', resultSrc);
-      const url = `${POLLINATIONS_BASE}/image/${encoded}?${q.toString()}`;
-      const headers = {};
-      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error('Pose edit failed');
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
+      const res = await fetch(`${API_BASE}/generate/edit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: editPrompt, imageUrl: resultSrc, model: 'gptimage', width, height }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Pose edit failed');
+      const blobUrl = data.imageData || data.imageUrl;
       setResultSrc(blobUrl);
       setModel('gptimage');
       saveSession({ prompt: editPrompt, model: 'gptimage', resultSrc: blobUrl });
@@ -510,24 +534,15 @@ export default function SessionPage({ params }) {
     setRemixLoading(true);
 
     try {
-      // Use gptimage model for editing with the current image as reference
-      const editPrompt = `${remixPrompt.trim()}`;
-      const encoded = encodeURIComponent(editPrompt);
-      const q = new URLSearchParams();
-      q.set('model', 'gptimage');
-      q.set('width', width);
-      q.set('height', height);
-      q.set('nologo', 'true');
-      q.set('referrer', 'elixpoart');
-      q.set('image', resultSrc);
-
-      const url = `${POLLINATIONS_BASE}/image/${encoded}?${q.toString()}`;
-      const headers = {};
-      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error('Edit failed');
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
+      const editPrompt = remixPrompt.trim();
+      const res = await fetch(`${API_BASE}/generate/edit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: editPrompt, imageUrl: resultSrc, model: 'gptimage', width, height }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Edit failed');
+      const blobUrl = data.imageData || data.imageUrl;
 
       setResultSrc(blobUrl);
       setModel('gptimage');
@@ -555,28 +570,54 @@ export default function SessionPage({ params }) {
             <div className={styles.ambientBlob2} aria-hidden="true" />
 
             {loading && (
-              <div className={styles.loadingState}>
-                <div className={styles.brushCanvas}>
-                  <div className={styles.brushBlob} />
-                  <div className={styles.brushBlob} />
-                  <div className={styles.brushBlob} />
-                  <div className={styles.brushBlob} />
-                  <div className={styles.brushBlob} />
+              <div className={styles.bokehFill}>
+                <div className={styles.bokehOrb} style={{ '--x': '15%', '--y': '20%', '--s': '180px', '--c': 'rgba(141,73,253,0.18)', '--d': '8s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '70%', '--y': '30%', '--s': '220px', '--c': 'rgba(86,145,243,0.15)', '--d': '11s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '40%', '--y': '65%', '--s': '160px', '--c': 'rgba(6,214,160,0.12)', '--d': '9s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '80%', '--y': '75%', '--s': '140px', '--c': 'rgba(236,72,153,0.1)', '--d': '13s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '25%', '--y': '80%', '--s': '120px', '--c': 'rgba(86,145,243,0.12)', '--d': '7s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '55%', '--y': '15%', '--s': '100px', '--c': 'rgba(141,73,253,0.14)', '--d': '10s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '90%', '--y': '50%', '--s': '90px', '--c': 'rgba(6,214,160,0.1)', '--d': '12s' }} />
+                <div className={styles.bokehShimmer} />
+                <div className={styles.bokehContent}>
+                  <p className={styles.bokehTitle}>Creating your vision</p>
+                  <div className={styles.bokehDots}>
+                    <span /><span /><span />
+                  </div>
+                  <p className={styles.bokehHint}>this may take a moment</p>
                 </div>
-                <p className={styles.loadingText}>Generating your creation...</p>
-                <p className={styles.loadingHint}>This may take up to a minute</p>
               </div>
             )}
 
             {error && !loading && (
               <div className={styles.errorState}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="1.5">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>
+                <div className={styles.errorIcon}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                </div>
+                <p className={styles.errorTitle}>Something went wrong</p>
                 <p className={styles.errorText}>{error}</p>
-                <button className={styles.retryBtn} onClick={handleRegenerate}>Try Again</button>
+                <div className={styles.errorActions}>
+                  <button className={styles.retryBtn} onClick={handleRegenerate}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 105.64-11.36L1 10" />
+                    </svg>
+                    Try Again
+                  </button>
+                  <button className={styles.retryAltBtn} onClick={() => {
+                    const alt = model === 'flux' ? 'gptimage' : 'flux';
+                    setModel(alt);
+                    generate({ prompt, model: alt, width, height, mode, duration, imageUrl });
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" /><path d="M2 12h20" />
+                    </svg>
+                    Try Different Model
+                  </button>
+                </div>
               </div>
             )}
 
@@ -723,7 +764,7 @@ export default function SessionPage({ params }) {
               {/* Session */}
               <div className={styles.sessionBlock}>
                 <div className={styles.sessionRow}>
-                  <span className={`${styles.statusDot} ${loading ? styles.statusLoading : styles.statusDone}`} />
+                  <span className={`${styles.statusDot} ${loading ? styles.statusLoading : error ? styles.statusError : styles.statusDone}`} />
                   <span className={styles.sessionId}>{sessionId.slice(0, 8)}</span>
                 </div>
                 {resultSrc && (
@@ -801,6 +842,12 @@ export default function SessionPage({ params }) {
                     <span className={styles.propKey}>Mode</span>
                     <span className={styles.propVal}>{mode === 'video' ? 'Video' : 'Image'}</span>
                   </div>
+                  {genStyle && (
+                    <div className={styles.propItem}>
+                      <span className={styles.propKey}>Style</span>
+                      <span className={styles.propVal}>{genStyle.charAt(0).toUpperCase() + genStyle.slice(1)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

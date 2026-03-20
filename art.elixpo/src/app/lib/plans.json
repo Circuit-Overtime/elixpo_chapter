@@ -1,0 +1,79 @@
+{
+  "dailyCredits": {
+    "guest": 100,
+    "free": 250,
+    "atelier": 500,
+    "masterpiece": 1000
+  },
+  "costs": {
+    "image": {
+      "flux": 2,
+      "klein": 2,
+      "zimage": 2,
+      "nanobanana": 3,
+      "seedream5": 4,
+      "kontext": 4,
+      "imagen-4": 5,
+      "gptimage": 8
+    },
+    "video": {
+      "ltx-2": 10,
+      "wan": 12,
+      "seedance": 15,
+      "seedance-pro": 20,
+      "veo": 25
+    },
+    "edit": 5,
+    "enhance": 1,
+    "describe": 2,
+    "blueprintExtra": 1
+  },
+  "plans": [
+    {
+      "id": "free",
+      "name": "Free",
+      "price": 0,
+      "yearlyPrice": 0,
+      "credits": 250,
+      "maxResolution": "1024x1024",
+      "features": [
+        "250 daily credits",
+        "All image models",
+        "Basic video generation",
+        "Community support"
+      ]
+    },
+    {
+      "id": "atelier",
+      "name": "Atelier",
+      "price": 12,
+      "yearlyPrice": 120,
+      "credits": 500,
+      "maxResolution": "2048x2048",
+      "popular": true,
+      "features": [
+        "500 daily credits",
+        "All image & video models",
+        "Priority generation queue",
+        "Blueprint templates",
+        "HD resolution up to 2048x2048"
+      ]
+    },
+    {
+      "id": "masterpiece",
+      "name": "Masterpiece",
+      "price": 49,
+      "yearlyPrice": 490,
+      "credits": 1000,
+      "maxResolution": "4096x4096",
+      "features": [
+        "1000 daily credits",
+        "All models at max quality",
+        "API access",
+        "4K resolution up to 4096x4096",
+        "Dedicated support",
+        "Early access to new models"
+      ]
+    }
+  ]
+}

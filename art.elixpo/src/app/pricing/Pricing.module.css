@@ -1,9 +1,9 @@
 .page {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(141, 73, 253, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(86, 145, 243, 0.04) 0%, transparent 60%),
-    var(--color-bg-primary);
+    radial-gradient(ellipse 80% 50% at 15% 5%, rgba(86, 145, 243, 0.07) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(141, 73, 253, 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #060a14 0%, #0a0f1e 40%, #0d1425 100%);
   padding-top: 52px;
   position: relative;
 }
@@ -131,40 +131,38 @@
 /* Card */
 .card {
   position: relative;
-  background: var(--gradient-glass);
+  background: linear-gradient(145deg, rgba(14, 18, 32, 0.9) 0%, rgba(10, 14, 26, 0.95) 100%);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(86, 145, 243, 0.08);
   border-radius: var(--radius-xl);
   padding: var(--spacing-2xl);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.03);
   transition: border-color var(--animation-normal), box-shadow var(--animation-normal);
   overflow: hidden;
 }
 
 .card:hover {
-  border-color: var(--color-border-hover);
-  box-shadow: var(--shadow-xl);
+  border-color: rgba(86, 145, 243, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(86, 145, 243, 0.04);
 }
 
 .cardFeatured {
-  border-color: var(--color-primary);
-  background: linear-gradient(
-    180deg,
-    rgba(141, 73, 253, 0.08) 0%,
-    var(--color-bg-card) 40%
-  );
+  border-color: rgba(86, 145, 243, 0.15);
+  background: linear-gradient(145deg, rgba(14, 18, 32, 0.9) 0%, rgba(10, 14, 26, 0.95) 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 0 20px rgba(86, 145, 243, 0.04);
 }
 
 .cardFeatured:hover {
-  border-color: var(--color-primary-light);
-  box-shadow: var(--shadow-glow);
+  border-color: rgba(86, 145, 243, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 30px rgba(86, 145, 243, 0.08);
 }
 
 .popularTag {
   position: absolute;
   top: 0;
   right: var(--spacing-xl);
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #5691f3 0%, #7b6cf6 100%);
   color: white;
   font-size: var(--font-size-xs);
   font-weight: 700;
@@ -283,12 +281,13 @@
 }
 
 .ctaPrimary {
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #5691f3 0%, #7b6cf6 100%);
   color: white;
+  box-shadow: 0 2px 12px rgba(86, 145, 243, 0.3);
 }
 
 .ctaPrimary:hover {
-  box-shadow: var(--shadow-glow);
+  box-shadow: 0 4px 20px rgba(86, 145, 243, 0.45);
   transform: translateY(-1px);
 }
 
@@ -305,14 +304,14 @@
 /* Features list */
 .divider {
   height: 1px;
-  background: var(--color-border);
+  background: linear-gradient(90deg, transparent, rgba(86, 145, 243, 0.12), rgba(141, 73, 253, 0.08), transparent);
   margin-bottom: var(--spacing-xl);
 }
 
 .featuresTitle {
   font-size: var(--font-size-xs);
   font-weight: 600;
-  color: var(--color-text-tertiary);
+  color: rgba(86, 145, 243, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: var(--spacing-md);
@@ -361,17 +360,19 @@
 }
 
 .faqItem {
-  background: var(--gradient-glass);
+  background: linear-gradient(145deg, rgba(14, 18, 32, 0.9) 0%, rgba(10, 14, 26, 0.95) 100%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(86, 145, 243, 0.08);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
-  transition: border-color var(--animation-fast);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: border-color var(--animation-fast), box-shadow var(--animation-fast);
 }
 
 .faqItem:hover {
-  border-color: var(--color-border-hover);
+  border-color: rgba(86, 145, 243, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(86, 145, 243, 0.04);
 }
 
 .faqQuestion {
