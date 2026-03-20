@@ -248,7 +248,9 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
         elif function_name == "export_to_pdf":
             content = function_args.get("content", "")
             title = function_args.get("title")
-            from pipeline.sse_messages import get_status_message
+            if not content or not content.strip():
+                yield "[ERROR] No content provided for PDF export. Provide the markdown content to export."
+                return
             web_event = emit_event_func("INFO", "<TASK>Generating PDF document</TASK>")
             if web_event:
                 yield web_event

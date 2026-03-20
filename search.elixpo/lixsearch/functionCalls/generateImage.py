@@ -30,7 +30,7 @@ async def create_image_from_prompt(prompt: str) -> str:
 
     upstream_url = (
         f"{POLLINATIONS_ENDPOINT_IMAGE}{quote(prompt)}"
-        f"?model={model}&height=462&width=768&seed={seed}&quality=hd&enhance=true"
+        f"?model=imagen-4&height=462&width=768&seed={seed}&quality=hd&enhance=true"
     )
     headers = {"Authorization": f"Bearer {os.getenv('TOKEN')}"}
 

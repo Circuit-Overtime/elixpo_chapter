@@ -32,7 +32,6 @@ from pipeline.synthesis import (
 from pipeline.response_builder import (
     is_placeholder_or_fallback,
     try_image_synthesis,
-    auto_generate_pdf,
     assemble_images,
     append_sources,
     build_fallback_response,
@@ -348,10 +347,21 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                 yield _stale_event
 
             try:
-                response = await asyncio.wait_for(
-                    asyncio.to_thread(requests.post, POLLINATIONS_ENDPOINT, json=payload, headers=headers, timeout=55),
-                    timeout=60.0
+                _api_task = asyncio.ensure_future(
+                    asyncio.to_thread(requests.post, POLLINATIONS_ENDPOINT, json=payload, headers=headers, timeout=55)
                 )
+                while not _api_task.done():
+                    await asyncio.wait({_api_task}, timeout=5.0)
+                    if not _api_task.done() and event_id:
+                        _thinking_event = status_tracker.refresh_if_stale()
+                        if _thinking_event:
+                            yield _thinking_event
+                        else:
+                            _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
+                            if _ke:
+                                yield _ke
+                            status_tracker.touch()
+                response = _api_task.result()
                 response.raise_for_status()
                 response_data = response.json()
                 status_tracker.touch()
@@ -394,12 +404,19 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     is_placeholder = raw_content.strip() in ("Processing your request...", "I'll help you with that.", "")
                     has_useful_context = bool(collected_sources) or tool_call_count > 0
 
+                    # If PDF was already generated, don't force synthesis — just use the response or build one
+                    if (is_reasoning_leak or is_placeholder) and memoized_results.get("generated_pdfs"):
+                        _pdf_url = memoized_results["generated_pdfs"][-1]
+                        final_message_content = raw_content if not (is_reasoning_leak or is_placeholder) else ""
+                        break
+
                     if (is_reasoning_leak or is_placeholder) and has_useful_context and current_iteration < max_iterations:
                         if event_id:
                             yield format_sse("INFO", get_user_message("synthesizing"))
                             status_tracker.touch()
                         _has_images = image_context_provided or bool(collected_images_from_web) or bool(collected_similar_images)
-                        messages.append({"role": "user", "content": synthesis_instruction(user_query, image_context=_has_images, is_detailed=is_detailed_mode)})
+                        _pdf_done = bool(memoized_results.get("generated_pdfs"))
+                        messages.append({"role": "user", "content": synthesis_instruction(user_query, image_context=_has_images, is_detailed=is_detailed_mode, pdf_already_generated=_pdf_done)})
                         force_synthesis = True
                         continue
 
@@ -645,6 +662,11 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                 final_message_content = build_synthesis_fallback(messages, user_query, rag_context, collected_sources)
 
         # ==================== FINAL RESPONSE FORMATTING ====================
+        # If PDF was generated but LLM gave a placeholder/empty response, construct one
+        if not final_message_content and memoized_results.get("generated_pdfs"):
+            _pdf_url = memoized_results["generated_pdfs"][-1]
+            final_message_content = f"Here's your PDF, ready to download:\n\n[Download PDF]({_pdf_url})"
+
         if final_message_content:
             final_message_content = await sanitize_final_response(final_message_content, user_query, collected_sources, headers)
             final_message_content = _scrub_tool_names(final_message_content)
@@ -656,17 +678,11 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                 if better:
                     final_message_content = better
 
-            # Auto-generate PDF
-            try:
-                pdf_url = await auto_generate_pdf(final_message_content, _query_lower, memoized_results, event_id)
-                if pdf_url:
-                    if event_id:
-                        yield format_sse("INFO", "<TASK>Generating PDF document</TASK>")
-                    final_message_content += f"\n\n---\n\n[Download PDF]({pdf_url})"
-                    if event_id:
-                        yield format_sse("INFO", "<TASK>PDF ready for download</TASK>")
-            except Exception as e:
-                logger.error(f"[FINAL] Auto PDF generation failed: {e}")
+            # Append PDF link if tool generated one during the loop
+            if memoized_results.get("generated_pdfs"):
+                _pdf_url = memoized_results["generated_pdfs"][-1]
+                if _pdf_url not in final_message_content:
+                    final_message_content += f"\n\n---\n\n[Download PDF]({_pdf_url})"
 
             # Assemble images and sources
             response_parts = assemble_images(final_message_content, collected_images_from_web,
