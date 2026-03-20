@@ -102,11 +102,10 @@
   height: 18px;
   background: white;
   border-radius: 50%;
-  transition: transform var(--animation-normal);
 }
 
 .toggle.active .toggleDot {
-  transform: translateX(22px);
+  left: 25px;
 }
 
 .saveBadge {
@@ -226,32 +225,30 @@
   margin-bottom: var(--spacing-xl);
 }
 
-/* Credits highlight */
-.credits {
+/* Limits row */
+.limitsRow {
   display: flex;
-  align-items: center;
   gap: var(--spacing-sm);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 0.6rem 0.8rem;
   margin-bottom: var(--spacing-xl);
 }
 
-.creditsIcon {
+.limitBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.45rem 0.7rem;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  flex: 1;
+}
+
+.limitBadge svg {
   color: var(--color-accent);
   flex-shrink: 0;
-}
-
-.creditsText {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.creditsLabel {
-  font-weight: 400;
-  color: var(--color-text-tertiary);
 }
 
 /* CTA button */

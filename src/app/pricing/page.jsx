@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../components/Navbar/Navbar';
 import Footer from '../components/Footer/Footer';
 import GradientBlobs from '../components/shared/GradientBlobs';
@@ -12,15 +12,17 @@ const PLANS = [
   {
     id: 'free',
     name: 'Free',
-    desc: 'Perfect for exploring AI art generation and casual creators.',
+    desc: 'Start creating — no account needed for a taste, or sign up for the full free tier.',
     monthly: 0,
     yearly: 0,
-    credits: 40,
+    images: 50,
+    videoMins: 2,
     featured: false,
-    cta: 'Get Started',
+    cta: 'Start Creating',
     ctaStyle: 'ctaDefault',
     features: [
-      '40 images per day',
+      '50 images per day',
+      '2 min video per day',
       'Standard models',
       '1024 x 1024 max resolution',
       'Community support',
@@ -28,40 +30,42 @@ const PLANS = [
     ],
   },
   {
-    id: 'pro',
-    name: 'Pro',
-    desc: 'For serious creators who need more power and priority access.',
+    id: 'atelier',
+    name: 'Atelier',
+    desc: 'Your personal studio — more power, all models, and priority access.',
     monthly: 12,
     yearly: 120,
-    credits: 200,
+    images: 200,
+    videoMins: 5,
     featured: true,
-    cta: 'Upgrade to Pro',
+    cta: 'Upgrade to Atelier',
     ctaStyle: 'ctaPrimary',
     features: [
       '200 images per day',
-      'All models including video',
+      '5 min video per day',
+      'All models',
       '2048 x 2048 max resolution',
-      '30s video generation',
       'Priority queue',
       'Early access to new models',
       'Private creations',
     ],
   },
   {
-    id: 'enterprise',
-    name: 'Enterprise',
+    id: 'masterpiece',
+    name: 'Masterpiece',
     desc: 'Full platform access with API, custom models, and dedicated support.',
     monthly: 49,
     yearly: 490,
-    credits: 1000,
+    images: 500,
+    videoMins: 15,
     featured: false,
-    cta: 'Contact Sales',
+    cta: 'Go Masterpiece',
     ctaStyle: 'ctaEnterprise',
     features: [
-      '1,000 images per day',
-      'All models including video',
+      '500 images per day',
+      '15 min video per day',
+      'All models',
       '4096 x 4096 max resolution',
-      '2 min video generation',
       'Priority queue',
       'API access',
       'Dedicated support',
@@ -72,20 +76,20 @@ const PLANS = [
 
 const FAQ = [
   {
-    q: 'How do daily credits work?',
-    a: 'Credits reset every 24 hours at midnight UTC. Each image generation costs 1 credit. Video generation costs vary by duration — typically 5 credits for a short clip.',
+    q: 'How do daily limits work?',
+    a: 'Image and video limits reset every 24 hours at midnight UTC. Each image generation uses 1 image credit. Video generation is tracked by duration in minutes.',
   },
   {
     q: 'Can I upgrade or downgrade anytime?',
     a: 'Yes. Upgrades take effect immediately and you get the difference prorated. Downgrades apply at the end of your current billing cycle.',
   },
   {
-    q: 'What happens if I run out of credits?',
-    a: 'You can wait for the next daily reset, or upgrade your plan for more credits. We never charge overage fees — your generations simply pause until credits refresh.',
+    q: 'What happens if I hit my limit?',
+    a: 'Your generations pause until the next daily reset. Upgrade your plan for higher limits — we never charge overage fees.',
   },
   {
-    q: 'Is there a free trial for Pro?',
-    a: 'New accounts start on the Free plan with 40 daily credits. You can try the platform risk-free and upgrade when you need more power.',
+    q: 'What can guests do without signing up?',
+    a: 'Guests can generate up to 10 images and 2 short videos to try the platform. Sign up for free to unlock 50 images and 2 minutes of video daily.',
   },
 ];
 
@@ -97,11 +101,21 @@ function CheckIcon() {
   );
 }
 
-function CreditsIcon() {
+// Animated number that smoothly transitions between values
+function AnimatedPrice({ value }) {
   return (
-    <svg className={styles.creditsIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26z" />
-    </svg>
+    <AnimatePresence mode="popLayout">
+      <motion.span
+        key={value}
+        initial={{ y: 20, opacity: 0, filter: 'blur(4px)' }}
+        animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+        exit={{ y: -20, opacity: 0, filter: 'blur(4px)' }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className={styles.price}
+      >
+        {value}
+      </motion.span>
+    </AnimatePresence>
   );
 }
 
@@ -132,7 +146,7 @@ export default function PricingPage() {
             <span className={styles.titleAccent}>right plan</span>
           </motion.h1>
           <motion.p className={styles.subtitle} variants={motionPresets.fadeUp}>
-            Start free with 40 daily generations. Upgrade when you need more credits, higher resolution, or video.
+            Start free with 50 daily images. Upgrade when you need more generations, higher resolution, or longer video.
           </motion.p>
         </motion.div>
 
@@ -149,10 +163,26 @@ export default function PricingPage() {
             onClick={() => setYearly(!yearly)}
             aria-label="Toggle yearly billing"
           >
-            <span className={styles.toggleDot} />
+            <motion.span
+              className={styles.toggleDot}
+              layout
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            />
           </button>
           <span className={`${styles.toggleLabel} ${yearly ? styles.toggleLabelActive : ''}`}>Yearly</span>
-          {yearly && <motion.span className={styles.saveBadge} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>Save ~17%</motion.span>}
+          <AnimatePresence>
+            {yearly && (
+              <motion.span
+                className={styles.saveBadge}
+                initial={{ scale: 0.8, opacity: 0, x: -8 }}
+                animate={{ scale: 1, opacity: 1, x: 0 }}
+                exit={{ scale: 0.8, opacity: 0, x: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                Save ~17%
+              </motion.span>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* Plan cards */}
@@ -180,18 +210,21 @@ export default function PricingPage() {
               ) : (
                 <div className={styles.priceWrap}>
                   <span className={styles.currency}>$</span>
-                  <span className={styles.price}>
-                    {yearly ? Math.round(plan.yearly / 12) : plan.monthly}
-                  </span>
+                  <AnimatedPrice value={yearly ? Math.round(plan.yearly / 12) : plan.monthly} />
                   <span className={styles.period}>/ mo</span>
                 </div>
               )}
 
-              <div className={styles.credits}>
-                <CreditsIcon />
-                <span className={styles.creditsText}>
-                  {plan.credits.toLocaleString()} <span className={styles.creditsLabel}>credits / day</span>
-                </span>
+              {/* Limits */}
+              <div className={styles.limitsRow}>
+                <div className={styles.limitBadge}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>{plan.images} images/day</span>
+                </div>
+                <div className={styles.limitBadge}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <span>{plan.videoMins} min video/day</span>
+                </div>
               </div>
 
               <a href={plan.id === 'free' ? '/generate' : '#'} className={`${styles.cta} ${styles[plan.ctaStyle]}`}>
