@@ -52,7 +52,7 @@ export default function SessionPage({ params }) {
   const [modelOpen, setModelOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const [actionsOpen, setActionsOpen] = useState(true);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const hasGenerated = useRef(false);
   const moreMenuRef = useRef(null);
 
@@ -285,17 +285,24 @@ export default function SessionPage({ params }) {
     return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
   };
 
+  const lastPoint = useRef(null);
+
   const onBrushDown = (e) => {
     e.preventDefault();
     isDrawing.current = true;
     const { x, y } = getCanvasCoords(e);
+    lastPoint.current = { x, y };
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(6, 214, 160, 0.35)';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = brushSize;
+    ctx.strokeStyle = 'rgba(6, 214, 160, 0.35)';
     ctx.beginPath();
-    ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x, y);
+    ctx.stroke();
   };
 
   const onBrushMove = (e) => {
@@ -304,13 +311,21 @@ export default function SessionPage({ params }) {
     const { x, y } = getCanvasCoords(e);
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
-    ctx.fillStyle = 'rgba(6, 214, 160, 0.35)';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = brushSize;
+    ctx.strokeStyle = 'rgba(6, 214, 160, 0.35)';
     ctx.beginPath();
-    ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(lastPoint.current.x, lastPoint.current.y);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    lastPoint.current = { x, y };
   };
 
-  const onBrushUp = () => { isDrawing.current = false; };
+  const onBrushUp = () => {
+    isDrawing.current = false;
+    lastPoint.current = null;
+  };
 
   const cancelRemix = () => {
     setRemixMode(false);
@@ -400,17 +415,24 @@ export default function SessionPage({ params }) {
                   <>
                     <img ref={imgRef} src={resultSrc} alt={prompt} className={styles.generatedImage} onLoad={remixMode ? initCanvas : undefined} />
                     {remixMode && (
-                      <canvas
-                        ref={canvasRef}
-                        className={styles.remixCanvas}
-                        onMouseDown={onBrushDown}
-                        onMouseMove={onBrushMove}
-                        onMouseUp={onBrushUp}
-                        onMouseLeave={onBrushUp}
-                        onTouchStart={onBrushDown}
-                        onTouchMove={onBrushMove}
-                        onTouchEnd={onBrushUp}
-                      />
+                      <>
+                        <canvas
+                          ref={canvasRef}
+                          className={styles.remixCanvas}
+                          onMouseDown={onBrushDown}
+                          onMouseMove={onBrushMove}
+                          onMouseUp={onBrushUp}
+                          onMouseLeave={onBrushUp}
+                          onTouchStart={onBrushDown}
+                          onTouchMove={onBrushMove}
+                          onTouchEnd={onBrushUp}
+                        />
+                        <button className={styles.exitEditBtn} onClick={cancelRemix} title="Exit edit mode">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </>
                     )}
                     {/* Edit button floating on preview */}
                     {!remixMode && (

@@ -585,6 +585,31 @@
   touch-action: none;
 }
 
+.exitEditBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  background: rgba(10, 15, 28, 0.75);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  z-index: 3;
+  transition: all 0.25s ease;
+}
+
+.exitEditBtn:hover {
+  background: rgba(10, 15, 28, 0.9);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
 /* ─── Remix bar ─── */
 .remixBar {
   padding: var(--spacing-xs) var(--spacing-lg) var(--spacing-md);
