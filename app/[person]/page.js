@@ -1,6 +1,7 @@
 import { getPersonContent } from "@/lib/content";
 import ContactBanner from "@/components/ContactBanner";
 import { SpotlightScroller } from "@/components/Animations";
+import DragScrollContainer from "@/components/DragScrollContainer";
 
 export default async function HomePage({ params }) {
   const { person } = await params;
