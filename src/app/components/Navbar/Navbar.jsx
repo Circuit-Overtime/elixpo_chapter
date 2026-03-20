@@ -5,10 +5,22 @@ import { getSignInUrl, isSignedIn, getUser, clearAuth } from '../../lib/auth';
 import styles from './Navbar.module.css';
 
 const navLinks = [
-  { label: 'Create', href: '/generate' },
-  { label: 'Blueprints', href: '/blueprints' },
-  { label: 'Gallery', href: '/gallery' },
-  { label: 'Pricing', href: '/pricing' },
+  {
+    label: 'Create', href: '/generate',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>,
+  },
+  {
+    label: 'Blueprints', href: '/blueprints',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
+  },
+  {
+    label: 'Gallery', href: '/gallery',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>,
+  },
+  {
+    label: 'Pricing', href: '/pricing',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>,
+  },
 ];
 
 export default function Navbar() {
@@ -77,6 +89,7 @@ export default function Navbar() {
         <div className={styles.links}>
           {navLinks.map((link) => (
             <a key={link.label} href={link.href} className={styles.link}>
+              {link.icon}
               {link.label}
             </a>
           ))}

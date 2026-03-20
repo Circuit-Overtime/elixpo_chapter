@@ -61,6 +61,9 @@ export default function SessionPage({ params }) {
   const [brushSize, setBrushSize] = useState(40);
   const [remixPrompt, setRemixPrompt] = useState('');
   const [remixLoading, setRemixLoading] = useState(false);
+  const [newRefImage, setNewRefImage] = useState(null);
+  const [newRefPreview, setNewRefPreview] = useState(null);
+  const refInputRef = useRef(null);
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const isDrawing = useRef(false);
@@ -216,11 +219,25 @@ export default function SessionPage({ params }) {
     generate({ prompt, model, width, height, mode, duration, imageUrl });
   };
 
+  const handleRefImage = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setNewRefImage(url);
+    setNewRefPreview(url);
+  };
+
+  const clearRefImage = () => {
+    setNewRefImage(null);
+    setNewRefPreview(null);
+    if (refInputRef.current) refInputRef.current.value = '';
+  };
+
   const handleNewGeneration = () => {
     if (!newPrompt.trim()) return;
     const id = crypto.randomUUID();
     sessionStorage.setItem(`gen_${id}`, JSON.stringify({
-      prompt: newPrompt.trim(), model, width, height, mode, duration, imageUrl: null, timestamp: Date.now(),
+      prompt: newPrompt.trim(), model, width, height, mode, duration, imageUrl: newRefImage || null, timestamp: Date.now(),
     }));
     router.push(`/generate/${id}`);
   };
@@ -298,11 +315,11 @@ export default function SessionPage({ params }) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.lineWidth = brushSize;
-    ctx.strokeStyle = 'rgba(6, 214, 160, 0.35)';
+    ctx.strokeStyle = '#06d6a0';
+    ctx.fillStyle = '#06d6a0';
     ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x, y);
-    ctx.stroke();
+    ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+    ctx.fill();
   };
 
   const onBrushMove = (e) => {
@@ -314,7 +331,7 @@ export default function SessionPage({ params }) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.lineWidth = brushSize;
-    ctx.strokeStyle = 'rgba(6, 214, 160, 0.35)';
+    ctx.strokeStyle = '#06d6a0';
     ctx.beginPath();
     ctx.moveTo(lastPoint.current.x, lastPoint.current.y);
     ctx.lineTo(x, y);
@@ -473,7 +490,31 @@ export default function SessionPage({ params }) {
           {/* Bottom prompt bar (hidden during remix) */}
           {!remixMode && (
             <div className={styles.bottomBar}>
+              {newRefPreview && (
+                <div className={styles.refPreviewWrap}>
+                  <img src={newRefPreview} alt="Reference" className={styles.refPreviewImg} />
+                  <button className={styles.refRemoveBtn} onClick={clearRefImage} title="Remove reference">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
               <div className={styles.promptBar}>
+                <input
+                  ref={refInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleRefImage}
+                  style={{ display: 'none' }}
+                />
+                <button className={styles.attachBtn} onClick={() => refInputRef.current?.click()} title="Attach reference image">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
+                </button>
                 <textarea
                   className={styles.promptInput}
                   placeholder="Type a prompt..."

@@ -253,6 +253,66 @@
   border-color: var(--color-border-hover);
 }
 
+/* Reference image preview */
+.refPreviewWrap {
+  display: inline-flex;
+  position: relative;
+  margin-bottom: var(--spacing-xs);
+  margin-left: var(--spacing-md);
+}
+
+.refPreviewImg {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.refRemoveBtn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: all var(--animation-fast);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.refRemoveBtn:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* Attach reference image button */
+.attachBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--animation-fast);
+}
+
+.attachBtn:hover {
+  color: #5691f3;
+  background: rgba(86, 145, 243, 0.08);
+}
+
 .promptInput {
   flex: 1;
   background: transparent;
@@ -587,6 +647,8 @@
   cursor: crosshair;
   z-index: 2;
   touch-action: none;
+  opacity: 0.4;
+  filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 0.5px rgba(0, 0, 0, 0.9));
 }
 
 .exitEditBtn {
