@@ -58,7 +58,7 @@ export default async function PersonLayout({ children, params }) {
       {/* Main content */}
       <div
         id="appContainer"
-        className="appContainer relative top-0 mx-auto max-w-[1440px] h-[calc(100vh-100px)] max-h-[calc(100vh-100px)] overflow-y-auto overflow-x-hidden p-4 sm:p-6 md:p-10"
+        className="appContainer relative top-0 mx-auto w-full max-w-full h-[calc(100vh-100px)] max-h-[calc(100vh-100px)] overflow-y-auto overflow-x-hidden p-4 sm:p-6 md:p-10"
       >
         {children}
         <Footer profile={profile} person={person} />
