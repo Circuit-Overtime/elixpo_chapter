@@ -87,16 +87,18 @@ def user_instruction(query, image_url, is_detailed=False):
 Answer directly if you can. Otherwise call the needed tool(s) — no text."""
 
 
-def synthesis_instruction(user_query, image_context=None, is_detailed=False):
+def synthesis_instruction(user_query, image_context=None, is_detailed=False, pdf_already_generated=False):
     image_note = ""
     if image_context:
         image_note = "\nImage results were found. Include relevant image URLs using ![description](url) markdown syntax in your answer."
 
-    # Check if user asked for PDF — remind the model to call the tool
+    # Check if user asked for PDF — remind the model to call the tool (but only if not already done)
     _q = user_query.lower()
     pdf_note = ""
-    if any(kw in _q for kw in ("pdf", "export", "save as", "document", "download")):
+    if not pdf_already_generated and any(kw in _q for kw in ("pdf", "export", "save as", "document", "download")):
         pdf_note = "\n\nIMPORTANT: The user asked for a PDF. You MUST call the export_to_pdf tool with the full content as markdown. Do NOT output the content as text — call the tool."
+    elif pdf_already_generated:
+        pdf_note = "\n\nThe PDF has already been generated. Do NOT call export_to_pdf again. Just write a brief response confirming the PDF is ready and include the download link."
 
     return f"""Write the final answer for: {user_query}
 
