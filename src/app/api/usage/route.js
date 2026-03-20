@@ -59,7 +59,7 @@ export async function POST(request) {
   const body = await request.json();
   const { type, userId, tier: bodyTier } = body;
 
-  if (!type || !['images', 'edits', 'videos'].includes(type)) {
+  if (!type || !['images', 'edits', 'videos', 'blueprints'].includes(type)) {
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
   }
 
