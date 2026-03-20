@@ -117,8 +117,59 @@ export async function ensureAuth() {
   return auth;
 }
 
-// Guest usage limits (unauthenticated visitors)
+// ─── Usage tracking (API-backed, IP for guests, userId for signed-in) ───
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3005';
+
+// Guest usage limits (client-side fallback)
 const GUEST_LIMITS = { images: 10, videos: 2 };
+
+export function getUserTier() {
+  const user = getUser();
+  if (!user) return 'guest';
+  return user.plan || user.plan_id || 'free';
+}
+
+export async function fetchUsage() {
+  try {
+    const user = getUser();
+    const tier = getUserTier();
+    const params = new URLSearchParams({ tier });
+    if (user?.id) params.set('userId', user.id);
+    const res = await fetch(`${API_BASE}/usage?${params}`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+// type: 'images' | 'edits' | 'videos'
+export async function checkAndIncrement(type) {
+  try {
+    const user = getUser();
+    const tier = getUserTier();
+    const body = { type };
+    if (user?.id) {
+      body.userId = user.id;
+      body.tier = tier;
+    }
+    const headers = { 'Content-Type': 'application/json' };
+    const auth = getAuth();
+    if (auth?.access_token) headers['Authorization'] = `Bearer ${auth.access_token}`;
+
+    const res = await fetch(`${API_BASE}/usage/increment`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) return { allowed: false, ...data };
+    return { allowed: true, ...data };
+  } catch {
+    // If API is down, fall back to client-side guest limits
+    return { allowed: true, fallback: true };
+  }
+}
 
 export function getGuestUsage() {
   if (typeof window === 'undefined') return { images: 0, videos: 0 };

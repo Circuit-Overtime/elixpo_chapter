@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, use, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar/Navbar';
 import { saveToLibrary } from '../../lib/library';
-import { isSignedIn, getUser } from '../../lib/auth';
+import { isSignedIn, getUser, checkAndIncrement, fetchUsage } from '../../lib/auth';
 import styles from './Session.module.css';
 
 const IMAGE_MODELS = [
@@ -180,6 +180,13 @@ export default function SessionPage({ params }) {
     const start = Date.now();
 
     try {
+      // Check daily usage limit
+      const usageType = p.mode === 'video' ? 'videos' : 'images';
+      const check = await checkAndIncrement(usageType);
+      if (!check.allowed) {
+        throw new Error(check.error || `Daily ${usageType} limit reached. Sign in or upgrade for more.`);
+      }
+
       const { url, seed: usedSeed } = buildUrl(p);
       setSeed(usedSeed);
       const headers = {};
@@ -326,6 +333,9 @@ export default function SessionPage({ params }) {
     setActionsOpen(false);
     setLoading(true);
     try {
+      const check = await checkAndIncrement('edits');
+      if (!check.allowed) throw new Error(check.error || 'Daily edit limit reached.');
+
       const editPrompt = 'Remove the background completely, make it transparent, keep only the main subject';
       const encoded = encodeURIComponent(editPrompt);
       const q = new URLSearchParams();
@@ -363,6 +373,9 @@ export default function SessionPage({ params }) {
     setActionsOpen(false);
     setLoading(true);
     try {
+      const check = await checkAndIncrement('edits');
+      if (!check.allowed) throw new Error(check.error || 'Daily edit limit reached.');
+
       const editPrompt = 'Edit the character pose in this image, adjust the body position naturally while keeping the same character and style';
       const encoded = encodeURIComponent(editPrompt);
       const q = new URLSearchParams();
@@ -510,7 +523,12 @@ export default function SessionPage({ params }) {
     setRemixLoading(true);
 
     try {
-      // Use gptimage model for editing with the current image as reference
+      // Check edit usage limit
+      const check = await checkAndIncrement('edits');
+      if (!check.allowed) {
+        throw new Error(check.error || 'Daily edit limit reached. Sign in or upgrade for more.');
+      }
+
       const editPrompt = `${remixPrompt.trim()}`;
       const encoded = encodeURIComponent(editPrompt);
       const q = new URLSearchParams();

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar/Navbar';
-import { isSignedIn, canGuestGenerate, getGuestRemaining, incrementGuestUsage, getGuestSessionId, getSignInUrl } from '../lib/auth';
+import { isSignedIn, canGuestGenerate, getGuestRemaining, incrementGuestUsage, getGuestSessionId, getSignInUrl, checkAndIncrement } from '../lib/auth';
 import styles from './Generate.module.css';
 
 const MODELS = [
@@ -187,7 +187,16 @@ export default function GeneratePage() {
     if (!prompt.trim() || generating) return;
 
     const genType = mode === 'video' ? 'videos' : 'images';
-    if (!canGuestGenerate(genType)) {
+
+    // Check server-side daily limit (IP for guests, userId for signed-in)
+    const check = await checkAndIncrement(genType);
+    if (!check.allowed) {
+      setLimitWarning(check.error || `Daily ${genType} limit reached. Sign in or upgrade for more.`);
+      return;
+    }
+
+    // Also keep client-side guest tracking as fallback
+    if (!signedIn && !canGuestGenerate(genType)) {
       setLimitWarning(
         mode === 'video'
           ? 'Guest video limit reached. Sign in for unlimited access.'
@@ -199,10 +208,8 @@ export default function GeneratePage() {
     setGenerating(true);
     setLimitWarning('');
 
-    // Guests get a single session ID, signed-in users get unique ones
     const sessionId = signedIn ? crypto.randomUUID() : getGuestSessionId();
 
-    // Track usage for guests
     if (!signedIn) incrementGuestUsage(genType);
     const { w, h } = selectedAspect;
 

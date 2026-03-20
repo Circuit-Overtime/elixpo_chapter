@@ -173,10 +173,10 @@ export const fonts = {
 // ─── Plan Rate Limits ────────────────────────────────────────────
 // Mirrors the D1 `plans` table. Used client-side for progress bars.
 export const planLimits = {
-  guest:       { images: 10,  videoMins: 0 },
-  free:        { images: 50,  videoMins: 2 },
-  atelier:     { images: 200, videoMins: 5 },
-  masterpiece: { images: 500, videoMins: 15 },
+  guest:       { images: 10,  edits: 3,   videoMins: 0 },
+  free:        { images: 50,  edits: 15,  videoMins: 2 },
+  atelier:     { images: 200, edits: 60,  videoMins: 5 },
+  masterpiece: { images: 500, edits: 150, videoMins: 15 },
 };
 
 // ─── Brush Stroke SVG Paths ──────────────────────────────────────
