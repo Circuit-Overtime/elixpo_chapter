@@ -97,7 +97,7 @@ export default function LandingClient({ profiles }) {
   useEffect(() => setMounted(true), []);
 
   return (
-    <div className="relative h-screen bg-[#1B1B19] flex flex-col items-center justify-center overflow-hidden">
+    <div className="relative h-[100dvh] bg-[#1B1B19] flex flex-col items-center justify-center overflow-hidden">
       {/* Paper texture background */}
       <div className="absolute inset-0 opacity-[0.07] bg-[url(/assets/ayushman/paperTexture.jpg)] bg-repeat bg-contain pointer-events-none" />
 
@@ -156,7 +156,7 @@ export default function LandingClient({ profiles }) {
         transition={{ duration: 1.2, ease: "easeOut" }}
       >
         <motion.h1
-          className="text-[#E2D9C8] text-6xl sm:text-8xl md:text-[10em] select-none"
+          className="text-[#E2D9C8] text-4xl sm:text-6xl md:text-8xl lg:text-[10em] select-none"
           style={{ fontFamily: "Canopee, serif" }}
           initial={{ letterSpacing: "0.5em", opacity: 0 }}
           animate={{ letterSpacing: "0.15em", opacity: 1 }}
