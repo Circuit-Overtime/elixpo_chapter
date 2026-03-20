@@ -118,7 +118,7 @@ export async function ensureAuth() {
 }
 
 // ─── Usage tracking (API-backed, IP for guests, userId for signed-in) ───
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3005';
+const API_BASE = '';
 
 // Guest usage limits (client-side fallback)
 const GUEST_LIMITS = { images: 10, videos: 2 };
@@ -135,7 +135,7 @@ export async function fetchUsage() {
     const tier = getUserTier();
     const params = new URLSearchParams({ tier });
     if (user?.id) params.set('userId', user.id);
-    const res = await fetch(`${API_BASE}/usage?${params}`);
+    const res = await fetch(`/api/usage?${params}`);
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -157,7 +157,7 @@ export async function checkAndIncrement(type) {
     const auth = getAuth();
     if (auth?.access_token) headers['Authorization'] = `Bearer ${auth.access_token}`;
 
-    const res = await fetch(`${API_BASE}/usage/increment`, {
+    const res = await fetch(`/api/usage`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),

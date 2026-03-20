@@ -72,7 +72,7 @@ const RANDOM_SUBJECTS = [
   'a knight made of starlight fighting shadow creatures',
 ];
 
-const API_BASE = 'http://localhost:3005';
+const API_BASE = '/api';
 
 export default function GeneratePage() {
   const router = useRouter();
@@ -291,7 +291,7 @@ export default function GeneratePage() {
       try {
         const formData = new FormData();
         formData.append('file', img);
-        const uploadRes = await fetch(`${API_BASE}/upload-to-uguu`, {
+        const uploadRes = await fetch(`${API_BASE}/upload`, {
           method: 'POST',
           body: formData,
         });

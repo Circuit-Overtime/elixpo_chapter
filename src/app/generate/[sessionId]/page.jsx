@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, use, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar/Navbar';
 import { saveToLibrary } from '../../lib/library';
-import { isSignedIn, getUser, checkAndIncrement, fetchUsage } from '../../lib/auth';
+import { isSignedIn, getUser } from '../../lib/auth';
 import styles from './Session.module.css';
 
 const IMAGE_MODELS = [
@@ -28,8 +28,7 @@ const VIDEO_MODELS = [
 
 const ALL_MODELS = [...IMAGE_MODELS, ...VIDEO_MODELS];
 
-const POLLINATIONS_BASE = 'https://gen.pollinations.ai';
-const POLLI_TOKEN = process.env.NEXT_PUBLIC_POLLINATIONS_API_IMAGE;
+const API_BASE = '/api';
 
 export default function SessionPage({ params }) {
   const { sessionId } = use(params);
@@ -153,27 +152,6 @@ export default function SessionPage({ params }) {
     generate(p);
   }, [sessionId]);
 
-  const buildUrl = (p, useSeed) => {
-    const encoded = encodeURIComponent(p.prompt);
-    const isVideo = p.mode === 'video';
-    const base = isVideo
-      ? `${POLLINATIONS_BASE}/video/${encoded}`
-      : `${POLLINATIONS_BASE}/image/${encoded}`;
-
-    const q = new URLSearchParams();
-    q.set('model', p.model);
-    q.set('width', p.width);
-    q.set('height', p.height);
-    q.set('nologo', 'true');
-    q.set('seed', useSeed || Math.floor(Math.random() * 2147483647));
-    q.set('enhance', 'true');
-    q.set('referrer', 'elixpoart');
-    if (isVideo && p.duration) q.set('duration', p.duration);
-    if (p.imageUrl) q.set('image', p.imageUrl);
-
-    return { url: `${base}?${q.toString()}`, seed: parseInt(q.get('seed')) };
-  };
-
   const generate = async (p) => {
     setLoading(true);
     setError(null);
@@ -182,30 +160,50 @@ export default function SessionPage({ params }) {
     const start = Date.now();
 
     try {
-      // Check daily usage limit
-      const usageType = p.mode === 'video' ? 'videos' : 'images';
-      const check = await checkAndIncrement(usageType);
-      if (!check.allowed) {
-        throw new Error(check.error || `Daily ${usageType} limit reached. Sign in or upgrade for more.`);
+      const isVideo = p.mode === 'video';
+      const usedSeed = p.seed || Math.floor(Math.random() * 2147483647);
+      setSeed(usedSeed);
+
+      let blobUrl;
+      if (isVideo) {
+        const res = await fetch(`${API_BASE}/generate/video`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: p.prompt, model: p.model, width: p.width, height: p.height,
+            duration: p.duration, imageUrl: p.imageUrl,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Video generation failed');
+        blobUrl = data.videoData;
+      } else {
+        const res = await fetch(`${API_BASE}/generate/image`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: p.prompt, model: p.model, width: p.width, height: p.height,
+            seed: usedSeed, style: p.style, imageUrl: p.imageUrl, imageUrls: p.imageUrls,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Generation failed');
+        blobUrl = data.imageData || data.imageUrl;
+        if (data.seed) setSeed(data.seed);
       }
 
-      const { url, seed: usedSeed } = buildUrl(p);
-      setSeed(usedSeed);
-      const headers = {};
-      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error(`Generation failed (${res.status})`);
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
       const genTime = Date.now() - start;
       setResultSrc(blobUrl);
       setGenerationTime(genTime);
 
-      // Save session
       saveSession({ ...p, seed: usedSeed, resultSrc: blobUrl, generationTime: genTime });
 
-      // Save to library with a thumbnail
-      saveThumbnailToLibrary(blob, { ...p, seed: usedSeed, generationTime: genTime });
+      // Create blob for thumbnail
+      try {
+        const thumbRes = await fetch(blobUrl);
+        const blob = await thumbRes.blob();
+        saveThumbnailToLibrary(blob, { ...p, seed: usedSeed, generationTime: genTime });
+      } catch {}
     } catch (err) {
       setError(err.message || 'Generation failed');
     } finally {
@@ -335,25 +333,15 @@ export default function SessionPage({ params }) {
     setActionsOpen(false);
     setLoading(true);
     try {
-      const check = await checkAndIncrement('edits');
-      if (!check.allowed) throw new Error(check.error || 'Daily edit limit reached.');
-
       const editPrompt = 'Remove the background completely, make it transparent, keep only the main subject';
-      const encoded = encodeURIComponent(editPrompt);
-      const q = new URLSearchParams();
-      q.set('model', 'gptimage');
-      q.set('width', width);
-      q.set('height', height);
-      q.set('nologo', 'true');
-      q.set('referrer', 'elixpoart');
-      q.set('image', resultSrc);
-      const url = `${POLLINATIONS_BASE}/image/${encoded}?${q.toString()}`;
-      const headers = {};
-      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error('Background removal failed');
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
+      const res = await fetch(`${API_BASE}/generate/edit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: editPrompt, imageUrl: resultSrc, model: 'gptimage', width, height }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Background removal failed');
+      const blobUrl = data.imageData || data.imageUrl;
       setResultSrc(blobUrl);
       setModel('gptimage');
       saveSession({ prompt: editPrompt, model: 'gptimage', resultSrc: blobUrl });
@@ -375,25 +363,15 @@ export default function SessionPage({ params }) {
     setActionsOpen(false);
     setLoading(true);
     try {
-      const check = await checkAndIncrement('edits');
-      if (!check.allowed) throw new Error(check.error || 'Daily edit limit reached.');
-
       const editPrompt = 'Edit the character pose in this image, adjust the body position naturally while keeping the same character and style';
-      const encoded = encodeURIComponent(editPrompt);
-      const q = new URLSearchParams();
-      q.set('model', 'gptimage');
-      q.set('width', width);
-      q.set('height', height);
-      q.set('nologo', 'true');
-      q.set('referrer', 'elixpoart');
-      q.set('image', resultSrc);
-      const url = `${POLLINATIONS_BASE}/image/${encoded}?${q.toString()}`;
-      const headers = {};
-      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error('Pose edit failed');
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
+      const res = await fetch(`${API_BASE}/generate/edit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: editPrompt, imageUrl: resultSrc, model: 'gptimage', width, height }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Pose edit failed');
+      const blobUrl = data.imageData || data.imageUrl;
       setResultSrc(blobUrl);
       setModel('gptimage');
       saveSession({ prompt: editPrompt, model: 'gptimage', resultSrc: blobUrl });
@@ -525,29 +503,15 @@ export default function SessionPage({ params }) {
     setRemixLoading(true);
 
     try {
-      // Check edit usage limit
-      const check = await checkAndIncrement('edits');
-      if (!check.allowed) {
-        throw new Error(check.error || 'Daily edit limit reached. Sign in or upgrade for more.');
-      }
-
-      const editPrompt = `${remixPrompt.trim()}`;
-      const encoded = encodeURIComponent(editPrompt);
-      const q = new URLSearchParams();
-      q.set('model', 'gptimage');
-      q.set('width', width);
-      q.set('height', height);
-      q.set('nologo', 'true');
-      q.set('referrer', 'elixpoart');
-      q.set('image', resultSrc);
-
-      const url = `${POLLINATIONS_BASE}/image/${encoded}?${q.toString()}`;
-      const headers = {};
-      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error('Edit failed');
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
+      const editPrompt = remixPrompt.trim();
+      const res = await fetch(`${API_BASE}/generate/edit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: editPrompt, imageUrl: resultSrc, model: 'gptimage', width, height }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Edit failed');
+      const blobUrl = data.imageData || data.imageUrl;
 
       setResultSrc(blobUrl);
       setModel('gptimage');
