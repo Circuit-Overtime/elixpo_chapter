@@ -88,7 +88,7 @@ export default function DocsPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative z-10 flex items-center justify-between px-8 py-5 max-w-7xl mx-auto w-full"
+        className="relative z-10 flex items-center justify-between px-4 sm:px-8 py-5 max-w-7xl mx-auto w-full"
       >
         <Link href="/" className="flex items-center gap-2.5 no-underline">
           <Image src="/logo.png" alt="ElixpoURL" width={32} height={32} className="rounded-lg" />
@@ -96,7 +96,7 @@ export default function DocsPage() {
             <span className="text-lime-main">Elixpo</span>URL
           </span>
         </Link>
-        <div className="flex items-center gap-6">
+        <div className="hidden sm:flex items-center gap-6">
           <Link href="/pricing" className="text-sm text-text-secondary hover:text-text-primary transition-colors no-underline">
             Pricing
           </Link>
@@ -116,12 +116,12 @@ export default function DocsPage() {
       </motion.nav>
 
       {/* Header */}
-      <section className="relative z-10 max-w-4xl mx-auto px-8 pt-16 pb-8">
+      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8 pt-16 pb-8">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="text-5xl font-display font-bold mb-4"
+          className="text-3xl sm:text-5xl font-display font-bold mb-4"
         >
           API <span className="text-gradient">Documentation</span>
         </motion.h1>
@@ -157,7 +157,7 @@ export default function DocsPage() {
       </section>
 
       {/* Sections */}
-      <section className="relative z-10 max-w-4xl mx-auto px-8 pb-24 flex-1">
+      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8 pb-24 flex-1">
         {sections.map((s, i) => (
           <motion.div
             key={s.id}

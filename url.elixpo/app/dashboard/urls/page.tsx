@@ -35,7 +35,7 @@ export default async function UrlsPage({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <h1 className="text-2xl font-display font-bold text-text-primary">My URLs</h1>
         <Link href="/dashboard/new" className="btn-lime no-underline">+ Shorten URL</Link>
       </div>
@@ -51,7 +51,8 @@ export default async function UrlsPage({
           />
         </form>
 
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[700px]">
           <thead>
             <tr>
               <th className="text-left text-[0.7rem] text-text-disabled uppercase tracking-wider pb-3">Code</th>
@@ -89,6 +90,7 @@ export default async function UrlsPage({
             )}
           </tbody>
         </table>
+        </div>
 
         {totalPages > 1 && (
           <div className="flex gap-2 justify-center mt-4">

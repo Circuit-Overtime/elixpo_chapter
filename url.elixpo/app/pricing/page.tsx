@@ -111,12 +111,12 @@ export default function PricingPage() {
       <Navbar />
 
       {/* Header */}
-      <section className="relative z-10 max-w-7xl mx-auto px-8 pt-20 pb-4 text-center">
+      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 pt-20 pb-4 text-center">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="text-5xl md:text-6xl font-display font-bold leading-tight mb-5"
+          className="text-3xl sm:text-5xl md:text-6xl font-display font-bold leading-tight mb-5"
         >
           Simple, transparent{' '}
           <span className="text-gradient">pricing</span>
@@ -132,8 +132,8 @@ export default function PricingPage() {
       </section>
 
       {/* Pricing cards */}
-      <section className="relative z-10 max-w-7xl mx-auto px-8 py-16 flex-1">
-        <div className="grid grid-cols-4 gap-5 items-stretch">
+      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-16 flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
           {tiers.map((tier, i) => {
             const isHovered = hoveredTier === tier.name;
             const isPopular = tier.popular;
@@ -269,7 +269,7 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ / Bottom CTA */}
-      <section className="relative z-10 max-w-3xl mx-auto px-8 pb-24 text-center">
+      <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-8 pb-24 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

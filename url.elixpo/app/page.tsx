@@ -32,7 +32,7 @@ export default function LandingPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-7xl mx-auto px-8 pt-16 pb-32 text-center">
+      <section className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-7xl mx-auto px-4 sm:px-8 pt-16 pb-32 text-center">
         {/* Banner image space */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -64,7 +64,7 @@ export default function LandingPage() {
           initial="hidden"
           animate="visible"
           variants={fadeUp}
-          className="text-6xl md:text-7xl font-display font-bold leading-[1.08] mb-6 max-w-4xl"
+          className="text-3xl sm:text-5xl md:text-7xl font-display font-bold leading-[1.08] mb-6 max-w-4xl"
         >
           Shorten URLs at the{' '}
           <span className="text-gradient">speed of light</span>
@@ -86,7 +86,7 @@ export default function LandingPage() {
           initial="hidden"
           animate="visible"
           variants={fadeUp}
-          className="flex items-center justify-center gap-4"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <Link
             href="/api/auth/login"

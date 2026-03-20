@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -71,6 +72,16 @@ const Icons = {
       <path d="M6 7h8M6 10h8M6 13h4" />
     </svg>
   ),
+  menu: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-5 h-5">
+      <path d="M3 5h14M3 10h14M3 15h14" />
+    </svg>
+  ),
+  close: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-5 h-5">
+      <path d="M5 5l10 10M15 5L5 15" />
+    </svg>
+  ),
 };
 
 const navItems = [
@@ -93,6 +104,7 @@ const adminItems = [
 export default function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
   const avatarUrl = getAvatarUrl(user);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (href: string) => {
     if (href === '/dashboard' || href === '/profile' || href === '/admin') {
@@ -109,6 +121,7 @@ export default function Sidebar({ user }: { user: User }) {
   const NavLink = ({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) => (
     <Link
       href={href}
+      onClick={() => setMobileOpen(false)}
       className={`flex items-center gap-3 px-5 py-2.5 text-sm transition-all duration-200 no-underline ${
         isActive(href)
           ? 'text-lime-main border-r-2 border-lime-main'
@@ -124,78 +137,110 @@ export default function Sidebar({ user }: { user: User }) {
   );
 
   return (
-    <aside
-      className="w-60 fixed top-0 left-0 bottom-0 flex flex-col border-r border-border-light z-20"
-      style={{ background: 'rgba(16, 24, 12, 0.6)', backdropFilter: 'blur(20px)' }}
-    >
-      {/* Brand */}
-      <div className="px-5 pt-6 pb-8">
+    <>
+      {/* Mobile top bar */}
+      <div
+        className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border-light"
+        style={{ background: 'rgba(16, 24, 12, 0.85)', backdropFilter: 'blur(20px)' }}
+      >
         <Link href="/dashboard" className="flex items-center gap-2.5 no-underline">
           <Image src="/logo.png" alt="ElixpoURL" width={28} height={28} className="rounded-lg" />
           <span className="text-lg font-display font-bold text-text-primary">
             <span className="text-lime-main">Elixpo</span>URL
           </span>
         </Link>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto">
-        {navItems.map((item) => (
-          <NavLink key={item.href} {...item} />
-        ))}
-
-        <div className="px-5 pt-6 pb-2 text-[0.6rem] text-text-disabled uppercase tracking-widest font-medium">
-          Account
-        </div>
-        {accountItems.map((item) => (
-          <NavLink key={item.href} {...item} />
-        ))}
-        {/* Sign out as a nav item */}
         <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-5 py-2.5 text-sm text-text-secondary hover:text-[#f87171] hover:bg-bg-glass transition-all duration-200 cursor-pointer bg-transparent border-none text-left"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="p-2 rounded-lg text-text-secondary bg-transparent border-none cursor-pointer"
         >
-          <span className="w-5 flex items-center justify-center opacity-50">
-            {Icons.logout}
-          </span>
-          Sign Out
+          {mobileOpen ? Icons.close : Icons.menu}
         </button>
-
-        {user.role === 'admin' && (
-          <>
-            <div className="px-5 pt-6 pb-2 text-[0.6rem] text-text-disabled uppercase tracking-widest font-medium">
-              Admin
-            </div>
-            {adminItems.map((item) => (
-              <NavLink key={item.href} {...item} />
-            ))}
-          </>
-        )}
-      </nav>
-
-      {/* User card */}
-      <div className="px-4 py-4 border-t border-border-light">
-        <Link href="/profile" className="flex items-center gap-3 no-underline group">
-          {/* Avatar from Elixpo Accounts */}
-          <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 transition-transform duration-200 group-hover:scale-105 border border-border-medium">
-            <img
-              src={avatarUrl}
-              alt={user.display_name}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-text-primary truncate group-hover:text-lime-main transition-colors">
-              {user.display_name}
-            </div>
-            <div className="text-[0.65rem] text-text-secondary truncate">
-              {user.email}
-            </div>
-          </div>
-        </Link>
       </div>
-    </aside>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-20 bg-black/50"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`w-60 fixed top-0 left-0 bottom-0 flex flex-col border-r border-border-light z-20 transition-transform duration-300 md:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        style={{ background: 'rgba(16, 24, 12, 0.95)', backdropFilter: 'blur(20px)' }}
+      >
+        {/* Brand */}
+        <div className="px-5 pt-6 pb-8">
+          <Link href="/dashboard" className="flex items-center gap-2.5 no-underline" onClick={() => setMobileOpen(false)}>
+            <Image src="/logo.png" alt="ElixpoURL" width={28} height={28} className="rounded-lg" />
+            <span className="text-lg font-display font-bold text-text-primary">
+              <span className="text-lime-main">Elixpo</span>URL
+            </span>
+          </Link>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto">
+          {navItems.map((item) => (
+            <NavLink key={item.href} {...item} />
+          ))}
+
+          <div className="px-5 pt-6 pb-2 text-[0.6rem] text-text-disabled uppercase tracking-widest font-medium">
+            Account
+          </div>
+          {accountItems.map((item) => (
+            <NavLink key={item.href} {...item} />
+          ))}
+          {/* Sign out as a nav item */}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-5 py-2.5 text-sm text-text-secondary hover:text-[#f87171] hover:bg-bg-glass transition-all duration-200 cursor-pointer bg-transparent border-none text-left"
+          >
+            <span className="w-5 flex items-center justify-center opacity-50">
+              {Icons.logout}
+            </span>
+            Sign Out
+          </button>
+
+          {user.role === 'admin' && (
+            <>
+              <div className="px-5 pt-6 pb-2 text-[0.6rem] text-text-disabled uppercase tracking-widest font-medium">
+                Admin
+              </div>
+              {adminItems.map((item) => (
+                <NavLink key={item.href} {...item} />
+              ))}
+            </>
+          )}
+        </nav>
+
+        {/* User card */}
+        <div className="px-4 py-4 border-t border-border-light">
+          <Link href="/profile" className="flex items-center gap-3 no-underline group" onClick={() => setMobileOpen(false)}>
+            {/* Avatar from Elixpo Accounts */}
+            <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 transition-transform duration-200 group-hover:scale-105 border border-border-medium">
+              <img
+                src={avatarUrl}
+                alt={user.display_name}
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-text-primary truncate group-hover:text-lime-main transition-colors">
+                {user.display_name}
+              </div>
+              <div className="text-[0.65rem] text-text-secondary truncate">
+                {user.email}
+              </div>
+            </div>
+          </Link>
+        </div>
+      </aside>
+    </>
   );
 }
