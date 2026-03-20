@@ -92,6 +92,8 @@ export default function GeneratePage() {
   const [uploadedPreviews, setUploadedPreviews] = useState([]);
   const [aiWorking, setAiWorking] = useState(false);
   const [limitWarning, setLimitWarning] = useState('');
+  const [describeArtifact, setDescribeArtifact] = useState(null);
+  const [artifactModal, setArtifactModal] = useState(false);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const describeInputRef = useRef(null);
@@ -210,6 +212,11 @@ export default function GeneratePage() {
     if (!file) return;
     if (describeInputRef.current) describeInputRef.current.value = '';
 
+    // Save preview for the artifact
+    const reader = new FileReader();
+    reader.onload = (ev) => setDescribeArtifact(ev.target.result);
+    reader.readAsDataURL(file);
+
     setAiWorking(true);
     try {
       const formData = new FormData();
@@ -229,6 +236,17 @@ export default function GeneratePage() {
       setAiWorking(false);
       pendingDescribe.current = false;
     }
+  };
+
+  const handleReplaceArtifact = () => {
+    setArtifactModal(false);
+    pendingDescribe.current = true;
+    describeInputRef.current?.click();
+  };
+
+  const handleRemoveArtifact = () => {
+    setDescribeArtifact(null);
+    setArtifactModal(false);
   };
 
   const handleImageUpload = (e) => {
@@ -395,6 +413,12 @@ export default function GeneratePage() {
                 {mode === 'video' ? 'Upload start frame' : 'Upload reference image'}
               </span>
             </div>
+            {describeArtifact && (
+              <button className={styles.artifact} onClick={() => setArtifactModal(true)} title="Source image — click to manage">
+                <img src={describeArtifact} alt="Source" className={styles.artifactImg} />
+                <span className={styles.artifactBadge}>AI</span>
+              </button>
+            )}
             <textarea
               ref={inputRef}
               className={styles.promptInput}
@@ -635,6 +659,36 @@ export default function GeneratePage() {
           )}
         </div>
       </main>
+
+      {/* Artifact modal */}
+      {artifactModal && describeArtifact && (
+        <div className={styles.artifactOverlay} onClick={() => setArtifactModal(false)}>
+          <div className={styles.artifactModal} onClick={(e) => e.stopPropagation()}>
+            <img src={describeArtifact} alt="Source image" className={styles.artifactModalImg} />
+            <div className={styles.artifactModalInfo}>
+              <p className={styles.artifactModalTitle}>Source Image</p>
+              <p className={styles.artifactModalHint}>This image was used to generate the prompt description</p>
+            </div>
+            <div className={styles.artifactModalActions}>
+              <button className={styles.artifactModalBtn} onClick={handleReplaceArtifact}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 105.64-11.36L1 10" />
+                </svg>
+                Replace
+              </button>
+              <button className={`${styles.artifactModalBtn} ${styles.artifactModalBtnDanger}`} onClick={handleRemoveArtifact}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                </svg>
+                Remove
+              </button>
+              <button className={styles.artifactModalBtn} onClick={() => setArtifactModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

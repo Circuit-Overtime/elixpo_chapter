@@ -78,10 +78,12 @@
 .gridOverlay {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 60px 60px;
+  background-image: url("../../../public/gen-bg.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: sepia(0.6) brightness(0.3) saturate(0.5);
+  opacity: 0.25;
   pointer-events: none;
 }
 
