@@ -74,18 +74,21 @@
 
 .pageTitle {
   font-family: var(--font-family-display);
-  font-size: var(--font-size-2xl);
-  font-weight: 800;
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
   color: var(--color-text-primary);
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  letter-spacing: -0.01em;
 }
 
 /* Cards */
 .card {
-  background: var(--color-bg-secondary);
+  background: var(--gradient-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   padding: var(--spacing-xl);
@@ -142,6 +145,105 @@
 
 .atSign {
   color: var(--color-text-tertiary);
+}
+
+/* ─── Usage / Rate Limits ─── */
+.usageTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.planBadge {
+  font-family: var(--font-family-accent);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-primary-light);
+  background: rgba(141, 73, 253, 0.12);
+  border: 1px solid rgba(141, 73, 253, 0.25);
+  padding: 0.2rem 0.7rem;
+  border-radius: var(--radius-full);
+}
+
+.usageItem {
+  margin-bottom: var(--spacing-lg);
+}
+
+.usageItem:last-of-type {
+  margin-bottom: var(--spacing-md);
+}
+
+.usageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.usageLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.usageLabel svg {
+  color: var(--color-text-tertiary);
+}
+
+.usageCount {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.usageNearLimit {
+  color: var(--color-amber);
+}
+
+.usageAtLimit {
+  color: #ef4444;
+}
+
+.usageTrack {
+  width: 100%;
+  height: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.usageFill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  min-width: 2px;
+}
+
+.usageHint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.upgradeLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-primary-light);
+  text-decoration: none;
+  transition: color var(--animation-fast);
+}
+
+.upgradeLink:hover {
+  color: var(--color-accent-light);
 }
 
 /* Interest chips */
