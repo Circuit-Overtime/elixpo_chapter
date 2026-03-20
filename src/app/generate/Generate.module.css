@@ -78,7 +78,7 @@
 .gridOverlay {
   position: absolute;
   inset: 0;
-  background-image: url("../../../public/gen-bg.png");
+  background-image: url("../../public/gen-bg.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -253,12 +253,132 @@
   color: var(--color-text-tertiary);
 }
 
+.artifact {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(86, 145, 243, 0.15);
+  border-radius: var(--radius-sm);
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all var(--animation-fast);
+}
+.artifact:hover {
+  border-color: rgba(86, 145, 243, 0.35);
+  box-shadow: 0 0 12px rgba(86, 145, 243, 0.1);
+  transform: scale(1.05);
+}
+.artifactImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+.artifactBadge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  padding: 1px 4px;
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: linear-gradient(135deg, #5691f3, #7b6cf6);
+  border-radius: 3px;
+  line-height: 1.2;
+}
+
+.artifactOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.artifactModal {
+  background: linear-gradient(145deg, rgba(14, 18, 32, 0.95) 0%, rgba(10, 14, 26, 0.98) 100%);
+  border: 1px solid rgba(86, 145, 243, 0.1);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-lg);
+  max-width: 400px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 1px rgba(86, 145, 243, 0.2);
+  animation: modalSlide 0.2s ease;
+}
+@keyframes modalSlide {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.artifactModalImg {
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.artifactModalInfo { text-align: center; }
+.artifactModalTitle {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 0.25rem;
+}
+.artifactModalHint {
+  font-family: var(--font-family-accent);
+  font-size: 0.9rem;
+  color: var(--color-text-tertiary);
+  margin: 0;
+}
+.artifactModalActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+.artifactModalBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--animation-fast);
+}
+.artifactModalBtn:hover {
+  background: rgba(86, 145, 243, 0.08);
+  border-color: rgba(86, 145, 243, 0.15);
+  color: #5691f3;
+}
+.artifactModalBtnDanger:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
 .promptSpinner {
   flex-shrink: 0;
   width: 16px;
   height: 16px;
   border: 2px solid transparent;
-  border-top-color: var(--color-accent);
+  border-top-color: #5691f3;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
