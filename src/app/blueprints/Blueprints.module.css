@@ -194,20 +194,15 @@
   padding: 0;
   aspect-ratio: 4 / 3;
   transition: transform 0.3s ease;
+  will-change: transform;
+  content-visibility: auto;
 }
 
 .card:hover { transform: translateY(-4px); }
 
-/* First card: 16:9 hero spanning 2 columns */
-.card:first-child {
+/* Every 5th card (1st, 6th, 11th, …): 16:9 hero spanning 2 columns */
+.card:nth-child(5n+1) {
   grid-column: span 2;
-  grid-row: span 2;
-  aspect-ratio: auto;
-}
-
-/* 2nd and 3rd cards: 4:3 stacked next to the hero */
-.card:nth-child(2),
-.card:nth-child(3) {
   aspect-ratio: 16 / 9;
 }
 
@@ -795,14 +790,13 @@
 /* ─── Responsive ─── */
 @media (max-width: 900px) {
   .grid { grid-template-columns: repeat(2, 1fr); }
-  .card:first-child { grid-column: span 2; grid-row: span 1; aspect-ratio: 16 / 9; }
+  .card:nth-child(5n+1) { grid-column: span 2; aspect-ratio: 16 / 9; }
 }
 
 @media (max-width: 768px) {
   .content { padding: 70px var(--spacing-md) var(--spacing-2xl); }
   .grid { grid-template-columns: repeat(2, 1fr); }
-  .card:first-child { grid-column: span 2; grid-row: span 1; }
-  .card:nth-child(2), .card:nth-child(3) { aspect-ratio: 4 / 3; }
+  .card:nth-child(5n+1) { grid-column: span 2; aspect-ratio: 16 / 9; }
   .modal { max-height: 95vh; }
   .modalCover { height: 120px; }
 }

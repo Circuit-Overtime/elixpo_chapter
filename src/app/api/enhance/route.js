@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { POLLI_TOKEN, POLLI_BASE } from '../pollinations';
+import { ENHANCE_COST } from '../../lib/credits';
 
 const SYSTEM_PROMPT = `Instruction Set for AI Image Prompt Engineering:
 Your primary goal is to generate a high-quality, professional-grade image prompt under 1000 tokens. You will adhere to the following principles, derived from research into advanced prompt engineering.
@@ -58,7 +59,7 @@ export async function POST(request) {
     const data = await res.json();
     const enhanced = data.choices?.[0]?.message?.content?.trim() || prompt;
 
-    return NextResponse.json({ success: true, enhanced, original: prompt });
+    return NextResponse.json({ success: true, enhanced, original: prompt, creditsCost: ENHANCE_COST });
   } catch {
     return NextResponse.json({ enhanced: prompt, original: prompt, fallback: true });
   }

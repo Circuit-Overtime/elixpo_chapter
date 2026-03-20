@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { POLLI_TOKEN, POLLI_BASE } from '../../pollinations';
+import { EDIT_COST } from '../../../lib/credits';
 
 export async function POST(request) {
   try {
@@ -49,6 +50,7 @@ export async function POST(request) {
       imageData: imageData ? `data:image/png;base64,${imageData}` : null,
       imageUrl: resultUrl || null,
       model,
+      creditsCost: EDIT_COST,
     });
   } catch (err) {
     return NextResponse.json({ error: err.message || 'Edit failed' }, { status: 500 });

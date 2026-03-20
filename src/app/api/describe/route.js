@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { POLLI_TOKEN, POLLI_BASE } from '../pollinations';
+import { DESCRIBE_COST } from '../../lib/credits';
 
 export async function POST(request) {
   try {
@@ -62,7 +63,7 @@ export async function POST(request) {
       return NextResponse.json({ success: false, description: '', error: 'No description generated' });
     }
 
-    return NextResponse.json({ success: true, description });
+    return NextResponse.json({ success: true, description, creditsCost: DESCRIBE_COST });
   } catch (err) {
     return NextResponse.json({ error: 'Failed to describe image: ' + err.message }, { status: 500 });
   }

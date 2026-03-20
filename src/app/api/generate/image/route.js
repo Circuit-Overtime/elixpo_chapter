@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { POLLI_TOKEN, POLLI_BASE } from '../../pollinations';
+import { getImageCost } from '../../../lib/credits';
 
 export async function POST(request) {
   try {
@@ -7,6 +8,8 @@ export async function POST(request) {
     const { prompt, model = 'flux', width = 1024, height = 576, seed, style, imageUrl, imageUrls } = body;
 
     if (!prompt) return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+
+    const cost = getImageCost(model);
 
     const usedSeed = seed || Math.floor(Math.random() * 2147483647);
 
@@ -60,6 +63,7 @@ export async function POST(request) {
       model,
       width,
       height,
+      creditsCost: cost,
     });
   } catch (err) {
     return NextResponse.json({ error: err.message || 'Generation failed' }, { status: 500 });

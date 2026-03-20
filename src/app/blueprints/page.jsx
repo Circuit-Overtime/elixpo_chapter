@@ -210,7 +210,7 @@ export default function BlueprintsPage() {
               <div className={styles.timelineList}>
                 {generations.map((gen, i) => (
                   <div key={gen.id} className={`${styles.timelineItem} ${i === 0 ? styles.timelineActive : ''}`}>
-                    <img src={gen.imageData} alt={`v${gen.version}`} className={styles.timelineThumb} />
+                    <img src={gen.imageData} alt={`v${gen.version}`} className={styles.timelineThumb} loading="lazy" decoding="async" />
                     <div className={styles.timelineInfo}>
                       <span className={styles.timelineVersion}>v{gen.version}</span>
                       <span className={styles.timelinePrompt}>{gen.prompt}</span>
@@ -256,7 +256,7 @@ export default function BlueprintsPage() {
                 setRefPreview(s.image);
                 setRefImage(null); // URL-based, no file
               }}>
-                <img src={s.image} alt={s.label} />
+                <img src={s.image} alt={s.label} loading="lazy" decoding="async" />
               </button>
             ))}
           </div>
@@ -275,7 +275,7 @@ export default function BlueprintsPage() {
                 className={`${styles.styleCard} ${selectedStyle === s.id ? styles.styleCardActive : ''}`}
                 onClick={() => setSelectedStyle(s.id)}
               >
-                <img src={s.image} alt={s.label} className={styles.styleCardImg} />
+                <img src={s.image} alt={s.label} className={styles.styleCardImg} loading="lazy" decoding="async" />
                 <span className={styles.styleCardLabel}>{s.label}</span>
               </button>
             ))}
@@ -373,7 +373,7 @@ export default function BlueprintsPage() {
 
             <div className={styles.modalHeader}>
               <div className={styles.modalCover}>
-                <img src={selected.cover} alt={selected.title} />
+                <img src={selected.cover} alt={selected.title} loading="lazy" decoding="async" />
                 <div className={styles.modalCoverOverlay}>
                   <span className={styles.modalBadge}>Blueprints</span>
                   <h2 className={styles.modalTitle}>{selected.title}</h2>

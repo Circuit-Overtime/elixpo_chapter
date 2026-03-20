@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { POLLI_TOKEN, POLLI_BASE } from '../../pollinations';
+import { getVideoCost } from '../../../lib/credits';
 
 export async function POST(request) {
   try {
@@ -46,6 +47,7 @@ export async function POST(request) {
       videoData: `data:video/mp4;base64,${base64Video}`,
       model,
       duration,
+      creditsCost: getVideoCost(model),
     });
   } catch (err) {
     return NextResponse.json({ error: err.message || 'Video generation failed' }, { status: 500 });

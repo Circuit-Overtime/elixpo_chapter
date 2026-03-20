@@ -117,8 +117,8 @@ export default function GeneratePage() {
   const selectedDuration = DURATIONS.find((d) => d.id === duration);
 
   const getRefImageLimit = () => {
-    const tier = getUserTier();
-    if (tier === 'guest' || !signedIn) return 1;
+    if (!signedIn) return 1;
+    const tier = credits?.tier || 'free';
     if (tier === 'free') return 2;
     return 5;
   };
@@ -285,29 +285,21 @@ export default function GeneratePage() {
   const handleGenerate = async () => {
     if (!prompt.trim() || generating) return;
 
-    const genType = mode === 'video' ? 'videos' : 'images';
-
-    const check = await checkAndIncrement(genType);
+    const genType = mode === 'video' ? 'video' : 'image';
+    const genModel = mode === 'video' ? videoModel : model;
+    const check = await spendCredits(genType, genModel);
     if (!check.allowed) {
-      setLimitWarning(check.error || `Daily ${genType} limit reached. Sign in or upgrade for more.`);
-      return;
-    }
-
-    if (!signedIn && !canGuestGenerate(genType)) {
-      setLimitWarning(
-        mode === 'video'
-          ? 'Guest video limit reached. Sign in for unlimited access.'
-          : 'Guest image limit reached. Sign in for unlimited access.'
-      );
+      setLimitWarning(check.error || 'Not enough credits.');
       return;
     }
 
     setGenerating(true);
     setLimitWarning('');
 
-    const sessionId = signedIn ? crypto.randomUUID() : getGuestSessionId();
+    // Refresh credit balance after spending
+    fetchCredits().then((data) => { if (data) setCredits(data); });
 
-    if (!signedIn) incrementGuestUsage(genType);
+    const sessionId = signedIn ? crypto.randomUUID() : getGuestSessionId();
     const { w, h } = selectedAspect;
 
     let imageUrls = [];
@@ -654,17 +646,16 @@ export default function GeneratePage() {
             </div>
           </div>
 
-          {/* Usage counter for guests */}
-          {!signedIn && (
-            <div className={styles.usageBar}>
-              <span className={styles.usageLabel}>
-                {mode === 'video'
-                  ? `${vidRemaining} video generation${vidRemaining !== 1 ? 's' : ''} remaining`
-                  : `${imgRemaining} image generation${imgRemaining !== 1 ? 's' : ''} remaining`}
-              </span>
-              <a href={getSignInUrl()} className={styles.usageLink}>Sign in for unlimited</a>
-            </div>
-          )}
+          {/* Credit cost display */}
+          <div className={styles.usageBar}>
+            <span className={styles.usageLabel}>
+              Cost: {currentCost} credit{currentCost !== 1 ? 's' : ''}
+              {credits ? ` — ${credits.credits - (credits.creditsUsed || 0)} credits remaining` : ''}
+            </span>
+            {!signedIn && (
+              <a href={getSignInUrl()} className={styles.usageLink}>Sign in for more credits</a>
+            )}
+          </div>
 
           {/* Limit warning */}
           {limitWarning && (
