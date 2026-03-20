@@ -110,10 +110,10 @@ export default async function HomePage({ params }) {
                   {home.websiteSection.designedBy}
                 </p>
               </div>
-              <div className="slide2 items-center flex-col">
+              <div className="slide2 items-center flex-col w-full overflow-hidden">
                 <div className="slide2text1 mt-3 text-2xl sm:text-3xl md:text-4xl lg:text-[5em]">Future Plans</div>
                 <div className="slide2description">
-                  <p className="webDescription2 relative flex text-[1.3em] sm:text-sm mt-3 md:text-base lg:text-[1.5em] text-left w-full sm:w-[350px] md:w-[400px] whitespace-normal break-words h-auto min-h-[50px]">
+                  <p className="webDescription2 relative flex text-[1.3em] sm:text-sm mt-3 md:text-base lg:text-[1.5em] text-left w-full whitespace-normal break-words h-auto min-h-[50px]">
                     {home.websiteSection.futurePlans}
                   </p>
                 </div>
@@ -124,7 +124,7 @@ export default async function HomePage({ params }) {
               style={{ backgroundImage: `url(${home.websiteSection.images.humanThink})` }}
             />
           </div>
-          <div className="webCol2 w-full lg:w-[30%] flex mt-2 flex-col items-center gap-5 p-2 sm:p-3 md:p-4">
+          <div className="webCol2 w-full lg:w-[30%] flex mt-2 flex-col items-center justify-between gap-5 p-2 sm:p-3 md:p-4">
             <div className="webCol2text1 text-left w-full">
               <div className="relative text-[#1B1B19] text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-[4em] font-extrabold line-through">
                 Wasting Time
@@ -137,14 +137,14 @@ export default async function HomePage({ params }) {
               <p className="webDescription3 relative flex text-xs sm:text-sm md:text-base lg:text-lg xl:text-[1.8em] text-left w-full sm:w-[300px] md:w-[350px] whitespace-normal break-words h-auto min-h-[30px] lg:px-[10px]">
                 {home.websiteSection.codeStory}
               </p>
-              <a
-                href={`/${person}/projects`}
-                id="projectsRedirect"
-                className="visitCircle w-full sm:w-[300px] md:w-[350px] h-[80px] sm:h-[100px] text-lg sm:text-xl md:text-2xl lg:text-[3em] border-2 border-[#222] rounded-full mt-10 flex justify-center items-center cursor-pointer transition-all duration-300 hover:bg-[#1B1B19] hover:text-[#E2D9C8] hover:scale-105 mx-auto lg:ml-[20px]"
-              >
-                Visit Now
-              </a>
             </div>
+            <a
+              href={`/${person}/projects`}
+              id="projectsRedirect"
+              className="visitCircle w-full sm:w-[300px] md:w-[350px] h-[80px] sm:h-[100px] text-lg sm:text-xl md:text-2xl lg:text-[3em] border-2 border-[#222] rounded-full mt-auto flex justify-center items-center cursor-pointer transition-all duration-300 hover:bg-[#1B1B19] hover:text-[#E2D9C8] hover:scale-105 mx-auto lg:ml-[20px]"
+            >
+              Visit Now
+            </a>
           </div>
         </div>
       </section>
