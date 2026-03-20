@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar/Navbar';
-import { isSignedIn, canGuestGenerate, getGuestRemaining, incrementGuestUsage, getGuestSessionId, getSignInUrl, checkAndIncrement, getUserTier } from '../lib/auth';
+import { isSignedIn, getGuestSessionId, getSignInUrl, spendCredits, fetchCredits } from '../lib/auth';
+import { getImageCost, getVideoCost } from '../lib/credits';
 import styles from './Generate.module.css';
 
 const MODELS = [
@@ -100,9 +101,14 @@ export default function GeneratePage() {
   const optionsBarRef = useRef(null);
   const pendingDescribe = useRef(false);
 
-  const imgRemaining = getGuestRemaining('images');
-  const vidRemaining = getGuestRemaining('videos');
   const signedIn = isSignedIn();
+  const [credits, setCredits] = useState(null);
+
+  const currentCost = mode === 'video' ? getVideoCost(videoModel) : getImageCost(model);
+
+  useEffect(() => {
+    fetchCredits().then((data) => { if (data) setCredits(data); });
+  }, []);
 
   const selectedModel = MODELS.find((m) => m.id === model);
   const selectedVideoModel = VIDEO_MODELS.find((m) => m.id === videoModel);
