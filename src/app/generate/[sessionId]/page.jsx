@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, use, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar/Navbar';
 import { saveToLibrary } from '../../lib/library';
+import { isSignedIn, getUser } from '../../lib/auth';
 import styles from './Session.module.css';
 
 const IMAGE_MODELS = [
@@ -68,6 +69,35 @@ export default function SessionPage({ params }) {
   const imgRef = useRef(null);
   const isDrawing = useRef(false);
 
+  // Determine ref image limit by tier
+  const getRefImageLimit = () => {
+    if (!isSignedIn()) return 1; // guest
+    return 2; // free and above
+  };
+
+  // Clipboard paste → reference image
+  useEffect(() => {
+    const handlePaste = (e) => {
+      if (remixMode) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) return;
+          if (newRefImage && getRefImageLimit() <= 1) return; // guest limit
+          const url = URL.createObjectURL(file);
+          setNewRefImage(url);
+          setNewRefPreview(url);
+          return;
+        }
+      }
+    };
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [remixMode, newRefImage]);
+
   // Close more menu on outside click
   useEffect(() => {
     const handler = (e) => {
@@ -76,6 +106,9 @@ export default function SessionPage({ params }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Read query params for property overrides
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (hasGenerated.current) return;
@@ -89,6 +122,16 @@ export default function SessionPage({ params }) {
     }
 
     const p = JSON.parse(stored);
+
+    // Query params override stored values
+    if (searchParams.get('model')) p.model = searchParams.get('model');
+    if (searchParams.get('width')) p.width = Number(searchParams.get('width'));
+    if (searchParams.get('height')) p.height = Number(searchParams.get('height'));
+    if (searchParams.get('mode')) p.mode = searchParams.get('mode');
+    if (searchParams.get('duration')) p.duration = Number(searchParams.get('duration'));
+    if (searchParams.get('seed')) p.seed = Number(searchParams.get('seed'));
+    if (searchParams.get('image')) p.imageUrl = searchParams.get('image');
+
     setPrompt(p.prompt);
     setModel(p.model);
     setWidth(p.width);
@@ -267,6 +310,15 @@ export default function SessionPage({ params }) {
 
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(prompt);
+  };
+
+  const handleCreateVideo = () => {
+    if (!resultSrc) return;
+    const id = crypto.randomUUID();
+    sessionStorage.setItem(`gen_${id}`, JSON.stringify({
+      prompt, model: 'wan', width, height, mode: 'video', duration: 5, imageUrl: resultSrc, timestamp: Date.now(),
+    }));
+    router.push(`/generate/${id}`);
   };
 
   const handleKeyDown = (e) => {
@@ -508,13 +560,19 @@ export default function SessionPage({ params }) {
                   onChange={handleRefImage}
                   style={{ display: 'none' }}
                 />
-                <button className={styles.attachBtn} onClick={() => refInputRef.current?.click()} title="Attach reference image">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <path d="M21 15l-5-5L5 21" />
-                  </svg>
-                </button>
+                <div className={styles.attachWrap}>
+                  <button className={styles.attachBtn} onClick={() => refInputRef.current?.click()}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="M21 15l-5-5L5 21" />
+                    </svg>
+                  </button>
+                  <div className={styles.attachTooltip}>
+                    Attach reference image
+                    <span className={styles.tooltipHint}>or paste from clipboard</span>
+                  </div>
+                </div>
                 <textarea
                   className={styles.promptInput}
                   placeholder="Type a prompt..."
@@ -650,13 +708,11 @@ export default function SessionPage({ params }) {
                     Remove Background
                     <span className={styles.comingSoon}>Soon</span>
                   </button>
-                  <button className={styles.actionBtn} disabled>
+                  <button className={styles.actionBtn} onClick={handleCreateVideo} disabled={!resultSrc || mode === 'video'}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                      <polygon points="5 3 19 12 5 21 5 3" />
                     </svg>
-                    Edit with Canvas
-                    <span className={styles.comingSoon}>Soon</span>
+                    Create Video
                   </button>
                   <button className={styles.actionBtn} onClick={handleDownload} disabled={!resultSrc}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
