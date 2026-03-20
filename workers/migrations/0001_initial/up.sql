@@ -1,5 +1,6 @@
 -- =============================================================================
--- Elixpo Art — D1 Database Schema
+-- Elixpo Art — Initial Schema
+-- Migration: 0001_initial
 -- =============================================================================
 
 -- Pricing plans available on the platform
@@ -76,9 +77,7 @@ CREATE INDEX IF NOT EXISTS idx_creations_status ON creations(status);
 CREATE INDEX IF NOT EXISTS idx_creations_created ON creations(created_at);
 CREATE INDEX IF NOT EXISTS idx_credit_tx_user ON credit_transactions(user_id);
 
--- =============================================================================
 -- Seed pricing plans
--- =============================================================================
 -- Guest (unauthenticated): 10 images, 2 videos — enforced in app code, not in DB
 --
 -- Rate limits per plan:
