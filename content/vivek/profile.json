@@ -1,0 +1,12 @@
+{
+  "name": "Vivek Yadav",
+  "siteName": "Vivek",
+  "siteDescription": "Frontend Developer & AI Integrator",
+  "location": "West Bengal, India",
+  "email": "vivek@elixpo.com",
+  "socials": [
+    { "platform": "github", "url": "https://github.com/ez-vivek", "icon": "logo-github" },
+    { "platform": "linkedin", "url": "https://linkedin.com/in/ezmkdir", "icon": "logo-linkedin" }
+  ],
+  "menuItems": ["Home", "About", "Projects", "Publications", "Contact"]
+}

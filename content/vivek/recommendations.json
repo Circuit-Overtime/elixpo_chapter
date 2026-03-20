@@ -1,0 +1,26 @@
+[
+  {
+    "content": "Vivek is the kind of developer who thrives under pressure. He has debugged critical production issues, optimized performance bottlenecks, and consistently delivers clean, efficient code. Headphones on, music playing, and focus locked in — that's his workflow.",
+    "name": "Senior Engineer",
+    "designation": "Full Stack Developer",
+    "image": "https://img.icons8.com/color/96/000000/laptop.png"
+  },
+  {
+    "content": "Working with Vivek means working with someone who is deeply focused and technically sharp. He approaches every problem methodically, writes maintainable code, and keeps the team aligned. Music in the background, code in the foreground — always in the zone.",
+    "name": "Team Lead",
+    "designation": "Software Engineer",
+    "image": "https://img.icons8.com/color/96/000000/code.png"
+  },
+  {
+    "content": "Vivek's coding style is clean, structured, and performance-driven. His repositories reflect strong fundamentals and practical problem-solving skills. Whether it's frontend or backend, he builds with precision and consistency.",
+    "name": "Peer Developer",
+    "designation": "Open Source Contributor",
+    "image": "https://img.icons8.com/color/96/000000/github.png"
+  },
+  {
+    "content": "Vivek approaches development with discipline and intensity. He treats every bug as a challenge to solve and every feature as an opportunity to improve system quality. Focus, logic, and good music — that's his environment.",
+    "name": "Tech Reviewer",
+    "designation": "Code Reviewer",
+    "image": "https://img.icons8.com/color/96/000000/settings.png"
+  }
+]
