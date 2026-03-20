@@ -60,6 +60,106 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
+// ─── Daily usage tracking (in-memory, resets at midnight UTC) ───
+const TIER_LIMITS = {
+  guest:       { images: 10, edits: 3, videos: 2 },
+  free:        { images: 50, edits: 15, videos: 5 },
+  atelier:     { images: 200, edits: 60, videos: 20 },
+  masterpiece: { images: 500, edits: 150, videos: 50 },
+};
+
+// Map: key (IP or userId) → { images, edits, videos, date }
+const usageStore = new Map();
+
+function getTodayUTC() {
+  return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
+
+function getUsage(key) {
+  const today = getTodayUTC();
+  const entry = usageStore.get(key);
+  if (!entry || entry.date !== today) {
+    const fresh = { images: 0, edits: 0, videos: 0, date: today };
+    usageStore.set(key, fresh);
+    return fresh;
+  }
+  return entry;
+}
+
+function resolveKey(req) {
+  // If Authorization header present, try to decode user ID
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith('Bearer ') && req.body?.userId) {
+    return { key: `user:${req.body.userId}`, tier: req.body.tier || 'free' };
+  }
+  // Fallback to IP
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+  return { key: `ip:${ip}`, tier: 'guest' };
+}
+
+// Check usage — GET /usage?userId=&tier=
+app.get('/usage', (req, res) => {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+  const userId = req.query.userId;
+  const tier = req.query.tier || 'guest';
+  const key = userId ? `user:${userId}` : `ip:${ip}`;
+  const usage = getUsage(key);
+  const limits = TIER_LIMITS[tier] || TIER_LIMITS.guest;
+  res.json({
+    usage: { images: usage.images, edits: usage.edits, videos: usage.videos },
+    limits,
+    tier,
+    remaining: {
+      images: Math.max(0, limits.images - usage.images),
+      edits: Math.max(0, limits.edits - usage.edits),
+      videos: Math.max(0, limits.videos - usage.videos),
+    },
+  });
+});
+
+// Check + increment usage — POST /usage/increment
+app.post('/usage/increment', (req, res) => {
+  const { type } = req.body; // 'images' | 'edits' | 'videos'
+  if (!type || !['images', 'edits', 'videos'].includes(type)) {
+    return res.status(400).json({ error: 'Invalid type. Must be images, edits, or videos.' });
+  }
+  const { key, tier } = resolveKey(req);
+  const usage = getUsage(key);
+  const limits = TIER_LIMITS[tier] || TIER_LIMITS.guest;
+
+  if (usage[type] >= limits[type]) {
+    return res.status(429).json({
+      error: `Daily ${type} limit reached (${limits[type]}).`,
+      usage: { images: usage.images, edits: usage.edits, videos: usage.videos },
+      limits,
+      tier,
+    });
+  }
+
+  usage[type]++;
+  usageStore.set(key, usage);
+
+  res.json({
+    success: true,
+    usage: { images: usage.images, edits: usage.edits, videos: usage.videos },
+    limits,
+    remaining: {
+      images: Math.max(0, limits.images - usage.images),
+      edits: Math.max(0, limits.edits - usage.edits),
+      videos: Math.max(0, limits.videos - usage.videos),
+    },
+    tier,
+  });
+});
+
+// Clean up stale entries every hour
+setInterval(() => {
+  const today = getTodayUTC();
+  for (const [key, entry] of usageStore) {
+    if (entry.date !== today) usageStore.delete(key);
+  }
+}, 60 * 60 * 1000);
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, '/tmp');
