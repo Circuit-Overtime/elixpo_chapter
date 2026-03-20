@@ -1,6 +1,7 @@
 import { getPersonContent } from "@/lib/content";
 import ContactBanner from "@/components/ContactBanner";
 import ComingSoon from "@/components/ComingSoon";
+import DragScrollContainer from "@/components/DragScrollContainer";
 
 export async function generateMetadata({ params }) {
   const { person } = await params;
@@ -49,7 +50,7 @@ export default async function AboutPage({ params }) {
 
       {/* Work Experience Section */}
       {work?.length > 0 ? (
-        <section className="workExperience relative h-auto min-h-[350px] sm:min-h-[500px] md:min-h-[600px] mb-[20px] px-3 sm:px-6 md:px-[40px] box-border py-[20px] sm:py-[40px] gap-[15px] sm:gap-[20px] overflow-x-auto overflow-y-hidden flex-nowrap flex flex-row mt-10 sm:mt-20 select-none cursor-grabbing">
+        <DragScrollContainer className="workExperience relative h-auto min-h-[350px] sm:min-h-[500px] md:min-h-[600px] mb-[20px] px-3 sm:px-6 md:px-[40px] box-border py-[20px] sm:py-[40px] gap-[15px] sm:gap-[20px] overflow-x-auto overflow-y-hidden flex-nowrap flex flex-row mt-10 sm:mt-20 select-none">
           {work.map((exp, index) => (
             <div
               key={index}
@@ -70,7 +71,7 @@ export default async function AboutPage({ params }) {
               </div>
             </div>
           ))}
-        </section>
+        </DragScrollContainer>
       ) : (
         <ComingSoon title="Work Experience Coming Soon" />
       )}
@@ -138,7 +139,7 @@ export default async function AboutPage({ params }) {
 
       {/* Spotlight */}
       {spotlight?.length > 0 ? (
-        <section className="spotlight relative h-auto min-h-[280px] sm:min-h-[350px] mb-[20px] py-[20px] sm:py-[40px] gap-[15px] sm:gap-[20px] overflow-x-auto overflow-y-hidden flex-nowrap flex flex-row select-none cursor-grabbing">
+        <DragScrollContainer className="spotlight relative h-auto min-h-[280px] sm:min-h-[350px] mb-[20px] py-[20px] sm:py-[40px] gap-[15px] sm:gap-[20px] overflow-x-auto overflow-y-hidden flex-nowrap flex flex-row select-none">
           {spotlight.map((news, index) => (
             <div
               key={index}
@@ -156,7 +157,7 @@ export default async function AboutPage({ params }) {
               </p>
             </div>
           ))}
-        </section>
+        </DragScrollContainer>
       ) : (
         <ComingSoon title="Spotlight Coming Soon" />
       )}

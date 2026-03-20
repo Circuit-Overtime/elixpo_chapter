@@ -23,7 +23,7 @@ export default async function ProjectsPage({ params }) {
     <>
       {/* Header */}
       <div className="headerTextContainer w-full p-2 flex flex-col sm:flex-row h-auto sm:h-[200px] gap-4 sm:gap-10">
-        <div className="projectsHeaderText text-2xl sm:text-6xl md:text-[8em] lg:text-[10em] w-full sm:w-1/2 flex justify-center items-center bg-[#1B1B19] text-center opacity-90 select-none rounded-[10px] sm:rounded-[15px] tracking-[3px] sm:tracking-[5px] h-[70px] sm:h-full">
+        <div className="projectsHeaderText text-2xl sm:text-6xl md:text-[8em] lg:text-[9em] w-full sm:w-1/2 flex justify-center items-center bg-[#1B1B19] text-center opacity-90 select-none rounded-[10px] sm:rounded-[15px] tracking-[3px] sm:tracking-[5px] h-[70px] sm:h-full">
           <p className="text-[#E2D9C8]">{projectsData.heading}</p>
         </div>
         <p className="w-full sm:w-1/2 relative flex-wrap break-words text-[#111] font-bold text-sm sm:text-base md:text-[1.4em]">
