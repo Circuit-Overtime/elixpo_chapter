@@ -4,12 +4,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 const productLinks = [
-  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Home', href: '/dashboard' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'API Docs', href: '/docs' },
   { label: 'Status', href: 'https://status.elixpo.com' },
 ];
-
 const companyLinks = [
   { label: 'About Elixpo', href: 'https://elixpo.com' },
   { label: 'Blog', href: 'https://blog.elixpo.com' },
@@ -55,11 +54,11 @@ const socialLinks = [
 export default function Footer() {
   return (
     <footer className="relative z-10 border-t border-border-light">
-      <div className="max-w-7xl mx-auto px-8 pt-14 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-14 pb-8">
         {/* Main grid */}
-        <div className="grid grid-cols-12 gap-8 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8 mb-12">
           {/* Brand col */}
-          <div className="col-span-4">
+          <div className="sm:col-span-2 lg:col-span-4">
             <Link href="/" className="flex items-center gap-2.5 no-underline mb-4">
               <Image src="/logo.png" alt="ElixpoURL" width={28} height={28} className="rounded-lg" />
               <span className="text-lg font-display font-bold text-text-primary">
@@ -89,7 +88,7 @@ export default function Footer() {
           </div>
 
           {/* Product col */}
-          <div className="col-span-2 col-start-6">
+          <div className="lg:col-span-2 lg:col-start-6">
             <h4 className="text-[0.65rem] text-text-disabled uppercase tracking-widest font-semibold mb-4">
               Product
             </h4>
@@ -108,7 +107,7 @@ export default function Footer() {
           </div>
 
           {/* Company col */}
-          <div className="col-span-2">
+          <div className="lg:col-span-2">
             <h4 className="text-[0.65rem] text-text-disabled uppercase tracking-widest font-semibold mb-4">
               Company
             </h4>
@@ -129,7 +128,7 @@ export default function Footer() {
           </div>
 
           {/* Legal col */}
-          <div className="col-span-2">
+          <div className="lg:col-span-2">
             <h4 className="text-[0.65rem] text-text-disabled uppercase tracking-widest font-semibold mb-4">
               Legal
             </h4>
@@ -150,7 +149,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div
-          className="flex items-center justify-between pt-6"
+          className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6"
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
         >
           <p className="text-xs text-text-disabled">

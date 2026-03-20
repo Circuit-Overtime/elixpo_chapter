@@ -53,12 +53,12 @@ export default async function UrlDetailPage({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <div className="min-w-0">
           <h1 className="text-2xl font-display font-bold text-text-primary">/{code}</h1>
           <p className="text-sm text-text-secondary mt-1 max-w-lg truncate">{url.original_url}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <button
             onClick={() => {}}
             className="btn-glass text-sm"
@@ -71,7 +71,7 @@ export default async function UrlDetailPage({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="stat-card">
           <div className="text-[0.7rem] text-text-disabled uppercase tracking-wider">Total Clicks</div>
           <div className="text-2xl font-bold mt-1">{url.clicks}</div>
@@ -108,7 +108,7 @@ export default async function UrlDetailPage({
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="glass-card p-5">
               <h2 className="text-sm font-semibold mb-3">Countries</h2>
               {analyticsData.countries && analyticsData.countries.length > 0 ? (

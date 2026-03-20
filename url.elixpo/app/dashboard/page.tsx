@@ -37,7 +37,7 @@ export default async function DashboardPage({
       <h1 className="text-2xl font-display font-bold text-text-primary mb-6">Dashboard</h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="stat-card">
           <div className="text-[0.7rem] text-text-disabled uppercase tracking-wider">My URLs</div>
           <div className="text-2xl font-bold mt-1">
@@ -91,7 +91,8 @@ export default async function DashboardPage({
           <h2 className="text-sm font-semibold">Top URLs</h2>
           <Link href="/dashboard/urls" className="btn-glass text-xs no-underline">View All</Link>
         </div>
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[500px]">
           <thead>
             <tr>
               <th className="text-left text-[0.7rem] text-text-disabled uppercase tracking-wider pb-3">Code</th>
@@ -123,6 +124,7 @@ export default async function DashboardPage({
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
