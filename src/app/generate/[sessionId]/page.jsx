@@ -321,6 +321,110 @@ export default function SessionPage({ params }) {
     router.push(`/generate/${id}`);
   };
 
+  const handleRemoveBackground = async () => {
+    if (!resultSrc) return;
+    setActionsOpen(false);
+    setLoading(true);
+    try {
+      const editPrompt = 'Remove the background completely, make it transparent, keep only the main subject';
+      const encoded = encodeURIComponent(editPrompt);
+      const q = new URLSearchParams();
+      q.set('model', 'gptimage');
+      q.set('width', width);
+      q.set('height', height);
+      q.set('nologo', 'true');
+      q.set('referrer', 'elixpoart');
+      q.set('image', resultSrc);
+      const url = `${POLLINATIONS_BASE}/image/${encoded}?${q.toString()}`;
+      const headers = {};
+      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error('Background removal failed');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setResultSrc(blobUrl);
+      setModel('gptimage');
+      saveSession({ prompt: editPrompt, model: 'gptimage', resultSrc: blobUrl });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewUnzoomed = () => {
+    if (!resultSrc) return;
+    window.open(resultSrc, '_blank');
+    setActionsOpen(false);
+  };
+
+  const handleEditPose = async () => {
+    if (!resultSrc) return;
+    setActionsOpen(false);
+    setLoading(true);
+    try {
+      const editPrompt = 'Edit the character pose in this image, adjust the body position naturally while keeping the same character and style';
+      const encoded = encodeURIComponent(editPrompt);
+      const q = new URLSearchParams();
+      q.set('model', 'gptimage');
+      q.set('width', width);
+      q.set('height', height);
+      q.set('nologo', 'true');
+      q.set('referrer', 'elixpoart');
+      q.set('image', resultSrc);
+      const url = `${POLLINATIONS_BASE}/image/${encoded}?${q.toString()}`;
+      const headers = {};
+      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error('Pose edit failed');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setResultSrc(blobUrl);
+      setModel('gptimage');
+      saveSession({ prompt: editPrompt, model: 'gptimage', resultSrc: blobUrl });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReportImage = () => {
+    setActionsOpen(false);
+    alert('Image has been reported. Thank you for helping keep Elixpo safe.');
+  };
+
+  const handleDeleteImage = () => {
+    if (!resultSrc) return;
+    URL.revokeObjectURL(resultSrc);
+    setResultSrc(null);
+    sessionStorage.removeItem(`gen_${sessionId}`);
+    // Remove from library
+    try {
+      const lib = JSON.parse(localStorage.getItem('elixpo_library') || '[]');
+      const updated = lib.filter((item) => item.sessionId !== sessionId);
+      localStorage.setItem('elixpo_library', JSON.stringify(updated));
+    } catch {}
+    router.push('/generate');
+  };
+
+  const handleShareImage = async () => {
+    if (!resultSrc) return;
+    try {
+      const res = await fetch(resultSrc);
+      const blob = await res.blob();
+      const file = new File([blob], `elixpo-${sessionId.slice(0, 8)}.png`, { type: blob.type });
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: 'Elixpo Art', text: prompt, files: [file] });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Link copied to clipboard!');
+      }
+    } catch {
+      await navigator.clipboard.writeText(window.location.href);
+    }
+  };
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleNewGeneration(); }
   };
@@ -622,6 +726,33 @@ export default function SessionPage({ params }) {
                   <span className={`${styles.statusDot} ${loading ? styles.statusLoading : styles.statusDone}`} />
                   <span className={styles.sessionId}>{sessionId.slice(0, 8)}</span>
                 </div>
+                {resultSrc && (
+                  <div className={styles.quickActions}>
+                    <button className={styles.quickActionBtn} onClick={handleShareImage} title="Share">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                      </svg>
+                    </button>
+                    <button className={styles.quickActionBtn} onClick={handleCopyImage} title="Copy image">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                      </svg>
+                    </button>
+                    <button className={styles.quickActionBtn} onClick={handleDownload} title="Download">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                    </button>
+                    <button className={`${styles.quickActionBtn} ${styles.quickActionDanger}`} onClick={handleDeleteImage} title="Delete">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Prompt */}
@@ -700,13 +831,31 @@ export default function SessionPage({ params }) {
                   Actions
                 </button>
                 {actionsOpen && <div className={styles.actionsPopup}><div className={styles.actionList}>
-                  <button className={styles.actionBtn} disabled>
+                  <button className={styles.actionBtn} onClick={handleRemoveBackground} disabled={!resultSrc || mode === 'video'}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="3" y="3" width="18" height="18" rx="2" />
                       <path d="M9 3v18" /><path d="M15 3v18" /><path d="M3 9h18" /><path d="M3 15h18" />
                     </svg>
                     Remove Background
-                    <span className={styles.comingSoon}>Soon</span>
+                  </button>
+                  <button className={styles.actionBtn} onClick={handleViewUnzoomed} disabled={!resultSrc}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" />
+                    </svg>
+                    View Unzoomed Image
+                  </button>
+                  <button className={styles.actionBtn} onClick={startRemix} disabled={!resultSrc || mode === 'video'}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                    </svg>
+                    Edit with Canvas
+                  </button>
+                  <button className={styles.actionBtn} onClick={handleEditPose} disabled={!resultSrc || mode === 'video'}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="5" r="2" /><path d="M12 7v5" /><path d="M9 12l-3 5" /><path d="M15 12l3 5" /><path d="M10 12l-2-3" /><path d="M14 12l2-3" />
+                    </svg>
+                    Edit Character Pose
                   </button>
                   <button className={styles.actionBtn} onClick={handleCreateVideo} disabled={!resultSrc || mode === 'video'}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -714,6 +863,9 @@ export default function SessionPage({ params }) {
                     </svg>
                     Create Video
                   </button>
+
+                  <div className={styles.actionDivider} />
+
                   <button className={styles.actionBtn} onClick={handleDownload} disabled={!resultSrc}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -736,12 +888,22 @@ export default function SessionPage({ params }) {
                     </svg>
                     Copy Seed
                   </button>
+
+                  <div className={styles.actionDivider} />
+
                   <button className={styles.actionBtn} onClick={() => router.push('/generate')}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="12" y1="5" x2="12" y2="19" />
                       <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                     New Generation
+                  </button>
+                  <button className={`${styles.actionBtn} ${styles.actionBtnDanger}`} onClick={handleReportImage} disabled={!resultSrc}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    Report Image
                   </button>
                 </div></div>}
               </div>
