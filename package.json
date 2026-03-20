@@ -17,20 +17,7 @@
     "type": "git",
     "url": "https://github.com/Circuit-Overtime/elixpo-art"
   },
-  "author": "Ayushman Bhattacharya <ayushbhatt633@gmail.com>",
-  "contributors": [
-    "Vivek Yadav <vivektalent200@gmail.com>",
-    "Abhranil SinghaRoy <abhranilsingharoy@gmail.com>",
-    "Deep Saha <ideepsaha25@gmail.com>",
-    "Dipanjan Sadhukhan <dipanjansadhukhan123@gmail.com>",
-    "Ishita Majumdar <majumdar.ishita2003@gmail.com>",
-    "AsHim Shrestha <ashimsth89@gmail.com>",
-    "Sahil Shingate <sahilshingate0@gmail.com>",
-    "Mahak Gupta <mahakgupta10a24@gmail.com>",
-    "Suraj Patil",
-    "NayandG07",
-    "PREETCHAUHAN2005"
-  ],
+  "author": "Ayushman Bhattacharya <ayushman@myceli.ai.com>",
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
