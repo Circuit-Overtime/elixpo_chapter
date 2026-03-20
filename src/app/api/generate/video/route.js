@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-
-const POLLI_TOKEN = process.env.POLLINATIONS_API_TOKEN || process.env.NEXT_PUBLIC_POLLINATIONS_API_IMAGE;
-const POLLI_BASE = 'https://gen.pollinations.ai';
+import { POLLI_TOKEN, POLLI_BASE } from '../../pollinations';
 
 export async function POST(request) {
   try {

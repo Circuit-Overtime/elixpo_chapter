@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-
-const POLLI_TOKEN = process.env.POLLINATIONS_API_TOKEN || process.env.NEXT_PUBLIC_POLLINATIONS_API_IMAGE;
+import { POLLI_TOKEN, POLLI_BASE } from '../pollinations';
 
 const SYSTEM_PROMPT = `Instruction Set for AI Image Prompt Engineering:
 Your primary goal is to generate a high-quality, professional-grade image prompt under 1000 tokens. You will adhere to the following principles, derived from research into advanced prompt engineering.
@@ -38,7 +37,7 @@ export async function POST(request) {
     const headers = { 'Content-Type': 'application/json' };
     if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
 
-    const res = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+    const res = await fetch(`${POLLI_BASE}/v1/chat/completions`, {
       method: 'POST',
       headers,
       body: JSON.stringify({

@@ -27,7 +27,7 @@ export async function POST(request) {
      };
 
 
-    const res = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+    const res = await fetch(`${POLLI_BASE}/v1/chat/completions`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
