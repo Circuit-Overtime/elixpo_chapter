@@ -1,0 +1,49 @@
+{
+  "brand": {
+    "name": "Elixpo",
+    "tagline": "Orchestrating your projects, seamlessly."
+  },
+  "columns": [
+    {
+      "title": "Product",
+      "links": [
+        { "label": "Features", "href": "/features" },
+        { "label": "Pricing", "href": "/pricing" },
+        { "label": "Integrations", "href": "/integrations" },
+        { "label": "Changelog", "href": "/changelog" }
+      ]
+    },
+    {
+      "title": "Company",
+      "links": [
+        { "label": "About", "href": "/about" },
+        { "label": "Blog", "href": "/blog" },
+        { "label": "Careers", "href": "/careers" },
+        { "label": "Contact", "href": "/contact" }
+      ]
+    },
+    {
+      "title": "Resources",
+      "links": [
+        { "label": "Documentation", "href": "/docs" },
+        { "label": "Help Center", "href": "/help" },
+        { "label": "Community", "href": "/community" },
+        { "label": "API Reference", "href": "/api" }
+      ]
+    },
+    {
+      "title": "Legal",
+      "links": [
+        { "label": "Privacy Policy", "href": "/privacy" },
+        { "label": "Terms of Service", "href": "/terms" },
+        { "label": "Cookie Policy", "href": "/cookies" }
+      ]
+    }
+  ],
+  "socials": [
+    { "platform": "twitter", "href": "https://twitter.com/elixpo" },
+    { "platform": "github", "href": "https://github.com/elixpo" },
+    { "platform": "linkedin", "href": "https://linkedin.com/company/elixpo" }
+  ],
+  "copyright": "2026 Elixpo. All rights reserved."
+}

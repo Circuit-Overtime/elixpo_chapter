@@ -1,0 +1,12 @@
+{
+  "headline": "Ready to orchestrate your projects?",
+  "subheadline": "Join thousands of teams already using Elixpo to streamline their workflows.",
+  "primaryCta": {
+    "label": "Get Started Free",
+    "href": "/signup"
+  },
+  "secondaryCta": {
+    "label": "Talk to Sales",
+    "href": "/contact"
+  }
+}

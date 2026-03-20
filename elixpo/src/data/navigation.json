@@ -1,0 +1,16 @@
+{
+  "brand": {
+    "name": "Elixpo",
+    "logo": "/images/icons/logo.svg"
+  },
+  "links": [
+    { "label": "Products", "href": "/products" },
+    { "label": "Features", "href": "/features" },
+    { "label": "Pricing", "href": "/pricing" },
+    { "label": "Resources", "href": "/resources" }
+  ],
+  "cta": {
+    "label": "Request a Demo",
+    "href": "/demo"
+  }
+}
