@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar/Navbar';
-import { isSignedIn, getUser, clearAuth } from '../lib/auth';
+import GradientBlobs from '../components/shared/GradientBlobs';
+import { isSignedIn, getUser, clearAuth, getGuestUsage } from '../lib/auth';
+import { planLimits } from '../lib/theme';
 import styles from './Settings.module.css';
 
 const INTERESTS = [
@@ -12,22 +15,87 @@ const INTERESTS = [
   'Product Design', 'Stock Images', 'Video Games', 'Other',
 ];
 
+const PLAN_LABELS = {
+  free: 'Free',
+  atelier: 'Atelier',
+  masterpiece: 'Masterpiece',
+};
+
+function UsageBar({ label, used, total, color = 'var(--gradient-primary)', icon }) {
+  const pct = total > 0 ? Math.min((used / total) * 100, 100) : 0;
+  const isNearLimit = pct >= 80;
+  const isAtLimit = pct >= 100;
+
+  return (
+    <div className={styles.usageItem}>
+      <div className={styles.usageHeader}>
+        <span className={styles.usageLabel}>
+          {icon}
+          {label}
+        </span>
+        <span className={`${styles.usageCount} ${isAtLimit ? styles.usageAtLimit : isNearLimit ? styles.usageNearLimit : ''}`}>
+          {used} / {total}
+        </span>
+      </div>
+      <div className={styles.usageTrack}>
+        <motion.div
+          className={styles.usageFill}
+          style={{ background: isAtLimit ? '#ef4444' : isNearLimit ? '#f59e0b' : color }}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+        />
+      </div>
+      <span className={styles.usageHint}>
+        {isAtLimit ? 'Limit reached — resets at midnight UTC' : `${Math.round(total - used)} remaining today`}
+      </span>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [usage, setUsage] = useState({ images: 0, videoMins: 0 });
+
+  const userPlan = user?.plan_id || 'free';
+  const limits = planLimits[userPlan] || planLimits.free;
 
   useEffect(() => {
     if (!isSignedIn()) {
       router.push('/');
       return;
     }
-    setUser(getUser());
+    const u = getUser();
+    setUser(u);
+
     // Load saved interests
     const saved = localStorage.getItem('elixpo_interests');
     if (saved) setSelectedInterests(JSON.parse(saved));
+
+    // Load usage from user object (would come from API) or fallback to guest usage
+    setUsage({
+      images: u?.images_used_today || 0,
+      videoMins: u?.video_mins_used_today || 0,
+    });
   }, [router]);
+
+  // Poll usage every 30s to keep progress bars fresh
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      const u = getUser();
+      if (u) {
+        setUsage({
+          images: u.images_used_today || 0,
+          videoMins: u.video_mins_used_today || 0,
+        });
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const toggleInterest = (interest) => {
     setSelectedInterests((prev) => {
@@ -55,6 +123,7 @@ export default function SettingsPage() {
 
   return (
     <div className={styles.page}>
+      <GradientBlobs preset="default" />
       <Navbar />
       <main className={styles.main}>
         <div className={styles.layout}>
@@ -91,6 +160,50 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Usage / Rate Limits */}
+            <div className={styles.card}>
+              <div className={styles.usageTitleRow}>
+                <h2 className={styles.cardTitle}>Daily Usage</h2>
+                <span className={styles.planBadge}>{PLAN_LABELS[userPlan] || 'Free'}</span>
+              </div>
+
+              <UsageBar
+                label="Images"
+                used={usage.images}
+                total={limits.images}
+                color="var(--gradient-primary)"
+                icon={
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
+                }
+              />
+
+              <UsageBar
+                label="Video"
+                used={Number(usage.videoMins.toFixed(1))}
+                total={limits.videoMins}
+                color="var(--gradient-warm)"
+                icon={
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                }
+              />
+
+              <a href="/pricing" className={styles.upgradeLink}>
+                {userPlan === 'masterpiece' ? 'You\'re on the top plan' : 'Upgrade for higher limits'}
+                {userPlan !== 'masterpiece' && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                )}
+              </a>
             </div>
 
             {/* Interests */}

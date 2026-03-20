@@ -108,8 +108,8 @@ export async function ensureAuth() {
   return auth;
 }
 
-// Guest usage limits
-const GUEST_LIMITS = { images: 20, videos: 3, videoMinutes: 3 };
+// Guest usage limits (unauthenticated visitors)
+const GUEST_LIMITS = { images: 10, videos: 2 };
 
 export function getGuestUsage() {
   if (typeof window === 'undefined') return { images: 0, videos: 0 };

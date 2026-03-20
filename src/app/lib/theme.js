@@ -170,6 +170,15 @@ export const fonts = {
   accent:   "'Caveat', 'Segoe Script', cursive",
 };
 
+// ─── Plan Rate Limits ────────────────────────────────────────────
+// Mirrors the D1 `plans` table. Used client-side for progress bars.
+export const planLimits = {
+  guest:       { images: 10,  videoMins: 0 },
+  free:        { images: 50,  videoMins: 2 },
+  atelier:     { images: 200, videoMins: 5 },
+  masterpiece: { images: 500, videoMins: 15 },
+};
+
 // ─── Brush Stroke SVG Paths ──────────────────────────────────────
 // Reusable wavy/brushy divider paths for section transitions.
 export const brushPaths = {
