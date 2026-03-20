@@ -41,6 +41,7 @@ export default function SessionPage({ params }) {
   const [width, setWidth] = useState(1024);
   const [height, setHeight] = useState(576);
   const [mode, setMode] = useState('image');
+  const [genStyle, setGenStyle] = useState(null);
   const [duration, setDuration] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
   const [seed, setSeed] = useState(0);
@@ -137,6 +138,7 @@ export default function SessionPage({ params }) {
     setWidth(p.width);
     setHeight(p.height);
     setMode(p.mode || 'image');
+    if (p.style) setGenStyle(p.style);
     setDuration(p.duration);
     setImageUrl(p.imageUrl);
     if (p.seed) setSeed(p.seed);
@@ -819,6 +821,12 @@ export default function SessionPage({ params }) {
                     <span className={styles.propKey}>Mode</span>
                     <span className={styles.propVal}>{mode === 'video' ? 'Video' : 'Image'}</span>
                   </div>
+                  {genStyle && (
+                    <div className={styles.propItem}>
+                      <span className={styles.propKey}>Style</span>
+                      <span className={styles.propVal}>{genStyle.charAt(0).toUpperCase() + genStyle.slice(1)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

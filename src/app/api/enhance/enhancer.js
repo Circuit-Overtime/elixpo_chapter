@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 dotenv.config();
-const POLLINATIONS_TOKEN = process.env.polli_token;
+
 const systemContent = `Instruction Set for AI Image Prompt Engineering:
 Your primary goal is to generate a high-quality, professional-grade image prompt under 1000 tokens. You will adhere to the following principles, derived from research into advanced prompt engineering.
 **Core Formula:** Structure your prompt using this six-part formula:
@@ -29,13 +29,14 @@ async function promptEnhance(userPrompt) {
     console.log("Enhancing prompt:", userPrompt);
     const seed = Math.floor(Math.random() * 10000);     
 
-    const response = await fetch("https://text.pollinations.ai/openai", {
+    const response = await fetch("https://gen.pollinations.ai/v1/chat/completions", {
         method: "POST",
         headers: {
+            "Bearer": process.env.NEXT_PUBLIC_POLLINATIONS_API_IMAGE,
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            model: process.env.ENHANCER_MODEL || "openai",
+            model: "gemini-fast",
             seed: seed,
             messages: [
                 {
@@ -48,7 +49,6 @@ async function promptEnhance(userPrompt) {
                 }
             ]
         }),
-        token: POLLINATIONS_TOKEN,
         top_p: 0.9,
         temperature: 1.2,
         private: "true",

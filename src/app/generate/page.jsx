@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar/Navbar';
-import { isSignedIn, canGuestGenerate, getGuestRemaining, incrementGuestUsage, getGuestSessionId, getSignInUrl, checkAndIncrement } from '../lib/auth';
+import { isSignedIn, canGuestGenerate, getGuestRemaining, incrementGuestUsage, getGuestSessionId, getSignInUrl, checkAndIncrement, getUserTier } from '../lib/auth';
 import styles from './Generate.module.css';
 
 const MODELS = [
@@ -88,13 +88,15 @@ export default function GeneratePage() {
   const [styleOpen, setStyleOpen] = useState(false);
   const [durationOpen, setDurationOpen] = useState(false);
   const [starMenuOpen, setStarMenuOpen] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [uploadedPreview, setUploadedPreview] = useState(null);
+  const [uploadedImages, setUploadedImages] = useState([]);
+  const [uploadedPreviews, setUploadedPreviews] = useState([]);
   const [aiWorking, setAiWorking] = useState(false);
   const [limitWarning, setLimitWarning] = useState('');
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
-  const starMenuRef = useRef(null);
+  const describeInputRef = useRef(null);
+  const optionsBarRef = useRef(null);
+  const pendingDescribe = useRef(false);
 
   const imgRemaining = getGuestRemaining('images');
   const vidRemaining = getGuestRemaining('videos');
@@ -106,16 +108,48 @@ export default function GeneratePage() {
   const selectedStyle = STYLES.find((s) => s.id === style);
   const selectedDuration = DURATIONS.find((d) => d.id === duration);
 
-  // Close star menu on outside click
+  const getRefImageLimit = () => {
+    const tier = getUserTier();
+    if (tier === 'guest' || !signedIn) return 1;
+    if (tier === 'free') return 2;
+    return 5;
+  };
+
+  // Close all dropdowns on outside click
   useEffect(() => {
     const handleClick = (e) => {
-      if (starMenuRef.current && !starMenuRef.current.contains(e.target)) {
-        setStarMenuOpen(false);
+      if (optionsBarRef.current && !optionsBarRef.current.contains(e.target)) {
+        closeAllDropdowns();
       }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  // Paste image from clipboard
+  useEffect(() => {
+    const handlePaste = (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) return;
+          if (uploadedImages.length >= getRefImageLimit()) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            setUploadedImages((prev) => [...prev, file]);
+            setUploadedPreviews((prev) => [...prev, ev.target.result]);
+          };
+          reader.readAsDataURL(file);
+          return;
+        }
+      }
+    };
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [uploadedImages]);
 
   const closeAllDropdowns = () => {
     setModelOpen(false);
@@ -141,6 +175,7 @@ export default function GeneratePage() {
       setPrompt(subject);
     } finally {
       setAiWorking(false);
+      autoResize();
     }
   };
 
@@ -160,27 +195,67 @@ export default function GeneratePage() {
       /* silent */
     } finally {
       setAiWorking(false);
+      autoResize();
     }
   };
 
   const handleDescribeImage = () => {
     setStarMenuOpen(false);
-    fileInputRef.current?.click();
+    pendingDescribe.current = true;
+    describeInputRef.current?.click();
+  };
+
+  const handleDescribeUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (describeInputRef.current) describeInputRef.current.value = '';
+
+    setAiWorking(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_BASE}/describe`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.description) {
+        setPrompt(data.description);
+        autoResize();
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setAiWorking(false);
+      pendingDescribe.current = false;
+    }
   };
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadedImage(file);
+    if (uploadedImages.length >= getRefImageLimit()) return;
     const reader = new FileReader();
-    reader.onload = (ev) => setUploadedPreview(ev.target.result);
+    reader.onload = (ev) => {
+      setUploadedImages((prev) => [...prev, file]);
+      setUploadedPreviews((prev) => [...prev, ev.target.result]);
+    };
     reader.readAsDataURL(file);
   };
 
-  const clearUploadedImage = () => {
-    setUploadedImage(null);
-    setUploadedPreview(null);
+  const clearUploadedImage = (index) => {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+    setUploadedPreviews((prev) => prev.filter((_, i) => i !== index));
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const autoResize = () => {
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 250) + 'px';
+    });
   };
 
   const handleGenerate = async () => {
@@ -188,14 +263,12 @@ export default function GeneratePage() {
 
     const genType = mode === 'video' ? 'videos' : 'images';
 
-    // Check server-side daily limit (IP for guests, userId for signed-in)
     const check = await checkAndIncrement(genType);
     if (!check.allowed) {
       setLimitWarning(check.error || `Daily ${genType} limit reached. Sign in or upgrade for more.`);
       return;
     }
 
-    // Also keep client-side guest tracking as fallback
     if (!signedIn && !canGuestGenerate(genType)) {
       setLimitWarning(
         mode === 'video'
@@ -213,17 +286,17 @@ export default function GeneratePage() {
     if (!signedIn) incrementGuestUsage(genType);
     const { w, h } = selectedAspect;
 
-    let imageUrl = null;
-    if (uploadedImage) {
+    let imageUrls = [];
+    for (const img of uploadedImages) {
       try {
         const formData = new FormData();
-        formData.append('file', uploadedImage);
+        formData.append('file', img);
         const uploadRes = await fetch(`${API_BASE}/upload-to-uguu`, {
           method: 'POST',
           body: formData,
         });
         const uploadData = await uploadRes.json();
-        if (uploadData.url) imageUrl = uploadData.url;
+        if (uploadData.url) imageUrls.push(uploadData.url);
       } catch { /* continue */ }
     }
 
@@ -237,7 +310,8 @@ export default function GeneratePage() {
         style,
         mode,
         duration: mode === 'video' ? duration : null,
-        imageUrl,
+        imageUrl: imageUrls[0] || null,
+        imageUrls: imageUrls.length > 0 ? imageUrls : null,
         timestamp: Date.now(),
       })
     );
@@ -271,18 +345,22 @@ export default function GeneratePage() {
             Describe your vision and let AI bring it to life
           </p>
 
-          {/* Uploaded image preview */}
-          {uploadedPreview && (
-            <div className={styles.uploadPreview}>
-              <img src={uploadedPreview} alt="Uploaded" className={styles.uploadThumb} />
+          {/* Uploaded image previews */}
+          {uploadedPreviews.length > 0 && (
+            <div className={styles.uploadPreviewRow}>
+              {uploadedPreviews.map((preview, i) => (
+                <div key={i} className={styles.uploadPreview}>
+                  <img src={preview} alt={`Reference ${i + 1}`} className={styles.uploadThumb} />
+                  <button className={styles.uploadRemove} onClick={() => clearUploadedImage(i)}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
               <span className={styles.uploadLabel}>
-                {mode === 'video' ? 'Start frame' : 'Reference image'}
+                {uploadedPreviews.length}/{getRefImageLimit()} {mode === 'video' ? 'start frames' : 'reference images'}
               </span>
-              <button className={styles.uploadRemove} onClick={clearUploadedImage}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
             </div>
           )}
 
@@ -293,6 +371,13 @@ export default function GeneratePage() {
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
+              style={{ display: 'none' }}
+            />
+            <input
+              ref={describeInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleDescribeUpload}
               style={{ display: 'none' }}
             />
             <div className={styles.tooltipWrap}>
@@ -310,20 +395,24 @@ export default function GeneratePage() {
                 {mode === 'video' ? 'Upload start frame' : 'Upload reference image'}
               </span>
             </div>
-            <input
+            <textarea
               ref={inputRef}
-              type="text"
               className={styles.promptInput}
-              placeholder="Type a prompt..."
+              placeholder="Type a prompt or paste an image..."
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => {
+                setPrompt(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 250) + 'px';
+              }}
               onKeyDown={handleKeyDown}
+              rows={1}
             />
             {aiWorking && <span className={styles.promptSpinner} />}
           </div>
 
           {/* Options bar */}
-          <div className={styles.optionsBar}>
+          <div className={styles.optionsBar} ref={optionsBarRef}>
             <div className={styles.optionsLeft}>
               <div className={styles.modeToggle}>
                 <button
@@ -451,7 +540,7 @@ export default function GeneratePage() {
               )}
 
               {/* Star menu */}
-              <div className={styles.starMenuWrap} ref={starMenuRef}>
+              <div className={styles.starMenuWrap}>
                 <button
                   className={`${styles.enhanceBtn} ${aiWorking ? styles.enhanceSpin : ''}`}
                   onClick={() => { setStarMenuOpen(!starMenuOpen); setModelOpen(false); setStyleOpen(false); setDurationOpen(false); }}

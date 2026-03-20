@@ -337,6 +337,50 @@ app.post('/enhance', async (req, res) => {
 });
 
 
+app.post('/describe', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+
+  const filePath = req.file.path;
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    const mimeType = req.file.mimetype || 'image/png';
+    const base64 = fileBuffer.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+
+    const response = await fetch('https://text.pollinations.ai/openai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'openai',
+        messages: [
+          {
+            role: 'system',
+            content: 'Describe this image in detail as an image generation prompt. Focus on subject, action, environment, art style, lighting, composition, colors, and mood. Output only the prompt text, no extra explanation.'
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Describe this image as a detailed prompt for image generation.' },
+              { type: 'image_url', image_url: { url: dataUrl } }
+            ]
+          }
+        ],
+        max_tokens: 500
+      })
+    });
+
+    const data = await response.json();
+    const description = data.choices?.[0]?.message?.content || '';
+    res.json({ success: true, description: description.trim() });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to describe image: ' + err.message });
+  } finally {
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlink(filePath, () => {});
+    }
+  }
+});
+
 app.post('/generate-image', async (req, res) => {
   const { 
     prompt, 

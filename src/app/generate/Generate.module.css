@@ -120,61 +120,73 @@
   margin-bottom: var(--spacing-2xl);
 }
 
-/* ─── Upload preview ─── */
-.uploadPreview {
+/* ─── Upload preview (multi-image) ─── */
+.uploadPreviewRow {
   width: 100%;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   padding: 0.5rem 0.75rem;
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-lg);
   margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.uploadPreview {
+  position: relative;
+  display: inline-flex;
 }
 
 .uploadThumb {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: var(--radius-sm);
   object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .uploadLabel {
-  flex: 1;
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
   font-weight: 500;
+  margin-left: auto;
 }
 
 .uploadRemove {
+  position: absolute;
+  top: -5px;
+  right: -5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
+  border-radius: 50%;
+  background: rgba(10, 15, 28, 0.85);
   color: var(--color-text-tertiary);
   cursor: pointer;
-  transition: color var(--animation-fast);
+  transition: all var(--animation-fast);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .uploadRemove:hover {
-  color: var(--color-text-primary);
+  background: #ef4444;
+  color: #fff;
 }
 
 /* ─── Prompt bar ─── */
 .promptBar {
   width: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: var(--spacing-sm);
   padding: 0.85rem 1.25rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-2xl);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 24px rgba(0, 0, 0, 0.2);
@@ -212,6 +224,11 @@
   font-size: var(--font-size-base);
   outline: none;
   min-width: 0;
+  resize: none;
+  min-height: 24px;
+  max-height: 250px;
+  overflow-y: auto;
+  line-height: 1.5;
 }
 
 .promptInput::placeholder {
