@@ -1,0 +1,53 @@
+import { NextResponse } from 'next/server';
+
+const POLLI_TOKEN = process.env.POLLINATIONS_API_TOKEN || process.env.NEXT_PUBLIC_POLLINATIONS_API_IMAGE;
+const POLLI_BASE = 'https://gen.pollinations.ai';
+
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const { prompt, model = 'wan', width = 1024, height = 576, duration = 5, imageUrl } = body;
+
+    if (!prompt) return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+
+    // Build video URL with query params
+    const encoded = encodeURIComponent(prompt);
+    const q = new URLSearchParams();
+    q.set('model', model);
+    q.set('duration', String(duration));
+    q.set('nologo', 'true');
+    q.set('referrer', 'elixpoart');
+
+    // Determine aspect ratio
+    if (width > height) q.set('aspectRatio', '16:9');
+    else if (height > width) q.set('aspectRatio', '9:16');
+    // else 1:1 is default
+
+    if (imageUrl) q.set('image', imageUrl);
+
+    const videoUrl = `${POLLI_BASE}/video/${encoded}?${q.toString()}`;
+
+    const headers = {};
+    if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
+
+    const res = await fetch(videoUrl, { headers });
+    if (!res.ok) {
+      return NextResponse.json({ error: `Video generation failed (${res.status})` }, { status: res.status });
+    }
+
+    const blob = await res.blob();
+    const buffer = Buffer.from(await blob.arrayBuffer());
+    const base64Video = buffer.toString('base64');
+
+    return NextResponse.json({
+      success: true,
+      videoData: `data:video/mp4;base64,${base64Video}`,
+      model,
+      duration,
+    });
+  } catch (err) {
+    return NextResponse.json({ error: err.message || 'Video generation failed' }, { status: 500 });
+  }
+}
+
+export const maxDuration = 120; // Allow up to 2 minutes for video generation
