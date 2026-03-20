@@ -6,13 +6,19 @@
   "license": "MIT",
   "author": "Elixpo <ayushman@elixpo.com>",
   "contributors": [
-    "Ayushman Bhattacharya",
-    "Anwesha Chakraborty",
-    "Vivek Yadav"
+    {
+      "name": "Ayushman Bhattacharya"
+    },
+    {
+      "name": "Anwesha Chakraborty"
+    },
+    {
+      "name": "Vivek Yadav"
+    }
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/elixpo/elixpome.git"
+    "url": "git+https://github.com/elixpo/elixpome.git"
   },
   "homepage": "https://elixpo.com",
   "bugs": {
@@ -33,6 +39,7 @@
     "deploy": "next build && npx wrangler pages deploy out"
   },
   "dependencies": {
+    "express": "^5.2.1",
     "framer-motion": "^12.36.0",
     "next": "^15.4.11",
     "react": "^19.2.4",
@@ -41,5 +48,9 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.1",
     "tailwindcss": "^4.2.1"
+  },
+  "main": "next.config.js",
+  "directories": {
+    "lib": "lib"
   }
 }
