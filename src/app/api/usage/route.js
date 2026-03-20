@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 
 const TIER_LIMITS = {
-  guest:       { images: 10, edits: 3, videos: 2 },
-  free:        { images: 50, edits: 15, videos: 5 },
-  atelier:     { images: 200, edits: 60, videos: 20 },
-  masterpiece: { images: 500, edits: 150, videos: 50 },
+  guest:       { images: 10, edits: 3, videos: 2, blueprints: 0 },
+  free:        { images: 50, edits: 15, videos: 5, blueprints: 5 },
+  atelier:     { images: 200, edits: 60, videos: 20, blueprints: 20 },
+  masterpiece: { images: 500, edits: 150, videos: 50, blueprints: 50 },
 };
 
 // In-memory store (resets on server restart — D1 replaces this in production)
@@ -19,7 +19,7 @@ function getUsage(key) {
   const today = getTodayUTC();
   const entry = usageStore.get(key);
   if (!entry || entry.date !== today) {
-    const fresh = { images: 0, edits: 0, videos: 0, date: today };
+    const fresh = { images: 0, edits: 0, videos: 0, blueprints: 0, date: today };
     usageStore.set(key, fresh);
     return fresh;
   }
