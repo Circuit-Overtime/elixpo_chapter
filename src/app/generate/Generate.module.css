@@ -253,9 +253,13 @@
   color: var(--color-text-tertiary);
 }
 
-.artifact {
+.artifactWrap {
   position: relative;
   flex-shrink: 0;
+}
+
+.artifact {
+  position: relative;
   width: 36px;
   height: 36px;
   border: 1px solid rgba(86, 145, 243, 0.15);
@@ -269,7 +273,30 @@
 .artifact:hover {
   border-color: rgba(86, 145, 243, 0.35);
   box-shadow: 0 0 12px rgba(86, 145, 243, 0.1);
-  transform: scale(1.05);
+}
+
+.artifactClose {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--animation-fast);
+  z-index: 2;
+  padding: 0;
+}
+
+.artifactWrap:hover .artifactClose {
+  opacity: 1;
 }
 .artifactImg {
   width: 100%;

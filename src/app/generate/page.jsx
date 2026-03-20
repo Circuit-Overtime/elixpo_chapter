@@ -414,10 +414,17 @@ export default function GeneratePage() {
               </span>
             </div>
             {describeArtifact && (
-              <button className={styles.artifact} onClick={() => setArtifactModal(true)} title="Source image — click to manage">
-                <img src={describeArtifact} alt="Source" className={styles.artifactImg} />
-                <span className={styles.artifactBadge}>AI</span>
-              </button>
+              <div className={styles.artifactWrap}>
+                <button className={styles.artifact} onClick={() => setArtifactModal(true)} title="Source image — click to manage">
+                  <img src={describeArtifact} alt="Source" className={styles.artifactImg} />
+                  <span className={styles.artifactBadge}>AI</span>
+                </button>
+                <button className={styles.artifactClose} onClick={(e) => { e.stopPropagation(); handleRemoveArtifact(); }} title="Remove">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             )}
             <textarea
               ref={inputRef}

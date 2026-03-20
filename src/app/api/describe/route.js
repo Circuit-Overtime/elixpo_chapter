@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-
-const POLLI_TOKEN = process.env.POLLINATIONS_API_TOKEN || process.env.NEXT_PUBLIC_POLLINATIONS_API_IMAGE;
+import { POLLI_TOKEN, POLLI_BASE } from '../pollinations';
 
 export async function POST(request) {
   try {
@@ -22,10 +21,13 @@ export async function POST(request) {
 
     if (!base64Data) return NextResponse.json({ error: 'No image data' }, { status: 400 });
 
-    const headers = { 'Content-Type': 'application/json' };
-    if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
+    const headers = { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${POLLI_TOKEN}`,
+     };
 
-    const res = await fetch('https://text.pollinations.ai/openai', {
+
+    const res = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -47,8 +49,18 @@ export async function POST(request) {
       }),
     });
 
+    if (!res.ok) {
+      console.error('Describe API error:', res.status);
+      return NextResponse.json({ error: 'Vision service error', description: '' }, { status: 502 });
+    }
+
     const data = await res.json();
     const description = data.choices?.[0]?.message?.content?.trim() || '';
+
+    if (!description) {
+      console.error('Describe returned empty. Response:', JSON.stringify(data).slice(0, 200));
+      return NextResponse.json({ success: false, description: '', error: 'No description generated' });
+    }
 
     return NextResponse.json({ success: true, description });
   } catch (err) {
