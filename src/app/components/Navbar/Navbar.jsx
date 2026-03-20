@@ -27,13 +27,34 @@ const navLinks = [
   },
 ];
 
+const moreItems = [
+  {
+    label: 'Canvas Editor', href: '/generate', desc: 'Edit and refine AI creations',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>,
+  },
+  {
+    label: 'Flow State', href: '/generate', desc: 'Spawn continuous images',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>,
+  },
+  {
+    label: 'Learn', href: '/blogs', desc: 'Tutorials and walkthroughs',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" /><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" /></svg>,
+  },
+  {
+    label: 'FAQ and Help', href: '/pricing', desc: 'Find answers and get support',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>,
+  },
+];
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef(null);
+  const moreRef = useRef(null);
 
   const checkAuth = () => {
     setSignedIn(isSignedIn());
@@ -65,10 +86,11 @@ export default function Navbar() {
     };
   }, []);
 
-  // Close user menu on outside click
+  // Close menus on outside click
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setUserMenuOpen(false);
+      if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -97,6 +119,27 @@ export default function Navbar() {
               {link.label}
             </a>
           ))}
+          <div className={styles.moreWrap} ref={moreRef}>
+            <button className={styles.link} onClick={() => setMoreOpen(!moreOpen)}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
+              </svg>
+              More
+            </button>
+            {moreOpen && (
+              <div className={styles.morePanel}>
+                {moreItems.map((item) => (
+                  <a key={item.label} href={item.href} className={styles.moreItem} onClick={() => setMoreOpen(false)}>
+                    <span className={styles.moreIcon}>{item.icon}</span>
+                    <div className={styles.moreText}>
+                      <span className={styles.moreLabel}>{item.label}</span>
+                      <span className={styles.moreDesc}>{item.desc}</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className={styles.actions}>
@@ -130,13 +173,13 @@ export default function Navbar() {
                     </svg>
                     Settings
                   </a>
-                  <a href="/creations" className={styles.menuItem}>
+                  <a href="/library" className={styles.menuItem}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="3" y="3" width="18" height="18" rx="2" />
                       <circle cx="8.5" cy="8.5" r="1.5" />
                       <path d="M21 15l-5-5L5 21" />
                     </svg>
-                    My Creations
+                    My Library
                   </a>
 
                   <div className={styles.menuDivider} />
