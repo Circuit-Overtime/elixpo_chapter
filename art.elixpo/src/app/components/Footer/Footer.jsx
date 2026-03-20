@@ -46,7 +46,7 @@ export default function Footer() {
         <div className={styles.brand}>
           <div className={styles.brandRow}>
             <img
-              src="https://firebasestorage.googleapis.com/v0/b/videolize-3563f.appspot.com/o/bigstar.png?alt=media&token=53c5945b-2b37-4c3e-972c-7bd1b0b9e4f1"
+              src="/logo.png"
               alt="Elixpo"
               className={styles.logo}
             />
