@@ -110,27 +110,56 @@ export default function SessionPage({ params }) {
   // Read query params for property overrides
   const searchParams = useSearchParams();
 
+  // Build shareable URL params (excludes reference images)
+  const updateUrlParams = (params) => {
+    const q = new URLSearchParams();
+    if (params.prompt) q.set('prompt', params.prompt);
+    if (params.model) q.set('model', params.model);
+    if (params.width) q.set('width', String(params.width));
+    if (params.height) q.set('height', String(params.height));
+    if (params.mode) q.set('mode', params.mode);
+    if (params.seed) q.set('seed', String(params.seed));
+    if (params.style) q.set('style', params.style);
+    if (params.mode === 'video' && params.duration) q.set('duration', String(params.duration));
+    const newUrl = `/generate/${sessionId}?${q.toString()}`;
+    window.history.replaceState(null, '', newUrl);
+  };
+
   useEffect(() => {
     if (hasGenerated.current) return;
     hasGenerated.current = true;
 
     const stored = sessionStorage.getItem(`gen_${sessionId}`);
-    if (!stored) {
+
+    // Build params from sessionStorage or URL query params
+    let p;
+    if (stored) {
+      p = JSON.parse(stored);
+      // Query params override stored values
+      if (searchParams.get('model')) p.model = searchParams.get('model');
+      if (searchParams.get('width')) p.width = Number(searchParams.get('width'));
+      if (searchParams.get('height')) p.height = Number(searchParams.get('height'));
+      if (searchParams.get('mode')) p.mode = searchParams.get('mode');
+      if (searchParams.get('duration')) p.duration = Number(searchParams.get('duration'));
+      if (searchParams.get('seed')) p.seed = Number(searchParams.get('seed'));
+      if (searchParams.get('style')) p.style = searchParams.get('style');
+    } else if (searchParams.get('prompt')) {
+      // URL-only visit — build session from query params (shareable link)
+      p = {
+        prompt: searchParams.get('prompt'),
+        model: searchParams.get('model') || 'flux',
+        width: Number(searchParams.get('width')) || 1024,
+        height: Number(searchParams.get('height')) || 576,
+        mode: searchParams.get('mode') || 'image',
+        duration: searchParams.get('duration') ? Number(searchParams.get('duration')) : null,
+        seed: searchParams.get('seed') ? Number(searchParams.get('seed')) : null,
+        style: searchParams.get('style') || null,
+      };
+    } else {
       setError('Session not found. Please start a new generation.');
       setLoading(false);
       return;
     }
-
-    const p = JSON.parse(stored);
-
-    // Query params override stored values
-    if (searchParams.get('model')) p.model = searchParams.get('model');
-    if (searchParams.get('width')) p.width = Number(searchParams.get('width'));
-    if (searchParams.get('height')) p.height = Number(searchParams.get('height'));
-    if (searchParams.get('mode')) p.mode = searchParams.get('mode');
-    if (searchParams.get('duration')) p.duration = Number(searchParams.get('duration'));
-    if (searchParams.get('seed')) p.seed = Number(searchParams.get('seed'));
-    if (searchParams.get('image')) p.imageUrl = searchParams.get('image');
 
     setPrompt(p.prompt);
     setModel(p.model);
@@ -146,6 +175,7 @@ export default function SessionPage({ params }) {
       setGenerationTime(p.generationTime);
       setSeed(p.seed);
       setLoading(false);
+      updateUrlParams(p);
       return;
     }
 
@@ -197,6 +227,7 @@ export default function SessionPage({ params }) {
       setGenerationTime(genTime);
 
       saveSession({ ...p, seed: usedSeed, resultSrc: blobUrl, generationTime: genTime });
+      updateUrlParams({ ...p, seed: usedSeed });
 
       // Create blob for thumbnail
       try {
@@ -539,17 +570,22 @@ export default function SessionPage({ params }) {
             <div className={styles.ambientBlob2} aria-hidden="true" />
 
             {loading && (
-              <div className={styles.loadingState}>
-                <div className={styles.diffusionFrame}>
-                  <div className={styles.diffusionNoise} />
-                  <div className={styles.diffusionGradient} />
-                  <div className={styles.diffusionShimmer} />
-                  <div className={styles.diffusionCenter}>
-                    <div className={styles.diffusionRing} />
+              <div className={styles.bokehFill}>
+                <div className={styles.bokehOrb} style={{ '--x': '15%', '--y': '20%', '--s': '180px', '--c': 'rgba(141,73,253,0.18)', '--d': '8s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '70%', '--y': '30%', '--s': '220px', '--c': 'rgba(86,145,243,0.15)', '--d': '11s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '40%', '--y': '65%', '--s': '160px', '--c': 'rgba(6,214,160,0.12)', '--d': '9s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '80%', '--y': '75%', '--s': '140px', '--c': 'rgba(236,72,153,0.1)', '--d': '13s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '25%', '--y': '80%', '--s': '120px', '--c': 'rgba(86,145,243,0.12)', '--d': '7s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '55%', '--y': '15%', '--s': '100px', '--c': 'rgba(141,73,253,0.14)', '--d': '10s' }} />
+                <div className={styles.bokehOrb} style={{ '--x': '90%', '--y': '50%', '--s': '90px', '--c': 'rgba(6,214,160,0.1)', '--d': '12s' }} />
+                <div className={styles.bokehShimmer} />
+                <div className={styles.bokehContent}>
+                  <p className={styles.bokehTitle}>Creating your vision</p>
+                  <div className={styles.bokehDots}>
+                    <span /><span /><span />
                   </div>
+                  <p className={styles.bokehHint}>this may take a moment</p>
                 </div>
-                <p className={styles.loadingText}>Generating your creation...</p>
-                <p className={styles.loadingHint}>This may take up to a minute</p>
               </div>
             )}
 
