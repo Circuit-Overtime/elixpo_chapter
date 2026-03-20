@@ -1,8 +1,37 @@
 {
-  "name": "elixpo_art_network",
-  "version": "1.0.0",
-  "description": "hosting elixpo_art",
+  "name": "elixpo-art",
+  "version": "5.0.0",
+  "description": "AI-powered creative platform for generating stunning images and video. 15+ art styles, 8+ models, built for artists.",
   "type": "module",
+  "keywords": [
+    "ai-art",
+    "image-generation",
+    "text-to-image",
+    "text-to-video",
+    "generative-ai",
+    "cloudflare-pages",
+    "nextjs"
+  ],
+  "homepage": "https://elixpoart.pages.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Circuit-Overtime/elixpo-art"
+  },
+  "author": "Ayushman Bhattacharya <ayushbhatt633@gmail.com>",
+  "contributors": [
+    "Vivek Yadav <vivektalent200@gmail.com>",
+    "Abhranil SinghaRoy <abhranilsingharoy@gmail.com>",
+    "Deep Saha <ideepsaha25@gmail.com>",
+    "Dipanjan Sadhukhan <dipanjansadhukhan123@gmail.com>",
+    "Ishita Majumdar <majumdar.ishita2003@gmail.com>",
+    "AsHim Shrestha <ashimsth89@gmail.com>",
+    "Sahil Shingate <sahilshingate0@gmail.com>",
+    "Mahak Gupta <mahakgupta10a24@gmail.com>",
+    "Suraj Patil",
+    "NayandG07",
+    "PREETCHAUHAN2005"
+  ],
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -44,6 +73,5 @@
   },
   "engines": {
     "node": "20.x"
-  },
-  "license": "MIT"
+  }
 }

@@ -1,18 +1,27 @@
 const ACCOUNTS_BASE = 'https://accounts.elixpo.com';
-const CLIENT_ID = process.env.NEXT_PUBLIC_ELIXPO_CLIENT_ID || '';
-const REDIRECT_URI = typeof window !== 'undefined'
-  ? `${window.location.origin}/auth/callback`
-  : '';
 
 const SESSION_DURATION = 15 * 24 * 60 * 60 * 1000; // 15 days
 
+function getClientId() {
+  return process.env.NEXT_PUBLIC_ELIXPO_CLIENT_ID || '';
+}
+
+function getRedirectUri() {
+  if (typeof window === 'undefined') return '';
+  return `${window.location.origin}/auth/callback`;
+}
+
 export function getSignInUrl() {
+  const clientId = getClientId();
+  const redirectUri = getRedirectUri();
+  if (!clientId || !redirectUri) return '#';
+
   const state = crypto.randomUUID();
-  if (typeof window !== 'undefined') sessionStorage.setItem('oauth_state', state);
+  sessionStorage.setItem('oauth_state', state);
   const params = new URLSearchParams({
     response_type: 'code',
-    client_id: CLIENT_ID,
-    redirect_uri: REDIRECT_URI,
+    client_id: clientId,
+    redirect_uri: redirectUri,
     state,
     scope: 'openid profile email',
   });
@@ -26,8 +35,8 @@ export async function exchangeCode(code) {
     body: JSON.stringify({
       grant_type: 'authorization_code',
       code,
-      client_id: CLIENT_ID,
-      redirect_uri: REDIRECT_URI,
+      client_id: getClientId(),
+      redirect_uri: getRedirectUri(),
     }),
   });
   if (!res.ok) throw new Error('Token exchange failed');
@@ -49,7 +58,7 @@ export async function refreshToken(token) {
     body: JSON.stringify({
       grant_type: 'refresh_token',
       refresh_token: token,
-      client_id: CLIENT_ID,
+      client_id: getClientId(),
     }),
   });
   if (!res.ok) throw new Error('Refresh failed');
