@@ -25,14 +25,14 @@
     "codeStory": "Once upon a time, a coder fell in love with some code.A journey of transformation from the world of cells and microscopes to the realm of code, algorithms, and terminals. This is the story of embracing change, overcoming challenges, and discovering that your passion can evolve in unexpected and exciting ways.",
     "images": {
       "owl": "/assets/anwesha/websiteSection/hz-owl1.png",
-      "humanThink": "https://github.com/elixpo/elixpome/blob/c6227fa504b7ffe1c6ec08a88ac73589d8d36433/public/assets/anwesha/about/Bio.jpeg",
+      "Bio": "https://github.com/elixpo/elixpome/blob/c6227fa504b7ffe1c6ec08a88ac73589d8d36433/public/assets/anwesha/about/Bio.jpeg",
       "seal": "/assets/anwesha/websiteSection/sq-seal1.png"
     }
   },
   "techSection": {
     "heading": "THE LOVEY CUTIEPIE",
     "subheading": "DEV-S",
-    "description": "Anwesha is not just a developer — she's a full-stack romantic fellow! From frontend feelings to backend butterflies, she's got it all covered. Her code reviews come with heart emojis, and her pull requests always pass the vibe check.",
+    "description": "A system design enthusiast who views every codebase as an uncharted territory. From dissecting complex biological patterns to mapping out scalable software infrastructures, Anwesha builds with the precision of a scientist and the curiosity of a global traveler.",
     "skills": [
       { "type": "icon", "src": "https://img.icons8.com/fluency/144/javascript.png", "alt": "JavaScript" },
       { "type": "icon", "src": "https://img.icons8.com/fluency/144/node-js.png", "alt": "Node.js" },
