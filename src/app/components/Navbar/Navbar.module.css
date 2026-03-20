@@ -155,7 +155,7 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #5691f3, #7b6cf6);
   color: white;
   display: flex;
   align-items: center;
