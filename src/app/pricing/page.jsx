@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar/Navbar';
 import Footer from '../components/Footer/Footer';
+import GradientBlobs from '../components/shared/GradientBlobs';
+import { motion as motionPresets } from '../lib/theme';
 import styles from './Pricing.module.css';
 
 const PLANS = [
@@ -102,26 +105,44 @@ function CreditsIcon() {
   );
 }
 
+const stagger = motionPresets.stagger(0.1);
+
 export default function PricingPage() {
   const [yearly, setYearly] = useState(false);
 
   return (
     <div className={styles.page}>
+      <GradientBlobs preset="pricing" />
       <Navbar />
-      <main className={styles.main}>
+      <motion.main
+        className={styles.main}
+        initial={motionPresets.page.initial}
+        animate={motionPresets.page.animate}
+      >
         {/* Header */}
-        <div className={styles.header}>
-          <span className={styles.badge}>Pricing</span>
-          <h1 className={styles.title}>
-            Create more with the <span className={styles.titleAccent}>right plan</span>
-          </h1>
-          <p className={styles.subtitle}>
+        <motion.div
+          className={styles.header}
+          initial="hidden"
+          animate="visible"
+          variants={stagger}
+        >
+          <motion.span className={styles.badge} variants={motionPresets.fadeUp}>Pricing</motion.span>
+          <motion.h1 className={styles.title} variants={motionPresets.fadeUp}>
+            Create more with the{' '}
+            <span className={styles.titleAccent}>right plan</span>
+          </motion.h1>
+          <motion.p className={styles.subtitle} variants={motionPresets.fadeUp}>
             Start free with 40 daily generations. Upgrade when you need more credits, higher resolution, or video.
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
         {/* Billing toggle */}
-        <div className={styles.toggleWrap}>
+        <motion.div
+          className={styles.toggleWrap}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
           <span className={`${styles.toggleLabel} ${!yearly ? styles.toggleLabelActive : ''}`}>Monthly</span>
           <button
             className={`${styles.toggle} ${yearly ? styles.active : ''}`}
@@ -131,13 +152,24 @@ export default function PricingPage() {
             <span className={styles.toggleDot} />
           </button>
           <span className={`${styles.toggleLabel} ${yearly ? styles.toggleLabelActive : ''}`}>Yearly</span>
-          {yearly && <span className={styles.saveBadge}>Save ~17%</span>}
-        </div>
+          {yearly && <motion.span className={styles.saveBadge} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>Save ~17%</motion.span>}
+        </motion.div>
 
         {/* Plan cards */}
-        <div className={styles.grid}>
+        <motion.div
+          className={styles.grid}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-50px' }}
+          variants={motionPresets.stagger(0.12)}
+        >
           {PLANS.map((plan) => (
-            <div key={plan.id} className={`${styles.card} ${plan.featured ? styles.cardFeatured : ''}`}>
+            <motion.div
+              key={plan.id}
+              className={`${styles.card} ${plan.featured ? styles.cardFeatured : ''}`}
+              variants={motionPresets.brushReveal}
+              whileHover={motionPresets.hoverLift}
+            >
               {plan.featured && <div className={styles.popularTag}>Most Popular</div>}
 
               <h2 className={styles.planName}>{plan.name}</h2>
@@ -176,23 +208,31 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {/* FAQ */}
-        <section className={styles.faq}>
-          <h2 className={styles.faqTitle}>Frequently Asked Questions</h2>
+        <motion.section
+          className={styles.faq}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-80px' }}
+          variants={motionPresets.stagger(0.08)}
+        >
+          <motion.h2 className={styles.faqTitle} variants={motionPresets.fadeUp}>
+            Frequently Asked Questions
+          </motion.h2>
           <div className={styles.faqGrid}>
             {FAQ.map((item) => (
-              <div key={item.q} className={styles.faqItem}>
+              <motion.div key={item.q} className={styles.faqItem} variants={motionPresets.fadeUp}>
                 <h3 className={styles.faqQuestion}>{item.q}</h3>
                 <p className={styles.faqAnswer}>{item.a}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </section>
-      </main>
+        </motion.section>
+      </motion.main>
       <Footer />
     </div>
   );

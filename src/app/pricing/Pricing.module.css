@@ -2,6 +2,7 @@
   min-height: 100vh;
   background: var(--color-bg-primary);
   padding-top: 52px;
+  position: relative;
 }
 
 .main {
@@ -34,17 +35,19 @@
 .title {
   font-family: var(--font-family-display);
   font-size: var(--font-size-5xl);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-text-primary);
-  line-height: 1.1;
+  line-height: 1.15;
   margin-bottom: var(--spacing-md);
+  letter-spacing: -0.01em;
 }
 
 .titleAccent {
-  background: var(--gradient-primary);
+  background: var(--gradient-warm);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  font-style: italic;
 }
 
 .subtitle {
@@ -126,17 +129,18 @@
 /* Card */
 .card {
   position: relative;
-  background: var(--color-bg-card);
+  background: var(--gradient-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   padding: var(--spacing-2xl);
-  transition: all var(--animation-normal);
+  transition: border-color var(--animation-normal), box-shadow var(--animation-normal);
   overflow: hidden;
 }
 
 .card:hover {
   border-color: var(--color-border-hover);
-  transform: translateY(-2px);
   box-shadow: var(--shadow-xl);
 }
 
@@ -170,10 +174,11 @@
 
 .planName {
   font-family: var(--font-family-display);
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-2xl);
   font-weight: 700;
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-xs);
+  letter-spacing: -0.01em;
 }
 
 .planDesc {
@@ -203,6 +208,7 @@
   font-weight: 800;
   color: var(--color-text-primary);
   line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .period {
@@ -212,9 +218,9 @@
 }
 
 .priceFree {
-  font-family: var(--font-family-display);
+  font-family: var(--font-family-accent);
   font-size: var(--font-size-5xl);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-accent);
   line-height: 1;
   margin-bottom: var(--spacing-xl);
@@ -342,6 +348,7 @@
   font-family: var(--font-family-display);
   font-size: var(--font-size-3xl);
   font-weight: 700;
+  font-style: italic;
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-2xl);
 }
@@ -354,10 +361,17 @@
 }
 
 .faqItem {
-  background: var(--color-bg-card);
+  background: var(--gradient-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
+  transition: border-color var(--animation-fast);
+}
+
+.faqItem:hover {
+  border-color: var(--color-border-hover);
 }
 
 .faqQuestion {
