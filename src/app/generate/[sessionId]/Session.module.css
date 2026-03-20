@@ -91,113 +91,105 @@
   to { opacity: 1; transform: scale(1); filter: blur(0); }
 }
 
-/* ─── RGB Brush Blob Loading ─── */
+/* ─── Diffusion Loading Effect ─── */
 .loadingState {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-lg);
   z-index: 1;
 }
 
-.brushCanvas {
+.diffusionFrame {
   position: relative;
-  width: 200px;
+  width: 320px;
   height: 200px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: rgba(6, 10, 20, 0.8);
+  border: 1px solid rgba(86, 145, 243, 0.08);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
 }
 
-.brushBlob {
+.diffusionNoise {
   position: absolute;
+  inset: 0;
+  background:
+    repeating-conic-gradient(rgba(141, 73, 253, 0.08) 0% 25%, transparent 0% 50%) 0 0 / 4px 4px,
+    repeating-conic-gradient(rgba(86, 145, 243, 0.06) 0% 25%, transparent 0% 50%) 2px 2px / 4px 4px;
+  animation: noiseShift 0.3s steps(3) infinite;
+  opacity: 0.8;
+}
+
+.diffusionGradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 40%, rgba(141, 73, 253, 0.2) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 70% 60%, rgba(86, 145, 243, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(6, 214, 160, 0.08) 0%, transparent 50%);
+  animation: diffusionPulse 4s ease-in-out infinite;
+}
+
+.diffusionShimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0.03) 55%,
+    transparent 70%
+  );
+  animation: shimmerSlide 2.5s ease-in-out infinite;
+}
+
+.diffusionCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diffusionRing {
+  width: 48px;
+  height: 48px;
+  border: 2px solid transparent;
+  border-top-color: rgba(86, 145, 243, 0.4);
+  border-right-color: rgba(141, 73, 253, 0.2);
   border-radius: 50%;
-  filter: blur(30px);
-  opacity: 0.7;
-  mix-blend-mode: screen;
+  animation: spin 1.2s linear infinite;
 }
 
-.brushBlob:nth-child(1) {
-  width: 100px;
-  height: 100px;
-  background: #8d49fd;
-  top: 20%;
-  left: 10%;
-  animation: brushMove1 3s ease-in-out infinite;
+@keyframes noiseShift {
+  0% { transform: translate(0, 0); }
+  33% { transform: translate(-2px, 1px); }
+  66% { transform: translate(1px, -2px); }
+  100% { transform: translate(0, 0); }
 }
 
-.brushBlob:nth-child(2) {
-  width: 90px;
-  height: 90px;
-  background: #06d6a0;
-  top: 30%;
-  right: 10%;
-  animation: brushMove2 3.5s ease-in-out infinite;
+@keyframes diffusionPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
 }
 
-.brushBlob:nth-child(3) {
-  width: 80px;
-  height: 80px;
-  background: #22d3ee;
-  bottom: 15%;
-  left: 25%;
-  animation: brushMove3 4s ease-in-out infinite;
-}
-
-.brushBlob:nth-child(4) {
-  width: 70px;
-  height: 70px;
-  background: #ec4899;
-  top: 10%;
-  right: 25%;
-  animation: brushMove4 3.2s ease-in-out infinite;
-}
-
-.brushBlob:nth-child(5) {
-  width: 60px;
-  height: 60px;
-  background: #5691f3;
-  bottom: 25%;
-  right: 15%;
-  animation: brushMove5 2.8s ease-in-out infinite;
-}
-
-@keyframes brushMove1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(30px, -20px) scale(1.2); }
-  50% { transform: translate(50px, 10px) scale(0.9); }
-  75% { transform: translate(10px, 30px) scale(1.1); }
-}
-
-@keyframes brushMove2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(-25px, 25px) scale(1.15); }
-  50% { transform: translate(-40px, -10px) scale(0.85); }
-  75% { transform: translate(-10px, -30px) scale(1.1); }
-}
-
-@keyframes brushMove3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(20px, -25px) scale(1.2); }
-  66% { transform: translate(-15px, -15px) scale(0.9); }
-}
-
-@keyframes brushMove4 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-20px, 20px) scale(1.1); }
-  66% { transform: translate(15px, 25px) scale(0.95); }
-}
-
-@keyframes brushMove5 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-30px, -20px) scale(1.15); }
+@keyframes shimmerSlide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .loadingText {
-  font-size: var(--font-size-base);
-  color: var(--color-text-secondary);
-  font-weight: 500;
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+  font-weight: 600;
 }
 
 .loadingHint {
-  font-size: var(--font-size-sm);
+  font-family: var(--font-family-accent);
+  font-size: 0.95rem;
   color: var(--color-text-tertiary);
 }
 

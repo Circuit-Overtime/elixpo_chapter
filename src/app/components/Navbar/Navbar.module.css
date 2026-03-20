@@ -6,16 +6,19 @@
   z-index: 1000;
   height: 52px;
   transition: all var(--animation-normal);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid rgba(86, 145, 243, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(6, 10, 20, 0.6);
+  backdrop-filter: blur(16px);
 }
 
 .scrolled {
-  background: rgba(10, 15, 28, 0.85);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--color-border);
+  background: rgba(6, 10, 20, 0.9);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(86, 145, 243, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .inner {
