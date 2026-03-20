@@ -1,6 +1,9 @@
 .page {
   min-height: 100vh;
-  background: var(--color-bg-primary);
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(141, 73, 253, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(86, 145, 243, 0.04) 0%, transparent 60%),
+    var(--color-bg-primary);
 }
 
 .main {
@@ -49,6 +52,8 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   text-decoration: none;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   transition: all var(--animation-fast);
 }
 
@@ -86,12 +91,13 @@
 
 /* Cards */
 .card {
-  background: var(--gradient-glass);
+  background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-xl);
   padding: var(--spacing-xl);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .cardTitle {

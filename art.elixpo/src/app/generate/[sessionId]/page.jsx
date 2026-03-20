@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, use, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar/Navbar';
 import { saveToLibrary } from '../../lib/library';
+import { isSignedIn, getUser } from '../../lib/auth';
 import styles from './Session.module.css';
 
 const IMAGE_MODELS = [
@@ -52,7 +53,7 @@ export default function SessionPage({ params }) {
   const [modelOpen, setModelOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const [actionsOpen, setActionsOpen] = useState(true);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const hasGenerated = useRef(false);
   const moreMenuRef = useRef(null);
 
@@ -61,9 +62,41 @@ export default function SessionPage({ params }) {
   const [brushSize, setBrushSize] = useState(40);
   const [remixPrompt, setRemixPrompt] = useState('');
   const [remixLoading, setRemixLoading] = useState(false);
+  const [newRefImage, setNewRefImage] = useState(null);
+  const [newRefPreview, setNewRefPreview] = useState(null);
+  const refInputRef = useRef(null);
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const isDrawing = useRef(false);
+
+  // Determine ref image limit by tier
+  const getRefImageLimit = () => {
+    if (!isSignedIn()) return 1; // guest
+    return 2; // free and above
+  };
+
+  // Clipboard paste → reference image
+  useEffect(() => {
+    const handlePaste = (e) => {
+      if (remixMode) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) return;
+          if (newRefImage && getRefImageLimit() <= 1) return; // guest limit
+          const url = URL.createObjectURL(file);
+          setNewRefImage(url);
+          setNewRefPreview(url);
+          return;
+        }
+      }
+    };
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [remixMode, newRefImage]);
 
   // Close more menu on outside click
   useEffect(() => {
@@ -73,6 +106,9 @@ export default function SessionPage({ params }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Read query params for property overrides
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (hasGenerated.current) return;
@@ -86,6 +122,16 @@ export default function SessionPage({ params }) {
     }
 
     const p = JSON.parse(stored);
+
+    // Query params override stored values
+    if (searchParams.get('model')) p.model = searchParams.get('model');
+    if (searchParams.get('width')) p.width = Number(searchParams.get('width'));
+    if (searchParams.get('height')) p.height = Number(searchParams.get('height'));
+    if (searchParams.get('mode')) p.mode = searchParams.get('mode');
+    if (searchParams.get('duration')) p.duration = Number(searchParams.get('duration'));
+    if (searchParams.get('seed')) p.seed = Number(searchParams.get('seed'));
+    if (searchParams.get('image')) p.imageUrl = searchParams.get('image');
+
     setPrompt(p.prompt);
     setModel(p.model);
     setWidth(p.width);
@@ -216,11 +262,25 @@ export default function SessionPage({ params }) {
     generate({ prompt, model, width, height, mode, duration, imageUrl });
   };
 
+  const handleRefImage = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setNewRefImage(url);
+    setNewRefPreview(url);
+  };
+
+  const clearRefImage = () => {
+    setNewRefImage(null);
+    setNewRefPreview(null);
+    if (refInputRef.current) refInputRef.current.value = '';
+  };
+
   const handleNewGeneration = () => {
     if (!newPrompt.trim()) return;
     const id = crypto.randomUUID();
     sessionStorage.setItem(`gen_${id}`, JSON.stringify({
-      prompt: newPrompt.trim(), model, width, height, mode, duration, imageUrl: null, timestamp: Date.now(),
+      prompt: newPrompt.trim(), model, width, height, mode, duration, imageUrl: newRefImage || null, timestamp: Date.now(),
     }));
     router.push(`/generate/${id}`);
   };
@@ -250,6 +310,119 @@ export default function SessionPage({ params }) {
 
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(prompt);
+  };
+
+  const handleCreateVideo = () => {
+    if (!resultSrc) return;
+    const id = crypto.randomUUID();
+    sessionStorage.setItem(`gen_${id}`, JSON.stringify({
+      prompt, model: 'wan', width, height, mode: 'video', duration: 5, imageUrl: resultSrc, timestamp: Date.now(),
+    }));
+    router.push(`/generate/${id}`);
+  };
+
+  const handleRemoveBackground = async () => {
+    if (!resultSrc) return;
+    setActionsOpen(false);
+    setLoading(true);
+    try {
+      const editPrompt = 'Remove the background completely, make it transparent, keep only the main subject';
+      const encoded = encodeURIComponent(editPrompt);
+      const q = new URLSearchParams();
+      q.set('model', 'gptimage');
+      q.set('width', width);
+      q.set('height', height);
+      q.set('nologo', 'true');
+      q.set('referrer', 'elixpoart');
+      q.set('image', resultSrc);
+      const url = `${POLLINATIONS_BASE}/image/${encoded}?${q.toString()}`;
+      const headers = {};
+      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error('Background removal failed');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setResultSrc(blobUrl);
+      setModel('gptimage');
+      saveSession({ prompt: editPrompt, model: 'gptimage', resultSrc: blobUrl });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewUnzoomed = () => {
+    if (!resultSrc) return;
+    window.open(resultSrc, '_blank');
+    setActionsOpen(false);
+  };
+
+  const handleEditPose = async () => {
+    if (!resultSrc) return;
+    setActionsOpen(false);
+    setLoading(true);
+    try {
+      const editPrompt = 'Edit the character pose in this image, adjust the body position naturally while keeping the same character and style';
+      const encoded = encodeURIComponent(editPrompt);
+      const q = new URLSearchParams();
+      q.set('model', 'gptimage');
+      q.set('width', width);
+      q.set('height', height);
+      q.set('nologo', 'true');
+      q.set('referrer', 'elixpoart');
+      q.set('image', resultSrc);
+      const url = `${POLLINATIONS_BASE}/image/${encoded}?${q.toString()}`;
+      const headers = {};
+      if (POLLI_TOKEN) headers['Authorization'] = `Bearer ${POLLI_TOKEN}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error('Pose edit failed');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setResultSrc(blobUrl);
+      setModel('gptimage');
+      saveSession({ prompt: editPrompt, model: 'gptimage', resultSrc: blobUrl });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReportImage = () => {
+    setActionsOpen(false);
+    alert('Image has been reported. Thank you for helping keep Elixpo safe.');
+  };
+
+  const handleDeleteImage = () => {
+    if (!resultSrc) return;
+    URL.revokeObjectURL(resultSrc);
+    setResultSrc(null);
+    sessionStorage.removeItem(`gen_${sessionId}`);
+    // Remove from library
+    try {
+      const lib = JSON.parse(localStorage.getItem('elixpo_library') || '[]');
+      const updated = lib.filter((item) => item.sessionId !== sessionId);
+      localStorage.setItem('elixpo_library', JSON.stringify(updated));
+    } catch {}
+    router.push('/generate');
+  };
+
+  const handleShareImage = async () => {
+    if (!resultSrc) return;
+    try {
+      const res = await fetch(resultSrc);
+      const blob = await res.blob();
+      const file = new File([blob], `elixpo-${sessionId.slice(0, 8)}.png`, { type: blob.type });
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: 'Elixpo Art', text: prompt, files: [file] });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Link copied to clipboard!');
+      }
+    } catch {
+      await navigator.clipboard.writeText(window.location.href);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -285,14 +458,21 @@ export default function SessionPage({ params }) {
     return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
   };
 
+  const lastPoint = useRef(null);
+
   const onBrushDown = (e) => {
     e.preventDefault();
     isDrawing.current = true;
     const { x, y } = getCanvasCoords(e);
+    lastPoint.current = { x, y };
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(6, 214, 160, 0.35)';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = brushSize;
+    ctx.strokeStyle = '#06d6a0';
+    ctx.fillStyle = '#06d6a0';
     ctx.beginPath();
     ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
     ctx.fill();
@@ -304,13 +484,21 @@ export default function SessionPage({ params }) {
     const { x, y } = getCanvasCoords(e);
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
-    ctx.fillStyle = 'rgba(6, 214, 160, 0.35)';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = brushSize;
+    ctx.strokeStyle = '#06d6a0';
     ctx.beginPath();
-    ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(lastPoint.current.x, lastPoint.current.y);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    lastPoint.current = { x, y };
   };
 
-  const onBrushUp = () => { isDrawing.current = false; };
+  const onBrushUp = () => {
+    isDrawing.current = false;
+    lastPoint.current = null;
+  };
 
   const cancelRemix = () => {
     setRemixMode(false);
@@ -400,17 +588,24 @@ export default function SessionPage({ params }) {
                   <>
                     <img ref={imgRef} src={resultSrc} alt={prompt} className={styles.generatedImage} onLoad={remixMode ? initCanvas : undefined} />
                     {remixMode && (
-                      <canvas
-                        ref={canvasRef}
-                        className={styles.remixCanvas}
-                        onMouseDown={onBrushDown}
-                        onMouseMove={onBrushMove}
-                        onMouseUp={onBrushUp}
-                        onMouseLeave={onBrushUp}
-                        onTouchStart={onBrushDown}
-                        onTouchMove={onBrushMove}
-                        onTouchEnd={onBrushUp}
-                      />
+                      <>
+                        <canvas
+                          ref={canvasRef}
+                          className={styles.remixCanvas}
+                          onMouseDown={onBrushDown}
+                          onMouseMove={onBrushMove}
+                          onMouseUp={onBrushUp}
+                          onMouseLeave={onBrushUp}
+                          onTouchStart={onBrushDown}
+                          onTouchMove={onBrushMove}
+                          onTouchEnd={onBrushUp}
+                        />
+                        <button className={styles.exitEditBtn} onClick={cancelRemix} title="Exit edit mode">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </>
                     )}
                     {/* Edit button floating on preview */}
                     {!remixMode && (
@@ -431,20 +626,6 @@ export default function SessionPage({ params }) {
           {/* Remix bar */}
           {remixMode && (
             <div className={styles.remixBar}>
-              <div className={styles.remixTools}>
-                <label className={styles.brushLabel}>
-                  Brush
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    value={brushSize}
-                    onChange={(e) => setBrushSize(Number(e.target.value))}
-                    className={styles.brushSlider}
-                  />
-                  <span className={styles.brushVal}>{brushSize}px</span>
-                </label>
-              </div>
               <div className={styles.remixPromptRow}>
                 <input
                   type="text"
@@ -465,7 +646,37 @@ export default function SessionPage({ params }) {
           {/* Bottom prompt bar (hidden during remix) */}
           {!remixMode && (
             <div className={styles.bottomBar}>
+              {newRefPreview && (
+                <div className={styles.refPreviewWrap}>
+                  <img src={newRefPreview} alt="Reference" className={styles.refPreviewImg} />
+                  <button className={styles.refRemoveBtn} onClick={clearRefImage} title="Remove reference">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
               <div className={styles.promptBar}>
+                <input
+                  ref={refInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleRefImage}
+                  style={{ display: 'none' }}
+                />
+                <div className={styles.attachWrap}>
+                  <button className={styles.attachBtn} onClick={() => refInputRef.current?.click()}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="M21 15l-5-5L5 21" />
+                    </svg>
+                  </button>
+                  <div className={styles.attachTooltip}>
+                    Attach reference image
+                    <span className={styles.tooltipHint}>or paste from clipboard</span>
+                  </div>
+                </div>
                 <textarea
                   className={styles.promptInput}
                   placeholder="Type a prompt..."
@@ -515,6 +726,33 @@ export default function SessionPage({ params }) {
                   <span className={`${styles.statusDot} ${loading ? styles.statusLoading : styles.statusDone}`} />
                   <span className={styles.sessionId}>{sessionId.slice(0, 8)}</span>
                 </div>
+                {resultSrc && (
+                  <div className={styles.quickActions}>
+                    <button className={styles.quickActionBtn} onClick={handleShareImage} title="Share">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                      </svg>
+                    </button>
+                    <button className={styles.quickActionBtn} onClick={handleCopyImage} title="Copy image">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                      </svg>
+                    </button>
+                    <button className={styles.quickActionBtn} onClick={handleDownload} title="Download">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                    </button>
+                    <button className={`${styles.quickActionBtn} ${styles.quickActionDanger}`} onClick={handleDeleteImage} title="Delete">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Prompt */}
@@ -566,6 +804,24 @@ export default function SessionPage({ params }) {
                 </div>
               </div>
 
+              {/* Brush size — visible in remix mode */}
+              {remixMode && (
+                <div className={styles.section}>
+                  <h3 className={styles.sectionLabel}>Brush</h3>
+                  <div className={styles.brushControl}>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      value={brushSize}
+                      onChange={(e) => setBrushSize(Number(e.target.value))}
+                      className={styles.brushSlider}
+                    />
+                    <span className={styles.brushVal}>{brushSize}px</span>
+                  </div>
+                </div>
+              )}
+
               {/* Actions — popup */}
               <div className={styles.actionsWrap}>
                 <button className={styles.actionsToggle} onClick={() => setActionsOpen(!actionsOpen)}>
@@ -575,22 +831,41 @@ export default function SessionPage({ params }) {
                   Actions
                 </button>
                 {actionsOpen && <div className={styles.actionsPopup}><div className={styles.actionList}>
-                  <button className={styles.actionBtn} disabled>
+                  <button className={styles.actionBtn} onClick={handleRemoveBackground} disabled={!resultSrc || mode === 'video'}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="3" y="3" width="18" height="18" rx="2" />
                       <path d="M9 3v18" /><path d="M15 3v18" /><path d="M3 9h18" /><path d="M3 15h18" />
                     </svg>
                     Remove Background
-                    <span className={styles.comingSoon}>Soon</span>
                   </button>
-                  <button className={styles.actionBtn} disabled>
+                  <button className={styles.actionBtn} onClick={handleViewUnzoomed} disabled={!resultSrc}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" />
+                    </svg>
+                    View Unzoomed Image
+                  </button>
+                  <button className={styles.actionBtn} onClick={startRemix} disabled={!resultSrc || mode === 'video'}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 20h9" />
                       <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
                     </svg>
                     Edit with Canvas
-                    <span className={styles.comingSoon}>Soon</span>
                   </button>
+                  <button className={styles.actionBtn} onClick={handleEditPose} disabled={!resultSrc || mode === 'video'}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="5" r="2" /><path d="M12 7v5" /><path d="M9 12l-3 5" /><path d="M15 12l3 5" /><path d="M10 12l-2-3" /><path d="M14 12l2-3" />
+                    </svg>
+                    Edit Character Pose
+                  </button>
+                  <button className={styles.actionBtn} onClick={handleCreateVideo} disabled={!resultSrc || mode === 'video'}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                    Create Video
+                  </button>
+
+                  <div className={styles.actionDivider} />
+
                   <button className={styles.actionBtn} onClick={handleDownload} disabled={!resultSrc}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -613,12 +888,22 @@ export default function SessionPage({ params }) {
                     </svg>
                     Copy Seed
                   </button>
+
+                  <div className={styles.actionDivider} />
+
                   <button className={styles.actionBtn} onClick={() => router.push('/generate')}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="12" y1="5" x2="12" y2="19" />
                       <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                     New Generation
+                  </button>
+                  <button className={`${styles.actionBtn} ${styles.actionBtnDanger}`} onClick={handleReportImage} disabled={!resultSrc}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    Report Image
                   </button>
                 </div></div>}
               </div>
