@@ -8,3 +8,4 @@ wrangler.toml
 .next
 out/
 output/
+plans/

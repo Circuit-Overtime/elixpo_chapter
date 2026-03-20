@@ -170,14 +170,9 @@ export const fonts = {
   accent:   "'Caveat', 'Segoe Script', cursive",
 };
 
-// ─── Plan Rate Limits ────────────────────────────────────────────
-// Mirrors the D1 `plans` table. Used client-side for progress bars.
-export const planLimits = {
-  guest:       { images: 10,  videoMins: 0 },
-  free:        { images: 50,  videoMins: 2 },
-  atelier:     { images: 200, videoMins: 5 },
-  masterpiece: { images: 500, videoMins: 15 },
-};
+// ─── Plan Credits (deprecated — use credits.js / plans.json instead) ──
+// Kept for backward compat with settings page until fully migrated.
+export { DAILY_CREDITS as planLimits } from './credits';
 
 // ─── Brush Stroke SVG Paths ──────────────────────────────────────
 // Reusable wavy/brushy divider paths for section transitions.

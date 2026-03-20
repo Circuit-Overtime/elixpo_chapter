@@ -117,35 +117,56 @@ export async function ensureAuth() {
   return auth;
 }
 
-// Guest usage limits (unauthenticated visitors)
-const GUEST_LIMITS = { images: 10, videos: 2 };
+// ─── Credit-based usage tracking ─────────────────────────────────
 
-export function getGuestUsage() {
-  if (typeof window === 'undefined') return { images: 0, videos: 0 };
+export function getUserTier() {
+  const user = getUser();
+  if (!user) return 'guest';
+  return user.plan || user.plan_id || 'free';
+}
+
+// Fetch current credit balance
+export async function fetchCredits() {
   try {
-    const raw = localStorage.getItem('elixpo_guest_usage');
-    return raw ? JSON.parse(raw) : { images: 0, videos: 0 };
-  } catch { return { images: 0, videos: 0 }; }
+    const user = getUser();
+    const tier = getUserTier();
+    const params = new URLSearchParams({ tier });
+    if (user?.id) params.set('userId', user.id);
+    const res = await fetch(`/api/usage?${params}`);
+    if (!res.ok) return null;
+    return res.json(); // { credits, creditsUsed, dailyTotal, tier }
+  } catch {
+    return null;
+  }
 }
 
-export function incrementGuestUsage(type) {
-  const usage = getGuestUsage();
-  usage[type] = (usage[type] || 0) + 1;
-  localStorage.setItem('elixpo_guest_usage', JSON.stringify(usage));
-  return usage;
+// Spend credits for an action. Returns { allowed, credits, cost, ... } or { allowed: false, error }
+export async function spendCredits(action, model) {
+  try {
+    const user = getUser();
+    const tier = getUserTier();
+    const body = { action, model };
+    if (user?.id) {
+      body.userId = user.id;
+      body.tier = tier;
+    }
+
+    const res = await fetch('/api/usage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) return { allowed: false, ...data };
+    return { allowed: true, ...data };
+  } catch {
+    return { allowed: true, fallback: true };
+  }
 }
 
-export function canGuestGenerate(type) {
-  if (isSignedIn()) return true;
-  const usage = getGuestUsage();
-  if (type === 'video') return usage.videos < GUEST_LIMITS.videos;
-  return usage.images < GUEST_LIMITS.images;
-}
-
-export function getGuestRemaining(type) {
-  const usage = getGuestUsage();
-  if (type === 'video') return Math.max(0, GUEST_LIMITS.videos - (usage.videos || 0));
-  return Math.max(0, GUEST_LIMITS.images - (usage.images || 0));
+// Legacy compat — wraps spendCredits
+export async function checkAndIncrement(type) {
+  return spendCredits(type === 'videos' ? 'video' : type === 'images' ? 'image' : type);
 }
 
 export function getGuestSessionId() {

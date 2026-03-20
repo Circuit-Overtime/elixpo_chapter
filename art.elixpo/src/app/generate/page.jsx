@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar/Navbar';
-import { isSignedIn, canGuestGenerate, getGuestRemaining, incrementGuestUsage, getGuestSessionId, getSignInUrl } from '../lib/auth';
+import { isSignedIn, getGuestSessionId, getSignInUrl, spendCredits, fetchCredits } from '../lib/auth';
+import { getImageCost, getVideoCost } from '../lib/credits';
 import styles from './Generate.module.css';
 
 const MODELS = [
@@ -72,7 +73,7 @@ const RANDOM_SUBJECTS = [
   'a knight made of starlight fighting shadow creatures',
 ];
 
-const API_BASE = 'http://localhost:3005';
+const API_BASE = '/api';
 
 export default function GeneratePage() {
   const router = useRouter();
@@ -88,17 +89,26 @@ export default function GeneratePage() {
   const [styleOpen, setStyleOpen] = useState(false);
   const [durationOpen, setDurationOpen] = useState(false);
   const [starMenuOpen, setStarMenuOpen] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [uploadedPreview, setUploadedPreview] = useState(null);
+  const [uploadedImages, setUploadedImages] = useState([]);
+  const [uploadedPreviews, setUploadedPreviews] = useState([]);
   const [aiWorking, setAiWorking] = useState(false);
   const [limitWarning, setLimitWarning] = useState('');
+  const [describeArtifact, setDescribeArtifact] = useState(null);
+  const [artifactModal, setArtifactModal] = useState(false);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
-  const starMenuRef = useRef(null);
+  const describeInputRef = useRef(null);
+  const optionsBarRef = useRef(null);
+  const pendingDescribe = useRef(false);
 
-  const imgRemaining = getGuestRemaining('images');
-  const vidRemaining = getGuestRemaining('videos');
   const signedIn = isSignedIn();
+  const [credits, setCredits] = useState(null);
+
+  const currentCost = mode === 'video' ? getVideoCost(videoModel) : getImageCost(model);
+
+  useEffect(() => {
+    fetchCredits().then((data) => { if (data) setCredits(data); });
+  }, []);
 
   const selectedModel = MODELS.find((m) => m.id === model);
   const selectedVideoModel = VIDEO_MODELS.find((m) => m.id === videoModel);
@@ -106,16 +116,48 @@ export default function GeneratePage() {
   const selectedStyle = STYLES.find((s) => s.id === style);
   const selectedDuration = DURATIONS.find((d) => d.id === duration);
 
-  // Close star menu on outside click
+  const getRefImageLimit = () => {
+    if (!signedIn) return 1;
+    const tier = credits?.tier || 'free';
+    if (tier === 'free') return 2;
+    return 5;
+  };
+
+  // Close all dropdowns on outside click
   useEffect(() => {
     const handleClick = (e) => {
-      if (starMenuRef.current && !starMenuRef.current.contains(e.target)) {
-        setStarMenuOpen(false);
+      if (optionsBarRef.current && !optionsBarRef.current.contains(e.target)) {
+        closeAllDropdowns();
       }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  // Paste image from clipboard
+  useEffect(() => {
+    const handlePaste = (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) return;
+          if (uploadedImages.length >= getRefImageLimit()) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            setUploadedImages((prev) => [...prev, file]);
+            setUploadedPreviews((prev) => [...prev, ev.target.result]);
+          };
+          reader.readAsDataURL(file);
+          return;
+        }
+      }
+    };
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [uploadedImages]);
 
   const closeAllDropdowns = () => {
     setModelOpen(false);
@@ -141,6 +183,7 @@ export default function GeneratePage() {
       setPrompt(subject);
     } finally {
       setAiWorking(false);
+      autoResize();
     }
   };
 
@@ -160,63 +203,116 @@ export default function GeneratePage() {
       /* silent */
     } finally {
       setAiWorking(false);
+      autoResize();
     }
   };
 
   const handleDescribeImage = () => {
     setStarMenuOpen(false);
-    fileInputRef.current?.click();
+    pendingDescribe.current = true;
+    describeInputRef.current?.click();
+  };
+
+  const handleDescribeUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (describeInputRef.current) describeInputRef.current.value = '';
+
+    // Save preview for the artifact
+    const reader = new FileReader();
+    reader.onload = (ev) => setDescribeArtifact(ev.target.result);
+    reader.readAsDataURL(file);
+
+    setAiWorking(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_BASE}/describe`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.description) {
+        setPrompt(data.description);
+        autoResize();
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setAiWorking(false);
+      pendingDescribe.current = false;
+    }
+  };
+
+  const handleReplaceArtifact = () => {
+    setArtifactModal(false);
+    pendingDescribe.current = true;
+    describeInputRef.current?.click();
+  };
+
+  const handleRemoveArtifact = () => {
+    setDescribeArtifact(null);
+    setArtifactModal(false);
   };
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadedImage(file);
+    if (uploadedImages.length >= getRefImageLimit()) return;
     const reader = new FileReader();
-    reader.onload = (ev) => setUploadedPreview(ev.target.result);
+    reader.onload = (ev) => {
+      setUploadedImages((prev) => [...prev, file]);
+      setUploadedPreviews((prev) => [...prev, ev.target.result]);
+    };
     reader.readAsDataURL(file);
   };
 
-  const clearUploadedImage = () => {
-    setUploadedImage(null);
-    setUploadedPreview(null);
+  const clearUploadedImage = (index) => {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+    setUploadedPreviews((prev) => prev.filter((_, i) => i !== index));
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const autoResize = () => {
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 250) + 'px';
+    });
   };
 
   const handleGenerate = async () => {
     if (!prompt.trim() || generating) return;
 
-    const genType = mode === 'video' ? 'videos' : 'images';
-    if (!canGuestGenerate(genType)) {
-      setLimitWarning(
-        mode === 'video'
-          ? 'Guest video limit reached. Sign in for unlimited access.'
-          : 'Guest image limit reached. Sign in for unlimited access.'
-      );
+    const genType = mode === 'video' ? 'video' : 'image';
+    const genModel = mode === 'video' ? videoModel : model;
+    const check = await spendCredits(genType, genModel);
+    if (!check.allowed) {
+      setLimitWarning(check.error || 'Not enough credits.');
       return;
     }
 
     setGenerating(true);
     setLimitWarning('');
 
-    // Guests get a single session ID, signed-in users get unique ones
-    const sessionId = signedIn ? crypto.randomUUID() : getGuestSessionId();
+    // Refresh credit balance after spending
+    fetchCredits().then((data) => { if (data) setCredits(data); });
 
-    // Track usage for guests
-    if (!signedIn) incrementGuestUsage(genType);
+    const sessionId = signedIn ? crypto.randomUUID() : getGuestSessionId();
     const { w, h } = selectedAspect;
 
-    let imageUrl = null;
-    if (uploadedImage) {
+    let imageUrls = [];
+    for (const img of uploadedImages) {
       try {
         const formData = new FormData();
-        formData.append('file', uploadedImage);
-        const uploadRes = await fetch(`${API_BASE}/upload-to-uguu`, {
+        formData.append('file', img);
+        const uploadRes = await fetch(`${API_BASE}/upload`, {
           method: 'POST',
           body: formData,
         });
         const uploadData = await uploadRes.json();
-        if (uploadData.url) imageUrl = uploadData.url;
+        if (uploadData.url) imageUrls.push(uploadData.url);
       } catch { /* continue */ }
     }
 
@@ -230,7 +326,8 @@ export default function GeneratePage() {
         style,
         mode,
         duration: mode === 'video' ? duration : null,
-        imageUrl,
+        imageUrl: imageUrls[0] || null,
+        imageUrls: imageUrls.length > 0 ? imageUrls : null,
         timestamp: Date.now(),
       })
     );
@@ -264,18 +361,40 @@ export default function GeneratePage() {
             Describe your vision and let AI bring it to life
           </p>
 
-          {/* Uploaded image preview */}
-          {uploadedPreview && (
-            <div className={styles.uploadPreview}>
-              <img src={uploadedPreview} alt="Uploaded" className={styles.uploadThumb} />
+          {/* Uploaded image previews */}
+          {uploadedPreviews.length > 0 && (
+            <div className={styles.uploadPreviewRow}>
+              {uploadedPreviews.map((preview, i) => (
+                <div key={i} className={styles.uploadPreview}>
+                  <img src={preview} alt={`Reference ${i + 1}`} className={styles.uploadThumb} />
+                  <button className={styles.uploadRemove} onClick={() => clearUploadedImage(i)}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
               <span className={styles.uploadLabel}>
-                {mode === 'video' ? 'Start frame' : 'Reference image'}
+                {uploadedPreviews.length}/{getRefImageLimit()} {mode === 'video' ? 'start frames' : 'reference images'}
               </span>
-              <button className={styles.uploadRemove} onClick={clearUploadedImage}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
+            </div>
+          )}
+
+          {/* Artifact zone — above prompt bar */}
+          {describeArtifact && (
+            <div className={styles.artifactZone}>
+              <div className={styles.artifactWrap}>
+                <button className={styles.artifact} onClick={() => setArtifactModal(true)} title="Source image — click to manage">
+                  <img src={describeArtifact} alt="Source" className={styles.artifactImg} />
+                  <span className={styles.artifactBadge}>AI</span>
+                </button>
+                <button className={styles.artifactClose} onClick={(e) => { e.stopPropagation(); handleRemoveArtifact(); }} title="Remove">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <span className={styles.artifactLabel}>Described with AI</span>
             </div>
           )}
 
@@ -286,6 +405,13 @@ export default function GeneratePage() {
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
+              style={{ display: 'none' }}
+            />
+            <input
+              ref={describeInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleDescribeUpload}
               style={{ display: 'none' }}
             />
             <div className={styles.tooltipWrap}>
@@ -303,20 +429,24 @@ export default function GeneratePage() {
                 {mode === 'video' ? 'Upload start frame' : 'Upload reference image'}
               </span>
             </div>
-            <input
+            <textarea
               ref={inputRef}
-              type="text"
               className={styles.promptInput}
-              placeholder="Type a prompt..."
+              placeholder="Type a prompt or paste an image..."
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => {
+                setPrompt(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 250) + 'px';
+              }}
               onKeyDown={handleKeyDown}
+              rows={1}
             />
             {aiWorking && <span className={styles.promptSpinner} />}
           </div>
 
           {/* Options bar */}
-          <div className={styles.optionsBar}>
+          <div className={styles.optionsBar} ref={optionsBarRef}>
             <div className={styles.optionsLeft}>
               <div className={styles.modeToggle}>
                 <button
@@ -444,7 +574,7 @@ export default function GeneratePage() {
               )}
 
               {/* Star menu */}
-              <div className={styles.starMenuWrap} ref={starMenuRef}>
+              <div className={styles.starMenuWrap}>
                 <button
                   className={`${styles.enhanceBtn} ${aiWorking ? styles.enhanceSpin : ''}`}
                   onClick={() => { setStarMenuOpen(!starMenuOpen); setModelOpen(false); setStyleOpen(false); setDurationOpen(false); }}
@@ -516,17 +646,16 @@ export default function GeneratePage() {
             </div>
           </div>
 
-          {/* Usage counter for guests */}
-          {!signedIn && (
-            <div className={styles.usageBar}>
-              <span className={styles.usageLabel}>
-                {mode === 'video'
-                  ? `${vidRemaining} video generation${vidRemaining !== 1 ? 's' : ''} remaining`
-                  : `${imgRemaining} image generation${imgRemaining !== 1 ? 's' : ''} remaining`}
-              </span>
-              <a href={getSignInUrl()} className={styles.usageLink}>Sign in for unlimited</a>
-            </div>
-          )}
+          {/* Credit cost display */}
+          <div className={styles.usageBar}>
+            <span className={styles.usageLabel}>
+              Cost: {currentCost} credit{currentCost !== 1 ? 's' : ''}
+              {credits ? ` — ${credits.credits - (credits.creditsUsed || 0)} credits remaining` : ''}
+            </span>
+            {!signedIn && (
+              <a href={getSignInUrl()} className={styles.usageLink}>Sign in for more credits</a>
+            )}
+          </div>
 
           {/* Limit warning */}
           {limitWarning && (
@@ -539,6 +668,36 @@ export default function GeneratePage() {
           )}
         </div>
       </main>
+
+      {/* Artifact modal */}
+      {artifactModal && describeArtifact && (
+        <div className={styles.artifactOverlay} onClick={() => setArtifactModal(false)}>
+          <div className={styles.artifactModal} onClick={(e) => e.stopPropagation()}>
+            <img src={describeArtifact} alt="Source image" className={styles.artifactModalImg} />
+            <div className={styles.artifactModalInfo}>
+              <p className={styles.artifactModalTitle}>Source Image</p>
+              <p className={styles.artifactModalHint}>This image was used to generate the prompt description</p>
+            </div>
+            <div className={styles.artifactModalActions}>
+              <button className={styles.artifactModalBtn} onClick={handleReplaceArtifact}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 105.64-11.36L1 10" />
+                </svg>
+                Replace
+              </button>
+              <button className={`${styles.artifactModalBtn} ${styles.artifactModalBtnDanger}`} onClick={handleRemoveArtifact}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                </svg>
+                Remove
+              </button>
+              <button className={styles.artifactModalBtn} onClick={() => setArtifactModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

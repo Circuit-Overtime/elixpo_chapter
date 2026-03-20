@@ -1,9 +1,9 @@
 .page {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(141, 73, 253, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(86, 145, 243, 0.04) 0%, transparent 60%),
-    var(--color-bg-primary);
+    radial-gradient(ellipse 80% 50% at 15% 5%, rgba(86, 145, 243, 0.07) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(141, 73, 253, 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #060a14 0%, #0a0f1e 40%, #0d1425 100%);
 }
 
 .main {
@@ -35,7 +35,7 @@
   font-family: var(--font-family-primary);
   font-size: var(--font-size-xs);
   font-weight: 700;
-  color: var(--color-text-tertiary);
+  color: rgba(86, 145, 243, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 0 0.6rem;
@@ -52,20 +52,21 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   text-decoration: none;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(145deg, rgba(14, 18, 32, 0.9) 0%, rgba(10, 14, 26, 0.95) 100%);
+  border: 1px solid rgba(86, 145, 243, 0.08);
   transition: all var(--animation-fast);
 }
 
 .sidebarItem:hover {
-  background: var(--color-surface-hover);
+  border-color: rgba(86, 145, 243, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(86, 145, 243, 0.04);
   color: var(--color-text-primary);
 }
 
 .sidebarActive {
-  background: var(--color-surface-hover);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
+  background: rgba(86, 145, 243, 0.08);
+  color: #5691f3;
+  border-color: rgba(86, 145, 243, 0.15);
 }
 
 /* ─── Content ─── */
@@ -82,7 +83,7 @@
   font-size: var(--font-size-3xl);
   font-weight: 700;
   color: var(--color-text-primary);
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #5691f3 0%, #7b6cf6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -91,13 +92,19 @@
 
 /* Cards */
 .card {
-  background: rgba(255, 255, 255, 0.02);
+  background: linear-gradient(145deg, rgba(14, 18, 32, 0.9) 0%, rgba(10, 14, 26, 0.95) 100%);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(86, 145, 243, 0.08);
   border-radius: var(--radius-xl);
   padding: var(--spacing-xl);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: border-color var(--animation-fast), box-shadow var(--animation-fast);
+}
+
+.card:hover {
+  border-color: rgba(86, 145, 243, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(86, 145, 243, 0.04);
 }
 
 .cardTitle {
@@ -131,7 +138,7 @@
 .fieldLabel {
   font-size: var(--font-size-xs);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: rgba(86, 145, 243, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -243,13 +250,13 @@
   margin-top: var(--spacing-sm);
   font-size: var(--font-size-sm);
   font-weight: 600;
-  color: var(--color-primary-light);
+  color: #5691f3;
   text-decoration: none;
   transition: color var(--animation-fast);
 }
 
 .upgradeLink:hover {
-  color: var(--color-accent-light);
+  color: #7b6cf6;
 }
 
 /* Interest chips */
@@ -277,15 +284,15 @@
 }
 
 .chipActive {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: white;
+  background: rgba(86, 145, 243, 0.08);
+  border-color: rgba(86, 145, 243, 0.15);
+  color: #5691f3;
 }
 
 .chipActive:hover {
-  background: var(--color-primary-dark);
-  border-color: var(--color-primary-dark);
-  color: white;
+  background: rgba(86, 145, 243, 0.12);
+  border-color: rgba(86, 145, 243, 0.2);
+  color: #5691f3;
 }
 
 /* Delete button */
