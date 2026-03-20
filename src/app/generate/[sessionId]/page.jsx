@@ -453,20 +453,6 @@ export default function SessionPage({ params }) {
           {/* Remix bar */}
           {remixMode && (
             <div className={styles.remixBar}>
-              <div className={styles.remixTools}>
-                <label className={styles.brushLabel}>
-                  Brush
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    value={brushSize}
-                    onChange={(e) => setBrushSize(Number(e.target.value))}
-                    className={styles.brushSlider}
-                  />
-                  <span className={styles.brushVal}>{brushSize}px</span>
-                </label>
-              </div>
               <div className={styles.remixPromptRow}>
                 <input
                   type="text"
@@ -587,6 +573,24 @@ export default function SessionPage({ params }) {
                   </div>
                 </div>
               </div>
+
+              {/* Brush size — visible in remix mode */}
+              {remixMode && (
+                <div className={styles.section}>
+                  <h3 className={styles.sectionLabel}>Brush</h3>
+                  <div className={styles.brushControl}>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      value={brushSize}
+                      onChange={(e) => setBrushSize(Number(e.target.value))}
+                      className={styles.brushSlider}
+                    />
+                    <span className={styles.brushVal}>{brushSize}px</span>
+                  </div>
+                </div>
+              )}
 
               {/* Actions — popup */}
               <div className={styles.actionsWrap}>

@@ -1,6 +1,10 @@
 .page {
   min-height: 100vh;
-  background: var(--color-bg-primary);
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(141, 73, 253, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6, 214, 160, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 60% 30%, rgba(86, 145, 243, 0.04) 0%, transparent 60%),
+    var(--color-bg-primary);
   display: flex;
   flex-direction: column;
 }
@@ -621,23 +625,15 @@
   backdrop-filter: blur(8px);
 }
 
-.remixTools {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-}
 
-.brushLabel {
+.brushControl {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-  font-family: var(--font-family-primary);
 }
 
 .brushSlider {
-  width: 100px;
+  flex: 1;
   accent-color: var(--color-accent);
 }
 
@@ -646,6 +642,7 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   min-width: 36px;
+  text-align: right;
 }
 
 .remixPromptRow {
