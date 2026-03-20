@@ -1,11 +1,3 @@
-"""
-OpenAI-compatible /v1/chat/completions endpoint.
-
-Accepts the standard OpenAI request format and returns responses in
-OpenAI chat completion format (streaming and non-streaming).
-
-This is the primary endpoint for Pollinations and other OpenAI-compatible clients.
-"""
 import logging
 import uuid
 import json
@@ -24,8 +16,7 @@ logger = logging.getLogger("lixsearch-api")
 
 
 def _generate_session_id(messages: list) -> str:
-    """Deterministic session ID from the first user message, so repeated
-    conversations with the same opening get the same session."""
+
     first_user = ""
     for msg in messages:
         if msg.get("role") == "user":
@@ -81,23 +72,7 @@ def _format_completion(request_id: str, content: str, prompt_tokens: int = 0) ->
 
 
 async def chat_completions(pipeline_initialized: bool):
-    """
-    POST /v1/chat/completions
 
-    OpenAI-compatible endpoint. Accepts:
-    {
-        "model": "lixsearch",             // optional, ignored (always uses lixsearch)
-        "messages": [
-            {"role": "system", "content": "..."},   // optional, ignored
-            {"role": "user", "content": "..."},
-            {"role": "assistant", "content": "..."},
-            {"role": "user", "content": "latest query"}
-        ],
-        "stream": true,                    // optional, default false
-        "session_id": "...",               // optional, auto-generated if missing
-        // deep search is auto-detected from query complexity
-    }
-    """
     if not pipeline_initialized:
         return jsonify({"error": {"message": "Server not initialized", "type": "server_error"}}), 503
 

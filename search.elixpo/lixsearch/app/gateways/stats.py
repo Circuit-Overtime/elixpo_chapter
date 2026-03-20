@@ -1,4 +1,3 @@
-"""Stats gateway."""
 import logging
 import uuid
 import os
@@ -15,7 +14,7 @@ logger = logging.getLogger("lixsearch-api")
 
 
 def _get_redis_memory_stats() -> dict:
-    """Get Redis memory usage across all 3 DBs."""
+
     try:
         client = create_redis_client(db=0)
         info = client.info("memory")
@@ -34,7 +33,7 @@ def _get_redis_memory_stats() -> dict:
 
 
 def _get_disk_archive_stats() -> dict:
-    """Get disk archive stats (total size, file count)."""
+
     try:
         archive_dir = CONVERSATION_ARCHIVE_DIR
         if not os.path.isdir(archive_dir):
@@ -56,7 +55,7 @@ def _get_disk_archive_stats() -> dict:
 
 
 async def get_stats():
-    """Get application statistics including Redis memory and disk usage."""
+
     request_id = request.headers.get("X-Request-ID", str(uuid.uuid4())[:X_REQ_ID_SLICE_SIZE])
 
     try:

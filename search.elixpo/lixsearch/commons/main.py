@@ -8,7 +8,7 @@ _ipc_ready = False
 _ipc_initialized = False
 
 def _init_ipc_manager(max_retries: int = 3, retry_delay: float = 1.0):
-    """Lazily initialize IPC connection using centralized manager."""
+
     global _ipc_ready, _ipc_initialized
     
     # Avoid re-attempting if already tried

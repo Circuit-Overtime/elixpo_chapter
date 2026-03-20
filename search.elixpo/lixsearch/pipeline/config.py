@@ -11,9 +11,6 @@ MIN_LINKS_TO_TAKE = 1
 MAX_LINKS_TO_TAKE_DETAILED = 12
 MIN_LINKS_TO_TAKE_DETAILED = 6
 
-# Source collection: how many URLs to surface to the user
-# Standard: up to MAX_SOURCES_STANDARD, Detailed: up to MAX_SOURCES_DETAILED
-# Web search step takes up to SOURCES_PER_SEARCH from each search call
 MAX_SOURCES_STANDARD = 8
 MAX_SOURCES_DETAILED = 15
 SOURCES_PER_SEARCH = 5

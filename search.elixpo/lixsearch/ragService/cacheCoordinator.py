@@ -26,15 +26,7 @@ from ragService.semanticCacheRedis import (
 
 
 class CacheCoordinator:
-    """
-    Orchestrates per-session caching across three Redis layers:
-    
-    1. URL Embedding Cache (24h): Single embedding per URL (global, across sessions)
-    2. Semantic Query Cache (5m): URL + query → results (per sessionID)
-    3. Session Context Window (30m): Conversation history (per sessionID, LRU)
-    
-    CRITICAL: All operations scoped to sessionID for isolation and scalability.
-    """
+
     
     def __init__(
         self,
@@ -84,15 +76,15 @@ class CacheCoordinator:
             raise
 
     def get_url_embedding(self, url: str) -> Optional[np.ndarray]:
-        """Get cached URL embedding (global cache)"""
+
         return self.url_embedding_cache.get(url)
 
     def cache_url_embedding(self, url: str, embedding: np.ndarray) -> bool:
-        """Store URL embedding (global cache)"""
+
         return self.url_embedding_cache.set(url, embedding)
     
     def batch_cache_url_embeddings(self, url_embeddings: Dict[str, np.ndarray]) -> Dict[str, bool]:
-        """Batch store URL embeddings for efficiency"""
+
         return self.url_embedding_cache.batch_set(url_embeddings)
 
     def get_semantic_response(
@@ -100,7 +92,7 @@ class CacheCoordinator:
         url: str,
         query_embedding: np.ndarray
     ) -> Optional[Dict]:
-        """Get cached semantic response for URL + query (session-scoped)"""
+
         return self.semantic_cache.get(
             url=url,
             query_embedding=query_embedding
@@ -112,7 +104,7 @@ class CacheCoordinator:
         query_embedding: np.ndarray,
         response: Dict
     ) -> None:
-        """Store semantic response for URL + query (session-scoped)"""
+
         self.semantic_cache.set(
             url=url,
             query_embedding=query_embedding,
@@ -125,19 +117,19 @@ class CacheCoordinator:
         content: str,
         metadata: Optional[Dict] = None
     ) -> int:
-        """Add message to session context window. Returns current window size."""
+
         return self.context_window.add_message(role, content, metadata)
 
     def get_context_messages(self) -> list:
-        """Get all messages in session context window"""
+
         return self.context_window.get_context()
 
     def get_formatted_context(self, max_lines: int = 50) -> str:
-        """Get formatted context for display/logging"""
+
         return self.context_window.get_formatted_context(max_lines)
     
     def clear_session_cache(self) -> bool:
-        """Clear semantic cache and context window for this session"""
+
         try:
             cache_cleared = self.semantic_cache.clear_session()
             context_cleared = self.context_window.clear()
@@ -148,7 +140,7 @@ class CacheCoordinator:
             return False
     
     def get_stats(self) -> Dict:
-        """Get comprehensive cache statistics for this session"""
+
         return {
             "session_id": self.session_id,
             "url_embedding_cache": self.url_embedding_cache.get_stats(),

@@ -3,7 +3,7 @@ from loguru import logger
 
 
 def get_model_server():
-    """Get model server reference via centralized CoreServiceManager."""
+
     try:
         from ipcService.coreServiceManager import CoreServiceManager
         manager = CoreServiceManager.get_instance()

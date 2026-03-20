@@ -10,7 +10,7 @@ from pipeline.config import X_REQ_ID_SLICE_SIZE, REQUEST_ID_HEX_SLICE_SIZE, LOG_
 
 
 def _session_id_from_ip() -> str:
-    """Derive a deterministic session_id from the client IP address."""
+
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
     # Take the first IP if X-Forwarded-For has multiple
     client_ip = client_ip.split(",")[0].strip()

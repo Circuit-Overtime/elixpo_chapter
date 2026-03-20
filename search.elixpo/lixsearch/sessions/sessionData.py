@@ -30,9 +30,6 @@ class SessionData:
         self.conversation_history: List[Dict] = []
         self.search_context: str = ""
         
-        # NOTE: Chroma vector storage is now global and shared via HTTP client (vectorStore.py)
-        # DO NOT create per-session Chroma clients - this was causing 500MB+ memory leak
-        # Each session still maintains conversation history and metadata locally
         
         self.content_order: List[str] = []
         self.lock = threading.RLock()
@@ -113,17 +110,11 @@ class SessionData:
         self.last_activity = datetime.now()
     
     def check_cache_relevance(self, query_text: str, query_embedding: Optional[np.ndarray] = None, similarity_threshold: float = 0.80) -> Tuple[bool, Optional[Dict]]:
-        """
-        Check if a similar query exists in the cache and return cached results.
-        Returns (cache_hit, cached_data)
-        """
+
         return False, None
     
     def get_mixed_results(self, cached_results: List[Dict], new_results: List[Dict], max_results: int = 10) -> List[Dict]:
-        """
-        Combine cached results with new search results, avoiding duplicates.
-        Prioritizes cached results (they are already validated) but includes new results.
-        """
+
         combined = []
         seen_urls = set()
         

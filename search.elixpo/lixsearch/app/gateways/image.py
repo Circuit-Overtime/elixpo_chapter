@@ -1,7 +1,3 @@
-"""
-Image storage and serving — disk-backed, shared across all app replicas.
-Images are stored on the shared cache-data volume so any container can serve them.
-"""
 import logging
 import os
 import time
@@ -39,7 +35,7 @@ def _content_type_from_ext(ext: str) -> str:
 
 
 def store_image(image_id: str, data: bytes, content_type: str = "image/png") -> None:
-    """Write image bytes to shared disk volume."""
+
     ext = _ext_from_content_type(content_type)
     path = os.path.join(IMAGE_DIR, f"{image_id}{ext}")
     with open(path, "wb") as f:
@@ -48,7 +44,7 @@ def store_image(image_id: str, data: bytes, content_type: str = "image/png") -> 
 
 
 def _cleanup_expired_images() -> None:
-    """Remove images older than IMAGE_TTL_SECONDS. Runs at most once per 10 min."""
+
     global _last_cleanup
     now = time.time()
     if now - _last_cleanup < 600:
@@ -74,11 +70,7 @@ def _cleanup_expired_images() -> None:
 
 
 async def serve_image(image_id: str):
-    """Serve an image by ID from disk.
 
-    If the file isn't on disk yet (background generation still in progress),
-    waits up to ~30s with exponential back-off before returning 404.
-    """
     import asyncio
 
     _cleanup_expired_images()

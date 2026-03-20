@@ -10,7 +10,7 @@ from app.utils import validate_session_id
 
 
 def _session_id_from_ip() -> str:
-    """Derive a deterministic session_id from the client IP address."""
+
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
     client_ip = client_ip.split(",")[0].strip()
     return f"ip-{hashlib.sha256(client_ip.encode()).hexdigest()[:16]}"

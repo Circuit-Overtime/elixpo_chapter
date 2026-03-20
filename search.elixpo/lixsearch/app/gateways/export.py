@@ -10,7 +10,7 @@ logger = logging.getLogger("lixsearch-api")
 
 
 def _markdown_to_pdf(markdown_text: str, title: str = "lixSearch Response") -> bytes:
-    """Convert markdown text to a styled PDF. Handles \\n literals and markdown formatting."""
+
     from fpdf import FPDF
 
     pdf = FPDF()
@@ -101,7 +101,7 @@ def _markdown_to_pdf(markdown_text: str, title: str = "lixSearch Response") -> b
 
 
 async def export_pdf():
-    """POST /api/export/pdf — convert markdown response to downloadable PDF."""
+
     request_id = request.headers.get("X-Request-ID", str(uuid.uuid4())[:X_REQ_ID_SLICE_SIZE])
 
     try:

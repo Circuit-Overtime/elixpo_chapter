@@ -1,8 +1,3 @@
-"""
-ConversationArchive – disk persistence layer for conversation history.
-Stores full turn history as Huffman-compressed JSON per session.
-Supports lazy embedding-based retrieval when context window overflows.
-"""
 import json
 import os
 import struct
@@ -15,31 +10,12 @@ from loguru import logger
 from sessions.huffman_codec import HuffmanCodec, encode_str, decode_bytes
 
 
-# File layout per session:  <archive_dir>/<session_id>.huff
-# Binary format:
-#   [4B]  MAGIC  "CAv1"
-#   [8B]  created_at  (float64 unix timestamp)
-#   [8B]  updated_at  (float64 unix timestamp)
-#   [4B]  num_turns   (uint32)
-#   [N B] Huffman-compressed JSON payload (list of turn dicts)
-
 _MAGIC = b"CAv1"
 _HEADER_SIZE = 4 + 8 + 8 + 4  # magic + created + updated + num_turns
 
 
 class ConversationArchive:
-    """
-    Persistent disk archive for full conversation history.
 
-    Each session is stored as a single Huffman-compressed file.
-    All operations are thread-safe via per-session locks.
-
-    Design decisions:
-    - One file per session: simple sequential read/write, no index needed
-    - Huffman over gzip/lz4: fastest for structured JSON (text-heavy)
-    - Lazy embedding: embeddings computed on-demand during retrieval
-    - 14-day TTL (configurable): enforced on startup and periodically
-    """
 
     def __init__(self, archive_dir: str, session_ttl_days: int = 30):
         self.archive_dir = archive_dir
@@ -51,9 +27,6 @@ class ConversationArchive:
             f"[ConversationArchive] Initialized: dir={archive_dir}, ttl={session_ttl_days}d"
         )
 
-    # ------------------------------------------------------------------ #
-    #  Internal helpers                                                    #
-    # ------------------------------------------------------------------ #
 
     def _path(self, session_id: str) -> str:
         return os.path.join(self.archive_dir, f"{session_id}.huff")
@@ -64,16 +37,9 @@ class ConversationArchive:
                 self._locks[session_id] = threading.RLock()
             return self._locks[session_id]
 
-    # ------------------------------------------------------------------ #
-    #  Public API                                                          #
-    # ------------------------------------------------------------------ #
 
     def append_turn(self, session_id: str, turn: Dict[str, Any]) -> bool:
-        """
-        Append a single turn to the session archive.
-        Turn structure:
-            {role, content, timestamp, turn_id, metadata}
-        """
+
         with self._get_lock(session_id):
             try:
                 path = self._path(session_id)
@@ -99,7 +65,7 @@ class ConversationArchive:
                 return False
 
     def append_turns(self, session_id: str, turns: List[Dict[str, Any]]) -> bool:
-        """Batch-append multiple turns (more efficient than repeated append_turn)."""
+
         with self._get_lock(session_id):
             try:
                 path = self._path(session_id)
@@ -125,7 +91,7 @@ class ConversationArchive:
                 return False
 
     def load_all(self, session_id: str) -> Optional[List[Dict[str, Any]]]:
-        """Load all turns for a session. Returns None if not found."""
+
         with self._get_lock(session_id):
             try:
                 path = self._path(session_id)
@@ -141,18 +107,14 @@ class ConversationArchive:
                 return None
 
     def load_recent(self, session_id: str, n: int) -> List[Dict[str, Any]]:
-        """Load the N most recent turns from disk (efficient tail read)."""
+
         all_turns = self.load_all(session_id)
         if all_turns is None:
             return []
         return all_turns[-n:]
 
     def search_by_text(self, session_id: str, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        """
-        Lazy semantic search over stored turns.
-        Uses simple token overlap (no embedding required) for fast cold-path retrieval.
-        Embedding-based search is called by HybridConversationCache only when needed.
-        """
+
         all_turns = self.load_all(session_id)
         if not all_turns:
             return []
@@ -178,11 +140,7 @@ class ConversationArchive:
         query_embedding,  # np.ndarray
         top_k: int = 5,
     ) -> List[Dict[str, Any]]:
-        """
-        Embedding-based semantic search over stored turns.
-        Called lazily (only when context window exceeded).
-        Turns that have a pre-stored 'embedding' field are scored directly.
-        """
+
         try:
             import numpy as np
 
@@ -212,7 +170,7 @@ class ConversationArchive:
             return []
 
     def delete_session(self, session_id: str) -> bool:
-        """Remove session archive from disk."""
+
         with self._get_lock(session_id):
             path = self._path(session_id)
             if os.path.exists(path):
@@ -232,7 +190,7 @@ class ConversationArchive:
         return os.path.exists(self._path(session_id))
 
     def get_metadata(self, session_id: str) -> Optional[Dict[str, Any]]:
-        """Return session metadata without loading full content."""
+
         path = self._path(session_id)
         if not os.path.exists(path):
             return None
@@ -259,7 +217,7 @@ class ConversationArchive:
             return None
 
     def cleanup_expired(self) -> int:
-        """Remove session archives older than session_ttl_days. Returns count removed."""
+
         cutoff = time.time() - self.session_ttl_days * 86400
         removed = 0
         try:
@@ -286,7 +244,7 @@ class ConversationArchive:
         return removed
 
     def list_sessions(self) -> List[Dict[str, Any]]:
-        """List all sessions in archive dir with metadata."""
+
         result = []
         try:
             for fname in os.listdir(self.archive_dir):
@@ -300,9 +258,6 @@ class ConversationArchive:
             logger.error(f"[ConversationArchive] list_sessions error: {e}")
         return result
 
-    # ------------------------------------------------------------------ #
-    #  Raw I/O helpers                                                     #
-    # ------------------------------------------------------------------ #
 
     def _write_raw(
         self,

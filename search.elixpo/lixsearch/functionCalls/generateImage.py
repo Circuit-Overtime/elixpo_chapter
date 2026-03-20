@@ -22,12 +22,7 @@ _BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://search.elixpo.com").rstrip("/"
 
 
 async def create_image_from_prompt(prompt: str) -> str:
-    """Generate an image, store it on disk, and return the full public URL.
 
-    The upstream fetch runs in a thread so it doesn't block the event loop,
-    but this function AWAITS completion — the caller gets the URL only after
-    the image is actually stored and ready to serve.
-    """
     model = next(_model_cycle)
     seed = random.randint(0, 10000)
     image_id = str(uuid.uuid4())

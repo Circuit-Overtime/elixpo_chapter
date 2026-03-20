@@ -67,10 +67,7 @@ class VectorStore:
     
     @staticmethod
     def _select_device() -> str:
-        """
-        Select the best available device for vector operations.
-        Tries CUDA first, then falls back to CPU with proper error handling.
-        """
+
         try:
             if torch.cuda.is_available():
                 device_count = torch.cuda.device_count()
@@ -142,7 +139,7 @@ class VectorStore:
             raise
     
     def _ensure_chroma(self) -> bool:
-        """Lazily connect to Chroma if not yet ready. Returns True if ready."""
+
         if self._chroma_ready:
             return True
         try:

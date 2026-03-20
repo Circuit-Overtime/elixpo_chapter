@@ -1,14 +1,3 @@
-"""
-RAG Service - OPTIMIZED Redis-only with coordinated caching
-
-Modules:
-- embeddingService: Sentence transformer embeddings with device fallback
-- vectorStore: Vector database for semantic search
-- retrievalPipeline: URL ingestion and chunking
-- semanticCacheRedis: Redis-based caches (URL embeddings, semantic responses, session context)
-- cacheCoordinator: Orchestrates multiple Redis caches
-- ragEngine: Main RAG orchestrator with context window management
-"""
 
 from ragService.embeddingService import EmbeddingService
 from ragService.vectorStore import VectorStore

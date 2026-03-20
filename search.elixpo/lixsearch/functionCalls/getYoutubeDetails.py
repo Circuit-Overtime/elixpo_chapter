@@ -13,7 +13,7 @@ from pipeline.config import ERROR_MESSAGE_TRUNCATE, MAX_TRANSCRIPT_WORD_COUNT
 
 
 def _init_ipc_manager(max_retries: int = 3, retry_delay: float = 1.0) -> bool:
-    """Initialize IPC connection using centralized manager."""
+
     try:
         from ipcService.coreServiceManager import CoreServiceManager
         manager = CoreServiceManager.get_instance()
@@ -29,7 +29,7 @@ def _init_ipc_manager(max_retries: int = 3, retry_delay: float = 1.0) -> bool:
 
 
 async def youtubeMetadata(url: str):
-    """Get YouTube metadata via IPC service."""
+
     if not _init_ipc_manager():
         logger.warning("[YoutubeDetails] IPC service not available for YouTube metadata")
         return None
@@ -63,7 +63,7 @@ def get_youtube_video_id(url):
 
 
 def _parse_caption_xml(xml_text: str) -> str:
-    """Parse YouTube caption XML into plain text."""
+
     try:
         root = ET.fromstring(xml_text)
         texts = []
@@ -94,7 +94,7 @@ def _parse_caption_xml(xml_text: str) -> str:
 
 
 def _fetch_captions_sync(url: str) -> Optional[str]:
-    """Fetch captions using pytubefix (synchronous). Returns transcript text or None."""
+
     yt = YouTube(url, use_oauth=True, allow_oauth_cache=True)
     captions = yt.captions
 
@@ -141,7 +141,7 @@ async def transcribe_audio(
     query: Optional[str] = None,
     timeout: float = 30.0
 ) -> str:
-    """Get YouTube video transcript via captions."""
+
     start_time = time.perf_counter()
     video_id = get_youtube_video_id(url)
     if not video_id:

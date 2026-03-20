@@ -1,9 +1,3 @@
-"""
-Generate a professionally branded PDF from markdown content.
-Stores the PDF on the shared content volume and returns a full URL.
-
-Requires fpdf2 (``pip install fpdf2``).
-"""
 import asyncio
 import os
 import re
@@ -14,7 +8,7 @@ _BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://search.elixpo.com").rstrip("/"
 
 
 def _generate_title_slug(content: str, max_words: int = 8) -> str:
-    """Extract a short title from the first heading or first sentence of the content."""
+
     heading = re.search(r"^#+\s+(.+)", content, re.MULTILINE)
     if heading:
         title = heading.group(1).strip()
@@ -42,12 +36,7 @@ _INLINE_RE = re.compile(
 
 
 def _parse_inline(text: str):
-    """Tokenize a markdown line into styled segments.
 
-    Returns list of tuples:
-      ("text", str) | ("bold", str) | ("italic", str) |
-      ("bold_italic", str) | ("code", str) | ("link", text, url)
-    """
     segments = []
     last = 0
     for m in _INLINE_RE.finditer(text):
@@ -75,7 +64,7 @@ def _parse_inline(text: str):
 
 def _write_md(pdf, text: str, font: str = "Helvetica", size: int = 11,
               color=(50, 50, 50), lh: float = 6):
-    """Render a markdown-formatted text span with inline bold/italic/code/link."""
+
     for seg in _parse_inline(text):
         kind = seg[0]
 
@@ -123,7 +112,7 @@ def _write_md(pdf, text: str, font: str = "Helvetica", size: int = 11,
 # ── PDF builder ──────────────────────────────────────────────────────────
 
 def _markdown_to_pdf(markdown_text: str, title: str = "lixSearch Response") -> bytes:
-    """Convert markdown text to a branded PDF with full inline formatting."""
+
     from fpdf import FPDF
 
     class BrandedPDF(FPDF):
@@ -254,7 +243,7 @@ def _markdown_to_pdf(markdown_text: str, title: str = "lixSearch Response") -> b
 
 
 async def create_pdf_from_content(content: str, title: str = None) -> str:
-    """Generate a branded PDF from markdown content. Returns the full public URL."""
+
     from app.gateways.content import store_content
 
     if not title:

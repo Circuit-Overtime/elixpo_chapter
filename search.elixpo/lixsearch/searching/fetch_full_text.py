@@ -17,7 +17,7 @@ USER_AGENTS = [
 ]
 
 def get_realistic_headers(url: str, user_agent_index: int = 0) -> dict:
-    """Generate realistic browser headers for web scraping"""
+
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
     
@@ -114,5 +114,4 @@ def fetch_full_text(
     
     logger.error(f"[Fetch] Failed to fetch {url} after {max_retries} retries")
     return ""
-
 

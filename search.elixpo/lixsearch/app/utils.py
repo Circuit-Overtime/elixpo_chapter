@@ -54,7 +54,7 @@ def format_openai_response(content: str, request_id: str = None) -> str:
 
 
 def validate_query(query: str, max_length: int = 5000) -> bool:
-    """Validate user query."""
+
     if not query or not isinstance(query, str):
         return False
     if len(query) > max_length:

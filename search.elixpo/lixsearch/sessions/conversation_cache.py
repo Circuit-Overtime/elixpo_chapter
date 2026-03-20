@@ -51,7 +51,7 @@ class ConversationCacheManager:
         self.latest_response: Optional[str] = None
 
     def _embed_text(self, text: str):
-        """Embed text using external IPC function or local fallback."""
+
         if self._embed_fn is not None:
             return np.array(self._embed_fn(text), dtype=np.float32)
         if self._load_embedding_model():
@@ -59,7 +59,7 @@ class ConversationCacheManager:
         return None
 
     def _load_embedding_model(self) -> bool:
-        """Load local embedding model as fallback (only if no embed_fn)."""
+
         if self.embedding_model is not None:
             return True
         if not EMBEDDING_AVAILABLE:
@@ -218,15 +218,7 @@ class ConversationCacheManager:
         }
     
     def save_to_disk(self, session_id: str = "default") -> bool:
-        """
-        Persist cache to disk for cross-session retrieval.
-        
-        Args:
-            session_id: Session identifier for cache file naming
-            
-        Returns:
-            True if successful, False otherwise
-        """
+
         try:
             cache_file = os.path.join(self.cache_dir, f"cache_{session_id}.pkl")
             
@@ -261,15 +253,7 @@ class ConversationCacheManager:
             return False
     
     def load_from_disk(self, session_id: str = "default") -> bool:
-        """
-        Load cache from disk for session continuation.
-        
-        Args:
-            session_id: Session identifier for cache file naming
-            
-        Returns:
-            True if successful and cache was loaded, False otherwise
-        """
+
         try:
             cache_file = os.path.join(self.cache_dir, f"cache_{session_id}.pkl")
             
@@ -300,7 +284,7 @@ class ConversationCacheManager:
             return False
     
     def delete_session_cache(self, session_id: str = "default") -> bool:
-        """Delete persisted cache for a session."""
+
         try:
             cache_file = os.path.join(self.cache_dir, f"cache_{session_id}.pkl")
             if os.path.exists(cache_file):

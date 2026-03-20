@@ -187,7 +187,7 @@ class LoadBalancer:
         
         @self.app.route('/api/stats', methods=['GET'])
         async def stats():
-            """Return aggregated stats from all workers"""
+
             worker_port = self.get_next_worker()
             path = "/api/stats"
             body, status, headers = await self.proxy_request(path, worker_port)

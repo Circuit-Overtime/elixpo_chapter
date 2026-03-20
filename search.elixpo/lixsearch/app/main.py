@@ -17,7 +17,7 @@ logger = logging.getLogger("lixsearch-api")
 
 
 def _run_archive_cleanup() -> None:
-    """Clean up expired conversation archives (>30 days old)."""
+
     try:
         from sessions.hybrid_conversation_cache import _get_archive
         archive = _get_archive()
@@ -29,7 +29,7 @@ def _run_archive_cleanup() -> None:
 
 
 def _run_redis_memory_check() -> None:
-    """Log Redis memory usage, warn if high, and flush expired keys."""
+
     try:
         from pipeline.config import create_redis_client
         client = create_redis_client(db=0)
@@ -69,7 +69,7 @@ def _run_redis_memory_check() -> None:
 
 
 def _run_content_cleanup() -> None:
-    """Clean up expired images and content files."""
+
     try:
         from app.gateways.image import _cleanup_expired_images
         _cleanup_expired_images()
@@ -150,7 +150,7 @@ class lixSearch:
         self.app.route('/v1/chat/completions', methods=['POST'])(completions_wrapper)
 
         async def models_list():
-            """GET /v1/models — OpenAI-compatible model listing."""
+
             from pipeline.config import RESPONSE_MODEL
             return jsonify({
                 "object": "list",
@@ -278,7 +278,7 @@ class lixSearch:
 
                 # Start periodic maintenance task (cleanup + Redis memory monitoring)
                 async def _periodic_maintenance():
-                    """Run every 6 hours: archive cleanup + content cleanup + Redis memory check."""
+
                     while True:
                         await asyncio.sleep(6 * 3600)
                         try:

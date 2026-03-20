@@ -1,23 +1,3 @@
-"""
-Formal Optimization Objective Framework for lixSearch
-
-Converts the system into a constrained optimization problem:
-
-Minimize:
-    L_total + λ·C_total
-
-Subject to:
-    Completeness ≥ δ (aspect coverage threshold)
-    Factuality ≥ ε (citation correctness threshold)  
-    Freshness ≥ φ (data currency threshold)
-
-Metrics:
-- L_total = expected latency
-- C_total = compute + token + API cost
-- Completeness = aspect coverage ratio
-- Factuality = citation correctness rate
-- Freshness = data age / acceptable age
-"""
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime, timedelta
