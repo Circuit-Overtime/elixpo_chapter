@@ -9,7 +9,6 @@ export const BLUEPRINTS = [
     type: 'image',
     cover: '/images/styles/digital-painting.jpg',
     samples: ['/images/styles/renaissance.jpeg', '/images/styles/baroque-art.jpg'],
-    featured: true,
     steps: [
       { id: 'reference', label: 'Add Image', type: 'image', required: true, hint: 'Upload your character image (PNG/JPG up to 5MB)' },
       { id: 'style', label: 'Style', type: 'style-picker', required: false },
@@ -26,7 +25,6 @@ export const BLUEPRINTS = [
     type: 'image',
     cover: '/images/styles/minimalism-art.jpg',
     samples: ['/images/styles/pop-art.jpeg', '/images/styles/abstract.jpeg'],
-    featured: true,
     steps: [
       { id: 'reference', label: 'Add Logo', type: 'image', required: true, hint: 'Upload your logo or design asset' },
       { id: 'prompt', label: 'Describe Mockup', type: 'text', required: true, hint: 'e.g. "Coffee cup mockup on a wooden table, morning light"' },
@@ -89,7 +87,6 @@ export const BLUEPRINTS = [
     type: 'image',
     cover: '/images/styles/art-nouveau.jpeg',
     samples: ['/images/styles/impressionism-art.jpg'],
-    featured: true,
     steps: [
       { id: 'reference', label: 'Character Ref', type: 'image', required: true, hint: 'Upload your main character reference' },
       { id: 'style', label: 'Style', type: 'style-picker', required: false },

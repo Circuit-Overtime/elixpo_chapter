@@ -29,7 +29,10 @@ export default function BlueprintsPage() {
   });
 
   const openBlueprint = (bp) => {
-    if (!signedIn) return;
+    if (!signedIn) {
+      window.location.href = getSignInUrl();
+      return;
+    }
     setSelected(bp);
     setStep(0);
     setRefImage(null);
@@ -343,33 +346,18 @@ export default function BlueprintsPage() {
             {filtered.map((bp) => (
               <button
                 key={bp.id}
-                className={`${styles.card} ${bp.featured ? styles.cardFeatured : ''}`}
+                className={styles.card}
                 onClick={() => openBlueprint(bp)}
               >
-                <img src={bp.cover} alt={bp.title} className={styles.cardImg} />
+                <img src={bp.cover} alt={bp.title} className={styles.cardImg} loading="lazy" decoding="async" />
                 <div className={styles.cardOverlay}>
-                  <span className={styles.cardBadge}>{bp.category}</span>
                   <h3 className={styles.cardTitle}>{bp.title}</h3>
                   <p className={styles.cardDesc}>{bp.description}</p>
                 </div>
-                {!signedIn && (
-                  <div className={styles.cardLock}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
-                    </svg>
-                    <span>Sign in to use</span>
-                  </div>
-                )}
               </button>
             ))}
           </div>
 
-          {!signedIn && (
-            <div className={styles.signInBanner}>
-              <p>Sign in to access Blueprints and create with AI templates</p>
-              <a href={getSignInUrl()} className={styles.signInLink}>Sign In</a>
-            </div>
-          )}
         </div>
       </main>
 
