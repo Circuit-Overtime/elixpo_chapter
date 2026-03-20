@@ -13,34 +13,38 @@ export default async function HomePage({ params }) {
   return (
     <>
       {/* Spotlight Section */}
-      <SpotlightScroller>
-        {spotlight.map((news, index) => {
-          const midIndex = Math.floor(spotlight.length / 2);
-          return (
-            <span key={index} className="contents">
-              {index === midIndex && (
-                <div id="spotlightCenter" className="featuredTileSpecial relative h-[280px] sm:h-[350px] w-[280px] sm:w-[450px] flex-shrink-0 flex flex-col items-center mt-[10px] border-r-2 border-l-2 border-[#888] px-3 sm:px-5">
-                  <p className="featuredTileSpecialText text-2xl sm:text-[4em] font-extrabold tracking-wide relative">SPOTLIGHT!</p>
-                  <p className="featuredTileSpecialDesc text-sm sm:text-[1.8em] font-thin relative text-center">Welcome to the latest catches -- in my career and let&apos;s find the craziest!!</p>
-                  <p className="featuredTileSpecialTip relative text-xs sm:text-[1.5em] font-extrabold text-center top-[30px] sm:top-[70px]">&lt;&lt; Watch! More to Come &gt;&gt;</p>
+      {spotlight?.length > 0 ? (
+        <SpotlightScroller>
+          {spotlight.map((news, index) => {
+            const midIndex = Math.floor(spotlight.length / 2);
+            return (
+              <span key={index} className="contents">
+                {index === midIndex && (
+                  <div id="spotlightCenter" className="featuredTileSpecial relative h-[280px] sm:h-[350px] w-[280px] sm:w-[450px] flex-shrink-0 flex flex-col items-center mt-[10px] border-r-2 border-l-2 border-[#888] px-3 sm:px-5">
+                    <p className="featuredTileSpecialText text-2xl sm:text-[4em] font-extrabold tracking-wide relative">SPOTLIGHT!</p>
+                    <p className="featuredTileSpecialDesc text-sm sm:text-[1.8em] font-thin relative text-center">Welcome to the latest catches -- in my career and let&apos;s find the craziest!!</p>
+                    <p className="featuredTileSpecialTip relative text-xs sm:text-[1.5em] font-extrabold text-center top-[30px] sm:top-[70px]">&lt;&lt; Watch! More to Come &gt;&gt;</p>
+                  </div>
+                )}
+                <div className="featuredTile relative h-[280px] sm:h-[350px] w-[250px] sm:w-[400px] flex-shrink-0 flex flex-col mt-[10px] px-[10px] sm:px-[20px] overflow-hidden">
+                  <div
+                    className="featuredImage hoverScale h-[120px] sm:h-[150px] w-full bg-cover bg-center rounded-[12px]"
+                    style={{ backgroundImage: `url(${news.image})` }}
+                  />
+                  <p className="featureName font-[Canopee,serif] text-base sm:text-[1.6em] tracking-wide mt-2 sm:mt-3 leading-tight truncate">
+                    {news.title}
+                  </p>
+                  <p className="featuredDescription text-xs sm:text-[1.1em] text-[#555] mt-1 leading-snug line-clamp-3 overflow-hidden">
+                    {news.description.slice(0, 120)}...
+                  </p>
                 </div>
-              )}
-              <div className="featuredTile relative h-[280px] sm:h-[350px] w-[250px] sm:w-[400px] flex-shrink-0 flex flex-col mt-[10px] px-[10px] sm:px-[20px] overflow-hidden">
-                <div
-                  className="featuredImage hoverScale h-[120px] sm:h-[150px] w-full bg-cover bg-center rounded-[12px]"
-                  style={{ backgroundImage: `url(${news.image})` }}
-                />
-                <p className="featureName font-[Canopee,serif] text-base sm:text-[1.6em] tracking-wide mt-2 sm:mt-3 leading-tight truncate">
-                  {news.title}
-                </p>
-                <p className="featuredDescription text-xs sm:text-[1.1em] text-[#555] mt-1 leading-snug line-clamp-3 overflow-hidden">
-                  {news.description.slice(0, 120)}...
-                </p>
-              </div>
-            </span>
-          );
-        })}
-      </SpotlightScroller>
+              </span>
+            );
+          })}
+        </SpotlightScroller>
+      ) : (
+        <ComingSoon title="Spotlight Coming Soon" />
+      )}
 
       {/* Intro Section */}
       <section className="introSection relative mt-[10px] w-full flex flex-col border-b-2 border-[#111] p-2 sm:p-5">
@@ -151,34 +155,38 @@ export default async function HomePage({ params }) {
       </section>
 
       {/* Recommendations Section */}
-      <DragScrollContainer id="recommendationSection" className="recommendationSection relative h-auto min-h-[300px] sm:min-h-[400px] md:min-h-[450px] mb-[20px] px-3 sm:px-6 md:px-[40px] box-border py-[20px] sm:py-[40px] gap-[15px] sm:gap-[20px] overflow-x-auto overflow-y-hidden flex-nowrap flex flex-row mt-10 sm:mt-20 select-none">
-        {recommendations.map((rec, index) => (
-          <div
-            key={index}
-            className="recommendationCard shrink-0 relative h-[280px] sm:h-[350px] md:h-[400px] w-[300px] sm:w-[500px] md:w-[650px] border-4 border-[#222] rounded-[20px] sm:rounded-[25px] bg-[#E2D9C8] p-3 sm:p-5 justify-center items-center mr-3 sm:mr-5 cursor-pointer hover:brightness-[85%] transition-all duration-300 ease-in-out"
-          >
-            <div className="dottedContainer relative h-full w-full border-2 border-dashed border-[#222] rounded-[20px] sm:rounded-[30px] flex flex-col gap-3 sm:gap-5 p-4 sm:p-6 md:p-10 justify-between">
-              <p className="quote text-[#333] text-xs sm:text-base md:text-[1.55em] whitespace-normal break-words underline decoration-1 decoration-[0.05rem] decoration-[#888] underline-offset-[4px] sm:underline-offset-[6px]">
-                &ldquo;{rec.content.slice(0, 200)}...&rdquo;
-              </p>
-              <div className="attribution flex flex-row items-center gap-3 sm:gap-5">
-                <div
-                  className="userLogo relative bg-cover bg-center h-[50px] w-[50px] sm:h-[60px] sm:w-[60px] md:h-[80px] md:w-[80px] border-2 border-[#222] rounded-[50%] grayscale sepia-[50%] shrink-0"
-                  style={{ backgroundImage: `url(${rec.image})` }}
-                />
-                <div className="userInfo flex flex-col gap-0 sm:gap-1 leading-[20px] sm:leading-[30px]">
-                  <div className="userName font-extrabold text-sm sm:text-base md:text-[1.4em] relative tracking-wide">{rec.name}</div>
-                  <div className="userDesig font-thin text-xs sm:text-sm md:text-[1.1em] relative">{rec.designation}</div>
+      {recommendations?.length > 0 ? (
+        <DragScrollContainer id="recommendationSection" className="recommendationSection relative h-auto min-h-[300px] sm:min-h-[400px] md:min-h-[450px] mb-[20px] px-3 sm:px-6 md:px-[40px] box-border py-[20px] sm:py-[40px] gap-[15px] sm:gap-[20px] overflow-x-auto overflow-y-hidden flex-nowrap flex flex-row mt-10 sm:mt-20 select-none">
+          {recommendations.map((rec, index) => (
+            <div
+              key={index}
+              className="recommendationCard shrink-0 relative h-[280px] sm:h-[350px] md:h-[400px] w-[300px] sm:w-[500px] md:w-[650px] border-4 border-[#222] rounded-[20px] sm:rounded-[25px] bg-[#E2D9C8] p-3 sm:p-5 justify-center items-center mr-3 sm:mr-5 cursor-pointer hover:brightness-[85%] transition-all duration-300 ease-in-out"
+            >
+              <div className="dottedContainer relative h-full w-full border-2 border-dashed border-[#222] rounded-[20px] sm:rounded-[30px] flex flex-col gap-3 sm:gap-5 p-4 sm:p-6 md:p-10 justify-between">
+                <p className="quote text-[#333] text-xs sm:text-base md:text-[1.55em] whitespace-normal break-words underline decoration-1 decoration-[0.05rem] decoration-[#888] underline-offset-[4px] sm:underline-offset-[6px]">
+                  &ldquo;{rec.content.slice(0, 200)}...&rdquo;
+                </p>
+                <div className="attribution flex flex-row items-center gap-3 sm:gap-5">
+                  <div
+                    className="userLogo relative bg-cover bg-center h-[50px] w-[50px] sm:h-[60px] sm:w-[60px] md:h-[80px] md:w-[80px] border-2 border-[#222] rounded-[50%] grayscale sepia-[50%] shrink-0"
+                    style={{ backgroundImage: `url(${rec.image})` }}
+                  />
+                  <div className="userInfo flex flex-col gap-0 sm:gap-1 leading-[20px] sm:leading-[30px]">
+                    <div className="userName font-extrabold text-sm sm:text-base md:text-[1.4em] relative tracking-wide">{rec.name}</div>
+                    <div className="userDesig font-thin text-xs sm:text-sm md:text-[1.1em] relative">{rec.designation}</div>
+                  </div>
                 </div>
+                <div
+                  className="stamp absolute bottom-[10px] right-[10px] sm:bottom-[20px] sm:right-[20px] h-[50px] w-[50px] sm:h-[60px] sm:w-[60px] md:h-[80px] md:w-[80px] bg-cover bg-center"
+                  style={{ backgroundImage: `url(/assets/${person}/projects/stamp-2.png)` }}
+                />
               </div>
-              <div
-                className="stamp absolute bottom-[10px] right-[10px] sm:bottom-[20px] sm:right-[20px] h-[50px] w-[50px] sm:h-[60px] sm:w-[60px] md:h-[80px] md:w-[80px] bg-cover bg-center"
-                style={{ backgroundImage: `url(/assets/${person}/projects/stamp-2.png)` }}
-              />
             </div>
-          </div>
-        ))}
-      </DragScrollContainer>
+          ))}
+        </DragScrollContainer>
+      ) : (
+        <ComingSoon title="Recommendations Coming Soon" />
+      )}
 
       {/* Tech Section */}
       <section className="techTracks overflow-hidden w-full flex flex-col mt-10 pt-5 pb-5 justify-center select-none overflow-y-hidden">
