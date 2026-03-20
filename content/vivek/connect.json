@@ -7,6 +7,7 @@
   "contactImage": "/assets/vivek/contact/contact.png",
   "socialLinks": [
     { "platform": "GitHub", "url": "https://github.com/ez-vivek", "icon": "logo-github", "hoverColor": "#333" },
-    { "platform": "LinkedIn", "url": "https://linkedin.com/in/ezmkdir", "icon": "logo-linkedin", "hoverColor": "#0077b5" }
+    { "platform": "LinkedIn", "url": "https://linkedin.com/in/ezmkdir", "icon": "logo-linkedin", "hoverColor": "#0077b5" },
+    { "platform": "Instagram", "url": "https://www.instagram.com/ezmkdir", "icon": "logo-instagram", "hoverColor": "#0077b5" }
   ]
 }
