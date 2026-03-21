@@ -6,6 +6,12 @@
     "image": "/assets/anwesha/spotlight/elixpo-art.png"
   },
   {
+    "title": "GSSoC Contributor",
+    "date": "2025-08-31",
+    "description": "Contributed to GSSOC 2025 with multiple contributions to open-source projects and collaborations.",
+    "image": "/assets/anwesha/spotlight/elixpo-gssoc.png"
+  },
+  {
     "title": "GDG Core Team",
     "date": "2025-10-15",
     "description": "Selected as the GDG Core Team Member for JIS University under the class of 2025-26. Served creating content for the socials and formal notices & logistics for the university and company.",
@@ -16,5 +22,34 @@
     "date": "2024-04-189",
     "description": "Working as a Co-Dev and Admin at Elixpo GitHub. Forming the ecosystem with the different projects at hand, shipped 10+ projects alongside.",
     "image": "/assets/anwesha/spotlight/elixpoSearchPicture.png"
+  },
+  {
+    "title": "MEAN Stack Certification",
+    "date": "2025-07-28",
+    "description": "Completed 36-hour Full Stack Development training with MEAN Stack from Ardent Computech Pvt. Ltd.",
+    "image": "/assets/anwesha/spotlight/elixpo-certification.png"
+  },
+  {
+    "title": "NPTEL Java Certification (Elite)",
+    "date": "2025-04-01",
+    "description": "Achieved Elite certification in Programming in Java from IIT Kharagpur under NPTEL."
+  },
+  {
+    "title": "Android App Development Training",
+    "date": "2025-03-24",
+    "description": "Completed 30-hour training program in Android App Development from Euphoria GenX.",
+    "image": "/assets/anwesha/spotlight/elixpo-training.png"
+  },
+  {
+    "title": "Google Solution Challenge",
+    "date": "2025-02-01",
+    "description": "Participated in GDG Solution Challenge, contributing to impactful solutions using technology.",
+    "image": "/assets/anwesha/spotlight/elixpo-solution-challenge.png"
+  },
+  {
+    "title": "Open Source Contributor",
+    "date": "2024-10-01",
+    "description": "Actively contributed to Hacktoberfest with multiple open-source contributions and collaborations.",
+    "image": "/assets/anwesha/spotlight/elixpo-hacktoberfest.png"
   }
 ]
