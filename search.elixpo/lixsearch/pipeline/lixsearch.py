@@ -246,7 +246,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
         messages = [
             {"role": "system", "name": "elixposearch-agent-system",
-             "content": system_instruction(rag_context, current_utc_time, is_detailed=is_detailed_mode)},
+             "content": system_instruction(rag_context, current_utc_time, is_detailed=is_detailed_mode, session_id=session_id)},
         ]
 
         # --- Inject conversation history ---
