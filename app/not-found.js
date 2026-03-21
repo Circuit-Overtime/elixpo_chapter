@@ -1,9 +1,5 @@
 import Link from "next/link";
 
-export const metadata = {
-  title: "404 — Person Not Found | Elixpo",
-};
-
 export default function NotFound() {
   return (
     <div className="relative min-h-screen bg-white flex flex-col justify-center items-center overflow-hidden">
@@ -18,11 +14,11 @@ export default function NotFound() {
         </div>
 
         <p className="text-lg sm:text-2xl md:text-[2.5em] text-[#1B1B19] font-extrabold tracking-wide" style={{ fontFamily: "Canopee, serif" }}>
-          This person doesn&apos;t exist yet.
+          This page doesn&apos;t exist.
         </p>
 
         <p className="text-sm sm:text-base md:text-[1.4em] text-[#555] leading-relaxed" style={{ fontFamily: "'Pathway Gothic One', sans-serif" }}>
-          The member you&apos;re looking for isn&apos;t part of Elixpo — or at least not yet.
+          The member or page you&apos;re looking for isn&apos;t part of Elixpo — or at least not yet.
           If you think they should be, raise a query and let us know.
         </p>
 
