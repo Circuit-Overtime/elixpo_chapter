@@ -1,6 +1,6 @@
 {
   "heading": "PROJECTS",
-  "description": "Welcome to Anwesha's portfolio, where the real project is her heart — currently under construction and falling in love with code (and maybe a little with you). Click on the project titles to see what she's been building, and remember: collaboration requests may result in butterflies!",
+  "description": "Welcome to Vivek's portfolio. This section highlights a collection of projects focused on software development, AI integration, and system design. Explore the repositories to see practical implementations, research-driven work, and contributions across multiple domains.",
   "projects": [
     {
       "name": "elixpo_chapter",
@@ -24,7 +24,7 @@
     },
     {
       "name": "jackeyBot",
-      "description": "A free text2image discord bot service on discord, implementing discord.js",
+      "description": "A free text-to-image Discord bot service built using discord.js",
       "stars": 4,
       "url": "https://github.com/Circuit-Overtime/jackeyBot",
       "owner": "Circuit-Overtime",
@@ -34,7 +34,7 @@
     },
     {
       "name": "lixSearch",
-      "description": "Research Based Project on Crawlers and Rankers with a LLM Supported Native Search Engine",
+      "description": "Research-based project on crawlers and ranking systems with an LLM-supported native search engine",
       "stars": 18,
       "url": "https://github.com/pollinations/lixSearch",
       "owner": "pollinations",
@@ -44,7 +44,7 @@
     },
     {
       "name": "terminal-ascii",
-      "description": "An Experimental Approach to Define and Display Media Files like Images and Videos as its Equivalent ANSI representation inside OS Terminal",
+      "description": "Experimental project to render images and videos as ANSI-based representations within terminal environments",
       "stars": 2,
       "url": "https://github.com/Circuit-Overtime/terminal-ascii",
       "owner": "Circuit-Overtime",
@@ -54,7 +54,7 @@
     },
     {
       "name": "Image_Compression",
-      "description": "Research on various compression algorithms on BW, GRAY, RGB, RGBA encodings, and a custom encoder .lix was built",
+      "description": "Research on image compression techniques across multiple color formats with a custom .lix encoder implementation",
       "stars": 2,
       "url": "https://github.com/Circuit-Overtime/Image_Compression",
       "owner": "Circuit-Overtime",
