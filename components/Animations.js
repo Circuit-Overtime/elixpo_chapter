@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function FadeInReveal() {
   useEffect(() => {
@@ -83,21 +83,43 @@ export function InertiaScroll() {
 
 export function SpotlightScroller({ children }) {
   const scrollRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
     const center = container.querySelector("#spotlightCenter");
     if (center) {
-      const scrollLeft = center.offsetLeft - container.offsetWidth / 2 + center.offsetWidth / 2;
-      container.scrollLeft = scrollLeft;
+      const sl = center.offsetLeft - container.offsetWidth / 2 + center.offsetWidth / 2;
+      container.scrollLeft = sl;
     }
   }, []);
+
+  const onMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+  const onMouseUp = () => setIsDragging(false);
+  const onMouseLeave = () => setIsDragging(false);
+  const onMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    scrollRef.current.scrollLeft = scrollLeft - (x - startX);
+  };
 
   return (
     <section
       ref={scrollRef}
-      className="spotlight relative h-[300px] sm:h-[350px] mb-[20px] px-3 sm:px-6 md:px-[40px] box-border py-[20px] sm:py-[40px] gap-[15px] sm:gap-[20px] overflow-x-auto overflow-y-hidden flex-nowrap flex flex-row select-none cursor-grabbing"
+      className="spotlight relative h-[300px] sm:h-[350px] mb-[20px] px-3 sm:px-6 md:px-[40px] box-border py-[20px] sm:py-[40px] gap-[15px] sm:gap-[20px] overflow-x-auto overflow-y-hidden flex-nowrap flex flex-row select-none"
+      style={{ cursor: isDragging ? "grabbing" : "grab" }}
+      onMouseDown={onMouseDown}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseLeave}
+      onMouseMove={onMouseMove}
     >
       {children}
     </section>

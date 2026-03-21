@@ -1,0 +1,66 @@
+{
+  "heading": "PROJECTS",
+  "description": "Welcome to Vivek's portfolio. This section highlights a collection of projects focused on software development, AI integration, and system design. Explore the repositories to see practical implementations, research-driven work, and contributions across multiple domains.",
+  "projects": [
+    {
+      "name": "elixpo_chapter",
+      "description": "A Collaborative Repository focusing on Computer Science from all the aspects that it deserves attention from!",
+      "stars": 85,
+      "url": "https://github.com/elixpo/elixpo_chapter",
+      "owner": "elixpo",
+      "ownerLogo": "https://avatars.githubusercontent.com/u/161109909?v=4",
+      "topics": ["cloud-computing", "community-driven", "discord-bot", "docker", "full-stack", "hacktoberfest", "open-source", "search-engine"],
+      "language": "JavaScript"
+    },
+    {
+      "name": "CNN_Facecom_2",
+      "description": "Collaborative Repository for CNN Facial Classification and Gender Recognition",
+      "stars": 0,
+      "url": "https://github.com/Circuit-Overtime/CNN_Facecom_2",
+      "owner": "Circuit-Overtime",
+      "ownerLogo": "https://avatars.githubusercontent.com/u/74301576?v=4",
+      "topics": ["cnn", "flask", "python", "resnet50", "tensorflow", "vgg19"],
+      "language": "Python"
+    },
+    {
+      "name": "jackeyBot",
+      "description": "A free text-to-image Discord bot service built using discord.js",
+      "stars": 4,
+      "url": "https://github.com/Circuit-Overtime/jackeyBot",
+      "owner": "Circuit-Overtime",
+      "ownerLogo": "https://avatars.githubusercontent.com/u/74301576?v=4",
+      "topics": ["discord-bot", "discord-js-v14", "image-generation", "text-to-image-generation"],
+      "language": "CSS"
+    },
+    {
+      "name": "lixSearch",
+      "description": "Research-based project on crawlers and ranking systems with an LLM-supported native search engine",
+      "stars": 18,
+      "url": "https://github.com/pollinations/lixSearch",
+      "owner": "pollinations",
+      "ownerLogo": "https://avatars.githubusercontent.com/u/86964862?v=4",
+      "topics": ["cloud-computing", "docker", "langchain", "langgraph", "python"],
+      "language": "Python"
+    },
+    {
+      "name": "terminal-ascii",
+      "description": "Experimental project to render images and videos as ANSI-based representations within terminal environments",
+      "stars": 2,
+      "url": "https://github.com/Circuit-Overtime/terminal-ascii",
+      "owner": "Circuit-Overtime",
+      "ownerLogo": "https://avatars.githubusercontent.com/u/74301576?v=4",
+      "topics": ["ascii-art", "python"],
+      "language": "Jupyter Notebook"
+    },
+    {
+      "name": "Image_Compression",
+      "description": "Research on image compression techniques across multiple color formats with a custom .lix encoder implementation",
+      "stars": 2,
+      "url": "https://github.com/Circuit-Overtime/Image_Compression",
+      "owner": "Circuit-Overtime",
+      "ownerLogo": "https://avatars.githubusercontent.com/u/74301576?v=4",
+      "topics": ["algorithms", "encoder-decoder", "image-compression", "mathematics"],
+      "language": "Jupyter Notebook"
+    }
+  ]
+}

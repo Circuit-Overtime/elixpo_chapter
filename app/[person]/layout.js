@@ -32,12 +32,12 @@ export default async function PersonLayout({ children, params }) {
   const profile = getPersonContent(person, "profile");
 
   return (
-    <div className="relative min-h-screen bg-white flex flex-col justify-center overflow-hidden">
+    <div className="relative min-h-screen bg-white flex flex-col justify-center overflow-x-hidden max-w-[100vw]">
       <MenuOverlay person={person} menuItems={profile.menuItems} currentPath="" />
 
       {/* Paper texture overlay */}
       <div
-        className="absolute top-0 left-0 w-screen h-screen opacity-55 bg-contain bg-repeat bg-center brightness-[55%] sepia-[65%]"
+        className="absolute top-0 left-0 w-full h-full opacity-55 bg-contain bg-repeat bg-center brightness-[55%] sepia-[65%]"
         style={{ backgroundImage: `url(/assets/${person}/paperTexture.jpg)` }}
       />
 
@@ -58,7 +58,7 @@ export default async function PersonLayout({ children, params }) {
       {/* Main content */}
       <div
         id="appContainer"
-        className="appContainer relative top-0 mx-auto max-w-[1440px] h-[calc(100vh-100px)] max-h-[calc(100vh-100px)] overflow-y-auto overflow-x-hidden p-4 sm:p-6 md:p-10"
+        className="appContainer relative top-0 mx-auto w-full max-w-full h-[calc(100vh-100px)] max-h-[calc(100vh-100px)] overflow-y-auto overflow-x-hidden p-4 sm:p-6 md:p-10"
       >
         {children}
         <Footer profile={profile} person={person} />
