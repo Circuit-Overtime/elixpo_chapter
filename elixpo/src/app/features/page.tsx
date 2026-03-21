@@ -1,6 +1,11 @@
 export const metadata = {
-  title: "Features - Elixpo",
-  description: "What makes the Elixpo ecosystem unique.",
+  title: "Features",
+  description: "What makes the Elixpo ecosystem unique — 100% open source, AI-powered, edge-first, and community-driven.",
+  openGraph: {
+    title: "Features | Elixpo",
+    description: "What makes the Elixpo ecosystem unique.",
+    images: ["/og-image.png"],
+  },
 };
 
 const features = [

@@ -1,8 +1,13 @@
 import projectsData from "@/data/projects.json";
 
 export const metadata = {
-  title: "Projects - Elixpo",
-  description: "Explore the full Elixpo ecosystem — 11+ interconnected open-source projects.",
+  title: "Projects",
+  description: "Explore the full Elixpo ecosystem — 11+ interconnected open-source projects spanning AI, web, and developer tools.",
+  openGraph: {
+    title: "Projects | Elixpo",
+    description: "Explore 11+ interconnected open-source projects spanning AI, web, and developer tools.",
+    images: ["/og-image.png"],
+  },
 };
 
 function ProjectIcon({ icon, color }: { icon: string; color: string }) {

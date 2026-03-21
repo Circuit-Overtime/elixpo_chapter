@@ -2,8 +2,13 @@ import teamData from "@/data/team.json";
 import statsData from "@/data/stats.json";
 
 export const metadata = {
-  title: "About - Elixpo",
-  description: "Learn about the mission, vision, and community behind Elixpo.",
+  title: "About",
+  description: "Learn about the mission, vision, and community behind Elixpo — a developer-first open-source ecosystem started in 2023.",
+  openGraph: {
+    title: "About | Elixpo",
+    description: "The mission, vision, and community behind Elixpo.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function AboutPage() {

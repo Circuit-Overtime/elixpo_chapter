@@ -1,6 +1,11 @@
 export const metadata = {
-  title: "Open Source - Elixpo",
-  description: "Contributing guides, documentation, and community resources for the Elixpo ecosystem.",
+  title: "Open Source",
+  description: "Contributing guides, documentation, and community resources for the Elixpo ecosystem. Licensed under GNU GPL-3.0.",
+  openGraph: {
+    title: "Open Source | Elixpo",
+    description: "Contributing guides and community resources for the Elixpo ecosystem.",
+    images: ["/og-image.png"],
+  },
 };
 
 const resources = [
