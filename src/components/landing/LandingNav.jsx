@@ -11,7 +11,7 @@ const resourceLinks = [
   { href: '/resources/security', label: 'Security', icon: 'bx bx-shield' },
   { href: '/docs', label: 'Docs', icon: 'bx bx-book-open' },
   { href: '/docs#blog', label: 'Blog', icon: 'bx bx-news' },
-  { href: 'https://www.npmjs.com/package/@lixsketch/engine', label: 'NPM Package', icon: 'bx bxl-nodejs', external: true },
+  { href: 'https://www.npmjs.com/package/@elixpo/lixsketch', label: 'NPM Package', icon: 'bx bxl-nodejs', external: true },
   { href: 'https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch-vscode', label: 'VS Code Extension', icon: 'bx bxl-visual-studio', external: true },
 ]
 

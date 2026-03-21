@@ -688,7 +688,7 @@ function LixScriptBlock({ code }) {
 
     async function render() {
       try {
-        const { parseLixScript, resolveShapeRefs } = await import('@lixsketch/engine/src/core/LixScriptParser')
+        const { parseLixScript, resolveShapeRefs } = await import('@elixpo/lixsketch/src/core/LixScriptParser')
         const parsed = parseLixScript(code)
         if (cancelled) return
 

@@ -7,7 +7,7 @@
 export const blogPosts = [
   {
     slug: 'engine-package-launch',
-    title: 'Introducing @lixsketch/engine: Build Your Own Whiteboard',
+    title: 'Introducing @elixpo/lixsketch: Build Your Own Whiteboard',
     description: 'We\'re open-sourcing the LixSketch engine as an npm package and launching a VS Code extension. Install it, mount on any SVG, and build your own whiteboard.',
     icon: 'bx bx-package',
     date: '2026-03-21',

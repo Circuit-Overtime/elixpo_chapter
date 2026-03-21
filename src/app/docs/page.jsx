@@ -168,7 +168,7 @@ export default function DocsPage() {
 
             <p className="text-text-dim text-[10px] uppercase tracking-widest px-3 pt-5 pb-2">Install</p>
             <a
-              href="https://www.npmjs.com/package/@lixsketch/engine"
+              href="https://www.npmjs.com/package/@elixpo/lixsketch"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] transition-all"
