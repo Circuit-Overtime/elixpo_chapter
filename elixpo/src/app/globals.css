@@ -53,3 +53,59 @@ html {
 .animate-float-medium {
   animation: float-medium 4s ease-in-out infinite;
 }
+
+/* Orbit animations - solar system */
+@keyframes orbit-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes orbit-medium {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes orbit-outer {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Counter-rotate to keep avatars upright */
+@keyframes counter-orbit-slow {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+@keyframes counter-orbit-medium {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes counter-orbit-outer {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+.animate-orbit-slow {
+  animation: orbit-slow 40s linear infinite;
+}
+
+.animate-orbit-medium {
+  animation: orbit-medium 55s linear infinite;
+}
+
+.animate-orbit-outer {
+  animation: orbit-outer 75s linear infinite;
+}
+
+.animate-counter-orbit-slow {
+  animation: counter-orbit-slow 40s linear infinite;
+}
+
+.animate-counter-orbit-medium {
+  animation: counter-orbit-medium 55s linear infinite;
+}
+
+.animate-counter-orbit-outer {
+  animation: counter-orbit-outer 75s linear infinite;
+}

@@ -1,16 +1,16 @@
 {
   "brand": {
     "name": "Elixpo",
-    "logo": "/images/icons/logo.svg"
+    "logo": "/logo.png"
   },
   "links": [
-    { "label": "Products", "href": "/products" },
-    { "label": "Features", "href": "/features" },
-    { "label": "Pricing", "href": "/pricing" },
-    { "label": "Resources", "href": "/resources" }
+    { "label": "Projects", "href": "/projects" },
+    { "label": "About", "href": "/about" },
+    { "label": "Open Source", "href": "/resources" },
+    { "label": "Community", "href": "https://github.com/elixpo/elixpo_chapter/discussions" }
   ],
   "cta": {
-    "label": "Request a Demo",
-    "href": "/demo"
+    "label": "Star on GitHub",
+    "href": "https://github.com/elixpo/elixpo_chapter"
   }
 }
