@@ -2,7 +2,12 @@
   "name": "lixsketch-vscode",
   "displayName": "LixSketch",
   "description": "Open-source whiteboard diagrams inside VS Code — draw, sketch, and save .lixsketch files",
-  "version": "1.0.0",
+  "version": "4.2.3",
+  "author": {
+    "name": "Ayushman Bhattacharya",
+    "email": "ayushman@myceli.ai",
+    "url": "https://github.com/elixpo"
+  },
   "publisher": "elixpo",
   "icon": "media/icon.png",
   "engines": {
