@@ -9,6 +9,7 @@ export const BLUEPRINTS = [
     category: 'Featured',
     type: 'image',
     cover: '/images/styles/baroque-art.jpg',
+    thumbnailPrompt: 'a dreamy portrait with warm amber tones, soft golden bokeh, cinematic haze --style portrait --lighting golden-hour',
     steps: [
       { id: 'reference', label: 'Add Photo', type: 'image', required: true, hint: 'Upload a portrait or face photo' },
       { id: 'prompt', label: 'Details', type: 'text', required: false, hint: 'Any additional style directions (optional)' },
@@ -23,6 +24,7 @@ export const BLUEPRINTS = [
     category: 'Featured',
     type: 'image',
     cover: '/images/styles/impressionism-art.jpg',
+    thumbnailPrompt: 'transform image into impressionist painting style, vibrant brushstrokes --model flux --style transfer',
     steps: [
       { id: 'reference', label: 'Source Image', type: 'image', required: true, hint: 'Upload the image to restyle' },
       { id: 'style', label: 'Art Style', type: 'style-picker', required: true },
@@ -38,6 +40,7 @@ export const BLUEPRINTS = [
     category: 'Featured',
     type: 'video',
     cover: '/images/styles/minimalism-art.jpg',
+    thumbnailPrompt: 'smooth 360° product rotation on white studio backdrop, professional lighting --type video --duration 5s',
     steps: [
       { id: 'reference', label: 'Product Image', type: 'image', required: true, hint: 'Upload a clean product photo' },
       { id: 'prompt', label: 'Scene', type: 'text', required: false, hint: 'Background description (optional, defaults to studio white)' },
@@ -54,6 +57,7 @@ export const BLUEPRINTS = [
     category: 'Editing',
     type: 'image',
     cover: '/images/styles/digital-painting.jpg',
+    thumbnailPrompt: 'remove unwanted object from scene, seamless inpainting, natural background fill --mode edit',
     steps: [
       { id: 'reference', label: 'Upload Image', type: 'image', required: true, hint: 'Upload the image to edit' },
       { id: 'prompt', label: 'What to Remove', type: 'text', required: true, hint: 'Describe what to remove, e.g. "Remove the person on the left"' },
@@ -68,6 +72,7 @@ export const BLUEPRINTS = [
     category: 'Editing',
     type: 'image',
     cover: '/images/styles/renaissance-art.jpg',
+    thumbnailPrompt: 'relight photo with warm golden cinematic lighting, soft shadows, color temperature shift --mode relight',
     steps: [
       { id: 'reference', label: 'Upload Photo', type: 'image', required: true, hint: 'Upload the photo to relight' },
       { id: 'prompt', label: 'Lighting Style', type: 'text', required: false, hint: 'e.g. "Golden hour sunlight from the left" (optional)' },
@@ -82,6 +87,7 @@ export const BLUEPRINTS = [
     category: 'Editing',
     type: 'image',
     cover: '/images/styles/surrealism-art.jpg',
+    thumbnailPrompt: 'extend image beyond borders, seamless outpainting, expand scene naturally --mode outpaint',
     steps: [
       { id: 'reference', label: 'Upload Image', type: 'image', required: true, hint: 'Upload the image to expand' },
       { id: 'prompt', label: 'Expansion Details', type: 'text', required: true, hint: 'Describe what should appear in the expanded area' },
@@ -96,6 +102,7 @@ export const BLUEPRINTS = [
     category: 'Editing',
     type: 'image',
     cover: '/images/styles/pop-art.jpeg',
+    thumbnailPrompt: 'quick image edit, change colors, modify elements, natural blending --mode quick-edit',
     steps: [
       { id: 'reference', label: 'Upload Image', type: 'image', required: true, hint: 'Upload the image to edit' },
       { id: 'prompt', label: 'Edit Instructions', type: 'text', required: true, hint: 'Describe the changes you want, e.g. "Make the sky sunset orange"' },
@@ -112,6 +119,7 @@ export const BLUEPRINTS = [
     category: 'Products & Brand',
     type: 'image',
     cover: '/images/styles/abstract.jpeg',
+    thumbnailPrompt: 'generate brand kit from logo: social posts, banners, cards, cohesive visual identity --mode brand',
     steps: [
       { id: 'reference', label: 'Upload Logo', type: 'image', required: true, hint: 'Upload your brand logo or mark' },
       { id: 'prompt', label: 'Brand Style', type: 'text', required: true, hint: 'Describe your brand aesthetic, e.g. "Minimal, tech, dark mode with blue accents"' },
@@ -126,6 +134,7 @@ export const BLUEPRINTS = [
     category: 'Products & Brand',
     type: 'image',
     cover: '/images/styles/baroque-art.jpg',
+    thumbnailPrompt: 'place product into lifestyle scene, realistic lighting and shadows, marketing photography --mode composite',
     steps: [
       { id: 'reference', label: 'Product Photo', type: 'image', required: true, hint: 'Upload a clean product photo' },
       { id: 'prompt', label: 'Scene', type: 'text', required: true, hint: 'e.g. "On a marble kitchen counter with morning sunlight and fresh flowers"' },
@@ -140,6 +149,7 @@ export const BLUEPRINTS = [
     category: 'Products & Brand',
     type: 'image',
     cover: '/images/styles/minimalism-art.jpg',
+    thumbnailPrompt: 'professional studio product photography, white seamless backdrop, soft diffused lighting --mode studio',
     steps: [
       { id: 'reference', label: 'Product Image', type: 'image', required: true, hint: 'Upload your product photo' },
       { id: 'prompt', label: 'Setup', type: 'text', required: false, hint: 'e.g. "White seamless backdrop, soft diffused light" (optional)' },
@@ -156,6 +166,7 @@ export const BLUEPRINTS = [
     category: 'Portraits',
     type: 'image',
     cover: '/images/styles/cyberpunk-art.jpg',
+    thumbnailPrompt: 'dramatic fisheye lens portrait, bold saturated colors, editorial composition --style fisheye',
     steps: [
       { id: 'reference', label: 'Upload Portrait', type: 'image', required: true, hint: 'Upload a face or portrait photo' },
       { id: 'prompt', label: 'Style', type: 'text', required: false, hint: 'Additional style directions (optional)' },
@@ -170,6 +181,7 @@ export const BLUEPRINTS = [
     category: 'Portraits',
     type: 'image',
     cover: '/images/styles/art-nouveau.jpg',
+    thumbnailPrompt: 'change hairstyle on portrait, keep face identical, modify only hair color and cut --mode hair-edit',
     steps: [
       { id: 'reference', label: 'Upload Photo', type: 'image', required: true, hint: 'Upload a clear front-facing portrait' },
       { id: 'prompt', label: 'New Hairstyle', type: 'text', required: true, hint: 'e.g. "Short bob cut with platinum blonde highlights" or "Long curly red hair"' },
@@ -184,6 +196,7 @@ export const BLUEPRINTS = [
     category: 'Portraits',
     type: 'image',
     cover: '/images/styles/vaporwave-art.jpg',
+    thumbnailPrompt: 'visualize outfit on photo, fashion styling, keep person identical, change clothing only --mode outfit',
     steps: [
       { id: 'reference', label: 'Upload Photo', type: 'image', required: true, hint: 'Upload a full-body or upper-body photo' },
       { id: 'prompt', label: 'Outfit Description', type: 'text', required: true, hint: 'e.g. "Casual streetwear with oversized hoodie and cargo pants" or "Elegant red evening gown"' },
@@ -200,6 +213,7 @@ export const BLUEPRINTS = [
     category: 'Creative',
     type: 'image',
     cover: '/images/styles/synthwave-art.jpg',
+    thumbnailPrompt: 'create curated moodboard collage, textures, colors, typography, editorial layout --mode moodboard',
     steps: [
       { id: 'reference', label: 'Inspiration', type: 'image', required: false, hint: 'Upload a reference image (optional)' },
       { id: 'prompt', label: 'Theme', type: 'text', required: true, hint: 'e.g. "Minimalist Scandinavian interior with warm wood and white tones"' },
@@ -214,6 +228,7 @@ export const BLUEPRINTS = [
     category: 'Creative',
     type: 'image',
     cover: '/images/styles/pop-art.jpeg',
+    thumbnailPrompt: 'typography specimen sheet, font pairing exploration, serif + sans-serif showcase --mode typography',
     steps: [
       { id: 'reference', label: 'Brand/Logo', type: 'image', required: false, hint: 'Upload your brand asset (optional)' },
       { id: 'prompt', label: 'Typography Brief', type: 'text', required: true, hint: 'e.g. "Modern serif heading with clean sans-serif body text, luxury feel"' },
@@ -228,6 +243,7 @@ export const BLUEPRINTS = [
     category: 'Creative',
     type: 'image',
     cover: '/images/styles/renaissance.jpeg',
+    thumbnailPrompt: 'redesign room interior, add furniture and decor, keep architecture, photorealistic result --mode interior',
     steps: [
       { id: 'reference', label: 'Room Photo', type: 'image', required: true, hint: 'Upload a photo of your room or space' },
       { id: 'prompt', label: 'Design Style', type: 'text', required: true, hint: 'e.g. "Modern minimalist with mid-century furniture, warm lighting, indoor plants"' },
@@ -242,6 +258,7 @@ export const BLUEPRINTS = [
     category: 'Creative',
     type: 'image',
     cover: '/images/styles/art-nouveau.jpg',
+    thumbnailPrompt: 'storybook illustration, consistent character across scenes, warm illustrative style --mode story',
     steps: [
       { id: 'reference', label: 'Character Ref', type: 'image', required: true, hint: 'Upload your main character reference' },
       { id: 'style', label: 'Style', type: 'style-picker', required: false },
@@ -257,6 +274,7 @@ export const BLUEPRINTS = [
     category: 'Creative',
     type: 'image',
     cover: '/images/styles/digital-painting.jpg',
+    thumbnailPrompt: 'same character in new scene, consistent features and identity, new pose and environment --mode character',
     steps: [
       { id: 'reference', label: 'Add Image', type: 'image', required: true, hint: 'Upload your character image' },
       { id: 'style', label: 'Style', type: 'style-picker', required: false },
@@ -274,6 +292,7 @@ export const BLUEPRINTS = [
     category: 'Video',
     type: 'video',
     cover: '/images/styles/synthwave-art.jpg',
+    thumbnailPrompt: 'cinematic video clip from text, smooth camera motion, atmospheric lighting --type video --duration 5s',
     steps: [
       { id: 'reference', label: 'First Frame', type: 'image', required: false, hint: 'Upload a reference image (optional)' },
       { id: 'prompt', label: 'Scene', type: 'text', required: true, hint: 'Describe the video scene and motion' },
@@ -288,6 +307,7 @@ export const BLUEPRINTS = [
     category: 'Video',
     type: 'video',
     cover: '/images/styles/renaissance-art.jpg',
+    thumbnailPrompt: 'aerial landscape flyover, misty mountains at sunrise, cinematic camera motion --type video --mode landscape',
     steps: [
       { id: 'reference', label: 'Landscape', type: 'image', required: false, hint: 'Upload a landscape photo (optional)' },
       { id: 'prompt', label: 'Scene', type: 'text', required: true, hint: 'e.g. "Slow aerial flyover of misty mountains at sunrise"' },
