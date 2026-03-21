@@ -109,23 +109,30 @@ export default async function AboutPage({ params }) {
         </div>
         <p className="w-full text-left font-thin text-sm sm:text-base md:text-[1.5em]">{about.fancySection.subtitle}</p>
         <p className="aboutFancyDescription text-base sm:text-xl md:text-[3em] leading-snug sm:leading-tight text-justify text-wrap">
-          {about.fancySection.content}{" "}
-          {about.fancySection.highlights.map((hl, i) => (
-            <span
-              key={i}
-              className="inline bg-[#1B1B19] text-[#E2D9C8] font-extrabold px-1.5 sm:px-4 py-0.5 sm:py-1 rounded-[5px] sm:rounded-[10px] tracking-wide opacity-90 mx-0.5 sm:mx-1 text-sm sm:text-base md:text-[0.7em] leading-relaxed"
-            >
-              {hl}
-            </span>
-          ))}
+          {about.fancySection.content.split(new RegExp(`(${about.fancySection.highlights.map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi')).map((part, i) =>
+            about.fancySection.highlights.some(h => h.toLowerCase() === part.toLowerCase()) ? (
+              <span
+                key={i}
+                className="inline bg-[#1B1B19] text-[#E2D9C8] font-extrabold px-1.5 sm:px-4 py-0.5 sm:py-1 rounded-[5px] sm:rounded-[10px] tracking-wide opacity-90 mx-0.5 sm:mx-1 text-sm sm:text-base md:text-[0.7em] leading-relaxed"
+              >
+                {part}
+              </span>
+            ) : (
+              <span key={i}>{part}</span>
+            )
+          )}
           <br /><br />
           {about.fancySection.contactNote}{" "}
           <span className="inline bg-[#1B1B19] text-[#E2D9C8] font-extrabold px-1.5 sm:px-4 py-0.5 sm:py-1 rounded-[5px] sm:rounded-[10px] tracking-wide opacity-90 mx-0.5 sm:mx-1 text-sm sm:text-base md:text-[0.7em] leading-relaxed">
             {profile.email}
           </span>
           <br /><br />
-          Huge shout-out to{" "}
-          {about.fancySection.shoutouts.map((name, i) => (
+          {about.fancySection.shoutouts && (
+            <>
+              {about.fancySection.shoutouts.length >= 1 ? "Huge shout-out to " : ""}
+            </>
+          )}
+          {about.fancySection.shoutouts?.map((name, i) => (
             <span
               key={i}
               className="inline bg-[#1B1B19] text-[#E2D9C8] font-extrabold px-1.5 sm:px-4 py-0.5 sm:py-1 rounded-[5px] sm:rounded-[10px] tracking-wide opacity-90 mx-0.5 sm:mx-1 text-sm sm:text-base md:text-[0.7em] leading-relaxed"

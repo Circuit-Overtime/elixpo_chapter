@@ -1,26 +1,20 @@
 [
   {
-    "title": "Anwesha's Birthday Bash",
-    "date": "2025-07-06",
-    "description": "Today is the day! Anwesha's birthday celebration is live. Join us for cake, code, and lots of love. The spotlight is on her — our favorite birthday girl who debugs hearts and compiles smiles!",
-    "image": "/assets/common/spotlight/elixpo-art.png"
+    "title": "OSCI Contributor",
+    "date": "2025-05-06",
+    "description": "Selected as a Contributor to OSCI 2025. Contributed to 3 projects during OSCI'25 and receievd the card of contribution for the season",
+    "image": "/assets/anwesha/spotlight/elixpo-art.png"
   },
   {
-    "title": "Love at First Byte",
-    "date": "2025-02-14",
-    "description": "On this Valentine's Day, Anwesha discovered that the only thing better than a perfect function is a perfect partner. She merged her heart with happiness and pushed it to the main branch of life!",
-    "image": "/assets/common/spotlight/elixpo-hackathon.png"
+    "title": "GDG Core Team",
+    "date": "2025-10-15",
+    "description": "Selected as the GDG Core Team Member for JIS University under the class of 2025-26. Served creating content for the socials and formal notices & logistics for the university and company.",
+    "image": "/assets/anwesha/spotlight/elixpo-hackathon.png"
   },
   {
-    "title": "Portfolio Panic",
-    "date": "2025-04-01",
-    "description": "April Fools! Anwesha tried to deploy her portfolio but accidentally pushed her love letters instead. The internet loved it. Now her README has more stars than her repos!",
-    "image": "/assets/common/spotlight/elixpoSearchPicture.png"
-  },
-  {
-    "title": "Falling for Bugs",
-    "date": "2025-04-06",
-    "description": "Anwesha spent all night debugging, only to realize the real bug was in her heart — it kept looping back to the same person. Infinite love loop detected!",
-    "image": "/assets/common/spotlight/asciiArt.png"
+    "title": "Elixp Organization",
+    "date": "2024-04-189",
+    "description": "Working as a Co-Dev and Admin at Elixpo GitHub. Forming the ecosystem with the different projects at hand, shipped 10+ projects alongside.",
+    "image": "/assets/anwesha/spotlight/elixpoSearchPicture.png"
   }
 ]
