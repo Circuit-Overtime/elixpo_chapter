@@ -50,9 +50,6 @@
     "watch": "npm run build -- --watch",
     "package": "npx @vscode/vsce package"
   },
-  "dependencies": {
-    "@lixsketch/engine": "workspace:*"
-  },
   "devDependencies": {
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.20.0",
