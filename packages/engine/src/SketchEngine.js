@@ -26,8 +26,24 @@ class SketchEngine {
             ...options
         };
 
+        // Event callback for framework consumers (React, Vue, vanilla, VS Code, etc.)
+        this.onEvent = options.onEvent || (() => {});
+
+        // Public API surfaces (populated after init)
+        this.scene = null;
+        this.shapes = null;
+
         this._modules = {};
         this._initialized = false;
+    }
+
+    /**
+     * Emit an event to the consumer callback.
+     * @param {string} type - Event type (e.g. 'sidebar:select', 'zoom:change')
+     * @param {*} data - Event payload
+     */
+    emit(type, data) {
+        try { this.onEvent(type, data); } catch (e) { console.warn('[SketchEngine] onEvent error:', e); }
     }
 
     /**
@@ -120,13 +136,15 @@ class SketchEngine {
         // Container
         window.container = document.querySelector('.container') || document.body;
 
-        // Sidebar control — bridge legacy code to React/Zustand
+        // Sidebar control — bridge legacy code to consumer UI
+        const engine = this;
         window.disableAllSideBars = function() {
             // Hide all legacy sidebar elements
             [window.paintBrushSideBar, window.lineSideBar, window.squareSideBar,
              window.circleSideBar, window.arrowSideBar, window.textSideBar, window.frameSideBar
             ].forEach(el => { if (el) el.classList.add('hidden'); });
-            // Notify React to hide shape-selected sidebar
+            // Notify consumer via onEvent + legacy bridge
+            engine.emit('sidebar:clear');
             if (window.__sketchStoreApi) {
                 window.__sketchStoreApi.clearSelectedShapeSidebar();
             }
@@ -138,8 +156,8 @@ class SketchEngine {
         // updateUndoRedoButtons — legacy UI function, no-op in React
         window.updateUndoRedoButtons = window.updateUndoRedoButtons || function() {};
 
-        // Bridge for shape selection -> React sidebar
-        // Maps shape.shapeName to the sidebar key React understands
+        // Bridge for shape selection -> consumer UI
+        // Maps shape.shapeName to the sidebar key
         window.__showSidebarForShape = function(shapeName) {
             const sidebarMap = {
                 'rectangle': 'rectangle',
@@ -153,10 +171,12 @@ class SketchEngine {
                 'image': 'image',
             };
             const sidebar = sidebarMap[shapeName];
+            // Emit to consumer callback
+            engine.emit('sidebar:select', { sidebar, shapeName });
+            // Legacy bridge for React
             if (sidebar && window.__sketchStoreApi) {
                 window.__sketchStoreApi.setSelectedShapeSidebar(sidebar);
             }
-            // Tell sidebar whether the selected shape is code mode
             window.__selectedShapeIsCode = (shapeName === 'code');
             if (window.__onCodeModeChanged) window.__onCodeModeChanged(shapeName === 'code');
         };
@@ -302,6 +322,43 @@ class SketchEngine {
             // Initialize LixScript programmatic diagram engine
             const lixScript = await import('./core/LixScriptParser.js');
             if (lixScript.initLixScriptBridge) lixScript.initLixScriptBridge();
+
+            // ── Public API surfaces ──
+
+            // Scene operations (save, load, export, etc.)
+            this.scene = window.__sceneSerializer || {
+                save: sceneSerializer.saveScene,
+                load: sceneSerializer.loadScene,
+                download: sceneSerializer.downloadScene,
+                upload: sceneSerializer.uploadScene,
+                exportPNG: sceneSerializer.exportAsPNG,
+                exportPDF: sceneSerializer.exportAsPDF,
+                copyAsPNG: sceneSerializer.copyAsPNG,
+                copyAsSVG: sceneSerializer.copyAsSVG,
+                reset: sceneSerializer.resetCanvas,
+                findText: sceneSerializer.findTextOnCanvas,
+            };
+
+            // Shape array reference
+            this.shapes = window.shapes;
+
+            // Undo/redo
+            this.undo = undoRedo.undo || (() => {});
+            this.redo = undoRedo.redo || (() => {});
+
+            // LixScript execution
+            this.lixscript = {
+                parse: lixScript.parseLixScript || (() => null),
+                execute: lixScript.executeLixScript || (lixScript.parseLixScript ? (code) => {
+                    const parsed = lixScript.parseLixScript(code);
+                    if (parsed && lixScript.resolveShapeRefs) lixScript.resolveShapeRefs(parsed);
+                    return parsed;
+                } : (() => null)),
+            };
+
+            // Store module refs for advanced consumers
+            this._modules.sceneSerializer = sceneSerializer;
+            this._modules.lixScript = lixScript;
 
             this._initialized = true;
             console.log('[SketchEngine] Initialized successfully');
