@@ -5,7 +5,7 @@ import { getVideoCost } from '../../../lib/credits';
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { prompt, model = 'wan', width = 1024, height = 576, duration = 5, imageUrl } = body;
+    const { prompt, model = 'grok-video', width = 1024, height = 576, duration = 5, imageUrl } = body;
 
     if (!prompt) return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
 

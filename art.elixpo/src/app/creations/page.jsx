@@ -8,13 +8,12 @@ import { getLibrary, removeFromLibrary } from '../lib/library';
 import styles from './Creations.module.css';
 
 const ALL_MODELS = [
-  { id: 'flux', label: 'Flux' }, { id: 'gptimage', label: 'GPT Image' },
-  { id: 'seedream5', label: 'Seedream 5' }, { id: 'nanobanana', label: 'Nano Banana' },
-  { id: 'kontext', label: 'Kontext' }, { id: 'imagen-4', label: 'Imagen 4' },
-  { id: 'zimage', label: 'Z-Image' }, { id: 'klein', label: 'Klein' },
-  { id: 'veo', label: 'Veo' }, { id: 'seedance', label: 'Seedance' },
-  { id: 'seedance-pro', label: 'Seedance Pro' }, { id: 'wan', label: 'Wan' },
-  { id: 'ltx-2', label: 'LTX-2' },
+  { id: 'flux', label: 'Flux Schnell' }, { id: 'flux-2-dev', label: 'FLUX.2 Dev' },
+  { id: 'gptimage', label: 'GPT Image' }, { id: 'dirtberry', label: 'Dirtberry' },
+  { id: 'dirtberry-pro', label: 'Dirtberry Pro' }, { id: 'zimage', label: 'Z-Image' },
+  { id: 'imagen-4', label: 'Imagen 4' }, { id: 'grok-imagine', label: 'Grok Imagine' },
+  { id: 'klein', label: 'Klein' }, { id: 'kontext', label: 'Kontext' },
+  { id: 'grok-video', label: 'Grok Video' },
 ];
 
 function modelLabel(id) {

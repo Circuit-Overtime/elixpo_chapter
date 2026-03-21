@@ -39,8 +39,11 @@ export async function exchangeCode(code) {
       redirect_uri: getRedirectUri(),
     }),
   });
-  if (!res.ok) throw new Error('Token exchange failed');
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error_description || data.error || 'Token exchange failed');
+  }
+  return data;
 }
 
 export async function fetchUser(accessToken) {
