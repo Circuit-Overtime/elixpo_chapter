@@ -2,21 +2,19 @@
   "intro": {
     "heading": "ANWESHA",
     "subheading": "ABOUT!",
-    "description": "Welcome to Anwesha's corner of the internet! She's a developer, dreamer, and full-time birthday queen. When she's not coding, she's probably planning her next adventure or eating cake. More about her as you scroll down!",
-    "portraitImage": "/assets/anwesha/about/ptr-11.png"
+    "description": "Welcome to Anwesha's corner of the internet!\n She's a Developer, dreamer and System Architect.I translate the complex rhythms of the natural world into high-performance digital systems, one expedition at a time. More about her as you scroll down!",
+    "portraitImage": "assets/anwesha/about/ptr-11.jpeg"
   },
   "fancySection": {
-    "banner": "FIRST SIGHT!",
+    "banner": "COLLAB AT FIRST SIGHT!",
     "subtitle": "Collabs & Meets!",
-    "content": "Anwesha's Heart.exe is Running... She fell in love with code, then fell in love with someone who codes. Together, they built projects, broke things, fixed things, and laughed through it all.",
+    "content": "Just as biological systems thrive on symbiosis, I believe the best software is built through diverse collaboration.I am always seeking fellow explorers and engineers to co-author robust, scalable solutions to complex problems. Together, we built projects, broke things, fixed things, and laughed through it all. Whether it's a hackathon, an open-source project, or just a casual code jam, I'm all in for the adventure. Let's connect and create something amazing together!",
     "highlights": [
-      "Birthday Girl in Love",
-      "Code Queen",
-      "Cake Enthusiast"
+      "Codeinsights Collab",
+      "System Design Collab",
+      "Hacktoberfest Collab"
     ],
-    "contactNote": "Want to wish her happy birthday or collaborate? Reach out!",
-    "shoutouts": ["Ayushman Bhattacharya", "Vivek Yadav"],
-    "shoutoutText": "for being the most amazing people in her journey! Happy Birthday Anwesha!"
+    "contactNote": "Feel free to reach out if you're interested in collaborating or just want to chat about code,system architect and,or anything in between for being the most amazing people in her journey"
   },
   "images": {
     "gallery": [
