@@ -2,7 +2,7 @@ const esbuild = require('esbuild');
 const path = require('path');
 
 esbuild.build({
-    entryPoints: [path.resolve(__dirname, '../engine/src/index.js')],
+    entryPoints: [path.resolve(__dirname, '../lixsketch/src/index.js')],
     bundle: true,
     format: 'iife',
     globalName: 'LixSketch',

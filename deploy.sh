@@ -209,7 +209,7 @@ ${CHANGELOG_CONTENT}
 ---
 
 **Links:**
-- [NPM Package](https://www.npmjs.com/package/@lixsketch/engine)
+- [NPM Package](https://www.npmjs.com/package/@elixpo/lixsketch)
 - [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch-vscode)
 - [Try it online](https://sketch.elixpo.com)
 BLOGEOF
@@ -259,7 +259,7 @@ do_release() {
   echo "==> Bumping versions ($BUMP)..."
 
   if $RELEASE_ENGINE; then
-    dry_run "npm version $BUMP --no-git-tag-version -w packages/engine"
+    dry_run "npm version $BUMP --no-git-tag-version -w packages/lixsketch"
   fi
   if $RELEASE_VSCODE; then
     dry_run "npm version $BUMP --no-git-tag-version -w packages/vscode"
@@ -269,7 +269,7 @@ do_release() {
   fi
 
   if $RELEASE_ENGINE; then
-    NEW_VERSION=$(node -p "require('./packages/engine/package.json').version" 2>/dev/null || echo "0.0.0")
+    NEW_VERSION=$(node -p "require('./packages/lixsketch/package.json').version" 2>/dev/null || echo "0.0.0")
   else
     NEW_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
   fi
@@ -281,8 +281,8 @@ do_release() {
 
   # ── Build & Publish ──
   if $RELEASE_ENGINE; then
-    echo "==> Publishing @lixsketch/engine to npm..."
-    dry_run "npm publish -w packages/engine --access public"
+    echo "==> Publishing @elixpo/lixsketch to npm..."
+    dry_run "npm publish -w packages/lixsketch --access public"
     echo "==> Engine published"
   fi
 
@@ -325,7 +325,7 @@ do_release() {
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  Release v${NEW_VERSION} complete!"
   echo ""
-  $RELEASE_ENGINE && echo "  - @lixsketch/engine published to npm"
+  $RELEASE_ENGINE && echo "  - @elixpo/lixsketch published to npm"
   $RELEASE_VSCODE && echo "  - LixSketch VS Code extension published"
   $RELEASE_WEB    && echo "  - Website deployed to Cloudflare Pages"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
