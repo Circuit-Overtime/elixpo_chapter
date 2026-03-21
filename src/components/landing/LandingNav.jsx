@@ -11,6 +11,8 @@ const resourceLinks = [
   { href: '/resources/security', label: 'Security', icon: 'bx bx-shield' },
   { href: '/docs', label: 'Docs', icon: 'bx bx-book-open' },
   { href: '/docs#blog', label: 'Blog', icon: 'bx bx-news' },
+  { href: 'https://www.npmjs.com/package/@lixsketch/engine', label: 'NPM Package', icon: 'bx bxl-nodejs', external: true },
+  { href: 'https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch-vscode', label: 'VS Code Extension', icon: 'bx bxl-visual-studio', external: true },
 ]
 
 export default function LandingNav() {
@@ -73,17 +75,23 @@ export default function LandingNav() {
                   transition={{ duration: 0.15 }}
                   className="absolute top-full right-0 mt-2 w-52 bg-surface-card border border-border-light rounded-xl overflow-hidden shadow-2xl shadow-black/40"
                 >
-                  {resourceLinks.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setResourcesOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-150 text-sm"
-                    >
-                      <i className={`${item.icon} text-base text-text-dim`} />
-                      {item.label}
-                    </Link>
-                  ))}
+                  {resourceLinks.map((item) => {
+                    const Tag = item.external ? 'a' : Link
+                    const extraProps = item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {}
+                    return (
+                      <Tag
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setResourcesOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-150 text-sm"
+                        {...extraProps}
+                      >
+                        <i className={`${item.icon} text-base text-text-dim`} />
+                        {item.label}
+                        {item.external && <i className="bx bx-link-external text-xs text-text-dim ml-auto" />}
+                      </Tag>
+                    )
+                  })}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -145,17 +153,23 @@ export default function LandingNav() {
               ))}
 
               <div className="py-2 text-text-dim text-xs uppercase tracking-wider mt-2">Resources</div>
-              {resourceLinks.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2.5 py-2 text-text-muted hover:text-text-primary transition-colors text-sm pl-1"
-                >
-                  <i className={`${item.icon} text-sm text-text-dim`} />
-                  {item.label}
-                </Link>
-              ))}
+              {resourceLinks.map((item) => {
+                const Tag = item.external ? 'a' : Link
+                const extraProps = item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {}
+                return (
+                  <Tag
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2.5 py-2 text-text-muted hover:text-text-primary transition-colors text-sm pl-1"
+                    {...extraProps}
+                  >
+                    <i className={`${item.icon} text-sm text-text-dim`} />
+                    {item.label}
+                    {item.external && <i className="bx bx-link-external text-xs text-text-dim ml-1" />}
+                  </Tag>
+                )
+              })}
 
               <a
                 href="https://github.com/elixpo/lixsketch"

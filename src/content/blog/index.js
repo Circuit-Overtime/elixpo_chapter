@@ -6,6 +6,14 @@
 
 export const blogPosts = [
   {
+    slug: 'engine-package-launch',
+    title: 'Introducing @lixsketch/engine: Build Your Own Whiteboard',
+    description: 'We\'re open-sourcing the LixSketch engine as an npm package and launching a VS Code extension. Install it, mount on any SVG, and build your own whiteboard.',
+    icon: 'bx bx-package',
+    date: '2026-03-21',
+    tags: ['launch', 'npm', 'vscode', 'open-source'],
+  },
+  {
     slug: 'image-pipeline',
     title: 'The Image Pipeline: From Pixels to Canvas to Cloud',
     description: 'How LixSketch handles images from file uploads, AI generation, clipboard pastes, and frame backgrounds — compress, place, upload, replace.',
