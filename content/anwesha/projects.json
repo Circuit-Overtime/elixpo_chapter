@@ -1,6 +1,7 @@
 {
   "heading": "PROJECTS",
-  "description": "Welcome to Anwesha's portfolio, where the real project is her heart — currently under construction and falling in love with code (and maybe a little with you). Click on the project titles to see what she's been building, and remember: collaboration requests may result in butterflies!",
+  "subText": "System Architect",
+  "description": "Welcome to Anwesha's Portfolio, where the real project is engineering a digital world that feels a intuitive as nature itself. Click on the project titles to see what she's been building, and remember: In the world of code, every bug is just a feature waiting to be discovered!",
   "projects": [
     {
       "name": "elixpo_chapter",
