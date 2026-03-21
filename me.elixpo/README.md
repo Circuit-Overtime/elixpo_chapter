@@ -32,6 +32,7 @@ Elixpome is the personalized portfolio platform for members of the Elixpo organi
 |--------|------|
 | Ayushman | [me.elixpo.com/ayushman](https://me.elixpo.com/ayushman) |
 | Anwesha | [me.elixpo.com/anwesha](https://me.elixpo.com/anwesha) |
+| Vivek | [me.elixpo.com/vivek](https://me.elixpo.com/vivek) |
 
 ## Contributors
 
