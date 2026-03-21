@@ -1,15 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# LixSketch deploy script
-# Usage: ./deploy.sh [command]
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# LixSketch Deploy & Release
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #
-# Commands:
-#   deploy      Build & deploy Next.js to Cloudflare Pages
+# Usage: ./deploy.sh [command ...] [options]
+#
+# Infra Commands:
+#   deploy      Build & deploy website to Cloudflare Pages
 #   worker      Deploy the collab Worker
-#   secrets     Upload .env vars as secrets to Worker + Pages
-#   all         secrets + worker + deploy
+#   secrets     Upload .env vars to Worker + Pages
 #   build       Build Pages only (no deploy)
+#
+# Release Commands:
+#   release [targets]   Full release with version bump + changelog + publish
+#                       Targets: engine, vscode, web, all (default: all)
+#
+# Options (for release):
+#   --patch     Patch version bump (default)
+#   --minor     Minor version bump
+#   --major     Major version bump
+#   --dry-run   Print what would happen, don't execute
+#   --skip-changelog  Skip changelog generation
+#
+# Shorthand:
+#   all         secrets + worker + deploy (infra only, no release)
+#
+# Examples:
+#   ./deploy.sh deploy                    # Quick website deploy
+#   ./deploy.sh release all --minor       # Release everything with minor bump
+#   ./deploy.sh release engine --patch    # Publish npm package only
+#   ./deploy.sh release vscode            # Publish VS Code extension only
+#   ./deploy.sh release all --dry-run     # Preview full release
+#   ./deploy.sh all                       # Infra: secrets + worker + deploy
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env"
@@ -28,24 +52,28 @@ load_env() {
   set +a
 }
 
-# Pull D1 and KV IDs from .env (loaded by load_env)
 get_binding_ids() {
   load_env
   D1_DB_ID="${D1_DATABASE_ID:?D1_DATABASE_ID not set in .env}"
   KV_ID="${KV_NAMESPACE_ID:?KV_NAMESPACE_ID not set in .env}"
 }
 
-# ── Commands ─────────────────────────────────────────────────
+dry_run() {
+  if $DRY_RUN; then
+    echo "[dry-run] $*"
+  else
+    eval "$@"
+  fi
+}
 
-# Upload secrets to both Worker and Pages project
+# ── Infra Commands ───────────────────────────────────────────
+
 secrets() {
   echo "==> Uploading secrets from .env..."
   load_env
 
   while IFS='=' read -r key value; do
-    # Skip blanks, comments, and NEXT_PUBLIC_ vars
     [[ -z "$key" || "$key" =~ ^# || "$key" =~ ^NEXT_PUBLIC_ ]] && continue
-    # Skip infra IDs that aren't secrets
     [[ "$key" =~ ^(CLOUDFLARE_ACCOUNT|D1_DATABASE_ID|KV_NAMESPACE_ID)$ ]] && continue
 
     echo "  -> $key (worker)"
@@ -57,16 +85,13 @@ secrets() {
   echo "==> Secrets uploaded to Worker + Pages."
 }
 
-# Build Next.js for Cloudflare Pages
 build() {
   echo "==> Building for Cloudflare Pages..."
   sudo npm version patch --no-git-tag-version
   sudo npx @cloudflare/next-on-pages
-
   echo "==> Build complete (.vercel/output/static)"
 }
 
-# Deploy to Cloudflare Pages
 deploy() {
   if [ ! -d "$SCRIPT_DIR/.vercel/output/static" ]; then
     echo "==> No build found, building first..."
@@ -80,7 +105,6 @@ deploy() {
 
   echo "==> Pages deploy complete."
 
-  # Commit version bump + source changes
   VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "unknown")
   git add -A
   if git diff --cached --quiet; then
@@ -92,28 +116,258 @@ deploy() {
   fi
 }
 
-# Deploy the collab Worker
 worker() {
   echo "==> Deploying Worker (lixsketch-collab)..."
   sudo npx wrangler deploy
   echo "==> Worker deploy complete."
 }
 
-# ── Entrypoint ───────────────────────────────────────────────
+# ── Release Commands ─────────────────────────────────────────
+
+generate_changelog() {
+  if $SKIP_CHANGELOG; then
+    echo "==> Skipping changelog generation"
+    return
+  fi
+
+  echo "==> Generating changelog..."
+
+  LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+  if [ -z "$LAST_TAG" ]; then
+    RANGE="HEAD"
+  else
+    RANGE="${LAST_TAG}..HEAD"
+  fi
+
+  local DATE
+  DATE=$(date +%Y-%m-%d)
+
+  FEATS=$(git log "$RANGE" --oneline --format='%s' 2>/dev/null | grep -E '^feat' | sed 's/^feat(\([^)]*\)): /- **\1**: /' | sed 's/^feat: /- /' || true)
+  FIXES=$(git log "$RANGE" --oneline --format='%s' 2>/dev/null | grep -E '^fix' | sed 's/^fix(\([^)]*\)): /- **\1**: /' | sed 's/^fix: /- /' || true)
+  OTHER=$(git log "$RANGE" --oneline --format='%s' 2>/dev/null | grep -vE '^(feat|fix|docs|chore|ci|style|refactor|test)' || true)
+
+  {
+    echo ""
+    echo "## v${NEW_VERSION} ($DATE)"
+    echo ""
+    if [ -n "$FEATS" ]; then
+      echo "### Features"
+      echo "$FEATS"
+      echo ""
+    fi
+    if [ -n "$FIXES" ]; then
+      echo "### Fixes"
+      echo "$FIXES"
+      echo ""
+    fi
+    if [ -n "$OTHER" ] && [ "$(echo "$OTHER" | wc -l)" -gt 0 ]; then
+      echo "### Other"
+      echo "$OTHER" | head -10 | sed 's/^/- /'
+      echo ""
+    fi
+  } > /tmp/changelog_entry.md
+
+  if [ -f "$SCRIPT_DIR/CHANGELOG.md" ]; then
+    head -1 "$SCRIPT_DIR/CHANGELOG.md" > /tmp/cl_head.md
+    cat /tmp/changelog_entry.md > /tmp/cl_new.md
+    tail -n +2 "$SCRIPT_DIR/CHANGELOG.md" > /tmp/cl_tail.md
+    cat /tmp/cl_head.md /tmp/cl_new.md /tmp/cl_tail.md > "$SCRIPT_DIR/CHANGELOG.md"
+  else
+    echo "# Changelog" > "$SCRIPT_DIR/CHANGELOG.md"
+    cat /tmp/changelog_entry.md >> "$SCRIPT_DIR/CHANGELOG.md"
+  fi
+
+  echo "==> Changelog updated"
+}
+
+generate_blog_post() {
+  local BLOG_DIR="$SCRIPT_DIR/src/content/blog"
+  local SLUG="release-v$(echo "$NEW_VERSION" | tr '.' '-')"
+  local BLOG_FILE="$BLOG_DIR/${SLUG}.md"
+
+  if [ ! -d "$BLOG_DIR" ]; then
+    echo "==> Blog directory not found, skipping blog generation"
+    return
+  fi
+
+  echo "==> Generating release blog post: $SLUG"
+
+  local DATE
+  DATE=$(date +%Y-%m-%d)
+  local CHANGELOG_CONTENT=""
+  if [ -f /tmp/changelog_entry.md ]; then
+    CHANGELOG_CONTENT=$(cat /tmp/changelog_entry.md)
+  fi
+
+  cat > "$BLOG_FILE" << BLOGEOF
+# LixSketch v${NEW_VERSION} Release
+
+*Released on ${DATE}*
+
+${CHANGELOG_CONTENT}
+
+---
+
+**Links:**
+- [NPM Package](https://www.npmjs.com/package/@lixsketch/engine)
+- [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch-vscode)
+- [Try it online](https://sketch.elixpo.com)
+BLOGEOF
+
+  echo "==> Blog post generated at $BLOG_FILE"
+}
+
+do_release() {
+  local BUMP="patch"
+  local DRY_RUN=false
+  local SKIP_CHANGELOG=false
+  local RELEASE_ENGINE=false
+  local RELEASE_VSCODE=false
+  local RELEASE_WEB=false
+  local TARGETS=()
+
+  # Parse release sub-args
+  for arg in "$@"; do
+    case "$arg" in
+      --patch)  BUMP="patch" ;;
+      --minor)  BUMP="minor" ;;
+      --major)  BUMP="major" ;;
+      --dry-run) DRY_RUN=true ;;
+      --skip-changelog) SKIP_CHANGELOG=true ;;
+      engine) TARGETS+=("engine") ;;
+      vscode) TARGETS+=("vscode") ;;
+      web)    TARGETS+=("web") ;;
+      all)    TARGETS+=("all") ;;
+    esac
+  done
+
+  # Default to 'all'
+  if [ ${#TARGETS[@]} -eq 0 ]; then
+    TARGETS=("all")
+  fi
+
+  for t in "${TARGETS[@]}"; do
+    case "$t" in
+      engine) RELEASE_ENGINE=true ;;
+      vscode) RELEASE_VSCODE=true ;;
+      web)    RELEASE_WEB=true ;;
+      all)    RELEASE_ENGINE=true; RELEASE_VSCODE=true; RELEASE_WEB=true ;;
+    esac
+  done
+
+  # ── Version Bump ──
+  echo "==> Bumping versions ($BUMP)..."
+
+  if $RELEASE_ENGINE; then
+    dry_run "npm version $BUMP --no-git-tag-version -w packages/engine"
+  fi
+  if $RELEASE_VSCODE; then
+    dry_run "npm version $BUMP --no-git-tag-version -w packages/vscode"
+  fi
+  if $RELEASE_WEB; then
+    dry_run "npm version $BUMP --no-git-tag-version"
+  fi
+
+  if $RELEASE_ENGINE; then
+    NEW_VERSION=$(node -p "require('./packages/engine/package.json').version" 2>/dev/null || echo "0.0.0")
+  else
+    NEW_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
+  fi
+
+  echo "==> New version: v${NEW_VERSION}"
+
+  # ── Changelog ──
+  generate_changelog
+
+  # ── Build & Publish ──
+  if $RELEASE_ENGINE; then
+    echo "==> Publishing @lixsketch/engine to npm..."
+    dry_run "npm publish -w packages/engine --access public"
+    echo "==> Engine published"
+  fi
+
+  if $RELEASE_VSCODE; then
+    echo "==> Building VS Code extension..."
+    dry_run "cd '$SCRIPT_DIR/packages/vscode' && npm run build"
+    echo "==> Packaging & publishing VS Code extension..."
+    dry_run "cd '$SCRIPT_DIR/packages/vscode' && npx @vscode/vsce package && npx @vscode/vsce publish"
+    echo "==> VS Code extension published"
+  fi
+
+  if $RELEASE_WEB; then
+    echo "==> Building & deploying website..."
+    dry_run "cd '$SCRIPT_DIR' && npx @cloudflare/next-on-pages"
+    dry_run "cd '$SCRIPT_DIR' && npx wrangler pages deploy .vercel/output/static --project-name lixsketch --branch main"
+    echo "==> Website deployed"
+  fi
+
+  # ── Blog Post ──
+  if ! $SKIP_CHANGELOG; then
+    generate_blog_post
+  fi
+
+  # ── Git Tag & Push ──
+  echo "==> Committing and tagging v${NEW_VERSION}..."
+  dry_run "git add -A"
+  dry_run "git commit -m 'release: v${NEW_VERSION}' || true"
+  dry_run "git tag 'v${NEW_VERSION}'"
+  dry_run "git push origin main --tags"
+
+  # ── GitHub Release ──
+  if command -v gh &> /dev/null; then
+    echo "==> Creating GitHub release..."
+    dry_run "gh release create 'v${NEW_VERSION}' --generate-notes --title 'v${NEW_VERSION}'"
+  else
+    echo "==> gh CLI not found, skipping GitHub release"
+  fi
+
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  Release v${NEW_VERSION} complete!"
+  echo ""
+  $RELEASE_ENGINE && echo "  - @lixsketch/engine published to npm"
+  $RELEASE_VSCODE && echo "  - LixSketch VS Code extension published"
+  $RELEASE_WEB    && echo "  - Website deployed to Cloudflare Pages"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+}
+
+# ── Usage ────────────────────────────────────────────────────
 
 usage() {
-  echo "Usage: ./deploy.sh [command ...]"
+  echo "Usage: ./deploy.sh [command ...] [options]"
   echo ""
-  echo "Commands:"
-  echo "  deploy    Build & deploy Next.js to Cloudflare Pages"
-  echo "  worker    Deploy the collab Worker"
-  echo "  secrets   Upload .env vars to Worker + Pages"
-  echo "  build     Build Pages only (no deploy)"
-  echo "  all       secrets + worker + deploy"
+  echo "Infra Commands:"
+  echo "  deploy              Build & deploy website to Cloudflare Pages"
+  echo "  worker              Deploy the collab Worker"
+  echo "  secrets             Upload .env vars to Worker + Pages"
+  echo "  build               Build Pages only (no deploy)"
+  echo "  all                 secrets + worker + deploy"
   echo ""
-  echo "Multiple commands can be chained: ./deploy.sh build deploy"
-  echo "Default: deploy"
+  echo "Release Commands:"
+  echo "  release [targets]   Full release with version bump + changelog + publish"
+  echo "                      Targets: engine, vscode, web, all (default: all)"
+  echo ""
+  echo "Release Options:"
+  echo "  --patch             Patch version bump (default)"
+  echo "  --minor             Minor version bump"
+  echo "  --major             Major version bump"
+  echo "  --dry-run           Preview without executing"
+  echo "  --skip-changelog    Skip changelog generation"
+  echo ""
+  echo "Examples:"
+  echo "  ./deploy.sh deploy                     # Quick website deploy"
+  echo "  ./deploy.sh release all --minor        # Release everything"
+  echo "  ./deploy.sh release engine --patch     # Publish npm package only"
+  echo "  ./deploy.sh release vscode             # Publish VS Code extension"
+  echo "  ./deploy.sh release all --dry-run      # Preview full release"
 }
+
+# ── Entrypoint ───────────────────────────────────────────────
+
+# DRY_RUN default for non-release commands
+DRY_RUN=false
+SKIP_CHANGELOG=false
+NEW_VERSION=""
 
 run_command() {
   case "$1" in
@@ -122,6 +376,7 @@ run_command() {
     secrets) secrets ;;
     build)   build ;;
     all)     secrets; worker; deploy ;;
+    release) shift; do_release "$@"; exit 0 ;;
     -h|--help|help) usage ;;
     *)
       echo "Unknown command: $1"
@@ -131,9 +386,11 @@ run_command() {
   esac
 }
 
-# Default to deploy if no args
 if [ $# -eq 0 ]; then
   deploy
+elif [ "$1" = "release" ]; then
+  shift
+  do_release "$@"
 else
   for cmd in "$@"; do
     run_command "$cmd"
