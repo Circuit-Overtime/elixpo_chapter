@@ -6,7 +6,7 @@
     "portraitImage": "assets/anwesha/about/ptr-11.jpeg"
   },
   "fancySection": {
-    "banner": "COLLAB AT FIRST SIGHT!",
+    "banner": "LET'S GO!!",
     "subtitle": "Collabs & Meets!",
     "content": "Just as biological systems thrive on symbiosis, I believe the best software is built through diverse collaboration.I am always seeking fellow explorers and engineers to co-author robust, scalable solutions to complex problems. Together, we built projects, broke things, fixed things, and laughed through it all. Whether it's a hackathon, an open-source project, or just a casual code jam, I'm all in for the adventure. Let's connect and create something amazing together!",
     "highlights": [
@@ -14,6 +14,7 @@
       "System Design Collab",
       "Hacktoberfest Collab"
     ],
+    "shoutouts": [],
     "contactNote": "Feel free to reach out if you're interested in collaborating or just want to chat about code,system architect and,or anything in between for being the most amazing people in her journey"
   },
   "images": {

@@ -114,8 +114,12 @@ export default async function AboutPage({ params }) {
             {profile.email}
           </span>
           <br /><br />
-          Huge shout-out to{" "}
-          {about.fancySection.shoutouts.map((name, i) => (
+          {about.fancySection.shoutouts && (
+            <>
+              {about.fancySection.shoutouts.length >= 1 ? "Huge shout-out to " : ""}
+            </>
+          )}
+          {about.fancySection.shoutouts?.map((name, i) => (
             <span
               key={i}
               className="inline bg-[#1B1B19] text-[#E2D9C8] font-extrabold px-1.5 sm:px-4 py-0.5 sm:py-1 rounded-[5px] sm:rounded-[10px] tracking-wide opacity-90 mx-0.5 sm:mx-1 text-sm sm:text-base md:text-[0.7em] leading-relaxed"
