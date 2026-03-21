@@ -30,7 +30,10 @@
     "editor",
     "collaboration"
   ],
-  "private": false,
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "engines": {
     "node": ">=20.0.0"
   },
@@ -47,13 +50,12 @@
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
+    "@lixsketch/engine": "workspace:*",
     "framer-motion": "^12.35.2",
     "fuse.js": "^7.1.0",
     "next": "^15.5.2",
-    "perfect-freehand": "^1.2.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "roughjs": "^4.6.6",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

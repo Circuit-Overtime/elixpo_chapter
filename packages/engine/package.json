@@ -1,0 +1,48 @@
+{
+  "name": "@lixsketch/engine",
+  "version": "1.0.0",
+  "description": "Open-source SVG whiteboard engine with hand-drawn aesthetics — the core of LixSketch",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./fonts": "./fonts/fonts.css",
+    "./fonts/*": "./fonts/*"
+  },
+  "files": [
+    "src/",
+    "fonts/",
+    "README.md"
+  ],
+  "keywords": [
+    "whiteboard",
+    "canvas",
+    "svg",
+    "diagram",
+    "drawing",
+    "roughjs",
+    "sketch",
+    "excalidraw-alternative",
+    "infinite-canvas",
+    "framework"
+  ],
+  "author": {
+    "name": "Ayushman Bhattacharya",
+    "email": "ayushman@myceli.ai",
+    "url": "https://github.com/elixpo"
+  },
+  "license": "MIT",
+  "homepage": "https://sketch.elixpo.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elixpo/elixposketch.git",
+    "directory": "packages/engine"
+  },
+  "bugs": {
+    "url": "https://github.com/elixpo/elixposketch/issues"
+  },
+  "dependencies": {
+    "roughjs": "^4.6.6",
+    "perfect-freehand": "^1.2.3"
+  }
+}
