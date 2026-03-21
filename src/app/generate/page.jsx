@@ -39,11 +39,7 @@ const DURATIONS = [
 ];
 
 const VIDEO_MODELS = [
-  { id: 'veo', label: 'Veo', desc: 'Google video' },
-  { id: 'seedance', label: 'Seedance', desc: 'Balanced' },
-  { id: 'seedance-pro', label: 'Seedance Pro', desc: 'High quality' },
-  { id: 'wan', label: 'Wan', desc: 'Fast video' },
-  { id: 'ltx-2', label: 'LTX-2', desc: 'Lightweight' },
+  { id: 'grok-video', label: 'Grok Video', desc: 'High quality video' },
 ];
 
 const STYLES = [
@@ -84,7 +80,7 @@ export default function GeneratePage() {
   const [style, setStyle] = useState('dynamic');
   const [generating, setGenerating] = useState(false);
   const [duration, setDuration] = useState('6');
-  const [videoModel, setVideoModel] = useState('veo');
+  const [videoModel, setVideoModel] = useState('grok-video');
   const [modelOpen, setModelOpen] = useState(false);
   const [styleOpen, setStyleOpen] = useState(false);
   const [durationOpen, setDurationOpen] = useState(false);

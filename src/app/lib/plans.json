@@ -17,11 +17,7 @@
       "gptimage": 8
     },
     "video": {
-      "ltx-2": 10,
-      "wan": 12,
-      "seedance": 15,
-      "seedance-pro": 20,
-      "veo": 25
+      "grok-video": 15
     },
     "edit": 5,
     "enhance": 1,

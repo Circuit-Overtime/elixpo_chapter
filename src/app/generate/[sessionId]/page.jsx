@@ -19,11 +19,7 @@ const IMAGE_MODELS = [
 ];
 
 const VIDEO_MODELS = [
-  { id: 'veo', label: 'Veo' },
-  { id: 'seedance', label: 'Seedance' },
-  { id: 'seedance-pro', label: 'Seedance Pro' },
-  { id: 'wan', label: 'Wan' },
-  { id: 'ltx-2', label: 'LTX-2' },
+  { id: 'grok-video', label: 'Grok Video' },
 ];
 
 const ALL_MODELS = [...IMAGE_MODELS, ...VIDEO_MODELS];
@@ -354,7 +350,7 @@ export default function SessionPage({ params }) {
     if (!resultSrc) return;
     const id = crypto.randomUUID();
     sessionStorage.setItem(`gen_${id}`, JSON.stringify({
-      prompt, model: 'wan', width, height, mode: 'video', duration: 5, imageUrl: resultSrc, timestamp: Date.now(),
+      prompt, model: 'grok-video', width, height, mode: 'video', duration: 5, imageUrl: resultSrc, timestamp: Date.now(),
     }));
     router.push(`/generate/${id}`);
   };

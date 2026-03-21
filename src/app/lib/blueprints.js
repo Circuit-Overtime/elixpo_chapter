@@ -45,7 +45,7 @@ export const BLUEPRINTS = [
       { id: 'reference', label: 'Product Image', type: 'image', required: true, hint: 'Upload a clean product photo' },
       { id: 'prompt', label: 'Scene', type: 'text', required: false, hint: 'Background description (optional, defaults to studio white)' },
     ],
-    defaultModel: 'wan',
+    defaultModel: 'grok-video',
     systemPrompt: 'Create a smooth 360-degree rotation video of this product on a clean studio background with professional lighting.',
   },
 
@@ -297,7 +297,7 @@ export const BLUEPRINTS = [
       { id: 'reference', label: 'First Frame', type: 'image', required: false, hint: 'Upload a reference image (optional)' },
       { id: 'prompt', label: 'Scene', type: 'text', required: true, hint: 'Describe the video scene and motion' },
     ],
-    defaultModel: 'wan',
+    defaultModel: 'grok-video',
     systemPrompt: 'Generate a smooth, cinematic video clip based on the description.',
   },
   {
@@ -312,7 +312,7 @@ export const BLUEPRINTS = [
       { id: 'reference', label: 'Landscape', type: 'image', required: false, hint: 'Upload a landscape photo (optional)' },
       { id: 'prompt', label: 'Scene', type: 'text', required: true, hint: 'e.g. "Slow aerial flyover of misty mountains at sunrise"' },
     ],
-    defaultModel: 'veo',
+    defaultModel: 'grok-video',
     systemPrompt: 'Create a cinematic landscape video with smooth camera motion and dramatic natural lighting.',
   },
 ];
