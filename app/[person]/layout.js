@@ -3,6 +3,8 @@ import MenuOverlay from "@/components/MenuOverlay";
 import Footer from "@/components/Footer";
 import { FadeInReveal, InertiaScroll } from "@/components/Animations";
 
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   return getValidPersons().map((person) => ({ person }));
 }
