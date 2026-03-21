@@ -1,49 +1,41 @@
 {
   "brand": {
     "name": "Elixpo",
-    "tagline": "Orchestrating your projects, seamlessly."
+    "tagline": "Open, Ethical, Accessible AI for Everyone."
   },
   "columns": [
     {
-      "title": "Product",
+      "title": "Projects",
       "links": [
-        { "label": "Features", "href": "/features" },
-        { "label": "Pricing", "href": "/pricing" },
-        { "label": "Integrations", "href": "/integrations" },
-        { "label": "Changelog", "href": "/changelog" }
+        { "label": "Elixpo Art", "href": "https://elixpoart.pages.dev" },
+        { "label": "LixSearch", "href": "https://search.elixpo.com" },
+        { "label": "LixSketch", "href": "https://sketch.elixpo.com" },
+        { "label": "Elixpo URL", "href": "https://url.elixpo.com" },
+        { "label": "Elixpo Me", "href": "https://me.elixpo.com" },
+        { "label": "All Projects", "href": "/projects" }
       ]
     },
     {
-      "title": "Company",
+      "title": "Community",
       "links": [
-        { "label": "About", "href": "/about" },
-        { "label": "Blog", "href": "/blog" },
-        { "label": "Careers", "href": "/careers" },
-        { "label": "Contact", "href": "/contact" }
+        { "label": "GitHub", "href": "https://github.com/elixpo/elixpo_chapter" },
+        { "label": "Contributing Guide", "href": "https://github.com/elixpo/elixpo_chapter/blob/main/CONTRIBUTING.md" },
+        { "label": "Code of Conduct", "href": "https://github.com/elixpo/elixpo_chapter/blob/main/CODE_OF_CONDUCT.md" },
+        { "label": "Discussions", "href": "https://github.com/elixpo/elixpo_chapter/discussions" }
       ]
     },
     {
       "title": "Resources",
       "links": [
-        { "label": "Documentation", "href": "/docs" },
-        { "label": "Help Center", "href": "/help" },
-        { "label": "Community", "href": "/community" },
-        { "label": "API Reference", "href": "/api" }
-      ]
-    },
-    {
-      "title": "Legal",
-      "links": [
-        { "label": "Privacy Policy", "href": "/privacy" },
-        { "label": "Terms of Service", "href": "/terms" },
-        { "label": "Cookie Policy", "href": "/cookies" }
+        { "label": "About", "href": "/about" },
+        { "label": "Open Source", "href": "/resources" },
+        { "label": "Hacktoberfest", "href": "https://hacktoberfest.com" },
+        { "label": "Sponsor Us", "href": "https://github.com/sponsors/Circuit-Overtime" }
       ]
     }
   ],
   "socials": [
-    { "platform": "twitter", "href": "https://twitter.com/elixpo" },
-    { "platform": "github", "href": "https://github.com/elixpo" },
-    { "platform": "linkedin", "href": "https://linkedin.com/company/elixpo" }
+    { "platform": "github", "href": "https://github.com/elixpo/elixpo_chapter" }
   ],
-  "copyright": "2026 Elixpo. All rights reserved."
+  "copyright": "2023-2026 Elixpo. Licensed under GNU GPL-3.0."
 }

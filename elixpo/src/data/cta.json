@@ -1,12 +1,12 @@
 {
-  "headline": "Ready to orchestrate your projects?",
-  "subheadline": "Join thousands of teams already using Elixpo to streamline their workflows.",
+  "headline": "Join the Ecosystem",
+  "subheadline": "Whether you want to contribute code, report bugs, or just explore — Elixpo is open to everyone.",
   "primaryCta": {
-    "label": "Get Started Free",
-    "href": "/signup"
+    "label": "Star on GitHub",
+    "href": "https://github.com/elixpo/elixpo_chapter"
   },
   "secondaryCta": {
-    "label": "Talk to Sales",
-    "href": "/contact"
+    "label": "Read Contributing Guide",
+    "href": "https://github.com/elixpo/elixpo_chapter/blob/main/CONTRIBUTING.md"
   }
 }

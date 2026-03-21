@@ -1,17 +1,20 @@
 {
-  "headline": "All-in-one Project Orchestrator",
-  "subheadline": "Elixpo is a modern, all-in-one platform designed to seamlessly orchestrate all your projects in one place.",
-  "cta": {
-    "label": "Request a Demo",
-    "href": "/demo"
+  "headline": "Enhanced Learning and Intelligence Process Optimization",
+  "subheadline": "A developer-first open-source ecosystem of interconnected projects — AI art, intelligent search, collaborative sketching, and more. 100% free, forever.",
+  "primaryCta": {
+    "label": "Explore Projects",
+    "href": "/projects"
+  },
+  "secondaryCta": {
+    "label": "Star on GitHub",
+    "href": "https://github.com/elixpo/elixpo_chapter"
   },
   "nodes": [
-    { "type": "avatar", "image": "/images/team/member1.jpg", "position": "top-left" },
-    { "type": "icon", "icon": "lightbulb", "color": "#FFC107", "position": "top-left-inner" },
-    { "type": "icon", "icon": "checkmark", "color": "#7C3AED", "position": "center" },
-    { "type": "icon", "icon": "bolt", "color": "#10B981", "position": "top-right" },
-    { "type": "icon", "icon": "key", "color": "#6366F1", "position": "left" },
-    { "type": "avatar", "image": "/images/team/member2.jpg", "position": "right" },
-    { "type": "icon", "icon": "quote", "color": "#1F2937", "position": "far-right" }
+    { "icon": "brain", "color": "#7C3AED", "label": "AI" },
+    { "icon": "code", "color": "#3B82F6", "label": "Code" },
+    { "icon": "palette", "color": "#EC4899", "label": "Art" },
+    { "icon": "search", "color": "#10B981", "label": "Search" },
+    { "icon": "chat", "color": "#F59E0B", "label": "Chat" },
+    { "icon": "bolt", "color": "#EF4444", "label": "Deploy" }
   ]
 }
