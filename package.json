@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
-    "@lixsketch/engine": "workspace:*",
+    "@elixpo/lixsketch": "workspace:*",
     "framer-motion": "^12.35.2",
     "fuse.js": "^7.1.0",
     "next": "^15.5.2",

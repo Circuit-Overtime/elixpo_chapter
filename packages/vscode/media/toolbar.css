@@ -1,0 +1,82 @@
+#toolbar {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #1e2228;
+    border: 1px solid #2d333b;
+    border-radius: 8px;
+    padding: 4px 6px;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    user-select: none;
+}
+
+.tool-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #8b949e;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.tool-btn:hover {
+    background: #2d333b;
+    color: #e6edf3;
+}
+
+.tool-btn.active {
+    background: #388bfd30;
+    color: #58a6ff;
+}
+
+.tool-divider {
+    width: 1px;
+    height: 20px;
+    background: #2d333b;
+    margin: 0 4px;
+}
+
+#zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 2px;
+}
+
+#zoom-controls button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #8b949e;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#zoom-controls button:hover {
+    background: #2d333b;
+    color: #e6edf3;
+}
+
+#zoomPercent {
+    font-size: 11px;
+    color: #8b949e;
+    min-width: 36px;
+    text-align: center;
+    font-family: system-ui, -apple-system, sans-serif;
+}
