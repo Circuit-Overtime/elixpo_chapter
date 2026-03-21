@@ -6,6 +6,10 @@
     "/assets/vivek/about/ptr-11.png"
   ],
   "papers": [
-    
+    {
+      "title": "Exploring Microcode CPU Instructions with RISC-V Breadboard Computer",
+      "year": "2025",
+      "isNew": true
+    }
   ]
 }
