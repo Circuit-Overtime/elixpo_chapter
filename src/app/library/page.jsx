@@ -8,10 +8,11 @@ import { getLibrary, removeFromLibrary } from '../lib/library';
 import styles from './Library.module.css';
 
 const ALL_MODELS = [
-  { id: 'flux', label: 'Flux' }, { id: 'gptimage', label: 'GPT Image' },
-  { id: 'seedream5', label: 'Seedream 5' }, { id: 'nanobanana', label: 'Nano Banana' },
-  { id: 'kontext', label: 'Kontext' }, { id: 'imagen-4', label: 'Imagen 4' },
-  { id: 'zimage', label: 'Z-Image' }, { id: 'klein', label: 'Klein' },
+  { id: 'flux', label: 'Flux Schnell' }, { id: 'flux-2-dev', label: 'FLUX.2 Dev' },
+  { id: 'gptimage', label: 'GPT Image' }, { id: 'dirtberry', label: 'Dirtberry' },
+  { id: 'dirtberry-pro', label: 'Dirtberry Pro' }, { id: 'zimage', label: 'Z-Image' },
+  { id: 'imagen-4', label: 'Imagen 4' }, { id: 'grok-imagine', label: 'Grok Imagine' },
+  { id: 'klein', label: 'Klein' }, { id: 'kontext', label: 'Kontext' },
   { id: 'grok-video', label: 'Grok Video' },
 ];
 

@@ -869,3 +869,80 @@
     padding: 0.7rem 1rem;
   }
 }
+
+/* ─── Video Maintenance Modal ─── */
+.maintenanceOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+}
+
+.maintenanceModal {
+  background: linear-gradient(145deg, rgba(16, 22, 38, 0.98) 0%, rgba(14, 20, 34, 0.99) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  animation: maintenanceIn 0.2s ease;
+}
+
+@keyframes maintenanceIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.maintenanceIcon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.maintenanceTitle {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.maintenanceDesc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.maintenanceBtn {
+  margin-top: var(--spacing-sm);
+  padding: 0.5rem 2rem;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-md);
+  background: rgba(245, 158, 11, 0.08);
+  color: #f59e0b;
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--animation-fast);
+}
+
+.maintenanceBtn:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+}

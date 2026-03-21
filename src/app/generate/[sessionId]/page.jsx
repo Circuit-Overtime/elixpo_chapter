@@ -8,14 +8,16 @@ import { isSignedIn, getUser } from '../../lib/auth';
 import styles from './Session.module.css';
 
 const IMAGE_MODELS = [
-  { id: 'flux', label: 'Flux' },
+  { id: 'flux', label: 'Flux Schnell' },
+  { id: 'flux-2-dev', label: 'FLUX.2 Dev' },
   { id: 'gptimage', label: 'GPT Image' },
-  { id: 'seedream5', label: 'Seedream 5' },
-  { id: 'nanobanana', label: 'Nano Banana' },
-  { id: 'kontext', label: 'Kontext' },
-  { id: 'imagen-4', label: 'Imagen 4' },
+  { id: 'dirtberry', label: 'Dirtberry' },
+  { id: 'dirtberry-pro', label: 'Dirtberry Pro' },
   { id: 'zimage', label: 'Z-Image' },
+  { id: 'imagen-4', label: 'Imagen 4' },
+  { id: 'grok-imagine', label: 'Grok Imagine' },
   { id: 'klein', label: 'Klein' },
+  { id: 'kontext', label: 'Kontext' },
 ];
 
 const VIDEO_MODELS = [

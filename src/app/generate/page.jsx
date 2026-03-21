@@ -9,13 +9,16 @@ import styles from './Generate.module.css';
 
 const MODELS = [
   { id: 'flux', label: 'Flux', desc: 'Fast & reliable' },
-  { id: 'gptimage', label: 'GPT Image', desc: 'OpenAI quality' },
-  { id: 'seedream5', label: 'Seedream 5', desc: 'High detail' },
-  { id: 'nanobanana', label: 'Nano Banana', desc: 'Stylized art' },
-  { id: 'kontext', label: 'Kontext', desc: 'Context-aware' },
+  { id: 'gptimage', label: 'GPT Image 1 Mini', desc: 'OpenAI quality' },
+  { id: 'flux', label: 'Flux Schnell', desc: 'Fast generation' },
+  { id: 'flux-2-dev', label: 'FLUX.2 Dev', desc: 'Next-gen Flux' },
+  { id: 'dirtberry', label: 'Dirtberry', desc: 'Stylized art' },
+  { id: 'dirtberry-pro', label: 'Dirtberry Pro', desc: 'High quality art' },
+  { id: 'zimage', label: 'Z-Image Turbo', desc: 'Turbo speed' },
   { id: 'imagen-4', label: 'Imagen 4', desc: 'Google quality' },
-  { id: 'zimage', label: 'Z-Image', desc: 'Turbo speed' },
-  { id: 'klein', label: 'Klein', desc: 'Compact model' },
+  { id: 'grok-imagine', label: 'Grok Imagine', desc: 'xAI generation' },
+  { id: 'klein', label: 'FLUX.2 Klein 4B', desc: 'Compact model' },
+  { id: 'kontext', label: 'Kontext', desc: 'Context-aware' },
 ];
 
 const ASPECTS = [
@@ -91,6 +94,7 @@ export default function GeneratePage() {
   const [limitWarning, setLimitWarning] = useState('');
   const [describeArtifact, setDescribeArtifact] = useState(null);
   const [artifactModal, setArtifactModal] = useState(false);
+  const [videoMaintenance, setVideoMaintenance] = useState(false);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const describeInputRef = useRef(null);
@@ -457,8 +461,8 @@ export default function GeneratePage() {
                   Image
                 </button>
                 <button
-                  className={`${styles.modeBtn} ${mode === 'video' ? styles.modeActive : ''}`}
-                  onClick={() => { setMode('video'); closeAllDropdowns(); }}
+                  className={styles.modeBtn}
+                  onClick={() => { setVideoMaintenance(true); closeAllDropdowns(); }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="5 3 19 12 5 21 5 3" />
@@ -691,6 +695,25 @@ export default function GeneratePage() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {videoMaintenance && (
+        <div className={styles.maintenanceOverlay} onClick={() => setVideoMaintenance(false)}>
+          <div className={styles.maintenanceModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.maintenanceIcon}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-amber)" strokeWidth="1.5">
+                <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
+              </svg>
+            </div>
+            <h2 className={styles.maintenanceTitle}>Under Maintenance</h2>
+            <p className={styles.maintenanceDesc}>
+              Video generation is currently undergoing maintenance and will be back soon. Thank you for your patience.
+            </p>
+            <button className={styles.maintenanceBtn} onClick={() => setVideoMaintenance(false)}>
+              Got it
+            </button>
           </div>
         </div>
       )}
