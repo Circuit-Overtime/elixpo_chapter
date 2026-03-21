@@ -53,7 +53,7 @@
     "build:extension": "node esbuild.extension.js",
     "build": "npm run build:engine && npm run build:extension",
     "watch": "npm run build -- --watch",
-    "package": "npx @vscode/vsce package"
+    "package": "npx @vscode/vsce package --no-dependencies"
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",
