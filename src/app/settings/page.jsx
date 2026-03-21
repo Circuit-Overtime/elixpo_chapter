@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar/Navbar';
 import GradientBlobs from '../components/shared/GradientBlobs';
-import { isSignedIn, getUser, clearAuth, getGuestUsage } from '../lib/auth';
-import { planLimits } from '../lib/theme';
+import { isSignedIn, getUser, clearAuth, fetchCredits, getUserTier } from '../lib/auth';
+import { getDailyCredits } from '../lib/credits';
 import styles from './Settings.module.css';
 
 const INTERESTS = [
@@ -58,10 +58,10 @@ export default function SettingsPage() {
   const [user, setUser] = useState(null);
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [usage, setUsage] = useState({ images: 0, videoMins: 0 });
+  const [creditsUsed, setCreditsUsed] = useState(0);
 
-  const userPlan = user?.plan_id || 'free';
-  const limits = planLimits[userPlan] || planLimits.free;
+  const userPlan = user?.plan_id || user?.plan || 'free';
+  const totalCredits = getDailyCredits(userPlan);
 
   useEffect(() => {
     if (!isSignedIn()) {
@@ -75,10 +75,9 @@ export default function SettingsPage() {
     const saved = localStorage.getItem('elixpo_interests');
     if (saved) setSelectedInterests(JSON.parse(saved));
 
-    // Load usage from user object (would come from API) or fallback to guest usage
-    setUsage({
-      images: u?.images_used_today || 0,
-      videoMins: u?.video_mins_used_today || 0,
+    // Fetch credit usage
+    fetchCredits().then((data) => {
+      if (data) setCreditsUsed(data.creditsUsed || 0);
     });
   }, [router]);
 
@@ -86,13 +85,9 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(() => {
-      const u = getUser();
-      if (u) {
-        setUsage({
-          images: u.images_used_today || 0,
-          videoMins: u.video_mins_used_today || 0,
-        });
-      }
+      fetchCredits().then((data) => {
+        if (data) setCreditsUsed(data.creditsUsed || 0);
+      });
     }, 30000);
     return () => clearInterval(interval);
   }, [user]);
@@ -170,27 +165,14 @@ export default function SettingsPage() {
               </div>
 
               <UsageBar
-                label="Images"
-                used={usage.images}
-                total={limits.images}
+                label="Credits"
+                used={creditsUsed}
+                total={totalCredits}
                 color="var(--gradient-primary)"
                 icon={
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <path d="M21 15l-5-5L5 21" />
-                  </svg>
-                }
-              />
-
-              <UsageBar
-                label="Video"
-                used={Number(usage.videoMins.toFixed(1))}
-                total={limits.videoMins}
-                color="var(--gradient-warm)"
-                icon={
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="5 3 19 12 5 21 5 3" />
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v12M6 12h12" />
                   </svg>
                 }
               />
