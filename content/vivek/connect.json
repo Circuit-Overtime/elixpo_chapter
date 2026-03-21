@@ -4,7 +4,7 @@
   "emails": [
     "vivek@elixpo.com"
   ],
-  "contactImage": "/assets/vivek/contact/contact.png",
+  "contactImage": "/assets/vivek/publication/sq-1.png",
   "socialLinks": [
     { "platform": "GitHub", "url": "https://github.com/ez-vivek", "icon": "logo-github", "hoverColor": "#333" },
     { "platform": "LinkedIn", "url": "https://linkedin.com/in/ezmkdir", "icon": "logo-linkedin", "hoverColor": "#0077b5" },
