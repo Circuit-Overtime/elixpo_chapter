@@ -166,6 +166,28 @@ export default function DocsPage() {
             <NavItem href="#api" label="JavaScript API" icon="bx-code-alt" active={activeSection === 'api'} />
             <NavItem href="#llm" label="LLM Spec" icon="bx-bot" active={activeSection === 'llm'} />
 
+            <p className="text-text-dim text-[10px] uppercase tracking-widest px-3 pt-5 pb-2">Install</p>
+            <a
+              href="https://www.npmjs.com/package/@elixpo/lixsketch"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] transition-all"
+            >
+              <i className="bx bxl-nodejs text-base text-text-dim" />
+              NPM Package
+              <i className="bx bx-link-external text-xs text-text-dim ml-auto" />
+            </a>
+            <a
+              href="https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch-vscode"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] transition-all"
+            >
+              <i className="bx bxl-visual-studio text-base text-text-dim" />
+              VS Code Extension
+              <i className="bx bx-link-external text-xs text-text-dim ml-auto" />
+            </a>
+
             <p className="text-text-dim text-[10px] uppercase tracking-widest px-3 pt-5 pb-2">Blog</p>
             <NavItem href="#blog" label="All Posts" icon="bx-news" active={activeSection === 'blog'} />
             {blogPosts.map(post => (
