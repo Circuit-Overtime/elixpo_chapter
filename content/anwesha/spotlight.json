@@ -46,10 +46,10 @@
     "description": "Participated in GDG Solution Challenge, contributing to impactful solutions using technology.",
     "image": "/assets/anwesha/spotlight/elixpo-solution-challenge.png"
   },
-  {
-    "title": "Open Source Contributor",
-    "date": "2024-10-01",
-    "description": "Actively contributed to Hacktoberfest with multiple open-source contributions and collaborations.",
-    "image": "/assets/anwesha/spotlight/elixpo-hacktoberfest.png"
-  }
-]
+    {
+      "title": "Open Source Contributor",
+      "date": "2024-10-01",
+      "description": "Actively contributed to Hacktoberfest with multiple open-source contributions and collaborations.",
+      "image": "/assets/anwesha/spotlight/elixpo-hacktoberfest.png"
+    }
+  ]
