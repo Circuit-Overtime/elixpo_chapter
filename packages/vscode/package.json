@@ -1,5 +1,5 @@
 {
-  "name": "lixsketch-vscode",
+  "name": "lixsketch",
   "displayName": "LixSketch",
   "description": "Open-source whiteboard diagrams inside VS Code — draw, sketch, and save .lixsketch files",
   "version": "4.2.3",
