@@ -169,7 +169,7 @@ export const BLUEPRINTS = [
     description: 'Try different hairstyles, colors, and cuts on your photo before committing.',
     category: 'Portraits',
     type: 'image',
-    cover: '/images/styles/art-nouveau.jpeg',
+    cover: '/images/styles/art-nouveau.jpg',
     steps: [
       { id: 'reference', label: 'Upload Photo', type: 'image', required: true, hint: 'Upload a clear front-facing portrait' },
       { id: 'prompt', label: 'New Hairstyle', type: 'text', required: true, hint: 'e.g. "Short bob cut with platinum blonde highlights" or "Long curly red hair"' },
@@ -241,7 +241,7 @@ export const BLUEPRINTS = [
     description: 'Create consistent illustrated scenes for storytelling with the same characters.',
     category: 'Creative',
     type: 'image',
-    cover: '/images/styles/art-nouveau.jpeg',
+    cover: '/images/styles/art-nouveau.jpg',
     steps: [
       { id: 'reference', label: 'Character Ref', type: 'image', required: true, hint: 'Upload your main character reference' },
       { id: 'style', label: 'Style', type: 'style-picker', required: false },
@@ -308,6 +308,6 @@ export const STYLE_PRESETS = [
   { id: 'pop-art', label: 'Pop Art', image: '/images/styles/pop-art.jpeg' },
   { id: 'vaporwave', label: 'Vaporwave', image: '/images/styles/vaporwave-art.jpg' },
   { id: 'renaissance', label: 'Renaissance', image: '/images/styles/renaissance-art.jpg' },
-  { id: 'art-nouveau', label: 'Art Nouveau', image: '/images/styles/art-nouveau.jpeg' },
+  { id: 'art-nouveau', label: 'Art Nouveau', image: '/images/styles/art-nouveau.jpg' },
   { id: 'abstract', label: 'Abstract', image: '/images/styles/abstract.jpeg' },
 ];

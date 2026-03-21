@@ -1,9 +1,9 @@
 .page {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 50% at 15% 5%, rgba(86, 145, 243, 0.07) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(141, 73, 253, 0.06) 0%, transparent 50%),
-    linear-gradient(180deg, #060a14 0%, #0a0f1e 40%, #0d1425 100%);
+    radial-gradient(ellipse 80% 50% at 15% 5%, rgba(86, 145, 243, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(141, 73, 253, 0.08) 0%, transparent 50%),
+    linear-gradient(180deg, #0c1220 0%, #111b2e 40%, #141f35 100%);
   display: flex;
   flex-direction: column;
 }
@@ -126,7 +126,7 @@
   padding: 0.8rem 1.2rem;
   background: rgba(10, 15, 28, 0.7);
   border: 1px solid rgba(86, 145, 243, 0.08);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   backdrop-filter: blur(12px);
   color: var(--color-text-tertiary);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
@@ -176,36 +176,37 @@
   color: #5691f3;
 }
 
-/* ─── Grid — masonry hero row + regular cards ─── */
+/* ─── Grid — clean 3-column layout ─── */
 .grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   grid-auto-rows: auto;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .card {
   position: relative;
   border: none;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-sm);
   overflow: hidden;
   cursor: pointer;
   background: none;
   padding: 0;
   aspect-ratio: 4 / 3;
-  transition: transform 0.3s ease;
-  will-change: transform;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   content-visibility: auto;
 }
 
-.card:hover { transform: translateY(-4px); }
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
 
-/* Every 5th card (1st, 6th, 11th, …): 16:9 hero spanning 2 columns */
+/* First card: wide hero spanning 2 columns */
 .card:nth-child(5n+1) {
   grid-column: span 2;
   aspect-ratio: 16 / 9;
 }
-
 
 .cardImg {
   width: 100%;
@@ -217,16 +218,45 @@
 .cardOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 30%, rgba(6, 10, 20, 0.95) 100%);
+  background: linear-gradient(180deg, transparent 40%, rgba(6, 10, 20, 0.92) 100%);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: var(--spacing-md);
-  gap: 4px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  gap: 2px;
+}
+
+.cardPromptEffect {
+  position: absolute;
+  top: var(--spacing-sm);
+  left: var(--spacing-sm);
+  right: var(--spacing-sm);
+  font-family: var(--font-family-mono);
+  font-size: 0.6rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0);
+  padding: 0.3rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0);
+  max-height: 2.8em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.card:hover .cardPromptEffect {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
 }
 
 .cardBadge {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -235,9 +265,9 @@
 }
 
 .cardTitle {
-  font-family: var(--font-family-display);
-  font-size: var(--font-size-base);
-  font-weight: 700;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
   color: #fff;
   margin: 0;
 }
@@ -273,7 +303,7 @@
   margin-top: var(--spacing-xl);
   background: linear-gradient(145deg, rgba(14, 18, 32, 0.8) 0%, rgba(10, 14, 26, 0.9) 100%);
   border: 1px solid rgba(86, 145, 243, 0.08);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
@@ -311,7 +341,7 @@
   overflow-y: auto;
   background: linear-gradient(145deg, rgba(10, 14, 26, 0.98) 0%, rgba(8, 12, 22, 0.99) 100%);
   border: 1px solid rgba(86, 145, 243, 0.1);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 1px rgba(86, 145, 243, 0.2);
   animation: modalIn 0.25s ease;
 }
@@ -348,7 +378,7 @@
   position: relative;
   height: 180px;
   overflow: hidden;
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
 .modalCover img {
@@ -790,13 +820,13 @@
 /* ─── Responsive ─── */
 @media (max-width: 900px) {
   .grid { grid-template-columns: repeat(2, 1fr); }
-  .card:nth-child(5n+1) { grid-column: span 2; aspect-ratio: 16 / 9; }
+  .card:nth-child(5n+1) { grid-column: span 2; }
 }
 
 @media (max-width: 768px) {
   .content { padding: 70px var(--spacing-md) var(--spacing-2xl); }
   .grid { grid-template-columns: repeat(2, 1fr); }
-  .card:nth-child(5n+1) { grid-column: span 2; aspect-ratio: 16 / 9; }
+  .card:nth-child(5n+1) { grid-column: span 2; }
   .modal { max-height: 95vh; }
   .modalCover { height: 120px; }
 }
