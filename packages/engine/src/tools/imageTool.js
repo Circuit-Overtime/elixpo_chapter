@@ -2,7 +2,7 @@
 // Image tool event handlers - extracted from imageTool.js
 import { pushCreateAction, pushDeleteAction, pushTransformAction, pushFrameAttachmentAction } from '../core/UndoRedo.js';
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './arrowTool.js';
-import { compressImage } from '../../utils/imageCompressor.js';
+import { compressImage } from '../utils/imageCompressor.js';
 
 
 let isDraggingImage = false;
