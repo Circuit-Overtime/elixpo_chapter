@@ -210,7 +210,7 @@ ${CHANGELOG_CONTENT}
 
 **Links:**
 - [NPM Package](https://www.npmjs.com/package/@elixpo/lixsketch)
-- [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch-vscode)
+- [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch)
 - [Try it online](https://sketch.elixpo.com)
 BLOGEOF
 
@@ -259,13 +259,13 @@ do_release() {
   echo "==> Bumping versions ($BUMP)..."
 
   if $RELEASE_ENGINE; then
-    dry_run "npm version $BUMP --no-git-tag-version -w packages/lixsketch"
+    dry_run "sudo npm version $BUMP --no-git-tag-version -w packages/lixsketch"
   fi
   if $RELEASE_VSCODE; then
-    dry_run "npm version $BUMP --no-git-tag-version -w packages/vscode"
+    dry_run "sudo npm version $BUMP --no-git-tag-version -w packages/vscode"
   fi
   if $RELEASE_WEB; then
-    dry_run "npm version $BUMP --no-git-tag-version"
+    dry_run "sudo npm version $BUMP --no-git-tag-version"
   fi
 
   if $RELEASE_ENGINE; then
@@ -282,22 +282,22 @@ do_release() {
   # ── Build & Publish ──
   if $RELEASE_ENGINE; then
     echo "==> Publishing @elixpo/lixsketch to npm..."
-    dry_run "npm publish -w packages/lixsketch --access public"
+    dry_run "sudo npm publish -w packages/lixsketch --access public"
     echo "==> Engine published"
   fi
 
   if $RELEASE_VSCODE; then
     echo "==> Building VS Code extension..."
-    dry_run "cd '$SCRIPT_DIR/packages/vscode' && npm run build"
+    dry_run "cd '$SCRIPT_DIR/packages/vscode' && sudo npm run build"
     echo "==> Packaging & publishing VS Code extension..."
-    dry_run "cd '$SCRIPT_DIR/packages/vscode' && npx @vscode/vsce package && npx @vscode/vsce publish"
+    dry_run "cd '$SCRIPT_DIR/packages/vscode' && sudo npx @vscode/vsce package --no-dependencies && sudo npx @vscode/vsce publish --no-dependencies"
     echo "==> VS Code extension published"
   fi
 
   if $RELEASE_WEB; then
     echo "==> Building & deploying website..."
-    dry_run "cd '$SCRIPT_DIR' && npx @cloudflare/next-on-pages"
-    dry_run "cd '$SCRIPT_DIR' && npx wrangler pages deploy .vercel/output/static --project-name lixsketch --branch main"
+    dry_run "cd '$SCRIPT_DIR' && sudo npx @cloudflare/next-on-pages"
+    dry_run "cd '$SCRIPT_DIR' && sudo npx wrangler pages deploy .vercel/output/static --project-name lixsketch --branch main"
     echo "==> Website deployed"
   fi
 
