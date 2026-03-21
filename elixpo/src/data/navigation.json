@@ -7,7 +7,7 @@
     { "label": "Projects", "href": "/projects" },
     { "label": "About", "href": "/about" },
     { "label": "Open Source", "href": "/resources" },
-    { "label": "Community", "href": "https://github.com/elixpo/elixpo_chapter/discussions" }
+    { "label": "Community", "href": "/community" }
   ],
   "cta": {
     "label": "Star on GitHub",
