@@ -1,0 +1,102 @@
+<div align="center">
+
+<img src="https://sketch.elixpo.com/Images/logo.png" alt="LixSketch Logo" width="80" />
+
+# LixSketch for VS Code
+
+**Draw diagrams, sketch ideas, and build visual documents — right inside your editor.**
+
+[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-5B57D1?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch-vscode)
+[![License](https://img.shields.io/github/license/elixpo/lixsketch?style=for-the-badge&color=4A90D9&labelColor=1a1a2e)](https://github.com/elixpo/lixsketch/blob/main/LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/elixpo/lixsketch?style=for-the-badge&logo=github&color=5B57D1&labelColor=1a1a2e)](https://github.com/elixpo/lixsketch/stargazers)
+
+</div>
+
+---
+
+<img width="1866" height="886" alt="LixSketch Canvas" src="https://github.com/user-attachments/assets/a0b93c41-32ce-44a1-ac37-4c3f9eb555cd" />
+
+## What is LixSketch?
+
+LixSketch brings a full whiteboard canvas into VS Code. No browser needed, no context switching — just open a `.lixsketch` file and start drawing.
+
+Whether you're sketching out an architecture before writing code, diagramming a flow for a pull request, or wireframing a quick UI — it all happens where you already work.
+
+## Getting Started
+
+1. **Install** the extension from the VS Code Marketplace
+2. **Create** a new diagram: open the Command Palette (`Ctrl+Shift+P`) and run `LixSketch: New Diagram`
+3. **Draw** — that's it. Your file saves automatically.
+
+Or just create any file ending in `.lixsketch` and it opens right up.
+
+<img width="1858" height="884" alt="LixSketch Tools" src="https://github.com/user-attachments/assets/de4565a2-c6b5-4392-8de2-e76b6b1f5c1e" />
+
+## What You Get
+
+| | Feature |
+|---|---|
+| :pencil2: | **Freehand drawing** — pressure-sensitive strokes with a hand-drawn feel |
+| :black_square_button: | **Shapes** — rectangles, circles, arrows, lines, frames |
+| :abc: | **Text & code blocks** — with syntax highlighting |
+| :framed_picture: | **Images** — drag and drop or paste from clipboard |
+| :mag: | **Infinite canvas** — zoom from 0.4x to 30x, pan freely |
+| :back: | **Undo / Redo** — full history, never lose work |
+| :floppy_disk: | **Auto-save** — changes save to your `.lixsketch` file automatically |
+| :scissors: | **Copy & Paste** — duplicate shapes instantly |
+| :wastebasket: | **Eraser** — clean up with precision |
+| :flashlight: | **Laser pointer** — highlight things during screen shares |
+
+## How It Works
+
+LixSketch files are simple JSON (`.lixsketch`). They live in your repo, version with git, and diff like any other file. Share them with your team, include them in PRs, or keep them as personal notes.
+
+<img width="1322" height="612" alt="LixSketch Overview" src="https://github.com/user-attachments/assets/a96e85be-dce9-464c-8451-5513ad521dd6" />
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `V` | Select tool |
+| `H` | Pan / Hand tool |
+| `R` | Rectangle |
+| `O` | Circle |
+| `A` | Arrow |
+| `L` | Line |
+| `P` | Freehand pen |
+| `T` | Text |
+| `E` | Eraser |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Shift+Z` | Redo |
+| `Ctrl+C / V` | Copy / Paste |
+| `Delete` | Delete selected |
+
+## Part of the LixSketch Ecosystem
+
+This extension is powered by the same engine that runs [sketch.elixpo.com](https://sketch.elixpo.com).
+
+| | |
+|---|---|
+| :globe_with_meridians: | **Web app** — [sketch.elixpo.com](https://sketch.elixpo.com) — full collaborative canvas in the browser |
+| :package: | **NPM package** — [`@lixsketch/engine`](https://www.npmjs.com/package/@lixsketch/engine) — build your own whiteboard |
+| :desktop_computer: | **VS Code extension** — you're looking at it |
+
+<img width="1867" height="874" alt="LixSketch Features" src="https://github.com/user-attachments/assets/9971cf94-dba8-4436-b858-4d80e99b246d" />
+
+## Open Source
+
+LixSketch is fully open source under the MIT license. Found a bug? Have an idea?
+
+- [Report an issue](https://github.com/elixpo/lixsketch/issues)
+- [View the source](https://github.com/elixpo/lixsketch/tree/main/packages/vscode)
+- [Star us on GitHub](https://github.com/elixpo/lixsketch)
+
+---
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,14,20,24&height=100&section=footer&fontSize=0" width="100%" />
+
+Made with love by [Elixpo](https://elixpo.com)
+
+</div>

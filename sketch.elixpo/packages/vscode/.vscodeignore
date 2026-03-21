@@ -1,0 +1,12 @@
+**/*
+!out/extension.js
+!media/engine.bundle.js
+!media/webview.js
+!media/toolbar.css
+!media/fonts.css
+!media/fonts/**
+!media/icon.png
+!package.json
+!README.md
+!LICENSE
+!LICENSE.txt
