@@ -281,8 +281,9 @@ do_release() {
 
   # ── Build & Publish ──
   if $RELEASE_ENGINE; then
+    load_env
     echo "==> Publishing @elixpo/lixsketch to npm..."
-    dry_run "sudo npm publish -w packages/lixsketch --access public"
+    dry_run "sudo npm publish -w packages/lixsketch --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken=${NPM_TOKEN}"
     echo "==> Engine published"
   fi
 
