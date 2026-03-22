@@ -10,8 +10,6 @@ const resourceLinks = [
   { href: '/resources/use-cases', label: 'Use Cases', icon: 'bx bx-bulb' },
   { href: '/resources/security', label: 'Security', icon: 'bx bx-shield' },
   { href: '/docs', label: 'Docs', icon: 'bx bx-book-open' },
-  { href: '/resources/npm-package', label: 'NPM Package', icon: 'bx bxl-nodejs' },
-  { href: '/resources/vscode-extension', label: 'VS Code Extension', icon: 'bx bxl-visual-studio' },
 ]
 
 export default function LandingNav() {
@@ -106,9 +104,11 @@ export default function LandingNav() {
             href="https://github.com/elixpo/lixsketch"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden md:flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-muted hover:text-text-primary border border-border-light hover:border-white/20 rounded-lg transition-all duration-200"
           >
             <i className="bx bxl-github text-lg" />
+            <i className="bx bx-star text-sm" />
+            <span className="hidden lg:inline">Star us on GitHub</span>
           </a>
 
           <Link
@@ -181,7 +181,8 @@ export default function LandingNav() {
                 className="flex items-center gap-2 py-2.5 text-text-muted hover:text-text-primary transition-colors text-sm mt-2 border-t border-white/5 pt-3"
               >
                 <i className="bx bxl-github text-base" />
-                GitHub
+                <i className="bx bx-star text-sm" />
+                Star us on GitHub
               </a>
             </div>
           </motion.div>
