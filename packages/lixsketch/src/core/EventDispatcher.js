@@ -14,6 +14,81 @@ import { handleMultiSelectionMouseDown, handleMultiSelectionMouseMove, handleMul
 import { handleMouseDownIcon, handleMouseMoveIcon, handleMouseUpIcon } from '../tools/iconTool.js';
 import { handleCodeMouseDown, handleCodeMouseMove, handleCodeMouseUp } from '../tools/codeTool.js';
 
+// === Auto-scroll when dragging near viewport edges ===
+const EDGE_THRESHOLD = 40; // px from edge to start scrolling
+const SCROLL_SPEED = 8;    // base px per frame (scaled by zoom)
+let _autoScrollRAF = null;
+
+function _autoScroll(e) {
+    if (!(e.buttons & 1)) { _stopAutoScroll(); return; } // no primary button
+    if (typeof currentViewBox === 'undefined' || typeof currentZoom === 'undefined') return;
+    if (typeof isPanning !== 'undefined' && isPanning) return; // don't fight pan tool
+    if (typeof isPanningToolActive !== 'undefined' && isPanningToolActive) return;
+
+    const rect = svg.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    let dx = 0, dy = 0;
+    if (mx < EDGE_THRESHOLD) dx = -SCROLL_SPEED * (1 - mx / EDGE_THRESHOLD);
+    else if (mx > rect.width - EDGE_THRESHOLD) dx = SCROLL_SPEED * (1 - (rect.width - mx) / EDGE_THRESHOLD);
+    if (my < EDGE_THRESHOLD) dy = -SCROLL_SPEED * (1 - my / EDGE_THRESHOLD);
+    else if (my > rect.height - EDGE_THRESHOLD) dy = SCROLL_SPEED * (1 - (rect.height - my) / EDGE_THRESHOLD);
+
+    // Also scroll when cursor is outside the canvas entirely
+    if (e.clientX < rect.left) dx = -SCROLL_SPEED;
+    else if (e.clientX > rect.right) dx = SCROLL_SPEED;
+    if (e.clientY < rect.top) dy = -SCROLL_SPEED;
+    else if (e.clientY > rect.bottom) dy = SCROLL_SPEED;
+
+    if (dx === 0 && dy === 0) { _stopAutoScroll(); return; }
+
+    // Scale speed inversely with zoom so scrolling feels consistent
+    const scale = 1 / currentZoom;
+    currentViewBox.x += dx * scale;
+    currentViewBox.y += dy * scale;
+    svg.setAttribute('viewBox', `${currentViewBox.x} ${currentViewBox.y} ${currentViewBox.width} ${currentViewBox.height}`);
+    if (typeof freehandCanvas !== 'undefined' && freehandCanvas !== svg) {
+        freehandCanvas.setAttribute('viewBox', `${currentViewBox.x} ${currentViewBox.y} ${currentViewBox.width} ${currentViewBox.height}`);
+    }
+}
+
+function _startAutoScroll() {
+    if (_autoScrollRAF) return;
+    const tick = () => {
+        if (_lastDragEvent) _autoScroll(_lastDragEvent);
+        _autoScrollRAF = requestAnimationFrame(tick);
+    };
+    _autoScrollRAF = requestAnimationFrame(tick);
+}
+
+function _stopAutoScroll() {
+    if (_autoScrollRAF) {
+        cancelAnimationFrame(_autoScrollRAF);
+        _autoScrollRAF = null;
+    }
+    _lastDragEvent = null;
+}
+
+let _lastDragEvent = null;
+let _documentDragActive = false;
+
+function _onDocumentDragMove(e) {
+    _lastDragEvent = e;
+    // Also forward the move to the main handler so the tool keeps updating
+    // (the SVG won't receive mousemove while cursor is outside it)
+    handleMainMouseMove(e);
+}
+
+function _onDocumentDragUp(e) {
+    _stopAutoScroll();
+    document.removeEventListener('mousemove', _onDocumentDragMove);
+    document.removeEventListener('mouseup', _onDocumentDragUp);
+    _documentDragActive = false;
+    // Finalize the operation
+    handleMainMouseUp(e);
+}
+
 const handleMainMouseDown = (e) => {
     // Safety: remove any stray selection rectangle from a previous interrupted drag
     removeMultiSelectionRect();
@@ -236,9 +311,18 @@ const handleMainMouseMove = (e) => {
             handleCodeMouseMove(e);
         }
     }
+
+    // Auto-scroll when dragging near/past viewport edges
+    if (e.buttons & 1) {
+        _lastDragEvent = e;
+        _startAutoScroll();
+    } else {
+        _stopAutoScroll();
+    }
 };
 
 const handleMainMouseUp = (e) => {
+    _stopAutoScroll();
     if (isSquareToolActive) {
         handleMouseUpRect(e);
     } else if (isArrowToolActive) {
@@ -318,6 +402,21 @@ const handleMainMouseUp = (e) => {
 };
 
 const handleMainMouseLeave = (e) => {
+    // If the user is still holding the primary button (dragging outside the canvas),
+    // keep auto-scrolling and don't finalize the operation yet.
+    if (e.buttons & 1) {
+        _lastDragEvent = e;
+        _startAutoScroll();
+
+        // Listen on document to continue receiving move events outside the SVG
+        if (!_documentDragActive) {
+            _documentDragActive = true;
+            document.addEventListener('mousemove', _onDocumentDragMove);
+            document.addEventListener('mouseup', _onDocumentDragUp);
+        }
+        return;
+    }
+
     // Stop all active drawing tools when pointer leaves the canvas
 
     // Fire mouseUp for whichever tool is active to finalize/cancel the operation
@@ -343,6 +442,15 @@ const handleMainMouseLeave = (e) => {
 
 let _boundSvg = null;
 
+function _onMouseEnter(e) {
+    // Cursor re-entered the SVG — stop document-level tracking, SVG handles events again
+    if (_documentDragActive) {
+        document.removeEventListener('mousemove', _onDocumentDragMove);
+        document.removeEventListener('mouseup', _onDocumentDragUp);
+        _documentDragActive = false;
+    }
+}
+
 function initEventDispatcher(svgEl) {
     if (_boundSvg) cleanupEventDispatcher();
     const target = svgEl || svg;
@@ -350,15 +458,23 @@ function initEventDispatcher(svgEl) {
     target.addEventListener('mousemove', handleMainMouseMove);
     target.addEventListener('mouseup', handleMainMouseUp);
     target.addEventListener('mouseleave', handleMainMouseLeave);
+    target.addEventListener('mouseenter', _onMouseEnter);
     _boundSvg = target;
 }
 
 function cleanupEventDispatcher() {
+    _stopAutoScroll();
+    if (_documentDragActive) {
+        document.removeEventListener('mousemove', _onDocumentDragMove);
+        document.removeEventListener('mouseup', _onDocumentDragUp);
+        _documentDragActive = false;
+    }
     if (_boundSvg) {
         _boundSvg.removeEventListener('mousedown', handleMainMouseDown);
         _boundSvg.removeEventListener('mousemove', handleMainMouseMove);
         _boundSvg.removeEventListener('mouseup', handleMainMouseUp);
         _boundSvg.removeEventListener('mouseleave', handleMainMouseLeave);
+        _boundSvg.removeEventListener('mouseenter', _onMouseEnter);
         _boundSvg = null;
     }
 }

@@ -1423,14 +1423,19 @@ function handleMultiSelectionMouseDown(e) {
         if (multiSelection.isPointInBounds(x, y)) {
             // Only start drag if clicking on a shape that's part of the selection
             // This allows clicking through empty areas of the selection rectangle
-            let clickedOnSelectedShape = false;
+            let clickedOnSelectedShape = null;
             for (const shape of multiSelection.selectedShapes) {
                 if (shape.contains && shape.contains(x, y)) {
-                    clickedOnSelectedShape = true;
+                    clickedOnSelectedShape = shape;
                     break;
                 }
             }
             if (clickedOnSelectedShape) {
+                // Ctrl+Click: toggle shape out of multi-selection
+                if (e.ctrlKey || e.metaKey) {
+                    multiSelection.removeShape(clickedOnSelectedShape);
+                    return true;
+                }
                 multiSelection.startDrag(e);
                 return true;
             }
