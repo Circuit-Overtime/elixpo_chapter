@@ -110,7 +110,7 @@ deploy() {
   if git diff --cached --quiet; then
     echo "==> No changes to commit."
   else
-    git commit -m "deploy: v${VERSION}"
+    sudo git commit -m "deploy: v${VERSION}"
     git push origin main
     echo "==> Pushed v${VERSION} to origin/main."
   fi
@@ -309,15 +309,15 @@ do_release() {
 
   # ── Git Tag & Push ──
   echo "==> Committing and tagging v${NEW_VERSION}..."
-  dry_run "git add -A"
-  dry_run "git commit -m 'release: v${NEW_VERSION}' || true"
-  dry_run "git tag 'v${NEW_VERSION}'"
-  dry_run "git push origin main --tags"
+  dry_run "sudo git add -A"
+  dry_run "sudo git commit -m 'release: v${NEW_VERSION}' || true"
+  dry_run "sudo git tag 'v${NEW_VERSION}'"
+  dry_run "sudo git push origin main --tags"
 
   # ── GitHub Release ──
   if command -v gh &> /dev/null; then
     echo "==> Creating GitHub release..."
-    dry_run "gh release create 'v${NEW_VERSION}' --generate-notes --title 'v${NEW_VERSION}'"
+    dry_run "sudo gh release create 'v${NEW_VERSION}' --generate-notes --title 'v${NEW_VERSION}'"
   else
     echo "==> gh CLI not found, skipping GitHub release"
   fi
