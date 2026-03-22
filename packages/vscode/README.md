@@ -6,7 +6,7 @@
 
 **Draw diagrams, sketch ideas, and build visual documents — right inside your editor.**
 
-[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-5B57D1?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch-vscode)
+[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-5B57D1?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch)
 [![License](https://img.shields.io/github/license/elixpo/lixsketch?style=for-the-badge&color=4A90D9&labelColor=1a1a2e)](https://github.com/elixpo/lixsketch/blob/main/LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/elixpo/lixsketch?style=for-the-badge&logo=github&color=5B57D1&labelColor=1a1a2e)](https://github.com/elixpo/lixsketch/stargazers)
 

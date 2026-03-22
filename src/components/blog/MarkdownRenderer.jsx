@@ -1002,6 +1002,74 @@ export default function MarkdownRenderer({ content, canvasStyle }) {
       continue
     }
 
+    // Table — starts with | ... |
+    if (line.trimStart().startsWith('|') && line.trimEnd().endsWith('|')) {
+      const tableRows = []
+      while (i < lines.length && lines[i].trimStart().startsWith('|') && lines[i].trimEnd().endsWith('|')) {
+        tableRows.push(lines[i])
+        i++
+      }
+
+      if (tableRows.length >= 2) {
+        const parseRow = (row) =>
+          row.split('|').slice(1, -1).map(cell => cell.trim())
+
+        const headers = parseRow(tableRows[0])
+
+        // Check for separator row (|---|---|)
+        const hasSeparator = /^\|[\s:-]+\|/.test(tableRows[1])
+        const bodyStartIndex = hasSeparator ? 2 : 1
+
+        // Parse alignment from separator
+        const alignments = hasSeparator
+          ? parseRow(tableRows[1]).map(sep => {
+              const trimmed = sep.replace(/\s/g, '')
+              if (trimmed.startsWith(':') && trimmed.endsWith(':')) return 'center'
+              if (trimmed.endsWith(':')) return 'right'
+              return 'left'
+            })
+          : headers.map(() => 'left')
+
+        const bodyRows = tableRows.slice(bodyStartIndex).map(parseRow)
+
+        elements.push(
+          <div key={elements.length} className="my-5 overflow-x-auto">
+            <table className={`w-full text-sm ${font}`}>
+              <thead>
+                <tr className="border-b border-[#8B88E8]/20">
+                  {headers.map((h, hi) => (
+                    <th
+                      key={hi}
+                      style={{ textAlign: alignments[hi] || 'left' }}
+                      className={`py-2 px-3 ${headingColor} font-medium text-left text-xs`}
+                    >
+                      {renderInline(h, canvasStyle)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {bodyRows.map((row, ri) => (
+                  <tr key={ri} className="border-b border-white/[0.04]">
+                    {row.map((cell, ci) => (
+                      <td
+                        key={ci}
+                        style={{ textAlign: alignments[ci] || 'left' }}
+                        className={`py-2 px-3 ${textColor} text-xs`}
+                      >
+                        {renderInline(cell, canvasStyle)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      }
+      continue
+    }
+
     // Image — ![alt](src)
     const imgMatch = line.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/)
     if (imgMatch) {
