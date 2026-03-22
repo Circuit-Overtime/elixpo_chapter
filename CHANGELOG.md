@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.6.2 (2026-03-22)
+
+### Other
+- deploy: v5.3.2
+- deploy: v5.3.1
+- Rewrite useAutoSave.js with new persistence architecture and useing localstorage as the cache
+
+
 ## v4.6.1 (2026-03-22)
 
 
