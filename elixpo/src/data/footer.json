@@ -3,25 +3,17 @@
     "name": "Elixpo",
     "tagline": "Open, Ethical, Accessible AI for Everyone."
   },
+  "contact": {
+    "email": "contact@elixpo.com"
+  },
   "columns": [
-    {
-      "title": "Projects",
-      "links": [
-        { "label": "Elixpo Art", "href": "https://elixpoart.pages.dev" },
-        { "label": "LixSearch", "href": "https://search.elixpo.com" },
-        { "label": "LixSketch", "href": "https://sketch.elixpo.com" },
-        { "label": "Elixpo URL", "href": "https://url.elixpo.com" },
-        { "label": "Elixpo Me", "href": "https://me.elixpo.com" },
-        { "label": "All Projects", "href": "/projects" }
-      ]
-    },
     {
       "title": "Community",
       "links": [
         { "label": "GitHub", "href": "https://github.com/elixpo/elixpo_chapter" },
-        { "label": "Contributing Guide", "href": "https://github.com/elixpo/elixpo_chapter/blob/main/CONTRIBUTING.md" },
-        { "label": "Code of Conduct", "href": "https://github.com/elixpo/elixpo_chapter/blob/main/CODE_OF_CONDUCT.md" },
-        { "label": "Discussions", "href": "https://github.com/elixpo/elixpo_chapter/discussions" }
+        { "label": "Discussions", "href": "https://github.com/elixpo/elixpo_chapter/discussions" },
+        { "label": "Contributing Guide", "href": "/contributing" },
+        { "label": "Code of Conduct", "href": "/code-of-conduct" }
       ]
     },
     {
@@ -35,7 +27,9 @@
     }
   ],
   "socials": [
-    { "platform": "github", "href": "https://github.com/elixpo/elixpo_chapter" }
+    { "platform": "github", "href": "https://github.com/elixpo/elixpo_chapter" },
+    { "platform": "discord", "href": "https://discord.gg/elixpo" },
+    { "platform": "twitter", "href": "https://twitter.com/elixpo" }
   ],
   "copyright": "2023-2026 Elixpo. Licensed under GNU GPL-3.0."
 }
