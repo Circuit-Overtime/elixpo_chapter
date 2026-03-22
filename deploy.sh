@@ -71,6 +71,12 @@ dry_run() {
   fi
 }
 
+auth_remote() {
+  local url
+  url=$(git remote get-url origin)
+  echo "${url/https:\/\//https:\/\/${GITHUB_ACCESS_TOKEN}@}"
+}
+
 # ── Infra Commands ───────────────────────────────────────────
 
 secrets() {
@@ -116,7 +122,8 @@ deploy() {
     echo "==> No changes to commit."
   else
     sudo git commit -m "deploy: v${VERSION}"
-    sudo git push origin main
+    load_env
+    sudo git push "$(auth_remote)" main
     echo "==> Pushed v${VERSION} to origin/main."
   fi
 }
@@ -282,7 +289,7 @@ do_release() {
   dry_run "sudo git add -A"
   dry_run "sudo git commit -m 'release: v${NEW_VERSION}' || true"
   dry_run "sudo git tag 'v${NEW_VERSION}'"
-  dry_run "sudo git push origin main --tags"
+  dry_run "sudo git push \"\$(auth_remote)\" main --tags"
 
   # ── GitHub Release ──
   echo "==> Creating GitHub release..."

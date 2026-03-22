@@ -1,5 +1,18 @@
 # Changelog
 
+## v4.6.0 (2026-03-22)
+
+### Other
+- added new images and regulated readme
+- regulated some blogs section
+- added new imags for the vs code extesion readme
+- deploy: v5.2.13
+- updated minor patch version
+- altered the styles of two blogs
+- create a npm packaeg and vs code extension resource pack for the resources section of the main website and attached vscode market place link
+- remoevd the logic to creaye the release logs for the deployment
+
+
 ## v4.5.10 (2026-03-22)
 
 
