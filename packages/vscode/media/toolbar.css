@@ -189,6 +189,39 @@ html, body {
 .bg-swatch:hover { border-color: var(--border-light); }
 .bg-swatch.active { border-color: var(--accent); transform: scale(1.1); }
 
+/* Preferences submenu */
+.pref-chevron { font-size: 14px; color: var(--text-dim); transition: transform 0.15s; }
+.pref-chevron.open { transform: rotate(180deg); }
+.pref-submenu {
+    margin-left: 8px; border-left: 1px solid var(--border-light); padding-left: 2px;
+}
+.pref-submenu .menu-item { font-size: 11px; padding: 5px 10px; }
+.pref-check { font-size: 14px; min-width: 14px; }
+
+/* Canvas Properties */
+.props-section { margin-bottom: 14px; }
+.props-section:last-child { margin-bottom: 0; }
+.props-section-title {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-dim); margin-bottom: 6px;
+}
+.props-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 4px 0;
+}
+.props-label { font-size: 12px; color: var(--text-muted); }
+.props-value { font-size: 12px; color: var(--text-primary); font-family: 'lixCode', monospace; }
+.props-breakdown {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+}
+.props-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 6px;
+    background: var(--surface-dark); border: 1px solid var(--border);
+    font-size: 11px; color: var(--text-muted);
+}
+.props-badge strong { color: var(--text-primary); font-weight: 500; }
+
 /* ═══════════ MODALS ═══════════ */
 .modal-overlay {
     position: fixed; inset: 0; z-index: 9999;

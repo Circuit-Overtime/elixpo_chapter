@@ -95,6 +95,40 @@
             return;
         }
 
+        // Alt+/ = canvas properties
+        if (e.altKey && e.key === '/') {
+            e.preventDefault();
+            openCanvasProperties();
+            return;
+        }
+
+        // Alt+S = snap to objects
+        if (e.altKey && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            prefState.snapObjects = !prefState.snapObjects;
+            applyPreference('snapObjects', prefState.snapObjects);
+            updatePrefCheck('snapObjects');
+            return;
+        }
+
+        // Alt+Z = zen mode
+        if (e.altKey && e.key.toLowerCase() === 'z') {
+            e.preventDefault();
+            prefState.zenMode = !prefState.zenMode;
+            applyPreference('zenMode', prefState.zenMode);
+            updatePrefCheck('zenMode');
+            return;
+        }
+
+        // Alt+R = view mode
+        if (e.altKey && e.key.toLowerCase() === 'r') {
+            e.preventDefault();
+            prefState.viewMode = !prefState.viewMode;
+            applyPreference('viewMode', prefState.viewMode);
+            updatePrefCheck('viewMode');
+            return;
+        }
+
         // Ctrl+Z / Ctrl+Shift+Z
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
             e.preventDefault();
@@ -189,11 +223,113 @@
             toggleMenu();
             if (action === 'help') toggleModal('help-modal');
             if (action === 'shortcuts') toggleModal('shortcuts-modal');
+            if (action === 'canvasProperties') openCanvasProperties();
             if (action === 'resetCanvas') {
                 if (engine && engine.scene && engine.scene.reset) engine.scene.reset();
             }
         });
     });
+
+    // Preferences submenu toggle
+    const prefToggleBtn = document.getElementById('pref-toggle-btn');
+    const prefSubmenu = document.getElementById('pref-submenu');
+    if (prefToggleBtn && prefSubmenu) {
+        prefToggleBtn.addEventListener('click', () => {
+            const open = prefSubmenu.style.display === 'none';
+            prefSubmenu.style.display = open ? 'block' : 'none';
+            const chevron = prefToggleBtn.querySelector('.pref-chevron');
+            if (chevron) chevron.classList.toggle('open', open);
+        });
+    }
+
+    // Preference state tracking
+    const prefState = {
+        toolLock: false, snapObjects: false, toggleGrid: false,
+        zenMode: false, viewMode: false, properties: false,
+        arrowBinding: true, snapMidpoints: true,
+    };
+
+    // Preference item clicks
+    document.querySelectorAll('.pref-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const pref = item.dataset.pref;
+            if (!pref) return;
+            prefState[pref] = !prefState[pref];
+            const check = item.querySelector('.pref-check');
+            if (check) {
+                check.style.visibility = prefState[pref] ? 'visible' : 'hidden';
+                check.style.color = 'var(--accent-blue)';
+            }
+            applyPreference(pref, prefState[pref]);
+        });
+    });
+
+    function updatePrefCheck(pref) {
+        const item = document.querySelector(`.pref-item[data-pref="${pref}"]`);
+        if (!item) return;
+        const check = item.querySelector('.pref-check');
+        if (check) {
+            check.style.visibility = prefState[pref] ? 'visible' : 'hidden';
+            check.style.color = 'var(--accent-blue)';
+        }
+    }
+
+    function applyPreference(pref, value) {
+        if (pref === 'toolLock') {
+            toolLocked = value;
+            if (toolLockBtn) {
+                toolLockBtn.classList.toggle('active', value);
+                const icon = toolLockBtn.querySelector('i');
+                if (icon) icon.className = value ? 'bx bxs-lock-alt' : 'bx bx-lock-alt';
+            }
+        }
+        if (pref === 'toggleGrid' && window.toggleGrid) window.toggleGrid();
+        if (pref === 'snapObjects' && window.toggleSnapToObjects) window.toggleSnapToObjects();
+        if (pref === 'zenMode' && window.toggleZenMode) window.toggleZenMode();
+        if (pref === 'viewMode' && window.toggleViewMode) window.toggleViewMode();
+        if (pref === 'properties') openCanvasProperties();
+        if (pref === 'arrowBinding' && window.toggleArrowBinding) window.toggleArrowBinding();
+        if (pref === 'snapMidpoints' && window.toggleSnapMidpoints) window.toggleSnapMidpoints();
+    }
+
+    // Canvas Properties modal
+    function openCanvasProperties() {
+        // Gather stats
+        const shapes = window.shapes || [];
+        const propName = document.getElementById('prop-name');
+        const propShapes = document.getElementById('prop-shapes');
+        const propViewport = document.getElementById('prop-viewport');
+        const propZoom = document.getElementById('prop-zoom');
+        const propBreakdown = document.getElementById('prop-breakdown');
+
+        if (propShapes) propShapes.textContent = shapes.length;
+
+        if (propViewport) {
+            const vb = window.currentViewBox;
+            if (vb) propViewport.textContent = Math.round(vb.width) + ' × ' + Math.round(vb.height);
+        }
+
+        if (propZoom) {
+            propZoom.textContent = Math.round((window.currentZoom || 1) * 100) + '%';
+        }
+
+        if (propBreakdown) {
+            const counts = {};
+            shapes.forEach(s => {
+                const name = s.shapeName || s.constructor?.name || 'unknown';
+                counts[name] = (counts[name] || 0) + 1;
+            });
+            if (Object.keys(counts).length === 0) {
+                propBreakdown.innerHTML = '<span style="color:var(--text-dim);font-size:11px">No shapes yet</span>';
+            } else {
+                propBreakdown.innerHTML = Object.entries(counts)
+                    .map(([k, v]) => '<span class="props-badge">' + k + ' <strong>' + v + '</strong></span>')
+                    .join('');
+            }
+        }
+
+        toggleModal('canvas-props-modal');
+    }
 
     // Canvas background swatches
     document.querySelectorAll('.bg-swatch').forEach(swatch => {

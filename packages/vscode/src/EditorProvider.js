@@ -381,10 +381,45 @@ class LixSketchEditorProvider {
         <button class="menu-item" data-action="shortcuts"><span><i class="bx bx-command"></i>Shortcuts</span><span class="menu-shortcut">Ctrl+/</span></button>
         <hr class="menu-divider" />
         <button class="menu-item" data-action="find"><span><i class="bx bx-search"></i>Find Text</span><span class="menu-shortcut">Ctrl+F</span></button>
+        <button class="menu-item" data-action="canvasProperties"><span><i class="bx bx-info-circle"></i>Canvas Properties</span><span class="menu-shortcut">Alt+/</span></button>
         <hr class="menu-divider" />
-        <div class="menu-section-label">Preferences</div>
-        <button class="menu-item pref-toggle" data-pref="toolLock"><span><i class="bx bx-lock-alt"></i>Tool Lock</span><span class="menu-shortcut">Q</span></button>
-        <button class="menu-item pref-toggle" data-pref="grid"><span><i class="bx bx-grid-alt"></i>Show Grid</span><span class="menu-shortcut">Ctrl+'</span></button>
+        <!-- Preferences (expandable) -->
+        <button class="menu-item" id="pref-toggle-btn">
+            <span><i class="bx bx-cog"></i>Preferences</span>
+            <i class="bx bx-chevron-down pref-chevron"></i>
+        </button>
+        <div id="pref-submenu" class="pref-submenu" style="display:none">
+            <button class="menu-item pref-item" data-pref="toolLock">
+                <span><i class="bx bx-check pref-check" style="visibility:hidden"></i>Tool lock</span>
+                <span class="menu-shortcut">Q</span>
+            </button>
+            <button class="menu-item pref-item" data-pref="snapObjects">
+                <span><i class="bx bx-check pref-check" style="visibility:hidden"></i>Snap to objects</span>
+                <span class="menu-shortcut">Alt+S</span>
+            </button>
+            <button class="menu-item pref-item" data-pref="toggleGrid">
+                <span><i class="bx bx-check pref-check" style="visibility:hidden"></i>Toggle grid</span>
+                <span class="menu-shortcut">Ctrl+'</span>
+            </button>
+            <button class="menu-item pref-item" data-pref="zenMode">
+                <span><i class="bx bx-check pref-check" style="visibility:hidden"></i>Zen mode</span>
+                <span class="menu-shortcut">Alt+Z</span>
+            </button>
+            <button class="menu-item pref-item" data-pref="viewMode">
+                <span><i class="bx bx-check pref-check" style="visibility:hidden"></i>View mode</span>
+                <span class="menu-shortcut">Alt+R</span>
+            </button>
+            <button class="menu-item pref-item" data-pref="properties">
+                <span><i class="bx bx-check pref-check" style="visibility:hidden"></i>Canvas & Shape properties</span>
+                <span class="menu-shortcut">Alt+/</span>
+            </button>
+            <button class="menu-item pref-item" data-pref="arrowBinding">
+                <span><i class="bx bx-check pref-check" style="color:var(--accent-blue)"></i>Arrow binding</span>
+            </button>
+            <button class="menu-item pref-item" data-pref="snapMidpoints">
+                <span><i class="bx bx-check pref-check" style="color:var(--accent-blue)"></i>Snap to midpoints</span>
+            </button>
+        </div>
         <hr class="menu-divider" />
         <div class="menu-section-label">Canvas Background</div>
         <div class="menu-bg-row">
@@ -461,6 +496,38 @@ class LixSketchEditorProvider {
                 <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
                     <a href="https://github.com/elixpo/lixsketch" class="help-link"><i class="bx bxl-github"></i> GitHub</a>
                     <a href="https://github.com/elixpo/lixsketch/issues" class="help-link"><i class="bx bx-bug"></i> Report Issue</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ CANVAS PROPERTIES MODAL ═══════════ -->
+    <div id="canvas-props-modal" class="modal-overlay" style="display:none">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card" style="max-width:440px">
+            <div class="modal-header">
+                <h2><i class="bx bx-info-circle" style="margin-right:6px;color:var(--accent-blue)"></i>Canvas Properties</h2>
+                <button class="modal-close" data-close="canvas-props-modal"><i class="bx bx-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <!-- File info -->
+                <div class="props-section">
+                    <div class="props-section-title">File</div>
+                    <div class="props-row"><span class="props-label">Name</span><span class="props-value" id="prop-name">${canvasName}</span></div>
+                    <div class="props-row"><span class="props-label">Format</span><span class="props-value">.lixsketch</span></div>
+                    <div class="props-row"><span class="props-label">Storage</span><span class="props-value">Local disk</span></div>
+                </div>
+                <!-- Canvas stats -->
+                <div class="props-section">
+                    <div class="props-section-title">Canvas</div>
+                    <div class="props-row"><span class="props-label">Shapes</span><span class="props-value" id="prop-shapes">0</span></div>
+                    <div class="props-row"><span class="props-label">Viewport</span><span class="props-value" id="prop-viewport">—</span></div>
+                    <div class="props-row"><span class="props-label">Zoom</span><span class="props-value" id="prop-zoom">100%</span></div>
+                </div>
+                <!-- Shape breakdown -->
+                <div class="props-section">
+                    <div class="props-section-title">Shape Breakdown</div>
+                    <div id="prop-breakdown" class="props-breakdown">—</div>
                 </div>
             </div>
         </div>
