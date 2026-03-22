@@ -358,10 +358,12 @@ export function loadScene(sceneData) {
         }
     });
 
-    window.shapes = [];
+    // Clear arrays IN PLACE — tool modules hold direct references to these
+    // arrays from import-time, so replacing them breaks interactivity.
+    if (window.shapes) window.shapes.length = 0; else window.shapes = [];
     window.currentShape = null;
-    window.historyStack = [];
-    window.redoStack = [];
+    if (window.historyStack) window.historyStack.length = 0; else window.historyStack = [];
+    if (window.redoStack) window.redoStack.length = 0; else window.redoStack = [];
 
     // Build ID -> shape map for frame containment and arrow attachments
     const idMap = new Map();
@@ -687,10 +689,11 @@ export function resetCanvas() {
         '.selection-outline, .resize-anchor, .rotation-anchor, [data-selection]'
     ).forEach(el => el.remove());
 
-    window.shapes = [];
+    // Clear arrays IN PLACE (same reason as loadScene)
+    if (window.shapes) window.shapes.length = 0; else window.shapes = [];
     window.currentShape = null;
-    window.historyStack = [];
-    window.redoStack = [];
+    if (window.historyStack) window.historyStack.length = 0; else window.historyStack = [];
+    if (window.redoStack) window.redoStack.length = 0; else window.redoStack = [];
 
     if (typeof window.clearAllSelections === 'function') {
         window.clearAllSelections();

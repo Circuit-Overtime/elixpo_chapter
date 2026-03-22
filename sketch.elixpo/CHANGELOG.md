@@ -1,5 +1,56 @@
 # Changelog
 
+## v5.3.3 (2026-03-22)
+
+
+## v4.6.3 (2026-03-22)
+
+### Fixes
+fixed the webview to default selection tool after loading
+fixed the file icon type to be packed to market place
+
+### Other
+- updated the canvas opening logic to avoid any same name crashes
+- publishing correct version
+- updated the new extension
+- release: v5.3.2
+
+
+## v5.3.2 (2026-03-22)
+
+### Fixes
+fixed the webview to default selection tool after loading
+fixed the file icon type to be packed to market place
+
+### Other
+- updated the new extension
+- release: v5.3.2
+
+
+## v5.3.2 (2026-03-22)
+
+### Fixes
+fixed the webview to default selection tool after loading
+fixed the file icon type to be packed to market place
+
+### Other
+- release: v5.3.2
+
+
+## v5.3.2 (2026-03-22)
+
+
+## v5.3.2 (2026-03-22)
+
+
+## v4.6.2 (2026-03-22)
+
+### Other
+- deploy: v5.3.2
+- deploy: v5.3.1
+- Rewrite useAutoSave.js with new persistence architecture and useing localstorage as the cache
+
+
 ## v4.6.1 (2026-03-22)
 
 

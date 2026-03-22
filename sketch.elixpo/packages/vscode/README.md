@@ -14,7 +14,7 @@
 
 ---
 
-<img width="1866" height="886" alt="LixSketch Canvas" src="./media/vs-code-etension-hero.png" />
+<img width="1866" height="886" alt="LixSketch Canvas" src="https://raw.githubusercontent.com/elixpo/lixsketch/main/packages/vscode/media/vs-code-etension-hero.png" />
 
 ## What is LixSketch?
 
@@ -30,22 +30,22 @@ Whether you're sketching out an architecture before writing code, diagramming a 
 
 Or just create any file ending in `.lixsketch` and it opens right up.
 
-<img width="1858" height="884" alt="LixSketch Tools" src="./media/vs-code-etension-template.png" />
+<img width="1858" height="884" alt="LixSketch Tools" src="https://raw.githubusercontent.com/elixpo/lixsketch/main/packages/vscode/media/vs-code-etension-template.png" />
 
 ## What You Get
 
 | | Feature |
 |---|---|
-| :pencil2: | **Freehand drawing** — pressure-sensitive strokes with a hand-drawn feel |
-| :black_square_button: | **Shapes** — rectangles, circles, arrows, lines, frames |
-| :abc: | **Text & code blocks** — with syntax highlighting |
-| :framed_picture: | **Images** — drag and drop or paste from clipboard |
-| :mag: | **Infinite canvas** — zoom from 0.4x to 30x, pan freely |
-| :back: | **Undo / Redo** — full history, never lose work |
-| :floppy_disk: | **Auto-save** — changes save to your `.lixsketch` file automatically |
-| :scissors: | **Copy & Paste** — duplicate shapes instantly |
-| :wastebasket: | **Eraser** — clean up with precision |
-| :flashlight: | **Laser pointer** — highlight things during screen shares |
+| ✏️ | **Freehand drawing** — pressure-sensitive strokes with a hand-drawn feel |
+| ⬛ | **Shapes** — rectangles, circles, arrows, lines, frames |
+| 🔤 | **Text & code blocks** — with syntax highlighting |
+| 🖼️ | **Images** — drag and drop or paste from clipboard |
+| 🔍 | **Infinite canvas** — zoom from 0.4x to 30x, pan freely |
+| ↩️ | **Undo / Redo** — full history, never lose work |
+| 💾 | **Auto-save** — changes save to your `.lixsketch` file automatically |
+| ✂️ | **Copy & Paste** — duplicate shapes instantly |
+| 🗑️ | **Eraser** — clean up with precision |
+| 🔦 | **Laser pointer** — highlight things during screen shares |
 
 ## How It Works
 
@@ -76,11 +76,11 @@ This extension is powered by the same engine that runs [sketch.elixpo.com](https
 
 | | |
 |---|---|
-| :globe_with_meridians: | **Web app** — [sketch.elixpo.com](https://sketch.elixpo.com) — full collaborative canvas in the browser |
-| :package: | **NPM package** — [`@lixsketch/engine`](https://www.npmjs.com/package/@lixsketch/engine) — build your own whiteboard |
-| :desktop_computer: | **VS Code extension** — you're looking at it |
+| 🌐 | **Web app** — [sketch.elixpo.com](https://sketch.elixpo.com) — full collaborative canvas in the browser |
+| 📦 | **NPM package** — [`@elixpo/lixsketch`](https://www.npmjs.com/package/@elixpo/lixsketch) — build your own whiteboard |
+| 🖥️ | **VS Code extension** — you're looking at it |
 
-<img width="1867" height="874" alt="LixSketch Features" src="./media/vs-code-header.png" />
+<img width="1867" height="874" alt="LixSketch Features" src="https://raw.githubusercontent.com/elixpo/lixsketch/main/packages/vscode/media/vs-code-header.png" />
 
 ## Open Source
 

@@ -711,7 +711,11 @@
                 const content = msg.content.trim();
                 if (content && content !== '{}') {
                     const sceneData = JSON.parse(content);
-                    if (sceneData.shapes && sceneData.shapes.length > 0) engine.scene.load(sceneData);
+                    if (sceneData.shapes && sceneData.shapes.length > 0) {
+                        engine.scene.load(sceneData);
+                        // Ensure shapes are interactive after load
+                        engine.setActiveTool('select');
+                    }
                 }
             } catch (err) {
                 console.warn('[LixSketch] Load error:', err);

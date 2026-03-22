@@ -3,6 +3,28 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import useAuthStore from '@/store/useAuthStore'
+
+function OpenCanvasButton({ className }) {
+  const router = useRouter()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
+  const handleClick = () => {
+    if (isAuthenticated) {
+      router.push('/profile')
+    } else {
+      const id = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+      router.push(`/c/${id}?new=1`)
+    }
+  }
+
+  return (
+    <button onClick={handleClick} className={className}>
+      {isAuthenticated ? 'My Canvases' : 'Open Canvas'}
+    </button>
+  )
+}
 
 const resourceLinks = [
   { href: '/resources/how-to-start', label: 'How to start', icon: 'bx bx-rocket' },
@@ -111,12 +133,7 @@ export default function LandingNav() {
             <span className="hidden lg:inline">GitHub</span>
           </a>
 
-          <Link
-            href={`/c/lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`}
-            className="px-4 py-2 bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-accent-blue/20"
-          >
-            Open Canvas
-          </Link>
+          <OpenCanvasButton className="px-4 py-2 bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-accent-blue/20" />
 
           {/* Mobile hamburger */}
           <button

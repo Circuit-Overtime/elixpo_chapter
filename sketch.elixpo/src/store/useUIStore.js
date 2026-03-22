@@ -145,7 +145,7 @@ const useUIStore = create((set, get) => ({
   },
 
   // --- Save Status ---
-  // 'idle' | 'local' | 'cloud'
+  // 'idle' | 'local' | 'cloud' | 'failed'
   saveStatus: 'idle',
   setSaveStatus: (status) => set({ saveStatus: status }),
 
