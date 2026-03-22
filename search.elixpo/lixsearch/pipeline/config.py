@@ -72,7 +72,7 @@ LEAKED_XML_TAG_RE = re.compile(
 )
 
 LLM_MODEL = "kimi" # or kimi => these two models has performed the best 
-IMAGE_MODEL1 = "dirtberry-pro"
+IMAGE_MODEL1 = "gptimage"
 IMAGE_MODEL2 = "imagen-4" 
 VISION_MODEL = "gemini-fast"
 RESPONSE_MODEL = "lixsearch"
