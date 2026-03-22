@@ -102,7 +102,7 @@ class LixSketchEditorProvider {
                    style-src ${webview.cspSource} 'unsafe-inline' https://unpkg.com;
                    font-src ${webview.cspSource} https://unpkg.com;
                    script-src 'nonce-${nonce}' https://unpkg.com;
-                   connect-src https://unpkg.com;">
+                   connect-src https://unpkg.com https://sketch.elixpo.com;">
     <link rel="stylesheet" href="${fontsUri}">
     <link rel="stylesheet" href="${toolbarCssUri}">
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">

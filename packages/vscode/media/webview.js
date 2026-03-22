@@ -285,14 +285,14 @@
             results.forEach(icon => {
                 const btn = document.createElement('button');
                 btn.className = 'icon-cell';
-                btn.title = icon.name || '';
-                const img = document.createElement('img');
-                img.src = icon.svg || icon.url || '';
-                img.alt = icon.name || '';
-                img.loading = 'lazy';
-                btn.appendChild(img);
+                btn.title = icon.filename || icon.name || '';
+                // Icons come as inline SVG strings
+                if (icon.svg && icon.svg.startsWith('<svg')) {
+                    btn.innerHTML = icon.svg;
+                } else if (icon.url) {
+                    btn.innerHTML = '<img src="' + icon.url + '" alt="" style="width:24px;height:24px;filter:invert(1)" />';
+                }
                 btn.addEventListener('click', () => {
-                    // Place icon on canvas
                     if (window.placeIconOnCanvas) {
                         window.placeIconOnCanvas(icon);
                     }

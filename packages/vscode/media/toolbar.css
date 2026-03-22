@@ -73,15 +73,17 @@ html, body {
 /* ═══════════ TOOLBAR ═══════════ */
 #toolbar {
     position: fixed; left: 10px; top: 50%; transform: translateY(-50%);
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
     background: var(--surface); border: 1px solid var(--border-light);
-    border-radius: 14px; padding: 6px 5px; z-index: 1000; width: 46px;
+    border-radius: 12px; padding: 4px 4px; z-index: 1000; width: 42px;
+    max-height: calc(100vh - 110px); overflow-y: auto;
 }
+#toolbar::-webkit-scrollbar { width: 0; }
 .tool-btn {
     position: relative; display: flex; align-items: center; justify-content: center;
-    width: 33px; height: 31px; border: none; border-radius: 8px;
+    width: 31px; height: 28px; border: none; border-radius: 7px;
     background: transparent; color: var(--text-muted);
-    cursor: pointer; font-size: 20px;
+    cursor: pointer; font-size: 18px; flex-shrink: 0;
     transition: background 0.15s, color 0.15s;
 }
 .tool-btn:hover { background: var(--surface-hover); color: var(--text-primary); }
@@ -95,7 +97,7 @@ html, body {
 .tool-btn.active .tool-key { color: var(--text-muted); }
 .tool-lock { color: var(--text-dim); }
 .tool-lock.active { background: rgba(91,87,209,0.2); color: var(--accent-blue); }
-.tool-divider { width: 24px; height: 1px; background: var(--border-light); margin: 3px 0; }
+.tool-divider { width: 22px; height: 1px; background: var(--border-light); margin: 2px 0; flex-shrink: 0; }
 
 /* ═══════════ SVG CANVAS ═══════════ */
 #freehand-canvas {
@@ -222,6 +224,7 @@ html, body {
 }
 .icon-cell:hover { background: rgba(255,255,255,0.1); }
 .icon-cell img { width: 24px; height: 24px; filter: invert(1); object-fit: contain; }
+.icon-cell svg { width: 24px; height: 24px; fill: rgba(255,255,255,0.85); }
 .icon-loading {
     grid-column: 1 / -1; text-align: center; padding: 24px;
     color: rgba(255,255,255,0.4); font-size: 12px;
