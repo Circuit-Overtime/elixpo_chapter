@@ -31,7 +31,12 @@ class LLMClient:
         model: str | None = None,
         timeout: float = 300.0,
     ):
-        self.api_url = (api_url or settings.llm.api_url).rstrip("/")
+        raw_url = (api_url or settings.llm.api_url).rstrip("/")
+        # If the URL already ends with /chat/completions, strip it —
+        # we append it ourselves in chat() and chat_stream()
+        if raw_url.endswith("/chat/completions"):
+            raw_url = raw_url[: -len("/chat/completions")]
+        self.api_url = raw_url
         self.api_key = api_key or settings.llm.api_key
         self.model = model or settings.llm.model
         self._client = httpx.AsyncClient(

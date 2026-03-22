@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 
 import structlog
 
 from elixpo.llm.models import ToolCall, ToolDef
-from elixpo.mcp.base import BaseTool, ToolResult
+from elixpo.mcp.base import BaseTool, ToolContext, ToolResult
+
+if TYPE_CHECKING:
+    from elixpo.agent.mode import AgentMode
 
 log = structlog.get_logger()
 
@@ -28,9 +32,17 @@ class ToolRegistry:
     def get(self, name: str) -> BaseTool | None:
         return self._tools.get(name)
 
-    def list_tool_defs(self) -> list[ToolDef]:
-        """Get OpenAI-compatible tool definitions for all registered tools."""
-        return [tool.to_tool_def() for tool in self._tools.values()]
+    def set_context(self, ctx: ToolContext) -> None:
+        """Propagate tool context to all registered tools."""
+        for tool in self._tools.values():
+            tool.set_context(ctx)
+
+    def list_tool_defs(self, mode: AgentMode | None = None) -> list[ToolDef]:
+        """Get OpenAI-compatible tool definitions, optionally filtered by mode."""
+        tools = self._tools.values()
+        if mode is not None:
+            tools = [t for t in tools if mode.value in t.allowed_modes]
+        return [tool.to_tool_def() for tool in tools]
 
     async def execute(self, tool_call: ToolCall, workspace_path: str) -> ToolResult:
         """Execute a tool call and return the result."""
@@ -85,6 +97,10 @@ def create_default_registry() -> ToolRegistry:
         GitBranchTool,
     )
     from elixpo.mcp.tools.github_tools import GitPushTool, GitCloneTool
+    from elixpo.mcp.tools.web_search import WebSearchTool
+    from elixpo.mcp.tools.task_validate import TaskValidateTool
+    from elixpo.mcp.tools.memory_tools import MemoryWriteTool, MemorySearchTool
+    from elixpo.mcp.tools.sub_agent_tool import SpawnSubAgentTool
 
     registry = ToolRegistry()
     for tool_cls in [
@@ -102,6 +118,11 @@ def create_default_registry() -> ToolRegistry:
         GitBranchTool,
         GitPushTool,
         GitCloneTool,
+        WebSearchTool,
+        TaskValidateTool,
+        MemoryWriteTool,
+        MemorySearchTool,
+        SpawnSubAgentTool,
     ]:
         registry.register(tool_cls())
     return registry

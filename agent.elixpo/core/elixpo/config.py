@@ -2,8 +2,19 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+from dotenv import load_dotenv
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
+
+# Auto-load .env file from project root
+_env_file = Path(__file__).resolve().parents[2] / ".env"
+if _env_file.exists():
+    load_dotenv(_env_file)
+else:
+    # Try current working directory
+    load_dotenv()
 
 
 class ModelProfile(BaseModel):
@@ -22,9 +33,9 @@ class LLMSettings(BaseSettings):
     model_config = {"env_prefix": "ELIXPO_LLM_"}
 
     # Legacy single-model fallback
-    api_url: str = "https://api.moonshot.cn/v1"
+    api_url: str = "https://gen.pollinations.ai/v1"
     api_key: str = ""
-    model: str = "kimi"
+    model: str = "openai"
     max_context_tokens: int = 128_000
     temperature: float = 0.0
 
@@ -32,18 +43,18 @@ class LLMSettings(BaseSettings):
 class KimiSettings(BaseSettings):
     model_config = {"env_prefix": "ELIXPO_KIMI_"}
 
-    api_url: str = "https://api.moonshot.cn/v1"
+    api_url: str = "https://gen.pollinations.ai/v1"
     api_key: str = ""
-    model: str = "moonshot-v1-128k"
+    model: str = "openai"
     max_context_tokens: int = 128_000
 
 
 class PerplexitySettings(BaseSettings):
     model_config = {"env_prefix": "ELIXPO_PERPLEXITY_"}
 
-    api_url: str = "https://api.perplexity.ai"
+    api_url: str = "https://gen.pollinations.ai/v1"
     api_key: str = ""
-    model: str = "sonar"
+    model: str = "searchgpt"
     max_context_tokens: int = 128_000
 
 

@@ -9,6 +9,7 @@ from elixpo.mcp.base import BaseTool, ToolResult
 
 class FileEditTool(BaseTool):
     name = "file_edit"
+    allowed_modes = {"edit"}
     description = (
         "Edit a file by replacing a specific text block with new content. "
         "The old_text must match exactly (including whitespace). "

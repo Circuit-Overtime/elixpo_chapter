@@ -9,6 +9,7 @@ from elixpo.mcp.base import BaseTool, ToolResult
 
 class FileWriteTool(BaseTool):
     name = "file_write"
+    allowed_modes = {"edit"}
     description = (
         "Write content to a file. Creates the file and parent directories if they "
         "don't exist. Overwrites the file if it already exists."

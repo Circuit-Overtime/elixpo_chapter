@@ -71,9 +71,9 @@ class ModelRouter:
         profiles: dict[str, ModelProfile] = {
             "kimi": ModelProfile(
                 name="kimi",
-                api_url=api_url or settings.kimi.api_url,
+                api_url=api_url or settings.llm.api_url,
                 api_key=api_key,
-                model=model or settings.kimi.model,
+                model=model or settings.llm.model,
                 supports_tools=True,
                 role="general",
             ),

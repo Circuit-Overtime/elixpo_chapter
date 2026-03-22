@@ -8,6 +8,7 @@ from elixpo.mcp.base import BaseTool, ToolResult
 class GitPushTool(BaseTool):
     """Push commits to remote — used after git_commit to push changes."""
     name = "git_push"
+    allowed_modes = {"edit"}
     description = "Push committed changes to the remote repository."
     parameters = {
         "type": "object",
@@ -50,6 +51,7 @@ class GitPushTool(BaseTool):
 class GitCloneTool(BaseTool):
     """Clone a repository into the workspace."""
     name = "git_clone"
+    allowed_modes = {"edit"}
     description = "Clone a git repository into the workspace."
     parameters = {
         "type": "object",

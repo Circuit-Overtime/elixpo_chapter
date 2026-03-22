@@ -31,8 +31,7 @@ def save_config(config: dict) -> None:
 
 def get_api_key() -> str | None:
     """Get the LLM API key from config or environment."""
-    # Environment takes precedence
-    env_key = os.environ.get("ELIXPO_LLM_API_KEY")
+    env_key = os.environ.get("ELIXPO_KIMI_API_KEY") or os.environ.get("ELIXPO_LLM_API_KEY")
     if env_key:
         return env_key
     config = load_config()
@@ -41,17 +40,26 @@ def get_api_key() -> str | None:
 
 def get_api_url() -> str:
     """Get the LLM API URL from config or environment."""
-    env_url = os.environ.get("ELIXPO_LLM_API_URL")
+    env_url = os.environ.get("ELIXPO_KIMI_API_URL") or os.environ.get("ELIXPO_LLM_API_URL")
     if env_url:
         return env_url
     config = load_config()
-    return config.get("api_url", "https://api.openai.com/v1")
+    return config.get("api_url", "https://gen.pollinations.ai/v1")
 
 
 def get_model() -> str:
     """Get the model name from config or environment."""
-    env_model = os.environ.get("ELIXPO_LLM_MODEL")
+    env_model = os.environ.get("ELIXPO_KIMI_MODEL") or os.environ.get("ELIXPO_LLM_MODEL")
     if env_model:
         return env_model
     config = load_config()
-    return config.get("model", "gpt-4o")
+    return config.get("model", "openai")
+
+
+def get_perplexity_key() -> str | None:
+    """Get the Perplexity API key from config or environment."""
+    env_key = os.environ.get("ELIXPO_PERPLEXITY_API_KEY")
+    if env_key:
+        return env_key
+    config = load_config()
+    return config.get("perplexity_key")
