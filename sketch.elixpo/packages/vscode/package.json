@@ -2,7 +2,7 @@
   "name": "lixsketch",
   "displayName": "LixSketch",
   "description": "Open-source whiteboard diagrams inside VS Code — draw, sketch, and save .lixsketch files",
-  "version": "4.2.3",
+  "version": "4.3.0",
   "author": {
     "name": "Ayushman Bhattacharya",
     "email": "ayushman@myceli.ai",
@@ -45,6 +45,25 @@
       {
         "command": "lixsketch.newDiagram",
         "title": "LixSketch: New Diagram"
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "lixsketch-icons",
+        "label": "LixSketch File Icons",
+        "path": "./media/file-icon-theme.json"
+      }
+    ],
+    "languages": [
+      {
+        "id": "lixsketch",
+        "extensions": [
+          ".lixsketch"
+        ],
+        "icon": {
+          "light": "./media/file-icon.png",
+          "dark": "./media/file-icon.png"
+        }
       }
     ]
   },

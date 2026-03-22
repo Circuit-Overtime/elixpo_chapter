@@ -20,14 +20,14 @@ var LixSketch = (() => {
   };
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-  // ../engine/src/shapes/Rectangle.js
+  // ../lixsketch/src/shapes/Rectangle.js
   var Rectangle_exports = {};
   __export(Rectangle_exports, {
     Rectangle: () => Rectangle2
   });
   var rc, isDraggingShapeSquare, isResizingShapeSquare, isRotatingShapeSquare, hoveredFrame, SquarecolorOptions, backgroundColorOptionsSquare, fillStyleOptions, squareStrokeThicknessValue, squareOutlineStyleValue, Rectangle2;
   var init_Rectangle = __esm({
-    "../engine/src/shapes/Rectangle.js"() {
+    "../lixsketch/src/shapes/Rectangle.js"() {
       rc = rough.svg(svg);
       isDraggingShapeSquare = false;
       isResizingShapeSquare = false;
@@ -766,14 +766,14 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/shapes/Circle.js
+  // ../lixsketch/src/shapes/Circle.js
   var Circle_exports = {};
   __export(Circle_exports, {
     Circle: () => Circle2
   });
   var rc2, isDraggingShapeCircle, isResizingShapeCircle, isRotatingShapeCircle, hoveredFrameCircle, colorOptionsCircle, backgroundColorOptionsCircle, fillStyleOptionsCircle, strokeThicknessValueCircle, outlineStyleValueCircle, Circle2;
   var init_Circle = __esm({
-    "../engine/src/shapes/Circle.js"() {
+    "../lixsketch/src/shapes/Circle.js"() {
       rc2 = rough.svg(svg);
       isDraggingShapeCircle = false;
       isResizingShapeCircle = false;
@@ -1455,7 +1455,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/shapes/Arrow.js
+  // ../lixsketch/src/shapes/Arrow.js
   var Arrow_exports = {};
   __export(Arrow_exports, {
     Arrow: () => Arrow2
@@ -1471,7 +1471,7 @@ var LixSketch = (() => {
   }
   var isDragging, hoveredFrameArrow, dragOldPosArrow, Arrow2;
   var init_Arrow = __esm({
-    "../engine/src/shapes/Arrow.js"() {
+    "../lixsketch/src/shapes/Arrow.js"() {
       isDragging = false;
       hoveredFrameArrow = null;
       dragOldPosArrow = null;
@@ -3102,7 +3102,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/UndoRedo.js
+  // ../lixsketch/src/core/UndoRedo.js
   var UndoRedo_exports = {};
   __export(UndoRedo_exports, {
     getCurrentSelectedElement: () => getCurrentSelectedElement,
@@ -4180,7 +4180,7 @@ var LixSketch = (() => {
   }
   var undoStack, redoStack, selectedElement, updateSelectionFeedback, svg2;
   var init_UndoRedo = __esm({
-    "../engine/src/core/UndoRedo.js"() {
+    "../lixsketch/src/core/UndoRedo.js"() {
       undoStack = [];
       redoStack = [];
       selectedElement = null;
@@ -4209,7 +4209,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/SnapGuides.js
+  // ../lixsketch/src/core/SnapGuides.js
   function ensureGuideLayer() {
     if (guideLayer && guideLayer.parentNode)
       return guideLayer;
@@ -4435,7 +4435,7 @@ var LixSketch = (() => {
   }
   var SNAP_THRESHOLD, BREAK_THRESHOLD, GUIDE_COLOR, GUIDE_WIDTH, guideLayer, activeSnapX, activeSnapY;
   var init_SnapGuides = __esm({
-    "../engine/src/core/SnapGuides.js"() {
+    "../lixsketch/src/core/SnapGuides.js"() {
       SNAP_THRESHOLD = 6;
       BREAK_THRESHOLD = 12;
       GUIDE_COLOR = "#ff4444";
@@ -4446,7 +4446,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/tools/arrowTool.js
+  // ../lixsketch/src/tools/arrowTool.js
   var arrowTool_exports = {};
   __export(arrowTool_exports, {
     cleanupAttachments: () => cleanupAttachments2,
@@ -4540,7 +4540,7 @@ var LixSketch = (() => {
   }
   var currentArrow, isResizing, isDragging2, activeAnchor, isDrawingArrow, arrowStrokeColor, arrowStrokeThickness, arrowOutlineStyle, arrowCurved, arrowCurveAmount, arrowHeadStyle, startX, startY, dragOldPosArrow2, draggedShapeInitialFrameArrow, hoveredFrameArrow2, arrowStrokeColorOptions, arrowStrokeThicknessValue, arrowOutlineStyleValue, arrowTypeStyleValue, arrowHeadStyleValue, arrowCurveAmountOptions, handleMouseDown, handleMouseMove, handleMouseUp, updateSelectedArrowStyle;
   var init_arrowTool = __esm({
-    "../engine/src/tools/arrowTool.js"() {
+    "../lixsketch/src/tools/arrowTool.js"() {
       init_UndoRedo();
       init_SnapGuides();
       currentArrow = null;
@@ -4962,14 +4962,14 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/shapes/Line.js
+  // ../lixsketch/src/shapes/Line.js
   var Line_exports = {};
   __export(Line_exports, {
     Line: () => Line2
   });
   var rc3, lineColor, lineStrokeWidth, hoveredFrameLine, Line2;
   var init_Line = __esm({
-    "../engine/src/shapes/Line.js"() {
+    "../lixsketch/src/shapes/Line.js"() {
       init_arrowTool();
       rc3 = rough.svg(svg);
       lineColor = "#fff";
@@ -5603,7 +5603,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/shapes/TextShape.js
+  // ../lixsketch/src/shapes/TextShape.js
   var TextShape_exports = {};
   __export(TextShape_exports, {
     TextShape: () => TextShape2
@@ -5634,7 +5634,7 @@ var LixSketch = (() => {
   }
   var isDragging3, hoveredFrameText, selectedElement2, TextShape2;
   var init_TextShape = __esm({
-    "../engine/src/shapes/TextShape.js"() {
+    "../lixsketch/src/shapes/TextShape.js"() {
       isDragging3 = false;
       hoveredFrameText = null;
       selectedElement2 = null;
@@ -5792,7 +5792,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/shapes/CodeShape.js
+  // ../lixsketch/src/shapes/CodeShape.js
   var CodeShape_exports = {};
   __export(CodeShape_exports, {
     CodeShape: () => CodeShape2
@@ -5829,7 +5829,7 @@ var LixSketch = (() => {
   }
   var isCodeDragging, hoveredCodeFrame, selectedCodeBlock, CodeShape2;
   var init_CodeShape = __esm({
-    "../engine/src/shapes/CodeShape.js"() {
+    "../lixsketch/src/shapes/CodeShape.js"() {
       isCodeDragging = false;
       hoveredCodeFrame = null;
       selectedCodeBlock = null;
@@ -6005,7 +6005,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/shapes/ImageShape.js
+  // ../lixsketch/src/shapes/ImageShape.js
   var ImageShape_exports = {};
   __export(ImageShape_exports, {
     ImageShape: () => ImageShape2
@@ -6014,7 +6014,7 @@ var LixSketch = (() => {
   }
   var isDragging4, hoveredFrameImage, ImageShape2;
   var init_ImageShape = __esm({
-    "../engine/src/shapes/ImageShape.js"() {
+    "../lixsketch/src/shapes/ImageShape.js"() {
       init_arrowTool();
       isDragging4 = false;
       hoveredFrameImage = null;
@@ -6224,7 +6224,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/shapes/IconShape.js
+  // ../lixsketch/src/shapes/IconShape.js
   var IconShape_exports = {};
   __export(IconShape_exports, {
     IconShape: () => IconShape2
@@ -6239,7 +6239,7 @@ var LixSketch = (() => {
   }
   var isDragging5, hoveredFrameIcon, IconShape2;
   var init_IconShape = __esm({
-    "../engine/src/shapes/IconShape.js"() {
+    "../lixsketch/src/shapes/IconShape.js"() {
       init_arrowTool();
       isDragging5 = false;
       hoveredFrameIcon = null;
@@ -6448,7 +6448,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/shapes/Frame.js
+  // ../lixsketch/src/shapes/Frame.js
   var Frame_exports = {};
   __export(Frame_exports, {
     Frame: () => Frame2
@@ -6464,7 +6464,7 @@ var LixSketch = (() => {
   }
   var dragOldPosFrame, Frame2;
   var init_Frame = __esm({
-    "../engine/src/shapes/Frame.js"() {
+    "../lixsketch/src/shapes/Frame.js"() {
       init_arrowTool();
       dragOldPosFrame = null;
       Frame2 = class {
@@ -7877,7 +7877,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/shapes/FreehandStroke.js
+  // ../lixsketch/src/shapes/FreehandStroke.js
   var FreehandStroke_exports = {};
   __export(FreehandStroke_exports, {
     FreehandStroke: () => FreehandStroke2
@@ -7902,7 +7902,7 @@ var LixSketch = (() => {
   }
   var FreehandStroke2;
   var init_FreehandStroke = __esm({
-    "../engine/src/shapes/FreehandStroke.js"() {
+    "../lixsketch/src/shapes/FreehandStroke.js"() {
       init_esm();
       FreehandStroke2 = class {
         constructor(points2 = [], options = {}) {
@@ -8473,7 +8473,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/tools/rectangleTool.js
+  // ../lixsketch/src/tools/rectangleTool.js
   var rectangleTool_exports = {};
   __export(rectangleTool_exports, {
     handleMouseDownRect: () => handleMouseDownRect,
@@ -8491,7 +8491,7 @@ var LixSketch = (() => {
   }
   var isDrawingSquare, isDraggingShapeSquare2, isResizingShapeSquare2, isRotatingShapeSquare2, resizingAnchorIndexSquare, startRotationMouseAngleSquare, startShapeRotationSquare, rc4, startX2, startY2, squareStrokecolor, squareBackgroundColor, squareFillStyleValue, squareStrokeThicknes, squareOutlineStyle, dragOldPosSquare, draggedShapeInitialFrame, hoveredFrame2, SquarecolorOptions2, backgroundColorOptionsSquare2, fillStyleOptions2, squareStrokeThicknessValue2, squareOutlineStyleValue2, handleMouseDownRect, handleMouseMoveRect, handleMouseUpRect;
   var init_rectangleTool = __esm({
-    "../engine/src/tools/rectangleTool.js"() {
+    "../lixsketch/src/tools/rectangleTool.js"() {
       init_UndoRedo();
       init_arrowTool();
       init_SnapGuides();
@@ -8975,7 +8975,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/tools/circleTool.js
+  // ../lixsketch/src/tools/circleTool.js
   var circleTool_exports = {};
   __export(circleTool_exports, {
     handleMouseDownCircle: () => handleMouseDown2,
@@ -9007,7 +9007,7 @@ var LixSketch = (() => {
   }
   var isDrawingCircle, isDraggingShapeCircle2, isResizingShapeCircle2, isRotatingShapeCircle2, resizingAnchorIndexCircle, startRotationMouseAngleCircle, startShapeRotationCircle, rc5, startX3, startY3, circleStrokecolor, circleBackgroundColor, circleFillStyleValue, circleStrokeThicknes, circleOutlineStyle, dragOldPosCircle, draggedShapeInitialFrameCircle, hoveredFrameCircle2, colorOptionsCircle2, backgroundColorOptionsCircle2, fillStyleOptionsCircle2, strokeThicknessValueCircle2, outlineStyleValueCircle2, handleMouseDown2, handleMouseMove2, handleMouseUp2;
   var init_circleTool = __esm({
-    "../engine/src/tools/circleTool.js"() {
+    "../lixsketch/src/tools/circleTool.js"() {
       init_UndoRedo();
       init_arrowTool();
       init_SnapGuides();
@@ -9529,7 +9529,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/tools/lineTool.js
+  // ../lixsketch/src/tools/lineTool.js
   var lineTool_exports = {};
   __export(lineTool_exports, {
     handleMouseDownLine: () => handleMouseDown3,
@@ -9560,7 +9560,7 @@ var LixSketch = (() => {
   }
   var isDrawingLine, currentLine, lineColor2, lineStrokeWidth2, lineStrokeStyle, lineEdgeType, lineSktetchRate, isDraggingLine, dragOldPosLine, draggedShapeInitialFrameLine, hoveredFrameLine2, startX4, startY4, lineColorOptions, lineThicknessOptions, lineOutlineOptions, lineSlopeOptions, lineEdgeOptions, handleMouseDown3, handleMouseMove3, handleMouseUp3;
   var init_lineTool = __esm({
-    "../engine/src/tools/lineTool.js"() {
+    "../lixsketch/src/tools/lineTool.js"() {
       init_UndoRedo();
       init_arrowTool();
       init_SnapGuides();
@@ -9963,7 +9963,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/tools/codeTool.js
+  // ../lixsketch/src/tools/codeTool.js
   var codeTool_exports = {};
   __export(codeTool_exports, {
     addCodeBlock: () => addCodeBlock,
@@ -10946,7 +10946,7 @@ var LixSketch = (() => {
   }
   var codeTextSize, codeTextFont, codeTextColor, codeTextAlign, codeLanguage, codeTextColorOptions, codeTextFontOptions, codeTextSizeOptions, codeTextAlignOptions, selectedCodeBlock2, codeSelectionBox, codeResizeHandles, codeDragOffsetX, codeDragOffsetY, isCodeDragging2, isCodeResizing, currentCodeResizeHandle, startCodeBBox, startCodeFontSize, startCodePoint, isCodeRotating, codeRotationStartAngle, codeRotationStartTransform, initialCodeHandlePosRelGroup, initialCodeGroupTx, initialCodeGroupTy, draggedCodeInitialFrame, hoveredCodeFrame2, handleCodeMouseMove, handleCodeMouseUp, handleCodeMouseDown, editorStyles;
   var init_codeTool = __esm({
-    "../engine/src/tools/codeTool.js"() {
+    "../lixsketch/src/tools/codeTool.js"() {
       init_UndoRedo();
       init_arrowTool();
       codeTextSize = "25px";
@@ -11578,7 +11578,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/tools/textTool.js
+  // ../lixsketch/src/tools/textTool.js
   var textTool_exports = {};
   __export(textTool_exports, {
     deselectTextElement: () => deselectElement2,
@@ -12372,7 +12372,7 @@ var LixSketch = (() => {
   }
   var textSize, textFont, textColor, textAlign, textColorOptions, textFontOptions, textSizeOptions, textAlignOptions, selectedElement3, selectionBox, resizeHandles, dragOffsetX, dragOffsetY, isDragging6, isResizing2, currentResizeHandle, startBBox, startFontSize, startPoint, isRotating, rotationStartAngle, rotationStartTransform, initialHandlePosRelGroup, initialGroupTx, initialGroupTy, draggedShapeInitialFrameText, hoveredFrameText2, handleMouseMove4, handleMouseUp4, handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, textCodeOptions, languageSelector, codeLanguageSelect;
   var init_textTool = __esm({
-    "../engine/src/tools/textTool.js"() {
+    "../lixsketch/src/tools/textTool.js"() {
       init_UndoRedo();
       init_arrowTool();
       init_codeTool();
@@ -13060,7 +13060,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/utils/imageCompressor.js
+  // ../lixsketch/src/utils/imageCompressor.js
   async function compressImage(dataUrl, { maxWidth = MAX_DIMENSION, quality = 0.8 } = {}) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -13143,14 +13143,14 @@ var LixSketch = (() => {
   }
   var MAX_DIMENSION, TARGET_SIZE_BYTES, MIN_QUALITY;
   var init_imageCompressor = __esm({
-    "../engine/src/utils/imageCompressor.js"() {
+    "../lixsketch/src/utils/imageCompressor.js"() {
       MAX_DIMENSION = 1920;
       TARGET_SIZE_BYTES = 300 * 1024;
       MIN_QUALITY = 0.4;
     }
   });
 
-  // ../engine/src/tools/imageTool.js
+  // ../lixsketch/src/tools/imageTool.js
   var imageTool_exports = {};
   __export(imageTool_exports, {
     handleMouseDownImage: () => handleMouseDownImage,
@@ -13799,7 +13799,7 @@ var LixSketch = (() => {
   }
   var isDraggingImage, imageToPlace, imageX, imageY, currentImageElement, selectedImage, originalX, originalY, originalWidth, originalHeight, currentAnchor, isDragging7, isRotatingImage, dragOffsetX2, dragOffsetY2, startRotationMouseAngle, startImageRotation, imageRotation, aspect_ratio_lock, minImageSize, draggedShapeInitialFrameImage, hoveredFrameImage2, ROOM_IMAGE_LIMIT_BYTES, handleImageUpload, handleMouseMoveImage, drawMiniatureImage, handleMouseDownImage, handleMouseUpImage;
   var init_imageTool = __esm({
-    "../engine/src/tools/imageTool.js"() {
+    "../lixsketch/src/tools/imageTool.js"() {
       init_UndoRedo();
       init_arrowTool();
       init_imageCompressor();
@@ -14110,7 +14110,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/tools/iconTool.js
+  // ../lixsketch/src/tools/iconTool.js
   var iconTool_exports = {};
   __export(iconTool_exports, {
     handleMouseDownIcon: () => handleMouseDownIcon,
@@ -14730,7 +14730,7 @@ var LixSketch = (() => {
   }
   var isDraggingIcon, iconToPlace, iconX, iconY, currentIconElement, selectedIcon, originalX2, originalY2, originalWidth2, originalHeight2, currentAnchor2, isDragging8, isRotatingIcon, dragOffsetX3, dragOffsetY3, startRotationMouseAngle2, startIconRotation, iconRotation, aspect_ratio_lock2, minIconSize, miniatureSize, placedIconSize, draggedShapeInitialFrameIcon, hoveredFrameIcon2, _pendingDragChecker, iconSearchInput, handleMouseMoveIcon, drawMiniatureIcon, handleMouseDownIcon, handleMouseUpIcon;
   var init_iconTool = __esm({
-    "../engine/src/tools/iconTool.js"() {
+    "../lixsketch/src/tools/iconTool.js"() {
       init_UndoRedo();
       init_arrowTool();
       isDraggingIcon = false;
@@ -15053,7 +15053,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/tools/frameTool.js
+  // ../lixsketch/src/tools/frameTool.js
   var frameTool_exports = {};
   __export(frameTool_exports, {
     handleMouseDownFrame: () => handleMouseDown4,
@@ -15083,7 +15083,7 @@ var LixSketch = (() => {
   }
   var currentFrame, isResizing3, isDragging9, activeAnchor2, isDrawingFrame, frameStrokeColor, frameStrokeThickness, frameFillColor, frameOpacity, startX5, startY5, dragOldPosFrame2, handleMouseDown4, handleMouseMove5, handleMouseUp5;
   var init_frameTool = __esm({
-    "../engine/src/tools/frameTool.js"() {
+    "../lixsketch/src/tools/frameTool.js"() {
       init_UndoRedo();
       init_arrowTool();
       currentFrame = null;
@@ -15261,7 +15261,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/tools/freehandTool.js
+  // ../lixsketch/src/tools/freehandTool.js
   var freehandTool_exports = {};
   __export(freehandTool_exports, {
     handleFreehandMouseDown: () => handleMouseDown5,
@@ -15563,7 +15563,7 @@ var LixSketch = (() => {
   }
   var strokeColors, strokeThicknesses, strokeStyles, strokeTapers, strokeRoughnesses, strokeColor, strokeThickness, strokeStyleValue, strokeThinning, strokeRoughnessValue, points, isDrawingStroke, currentStroke, strokeOpacity, isDraggingStroke2, isResizingStroke, isRotatingStroke, dragOldPosStroke, resizingAnchorIndex, startRotationMouseAngle3, startShapeRotation, startX6, startY6, draggedShapeInitialFrameStroke, hoveredFrameStroke2, lastPoint, lastTime, minDistance, maxDistance, isdraggingOpacity;
   var init_freehandTool = __esm({
-    "../engine/src/tools/freehandTool.js"() {
+    "../lixsketch/src/tools/freehandTool.js"() {
       init_UndoRedo();
       init_arrowTool();
       init_SnapGuides();
@@ -15791,7 +15791,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/Selection.js
+  // ../lixsketch/src/core/Selection.js
   var Selection_exports = {};
   __export(Selection_exports, {
     clearAllSelections: () => clearAllSelections2,
@@ -16332,7 +16332,7 @@ var LixSketch = (() => {
   }
   var isMultiSelecting, multiSelectionStart, multiSelectionRect, isDraggingMultiSelection, dragSelectHighlights, MultiSelection, multiSelection;
   var init_Selection = __esm({
-    "../engine/src/core/Selection.js"() {
+    "../lixsketch/src/core/Selection.js"() {
       init_arrowTool();
       init_UndoRedo();
       init_SnapGuides();
@@ -17361,7 +17361,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/EventDispatcher.js
+  // ../lixsketch/src/core/EventDispatcher.js
   var EventDispatcher_exports = {};
   __export(EventDispatcher_exports, {
     cleanupEventDispatcher: () => cleanupEventDispatcher,
@@ -17392,7 +17392,7 @@ var LixSketch = (() => {
   }
   var handleMainMouseDown, handleMainMouseMove, handleMainMouseUp, handleMainMouseLeave, _boundSvg;
   var init_EventDispatcher = __esm({
-    "../engine/src/core/EventDispatcher.js"() {
+    "../lixsketch/src/core/EventDispatcher.js"() {
       init_rectangleTool();
       init_arrowTool();
       init_circleTool();
@@ -17669,7 +17669,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/ZoomPan.js
+  // ../lixsketch/src/core/ZoomPan.js
   var ZoomPan_exports = {};
   function updateZoomDisplay() {
     zoomPercentSpan.innerText = Math.round(currentZoom * 100) + "%";
@@ -17700,7 +17700,7 @@ var LixSketch = (() => {
   }
   var scrollRate, isMiddleMousePanning;
   var init_ZoomPan = __esm({
-    "../engine/src/core/ZoomPan.js"() {
+    "../lixsketch/src/core/ZoomPan.js"() {
       scrollRate = 50;
       zoomInBtn.addEventListener("click", function() {
         currentZoom *= 1.1;
@@ -17864,7 +17864,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/CopyPaste.js
+  // ../lixsketch/src/core/CopyPaste.js
   var CopyPaste_exports = {};
   __export(CopyPaste_exports, {
     copySelected: () => copySelected,
@@ -18401,7 +18401,7 @@ var LixSketch = (() => {
   }
   var clipboard, pasteCount, lastMouseSVG;
   var init_CopyPaste = __esm({
-    "../engine/src/core/CopyPaste.js"() {
+    "../lixsketch/src/core/CopyPaste.js"() {
       init_UndoRedo();
       init_Rectangle();
       init_Circle();
@@ -18419,7 +18419,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/EraserTrail.js
+  // ../lixsketch/src/core/EraserTrail.js
   var EraserTrail_exports = {};
   __export(EraserTrail_exports, {
     createEraserTrail: () => createEraserTrail,
@@ -18600,7 +18600,7 @@ var LixSketch = (() => {
   }
   var isErasing, eraserPath, eraserGlow, eraserPoints, targetedElements, MAX_TRAIL_LENGTH, FADE_DURATION, MIN_POINT_DISTANCE, SMOOTHING_WINDOW, fadeAnimationId, fadeStartTime, fadeInitialPoints;
   var init_EraserTrail = __esm({
-    "../engine/src/core/EraserTrail.js"() {
+    "../lixsketch/src/core/EraserTrail.js"() {
       isErasing = false;
       eraserPath = null;
       eraserGlow = null;
@@ -18616,7 +18616,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/ResizeShapes.js
+  // ../lixsketch/src/core/ResizeShapes.js
   var ResizeShapes_exports = {};
   function clientToSVGResize(x3, y3) {
     const pt = svg.createSVGPoint();
@@ -18861,7 +18861,7 @@ var LixSketch = (() => {
   }
   var selectedElements, selectionAnchors, isScaling, activeAnchor3, initialBBox, startSVG, isAnchorClicked;
   var init_ResizeShapes = __esm({
-    "../engine/src/core/ResizeShapes.js"() {
+    "../lixsketch/src/core/ResizeShapes.js"() {
       selectedElements = [];
       selectionAnchors = [];
       isScaling = false;
@@ -18874,14 +18874,14 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/ResizeCode.js
+  // ../lixsketch/src/core/ResizeCode.js
   var ResizeCode_exports = {};
   var init_ResizeCode = __esm({
-    "../engine/src/core/ResizeCode.js"() {
+    "../lixsketch/src/core/ResizeCode.js"() {
     }
   });
 
-  // ../engine/src/tools/eraserTool.js
+  // ../lixsketch/src/tools/eraserTool.js
   var eraserTool_exports = {};
   function findTopLevelGroup(element) {
     if (!element || element === svg)
@@ -18952,7 +18952,7 @@ var LixSketch = (() => {
   }
   var eraserCursorSVG;
   var init_eraserTool = __esm({
-    "../engine/src/tools/eraserTool.js"() {
+    "../lixsketch/src/tools/eraserTool.js"() {
       init_EraserTrail();
       eraserCursorSVG = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="#222" stroke="white" stroke-width="2"/></svg>')}`;
       window.forceCleanupEraserTrail = forceCleanupEraserTrail;
@@ -18991,7 +18991,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/tools/laserTool.js
+  // ../lixsketch/src/tools/laserTool.js
   var laserTool_exports = {};
   function screenToViewBoxPoint(x3, y3) {
     const CTM = svg.getScreenCTM();
@@ -19179,7 +19179,7 @@ var LixSketch = (() => {
   }
   var lazerCursor, isDrawing2, lasers2, fadingLasers, fadeOutDuration, baseLaserOpacity, baseLaserWidth, glowWidth, minDistanceThreshold, smoothingWindow, drawingAnimationId, fadingAnimationId;
   var init_laserTool = __esm({
-    "../engine/src/tools/laserTool.js"() {
+    "../lixsketch/src/tools/laserTool.js"() {
       lazerCursor = `data:image/svg+xml;base64,${btoa('<svg viewBox="0 0 24 24" stroke-width="1" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><path d="M6.164 11.755a5.314 5.314 0 0 1-4.932-5.298 5.314 5.314 0 0 1 5.311-5.311 5.314 5.314 0 0 1 5.307 5.113l8.773 8.773a3.322 3.322 0 0 1 0 4.696l-.895.895a3.322 3.322 0 0 1-4.696 0l-8.868-8.868Z" style="fill:#fff"/><path stroke="#1b1b1f" fill="#fff" d="m7.868 11.113 7.773 7.774a2.359 2.359 0 0 0 1.667.691 2.368 2.368 0 0 0 2.357-2.358c0-.625-.248-1.225-.69-1.667L11.201 7.78 9.558 9.469l-1.69 1.643v.001Zm10.273 3.606-3.333 3.333m-3.25-6.583 2 2m-7-7 3 3M3.664 3.625l1 1M2.529 6.922l1.407-.144m5.735-2.932-1.118.866M4.285 9.823l.758-1.194m1.863-6.207-.13 1.408"/></svg>')}`;
       isDrawing2 = false;
       lasers2 = [];
@@ -19250,7 +19250,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/MermaidSequenceParser.js
+  // ../lixsketch/src/core/MermaidSequenceParser.js
   var MermaidSequenceParser_exports = {};
   __export(MermaidSequenceParser_exports, {
     parseSequenceDiagram: () => parseSequenceDiagram
@@ -19401,7 +19401,7 @@ var LixSketch = (() => {
   }
   var ARROW_TYPES, ARROW_PATTERNS;
   var init_MermaidSequenceParser = __esm({
-    "../engine/src/core/MermaidSequenceParser.js"() {
+    "../lixsketch/src/core/MermaidSequenceParser.js"() {
       ARROW_TYPES = {
         "->>": { solid: true, arrowHead: "open", cross: false },
         "-->>": { solid: false, arrowHead: "open", cross: false },
@@ -19416,7 +19416,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/MermaidSequenceRenderer.js
+  // ../lixsketch/src/core/MermaidSequenceRenderer.js
   var MermaidSequenceRenderer_exports = {};
   __export(MermaidSequenceRenderer_exports, {
     parseAndRenderSequence: () => parseAndRenderSequence,
@@ -19742,7 +19742,7 @@ var LixSketch = (() => {
   }
   var PARTICIPANT_W, PARTICIPANT_H, PARTICIPANT_GAP, MSG_ROW_HEIGHT, NOTE_PAD, NOTE_MAX_W, TOP_MARGIN, BOTTOM_MARGIN, SIDE_MARGIN, FONT_FAMILY, THEME;
   var init_MermaidSequenceRenderer = __esm({
-    "../engine/src/core/MermaidSequenceRenderer.js"() {
+    "../lixsketch/src/core/MermaidSequenceRenderer.js"() {
       init_MermaidSequenceParser();
       PARTICIPANT_W = 100;
       PARTICIPANT_H = 36;
@@ -19774,7 +19774,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/MermaidFlowchartRenderer.js
+  // ../lixsketch/src/core/MermaidFlowchartRenderer.js
   var MermaidFlowchartRenderer_exports = {};
   __export(MermaidFlowchartRenderer_exports, {
     renderFlowchartOnCanvas: () => renderFlowchartOnCanvas,
@@ -20151,7 +20151,7 @@ var LixSketch = (() => {
   }
   var NODE_W, NODE_H, SIDE_MARGIN2, TOP_MARGIN2, FONT_FAMILY2, THEME2;
   var init_MermaidFlowchartRenderer = __esm({
-    "../engine/src/core/MermaidFlowchartRenderer.js"() {
+    "../lixsketch/src/core/MermaidFlowchartRenderer.js"() {
       NODE_W = 150;
       NODE_H = 50;
       SIDE_MARGIN2 = 50;
@@ -20171,7 +20171,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/AIRenderer.js
+  // ../lixsketch/src/core/AIRenderer.js
   var AIRenderer_exports = {};
   __export(AIRenderer_exports, {
     generateFramePreviewSVG: () => generateFramePreviewSVG,
@@ -21354,7 +21354,7 @@ var LixSketch = (() => {
   }
   var PADDING, NODE_W2, NODE_H2, H_SPACING, V_SPACING, NS, ALIGN_THRESHOLD;
   var init_AIRenderer = __esm({
-    "../engine/src/core/AIRenderer.js"() {
+    "../lixsketch/src/core/AIRenderer.js"() {
       PADDING = 80;
       NODE_W2 = 160;
       NODE_H2 = 60;
@@ -21365,7 +21365,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/GraphMathParser.js
+  // ../lixsketch/src/core/GraphMathParser.js
   function tokenize(expr) {
     const tokens = [];
     let i3 = 0;
@@ -21552,7 +21552,7 @@ var LixSketch = (() => {
   }
   var FUNCTIONS, CONSTANTS;
   var init_GraphMathParser = __esm({
-    "../engine/src/core/GraphMathParser.js"() {
+    "../lixsketch/src/core/GraphMathParser.js"() {
       FUNCTIONS = {
         sin: Math.sin,
         cos: Math.cos,
@@ -21572,7 +21572,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/GraphRenderer.js
+  // ../lixsketch/src/core/GraphRenderer.js
   function niceInterval(range) {
     const rough2 = range / 8;
     const mag = Math.pow(10, Math.floor(Math.log10(rough2)));
@@ -21774,7 +21774,7 @@ var LixSketch = (() => {
   }
   var GRAPH_COLORS;
   var init_GraphRenderer = __esm({
-    "../engine/src/core/GraphRenderer.js"() {
+    "../lixsketch/src/core/GraphRenderer.js"() {
       init_GraphMathParser();
       GRAPH_COLORS = [
         "#4A90D9",
@@ -21791,7 +21791,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/GraphEngine.js
+  // ../lixsketch/src/core/GraphEngine.js
   var GraphEngine_exports = {};
   __export(GraphEngine_exports, {
     initGraphEngine: () => initGraphEngine
@@ -21907,7 +21907,7 @@ var LixSketch = (() => {
   }
   var NS2, GRAPH_WIDTH, GRAPH_HEIGHT;
   var init_GraphEngine = __esm({
-    "../engine/src/core/GraphEngine.js"() {
+    "../lixsketch/src/core/GraphEngine.js"() {
       init_GraphMathParser();
       init_GraphRenderer();
       NS2 = "http://www.w3.org/2000/svg";
@@ -21916,7 +21916,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/SceneSerializer.js
+  // ../lixsketch/src/core/SceneSerializer.js
   var SceneSerializer_exports = {};
   __export(SceneSerializer_exports, {
     copyAsPNG: () => copyAsPNG,
@@ -22618,7 +22618,7 @@ var LixSketch = (() => {
   }
   var FORMAT_VERSION, _sessionID;
   var init_SceneSerializer = __esm({
-    "../engine/src/core/SceneSerializer.js"() {
+    "../lixsketch/src/core/SceneSerializer.js"() {
       init_Rectangle();
       init_Circle();
       init_Line();
@@ -22634,7 +22634,7 @@ var LixSketch = (() => {
     }
   });
 
-  // ../engine/src/core/LayerOrder.js
+  // ../lixsketch/src/core/LayerOrder.js
   var LayerOrder_exports = {};
   __export(LayerOrder_exports, {
     bringForward: () => bringForward,
@@ -22707,11 +22707,11 @@ var LixSketch = (() => {
     window.__layerOrder = { bringForward, sendBackward, bringToFront, sendToBack };
   }
   var init_LayerOrder = __esm({
-    "../engine/src/core/LayerOrder.js"() {
+    "../lixsketch/src/core/LayerOrder.js"() {
     }
   });
 
-  // ../engine/src/core/LixScriptParser.js
+  // ../lixsketch/src/core/LixScriptParser.js
   var LixScriptParser_exports = {};
   __export(LixScriptParser_exports, {
     initLixScriptBridge: () => initLixScriptBridge,
@@ -23779,26 +23779,16 @@ var LixSketch = (() => {
   }
   var NS3;
   var init_LixScriptParser = __esm({
-    "../engine/src/core/LixScriptParser.js"() {
+    "../lixsketch/src/core/LixScriptParser.js"() {
       NS3 = "http://www.w3.org/2000/svg";
     }
   });
 
-  // ../engine/src/index.js
+  // ../lixsketch/src/index.js
   var src_exports = {};
   __export(src_exports, {
-    Arrow: () => Arrow2,
-    Circle: () => Circle2,
-    CodeShape: () => CodeShape2,
-    Frame: () => Frame2,
-    FreehandStroke: () => FreehandStroke2,
-    IconShape: () => IconShape2,
-    ImageShape: () => ImageShape2,
-    Line: () => Line2,
-    Rectangle: () => Rectangle2,
     SketchEngine: () => SketchEngine,
     TOOLS: () => TOOLS,
-    TextShape: () => TextShape2,
     createSketchEngine: () => createSketchEngine,
     default: () => SketchEngine_default
   });
@@ -24868,7 +24858,7 @@ var LixSketch = (() => {
   };
   var at = { canvas: (t3, e3) => new st(t3, e3), svg: (t3, e3) => new ot(t3, e3), generator: (t3) => new et(t3), newSeed: () => et.newSeed() };
 
-  // ../engine/src/SketchEngine.js
+  // ../lixsketch/src/SketchEngine.js
   var SketchEngine = class {
     constructor(svgElement, options = {}) {
       if (!svgElement || svgElement.tagName !== "svg") {
@@ -25287,17 +25277,7 @@ var LixSketch = (() => {
   };
   var SketchEngine_default = SketchEngine;
 
-  // ../engine/src/index.js
-  init_Rectangle();
-  init_Circle();
-  init_Arrow();
-  init_Line();
-  init_TextShape();
-  init_CodeShape();
-  init_ImageShape();
-  init_IconShape();
-  init_Frame();
-  init_FreehandStroke();
+  // ../lixsketch/src/index.js
   function createSketchEngine(svgElement, options = {}) {
     return new SketchEngine(svgElement, options);
   }
