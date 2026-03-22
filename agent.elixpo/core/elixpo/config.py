@@ -1,16 +1,50 @@
 """Global configuration loaded from environment variables."""
 
+from __future__ import annotations
+
+from pydantic import BaseModel
 from pydantic_settings import BaseSettings
+
+
+class ModelProfile(BaseModel):
+    """Configuration for a single LLM provider."""
+    name: str
+    api_url: str
+    api_key: str = ""
+    model: str
+    max_context_tokens: int = 128_000
+    temperature: float = 0.0
+    supports_tools: bool = True
+    role: str = "general"  # "general" | "research"
 
 
 class LLMSettings(BaseSettings):
     model_config = {"env_prefix": "ELIXPO_LLM_"}
 
-    api_url: str = "https://api.openai.com/v1"
+    # Legacy single-model fallback
+    api_url: str = "https://api.moonshot.cn/v1"
     api_key: str = ""
-    model: str = "gpt-4o"
+    model: str = "kimi"
     max_context_tokens: int = 128_000
     temperature: float = 0.0
+
+
+class KimiSettings(BaseSettings):
+    model_config = {"env_prefix": "ELIXPO_KIMI_"}
+
+    api_url: str = "https://api.moonshot.cn/v1"
+    api_key: str = ""
+    model: str = "moonshot-v1-128k"
+    max_context_tokens: int = 128_000
+
+
+class PerplexitySettings(BaseSettings):
+    model_config = {"env_prefix": "ELIXPO_PERPLEXITY_"}
+
+    api_url: str = "https://api.perplexity.ai"
+    api_key: str = ""
+    model: str = "sonar"
+    max_context_tokens: int = 128_000
 
 
 class GitHubSettings(BaseSettings):
@@ -30,6 +64,7 @@ class AgentSettings(BaseSettings):
     max_concurrent_sessions: int = 5
     session_storage_path: str = "/data/sessions"
     workspace_path: str = "/data/workspaces"
+    default_reasoning_effort: str = "medium"  # "low" | "medium" | "high"
 
 
 class SandboxSettings(BaseSettings):
@@ -51,6 +86,8 @@ class CloudflareSettings(BaseSettings):
 
 class Settings(BaseSettings):
     llm: LLMSettings = LLMSettings()
+    kimi: KimiSettings = KimiSettings()
+    perplexity: PerplexitySettings = PerplexitySettings()
     github: GitHubSettings = GitHubSettings()
     agent: AgentSettings = AgentSettings()
     sandbox: SandboxSettings = SandboxSettings()
@@ -61,6 +98,49 @@ class Settings(BaseSettings):
     debug: bool = False
 
     model_config = {"env_prefix": "ELIXPO_"}
+
+    def build_model_profiles(self) -> dict[str, ModelProfile]:
+        """Build model profiles from settings, using Kimi/Perplexity env vars or falling back to LLM defaults."""
+        profiles = {}
+
+        # Kimi profile (main workhorse for tool calls)
+        kimi_key = self.kimi.api_key or self.llm.api_key
+        if kimi_key:
+            profiles["kimi"] = ModelProfile(
+                name="kimi",
+                api_url=self.kimi.api_url,
+                api_key=kimi_key,
+                model=self.kimi.model,
+                max_context_tokens=self.kimi.max_context_tokens,
+                supports_tools=True,
+                role="general",
+            )
+
+        # Perplexity profile (web search/research)
+        if self.perplexity.api_key:
+            profiles["perplexity"] = ModelProfile(
+                name="perplexity",
+                api_url=self.perplexity.api_url,
+                api_key=self.perplexity.api_key,
+                model=self.perplexity.model,
+                max_context_tokens=self.perplexity.max_context_tokens,
+                supports_tools=False,
+                role="research",
+            )
+
+        # Fallback: if no kimi profile, use legacy LLM settings
+        if "kimi" not in profiles and self.llm.api_key:
+            profiles["kimi"] = ModelProfile(
+                name="kimi",
+                api_url=self.llm.api_url,
+                api_key=self.llm.api_key,
+                model=self.llm.model,
+                max_context_tokens=self.llm.max_context_tokens,
+                supports_tools=True,
+                role="general",
+            )
+
+        return profiles
 
 
 settings = Settings()
