@@ -427,6 +427,67 @@
     // Observe SVG mutations for auto-save
     const observer = new MutationObserver(() => scheduleAutoSave());
 
+    // ═══════════ AI DIAGRAM BUTTON ═══════════
+    const aiDiagramBtn = document.querySelector('.tool-btn[data-action="ai-diagrams"]');
+    if (aiDiagramBtn) {
+        aiDiagramBtn.addEventListener('click', () => toggleModal('ai-diagram-modal'));
+    }
+
+    // ═══════════ IMAGE SOURCE PICKER ═══════════
+    const imagePicker = document.getElementById('image-source-picker');
+    let imagePickerOpen = false;
+
+    function showImageSourcePicker() {
+        if (!imagePicker) return;
+        // Position next to the image tool button
+        const imgBtn = document.querySelector('.tool-btn[data-tool="image"]');
+        if (imgBtn) {
+            const rect = imgBtn.getBoundingClientRect();
+            imagePicker.style.left = (rect.right + 10) + 'px';
+            imagePicker.style.top = (rect.top - 10) + 'px';
+        } else {
+            imagePicker.style.left = '65px';
+            imagePicker.style.top = (window.innerHeight / 2 - 50) + 'px';
+        }
+        imagePicker.style.display = 'block';
+        imagePickerOpen = true;
+
+        // Close on outside click (delayed to not catch opening click)
+        setTimeout(() => {
+            const closeHandler = (e) => {
+                if (imagePicker && !imagePicker.contains(e.target)) {
+                    hideImageSourcePicker();
+                    document.removeEventListener('mousedown', closeHandler);
+                }
+            };
+            document.addEventListener('mousedown', closeHandler);
+        }, 50);
+    }
+
+    function hideImageSourcePicker() {
+        if (imagePicker) imagePicker.style.display = 'none';
+        imagePickerOpen = false;
+    }
+
+    // AI image button
+    const aiImageBtn = imagePicker?.querySelector('[data-action="ai-image"]');
+    if (aiImageBtn) {
+        aiImageBtn.addEventListener('click', () => {
+            hideImageSourcePicker();
+            setActiveTool('select');
+            toggleModal('ai-image-modal');
+        });
+    }
+
+    // Upload button
+    const uploadImageBtn = imagePicker?.querySelector('[data-action="upload-image"]');
+    if (uploadImageBtn) {
+        uploadImageBtn.addEventListener('click', () => {
+            hideImageSourcePicker();
+            if (window.openImageFilePicker) window.openImageFilePicker();
+        });
+    }
+
     // ═══════════ INIT ENGINE ═══════════
     async function initEngine() {
         try {
@@ -478,9 +539,9 @@
             if (zoomOutBtn && window.zoomOut) zoomOutBtn.addEventListener('click', window.zoomOut);
             if (zoomPct && window.resetZoom) zoomPct.addEventListener('click', window.resetZoom);
 
-            // Image tool: direct file picker (no AI in VS Code)
+            // Image tool: show picker with AI (coming soon) + upload
             window.__showImageSourcePicker = () => {
-                if (window.openImageFilePicker) window.openImageFilePicker();
+                showImageSourcePicker();
             };
 
             console.log('[LixSketch] Engine initialized');

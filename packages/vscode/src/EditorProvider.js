@@ -169,6 +169,115 @@ class LixSketchEditorProvider {
         <button class="tool-btn" data-tool="eraser" title="Eraser (E)">
             <i class="bx bxs-eraser"></i><span class="tool-key">E</span>
         </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn" data-action="ai-diagrams" title="AI Diagram Generator">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
+                <path d="M18 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- ═══════════ IMAGE SOURCE PICKER (on image tool) ═══════════ -->
+    <div id="image-source-picker" style="display:none">
+        <button class="img-picker-btn" data-action="ai-image">
+            <div class="img-picker-icon ai">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
+                    <path d="M18 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z"/>
+                </svg>
+            </div>
+            <div class="img-picker-text">
+                <div class="img-picker-label">Generate with AI</div>
+                <div class="img-picker-desc">Coming soon</div>
+            </div>
+            <span class="coming-soon-badge">Soon</span>
+        </button>
+        <div class="img-picker-divider"></div>
+        <button class="img-picker-btn" data-action="upload-image">
+            <div class="img-picker-icon upload"><i class="bx bx-upload"></i></div>
+            <div class="img-picker-text">
+                <div class="img-picker-label">Upload from device</div>
+                <div class="img-picker-desc">PNG, JPG, SVG, WebP</div>
+            </div>
+            <kbd class="img-picker-kbd">U</kbd>
+        </button>
+    </div>
+
+    <!-- ═══════════ AI DIAGRAM MODAL (Coming Soon) ═══════════ -->
+    <div id="ai-diagram-modal" class="modal-overlay" style="display:none">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card" style="max-width:520px">
+            <div class="modal-header">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;color:var(--accent)">
+                        <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
+                        <path d="M18 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z"/>
+                    </svg>
+                    AI Diagram Generator
+                </h2>
+                <button class="modal-close" data-close="ai-diagram-modal"><i class="bx bx-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="coming-soon-card">
+                    <div class="coming-soon-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
+                            <path d="M18 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z"/>
+                        </svg>
+                    </div>
+                    <h3 class="coming-soon-title">Coming Soon</h3>
+                    <p class="coming-soon-desc">
+                        Generate diagrams, flowcharts, architecture diagrams, and research paper illustrations from text prompts using AI.
+                    </p>
+                    <div class="coming-soon-features">
+                        <div class="coming-soon-feature"><i class="bx bx-conversation"></i> Text-to-Diagram</div>
+                        <div class="coming-soon-feature"><i class="bx bx-code-alt"></i> LixScript Generation</div>
+                        <div class="coming-soon-feature"><i class="bx bx-git-merge"></i> Mermaid Import</div>
+                        <div class="coming-soon-feature"><i class="bx bx-book-open"></i> Research Paper Illustrations</div>
+                    </div>
+                    <div class="coming-soon-api-note">
+                        <i class="bx bx-key"></i>
+                        <span>This feature will require an <strong>API key</strong> to access AI generation services. API key configuration for the VS Code extension is coming in a future update.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ AI IMAGE MODAL (Coming Soon) ═══════════ -->
+    <div id="ai-image-modal" class="modal-overlay" style="display:none">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card" style="max-width:520px">
+            <div class="modal-header">
+                <h2>
+                    <i class="bx bx-image-alt" style="margin-right:8px;color:var(--accent-blue)"></i>
+                    AI Image Generator
+                </h2>
+                <button class="modal-close" data-close="ai-image-modal"><i class="bx bx-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="coming-soon-card">
+                    <div class="coming-soon-icon" style="color:var(--accent-blue)">
+                        <i class="bx bx-image-alt" style="font-size:40px"></i>
+                    </div>
+                    <h3 class="coming-soon-title">Coming Soon</h3>
+                    <p class="coming-soon-desc">
+                        Generate images from text prompts and place them directly on the canvas. Edit images with AI-powered selective brush editing.
+                    </p>
+                    <div class="coming-soon-features">
+                        <div class="coming-soon-feature"><i class="bx bx-image-add"></i> Text-to-Image</div>
+                        <div class="coming-soon-feature"><i class="bx bx-brush"></i> AI Image Editing</div>
+                        <div class="coming-soon-feature"><i class="bx bx-palette"></i> Multiple Models</div>
+                        <div class="coming-soon-feature"><i class="bx bx-expand"></i> Up to 768×768</div>
+                    </div>
+                    <div class="coming-soon-api-note">
+                        <i class="bx bx-key"></i>
+                        <span>This feature will require an <strong>API key</strong> to access image generation services. API key configuration for the VS Code extension is coming in a future update.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ═══════════ SIDEBARS ═══════════ -->
