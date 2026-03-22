@@ -37,9 +37,21 @@ export default function useSessionID() {
       }
 
       if (isNewWorkspace) {
-        // Clear old autosave so the new workspace starts with a blank canvas
+        // Clear ALL autosave data so the new workspace starts with a blank canvas
         localStorage.removeItem('lixsketch-autosave')
         localStorage.removeItem('lixsketch-autosave-meta')
+        // Also clear any session-scoped keys from previous sessions
+        try {
+          const keysToRemove = []
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && (key.startsWith('lixsketch-autosave-') || key.startsWith('lixsketch-autosave-meta-'))) {
+              keysToRemove.push(key)
+            }
+          }
+          keysToRemove.forEach(k => localStorage.removeItem(k))
+        } catch {}
+        localStorage.removeItem('lixsketch-workspace-name')
       }
 
       // Persist for guest reuse
@@ -57,6 +69,12 @@ export default function useSessionID() {
     window.__sessionID = sessionID
     // Flag so other hooks know this is a fresh workspace
     window.__isNewWorkspace = isNewWorkspace
+
+    // Clear stale shapes from previous canvas (SPA navigation doesn't reload)
+    if (isNewWorkspace && window.shapes) {
+      window.shapes.length = 0
+      window.currentShape = null
+    }
 
     // Restore workspace name from localStorage, or generate on first visit
     const store = useUIStore.getState()
