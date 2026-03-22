@@ -22272,10 +22272,19 @@ var LixSketch = (() => {
         shape.element.parentNode.removeChild(shape.element);
       }
     });
-    window.shapes = [];
+    if (window.shapes)
+      window.shapes.length = 0;
+    else
+      window.shapes = [];
     window.currentShape = null;
-    window.historyStack = [];
-    window.redoStack = [];
+    if (window.historyStack)
+      window.historyStack.length = 0;
+    else
+      window.historyStack = [];
+    if (window.redoStack)
+      window.redoStack.length = 0;
+    else
+      window.redoStack = [];
     const idMap = /* @__PURE__ */ new Map();
     const frameData = sceneData.shapes.filter((s3) => s3.type === "frame");
     const otherData = sceneData.shapes.filter((s3) => s3.type !== "frame");
@@ -22542,10 +22551,19 @@ var LixSketch = (() => {
     svgEl.querySelectorAll(
       ".selection-outline, .resize-anchor, .rotation-anchor, [data-selection]"
     ).forEach((el) => el.remove());
-    window.shapes = [];
+    if (window.shapes)
+      window.shapes.length = 0;
+    else
+      window.shapes = [];
     window.currentShape = null;
-    window.historyStack = [];
-    window.redoStack = [];
+    if (window.historyStack)
+      window.historyStack.length = 0;
+    else
+      window.historyStack = [];
+    if (window.redoStack)
+      window.redoStack.length = 0;
+    else
+      window.redoStack = [];
     if (typeof window.clearAllSelections === "function") {
       window.clearAllSelections();
     }
