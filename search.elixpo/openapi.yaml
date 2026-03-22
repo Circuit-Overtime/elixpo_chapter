@@ -23,7 +23,7 @@ info:
     # Simple search
     curl "https://search.elixpo.com/api/search?query=latest+AI+news&session_id=my-session&stream=false"
     ```
-  version: 2.1.0
+  version: 2.2.0
   contact:
     name: Elixpo
     url: https://elixpo.com
@@ -47,6 +47,12 @@ tags:
     description: Lightweight URL and image search without LLM synthesis
   - name: Images
     description: Generated image proxy endpoints
+  - name: Discover
+    description: AI-generated discover feed articles by category
+  - name: Export
+    description: Export search results to PDF
+  - name: Content
+    description: Serve stored content (PDFs, documents) by ID
   - name: System
     description: Health checks, statistics, and operational endpoints
 
@@ -206,7 +212,7 @@ paths:
           schema:
             type: string
             enum: ['true', 'false']
-            default: 'true'
+            default: 'false'
           description: Enable SSE streaming (`true`) or return complete JSON (`false`)
         - name: image_url
           in: query
@@ -266,7 +272,7 @@ paths:
                   description: Session identifier for context persistence. If omitted, derived from client IP.
                 stream:
                   type: boolean
-                  default: true
+                  default: false
                   description: Enable SSE streaming
                 image_url:
                   type: string
@@ -289,7 +295,7 @@ paths:
                 value:
                   query: "What is quantum computing?"
                   session_id: "sess-abc123"
-                  stream: true
+                  stream: false
               with_images:
                 summary: Search with images
                 value:
@@ -544,9 +550,15 @@ paths:
                   query:
                     type: string
                   summary:
-                    type: string
-                  rag_stats:
                     type: object
+                    description: Session summary including RAG stats, messages, and conversation turn count
+                    properties:
+                      messages:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChatMessage'
+                      conversation_turns:
+                        type: integer
                   request_id:
                     type: string
                   timestamp:
@@ -730,7 +742,7 @@ paths:
       operationId: getGeneratedImage
       summary: Get generated image
       description: |
-        Serve a previously generated image by its ID. Images are stored in-memory with a 1-hour TTL.
+        Serve a previously generated image by its ID. Images are stored on disk with a 7-day TTL (configurable via `IMAGE_TTL_SECONDS` env var).
         These URLs are returned by the search pipeline when image generation is triggered.
       tags:
         - Images
@@ -756,6 +768,149 @@ paths:
                 format: binary
         '404':
           description: Image not found or expired
+
+  # ──────────────────────────────────────────────
+  # Discover
+  # ──────────────────────────────────────────────
+  /api/discover/generate:
+    post:
+      operationId: generateDiscover
+      summary: Generate discover articles
+      description: |
+        Generate curated news/article summaries for discover feed categories.
+        Uses web search + LLM synthesis to produce structured article objects.
+      tags:
+        - Discover
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                categories:
+                  type: array
+                  items:
+                    type: string
+                  description: List of categories to generate articles for (e.g. finance, academic, sports, patent). Defaults to all categories.
+            example:
+              categories: ["finance", "academic"]
+      responses:
+        '200':
+          description: Generated articles grouped by category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  dayKey:
+                    type: string
+                    description: Date key (YYYY-MM-DD)
+                    example: "2026-03-22"
+                  generated_count:
+                    type: integer
+                    description: Total number of articles generated
+                  categories:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          title:
+                            type: string
+                          excerpt:
+                            type: string
+                          sourceUrl:
+                            type: string
+                            format: uri
+                          sourceTitle:
+                            type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/NotInitialized'
+
+  # ──────────────────────────────────────────────
+  # Export
+  # ──────────────────────────────────────────────
+  /api/export/pdf:
+    post:
+      operationId: exportPdf
+      summary: Export content as PDF
+      description: |
+        Convert markdown content to a PDF document. Returns the PDF as a binary download.
+      tags:
+        - Export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  description: Markdown content to convert to PDF
+                title:
+                  type: string
+                  default: "lixSearch Response"
+                  description: PDF document title
+            example:
+              content: "## My Research\n\nQuantum computing uses qubits..."
+              title: "Quantum Computing Research"
+      responses:
+        '200':
+          description: PDF document
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ──────────────────────────────────────────────
+  # Content
+  # ──────────────────────────────────────────────
+  /api/content/{content_id}:
+    get:
+      operationId: getContent
+      summary: Get stored content
+      description: |
+        Serve previously stored content (PDFs, HTML, etc.) by its ID. Content is stored on disk with a 7-day TTL.
+      tags:
+        - Content
+      parameters:
+        - name: content_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Content identifier
+      responses:
+        '200':
+          description: Content data
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/html:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Content not found or expired
 
   # ──────────────────────────────────────────────
   # System
