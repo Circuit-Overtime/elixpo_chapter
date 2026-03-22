@@ -11,7 +11,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from elixpo.agent.engine import AgentEngine
 from elixpo.agent.session import Session, SessionStore, SessionTrigger
 from elixpo.config import settings
-from elixpo.llm.client import LLMClient
+from elixpo.llm.router import ModelRouter
 from elixpo.mcp.registry import create_default_registry
 
 log = structlog.get_logger()
@@ -57,16 +57,16 @@ manager = ConnectionManager()
 async def session_stream(websocket: WebSocket, session_id: str):
     """Stream agent events for a session over WebSocket.
 
-    Client connects, then sends a JSON message to start/resume:
+    Client connects, then sends a JSON message to start/resume/switch mode:
       {"action": "start", "task": "fix the bug", "workspace": "/path"}
       {"action": "resume", "follow_up": "also add tests"}
+      {"action": "switch_mode", "mode": "plan|edit"}
     """
     await manager.connect(session_id, websocket)
     session_store = SessionStore(settings.agent.session_storage_path)
 
     try:
         while True:
-            # Wait for client instruction
             raw = await websocket.receive_text()
             try:
                 msg = json.loads(raw)
@@ -76,9 +76,9 @@ async def session_stream(websocket: WebSocket, session_id: str):
 
             action = msg.get("action", "start")
 
-            llm = LLMClient()
+            router = ModelRouter.from_settings()
             tools = create_default_registry()
-            engine = AgentEngine(llm=llm, tools=tools, session_store=session_store)
+            engine = AgentEngine(router=router, tools=tools, session_store=session_store)
 
             if action == "start":
                 task = msg.get("task", "")
@@ -94,8 +94,7 @@ async def session_stream(websocket: WebSocket, session_id: str):
                 )
 
                 async for event in engine.run(session, task=task, workspace_path=workspace):
-                    event_data = event.to_dict()
-                    await manager.broadcast(session_id, event_data)
+                    await manager.broadcast(session_id, event.to_dict())
 
             elif action == "resume":
                 follow_up = msg.get("follow_up", "")
@@ -106,8 +105,18 @@ async def session_stream(websocket: WebSocket, session_id: str):
                     follow_up=follow_up,
                     workspace_path=workspace,
                 ):
-                    event_data = event.to_dict()
-                    await manager.broadcast(session_id, event_data)
+                    await manager.broadcast(session_id, event.to_dict())
+
+            elif action == "switch_mode":
+                # Direct mode switch via WebSocket
+                mode = msg.get("mode", "")
+                if mode in ("plan", "edit"):
+                    follow_up = f"/{mode}"
+                    async for event in engine.resume(
+                        session_id=session_id,
+                        follow_up=follow_up,
+                    ):
+                        await manager.broadcast(session_id, event.to_dict())
 
             elif action == "ping":
                 await websocket.send_text(json.dumps({"type": "pong"}))
@@ -118,7 +127,7 @@ async def session_stream(websocket: WebSocket, session_id: str):
                     "error": f"Unknown action: {action}",
                 }))
 
-            await llm.close()
+            await router.close()
 
     except WebSocketDisconnect:
         manager.disconnect(session_id, websocket)

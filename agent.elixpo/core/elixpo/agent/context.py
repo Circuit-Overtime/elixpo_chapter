@@ -34,13 +34,27 @@ class ContextManager:
     and recent messages.
     """
 
-    def __init__(self, max_tokens: int = 128_000, compression_threshold: float = 0.8):
+    def __init__(
+        self,
+        max_tokens: int = 128_000,
+        compression_threshold: float = 0.8,
+        working_memory_budget: int = 0,
+    ):
         self.max_tokens = max_tokens
         self.compression_threshold = compression_threshold
+        self.working_memory_budget = working_memory_budget
+
+    def set_working_memory_budget(self, tokens: int) -> None:
+        """Update the working memory token budget (reduces available context)."""
+        self.working_memory_budget = tokens
+
+    def available_tokens(self) -> int:
+        """Tokens available for conversation after working memory."""
+        return self.max_tokens - self.working_memory_budget
 
     def needs_compression(self, messages: list[Message]) -> bool:
         current = total_tokens(messages)
-        return current > self.max_tokens * self.compression_threshold
+        return current > self.available_tokens() * self.compression_threshold
 
     def compress(self, messages: list[Message], keep_recent: int = 10) -> list[Message]:
         """Compress older messages into a summary.

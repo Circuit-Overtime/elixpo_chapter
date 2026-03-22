@@ -43,15 +43,11 @@ class CreateSessionRequest(BaseModel):
 
 @router.post("/api/v1/sessions")
 async def create_session(req: CreateSessionRequest):
-    """Create and run a new agent session.
-
-    For now, this is a synchronous placeholder. Full async streaming
-    will be implemented with WebSocket support in Phase 3.
-    """
+    """Create and run a new agent session."""
     import os
     from elixpo.agent.engine import AgentEngine
     from elixpo.agent.session import Session, SessionTrigger
-    from elixpo.llm.client import LLMClient
+    from elixpo.llm.router import ModelRouter
     from elixpo.mcp.registry import create_default_registry
 
     session = Session(
@@ -62,19 +58,20 @@ async def create_session(req: CreateSessionRequest):
     workspace = req.workspace_path or os.path.join(settings.agent.workspace_path, session.id)
     os.makedirs(workspace, exist_ok=True)
 
-    llm = LLMClient()
+    router = ModelRouter.from_settings()
     tools = create_default_registry()
-    engine = AgentEngine(llm=llm, tools=tools, session_store=_session_store)
+    engine = AgentEngine(router=router, tools=tools, session_store=_session_store)
 
     events = []
     async for event in engine.run(session, task=req.task, workspace_path=workspace):
         events.append(event.to_dict())
 
-    await llm.close()
+    await router.close()
 
     return {
         "session_id": session.id,
         "status": session.status.value,
+        "mode": session.mode.value,
         "events": events,
     }
 
@@ -88,16 +85,16 @@ class ResumeSessionRequest(BaseModel):
 async def resume_session(session_id: str, req: ResumeSessionRequest):
     """Send a follow-up message to an existing session, resuming it."""
     from elixpo.agent.engine import AgentEngine
-    from elixpo.llm.client import LLMClient
+    from elixpo.llm.router import ModelRouter
     from elixpo.mcp.registry import create_default_registry
 
     session = _session_store.load(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    llm = LLMClient()
+    router = ModelRouter.from_settings()
     tools = create_default_registry()
-    engine = AgentEngine(llm=llm, tools=tools, session_store=_session_store)
+    engine = AgentEngine(router=router, tools=tools, session_store=_session_store)
 
     events = []
     async for event in engine.resume(
@@ -107,7 +104,7 @@ async def resume_session(session_id: str, req: ResumeSessionRequest):
     ):
         events.append(event.to_dict())
 
-    await llm.close()
+    await router.close()
 
     return {
         "session_id": session_id,

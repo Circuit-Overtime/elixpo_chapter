@@ -11,6 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from elixpo.agent.mode import AgentMode
 from elixpo.llm.models import Message
 
 
@@ -49,6 +50,7 @@ class Session(BaseModel):
     workspace_path: str = ""
     plan: str | None = None
     result_pr_url: str | None = None
+    mode: AgentMode = AgentMode.PLAN
     current_step: int = 0
     max_steps: int = 50
     messages: list[Message] = Field(default_factory=list)

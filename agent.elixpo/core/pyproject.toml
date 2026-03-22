@@ -22,6 +22,7 @@ dependencies = [
     "cryptography>=44.0.0",
     "structlog>=24.4.0",
     "websockets>=14.0",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.optional-dependencies]

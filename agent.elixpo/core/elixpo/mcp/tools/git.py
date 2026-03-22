@@ -109,6 +109,7 @@ class GitLogTool(BaseTool):
 
 class GitCommitTool(BaseTool):
     name = "git_commit"
+    allowed_modes = {"edit"}
     description = "Stage specified files (or all changes) and create a commit."
     parameters = {
         "type": "object",
@@ -148,6 +149,7 @@ class GitCommitTool(BaseTool):
 
 class GitBranchTool(BaseTool):
     name = "git_branch"
+    allowed_modes = {"edit"}
     description = "List, create, or switch branches."
     parameters = {
         "type": "object",
