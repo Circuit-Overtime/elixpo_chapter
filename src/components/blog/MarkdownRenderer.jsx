@@ -17,7 +17,7 @@ function CopyButton({ text }) {
       className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] transition-all duration-200 cursor-pointer ${
         copied
           ? 'bg-green-500/20 text-green-400'
-          : 'bg-white/5 text-[#444480] hover:text-white hover:bg-white/10'
+          : 'bg-white/5 text-[#6969aa] hover:text-white hover:bg-white/10'
       }`}
     >
       <i className={`bx ${copied ? 'bx-check' : 'bx-copy'} text-xs`} />
@@ -720,8 +720,8 @@ function LixScriptBlock({ code }) {
             onClick={() => setTab('preview')}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer font-[lixFont] ${
               tab === 'preview'
-                ? 'bg-[#8B88E8]/15 text-[#8B88E8]'
-                : 'text-[#444480] hover:text-[#a0a0b0]'
+                ? 'bg-[#8B88E8]/45 text-[#8B88E8]'
+                : 'text-[#6969aa] hover:text-[#a0a0b0]'
             }`}
           >
             <i className="bx bx-show text-sm" />
@@ -732,7 +732,7 @@ function LixScriptBlock({ code }) {
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer font-[lixFont] ${
               tab === 'code'
                 ? 'bg-[#8B88E8]/15 text-[#8B88E8]'
-                : 'text-[#444480] hover:text-[#a0a0b0]'
+                : 'text-[#6969aa] hover:text-[#a0a0b0]'
             }`}
           >
             <i className="bx bx-code-alt text-sm" />
@@ -746,7 +746,7 @@ function LixScriptBlock({ code }) {
 
       {tab === 'preview' && !parsedData && !parseError && (
         <div className="bg-[#0a0a12] p-8 flex items-center justify-center min-h-48">
-          <div className="flex items-center gap-2 text-[#444480] text-xs font-[lixFont]">
+          <div className="flex items-center gap-2 text-[#6969aa] text-xs font-[lixFont]">
             <div className="w-4 h-4 border border-[#8B88E8]/40 border-t-transparent rounded-full animate-spin" />
             Rendering diagram...
           </div>
@@ -755,7 +755,7 @@ function LixScriptBlock({ code }) {
 
       {tab === 'preview' && parseError && (
         <div className="bg-[#0a0a12] p-8 flex items-center justify-center min-h-48">
-          <div className="text-center text-[#444480] text-xs font-[lixFont]">
+          <div className="text-center text-[#6969aa] text-xs font-[lixFont]">
             <i className="bx bx-shape-square text-2xl text-[#8B88E8]/30 mb-2" />
             <p>Preview unavailable — switch to Code tab to view the LixScript source.</p>
           </div>
@@ -821,7 +821,7 @@ function CodeFenceBlock({ code, language }) {
       <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
       <div className="relative z-10">
         <div className="flex items-center justify-between px-4 py-1.5 border-b border-[#30363d]/50">
-          <span className="text-[#444480] text-[10px] font-[lixCode] uppercase">{language || 'code'}</span>
+          <span className="text-[#6969aa] text-[10px] font-[lixCode] uppercase">{language || 'code'}</span>
           <CopyButton text={code} />
         </div>
         <pre className="p-4 overflow-x-auto max-h-96 overflow-y-auto docs-scroll select-text">

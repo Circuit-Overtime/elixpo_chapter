@@ -10,7 +10,6 @@ const resourceLinks = [
   { href: '/resources/use-cases', label: 'Use Cases', icon: 'bx bx-bulb' },
   { href: '/resources/security', label: 'Security', icon: 'bx bx-shield' },
   { href: '/docs', label: 'Docs', icon: 'bx bx-book-open' },
-  { href: '/docs#blog', label: 'Blog', icon: 'bx bx-news' },
   { href: '/resources/npm-package', label: 'NPM Package', icon: 'bx bxl-nodejs' },
   { href: '/resources/vscode-extension', label: 'VS Code Extension', icon: 'bx bxl-visual-studio' },
 ]
@@ -54,6 +53,9 @@ export default function LandingNav() {
           </Link>
           <Link href="/roadmap" className="hover:text-text-primary transition-colors">
             Roadmap
+          </Link>
+          <Link href="/docs#blog" className="hover:text-text-primary transition-colors">
+            Blog
           </Link>
 
           {/* Resources dropdown */}
@@ -141,6 +143,7 @@ export default function LandingNav() {
                 { href: '/pricing', label: 'Pricing' },
                 { href: '/teams', label: 'Teams' },
                 { href: '/roadmap', label: 'Roadmap' },
+                { href: '/docs#blog', label: 'Blog' },
               ].map((item) => (
                 <Link
                   key={item.href}
