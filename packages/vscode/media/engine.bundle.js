@@ -8150,7 +8150,9 @@ var LixSketch = (() => {
         move(dx, dy) {
           this._moveOffsetX = (this._moveOffsetX || 0) + dx;
           this._moveOffsetY = (this._moveOffsetY || 0) + dy;
-          const rot = this.rotation ? `rotate(${this.rotation} ${this._rotCenterX || 0} ${this._rotCenterY || 0})` : "";
+          const centerX = this.boundingBox.x + this.boundingBox.width / 2;
+          const centerY = this.boundingBox.y + this.boundingBox.height / 2;
+          const rot = this.rotation ? `rotate(${this.rotation} ${centerX} ${centerY})` : "";
           this.group.setAttribute("transform", `translate(${this._moveOffsetX}, ${this._moveOffsetY}) ${rot}`);
           if (isDraggingStroke && !this.isBeingMovedByFrame) {
             this.updateFrameContainment();
@@ -8227,14 +8229,18 @@ var LixSketch = (() => {
         updateSidebar() {
         }
         contains(x3, y3) {
-          const centerX = this.boundingBox.x + this.boundingBox.width / 2;
-          const centerY = this.boundingBox.y + this.boundingBox.height / 2;
+          const ox = this._moveOffsetX || 0;
+          const oy = this._moveOffsetY || 0;
+          const bbX = this.boundingBox.x + ox;
+          const bbY = this.boundingBox.y + oy;
+          const centerX = bbX + this.boundingBox.width / 2;
+          const centerY = bbY + this.boundingBox.height / 2;
           const dx = x3 - centerX;
           const dy = y3 - centerY;
           const angleRad = -this.rotation * Math.PI / 180;
           const rotatedX = dx * Math.cos(angleRad) - dy * Math.sin(angleRad) + centerX;
           const rotatedY = dx * Math.sin(angleRad) + dy * Math.cos(angleRad) + centerY;
-          return rotatedX >= this.boundingBox.x && rotatedX <= this.boundingBox.x + this.boundingBox.width && rotatedY >= this.boundingBox.y && rotatedY <= this.boundingBox.y + this.boundingBox.height;
+          return rotatedX >= bbX && rotatedX <= bbX + this.boundingBox.width && rotatedY >= bbY && rotatedY <= bbY + this.boundingBox.height;
         }
         isNearAnchor(x3, y3) {
           if (!this.isSelected)
@@ -16025,14 +16031,18 @@ var LixSketch = (() => {
         return true;
       }
       if (multiSelection.isPointInBounds(x3, y3)) {
-        let clickedOnSelectedShape = false;
+        let clickedOnSelectedShape = null;
         for (const shape of multiSelection.selectedShapes) {
           if (shape.contains && shape.contains(x3, y3)) {
-            clickedOnSelectedShape = true;
+            clickedOnSelectedShape = shape;
             break;
           }
         }
         if (clickedOnSelectedShape) {
+          if (e3.ctrlKey || e3.metaKey) {
+            multiSelection.removeShape(clickedOnSelectedShape);
+            return true;
+          }
           multiSelection.startDrag(e3);
           return true;
         }
@@ -17371,6 +17381,84 @@ var LixSketch = (() => {
     handleMainMouseUp: () => handleMainMouseUp,
     initEventDispatcher: () => initEventDispatcher
   });
+  function _autoScroll(e3) {
+    if (!(e3.buttons & 1)) {
+      _stopAutoScroll();
+      return;
+    }
+    if (typeof currentViewBox === "undefined" || typeof currentZoom === "undefined")
+      return;
+    if (typeof isPanning !== "undefined" && isPanning)
+      return;
+    if (typeof isPanningToolActive !== "undefined" && isPanningToolActive)
+      return;
+    const rect = svg.getBoundingClientRect();
+    const mx = e3.clientX - rect.left;
+    const my = e3.clientY - rect.top;
+    let dx = 0, dy = 0;
+    if (mx < EDGE_THRESHOLD)
+      dx = -SCROLL_SPEED * (1 - mx / EDGE_THRESHOLD);
+    else if (mx > rect.width - EDGE_THRESHOLD)
+      dx = SCROLL_SPEED * (1 - (rect.width - mx) / EDGE_THRESHOLD);
+    if (my < EDGE_THRESHOLD)
+      dy = -SCROLL_SPEED * (1 - my / EDGE_THRESHOLD);
+    else if (my > rect.height - EDGE_THRESHOLD)
+      dy = SCROLL_SPEED * (1 - (rect.height - my) / EDGE_THRESHOLD);
+    if (e3.clientX < rect.left)
+      dx = -SCROLL_SPEED;
+    else if (e3.clientX > rect.right)
+      dx = SCROLL_SPEED;
+    if (e3.clientY < rect.top)
+      dy = -SCROLL_SPEED;
+    else if (e3.clientY > rect.bottom)
+      dy = SCROLL_SPEED;
+    if (dx === 0 && dy === 0) {
+      _stopAutoScroll();
+      return;
+    }
+    const scale = 1 / currentZoom;
+    currentViewBox.x += dx * scale;
+    currentViewBox.y += dy * scale;
+    svg.setAttribute("viewBox", `${currentViewBox.x} ${currentViewBox.y} ${currentViewBox.width} ${currentViewBox.height}`);
+    if (typeof freehandCanvas !== "undefined" && freehandCanvas !== svg) {
+      freehandCanvas.setAttribute("viewBox", `${currentViewBox.x} ${currentViewBox.y} ${currentViewBox.width} ${currentViewBox.height}`);
+    }
+  }
+  function _startAutoScroll() {
+    if (_autoScrollRAF)
+      return;
+    const tick = () => {
+      if (_lastDragEvent)
+        _autoScroll(_lastDragEvent);
+      _autoScrollRAF = requestAnimationFrame(tick);
+    };
+    _autoScrollRAF = requestAnimationFrame(tick);
+  }
+  function _stopAutoScroll() {
+    if (_autoScrollRAF) {
+      cancelAnimationFrame(_autoScrollRAF);
+      _autoScrollRAF = null;
+    }
+    _lastDragEvent = null;
+  }
+  function _onDocumentDragMove(e3) {
+    _lastDragEvent = e3;
+    handleMainMouseMove(e3);
+  }
+  function _onDocumentDragUp(e3) {
+    _stopAutoScroll();
+    document.removeEventListener("mousemove", _onDocumentDragMove);
+    document.removeEventListener("mouseup", _onDocumentDragUp);
+    _documentDragActive = false;
+    handleMainMouseUp(e3);
+  }
+  function _onMouseEnter(e3) {
+    if (_documentDragActive) {
+      document.removeEventListener("mousemove", _onDocumentDragMove);
+      document.removeEventListener("mouseup", _onDocumentDragUp);
+      _documentDragActive = false;
+    }
+  }
   function initEventDispatcher(svgEl) {
     if (_boundSvg)
       cleanupEventDispatcher();
@@ -17379,18 +17467,26 @@ var LixSketch = (() => {
     target.addEventListener("mousemove", handleMainMouseMove);
     target.addEventListener("mouseup", handleMainMouseUp);
     target.addEventListener("mouseleave", handleMainMouseLeave);
+    target.addEventListener("mouseenter", _onMouseEnter);
     _boundSvg = target;
   }
   function cleanupEventDispatcher() {
+    _stopAutoScroll();
+    if (_documentDragActive) {
+      document.removeEventListener("mousemove", _onDocumentDragMove);
+      document.removeEventListener("mouseup", _onDocumentDragUp);
+      _documentDragActive = false;
+    }
     if (_boundSvg) {
       _boundSvg.removeEventListener("mousedown", handleMainMouseDown);
       _boundSvg.removeEventListener("mousemove", handleMainMouseMove);
       _boundSvg.removeEventListener("mouseup", handleMainMouseUp);
       _boundSvg.removeEventListener("mouseleave", handleMainMouseLeave);
+      _boundSvg.removeEventListener("mouseenter", _onMouseEnter);
       _boundSvg = null;
     }
   }
-  var handleMainMouseDown, handleMainMouseMove, handleMainMouseUp, handleMainMouseLeave, _boundSvg;
+  var EDGE_THRESHOLD, SCROLL_SPEED, _autoScrollRAF, _lastDragEvent, _documentDragActive, handleMainMouseDown, handleMainMouseMove, handleMainMouseUp, handleMainMouseLeave, _boundSvg;
   var init_EventDispatcher = __esm({
     "../lixsketch/src/core/EventDispatcher.js"() {
       init_rectangleTool();
@@ -17404,6 +17500,11 @@ var LixSketch = (() => {
       init_Selection();
       init_iconTool();
       init_codeTool();
+      EDGE_THRESHOLD = 40;
+      SCROLL_SPEED = 8;
+      _autoScrollRAF = null;
+      _lastDragEvent = null;
+      _documentDragActive = false;
       handleMainMouseDown = (e3) => {
         removeMultiSelectionRect();
         if (!isSelectionToolActive) {
@@ -17587,8 +17688,15 @@ var LixSketch = (() => {
             handleCodeMouseMove(e3);
           }
         }
+        if (e3.buttons & 1) {
+          _lastDragEvent = e3;
+          _startAutoScroll();
+        } else {
+          _stopAutoScroll();
+        }
       };
       handleMainMouseUp = (e3) => {
+        _stopAutoScroll();
         if (isSquareToolActive) {
           handleMouseUpRect(e3);
         } else if (isArrowToolActive) {
@@ -17649,6 +17757,16 @@ var LixSketch = (() => {
         }
       };
       handleMainMouseLeave = (e3) => {
+        if (e3.buttons & 1) {
+          _lastDragEvent = e3;
+          _startAutoScroll();
+          if (!_documentDragActive) {
+            _documentDragActive = true;
+            document.addEventListener("mousemove", _onDocumentDragMove);
+            document.addEventListener("mouseup", _onDocumentDragUp);
+          }
+          return;
+        }
         handleMainMouseUp(e3);
         removeMultiSelectionRect();
         if (typeof window.forceCleanupEraserTrail === "function") {
