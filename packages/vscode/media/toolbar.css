@@ -1,82 +1,342 @@
-#toolbar {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    background: #1e2228;
-    border: 1px solid #2d333b;
-    border-radius: 8px;
-    padding: 4px 6px;
-    z-index: 1000;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+/* ═══════════ LixSketch VS Code Extension Styles ═══════════ */
+/* Exact match to the website dark theme */
+
+:root {
+    --surface: #232329;
+    --surface-hover: #343448;
+    --surface-active: #444480;
+    --surface-dark: #1a1a20;
+    --surface-card: #1e1e28;
+    --accent: #c873e4;
+    --accent-blue: #5B57D1;
+    --accent-blue-hover: #6c67f3;
+    --text-primary: #fff;
+    --text-secondary: #e8e8ee;
+    --text-muted: #a0a0b0;
+    --text-dim: #787888;
+    --border: #333;
+    --border-light: #3a3a50;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #13171C;
+    font-family: 'lixFont', system-ui, -apple-system, sans-serif;
+    color: var(--text-primary);
     user-select: none;
 }
 
+/* ═══════════ TOOLBAR ═══════════ */
+#toolbar {
+    position: fixed;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 6px 5px;
+    z-index: 1000;
+    width: 46px;
+}
+
 .tool-btn {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 33px;
+    height: 31px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     background: transparent;
-    color: #8b949e;
+    color: var(--text-muted);
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
+    font-size: 20px;
 }
 
 .tool-btn:hover {
-    background: #2d333b;
-    color: #e6edf3;
+    background: var(--surface-hover);
+    color: var(--text-primary);
 }
 
 .tool-btn.active {
-    background: #388bfd30;
-    color: #58a6ff;
+    background: var(--surface-active);
+    color: var(--text-primary);
+}
+
+.tool-btn .tool-key {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    font-size: 9px;
+    color: var(--text-dim);
+    font-family: 'lixFont', system-ui, sans-serif;
+    line-height: 1;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.tool-btn.active .tool-key {
+    color: var(--text-muted);
+}
+
+.tool-lock {
+    color: var(--text-dim);
+}
+.tool-lock.active {
+    background: rgba(91, 87, 209, 0.2);
+    color: var(--accent-blue);
 }
 
 .tool-divider {
-    width: 1px;
-    height: 20px;
-    background: #2d333b;
-    margin: 0 4px;
+    width: 24px;
+    height: 1px;
+    background: var(--border-light);
+    margin: 3px 0;
 }
 
-#zoom-controls {
+/* ═══════════ SVG CANVAS ═══════════ */
+#freehand-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    background: #13171C;
+}
+
+/* ═══════════ SIDEBARS ═══════════ */
+.sidebar {
+    position: fixed;
+    bottom: 52px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1c1c1c;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 10px 12px;
+    z-index: 1000;
     display: flex;
     align-items: center;
-    gap: 4px;
-    margin-left: 2px;
+    gap: 10px;
 }
 
-#zoom-controls button {
+.sidebar-section {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sidebar-section + .sidebar-section {
+    padding-left: 10px;
+    border-left: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 4px;
+    white-space: nowrap;
+}
+
+/* Color swatches */
+.color-grid {
+    display: flex;
+    gap: 4px;
+}
+
+.color-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1.5px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    padding: 0;
+}
+
+.color-swatch:hover {
+    border-color: rgba(255,255,255,0.3);
+    transform: scale(1.1);
+}
+
+.color-swatch.active {
+    border-color: var(--accent-blue);
+    transform: scale(1.1);
+}
+
+/* Button groups (width, style, etc) */
+.btn-group {
+    display: flex;
+    gap: 2px;
+}
+
+.group-btn {
+    padding: 4px 10px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     background: transparent;
-    color: #8b949e;
+    color: var(--text-dim);
     cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-#zoom-controls button:hover {
-    background: #2d333b;
-    color: #e6edf3;
-}
-
-#zoomPercent {
     font-size: 11px;
-    color: #8b949e;
-    min-width: 36px;
-    text-align: center;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: 'lixFont', system-ui, sans-serif;
+    transition: background 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
 }
+
+.group-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.group-btn.active {
+    background: var(--surface-active);
+    color: var(--text-primary);
+}
+
+/* Layer controls */
+.sidebar-layers {
+    display: flex;
+    gap: 2px;
+}
+
+.layer-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.layer-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+/* Sidebar input */
+.sidebar-input {
+    background: var(--surface-dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 10px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: 'lixFont', system-ui, sans-serif;
+    outline: none;
+    width: 120px;
+}
+
+.sidebar-input:focus {
+    border-color: var(--accent-blue);
+}
+
+/* ═══════════ FOOTER ═══════════ */
+#footer {
+    position: fixed;
+    bottom: 8px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 999;
+}
+
+.footer-group {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 3px 4px;
+}
+
+.footer-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.footer-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.footer-btn.zoom-label {
+    font-size: 11px;
+    font-family: 'lixFont', system-ui, sans-serif;
+    width: auto;
+    padding: 0 8px;
+    min-width: 44px;
+}
+
+.footer-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--border-light);
+    margin: 0 2px;
+}
+
+/* ═══════════ SAVE TOAST ═══════════ */
+#save-toast {
+    position: fixed;
+    bottom: 52px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(30, 30, 40, 0.9);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 8px 16px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-family: 'lixFont', system-ui, sans-serif;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    animation: toast-fade-in 0.3s ease;
+}
+
+@keyframes toast-fade-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ═══════════ SCROLLBAR ═══════════ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
