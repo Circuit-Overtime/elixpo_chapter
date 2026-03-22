@@ -14,7 +14,7 @@
 
 ---
 
-<img width="1866" height="886" alt="LixSketch Canvas" src="https://github.com/user-attachments/assets/a0b93c41-32ce-44a1-ac37-4c3f9eb555cd" />
+<img width="1866" height="886" alt="LixSketch Canvas" src="./media/vs-code-etension-hero.png" />
 
 ## What is LixSketch?
 
@@ -30,7 +30,7 @@ Whether you're sketching out an architecture before writing code, diagramming a 
 
 Or just create any file ending in `.lixsketch` and it opens right up.
 
-<img width="1858" height="884" alt="LixSketch Tools" src="https://github.com/user-attachments/assets/de4565a2-c6b5-4392-8de2-e76b6b1f5c1e" />
+<img width="1858" height="884" alt="LixSketch Tools" src="./media/vs-code-etension-template.png" />
 
 ## What You Get
 
@@ -51,7 +51,6 @@ Or just create any file ending in `.lixsketch` and it opens right up.
 
 LixSketch files are simple JSON (`.lixsketch`). They live in your repo, version with git, and diff like any other file. Share them with your team, include them in PRs, or keep them as personal notes.
 
-<img width="1322" height="612" alt="LixSketch Overview" src="https://github.com/user-attachments/assets/a96e85be-dce9-464c-8451-5513ad521dd6" />
 
 ## Keyboard Shortcuts
 
