@@ -6,6 +6,8 @@
 !media/fonts.css
 !media/fonts/**
 !media/icon.png
+!media/file-icon.png
+!media/file-icon-theme.json
 !package.json
 !README.md
 !LICENSE
