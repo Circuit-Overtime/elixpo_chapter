@@ -266,7 +266,9 @@ do_release() {
   if $RELEASE_ENGINE; then
     echo "==> Publishing @elixpo/lixsketch to npm..."
     dry_run "cd '$SCRIPT_DIR/packages/lixsketch' && sudo NPM_TOKEN='$_NPM_TOKEN' npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken='$_NPM_TOKEN'"
-    echo "==> Engine published"
+    echo "==> Publishing @elixpo/lixsketch to GitHub Packages..."
+    dry_run "cd '$SCRIPT_DIR/packages/lixsketch' && sudo npm publish --access public --registry https://npm.pkg.github.com/ --//npm.pkg.github.com/:_authToken='$_GH_TOKEN'"
+    echo "==> Engine published (npm + GitHub Packages)"
   fi
 
   if $RELEASE_VSCODE; then
