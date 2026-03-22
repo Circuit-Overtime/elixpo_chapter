@@ -131,11 +131,20 @@ function SaveStatusDot() {
   const saveStatus = useUIStore((s) => s.saveStatus)
   if (saveStatus === 'idle') return null
 
-  const isCloud = saveStatus === 'cloud'
+  const colorMap = {
+    cloud: 'bg-green-400',
+    local: 'bg-yellow-400',
+    failed: 'bg-red-400',
+  }
+  const titleMap = {
+    cloud: 'Synced to cloud — Ctrl+S to force sync',
+    local: 'Saved locally — auto-syncs every 5min or press Ctrl+S',
+    failed: 'Sync failed — will retry automatically',
+  }
   return (
     <span
-      className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-300 ${isCloud ? 'bg-green-400' : 'bg-yellow-400'}`}
-      title={isCloud ? 'Synced to cloud — Ctrl+S to force sync' : 'Saved locally — auto-syncs every 10min or press Ctrl+S'}
+      className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-300 ${colorMap[saveStatus] || 'bg-yellow-400'}`}
+      title={titleMap[saveStatus] || ''}
     />
   )
 }

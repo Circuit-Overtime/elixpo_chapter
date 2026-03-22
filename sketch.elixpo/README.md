@@ -39,13 +39,13 @@ LixSketch offers technical / professional proficiency in quick canvases used for
 
 | | Feature |
 |---|---|
-| :unlock: | **No login required** — start drawing instantly as a guest |
-| :gift: | **Generous freemium model** — powerful tools at zero cost |
-| :scroll: | **LixScript** — our own [diagram scripting language](https://sketch.elixpo.com/docs) |
-| :jigsaw: | **All-in-one workspace** — combines Excalidraw + TLDraw + Eraser.io |
-| :shield: | **E2E encrypted sharing** — your data stays yours |
-| :open_file_folder: | **Open Source** — MIT licensed, built in public |
-| :zap: | **Fast & free** — generous guest mode, no paywall |
+| 🔓 | **No login required** — start drawing instantly as a guest |
+| 🎁 | **Generous freemium model** — powerful tools at zero cost |
+| 📜 | **LixScript** — our own [diagram scripting language](https://sketch.elixpo.com/docs) |
+| 🧩 | **All-in-one workspace** — combines Excalidraw + TLDraw + Eraser.io |
+| 🛡️ | **E2E encrypted sharing** — your data stays yours |
+| 📂 | **Open Source** — MIT licensed, built in public |
+| ⚡ | **Fast & free** — generous guest mode, no paywall |
 
 <img width="1858" height="884" alt="image" src="https://github.com/user-attachments/assets/de4565a2-c6b5-4392-8de2-e76b6b1f5c1e" />
 
@@ -55,9 +55,9 @@ LixSketch offers technical / professional proficiency in quick canvases used for
 
 | | Platform | Description |
 |---|---|---|
-| :globe_with_meridians: | **[Web App](https://sketch.elixpo.com)** | Full collaborative canvas in the browser |
-| :desktop_computer: | **[VS Code Extension](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch)** | Draw diagrams right inside your editor — open any `.lixsketch` file |
-| :package: | **[NPM Package](https://www.npmjs.com/package/@elixpo/lixsketch)** | Embed the engine in your own app with `npm install @elixpo/lixsketch` |
+| 🌐 | **[Web App](https://sketch.elixpo.com)** | Full collaborative canvas in the browser |
+| 🖥️ | **[VS Code Extension](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch)** | Draw diagrams right inside your editor — open any `.lixsketch` file |
+| 📦 | **[NPM Package](https://www.npmjs.com/package/@elixpo/lixsketch)** | Embed the engine in your own app with `npm install @elixpo/lixsketch` |
 
 </div>
 
