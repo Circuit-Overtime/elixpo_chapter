@@ -27,6 +27,11 @@ set -euo pipefail
 # Shorthand:
 #   all         secrets + worker + deploy (infra only, no release)
 #
+# Auth tokens are read automatically from .env:
+#   NPM_TOKEN            → npm publish
+#   VSCE_PAT             → VS Code extension publish
+#   GITHUB_ACCESS_TOKEN  → gh release create
+#
 # Examples:
 #   ./deploy.sh deploy                    # Quick website deploy
 #   ./deploy.sh release all --minor       # Release everything with minor bump
@@ -106,12 +111,12 @@ deploy() {
   echo "==> Pages deploy complete."
 
   VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "unknown")
-  git add -A
-  if git diff --cached --quiet; then
+  sudo git add -A
+  if sudo git diff --cached --quiet; then
     echo "==> No changes to commit."
   else
     sudo git commit -m "deploy: v${VERSION}"
-    git push origin main
+    sudo git push origin main
     echo "==> Pushed v${VERSION} to origin/main."
   fi
 }
@@ -255,6 +260,14 @@ do_release() {
     esac
   done
 
+  # ── Load tokens from .env ──
+  load_env
+  local _NPM_TOKEN="${NPM_TOKEN:?NPM_TOKEN not set in .env}"
+  local _VSCE_PAT="${VSCE_PAT:?VSCE_PAT not set in .env}"
+  local _GH_TOKEN="${GITHUB_ACCESS_TOKEN:?GITHUB_ACCESS_TOKEN not set in .env}"
+
+  echo "==> Tokens loaded from .env"
+
   # ── Version Bump ──
   echo "==> Bumping versions ($BUMP)..."
 
@@ -281,9 +294,8 @@ do_release() {
 
   # ── Build & Publish ──
   if $RELEASE_ENGINE; then
-    load_env
     echo "==> Publishing @elixpo/lixsketch to npm..."
-    dry_run "cd '$SCRIPT_DIR/packages/lixsketch' && sudo npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken=${NPM_TOKEN}"
+    dry_run "cd '$SCRIPT_DIR/packages/lixsketch' && sudo NPM_TOKEN='$_NPM_TOKEN' npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken='$_NPM_TOKEN'"
     echo "==> Engine published"
   fi
 
@@ -291,7 +303,7 @@ do_release() {
     echo "==> Building VS Code extension..."
     dry_run "cd '$SCRIPT_DIR/packages/vscode' && sudo npm run build"
     echo "==> Packaging & publishing VS Code extension..."
-    dry_run "cd '$SCRIPT_DIR/packages/vscode' && sudo npx @vscode/vsce package --no-dependencies && sudo npx @vscode/vsce publish --no-dependencies"
+    dry_run "cd '$SCRIPT_DIR/packages/vscode' && sudo npx @vscode/vsce package --no-dependencies && sudo VSCE_PAT='$_VSCE_PAT' npx @vscode/vsce publish --no-dependencies --pat '$_VSCE_PAT'"
     echo "==> VS Code extension published"
   fi
 
@@ -315,12 +327,8 @@ do_release() {
   dry_run "sudo git push origin main --tags"
 
   # ── GitHub Release ──
-  if command -v gh &> /dev/null; then
-    echo "==> Creating GitHub release..."
-    dry_run "sudo gh release create 'v${NEW_VERSION}' --generate-notes --title 'v${NEW_VERSION}'"
-  else
-    echo "==> gh CLI not found, skipping GitHub release"
-  fi
+  echo "==> Creating GitHub release..."
+  dry_run "sudo GH_TOKEN='$_GH_TOKEN' GITHUB_TOKEN='$_GH_TOKEN' gh release create 'v${NEW_VERSION}' --generate-notes --title 'v${NEW_VERSION}'"
 
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -354,6 +362,11 @@ usage() {
   echo "  --major             Major version bump"
   echo "  --dry-run           Preview without executing"
   echo "  --skip-changelog    Skip changelog generation"
+  echo ""
+  echo "Auth (auto-loaded from .env):"
+  echo "  NPM_TOKEN           npm publish authentication"
+  echo "  VSCE_PAT            VS Code Marketplace publish"
+  echo "  GITHUB_ACCESS_TOKEN GitHub release creation"
   echo ""
   echo "Examples:"
   echo "  ./deploy.sh deploy                     # Quick website deploy"
