@@ -185,43 +185,6 @@ generate_changelog() {
   echo "==> Changelog updated"
 }
 
-generate_blog_post() {
-  local BLOG_DIR="$SCRIPT_DIR/src/content/blog"
-  local SLUG="release-v$(echo "$NEW_VERSION" | tr '.' '-')"
-  local BLOG_FILE="$BLOG_DIR/${SLUG}.md"
-
-  if [ ! -d "$BLOG_DIR" ]; then
-    echo "==> Blog directory not found, skipping blog generation"
-    return
-  fi
-
-  echo "==> Generating release blog post: $SLUG"
-
-  local DATE
-  DATE=$(date +%Y-%m-%d)
-  local CHANGELOG_CONTENT=""
-  if [ -f /tmp/changelog_entry.md ]; then
-    CHANGELOG_CONTENT=$(cat /tmp/changelog_entry.md)
-  fi
-
-  cat > "$BLOG_FILE" << BLOGEOF
-# LixSketch v${NEW_VERSION} Release
-
-*Released on ${DATE}*
-
-${CHANGELOG_CONTENT}
-
----
-
-**Links:**
-- [NPM Package](https://www.npmjs.com/package/@elixpo/lixsketch)
-- [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch)
-- [Try it online](https://sketch.elixpo.com)
-BLOGEOF
-
-  echo "==> Blog post generated at $BLOG_FILE"
-}
-
 do_release() {
   local BUMP="patch"
   local DRY_RUN=false
@@ -312,11 +275,6 @@ do_release() {
     dry_run "cd '$SCRIPT_DIR' && sudo npx @cloudflare/next-on-pages"
     dry_run "cd '$SCRIPT_DIR' && sudo npx wrangler pages deploy .vercel/output/static --project-name lixsketch --branch main"
     echo "==> Website deployed"
-  fi
-
-  # ── Blog Post ──
-  if ! $SKIP_CHANGELOG; then
-    generate_blog_post
   fi
 
   # ── Git Tag & Push ──
