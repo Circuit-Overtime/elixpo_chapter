@@ -3,29 +3,22 @@
  * @lixsketch/engine - Open-source SVG whiteboard engine
  *
  * Usage:
- *   import { createSketchEngine } from '@lixsketch/engine';
+ *   import { createSketchEngine } from '@elixpo/lixsketch';
  *
  *   const engine = createSketchEngine(svgElement, {
  *     onEvent: (type, data) => console.log(type, data),
  *   });
  *   await engine.init();
  *   engine.setActiveTool('rectangle');
+ *
+ * Shape classes are loaded lazily by the engine during init() and exposed
+ * on `window` (Rectangle, Circle, Arrow, etc.) and via `engine._modules.shapes`.
+ * They CANNOT be statically imported because they depend on globals (rough, svg)
+ * that are only set up during engine initialization.
  */
 
 // Main engine class
 export { SketchEngine, default } from './SketchEngine.js';
-
-// Shape classes
-export { Rectangle } from './shapes/Rectangle.js';
-export { Circle } from './shapes/Circle.js';
-export { Arrow } from './shapes/Arrow.js';
-export { Line } from './shapes/Line.js';
-export { TextShape } from './shapes/TextShape.js';
-export { CodeShape } from './shapes/CodeShape.js';
-export { ImageShape } from './shapes/ImageShape.js';
-export { IconShape } from './shapes/IconShape.js';
-export { Frame } from './shapes/Frame.js';
-export { FreehandStroke } from './shapes/FreehandStroke.js';
 
 // Convenience factory
 import { SketchEngine } from './SketchEngine.js';

@@ -6,7 +6,7 @@
 
 **Draw diagrams, sketch ideas, and build visual documents — right inside your editor.**
 
-[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-5B57D1?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch-vscode)
+[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-5B57D1?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch)
 [![License](https://img.shields.io/github/license/elixpo/lixsketch?style=for-the-badge&color=4A90D9&labelColor=1a1a2e)](https://github.com/elixpo/lixsketch/blob/main/LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/elixpo/lixsketch?style=for-the-badge&logo=github&color=5B57D1&labelColor=1a1a2e)](https://github.com/elixpo/lixsketch/stargazers)
 
@@ -14,7 +14,7 @@
 
 ---
 
-<img width="1866" height="886" alt="LixSketch Canvas" src="https://github.com/user-attachments/assets/a0b93c41-32ce-44a1-ac37-4c3f9eb555cd" />
+<img width="1866" height="886" alt="LixSketch Canvas" src="./media/vs-code-etension-hero.png" />
 
 ## What is LixSketch?
 
@@ -30,7 +30,7 @@ Whether you're sketching out an architecture before writing code, diagramming a 
 
 Or just create any file ending in `.lixsketch` and it opens right up.
 
-<img width="1858" height="884" alt="LixSketch Tools" src="https://github.com/user-attachments/assets/de4565a2-c6b5-4392-8de2-e76b6b1f5c1e" />
+<img width="1858" height="884" alt="LixSketch Tools" src="./media/vs-code-etension-template.png" />
 
 ## What You Get
 
@@ -51,7 +51,6 @@ Or just create any file ending in `.lixsketch` and it opens right up.
 
 LixSketch files are simple JSON (`.lixsketch`). They live in your repo, version with git, and diff like any other file. Share them with your team, include them in PRs, or keep them as personal notes.
 
-<img width="1322" height="612" alt="LixSketch Overview" src="https://github.com/user-attachments/assets/a96e85be-dce9-464c-8451-5513ad521dd6" />
 
 ## Keyboard Shortcuts
 
@@ -81,7 +80,7 @@ This extension is powered by the same engine that runs [sketch.elixpo.com](https
 | :package: | **NPM package** — [`@lixsketch/engine`](https://www.npmjs.com/package/@lixsketch/engine) — build your own whiteboard |
 | :desktop_computer: | **VS Code extension** — you're looking at it |
 
-<img width="1867" height="874" alt="LixSketch Features" src="https://github.com/user-attachments/assets/9971cf94-dba8-4436-b858-4d80e99b246d" />
+<img width="1867" height="874" alt="LixSketch Features" src="./media/vs-code-header.png" />
 
 ## Open Source
 

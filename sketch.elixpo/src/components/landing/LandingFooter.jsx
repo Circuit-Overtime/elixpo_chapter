@@ -15,7 +15,7 @@ export default function LandingFooter() {
               <a href="https://www.npmjs.com/package/@elixpo/lixsketch" target="_blank" rel="noopener noreferrer" className="text-text-dim text-sm hover:text-text-primary transition-colors flex items-center gap-1.5">
                 <i className="bx bxl-nodejs text-sm" />NPM Package
               </a>
-              <a href="https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch-vscode" target="_blank" rel="noopener noreferrer" className="text-text-dim text-sm hover:text-text-primary transition-colors flex items-center gap-1.5">
+              <a href="https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch" target="_blank" rel="noopener noreferrer" className="text-text-dim text-sm hover:text-text-primary transition-colors flex items-center gap-1.5">
                 <i className="bx bxl-visual-studio text-sm" />VS Code Extension
               </a>
             </div>

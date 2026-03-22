@@ -1,0 +1,10 @@
+{
+    "iconDefinitions": {
+        "lixsketch": {
+            "iconPath": "./icon.png"
+        }
+    },
+    "fileExtensions": {
+        "lixsketch": "lixsketch"
+    }
+}
