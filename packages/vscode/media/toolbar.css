@@ -105,65 +105,121 @@ html, body {
     display: block; touch-action: none; background: #13171C;
 }
 
-/* ═══════════ SIDEBARS ═══════════ */
-.sidebar {
-    position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%);
+/* ═══════════ SIDEBARS (popover toolbar) ═══════════ */
+.sb {
+    position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
     background: #1c1c1c; border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 14px; padding: 10px 12px; z-index: 1000;
-    display: flex; align-items: center; gap: 10px;
+    border-radius: 12px; padding: 4px 8px; z-index: 999;
+    display: flex; align-items: center; gap: 2px;
 }
-.sidebar-section { display: flex; align-items: center; gap: 6px; }
-.sidebar-section + .sidebar-section { padding-left: 10px; border-left: 1px solid rgba(255,255,255,0.08); }
-.sidebar-label {
-    font-size: 10px; color: var(--text-dim); text-transform: uppercase;
-    letter-spacing: 0.5px; margin-right: 4px; white-space: nowrap;
+
+/* Toolbar button (icon + chevron) */
+.tb-wrap { position: relative; display: flex; align-items: center; }
+.tb-btn {
+    height: 36px; display: flex; align-items: center; gap: 5px;
+    padding: 0 10px; border: none; border-radius: 8px;
+    background: transparent; color: var(--text-muted); cursor: pointer;
+    font-size: 16px; transition: background 0.1s, color 0.1s;
+    font-family: 'lixFont', system-ui, sans-serif;
 }
-.color-grid { display: flex; gap: 4px; }
-.color-swatch {
-    width: 22px; height: 22px; border-radius: 6px;
-    border: 1.5px solid rgba(255,255,255,0.08); cursor: pointer;
-    transition: border-color 0.15s, transform 0.15s;
-    display: flex; align-items: center; justify-content: center; padding: 0;
-    background: transparent;
+.tb-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.tb-btn.open { background: rgba(255,255,255,0.12); color: #fff; }
+.tb-chev { width: 8px; height: 5px; opacity: 0.4; transition: transform 0.1s; flex-shrink: 0; }
+.tb-btn.open .tb-chev { transform: rotate(180deg); }
+.tb-div { width: 1px; height: 20px; background: rgba(255,255,255,0.08); margin: 0 2px; flex-shrink: 0; }
+
+/* Color dot preview */
+.color-dot {
+    width: 16px; height: 16px; border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.2); display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
 }
-.color-swatch:hover { border-color: rgba(255,255,255,0.3); transform: scale(1.1); }
-.color-swatch.active { border-color: var(--accent-blue); transform: scale(1.1); }
-.btn-group { display: flex; gap: 2px; }
-.group-btn {
-    padding: 4px 10px; border: none; border-radius: 6px;
-    background: transparent; color: var(--text-dim); cursor: pointer;
-    font-size: 11px; font-family: 'lixFont', system-ui, sans-serif;
-    transition: background 0.15s, color 0.15s;
-    display: flex; align-items: center; justify-content: center;
-    min-width: 28px; height: 28px;
+
+/* Layer buttons */
+.tb-layer {
+    height: 36px; width: 32px; display: flex; align-items: center; justify-content: center;
+    border: none; border-radius: 8px; background: transparent;
+    color: var(--text-muted); cursor: pointer; font-size: 16px;
+    transition: background 0.1s, color 0.1s;
 }
-.group-btn:hover { background: var(--surface-hover); color: var(--text-primary); }
-.group-btn.active { background: var(--surface-active); color: var(--text-primary); }
-.sidebar-layers { display: flex; gap: 2px; }
-.layer-btn {
-    width: 28px; height: 28px; border: none; border-radius: 6px;
-    background: transparent; color: var(--text-dim); cursor: pointer;
-    display: flex; align-items: center; justify-content: center; font-size: 16px;
-    transition: background 0.15s, color 0.15s;
-}
-.layer-btn:hover { background: var(--surface-hover); color: var(--text-primary); }
-.sidebar-input {
-    background: var(--surface-dark); border: 1px solid var(--border);
-    border-radius: 8px; padding: 5px 10px; color: var(--text-primary);
+.tb-layer:hover { background: rgba(255,255,255,0.06); color: #fff; }
+
+/* Frame name inline */
+.frame-name {
+    background: transparent; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px; padding: 4px 8px; color: var(--text-primary);
     font-size: 12px; font-family: 'lixFont', system-ui, sans-serif;
-    outline: none; width: 120px;
+    outline: none; width: 90px; height: 36px;
 }
-.sidebar-input:focus { border-color: var(--accent-blue); }
+.frame-name:focus { border-color: var(--accent-blue); }
 
-/* Range slider */
-.sidebar-range {
-    width: 60px; height: 4px; accent-color: var(--accent-blue);
-    cursor: pointer; margin: 0 4px;
+/* ═══════════ POPOVERS ═══════════ */
+.popover {
+    position: absolute; bottom: calc(100% + 12px);
+    left: 50%; transform: translateX(-50%);
+    z-index: 20; display: none;
 }
-.range-label { font-size: 10px; color: var(--text-dim); min-width: 28px; text-align: right; }
+.pop-inner {
+    background: #252525; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 12px; min-width: max-content;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.pop-arrow {
+    position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%) rotate(45deg);
+    width: 10px; height: 10px; background: #252525;
+    border-right: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.pop-label {
+    font-size: 10px; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 8px;
+}
 
-/* Curvature section (shown when arrow type=curved) */
-.curvature-section { display: none; }
+/* Color grid inside popovers */
+.color-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+}
+.cs {
+    width: 28px; height: 28px; border-radius: 6px;
+    border: 1.5px solid rgba(255,255,255,0.08); cursor: pointer;
+    transition: border-color 0.1s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; background: transparent;
+}
+.cs:hover { border-color: rgba(255,255,255,0.3); transform: scale(1.1); }
+.cs.active { border-color: #5B57D1; transform: scale(1.1); }
+
+/* Option rows (width pills, style lines, type icons) */
+.pop-row { display: flex; gap: 4px; }
+.pop-opt {
+    min-width: 36px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border: none; border-radius: 8px; background: transparent;
+    color: var(--text-muted); cursor: pointer; font-size: 13px;
+    font-family: 'lixFont', system-ui, sans-serif;
+    transition: background 0.1s, color 0.1s; padding: 0 8px;
+}
+.pop-opt:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.pop-opt.active { background: rgba(91,87,209,0.2); color: #5B57D1; }
+.pop-opt i { font-size: 16px; }
+
+/* Width preview pill */
+.width-pill { width: 20px; border-radius: 2px; background: currentColor; }
+
+/* Vertical option list (fill patterns) */
+.pop-col { display: flex; flex-direction: column; gap: 2px; }
+.pop-opt-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border: none; border-radius: 8px;
+    background: transparent; color: var(--text-secondary); cursor: pointer;
+    font-size: 12px; font-family: 'lixFont', system-ui, sans-serif;
+    transition: background 0.1s, color 0.1s; text-align: left; width: 100%;
+}
+.pop-opt-row:hover { background: rgba(255,255,255,0.06); }
+.pop-opt-row.active { background: #5B57D1; color: #fff; }
+
+/* Range inside popover */
+.sb-range { width: 80px; height: 4px; accent-color: #5B57D1; cursor: pointer; }
+.range-val { font-size: 10px; color: var(--text-dim); min-width: 28px; text-align: right; }
 
 /* ═══════════ ICON PANEL (right side) ═══════════ */
 .icon-panel {

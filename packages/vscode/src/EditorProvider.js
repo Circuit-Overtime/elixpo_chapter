@@ -283,352 +283,124 @@ class LixSketchEditorProvider {
         </div>
     </div>
 
-    <!-- ═══════════ SIDEBARS ═══════════ -->
+    <!-- ═══════════ SIDEBARS (popover toolbar, matching website) ═══════════ -->
+
     <!-- Rectangle -->
-    <div id="sidebar-rectangle" class="sidebar" style="display:none">
-        <div class="sidebar-section"><div class="sidebar-label">Stroke</div>
-            <div class="color-grid" data-prop="stroke">
-                <button class="color-swatch active" data-value="#fff" style="background:#fff"></button>
-                <button class="color-swatch" data-value="#FF8383" style="background:#FF8383"></button>
-                <button class="color-swatch" data-value="#3A994C" style="background:#3A994C"></button>
-                <button class="color-swatch" data-value="#56A2E8" style="background:#56A2E8"></button>
-                <button class="color-swatch" data-value="#FFD700" style="background:#FFD700"></button>
-                <button class="color-swatch" data-value="#FF69B4" style="background:#FF69B4"></button>
-                <button class="color-swatch" data-value="#A855F7" style="background:#A855F7"></button>
-            </div>
+    <div id="sidebar-rectangle" class="sb" style="display:none">
+        <div class="tb-wrap">
+            <button class="tb-btn" data-popover="rect-stroke" title="Stroke color"><span class="color-dot" id="rect-stroke-dot" style="background:#fff"></span><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+            <div class="popover" id="pop-rect-stroke"><div class="pop-inner"><p class="pop-label">Stroke</p><div class="color-grid" data-prop="stroke" data-dot="rect-stroke-dot"><button class="cs active" data-value="#fff" style="background:#fff"></button><button class="cs" data-value="#FF8383" style="background:#FF8383"></button><button class="cs" data-value="#3A994C" style="background:#3A994C"></button><button class="cs" data-value="#56A2E8" style="background:#56A2E8"></button><button class="cs" data-value="#FFD700" style="background:#FFD700"></button><button class="cs" data-value="#FF69B4" style="background:#FF69B4"></button><button class="cs" data-value="#A855F7" style="background:#A855F7"></button></div></div><div class="pop-arrow"></div></div>
         </div>
-        <div class="sidebar-section"><div class="sidebar-label">Fill</div>
-            <div class="color-grid" data-prop="fill">
-                <button class="color-swatch active" data-value="transparent" title="None"><svg width="14" height="14" viewBox="0 0 14 14"><line x1="0" y1="14" x2="14" y2="0" stroke="#666" stroke-width="1.5"/></svg></button>
-                <button class="color-swatch" data-value="#f0f0f0" style="background:#f0f0f0"></button>
-                <button class="color-swatch" data-value="#ffcccb" style="background:#ffcccb"></button>
-                <button class="color-swatch" data-value="#90ee90" style="background:#90ee90"></button>
-                <button class="color-swatch" data-value="#add8e6" style="background:#add8e6"></button>
-                <button class="color-swatch" data-value="#FFE4B5" style="background:#FFE4B5"></button>
-                <button class="color-swatch" data-value="#DDA0DD" style="background:#DDA0DD"></button>
-                <button class="color-swatch" data-value="#2d2d2d" style="background:#2d2d2d"></button>
-            </div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap">
+            <button class="tb-btn" data-popover="rect-fill" title="Fill color"><span class="color-dot" id="rect-fill-dot" style="background:transparent"><svg viewBox="0 0 16 16" style="width:100%;height:100%"><line x1="2" y1="14" x2="14" y2="2" stroke="#666" stroke-width="1.5"/></svg></span><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+            <div class="popover" id="pop-rect-fill"><div class="pop-inner"><p class="pop-label">Background</p><div class="color-grid" data-prop="fill" data-dot="rect-fill-dot"><button class="cs active" data-value="transparent"><svg viewBox="0 0 20 20" style="width:14px;height:14px"><line x1="4" y1="16" x2="16" y2="4" stroke="#666" stroke-width="2"/></svg></button><button class="cs" data-value="#f0f0f0" style="background:#f0f0f0"></button><button class="cs" data-value="#ffcccb" style="background:#ffcccb"></button><button class="cs" data-value="#90ee90" style="background:#90ee90"></button><button class="cs" data-value="#add8e6" style="background:#add8e6"></button><button class="cs" data-value="#FFE4B5" style="background:#FFE4B5"></button><button class="cs" data-value="#DDA0DD" style="background:#DDA0DD"></button><button class="cs" data-value="#2d2d2d" style="background:#2d2d2d"></button></div></div><div class="pop-arrow"></div></div>
         </div>
-        <div class="sidebar-section"><div class="sidebar-label">Width</div>
-            <div class="btn-group" data-prop="strokeWidth">
-                <button class="group-btn" data-value="1">1</button>
-                <button class="group-btn active" data-value="2">2</button>
-                <button class="group-btn" data-value="4">4</button>
-                <button class="group-btn" data-value="7">7</button>
-            </div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap">
+            <button class="tb-btn" data-popover="rect-width" title="Stroke width"><i class="bx bxs-edit-alt"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+            <div class="popover" id="pop-rect-width"><div class="pop-inner"><p class="pop-label">Width</p><div class="pop-row" data-prop="strokeWidth"><button class="pop-opt active" data-value="1"><div class="width-pill" style="height:1px"></div></button><button class="pop-opt" data-value="2"><div class="width-pill" style="height:2px"></div></button><button class="pop-opt" data-value="4"><div class="width-pill" style="height:4px"></div></button><button class="pop-opt" data-value="7"><div class="width-pill" style="height:7px"></div></button></div></div><div class="pop-arrow"></div></div>
         </div>
-        <div class="sidebar-section"><div class="sidebar-label">Style</div>
-            <div class="btn-group" data-prop="strokeStyle">
-                <button class="group-btn active" data-value="solid" title="Solid"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2"/></svg></button>
-                <button class="group-btn" data-value="dashed" title="Dashed"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/></svg></button>
-                <button class="group-btn" data-value="dotted" title="Dotted"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3"/></svg></button>
-            </div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap">
+            <button class="tb-btn" data-popover="rect-style" title="Stroke style"><i class="bx bxs-minus-circle"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+            <div class="popover" id="pop-rect-style"><div class="pop-inner"><p class="pop-label">Style</p><div class="pop-row" data-prop="strokeStyle"><button class="pop-opt active" data-value="solid"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" stroke-width="2"/></svg></button><button class="pop-opt" data-value="dashed"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" stroke-width="2" stroke-dasharray="6 4"/></svg></button><button class="pop-opt" data-value="dotted"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" stroke-width="2" stroke-dasharray="2 3"/></svg></button></div></div><div class="pop-arrow"></div></div>
         </div>
-        <div class="sidebar-section"><div class="sidebar-label">Fill Pattern</div>
-            <div class="btn-group" data-prop="fillStyle">
-                <button class="group-btn active" data-value="hachure" title="Hachure">H</button>
-                <button class="group-btn" data-value="solid" title="Solid">S</button>
-                <button class="group-btn" data-value="dots" title="Dots">D</button>
-                <button class="group-btn" data-value="cross-hatch" title="Cross">X</button>
-                <button class="group-btn" data-value="transparent" title="None">—</button>
-            </div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap">
+            <button class="tb-btn" data-popover="rect-fillpat" title="Fill style"><i class="bx bxs-brush"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+            <div class="popover" id="pop-rect-fillpat"><div class="pop-inner"><p class="pop-label">Fill</p><div class="pop-col" data-prop="fillStyle"><button class="pop-opt-row active" data-value="hachure">Hachure</button><button class="pop-opt-row" data-value="solid">Solid</button><button class="pop-opt-row" data-value="dots">Dots</button><button class="pop-opt-row" data-value="cross-hatch">Cross</button><button class="pop-opt-row" data-value="transparent">None</button></div></div><div class="pop-arrow"></div></div>
         </div>
-        <div class="sidebar-section sidebar-layers">
-            <button class="layer-btn" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button>
-            <button class="layer-btn" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button>
-            <button class="layer-btn" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button>
-            <button class="layer-btn" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
-        </div>
+        <div class="tb-div"></div>
+        <button class="tb-layer" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button>
+        <button class="tb-layer" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button>
+        <button class="tb-layer" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button>
+        <button class="tb-layer" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
     </div>
-    <!-- Circle -->
-    <div id="sidebar-circle" class="sidebar" style="display:none">
-        <div class="sidebar-section"><div class="sidebar-label">Stroke</div>
-            <div class="color-grid" data-prop="stroke">
-                <button class="color-swatch active" data-value="#fff" style="background:#fff"></button>
-                <button class="color-swatch" data-value="#FF8383" style="background:#FF8383"></button>
-                <button class="color-swatch" data-value="#3A994C" style="background:#3A994C"></button>
-                <button class="color-swatch" data-value="#56A2E8" style="background:#56A2E8"></button>
-                <button class="color-swatch" data-value="#FFD700" style="background:#FFD700"></button>
-                <button class="color-swatch" data-value="#FF69B4" style="background:#FF69B4"></button>
-                <button class="color-swatch" data-value="#A855F7" style="background:#A855F7"></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Fill</div>
-            <div class="color-grid" data-prop="fill">
-                <button class="color-swatch active" data-value="transparent" title="None"><svg width="14" height="14" viewBox="0 0 14 14"><line x1="0" y1="14" x2="14" y2="0" stroke="#666" stroke-width="1.5"/></svg></button>
-                <button class="color-swatch" data-value="#f0f0f0" style="background:#f0f0f0"></button>
-                <button class="color-swatch" data-value="#ffcccb" style="background:#ffcccb"></button>
-                <button class="color-swatch" data-value="#90ee90" style="background:#90ee90"></button>
-                <button class="color-swatch" data-value="#add8e6" style="background:#add8e6"></button>
-                <button class="color-swatch" data-value="#FFE4B5" style="background:#FFE4B5"></button>
-                <button class="color-swatch" data-value="#DDA0DD" style="background:#DDA0DD"></button>
-                <button class="color-swatch" data-value="#2d2d2d" style="background:#2d2d2d"></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Width</div>
-            <div class="btn-group" data-prop="strokeWidth">
-                <button class="group-btn" data-value="1">1</button>
-                <button class="group-btn active" data-value="2">2</button>
-                <button class="group-btn" data-value="4">4</button>
-                <button class="group-btn" data-value="7">7</button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Style</div>
-            <div class="btn-group" data-prop="strokeStyle">
-                <button class="group-btn active" data-value="solid" title="Solid"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2"/></svg></button>
-                <button class="group-btn" data-value="dashed" title="Dashed"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/></svg></button>
-                <button class="group-btn" data-value="dotted" title="Dotted"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3"/></svg></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Fill Pattern</div>
-            <div class="btn-group" data-prop="fillStyle">
-                <button class="group-btn active" data-value="hachure" title="Hachure">H</button>
-                <button class="group-btn" data-value="solid" title="Solid">S</button>
-                <button class="group-btn" data-value="dots" title="Dots">D</button>
-                <button class="group-btn" data-value="cross-hatch" title="Cross">X</button>
-                <button class="group-btn" data-value="transparent" title="None">—</button>
-            </div>
-        </div>
-        <div class="sidebar-section sidebar-layers">
-            <button class="layer-btn" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button>
-            <button class="layer-btn" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button>
-            <button class="layer-btn" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button>
-            <button class="layer-btn" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
-        </div>
+
+    <!-- Circle (same as rectangle) -->
+    <div id="sidebar-circle" class="sb" style="display:none">
+        <div class="tb-wrap"><button class="tb-btn" data-popover="circ-stroke" title="Stroke color"><span class="color-dot" id="circ-stroke-dot" style="background:#fff"></span><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-circ-stroke"><div class="pop-inner"><p class="pop-label">Stroke</p><div class="color-grid" data-prop="stroke" data-dot="circ-stroke-dot"><button class="cs active" data-value="#fff" style="background:#fff"></button><button class="cs" data-value="#FF8383" style="background:#FF8383"></button><button class="cs" data-value="#3A994C" style="background:#3A994C"></button><button class="cs" data-value="#56A2E8" style="background:#56A2E8"></button><button class="cs" data-value="#FFD700" style="background:#FFD700"></button><button class="cs" data-value="#FF69B4" style="background:#FF69B4"></button><button class="cs" data-value="#A855F7" style="background:#A855F7"></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="circ-fill" title="Fill color"><span class="color-dot" id="circ-fill-dot" style="background:transparent"><svg viewBox="0 0 16 16" style="width:100%;height:100%"><line x1="2" y1="14" x2="14" y2="2" stroke="#666" stroke-width="1.5"/></svg></span><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-circ-fill"><div class="pop-inner"><p class="pop-label">Background</p><div class="color-grid" data-prop="fill" data-dot="circ-fill-dot"><button class="cs active" data-value="transparent"><svg viewBox="0 0 20 20" style="width:14px;height:14px"><line x1="4" y1="16" x2="16" y2="4" stroke="#666" stroke-width="2"/></svg></button><button class="cs" data-value="#f0f0f0" style="background:#f0f0f0"></button><button class="cs" data-value="#ffcccb" style="background:#ffcccb"></button><button class="cs" data-value="#90ee90" style="background:#90ee90"></button><button class="cs" data-value="#add8e6" style="background:#add8e6"></button><button class="cs" data-value="#FFE4B5" style="background:#FFE4B5"></button><button class="cs" data-value="#DDA0DD" style="background:#DDA0DD"></button><button class="cs" data-value="#2d2d2d" style="background:#2d2d2d"></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="circ-width" title="Width"><i class="bx bxs-edit-alt"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-circ-width"><div class="pop-inner"><p class="pop-label">Width</p><div class="pop-row" data-prop="strokeWidth"><button class="pop-opt active" data-value="1"><div class="width-pill" style="height:1px"></div></button><button class="pop-opt" data-value="2"><div class="width-pill" style="height:2px"></div></button><button class="pop-opt" data-value="4"><div class="width-pill" style="height:4px"></div></button><button class="pop-opt" data-value="7"><div class="width-pill" style="height:7px"></div></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="circ-fillpat" title="Fill style"><i class="bx bxs-brush"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-circ-fillpat"><div class="pop-inner"><p class="pop-label">Fill</p><div class="pop-col" data-prop="fillStyle"><button class="pop-opt-row active" data-value="hachure">Hachure</button><button class="pop-opt-row" data-value="solid">Solid</button><button class="pop-opt-row" data-value="dots">Dots</button><button class="pop-opt-row" data-value="cross-hatch">Cross</button><button class="pop-opt-row" data-value="transparent">None</button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <button class="tb-layer" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button><button class="tb-layer" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button><button class="tb-layer" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button><button class="tb-layer" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
     </div>
+
     <!-- Arrow -->
-    <div id="sidebar-arrow" class="sidebar" style="display:none">
-        <div class="sidebar-section"><div class="sidebar-label">Head</div>
-            <div class="btn-group" data-prop="arrowHead">
-                <button class="group-btn active" data-value="default" title="Default"><svg width="20" height="14" viewBox="0 0 20 14"><line x1="2" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1.5"/><polyline points="10,2 16,7 10,12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                <button class="group-btn" data-value="outline" title="Outline"><svg width="20" height="14" viewBox="0 0 20 14"><line x1="2" y1="7" x2="11" y2="7" stroke="currentColor" stroke-width="1.5"/><polygon points="11,2 18,7 11,12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                <button class="group-btn" data-value="solid" title="Solid"><svg width="20" height="14" viewBox="0 0 20 14"><line x1="2" y1="7" x2="11" y2="7" stroke="currentColor" stroke-width="1.5"/><polygon points="11,2 18,7 11,12" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Stroke</div>
-            <div class="color-grid" data-prop="stroke">
-                <button class="color-swatch active" data-value="#fff" style="background:#fff"></button>
-                <button class="color-swatch" data-value="#FF8383" style="background:#FF8383"></button>
-                <button class="color-swatch" data-value="#3A994C" style="background:#3A994C"></button>
-                <button class="color-swatch" data-value="#56A2E8" style="background:#56A2E8"></button>
-                <button class="color-swatch" data-value="#FFD700" style="background:#FFD700"></button>
-                <button class="color-swatch" data-value="#FF69B4" style="background:#FF69B4"></button>
-                <button class="color-swatch" data-value="#A855F7" style="background:#A855F7"></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Width</div>
-            <div class="btn-group" data-prop="strokeWidth">
-                <button class="group-btn" data-value="1">1</button>
-                <button class="group-btn active" data-value="2">2</button>
-                <button class="group-btn" data-value="4">4</button>
-                <button class="group-btn" data-value="7">7</button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Style</div>
-            <div class="btn-group" data-prop="strokeStyle">
-                <button class="group-btn active" data-value="solid" title="Solid"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2"/></svg></button>
-                <button class="group-btn" data-value="dashed" title="Dashed"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/></svg></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Type</div>
-            <div class="btn-group" data-prop="arrowType">
-                <button class="group-btn active" data-value="straight" title="Straight"><svg width="24" height="12" viewBox="0 0 24 12"><line x1="2" y1="6" x2="22" y2="6" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                <button class="group-btn" data-value="curved" title="Curved"><svg width="24" height="12" viewBox="0 0 24 12"><path d="M2,10 Q12,0 22,10" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                <button class="group-btn" data-value="elbow" title="Elbow"><svg width="24" height="12" viewBox="0 0 24 12"><polyline points="2,10 2,2 22,2 22,10" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
-            </div>
-        </div>
-        <div class="sidebar-section curvature-section" style="display:none"><div class="sidebar-label">Curve</div>
-            <div class="btn-group" data-prop="curvature">
-                <button class="group-btn active" data-value="8">Lo</button>
-                <button class="group-btn" data-value="20">Md</button>
-                <button class="group-btn" data-value="40">Hi</button>
-            </div>
-        </div>
-        <div class="sidebar-section sidebar-layers">
-            <button class="layer-btn" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button>
-            <button class="layer-btn" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button>
-            <button class="layer-btn" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button>
-            <button class="layer-btn" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
-        </div>
+    <div id="sidebar-arrow" class="sb" style="display:none">
+        <div class="tb-wrap"><button class="tb-btn" data-popover="arr-head" title="Arrow head"><i class="bx bx-right-arrow-alt" style="transform:rotate(-45deg)"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-arr-head"><div class="pop-inner"><p class="pop-label">Head</p><div class="pop-row" data-prop="arrowHead"><button class="pop-opt active" data-value="default"><svg width="20" height="14" viewBox="0 0 20 14"><line x1="2" y1="7" x2="14" y2="7" stroke="#fff" stroke-width="1.5"/><polyline points="10,2 16,7 10,12" fill="none" stroke="#fff" stroke-width="1.5"/></svg></button><button class="pop-opt" data-value="outline"><svg width="20" height="14" viewBox="0 0 20 14"><line x1="2" y1="7" x2="11" y2="7" stroke="#fff" stroke-width="1.5"/><polygon points="11,2 18,7 11,12" fill="none" stroke="#fff" stroke-width="1.5"/></svg></button><button class="pop-opt" data-value="solid"><svg width="20" height="14" viewBox="0 0 20 14"><line x1="2" y1="7" x2="11" y2="7" stroke="#fff" stroke-width="1.5"/><polygon points="11,2 18,7 11,12" fill="#fff" stroke="#fff" stroke-width="1"/></svg></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="arr-stroke" title="Stroke color"><span class="color-dot" id="arr-stroke-dot" style="background:#fff"></span><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-arr-stroke"><div class="pop-inner"><p class="pop-label">Stroke</p><div class="color-grid" data-prop="stroke" data-dot="arr-stroke-dot"><button class="cs active" data-value="#fff" style="background:#fff"></button><button class="cs" data-value="#FF8383" style="background:#FF8383"></button><button class="cs" data-value="#3A994C" style="background:#3A994C"></button><button class="cs" data-value="#56A2E8" style="background:#56A2E8"></button><button class="cs" data-value="#FFD700" style="background:#FFD700"></button><button class="cs" data-value="#FF69B4" style="background:#FF69B4"></button><button class="cs" data-value="#A855F7" style="background:#A855F7"></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="arr-width" title="Width"><i class="bx bxs-edit-alt"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-arr-width"><div class="pop-inner"><p class="pop-label">Width</p><div class="pop-row" data-prop="strokeWidth"><button class="pop-opt active" data-value="1"><div class="width-pill" style="height:1px"></div></button><button class="pop-opt" data-value="2"><div class="width-pill" style="height:2px"></div></button><button class="pop-opt" data-value="4"><div class="width-pill" style="height:4px"></div></button><button class="pop-opt" data-value="7"><div class="width-pill" style="height:7px"></div></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="arr-style" title="Style"><i class="bx bxs-minus-circle"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-arr-style"><div class="pop-inner"><p class="pop-label">Style</p><div class="pop-row" data-prop="strokeStyle"><button class="pop-opt active" data-value="solid"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" stroke-width="2"/></svg></button><button class="pop-opt" data-value="dashed"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" stroke-width="2" stroke-dasharray="6 4"/></svg></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="arr-type" title="Arrow type"><i class="bx bx-git-branch"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-arr-type"><div class="pop-inner"><p class="pop-label">Type</p><div class="pop-row" data-prop="arrowType"><button class="pop-opt active" data-value="straight"><svg width="24" height="12" viewBox="0 0 24 12"><line x1="2" y1="6" x2="22" y2="6" stroke="#fff" stroke-width="1.5"/></svg></button><button class="pop-opt" data-value="curved"><svg width="24" height="12" viewBox="0 0 24 12"><path d="M2,10 Q12,0 22,10" fill="none" stroke="#fff" stroke-width="1.5"/></svg></button><button class="pop-opt" data-value="elbow"><svg width="24" height="12" viewBox="0 0 24 12"><polyline points="2,10 2,2 22,2 22,10" fill="none" stroke="#fff" stroke-width="1.5"/></svg></button></div><div class="pop-row curvature-row" data-prop="curvature" style="display:none;margin-top:6px"><button class="pop-opt active" data-value="8">Lo</button><button class="pop-opt" data-value="20">Md</button><button class="pop-opt" data-value="40">Hi</button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <button class="tb-layer" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button><button class="tb-layer" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button><button class="tb-layer" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button><button class="tb-layer" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
     </div>
+
     <!-- Line -->
-    <div id="sidebar-line" class="sidebar" style="display:none">
-        <div class="sidebar-section"><div class="sidebar-label">Stroke</div>
-            <div class="color-grid" data-prop="stroke">
-                <button class="color-swatch active" data-value="#fff" style="background:#fff"></button>
-                <button class="color-swatch" data-value="#FF8383" style="background:#FF8383"></button>
-                <button class="color-swatch" data-value="#3A994C" style="background:#3A994C"></button>
-                <button class="color-swatch" data-value="#56A2E8" style="background:#56A2E8"></button>
-                <button class="color-swatch" data-value="#FFD700" style="background:#FFD700"></button>
-                <button class="color-swatch" data-value="#FF69B4" style="background:#FF69B4"></button>
-                <button class="color-swatch" data-value="#A855F7" style="background:#A855F7"></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Width</div>
-            <div class="btn-group" data-prop="strokeWidth">
-                <button class="group-btn" data-value="1">1</button>
-                <button class="group-btn active" data-value="2">2</button>
-                <button class="group-btn" data-value="4">4</button>
-                <button class="group-btn" data-value="7">7</button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Style</div>
-            <div class="btn-group" data-prop="strokeStyle">
-                <button class="group-btn active" data-value="solid" title="Solid"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2"/></svg></button>
-                <button class="group-btn" data-value="dashed" title="Dashed"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/></svg></button>
-                <button class="group-btn" data-value="dotted" title="Dotted"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3"/></svg></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Sloppiness</div>
-            <div class="btn-group" data-prop="roughness">
-                <button class="group-btn active" data-value="0">0</button>
-                <button class="group-btn" data-value="2">2</button>
-                <button class="group-btn" data-value="4">4</button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Edge</div>
-            <div class="btn-group" data-prop="edge">
-                <button class="group-btn active" data-value="1" title="Smooth">Smooth</button>
-                <button class="group-btn" data-value="5" title="Rough">Rough</button>
-            </div>
-        </div>
-        <div class="sidebar-section sidebar-layers">
-            <button class="layer-btn" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button>
-            <button class="layer-btn" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button>
-            <button class="layer-btn" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button>
-            <button class="layer-btn" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
-        </div>
+    <div id="sidebar-line" class="sb" style="display:none">
+        <div class="tb-wrap"><button class="tb-btn" data-popover="ln-stroke" title="Stroke color"><span class="color-dot" id="ln-stroke-dot" style="background:#fff"></span><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-ln-stroke"><div class="pop-inner"><p class="pop-label">Stroke</p><div class="color-grid" data-prop="stroke" data-dot="ln-stroke-dot"><button class="cs active" data-value="#fff" style="background:#fff"></button><button class="cs" data-value="#FF8383" style="background:#FF8383"></button><button class="cs" data-value="#3A994C" style="background:#3A994C"></button><button class="cs" data-value="#56A2E8" style="background:#56A2E8"></button><button class="cs" data-value="#FFD700" style="background:#FFD700"></button><button class="cs" data-value="#FF69B4" style="background:#FF69B4"></button><button class="cs" data-value="#A855F7" style="background:#A855F7"></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="ln-width" title="Width"><i class="bx bxs-edit-alt"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-ln-width"><div class="pop-inner"><p class="pop-label">Width</p><div class="pop-row" data-prop="strokeWidth"><button class="pop-opt active" data-value="1"><div class="width-pill" style="height:1px"></div></button><button class="pop-opt" data-value="2"><div class="width-pill" style="height:2px"></div></button><button class="pop-opt" data-value="4"><div class="width-pill" style="height:4px"></div></button><button class="pop-opt" data-value="7"><div class="width-pill" style="height:7px"></div></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="ln-style" title="Style"><i class="bx bxs-minus-circle"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-ln-style"><div class="pop-inner"><p class="pop-label">Style</p><div class="pop-row" data-prop="strokeStyle"><button class="pop-opt active" data-value="solid"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" stroke-width="2"/></svg></button><button class="pop-opt" data-value="dashed"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" stroke-width="2" stroke-dasharray="6 4"/></svg></button><button class="pop-opt" data-value="dotted"><svg width="28" height="4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" stroke-width="2" stroke-dasharray="2 3"/></svg></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="ln-rough" title="Sloppiness"><i class="bx bxs-brush"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-ln-rough"><div class="pop-inner"><p class="pop-label">Sloppiness</p><div class="pop-row" data-prop="roughness"><button class="pop-opt active" data-value="0">0</button><button class="pop-opt" data-value="2">2</button><button class="pop-opt" data-value="4">4</button></div><p class="pop-label" style="margin-top:8px">Edge</p><div class="pop-row" data-prop="edge"><button class="pop-opt active" data-value="1">Smooth</button><button class="pop-opt" data-value="5">Rough</button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <button class="tb-layer" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button><button class="tb-layer" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button><button class="tb-layer" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button><button class="tb-layer" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
     </div>
+
     <!-- Freehand -->
-    <div id="sidebar-freehand" class="sidebar" style="display:none">
-        <div class="sidebar-section"><div class="sidebar-label">Stroke</div>
-            <div class="color-grid" data-prop="stroke">
-                <button class="color-swatch active" data-value="#fff" style="background:#fff"></button>
-                <button class="color-swatch" data-value="#FF8383" style="background:#FF8383"></button>
-                <button class="color-swatch" data-value="#3A994C" style="background:#3A994C"></button>
-                <button class="color-swatch" data-value="#56A2E8" style="background:#56A2E8"></button>
-                <button class="color-swatch" data-value="#FFD700" style="background:#FFD700"></button>
-                <button class="color-swatch" data-value="#FF69B4" style="background:#FF69B4"></button>
-                <button class="color-swatch" data-value="#A855F7" style="background:#A855F7"></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Width</div>
-            <div class="btn-group" data-prop="strokeWidth">
-                <button class="group-btn" data-value="1">1</button>
-                <button class="group-btn active" data-value="2">2</button>
-                <button class="group-btn" data-value="4">4</button>
-                <button class="group-btn" data-value="7">7</button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Taper</div>
-            <div class="btn-group" data-prop="taper">
-                <button class="group-btn active" data-value="0" title="Uniform"><i class="bx bxs-minus-circle" style="font-size:14px"></i></button>
-                <button class="group-btn" data-value="0.5" title="Pen"><i class="bx bxs-pen" style="font-size:14px"></i></button>
-                <button class="group-btn" data-value="0.8" title="Brush"><i class="bx bxs-brush" style="font-size:14px"></i></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Rough</div>
-            <div class="btn-group" data-prop="roughness">
-                <button class="group-btn active" data-value="smooth" title="Smooth"><i class="bx bxs-droplet" style="font-size:14px"></i></button>
-                <button class="group-btn" data-value="medium" title="Medium"><i class="bx bxs-leaf" style="font-size:14px"></i></button>
-                <button class="group-btn" data-value="rough" title="Rough"><i class="bx bxs-bolt" style="font-size:14px"></i></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Opacity</div>
-            <input type="range" class="sidebar-range" data-prop="opacity" min="0" max="1" step="0.05" value="1" />
-            <span class="range-label" id="opacity-label">100%</span>
-        </div>
-        <div class="sidebar-section sidebar-layers">
-            <button class="layer-btn" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button>
-            <button class="layer-btn" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button>
-            <button class="layer-btn" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button>
-            <button class="layer-btn" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
-        </div>
+    <div id="sidebar-freehand" class="sb" style="display:none">
+        <div class="tb-wrap"><button class="tb-btn" data-popover="fh-stroke" title="Stroke color"><span class="color-dot" id="fh-stroke-dot" style="background:#fff"></span><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-fh-stroke"><div class="pop-inner"><p class="pop-label">Stroke</p><div class="color-grid" data-prop="stroke" data-dot="fh-stroke-dot"><button class="cs active" data-value="#fff" style="background:#fff"></button><button class="cs" data-value="#FF8383" style="background:#FF8383"></button><button class="cs" data-value="#3A994C" style="background:#3A994C"></button><button class="cs" data-value="#56A2E8" style="background:#56A2E8"></button><button class="cs" data-value="#FFD700" style="background:#FFD700"></button><button class="cs" data-value="#FF69B4" style="background:#FF69B4"></button><button class="cs" data-value="#A855F7" style="background:#A855F7"></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="fh-width" title="Width"><i class="bx bxs-edit-alt"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-fh-width"><div class="pop-inner"><p class="pop-label">Width</p><div class="pop-row" data-prop="strokeWidth"><button class="pop-opt active" data-value="1"><div class="width-pill" style="height:1px"></div></button><button class="pop-opt" data-value="2"><div class="width-pill" style="height:2px"></div></button><button class="pop-opt" data-value="4"><div class="width-pill" style="height:4px"></div></button><button class="pop-opt" data-value="7"><div class="width-pill" style="height:7px"></div></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="fh-taper" title="Taper"><i class="bx bxs-pen"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-fh-taper"><div class="pop-inner"><p class="pop-label">Taper</p><div class="pop-row" data-prop="taper"><button class="pop-opt active" data-value="0" title="Uniform"><i class="bx bxs-minus-circle"></i></button><button class="pop-opt" data-value="0.5" title="Pen"><i class="bx bxs-pen"></i></button><button class="pop-opt" data-value="0.8" title="Brush"><i class="bx bxs-brush"></i></button></div><p class="pop-label" style="margin-top:8px">Roughness</p><div class="pop-row" data-prop="roughness"><button class="pop-opt active" data-value="smooth" title="Smooth"><i class="bx bxs-droplet"></i></button><button class="pop-opt" data-value="medium" title="Medium"><i class="bx bxs-leaf"></i></button><button class="pop-opt" data-value="rough" title="Rough"><i class="bx bxs-bolt"></i></button></div><p class="pop-label" style="margin-top:8px">Opacity</p><div style="display:flex;align-items:center;gap:6px"><input type="range" class="sb-range" data-prop="opacity" min="0" max="1" step="0.05" value="1"/><span class="range-val" id="opacity-val">100%</span></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <button class="tb-layer" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button><button class="tb-layer" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button><button class="tb-layer" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button><button class="tb-layer" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
     </div>
+
     <!-- Text -->
-    <div id="sidebar-text" class="sidebar" style="display:none">
-        <div class="sidebar-section"><div class="sidebar-label">Color</div>
-            <div class="color-grid" data-prop="color">
-                <button class="color-swatch active" data-value="#fff" style="background:#fff"></button>
-                <button class="color-swatch" data-value="#FF8383" style="background:#FF8383"></button>
-                <button class="color-swatch" data-value="#3A994C" style="background:#3A994C"></button>
-                <button class="color-swatch" data-value="#56A2E8" style="background:#56A2E8"></button>
-                <button class="color-swatch" data-value="#FFD700" style="background:#FFD700"></button>
-                <button class="color-swatch" data-value="#FF69B4" style="background:#FF69B4"></button>
-                <button class="color-swatch" data-value="#A855F7" style="background:#A855F7"></button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Font</div>
-            <div class="btn-group" data-prop="fontFamily">
-                <button class="group-btn active" data-value="lixFont" style="font-family:lixFont">Lix</button>
-                <button class="group-btn" data-value="lixCode" style="font-family:lixCode">Code</button>
-                <button class="group-btn" data-value="lixDefault" style="font-family:lixDefault">Def</button>
-                <button class="group-btn" data-value="lixFancy" style="font-family:lixFancy">Fan</button>
-            </div>
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Size</div>
-            <div class="btn-group" data-prop="fontSize">
-                <button class="group-btn" data-value="20">S</button>
-                <button class="group-btn active" data-value="30">M</button>
-                <button class="group-btn" data-value="48">L</button>
-                <button class="group-btn" data-value="72">XL</button>
-            </div>
-        </div>
+    <div id="sidebar-text" class="sb" style="display:none">
+        <div class="tb-wrap"><button class="tb-btn" data-popover="txt-color" title="Text color"><span class="color-dot" id="txt-color-dot" style="background:#fff"></span><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-txt-color"><div class="pop-inner"><p class="pop-label">Color</p><div class="color-grid" data-prop="color" data-dot="txt-color-dot"><button class="cs active" data-value="#fff" style="background:#fff"></button><button class="cs" data-value="#FF8383" style="background:#FF8383"></button><button class="cs" data-value="#3A994C" style="background:#3A994C"></button><button class="cs" data-value="#56A2E8" style="background:#56A2E8"></button><button class="cs" data-value="#FFD700" style="background:#FFD700"></button><button class="cs" data-value="#FF69B4" style="background:#FF69B4"></button><button class="cs" data-value="#A855F7" style="background:#A855F7"></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="txt-font" title="Font"><i class="bx bxs-font-family"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-txt-font"><div class="pop-inner"><p class="pop-label">Font</p><div class="pop-row" data-prop="fontFamily"><button class="pop-opt active" data-value="lixFont" style="font-family:lixFont">Lix</button><button class="pop-opt" data-value="lixCode" style="font-family:lixCode">Code</button><button class="pop-opt" data-value="lixDefault" style="font-family:lixDefault">Def</button><button class="pop-opt" data-value="lixFancy" style="font-family:lixFancy">Fan</button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="txt-size" title="Size"><i class="bx bx-font-size"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-txt-size"><div class="pop-inner"><p class="pop-label">Size</p><div class="pop-row" data-prop="fontSize"><button class="pop-opt" data-value="20">S</button><button class="pop-opt active" data-value="30">M</button><button class="pop-opt" data-value="48">L</button><button class="pop-opt" data-value="72">XL</button></div></div><div class="pop-arrow"></div></div></div>
     </div>
+
     <!-- Frame -->
-    <div id="sidebar-frame" class="sidebar" style="display:none">
-        <div class="sidebar-section"><div class="sidebar-label">Name</div>
-            <input type="text" id="frame-name-input" class="sidebar-input" value="Frame" placeholder="Frame name" />
-        </div>
-        <div class="sidebar-section"><div class="sidebar-label">Fill</div>
-            <div class="btn-group" data-prop="frameFill">
-                <button class="group-btn active" data-value="transparent" title="None"><i class="bx bx-x" style="font-size:14px"></i></button>
-                <button class="group-btn" data-value="solid" title="Solid"><i class="bx bxs-square" style="font-size:14px"></i></button>
-                <button class="group-btn" data-value="grid" title="Grid"><i class="bx bx-grid-alt" style="font-size:14px"></i></button>
-            </div>
-        </div>
-        <div class="sidebar-section sidebar-layers">
-            <button class="layer-btn" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button>
-            <button class="layer-btn" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button>
-            <button class="layer-btn" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button>
-            <button class="layer-btn" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
-        </div>
+    <div id="sidebar-frame" class="sb" style="display:none">
+        <input type="text" id="frame-name-input" class="frame-name" value="Frame" placeholder="Frame name" />
+        <div class="tb-div"></div>
+        <div class="tb-wrap"><button class="tb-btn" data-popover="frm-fill" title="Fill style"><i class="bx bxs-square"></i><svg class="tb-chev" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="popover" id="pop-frm-fill"><div class="pop-inner"><p class="pop-label">Fill</p><div class="pop-row" data-prop="frameFill"><button class="pop-opt active" data-value="transparent"><i class="bx bx-x"></i></button><button class="pop-opt" data-value="solid"><i class="bx bxs-square"></i></button><button class="pop-opt" data-value="grid"><i class="bx bx-grid-alt"></i></button></div></div><div class="pop-arrow"></div></div></div>
+        <div class="tb-div"></div>
+        <button class="tb-layer" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button><button class="tb-layer" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button><button class="tb-layer" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button><button class="tb-layer" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
     </div>
+
     <!-- Image -->
-    <div id="sidebar-image" class="sidebar" style="display:none">
-        <div class="sidebar-section">
-            <button class="group-btn" data-action="replaceImage" title="Replace image"><i class="bx bx-upload" style="font-size:14px;margin-right:4px"></i>Replace</button>
-        </div>
-        <div class="sidebar-section sidebar-layers">
-            <button class="layer-btn" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button>
-            <button class="layer-btn" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button>
-            <button class="layer-btn" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button>
-            <button class="layer-btn" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
-        </div>
+    <div id="sidebar-image" class="sb" style="display:none">
+        <button class="tb-btn" data-action="replaceImage" title="Replace image"><i class="bx bx-upload"></i></button>
+        <div class="tb-div"></div>
+        <button class="tb-layer" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button><button class="tb-layer" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button><button class="tb-layer" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button><button class="tb-layer" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
     </div>
-    <!-- Icon Sidebar (right panel) -->
+
+    <!-- Icon Panel (right side) -->
     <div id="sidebar-icon" class="icon-panel" style="display:none">
-        <div class="icon-panel-header">
-            <span class="icon-panel-title">Icons</span>
-            <button class="icon-panel-close" id="icon-panel-close"><i class="bx bx-x"></i></button>
-        </div>
-        <div class="icon-search-wrap">
-            <i class="bx bx-search icon-search-icon"></i>
-            <input type="text" id="icon-search" class="icon-search" placeholder="Search icons..." />
-        </div>
-        <div class="icon-categories">
-            <button class="icon-cat active" data-cat=""><i class="bx bxs-grid-alt"></i> All</button>
-            <button class="icon-cat" data-cat="tech"><i class="bx bxs-chip"></i> Tech</button>
-            <button class="icon-cat" data-cat="devops"><i class="bx bxs-server"></i> DevOps</button>
-            <button class="icon-cat" data-cat="design"><i class="bx bxs-palette"></i> Design</button>
-            <button class="icon-cat" data-cat="social"><i class="bx bxs-share-alt"></i> Social</button>
-            <button class="icon-cat" data-cat="nav"><i class="bx bxs-navigation"></i> Nav</button>
-            <button class="icon-cat" data-cat="business"><i class="bx bxs-briefcase"></i> Biz</button>
-            <button class="icon-cat" data-cat="media"><i class="bx bxs-videos"></i> Media</button>
-        </div>
-        <div class="icon-grid" id="icon-grid">
-            <div class="icon-loading"><i class="bx bx-loader-alt bx-spin"></i> Loading icons...</div>
-        </div>
+        <div class="icon-panel-header"><span class="icon-panel-title">Icons</span><button class="icon-panel-close" id="icon-panel-close"><i class="bx bx-x"></i></button></div>
+        <div class="icon-search-wrap"><i class="bx bx-search icon-search-icon"></i><input type="text" id="icon-search" class="icon-search" placeholder="Search icons..." /></div>
+        <div class="icon-categories"><button class="icon-cat active" data-cat=""><i class="bx bxs-grid-alt"></i> All</button><button class="icon-cat" data-cat="tech"><i class="bx bxs-chip"></i> Tech</button><button class="icon-cat" data-cat="devops"><i class="bx bxs-server"></i> DevOps</button><button class="icon-cat" data-cat="design"><i class="bx bxs-palette"></i> Design</button><button class="icon-cat" data-cat="social"><i class="bx bxs-share-alt"></i> Social</button><button class="icon-cat" data-cat="nav"><i class="bx bxs-navigation"></i> Nav</button><button class="icon-cat" data-cat="business"><i class="bx bxs-briefcase"></i> Biz</button><button class="icon-cat" data-cat="media"><i class="bx bxs-videos"></i> Media</button></div>
+        <div class="icon-grid" id="icon-grid"><div class="icon-loading"><i class="bx bx-loader-alt bx-spin"></i> Loading icons...</div></div>
     </div>
 
     <!-- ═══════════ MENU (hidden by default) ═══════════ -->

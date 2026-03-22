@@ -161,7 +161,11 @@
     };
 
     function updateSidebar(tool) {
-        document.querySelectorAll('.sidebar').forEach(s => s.style.display = 'none');
+        // Hide all bottom sidebars
+        document.querySelectorAll('.sb').forEach(s => s.style.display = 'none');
+        // Close all popovers
+        document.querySelectorAll('.popover').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.tb-btn').forEach(b => b.classList.remove('open'));
         // Icon panel is special (right side)
         const iconPanel = document.getElementById('sidebar-icon');
         if (tool === 'icon') {
@@ -173,56 +177,91 @@
         if (id) { const el = document.getElementById(id); if (el) el.style.display = 'flex'; }
     }
 
-    // Color swatches
+    // ═══════════ POPOVER SYSTEM ═══════════
+    // Toggle popover on button click
+    document.querySelectorAll('.tb-btn[data-popover]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const popId = 'pop-' + btn.dataset.popover;
+            const pop = document.getElementById(popId);
+            if (!pop) return;
+            const isOpen = pop.style.display === 'block';
+            // Close all popovers first
+            document.querySelectorAll('.popover').forEach(p => p.style.display = 'none');
+            document.querySelectorAll('.tb-btn').forEach(b => b.classList.remove('open'));
+            if (!isOpen) {
+                pop.style.display = 'block';
+                btn.classList.add('open');
+            }
+        });
+    });
+
+    // Close popovers on outside click
+    document.addEventListener('mousedown', (e) => {
+        if (!e.target.closest('.tb-wrap')) {
+            document.querySelectorAll('.popover').forEach(p => p.style.display = 'none');
+            document.querySelectorAll('.tb-btn').forEach(b => b.classList.remove('open'));
+        }
+    });
+
+    // Color swatches inside popovers
     document.querySelectorAll('.color-grid').forEach(grid => {
         grid.addEventListener('click', (e) => {
-            const swatch = e.target.closest('.color-swatch');
+            const swatch = e.target.closest('.cs');
             if (!swatch) return;
-            grid.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            grid.querySelectorAll('.cs').forEach(s => s.classList.remove('active'));
             swatch.classList.add('active');
             const prop = grid.dataset.prop, value = swatch.dataset.value;
+            // Update the color dot preview
+            const dotId = grid.dataset.dot;
+            if (dotId) {
+                const dot = document.getElementById(dotId);
+                if (dot) {
+                    if (value === 'transparent') {
+                        dot.style.background = 'transparent';
+                        dot.innerHTML = '<svg viewBox="0 0 16 16" style="width:100%;height:100%"><line x1="2" y1="14" x2="14" y2="2" stroke="#666" stroke-width="1.5"/></svg>';
+                    } else {
+                        dot.style.background = value;
+                        dot.innerHTML = '';
+                    }
+                }
+            }
             if (prop && value !== undefined && window.setShapeProperty) window.setShapeProperty(prop, value);
         });
     });
 
-    // Group buttons
-    document.querySelectorAll('.btn-group').forEach(group => {
-        group.addEventListener('click', (e) => {
-            const btn = e.target.closest('.group-btn');
-            if (!btn) return;
-            group.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const prop = group.dataset.prop, value = btn.dataset.value;
+    // Option buttons (width, style, type, fill pattern, etc.)
+    document.querySelectorAll('.pop-row, .pop-col').forEach(row => {
+        row.addEventListener('click', (e) => {
+            const opt = e.target.closest('.pop-opt, .pop-opt-row');
+            if (!opt) return;
+            row.querySelectorAll('.pop-opt, .pop-opt-row').forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+            const prop = row.dataset.prop, value = opt.dataset.value;
             if (prop && value !== undefined && window.setShapeProperty) window.setShapeProperty(prop, value);
+            // Arrow type -> show/hide curvature row
+            if (prop === 'arrowType') {
+                const curvRow = row.parentElement.querySelector('.curvature-row');
+                if (curvRow) curvRow.style.display = value === 'curved' ? 'flex' : 'none';
+            }
         });
     });
 
     // Layer buttons
-    document.querySelectorAll('.layer-btn').forEach(btn => {
+    document.querySelectorAll('.tb-layer').forEach(btn => {
         btn.addEventListener('click', () => {
             const action = btn.dataset.action;
             if (action && window[action]) window[action]();
         });
     });
 
-    // Arrow type -> show/hide curvature
-    const arrowTypeGroup = document.querySelector('#sidebar-arrow .btn-group[data-prop="arrowType"]');
-    const curvatureSection = document.querySelector('.curvature-section');
-    if (arrowTypeGroup && curvatureSection) {
-        arrowTypeGroup.addEventListener('click', (e) => {
-            const btn = e.target.closest('.group-btn');
-            if (!btn) return;
-            curvatureSection.style.display = btn.dataset.value === 'curved' ? 'flex' : 'none';
-        });
-    }
-
-    // Opacity range slider
-    document.querySelectorAll('.sidebar-range').forEach(range => {
+    // Range sliders
+    document.querySelectorAll('.sb-range').forEach(range => {
         range.addEventListener('input', () => {
             const prop = range.dataset.prop;
             const value = parseFloat(range.value);
             if (prop === 'opacity') {
-                const label = document.getElementById('opacity-label');
+                const label = document.getElementById('opacity-val');
                 if (label) label.textContent = Math.round(value * 100) + '%';
             }
             if (prop && window.setShapeProperty) window.setShapeProperty(prop, value);
