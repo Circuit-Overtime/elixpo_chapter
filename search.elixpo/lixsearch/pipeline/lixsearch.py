@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from pipeline.config import *
 from pipeline.instruction import system_instruction, user_instruction, synthesis_instruction
 from pipeline.optimized_tool_execution import optimized_tool_execution
-from pipeline.utils import format_sse
+from pipeline.utils import format_sse, clean_url, clean_source_list
 from pipeline.sse_messages import SSEStatusTracker
 from pipeline.helpers import (
     _scrub_tool_names,
@@ -46,6 +46,84 @@ load_dotenv()
 POLLINATIONS_TOKEN = os.getenv("TOKEN")
 MODEL = LLM_MODEL
 
+
+async def _stream_llm_call(payload: dict, headers: dict):
+    """Stream an LLM call from Pollinations. Yields ("content", str) for text
+    deltas and ("done", assistant_message_dict) when finished. Tool call deltas
+    are accumulated silently and returned in the final message."""
+    loop = asyncio.get_event_loop()
+    queue = asyncio.Queue()
+
+    def _blocking_stream():
+        try:
+            with requests.post(
+                POLLINATIONS_ENDPOINT, json={**payload, "stream": True},
+                headers=headers, stream=True, timeout=55,
+            ) as r:
+                r.raise_for_status()
+                for line in r.iter_lines(decode_unicode=True):
+                    if line:
+                        loop.call_soon_threadsafe(queue.put_nowait, line)
+        except Exception as e:
+            loop.call_soon_threadsafe(queue.put_nowait, e)
+        finally:
+            loop.call_soon_threadsafe(queue.put_nowait, None)
+
+    asyncio.ensure_future(asyncio.to_thread(_blocking_stream))
+
+    content = ""
+    tool_calls = []
+
+    while True:
+        try:
+            line = await asyncio.wait_for(queue.get(), timeout=60.0)
+        except asyncio.TimeoutError:
+            break
+        if line is None:
+            break
+        if isinstance(line, Exception):
+            raise line
+        if not isinstance(line, str) or not line.startswith("data: "):
+            continue
+        data_str = line[6:]
+        if data_str.strip() == "[DONE]":
+            break
+        try:
+            obj = json.loads(data_str)
+            choices = obj.get("choices", [])
+            if not choices:
+                continue
+            delta = choices[0].get("delta", {})
+
+            if "content" in delta and delta["content"]:
+                content += delta["content"]
+                yield ("content", delta["content"])
+
+            if "tool_calls" in delta:
+                for tc_delta in delta["tool_calls"]:
+                    idx = tc_delta.get("index", 0)
+                    while len(tool_calls) <= idx:
+                        tool_calls.append({"id": "", "type": "function",
+                                           "function": {"name": "", "arguments": ""}})
+                    if "id" in tc_delta:
+                        tool_calls[idx]["id"] = tc_delta["id"]
+                    if "function" in tc_delta:
+                        fn = tc_delta["function"]
+                        if "name" in fn:
+                            tool_calls[idx]["function"]["name"] += fn["name"]
+                        if "arguments" in fn:
+                            tool_calls[idx]["function"]["arguments"] += fn["arguments"]
+
+            if choices[0].get("finish_reason"):
+                break
+        except json.JSONDecodeError:
+            continue
+
+    message = {"role": "assistant", "content": content}
+    if tool_calls:
+        message["tool_calls"] = tool_calls
+    yield ("done", message)
+
 _DETAIL_RE = re.compile(
     r"\b(detail(?:ed|s)?|comprehensive|in[- ]?depth|thorough|extensive|elaborate|full|complete|everything about|deep dive|lengthy|long)\b",
     re.IGNORECASE,
@@ -54,7 +132,7 @@ _DETAIL_RE = re.compile(
 
 async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: str = None,
                                      session_id: str = None, user_images: list = None,
-                                     chat_history: list = None):
+                                     chat_history: list = None, is_ephemeral: bool = False):
     if user_images is None:
         user_images = [user_image] if user_image else []
     if not user_image and user_images:
@@ -62,7 +140,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
     logger.info(f"[pipeline] session={session_id} query='{user_query[:LOG_MESSAGE_QUERY_TRUNCATE]}...' images={len(user_images)}")
 
-    if session_id:
+    if session_id and not is_ephemeral:
         try:
             from sessions.main import get_session_manager
             sm = get_session_manager()
@@ -112,9 +190,9 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             "session_id": session_id or "", "generated_images": [],
         }
 
-        # --- Session context ---
+        # --- Session context (skip for ephemeral — no history to load or persist) ---
         session_context = None
-        if session_id:
+        if session_id and not is_ephemeral:
             try:
                 session_context = SessionContextWindow(session_id=session_id)
                 memoized_results["session_context"] = session_context
@@ -134,7 +212,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
         )
         memoized_results["conversation_cache"] = conversation_cache
 
-        if session_id:
+        if session_id and not is_ephemeral:
             conversation_cache.load_from_disk(session_id=session_id)
 
         # --- Semantic cache ---
@@ -146,7 +224,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             redis_port=SEMANTIC_CACHE_REDIS_PORT,
             redis_db=SEMANTIC_CACHE_REDIS_DB
         )
-        if session_id:
+        if session_id and not is_ephemeral:
             semantic_cache.load_for_request(session_id)
 
         # --- Image handling ---
@@ -223,7 +301,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             try:
                 active_top_k = RETRIEVAL_TOP_K * 2 if is_detailed_mode else RETRIEVAL_TOP_K
                 retrieval_result = await asyncio.wait_for(
-                    asyncio.to_thread(core_service.retrieve, user_query, active_top_k), timeout=3.0
+                    asyncio.to_thread(core_service.retrieve, user_query, active_top_k), timeout=2.0
                 )
                 if retrieval_result.get("count", 0) > 0:
                     _rag_chunks = [r["metadata"]["text"] for r in retrieval_result.get("results", [])]
@@ -346,39 +424,60 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             if _stale_event:
                 yield _stale_event
 
-            try:
-                _api_task = asyncio.ensure_future(
-                    asyncio.to_thread(requests.post, POLLINATIONS_ENDPOINT, json=payload, headers=headers, timeout=55)
-                )
-                while not _api_task.done():
-                    await asyncio.wait({_api_task}, timeout=5.0)
-                    if not _api_task.done() and event_id:
-                        _thinking_event = status_tracker.refresh_if_stale()
-                        if _thinking_event:
-                            yield _thinking_event
-                        else:
-                            _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
-                            if _ke:
-                                yield _ke
-                            status_tracker.touch()
-                response = _api_task.result()
-                response.raise_for_status()
-                response_data = response.json()
-                status_tracker.touch()
-            except asyncio.TimeoutError:
-                logger.error(f"API timeout at iteration {current_iteration}")
-                break
-            except requests.exceptions.RequestException as e:
-                logger.error(f"API error at iteration {current_iteration}: {e}")
-                break
-            except Exception as e:
-                logger.error(f"Unexpected API error at iteration {current_iteration}: {e}")
-                break
+            # --- Streaming path: stream content tokens when synthesizing ---
+            _use_streaming = force_synthesis and event_id
+            _streamed_content = ""
 
-            choice = response_data.get("choices", [{}])[0]
-            assistant_message = choice.get("message") or choice.get("delta")
-            if not assistant_message:
-                break
+            if _use_streaming:
+                try:
+                    assistant_message = None
+                    async for _stype, _sdata in _stream_llm_call(payload, headers):
+                        if _stype == "content":
+                            _streamed_content += _sdata
+                            yield format_sse("RESPONSE", _sdata)
+                            status_tracker.touch()
+                        elif _stype == "done":
+                            assistant_message = _sdata
+                    if not assistant_message:
+                        break
+                except Exception as e:
+                    logger.error(f"Streaming API error at iteration {current_iteration}: {e}")
+                    break
+            else:
+                # --- Non-streaming path: blocking call with keepalive ---
+                try:
+                    _api_task = asyncio.ensure_future(
+                        asyncio.to_thread(requests.post, POLLINATIONS_ENDPOINT, json=payload, headers=headers, timeout=55)
+                    )
+                    while not _api_task.done():
+                        await asyncio.wait({_api_task}, timeout=5.0)
+                        if not _api_task.done() and event_id:
+                            _thinking_event = status_tracker.refresh_if_stale()
+                            if _thinking_event:
+                                yield _thinking_event
+                            else:
+                                _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
+                                if _ke:
+                                    yield _ke
+                                status_tracker.touch()
+                    response = _api_task.result()
+                    response.raise_for_status()
+                    response_data = response.json()
+                    status_tracker.touch()
+                except asyncio.TimeoutError:
+                    logger.error(f"API timeout at iteration {current_iteration}")
+                    break
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"API error at iteration {current_iteration}: {e}")
+                    break
+                except Exception as e:
+                    logger.error(f"Unexpected API error at iteration {current_iteration}: {e}")
+                    break
+
+                choice = response_data.get("choices", [{}])[0]
+                assistant_message = choice.get("message") or choice.get("delta")
+                if not assistant_message:
+                    break
 
             assistant_message.pop("reasoning_content", None)
             if not assistant_message.get("content"):
@@ -504,7 +603,8 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                 for result in ws_results:
                     if not isinstance(result, Exception):
                         if result["name"] == "web_search" and "current_search_urls" in memoized_results:
-                            collected_sources.extend(memoized_results["current_search_urls"][:active_sources_per_search])
+                            _raw_urls = memoized_results["current_search_urls"][:active_sources_per_search]
+                            collected_sources.extend(clean_source_list(_raw_urls))
                         tool_outputs.append({"role": "tool", "tool_call_id": result["tool_call_id"],
                                              "name": result["name"], "content": str(result["result"]) if result["result"] else "No result"})
                 if event_id and collected_sources:
@@ -577,7 +677,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                 for fr in fetch_results:
                     if isinstance(fr, Exception):
                         continue
-                    url = fr["url"]
+                    url = clean_url(fr["url"]) or fr["url"]
                     if len(collected_sources) < active_max_sources:
                         collected_sources.append(url)
                     if core_service:
@@ -592,15 +692,9 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     tool_outputs.append({"role": "tool", "tool_call_id": fr["tool_call_id"], "name": "fetch_full_text",
                                          "content": str(fr["result"])[:500] if fr["result"] else "No result"})
 
+                # Fire-and-forget: ingest into vector store without blocking the response
                 if ingest_tasks:
-                    try:
-                        ingest_results = await asyncio.wait_for(asyncio.gather(*ingest_tasks, return_exceptions=True), timeout=5.0)
-                        _ingested = sum(1 for r in ingest_results if not isinstance(r, Exception))
-                        if event_id and _ingested > 0:
-                            yield format_sse("INFO", f"<TASK>Memorizing {_ingested} source{'s' if _ingested != 1 else ''}</TASK>")
-                            status_tracker.touch()
-                    except asyncio.TimeoutError:
-                        pass
+                    asyncio.gather(*ingest_tasks, return_exceptions=True)
 
                 good, total = _evaluate_fetch_quality(tool_outputs)
                 if total > 0 and event_id and good > 0:
@@ -617,7 +711,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                 yield format_sse("INFO", get_user_message("synthesizing"))
                 status_tracker.touch()
 
-            rag_context = await re_retrieve_rag_context(user_query, rag_context)
+            # RAG context already retrieved at pipeline start — skip redundant re-retrieval
 
             if is_detailed_mode:
                 async for item in run_detailed_synthesis(
@@ -656,6 +750,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             final_message_content = await run_standard_synthesis(
                 messages, user_query, active_max_tokens, headers, is_detailed_mode,
                 image_context_provided, collected_images_from_web, collected_similar_images,
+                event_id=event_id, format_sse_fn=format_sse,
             )
 
             if not final_message_content:
@@ -668,11 +763,15 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             final_message_content = f"Here's your PDF, ready to download:\n\n[Download PDF]({_pdf_url})"
 
         if final_message_content:
-            final_message_content = await sanitize_final_response(final_message_content, user_query, collected_sources, headers)
+            # Check if content was already streamed to the user
+            _already_streamed = bool(_streamed_content) and _streamed_content == final_message_content
+
+            if not _already_streamed:
+                final_message_content = await sanitize_final_response(final_message_content, user_query, collected_sources, headers)
             final_message_content = _scrub_tool_names(final_message_content)
 
             # If we got placeholder content with images, try one more synthesis
-            if is_placeholder_or_fallback(final_message_content) and (collected_images_from_web or collected_similar_images):
+            if not _already_streamed and is_placeholder_or_fallback(final_message_content) and (collected_images_from_web or collected_similar_images):
                 _pool = collected_similar_images if (image_only_mode and collected_similar_images) else collected_images_from_web
                 better = await try_image_synthesis(messages, user_query, _pool, headers, event_id)
                 if better:
@@ -689,14 +788,21 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                                               collected_similar_images, image_only_mode, memoized_results)
             response_with_sources = append_sources(response_parts, collected_sources)
 
-            # Save to caches
-            await save_to_caches(user_query, final_message_content, collected_sources, tool_call_count,
-                                  current_iteration, memoized_results, core_service, conversation_cache,
-                                  session_context, session_id)
+            # Save to caches (skip for ephemeral sessions)
+            if not is_ephemeral:
+                await save_to_caches(user_query, final_message_content, collected_sources, tool_call_count,
+                                      current_iteration, memoized_results, core_service, conversation_cache,
+                                      session_context, session_id)
 
             memoized_results["final_response"] = response_with_sources
 
-            if event_id:
+            if _already_streamed and event_id:
+                # Content was already streamed — only send extras (sources, images, PDF)
+                _extras = response_with_sources[len(final_message_content):]
+                if _extras.strip():
+                    yield format_sse("RESPONSE", _extras)
+                yield format_sse("INFO", "<TASK>DONE</TASK>")
+            elif event_id:
                 yield format_sse("RESPONSE", response_with_sources)
                 yield format_sse("INFO", "<TASK>DONE</TASK>")
             else:
@@ -724,18 +830,20 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
         if event_id:
             yield format_sse("INFO", "<TASK>DONE</TASK>")
     finally:
-        if session_id and "session_context" in memoized_results and memoized_results["session_context"]:
-            try:
-                ctx = memoized_results["session_context"]
-                if memoized_results.get("final_response") and not memoized_results.get("_assistant_response_saved"):
-                    ctx.add_message(role="assistant", content=memoized_results["final_response"])
-            except Exception:
-                pass
+        # Skip all persistence for ephemeral sessions — nothing to save
+        if not is_ephemeral:
+            if session_id and "session_context" in memoized_results and memoized_results["session_context"]:
+                try:
+                    ctx = memoized_results["session_context"]
+                    if memoized_results.get("final_response") and not memoized_results.get("_assistant_response_saved"):
+                        ctx.add_message(role="assistant", content=memoized_results["final_response"])
+                except Exception:
+                    pass
 
-        if session_id and semantic_cache is not None:
-            semantic_cache.save_for_request(session_id)
-            try:
-                if "conversation_cache" in memoized_results:
-                    conversation_cache.save_to_disk(session_id=session_id)
-            except Exception:
-                pass
+            if session_id and semantic_cache is not None:
+                semantic_cache.save_for_request(session_id)
+                try:
+                    if "conversation_cache" in memoized_results:
+                        conversation_cache.save_to_disk(session_id=session_id)
+                except Exception:
+                    pass
