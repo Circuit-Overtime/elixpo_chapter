@@ -1,4 +1,3 @@
-import hashlib
 import logging
 import uuid
 from datetime import datetime
@@ -9,11 +8,8 @@ from pipeline.config import X_REQ_ID_SLICE_SIZE, LOG_MESSAGE_QUERY_TRUNCATE
 from app.utils import validate_session_id
 
 
-def _session_id_from_ip() -> str:
-
-    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
-    client_ip = client_ip.split(",")[0].strip()
-    return f"ip-{hashlib.sha256(client_ip.encode()).hexdigest()[:16]}"
+def _ephemeral_session_id() -> str:
+    return f"eph-{uuid.uuid4().hex[:16]}"
 
 logger = logging.getLogger("lixsearch-api")
 
@@ -33,11 +29,8 @@ async def chat(pipeline_initialized: bool):
             return jsonify({"error": "Message is required"}), 400
 
         if not session_id:
-            session_id = _session_id_from_ip()
-            session_manager = get_session_manager()
-            if not session_manager.get_session(session_id):
-                session_manager.create_session(user_message, session_id=session_id)
-            logger.info(f"[chat] Using IP-derived session: {session_id}")
+            session_id = _ephemeral_session_id()
+            logger.info(f"[chat] No session_id provided, using ephemeral: {session_id}")
 
         request_id = request.headers.get("X-Request-ID", str(uuid.uuid4())[:X_REQ_ID_SLICE_SIZE])
         logger.info(
@@ -187,7 +180,7 @@ async def chat_completions(session_id: str, pipeline_initialized: bool):
                     break
 
             return jsonify({
-                "id": f"chatcmpl-{str(uuid.uuid4())[:X_REQ_ID_SLICE_SIZE]}",
+                "id": f"elixpo-{str(uuid.uuid4())[:X_REQ_ID_SLICE_SIZE]}",
                 "object": "chat.completion",
                 "created": int(datetime.utcnow().timestamp()),
                 "model": "lixsearch",

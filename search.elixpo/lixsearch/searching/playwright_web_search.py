@@ -128,7 +128,12 @@ async def playwright_web_search(query: str, max_links: int = 5, images: bool = F
             await page.wait_for_selector("div.compTitle > a", timeout=55000)
             
             link_elements = await page.query_selector_all("div.compTitle > a")
-            blacklist = ["yahoo.com/preferences", "yahoo.com/account", "login.yahoo.com", "yahoo.com/gdpr", "https://ad.doubleclick.net"]
+            blacklist = [
+                "yahoo.com/preferences", "yahoo.com/account", "login.yahoo.com", "yahoo.com/gdpr",
+                "ad.doubleclick.net", "doubleclick.net", "googleadservices.com",
+                "googlesyndication.com", "clickserve.dartsearch.net",
+                "bing.com/aclick", "r.search.yahoo.com/cbclk",
+            ]
             
             for link in link_elements:
                 if len(results) >= max_links:

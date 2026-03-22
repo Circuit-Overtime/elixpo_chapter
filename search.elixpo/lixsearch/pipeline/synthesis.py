@@ -26,7 +26,8 @@ MODEL = LLM_MODEL
 
 
 async def run_standard_synthesis(messages, user_query, active_max_tokens, headers, is_detailed_mode,
-                                  image_context_provided, collected_images_from_web, collected_similar_images):
+                                  image_context_provided, collected_images_from_web, collected_similar_images,
+                                  event_id=None, format_sse_fn=None):
     _has_images = image_context_provided or bool(collected_images_from_web) or bool(collected_similar_images)
     synthesis_prompt = {
         "role": "user",
@@ -52,46 +53,61 @@ async def run_standard_synthesis(messages, user_query, active_max_tokens, header
         "messages": messages,
         "seed": random.randint(1000, 9999),
         "max_tokens": active_max_tokens,
-        "stream": False,
         "tool_choice": "none",
     }
 
-    for _attempt in range(1, 3):
+    # --- Streaming synthesis when event_id is set ---
+    if event_id and format_sse_fn:
         try:
-            response = await asyncio.wait_for(
-                asyncio.to_thread(
-                    requests.post, POLLINATIONS_ENDPOINT,
-                    json=payload, headers=headers, timeout=45
-                ),
-                timeout=50.0
-            )
-            response.raise_for_status()
-            response_data = response.json()
-            try:
-                message = response_data["choices"][0]["message"]
-                message.pop("reasoning_content", None)
-                content = message.get("content", "").strip()
-
-                if content and "<|tool_call" in content:
-                    content = _scrub_tool_names(content)
-
-                if content:
-                    logger.info(f"[SYNTHESIS] Content extracted: {len(content)} chars")
-                else:
-                    logger.error(f"[SYNTHESIS] API returned empty content")
-                return content
-            except (KeyError, IndexError, TypeError) as e:
-                logger.error(f"[SYNTHESIS] Failed to extract content: {e}")
-                return None
-        except asyncio.TimeoutError:
-            logger.error(f"[SYNTHESIS TIMEOUT] attempt {_attempt}")
-        except requests.exceptions.HTTPError as http_err:
-            logger.error(f"[SYNTHESIS HTTP ERROR] attempt {_attempt}: {str(http_err)[:ERROR_MESSAGE_TRUNCATE]}")
+            from pipeline.lixsearch import _stream_llm_call
+            content = ""
+            async for _stype, _sdata in _stream_llm_call(payload, headers):
+                if _stype == "content":
+                    content += _sdata
+                elif _stype == "done":
+                    pass
+            if content:
+                content = _scrub_tool_names(content.strip())
+                logger.info(f"[SYNTHESIS] Streamed: {len(content)} chars")
+            return content or None
         except Exception as e:
-            logger.error(f"[SYNTHESIS ERROR] attempt {_attempt}: {str(e)[:ERROR_MESSAGE_TRUNCATE]}")
+            logger.error(f"[SYNTHESIS STREAM ERROR]: {str(e)[:ERROR_MESSAGE_TRUNCATE]}")
+            return None
 
-        if _attempt < 2:
-            await asyncio.sleep(1.5)
+    # --- Non-streaming fallback ---
+    payload["stream"] = False
+    try:
+        response = await asyncio.wait_for(
+            asyncio.to_thread(
+                requests.post, POLLINATIONS_ENDPOINT,
+                json=payload, headers=headers, timeout=45
+            ),
+            timeout=50.0
+        )
+        response.raise_for_status()
+        response_data = response.json()
+        try:
+            message = response_data["choices"][0]["message"]
+            message.pop("reasoning_content", None)
+            content = message.get("content", "").strip()
+
+            if content and "<|tool_call" in content:
+                content = _scrub_tool_names(content)
+
+            if content:
+                logger.info(f"[SYNTHESIS] Content extracted: {len(content)} chars")
+            else:
+                logger.error(f"[SYNTHESIS] API returned empty content")
+            return content
+        except (KeyError, IndexError, TypeError) as e:
+            logger.error(f"[SYNTHESIS] Failed to extract content: {e}")
+            return None
+    except asyncio.TimeoutError:
+        logger.error("[SYNTHESIS TIMEOUT]")
+    except requests.exceptions.HTTPError as http_err:
+        logger.error(f"[SYNTHESIS HTTP ERROR]: {str(http_err)[:ERROR_MESSAGE_TRUNCATE]}")
+    except Exception as e:
+        logger.error(f"[SYNTHESIS ERROR]: {str(e)[:ERROR_MESSAGE_TRUNCATE]}")
 
     return None
 
