@@ -1,5 +1,18 @@
 # Changelog
 
+## v4.6.3 (2026-03-22)
+
+### Fixes
+fixed the webview to default selection tool after loading
+fixed the file icon type to be packed to market place
+
+### Other
+- updated the canvas opening logic to avoid any same name crashes
+- publishing correct version
+- updated the new extension
+- release: v5.3.2
+
+
 ## v5.3.2 (2026-03-22)
 
 ### Fixes
