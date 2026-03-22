@@ -482,6 +482,92 @@ export default function LandingPage() {
         </motion.div>
       </motion.section>
 
+
+    {/* NPM Package & VS Code Extension */}
+      <section className="py-24 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#8B88E8]/[0.02] to-transparent pointer-events-none" />
+
+        <div className="max-w-5xl mx-auto relative z-10">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={blurUp}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-14"
+          >
+            <h2 className="text-3xl md:text-4xl font-light mb-4">
+              Use it anywhere
+            </h2>
+            <p className="text-text-dim text-base max-w-xl mx-auto">
+              Embed the engine in your app or draw diagrams right inside VS Code.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* NPM Package */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={blurUp}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <Link
+                href="/resources/npm-package"
+                className="block group bg-surface-card/60 border border-border-light rounded-2xl p-8 h-full transition-all duration-300 hover:border-accent-blue/40 hover:bg-surface-card/80"
+              >
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+                    <i className="bx bxl-nodejs text-2xl text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-text-primary text-lg font-medium group-hover:text-accent-blue transition-colors">NPM Package</h3>
+                    <p className="text-text-dim text-xs">@elixpo/lixsketch</p>
+                  </div>
+                </div>
+                <p className="text-text-muted text-sm leading-relaxed mb-5">
+                  Mount a full infinite canvas on any SVG element. Works with React, Vue, Svelte, or plain HTML.
+                </p>
+                <div className="bg-[#0d0d14] rounded-lg border border-white/[0.06] px-4 py-3">
+                  <code className="text-green-400 text-sm font-[lixCode]">npm install @elixpo/lixsketch</code>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* VS Code Extension */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={blurUp}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <Link
+                href="/resources/vscode-extension"
+                className="block group bg-surface-card/60 border border-border-light rounded-2xl p-8 h-full transition-all duration-300 hover:border-accent-blue/40 hover:bg-surface-card/80"
+              >
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                    <i className="bx bxl-visual-studio text-2xl text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-text-primary text-lg font-medium group-hover:text-accent-blue transition-colors">VS Code Extension</h3>
+                    <p className="text-text-dim text-xs">LixSketch for VS Code</p>
+                  </div>
+                </div>
+                <p className="text-text-muted text-sm leading-relaxed mb-5">
+                  Draw diagrams inside your editor. Full canvas tab, LixScript syntax highlighting, and live preview.
+                </p>
+                <div className="bg-[#0d0d14] rounded-lg border border-white/[0.06] px-4 py-3">
+                  <code className="text-blue-400 text-sm font-[lixCode]">https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch</code>
+                </div>
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section id="features" className="py-32 px-6">
         <div className="max-w-6xl mx-auto">
@@ -635,90 +721,8 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* NPM Package & VS Code Extension */}
-      <section className="py-24 px-6 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#8B88E8]/[0.02] to-transparent pointer-events-none" />
-
-        <div className="max-w-5xl mx-auto relative z-10">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={blurUp}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-14"
-          >
-            <h2 className="text-3xl md:text-4xl font-light mb-4">
-              Use it anywhere
-            </h2>
-            <p className="text-text-dim text-base max-w-xl mx-auto">
-              Embed the engine in your app or draw diagrams right inside VS Code.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* NPM Package */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={blurUp}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            >
-              <Link
-                href="/resources/npm-package"
-                className="block group bg-surface-card/60 border border-border-light rounded-2xl p-8 h-full transition-all duration-300 hover:border-accent-blue/40 hover:bg-surface-card/80"
-              >
-                <div className="flex items-center gap-4 mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
-                    <i className="bx bxl-nodejs text-2xl text-green-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-text-primary text-lg font-medium group-hover:text-accent-blue transition-colors">NPM Package</h3>
-                    <p className="text-text-dim text-xs">@elixpo/lixsketch</p>
-                  </div>
-                </div>
-                <p className="text-text-muted text-sm leading-relaxed mb-5">
-                  Mount a full infinite canvas on any SVG element. Works with React, Vue, Svelte, or plain HTML.
-                </p>
-                <div className="bg-[#0d0d14] rounded-lg border border-white/[0.06] px-4 py-3">
-                  <code className="text-green-400 text-sm font-[lixCode]">npm install @elixpo/lixsketch</code>
-                </div>
-              </Link>
-            </motion.div>
-
-            {/* VS Code Extension */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={blurUp}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <Link
-                href="/resources/vscode-extension"
-                className="block group bg-surface-card/60 border border-border-light rounded-2xl p-8 h-full transition-all duration-300 hover:border-accent-blue/40 hover:bg-surface-card/80"
-              >
-                <div className="flex items-center gap-4 mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                    <i className="bx bxl-visual-studio text-2xl text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-text-primary text-lg font-medium group-hover:text-accent-blue transition-colors">VS Code Extension</h3>
-                    <p className="text-text-dim text-xs">LixSketch for VS Code</p>
-                  </div>
-                </div>
-                <p className="text-text-muted text-sm leading-relaxed mb-5">
-                  Draw diagrams inside your editor. Full canvas tab, LixScript syntax highlighting, and live preview.
-                </p>
-                <div className="bg-[#0d0d14] rounded-lg border border-white/[0.06] px-4 py-3">
-                  <code className="text-blue-400 text-sm font-[lixCode]">code --install-extension elixpo.lixsketch</code>
-                </div>
-              </Link>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+      
+     
 
       {/* InkFlowa v1 Showcase */}
       <section className="py-20 px-6 relative">

@@ -10,6 +10,12 @@ Open VS Code and search for **LixSketch** in the Extensions panel, or run:
 code --install-extension elixpo.lixsketch
 ```
 
+OR Visit
+
+```
+https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch
+```
+
 ## Features
 
 - **Canvas tab** — open a LixSketch canvas as a VS Code editor tab

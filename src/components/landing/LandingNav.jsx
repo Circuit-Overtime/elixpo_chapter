@@ -108,7 +108,7 @@ export default function LandingNav() {
           >
             <i className="bx bxl-github text-lg" />
             <i className="bx bx-star text-sm" />
-            <span className="hidden lg:inline">Star us on GitHub</span>
+            <span className="hidden lg:inline">GitHub</span>
           </a>
 
           <Link
