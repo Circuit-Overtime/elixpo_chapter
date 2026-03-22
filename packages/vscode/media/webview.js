@@ -44,7 +44,7 @@
         'v': 'select', 'h': 'pan', 'r': 'rectangle', 'o': 'circle',
         'a': 'arrow', 'l': 'line', 't': 'text', 'p': 'freehand',
         'e': 'eraser', 'f': 'frame', 'k': 'laser', 'd': 'freehand',
-        '9': 'image',
+        '9': 'image', 'i': 'icon',
     };
 
     document.addEventListener('keydown', (e) => {
@@ -157,11 +157,18 @@
         'rectangle': 'sidebar-rectangle', 'circle': 'sidebar-circle',
         'arrow': 'sidebar-arrow', 'line': 'sidebar-line',
         'freehand': 'sidebar-freehand', 'text': 'sidebar-text',
-        'frame': 'sidebar-frame',
+        'frame': 'sidebar-frame', 'image': 'sidebar-image',
     };
 
     function updateSidebar(tool) {
         document.querySelectorAll('.sidebar').forEach(s => s.style.display = 'none');
+        // Icon panel is special (right side)
+        const iconPanel = document.getElementById('sidebar-icon');
+        if (tool === 'icon') {
+            if (iconPanel) { iconPanel.style.display = 'flex'; fetchIcons('', ''); }
+        } else {
+            if (iconPanel) iconPanel.style.display = 'none';
+        }
         const id = sidebarMap[tool];
         if (id) { const el = document.getElementById(id); if (el) el.style.display = 'flex'; }
     }
@@ -197,6 +204,106 @@
             if (action && window[action]) window[action]();
         });
     });
+
+    // Arrow type -> show/hide curvature
+    const arrowTypeGroup = document.querySelector('#sidebar-arrow .btn-group[data-prop="arrowType"]');
+    const curvatureSection = document.querySelector('.curvature-section');
+    if (arrowTypeGroup && curvatureSection) {
+        arrowTypeGroup.addEventListener('click', (e) => {
+            const btn = e.target.closest('.group-btn');
+            if (!btn) return;
+            curvatureSection.style.display = btn.dataset.value === 'curved' ? 'flex' : 'none';
+        });
+    }
+
+    // Opacity range slider
+    document.querySelectorAll('.sidebar-range').forEach(range => {
+        range.addEventListener('input', () => {
+            const prop = range.dataset.prop;
+            const value = parseFloat(range.value);
+            if (prop === 'opacity') {
+                const label = document.getElementById('opacity-label');
+                if (label) label.textContent = Math.round(value * 100) + '%';
+            }
+            if (prop && window.setShapeProperty) window.setShapeProperty(prop, value);
+        });
+    });
+
+    // ═══════════ ICON PANEL ═══════════
+    const ICON_API = 'https://sketch.elixpo.com/api/icons/search';
+    let iconDebounce = null;
+
+    const iconSearch = document.getElementById('icon-search');
+    const iconGrid = document.getElementById('icon-grid');
+    const iconPanelClose = document.getElementById('icon-panel-close');
+
+    if (iconPanelClose) {
+        iconPanelClose.addEventListener('click', () => {
+            const panel = document.getElementById('sidebar-icon');
+            if (panel) panel.style.display = 'none';
+            setActiveTool('select');
+        });
+    }
+
+    // Category tabs
+    document.querySelectorAll('.icon-cat').forEach(cat => {
+        cat.addEventListener('click', () => {
+            document.querySelectorAll('.icon-cat').forEach(c => c.classList.remove('active'));
+            cat.classList.add('active');
+            fetchIcons(iconSearch ? iconSearch.value : '', cat.dataset.cat);
+        });
+    });
+
+    // Search input (debounced)
+    if (iconSearch) {
+        iconSearch.addEventListener('input', () => {
+            if (iconDebounce) clearTimeout(iconDebounce);
+            iconDebounce = setTimeout(() => {
+                const activeCat = document.querySelector('.icon-cat.active');
+                fetchIcons(iconSearch.value, activeCat ? activeCat.dataset.cat : '');
+            }, 300);
+        });
+    }
+
+    async function fetchIcons(query, category) {
+        if (!iconGrid) return;
+        iconGrid.innerHTML = '<div class="icon-loading"><i class="bx bx-loader-alt bx-spin"></i> Loading...</div>';
+        try {
+            const params = new URLSearchParams();
+            if (query) params.set('q', query);
+            if (category) params.set('category', category);
+            params.set('inline', '1');
+            const res = await fetch(ICON_API + '?' + params.toString());
+            if (!res.ok) throw new Error('fetch failed');
+            const data = await res.json();
+            const results = data.results || [];
+            if (results.length === 0) {
+                iconGrid.innerHTML = '<div class="icon-empty">No icons found</div>';
+                return;
+            }
+            iconGrid.innerHTML = '';
+            results.forEach(icon => {
+                const btn = document.createElement('button');
+                btn.className = 'icon-cell';
+                btn.title = icon.name || '';
+                const img = document.createElement('img');
+                img.src = icon.svg || icon.url || '';
+                img.alt = icon.name || '';
+                img.loading = 'lazy';
+                btn.appendChild(img);
+                btn.addEventListener('click', () => {
+                    // Place icon on canvas
+                    if (window.placeIconOnCanvas) {
+                        window.placeIconOnCanvas(icon);
+                    }
+                });
+                iconGrid.appendChild(btn);
+            });
+        } catch (err) {
+            iconGrid.innerHTML = '<div class="icon-empty">Failed to load icons</div>';
+            console.warn('[LixSketch] Icon fetch error:', err);
+        }
+    }
 
     // ═══════════ HEADER ═══════════
     const menuBtn = document.getElementById('menuBtn');

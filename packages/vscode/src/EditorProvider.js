@@ -159,6 +159,9 @@ class LixSketchEditorProvider {
         <button class="tool-btn" data-tool="image" title="Image (9)">
             <i class="bx bx-image-alt"></i><span class="tool-key">9</span>
         </button>
+        <button class="tool-btn" data-tool="icon" title="Icon (I)">
+            <i class="bx bx-wink-smile"></i><span class="tool-key">I</span>
+        </button>
         <div class="tool-divider"></div>
         <button class="tool-btn" data-tool="frame" title="Frame (F)">
             <i class="bx bx-crop"></i><span class="tool-key">F</span>
@@ -297,17 +300,18 @@ class LixSketchEditorProvider {
         <div class="sidebar-section"><div class="sidebar-label">Fill</div>
             <div class="color-grid" data-prop="fill">
                 <button class="color-swatch active" data-value="transparent" title="None"><svg width="14" height="14" viewBox="0 0 14 14"><line x1="0" y1="14" x2="14" y2="0" stroke="#666" stroke-width="1.5"/></svg></button>
-                <button class="color-swatch" data-value="#fff" style="background:#fff"></button>
-                <button class="color-swatch" data-value="#FF8383" style="background:#FF8383"></button>
-                <button class="color-swatch" data-value="#3A994C" style="background:#3A994C"></button>
-                <button class="color-swatch" data-value="#56A2E8" style="background:#56A2E8"></button>
-                <button class="color-swatch" data-value="#FFD700" style="background:#FFD700"></button>
-                <button class="color-swatch" data-value="#FF69B4" style="background:#FF69B4"></button>
-                <button class="color-swatch" data-value="#A855F7" style="background:#A855F7"></button>
+                <button class="color-swatch" data-value="#f0f0f0" style="background:#f0f0f0"></button>
+                <button class="color-swatch" data-value="#ffcccb" style="background:#ffcccb"></button>
+                <button class="color-swatch" data-value="#90ee90" style="background:#90ee90"></button>
+                <button class="color-swatch" data-value="#add8e6" style="background:#add8e6"></button>
+                <button class="color-swatch" data-value="#FFE4B5" style="background:#FFE4B5"></button>
+                <button class="color-swatch" data-value="#DDA0DD" style="background:#DDA0DD"></button>
+                <button class="color-swatch" data-value="#2d2d2d" style="background:#2d2d2d"></button>
             </div>
         </div>
         <div class="sidebar-section"><div class="sidebar-label">Width</div>
             <div class="btn-group" data-prop="strokeWidth">
+                <button class="group-btn" data-value="1">1</button>
                 <button class="group-btn active" data-value="2">2</button>
                 <button class="group-btn" data-value="4">4</button>
                 <button class="group-btn" data-value="7">7</button>
@@ -316,8 +320,17 @@ class LixSketchEditorProvider {
         <div class="sidebar-section"><div class="sidebar-label">Style</div>
             <div class="btn-group" data-prop="strokeStyle">
                 <button class="group-btn active" data-value="solid" title="Solid"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2"/></svg></button>
-                <button class="group-btn" data-value="dashed" title="Dashed"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"/></svg></button>
-                <button class="group-btn" data-value="dotted" title="Dotted"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/></svg></button>
+                <button class="group-btn" data-value="dashed" title="Dashed"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/></svg></button>
+                <button class="group-btn" data-value="dotted" title="Dotted"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3"/></svg></button>
+            </div>
+        </div>
+        <div class="sidebar-section"><div class="sidebar-label">Fill Pattern</div>
+            <div class="btn-group" data-prop="fillStyle">
+                <button class="group-btn active" data-value="hachure" title="Hachure">H</button>
+                <button class="group-btn" data-value="solid" title="Solid">S</button>
+                <button class="group-btn" data-value="dots" title="Dots">D</button>
+                <button class="group-btn" data-value="cross-hatch" title="Cross">X</button>
+                <button class="group-btn" data-value="transparent" title="None">—</button>
             </div>
         </div>
         <div class="sidebar-section sidebar-layers">
@@ -343,20 +356,37 @@ class LixSketchEditorProvider {
         <div class="sidebar-section"><div class="sidebar-label">Fill</div>
             <div class="color-grid" data-prop="fill">
                 <button class="color-swatch active" data-value="transparent" title="None"><svg width="14" height="14" viewBox="0 0 14 14"><line x1="0" y1="14" x2="14" y2="0" stroke="#666" stroke-width="1.5"/></svg></button>
-                <button class="color-swatch" data-value="#fff" style="background:#fff"></button>
-                <button class="color-swatch" data-value="#FF8383" style="background:#FF8383"></button>
-                <button class="color-swatch" data-value="#3A994C" style="background:#3A994C"></button>
-                <button class="color-swatch" data-value="#56A2E8" style="background:#56A2E8"></button>
-                <button class="color-swatch" data-value="#FFD700" style="background:#FFD700"></button>
-                <button class="color-swatch" data-value="#FF69B4" style="background:#FF69B4"></button>
-                <button class="color-swatch" data-value="#A855F7" style="background:#A855F7"></button>
+                <button class="color-swatch" data-value="#f0f0f0" style="background:#f0f0f0"></button>
+                <button class="color-swatch" data-value="#ffcccb" style="background:#ffcccb"></button>
+                <button class="color-swatch" data-value="#90ee90" style="background:#90ee90"></button>
+                <button class="color-swatch" data-value="#add8e6" style="background:#add8e6"></button>
+                <button class="color-swatch" data-value="#FFE4B5" style="background:#FFE4B5"></button>
+                <button class="color-swatch" data-value="#DDA0DD" style="background:#DDA0DD"></button>
+                <button class="color-swatch" data-value="#2d2d2d" style="background:#2d2d2d"></button>
             </div>
         </div>
         <div class="sidebar-section"><div class="sidebar-label">Width</div>
             <div class="btn-group" data-prop="strokeWidth">
+                <button class="group-btn" data-value="1">1</button>
                 <button class="group-btn active" data-value="2">2</button>
                 <button class="group-btn" data-value="4">4</button>
                 <button class="group-btn" data-value="7">7</button>
+            </div>
+        </div>
+        <div class="sidebar-section"><div class="sidebar-label">Style</div>
+            <div class="btn-group" data-prop="strokeStyle">
+                <button class="group-btn active" data-value="solid" title="Solid"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2"/></svg></button>
+                <button class="group-btn" data-value="dashed" title="Dashed"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/></svg></button>
+                <button class="group-btn" data-value="dotted" title="Dotted"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3"/></svg></button>
+            </div>
+        </div>
+        <div class="sidebar-section"><div class="sidebar-label">Fill Pattern</div>
+            <div class="btn-group" data-prop="fillStyle">
+                <button class="group-btn active" data-value="hachure" title="Hachure">H</button>
+                <button class="group-btn" data-value="solid" title="Solid">S</button>
+                <button class="group-btn" data-value="dots" title="Dots">D</button>
+                <button class="group-btn" data-value="cross-hatch" title="Cross">X</button>
+                <button class="group-btn" data-value="transparent" title="None">—</button>
             </div>
         </div>
         <div class="sidebar-section sidebar-layers">
@@ -368,6 +398,13 @@ class LixSketchEditorProvider {
     </div>
     <!-- Arrow -->
     <div id="sidebar-arrow" class="sidebar" style="display:none">
+        <div class="sidebar-section"><div class="sidebar-label">Head</div>
+            <div class="btn-group" data-prop="arrowHead">
+                <button class="group-btn active" data-value="default" title="Default"><svg width="20" height="14" viewBox="0 0 20 14"><line x1="2" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1.5"/><polyline points="10,2 16,7 10,12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                <button class="group-btn" data-value="outline" title="Outline"><svg width="20" height="14" viewBox="0 0 20 14"><line x1="2" y1="7" x2="11" y2="7" stroke="currentColor" stroke-width="1.5"/><polygon points="11,2 18,7 11,12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                <button class="group-btn" data-value="solid" title="Solid"><svg width="20" height="14" viewBox="0 0 20 14"><line x1="2" y1="7" x2="11" y2="7" stroke="currentColor" stroke-width="1.5"/><polygon points="11,2 18,7 11,12" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg></button>
+            </div>
+        </div>
         <div class="sidebar-section"><div class="sidebar-label">Stroke</div>
             <div class="color-grid" data-prop="stroke">
                 <button class="color-swatch active" data-value="#fff" style="background:#fff"></button>
@@ -381,9 +418,30 @@ class LixSketchEditorProvider {
         </div>
         <div class="sidebar-section"><div class="sidebar-label">Width</div>
             <div class="btn-group" data-prop="strokeWidth">
+                <button class="group-btn" data-value="1">1</button>
                 <button class="group-btn active" data-value="2">2</button>
                 <button class="group-btn" data-value="4">4</button>
                 <button class="group-btn" data-value="7">7</button>
+            </div>
+        </div>
+        <div class="sidebar-section"><div class="sidebar-label">Style</div>
+            <div class="btn-group" data-prop="strokeStyle">
+                <button class="group-btn active" data-value="solid" title="Solid"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2"/></svg></button>
+                <button class="group-btn" data-value="dashed" title="Dashed"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/></svg></button>
+            </div>
+        </div>
+        <div class="sidebar-section"><div class="sidebar-label">Type</div>
+            <div class="btn-group" data-prop="arrowType">
+                <button class="group-btn active" data-value="straight" title="Straight"><svg width="24" height="12" viewBox="0 0 24 12"><line x1="2" y1="6" x2="22" y2="6" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                <button class="group-btn" data-value="curved" title="Curved"><svg width="24" height="12" viewBox="0 0 24 12"><path d="M2,10 Q12,0 22,10" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                <button class="group-btn" data-value="elbow" title="Elbow"><svg width="24" height="12" viewBox="0 0 24 12"><polyline points="2,10 2,2 22,2 22,10" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+            </div>
+        </div>
+        <div class="sidebar-section curvature-section" style="display:none"><div class="sidebar-label">Curve</div>
+            <div class="btn-group" data-prop="curvature">
+                <button class="group-btn active" data-value="8">Lo</button>
+                <button class="group-btn" data-value="20">Md</button>
+                <button class="group-btn" data-value="40">Hi</button>
             </div>
         </div>
         <div class="sidebar-section sidebar-layers">
@@ -408,9 +466,30 @@ class LixSketchEditorProvider {
         </div>
         <div class="sidebar-section"><div class="sidebar-label">Width</div>
             <div class="btn-group" data-prop="strokeWidth">
+                <button class="group-btn" data-value="1">1</button>
                 <button class="group-btn active" data-value="2">2</button>
                 <button class="group-btn" data-value="4">4</button>
                 <button class="group-btn" data-value="7">7</button>
+            </div>
+        </div>
+        <div class="sidebar-section"><div class="sidebar-label">Style</div>
+            <div class="btn-group" data-prop="strokeStyle">
+                <button class="group-btn active" data-value="solid" title="Solid"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2"/></svg></button>
+                <button class="group-btn" data-value="dashed" title="Dashed"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/></svg></button>
+                <button class="group-btn" data-value="dotted" title="Dotted"><svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3"/></svg></button>
+            </div>
+        </div>
+        <div class="sidebar-section"><div class="sidebar-label">Sloppiness</div>
+            <div class="btn-group" data-prop="roughness">
+                <button class="group-btn active" data-value="0">0</button>
+                <button class="group-btn" data-value="2">2</button>
+                <button class="group-btn" data-value="4">4</button>
+            </div>
+        </div>
+        <div class="sidebar-section"><div class="sidebar-label">Edge</div>
+            <div class="btn-group" data-prop="edge">
+                <button class="group-btn active" data-value="1" title="Smooth">Smooth</button>
+                <button class="group-btn" data-value="5" title="Rough">Rough</button>
             </div>
         </div>
         <div class="sidebar-section sidebar-layers">
@@ -441,6 +520,24 @@ class LixSketchEditorProvider {
                 <button class="group-btn" data-value="7">7</button>
             </div>
         </div>
+        <div class="sidebar-section"><div class="sidebar-label">Taper</div>
+            <div class="btn-group" data-prop="taper">
+                <button class="group-btn active" data-value="0" title="Uniform"><i class="bx bxs-minus-circle" style="font-size:14px"></i></button>
+                <button class="group-btn" data-value="0.5" title="Pen"><i class="bx bxs-pen" style="font-size:14px"></i></button>
+                <button class="group-btn" data-value="0.8" title="Brush"><i class="bx bxs-brush" style="font-size:14px"></i></button>
+            </div>
+        </div>
+        <div class="sidebar-section"><div class="sidebar-label">Rough</div>
+            <div class="btn-group" data-prop="roughness">
+                <button class="group-btn active" data-value="smooth" title="Smooth"><i class="bx bxs-droplet" style="font-size:14px"></i></button>
+                <button class="group-btn" data-value="medium" title="Medium"><i class="bx bxs-leaf" style="font-size:14px"></i></button>
+                <button class="group-btn" data-value="rough" title="Rough"><i class="bx bxs-bolt" style="font-size:14px"></i></button>
+            </div>
+        </div>
+        <div class="sidebar-section"><div class="sidebar-label">Opacity</div>
+            <input type="range" class="sidebar-range" data-prop="opacity" min="0" max="1" step="0.05" value="1" />
+            <span class="range-label" id="opacity-label">100%</span>
+        </div>
         <div class="sidebar-section sidebar-layers">
             <button class="layer-btn" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button>
             <button class="layer-btn" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button>
@@ -461,6 +558,14 @@ class LixSketchEditorProvider {
                 <button class="color-swatch" data-value="#A855F7" style="background:#A855F7"></button>
             </div>
         </div>
+        <div class="sidebar-section"><div class="sidebar-label">Font</div>
+            <div class="btn-group" data-prop="fontFamily">
+                <button class="group-btn active" data-value="lixFont" style="font-family:lixFont">Lix</button>
+                <button class="group-btn" data-value="lixCode" style="font-family:lixCode">Code</button>
+                <button class="group-btn" data-value="lixDefault" style="font-family:lixDefault">Def</button>
+                <button class="group-btn" data-value="lixFancy" style="font-family:lixFancy">Fan</button>
+            </div>
+        </div>
         <div class="sidebar-section"><div class="sidebar-label">Size</div>
             <div class="btn-group" data-prop="fontSize">
                 <button class="group-btn" data-value="20">S</button>
@@ -475,11 +580,54 @@ class LixSketchEditorProvider {
         <div class="sidebar-section"><div class="sidebar-label">Name</div>
             <input type="text" id="frame-name-input" class="sidebar-input" value="Frame" placeholder="Frame name" />
         </div>
+        <div class="sidebar-section"><div class="sidebar-label">Fill</div>
+            <div class="btn-group" data-prop="frameFill">
+                <button class="group-btn active" data-value="transparent" title="None"><i class="bx bx-x" style="font-size:14px"></i></button>
+                <button class="group-btn" data-value="solid" title="Solid"><i class="bx bxs-square" style="font-size:14px"></i></button>
+                <button class="group-btn" data-value="grid" title="Grid"><i class="bx bx-grid-alt" style="font-size:14px"></i></button>
+            </div>
+        </div>
         <div class="sidebar-section sidebar-layers">
             <button class="layer-btn" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button>
             <button class="layer-btn" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button>
             <button class="layer-btn" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button>
             <button class="layer-btn" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
+        </div>
+    </div>
+    <!-- Image -->
+    <div id="sidebar-image" class="sidebar" style="display:none">
+        <div class="sidebar-section">
+            <button class="group-btn" data-action="replaceImage" title="Replace image"><i class="bx bx-upload" style="font-size:14px;margin-right:4px"></i>Replace</button>
+        </div>
+        <div class="sidebar-section sidebar-layers">
+            <button class="layer-btn" data-action="sendToBack" title="Send to back"><i class="bx bx-chevrons-down"></i></button>
+            <button class="layer-btn" data-action="sendBackward" title="Send backward"><i class="bx bx-chevron-down"></i></button>
+            <button class="layer-btn" data-action="bringForward" title="Bring forward"><i class="bx bx-chevron-up"></i></button>
+            <button class="layer-btn" data-action="bringToFront" title="Bring to front"><i class="bx bx-chevrons-up"></i></button>
+        </div>
+    </div>
+    <!-- Icon Sidebar (right panel) -->
+    <div id="sidebar-icon" class="icon-panel" style="display:none">
+        <div class="icon-panel-header">
+            <span class="icon-panel-title">Icons</span>
+            <button class="icon-panel-close" id="icon-panel-close"><i class="bx bx-x"></i></button>
+        </div>
+        <div class="icon-search-wrap">
+            <i class="bx bx-search icon-search-icon"></i>
+            <input type="text" id="icon-search" class="icon-search" placeholder="Search icons..." />
+        </div>
+        <div class="icon-categories">
+            <button class="icon-cat active" data-cat=""><i class="bx bxs-grid-alt"></i> All</button>
+            <button class="icon-cat" data-cat="tech"><i class="bx bxs-chip"></i> Tech</button>
+            <button class="icon-cat" data-cat="devops"><i class="bx bxs-server"></i> DevOps</button>
+            <button class="icon-cat" data-cat="design"><i class="bx bxs-palette"></i> Design</button>
+            <button class="icon-cat" data-cat="social"><i class="bx bxs-share-alt"></i> Social</button>
+            <button class="icon-cat" data-cat="nav"><i class="bx bxs-navigation"></i> Nav</button>
+            <button class="icon-cat" data-cat="business"><i class="bx bxs-briefcase"></i> Biz</button>
+            <button class="icon-cat" data-cat="media"><i class="bx bxs-videos"></i> Media</button>
+        </div>
+        <div class="icon-grid" id="icon-grid">
+            <div class="icon-loading"><i class="bx bx-loader-alt bx-spin"></i> Loading icons...</div>
         </div>
     </div>
 
