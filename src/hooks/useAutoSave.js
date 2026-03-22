@@ -127,7 +127,6 @@ async function saveToDb() {
       useUIStore.getState().setSaveStatus('cloud')
       // Store encryption key for this session
       useUIStore.getState().setSessionEncryptionKey?.(key, sessionId)
-      showSaveToast()
       console.log('[AutoSave] Synced to cloud')
       return true
     } else if (res.status === 429) {
@@ -153,7 +152,9 @@ async function saveToDb() {
  */
 export async function triggerCloudSync() {
   saveToLocalStorage()
-  return saveToDb()
+  const ok = await saveToDb()
+  if (ok) showSaveToast()
+  return ok
 }
 
 /**
