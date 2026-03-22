@@ -70,27 +70,6 @@ No CMS. No database. Just clean, static content that deploys to the edge.
 
 <br />
 
-### Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/elixpo/elixpome.git
-cd elixpome
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Deploy to Cloudflare Pages
-npm run deploy
-```
-
-<br />
 
 ### Adding a New Member
 
@@ -98,7 +77,7 @@ npm run deploy
 2. Add the required JSON files: `profile.json`, `home.json`, `about.json`, `projects.json`, `publications.json`, `spotlight.json`, `recommendations.json`, `work.json`, `connect.json`
 3. Add assets under `public/assets/{name}/`
 4. The member's portfolio will be available at `/{name}`
-
+5. Please submit a PR with the new content and assets, and we'll review it for deployment!
 <br />
 
 ---
