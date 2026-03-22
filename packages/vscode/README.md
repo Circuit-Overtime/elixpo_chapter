@@ -80,7 +80,7 @@ This extension is powered by the same engine that runs [sketch.elixpo.com](https
 | :package: | **NPM package** — [`@lixsketch/engine`](https://www.npmjs.com/package/@lixsketch/engine) — build your own whiteboard |
 | :desktop_computer: | **VS Code extension** — you're looking at it |
 
-<img width="1867" height="874" alt="LixSketch Features" src="https://github.com/user-attachments/assets/9971cf94-dba8-4436-b858-4d80e99b246d" />
+<img width="1867" height="874" alt="LixSketch Features" src="./media/vs-code-header.png" />
 
 ## Open Source
 
