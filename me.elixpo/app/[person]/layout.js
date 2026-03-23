@@ -16,13 +16,13 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: `${profile.siteName} - Home`,
       description: `${profile.siteDescription} — ${profile.siteName}'s personal portfolio`,
-      images: [{ url: "/assets/og-image.png", width: 1200, height: 630, alt: profile.siteName }],
+      images: [{ url: "/assets/og-image.webp", width: 1200, height: 630, alt: profile.siteName }],
     },
     twitter: {
       card: "summary_large_image",
       title: `${profile.siteName} - Home`,
       description: `${profile.siteDescription} — ${profile.siteName}'s personal portfolio`,
-      images: ["/assets/og-image.png"],
+      images: ["/assets/og-image.webp"],
     },
   };
 }
@@ -38,7 +38,7 @@ export default async function PersonLayout({ children, params }) {
       {/* Paper texture overlay */}
       <div
         className="absolute top-0 left-0 w-full h-full opacity-55 bg-contain bg-repeat bg-center brightness-[55%] sepia-[65%]"
-        style={{ backgroundImage: `url(/assets/${person}/paperTexture.jpg)` }}
+        style={{ backgroundImage: `url(/assets/${person}/paperTexture.webp)` }}
       />
 
       {/* Navbar */}

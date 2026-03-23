@@ -15,8 +15,8 @@
     ],
 
     "images": {
-      "portrait": "/assets/anwesha/punchlineSection/vr-pic1.png",
-      "landscape": "/assets/anwesha/punchlineSection/hz-pic1.png"
+      "portrait": "/assets/anwesha/punchlineSection/vr-pic1.webp",
+      "landscape": "/assets/anwesha/punchlineSection/hz-pic1.webp"
     }
   },
   "websiteSection": {
@@ -24,9 +24,9 @@
     "futurePlans": "Moving forward with the dream of grasping system architectures and design, I am eager to explore the depths of scalable systems, distributed computing, and cloud technologies. My goal is to contribute to innovative projects that push the boundaries of technology and create impactful solutions for real-world problems. I am excited to continue learning, growing, and collaborating with talented individuals in the tech community.", 
     "codeStory": "A former biology enthusiast, slowly turned into a CS Major working on system design and archirechture. Learning concepts of the design and technological gain was the most interesting part of the game so far! diving deep into the topics and the scales of the vast serving of CS and the fast growing technological scope is really awesome but sometimes tiring. But with the advent of time and love for the subject, moving forwrd with the choice of transfer and change is quite fun. Neverthless wish to explore more and push forward some awesome projects down the line with Elixpo and Computer Science ~ Wish me Luck :D",
     "images": {
-      "owl": "/assets/anwesha/websiteSection/hz-owl1.png",
-      "humanThink": "/assets/anwesha/websiteSection/human-think1.png",
-      "seal": "/assets/anwesha/websiteSection/sq-seal1.png"
+      "owl": "/assets/anwesha/websiteSection/hz-owl1.webp",
+      "humanThink": "/assets/anwesha/websiteSection/human-think1.webp",
+      "seal": "/assets/anwesha/websiteSection/sq-seal1.webp"
     }
   },
   "techSection": {
@@ -59,9 +59,9 @@
       { "type": "icon", "src": "https://img.icons8.com/color/144/python.png", "alt": "Python" }
     ],
     "images": {
-      "wand": "/assets/anwesha/techTracks/wand-1.png",
-      "landscape": "/assets/anwesha/techTracks/hz-image1.png",
-      "banner": "/assets/anwesha/hrz-image1.png"
+      "wand": "/assets/anwesha/techTracks/wand-1.webp",
+      "landscape": "/assets/anwesha/techTracks/hz-image1.webp",
+      "banner": "/assets/anwesha/hrz-image1.webp"
     }
   }
 }

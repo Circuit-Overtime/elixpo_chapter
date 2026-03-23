@@ -9,8 +9,8 @@ export async function generateMetadata({ params }) {
   return {
     title,
     description,
-    openGraph: { title, description, images: [{ url: "/assets/og-image.png", width: 1200, height: 630, alt: profile.siteName }] },
-    twitter: { card: "summary_large_image", title, description, images: ["/assets/og-image.png"] },
+    openGraph: { title, description, images: [{ url: "/assets/og-image.webp", width: 1200, height: 630, alt: profile.siteName }] },
+    twitter: { card: "summary_large_image", title, description, images: ["/assets/og-image.webp"] },
   };
 }
 
