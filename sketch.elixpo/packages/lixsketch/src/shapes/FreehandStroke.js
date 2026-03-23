@@ -76,25 +76,25 @@ class FreehandStroke {
     }
 
     // Add position and dimension properties for frame compatibility
+    // Getters include pending move offset so callers see the visual position
     get x() {
-        return this.boundingBox.x;
+        return this.boundingBox.x + (this._moveOffsetX || 0);
     }
-    
+
     set x(value) {
-        const dx = value - this.boundingBox.x;
-        const dy = 0;
-        this.points = this.points.map(point => [point[0] + dx, point[1] + dy, point[2] || 0.5]);
-        this.boundingBox.x = value;
+        const dx = value - this.boundingBox.x - (this._moveOffsetX || 0);
+        this.points = this.points.map(point => [point[0] + dx, point[1], point[2] || 0.5]);
+        this.boundingBox.x = value - (this._moveOffsetX || 0);
     }
-    
+
     get y() {
-        return this.boundingBox.y;
+        return this.boundingBox.y + (this._moveOffsetY || 0);
     }
-    
+
     set y(value) {
-        const dy = value - this.boundingBox.y;
+        const dy = value - this.boundingBox.y - (this._moveOffsetY || 0);
         this.points = this.points.map(point => [point[0], point[1] + dy, point[2] || 0.5]);
-        this.boundingBox.y = value;
+        this.boundingBox.y = value - (this._moveOffsetY || 0);
     }
     
     get width() {
