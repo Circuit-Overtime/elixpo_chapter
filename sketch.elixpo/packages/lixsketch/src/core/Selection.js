@@ -151,10 +151,10 @@ function isShapeInSelectionRect(shape, selectionBounds) {
             break;
         case 'freehandStroke':
             shapeBounds = {
-                x: shape.boundingBox.x,
-                y: shape.boundingBox.y,
-                width: shape.boundingBox.width,
-                height: shape.boundingBox.height
+                x: shape.x,
+                y: shape.y,
+                width: shape.width,
+                height: shape.height
             };
             break;
         case 'text':
@@ -389,10 +389,10 @@ class MultiSelection {
                 };
             case 'freehandStroke':
                 return {
-                    x: shape.boundingBox.x,
-                    y: shape.boundingBox.y,
-                    width: shape.boundingBox.width,
-                    height: shape.boundingBox.height
+                    x: shape.x,
+                    y: shape.y,
+                    width: shape.width,
+                    height: shape.height
                 };
             case 'text':
                 const textElement = shape.group ? shape.group.querySelector('text') : null;
@@ -728,7 +728,7 @@ class MultiSelection {
                             shape.updateBoundingBox();
                         }
 
-                        const boundingBox = shape.boundingBox || this.getShapeBounds(shape);
+                        const boundingBox = this.getShapeBounds(shape);
 
                         shapeData = {
                             x: boundingBox.x || 0,

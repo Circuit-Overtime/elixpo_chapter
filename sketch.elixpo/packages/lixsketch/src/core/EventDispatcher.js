@@ -75,9 +75,22 @@ let _documentDragActive = false;
 
 function _onDocumentDragMove(e) {
     _lastDragEvent = e;
-    // Also forward the move to the main handler so the tool keeps updating
-    // (the SVG won't receive mousemove while cursor is outside it)
-    handleMainMouseMove(e);
+    // Clamp mouse coordinates to SVG bounds before forwarding to tool handlers,
+    // so getSVGCoordsFromMouse doesn't produce extreme values when cursor is outside.
+    const rect = svg.getBoundingClientRect();
+    const clampedX = Math.max(rect.left, Math.min(rect.right, e.clientX));
+    const clampedY = Math.max(rect.top, Math.min(rect.bottom, e.clientY));
+    const clampedEvent = new MouseEvent(e.type, {
+        clientX: clampedX,
+        clientY: clampedY,
+        buttons: e.buttons,
+        button: e.button,
+        ctrlKey: e.ctrlKey,
+        shiftKey: e.shiftKey,
+        altKey: e.altKey,
+        metaKey: e.metaKey,
+    });
+    handleMainMouseMove(clampedEvent);
 }
 
 function _onDocumentDragUp(e) {
@@ -231,6 +244,14 @@ const handleMainMouseDown = (e) => {
 };
 
 const handleMainMouseMove = (e) => {
+    // Auto-scroll when dragging near/past viewport edges (checked first so early returns don't skip it)
+    if (e.buttons & 1) {
+        _lastDragEvent = e;
+        _startAutoScroll();
+    } else {
+        _stopAutoScroll();
+    }
+
     if (isSquareToolActive) {
         handleMouseMoveRect(e);
     } else if (isArrowToolActive) {
@@ -310,14 +331,6 @@ const handleMainMouseMove = (e) => {
             handleMouseMoveIcon(e);
             handleCodeMouseMove(e);
         }
-    }
-
-    // Auto-scroll when dragging near/past viewport edges
-    if (e.buttons & 1) {
-        _lastDragEvent = e;
-        _startAutoScroll();
-    } else {
-        _stopAutoScroll();
     }
 };
 
