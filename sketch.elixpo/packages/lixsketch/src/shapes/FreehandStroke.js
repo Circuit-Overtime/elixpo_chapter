@@ -339,7 +339,9 @@ class FreehandStroke {
         // Accumulate offset for transform-based movement (avoids full path rebuild)
         this._moveOffsetX = (this._moveOffsetX || 0) + dx;
         this._moveOffsetY = (this._moveOffsetY || 0) + dy;
-        const rot = this.rotation ? `rotate(${this.rotation} ${this._rotCenterX || 0} ${this._rotCenterY || 0})` : '';
+        const centerX = this.boundingBox.x + this.boundingBox.width / 2;
+        const centerY = this.boundingBox.y + this.boundingBox.height / 2;
+        const rot = this.rotation ? `rotate(${this.rotation} ${centerX} ${centerY})` : '';
         this.group.setAttribute('transform', `translate(${this._moveOffsetX}, ${this._moveOffsetY}) ${rot}`);
 
         // Only update frame containment if we're actively dragging the shape itself
@@ -436,22 +438,26 @@ class FreehandStroke {
     updateSidebar() {}
 
     contains(x, y) {
-        // Simple bounding box check
-        const centerX = this.boundingBox.x + this.boundingBox.width / 2;
-        const centerY = this.boundingBox.y + this.boundingBox.height / 2;
-        
+        // Account for pending move offset (during drag, points aren't updated yet)
+        const ox = this._moveOffsetX || 0;
+        const oy = this._moveOffsetY || 0;
+        const bbX = this.boundingBox.x + ox;
+        const bbY = this.boundingBox.y + oy;
+        const centerX = bbX + this.boundingBox.width / 2;
+        const centerY = bbY + this.boundingBox.height / 2;
+
         // Adjust for rotation
         const dx = x - centerX;
         const dy = y - centerY;
-        
+
         const angleRad = -this.rotation * Math.PI / 180;
         const rotatedX = dx * Math.cos(angleRad) - dy * Math.sin(angleRad) + centerX;
         const rotatedY = dx * Math.sin(angleRad) + dy * Math.cos(angleRad) + centerY;
-        
-        return rotatedX >= this.boundingBox.x && 
-               rotatedX <= this.boundingBox.x + this.boundingBox.width &&
-               rotatedY >= this.boundingBox.y && 
-               rotatedY <= this.boundingBox.y + this.boundingBox.height;
+
+        return rotatedX >= bbX &&
+               rotatedX <= bbX + this.boundingBox.width &&
+               rotatedY >= bbY &&
+               rotatedY <= bbY + this.boundingBox.height;
     }
 
   isNearAnchor(x, y) {
