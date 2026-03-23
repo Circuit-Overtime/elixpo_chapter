@@ -3,7 +3,7 @@
     "heading": "ANWESHA",
     "subheading": "ABOUT!",
     "description": "Welcome to Anwesha's corner of the internet!\n She's a Developer, dreamer and System Architect.I translate the complex rhythms of the natural world into high-performance digital systems, one expedition at a time. More about her as you scroll down!",
-    "portraitImage": "/assets/anwesha/about/ptr-11.png"
+    "portraitImage": "/assets/anwesha/about/ptr-11.webp"
   },
   "fancySection": {
     "banner": "LET'S GO!!",
@@ -22,8 +22,8 @@
   },
   "images": {
     "gallery": [
-      "/assets/anwesha/about/sq-22.png",
-      "/assets/anwesha/about/sq-11.png"
+      "/assets/anwesha/about/sq-22.webp",
+      "/assets/anwesha/about/sq-11.webp"
     ]
   }
 }

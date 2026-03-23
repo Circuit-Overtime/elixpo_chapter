@@ -5,7 +5,7 @@ export default function NotFound() {
     <div className="relative min-h-screen bg-white flex flex-col justify-center items-center overflow-hidden">
       <div
         className="absolute top-0 left-0 w-screen h-screen opacity-55 bg-contain bg-repeat bg-center brightness-[55%] sepia-[65%]"
-        style={{ backgroundImage: `url(/assets/ayushman/paperTexture.jpg)` }}
+        style={{ backgroundImage: `url(/assets/ayushman/paperTexture.webp)` }}
       />
 
       <div className="relative z-10 flex flex-col items-center gap-6 sm:gap-10 p-6 sm:p-10 max-w-[700px] text-center">
