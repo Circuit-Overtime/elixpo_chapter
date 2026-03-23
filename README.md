@@ -8,6 +8,8 @@
   <strong>Fast URL shortener running on the edge.</strong>
 </p>
 
+## Huge thanks to [Karan](https://github.com/karanray06) from our [GDG JIS University](https://gdg.community.dev/gdg-on-campus-jis-university-kolkata-india/) community for preparing the basis foundation of the HLD with us on which we have the [Elixpo URL](https://url.elixpo.com) was built with modifications made based on scale. 
+
 <p align="center">
   <a href="https://url.elixpo.com"><img src="https://img.shields.io/badge/live-url.elixpo.com-a3e635?style=flat-square" alt="Live" /></a>
   <img src="https://img.shields.io/badge/platform-Cloudflare%20Pages-f38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Pages" />
