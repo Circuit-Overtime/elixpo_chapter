@@ -1,5 +1,11 @@
 # Changelog
 
+## v5.4.0 (2026-03-22)
+
+### Other
+- Implement auto-scroll functionality during drag events and enhance multi-selection shape toggling
+
+
 ## v5.3.3 (2026-03-22)
 
 
