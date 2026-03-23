@@ -247,7 +247,9 @@ export async function GET(
 }
 
 /**
- * Build a successful auth response: issue tokens, set cookies, redirect to dashboard.
+ * Build a successful auth response: issue tokens, set cookies, redirect to destination.
+ * If an oauth_next cookie exists (from the SSO flow initiated during an OAuth authorize),
+ * redirect there instead of the default dashboard.
  */
 async function buildSuccessResponse(
   request: NextRequest,
@@ -303,7 +305,9 @@ async function buildSuccessResponse(
     console.error('Failed to store tokens/audit log:', dbError);
   }
 
-  const redirectDest = user.is_admin ? '/admin' : '/dashboard/oauth-apps';
+  // If there's a pending ?next= redirect (e.g. from OAuth authorize flow), use it
+  const oauthNext = request.cookies.get('oauth_next')?.value;
+  const redirectDest = oauthNext || (user.is_admin ? '/admin' : '/dashboard/oauth-apps');
   const response = NextResponse.redirect(new URL(redirectDest, request.url));
 
   const maxAge = parseInt(process.env.JWT_EXPIRATION_MINUTES || '15') * 60;
@@ -338,6 +342,7 @@ async function buildSuccessResponse(
   // Clear OAuth state cookies
   response.cookies.set('oauth_state', '', { maxAge: 0, path: '/' });
   response.cookies.set('oauth_mode', '', { maxAge: 0, path: '/' });
+  response.cookies.set('oauth_next', '', { maxAge: 0, path: '/' });
 
   return response;
 }

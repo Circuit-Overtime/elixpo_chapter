@@ -5,6 +5,8 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 const textFieldSx = {
   '& .MuiOutlinedInput-root': {
@@ -32,7 +34,9 @@ const textFieldSx = {
   '& .MuiInputLabel-root.Mui-focused': { color: '#a3e635' },
 };
 
-const RegisterPage = () => {
+const RegisterContent = () => {
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -72,8 +76,11 @@ const RegisterPage = () => {
       }
 
       // Redirect email/password users to set their display name
+      const nextParam = next ? `?next=${encodeURIComponent(next)}` : '';
       if (data.needsDisplayName) {
-        window.location.href = '/setup-name';
+        window.location.href = `/setup-name${nextParam}`;
+      } else if (next) {
+        window.location.href = next;
       } else {
         window.location.href = '/dashboard/oauth-apps';
       }
@@ -86,7 +93,8 @@ const RegisterPage = () => {
 
   const handleSSORegister = (provider: 'google' | 'github') => {
     // Redirect through our backend so state cookie is set correctly before going to provider
-    window.location.href = `/api/auth/oauth/${provider}?mode=register`;
+    const url = `/api/auth/oauth/${provider}?mode=register${next ? `&next=${encodeURIComponent(next)}` : ''}`;
+    window.location.href = url;
   };
 
   return (
@@ -112,7 +120,7 @@ const RegisterPage = () => {
 
           <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'center' }}>
             <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 1 }}>Already have an account?</Typography>
-            <Link href="/login" style={{ color: '#a3e635', textDecoration: 'none', fontWeight: 600 }}>Sign in</Link>
+            <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} style={{ color: '#a3e635', textDecoration: 'none', fontWeight: 600 }}>Sign in</Link>
           </Box>
         </Box>
 
@@ -180,5 +188,11 @@ const RegisterPage = () => {
     </Box>
   );
 };
+
+const RegisterPage = () => (
+  <Suspense>
+    <RegisterContent />
+  </Suspense>
+);
 
 export default RegisterPage;
