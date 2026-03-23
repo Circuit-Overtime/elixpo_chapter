@@ -1633,6 +1633,7 @@ static getFrameAttachmentPoint(point, frame, tolerance = 20) {
     this._updatePathElement();
     this._updateHitArea();
     this._updateLabelElement();
+    this._updateAnchorPositions();
 
     // Only update frame containment if we're actively dragging the shape itself
     // and not being moved by a parent frame
