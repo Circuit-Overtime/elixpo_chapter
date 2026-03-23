@@ -1360,12 +1360,17 @@ createRotatedControls(angleDiff = 0) {
             if (typeof shape.finalizeMove === 'function') {
                 shape.finalizeMove();
             }
+            // Restore isSelected flag (startDrag's removeSelection clears it)
+            shape.isSelected = true;
         });
 
         this.initialPositions.clear();
 
         // Push undo for all moved shapes
         this._pushUndoForAll();
+
+        // Refresh bounds and controls after finalizeMove may have changed positions
+        this.updateControls();
 
         if (typeof svg !== 'undefined') {
             svg.style.cursor = 'default';
@@ -1420,28 +1425,26 @@ function handleMultiSelectionMouseDown(e) {
             return true;
         }
 
-        if (multiSelection.isPointInBounds(x, y)) {
-            // Only start drag if clicking on a shape that's part of the selection
-            // This allows clicking through empty areas of the selection rectangle
-            let clickedOnSelectedShape = null;
-            for (const shape of multiSelection.selectedShapes) {
-                if (shape.contains && shape.contains(x, y)) {
-                    clickedOnSelectedShape = shape;
-                    break;
-                }
+        // Check if clicking on any shape that's part of the selection
+        let clickedOnSelectedShape = null;
+        for (const shape of multiSelection.selectedShapes) {
+            if (shape.contains && shape.contains(x, y)) {
+                clickedOnSelectedShape = shape;
+                break;
             }
-            if (clickedOnSelectedShape) {
-                // Ctrl+Click: toggle shape out of multi-selection
-                if (e.ctrlKey || e.metaKey) {
-                    multiSelection.removeShape(clickedOnSelectedShape);
-                    return true;
-                }
-                multiSelection.startDrag(e);
+        }
+        if (clickedOnSelectedShape) {
+            // Ctrl+Click: toggle shape out of multi-selection
+            if (e.ctrlKey || e.metaKey) {
+                multiSelection.removeShape(clickedOnSelectedShape);
                 return true;
             }
-            // Click was in bounds but not on a selected shape — fall through
-            // to allow clicking on other shapes or starting a new selection
+            multiSelection.startDrag(e);
+            return true;
         }
+
+        // If click is within the selection bounds but not on a shape,
+        // fall through to allow clicking on other shapes or starting a new selection
     }
 
     // Check if clicking on individual shape anchors - let them handle it
@@ -1498,6 +1501,12 @@ function handleMultiSelectionMouseDown(e) {
                 multiSelection.addShape(clickedShape);
             }
             currentShape = null;
+            return true;
+        }
+
+        // If the clicked shape is part of the multi-selection, start dragging instead of clearing
+        if (multiSelection.selectedShapes.size > 1 && multiSelection.selectedShapes.has(clickedShape)) {
+            multiSelection.startDrag(e);
             return true;
         }
 

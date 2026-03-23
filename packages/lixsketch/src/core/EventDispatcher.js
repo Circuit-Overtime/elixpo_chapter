@@ -51,6 +51,10 @@ function _autoScroll(e) {
     if (typeof freehandCanvas !== 'undefined' && freehandCanvas !== svg) {
         freehandCanvas.setAttribute('viewBox', `${currentViewBox.x} ${currentViewBox.y} ${currentViewBox.width} ${currentViewBox.height}`);
     }
+
+    // After scrolling the viewport, re-fire the tool handler so shapes move
+    // with the scroll even when the cursor is stationary at the edge
+    handleMainMouseMove(e);
 }
 
 function _startAutoScroll() {
