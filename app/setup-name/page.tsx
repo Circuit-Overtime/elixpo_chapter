@@ -2,7 +2,8 @@
 
 import { Box, Button, TextField, Typography, Snackbar, Alert } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 const textFieldSx = {
   '& .MuiOutlinedInput-root': {
@@ -17,8 +18,10 @@ const textFieldSx = {
   '& .MuiFormHelperText-root': { color: 'rgba(255, 255, 255, 0.4)' },
 };
 
-const SetupNamePage = () => {
+const SetupNameContent = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const [displayName, setDisplayName] = useState('');
   const [currentName, setCurrentName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,7 +36,7 @@ const SetupNamePage = () => {
     try {
       const res = await fetch('/api/auth/me', { credentials: 'include' });
       if (!res.ok) {
-        router.push('/login');
+        window.location.href = next ? `/login?next=${encodeURIComponent(next)}` : '/login';
         return;
       }
       const data: any = await res.json();
@@ -73,7 +76,8 @@ const SetupNamePage = () => {
         throw new Error(data.error || 'Failed to set display name');
       }
       setToast({ open: true, message: 'Display name set!', severity: 'success' });
-      setTimeout(() => router.push('/dashboard/oauth-apps'), 1000);
+      const dest = next || '/dashboard/oauth-apps';
+      setTimeout(() => { window.location.href = dest; }, 1000);
     } catch (err) {
       setToast({ open: true, message: err instanceof Error ? err.message : 'Failed to save', severity: 'error' });
     } finally {
@@ -98,7 +102,7 @@ const SetupNamePage = () => {
         // non-critical
       }
     }
-    router.push('/dashboard/oauth-apps');
+    window.location.href = next || '/dashboard/oauth-apps';
   };
 
   if (pageLoading) {
@@ -216,5 +220,11 @@ const SetupNamePage = () => {
     </Box>
   );
 };
+
+const SetupNamePage = () => (
+  <Suspense>
+    <SetupNameContent />
+  </Suspense>
+);
 
 export default SetupNamePage;
