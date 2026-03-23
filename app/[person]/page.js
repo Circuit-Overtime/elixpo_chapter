@@ -171,7 +171,7 @@ export default async function HomePage({ params }) {
               </div>
               <div
                 className="stamp absolute bottom-[10px] right-[10px] sm:bottom-[20px] sm:right-[20px] h-[50px] w-[50px] sm:h-[60px] sm:w-[60px] md:h-[80px] md:w-[80px] bg-cover bg-center"
-                style={{ backgroundImage: `url(/assets/${person}/projects/stamp-2.png)` }}
+                style={{ backgroundImage: `url(/assets/${person}/projects/stamp-2.webp)` }}
               />
             </div>
           </div>

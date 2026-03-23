@@ -11,8 +11,8 @@
       "Open Source Contributor"
     ],
     "images": {
-      "portrait": "/assets/vivek/punchlineSection/vr-pic1.png",
-      "landscape": "/assets/vivek/punchlineSection/hz-pic1.png"
+      "portrait": "/assets/vivek/punchlineSection/vr-pic1.webp",
+      "landscape": "/assets/vivek/punchlineSection/hz-pic1.webp"
     }
   },
   "websiteSection": {
@@ -20,9 +20,9 @@
     "futurePlans": "I aim to deepen my expertise in system design, scalable architectures, and AI-powered applications.",
     "codeStory": "My journey in tech started with curiosity about how things work. Over time, it evolved into building real-world applications, contributing to communities, and exploring cutting-edge AI technologies.",
     "images": {
-      "owl": "/assets/vivek/websiteSection/hz-owl1.png",
-      "humanThink": "/assets/vivek/websiteSection/human-think1.png",
-      "seal": "/assets/vivek/websiteSection/sq-seal1.png"
+      "owl": "/assets/vivek/websiteSection/hz-owl1.webp",
+      "humanThink": "/assets/vivek/websiteSection/human-think1.webp",
+      "seal": "/assets/vivek/websiteSection/sq-seal1.webp"
     }
   },
   "techSection": {
@@ -44,9 +44,9 @@
       { "type": "text", "label": "RAG Systems" }
     ],
     "images": {
-      "wand": "/assets/vivek/techTracks/wand-1.png",
-      "landscape": "/assets/vivek/techTracks/hz-image1.png",
-      "banner": "/assets/vivek/hrz-image1.png"
+      "wand": "/assets/vivek/techTracks/wand-1.webp",
+      "landscape": "/assets/vivek/techTracks/hz-image1.webp",
+      "banner": "/assets/vivek/hrz-image1.webp"
     }
   }
 }

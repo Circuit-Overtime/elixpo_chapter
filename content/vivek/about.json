@@ -3,7 +3,7 @@
     "heading": "VIVEK",
     "subheading": "ABOUT!",
     "description": "I am a 3rd-year Computer Science Engineering student at JIS University with a strong focus on frontend development and AI integration. I enjoy building scalable web applications, experimenting with LLMs, and crafting intuitive user experiences.",
-    "portraitImage": "/assets/vivek/about/ptr-11.png"
+    "portraitImage": "/assets/vivek/about/ptr-11.webp"
   },
   "fancySection": {
     "banner": "PROFILE",
@@ -20,8 +20,8 @@
   },
   "images": {
     "gallery": [
-      "/assets/vivek/about/sq-11.png",
-      "/assets/vivek/about/sq-22.png"
+      "/assets/vivek/about/sq-11.webp",
+      "/assets/vivek/about/sq-22.webp"
     ]
   }
 }

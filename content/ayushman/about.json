@@ -3,7 +3,7 @@
     "heading": "AYUSHMAN",
     "subheading": "ABOUT!",
     "description": "Elixpo is a platform dedicated to exploring the intersection of technology and creativity, offering insights into innovative projects and research. Alongside I am an Ex-Web Dev Associate @GDG JISU | DevOps Engineer @pollinations | Excellence SOF NCO 19' | 3rd, 2nd SOF NCO 14' 18' | LSA exe.BIT Runners 20' | Techverse2.0 & 3.0 Winner | Mod Dev @modrinth. More about me, as you scroll down this page! Thanks for visiting my portfolio!",
-    "portraitImage": "/assets/ayushman/about/ptr-11.png"
+    "portraitImage": "/assets/ayushman/about/ptr-11.webp"
   },
   "fancySection": {
     "banner": "YES! WE DID IT!",
@@ -20,8 +20,8 @@
   },
   "images": {
     "gallery": [
-      "/assets/ayushman/about/sq-22.png",
-      "/assets/ayushman/about/sq-11.png"
+      "/assets/ayushman/about/sq-22.webp",
+      "/assets/ayushman/about/sq-11.webp"
     ]
   }
 }

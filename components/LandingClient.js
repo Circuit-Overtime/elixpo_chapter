@@ -99,7 +99,7 @@ export default function LandingClient({ profiles }) {
   return (
     <div className="relative h-[100dvh] bg-[#1B1B19] flex flex-col items-center justify-center overflow-hidden">
       {/* Paper texture background */}
-      <div className="absolute inset-0 opacity-[0.07] bg-[url(/assets/ayushman/paperTexture.jpg)] bg-repeat bg-contain pointer-events-none" />
+      <div className="absolute inset-0 opacity-[0.07] bg-[url(/assets/ayushman/paperTexture.webp)] bg-repeat bg-contain pointer-events-none" />
 
       {/* Floating paper pieces */}
       {mounted &&
@@ -199,13 +199,13 @@ export default function LandingClient({ profiles }) {
               className="group relative flex flex-col h-[clamp(260px,55vh,420px)] aspect-[3/4] border-2 border-[#444] rounded-[20px] bg-[#E2D9C8] p-4 sm:p-5 transition-all duration-500 hover:scale-105 hover:border-[#ffc300] hover:shadow-[0_0_60px_rgba(255,195,0,0.12)]"
             >
               {/* Paper grain overlay on card */}
-              <div className="absolute inset-0 rounded-[20px] opacity-30 bg-[url(/assets/ayushman/paperTexture.jpg)] bg-repeat bg-cover pointer-events-none mix-blend-multiply" />
+              <div className="absolute inset-0 rounded-[20px] opacity-30 bg-[url(/assets/ayushman/paperTexture.webp)] bg-repeat bg-cover pointer-events-none mix-blend-multiply" />
 
               {/* Portrait */}
               <div
                 className="relative w-full flex-1 rounded-[12px] bg-cover bg-center border-2 border-[#222] sepia-[40%] saturate-[180%] group-hover:sepia-0 group-hover:saturate-100 transition-all duration-500"
                 style={{
-                  backgroundImage: `url(/assets/${profile.slug}/about/ptr-11.png)`,
+                  backgroundImage: `url(/assets/${profile.slug}/about/ptr-11.webp)`,
                 }}
               />
 

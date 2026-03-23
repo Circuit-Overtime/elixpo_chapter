@@ -16,7 +16,15 @@ usage() {
 }
 
 optimize_assets() {
-  echo ">> Optimizing assets..."
+  # Skip if no original images remain
+  local remaining
+  remaining=$(find "$ASSETS_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) | wc -l)
+  if [ "$remaining" -eq 0 ]; then
+    echo ">> Assets already optimized, skipping."
+    return
+  fi
+
+  echo ">> Optimizing $remaining images..."
 
   # Install cwebp if not available
   if ! command -v cwebp &>/dev/null; then
@@ -39,13 +47,13 @@ optimize_assets() {
   # Update local asset references (skip external URLs like https://)
   # Only replace .png/.jpg/.jpeg that follow /assets/ paths
   find "$CONTENT_DIR" -type f -name '*.json' -exec \
-    sed -i -E 's|(/assets/[^"]*)\.(png|jpg|jpeg)|\1.webp|g' {} +
+    sed -i -E 's#(/assets/[^"]*)\.(png|jpg|jpeg)#\1.webp#g' {} +
 
   # Update references in source files (app/, components/)
   for dir in "${SRC_DIRS[@]}"; do
     if [ -d "$dir" ]; then
       find "$dir" -type f \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \) -exec \
-        sed -i -E 's|(/assets/[^")\x27 ]*)\.(png|jpg|jpeg)|\1.webp|g' {} +
+        sed -i -E 's#(/assets/[^"'\''`) ]*)\.(png|jpg|jpeg)#\1.webp#g' {} +
     fi
   done
 
