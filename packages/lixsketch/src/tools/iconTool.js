@@ -532,7 +532,7 @@ function selectIcon(event) {
 
     event.stopPropagation();
 
-    let targetIcon = event.target.closest('[type="icon"]');
+    let targetIcon = event.target.closest ? event.target.closest('[type="icon"]') : null;
     if (!targetIcon) {
         let current = event.target;
         while (current && current !== document) {
@@ -544,44 +544,43 @@ function selectIcon(event) {
         }
     }
 
-    if (selectedIcon !== targetIcon) {
-        if (selectedIcon) {
-            removeSelection();
+    // Always clean up previous selection before applying new one
+    if (selectedIcon) {
+        removeSelection();
+    }
+
+    selectedIcon = targetIcon;
+
+    if (!selectedIcon) {
+        console.warn('Could not find icon to select');
+        return;
+    }
+
+    const transform = selectedIcon.getAttribute('transform');
+    if (transform) {
+        const rotateMatch = transform.match(/rotate\(([^,\s]+)/);
+        if (rotateMatch) {
+            iconRotation = parseFloat(rotateMatch[1]);
         }
+    } else {
+        iconRotation = 0;
+    }
 
-        selectedIcon = targetIcon;
+    addSelectionOutline();
 
-        if (!selectedIcon) {
-            console.warn('Could not find icon to select');
-            return;
-        }
+    originalX = parseFloat(selectedIcon.getAttribute('x')) || 0;
+    originalY = parseFloat(selectedIcon.getAttribute('y')) || 0;
+    originalWidth = parseFloat(selectedIcon.getAttribute('width')) || placedIconSize;
+    originalHeight = parseFloat(selectedIcon.getAttribute('height')) || placedIconSize;
 
-        const transform = selectedIcon.getAttribute('transform');
-        if (transform) {
-            const rotateMatch = transform.match(/rotate\(([^,\s]+)/);
-            if (rotateMatch) {
-                iconRotation = parseFloat(rotateMatch[1]);
-            }
-        } else {
-            iconRotation = 0;
-        }
-
-        addSelectionOutline();
-
-        originalX = parseFloat(selectedIcon.getAttribute('x')) || 0;
-        originalY = parseFloat(selectedIcon.getAttribute('y')) || 0;
-        originalWidth = parseFloat(selectedIcon.getAttribute('width')) || placedIconSize;
-        originalHeight = parseFloat(selectedIcon.getAttribute('height')) || placedIconSize;
-
-        // Set currentShape so EventDispatcher routes subsequent events to icon handler
-        const iconShape = (typeof shapes !== 'undefined' && Array.isArray(shapes))
-            ? shapes.find(s => s.shapeName === 'icon' && s.element === selectedIcon)
-            : null;
-        if (iconShape) {
-            currentShape = iconShape;
-            currentShape.isSelected = true;
-            if (window.__showSidebarForShape) window.__showSidebarForShape('icon');
-        }
+    // Set currentShape so EventDispatcher routes subsequent events to icon handler
+    const iconShape = (typeof shapes !== 'undefined' && Array.isArray(shapes))
+        ? shapes.find(s => s.shapeName === 'icon' && s.element === selectedIcon)
+        : null;
+    if (iconShape) {
+        currentShape = iconShape;
+        currentShape.isSelected = true;
+        if (window.__showSidebarForShape) window.__showSidebarForShape('icon');
     }
 }
 
