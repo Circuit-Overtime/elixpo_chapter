@@ -1807,6 +1807,33 @@ var LixSketch = (() => {
             y: (this.startPoint.y + this.endPoint.y) / 2
           };
         }
+        _updateAnchorPositions() {
+          if (!this.anchors || this.anchors.length === 0)
+            return;
+          const anchorSize = 5 / currentZoom;
+          let anchorPositions = [this.startPoint, this.endPoint];
+          if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
+            const midOnCurve = this.getCubicBezierPoint(0.5);
+            anchorPositions.push(midOnCurve);
+          } else if (this.arrowCurved === "elbow") {
+            const elbowXVal = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
+            const midY = (this.startPoint.y + this.endPoint.y) / 2;
+            anchorPositions.push({ x: elbowXVal, y: midY });
+          } else {
+            const arrowAngle = Math.atan2(this.endPoint.y - this.startPoint.y, this.endPoint.x - this.startPoint.x);
+            const arrowHeadClearance = this.arrowHeadLength + anchorSize - 10;
+            anchorPositions[1] = {
+              x: this.endPoint.x + arrowHeadClearance * Math.cos(arrowAngle),
+              y: this.endPoint.y + arrowHeadClearance * Math.sin(arrowAngle)
+            };
+          }
+          anchorPositions.forEach((point, index) => {
+            if (this.anchors[index]) {
+              this.anchors[index].setAttribute("cx", point.x);
+              this.anchors[index].setAttribute("cy", point.y);
+            }
+          });
+        }
         _updateLabelElement() {
           if (!this.label) {
             if (this.labelElement && this.labelElement.parentNode === this.group) {
@@ -2830,6 +2857,7 @@ var LixSketch = (() => {
           this._updatePathElement();
           this._updateHitArea();
           this._updateLabelElement();
+          this._updateAnchorPositions();
           if (isDragging && !this.isBeingMovedByFrame) {
             this.updateFrameContainment();
           }
@@ -7926,31 +7954,34 @@ var LixSketch = (() => {
           this.group = document.createElementNS("http://www.w3.org/2000/svg", "g");
           this.anchors = [];
           this.rotationAnchor = null;
+          this.rotationLine = null;
           this.selectionPadding = 8;
           this.selectionOutline = null;
           this.boundingBox = { x: 0, y: 0, width: 0, height: 0 };
           this.shapeName = "freehandStroke";
+          this._moveOffsetX = 0;
+          this._moveOffsetY = 0;
           this.parentFrame = null;
           svg.appendChild(this.group);
           this.draw();
         }
         // Add position and dimension properties for frame compatibility
+        // Getters include pending move offset so callers see the visual position
         get x() {
-          return this.boundingBox.x;
+          return this.boundingBox.x + (this._moveOffsetX || 0);
         }
         set x(value) {
-          const dx = value - this.boundingBox.x;
-          const dy = 0;
-          this.points = this.points.map((point) => [point[0] + dx, point[1] + dy, point[2] || 0.5]);
-          this.boundingBox.x = value;
+          const dx = value - this.boundingBox.x - (this._moveOffsetX || 0);
+          this.points = this.points.map((point) => [point[0] + dx, point[1], point[2] || 0.5]);
+          this.boundingBox.x = value - (this._moveOffsetX || 0);
         }
         get y() {
-          return this.boundingBox.y;
+          return this.boundingBox.y + (this._moveOffsetY || 0);
         }
         set y(value) {
-          const dy = value - this.boundingBox.y;
+          const dy = value - this.boundingBox.y - (this._moveOffsetY || 0);
           this.points = this.points.map((point) => [point[0], point[1] + dy, point[2] || 0.5]);
-          this.boundingBox.y = value;
+          this.boundingBox.y = value - (this._moveOffsetY || 0);
         }
         get width() {
           return this.boundingBox.width;
@@ -8154,10 +8185,6 @@ var LixSketch = (() => {
           const centerY = this.boundingBox.y + this.boundingBox.height / 2;
           const rot = this.rotation ? `rotate(${this.rotation} ${centerX} ${centerY})` : "";
           this.group.setAttribute("transform", `translate(${this._moveOffsetX}, ${this._moveOffsetY}) ${rot}`);
-          if (isDraggingStroke && !this.isBeingMovedByFrame) {
-            this.updateFrameContainment();
-          }
-          this.updateAttachedArrows();
         }
         // Call after drag ends to bake the offset into actual point coordinates
         finalizeMove() {
@@ -8171,27 +8198,9 @@ var LixSketch = (() => {
           }
         }
         updateAttachedArrows() {
-          updateArrowsForShape(this);
-        }
-        updateFrameContainment() {
-          if (this.isBeingMovedByFrame)
-            return;
-          let targetFrame = null;
-          shapes.forEach((shape) => {
-            if (shape.shapeName === "frame" && shape.isShapeInFrame(this)) {
-              targetFrame = shape;
-            }
-          });
-          if (this.parentFrame && isDraggingStroke) {
-            this.parentFrame.temporarilyRemoveFromFrame(this);
+          if (typeof window.__updateArrowsForShape === "function") {
+            window.__updateArrowsForShape(this);
           }
-          if (hoveredFrameStroke && hoveredFrameStroke !== targetFrame) {
-            hoveredFrameStroke.removeHighlight();
-          }
-          if (targetFrame && targetFrame !== hoveredFrameStroke) {
-            targetFrame.highlightFrame();
-          }
-          hoveredFrameStroke = targetFrame;
         }
         selectStroke() {
           this.isSelected = true;
@@ -8217,11 +8226,15 @@ var LixSketch = (() => {
           if (this.rotationAnchor && this.rotationAnchor.parentNode === this.group) {
             this.group.removeChild(this.rotationAnchor);
           }
+          if (this.rotationLine && this.rotationLine.parentNode === this.group) {
+            this.group.removeChild(this.rotationLine);
+          }
           if (this.selectionOutline && this.selectionOutline.parentNode === this.group) {
             this.group.removeChild(this.selectionOutline);
           }
           this.anchors = [];
           this.rotationAnchor = null;
+          this.rotationLine = null;
           this.selectionOutline = null;
           this.isSelected = false;
         }
@@ -8247,15 +8260,17 @@ var LixSketch = (() => {
             return null;
           const buffer = 10;
           const anchorSize = 10 / currentZoom;
-          const centerX = this.boundingBox.x + this.boundingBox.width / 2;
-          const centerY = this.boundingBox.y + this.boundingBox.height / 2;
+          const ox = this._moveOffsetX || 0;
+          const oy = this._moveOffsetY || 0;
+          const centerX = this.boundingBox.x + ox + this.boundingBox.width / 2;
+          const centerY = this.boundingBox.y + oy + this.boundingBox.height / 2;
           const angleRad = -this.rotation * Math.PI / 180;
           const dx = x3 - centerX;
           const dy = y3 - centerY;
           const localX = dx * Math.cos(angleRad) - dy * Math.sin(angleRad) + centerX;
           const localY = dx * Math.sin(angleRad) + dy * Math.cos(angleRad) + centerY;
-          const expandedX = this.boundingBox.x - this.selectionPadding;
-          const expandedY = this.boundingBox.y - this.selectionPadding;
+          const expandedX = this.boundingBox.x + ox - this.selectionPadding;
+          const expandedY = this.boundingBox.y + oy - this.selectionPadding;
           const expandedWidth = this.boundingBox.width + 2 * this.selectionPadding;
           const expandedHeight = this.boundingBox.height + 2 * this.selectionPadding;
           const anchorPositions = [
@@ -8393,6 +8408,7 @@ var LixSketch = (() => {
           rotationLine.setAttribute("stroke-dasharray", "2 2");
           rotationLine.setAttribute("style", "pointer-events: none;");
           this.group.appendChild(rotationLine);
+          this.rotationLine = rotationLine;
           disableAllSideBars();
           paintBrushSideBar.classList.remove("hidden");
           if (window.__showSidebarForShape)
@@ -15282,6 +15298,26 @@ var LixSketch = (() => {
     const svgY = currentViewBox.y + (event.clientY - rect.top) * scaleY;
     return { x: svgX, y: svgY };
   }
+  function updateFrameContainmentForStroke(shape) {
+    if (shape.isBeingMovedByFrame)
+      return;
+    let targetFrame = null;
+    shapes.forEach((s3) => {
+      if (s3.shapeName === "frame" && s3.isShapeInFrame(shape)) {
+        targetFrame = s3;
+      }
+    });
+    if (shape.parentFrame && isDraggingStroke) {
+      shape.parentFrame.temporarilyRemoveFromFrame(shape);
+    }
+    if (hoveredFrameStroke && hoveredFrameStroke !== targetFrame) {
+      hoveredFrameStroke.removeHighlight();
+    }
+    if (targetFrame && targetFrame !== hoveredFrameStroke) {
+      targetFrame.highlightFrame();
+    }
+    hoveredFrameStroke = targetFrame;
+  }
   function deleteCurrentShape4() {
     if (currentShape && currentShape.shapeName === "freehandStroke") {
       const idx = shapes.indexOf(currentShape);
@@ -15328,7 +15364,7 @@ var LixSketch = (() => {
           }
           clickedOnShape = true;
         } else if (currentShape.contains(x3, y3)) {
-          isDraggingStroke2 = true;
+          isDraggingStroke = true;
           dragOldPosStroke = cloneStrokeData(currentShape);
           draggedShapeInitialFrameStroke = currentShape.parentFrame || null;
           if (currentShape.parentFrame) {
@@ -15370,7 +15406,7 @@ var LixSketch = (() => {
               dragOldPosStroke = cloneStrokeData(currentShape);
             }
           } else {
-            isDraggingStroke2 = true;
+            isDraggingStroke = true;
             dragOldPosStroke = cloneStrokeData(currentShape);
             draggedShapeInitialFrameStroke = currentShape.parentFrame || null;
             if (currentShape.parentFrame) {
@@ -15446,19 +15482,23 @@ var LixSketch = (() => {
         if (frame.shapeName === "frame") {
           if (frame.isShapeInFrame(currentStroke)) {
             frame.highlightFrame();
-            hoveredFrameStroke2 = frame;
-          } else if (hoveredFrameStroke2 === frame) {
+            hoveredFrameStroke = frame;
+          } else if (hoveredFrameStroke === frame) {
             frame.removeHighlight();
-            hoveredFrameStroke2 = null;
+            hoveredFrameStroke = null;
           }
         }
       });
-    } else if (isDraggingStroke2 && currentShape && currentShape.isSelected) {
+    } else if (isDraggingStroke && currentShape && currentShape.isSelected) {
       const dx = x3 - startX6;
       const dy = y3 - startY6;
       currentShape.move(dx, dy);
       startX6 = x3;
       startY6 = y3;
+      if (!currentShape.isBeingMovedByFrame) {
+        updateFrameContainmentForStroke(currentShape);
+      }
+      currentShape.updateAttachedArrows();
       if (window.__sketchStoreApi && window.__sketchStoreApi.getState().snapToObjects) {
         const snap = calculateSnap(currentShape, e3.shiftKey, e3.clientX, e3.clientY);
         if (snap.dx || snap.dy) {
@@ -15485,24 +15525,29 @@ var LixSketch = (() => {
       if (currentStroke && currentStroke.points.length >= 2) {
         currentStroke.draw();
         pushCreateAction(currentStroke);
-        const finalFrame = hoveredFrameStroke2;
+        const finalFrame = hoveredFrameStroke;
         if (finalFrame) {
           finalFrame.addShapeToFrame(currentStroke);
           pushFrameAttachmentAction(finalFrame, currentStroke, "attach", null);
         }
+        const drawnShape = currentStroke;
+        if (window.__sketchStoreApi)
+          window.__sketchStoreApi.setActiveTool("select", { afterDraw: true });
+        currentShape = drawnShape;
+        currentShape.selectStroke();
       } else if (currentStroke) {
         shapes.pop();
         if (currentStroke.group.parentNode) {
           currentStroke.group.parentNode.removeChild(currentStroke.group);
         }
       }
-      if (hoveredFrameStroke2) {
-        hoveredFrameStroke2.removeHighlight();
-        hoveredFrameStroke2 = null;
+      if (hoveredFrameStroke) {
+        hoveredFrameStroke.removeHighlight();
+        hoveredFrameStroke = null;
       }
       currentStroke = null;
     }
-    if ((isDraggingStroke2 || isResizingStroke || isRotatingStroke) && dragOldPosStroke && currentShape) {
+    if ((isDraggingStroke || isResizingStroke || isRotatingStroke) && dragOldPosStroke && currentShape) {
       const newPos = cloneStrokeData(currentShape);
       const stateChanged = JSON.stringify(dragOldPosStroke.points) !== JSON.stringify(newPos.points) || dragOldPosStroke.rotation !== newPos.rotation;
       const oldPos = {
@@ -15517,8 +15562,8 @@ var LixSketch = (() => {
       if (stateChanged || frameChanged) {
         pushTransformAction2(currentShape, oldPos, newPosForUndo);
       }
-      if (isDraggingStroke2) {
-        const finalFrame = hoveredFrameStroke2;
+      if (isDraggingStroke) {
+        const finalFrame = hoveredFrameStroke;
         if (draggedShapeInitialFrameStroke !== finalFrame) {
           if (draggedShapeInitialFrameStroke) {
             draggedShapeInitialFrameStroke.removeShapeFromFrame(currentShape);
@@ -15541,15 +15586,15 @@ var LixSketch = (() => {
       dragOldPosStroke = null;
       draggedShapeInitialFrameStroke = null;
     }
-    if (hoveredFrameStroke2) {
-      hoveredFrameStroke2.removeHighlight();
-      hoveredFrameStroke2 = null;
+    if (hoveredFrameStroke) {
+      hoveredFrameStroke.removeHighlight();
+      hoveredFrameStroke = null;
     }
     if (currentShape && typeof currentShape.finalizeMove === "function") {
       currentShape.finalizeMove();
     }
     clearSnapGuides();
-    isDraggingStroke2 = false;
+    isDraggingStroke = false;
     isResizingStroke = false;
     isRotatingStroke = false;
     resizingAnchorIndex = null;
@@ -15567,12 +15612,13 @@ var LixSketch = (() => {
       options: cloneOptions(stroke.options)
     };
   }
-  var strokeColors, strokeThicknesses, strokeStyles, strokeTapers, strokeRoughnesses, strokeColor, strokeThickness, strokeStyleValue, strokeThinning, strokeRoughnessValue, points, isDrawingStroke, currentStroke, strokeOpacity, isDraggingStroke2, isResizingStroke, isRotatingStroke, dragOldPosStroke, resizingAnchorIndex, startRotationMouseAngle3, startShapeRotation, startX6, startY6, draggedShapeInitialFrameStroke, hoveredFrameStroke2, lastPoint, lastTime, minDistance, maxDistance, isdraggingOpacity;
+  var strokeColors, strokeThicknesses, strokeStyles, strokeTapers, strokeRoughnesses, strokeColor, strokeThickness, strokeStyleValue, strokeThinning, strokeRoughnessValue, points, isDrawingStroke, currentStroke, strokeOpacity, isDraggingStroke, isResizingStroke, isRotatingStroke, dragOldPosStroke, resizingAnchorIndex, startRotationMouseAngle3, startShapeRotation, startX6, startY6, draggedShapeInitialFrameStroke, hoveredFrameStroke, lastPoint, lastTime, minDistance, maxDistance, isdraggingOpacity;
   var init_freehandTool = __esm({
     "../lixsketch/src/tools/freehandTool.js"() {
       init_UndoRedo();
       init_arrowTool();
       init_SnapGuides();
+      window.__updateArrowsForShape = updateAttachedArrows;
       strokeColors = document.querySelectorAll(".strokeColors span");
       strokeThicknesses = document.querySelectorAll(".strokeThickness span");
       strokeStyles = document.querySelectorAll(".strokeStyleSpan");
@@ -15587,7 +15633,7 @@ var LixSketch = (() => {
       isDrawingStroke = false;
       currentStroke = null;
       strokeOpacity = 1;
-      isDraggingStroke2 = false;
+      isDraggingStroke = false;
       isResizingStroke = false;
       isRotatingStroke = false;
       dragOldPosStroke = null;
@@ -15595,7 +15641,7 @@ var LixSketch = (() => {
       startRotationMouseAngle3 = null;
       startShapeRotation = null;
       draggedShapeInitialFrameStroke = null;
-      hoveredFrameStroke2 = null;
+      hoveredFrameStroke = null;
       lastPoint = null;
       lastTime = 0;
       minDistance = 2;
@@ -15939,10 +15985,10 @@ var LixSketch = (() => {
         break;
       case "freehandStroke":
         shapeBounds = {
-          x: shape.boundingBox.x,
-          y: shape.boundingBox.y,
-          width: shape.boundingBox.width,
-          height: shape.boundingBox.height
+          x: shape.x,
+          y: shape.y,
+          width: shape.width,
+          height: shape.height
         };
         break;
       case "text":
@@ -16030,22 +16076,20 @@ var LixSketch = (() => {
         multiSelection.startRotation(e3);
         return true;
       }
-      if (multiSelection.isPointInBounds(x3, y3)) {
-        let clickedOnSelectedShape = null;
-        for (const shape of multiSelection.selectedShapes) {
-          if (shape.contains && shape.contains(x3, y3)) {
-            clickedOnSelectedShape = shape;
-            break;
-          }
+      let clickedOnSelectedShape = null;
+      for (const shape of multiSelection.selectedShapes) {
+        if (shape.contains && shape.contains(x3, y3)) {
+          clickedOnSelectedShape = shape;
+          break;
         }
-        if (clickedOnSelectedShape) {
-          if (e3.ctrlKey || e3.metaKey) {
-            multiSelection.removeShape(clickedOnSelectedShape);
-            return true;
-          }
-          multiSelection.startDrag(e3);
+      }
+      if (clickedOnSelectedShape) {
+        if (e3.ctrlKey || e3.metaKey) {
+          multiSelection.removeShape(clickedOnSelectedShape);
           return true;
         }
+        multiSelection.startDrag(e3);
+        return true;
       }
     }
     if (e3.target.closest(".anchor") || e3.target.closest(".rotate-anchor") || e3.target.closest(".rotation-anchor")) {
@@ -16093,6 +16137,10 @@ var LixSketch = (() => {
           multiSelection.addShape(clickedShape);
         }
         currentShape = null;
+        return true;
+      }
+      if (multiSelection.selectedShapes.size > 1 && multiSelection.selectedShapes.has(clickedShape)) {
+        multiSelection.startDrag(e3);
         return true;
       }
       if (currentShape === clickedShape) {
@@ -16513,10 +16561,10 @@ var LixSketch = (() => {
               };
             case "freehandStroke":
               return {
-                x: shape.boundingBox.x,
-                y: shape.boundingBox.y,
-                width: shape.boundingBox.width,
-                height: shape.boundingBox.height
+                x: shape.x,
+                y: shape.y,
+                width: shape.width,
+                height: shape.height
               };
             case "text":
               const textElement = shape.group ? shape.group.querySelector("text") : null;
@@ -16799,7 +16847,7 @@ var LixSketch = (() => {
                 if (typeof shape.updateBoundingBox === "function") {
                   shape.updateBoundingBox();
                 }
-                const boundingBox = shape.boundingBox || this.getShapeBounds(shape);
+                const boundingBox = this.getShapeBounds(shape);
                 shapeData = {
                   x: boundingBox.x || 0,
                   y: boundingBox.y || 0,
@@ -17337,9 +17385,11 @@ var LixSketch = (() => {
             if (typeof shape.finalizeMove === "function") {
               shape.finalizeMove();
             }
+            shape.isSelected = true;
           });
           this.initialPositions.clear();
           this._pushUndoForAll();
+          this.updateControls();
           if (typeof svg !== "undefined") {
             svg.style.cursor = "default";
           }
@@ -17443,7 +17493,20 @@ var LixSketch = (() => {
   }
   function _onDocumentDragMove(e3) {
     _lastDragEvent = e3;
-    handleMainMouseMove(e3);
+    const rect = svg.getBoundingClientRect();
+    const clampedX = Math.max(rect.left, Math.min(rect.right, e3.clientX));
+    const clampedY = Math.max(rect.top, Math.min(rect.bottom, e3.clientY));
+    const clampedEvent = new MouseEvent(e3.type, {
+      clientX: clampedX,
+      clientY: clampedY,
+      buttons: e3.buttons,
+      button: e3.button,
+      ctrlKey: e3.ctrlKey,
+      shiftKey: e3.shiftKey,
+      altKey: e3.altKey,
+      metaKey: e3.metaKey
+    });
+    handleMainMouseMove(clampedEvent);
   }
   function _onDocumentDragUp(e3) {
     _stopAutoScroll();
@@ -17627,6 +17690,12 @@ var LixSketch = (() => {
         }
       };
       handleMainMouseMove = (e3) => {
+        if (e3.buttons & 1) {
+          _lastDragEvent = e3;
+          _startAutoScroll();
+        } else {
+          _stopAutoScroll();
+        }
         if (isSquareToolActive) {
           handleMouseMoveRect(e3);
         } else if (isArrowToolActive) {
@@ -17687,12 +17756,6 @@ var LixSketch = (() => {
             handleMouseMoveIcon(e3);
             handleCodeMouseMove(e3);
           }
-        }
-        if (e3.buttons & 1) {
-          _lastDragEvent = e3;
-          _startAutoScroll();
-        } else {
-          _stopAutoScroll();
         }
       };
       handleMainMouseUp = (e3) => {

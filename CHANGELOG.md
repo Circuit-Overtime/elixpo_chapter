@@ -1,5 +1,19 @@
 # Changelog
 
+## v5.4.1 (2026-03-24)
+
+### Fixes
+fix FreehandStroke getShapeBounds to account for move offset
+
+### Other
+- Add rotation line handling in FreehandStroke and enhance mouse up logic in freehandTool
+- Refactor FreehandStroke and freehandTool to streamline arrow updates and frame containment logic during drag operations
+- Refactor FreehandStroke to simplify transformation handling and remove unnecessary move offset logic
+- Enhance auto-scroll functionality and improve shape transformation handling in FreehandStroke
+- updated the multi select to work with the perspective of the full canvas during multi drag
+- Add anchor position updates during frame attachment point calculations
+
+
 ## v5.4.0 (2026-03-22)
 
 ### Other
