@@ -67,7 +67,9 @@ class FreehandStroke {
         this.selectionOutline = null;
         this.boundingBox = { x: 0, y: 0, width: 0, height: 0 };
         this.shapeName = "freehandStroke";
-        
+        this._moveOffsetX = 0;
+        this._moveOffsetY = 0;
+
         // Frame attachment properties
         this.parentFrame = null;
         
@@ -321,20 +323,13 @@ class FreehandStroke {
         // Calculate and store bounding box
         this.boundingBox = this.calculateBoundingBox();
 
-        // Apply transform (rotation + any pending move offset)
+        // Apply rotation
         const centerX = this.boundingBox.x + this.boundingBox.width / 2;
         const centerY = this.boundingBox.y + this.boundingBox.height / 2;
 
         // Ensure centerX and centerY are valid numbers
         if (!isNaN(centerX) && !isNaN(centerY)) {
-            const ox = this._moveOffsetX || 0;
-            const oy = this._moveOffsetY || 0;
-            const rot = this.rotation ? `rotate(${this.rotation} ${centerX} ${centerY})` : '';
-            if (ox || oy) {
-                this.group.setAttribute('transform', `translate(${ox}, ${oy}) ${rot}`);
-            } else {
-                this.group.setAttribute('transform', rot || `rotate(0 ${centerX} ${centerY})`);
-            }
+            this.group.setAttribute('transform', `rotate(${this.rotation} ${centerX} ${centerY})`);
         }
 
         if (this.isSelected) {
