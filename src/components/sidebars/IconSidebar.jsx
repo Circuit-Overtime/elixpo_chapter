@@ -16,8 +16,31 @@ const CATEGORIES = [
   { value: 'media', label: 'Media', icon: 'bxs-videos' },
 ]
 
+// Normalize an SVG string so it renders fully within a fixed box.
+// Ensures the inner <svg> has width/height="100%" and a viewBox.
+function normalizeSvg(raw) {
+  if (!raw) return raw
+  // Parse to a temp element so we can inspect attributes
+  const tmp = document.createElement('div')
+  tmp.innerHTML = raw
+  const svgEl = tmp.querySelector('svg')
+  if (!svgEl) return raw
+
+  // Ensure viewBox exists — derive from width/height if missing
+  if (!svgEl.getAttribute('viewBox')) {
+    const w = parseFloat(svgEl.getAttribute('width')) || 24
+    const h = parseFloat(svgEl.getAttribute('height')) || 24
+    svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`)
+  }
+  // Force the SVG to fill its container
+  svgEl.setAttribute('width', '100%')
+  svgEl.setAttribute('height', '100%')
+  return tmp.innerHTML
+}
+
 function IconCell({ icon, onClick }) {
   const name = icon.filename?.replace('.svg', '').replace(/_/g, ' ') || ''
+  const normalizedSvg = typeof document !== 'undefined' && icon.svg ? normalizeSvg(icon.svg) : icon.svg
   return (
     <button
       onClick={onClick}
@@ -25,10 +48,10 @@ function IconCell({ icon, onClick }) {
       style={{ width: '44px', height: '44px', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', cursor: 'pointer', background: 'transparent', border: 'none', padding: 0 }}
       className="hover:bg-white/10 transition-colors duration-100"
     >
-      {icon.svg ? (
+      {normalizedSvg ? (
         <div
-          style={{ width: '24px', height: '24px', overflow: 'hidden', flexShrink: 0, pointerEvents: 'none', filter: 'brightness(0) invert(1)' }}
-          dangerouslySetInnerHTML={{ __html: icon.svg }}
+          style={{ width: '24px', height: '24px', overflow: 'visible', flexShrink: 0, pointerEvents: 'none', filter: 'brightness(0) invert(1)' }}
+          dangerouslySetInnerHTML={{ __html: normalizedSvg }}
         />
       ) : (
         <img
@@ -112,6 +135,26 @@ export default function IconSidebar() {
     }, query ? 300 : 0)
     return () => clearTimeout(debounceRef.current)
   }, [query, visible, category, fetchIcons])
+
+  // Preload all categories in background on first sidebar open
+  const hasPreloaded = useRef(false)
+  useEffect(() => {
+    if (!visible || hasPreloaded.current) return
+    hasPreloaded.current = true
+    // Fire-and-forget: preload each category so switching is instant
+    CATEGORIES.forEach((cat) => {
+      const params = new URLSearchParams()
+      if (cat.value) params.set('category', cat.value)
+      params.set('inline', '1')
+      const key = params.toString()
+      if (!iconResultCache.has(key)) {
+        fetch(`/api/icons/search?${key}`)
+          .then((r) => r.ok ? r.json() : null)
+          .then((data) => { if (data?.results) iconResultCache.set(key, data.results) })
+          .catch(() => {})
+      }
+    })
+  }, [visible])
 
   const handleIconClick = useCallback((icon) => {
     if (typeof window === 'undefined') return
