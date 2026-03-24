@@ -47,7 +47,7 @@ function recordDbSave() {
 function saveToLocalStorage() {
   const serializer = window.__sceneSerializer
   const shapes = window.shapes
-  if (!serializer || !shapes) return false
+  if (!serializer || !Array.isArray(shapes)) return false
 
   try {
     const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
@@ -58,6 +58,13 @@ function saveToLocalStorage() {
       savedAt: Date.now(),
       shapeCount: shapes.length,
     }))
+
+    // Signal the UI that a local save just happened
+    if (typeof window.__onLocalSave === 'function') window.__onLocalSave()
+    const status = useUIStore.getState().saveStatus
+    if (status !== 'local' && status !== 'cloud') {
+      useUIStore.getState().setSaveStatus('local')
+    }
     return true
   } catch (err) {
     console.warn('[AutoSave] Local buffer save failed:', err)
@@ -319,25 +326,33 @@ export default function useAutoSave() {
   }, [isInRoom])
 
   // ──────────────────────────────────────────────────────
-  // 2. MARK DIRTY: yellow status when canvas changes after cloud sync
+  // 2. AUTO-SAVE ON EVERY CANVAS CHANGE (debounced)
+  //    MutationObserver catches all DOM changes; mouseup catches
+  //    the end of draw/move/resize operations.
   // ──────────────────────────────────────────────────────
   useEffect(() => {
     if (isInRoom) return
 
-    const markDirty = () => {
-      const status = useUIStore.getState().saveStatus
-      if (status === 'cloud') {
-        useUIStore.getState().setSaveStatus('local')
-      }
+    let debounceTimer = null
+    const debouncedSave = () => {
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => {
+        saveToLocalStorage()
+        // Mark dirty relative to cloud
+        const status = useUIStore.getState().saveStatus
+        if (status === 'cloud') {
+          useUIStore.getState().setSaveStatus('local')
+        }
+      }, 400) // 400ms debounce — fast enough to feel instant, avoids thrashing
     }
 
     const waitForSvg = () => {
       const svg = window.svg
       if (!svg) { setTimeout(waitForSvg, 500); return }
 
-      const observer = new MutationObserver(markDirty)
+      const observer = new MutationObserver(debouncedSave)
       observer.observe(svg, { childList: true, subtree: true, attributes: true })
-      svg.addEventListener('mouseup', markDirty)
+      svg.addEventListener('mouseup', debouncedSave)
 
       observerRef.current = { observer, svg }
     }
@@ -346,9 +361,10 @@ export default function useAutoSave() {
     waitForSvg()
 
     return () => {
+      clearTimeout(debounceTimer)
       if (observerRef.current) {
         observerRef.current.observer.disconnect()
-        observerRef.current.svg.removeEventListener('mouseup', markDirty)
+        observerRef.current.svg.removeEventListener('mouseup', debouncedSave)
       }
     }
   }, [isInRoom])

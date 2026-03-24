@@ -403,7 +403,8 @@ function renderText(input, textElement, deleteIfEmpty = false) {
     // After rendering text, switch to selection tool and auto-select
     if (gElement.parentNode) {
         switchToSelectionTool();
-        selectElement(gElement);
+        // Defer selection so the tool switch (async React state) completes first
+        requestAnimationFrame(() => selectElement(gElement));
     }
 }
 
@@ -1797,8 +1798,9 @@ window.updateSelectedTextStyle = function(changes) {
     }
 };
 
-// Expose deselectElement for external callers (Selection.js blank canvas click)
+// Expose select/deselect for external callers (Selection.js, TextShape.selectShape)
 window.__deselectTextElement = deselectElement;
+window.__selectTextElement = selectElement;
 
 // React sidebar bridge — text ↔ code conversion
 window.__convertTextToCode = function() {

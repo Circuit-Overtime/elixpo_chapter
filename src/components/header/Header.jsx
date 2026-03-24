@@ -129,6 +129,22 @@ function ProfileDropdown() {
 
 function SaveStatusDot() {
   const saveStatus = useUIStore((s) => s.saveStatus)
+  const [pulsing, setPulsing] = useState(false)
+
+  // Listen for local save events to trigger a pulse
+  useEffect(() => {
+    let timer
+    window.__onLocalSave = () => {
+      setPulsing(true)
+      clearTimeout(timer)
+      timer = setTimeout(() => setPulsing(false), 800)
+    }
+    return () => {
+      window.__onLocalSave = null
+      clearTimeout(timer)
+    }
+  }, [])
+
   if (saveStatus === 'idle') return null
 
   const colorMap = {
@@ -143,7 +159,7 @@ function SaveStatusDot() {
   }
   return (
     <span
-      className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-300 ${colorMap[saveStatus] || 'bg-yellow-400'}`}
+      className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-300 ${colorMap[saveStatus] || 'bg-yellow-400'} ${pulsing ? 'animate-pulse' : ''}`}
       title={titleMap[saveStatus] || ''}
     />
   )

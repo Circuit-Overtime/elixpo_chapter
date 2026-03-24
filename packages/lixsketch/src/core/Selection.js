@@ -159,17 +159,22 @@ function isShapeInSelectionRect(shape, selectionBounds) {
             };
             break;
         case 'text':
-            const textElement = shape.group ? shape.group.querySelector('text') : null;
-            if (textElement) {
-                const bbox = textElement.getBBox();
-                const transform = shape.group.transform.baseVal.consolidate();
-                const matrix = transform ? transform.matrix : { e: 0, f: 0 };
-                shapeBounds = {
-                    x: bbox.x + matrix.e,
-                    y: bbox.y + matrix.f,
-                    width: bbox.width,
-                    height: bbox.height
-                };
+        case 'code':
+            const textOrCodeEl = shape.group ? shape.group.querySelector('text') : null;
+            if (textOrCodeEl && shape.group.style.display !== 'none') {
+                try {
+                    const bbox = textOrCodeEl.getBBox();
+                    const transform = shape.group.transform.baseVal.consolidate();
+                    const matrix = transform ? transform.matrix : { e: 0, f: 0 };
+                    shapeBounds = {
+                        x: bbox.x + matrix.e,
+                        y: bbox.y + matrix.f,
+                        width: bbox.width,
+                        height: bbox.height
+                    };
+                } catch {
+                    shapeBounds = { x: 0, y: 0, width: 0, height: 0 };
+                }
             } else {
                 shapeBounds = { x: 0, y: 0, width: 0, height: 0 };
             }
@@ -1693,6 +1698,9 @@ function handleMultiSelectionMouseUp(e) {
                     selectedShape.isSelected = true;
                 } else if (typeof selectedShape.createSelection === 'function') {
                     selectedShape.createSelection();
+                    selectedShape.isSelected = true;
+                } else if (typeof selectedShape.selectShape === 'function') {
+                    selectedShape.selectShape();
                     selectedShape.isSelected = true;
                 }
 

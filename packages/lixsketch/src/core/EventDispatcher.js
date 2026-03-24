@@ -103,6 +103,7 @@ function _onDocumentDragUp(e) {
 }
 
 const handleMainMouseDown = (e) => {
+    if (!e.target) return;
     // Safety: remove any stray selection rectangle from a previous interrupted drag
     removeMultiSelectionRect();
 
@@ -465,6 +466,7 @@ function _onMouseEnter(e) {
 }
 
 const handleMainDblClick = (e) => {
+    if (!e.target) return;
     // Double-click on a text group from any tool: enter text edit mode
     const targetTextGroup = e.target.closest('g[data-type="text-group"]');
     if (targetTextGroup) {

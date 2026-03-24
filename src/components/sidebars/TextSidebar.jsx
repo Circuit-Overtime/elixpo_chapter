@@ -75,6 +75,7 @@ export default function TextSidebar() {
   const visible = activeTool === TOOLS.TEXT || activeTool === TOOLS.CODE || selectedShapeSidebar === 'text'
 
   return (
+    <>
     <ShapeSidebar visible={visible}>
       {/* Color */}
       <ToolbarButton tooltip="Text color"
@@ -153,14 +154,19 @@ export default function TextSidebar() {
       </ToolbarButton>
       <Divider />
       <LayerControls />
-
-      {/* Keyboard shortcut hint */}
-      <div className="px-3 pb-2 pt-1">
-        <p className="text-[10px] text-white/30 leading-relaxed text-center">
-          <span className="text-white/50">Ctrl+Enter</span> / <span className="text-white/50">Enter</span> — render text<br />
-          <span className="text-white/50">Shift+Enter</span> — new line
-        </p>
-      </div>
     </ShapeSidebar>
+
+    {/* Keyboard shortcut hint — positioned below the property bar */}
+    <div
+      className={`absolute bottom-7 left-1/2 -translate-x-1/2 z-[998] font-[lixFont] transition-all duration-200 ${
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 pointer-events-none translate-y-2'
+      }`}
+    >
+      <p className="text-[10px] text-white/30 leading-relaxed text-center whitespace-nowrap">
+        <span className="text-white/50">Ctrl+Enter</span> / <span className="text-white/50">Enter</span> — render text &nbsp;&nbsp;
+        <span className="text-white/50">Shift+Enter</span> — new line
+      </p>
+    </div>
+    </>
   )
 }

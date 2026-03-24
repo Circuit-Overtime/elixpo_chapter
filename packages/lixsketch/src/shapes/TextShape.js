@@ -219,7 +219,12 @@ class TextShape {
     }
 
     selectShape() {
-        selectElement(this.group);
+        // Use the real textTool selectElement (with selection feedback) if available
+        if (typeof window !== 'undefined' && window.__selectTextElement) {
+            window.__selectTextElement(this.group);
+        } else {
+            selectElement(this.group);
+        }
     }
 }
 
