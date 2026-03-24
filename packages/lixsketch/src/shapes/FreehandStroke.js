@@ -63,6 +63,7 @@ class FreehandStroke {
         this.group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         this.anchors = [];
         this.rotationAnchor = null;
+        this.rotationLine = null;
         this.selectionPadding = 8;
         this.selectionOutline = null;
         this.boundingBox = { x: 0, y: 0, width: 0, height: 0 };
@@ -391,11 +392,15 @@ class FreehandStroke {
         if (this.rotationAnchor && this.rotationAnchor.parentNode === this.group) {
             this.group.removeChild(this.rotationAnchor);
         }
+        if (this.rotationLine && this.rotationLine.parentNode === this.group) {
+            this.group.removeChild(this.rotationLine);
+        }
         if (this.selectionOutline && this.selectionOutline.parentNode === this.group) {
             this.group.removeChild(this.selectionOutline);
         }
         this.anchors = [];
         this.rotationAnchor = null;
+        this.rotationLine = null;
         this.selectionOutline = null;
         this.isSelected = false;
     }
@@ -594,6 +599,7 @@ class FreehandStroke {
     rotationLine.setAttribute('stroke-dasharray', '2 2');
     rotationLine.setAttribute('style', 'pointer-events: none;');
     this.group.appendChild(rotationLine);
+    this.rotationLine = rotationLine;
 
     // Show sidebar when anchors are added (when shape is selected)
     disableAllSideBars();

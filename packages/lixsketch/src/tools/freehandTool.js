@@ -370,7 +370,7 @@ function handleMouseUp(e) {
         if (currentStroke && currentStroke.points.length >= 2) {
             currentStroke.draw(); // Redraw with final smoothing
             pushCreateAction(currentStroke);
-            
+
             // Check for frame containment and track attachment
             const finalFrame = hoveredFrameStroke;
             if (finalFrame) {
@@ -378,6 +378,12 @@ function handleMouseUp(e) {
                 // Track the attachment for undo
                 pushFrameAttachmentAction(finalFrame, currentStroke, 'attach', null);
             }
+
+            // Auto-select the drawn stroke and switch to selection tool
+            const drawnShape = currentStroke;
+            if (window.__sketchStoreApi) window.__sketchStoreApi.setActiveTool('select', { afterDraw: true });
+            currentShape = drawnShape;
+            currentShape.selectStroke();
         } else if (currentStroke) {
             // Remove strokes that are too small
             shapes.pop();
@@ -385,13 +391,13 @@ function handleMouseUp(e) {
                 currentStroke.group.parentNode.removeChild(currentStroke.group);
             }
         }
-        
+
         // Clear frame highlighting
         if (hoveredFrameStroke) {
             hoveredFrameStroke.removeHighlight();
             hoveredFrameStroke = null;
         }
-        
+
         currentStroke = null;
     }
     
