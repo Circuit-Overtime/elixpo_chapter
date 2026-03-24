@@ -321,13 +321,20 @@ class FreehandStroke {
         // Calculate and store bounding box
         this.boundingBox = this.calculateBoundingBox();
 
-        // Apply rotation
+        // Apply transform (rotation + any pending move offset)
         const centerX = this.boundingBox.x + this.boundingBox.width / 2;
         const centerY = this.boundingBox.y + this.boundingBox.height / 2;
 
         // Ensure centerX and centerY are valid numbers
         if (!isNaN(centerX) && !isNaN(centerY)) {
-            this.group.setAttribute('transform', `rotate(${this.rotation} ${centerX} ${centerY})`);
+            const ox = this._moveOffsetX || 0;
+            const oy = this._moveOffsetY || 0;
+            const rot = this.rotation ? `rotate(${this.rotation} ${centerX} ${centerY})` : '';
+            if (ox || oy) {
+                this.group.setAttribute('transform', `translate(${ox}, ${oy}) ${rot}`);
+            } else {
+                this.group.setAttribute('transform', rot || `rotate(0 ${centerX} ${centerY})`);
+            }
         }
 
         if (this.isSelected) {
@@ -465,10 +472,14 @@ class FreehandStroke {
     const buffer = 10;
     const anchorSize = 10 / currentZoom;
 
+    // Account for pending move offset
+    const ox = this._moveOffsetX || 0;
+    const oy = this._moveOffsetY || 0;
+
     // Transform the input coordinates to account for rotation
-    const centerX = this.boundingBox.x + this.boundingBox.width / 2;
-    const centerY = this.boundingBox.y + this.boundingBox.height / 2;
-    
+    const centerX = this.boundingBox.x + ox + this.boundingBox.width / 2;
+    const centerY = this.boundingBox.y + oy + this.boundingBox.height / 2;
+
     // Rotate the mouse coordinates to the shape's local coordinate system
     const angleRad = -this.rotation * Math.PI / 180;
     const dx = x - centerX;
@@ -477,8 +488,8 @@ class FreehandStroke {
     const localY = dx * Math.sin(angleRad) + dy * Math.cos(angleRad) + centerY;
 
     // Check resize anchors in local space
-    const expandedX = this.boundingBox.x - this.selectionPadding;
-    const expandedY = this.boundingBox.y - this.selectionPadding;
+    const expandedX = this.boundingBox.x + ox - this.selectionPadding;
+    const expandedY = this.boundingBox.y + oy - this.selectionPadding;
     const expandedWidth = this.boundingBox.width + 2 * this.selectionPadding;
     const expandedHeight = this.boundingBox.height + 2 * this.selectionPadding;
     
