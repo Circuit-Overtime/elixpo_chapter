@@ -202,11 +202,12 @@ class CodeShape {
 
     contains(x, y) {
         const codeElement = this.group.querySelector('text');
-        if (!codeElement) return false;
-        
-        const bbox = codeElement.getBBox();
+        if (!codeElement || typeof codeElement.getBBox !== 'function') return false;
+
+        let bbox;
+        try { bbox = codeElement.getBBox(); } catch { return false; }
         const padding = 8; // Selection padding
-        
+
         const CTM = this.group.getCTM();
         if (!CTM) return false;
         
