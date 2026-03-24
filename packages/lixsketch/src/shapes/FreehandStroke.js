@@ -345,14 +345,6 @@ class FreehandStroke {
         const centerY = this.boundingBox.y + this.boundingBox.height / 2;
         const rot = this.rotation ? `rotate(${this.rotation} ${centerX} ${centerY})` : '';
         this.group.setAttribute('transform', `translate(${this._moveOffsetX}, ${this._moveOffsetY}) ${rot}`);
-
-        // Only update frame containment if we're actively dragging the shape itself
-        // and not being moved by a parent frame
-        if (isDraggingStroke && !this.isBeingMovedByFrame) {
-            this.updateFrameContainment();
-        }
-
-        this.updateAttachedArrows();
     }
 
     // Call after drag ends to bake the offset into actual point coordinates
@@ -368,37 +360,9 @@ class FreehandStroke {
     }
 
     updateAttachedArrows() {
-        updateArrowsForShape(this);
-    }
-
-    updateFrameContainment() {
-        // Don't update if we're being moved by a frame
-        if (this.isBeingMovedByFrame) return;
-        
-        let targetFrame = null;
-        
-        // Find which frame this shape is over
-        shapes.forEach(shape => {
-            if (shape.shapeName === 'frame' && shape.isShapeInFrame(this)) {
-                targetFrame = shape;
-            }
-        });
-        
-        // If we have a parent frame and we're being dragged, temporarily remove clipping
-        if (this.parentFrame && isDraggingStroke) {
-            this.parentFrame.temporarilyRemoveFromFrame(this);
+        if (typeof window.__updateArrowsForShape === 'function') {
+            window.__updateArrowsForShape(this);
         }
-        
-        // Update frame highlighting
-        if (hoveredFrameStroke && hoveredFrameStroke !== targetFrame) {
-            hoveredFrameStroke.removeHighlight();
-        }
-        
-        if (targetFrame && targetFrame !== hoveredFrameStroke) {
-            targetFrame.highlightFrame();
-        }
-        
-        hoveredFrameStroke = targetFrame;
     }
 
     selectStroke() {

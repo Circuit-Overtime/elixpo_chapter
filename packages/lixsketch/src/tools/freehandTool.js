@@ -4,6 +4,9 @@ import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransf
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './arrowTool.js';
 import { calculateSnap, clearSnapGuides } from '../core/SnapGuides.js';
 
+// Expose updateArrowsForShape globally so FreehandStroke.updateAttachedArrows() can call it
+// (FreehandStroke.js is a separate module and cannot import freehandTool's local bindings)
+window.__updateArrowsForShape = updateArrowsForShape;
 
 const strokeColors = document.querySelectorAll(".strokeColors span");
 const strokeThicknesses = document.querySelectorAll(".strokeThickness span");
@@ -78,6 +81,31 @@ function getSvgPathFromStroke(stroke) {
     }
     
     return pathData.join(' ');
+}
+
+// Frame containment check for a freehand stroke during drag.
+// Lives here (not in FreehandStroke.js) because it needs isDraggingStroke & hoveredFrameStroke.
+function updateFrameContainmentForStroke(shape) {
+    if (shape.isBeingMovedByFrame) return;
+
+    let targetFrame = null;
+    shapes.forEach(s => {
+        if (s.shapeName === 'frame' && s.isShapeInFrame(shape)) {
+            targetFrame = s;
+        }
+    });
+
+    if (shape.parentFrame && isDraggingStroke) {
+        shape.parentFrame.temporarilyRemoveFromFrame(shape);
+    }
+
+    if (hoveredFrameStroke && hoveredFrameStroke !== targetFrame) {
+        hoveredFrameStroke.removeHighlight();
+    }
+    if (targetFrame && targetFrame !== hoveredFrameStroke) {
+        targetFrame.highlightFrame();
+    }
+    hoveredFrameStroke = targetFrame;
 }
 
 // Delete functionality
@@ -303,6 +331,14 @@ function handleMouseMove(e) {
         currentShape.move(dx, dy);
         startX = x;
         startY = y;
+
+        // Frame containment update (must live here where isDraggingStroke is in scope)
+        if (!currentShape.isBeingMovedByFrame) {
+            updateFrameContainmentForStroke(currentShape);
+        }
+
+        // Update arrows attached to this shape
+        currentShape.updateAttachedArrows();
 
         // Snap guides
         if (window.__sketchStoreApi && window.__sketchStoreApi.getState().snapToObjects) {
