@@ -41,10 +41,8 @@ function removeSelection() {
     const svg = getSVGElement();
     if (!svg) return;
 
-    const outline = svg.querySelector(".selection-outline");
-    if (outline) {
-        svg.removeChild(outline);
-    }
+    // Remove ALL selection outlines (prevents orphaned ghost elements)
+    svg.querySelectorAll(".selection-outline").forEach(el => el.remove());
 
     removeResizeAnchors();
     removeRotationAnchor();
@@ -1328,6 +1326,21 @@ function handleIconClick(event, filename) {
 }
 
 
+
+// Clean up any lingering miniature icon or drag state (called on tool switch)
+function cleanupIconTool() {
+    if (currentIconElement) {
+        const svg = getSVGElement();
+        if (svg && currentIconElement.parentNode === svg) {
+            svg.removeChild(currentIconElement);
+        }
+        currentIconElement = null;
+    }
+    isDraggingIcon = false;
+    iconToPlace = null;
+    document.body.style.cursor = 'default';
+}
+window.__cleanupIconTool = cleanupIconTool;
 
 // Bridge for React sidebar to trigger icon placement
 window.prepareIconPlacement = function(svgContent) {

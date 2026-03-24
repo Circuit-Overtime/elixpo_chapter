@@ -388,6 +388,10 @@ class SketchEngine {
         if (typeof window.forceCleanupEraserTrail === 'function') {
             window.forceCleanupEraserTrail();
         }
+        // Clean up any lingering icon miniature/drag state
+        if (typeof window.__cleanupIconTool === 'function') {
+            window.__cleanupIconTool();
+        }
 
         window.isPaintToolActive = false;
         window.isSquareToolActive = false;
