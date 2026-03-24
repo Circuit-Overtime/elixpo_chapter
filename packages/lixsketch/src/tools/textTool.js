@@ -51,6 +51,7 @@ let rotationStartTransform = null;
 let initialHandlePosRelGroup = null;
 let initialGroupTx = 0;
 let initialGroupTy = 0;
+let initialInverseScreenCTM = null;
 
 // Frame attachment variables
 let draggedShapeInitialFrameText = null;
@@ -1820,4 +1821,4 @@ window.__setCodeLanguage = function(lang) {
     }
 };
 
-export { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, updateCodeToggleForShape, deselectElement as deselectTextElement };
+export { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, updateCodeToggleForShape, deselectElement as deselectTextElement, enterEditMode };
