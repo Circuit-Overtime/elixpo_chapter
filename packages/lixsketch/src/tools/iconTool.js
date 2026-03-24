@@ -194,7 +194,7 @@ const handleMouseDownIcon = async (e) => {
         if (clickedIcon) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             if (selectedIcon === clickedIcon) {
                 originalX = parseFloat(selectedIcon.getAttribute('x')) || 0;
                 originalY = parseFloat(selectedIcon.getAttribute('y')) || 0;
@@ -245,6 +245,16 @@ const handleMouseDownIcon = async (e) => {
                 return;
             }
         }
+
+        // Clicked on empty canvas while an icon is selected — deselect it
+        if (selectedIcon) {
+            removeSelection();
+            selectedIcon = null;
+            if (currentShape && currentShape.shapeName === 'icon') {
+                currentShape = null;
+            }
+        }
+        return;
     }
 
     if (!isDraggingIcon || !iconToPlace || !isIconToolActive) {
@@ -404,22 +414,9 @@ const handleMouseDownIcon = async (e) => {
 
 const handleMouseUpIcon = (e) => {
     if (!e.target) return;
-    if (isSelectionToolActive) {
-        const clickedElement = e.target;
-        const isIconElement = clickedElement.closest('[type="icon"]');
-        const isAnchorElement = clickedElement.classList.contains('resize-anchor') ||
-            clickedElement.classList.contains('rotation-anchor') ||
-            clickedElement.classList.contains('selection-outline');
-
-        if (!isIconElement && !isAnchorElement && selectedIcon) {
-            removeSelection();
-            selectedIcon = null;
-            // Clear global currentShape so EventDispatcher doesn't route to icon handler
-            if (currentShape && currentShape.shapeName === 'icon') {
-                currentShape = null;
-            }
-        }
-    }
+    // Deselection on empty-canvas click is handled by handleMouseDownIcon.
+    // We intentionally do NOT deselect on mouseup — after a drag the cursor
+    // often ends up on the background, and that shouldn't kill the selection.
 
     if (hoveredFrameIcon) {
         hoveredFrameIcon.removeHighlight();
