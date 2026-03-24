@@ -284,10 +284,11 @@ function deserializeShape(data) {
         case 'icon': {
             if (!data.elementHTML) return null;
             const parser = new DOMParser();
-            const doc = parser.parseFromString(data.elementHTML, 'image/svg+xml');
-            const svgIcon = doc.documentElement;
-            if (!svgIcon) return null;
-            const imported = svgEl.ownerDocument.importNode(svgIcon, true);
+            // Wrap in <svg> so the parser treats the <g> as a valid child, not a document root
+            const doc = parser.parseFromString(`<svg xmlns="${ns}">${data.elementHTML}</svg>`, 'image/svg+xml');
+            const iconGroup = doc.querySelector('g');
+            if (!iconGroup) return null;
+            const imported = svgEl.ownerDocument.importNode(iconGroup, true);
             svgEl.appendChild(imported);
             const shape = new IconShape(imported);
             if (data.shapeID) shape.shapeID = data.shapeID;
