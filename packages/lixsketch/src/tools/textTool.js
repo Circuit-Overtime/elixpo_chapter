@@ -754,6 +754,10 @@ function startResize(event, anchor) {
 
   startPoint = getSVGCoordinates(event, selectedElement);
 
+  // Freeze the group's screen CTM at resize start so mouse→local mapping stays stable
+  const groupScreenCTM = selectedElement.getScreenCTM();
+  initialInverseScreenCTM = groupScreenCTM ? groupScreenCTM.inverse() : null;
+
   const currentTransform = selectedElement.transform.baseVal.consolidate();
   initialGroupTx = currentTransform ? currentTransform.matrix.e : 0;
   initialGroupTy = currentTransform ? currentTransform.matrix.f : 0;
@@ -829,7 +833,16 @@ const handleMouseMove = (event) => {
         const textElement = selectedElement.querySelector('text');
         if (!textElement || !startBBox || startFontSize === null || !startPoint || !initialHandlePosRelGroup) return;
 
-        const currentPoint = getSVGCoordinates(event, selectedElement);
+        // Use the frozen initial CTM so the mapping doesn't shift as we change the group transform
+        let currentPoint;
+        if (initialInverseScreenCTM) {
+            const pt = svg.createSVGPoint();
+            pt.x = event.clientX;
+            pt.y = event.clientY;
+            currentPoint = pt.matrixTransform(initialInverseScreenCTM);
+        } else {
+            currentPoint = getSVGCoordinates(event, selectedElement);
+        }
 
         const startX = startBBox.x;
         const startY = startBBox.y;

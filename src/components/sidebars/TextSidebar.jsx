@@ -153,6 +153,14 @@ export default function TextSidebar() {
       </ToolbarButton>
       <Divider />
       <LayerControls />
+
+      {/* Keyboard shortcut hint */}
+      <div className="px-3 pb-2 pt-1">
+        <p className="text-[10px] text-white/30 leading-relaxed text-center">
+          <span className="text-white/50">Ctrl+Enter</span> / <span className="text-white/50">Enter</span> — render text<br />
+          <span className="text-white/50">Shift+Enter</span> — new line
+        </p>
+      </div>
     </ShapeSidebar>
   )
 }

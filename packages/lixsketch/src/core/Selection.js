@@ -80,9 +80,10 @@ function highlightShapesInSelectionRect(currentX, currentY) {
         shapes.forEach(shape => {
             if (isShapeInSelectionRect(shape, selBounds)) {
                 // Add a semi-transparent overlay to the shape's group
-                if (shape.group) {
+                if (shape.group && typeof shape.group.getBBox === 'function') {
+                    let bbox;
+                    try { bbox = shape.group.getBBox(); } catch { return; }
                     const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                    const bbox = shape.group.getBBox();
                     overlay.setAttribute('x', bbox.x - 2);
                     overlay.setAttribute('y', bbox.y - 2);
                     overlay.setAttribute('width', bbox.width + 4);

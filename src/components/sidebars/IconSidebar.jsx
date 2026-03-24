@@ -3,6 +3,8 @@
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import { useState, useEffect, useCallback, useRef } from 'react'
 
+const iconResultCache = new Map()
+
 const CATEGORIES = [
   { value: null, label: 'All', icon: 'bxs-grid-alt' },
   { value: 'tech', label: 'Tech', icon: 'bxs-chip' },
@@ -63,18 +65,37 @@ export default function IconSidebar() {
     return () => document.removeEventListener('keydown', handler, true)
   }, [visible, setActiveTool])
 
+  // Close when clicking on the canvas (outside the sidebar)
+  useEffect(() => {
+    if (!visible) return
+    const svgEl = document.getElementById('freehand-canvas')
+    if (!svgEl) return
+    const handleCanvasClick = () => setActiveTool(TOOLS.SELECT)
+    svgEl.addEventListener('mousedown', handleCanvasClick)
+    return () => svgEl.removeEventListener('mousedown', handleCanvasClick)
+  }, [visible, setActiveTool])
+
   const fetchIcons = useCallback(async (searchQuery, cat) => {
+    const params = new URLSearchParams()
+    if (searchQuery) params.set('q', searchQuery)
+    if (cat) params.set('category', cat)
+    params.set('inline', '1')
+    const cacheKey = params.toString()
+
+    // Return cached results instantly if available
+    if (iconResultCache.has(cacheKey)) {
+      setIcons(iconResultCache.get(cacheKey))
+      return
+    }
+
     setLoading(true)
     try {
-      const params = new URLSearchParams()
-      if (searchQuery) params.set('q', searchQuery)
-      if (cat) params.set('category', cat)
-      params.set('inline', '1')
-
-      const res = await fetch(`/api/icons/search?${params.toString()}`)
+      const res = await fetch(`/api/icons/search?${cacheKey}`)
       if (res.ok) {
         const data = await res.json()
-        setIcons(data.results || [])
+        const results = data.results || []
+        iconResultCache.set(cacheKey, results)
+        setIcons(results)
       }
     } catch (err) {
       console.error('Icon fetch failed:', err)

@@ -5,6 +5,7 @@ import Fuse from 'fuse.js'
 
 let fuse = null
 let dataArray = null
+const svgCache = new Map()
 
 async function loadData(origin) {
   if (dataArray && fuse) return
@@ -23,6 +24,18 @@ async function loadData(origin) {
     threshold: 0.4,
     keys: ['filename', 'keywords', 'description', 'category'],
   })
+}
+
+async function fetchSvg(origin, filename) {
+  if (svgCache.has(filename)) return svgCache.get(filename)
+  try {
+    const svgRes = await fetch(`${origin}/icons/${filename}`)
+    const svg = svgRes.ok ? await svgRes.text() : null
+    if (svg) svgCache.set(filename, svg)
+    return svg
+  } catch {
+    return null
+  }
 }
 
 export async function GET(request) {
@@ -54,17 +67,16 @@ export async function GET(request) {
   if (inline) {
     const withSvg = await Promise.all(
       sliced.map(async (item) => {
-        try {
-          const svgRes = await fetch(`${origin}/icons/${item.filename}`)
-          const svg = svgRes.ok ? await svgRes.text() : null
-          return { ...item, svg }
-        } catch {
-          return { ...item, svg: null }
-        }
+        const svg = await fetchSvg(origin, item.filename)
+        return { ...item, svg }
       })
     )
-    return NextResponse.json({ results: withSvg })
+    return NextResponse.json({ results: withSvg }, {
+      headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' },
+    })
   }
 
-  return NextResponse.json({ results: sliced })
+  return NextResponse.json({ results: sliced }, {
+    headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' },
+  })
 }
