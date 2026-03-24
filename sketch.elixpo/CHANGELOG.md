@@ -1,5 +1,12 @@
 # Changelog
 
+## v5.4.2 (2026-03-24)
+
+### Other
+- Enhance error handling for shape bounding box retrieval and add caching for icon fetch results
+- Add double-click functionality to enter text edit mode and update textTool exports
+
+
 ## v5.4.1 (2026-03-24)
 
 ### Fixes

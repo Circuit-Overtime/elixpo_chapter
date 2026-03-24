@@ -5787,9 +5787,14 @@ var LixSketch = (() => {
         }
         contains(x3, y3) {
           const textElement = this.group.querySelector("text");
-          if (!textElement)
+          if (!textElement || typeof textElement.getBBox !== "function")
             return false;
-          const bbox = textElement.getBBox();
+          let bbox;
+          try {
+            bbox = textElement.getBBox();
+          } catch {
+            return false;
+          }
           const padding = 8;
           const CTM = this.group.getCTM();
           if (!CTM)
@@ -6000,9 +6005,14 @@ var LixSketch = (() => {
         }
         contains(x3, y3) {
           const codeElement = this.group.querySelector("text");
-          if (!codeElement)
+          if (!codeElement || typeof codeElement.getBBox !== "function")
             return false;
-          const bbox = codeElement.getBBox();
+          let bbox;
+          try {
+            bbox = codeElement.getBBox();
+          } catch {
+            return false;
+          }
           const padding = 8;
           const CTM = this.group.getCTM();
           if (!CTM)
@@ -11604,6 +11614,7 @@ var LixSketch = (() => {
   var textTool_exports = {};
   __export(textTool_exports, {
     deselectTextElement: () => deselectElement2,
+    enterEditMode: () => enterEditMode,
     handleTextMouseDown: () => handleTextMouseDown,
     handleTextMouseMove: () => handleTextMouseMove,
     handleTextMouseUp: () => handleTextMouseUp,
@@ -12174,6 +12185,8 @@ var LixSketch = (() => {
     if (isNaN(startFontSize))
       startFontSize = 30;
     startPoint = getSVGCoordinates2(event, selectedElement3);
+    const groupScreenCTM = selectedElement3.getScreenCTM();
+    initialInverseScreenCTM = groupScreenCTM ? groupScreenCTM.inverse() : null;
     const currentTransform = selectedElement3.transform.baseVal.consolidate();
     initialGroupTx = currentTransform ? currentTransform.matrix.e : 0;
     initialGroupTy = currentTransform ? currentTransform.matrix.f : 0;
@@ -12392,7 +12405,7 @@ var LixSketch = (() => {
       }
     }
   }
-  var textSize, textFont, textColor, textAlign, textColorOptions, textFontOptions, textSizeOptions, textAlignOptions, selectedElement3, selectionBox, resizeHandles, dragOffsetX, dragOffsetY, isDragging6, isResizing2, currentResizeHandle, startBBox, startFontSize, startPoint, isRotating, rotationStartAngle, rotationStartTransform, initialHandlePosRelGroup, initialGroupTx, initialGroupTy, draggedShapeInitialFrameText, hoveredFrameText2, handleMouseMove4, handleMouseUp4, handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, textCodeOptions, languageSelector, codeLanguageSelect;
+  var textSize, textFont, textColor, textAlign, textColorOptions, textFontOptions, textSizeOptions, textAlignOptions, selectedElement3, selectionBox, resizeHandles, dragOffsetX, dragOffsetY, isDragging6, isResizing2, currentResizeHandle, startBBox, startFontSize, startPoint, isRotating, rotationStartAngle, rotationStartTransform, initialHandlePosRelGroup, initialGroupTx, initialGroupTy, initialInverseScreenCTM, draggedShapeInitialFrameText, hoveredFrameText2, handleMouseMove4, handleMouseUp4, handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, textCodeOptions, languageSelector, codeLanguageSelect;
   var init_textTool = __esm({
     "../lixsketch/src/tools/textTool.js"() {
       init_UndoRedo();
@@ -12421,6 +12434,7 @@ var LixSketch = (() => {
       initialHandlePosRelGroup = null;
       initialGroupTx = 0;
       initialGroupTy = 0;
+      initialInverseScreenCTM = null;
       draggedShapeInitialFrameText = null;
       hoveredFrameText2 = null;
       setTextReferences(selectedElement3, updateSelectionFeedback3, svg);
@@ -12467,7 +12481,15 @@ var LixSketch = (() => {
           const textElement = selectedElement3.querySelector("text");
           if (!textElement || !startBBox || startFontSize === null || !startPoint || !initialHandlePosRelGroup)
             return;
-          const currentPoint = getSVGCoordinates2(event, selectedElement3);
+          let currentPoint;
+          if (initialInverseScreenCTM) {
+            const pt = svg.createSVGPoint();
+            pt.x = event.clientX;
+            pt.y = event.clientY;
+            currentPoint = pt.matrixTransform(initialInverseScreenCTM);
+          } else {
+            currentPoint = getSVGCoordinates2(event, selectedElement3);
+          }
           const startX7 = startBBox.x;
           const startY7 = startBBox.y;
           const startWidth = startBBox.width;
@@ -15916,9 +15938,14 @@ var LixSketch = (() => {
     if (typeof shapes !== "undefined") {
       shapes.forEach((shape) => {
         if (isShapeInSelectionRect(shape, selBounds)) {
-          if (shape.group) {
+          if (shape.group && typeof shape.group.getBBox === "function") {
+            let bbox;
+            try {
+              bbox = shape.group.getBBox();
+            } catch {
+              return;
+            }
             const overlay = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            const bbox = shape.group.getBBox();
             overlay.setAttribute("x", bbox.x - 2);
             overlay.setAttribute("y", bbox.y - 2);
             overlay.setAttribute("width", bbox.width + 4);
@@ -17531,6 +17558,7 @@ var LixSketch = (() => {
     target.addEventListener("mouseup", handleMainMouseUp);
     target.addEventListener("mouseleave", handleMainMouseLeave);
     target.addEventListener("mouseenter", _onMouseEnter);
+    target.addEventListener("dblclick", handleMainDblClick);
     _boundSvg = target;
   }
   function cleanupEventDispatcher() {
@@ -17546,10 +17574,11 @@ var LixSketch = (() => {
       _boundSvg.removeEventListener("mouseup", handleMainMouseUp);
       _boundSvg.removeEventListener("mouseleave", handleMainMouseLeave);
       _boundSvg.removeEventListener("mouseenter", _onMouseEnter);
+      _boundSvg.removeEventListener("dblclick", handleMainDblClick);
       _boundSvg = null;
     }
   }
-  var EDGE_THRESHOLD, SCROLL_SPEED, _autoScrollRAF, _lastDragEvent, _documentDragActive, handleMainMouseDown, handleMainMouseMove, handleMainMouseUp, handleMainMouseLeave, _boundSvg;
+  var EDGE_THRESHOLD, SCROLL_SPEED, _autoScrollRAF, _lastDragEvent, _documentDragActive, handleMainMouseDown, handleMainMouseMove, handleMainMouseUp, handleMainMouseLeave, _boundSvg, handleMainDblClick;
   var init_EventDispatcher = __esm({
     "../lixsketch/src/core/EventDispatcher.js"() {
       init_rectangleTool();
@@ -17844,6 +17873,13 @@ var LixSketch = (() => {
         }
       };
       _boundSvg = null;
+      handleMainDblClick = (e3) => {
+        const targetTextGroup = e3.target.closest('g[data-type="text-group"]');
+        if (targetTextGroup) {
+          e3.stopPropagation();
+          enterEditMode(targetTextGroup);
+        }
+      };
       if (typeof svg !== "undefined" && svg) {
         initEventDispatcher(svg);
       }

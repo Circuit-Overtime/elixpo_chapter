@@ -182,11 +182,12 @@ class TextShape {
 
     contains(x, y) {
         const textElement = this.group.querySelector('text');
-        if (!textElement) return false;
-        
-        const bbox = textElement.getBBox();
+        if (!textElement || typeof textElement.getBBox !== 'function') return false;
+
+        let bbox;
+        try { bbox = textElement.getBBox(); } catch { return false; }
         const padding = 8; // Selection padding
-        
+
         const CTM = this.group.getCTM();
         if (!CTM) return false;
         
@@ -218,7 +219,12 @@ class TextShape {
     }
 
     selectShape() {
-        selectElement(this.group);
+        // Use the real textTool selectElement (with selection feedback) if available
+        if (typeof window !== 'undefined' && window.__selectTextElement) {
+            window.__selectTextElement(this.group);
+        } else {
+            selectElement(this.group);
+        }
     }
 }
 

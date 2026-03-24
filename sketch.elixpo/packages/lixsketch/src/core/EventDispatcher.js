@@ -8,7 +8,7 @@ import { handleMouseDownCircle, handleMouseMoveCircle, handleMouseUpCircle } fro
 import { handleMouseUpImage, handleMouseDownImage, handleMouseMoveImage } from '../tools/imageTool.js';
 import { handleMouseDownLine, handleMouseMoveLine, handleMouseUpLine } from '../tools/lineTool.js';
 import { handleFreehandMouseDown, handleFreehandMouseMove, handleFreehandMouseUp } from '../tools/freehandTool.js';
-import { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp } from '../tools/textTool.js';
+import { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, enterEditMode } from '../tools/textTool.js';
 import { handleMouseDownFrame, handleMouseMoveFrame, handleMouseUpFrame } from '../tools/frameTool.js';
 import { handleMultiSelectionMouseDown, handleMultiSelectionMouseMove, handleMultiSelectionMouseUp, removeMultiSelectionRect, multiSelection, isMultiSelecting} from './Selection.js';
 import { handleMouseDownIcon, handleMouseMoveIcon, handleMouseUpIcon } from '../tools/iconTool.js';
@@ -103,6 +103,7 @@ function _onDocumentDragUp(e) {
 }
 
 const handleMainMouseDown = (e) => {
+    if (!e.target) return;
     // Safety: remove any stray selection rectangle from a previous interrupted drag
     removeMultiSelectionRect();
 
@@ -464,6 +465,16 @@ function _onMouseEnter(e) {
     }
 }
 
+const handleMainDblClick = (e) => {
+    if (!e.target) return;
+    // Double-click on a text group from any tool: enter text edit mode
+    const targetTextGroup = e.target.closest('g[data-type="text-group"]');
+    if (targetTextGroup) {
+        e.stopPropagation();
+        enterEditMode(targetTextGroup);
+    }
+};
+
 function initEventDispatcher(svgEl) {
     if (_boundSvg) cleanupEventDispatcher();
     const target = svgEl || svg;
@@ -472,6 +483,7 @@ function initEventDispatcher(svgEl) {
     target.addEventListener('mouseup', handleMainMouseUp);
     target.addEventListener('mouseleave', handleMainMouseLeave);
     target.addEventListener('mouseenter', _onMouseEnter);
+    target.addEventListener('dblclick', handleMainDblClick);
     _boundSvg = target;
 }
 
@@ -488,6 +500,7 @@ function cleanupEventDispatcher() {
         _boundSvg.removeEventListener('mouseup', handleMainMouseUp);
         _boundSvg.removeEventListener('mouseleave', handleMainMouseLeave);
         _boundSvg.removeEventListener('mouseenter', _onMouseEnter);
+        _boundSvg.removeEventListener('dblclick', handleMainDblClick);
         _boundSvg = null;
     }
 }

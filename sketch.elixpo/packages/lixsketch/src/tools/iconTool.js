@@ -41,10 +41,8 @@ function removeSelection() {
     const svg = getSVGElement();
     if (!svg) return;
 
-    const outline = svg.querySelector(".selection-outline");
-    if (outline) {
-        svg.removeChild(outline);
-    }
+    // Remove ALL selection outlines (prevents orphaned ghost elements)
+    svg.querySelectorAll(".selection-outline").forEach(el => el.remove());
 
     removeResizeAnchors();
     removeRotationAnchor();
@@ -190,12 +188,13 @@ const drawMiniatureIcon = () => {
 };
 
 const handleMouseDownIcon = async (e) => {
+    if (!e.target) return;
     if (isSelectionToolActive) {
         const clickedIcon = e.target.closest('[type="icon"]');
         if (clickedIcon) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             if (selectedIcon === clickedIcon) {
                 originalX = parseFloat(selectedIcon.getAttribute('x')) || 0;
                 originalY = parseFloat(selectedIcon.getAttribute('y')) || 0;
@@ -246,6 +245,16 @@ const handleMouseDownIcon = async (e) => {
                 return;
             }
         }
+
+        // Clicked on empty canvas while an icon is selected — deselect it
+        if (selectedIcon) {
+            removeSelection();
+            selectedIcon = null;
+            if (currentShape && currentShape.shapeName === 'icon') {
+                currentShape = null;
+            }
+        }
+        return;
     }
 
     if (!isDraggingIcon || !iconToPlace || !isIconToolActive) {
@@ -358,10 +367,11 @@ const handleMouseDownIcon = async (e) => {
         placedIconShape = iconShape;
 
         if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
-            shapes.push(iconShape);
-            console.log('Icon added to shapes array for arrow attachment and frame functionality');
-        } else {
-            console.warn('shapes array not found - arrows and frames may not work with icons');
+            // Prevent duplicates — check if this element is already tracked
+            const alreadyExists = shapes.some(s => s.shapeName === 'icon' && s.element === finalIconGroup);
+            if (!alreadyExists) {
+                shapes.push(iconShape);
+            }
         }
 
         const finalFrame = hoveredFrameIcon;
@@ -403,18 +413,10 @@ const handleMouseDownIcon = async (e) => {
 };
 
 const handleMouseUpIcon = (e) => {
-    if (isSelectionToolActive) {
-        const clickedElement = e.target;
-        const isIconElement = clickedElement.closest('[type="icon"]');
-        const isAnchorElement = clickedElement.classList.contains('resize-anchor') ||
-            clickedElement.classList.contains('rotation-anchor') ||
-            clickedElement.classList.contains('selection-outline');
-
-        if (!isIconElement && !isAnchorElement && selectedIcon) {
-            removeSelection();
-            selectedIcon = null;
-        }
-    }
+    if (!e.target) return;
+    // Deselection on empty-canvas click is handled by handleMouseDownIcon.
+    // We intentionally do NOT deselect on mouseup — after a drag the cursor
+    // often ends up on the background, and that shouldn't kill the selection.
 
     if (hoveredFrameIcon) {
         hoveredFrameIcon.removeHighlight();
@@ -530,7 +532,7 @@ function selectIcon(event) {
 
     event.stopPropagation();
 
-    let targetIcon = event.target.closest('[type="icon"]');
+    let targetIcon = event.target.closest ? event.target.closest('[type="icon"]') : null;
     if (!targetIcon) {
         let current = event.target;
         while (current && current !== document) {
@@ -542,44 +544,43 @@ function selectIcon(event) {
         }
     }
 
-    if (selectedIcon !== targetIcon) {
-        if (selectedIcon) {
-            removeSelection();
+    // Always clean up previous selection before applying new one
+    if (selectedIcon) {
+        removeSelection();
+    }
+
+    selectedIcon = targetIcon;
+
+    if (!selectedIcon) {
+        console.warn('Could not find icon to select');
+        return;
+    }
+
+    const transform = selectedIcon.getAttribute('transform');
+    if (transform) {
+        const rotateMatch = transform.match(/rotate\(([^,\s]+)/);
+        if (rotateMatch) {
+            iconRotation = parseFloat(rotateMatch[1]);
         }
+    } else {
+        iconRotation = 0;
+    }
 
-        selectedIcon = targetIcon;
+    addSelectionOutline();
 
-        if (!selectedIcon) {
-            console.warn('Could not find icon to select');
-            return;
-        }
+    originalX = parseFloat(selectedIcon.getAttribute('x')) || 0;
+    originalY = parseFloat(selectedIcon.getAttribute('y')) || 0;
+    originalWidth = parseFloat(selectedIcon.getAttribute('width')) || placedIconSize;
+    originalHeight = parseFloat(selectedIcon.getAttribute('height')) || placedIconSize;
 
-        const transform = selectedIcon.getAttribute('transform');
-        if (transform) {
-            const rotateMatch = transform.match(/rotate\(([^,\s]+)/);
-            if (rotateMatch) {
-                iconRotation = parseFloat(rotateMatch[1]);
-            }
-        } else {
-            iconRotation = 0;
-        }
-
-        addSelectionOutline();
-
-        originalX = parseFloat(selectedIcon.getAttribute('x')) || 0;
-        originalY = parseFloat(selectedIcon.getAttribute('y')) || 0;
-        originalWidth = parseFloat(selectedIcon.getAttribute('width')) || placedIconSize;
-        originalHeight = parseFloat(selectedIcon.getAttribute('height')) || placedIconSize;
-
-        // Set currentShape so EventDispatcher routes subsequent events to icon handler
-        const iconShape = (typeof shapes !== 'undefined' && Array.isArray(shapes))
-            ? shapes.find(s => s.shapeName === 'icon' && s.element === selectedIcon)
-            : null;
-        if (iconShape) {
-            currentShape = iconShape;
-            currentShape.isSelected = true;
-            if (window.__showSidebarForShape) window.__showSidebarForShape('icon');
-        }
+    // Set currentShape so EventDispatcher routes subsequent events to icon handler
+    const iconShape = (typeof shapes !== 'undefined' && Array.isArray(shapes))
+        ? shapes.find(s => s.shapeName === 'icon' && s.element === selectedIcon)
+        : null;
+    if (iconShape) {
+        currentShape = iconShape;
+        currentShape.isSelected = true;
+        if (window.__showSidebarForShape) window.__showSidebarForShape('icon');
     }
 }
 
@@ -662,10 +663,7 @@ function removeRotationAnchor() {
     const svg = getSVGElement();
     if (!svg) return;
 
-    const rotationAnchor = svg.querySelector(".rotation-anchor");
-    if (rotationAnchor) {
-        svg.removeChild(rotationAnchor);
-    }
+    svg.querySelectorAll(".rotation-anchor").forEach(el => el.remove());
 }
 
 function removeResizeAnchors() {
@@ -1326,6 +1324,21 @@ function handleIconClick(event, filename) {
 }
 
 
+
+// Clean up any lingering miniature icon or drag state (called on tool switch)
+function cleanupIconTool() {
+    if (currentIconElement) {
+        const svg = getSVGElement();
+        if (svg && currentIconElement.parentNode === svg) {
+            svg.removeChild(currentIconElement);
+        }
+        currentIconElement = null;
+    }
+    isDraggingIcon = false;
+    iconToPlace = null;
+    document.body.style.cursor = 'default';
+}
+window.__cleanupIconTool = cleanupIconTool;
 
 // Bridge for React sidebar to trigger icon placement
 window.prepareIconPlacement = function(svgContent) {

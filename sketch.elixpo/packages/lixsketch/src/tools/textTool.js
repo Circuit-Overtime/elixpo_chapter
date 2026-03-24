@@ -51,6 +51,7 @@ let rotationStartTransform = null;
 let initialHandlePosRelGroup = null;
 let initialGroupTx = 0;
 let initialGroupTy = 0;
+let initialInverseScreenCTM = null;
 
 // Frame attachment variables
 let draggedShapeInitialFrameText = null;
@@ -402,7 +403,8 @@ function renderText(input, textElement, deleteIfEmpty = false) {
     // After rendering text, switch to selection tool and auto-select
     if (gElement.parentNode) {
         switchToSelectionTool();
-        selectElement(gElement);
+        // Defer selection so the tool switch (async React state) completes first
+        requestAnimationFrame(() => selectElement(gElement));
     }
 }
 
@@ -753,6 +755,10 @@ function startResize(event, anchor) {
 
   startPoint = getSVGCoordinates(event, selectedElement);
 
+  // Freeze the group's screen CTM at resize start so mouse→local mapping stays stable
+  const groupScreenCTM = selectedElement.getScreenCTM();
+  initialInverseScreenCTM = groupScreenCTM ? groupScreenCTM.inverse() : null;
+
   const currentTransform = selectedElement.transform.baseVal.consolidate();
   initialGroupTx = currentTransform ? currentTransform.matrix.e : 0;
   initialGroupTy = currentTransform ? currentTransform.matrix.f : 0;
@@ -828,7 +834,16 @@ const handleMouseMove = (event) => {
         const textElement = selectedElement.querySelector('text');
         if (!textElement || !startBBox || startFontSize === null || !startPoint || !initialHandlePosRelGroup) return;
 
-        const currentPoint = getSVGCoordinates(event, selectedElement);
+        // Use the frozen initial CTM so the mapping doesn't shift as we change the group transform
+        let currentPoint;
+        if (initialInverseScreenCTM) {
+            const pt = svg.createSVGPoint();
+            pt.x = event.clientX;
+            pt.y = event.clientY;
+            currentPoint = pt.matrixTransform(initialInverseScreenCTM);
+        } else {
+            currentPoint = getSVGCoordinates(event, selectedElement);
+        }
 
         const startX = startBBox.x;
         const startY = startBBox.y;
@@ -1155,6 +1170,7 @@ function extractRotationFromTransform(element) {
 
 // EXPORTED EVENT HANDLERS
 const handleTextMouseDown = function (e) {
+    if (!e.target) return;
     const activeEditor = document.querySelector("textarea.svg-text-editor");
     if (activeEditor && activeEditor.contains(e.target)) {
          return;
@@ -1783,8 +1799,9 @@ window.updateSelectedTextStyle = function(changes) {
     }
 };
 
-// Expose deselectElement for external callers (Selection.js blank canvas click)
+// Expose select/deselect for external callers (Selection.js, TextShape.selectShape)
 window.__deselectTextElement = deselectElement;
+window.__selectTextElement = selectElement;
 
 // React sidebar bridge — text ↔ code conversion
 window.__convertTextToCode = function() {
@@ -1820,4 +1837,4 @@ window.__setCodeLanguage = function(lang) {
     }
 };
 
-export { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, updateCodeToggleForShape, deselectElement as deselectTextElement };
+export { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, updateCodeToggleForShape, deselectElement as deselectTextElement, enterEditMode };

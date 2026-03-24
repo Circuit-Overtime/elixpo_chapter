@@ -80,9 +80,10 @@ function highlightShapesInSelectionRect(currentX, currentY) {
         shapes.forEach(shape => {
             if (isShapeInSelectionRect(shape, selBounds)) {
                 // Add a semi-transparent overlay to the shape's group
-                if (shape.group) {
+                if (shape.group && typeof shape.group.getBBox === 'function') {
+                    let bbox;
+                    try { bbox = shape.group.getBBox(); } catch { return; }
                     const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                    const bbox = shape.group.getBBox();
                     overlay.setAttribute('x', bbox.x - 2);
                     overlay.setAttribute('y', bbox.y - 2);
                     overlay.setAttribute('width', bbox.width + 4);
@@ -158,17 +159,22 @@ function isShapeInSelectionRect(shape, selectionBounds) {
             };
             break;
         case 'text':
-            const textElement = shape.group ? shape.group.querySelector('text') : null;
-            if (textElement) {
-                const bbox = textElement.getBBox();
-                const transform = shape.group.transform.baseVal.consolidate();
-                const matrix = transform ? transform.matrix : { e: 0, f: 0 };
-                shapeBounds = {
-                    x: bbox.x + matrix.e,
-                    y: bbox.y + matrix.f,
-                    width: bbox.width,
-                    height: bbox.height
-                };
+        case 'code':
+            const textOrCodeEl = shape.group ? shape.group.querySelector('text') : null;
+            if (textOrCodeEl && shape.group.style.display !== 'none') {
+                try {
+                    const bbox = textOrCodeEl.getBBox();
+                    const transform = shape.group.transform.baseVal.consolidate();
+                    const matrix = transform ? transform.matrix : { e: 0, f: 0 };
+                    shapeBounds = {
+                        x: bbox.x + matrix.e,
+                        y: bbox.y + matrix.f,
+                        width: bbox.width,
+                        height: bbox.height
+                    };
+                } catch {
+                    shapeBounds = { x: 0, y: 0, width: 0, height: 0 };
+                }
             } else {
                 shapeBounds = { x: 0, y: 0, width: 0, height: 0 };
             }
@@ -1409,6 +1415,7 @@ function moveSelectedShapes(dx, dy) {
 }
 
 function handleMultiSelectionMouseDown(e) {
+    if (!e.target) return false;
     const { x, y } = getSVGCoordsFromMouse(e);
 
     // Only handle multi-selection operations if we have multiple shapes selected
@@ -1443,8 +1450,14 @@ function handleMultiSelectionMouseDown(e) {
             return true;
         }
 
-        // If click is within the selection bounds but not on a shape,
-        // fall through to allow clicking on other shapes or starting a new selection
+        // Click is within the multi-selection bounding box but not directly on a shape —
+        // still start dragging the group (prevents accidental deselection)
+        if (multiSelection.isPointInBounds(x, y)) {
+            multiSelection.startDrag(e);
+            return true;
+        }
+
+        // Click is outside the selection bounds — fall through to deselect / start new selection
     }
 
     // Check if clicking on individual shape anchors - let them handle it
@@ -1692,6 +1705,9 @@ function handleMultiSelectionMouseUp(e) {
                     selectedShape.isSelected = true;
                 } else if (typeof selectedShape.createSelection === 'function') {
                     selectedShape.createSelection();
+                    selectedShape.isSelected = true;
+                } else if (typeof selectedShape.selectShape === 'function') {
+                    selectedShape.selectShape();
                     selectedShape.isSelected = true;
                 }
 
