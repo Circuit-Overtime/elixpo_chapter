@@ -357,10 +357,11 @@ const handleMouseDownIcon = async (e) => {
         placedIconShape = iconShape;
 
         if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
-            shapes.push(iconShape);
-            console.log('Icon added to shapes array for arrow attachment and frame functionality');
-        } else {
-            console.warn('shapes array not found - arrows and frames may not work with icons');
+            // Prevent duplicates — check if this element is already tracked
+            const alreadyExists = shapes.some(s => s.shapeName === 'icon' && s.element === finalIconGroup);
+            if (!alreadyExists) {
+                shapes.push(iconShape);
+            }
         }
 
         const finalFrame = hoveredFrameIcon;
@@ -413,6 +414,10 @@ const handleMouseUpIcon = (e) => {
         if (!isIconElement && !isAnchorElement && selectedIcon) {
             removeSelection();
             selectedIcon = null;
+            // Clear global currentShape so EventDispatcher doesn't route to icon handler
+            if (currentShape && currentShape.shapeName === 'icon') {
+                currentShape = null;
+            }
         }
     }
 
@@ -662,10 +667,7 @@ function removeRotationAnchor() {
     const svg = getSVGElement();
     if (!svg) return;
 
-    const rotationAnchor = svg.querySelector(".rotation-anchor");
-    if (rotationAnchor) {
-        svg.removeChild(rotationAnchor);
-    }
+    svg.querySelectorAll(".rotation-anchor").forEach(el => el.remove());
 }
 
 function removeResizeAnchors() {
