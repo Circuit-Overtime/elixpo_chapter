@@ -1760,6 +1760,7 @@ function extractRotationFromTransform(element) {
 }
 
 const handleCodeMouseDown = function (e) {
+    if (!e.target) return;
     // Check for contenteditable code editor (new style)
     const activeContentEditor = document.querySelector(".svg-code-editor[contenteditable='true']");
     if (activeContentEditor) {

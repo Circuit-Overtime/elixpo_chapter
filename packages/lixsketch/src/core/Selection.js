@@ -1415,6 +1415,7 @@ function moveSelectedShapes(dx, dy) {
 }
 
 function handleMultiSelectionMouseDown(e) {
+    if (!e.target) return false;
     const { x, y } = getSVGCoordsFromMouse(e);
 
     // Only handle multi-selection operations if we have multiple shapes selected

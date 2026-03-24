@@ -1170,6 +1170,7 @@ function extractRotationFromTransform(element) {
 
 // EXPORTED EVENT HANDLERS
 const handleTextMouseDown = function (e) {
+    if (!e.target) return;
     const activeEditor = document.querySelector("textarea.svg-text-editor");
     if (activeEditor && activeEditor.contains(e.target)) {
          return;

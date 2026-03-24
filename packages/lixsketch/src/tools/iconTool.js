@@ -190,6 +190,7 @@ const drawMiniatureIcon = () => {
 };
 
 const handleMouseDownIcon = async (e) => {
+    if (!e.target) return;
     if (isSelectionToolActive) {
         const clickedIcon = e.target.closest('[type="icon"]');
         if (clickedIcon) {
@@ -403,6 +404,7 @@ const handleMouseDownIcon = async (e) => {
 };
 
 const handleMouseUpIcon = (e) => {
+    if (!e.target) return;
     if (isSelectionToolActive) {
         const clickedElement = e.target;
         const isIconElement = clickedElement.closest('[type="icon"]');

@@ -298,8 +298,13 @@ export default function useAutoSave() {
         }
       }
 
-      // Ensure shapes are interactive after restore
+      // Ensure shapes are interactive after restore but nothing is selected
       if (restoredFromCloud || restoredFromLocal) {
+        // Clear any selection that might have been set during deserialization
+        window.currentShape = null
+        if (typeof window.__deselectTextElement === 'function') window.__deselectTextElement()
+        if (typeof window.disableAllSideBars === 'function') window.disableAllSideBars()
+
         // Force selection tool active so shapes are clickable/draggable
         if (window.__sketchEngine && typeof window.__sketchEngine.setActiveTool === 'function') {
           window.__sketchEngine.setActiveTool('select')
