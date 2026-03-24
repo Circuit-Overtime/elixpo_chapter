@@ -1450,8 +1450,14 @@ function handleMultiSelectionMouseDown(e) {
             return true;
         }
 
-        // If click is within the selection bounds but not on a shape,
-        // fall through to allow clicking on other shapes or starting a new selection
+        // Click is within the multi-selection bounding box but not directly on a shape —
+        // still start dragging the group (prevents accidental deselection)
+        if (multiSelection.isPointInBounds(x, y)) {
+            multiSelection.startDrag(e);
+            return true;
+        }
+
+        // Click is outside the selection bounds — fall through to deselect / start new selection
     }
 
     // Check if clicking on individual shape anchors - let them handle it
