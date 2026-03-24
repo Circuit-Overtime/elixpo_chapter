@@ -1,6 +1,6 @@
 {
   "name": "@elixpo/lixsketch",
-  "version": "5.4.0",
+  "version": "5.4.1",
   "description": "Open-source SVG whiteboard engine with hand-drawn aesthetics — the core of LixSketch",
   "type": "module",
   "main": "src/index.js",
