@@ -821,14 +821,30 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                 else:
                     yield response
                 return
+            _error_msg = (
+                "Hmm, I hit a snag — my brain (the LLM upstream) seems to be "
+                "taking a nap right now. This usually resolves in a few seconds. "
+                "Give it another shot and I should be back to my usual brilliant self."
+            )
             if event_id:
+                yield format_sse("RESPONSE", _error_msg)
                 yield format_sse("INFO", "<TASK>DONE</TASK>")
+            else:
+                yield _error_msg
             return
 
     except Exception as e:
         logger.error(f"Pipeline error: {e}", exc_info=True)
+        _error_msg = (
+            "Oops — something unexpected went wrong on my end. "
+            "It's not you, it's me (probably a temporary hiccup). "
+            "Try again in a moment?"
+        )
         if event_id:
+            yield format_sse("RESPONSE", _error_msg)
             yield format_sse("INFO", "<TASK>DONE</TASK>")
+        else:
+            yield _error_msg
     finally:
         # Skip all persistence for ephemeral sessions — nothing to save
         if not is_ephemeral:

@@ -49,3 +49,5 @@ search.elixpo/wrangler.toml
 /PRODUCTION/src/__pycache__
 PRODUCTION/k8s/secret.yaml
 data/
+
+lix_chat.egg-info/
