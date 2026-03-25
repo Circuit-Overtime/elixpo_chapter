@@ -1,13 +1,10 @@
+import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev';
+
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:5000/api/:path*',
-      },
-    ];
-  },
-};
+const nextConfig = {};
+
+if (process.env.NODE_ENV === 'development') {
+  await setupDevPlatform();
+}
 
 export default nextConfig;

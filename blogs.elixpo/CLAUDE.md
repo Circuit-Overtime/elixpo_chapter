@@ -10,31 +10,58 @@ LixBlogs is a blogging platform built with **Next.js** (Cloudflare Pages), **Clo
 
 ### Personal Accounts
 - Every user has one personal account tied to their Elixpo Accounts identity
-- Personal profile: display name, username (unique via bloom filter + D1 fallback), bio, avatar (R2), banner (R2)
-- Each user can **own exactly one organization**
+- Personal profile: display name, username (from Elixpo Accounts), bio, avatar (R2), banner (R2)
+- Each user can **create multiple organizations**
 - Each user can be a **member of multiple organizations** (via invite)
+- No circular org membership (an org cannot be a member of another org)
 
 ### Organizations
-- Created by a user (who becomes the owner)
+- Created by a user (who becomes the admin)
 - Has its own profile: org name, slug, description, logo (R2), banner (R2)
-- Roles within an org: **owner**, **admin**, **editor**, **member**
-- Owner can invite users, manage roles, publish under org name
+- Roles within an org: **admin**, **maintain**, **write**, **read**
+- Admin can invite users, manage roles, manage collections, publish under org name
+- Maintain can manage collections and members (except admin)
+- Write can create/edit blogs and post to collections
+- Read can only view org-internal content
 - Org settings: visibility (public/private), default blog license, branding
+
+### Collections (within Orgs)
+- An org can have multiple collections (like folders/series)
+- Each collection has: slug, name, description, cover image
+- Blogs can be posted inside a collection or directly under the org
+- Collection URL: `@orgname/collection-slug/blog-slug`
 
 ---
 
 ## 2. Blog / Post Model
 
 ### Blog Properties
-- `id` (uuid), `slug`, `title`, `subtitle`, `content` (stored as JSON block format for WYSIWYG)
+- `id` (uuid), `slugid` (short shareable ID), `slug` (human-readable)
+- `title`, `subtitle`, `page_emoji`, `content` (JSON block format for WYSIWYG)
 - `cover_image` (R2 key), `tags[]`, `category`
 - `author_id` (primary author), `co_authors[]` (array of user IDs)
-- `published_as`: `"personal"` | `"org:<org_id>"` — determines if shown under user profile or org
+- `published_as`: `"personal"` | `"org:<org_id>"` — determines context
+- `collection_id`: nullable — if set, blog belongs to an org collection
 - `status`: `draft` | `published` | `archived` | `unlisted`
 - `created_at`, `updated_at`, `published_at`
 - `read_time_minutes` (computed on save)
 - `allow_comments`: boolean
 - `license`: string (optional, inherits from org or user default)
+
+### URL Structure
+```
+Reading:
+  blogs.elixpo.com/@username/[slug]              — personal blog
+  blogs.elixpo.com/@orgname/[slug]               — org blog (direct)
+  blogs.elixpo.com/@orgname/[collection]/[slug]  — org blog in collection
+  blogs.elixpo.com/[slugid]                      — short shareable link
+
+Editing:
+  blogs.elixpo.com/[slugid]/edit                 — edit any blog by slugid
+
+Feed:
+  blogs.elixpo.com/                              — root = feed
+```
 
 ### Co-authoring
 - Primary author creates the blog and invites co-authors by username
@@ -43,9 +70,10 @@ LixBlogs is a blogging platform built with **Next.js** (Cloudflare Pages), **Clo
 - Only primary author can delete or change `published_as`
 
 ### Publishing Context
-- **Personal**: blog appears on the user's profile, attributed to the user
-- **Organization**: blog appears on the org's page, attributed to author(s) within the org
-- A user can only publish under an org they are a member of (editor+ role)
+- **Personal**: blog appears on the user's profile at `@username/slug`
+- **Organization**: blog appears on the org's page at `@orgname/slug`
+- **Collection**: blog appears under `@orgname/collection/slug`
+- A user can only publish under an org they are a member of (write+ role)
 
 ---
 
@@ -119,25 +147,40 @@ orgs
 org_members
   org_id TEXT                 -- FK to orgs
   user_id TEXT                -- FK to users
-  role TEXT                   -- owner | admin | editor | member
+  role TEXT                   -- admin | maintain | write | read
   joined_at INTEGER
   PRIMARY KEY (org_id, user_id)
 
 blogs
   id TEXT PRIMARY KEY
-  slug TEXT
+  slugid TEXT UNIQUE          -- short shareable ID
+  slug TEXT                   -- human-readable URL slug
   title TEXT
   subtitle TEXT
+  page_emoji TEXT             -- optional emoji icon
   content TEXT                -- JSON (WYSIWYG block format)
   cover_image_r2_key TEXT
   author_id TEXT              -- FK to users
   published_as TEXT           -- 'personal' | 'org:<org_id>'
+  collection_id TEXT          -- nullable FK to collections
   status TEXT DEFAULT 'draft' -- draft | published | archived | unlisted
   read_time_minutes INTEGER
   allow_comments INTEGER DEFAULT 1
   created_at INTEGER
   updated_at INTEGER
   published_at INTEGER
+
+collections
+  id TEXT PRIMARY KEY
+  org_id TEXT                 -- FK to orgs
+  slug TEXT                   -- unique within org
+  name TEXT
+  description TEXT
+  cover_r2_key TEXT
+  created_by TEXT             -- FK to users
+  created_at INTEGER
+  updated_at INTEGER
+  UNIQUE(org_id, slug)
 
 blog_co_authors
   blog_id TEXT
@@ -196,10 +239,9 @@ read_history
 
 ### KV / Cache
 - Session data (if not using JWT-only approach)
-- Blog content cache (key: `blog:{slug}`, TTL: 5min)
+- Blog content cache (key: `blog:{slugid}`, TTL: 5min)
 - User profile cache (key: `user:{username}`, TTL: 10min)
 - Feed cache per user (key: `feed:{user_id}`, TTL: 2min)
-- Bloom filter binary (key: `bloom:usernames`)
 
 ---
 
@@ -257,28 +299,33 @@ Users:
   POST /api/users/me/avatar     → upload avatar → R2
   POST /api/users/me/banner     → upload banner → R2
   GET  /api/users/:username/blogs → user's published blogs
-  POST /api/users/check-username → bloom filter + D1 check
-
 Orgs:
-  POST /api/orgs                → create org (max 1 per user)
+  POST /api/orgs                → create org (multiple allowed)
   GET  /api/orgs/:slug          → org profile
-  PUT  /api/orgs/:slug          → update org (owner/admin only)
-  POST /api/orgs/:slug/invite   → invite user (owner/admin)
+  PUT  /api/orgs/:slug          → update org (admin only)
+  POST /api/orgs/:slug/invite   → invite user (admin/maintain)
   POST /api/orgs/:slug/members  → accept invite
   DELETE /api/orgs/:slug/members/:userId → remove member
-  PUT  /api/orgs/:slug/members/:userId  → change role
+  PUT  /api/orgs/:slug/members/:userId  → change role (admin, maintain, write, read)
   GET  /api/orgs/:slug/blogs    → org's published blogs
+  GET  /api/orgs/:slug/collections → list collections
+
+Collections:
+  POST /api/orgs/:slug/collections        → create collection (admin/maintain)
+  GET  /api/orgs/:slug/collections/:cslug → get collection + blogs
+  PUT  /api/orgs/:slug/collections/:cslug → update collection
+  DELETE /api/orgs/:slug/collections/:cslug → delete collection
 
 Blogs:
-  POST /api/blogs               → create draft
-  GET  /api/blogs/:slug         → read blog (public)
-  PUT  /api/blogs/:id           → update blog (author/co-author)
-  DELETE /api/blogs/:id         → delete blog (primary author only)
-  POST /api/blogs/:id/publish   → publish blog
-  POST /api/blogs/:id/co-authors → add/remove co-authors
-  POST /api/blogs/:id/like      → toggle like
-  GET  /api/blogs/:id/comments  → list comments
-  POST /api/blogs/:id/comments  → add comment
+  POST /api/blogs               → create draft (returns slugid)
+  GET  /api/blogs/:slugid       → read blog
+  PUT  /api/blogs/:slugid       → update blog (author/co-author)
+  DELETE /api/blogs/:slugid     → delete blog (primary author only)
+  POST /api/blogs/:slugid/publish → publish blog
+  POST /api/blogs/:slugid/co-authors → add/remove co-authors
+  POST /api/blogs/:slugid/like  → toggle like
+  GET  /api/blogs/:slugid/comments → list comments
+  POST /api/blogs/:slugid/comments → add comment
 
 Feed:
   GET  /api/feed                → personalized feed (paginated)
@@ -302,25 +349,25 @@ Stats (for authors):
 ## 8. Frontend Route Map (Next.js App Router)
 
 ```
-/                          → Landing page (marketing)
-/intro                     → New user onboarding (pick username)
-/feed                      → Personalized feed + trending + top picks
-/profile                   → Own profile
-/profile/:username         → Public user profile (future)
-/settings                  → Account settings
-/settings/notifications    → Notification preferences
-/settings/publisher        → Publishing / org settings
-/about                     → About page
-/library                   → Bookmarks & collections
-/library/history           → Read history
-/library/saved             → Saved collections
-/stats                     → Author analytics dashboard
-/auth/login                → Login (redirects to Elixpo OAuth)
-/auth/callback             → OAuth callback handler
-/auth/register             → Registration flow
-/write                     → Blog editor (future)
-/blog/:slug                → Blog reader (future)
-/org/:slug                 → Org profile page (future)
+/                                      → Feed (root = personalized feed)
+/intro                                 → New user onboarding
+/feed                                  → Alias for / (feed)
+/profile                               → Own profile
+/settings                              → Account settings
+/settings/notifications                → Notification preferences
+/settings/publisher                    → Publishing / org settings
+/about                                 → About page
+/library                               → Bookmarks & collections
+/library/history                       → Read history
+/library/saved                         → Saved collections
+/stats                                 → Author analytics dashboard
+/auth/login                            → Login (redirects to Elixpo OAuth)
+/auth/callback                         → OAuth callback handler
+/@username/[slug]                      → Personal blog reader
+/@orgname/[slug]                       → Org blog reader (direct)
+/@orgname/[collection]/[slug]          → Org blog reader (in collection)
+/[slugid]                              → Short shareable link → resolves to full URL
+/[slugid]/edit                         → Blog editor
 ```
 
 ---
