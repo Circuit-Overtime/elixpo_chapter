@@ -1,5 +1,4 @@
 import '../styles/intro/introStyle.css';
-import '../utils/intro/intro.ts'
 
 export default function IntroPage() {
   return (
@@ -7,7 +6,7 @@ export default function IntroPage() {
       <div className="min-h-screen min-w-screen items-center flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 relative overflow-x-hidden">
         <section className="w-full h-[60px]">
           <div className="relative top-0 left-0 w-full h-[60px] border-b-2 border-[#1D202A] flex items-center bg-[#030712] z-[1000]">
-            <div className="absolute left-[3%] h-10 w-10 rounded-full bg-[url('../../CSS/IMAGES/logo.png')] bg-cover"></div>
+            <div className="absolute left-[3%] h-10 w-10 rounded-full bg-[url('/logo.png')] bg-cover"></div>
             <p className="absolute left-[5%] text-3xl font-bold font-[Kanit,serif] text-white cursor-pointer">
               LixBlogs
             </p>

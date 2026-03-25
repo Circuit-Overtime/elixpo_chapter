@@ -6,6 +6,10 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        serif: ['"Source Serif 4"', 'Georgia', 'serif'],
+        kanit: ['Kanit', 'sans-serif'],
+      },
       animation: {
         'fade-in-up': 'fadeInUp 0.6s ease-out',
       },

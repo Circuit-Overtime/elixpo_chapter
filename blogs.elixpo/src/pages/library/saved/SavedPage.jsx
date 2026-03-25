@@ -1,30 +1,6 @@
-import { useEffect } from 'react';
 import '../../../styles/library/library.css';
 
 export default function SavedPage() {
-  useEffect(() => {
-    // Dynamically load ionicons
-    const ioniconsESM = document.createElement('script');
-    ioniconsESM.type = 'module';
-    ioniconsESM.src = 'https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js';
-    document.head.appendChild(ioniconsESM);
-
-    const ioniconsNoModule = document.createElement('script');
-    ioniconsNoModule.noModule = true;
-    ioniconsNoModule.src = 'https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js';
-    document.head.appendChild(ioniconsNoModule);
-
-    // Load library JS utilities
-    const libraryScript = document.createElement('script');
-    libraryScript.src = '../../../utils/library/library.js';
-    document.body.appendChild(libraryScript);
-
-    return () => {
-      if (ioniconsESM.parentNode) ioniconsESM.parentNode.removeChild(ioniconsESM);
-      if (ioniconsNoModule.parentNode) ioniconsNoModule.parentNode.removeChild(ioniconsNoModule);
-      if (libraryScript.parentNode) libraryScript.parentNode.removeChild(libraryScript);
-    };
-  }, []);
 
   const handleNavigation = (page) => {
     // Handle navigation logic
@@ -36,7 +12,7 @@ export default function SavedPage() {
       {/* Header Section */}
       <section className="w-full h-[60px]">
         <div className="relative top-0 left-0 w-full h-[60px] border-b-2 border-[#1D202A] flex items-center bg-[#030712] z-[1000]">
-          <div className="absolute left-[3%] h-10 w-10 rounded-full bg-cover" style={{backgroundImage: "url('/CSS/IMAGES/logo.png')"}}></div>
+          <div className="absolute left-[3%] h-10 w-10 rounded-full bg-cover" style={{backgroundImage: "url('/logo.png')"}}></div>
           <p className="absolute left-[5%] text-3xl font-bold font-[Kanit,serif] text-white cursor-pointer">LixBlogs</p>
           <div className="absolute left-[80%] text-white text-[1.3em] cursor-pointer px-2.5 py-1.5 bg-[#10141E] border border-[#7ba8f0] rounded-[15px] flex items-center">
             <ion-icon name="pencil" className="text-[0.8em] mr-1 text-[#7ba8f0]"></ion-icon>

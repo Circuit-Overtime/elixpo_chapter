@@ -1,93 +1,81 @@
-import '../styles/auth/login.css';
-import '../../../utils/auth/login';
-import '../../../utils/auth/helperFunction';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = () => {
+    setLoading(true);
+
+    // Generate CSRF state token
+    const state = crypto.randomUUID();
+    document.cookie = `oauth_state=${state}; path=/; max-age=600; samesite=lax`;
+
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: process.env.NEXT_PUBLIC_ELIXPO_CLIENT_ID,
+      redirect_uri: window.location.origin + '/api/auth/callback',
+      state,
+      scope: 'openid profile email',
+    });
+
+    window.location.href = `https://accounts.elixpo.com/oauth/authorize?${params}`;
+  };
+
+  const errorMessages = {
+    access_denied: 'You denied the authorization request.',
+    token_exchange_failed: 'Authentication failed. Please try again.',
+    invalid_state: 'Session expired. Please try again.',
+    missing_code: 'Something went wrong. Please try again.',
+  };
+
   return (
-    document.title = 'Login - LixBlogs',
-    <div className="w-full md:w-1/2 flex flex-col justify-center px-10 py-12 bg-[#10141E]">
-      <div className="flex flex-col max-w-md w-full mx-auto">
-        <div className="flex items-center mb-10">
-          <div className="h-12 w-12 rounded-full bg-[url('../../../CSS/IMAGES/logo.png')] bg-cover mr-3"></div>
+    <div className="min-h-screen bg-[#030712] flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-10">
+          <div className="h-16 w-16 mx-auto rounded-full bg-[url('/logo.png')] bg-cover mb-4" />
+          <h1 className="text-3xl font-bold text-white font-[Kanit,serif]">LixBlogs</h1>
+          <p className="text-[#888] text-sm mt-2">Sign in to start writing</p>
         </div>
 
-        <form className="flex flex-col gap-4">
-          <div id="inputLabel">
-            <label className="block text-[#7ba8f0] mb-1 text-[1em] font-bold" htmlFor="email">
-              Email address
-            </label>
-            <input
-              id="email"
-              type="email"
-              value="ayushbhatt633@gmail.com"
-              autoComplete="off"
-              required
-              className="w-full px-4 py-2 rounded-lg bg-[#1D202A] text-white border border-[#313647] focus:outline-none focus:border-[#7ba8f0] transition"
-            />
-          </div>
-          <div id="otpLabel" className="hidden">
-            <label className="block text-[#7ba8f0] mb-1 text-[1em] font-bold" htmlFor="otp">
-              OTP
-            </label>
-            <div className="flex gap-2">
-              {[...Array(6)].map((_, i) => (
-                <input
-                  key={i}
-                  maxLength={1}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  className="w-12 h-12 text-center text-xl rounded-lg bg-[#1D202A] text-white border border-[#313647] focus:outline-none focus:border-[#7ba8f0] transition"
-                />
-              ))}
+        <div className="bg-[#10141E] border border-[#1D202A] rounded-2xl p-8">
+          {error && (
+            <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center">
+              {errorMessages[error] || 'An error occurred. Please try again.'}
             </div>
-          </div>
-          <div className="flex items-center justify-between text-sm mt-2">
-            <label className="flex items-center text-[#888]">
-              <input
-                type="checkbox"
-                id="rememberMe"
-                className="appearance-none h-5 w-5 rounded-md bg-[#1D202A] border border-[#313647] checked:bg-[#7ba8f0] checked:border-[#7ba8f0] focus:outline-none transition-all duration-200 mr-2 relative"
-              />
-              <span> Remember Me </span>
-            </label>
-            <a href="#" className="text-[#7ba8f0] text-[1.1em] font-bold hover:underline">
-              Forgot password?
-            </a>
-          </div>
-          <button
-            type="button"
-            id="loginBtn"
-            className="mt-4 px-6 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-lg rounded-full font-semibold shadow transition-all duration-200"
-          >
-            <span> Sign in </span>
-          </button>
-        </form>
-        <div className="flex items-center my-6">
-          <div className="flex-grow border-t border-[#1D202A]"></div>
-          <span className="mx-4 text-[#888] text-[1em] font-bold">Or continue with</span>
-          <div className="flex-grow border-t border-[#1D202A]"></div>
-        </div>
-
-        <div className="flex gap-4 flex-row">
-          <button
-            id="loginGoogle"
-            className="flex items-center justify-center gap-2 w-1/2 py-2 rounded-lg bg-[#1D202A] text-white border border-[#313647] hover:bg-[#23395d] transition"
-          >
-            {/* Replace with a React icon */}
-            <span className="text-xl text-[#888]">G</span>
-            <span> Google </span>
-          </button>
+          )}
 
           <button
-            id="loginGithub"
-            className="flex items-center justify-center gap-2 w-1/2 py-2 rounded-lg bg-[#1D202A] text-white border border-[#313647] hover:bg-[#23395d] transition"
+            onClick={handleLogin}
+            disabled={loading}
+            className="w-full py-3 bg-[#7ba8f0] text-[#030712] font-bold rounded-xl text-sm hover:bg-[#9dc0ff] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {/* Replace with a React icon */}
-            <span className="text-xl text-[#888]">GH</span>
-            <span> GitHub </span>
+            {loading ? (
+              <div className="h-5 w-5 border-2 border-[#030712] border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  <polyline points="10 17 15 12 10 7" />
+                  <line x1="15" y1="12" x2="3" y2="12" />
+                </svg>
+                Sign in with Elixpo Accounts
+              </>
+            )}
           </button>
+
+          <p className="text-[#555] text-xs text-center mt-6">
+            By signing in, you agree to our Terms of Service and Privacy Policy.
+          </p>
         </div>
+
+        <p className="text-center text-[#555] text-xs mt-6">
+          Secured by Elixpo Accounts
+        </p>
       </div>
     </div>
   );
