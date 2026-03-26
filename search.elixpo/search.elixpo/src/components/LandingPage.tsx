@@ -1,13 +1,70 @@
 'use client';
 
-import { Search, BookOpen, Zap, Globe, ExternalLink, Sparkles, Database, Shield } from 'lucide-react';
+import { Search, BookOpen, Zap, Globe, ExternalLink, Sparkles, Database, Shield, Package, Box, Terminal, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
 
 const LINKS = {
   trySearch: 'https://search.elixpo.com',
   docs: '/docs',
   pollinations: 'https://pollinations.ai',
-  github: 'https://github.com/pollinations/lixsearch',
+  github: 'https://github.com/Circuit-Overtime/lixSearch',
+  pypiSearch: 'https://pypi.org/project/lix-open-search/',
+  pypiCache: 'https://pypi.org/project/lix-open-cache/',
+  dockerHub: 'https://hub.docker.com/r/elixpo/lixsearch',
+  paper: 'https://github.com/Circuit-Overtime/lixSearch/blob/main/docs/paper/lix_cache_paper.pdf',
 };
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+      className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+      title="Copy"
+    >
+      {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} className="text-white/30" />}
+    </button>
+  );
+}
+
+function PackageCard({ icon: Icon, iconColor, title, description, installCmd, links }: {
+  icon: React.ElementType;
+  iconColor: string;
+  title: string;
+  description: string;
+  installCmd: string;
+  links: { label: string; href: string }[];
+}) {
+  return (
+    <div className="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-sm hover:bg-white/[0.05] hover:border-indigo-500/20 transition-all duration-300">
+      <div className="flex items-start justify-between mb-4">
+        <div className={`w-11 h-11 rounded-xl ${iconColor} flex items-center justify-center`}>
+          <Icon size={22} className="text-white" />
+        </div>
+        <div className="flex items-center gap-2">
+          {links.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-md bg-white/[0.05] border border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20 transition-all"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      </div>
+      <h3 className="text-lg font-semibold text-white mb-1.5 font-display">{title}</h3>
+      <p className="text-sm text-white/40 leading-relaxed mb-4">{description}</p>
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/30 border border-white/[0.06] font-mono text-sm">
+        <Terminal size={14} className="text-white/20 flex-shrink-0" />
+        <code className="text-indigo-300/80 flex-1 overflow-x-auto">{installCmd}</code>
+        <CopyButton text={installCmd} />
+      </div>
+    </div>
+  );
+}
 
 function FeatureCard({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description: string }) {
   return (
@@ -86,6 +143,12 @@ export default function LandingPage() {
             >
               Docs
             </a>
+            <a
+              href="/paper"
+              className="text-sm text-white/50 hover:text-white/80 transition-colors px-3 py-1.5"
+            >
+              Paper
+            </a>
             <span
               className="text-sm font-medium px-4 py-2 rounded-lg bg-indigo-600/50 text-white/60 cursor-default"
             >
@@ -95,7 +158,7 @@ export default function LandingPage() {
         </nav>
 
         {/* Hero */}
-        <section className="px-6 md:px-12 pt-20 pb-16 max-w-4xl mx-auto text-center">
+        <section className="px-6 md:px-12 pt-7 pb-16 max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-xs text-white/50 mb-8">
             <Sparkles size={12} className="text-indigo-400" />
             Open-source AI search engine
@@ -147,6 +210,58 @@ export default function LandingPage() {
           </div>
         </section>
 
+          {/* Packages */}
+        <section className="px-6 md:px-12 py-16 max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-xs text-white/50 mb-4">
+              <Package size={12} className="text-indigo-400" />
+              Open-source packages
+            </div>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-3">
+              Use it your way
+            </h2>
+            <p className="text-white/40 max-w-xl mx-auto">
+              Install the Python SDK, use the caching library standalone, or self-host the entire engine with Docker.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <PackageCard
+              icon={Search}
+              iconColor="bg-indigo-500/20 border border-indigo-500/30"
+              title="lix-open-search"
+              description="Python client SDK with sync + async, streaming, multi-turn sessions, and multimodal search. OpenAI-compatible."
+              installCmd="pip install lix-open-search"
+              links={[
+                { label: 'PyPI', href: LINKS.pypiSearch },
+                { label: 'Docs', href: LINKS.github + '/tree/main/package/lix_open_search_pkg' },
+              ]}
+            />
+            <PackageCard
+              icon={Database}
+              iconColor="bg-emerald-500/20 border border-emerald-500/30"
+              title="lix-open-cache"
+              description="Standalone 3-layer Redis caching with Huffman disk archival. Session memory, semantic dedup, and LRU eviction."
+              installCmd="pip install lix-open-cache"
+              links={[
+                { label: 'PyPI', href: LINKS.pypiCache },
+                { label: 'Paper', href: LINKS.paper },
+              ]}
+            />
+            <PackageCard
+              icon={Box}
+              iconColor="bg-blue-500/20 border border-blue-500/30"
+              title="LixSearch"
+              description="Full self-hostable search engine. One command to run the API, Redis, ChromaDB, Playwright agents, and embeddings."
+              installCmd="docker pull elixpo/lixsearch"
+              links={[
+                { label: 'Docker Hub', href: LINKS.dockerHub },
+                { label: 'GitHub', href: LINKS.github },
+              ]}
+            />
+          </div>
+        </section>
+
         {/* Features */}
         <section className="px-6 md:px-12 py-16 max-w-5xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -186,6 +301,8 @@ export default function LandingPage() {
           </div>
         </section>
 
+      
+
         {/* Code snippet / API preview */}
         <section className="px-6 md:px-12 py-16 max-w-3xl mx-auto">
           <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
@@ -217,6 +334,7 @@ export default function LandingPage() {
               <a href={LINKS.docs} className="text-sm text-white/30 hover:text-white/60 transition-colors">Docs</a>
               <a href={LINKS.trySearch} className="text-sm text-white/30 hover:text-white/60 transition-colors">App</a>
               <a href={LINKS.pollinations} target="_blank" rel="noopener noreferrer" className="text-sm text-white/30 hover:text-white/60 transition-colors">Pollinations</a>
+              <a href={LINKS.pypiSearch} target="_blank" rel="noopener noreferrer" className="text-sm text-white/30 hover:text-white/60 transition-colors">PyPI</a>
               <a href={LINKS.github} target="_blank" rel="noopener noreferrer" className="text-sm text-white/30 hover:text-white/60 transition-colors">GitHub</a>
             </div>
           </div>

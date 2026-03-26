@@ -43,6 +43,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "pages:build": "next build",
+    "pages:deploy": "npx wrangler pages deploy out --project-name=lixsearch",
     "deploy": "./deploy.sh",
     "deploy:build": "./deploy.sh build",
     "deploy:publish": "./deploy.sh deploy"
