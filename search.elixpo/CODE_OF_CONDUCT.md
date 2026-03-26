@@ -40,7 +40,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## Reporting
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at [support@elixpo.ai](mailto:support@elixpo.ai). All complaints will be reviewed and investigated fairly and promptly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at [hello@elixpo.ai](mailto:hello@elixpo.ai). All complaints will be reviewed and investigated fairly and promptly.
 
 All community leaders are obligated to respect the privacy and security of the reporter of any incident.
 

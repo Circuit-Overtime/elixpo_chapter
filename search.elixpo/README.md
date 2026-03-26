@@ -46,6 +46,22 @@
 
 ---
 
+## 🚩 Released Packages
+
+| Package | Registry | Install / Pull | Description |
+|---------|----------|---------------|-------------|
+| [`lix-open-search`](https://pypi.org/project/lix-open-search/) | PyPI | `pip install lix-open-search` | Python client SDK — sync + async, streaming, multimodal, OpenAI-compatible |
+| [`lix-open-cache`](https://pypi.org/project/lix-open-cache/) | PyPI | `pip install lix-open-cache` | Standalone 3-layer Redis caching + Huffman disk archival for conversational AI |
+| [`LixSearch`](https://hub.docker.com/r/elixpo/lixsearch) | Docker Hub / GHCR | `docker pull elixpo/lixsearch` OR `docker pull ghcr.io/circuit-overtime/lixsearch` | Full self-hostable search engine (API + Redis + ChromaDB + Playwright) both on Docker Hub and GitHub Container Registry |
+
+
+- **lix-open-search** — lightweight client SDK that connects to a running LixSearch server (self-hosted via Docker or hosted at `search.elixpo.com`). Only depends on `httpx`.
+- **lix-open-cache** — standalone caching library, works independently with just Redis. No server needed. Only depends on `redis`, `numpy`, `loguru`.
+- **LixSearch Docker** — the full search engine. Run `docker compose up` and get a working API.
+
+---
+
+
 ## ⚙️ How It Works
 
 When you ask lixSearch a question, here's what happens behind the scenes:
