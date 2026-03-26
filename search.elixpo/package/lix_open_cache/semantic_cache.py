@@ -7,8 +7,8 @@ from typing import Dict, Optional, List, Any
 from loguru import logger
 import numpy as np
 
-from lix_chat.lix_cache.config import CacheConfig
-from lix_chat.lix_cache.redis_pool import create_redis_client
+from lix_open_cache.config import CacheConfig
+from lix_open_cache.redis_pool import create_redis_client
 
 try:
     import redis

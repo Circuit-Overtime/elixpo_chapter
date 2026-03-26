@@ -2,8 +2,8 @@ from typing import Dict, List, Optional
 
 from loguru import logger
 
-from lix_chat.lix_cache.config import CacheConfig
-from lix_chat.lix_cache.hybrid_cache import HybridConversationCache
+from lix_open_cache.config import CacheConfig
+from lix_open_cache.hybrid_cache import HybridConversationCache
 
 
 class SessionContextWindow:

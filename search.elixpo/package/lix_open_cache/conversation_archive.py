@@ -6,7 +6,7 @@ import threading
 from typing import Dict, List, Optional, Any
 
 from loguru import logger
-from lix_chat.lix_cache.huffman_codec import HuffmanCodec
+from lix_open_cache.huffman_codec import HuffmanCodec
 
 _MAGIC = b"CAv1"
 _HEADER_SIZE = 4 + 8 + 8 + 4  # magic + created + updated + num_turns

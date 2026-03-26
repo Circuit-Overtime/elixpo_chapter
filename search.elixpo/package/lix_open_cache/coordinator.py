@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 from loguru import logger
 import numpy as np
 
-from lix_chat.lix_cache.config import CacheConfig
-from lix_chat.lix_cache.semantic_cache import URLEmbeddingCache, SemanticCacheRedis
-from lix_chat.lix_cache.context_window import SessionContextWindow
+from lix_open_cache.config import CacheConfig
+from lix_open_cache.semantic_cache import URLEmbeddingCache, SemanticCacheRedis
+from lix_open_cache.context_window import SessionContextWindow
 
 
 class CacheCoordinator:

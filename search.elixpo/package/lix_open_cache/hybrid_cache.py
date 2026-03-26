@@ -5,9 +5,9 @@ from typing import Dict, List, Optional, Any
 
 from loguru import logger
 
-from lix_chat.lix_cache.config import CacheConfig
-from lix_chat.lix_cache.conversation_archive import ConversationArchive
-from lix_chat.lix_cache.redis_pool import create_redis_client
+from lix_open_cache.config import CacheConfig
+from lix_open_cache.conversation_archive import ConversationArchive
+from lix_open_cache.redis_pool import create_redis_client
 
 try:
     import redis as _redis

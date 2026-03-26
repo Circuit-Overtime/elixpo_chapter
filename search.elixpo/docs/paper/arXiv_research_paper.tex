@@ -50,9 +50,9 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-When OpenAI launched SearchGPT, it promised the future of AI-powered web search---but at a cost that made it prohibitive for independent developers. At \$30--100+ per thousand API queries, building a search assistant on top of SearchGPT was a non-starter. We set out to build an open-source alternative that could surf the internet with LLMs at a fraction of the cost, using Playwright-based search agents and open models---running entirely on CPU, without GPU acceleration. The system worked, but as users grew, so did the problems. Sessions lost context between turns. Semantically identical queries triggered redundant LLM calls. The same URLs were embedded over and over across sessions. On a resource-constrained 8-vCPU server, every wasted computation mattered.
+When OpenAI launched SearchGPT, it promised the future of AI-powered web search-but at a cost that made it prohibitive for independent developers. At \$30--100+ per thousand API queries, building a search assistant on top of SearchGPT was a non-starter. We set out to build an open-source alternative that could surf the internet with LLMs at a fraction of the cost, using Playwright-based search agents and open models-running entirely on CPU, without GPU acceleration. The system worked, but as users grew, so did the problems. Sessions lost context between turns. Semantically identical queries triggered redundant LLM calls. The same URLs were embedded over and over across sessions. On a resource-constrained 8-vCPU server, every wasted computation mattered.
 
-This paper tells the story of how we solved those problems. We present a three-layer caching architecture, now available as the open-source Python library \texttt{lix\_cache}: (1)~a \emph{Session Context Window} maintaining a rolling window of recent messages in Redis with automatic overflow to Huffman-compressed disk archives; (2)~a \emph{Semantic Query Cache} that catches rephrasings via cosine similarity on embedding vectors, eliminating redundant LLM invocations; and (3)~a \emph{URL Embedding Cache} that deduplicates embedding computations across sessions. Deployed on a single 8-vCPU Intel Cascade Lake server (2\,GHz, 32\,GB RAM) running 30 async workers across three containerized replicas, the system achieves an 89.3\% cache hit rate with 0.1\,ms Redis read latency and just 1.38\,MB of memory overhead. A background LRU eviction daemon transparently migrates idle sessions from Redis to disk and re-hydrates them on demand. We describe the journey from a bare-bones search pipeline to a production system, detail the architecture and implementation of each caching layer, and evaluate the system's throughput, latency, and compression characteristics on commodity CPU hardware. The library is pip-installable and designed for drop-in integration with any chatbot, search assistant, or RAG pipeline.
+This paper tells the story of how we solved those problems. We present a three-layer caching architecture, now available as the open-source Python library \texttt{lix\_open\_cache}: (1)~a \emph{Session Context Window} maintaining a rolling window of recent messages in Redis with automatic overflow to Huffman-compressed disk archives; (2)~a \emph{Semantic Query Cache} that catches rephrasings via cosine similarity on embedding vectors, eliminating redundant LLM invocations; and (3)~a \emph{URL Embedding Cache} that deduplicates embedding computations across sessions. Deployed on a single 8-vCPU Intel Cascade Lake server (2\,GHz, 32\,GB RAM) running 30 async workers across three containerized replicas, the system achieves an 89.3\% cache hit rate with 0.1\,ms Redis read latency and just 1.38\,MB of memory overhead. A background LRU eviction daemon transparently migrates idle sessions from Redis to disk and re-hydrates them on demand. We describe the journey from a bare-bones search pipeline to a production system, detail the architecture and implementation of each caching layer, and evaluate the system's throughput, latency, and compression characteristics on commodity CPU hardware. The library is pip-installable and designed for drop-in integration with any chatbot, search assistant, or RAG pipeline.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -86,11 +86,11 @@ It worked. The per-query cost dropped dramatically-from \$0.22 with SearchGPT to
 \item \textbf{``We already embedded this URL.''} As we added RAG capabilities to improve answer quality, the same popular URLs were fetched and embedded by multiple sessions. Computing a 384-dimensional embedding (${\sim}200$\,ms per URL) redundantly across sessions wasted the compute budget we had fought so hard to minimize.
 \end{enumerate}
 
-\subsection{The Solution: lix\_cache}
+\subsection{The Solution: lix\_open\_cache}
 
 Each of these problems had partial solutions in the ecosystem. LangChain~\cite{langchain2023} offered in-memory conversation buffers. GPTCache~\cite{gptcache2023} provided semantic caching for LLM responses. But nothing unified all three concerns into a single, lightweight library we could drop into our existing pipeline without adding heavyweight infrastructure.
 
-So we built \texttt{lix\_cache}-a three-layer caching architecture that grew organically out of the problems we faced in production. Each layer was born from a specific pain point:
+So we built \texttt{lix\_open\_cache}-a three-layer caching architecture that grew organically out of the problems we faced in production. Each layer was born from a specific pain point:
 
 \begin{itemize}
 \item \textbf{Layer 1: Session Context Window.} A rolling window of the 20 most recent messages in Redis, with automatic overflow to Huffman-compressed disk archives. Born from the need to maintain conversation context without unbounded memory growth.
@@ -100,7 +100,7 @@ So we built \texttt{lix\_cache}-a three-layer caching architecture that grew org
 
 The system also introduced a \textbf{two-tier hybrid storage model}-Redis for hot data (${\sim}1$\,ms reads) and Huffman-compressed disk archives for cold data-connected by a background LRU eviction daemon. A \textbf{custom binary archive format} with a 24-byte header achieves 45--67\% compression on conversation text using pure Python, with zero native dependencies. All tunables are consolidated into a single \textbf{\texttt{CacheConfig} dataclass} with 12-factor environment variable support.
 
-Today, \texttt{lix\_cache} is extracted into a standalone, pip-installable library (\texttt{pip install lix-chat}), requiring only \texttt{redis}, \texttt{numpy}, and \texttt{loguru}. It powers the production \texttt{lixSearch} system at \texttt{search.elixpo.com}, serving an 89.3\% cache hit rate with just 1.38\,MB of Redis memory.
+Today, \texttt{lix\_open\_cache} is extracted into a standalone, pip-installable library (\texttt{pip install lix-open-cache}), requiring only \texttt{redis}, \texttt{numpy}, and \texttt{loguru}. It powers the production \texttt{lixSearch} system at \texttt{search.elixpo.com}, serving an 89.3\% cache hit rate with just 1.38\,MB of Redis memory.
 
 The remainder of this paper follows the arc of this journey. Section~\ref{sec:architecture} presents the architecture that emerged. Section~\ref{sec:design} explains the design decisions we made and why. Section~\ref{sec:implementation} details the implementation. Section~\ref{sec:evaluation} evaluates what we achieved in production. Section~\ref{sec:related} surveys related work, and Section~\ref{sec:conclusion} reflects on what we learned.
 
@@ -112,7 +112,7 @@ The remainder of this paper follows the arc of this journey. Section~\ref{sec:ar
 
 \subsection{Overview}
 
-With the problems identified, the architecture of \texttt{lix\_cache} took shape around a simple principle: each problem gets its own caching layer, each layer gets its own Redis database, and a single coordinator fa\c{c}ade ties them together. Figure~\ref{fig:architecture} illustrates the complete data flow when a user message arrives.
+With the problems identified, the architecture of \texttt{lix\_open\_cache} took shape around a simple principle: each problem gets its own caching layer, each layer gets its own Redis database, and a single coordinator fa\c{c}ade ties them together. Figure~\ref{fig:architecture} illustrates the complete data flow when a user message arrives.
 
 \begin{figure*}[t]
 \centering
@@ -196,7 +196,7 @@ The resulting compression achieves ${\sim}54\%$ ratio on typical conversation te
 
 \subsection{Rolling Window with Overflow vs.\ Truncation}
 
-Early in development, we used a simple truncation strategy: keep the last $k$ messages, throw away the rest. This bit us when users returned to a conversation after an hour and asked ``what was that article you found earlier?'' The context was gone. \texttt{lix\_cache} instead \emph{overflows} old messages to disk. This preserves the full conversation history for:
+Early in development, we used a simple truncation strategy: keep the last $k$ messages, throw away the rest. This bit us when users returned to a conversation after an hour and asked ``what was that article you found earlier?'' The context was gone. \texttt{lix\_open\_cache} instead \emph{overflows} old messages to disk. This preserves the full conversation history for:
 
 \begin{itemize}
 \item \textbf{Semantic retrieval:} the system can search the disk archive by embedding similarity to find relevant messages from much earlier in the conversation, even if those messages left the hot window long ago.
@@ -322,15 +322,15 @@ We chose re-entrant locks specifically because the call graph is nested: flushin
 \section{Evaluation}
 \label{sec:evaluation}
 
-The real test of any caching system is whether it actually delivers in production---especially on modest hardware. Our entire stack runs on a single DigitalOcean droplet: an 8-vCPU Intel Cascade Lake (2\,GHz) with 32\,GB RAM, no GPU. The search assistant runs as three containerized replicas (2\,vCPU, 2\,GB RAM limit each) with 10 Hypercorn async workers per replica---30 workers total. Redis 7.4 runs in its own container capped at 2\,GB, and an nginx load balancer sits in front. All measurements below were taken from this live system---no synthetic benchmarks, no cherry-picked scenarios.
+The real test of any caching system is whether it actually delivers in production-especially on modest hardware. Our entire stack runs on a single DigitalOcean droplet: an 8-vCPU Intel Cascade Lake (2\,GHz) with 32\,GB RAM, no GPU. The search assistant runs as three containerized replicas (2\,vCPU, 2\,GB RAM limit each) with 10 Hypercorn async workers per replica-30 workers total. Redis 7.4 runs in its own container capped at 2\,GB, and an nginx load balancer sits in front. All measurements below were taken from this live system-no synthetic benchmarks, no cherry-picked scenarios.
 
 \subsection{Cost Comparison: SearchGPT vs.\ lixSearch}
 
 The original motivation for building the search assistant was cost. To understand the comparison, it is important to note a fundamental difference in cost structure between the two systems.
 
-\textbf{SearchGPT cost breakdown.} OpenAI's web search API charges in two parts: (1)~a base fee of \$10--30 per thousand calls, and (2)~a hidden token charge---each search call injects ${\sim}$8{,}000 tokens of retrieved web content into the model context, billed at standard input rates (${\sim}$\$2.50/M tokens for GPT-4o). For a typical query, this amounts to ${\sim}$\$0.02 in token charges on top of the ${\sim}$\$0.01--0.03 base fee, totaling ${\sim}$\$0.22 per query when accounting for output tokens and model overhead~\cite{openai_search_pricing, openai_search_billing}.
+\textbf{SearchGPT cost breakdown.} OpenAI's web search API charges in two parts: (1)~a base fee of \$10--30 per thousand calls, and (2)~a hidden token charge-each search call injects ${\sim}$8{,}000 tokens of retrieved web content into the model context, billed at standard input rates (${\sim}$\$2.50/M tokens for GPT-4o). For a typical query, this amounts to ${\sim}$\$0.02 in token charges on top of the ${\sim}$\$0.01--0.03 base fee, totaling ${\sim}$\$0.22 per query when accounting for output tokens and model overhead~\cite{openai_search_pricing, openai_search_billing}.
 
-\textbf{lixSearch cost breakdown.} Our system has \emph{zero per-query API fees}. LLM inference runs through an open model API (Pollinations.ai) at no per-call cost. Web search is performed by Playwright-based browser agents that scrape results directly---no search API subscription. Embedding computation (sentence-transformers, all-MiniLM-L6-v2) runs locally on CPU via our IPC embedding service. The \emph{only} recurring cost is the server itself: a DigitalOcean 8-vCPU droplet at ${\sim}$\$96/month. Per-query cost is therefore purely amortized infrastructure.
+\textbf{lixSearch cost breakdown.} Our system has \emph{zero per-query API fees}. LLM inference runs through an open model API (Pollinations.ai) at no per-call cost. Web search is performed by Playwright-based browser agents that scrape results directly-no search API subscription. Embedding computation (sentence-transformers, all-MiniLM-L6-v2) runs locally on CPU via our IPC embedding service. The \emph{only} recurring cost is the server itself: a DigitalOcean 8-vCPU droplet at ${\sim}$\$96/month. Per-query cost is therefore purely amortized infrastructure.
 
 Table~\ref{tab:cost} and Figure~\ref{fig:cost} show the comparison across query volumes.
 
@@ -350,7 +350,7 @@ Ours (89\% cached) & \$0.0011 & \$0.00021 & \$0.00011 \\
 \end{tabular}}
 \end{table}
 
-With the semantic cache achieving an 89.3\% hit rate, only ${\sim}$11\% of queries trigger a full pipeline execution. The remaining 89\% are served directly from Redis---no search agents, no LLM call, no embedding computation. At 50{,}000 queries per month, this yields a \textbf{1{,}000$\times$ cost reduction} compared to SearchGPT.
+With the semantic cache achieving an 89.3\% hit rate, only ${\sim}$11\% of queries trigger a full pipeline execution. The remaining 89\% are served directly from Redis-no search agents, no LLM call, no embedding computation. At 50{,}000 queries per month, this yields a \textbf{1{,}000$\times$ cost reduction} compared to SearchGPT.
 
 \begin{figure}[h]
 \centering
@@ -387,7 +387,7 @@ With the semantic cache achieving an 89.3\% hit rate, only ${\sim}$11\% of queri
 \end{axis}
 \end{tikzpicture}%
 }
-\caption{Per-query cost at 50k queries/month (log scale). SearchGPT charges per-query API fees (\$0.22). Our system has zero API fees---cost is amortized server infrastructure (\$96/mo). With 89\% cache hit rate, effective cost drops to \$0.0002/query---a 1{,}000$\times$ reduction.}
+\caption{Per-query cost at 50k queries/month (log scale). SearchGPT charges per-query API fees (\$0.22). Our system has zero API fees-cost is amortized server infrastructure (\$96/mo). With 89\% cache hit rate, effective cost drops to \$0.0002/query-a 1{,}000$\times$ reduction.}
 \label{fig:cost}
 \end{figure}
 
@@ -516,7 +516,7 @@ This aggregate hit rate spans all three databases. The high rate reflects the ef
 \section{Related Work}
 \label{sec:related}
 
-Before building \texttt{lix\_cache}, we surveyed the landscape of existing tools. None of them solved our problem completely, but each influenced our design in specific ways.
+Before building \texttt{lix\_open\_cache}, we surveyed the landscape of existing tools. None of them solved our problem completely, but each influenced our design in specific ways.
 
 \textbf{Conversation memory in LLM frameworks.}
 LangChain~\cite{langchain2023} provides several memory modules-buffer, summary, and windowed variants-that maintain conversation state for LLM chains. These operate in-process and do not persist across restarts or scale across replicas. LlamaIndex~\cite{llamaindex2023} offers similar in-memory chat stores. Our system differs by providing Redis-backed persistence with automatic disk archival, enabling shared state across horizontally scaled application instances.
@@ -525,10 +525,10 @@ LangChain~\cite{langchain2023} provides several memory modules-buffer, summary, 
 GPTCache~\cite{gptcache2023} is the closest prior work to our semantic query cache layer. It intercepts LLM calls, computes embeddings for queries, and returns cached responses when similarity exceeds a threshold. GPTCache supports multiple embedding backends and vector stores (FAISS, Milvus, etc.). Our semantic cache is deliberately simpler: it stores embeddings as JSON arrays in Redis (no external vector database), uses direct cosine similarity over a bounded list (50 items per URL), and is scoped per-session. This trades maximum throughput for operational simplicity-no additional infrastructure beyond Redis.
 
 \textbf{Redis as a caching layer.}
-Redis is widely used as an LLM response cache. Frameworks like Semantic Kernel~\cite{semantic_kernel2023} and Haystack~\cite{haystack2023} support Redis as a cache backend. However, these typically use Redis as a flat key-value store. \texttt{lix\_cache} uses three separate Redis databases with distinct TTL profiles and data formats, and adds the hybrid hot/cold tier with disk overflow-a pattern not found in existing frameworks.
+Redis is widely used as an LLM response cache. Frameworks like Semantic Kernel~\cite{semantic_kernel2023} and Haystack~\cite{haystack2023} support Redis as a cache backend. However, these typically use Redis as a flat key-value store. \texttt{lix\_open\_cache} uses three separate Redis databases with distinct TTL profiles and data formats, and adds the hybrid hot/cold tier with disk overflow-a pattern not found in existing frameworks.
 
 \textbf{Conversation compression and archival.}
-MemGPT~\cite{memgpt2023} addresses the context window limitation by paging conversation history between a main context and an external storage tier, analogous to virtual memory. Our approach is similar in spirit: the hot Redis window serves as ``main memory'' and the Huffman-compressed disk archive as ``swap.'' However, MemGPT focuses on autonomous LLM-driven memory management, while \texttt{lix\_cache} uses deterministic LRU eviction with fixed window sizes.
+MemGPT~\cite{memgpt2023} addresses the context window limitation by paging conversation history between a main context and an external storage tier, analogous to virtual memory. Our approach is similar in spirit: the hot Redis window serves as ``main memory'' and the Huffman-compressed disk archive as ``swap.'' However, MemGPT focuses on autonomous LLM-driven memory management, while \texttt{lix\_open\_cache} uses deterministic LRU eviction with fixed window sizes.
 
 \textbf{Data compression for chat.}
 Standard approaches use gzip or lz4 for compressing stored conversations. Our use of canonical Huffman coding is motivated by the small payload sizes typical of conversation archives ($<$100\,KB), where dictionary-based compressors have proportionally higher overhead. The pure-Python implementation eliminates native build dependencies, simplifying distribution as a pip package.
@@ -539,9 +539,9 @@ Standard approaches use gzip or lz4 for compressing stored conversations. Our us
 \section{Conclusion}
 \label{sec:conclusion}
 
-We started with a simple goal: build a search assistant that could compete with SearchGPT without the \$0.22-per-query price tag---and do it on a single 8-vCPU server with no GPU. Along the way, we discovered that the real engineering challenge was not in searching the web or calling an LLM, but in managing the state that accumulates around multi-turn conversations at scale on resource-constrained hardware.
+We started with a simple goal: build a search assistant that could compete with SearchGPT without the \$0.22-per-query price tag-and do it on a single 8-vCPU server with no GPU. Along the way, we discovered that the real engineering challenge was not in searching the web or calling an LLM, but in managing the state that accumulates around multi-turn conversations at scale on resource-constrained hardware.
 
-The caching architecture that grew out of those challenges is now published as the open-source Python package \texttt{lix\_cache} (\texttt{pip install lix-chat}). Each of its three layers---session context, semantic query deduplication, and URL embedding reuse---was born from a specific production pain point, not from a whiteboard architecture session. The result is a system that is simple enough to understand in an afternoon (${\sim}800$ lines of Python) but effective enough to run in production on commodity CPU infrastructure:
+The caching architecture that grew out of those challenges is now published as the open-source Python package \texttt{lix\_open\_cache} (\texttt{pip install lix-open-cache}). Each of its three layers-session context, semantic query deduplication, and URL embedding reuse-was born from a specific production pain point, not from a whiteboard architecture session. The result is a system that is simple enough to understand in an afternoon (${\sim}800$ lines of Python) but effective enough to run in production on commodity CPU infrastructure:
 
 \begin{itemize}
 \item \textbf{89.3\% aggregate cache hit rate} across all layers over a 6-day measurement window, with Redis memory usage of only 1.38\,MB.
@@ -550,7 +550,7 @@ The caching architecture that grew out of those challenges is now published as t
 \item \textbf{Transparent session lifecycle management}: LRU eviction, disk archival, re-hydration, and TTL cleanup operate without application-level intervention.
 \end{itemize}
 
-Building the search assistant forced us to solve these caching problems; publishing the solution as a standalone library was the natural next step. By extracting these concerns into a reusable package with minimal dependencies (redis, numpy, loguru), we hope to save other developers from the same trial-and-error we went through---so they can focus on what makes their search assistant unique, rather than re-implementing session management and caching from scratch.
+Building the search assistant forced us to solve these caching problems; publishing the solution as a standalone library was the natural next step. By extracting these concerns into a reusable package with minimal dependencies (redis, numpy, loguru), we hope to save other developers from the same trial-and-error we went through-so they can focus on what makes their search assistant unique, rather than re-implementing session management and caching from scratch.
 
 \textbf{Future work.} The journey is not over. Potential improvements include: (1)~replacing the pure-Python Huffman codec with an optional C extension for higher throughput on large archives; (2)~adding native async/await support for frameworks like Quart and FastAPI; (3)~supporting pluggable vector databases (FAISS, Chroma) as alternatives to the brute-force cosine similarity search in the semantic cache; and (4)~implementing adaptive TTL policies that learn optimal cache lifetimes from observed query patterns.
 
@@ -559,7 +559,7 @@ Building the search assistant forced us to solve these caching problems; publish
 % ============================================================
 \vspace{0.5em}
 \noindent\rule{\columnwidth}{0.4pt}
-{\footnotesize \textbf{License.} This paper is licensed under \href{https://creativecommons.org/licenses/by-nc-nd/4.0/}{CC BY-NC-ND 4.0}. You may share this work with attribution, but you may not modify it or use it commercially. The \texttt{lix\_cache} software library is separately licensed under MIT. \textcopyright~2026 Ayushman Bhattacharya.}
+{\footnotesize \textbf{License.} This paper is licensed under \href{https://creativecommons.org/licenses/by-nc-nd/4.0/}{CC BY-NC-ND 4.0}. You may share this work with attribution, but you may not modify it or use it commercially. The \texttt{lix\_open\_cache} software library is separately licensed under MIT. \textcopyright~2026 Ayushman Bhattacharya.}
 
 % ============================================================
 % REFERENCES

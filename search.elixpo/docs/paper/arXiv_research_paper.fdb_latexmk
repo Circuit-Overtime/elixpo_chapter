@@ -1,7 +1,7 @@
 # Fdb version 4
-["pdflatex"] 1774515131.04977 "/mnt/volume_sfo2_01/lixSearch/docs/paper/arXiv_research_paper.tex" "arXiv_research_paper.pdf" "arXiv_research_paper" 1774515132.57039 0
+["pdflatex"] 1774515295.16034 "/mnt/volume_sfo2_01/lixSearch/docs/paper/arXiv_research_paper.tex" "arXiv_research_paper.pdf" "arXiv_research_paper" 1774515296.59366 0
   "/etc/texmf/web2c/texmf.cnf" 1774466716.6827 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/mnt/volume_sfo2_01/lixSearch/docs/paper/arXiv_research_paper.tex" 1774515127.68784 44951 69cc48aedb9efe5d9b8b0a52707fa51c ""
+  "/mnt/volume_sfo2_01/lixSearch/docs/paper/arXiv_research_paper.tex" 1774515291.96134 44923 19490042032d3d7c50d42ff3d249dfd0 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/courier/pcrb8r.tfm" 1136768653 1292 3059476c50a24578715759f22652f3d0 ""
@@ -262,9 +262,9 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1774466725.50968 165012 f177baa1c39a3ebd62c3096a43521a0d ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1774466734 6831078 7a2d7d3d60b71ac35077dbd818a7fffc ""
-  "arXiv_research_paper.aux" 1774515132.43882 8322 148451f19b2f824eb7c7c70a48c4a041 "pdflatex"
-  "arXiv_research_paper.out" 1774515132.43982 6327 308e3ca148b64c3128e75675c134fad1 "pdflatex"
-  "arXiv_research_paper.tex" 1774515127.68784 44951 69cc48aedb9efe5d9b8b0a52707fa51c ""
+  "arXiv_research_paper.aux" 1774515296.42933 8314 047a95aaa6902a71e85de7ccac3a48ba "pdflatex"
+  "arXiv_research_paper.out" 1774515296.43033 6327 308e3ca148b64c3128e75675c134fad1 "pdflatex"
+  "arXiv_research_paper.tex" 1774515291.96134 44923 19490042032d3d7c50d42ff3d249dfd0 ""
   "architecture_inline.tex" 1774507033.95457 4837 a5c62041f2e4313c3337d9ee5cc89ceb ""
   (generated)
   "arXiv_research_paper.aux"
