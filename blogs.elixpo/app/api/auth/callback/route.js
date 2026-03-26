@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getOAuthConfig, setSessionCookie } from '../../../../lib/auth';
-import { getDB } from '../../../../lib/cloudflare';
+import { getOAuthConfig } from '../../../../lib/auth';
+
+const SESSION_MAX_AGE = 60 * 60 * 24 * 15; // 15 days
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -39,6 +40,8 @@ export async function GET(request) {
   });
 
   if (!tokenRes.ok) {
+    const errorBody = await tokenRes.text();
+    console.error('Token exchange failed:', tokenRes.status, errorBody);
     return NextResponse.redirect(new URL('/sign-in?error=token_exchange_failed', request.url));
   }
 
@@ -54,75 +57,72 @@ export async function GET(request) {
   }
 
   const userInfo = await userInfoRes.json();
+  const userId = userInfo.id || userInfo.userId || userInfo.sub;
+  let isNewUser = false;
 
-  // Upsert user into D1
-  const db = getDB();
-  const existingUser = await db.prepare('SELECT id FROM users WHERE id = ?').bind(userInfo.id || userInfo.sub).first();
+  // Try to upsert user into D1 (only works in Cloudflare edge runtime)
+  try {
+    const { getDB } = await import('../../../../lib/cloudflare');
+    const db = getDB();
+    const existingUser = await db.prepare('SELECT id FROM users WHERE id = ?').bind(userId).first();
+    const now = Math.floor(Date.now() / 1000);
 
-  const userId = userInfo.id || userInfo.sub;
-  const now = Math.floor(Date.now() / 1000);
-
-  if (!existingUser) {
-    // New user — insert
-    await db.prepare(`
-      INSERT INTO users (id, email, username, display_name, avatar_url, locale, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      userId,
-      userInfo.email,
-      userInfo.username || userInfo.preferred_username || userInfo.email.split('@')[0],
-      userInfo.display_name || userInfo.name || userInfo.username || '',
-      userInfo.avatar_url || userInfo.picture || '',
-      userInfo.locale || 'en',
-      now,
-      now
-    ).run();
-
-    // Set session cookie and redirect to /intro for first-time setup
-    const response = NextResponse.redirect(new URL('/intro', request.url));
-    const session = JSON.stringify({
-      accessToken: tokenData.access_token,
-      refreshToken: tokenData.refresh_token,
-      expiresAt: Date.now() + tokenData.expires_in * 1000,
-      userId,
-    });
-    response.cookies.set('lixblogs_session', session, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 15, // 15 days
-      path: '/',
-    });
-    response.cookies.delete('oauth_state');
-    return response;
+    if (!existingUser) {
+      isNewUser = true;
+      await db.prepare(`
+        INSERT INTO users (id, email, username, display_name, avatar_url, locale, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        userId,
+        userInfo.email,
+        userInfo.displayName || userInfo.email.split('@')[0],
+        userInfo.displayName || '',
+        userInfo.avatar || '',
+        'en',
+        now,
+        now
+      ).run();
+    } else {
+      await db.prepare(`
+        UPDATE users SET email = ?, display_name = ?, avatar_url = ?, updated_at = ?
+        WHERE id = ?
+      `).bind(
+        userInfo.email,
+        userInfo.displayName || '',
+        userInfo.avatar || '',
+        now,
+        userId
+      ).run();
+    }
+  } catch (e) {
+    // D1 not available (local dev) — user data lives in session cookie only
+    console.warn('D1 not available, skipping user upsert:', e.message);
   }
 
-  // Existing user — update profile fields from OAuth provider
-  await db.prepare(`
-    UPDATE users SET email = ?, display_name = ?, avatar_url = ?, locale = ?, updated_at = ?
-    WHERE id = ?
-  `).bind(
-    userInfo.email,
-    userInfo.display_name || userInfo.name || '',
-    userInfo.avatar_url || userInfo.picture || '',
-    userInfo.locale || 'en',
-    now,
-    userId
-  ).run();
-
-  // Set session cookie and redirect to feed
-  const response = NextResponse.redirect(new URL('/', request.url));
+  // Build session with user profile from OAuth provider
   const session = JSON.stringify({
     accessToken: tokenData.access_token,
     refreshToken: tokenData.refresh_token,
     expiresAt: Date.now() + tokenData.expires_in * 1000,
     userId,
+    // Cache user profile in cookie so /api/auth/me works without D1
+    profile: {
+      id: userId,
+      email: userInfo.email,
+      username: userInfo.displayName || userInfo.email.split('@')[0],
+      display_name: userInfo.displayName || '',
+      avatar_url: userInfo.avatar || '',
+      isAdmin: userInfo.isAdmin || false,
+    },
   });
+
+  const redirectTo = isNewUser ? '/intro' : '/';
+  const response = NextResponse.redirect(new URL(redirectTo, request.url));
   response.cookies.set('lixblogs_session', session, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 15, // 15 days
+    maxAge: SESSION_MAX_AGE,
     path: '/',
   });
   response.cookies.delete('oauth_state');

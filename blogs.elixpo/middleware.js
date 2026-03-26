@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 // Routes that require authentication — redirect to /sign-in if no session
 const PROTECTED_PATHS = [
   '/settings',
-  '/new',
+  '/new-blog',
   '/intro',
 ];
 

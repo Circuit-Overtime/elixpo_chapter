@@ -221,7 +221,7 @@ export default function App() {
               <li className="hover:text-[#b0b0b0] cursor-pointer transition-colors">Get practical writing advice</li>
             </ul>
             <button
-              onClick={() => window.location.href = '/new'}
+              onClick={() => window.location.href = '/new-blog'}
               className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-[#030712] bg-[#e8e8e8] hover:bg-white rounded-full transition-colors"
             >
               Start writing

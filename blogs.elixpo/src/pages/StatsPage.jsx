@@ -1,122 +1,224 @@
-import '../styles/stats/stats.css';
+'use client';
 
+import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import AppShell from '../components/AppShell';
+import Link from 'next/link';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const TABS = ['Overview', 'Posts', 'Followers'];
+
+// Placeholder data — replace with API calls
+const MOCK_MONTHLY = [12, 28, 45, 38, 62, 55, 78, 94, 85, 110, 98, 0];
+const MOCK_READS = [8, 18, 30, 25, 40, 35, 55, 68, 60, 82, 70, 0];
+
+function MiniStatCard({ label, value, icon, trend }) {
+  return (
+    <div className="flex-1 bg-[#0d1117] border border-[#1a1d27] rounded-xl p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-lg bg-[#1a1d27] flex items-center justify-center">
+          {icon}
+        </div>
+        <span className="text-[13px] text-[#777]">{label}</span>
+      </div>
+      <p className="text-3xl font-bold text-white">{value}</p>
+      {trend !== undefined && (
+        <p className={`text-[12px] mt-1 ${trend >= 0 ? 'text-[#4ade80]' : 'text-red-400'}`}>
+          {trend >= 0 ? '+' : ''}{trend}% from last month
+        </p>
+      )}
+    </div>
+  );
+}
+
+function LineChart({ data, color, label, height = 200 }) {
+  if (!data || data.length === 0) return null;
+
+  const max = Math.max(...data, 1);
+  const padding = 40;
+  const chartWidth = 600;
+  const chartHeight = height;
+  const stepX = (chartWidth - padding * 2) / (data.length - 1);
+
+  const points = data.map((val, i) => ({
+    x: padding + i * stepX,
+    y: chartHeight - padding - ((val / max) * (chartHeight - padding * 2)),
+  }));
+
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const areaD = pathD + ` L ${points[points.length - 1].x} ${chartHeight - padding} L ${points[0].x} ${chartHeight - padding} Z`;
+
+  return (
+    <div className="bg-[#0d1117] border border-[#1a1d27] rounded-xl p-5">
+      <p className="text-[14px] font-medium text-[#e0e0e0] mb-4">{label}</p>
+      <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full" preserveAspectRatio="xMidYMid meet">
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
+          const y = chartHeight - padding - frac * (chartHeight - padding * 2);
+          return (
+            <g key={frac}>
+              <line x1={padding} y1={y} x2={chartWidth - padding} y2={y} stroke="#1a1d27" strokeWidth="1" />
+              <text x={padding - 8} y={y + 4} textAnchor="end" fill="#555" fontSize="11">
+                {Math.round(max * frac)}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* X labels */}
+        {MONTHS.map((m, i) => (
+          <text
+            key={m}
+            x={padding + i * stepX}
+            y={chartHeight - 12}
+            textAnchor="middle"
+            fill="#555"
+            fontSize="11"
+          >
+            {m}
+          </text>
+        ))}
+
+        {/* Area fill */}
+        <path d={areaD} fill={color} opacity="0.08" />
+
+        {/* Line */}
+        <path d={pathD} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Dots */}
+        {points.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="3.5" fill="#0d1117" stroke={color} strokeWidth="2" />
+        ))}
+      </svg>
+    </div>
+  );
+}
 
 export default function StatsPage() {
-  return (
-   <div className="container absolute flex flex-col h-full max-w-[2560px] bg-[#030712] box-border">
-        <section className="w-full h-[60px]">
-            <div className="relative top-0 left-0 w-full h-[60px] border-b-2 border-[#1D202A] flex items-center bg-[#030712] z-[1000]">
-                <div className="absolute left-[3%] h-10 w-10 rounded-full bg-[url('/logo.png')] bg-cover"></div>
-                <p className="absolute left-[5%] text-3xl font-bold font-[Kanit,serif] text-white cursor-pointer">LixBlogs</p>
-                <div className="absolute left-[80%] text-white text-[1.3em] cursor-pointer px-2.5 py-1.5 bg-[#10141E] border border-[#7ba8f0] rounded-[15px] flex items-center">
-                    <ion-icon name="pencil" className="text-[0.8em] mr-1 text-[#7ba8f0]"></ion-icon>
-                    Write
-                </div>
-                <div className="absolute left-[88%] text-white text-[1.3em] cursor-pointer">Sign-In</div>
-                <ion-icon name="logo-github" className="githubLogo absolute left-[95%] text-[#888] text-2xl"></ion-icon>
-            </div>
-        </section>
-        <div className="settingsSection flex flex-row h-full w-full h-full box-border">
+  const { user, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState(0);
 
-        <section className="relative flex flex-row h-full w-full box-border border-t-2 border-[#1D202A]">
-            <div className="profileInformation w-[20%] h-full bg-[#10141E] px-5 box-border flex flex-col items-center">
-                <div className="profileControlButtons flex-col w-full mt-5 py-10 box-border">
-                    <div className="controlButton selected relative h-[40px] w-full bg-[#1D202A] rounded-[8px] flex flex-row mb-5 px-2 box-border cursor-pointer gap-[10px] items-center text-[1.3em] hover:bg-[#313647] hover:text-white transition-all duration-300">
-                        <ion-icon name="home-outline" className="text-[#7ba8f0] text-[0.9em]"></ion-icon>
-                        <p className="text-[#7ba8f0] text-[0.9em]">Home</p>
-                    </div>
-                <div className="controlButton relative h-[40px] w-full bg-[#1D202A] rounded-[8px] flex flex-row mb-5 px-2 cursor-pointer gap-[10px] items-center text-[1.3em] hover:bg-[#313647] hover:text-white transition-all duration-300">
-                        <ion-icon name="bookmark-outline" className="text-[#7ba8f0] text-[0.9em]"></ion-icon>
-                        <p className="text-[#7ba8f0] text-[0.9em]">Library</p>
-                    </div>
-                    <div className="controlButton relative h-[40px] w-full bg-[#1D202A] rounded-[8px] flex flex-row mb-15 px-2 cursor-pointer gap-[10px] items-center text-[1.3em] hover:bg-[#313647] hover:text-white transition-all duration-300">
-                        <ion-icon name="person-outline" className="text-[#7ba8f0] text-[0.9em]"></ion-icon>
-                        <p className="text-[#7ba8f0] text-[0.9em]">Profile</p>
-                    </div>
-
-
-                    <div className="controlButton relative h-[40px] w-full bg-[#1D202A] rounded-[8px] flex flex-row mt-20 mb-5 px-2 cursor-pointer gap-[10px] items-center text-[1.3em] hover:bg-[#313647] hover:text-white transition-all duration-300">
-                        <ion-icon name="book-outline" className="text-[#7ba8f0] text-[0.9em]"></ion-icon>
-                        <p className="text-[#7ba8f0] text-[0.9em]">Stories</p>
-                    </div>
-                    <div className="controlButton relative h-[40px] w-full bg-[#1D202A] rounded-[8px] flex flex-row mb-5 px-2 cursor-pointer gap-[10px] items-center text-[1.3em] hover:bg-[#313647] hover:text-white transition-all duration-300">
-                        <ion-icon name="stats-chart-outline" className="text-[#7ba8f0] text-[0.9em]"></ion-icon>
-                        <p className="text-[#7ba8f0] text-[0.9em]">Stats</p>
-                    </div>
-
-
-                    <div className="userInfo flex items-center gap-2 w-full h-[50px] px-3 rounded-[12px] bg-[#10141E] shadow-[6px_6px_12px_#0b0e16,-6px_-6px_12px_#171c28]">
-                        <div className="userLogo flex-shrink-0 h-[35px] w-[35px] rounded-full bg-[#888] shadow-[inset_3px_3px_6px_#777,inset_-3px_-3px_6px_#999]"></div>
-                        <span className="text-white text-lg font-medium cursor-pointer userOrganization truncate">Ayushman Bhattacharya</span>
-                    </div>
-
-                </div>
-            </div>
-
-            <div className="statsControl w-[80%] h-full max-h-[calc(100vh-80px)] overflow-y-auto bg-[#030712] px-10 box-border flex flex-col items-start">
-                <div className="statsHeader w-full h-[30%] flex flex-row items-center ">
-                    <h1 className="text-white text-[4em] my-auto font-bold">Stats</h1>
-                </div>
-
-                <div className="statsNav flex flex-row w-full h-[10%] items-center justify-left gap-10 mt-2 border-b-2 border-[#1D202A]">
-                    <p className="statsNavItem text-[#888] text-lg selected underline cursor-pointer select-none">Posts</p>
-                    <p className="statsNavItem text-[#888] text-lg cursor-pointer select-none">Viewers</p>
-                </div>
-
-
-
-                <div className="statsOverview flex flex-col w-full mt-10 gap-5">
-
-                    <div className="statsBox flex flex-row justify-between w-full px-10">
-                        <div className="flex flex-col w-1/2">
-                        <p className="text-white text-lg select-none">This Month</p>
-                        <p className="text-[#888] text-[1em] select-none">From the 1st August to the 31st August</p>
-                        </div>
-                        <div className="flex w-1/2">
-                            <div className="relative w-full max-w-xs"></div>
-                                <div className="relative w-full">
-                                    <div id="customMonthDropdown" className="flex items-center justify-between bg-[#10141E] border border-[#7ba8f0] text-white py-2 px-4 pr-8 rounded-[12px] cursor-pointer select-none transition-all duration-300">
-                                        <span id="selectedMonth">August</span>
-                                        <ion-icon name="chevron-down-outline" className="text-xl text-[#7ba8f0]"></ion-icon>
-                                    </div>
-                                    <div id="monthOptions" className="monthOptions absolute left-0 right-0 mt-2 bg-[#10141E] max-h-[200px] overflow-y-auto border border-[#7ba8f0] rounded-[12px] shadow-lg z-10 hidden">
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] hover:text-[#7ba8f0] cursor-pointer">January</div>
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] hover:text-[#7ba8f0] cursor-pointer">February</div>
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] hover:text-[#7ba8f0] cursor-pointer">March</div>
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] hover:text-[#7ba8f0] cursor-pointer">April</div>
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] hover:text-[#7ba8f0] cursor-pointer">May</div>
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] hover:text-[#7ba8f0] cursor-pointer">June</div>
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] hover:text-[#7ba8f0] cursor-pointer">July</div>
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] selected hover:text-[#7ba8f0] cursor-pointer">August</div>
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] hover:text-[#7ba8f0] cursor-pointer">September</div>
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] hover:text-[#7ba8f0] cursor-pointer">October</div>
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] hover:text-[#7ba8f0] cursor-pointer">November</div>
-                                        <div className="relative px-4 py-2 hover:bg-[#313647] text-[#888] hover:text-[#7ba8f0] cursor-pointer">December</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="statsBox flex flex-row gap-5 justify-start items-center">
-                            <div className="viewCount flex flex-col px-10">
-                                <p className="views text-[4em] font-bold text-white">0</p>
-                                <p className="text-[#888] text-[1em] select-none">Views</p>
-                            </div>
-                            <div className="readCount flex flex-col px-10">
-                                <p className="reads text-[4em] font-bold text-white">0</p>
-                                <p className="text-[#888] text-[1em] select-none">Reads</p>
-                            </div>
-                        </div>
-
-
-                        <div className="statsBox w-full flex flex-col items-center mt-8">
-                            <canvas id="readsViewsChart" className="w-full h-80 bg-[#10141E] rounded-[16px] p-4"></canvas>
-                        </div>
-                    </div>
-
-                </div>
-            </section>
+  if (loading) {
+    return (
+      <AppShell>
+        <div className="max-w-4xl mx-auto px-6 py-10">
+          <div className="h-10 w-32 bg-[#1a1d27] animate-pulse rounded mb-8" />
+          <div className="grid grid-cols-4 gap-4 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-28 bg-[#1a1d27] animate-pulse rounded-xl" />
+            ))}
+          </div>
+          <div className="h-64 bg-[#1a1d27] animate-pulse rounded-xl" />
         </div>
-    </div>
+      </AppShell>
+    );
+  }
+
+  if (!user) {
+    return (
+      <AppShell>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
+          <svg className="w-12 h-12 text-[#2a2d3a] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+          <h2 className="text-xl font-bold text-white mb-2">Sign in to view your stats</h2>
+          <p className="text-[#777] text-sm mb-6">Track your views, reads, and followers over time.</p>
+          <Link href="/sign-in" className="px-6 py-2.5 bg-[#e8e8e8] text-[#030712] font-semibold rounded-full text-sm hover:bg-white transition-colors">
+            Sign In
+          </Link>
+        </div>
+      </AppShell>
+    );
+  }
+
+  return (
+    <AppShell>
+      <div className="max-w-4xl mx-auto px-6 py-10">
+        <h1 className="text-3xl font-bold text-white mb-8">Stats</h1>
+
+        {/* Tabs */}
+        <div className="flex gap-6 border-b border-[#1a1d27] mb-8">
+          {TABS.map((tab, i) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(i)}
+              className={`pb-3 text-[14px] font-medium border-b-2 transition-colors ${
+                i === activeTab
+                  ? 'text-white border-white'
+                  : 'text-[#777] border-transparent hover:text-[#b0b0b0]'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 0 && (
+          <div className="space-y-6">
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <MiniStatCard
+                label="Views"
+                value="0"
+                trend={0}
+                icon={<svg className="w-4 h-4 text-[#9b7bf7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>}
+              />
+              <MiniStatCard
+                label="Reads"
+                value="0"
+                trend={0}
+                icon={<svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>}
+              />
+              <MiniStatCard
+                label="Likes"
+                value="0"
+                trend={0}
+                icon={<svg className="w-4 h-4 text-[#f87171]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>}
+              />
+              <MiniStatCard
+                label="Followers"
+                value="0"
+                trend={0}
+                icon={<svg className="w-4 h-4 text-[#60a5fa]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+              />
+            </div>
+
+            {/* Views chart */}
+            <LineChart
+              data={MOCK_MONTHLY}
+              color="#9b7bf7"
+              label="Views over time"
+            />
+
+            {/* Reads chart */}
+            <LineChart
+              data={MOCK_READS}
+              color="#4ade80"
+              label="Reads over time"
+            />
+          </div>
+        )}
+
+        {activeTab === 1 && (
+          <div className="text-center py-16">
+            <svg className="w-16 h-16 text-[#1a1d27] mx-auto mb-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+            </svg>
+            <p className="text-[#777] text-[15px] font-medium mb-1">No post stats yet</p>
+            <p className="text-[#555] text-[13px]">Publish a story to start tracking its performance.</p>
+          </div>
+        )}
+
+        {activeTab === 2 && (
+          <div className="space-y-6">
+            <div className="bg-[#0d1117] border border-[#1a1d27] rounded-xl p-8 text-center">
+              <p className="text-4xl font-bold text-white mb-1">0</p>
+              <p className="text-[#777] text-[14px]">Total followers</p>
+            </div>
+            <div className="text-center py-8">
+              <p className="text-[#555] text-[13px]">Follower growth chart will appear once you have followers.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </AppShell>
   );
 }
