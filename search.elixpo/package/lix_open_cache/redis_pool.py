@@ -1,7 +1,7 @@
 import threading
 from typing import Optional
 
-from lix_chat.lix_cache.config import CacheConfig
+from lix_open_cache.config import CacheConfig
 
 _pools = {}
 _pools_lock = threading.Lock()

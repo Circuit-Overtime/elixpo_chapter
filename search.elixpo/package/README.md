@@ -1,11 +1,11 @@
-# lix_chat / lix_cache
+# lix_open_cache
 
 Standalone multi-layer caching and session management for conversational AI. Extracted from [lixSearch](https://github.com/pollinations/lixsearch) into a reusable, pip-installable package.
 
 Drop it into any chatbot, search assistant, or RAG pipeline to get production-grade session memory, semantic caching, and compressed disk archival out of the box.
 
 ```
-pip install lix-chat
+pip install lix-open-cache
 ```
 
 ## Research Paper
@@ -71,33 +71,32 @@ User message arrives
 ## Package structure
 
 ```
-lix_chat/
+lix_open_cache/
 ├── pyproject.toml
-└── lix_chat/
-    ├── __init__.py              # re-exports from lix_cache
-    └── lix_cache/
-        ├── __init__.py          # public API
-        ├── config.py            # CacheConfig dataclass
-        ├── redis_pool.py        # Connection-pooled Redis factory
-        ├── huffman_codec.py     # Canonical Huffman encoder/decoder
-        ├── conversation_archive.py  # .huff disk persistence
-        ├── hybrid_cache.py      # Redis hot + disk cold + LRU eviction
-        ├── semantic_cache.py    # SemanticCacheRedis + URLEmbeddingCache
-        ├── context_window.py    # SessionContextWindow (wraps hybrid_cache)
-        └── coordinator.py       # CacheCoordinator (orchestrates all 3)
+├── README.md
+└── lix_open_cache/
+    ├── __init__.py              # public API
+    ├── config.py                # CacheConfig dataclass
+    ├── redis_pool.py            # Connection-pooled Redis factory
+    ├── huffman_codec.py         # Canonical Huffman encoder/decoder
+    ├── conversation_archive.py  # .huff disk persistence
+    ├── hybrid_cache.py          # Redis hot + disk cold + LRU eviction
+    ├── semantic_cache.py        # SemanticCacheRedis + URLEmbeddingCache
+    ├── context_window.py        # SessionContextWindow (wraps hybrid_cache)
+    └── coordinator.py           # CacheCoordinator (orchestrates all 3)
 ```
 
 ## Installation
 
 **From PyPI** (once published):
 ```bash
-pip install lix-chat
+pip install lix-open-cache
 ```
 
 **From source:**
 ```bash
 git clone https://github.com/pollinations/lixsearch.git
-cd lixsearch/lix_chat
+cd lixsearch/lix_open_cache
 pip install -e .
 ```
 
@@ -115,7 +114,7 @@ pip install -e .
 ### Full 3-layer setup
 
 ```python
-from lix_chat import CacheConfig, CacheCoordinator
+from lix_open_cache import CacheConfig, CacheCoordinator
 
 config = CacheConfig(
     redis_host="localhost",
@@ -147,7 +146,7 @@ else:
 ### Session memory only (no semantic cache)
 
 ```python
-from lix_chat import HybridConversationCache, CacheConfig
+from lix_open_cache import HybridConversationCache, CacheConfig
 
 config = CacheConfig(redis_host="localhost", redis_port=6379)
 cache = HybridConversationCache("session-123", config=config)
@@ -170,7 +169,7 @@ context = cache.smart_context(
 ### Disk-only (no Redis)
 
 ```python
-from lix_chat import ConversationArchive
+from lix_open_cache import ConversationArchive
 
 archive = ConversationArchive("./data/chats", session_ttl_days=30)
 
@@ -187,8 +186,8 @@ archive.cleanup_expired()
 ### Just the Huffman codec
 
 ```python
-from lix_chat import HuffmanCodec
-from lix_chat.lix_cache.huffman_codec import encode_str, decode_bytes
+from lix_open_cache import HuffmanCodec
+from lix_open_cache.huffman_codec import encode_str, decode_bytes
 
 text = "The quick brown fox jumps over the lazy dog" * 100
 compressed = encode_str(text)
@@ -202,7 +201,7 @@ print(f"{len(text)}B → {len(compressed)}B ({len(compressed)/len(text)*100:.0f}
 All tunables live in a single `CacheConfig` dataclass. No global state, no scattered constants.
 
 ```python
-from lix_chat import CacheConfig
+from lix_open_cache import CacheConfig
 
 config = CacheConfig(
     # Redis connection
@@ -332,7 +331,7 @@ Conversation text has very skewed byte frequencies (~18% spaces, ~13% 'e', ~0.07
 `create_redis_client()` maintains a global pool keyed by `(host, port, db)`:
 
 ```python
-from lix_chat import create_redis_client, CacheConfig
+from lix_open_cache import create_redis_client, CacheConfig
 
 config = CacheConfig(redis_host="localhost", redis_port=6379)
 
@@ -448,7 +447,7 @@ Handles auth gracefully — tries with password first, falls back to no-auth on 
 ## Publishing to PyPI
 
 ```bash
-cd lix_chat
+cd lix_open_cache
 pip install build twine
 
 # Build
@@ -456,7 +455,7 @@ python -m build
 
 # Test on TestPyPI first
 twine upload --repository testpypi dist/*
-pip install --index-url https://test.pypi.org/simple/ lix-chat
+pip install --index-url https://test.pypi.org/simple/ lix-open-cache
 
 # Publish to production PyPI
 twine upload dist/*
@@ -478,8 +477,8 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install build twine
-      - run: cd lix_chat && python -m build
-      - run: cd lix_chat && twine upload dist/*
+      - run: cd lix_open_cache && python -m build
+      - run: cd lix_open_cache && twine upload dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}

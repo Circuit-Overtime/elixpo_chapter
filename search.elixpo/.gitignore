@@ -1,28 +1,15 @@
-# Secrets
 *.env
 .dev.vars
-
-# Runtime data (bind-mounted into Docker)
 /data/
-
-# Python
 /venv/
 __pycache__/
 *.pyc
-
-# Node
 node_modules/
 .next/
 out/
-
-# Build artifacts
 dump.rdb
 *.rdb
-
-# IDE / OS
 .*json
-
-# Legacy dirs (may still exist locally)
 model/
 clipenv/
 searchenv/
@@ -39,17 +26,13 @@ nltk_data/
 model_cache/
 playwright_user_data/
 minikube-linux-amd64
-
-# Cloudflare
 .wrangler/
 wrangler.toml
 search.elixpo/wrangler.toml
-
-# Legacy
 /PRODUCTION/src/__pycache__
 PRODUCTION/k8s/secret.yaml
 data/
-
+dist/
 lix_chat.egg-info/
 *.aux
 *.fls
