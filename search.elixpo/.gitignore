@@ -51,3 +51,10 @@ PRODUCTION/k8s/secret.yaml
 data/
 
 lix_chat.egg-info/
+*.aux
+*.fls
+*.log
+*.out
+*.gz
+*.latexmk
+*.egg-info/
