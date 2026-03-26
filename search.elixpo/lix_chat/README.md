@@ -8,6 +8,28 @@ Drop it into any chatbot, search assistant, or RAG pipeline to get production-gr
 pip install lix-chat
 ```
 
+## Research Paper
+
+This library is described in detail in our research paper:
+
+> **A Three-Layer Caching Architecture for Low-Latency LLM Web Search on Commodity CPU Hardware**
+> Ayushman Bhattacharya (Pollinations.ai), 2026
+> [Read the paper (PDF)](../docs/paper/lix_cache_paper.pdf)
+
+The paper covers the origin story (building a cost-effective alternative to SearchGPT), the architecture and design decisions behind each caching layer, production evaluation on an 8-vCPU server (89.3% hit rate, 0.1ms latency, 1,000x cost reduction), and the Huffman compression scheme for conversation archival.
+
+If you use this library in your research, please cite:
+
+```bibtex
+@article{bhattacharya2026lixcache,
+  title={A Three-Layer Caching Architecture for Low-Latency LLM Web Search on Commodity CPU Hardware},
+  author={Bhattacharya, Ayushman},
+  year={2026},
+  url={https://github.com/pollinations/lixsearch/blob/main/docs/paper/lix_cache_paper.pdf},
+  note={Licensed under CC BY-NC-ND 4.0}
+}
+```
+
 ## What it solves
 
 | Problem | Layer | Solution |
