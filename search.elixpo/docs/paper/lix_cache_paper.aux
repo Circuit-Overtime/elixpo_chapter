@@ -1,0 +1,70 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{langchain2023}
+\citation{gptcache2023}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {II}Architecture}{1}{section.2}\protected@file@percent }
+\newlabel{sec:architecture}{{II}{1}{Architecture}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Overview}{1}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Layer 1: Session Context Window (Redis DB\,2)}{1}{subsection.2.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Data flow through the three-layer caching architecture. Solid arrows indicate the primary path; dashed arrows indicate overflow and eviction paths.}}{2}{figure.1}\protected@file@percent }
+\newlabel{fig:architecture}{{1}{2}{Data flow through the three-layer caching architecture. Solid arrows indicate the primary path; dashed arrows indicate overflow and eviction paths}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Layer 2: Semantic Query Cache (Redis DB\,0)}{2}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}Layer 3: URL Embedding Cache (Redis DB\,1)}{2}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-E}}CacheCoordinator}{2}{subsection.2.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-F}}Redis Database Separation}{2}{subsection.2.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {III}Design Decisions}{2}{section.3}\protected@file@percent }
+\newlabel{sec:design}{{III}{2}{Design Decisions}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Three Separate Layers vs.\ a Monolithic Cache}{2}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Huffman Coding vs.\ gzip/zlib/lz4}{3}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Rolling Window with Overflow vs.\ Truncation}{3}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}LRU Eviction as a Background Daemon}{3}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Connection Pooling Strategy}{3}{subsection.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-F}}Single Configuration Object}{3}{subsection.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Implementation}{3}{section.4}\protected@file@percent }
+\newlabel{sec:implementation}{{IV}{3}{Implementation}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Package Structure}{3}{subsection.4.1}\protected@file@percent }
+\newlabel{lst:layout}{{1}{3}{Module layout}{lstlisting.1}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}Module layout}{3}{lstlisting.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Huffman Codec}{4}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Conversation Archive and .huff File Format}{4}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Hybrid Conversation Cache}{4}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Semantic Cache}{4}{subsection.4.5}\protected@file@percent }
+\newlabel{lst:semcache}{{2}{4}{Semantic cache Redis value structure}{lstlisting.2}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {2}Semantic cache Redis value structure}{4}{lstlisting.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}URL Embedding Cache}{4}{subsection.4.6}\protected@file@percent }
+\citation{langchain2023}
+\citation{llamaindex2023}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-G}}Thread Safety}{5}{subsection.4.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {V}Evaluation}{5}{section.5}\protected@file@percent }
+\newlabel{sec:evaluation}{{V}{5}{Evaluation}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Compression Efficiency}{5}{subsection.5.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Huffman compression ratios on production conversation archives}}{5}{table.1}\protected@file@percent }
+\newlabel{tab:compression}{{I}{5}{Huffman compression ratios on production conversation archives}{table.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Huffman compression ratio vs.\ payload size (synthetic conversation data)}}{5}{table.2}\protected@file@percent }
+\newlabel{tab:compression_scaling}{{II}{5}{Huffman compression ratio vs.\ payload size (synthetic conversation data)}{table.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Latency}{5}{subsection.5.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Operation latencies (measured from application containers)}}{5}{table.3}\protected@file@percent }
+\newlabel{tab:latency}{{III}{5}{Operation latencies (measured from application containers)}{table.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Redis Memory Footprint}{5}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Cache Hit Rate}{5}{subsection.5.4}\protected@file@percent }
+\citation{gptcache2023}
+\citation{semantic_kernel2023}
+\citation{haystack2023}
+\citation{memgpt2023}
+\bibcite{langchain2023}{1}
+\bibcite{gptcache2023}{2}
+\bibcite{llamaindex2023}{3}
+\bibcite{semantic_kernel2023}{4}
+\bibcite{haystack2023}{5}
+\bibcite{memgpt2023}{6}
+\bibcite{huffman1952}{7}
+\bibcite{redis2023}{8}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Related Work}{6}{section.6}\protected@file@percent }
+\newlabel{sec:related}{{VI}{6}{Related Work}{section.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusion}{6}{section.7}\protected@file@percent }
+\newlabel{sec:conclusion}{{VII}{6}{Conclusion}{section.7}{}}
+\@writefile{toc}{\contentsline {section}{References}{6}{section*.1}\protected@file@percent }
+\gdef \@abspage@last{6}
