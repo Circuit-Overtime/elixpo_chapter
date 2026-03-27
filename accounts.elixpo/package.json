@@ -31,7 +31,7 @@
     "fs": "^0.0.1-security",
     "jose": "^5.9.6",
     "next": "15.2.4",
-    "nodemailer": "^8.0.1",
+    "nodemailer": "^8.0.4",
     "prom-client": "^15.1.3",
     "react": "19.2.3",
     "react-dom": "19.2.3"
