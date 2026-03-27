@@ -11,7 +11,7 @@ function Toggle({ checked, onChange }) {
   return (
     <button
       onClick={() => onChange(!checked)}
-      className={`relative w-10 h-[22px] rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-[#9b7bf7]' : 'bg-[#1a1d27]'}`}
+      className={`relative w-10 h-[22px] rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-[#9b7bf7]' : 'bg-[#232d3f]'}`}
     >
       <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white transition-transform ${checked ? 'left-[22px]' : 'left-[3px]'}`} />
     </button>
@@ -24,11 +24,11 @@ function SettingRow({ title, description, right, border = true }) {
       <div className="flex items-start justify-between py-4 gap-6">
         <div className="min-w-0">
           <p className="text-[14px] text-[#e0e0e0] font-medium">{title}</p>
-          {description && <p className="text-[12px] text-[#666] mt-0.5 leading-relaxed">{description}</p>}
+          {description && <p className="text-[12px] text-[#8896a8] mt-0.5 leading-relaxed">{description}</p>}
         </div>
         <div className="flex-shrink-0">{right}</div>
       </div>
-      {border && <div className="h-px bg-[#1a1d27]" />}
+      {border && <div className="h-px bg-[#232d3f]" />}
     </>
   );
 }
@@ -42,7 +42,7 @@ function DropdownSelect({ value, options, onChange }) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="bg-[#0d1117] border border-[#1a1d27] rounded-lg px-3 py-1.5 text-[13px] text-[#b0b0b0] outline-none focus:border-[#333] transition-colors cursor-pointer appearance-none pr-8"
+      className="bg-[#141a26] border border-[#232d3f] rounded-lg px-3 py-1.5 text-[13px] text-[#b0b0b0] outline-none focus:border-[#333] transition-colors cursor-pointer appearance-none pr-8"
       style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23777' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
     >
       {options.map((opt) => (
@@ -62,19 +62,19 @@ function AccountTab({ user }) {
     <div>
       <SettingRow
         title="Email"
-        right={<span className="text-[14px] text-[#777]">{user.email}</span>}
+        right={<span className="text-[14px] text-[#9ca3af]">{user.email}</span>}
       />
       <SettingRow
         title="Username"
-        right={<span className="text-[14px] text-[#777]">@{user.username}</span>}
+        right={<span className="text-[14px] text-[#9ca3af]">@{user.username}</span>}
       />
       <SettingRow
         title="Display Name"
-        right={<span className="text-[14px] text-[#777]">{user.display_name || 'Not set'}</span>}
+        right={<span className="text-[14px] text-[#9ca3af]">{user.display_name || 'Not set'}</span>}
       />
       <SettingRow
         title="Locale"
-        right={<span className="text-[14px] text-[#777]">{user.locale || 'en'}</span>}
+        right={<span className="text-[14px] text-[#9ca3af]">{user.locale || 'en'}</span>}
       />
 
       <div className="py-4">
@@ -83,12 +83,12 @@ function AccountTab({ user }) {
           value={bio}
           onChange={(e) => { setBio(e.target.value); setSaved(false); }}
           rows={3}
-          className="w-full bg-[#0d1117] border border-[#1a1d27] rounded-lg p-3 text-[14px] text-[#c8c8c8] resize-none focus:outline-none focus:border-[#333] transition-colors placeholder-[#444]"
+          className="w-full bg-[#141a26] border border-[#232d3f] rounded-lg p-3 text-[14px] text-[#c8c8c8] resize-none focus:outline-none focus:border-[#333] transition-colors placeholder-[#6b7a8d]"
           placeholder="Tell readers about yourself..."
         />
         {saved && <p className="text-[#4ade80] text-[12px] mt-1.5">Changes saved!</p>}
       </div>
-      <div className="h-px bg-[#1a1d27]" />
+      <div className="h-px bg-[#232d3f]" />
 
       <SettingRow
         title="LixBlogs Digest"
@@ -102,7 +102,7 @@ function AccountTab({ user }) {
                 className={`px-3 py-1 text-[12px] rounded-full border transition-colors capitalize ${
                   digestFreq === f
                     ? 'border-white text-white'
-                    : 'border-[#1a1d27] text-[#777] hover:text-[#b0b0b0] hover:border-[#333]'
+                    : 'border-[#232d3f] text-[#9ca3af] hover:text-[#b0b0b0] hover:border-[#333]'
                 }`}
               >
                 {f}
@@ -151,7 +151,7 @@ function PublishingTab({ user }) {
         title="Manage tipping on your stories"
         description="Readers can send you tips through the third-party platform of your choice."
         right={
-          <span className="text-[13px] text-[#777]">{tipping ? 'Enabled' : 'Disabled'}</span>
+          <span className="text-[13px] text-[#9ca3af]">{tipping ? 'Enabled' : 'Disabled'}</span>
         }
       />
 
@@ -173,7 +173,7 @@ function PublishingTab({ user }) {
         }
       />
 
-      <div className="h-px bg-[#1a1d27] mt-2" />
+      <div className="h-px bg-[#232d3f] mt-2" />
 
       <SettingRow
         title="Allow email replies"
@@ -184,7 +184,7 @@ function PublishingTab({ user }) {
       <SettingRow
         title="'Reply To' email address"
         description="Shown to your subscribers when they reply."
-        right={<span className="text-[13px] text-[#777]">{replyTo}</span>}
+        right={<span className="text-[13px] text-[#9ca3af]">{replyTo}</span>}
       />
 
       <SettingRow
@@ -324,7 +324,7 @@ function NotificationsTab() {
         right={<Toggle checked={prefs.announcements} onChange={(v) => update('announcements', v)} />}
       />
 
-      <div className="h-px bg-[#1a1d27] mt-4" />
+      <div className="h-px bg-[#232d3f] mt-4" />
       <SettingRow
         title="Allow email notifications"
         description="You'll still receive administrative emails even if this setting is off."
@@ -345,9 +345,9 @@ function OrganizationTab({ user }) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-[15px] text-[#e0e0e0] font-semibold">Your Organizations</h3>
-          <p className="text-[12px] text-[#666] mt-0.5">Create and manage organizations to publish collaboratively.</p>
+          <p className="text-[12px] text-[#8896a8] mt-0.5">Create and manage organizations to publish collaboratively.</p>
         </div>
-        <button className="px-4 py-2 text-[13px] font-medium text-[#030712] bg-[#e8e8e8] hover:bg-white rounded-lg transition-colors">
+        <button className="px-4 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-lg transition-colors">
           Create Organization
         </button>
       </div>
@@ -355,13 +355,13 @@ function OrganizationTab({ user }) {
       {orgs.length > 0 ? (
         <div className="space-y-3">
           {orgs.map((org) => (
-            <div key={org.id} className="flex items-center gap-4 p-4 bg-[#0d1117] border border-[#1a1d27] rounded-xl">
-              <div className="h-10 w-10 rounded-lg bg-[#1a1d27] flex-shrink-0 flex items-center justify-center text-[14px] text-[#777] font-bold">
+            <div key={org.id} className="flex items-center gap-4 p-4 bg-[#141a26] border border-[#232d3f] rounded-xl">
+              <div className="h-10 w-10 rounded-lg bg-[#232d3f] flex-shrink-0 flex items-center justify-center text-[14px] text-[#9ca3af] font-bold">
                 {org.name[0]}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] text-[#e0e0e0] font-medium truncate">{org.name}</p>
-                <p className="text-[12px] text-[#666] truncate">@{org.slug} &middot; {org.role}</p>
+                <p className="text-[12px] text-[#8896a8] truncate">@{org.slug} &middot; {org.role}</p>
               </div>
               <Link href={`/settings/org/${org.slug}`} className="text-[12px] text-[#9b7bf7] hover:text-[#b69aff] transition-colors font-medium">
                 Manage
@@ -370,19 +370,19 @@ function OrganizationTab({ user }) {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-[#0d1117] border border-[#1a1d27] rounded-xl">
-          <svg className="w-12 h-12 text-[#1a1d27] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center py-16 bg-[#141a26] border border-[#232d3f] rounded-xl">
+          <svg className="w-12 h-12 text-[#232d3f] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
-          <p className="text-[#777] text-[14px] font-medium mb-1">No organizations yet</p>
-          <p className="text-[#555] text-[12px] mb-5">Create one to collaborate with others.</p>
-          <button className="px-5 py-2 text-[13px] font-medium text-[#030712] bg-[#e8e8e8] hover:bg-white rounded-full transition-colors">
+          <p className="text-[#9ca3af] text-[14px] font-medium mb-1">No organizations yet</p>
+          <p className="text-[#8896a8] text-[12px] mb-5">Create one to collaborate with others.</p>
+          <button className="px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
             Create your first organization
           </button>
         </div>
       )}
 
-      <div className="h-px bg-[#1a1d27] my-8" />
+      <div className="h-px bg-[#232d3f] my-8" />
 
       <SectionHeader title="Organization Settings" />
       <SettingRow
@@ -417,7 +417,7 @@ function SubscriptionTab() {
         <ion-icon name="diamond-outline" style={{ fontSize: '28px', color: '#9b7bf7' }} />
       </div>
       <h3 className="text-lg font-bold text-white mb-2">Subscription</h3>
-      <p className="text-[#777] text-[14px] text-center max-w-sm">Pricing and subscription management is coming soon. Stay tuned for LixBlogs Pro.</p>
+      <p className="text-[#9ca3af] text-[14px] text-center max-w-sm">Pricing and subscription management is coming soon. Stay tuned for LixBlogs Pro.</p>
     </div>
   );
 }
@@ -431,10 +431,10 @@ export default function SettingsPage() {
     return (
       <AppShell>
         <div className="max-w-2xl mx-auto px-6 py-10">
-          <div className="h-10 w-40 bg-[#1a1d27] animate-pulse rounded mb-8" />
+          <div className="h-10 w-40 bg-[#232d3f] animate-pulse rounded mb-8" />
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-12 bg-[#1a1d27] animate-pulse rounded" />
+              <div key={i} className="h-12 bg-[#232d3f] animate-pulse rounded" />
             ))}
           </div>
         </div>
@@ -447,8 +447,8 @@ export default function SettingsPage() {
       <AppShell>
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
           <h2 className="text-xl font-bold text-white mb-2">Sign in to access settings</h2>
-          <p className="text-[#777] text-sm mb-6">Manage your account, profile, and preferences.</p>
-          <Link href="/sign-in" className="px-6 py-2.5 bg-[#e8e8e8] text-[#030712] font-semibold rounded-full text-sm hover:bg-white transition-colors">
+          <p className="text-[#9ca3af] text-sm mb-6">Manage your account, profile, and preferences.</p>
+          <Link href="/sign-in" className="px-6 py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-full text-sm hover:bg-[#b69aff] transition-colors">
             Sign In
           </Link>
         </div>
@@ -462,7 +462,7 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold text-white mb-8">Settings</h1>
 
         {/* Tabs */}
-        <div className="flex gap-4 border-b border-[#1a1d27] mb-8 overflow-x-auto scrollbar-none">
+        <div className="flex gap-4 border-b border-[#232d3f] mb-8 overflow-x-auto scrollbar-none">
           {TABS.map((tab, i) => (
             <button
               key={tab}
@@ -470,7 +470,7 @@ export default function SettingsPage() {
               className={`pb-3 text-[13px] font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                 i === activeTab
                   ? 'text-white border-white'
-                  : 'text-[#777] border-transparent hover:text-[#b0b0b0]'
+                  : 'text-[#9ca3af] border-transparent hover:text-[#b0b0b0]'
               }`}
             >
               {tab}

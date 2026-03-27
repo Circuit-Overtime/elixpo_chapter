@@ -15,10 +15,10 @@ export default function ProfilePage() {
     return (
       <AppShell>
         <div className="max-w-3xl mx-auto px-6 py-10">
-          <div className="h-48 rounded-xl bg-[#1a1d27] animate-pulse mb-20" />
-          <div className="h-6 w-48 bg-[#1a1d27] animate-pulse rounded mb-3" />
-          <div className="h-4 w-32 bg-[#1a1d27] animate-pulse rounded mb-6" />
-          <div className="h-16 w-full bg-[#1a1d27] animate-pulse rounded" />
+          <div className="h-48 rounded-xl bg-[#232d3f] animate-pulse mb-20" />
+          <div className="h-6 w-48 bg-[#232d3f] animate-pulse rounded mb-3" />
+          <div className="h-4 w-32 bg-[#232d3f] animate-pulse rounded mb-6" />
+          <div className="h-16 w-full bg-[#232d3f] animate-pulse rounded" />
         </div>
       </AppShell>
     );
@@ -29,8 +29,8 @@ export default function ProfilePage() {
       <AppShell>
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
           <h2 className="text-xl font-bold text-white mb-2">Sign in to view your profile</h2>
-          <p className="text-[#777] text-sm mb-6">Your profile, blogs, and activity will appear here.</p>
-          <Link href="/sign-in" className="px-6 py-2.5 bg-[#e8e8e8] text-[#030712] font-semibold rounded-full text-sm hover:bg-white transition-colors">
+          <p className="text-[#9ca3af] text-sm mb-6">Your profile, blogs, and activity will appear here.</p>
+          <Link href="/sign-in" className="px-6 py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-full text-sm hover:bg-[#b69aff] transition-colors">
             Sign In
           </Link>
         </div>
@@ -66,7 +66,7 @@ export default function ProfilePage() {
       <div className="max-w-3xl mx-auto px-6 py-8">
         {/* Banner + Avatar */}
         <div className="relative mb-16">
-          <div className="group w-full h-48 rounded-xl bg-[#1a1d27] overflow-hidden relative">
+          <div className="group w-full h-48 rounded-xl bg-[#232d3f] overflow-hidden relative">
             {bannerSrc && (
               <img src={bannerSrc} alt="" className="w-full h-full object-cover" />
             )}
@@ -86,9 +86,9 @@ export default function ProfilePage() {
           </div>
           <div className="absolute -bottom-12 left-6">
             {user.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="h-24 w-24 rounded-full border-4 border-[#030712] object-cover" />
+              <img src={user.avatar_url} alt="" className="h-24 w-24 rounded-full border-4 border-[#0c1017] object-cover" />
             ) : (
-              <div className="h-24 w-24 rounded-full border-4 border-[#030712] bg-[#2a2d3a] flex items-center justify-center text-3xl text-[#b0b0b0] font-bold">
+              <div className="h-24 w-24 rounded-full border-4 border-[#0c1017] bg-[#2a2d3a] flex items-center justify-center text-3xl text-[#b0b0b0] font-bold">
                 {(user.display_name || user.username || '?')[0].toUpperCase()}
               </div>
             )}
@@ -99,11 +99,11 @@ export default function ProfilePage() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white">{user.display_name || user.username}</h1>
-            <p className="text-[#777] text-sm mt-0.5">@{user.username}</p>
+            <p className="text-[#9ca3af] text-sm mt-0.5">@{user.username}</p>
           </div>
           <Link
             href="/settings"
-            className="px-4 py-2 text-[13px] font-medium text-[#b0b0b0] bg-[#0d1117] border border-[#1a1d27] rounded-lg hover:text-white hover:border-[#333] transition-colors"
+            className="px-4 py-2 text-[13px] font-medium text-[#b0b0b0] bg-[#141a26] border border-[#232d3f] rounded-lg hover:text-white hover:border-[#333] transition-colors"
           >
             Edit Profile
           </Link>
@@ -113,23 +113,23 @@ export default function ProfilePage() {
           <p className="text-[#c8c8c8] text-[15px] leading-relaxed mb-6">{user.bio}</p>
         )}
 
-        <div className="flex items-center gap-6 text-[14px] text-[#777] mb-8">
+        <div className="flex items-center gap-6 text-[14px] text-[#9ca3af] mb-8">
           <span><strong className="text-[#e0e0e0]">0</strong> Followers</span>
           <span><strong className="text-[#e0e0e0]">0</strong> Following</span>
         </div>
 
-        <div className="h-px bg-[#1a1d27] mb-8" />
+        <div className="h-px bg-[#232d3f] mb-8" />
 
         {/* Blog tabs */}
-        <div className="flex gap-6 border-b border-[#1a1d27] mb-8">
+        <div className="flex gap-6 border-b border-[#232d3f] mb-8">
           <button className="pb-3 text-[14px] font-medium text-white border-b-2 border-white">Published</button>
-          <button className="pb-3 text-[14px] font-medium text-[#777] border-b-2 border-transparent hover:text-[#b0b0b0] transition-colors">Drafts</button>
+          <button className="pb-3 text-[14px] font-medium text-[#9ca3af] border-b-2 border-transparent hover:text-[#b0b0b0] transition-colors">Drafts</button>
         </div>
 
         {/* Empty state */}
         <div className="text-center py-16">
-          <p className="text-[#777] text-sm">No published blogs yet.</p>
-          <Link href="/new-blog" className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-[#030712] bg-[#e8e8e8] hover:bg-white rounded-full transition-colors">
+          <p className="text-[#9ca3af] text-sm">No published blogs yet.</p>
+          <Link href="/new-blog" className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
             Write your first blog
           </Link>
         </div>
