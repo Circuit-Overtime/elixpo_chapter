@@ -11,8 +11,8 @@
     "github": "Circuit-Overtime"
   },
   "coreTeam": [
-    { "name": "Anwesha", "role": "Core Contributor", "github": "CSE-Anwesha" },
-    { "name": "Vivek", "role": "Core Contributor", "github": "ez-vivek" }
+    { "name": "Anwesha Chakraborty", "role": "Core Contributor", "github": "anwe-ch" },
+    { "name": "Vivek Yadav", "role": "Core Contributor", "github": "ez-vivek" }
   ],
   "programs": [
     { "name": "GSSOC", "description": "GirlScript Summer of Code" },
