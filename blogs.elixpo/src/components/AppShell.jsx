@@ -43,7 +43,7 @@ function ProfileDropdown({ user, logout }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[264px] bg-[#0d1117] border border-[#1a1d27] rounded-xl shadow-2xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-[264px] bg-[#141a26] border border-[#232d3f] rounded-xl shadow-2xl z-50 overflow-hidden">
           {/* User info header */}
           <Link
             href="/profile"
@@ -63,7 +63,7 @@ function ProfileDropdown({ user, logout }) {
             </div>
           </Link>
 
-          <div className="h-px bg-[#1a1d27]" />
+          <div className="h-px bg-[#232d3f]" />
 
           {/* Main links */}
           <div className="py-1.5">
@@ -85,7 +85,7 @@ function ProfileDropdown({ user, logout }) {
             </Link>
           </div>
 
-          <div className="h-px bg-[#1a1d27]" />
+          <div className="h-px bg-[#232d3f]" />
 
           {/* Pricing */}
           <div className="py-1.5">
@@ -99,7 +99,7 @@ function ProfileDropdown({ user, logout }) {
             </Link>
           </div>
 
-          <div className="h-px bg-[#1a1d27]" />
+          <div className="h-px bg-[#232d3f]" />
 
           {/* Sign out */}
           <div className="py-1.5">
@@ -110,13 +110,13 @@ function ProfileDropdown({ user, logout }) {
               <ion-icon name="log-out-outline" style={{ fontSize: '18px', color: '#888' }} />
               Sign out
             </button>
-            <p className="px-5 pb-1 text-[11px] text-[#555] truncate">{user.email}</p>
+            <p className="px-5 pb-1 text-[11px] text-[#8896a8] truncate">{user.email}</p>
           </div>
 
-          <div className="h-px bg-[#1a1d27]" />
+          <div className="h-px bg-[#232d3f]" />
 
           {/* Footer links */}
-          <div className="px-5 py-3 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[#555]">
+          <div className="px-5 py-3 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[#8896a8]">
             <Link href="/about" className="hover:text-[#888] transition-colors">About</Link>
             <Link href="/blog" className="hover:text-[#888] transition-colors">Blog</Link>
             <span className="hover:text-[#888] cursor-pointer transition-colors">Privacy</span>
@@ -148,9 +148,9 @@ export default function AppShell({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#030712]">
+    <div className="min-h-screen bg-[#0c1017]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#030712]/95 backdrop-blur-md border-b border-[#1a1d27]">
+      <header className="sticky top-0 z-50 bg-[#0c1017]/95 backdrop-blur-md border-b border-[#232d3f]">
         <div className="max-w-[1400px] mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3">
@@ -164,7 +164,7 @@ export default function AppShell({ children }) {
               Write
             </Link>
             {loading ? (
-              <div className="h-8 w-8 rounded-full bg-[#1a1d27] animate-pulse" />
+              <div className="h-8 w-8 rounded-full bg-[#232d3f] animate-pulse" />
             ) : user ? (
               <ProfileDropdown user={user} logout={logout} />
             ) : (
@@ -172,7 +172,7 @@ export default function AppShell({ children }) {
                 <button onClick={handleLogin} className="text-[14px] text-[#b0b0b0] hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-[#ffffff08]">
                   Sign In
                 </button>
-                <button onClick={handleLogin} className="text-[14px] font-medium text-[#030712] bg-[#e8e8e8] hover:bg-white transition-colors px-4 py-1.5 rounded-full">
+                <button onClick={handleLogin} className="text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] transition-colors px-4 py-1.5 rounded-full">
                   Get Started
                 </button>
               </>
@@ -184,7 +184,7 @@ export default function AppShell({ children }) {
       {/* Layout with sidebar */}
       <div className="max-w-[1400px] mx-auto flex">
         {/* Left Sidebar */}
-        <aside className="hidden lg:flex flex-col w-[220px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] border-r border-[#1a1d27] px-4 py-6 justify-between">
+        <aside className="hidden lg:flex flex-col w-[220px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] border-r border-[#232d3f] px-4 py-6 justify-between">
           <nav className="flex flex-col gap-1">
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
@@ -203,7 +203,7 @@ export default function AppShell({ children }) {
                 </Link>
               );
             })}
-            <div className="mt-3 border-t border-[#1a1d27] pt-3">
+            <div className="mt-3 border-t border-[#232d3f] pt-3">
               <Link
                 href="/settings"
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] transition-colors ${
@@ -218,7 +218,7 @@ export default function AppShell({ children }) {
             </div>
           </nav>
           {user && (
-            <div className="px-3 py-3 rounded-xl bg-[#0d1117] border border-[#1a1d27]">
+            <div className="px-3 py-3 rounded-xl bg-[#141a26] border border-[#232d3f]">
               <div className="flex items-center gap-2.5">
                 {user.avatar_url ? (
                   <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
@@ -229,7 +229,7 @@ export default function AppShell({ children }) {
                 )}
                 <div className="min-w-0">
                   <p className="text-[13px] text-[#e0e0e0] font-medium truncate">{user.display_name || user.username}</p>
-                  <p className="text-[11px] text-[#666] truncate">@{user.username}</p>
+                  <p className="text-[11px] text-[#8896a8] truncate">@{user.username}</p>
                 </div>
               </div>
             </div>

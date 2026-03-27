@@ -32,15 +32,15 @@ function SignUpContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030712] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#0c1017] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
           <div className="h-14 w-14 mx-auto rounded-full bg-[url('/logo.png')] bg-cover mb-4" />
           <h1 className="text-2xl font-bold text-white font-kanit">Create your account</h1>
-          <p className="text-[#777] text-sm mt-1.5">Join the LixBlogs community</p>
+          <p className="text-[#9ca3af] text-sm mt-1.5">Join the LixBlogs community</p>
         </div>
 
-        <div className="bg-[#0d1117] border border-[#1a1d27] rounded-2xl p-6">
+        <div className="bg-[#141a26] border border-[#232d3f] rounded-2xl p-6">
           {error && (
             <div className="mb-5 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-[13px] text-center">
               {errorMessages[error] || 'An error occurred. Please try again.'}
@@ -49,7 +49,7 @@ function SignUpContent() {
 
           <button
             onClick={handleSignUp}
-            className="w-full py-2.5 bg-[#e8e8e8] text-[#030712] font-semibold rounded-xl text-[14px] hover:bg-white transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-xl text-[14px] hover:bg-[#b69aff] transition-colors flex items-center justify-center gap-2"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
@@ -60,17 +60,17 @@ function SignUpContent() {
             Sign up with Elixpo Accounts
           </button>
 
-          <p className="text-[#555] text-[11px] text-center mt-5 leading-relaxed">
+          <p className="text-[#8896a8] text-[11px] text-center mt-5 leading-relaxed">
             By continuing, you agree to our Terms of Service and Privacy Policy.
           </p>
         </div>
 
-        <p className="text-center mt-6 text-[14px] text-[#777]">
+        <p className="text-center mt-6 text-[14px] text-[#9ca3af]">
           Already have an account?{' '}
           <Link href="/sign-in" className="text-[#e8e8e8] hover:text-white transition-colors font-medium">Sign in</Link>
         </p>
 
-        <p className="text-center text-[#444] text-[11px] mt-6">
+        <p className="text-center text-[#7c8a9e] text-[11px] mt-6">
           Secured by Elixpo Accounts
         </p>
       </div>
@@ -80,7 +80,7 @@ function SignUpContent() {
 
 export default function SignUp() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#030712]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#0c1017]" />}>
       <SignUpContent />
     </Suspense>
   );

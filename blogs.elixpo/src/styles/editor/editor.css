@@ -48,8 +48,8 @@
 
 /* Placeholder */
 .blog-editor-wrapper .bn-inline-content[data-placeholder]::before {
-  color: #333;
-  font-style: italic;
+  color: #566479;
+  font-style: normal;
 }
 
 /* Headings */
@@ -70,13 +70,13 @@
 
 /* Side menu (+ / drag handle) */
 .blog-editor-wrapper .bn-side-menu {
-  background: #1D202A;
+  background: #232d3f;
   border: 1px solid #2a2e3a;
   border-radius: 8px;
 }
 
 .blog-editor-wrapper .bn-drag-handle {
-  color: #555;
+  color: #6b7a8d;
 }
 
 .blog-editor-wrapper .bn-drag-handle:hover {
@@ -86,8 +86,8 @@
 /* Slash menu / dropdown */
 .blog-editor-wrapper .mantine-Menu-dropdown,
 .blog-editor-wrapper .bn-suggestion-menu {
-  background: #10141E !important;
-  border: 1px solid #1D202A !important;
+  background: #141a26 !important;
+  border: 1px solid #232d3f !important;
   border-radius: 12px !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
   scrollbar-width: thin;
@@ -113,7 +113,7 @@
 
 /* Slash menu group headers */
 .blog-editor-wrapper .bn-suggestion-menu [class*="group"] {
-  color: #555 !important;
+  color: #6b7a8d !important;
   font-size: 11px !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
@@ -125,11 +125,11 @@
 }
 
 .blog-editor-wrapper .mantine-Menu-item:hover {
-  background: #1D202A !important;
+  background: #232d3f !important;
 }
 
 .blog-editor-wrapper .mantine-Menu-item[data-hovered] {
-  background: #1D202A !important;
+  background: #232d3f !important;
 }
 
 .blog-editor-wrapper .mantine-Menu-itemLabel {
@@ -142,19 +142,19 @@
 
 /* Formatting toolbar */
 .blog-editor-wrapper .bn-toolbar {
-  background: #10141E;
-  border: 1px solid #1D202A;
+  background: #141a26;
+  border: 1px solid #232d3f;
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .blog-editor-wrapper .bn-toolbar button {
-  color: #888;
+  color: #9ca3af;
 }
 
 .blog-editor-wrapper .bn-toolbar button:hover {
   color: #7ba8f0;
-  background: #1D202A;
+  background: #232d3f;
 }
 
 .blog-editor-wrapper .bn-toolbar button[data-active="true"] {
@@ -163,8 +163,8 @@
 
 /* Code blocks */
 .blog-editor-wrapper [data-content-type="codeBlock"] {
-  background: #0a0e17;
-  border: 1px solid #1D202A;
+  background: #0c1017;
+  border: 1px solid #232d3f;
   border-radius: 10px;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
@@ -192,19 +192,19 @@
 
 /* Table */
 .blog-editor-wrapper [data-content-type="table"] {
-  border-color: #1D202A;
+  border-color: #232d3f;
 }
 
 .blog-editor-wrapper [data-content-type="table"] td,
 .blog-editor-wrapper [data-content-type="table"] th {
-  border-color: #1D202A;
+  border-color: #232d3f;
   padding: 8px 12px;
 }
 
 /* Link tooltip */
 .blog-editor-wrapper .bn-link-toolbar {
-  background: #10141E;
-  border: 1px solid #1D202A;
+  background: #141a26;
+  border: 1px solid #232d3f;
   border-radius: 8px;
 }
 
@@ -236,6 +236,130 @@
 .dark-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #2a2e3a transparent;
+}
+
+/* ===== AI Command Menu (space trigger) ===== */
+
+.ai-command-menu {
+  width: 260px;
+  background: #141a26;
+  border: 1px solid #232d3f;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+  padding: 6px;
+  overflow: hidden;
+  animation: aiMenuFadeIn 0.12s ease-out;
+}
+
+@keyframes aiMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-command-group {
+  margin-bottom: 2px;
+}
+
+.ai-command-group-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7a8d;
+  padding: 8px 10px 4px;
+}
+
+.ai-command-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: #c8c8c8;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  text-align: left;
+}
+
+.ai-command-item:hover,
+.ai-command-item-active {
+  background: #232d3f;
+  color: #fff;
+}
+
+.ai-command-item-active .ai-command-icon {
+  color: #9b7bf7;
+}
+
+.ai-command-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #1c2333;
+  border: 1px solid #232d3f;
+  color: #9ca3af;
+  flex-shrink: 0;
+  font-size: 16px;
+  transition: color 0.1s;
+}
+
+.ai-command-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== AI slash menu icon sparkle tint ===== */
+
+.ai-slash-icon {
+  color: #9b7bf7;
+}
+
+/* ===== Slash menu group labels for Media / AI ===== */
+
+.blog-editor-wrapper .bn-suggestion-menu [data-group="Media"] .bn-suggestion-menu-group-label,
+.blog-editor-wrapper .bn-suggestion-menu [data-group="AI Generate"] .bn-suggestion-menu-group-label {
+  color: #9b7bf7 !important;
+}
+
+/* ===== KaTeX overrides ===== */
+
+.blog-editor-wrapper .katex {
+  color: #e0e0e0;
+  font-size: 1.1em;
+}
+
+.blog-editor-wrapper .katex-display {
+  margin: 0;
+}
+
+/* ===== Custom block styles ===== */
+
+.blog-editor-wrapper .toc-block a {
+  color: #9b7bf7;
+  text-decoration: none;
+}
+
+.blog-editor-wrapper .toc-block a:hover {
+  color: #b69aff;
+}
+
+/* Inline equation */
+.blog-editor-wrapper .inline-equation .katex {
+  font-size: 1em;
 }
 
 /* ===== Preview Prose Styles ===== */
@@ -298,8 +422,8 @@
 }
 
 .blog-preview-content pre {
-  background: #0a0e17;
-  border: 1px solid #1D202A;
+  background: #0c1017;
+  border: 1px solid #232d3f;
   border-radius: 10px;
   padding: 1em;
   overflow-x: auto;
@@ -313,7 +437,7 @@
 }
 
 .blog-preview-content p code {
-  background: #1D202A;
+  background: #232d3f;
   padding: 0.15em 0.4em;
   border-radius: 4px;
   font-size: 0.85em;
@@ -333,20 +457,20 @@
 
 .blog-preview-content th,
 .blog-preview-content td {
-  border: 1px solid #1D202A;
+  border: 1px solid #232d3f;
   padding: 8px 12px;
   text-align: left;
   color: #c9d1d9;
 }
 
 .blog-preview-content th {
-  background: #10141E;
+  background: #141a26;
   font-weight: 600;
   color: #fff;
 }
 
 .blog-preview-content hr {
   border: none;
-  border-top: 1px solid #1D202A;
+  border-top: 1px solid #232d3f;
   margin: 2em 0;
 }
