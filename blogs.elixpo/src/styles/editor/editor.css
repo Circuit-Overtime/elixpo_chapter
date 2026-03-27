@@ -362,6 +362,33 @@
   font-size: 1em;
 }
 
+/* ===== AI Edit Diff Styles ===== */
+
+.ai-diff-deleted {
+  text-decoration: line-through;
+  color: #f8717180;
+  text-decoration-color: #f87171;
+}
+
+.ai-diff-added {
+  color: #93c5fd;
+  background: rgba(147, 197, 253, 0.06);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.ai-streaming-cursor::after {
+  content: '|';
+  color: #9b7bf7;
+  animation: aiCursorBlink 0.8s infinite;
+  font-weight: 300;
+}
+
+@keyframes aiCursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
 /* ===== Preview Prose Styles ===== */
 
 .blog-preview-content h1 {

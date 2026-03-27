@@ -8,6 +8,7 @@ import '@blocknote/mantine/style.css';
 import 'katex/dist/katex.min.css';
 import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef, useEffect } from 'react';
 import AICommandMenu from './AICommandMenu';
+import AISelectionToolbar from './AISelectionToolbar';
 
 // Custom blocks
 import { TableOfContents } from './blocks/TableOfContents';
@@ -299,15 +300,77 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
     }
   }, [editor]);
 
-  const handleAISubmit = useCallback((prompt) => {
+  const handleAISubmit = useCallback(async (userPrompt) => {
     setShowAIMenu(false);
     const cursor = editor.getTextCursorPosition();
-    if (cursor?.block) {
-      editor.insertBlocks(
-        [{ type: 'aiBlock', props: { prompt, generateType: 'custom', status: 'idle' } }],
-        cursor.block,
-        'after'
-      );
+    if (!cursor?.block) return;
+
+    // Insert a placeholder block
+    const placeholderBlock = { type: 'paragraph', content: [{ type: 'text', text: 'Generating...', styles: { italic: true } }] };
+    editor.insertBlocks([placeholderBlock], cursor.block, 'after');
+
+    // Get the inserted block (it's the one after cursor)
+    const doc = editor.document;
+    const cursorIdx = doc.findIndex((b) => b.id === cursor.block.id);
+    const insertedBlock = doc[cursorIdx + 1];
+    if (!insertedBlock) return;
+
+    try {
+      const { streamAI } = await import('../../ai/stream');
+      const { WRITE_SYSTEM_PROMPT } = await import('../../ai/prompts');
+
+      await streamAI({
+        systemPrompt: WRITE_SYSTEM_PROMPT,
+        userPrompt,
+        onChunk: (chunk, fullText) => {
+          // Update the block content in real-time
+          try {
+            editor.updateBlock(insertedBlock.id, {
+              content: [{ type: 'text', text: fullText }],
+            });
+          } catch { /* block may have been removed */ }
+        },
+        onDone: (fullText) => {
+          // Parse the result into proper blocks
+          const lines = fullText.split('\n').filter((l) => l.trim());
+          if (lines.length <= 1) {
+            // Single block — just update the text
+            try {
+              editor.updateBlock(insertedBlock.id, {
+                content: [{ type: 'text', text: fullText.trim() }],
+              });
+            } catch {}
+            return;
+          }
+          // Multiple blocks — replace the placeholder
+          const newBlocks = lines.map((line) => {
+            const headingMatch = line.match(/^(#{1,3})\s+(.+)/);
+            if (headingMatch) {
+              return { type: 'heading', props: { level: headingMatch[1].length.toString() }, content: [{ type: 'text', text: headingMatch[2] }] };
+            }
+            if (line.match(/^[-*]\s+/)) {
+              return { type: 'bulletListItem', content: [{ type: 'text', text: line.replace(/^[-*]\s+/, '') }] };
+            }
+            return { type: 'paragraph', content: [{ type: 'text', text: line }] };
+          });
+          try {
+            editor.replaceBlocks([insertedBlock.id], newBlocks);
+          } catch {}
+        },
+        onError: (err) => {
+          try {
+            editor.updateBlock(insertedBlock.id, {
+              content: [{ type: 'text', text: `Error: ${err.message}` }],
+            });
+          } catch {}
+        },
+      });
+    } catch (err) {
+      try {
+        editor.updateBlock(insertedBlock.id, {
+          content: [{ type: 'text', text: `Error: ${err.message}` }],
+        });
+      } catch {}
     }
   }, [editor]);
 
@@ -332,6 +395,9 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
           onClose={() => setShowAIMenu(false)}
         />
       )}
+
+      {/* AI selection toolbar — appears on text selection */}
+      <AISelectionToolbar editor={editor} />
     </div>
   );
 });
