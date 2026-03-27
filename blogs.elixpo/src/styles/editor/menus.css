@@ -1,0 +1,229 @@
+/* ===== Slash menu / dropdown ===== */
+
+.blog-editor-wrapper .mantine-Menu-dropdown,
+.blog-editor-wrapper .bn-suggestion-menu {
+  background: #141a26 !important;
+  border: 1px solid #232d3f !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
+  scrollbar-width: thin;
+  scrollbar-color: #2a2e3a transparent;
+}
+
+.blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar-thumb {
+  background: #2a2e3a;
+  border-radius: 3px;
+}
+
+.blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar-thumb:hover {
+  background: #3a3f4f;
+}
+
+/* Slash menu group headers */
+.blog-editor-wrapper .bn-suggestion-menu [class*="group"] {
+  color: #6b7a8d !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.blog-editor-wrapper .mantine-Menu-item {
+  color: #e4e4e7 !important;
+  border-radius: 8px !important;
+}
+
+.blog-editor-wrapper .mantine-Menu-item:hover {
+  background: #232d3f !important;
+}
+
+.blog-editor-wrapper .mantine-Menu-item[data-hovered] {
+  background: #232d3f !important;
+}
+
+.blog-editor-wrapper .mantine-Menu-itemLabel {
+  color: #e4e4e7 !important;
+}
+
+.blog-editor-wrapper .mantine-Menu-itemSection {
+  color: #7ba8f0 !important;
+}
+
+/* ===== Formatting toolbar ===== */
+
+.blog-editor-wrapper .bn-toolbar {
+  background: #141a26;
+  border: 1px solid #232d3f;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.blog-editor-wrapper .bn-toolbar button {
+  color: #9ca3af;
+}
+
+.blog-editor-wrapper .bn-toolbar button:hover {
+  color: #7ba8f0;
+  background: #232d3f;
+}
+
+.blog-editor-wrapper .bn-toolbar button[data-active="true"] {
+  color: #7ba8f0;
+}
+
+/* AI star button inside native toolbar */
+.ai-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: #232d3f;
+  margin: 0 4px;
+  align-self: center;
+}
+
+.ai-star-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #9b7bf7;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+
+.ai-star-btn:hover {
+  background: rgba(155, 123, 247, 0.1);
+  color: #b69aff;
+}
+
+.ai-star-btn:hover::after {
+  content: 'Edit with AI';
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 11px;
+  color: #e0e0e0;
+  background: #0c1017;
+  border: 1px solid #232d3f;
+  border-radius: 6px;
+  padding: 3px 8px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ===== AI Command Menu (space trigger) ===== */
+
+.ai-command-menu {
+  width: 260px;
+  background: #141a26;
+  border: 1px solid #232d3f;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+  padding: 6px;
+  overflow: hidden;
+  animation: aiMenuFadeIn 0.12s ease-out;
+}
+
+@keyframes aiMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-command-group {
+  margin-bottom: 2px;
+}
+
+.ai-command-group-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7a8d;
+  padding: 8px 10px 4px;
+}
+
+.ai-command-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: #c8c8c8;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  text-align: left;
+}
+
+.ai-command-item:hover,
+.ai-command-item-active {
+  background: #232d3f;
+  color: #fff;
+}
+
+.ai-command-item-active .ai-command-icon {
+  color: #9b7bf7;
+}
+
+.ai-command-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #1c2333;
+  border: 1px solid #232d3f;
+  color: #9ca3af;
+  flex-shrink: 0;
+  font-size: 16px;
+  transition: color 0.1s;
+}
+
+.ai-command-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== AI slash menu icon sparkle tint ===== */
+
+.ai-slash-icon {
+  color: #9b7bf7;
+}
+
+/* ===== Slash menu group labels for Media / AI ===== */
+
+.blog-editor-wrapper .bn-suggestion-menu [data-group="Media"] .bn-suggestion-menu-group-label,
+.blog-editor-wrapper .bn-suggestion-menu [data-group="AI Generate"] .bn-suggestion-menu-group-label {
+  color: #9b7bf7 !important;
+}
+
+/* Link tooltip */
+.blog-editor-wrapper .bn-link-toolbar {
+  background: #141a26;
+  border: 1px solid #232d3f;
+  border-radius: 8px;
+}

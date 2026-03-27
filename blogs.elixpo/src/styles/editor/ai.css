@@ -1,0 +1,300 @@
+/* ===== AI Generated Block Highlight ===== */
+
+.ai-generated-highlight {
+  background: rgba(167, 139, 250, 0.10) !important;
+  border-left: 3px solid rgba(167, 139, 250, 0.5) !important;
+  border-radius: 0 4px 4px 0;
+  margin-left: -3px;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.ai-generated-highlight .bn-block-content {
+  background: rgba(167, 139, 250, 0.04);
+  border-radius: 4px;
+}
+
+.ai-generated-highlight .bn-inline-content,
+.ai-generated-highlight p,
+.ai-generated-highlight span {
+  color: #ddd6fe !important;
+}
+
+/* ===== AI Edit Diff Styles (lavender theme) ===== */
+
+.ai-diff-deleted {
+  text-decoration: line-through;
+  color: rgba(196, 181, 253, 0.45);
+  text-decoration-color: rgba(196, 181, 253, 0.6);
+  background: rgba(196, 181, 253, 0.06);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.ai-diff-added {
+  color: #c4b5fd;
+  background: rgba(196, 181, 253, 0.1);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.ai-streaming-cursor::after {
+  content: '|';
+  color: #c4b5fd;
+  animation: aiCursorBlink 0.8s infinite;
+  font-weight: 300;
+}
+
+@keyframes aiCursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ===== AI Typing Cursor Dot ===== */
+
+.ai-typing-cursor {
+  position: relative;
+}
+
+.ai-typing-cursor::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c4b5fd;
+  margin-left: 4px;
+  vertical-align: middle;
+  animation: aiDotPulse 1s ease-in-out infinite;
+  position: absolute;
+  bottom: 12px;
+  right: -14px;
+}
+
+@keyframes aiDotPulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.7); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* ===== Elixpo Typing Bar (fixed bottom, glassmorphism) ===== */
+
+.elixpo-typing-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  pointer-events: none;
+  animation: elixpoBarIn 0.3s ease-out;
+}
+
+@keyframes elixpoBarIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.elixpo-typing-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(14, 18, 27, 0.75);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(196, 181, 253, 0.15);
+  border-radius: 14px;
+  padding: 10px 18px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(196, 181, 253, 0.06);
+  pointer-events: auto;
+}
+
+.elixpo-typing-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(196, 181, 253, 0.3);
+}
+
+.elixpo-typing-text {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.elixpo-typing-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #c4b5fd;
+}
+
+.elixpo-typing-status {
+  font-size: 13px;
+  color: #8b8fa3;
+}
+
+.elixpo-typing-dots {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 2px;
+  vertical-align: baseline;
+}
+
+.elixpo-typing-dots span {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #c4b5fd;
+  animation: elixpoDot 1.4s ease-in-out infinite;
+}
+
+.elixpo-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.elixpo-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes elixpoDot {
+  0%, 80%, 100% { opacity: 0.2; }
+  40% { opacity: 1; }
+}
+
+.elixpo-stop-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 8px;
+  padding: 5px 12px;
+  color: #f87171;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.elixpo-stop-btn:hover {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: #f87171;
+}
+
+/* ===== Elixpo Done Bar (keep/discard) ===== */
+
+.elixpo-done-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  animation: elixpoBarIn 0.3s ease-out;
+}
+
+.elixpo-done-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(14, 18, 27, 0.75);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(196, 181, 253, 0.15);
+  border-radius: 14px;
+  padding: 10px 18px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(196, 181, 253, 0.06);
+}
+
+.elixpo-done-label {
+  font-size: 13px;
+  color: #8b8fa3;
+}
+
+.elixpo-done-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.elixpo-done-keep {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(134, 239, 172, 0.1);
+  border: 1px solid rgba(134, 239, 172, 0.25);
+  border-radius: 8px;
+  padding: 5px 12px;
+  color: #86efac;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.elixpo-done-keep:hover {
+  background: rgba(134, 239, 172, 0.2);
+}
+
+.elixpo-done-discard {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 8px;
+  padding: 5px 12px;
+  color: #f87171;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.elixpo-done-discard:hover {
+  background: rgba(248, 113, 113, 0.15);
+}
+
+/* ===== AI Error Toast ===== */
+
+@keyframes ai-toast-fade-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes ai-toast-fade-out {
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to { opacity: 0; transform: translate(-50%, -10px); }
+}
+
+.ai-error-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #1e1e2e;
+  border: 1px solid #ff6b6b44;
+  border-radius: 10px;
+  padding: 10px 16px;
+  color: #ff6b6b;
+  font-size: 13px;
+  z-index: 9999;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  animation: ai-toast-fade-in 0.25s ease, ai-toast-fade-out 0.3s ease 3.5s forwards;
+}
+
+.ai-error-toast span {
+  white-space: nowrap;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-error-toast button {
+  background: none;
+  border: none;
+  color: #ff6b6b99;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.ai-error-toast button:hover {
+  color: #ff6b6b;
+}

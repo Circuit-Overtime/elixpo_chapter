@@ -15,7 +15,7 @@ const POLLINATIONS_BASE = 'https://gen.pollinations.ai/v1';
  * @param {AbortSignal} [opts.signal] - AbortController signal
  * @returns {AsyncGenerator<string>} - Yields text chunks
  */
-export async function* streamChatCompletion({ systemPrompt, userPrompt, model = 'openai', temperature = 0.7, signal }) {
+export async function* streamChatCompletion({ systemPrompt, userPrompt, model = 'gemini-fast', temperature = 0.7, signal }) {
   const apiKey = process.env.NEXT_PUBLIC_POLLINATIONS_TEXT_API_KEY || process.env.POLLINATIONS_TEXT_API_KEY;
 
   const res = await fetch(`${POLLINATIONS_BASE}/chat/completions`, {
@@ -73,7 +73,7 @@ export async function* streamChatCompletion({ systemPrompt, userPrompt, model = 
 /**
  * Non-streaming chat completion.
  */
-export async function chatCompletion({ systemPrompt, userPrompt, model = 'openai', temperature = 0.7 }) {
+export async function chatCompletion({ systemPrompt, userPrompt, model = 'gemini-fast', temperature = 0.7 }) {
   const apiKey = process.env.NEXT_PUBLIC_POLLINATIONS_TEXT_API_KEY || process.env.POLLINATIONS_TEXT_API_KEY;
 
   const res = await fetch(`${POLLINATIONS_BASE}/chat/completions`, {

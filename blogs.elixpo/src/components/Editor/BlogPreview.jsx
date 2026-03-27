@@ -7,20 +7,20 @@ export default function BlogPreview({ title, subtitle, coverPreview, tags, html 
         <img
           src={coverPreview}
           alt="Cover"
-          className="w-full h-[360px] object-cover rounded-xl mb-8"
+          className="w-full h-[360px] object-cover rounded-xl mb-6"
         />
       )}
 
       {title && (
-        <h1 className="text-[2.8em] font-extrabold leading-tight mb-2">{title}</h1>
+        <h1 className="text-[2em] font-extrabold leading-tight mb-1">{title}</h1>
       )}
 
       {subtitle && (
-        <p className="text-xl text-[#888] mb-6">{subtitle}</p>
+        <p className="text-xl text-[#888] mb-4">{subtitle}</p>
       )}
 
       {tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="flex flex-wrap gap-2 mb-6">
           {tags.map((tag) => (
             <span
               key={tag}
@@ -32,10 +32,10 @@ export default function BlogPreview({ title, subtitle, coverPreview, tags, html 
         </div>
       )}
 
-      <div className="border-t border-[#1D202A] pt-8">
+      <div className="mt-4">
         {html ? (
           <div
-            className="blog-preview-content prose prose-invert max-w-none"
+            className="blog-preview-content max-w-none"
             dangerouslySetInnerHTML={{ __html: html }}
           />
         ) : (

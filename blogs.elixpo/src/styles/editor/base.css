@@ -1,0 +1,140 @@
+/* ===== Edit page scrollbar ===== */
+
+.edit-page {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2e3a transparent;
+}
+
+.edit-page::-webkit-scrollbar {
+  width: 8px;
+}
+
+.edit-page::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.edit-page::-webkit-scrollbar-thumb {
+  background: #2a2e3a;
+  border-radius: 4px;
+}
+
+.edit-page::-webkit-scrollbar-thumb:hover {
+  background: #3a3f4f;
+}
+
+/* ===== BlogEditor (BlockNote) Dark Theme ===== */
+
+.blog-editor-wrapper .bn-editor {
+  background: transparent;
+  color: #e4e4e7;
+  font-size: 1em;
+  line-height: 1.75;
+  padding-left: 0;
+}
+
+.blog-editor-wrapper .bn-container {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.blog-editor-wrapper [class*="blockOuter"] {
+  padding-left: 0;
+}
+
+.blog-editor-wrapper .bn-block-content {
+  font-size: 1em;
+}
+
+/* Placeholder */
+.blog-editor-wrapper .bn-inline-content[data-placeholder]::before {
+  color: #566479;
+  font-style: normal;
+}
+
+/* Reset browser default heading sizes inside BlockNote */
+.blog-editor-wrapper h1,
+.blog-editor-wrapper h2,
+.blog-editor-wrapper h3 {
+  font-size: 1em !important;
+  margin: 0 !important;
+}
+
+/* Headings — set size on the block wrapper so em doesn't compound */
+.blog-editor-wrapper [data-content-type="heading"][data-level="1"] {
+  font-size: 1.85em !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  color: #e4e4e7;
+}
+
+.blog-editor-wrapper [data-content-type="heading"][data-level="2"] {
+  font-size: 1.35em !important;
+  font-weight: 650 !important;
+  line-height: 1.35 !important;
+  color: #e4e4e7;
+}
+
+.blog-editor-wrapper [data-content-type="heading"][data-level="3"] {
+  font-size: 1.15em !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  color: #e4e4e7;
+}
+
+/* Inline code — lavender theme */
+.blog-editor-wrapper code,
+.blog-preview-content code {
+  color: #c4b5fd;
+  background: rgba(196, 181, 253, 0.1);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-size: 0.95em;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+/* Side menu (+ / drag handle) */
+.blog-editor-wrapper .bn-side-menu {
+  background: #232d3f;
+  border: 1px solid #2a2e3a;
+  border-radius: 8px;
+  margin-right: 16px;
+}
+
+.blog-editor-wrapper .bn-drag-handle {
+  color: #6b7a8d;
+}
+
+.blog-editor-wrapper .bn-drag-handle:hover {
+  color: #7ba8f0;
+}
+
+/* Selection highlight */
+.blog-editor-wrapper ::selection {
+  background: rgba(123, 168, 240, 0.3);
+}
+
+/* ===== Dark scrollbar (used in emoji picker, editor dropdowns) ===== */
+
+.dark-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb {
+  background: #2a2e3a;
+  border-radius: 3px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3a3f4f;
+}
+
+/* Firefox */
+.dark-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2e3a transparent;
+}

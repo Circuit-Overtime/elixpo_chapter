@@ -1,0 +1,107 @@
+/* ===== Code blocks ===== */
+
+.blog-editor-wrapper [data-content-type="codeBlock"] {
+  background: #0c1017;
+  border: 1px solid #232d3f;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.blog-editor-wrapper [data-content-type="codeBlock"] code {
+  color: #c9d1d9;
+  font-size: 0.85em;
+}
+
+/* Code block copy button */
+.code-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #7c8a9e;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+[data-content-type="codeBlock"]:hover .code-copy-btn {
+  opacity: 1;
+}
+
+.code-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #c4b5fd;
+}
+
+/* ===== Lists ===== */
+
+.blog-editor-wrapper [data-content-type="bulletListItem"],
+.blog-editor-wrapper [data-content-type="numberedListItem"] {
+  color: #e4e4e7;
+}
+
+.blog-editor-wrapper [data-content-type="bulletListItem"]::before {
+  color: #9ca3af;
+}
+
+.blog-editor-wrapper [data-content-type="numberedListItem"]::before {
+  color: #9ca3af;
+}
+
+/* ===== Image blocks ===== */
+
+.blog-editor-wrapper [data-content-type="image"] img {
+  border-radius: 10px;
+  max-width: 100%;
+}
+
+.blog-editor-wrapper [data-content-type="image"] .bn-image-resize-handle {
+  background: #7ba8f0;
+}
+
+/* ===== Table ===== */
+
+.blog-editor-wrapper [data-content-type="table"] {
+  border-color: #232d3f;
+}
+
+.blog-editor-wrapper [data-content-type="table"] td,
+.blog-editor-wrapper [data-content-type="table"] th {
+  border-color: #232d3f;
+  padding: 8px 12px;
+}
+
+/* ===== KaTeX overrides ===== */
+
+.blog-editor-wrapper .katex {
+  color: #e0e0e0;
+  font-size: 1.1em;
+}
+
+.blog-editor-wrapper .katex-display {
+  margin: 0;
+}
+
+/* ===== Custom block styles ===== */
+
+.blog-editor-wrapper .toc-block a {
+  color: #9b7bf7;
+  text-decoration: none;
+}
+
+.blog-editor-wrapper .toc-block a:hover {
+  color: #b69aff;
+}
+
+/* Inline equation */
+.blog-editor-wrapper .inline-equation .katex {
+  font-size: 1em;
+}
