@@ -1,17 +1,20 @@
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 
 @dataclass
 class CacheConfig:
-    redis_host: str = "localhost"
-    redis_port: int = 6379
-    redis_password: Optional[str] = None
-    redis_key_prefix: str = "lix"
+    # Connection — host from env (deployment-dependent), port hardcoded to production
+    redis_host: str = os.getenv("REDIS_HOST", "localhost")
+    redis_port: int = int(os.getenv("REDIS_PORT", "9530"))
+    redis_key_prefix: str = "elixpo"
     redis_socket_connect_timeout: int = 5
     redis_socket_keepalive: bool = True
     redis_pool_size: int = 50
+
+    # Secrets — always from env, never hardcoded
+    redis_password: Optional[str] = os.getenv("REDIS_PASSWORD") or None
 
     # Session context window — Redis DB 2 (hot messages)
     session_redis_db: int = 2
@@ -39,12 +42,14 @@ class CacheConfig:
 
     @classmethod
     def from_env(cls, prefix: str = "") -> "CacheConfig":
+        """Build config reading overrides from env vars. Only needed for
+        external users who want to customize beyond the defaults."""
         p = prefix.upper() + "_" if prefix else ""
         return cls(
             redis_host=os.getenv(f"{p}REDIS_HOST", "localhost"),
-            redis_port=int(os.getenv(f"{p}REDIS_PORT", "6379")),
+            redis_port=int(os.getenv(f"{p}REDIS_PORT", "9530")),
             redis_password=os.getenv(f"{p}REDIS_PASSWORD") or None,
-            redis_key_prefix=os.getenv(f"{p}REDIS_KEY_PREFIX", "lix"),
+            redis_key_prefix=os.getenv(f"{p}REDIS_KEY_PREFIX", "elixpo"),
             redis_pool_size=int(os.getenv(f"{p}REDIS_POOL_SIZE", "50")),
             session_redis_db=int(os.getenv(f"{p}SESSION_REDIS_DB", "2")),
             session_ttl_seconds=int(os.getenv(f"{p}SESSION_TTL_SECONDS", "86400")),

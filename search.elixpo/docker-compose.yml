@@ -157,9 +157,6 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=9530
       - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme_redis_secret}
-      - SEMANTIC_CACHE_REDIS_HOST=redis
-      - SEMANTIC_CACHE_REDIS_PORT=9530
-      - SEMANTIC_CACHE_REDIS_DB=0
       - CHROMA_API_IMPL=http
       - CHROMA_SERVER_HOST=chroma-server
       - CHROMA_SERVER_PORT=9001

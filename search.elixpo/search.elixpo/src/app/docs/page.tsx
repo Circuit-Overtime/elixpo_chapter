@@ -16,9 +16,9 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Documentation — lix_chat',
+  title: 'Documentation — lix_open_cache',
   description:
-    'Full documentation for lix_chat — a reusable multi-layer caching and session management package for conversational AI.',
+    'Full documentation for lix_open_cache — a reusable multi-layer caching and session management package for conversational AI.',
 };
 
 /* ── tiny helpers ─────────────────────────────────────────────────── */
@@ -112,7 +112,7 @@ export default function DocsPage() {
             </a>
             <div className="flex items-center gap-2 mb-1">
               <Database size={16} className="text-indigo-400" />
-              <span className="font-display font-semibold text-white text-sm">lix_chat</span>
+              <span className="font-display font-semibold text-white text-sm">lix_open_cache</span>
             </div>
             <span className="text-[11px] text-white/30">Multi-layer caching for conversational AI</span>
 
@@ -140,7 +140,7 @@ export default function DocsPage() {
               <Badge color="purple">Redis-backed</Badge>
             </div>
             <h1 className="text-4xl md:text-5xl font-display font-bold leading-tight mb-4">
-              <span className="text-gradient-hero">lix_chat</span>{' '}
+              <span className="text-gradient-hero">lix_open_cache</span>{' '}
               <span className="text-white/60 text-3xl">/ lix_cache</span>
             </h1>
             <P>
@@ -214,9 +214,9 @@ export default function DocsPage() {
           `}</Diagram>
 
           <SubHeading>Package structure</SubHeading>
-          <Code>{`lix_chat/
+          <Code>{`lix_open_cache/
 ├── pyproject.toml
-└── lix_chat/
+└── lix_open_cache/
     ├── __init__.py                # re-exports from lix_cache
     └── lix_cache/
         ├── __init__.py            # public API
@@ -233,11 +233,11 @@ export default function DocsPage() {
           <SectionHeading id="install" icon={Package}>Installation</SectionHeading>
 
           <SubHeading>From PyPI (once published)</SubHeading>
-          <Code>{`pip install lix-chat`}</Code>
+          <Code>{`pip install lix-open-cache`}</Code>
 
           <SubHeading>From source (development)</SubHeading>
           <Code>{`git clone https://github.com/pollinations/lixsearch.git
-cd lixsearch/lix_chat
+cd lixsearch/lix_open_cache
 pip install -e .`}</Code>
 
           <SubHeading>Dependencies</SubHeading>
@@ -271,7 +271,7 @@ pip install -e .`}</Code>
           <SectionHeading id="quickstart" icon={Zap}>Quick Start</SectionHeading>
 
           <SubHeading>Full 3-layer setup (CacheCoordinator)</SubHeading>
-          <Code>{`from lix_chat import CacheConfig, CacheCoordinator
+          <Code>{`from lix_open_cache import CacheConfig, CacheCoordinator
 
 config = CacheConfig(
     redis_host="localhost",
@@ -307,7 +307,7 @@ else:
 print(cache.get_stats())`}</Code>
 
           <SubHeading>Session memory only (no semantic cache)</SubHeading>
-          <Code>{`from lix_chat import HybridConversationCache, CacheConfig
+          <Code>{`from lix_open_cache import HybridConversationCache, CacheConfig
 
 config = CacheConfig(redis_host="localhost", redis_port=6379)
 cache = HybridConversationCache("session-123", config=config)
@@ -328,7 +328,7 @@ context = cache.smart_context(
 # → {"recent": [...last 10...], "relevant": [...5 from disk archive...]}`}</Code>
 
           <SubHeading>Disk-only (no Redis needed)</SubHeading>
-          <Code>{`from lix_chat import ConversationArchive
+          <Code>{`from lix_open_cache import ConversationArchive
 
 archive = ConversationArchive("./data/chats", session_ttl_days=30)
 
@@ -343,8 +343,8 @@ results = archive.search_by_text("sess-1", "hello", top_k=3)
 archive.cleanup_expired()`}</Code>
 
           <SubHeading>Just the Huffman codec</SubHeading>
-          <Code>{`from lix_chat import HuffmanCodec
-from lix_chat.lix_cache.huffman_codec import encode_str, decode_bytes
+          <Code>{`from lix_open_cache import HuffmanCodec
+from lix_open_cache.lix_cache.huffman_codec import encode_str, decode_bytes
 
 text = "The quick brown fox jumps over the lazy dog" * 100
 compressed = encode_str(text)
@@ -360,7 +360,7 @@ print(f"{len(text)}B → {len(compressed)}B ({len(compressed)/len(text)*100:.0f}
             Pass it to any class constructor. No global state, no scattered constants.
           </P>
 
-          <Code>{`from lix_chat import CacheConfig
+          <Code>{`from lix_open_cache import CacheConfig
 
 # Option 1: explicit values
 config = CacheConfig(
@@ -410,7 +410,7 @@ config = CacheConfig.from_env("MYAPP")`}</Code>
             everything older to Huffman-compressed files on disk. The window size, TTL, and eviction timing
             are all configurable via CacheConfig.
           </P>
-          <Code>{`from lix_chat import SessionContextWindow, CacheConfig
+          <Code>{`from lix_open_cache import SessionContextWindow, CacheConfig
 
 config = CacheConfig(redis_host="localhost", redis_port=6379)
 ctx = SessionContextWindow("session-abc", config=config)
@@ -450,7 +450,7 @@ print(ctx.get_stats())`}</Code>
             If any exceed the threshold (default 0.90), it&apos;s a hit. This means rephrasing
             (&ldquo;weather Tokyo&rdquo; vs &ldquo;Tokyo weather forecast&rdquo;) still hits cache.
           </P>
-          <Code>{`from lix_chat import SemanticCacheRedis, CacheConfig
+          <Code>{`from lix_open_cache import SemanticCacheRedis, CacheConfig
 import numpy as np
 
 config = CacheConfig(
@@ -482,7 +482,7 @@ hit = cache.get("https://weather.com/tokyo", new_embedding)
             This layer is <strong className="text-white/80">global</strong> (shared across all sessions) with a 24-hour TTL.
             Stores raw float32 bytes in Redis — no JSON serialization overhead.
           </P>
-          <Code>{`from lix_chat import URLEmbeddingCache, CacheConfig
+          <Code>{`from lix_open_cache import URLEmbeddingCache, CacheConfig
 import numpy as np
 
 config = CacheConfig(redis_host="localhost", redis_port=6379)
@@ -584,7 +584,7 @@ cache.batch_set({
             The top-level orchestrator. One constructor call initializes all three Redis layers and the
             hybrid storage engine. Use this when you want the full stack.
           </P>
-          <Code>{`from lix_chat import CacheCoordinator, CacheConfig
+          <Code>{`from lix_open_cache import CacheCoordinator, CacheConfig
 
 config = CacheConfig.from_env("MYAPP")
 cache = CacheCoordinator(session_id="user-abc", config=config)
@@ -743,7 +743,7 @@ stats = cache.get_stats()    # full stats from all 3 layers`}</Code>
           <SectionHeading id="pypi" icon={ExternalLink}>Publishing to PyPI</SectionHeading>
 
           <SubHeading>1. Prepare</SubHeading>
-          <Code>{`cd lix_chat
+          <Code>{`cd lix_open_cache
 
 # Ensure pyproject.toml has the right metadata
 # name, version, description, author, license, URLs, etc.
@@ -755,18 +755,18 @@ pip install build twine`}</Code>
           <Code>{`python -m build
 
 # Creates:
-#   dist/lix_chat-0.1.0.tar.gz      (sdist)
-#   dist/lix_chat-0.1.0-py3-none-any.whl  (wheel)`}</Code>
+#   dist/lix_open_cache-0.1.0.tar.gz      (sdist)
+#   dist/lix_open_cache-0.1.0-py3-none-any.whl  (wheel)`}</Code>
 
           <SubHeading>3. Test on TestPyPI first</SubHeading>
           <Code>{`# Upload to test index
 twine upload --repository testpypi dist/*
 
 # Test install from test index
-pip install --index-url https://test.pypi.org/simple/ lix-chat
+pip install --index-url https://test.pypi.org/simple/ lix-open-cache
 
 # Verify
-python -c "from lix_chat import CacheConfig; print('OK')"`}</Code>
+python -c "from lix_open_cache import CacheConfig; print('OK')"`}</Code>
 
           <SubHeading>4. Publish to production PyPI</SubHeading>
           <Code>{`# Upload to real PyPI
@@ -775,7 +775,7 @@ twine upload dist/*
 # You'll need a PyPI API token:
 #   1. Create account at https://pypi.org
 #   2. Go to Account Settings → API tokens
-#   3. Create token scoped to "lix-chat" project
+#   3. Create token scoped to "lix-open-cache" project
 #   4. Use __token__ as username, the token as password
 
 # Or use a .pypirc file:
@@ -803,16 +803,16 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install build twine
-      - run: cd lix_chat && python -m build
-      - run: cd lix_chat && twine upload dist/*
+      - run: cd lix_open_cache && python -m build
+      - run: cd lix_open_cache && twine upload dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: \${{ secrets.PYPI_TOKEN }}`}</Code>
 
           <SubHeading>6. Version bumps</SubHeading>
-          <Code>{`# Edit lix_chat/pyproject.toml → version = "0.2.0"
+          <Code>{`# Edit lix_open_cache/pyproject.toml → version = "0.2.0"
 # Then rebuild and upload:
-cd lix_chat
+cd lix_open_cache
 python -m build
 twine upload dist/*`}</Code>
 

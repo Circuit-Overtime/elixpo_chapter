@@ -10,22 +10,7 @@ from typing import Optional
 from loguru import logger
 from pytubefix import YouTube
 from pipeline.config import ERROR_MESSAGE_TRUNCATE, MAX_TRANSCRIPT_WORD_COUNT
-
-
-def _init_ipc_manager(max_retries: int = 3, retry_delay: float = 1.0) -> bool:
-
-    try:
-        from ipcService.coreServiceManager import CoreServiceManager
-        manager = CoreServiceManager.get_instance()
-        is_ready = manager.is_ready()
-        if is_ready:
-            logger.info("[YoutubeDetails] IPC connection established with CoreEmbeddingService")
-        else:
-            logger.warning("[YoutubeDetails] IPC service not yet ready")
-        return is_ready
-    except Exception as e:
-        logger.warning(f"[YoutubeDetails] Could not initialize IPC connection: {e}")
-        return False
+from commons.main import _init_ipc_manager
 
 
 async def youtubeMetadata(url: str):

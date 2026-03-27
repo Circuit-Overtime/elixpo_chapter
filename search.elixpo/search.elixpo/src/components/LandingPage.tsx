@@ -8,7 +8,6 @@ const LINKS = {
   docs: '/docs',
   pollinations: 'https://pollinations.ai',
   github: 'https://github.com/Circuit-Overtime/lixSearch',
-  pypiSearch: 'https://pypi.org/project/lix-open-search/',
   pypiCache: 'https://pypi.org/project/lix-open-cache/',
   dockerHub: 'https://hub.docker.com/r/elixpo/lixsearch',
   paper: 'https://github.com/Circuit-Overtime/lixSearch/blob/main/docs/paper/lix_cache_paper.pdf',
@@ -227,14 +226,14 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <PackageCard
-              icon={Search}
+              icon={BookOpen}
               iconColor="bg-indigo-500/20 border border-indigo-500/30"
-              title="lix-open-search"
-              description="Python client SDK with sync + async, streaming, multi-turn sessions, and multimodal search. OpenAI-compatible."
-              installCmd="pip install lix-open-search"
+              title="Research Paper"
+              description="A Three-Layer Caching Architecture for Low-Latency LLM Web Search on Commodity CPU Hardware."
+              installCmd="Read the paper"
               links={[
-                { label: 'PyPI', href: LINKS.pypiSearch },
-                { label: 'Docs', href: LINKS.github + '/tree/main/package/lix_open_search_pkg' },
+                { label: 'PDF', href: LINKS.paper },
+                { label: 'Source', href: LINKS.github + '/tree/main/docs/paper' },
               ]}
             />
             <PackageCard
@@ -334,7 +333,7 @@ export default function LandingPage() {
               <a href={LINKS.docs} className="text-sm text-white/30 hover:text-white/60 transition-colors">Docs</a>
               <a href={LINKS.trySearch} className="text-sm text-white/30 hover:text-white/60 transition-colors">App</a>
               <a href={LINKS.pollinations} target="_blank" rel="noopener noreferrer" className="text-sm text-white/30 hover:text-white/60 transition-colors">Pollinations</a>
-              <a href={LINKS.pypiSearch} target="_blank" rel="noopener noreferrer" className="text-sm text-white/30 hover:text-white/60 transition-colors">PyPI</a>
+              <a href={LINKS.pypiCache} target="_blank" rel="noopener noreferrer" className="text-sm text-white/30 hover:text-white/60 transition-colors">PyPI</a>
               <a href={LINKS.github} target="_blank" rel="noopener noreferrer" className="text-sm text-white/30 hover:text-white/60 transition-colors">GitHub</a>
             </div>
           </div>
