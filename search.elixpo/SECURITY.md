@@ -19,7 +19,7 @@ We will acknowledge receipt within 24 hours and provide updates every 48 hours.
 |---------|---------|-----------|
 | lixSearch (backend) | 2.x | Active |
 | lix-open-cache (PyPI) | 2.x | Active |
-| lix-open-search (PyPI) | 2.x | Active |
+| lix-open-search (PyPI) | 2.x | Deprecated — removed from PyPI |
 | LixSearch (Docker) | latest | Active |
 
 Always run the latest version for security patches.

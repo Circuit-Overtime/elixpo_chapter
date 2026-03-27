@@ -11,15 +11,26 @@ from lix_open_cache.context_window import SessionContextWindow
 
 class CacheCoordinator:
 
-    def __init__(self, session_id: str, config: Optional[CacheConfig] = None):
-        self._config = config or CacheConfig()
+    def __init__(self, session_id: str, config: Optional[CacheConfig] = None, **kwargs):
+        if config is None:
+            # Build config from kwargs for backward compatibility
+            cfg_kwargs = {}
+            if "redis_host" in kwargs:
+                cfg_kwargs["redis_host"] = kwargs["redis_host"]
+            if "redis_port" in kwargs:
+                cfg_kwargs["redis_port"] = int(kwargs["redis_port"])
+            if "redis_password" in kwargs:
+                cfg_kwargs["redis_password"] = kwargs["redis_password"]
+            self._config = CacheConfig(**cfg_kwargs) if cfg_kwargs else CacheConfig.from_env()
+        else:
+            self._config = config
         c = self._config
         self.session_id = session_id
 
         try:
-            self.url_embedding_cache = URLEmbeddingCache(session_id=session_id, config=c)
-            self.semantic_cache = SemanticCacheRedis(session_id=session_id, config=c)
-            self.context_window = SessionContextWindow(session_id=session_id, config=c)
+            self.url_embedding_cache = URLEmbeddingCache(session_id=session_id, config=c, **kwargs)
+            self.semantic_cache = SemanticCacheRedis(session_id=session_id, config=c, **kwargs)
+            self.context_window = SessionContextWindow(session_id=session_id, config=c, **kwargs)
             logger.info(
                 f"[CacheCoordinator] session={session_id} initialized: "
                 f"URLEmbedding(db={c.url_cache_redis_db}), "
@@ -74,6 +85,9 @@ class CacheCoordinator:
             "context_window": self.context_window.get_stats(),
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
+
+    # Alias used by lixSearch production code
+    get_cache_stats = get_stats
 
 
 class BatchCacheProcessor:

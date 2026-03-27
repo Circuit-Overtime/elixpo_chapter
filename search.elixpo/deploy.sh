@@ -305,7 +305,7 @@ _github_release() {
 # ── Package paths ──────────────────────────────────────
 
 CACHE_PKG="package/lix_open_cache_pkg"
-SEARCH_PKG="package/lix_open_search_pkg"
+# SEARCH_PKG removed — lix-open-search deprecated and removed from PyPI
 
 _pkg_version() {
     local pkg_dir=$1
@@ -331,8 +331,7 @@ release_bump() {
 
     case "$target" in
         cache)  _do_bump "$CACHE_PKG" "lix-open-cache" ;;
-        search) _do_bump "$SEARCH_PKG" "lix-open-search" ;;
-        all)    _do_bump "$CACHE_PKG" "lix-open-cache"; _do_bump "$SEARCH_PKG" "lix-open-search" ;;
+        all)    _do_bump "$CACHE_PKG" "lix-open-cache" ;;
         *)      error "Unknown target: $target (use cache, search, or all)"; exit 1 ;;
     esac
 }
@@ -353,8 +352,7 @@ release_build() {
 
     case "$target" in
         cache)  _do_build "$CACHE_PKG" "lix-open-cache" ;;
-        search) _do_build "$SEARCH_PKG" "lix-open-search" ;;
-        all)    _do_build "$CACHE_PKG" "lix-open-cache"; _do_build "$SEARCH_PKG" "lix-open-search" ;;
+        all)    _do_build "$CACHE_PKG" "lix-open-cache" ;;
         *)      error "Unknown target: $target"; exit 1 ;;
     esac
 }
@@ -375,8 +373,7 @@ release_pypi() {
 
     case "$target" in
         cache)  _do_pypi "$CACHE_PKG" "lix-open-cache" ;;
-        search) _do_pypi "$SEARCH_PKG" "lix-open-search" ;;
-        all)    _do_pypi "$CACHE_PKG" "lix-open-cache"; _do_pypi "$SEARCH_PKG" "lix-open-search" ;;
+        all)    _do_pypi "$CACHE_PKG" "lix-open-cache" ;;
         *)      error "Unknown target: $target"; exit 1 ;;
     esac
 }
@@ -399,12 +396,12 @@ release_docker() {
 
     local ghcr_image="ghcr.io/${GITHUB_USER:-Circuit-Overtime}/lixsearch"
     local hub_image="${DOCKERHUB_USER:-elixpo}/lixsearch"
-    local version=$(_pkg_version "$SEARCH_PKG")
+    local version=$(_pkg_version "$CACHE_PKG")
     info "Building Docker image v${version}"
 
     check_docker
 
-    docker build -f "${SEARCH_PKG}/Dockerfile" \
+    docker build -f Dockerfile \
         -t "${ghcr_image}:${version}" \
         -t "${ghcr_image}:latest" \
         -t "${hub_image}:${version}" \
@@ -513,93 +510,14 @@ Only 3: \`redis\`, \`numpy\`, \`loguru\`
 NOTES
     }
 
-    _search_notes() {
-        local v=$1
-        cat <<NOTES
-## lix-open-search v${v}
-
-Python client SDK for lixSearch — multi-tool AI search with web, video, image, and deep research.
-
-### Install
-
-\`\`\`bash
-pip install lix-open-search==${v}
-\`\`\`
-
-### Quick Start
-
-\`\`\`python
-from lix_open_search import LixSearch
-
-lix = LixSearch("http://localhost:9002")
-
-# One-shot search
-result = lix.search("quantum computing breakthroughs 2026")
-print(result.content)
-
-# Streaming
-for chunk in lix.search_stream("latest AI papers"):
-    print(chunk.content, end="", flush=True)
-
-# Multi-turn conversation
-result = lix.chat([
-    {"role": "user", "content": "Compare Tesla and BYD sales"}
-], session_id="my-session")
-
-# Multimodal (text + image)
-result = lix.search("What is this?", images=["https://example.com/photo.jpg"])
-
-# Raw URLs without LLM
-urls = lix.surf("best Python frameworks", limit=10)
-\`\`\`
-
-### Async
-
-\`\`\`python
-from lix_open_search import AsyncLixSearch
-
-async with AsyncLixSearch("http://localhost:9002") as lix:
-    result = await lix.search("SpaceX updates")
-    async for chunk in lix.search_stream("AI papers"):
-        print(chunk.content, end="", flush=True)
-\`\`\`
-
-### Features
-
-- **Sync + Async** clients (\`LixSearch\` / \`AsyncLixSearch\`)
-- **Streaming** with parsed \`StreamChunk\` objects
-- **Multi-turn** sessions with server-side memory
-- **Multimodal** — text + up to 3 images
-- **Surf** — raw URL/image search without LLM synthesis
-- **OpenAI-compatible** — also works with the standard OpenAI Python client
-- **Single dependency** — just \`httpx\`
-
-### Self-Host with Docker
-
-\`\`\`bash
-docker pull elixpo/lixsearch
-docker compose -f package/lix_open_search_pkg/docker-compose.yml up -d
-\`\`\`
-
-### Links
-
-- [PyPI](https://pypi.org/project/lix-open-search/${v}/)
-- [Docs](https://github.com/${repo_url}/tree/main/${SEARCH_PKG})
-- [Docker Hub](https://hub.docker.com/r/elixpo/lixsearch)
-- [Live Demo](https://search.elixpo.com)
-NOTES
-    }
+    # lix-open-search release notes removed — package deprecated
 
     _do_gh_release() {
         local pkg_dir=$1 pkg_name=$2 tag=$3
         local v=$(_pkg_version "$pkg_dir")
 
         local notes
-        if [ "$tag" = "lix-open-cache" ]; then
-            notes=$(_cache_notes "$v")
-        else
-            notes=$(_search_notes "$v")
-        fi
+        notes=$(_cache_notes "$v")
 
         # Collect dist assets
         local assets=()
@@ -629,10 +547,8 @@ NOTES
 
     case "$target" in
         cache)  _do_gh_release "$CACHE_PKG" "lix-open-cache" "lix-open-cache" ;;
-        search) _do_gh_release "$SEARCH_PKG" "lix-open-search" "lix-open-search" ;;
         all)
             _do_gh_release "$CACHE_PKG" "lix-open-cache" "lix-open-cache"
-            _do_gh_release "$SEARCH_PKG" "lix-open-search" "lix-open-search"
             ;;
         *)      error "Unknown target: $target (use cache, search, or all)"; exit 1 ;;
     esac
@@ -700,10 +616,8 @@ release_version() {
     local target=${1:-all}
     case "$target" in
         cache)  info "lix-open-cache: $(_pkg_version "$CACHE_PKG")" ;;
-        search) info "lix-open-search: $(_pkg_version "$SEARCH_PKG")" ;;
         all)
             info "lix-open-cache:  $(_pkg_version "$CACHE_PKG")"
-            info "lix-open-search: $(_pkg_version "$SEARCH_PKG")"
             ;;
     esac
 }
@@ -766,8 +680,8 @@ ${YELLOW}Examples:${NC}
   ./deploy.sh backup                      # Backup Redis
   ./deploy.sh release version              # Show all package versions
   ./deploy.sh release bump cache          # Bump lix-open-cache (patch)
-  ./deploy.sh release build search        # Build lix-open-search only
-  ./deploy.sh release pypi all            # Upload both to PyPI
+  ./deploy.sh release build cache         # Build lix-open-cache
+  ./deploy.sh release pypi cache          # Upload lix-open-cache to PyPI
   ./deploy.sh release docker              # Push Docker to ghcr.io + Hub
   ./deploy.sh release all minor           # Full release (minor bump)
   ./deploy.sh frontend build              # Build Next.js static site
