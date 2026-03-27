@@ -557,11 +557,15 @@ NOTES
 # ── Frontend ───────────────────────────────────────────
 
 _sync_paper() {
-    if [ -f "docs/paper/arXiv_research_paper.pdf" ]; then
-        cp docs/paper/arXiv_research_paper.pdf search.elixpo/public/paper.pdf
+    local src=""
+    for f in docs/paper/paper.pdf docs/paper/arXiv_research_paper.pdf docs/paper/lix_cache_paper.pdf; do
+        [ -f "$f" ] && src="$f" && break
+    done
+    if [ -n "$src" ]; then
+        cp "$src" search.elixpo/public/paper.pdf
         success "Synced research paper → search.elixpo/public/paper.pdf"
     else
-        warning "docs/paper/arXiv_research_paper.pdf not found — skipping paper sync"
+        warning "No paper PDF found in docs/paper/ — skipping paper sync"
     fi
 }
 
@@ -608,6 +612,8 @@ frontend_deploy() {
     npx wrangler pages deploy out || { cd ..; error "Pages deploy failed"; exit 1; }
     cd ..
     success "Frontend deployed to Cloudflare Pages"
+    docker restart lixsearch-nginx
+    success "Nginx restarted to serve new frontend"
 }
 
 # ── Version display ────────────────────────────────────
