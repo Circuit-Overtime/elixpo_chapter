@@ -170,26 +170,27 @@ def build_fallback_response(user_query, collected_sources, collected_images_from
 async def save_to_caches(user_query, final_content, collected_sources, tool_call_count,
                           current_iteration, memoized_results, core_service, conversation_cache,
                           session_context, session_id):
-    try:
-        _embedding = None
-        if core_service:
-            try:
-                _embedding = core_service.embed_single_text(user_query)
-            except Exception:
-                pass
-        conversation_cache.add_to_cache(
-            query=user_query,
-            response=final_content,
-            metadata={
-                "sources": collected_sources[:5],
-                "tool_calls": tool_call_count,
-                "iteration": current_iteration,
-                "had_cache_hit": memoized_results.get("cache_hit", False)
-            },
-            query_embedding=_embedding,
-        )
-    except Exception as e:
-        logger.warning(f"[Pipeline] Failed to save to cache: {e}")
+    if conversation_cache is not None:
+        try:
+            _embedding = None
+            if core_service:
+                try:
+                    _embedding = core_service.embed_single_text(user_query)
+                except Exception:
+                    pass
+            conversation_cache.add_to_cache(
+                query=user_query,
+                response=final_content,
+                metadata={
+                    "sources": collected_sources[:5],
+                    "tool_calls": tool_call_count,
+                    "iteration": current_iteration,
+                    "had_cache_hit": memoized_results.get("cache_hit", False)
+                },
+                query_embedding=_embedding,
+            )
+        except Exception as e:
+            logger.warning(f"[Pipeline] Failed to save to cache: {e}")
 
     if session_context:
         try:
