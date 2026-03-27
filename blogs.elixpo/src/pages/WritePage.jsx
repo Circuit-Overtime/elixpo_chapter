@@ -223,21 +223,27 @@ export default function WritePage({ slugid }) {
   const [markdown, setMarkdown] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [lastSaved, setLastSaved] = useState(null);
+  const [draftLoading, setDraftLoading] = useState(true);
 
   const username = user?.username || 'you';
 
   useEffect(() => {
-    const draft = loadDraft(slugid);
-    if (draft) {
-      if (draft.title) setTitle(draft.title);
-      if (draft.subtitle) setSubtitle(draft.subtitle);
-      if (draft.tags) setTags(draft.tags);
-      if (draft.publishAs) setPublishAs(draft.publishAs);
-      if (draft.coverPreview) setCoverPreview(draft.coverPreview);
-      if (draft.editorContent) setEditorContent(draft.editorContent);
-      if (draft.pageEmoji) setPageEmoji(draft.pageEmoji);
-      if (draft.savedAt) setLastSaved(draft.savedAt);
-    }
+    // Small delay to show skeleton and let the UI mount before heavy JSON parsing
+    const timer = setTimeout(() => {
+      const draft = loadDraft(slugid);
+      if (draft) {
+        if (draft.title) setTitle(draft.title);
+        if (draft.subtitle) setSubtitle(draft.subtitle);
+        if (draft.tags) setTags(draft.tags);
+        if (draft.publishAs) setPublishAs(draft.publishAs);
+        if (draft.coverPreview) setCoverPreview(draft.coverPreview);
+        if (draft.editorContent) setEditorContent(draft.editorContent);
+        if (draft.pageEmoji) setPageEmoji(draft.pageEmoji);
+        if (draft.savedAt) setLastSaved(draft.savedAt);
+      }
+      setDraftLoading(false);
+    }, 80);
+    return () => clearTimeout(timer);
   }, [slugid]);
 
   useEffect(() => {
@@ -408,7 +414,6 @@ export default function WritePage({ slugid }) {
             {[
               { key: 'edit', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> },
               { key: 'preview', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> },
-              { key: 'code', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -428,63 +433,90 @@ export default function WritePage({ slugid }) {
           {/* === EDIT MODE === */}
           {mode === 'edit' && (
             <>
-              {coverPreview && (
-                <div className="relative mb-6 rounded-xl overflow-hidden group" style={{ aspectRatio: '3/1' }}>
-                  <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                    <button onClick={() => setShowCoverModal(true)} className="px-3 py-1.5 bg-white/20 backdrop-blur rounded-lg text-xs hover:bg-[#b69aff]/30 transition-colors">Change</button>
-                    <button onClick={removeCover} className="px-3 py-1.5 bg-red-500/60 backdrop-blur rounded-lg text-xs hover:bg-red-500/80 transition-colors">Remove</button>
+              {draftLoading ? (
+                <div className="animate-pulse space-y-4">
+                  {/* Cover skeleton */}
+                  <div className="w-full h-[180px] bg-[#1a2030] rounded-xl" />
+                  {/* Title skeleton */}
+                  <div className="h-10 bg-[#1a2030] rounded-lg w-3/4" />
+                  {/* Editor body skeleton lines */}
+                  <div className="space-y-3 mt-6">
+                    <div className="h-4 bg-[#1a2030] rounded w-full" />
+                    <div className="h-4 bg-[#1a2030] rounded w-5/6" />
+                    <div className="h-4 bg-[#1a2030] rounded w-full" />
+                    <div className="h-4 bg-[#1a2030] rounded w-2/3" />
+                    <div className="h-6 bg-[#1a2030] rounded w-1/2 mt-5" />
+                    <div className="h-4 bg-[#1a2030] rounded w-full" />
+                    <div className="h-4 bg-[#1a2030] rounded w-4/5" />
+                    <div className="h-4 bg-[#1a2030] rounded w-full" />
+                    <div className="h-4 bg-[#1a2030] rounded w-3/4" />
+                    <div className="h-4 bg-[#1a2030] rounded w-5/6" />
+                    <div className="h-6 bg-[#1a2030] rounded w-2/5 mt-5" />
+                    <div className="h-4 bg-[#1a2030] rounded w-full" />
+                    <div className="h-4 bg-[#1a2030] rounded w-2/3" />
                   </div>
                 </div>
-              )}
-
-              {pageEmoji && (
-                <div className="relative group w-fit mb-2">
-                  <span className="text-5xl cursor-pointer select-none" onClick={() => setShowEmojiPicker(true)}>{pageEmoji}</span>
-                  <button onClick={() => setPageEmoji(null)} className="absolute -top-1 -right-3 opacity-0 group-hover:opacity-100 h-5 w-5 rounded-full bg-[#232d3f] border border-[#333] flex items-center justify-center text-[#888] hover:text-white transition-all text-[10px]">&times;</button>
-                </div>
-              )}
-
-              {(!coverPreview || !pageEmoji) && (
-                <div className="flex items-center gap-3 mb-4">
-                  {!coverPreview && (
-                    <button onClick={() => setShowCoverModal(true)} className="inline-flex items-center gap-1.5 text-[#7c8a9e] hover:text-[#9b7bf7] transition-colors text-xs">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                      Add cover
-                    </button>
+              ) : (
+                <>
+                  {coverPreview && (
+                    <div className="relative mb-6 rounded-xl overflow-hidden group" style={{ aspectRatio: '3/1' }}>
+                      <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <button onClick={() => setShowCoverModal(true)} className="px-3 py-1.5 bg-white/20 backdrop-blur rounded-lg text-xs hover:bg-[#b69aff]/30 transition-colors">Change</button>
+                        <button onClick={removeCover} className="px-3 py-1.5 bg-red-500/60 backdrop-blur rounded-lg text-xs hover:bg-red-500/80 transition-colors">Remove</button>
+                      </div>
+                    </div>
                   )}
-                  {!pageEmoji && (
-                    <button onClick={() => setShowEmojiPicker(true)} className="inline-flex items-center gap-1.5 text-[#7c8a9e] hover:text-[#9b7bf7] transition-colors text-xs">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-                      Add emoji
-                    </button>
+
+                  {pageEmoji && (
+                    <div className="relative group w-fit mb-2">
+                      <span className="text-5xl cursor-pointer select-none" onClick={() => setShowEmojiPicker(true)}>{pageEmoji}</span>
+                      <button onClick={() => setPageEmoji(null)} className="absolute -top-1 -right-3 opacity-0 group-hover:opacity-100 h-5 w-5 rounded-full bg-[#232d3f] border border-[#333] flex items-center justify-center text-[#888] hover:text-white transition-all text-[10px]">&times;</button>
+                    </div>
                   )}
-                </div>
+
+                  {(!coverPreview || !pageEmoji) && (
+                    <div className="flex items-center gap-3 mb-4">
+                      {!coverPreview && (
+                        <button onClick={() => setShowCoverModal(true)} className="inline-flex items-center gap-1.5 text-[#7c8a9e] hover:text-[#9b7bf7] transition-colors text-xs">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                          Add cover
+                        </button>
+                      )}
+                      {!pageEmoji && (
+                        <button onClick={() => setShowEmojiPicker(true)} className="inline-flex items-center gap-1.5 text-[#7c8a9e] hover:text-[#9b7bf7] transition-colors text-xs">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                          Add emoji
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {showEmojiPicker && (
+                    <EmojiPicker
+                      onSelect={(emoji) => { setPageEmoji(emoji); setShowEmojiPicker(false); }}
+                      onRemove={() => { setPageEmoji(null); setShowEmojiPicker(false); }}
+                      onClose={() => setShowEmojiPicker(false)}
+                    />
+                  )}
+
+                  {showCoverModal && (
+                    <CoverUploadModal onSelect={handleCoverSelect} onClose={() => setShowCoverModal(false)} />
+                  )}
+
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Blog title..."
+                    className="w-full bg-transparent text-[2em] font-extrabold outline-none placeholder-[#4a5568] mb-1 leading-tight"
+                  />
+
+                  <div className="min-h-[500px] mt-4">
+                    <BlockNoteEditor ref={editorRef} onChange={handleEditorChange} initialContent={editorContent} />
+                  </div>
+                </>
               )}
-
-              {showEmojiPicker && (
-                <EmojiPicker
-                  onSelect={(emoji) => { setPageEmoji(emoji); setShowEmojiPicker(false); }}
-                  onRemove={() => { setPageEmoji(null); setShowEmojiPicker(false); }}
-                  onClose={() => setShowEmojiPicker(false)}
-                />
-              )}
-
-              {showCoverModal && (
-                <CoverUploadModal onSelect={handleCoverSelect} onClose={() => setShowCoverModal(false)} />
-              )}
-
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Blog title..."
-                className="w-full bg-transparent text-[2em] font-extrabold outline-none placeholder-[#4a5568] mb-1 leading-tight"
-              />
-
-              <div className="min-h-[500px] mt-4">
-                <BlockNoteEditor ref={editorRef} onChange={handleEditorChange} initialContent={editorContent} />
-              </div>
             </>
           )}
 

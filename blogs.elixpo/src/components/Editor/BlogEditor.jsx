@@ -9,6 +9,7 @@ import 'katex/dist/katex.min.css';
 import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef, useEffect } from 'react';
 import AICommandMenu from './AICommandMenu';
 import AISelectionToolbar from './AISelectionToolbar';
+import { parseMarkdownToBlocks } from './markdownToBlocks';
 
 // Custom blocks
 import { TableOfContents } from './blocks/TableOfContents';
@@ -220,6 +221,16 @@ function isCurrentBlockEmpty(editor) {
 const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, ref) {
   const [showAIMenu, setShowAIMenu] = useState(false);
   const [aiMenuPos, setAiMenuPos] = useState({ top: 0, left: 0 });
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiGeneratingBlockId, setAiGeneratingBlockId] = useState(null);
+  const [aiErrorToast, setAiErrorToast] = useState(null);
+  const [aiBlockIds, setAiBlockIds] = useState(new Set());
+  const [showAIActions, setShowAIActions] = useState(false);
+  const [aiActionsPos, setAiActionsPos] = useState({ top: 0, left: 0 });
+  const aiAbortRef = useRef(null);
+  const aiBlockIdsRef = useRef(new Set());
+  const aiBlockCountRef = useRef(0);
+  const aiAnchorIdRef = useRef(null);
   const wrapperRef = useRef(null);
 
   const editor = useCreateBlockNote({
@@ -227,6 +238,9 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
     initialContent: initialContent || undefined,
     domAttributes: {
       editor: { class: 'blog-editor' },
+    },
+    placeholders: {
+      default: "Press 'Space' for AI, type '/' for commands",
     },
   });
 
@@ -237,9 +251,41 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
     getMarkdown: async () => await editor.blocksToMarkdownLossy(editor.document),
   }), [editor]);
 
+  // Disable spellcheck on code blocks + inject copy buttons
+  const patchCodeBlocks = useCallback(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    wrapper.querySelectorAll('[data-content-type="codeBlock"]').forEach((block) => {
+      const editable = block.querySelector('[contenteditable]');
+      if (editable) editable.spellcheck = false;
+      if (!block.querySelector('.code-copy-btn')) {
+        const btn = document.createElement('button');
+        btn.className = 'code-copy-btn';
+        btn.title = 'Copy code';
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        btn.onclick = () => {
+          const code = block.querySelector('[contenteditable]')?.textContent || '';
+          navigator.clipboard.writeText(code);
+          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+          setTimeout(() => {
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+          }, 1500);
+        };
+        block.style.position = 'relative';
+        block.appendChild(btn);
+      }
+    });
+  }, []);
+
   const handleChange = useCallback(() => {
     if (onChange) onChange(editor.document);
-  }, [onChange, editor]);
+    requestAnimationFrame(patchCodeBlocks);
+  }, [onChange, editor, patchCodeBlocks]);
+
+  // Patch code blocks on initial mount
+  useEffect(() => {
+    requestAnimationFrame(patchCodeBlocks);
+  }, [patchCodeBlocks]);
 
   const getItems = useMemo(
     () => async (query) => filterItems(getCustomSlashMenuItems(editor), query),
@@ -300,20 +346,129 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
     }
   }, [editor]);
 
+  const handleAIStop = useCallback(() => {
+    if (aiAbortRef.current) {
+      aiAbortRef.current.abort();
+      aiAbortRef.current = null;
+    }
+    setAiGenerating(false);
+    setAiGeneratingBlockId(null);
+
+    // Scroll to the AI-generated content and show keep/discard
+    const ids = aiBlockIdsRef.current;
+    if (ids && ids.size > 0) {
+      setShowAIActions(true);
+      requestAnimationFrame(() => {
+        const firstId = [...ids][0];
+        const el = wrapperRef.current?.querySelector(`[data-id="${firstId}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }, []);
+
+  // Highlight AI blocks in the DOM with lavender class + optional typing cursor on last block
+  const highlightAiBlocks = useCallback((ids, showCursor = true) => {
+    wrapperRef.current?.querySelectorAll('.ai-generated-highlight, .ai-typing-cursor').forEach((el) => {
+      el.classList.remove('ai-generated-highlight', 'ai-typing-cursor');
+    });
+    for (let i = 0; i < ids.length; i++) {
+      const el = wrapperRef.current?.querySelector(`[data-id="${ids[i]}"]`);
+      if (el) {
+        el.classList.add('ai-generated-highlight');
+        if (showCursor && i === ids.length - 1) el.classList.add('ai-typing-cursor');
+      }
+    }
+  }, []);
+
+  // Get current AI block IDs by position relative to anchor
+  const getAiBlockIds = useCallback(() => {
+    const anchorId = aiAnchorIdRef.current;
+    const count = aiBlockCountRef.current;
+    if (!anchorId || count === 0) return [];
+    const doc = editor.document;
+    const idx = doc.findIndex((b) => b.id === anchorId);
+    if (idx === -1) return [];
+    return doc.slice(idx + 1, idx + 1 + count).map((b) => b.id);
+  }, [editor]);
+
+  const handleAIKeep = useCallback(() => {
+    // Remove highlights, keep the text
+    wrapperRef.current?.querySelectorAll('.ai-generated-highlight').forEach((el) => {
+      el.classList.remove('ai-generated-highlight');
+    });
+    setAiBlockIds(new Set());
+    aiBlockIdsRef.current = new Set();
+    aiBlockCountRef.current = 0;
+    aiAnchorIdRef.current = null;
+    setShowAIActions(false);
+  }, []);
+
+  const handleAIDiscard = useCallback(() => {
+    // Remove AI-generated blocks
+    const ids = getAiBlockIds();
+    if (ids.length > 0) {
+      try { editor.removeBlocks(ids); } catch {}
+    }
+    setAiBlockIds(new Set());
+    aiBlockIdsRef.current = new Set();
+    aiBlockCountRef.current = 0;
+    aiAnchorIdRef.current = null;
+    setShowAIActions(false);
+  }, [editor, getAiBlockIds]);
+
+  // Click on AI content to show keep/discard
+  useEffect(() => {
+    if (aiBlockIds.size === 0) return;
+
+    function handleClick(e) {
+      const blockEl = e.target.closest?.('.ai-generated-highlight');
+      if (blockEl) {
+        const rect = blockEl.getBoundingClientRect();
+        const wrapperRect = wrapperRef.current?.getBoundingClientRect();
+        if (wrapperRect) {
+          setAiActionsPos({
+            top: rect.top - wrapperRect.top - 36,
+            left: rect.left - wrapperRect.left + rect.width / 2,
+          });
+        }
+        setShowAIActions(true);
+      } else if (!e.target.closest?.('.ai-inline-actions')) {
+        setShowAIActions(false);
+      }
+    }
+
+    const wrapper = wrapperRef.current;
+    wrapper?.addEventListener('click', handleClick);
+    return () => wrapper?.removeEventListener('click', handleClick);
+  }, [aiBlockIds]);
+
   const handleAISubmit = useCallback(async (userPrompt) => {
     setShowAIMenu(false);
+    setShowAIActions(false);
     const cursor = editor.getTextCursorPosition();
     if (!cursor?.block) return;
 
-    // Insert a placeholder block
-    const placeholderBlock = { type: 'paragraph', content: [{ type: 'text', text: 'Generating...', styles: { italic: true } }] };
-    editor.insertBlocks([placeholderBlock], cursor.block, 'after');
+    const anchorBlockId = cursor.block.id;
+    aiAnchorIdRef.current = anchorBlockId;
 
-    // Get the inserted block (it's the one after cursor)
+    // Insert initial placeholder
+    editor.insertBlocks([{ type: 'paragraph', content: [] }], cursor.block, 'after');
     const doc = editor.document;
-    const cursorIdx = doc.findIndex((b) => b.id === cursor.block.id);
+    const cursorIdx = doc.findIndex((b) => b.id === anchorBlockId);
     const insertedBlock = doc[cursorIdx + 1];
     if (!insertedBlock) return;
+
+    aiBlockCountRef.current = 1;
+    let currentIds = [insertedBlock.id];
+    aiBlockIdsRef.current = new Set(currentIds);
+
+    setAiGenerating(true);
+    setAiGeneratingBlockId(insertedBlock.id);
+    const abortController = new AbortController();
+    aiAbortRef.current = abortController;
+
+    // Apply initial highlight
+    requestAnimationFrame(() => highlightAiBlocks(currentIds));
 
     try {
       const { streamAI } = await import('../../ai/stream');
@@ -322,57 +477,96 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
       await streamAI({
         systemPrompt: WRITE_SYSTEM_PROMPT,
         userPrompt,
+        signal: abortController.signal,
         onChunk: (chunk, fullText) => {
-          // Update the block content in real-time
+          const newBlocks = parseMarkdownToBlocks(fullText);
+          const oldIds = getAiBlockIds();
+
+          if (oldIds.length === 0) return;
+
           try {
-            editor.updateBlock(insertedBlock.id, {
-              content: [{ type: 'text', text: fullText }],
+            if (newBlocks.length !== aiBlockCountRef.current) {
+              // Block structure changed — replace all
+              editor.replaceBlocks(oldIds, newBlocks);
+              aiBlockCountRef.current = newBlocks.length;
+              currentIds = getAiBlockIds();
+              aiBlockIdsRef.current = new Set(currentIds);
+            } else {
+              // Same structure — just update the last block text
+              const lastId = oldIds[oldIds.length - 1];
+              const lastBlock = newBlocks[newBlocks.length - 1];
+              editor.updateBlock(lastId, {
+                type: lastBlock.type,
+                props: lastBlock.props || {},
+                content: lastBlock.content,
+              });
+              currentIds = oldIds;
+              aiBlockIdsRef.current = new Set(currentIds);
+            }
+            requestAnimationFrame(() => {
+              highlightAiBlocks(currentIds);
+              // Auto-scroll to follow AI typing
+              const lastId = currentIds[currentIds.length - 1];
+              const lastEl = wrapperRef.current?.querySelector(`[data-id="${lastId}"]`);
+              if (lastEl) lastEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             });
           } catch { /* block may have been removed */ }
         },
         onDone: (fullText) => {
-          // Parse the result into proper blocks
-          const lines = fullText.split('\n').filter((l) => l.trim());
-          if (lines.length <= 1) {
-            // Single block — just update the text
-            try {
-              editor.updateBlock(insertedBlock.id, {
-                content: [{ type: 'text', text: fullText.trim() }],
-              });
-            } catch {}
-            return;
-          }
-          // Multiple blocks — replace the placeholder
-          const newBlocks = lines.map((line) => {
-            const headingMatch = line.match(/^(#{1,3})\s+(.+)/);
-            if (headingMatch) {
-              return { type: 'heading', props: { level: headingMatch[1].length.toString() }, content: [{ type: 'text', text: headingMatch[2] }] };
-            }
-            if (line.match(/^[-*]\s+/)) {
-              return { type: 'bulletListItem', content: [{ type: 'text', text: line.replace(/^[-*]\s+/, '') }] };
-            }
-            return { type: 'paragraph', content: [{ type: 'text', text: line }] };
-          });
+          // Final parse into proper blocks
+          const newBlocks = parseMarkdownToBlocks(fullText);
+          const oldIds = getAiBlockIds();
+
           try {
-            editor.replaceBlocks([insertedBlock.id], newBlocks);
+            if (oldIds.length > 0) {
+              editor.replaceBlocks(oldIds, newBlocks);
+              aiBlockCountRef.current = newBlocks.length;
+              currentIds = getAiBlockIds();
+            }
           } catch {}
+
+          const finalIds = new Set(currentIds);
+          aiBlockIdsRef.current = finalIds;
+          setAiBlockIds(finalIds);
+          setAiGenerating(false);
+          setAiGeneratingBlockId(null);
+          aiAbortRef.current = null;
+
+          // Highlight without cursor and show keep/discard
+          setShowAIActions(true);
+          requestAnimationFrame(() => {
+            highlightAiBlocks(currentIds, false);
+          });
         },
         onError: (err) => {
+          setAiGenerating(false);
+          setAiGeneratingBlockId(null);
+          aiAbortRef.current = null;
           try {
-            editor.updateBlock(insertedBlock.id, {
-              content: [{ type: 'text', text: `Error: ${err.message}` }],
-            });
+            const ids = getAiBlockIds();
+            if (ids.length > 0) editor.removeBlocks(ids);
           } catch {}
+          setAiBlockIds(new Set());
+          aiBlockIdsRef.current = new Set();
+          setShowAIActions(false);
+          setAiErrorToast(err.message || 'AI generation failed');
         },
       });
     } catch (err) {
+      setAiGenerating(false);
+      setAiGeneratingBlockId(null);
+      aiAbortRef.current = null;
+      if (err.name === 'AbortError') return;
       try {
-        editor.updateBlock(insertedBlock.id, {
-          content: [{ type: 'text', text: `Error: ${err.message}` }],
-        });
+        const ids = getAiBlockIds();
+        if (ids.length > 0) editor.removeBlocks(ids);
       } catch {}
+      setAiBlockIds(new Set());
+      aiBlockIdsRef.current = new Set();
+      setShowAIActions(false);
+      setAiErrorToast(err.message || 'AI generation failed');
     }
-  }, [editor]);
+  }, [editor, getAiBlockIds, highlightAiBlocks]);
 
   return (
     <div className="blog-editor-wrapper" ref={wrapperRef} style={{ position: 'relative' }}>
@@ -396,8 +590,66 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
         />
       )}
 
+      {/* Elixpo AI typing bar — fixed bottom glassmorphism */}
+      {aiGenerating && (
+        <div className="elixpo-typing-bar">
+          <div className="elixpo-typing-bar-inner">
+            <img src="/base-logo.png" alt="Elixpo" className="elixpo-typing-avatar" />
+            <div className="elixpo-typing-text">
+              <span className="elixpo-typing-name">Elixpo</span>
+              <span className="elixpo-typing-status">is typing<span className="elixpo-typing-dots"><span /><span /><span /></span></span>
+            </div>
+            <button className="elixpo-stop-btn" onClick={handleAIStop}>
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
+                <rect x="1" y="1" width="10" height="10" rx="2" />
+              </svg>
+              Stop
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Keep/Discard actions — fixed bottom bar after AI done */}
+      {showAIActions && !aiGenerating && aiBlockIds.size > 0 && (
+        <div className="elixpo-done-bar">
+          <div className="elixpo-done-bar-inner">
+            <img src="/base-logo.png" alt="Elixpo" className="elixpo-typing-avatar" />
+            <span className="elixpo-done-label">Elixpo finished writing</span>
+            <div className="elixpo-done-actions">
+              <button className="elixpo-done-keep" onClick={handleAIKeep} title="Keep">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Keep
+              </button>
+              <button className="elixpo-done-discard" onClick={handleAIDiscard} title="Discard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+                Undo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* AI selection toolbar — appears on text selection */}
       <AISelectionToolbar editor={editor} />
+
+      {/* AI error toast */}
+      {aiErrorToast && (
+        <div className="ai-error-toast" onAnimationEnd={(e) => {
+          if (e.animationName === 'ai-toast-fade-out') setAiErrorToast(null);
+        }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+            <circle cx="8" cy="8" r="7" stroke="#ff6b6b" strokeWidth="1.5" />
+            <path d="M8 4.5v4" stroke="#ff6b6b" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="8" cy="11" r="0.75" fill="#ff6b6b" />
+          </svg>
+          <span>{aiErrorToast}</span>
+          <button onClick={() => setAiErrorToast(null)} aria-label="Dismiss">×</button>
+        </div>
+      )}
     </div>
   );
 });
