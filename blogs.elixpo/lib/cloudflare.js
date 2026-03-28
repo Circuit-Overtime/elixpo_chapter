@@ -7,3 +7,4 @@ export function getDB() {
 export function getKV() {
   return getRequestContext().env.KV;
 }
+
