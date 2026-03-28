@@ -1,22 +1,63 @@
 /* ===== AI Generated Block Highlight ===== */
 
 .ai-generated-highlight {
-  background: rgba(167, 139, 250, 0.10) !important;
-  border-left: 3px solid rgba(167, 139, 250, 0.5) !important;
-  border-radius: 0 4px 4px 0;
+  background: rgba(167, 139, 250, 0.15) !important;
+  border-left: 3px solid rgba(167, 139, 250, 0.7) !important;
+  border-radius: 0 6px 6px 0;
   margin-left: -3px;
   transition: background 0.3s ease, border-color 0.3s ease;
+  animation: aiBlockFadeIn 0.3s ease-out;
+}
+
+@keyframes aiBlockFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .ai-generated-highlight .bn-block-content {
-  background: rgba(167, 139, 250, 0.04);
+  background: rgba(167, 139, 250, 0.08) !important;
   border-radius: 4px;
 }
 
+/* Smooth text appearance during AI streaming — word-level fade in effect */
+.ai-generated-highlight .bn-inline-content {
+  animation: aiTextFadeIn 0.4s ease-out;
+}
+
+.ai-generated-highlight .bn-inline-content span,
+.ai-generated-highlight .bn-inline-content a,
+.ai-generated-highlight .bn-inline-content code,
+.ai-generated-highlight .bn-inline-content strong,
+.ai-generated-highlight .bn-inline-content em {
+  animation: aiWordFadeIn 0.35s ease-out both;
+}
+
+@keyframes aiTextFadeIn {
+  from { opacity: 0.3; filter: blur(2px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+@keyframes aiWordFadeIn {
+  from { opacity: 0; transform: translateY(4px); filter: blur(2px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+/* Force lavender color on ALL text inside AI blocks — use broad selectors to beat inline styles */
+.ai-generated-highlight,
+.ai-generated-highlight *,
+[data-node-type="blockContainer"].ai-generated-highlight *,
 .ai-generated-highlight .bn-inline-content,
+.ai-generated-highlight .bn-inline-content *,
+.ai-generated-highlight [data-content-type] *,
 .ai-generated-highlight p,
-.ai-generated-highlight span {
-  color: #ddd6fe !important;
+.ai-generated-highlight span,
+.ai-generated-highlight strong,
+.ai-generated-highlight em,
+.ai-generated-highlight code,
+.ai-generated-highlight a,
+.ai-generated-highlight li {
+  color: #c4b5fd !important;
+  caret-color: #c4b5fd !important;
 }
 
 /* ===== AI Edit Diff Styles (lavender theme) ===== */
@@ -37,6 +78,53 @@
   padding: 0 2px;
 }
 
+/* ===== Inline AI Edit Diff — original blocks (strikethrough) ===== */
+
+.ai-edit-original-block {
+  position: relative;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.ai-edit-original-block .bn-inline-content,
+.ai-edit-original-block .bn-inline-content *,
+.ai-edit-original-block p,
+.ai-edit-original-block span,
+.ai-edit-original-block strong,
+.ai-edit-original-block em,
+.ai-edit-original-block code,
+.ai-edit-original-block a,
+.ai-edit-original-block li {
+  text-decoration: line-through !important;
+  text-decoration-color: rgba(196, 181, 253, 0.6) !important;
+  color: rgba(196, 181, 253, 0.45) !important;
+}
+
+/* ===== Inline AI Edit Diff — new AI blocks (lavender) ===== */
+
+.ai-edit-new-block {
+  background: rgba(196, 181, 253, 0.08) !important;
+  border-left: 3px solid rgba(196, 181, 253, 0.5) !important;
+  border-radius: 0 6px 6px 0;
+  margin-left: -3px;
+  animation: aiBlockFadeIn 0.3s ease-out;
+}
+
+.ai-edit-new-block,
+.ai-edit-new-block *,
+.ai-edit-new-block .bn-inline-content,
+.ai-edit-new-block .bn-inline-content *,
+.ai-edit-new-block p,
+.ai-edit-new-block span,
+.ai-edit-new-block strong,
+.ai-edit-new-block em,
+.ai-edit-new-block code,
+.ai-edit-new-block a,
+.ai-edit-new-block li {
+  color: #c4b5fd !important;
+  caret-color: #c4b5fd !important;
+}
+
 .ai-streaming-cursor::after {
   content: '|';
   color: #c4b5fd;
@@ -49,30 +137,81 @@
   51%, 100% { opacity: 0; }
 }
 
-/* ===== AI Typing Cursor Dot ===== */
+/* ===== AI Sparkle Star Cursor (inline, follows text) ===== */
 
-.ai-typing-cursor {
-  position: relative;
+.ai-glob-cursor {
+  display: none;
+  position: fixed;
+  width: 30px;
+  height: 30px;
+  pointer-events: none;
+  z-index: 9999;
+  transition: left 0.15s ease-out, top 0.15s ease-out;
 }
 
-.ai-typing-cursor::after {
-  content: '';
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #c4b5fd;
-  margin-left: 4px;
-  vertical-align: middle;
-  animation: aiDotPulse 1s ease-in-out infinite;
-  position: absolute;
-  bottom: 12px;
-  right: -14px;
+/* Main sparkle star — 4-point star shape */
+.ai-glob-cursor::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 20px !important;
+  height: 20px !important;
+  background: #c4b5fd !important;
+  clip-path: polygon(
+    50% 0%, 61% 35%, 100% 50%, 61% 65%,
+    50% 100%, 39% 65%, 0% 50%, 39% 35%
+  ) !important;
+  filter: drop-shadow(0 0 4px rgba(196, 181, 253, 0.9))
+          drop-shadow(0 0 10px rgba(167, 139, 250, 0.6))
+          drop-shadow(0 0 20px rgba(167, 139, 250, 0.3)) !important;
+  animation: aiStarSpin 3s linear infinite, aiStarPulse 1.4s ease-in-out infinite !important;
 }
 
-@keyframes aiDotPulse {
-  0%, 100% { opacity: 0.4; transform: scale(0.7); }
-  50% { opacity: 1; transform: scale(1); }
+/* Smaller offset sparkle */
+.ai-glob-cursor::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 20% !important;
+  right: -2px !important;
+  width: 12px !important;
+  height: 12px !important;
+  background: #ddd6fe !important;
+  clip-path: polygon(
+    50% 0%, 61% 35%, 100% 50%, 61% 65%,
+    50% 100%, 39% 65%, 0% 50%, 39% 35%
+  ) !important;
+  filter: drop-shadow(0 0 3px rgba(196, 181, 253, 0.7)) !important;
+  animation: aiStarSpinReverse 2s linear infinite, aiStarTrail 1.6s ease-in-out infinite !important;
+}
+
+@keyframes aiStarSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes aiStarSpinReverse {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes aiStarPulse {
+  0%, 100% {
+    opacity: 0.7;
+    filter: drop-shadow(0 0 3px rgba(196, 181, 253, 0.5))
+            drop-shadow(0 0 8px rgba(167, 139, 250, 0.3));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(196, 181, 253, 1))
+            drop-shadow(0 0 14px rgba(167, 139, 250, 0.7))
+            drop-shadow(0 0 24px rgba(167, 139, 250, 0.3));
+  }
+}
+
+@keyframes aiStarTrail {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.9; }
 }
 
 /* ===== Elixpo Typing Bar (fixed bottom, glassmorphism) ===== */

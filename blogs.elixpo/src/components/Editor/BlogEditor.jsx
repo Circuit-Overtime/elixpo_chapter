@@ -9,6 +9,7 @@ import 'katex/dist/katex.min.css';
 import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef, useEffect } from 'react';
 import AICommandMenu from './AICommandMenu';
 import AISelectionToolbar from './AISelectionToolbar';
+import MentionMenu from './MentionMenu';
 import { parseMarkdownToBlocks } from './markdownToBlocks';
 
 // Custom blocks
@@ -24,6 +25,7 @@ import { InlineEquation } from './blocks/InlineEquation';
 import { DateInline } from './blocks/DateInline';
 import { MentionInline } from './blocks/MentionInline';
 import { BlogMentionInline } from './blocks/BlogMentionInline';
+import { OrgMentionInline } from './blocks/OrgMentionInline';
 
 // ── Schema ──
 
@@ -44,6 +46,7 @@ const schema = BlockNoteSchema.create({
     dateInline: DateInline,
     mention: MentionInline,
     blogMention: BlogMentionInline,
+    orgMention: OrgMentionInline,
   },
 });
 
@@ -218,11 +221,16 @@ function isCurrentBlockEmpty(editor) {
 
 // ── BlogEditor ──
 
-const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, ref) {
+const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange }, ref) {
+  const [showMentionMenu, setShowMentionMenu] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionPos, setMentionPos] = useState({ top: 0, left: 0 });
+  const mentionStartRef = useRef(null);
   const [showAIMenu, setShowAIMenu] = useState(false);
   const [aiMenuPos, setAiMenuPos] = useState({ top: 0, left: 0 });
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiGeneratingBlockId, setAiGeneratingBlockId] = useState(null);
+  const [aiPhase, setAiPhase] = useState('idle'); // idle | thinking | typing
   const [aiErrorToast, setAiErrorToast] = useState(null);
   const [aiBlockIds, setAiBlockIds] = useState(new Set());
   const [showAIActions, setShowAIActions] = useState(false);
@@ -282,10 +290,88 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
     requestAnimationFrame(patchCodeBlocks);
   }, [onChange, editor, patchCodeBlocks]);
 
-  // Patch code blocks on initial mount
+  // Patch code blocks on initial mount + signal ready
   useEffect(() => {
-    requestAnimationFrame(patchCodeBlocks);
-  }, [patchCodeBlocks]);
+    requestAnimationFrame(() => {
+      patchCodeBlocks();
+      onReady?.();
+    });
+  }, [patchCodeBlocks, onReady]);
+
+  // AI sparkle star — fixed position, follows the last AI block's text end
+  const sparkleRef = useRef(null);
+
+  useEffect(() => {
+    // Create sparkle once, keep hidden until AI starts
+    const star = document.createElement('div');
+    star.className = 'ai-glob-cursor';
+    star.style.cssText = '';
+    document.body.appendChild(star);
+    sparkleRef.current = star;
+    return () => { star.remove(); sparkleRef.current = null; };
+  }, []);
+
+  const moveSparkleToLastAiBlock = useCallback(() => {
+    const star = sparkleRef.current;
+    if (!star) return;
+    const ids = aiBlockIdsRef.current;
+    if (!ids || ids.size === 0) { star.style.display = 'none'; return; }
+
+    const lastId = [...ids][ids.size - 1];
+    const blockEl = wrapperRef.current?.querySelector(`[data-id="${lastId}"]`);
+    if (!blockEl) { star.style.display = 'none'; return; }
+
+    const inlineEl = blockEl.querySelector('.bn-inline-content') || blockEl.querySelector('p') || blockEl;
+
+    // Try to find the last text node and position at its end
+    try {
+      const textNodes = [];
+      const walker = document.createTreeWalker(inlineEl, NodeFilter.SHOW_TEXT);
+      let n;
+      while ((n = walker.nextNode())) textNodes.push(n);
+
+      if (textNodes.length > 0) {
+        const lastText = textNodes[textNodes.length - 1];
+        const range = document.createRange();
+        range.setStart(lastText, lastText.length);
+        range.collapse(true);
+        const rect = range.getBoundingClientRect();
+        if (rect.width !== undefined && rect.height > 0) {
+          star.style.left = (rect.right) + 'px';
+          star.style.top = (rect.top + rect.height / 2 - 10) + 'px';
+          star.style.display = 'block';
+          return;
+        }
+      }
+    } catch {}
+
+    // Fallback: position at the left edge of the block (for empty blocks)
+    const blockRect = blockEl.getBoundingClientRect();
+    if (blockRect.height > 0) {
+      star.style.left = (blockRect.left + 4) + 'px';
+      star.style.top = (blockRect.top + 2) + 'px';
+      star.style.display = 'block';
+    }
+  }, []);
+
+  const hideSparkle = useCallback(() => {
+    if (sparkleRef.current) {
+      sparkleRef.current.style.display = 'none';
+      sparkleRef.current.style.left = '-100px';
+      sparkleRef.current.style.top = '-100px';
+    }
+  }, []);
+
+  // Reposition sparkle on scroll so it stays with the text
+  useEffect(() => {
+    function onScroll() {
+      if (sparkleRef.current && sparkleRef.current.style.display === 'block') {
+        moveSparkleToLastAiBlock();
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [moveSparkleToLastAiBlock]);
 
   const getItems = useMemo(
     () => async (query) => filterItems(getCustomSlashMenuItems(editor), query),
@@ -346,13 +432,69 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
     }
   }, [editor]);
 
+  // @ mention trigger
+  useEffect(() => {
+    const editorEl = wrapperRef.current?.querySelector('.bn-editor');
+    if (!editorEl) return;
+
+    function checkMention() {
+      try {
+        const cursor = editor.getTextCursorPosition();
+        if (!cursor?.block) { setShowMentionMenu(false); return; }
+        const block = cursor.block;
+        if (!block.content || !Array.isArray(block.content)) { setShowMentionMenu(false); return; }
+
+        const fullText = block.content.map((c) => c.text || '').join('');
+        const lastAt = fullText.lastIndexOf('@');
+
+        if (lastAt === -1) { setShowMentionMenu(false); return; }
+
+        const afterAt = fullText.slice(lastAt + 1);
+        if (afterAt.includes(' ') || afterAt.length > 30) { setShowMentionMenu(false); return; }
+
+        const domSel = window.getSelection();
+        if (domSel && domSel.rangeCount > 0) {
+          const range = domSel.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          const wrapperRect = wrapperRef.current?.getBoundingClientRect();
+          if (wrapperRect && rect.height > 0) {
+            setMentionPos({
+              top: rect.bottom - wrapperRect.top + 6,
+              left: rect.left - wrapperRect.left,
+            });
+          }
+        }
+
+        setMentionQuery(afterAt);
+        setShowMentionMenu(true);
+        mentionStartRef.current = lastAt;
+      } catch { setShowMentionMenu(false); }
+    }
+
+    editorEl.addEventListener('input', checkMention);
+    editorEl.addEventListener('keyup', checkMention);
+    return () => {
+      editorEl.removeEventListener('input', checkMention);
+      editorEl.removeEventListener('keyup', checkMention);
+    };
+  }, [editor]);
+
+  // Close mention menu and remove the @query text when a mention is inserted
+  const handleMentionClose = useCallback(() => {
+    setShowMentionMenu(false);
+    setMentionQuery('');
+    mentionStartRef.current = null;
+  }, []);
+
   const handleAIStop = useCallback(() => {
     if (aiAbortRef.current) {
       aiAbortRef.current.abort();
       aiAbortRef.current = null;
     }
     setAiGenerating(false);
+      setAiPhase('idle');
     setAiGeneratingBlockId(null);
+    hideSparkle();
 
     // Scroll to the AI-generated content and show keep/discard
     const ids = aiBlockIdsRef.current;
@@ -366,19 +508,65 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
     }
   }, []);
 
-  // Highlight AI blocks in the DOM with lavender class + optional typing cursor on last block
-  const highlightAiBlocks = useCallback((ids, showCursor = true) => {
-    wrapperRef.current?.querySelectorAll('.ai-generated-highlight, .ai-typing-cursor').forEach((el) => {
-      el.classList.remove('ai-generated-highlight', 'ai-typing-cursor');
+  // Force lavender on all children of a block element
+  const forceLavenderOnBlock = useCallback((el) => {
+    el.style.setProperty('color', '#c4b5fd', 'important');
+    el.querySelectorAll('*').forEach((child) => {
+      child.style.setProperty('color', '#c4b5fd', 'important');
     });
-    for (let i = 0; i < ids.length; i++) {
-      const el = wrapperRef.current?.querySelector(`[data-id="${ids[i]}"]`);
-      if (el) {
-        el.classList.add('ai-generated-highlight');
-        if (showCursor && i === ids.length - 1) el.classList.add('ai-typing-cursor');
-      }
+  }, []);
+
+  // MutationObserver to re-apply lavender when BlockNote re-renders AI blocks
+  const aiObserverRef = useRef(null);
+
+  const startAiObserver = useCallback(() => {
+    if (aiObserverRef.current) aiObserverRef.current.disconnect();
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    const observer = new MutationObserver((mutations) => {
+      // Pause observer while we apply styles to avoid infinite loop
+      observer.disconnect();
+      wrapper.querySelectorAll('.ai-generated-highlight').forEach(forceLavenderOnBlock);
+      // Re-observe after styles are applied
+      observer.observe(wrapper, { childList: true, subtree: true, characterData: true });
+    });
+    observer.observe(wrapper, { childList: true, subtree: true, characterData: true });
+    aiObserverRef.current = observer;
+  }, [forceLavenderOnBlock]);
+
+  const stopAiObserver = useCallback(() => {
+    if (aiObserverRef.current) {
+      aiObserverRef.current.disconnect();
+      aiObserverRef.current = null;
     }
   }, []);
+
+  // Highlight AI blocks in the DOM with lavender class + position sparkle
+  const highlightAiBlocks = useCallback((ids, showCursor = true) => {
+    // Remove old highlights and restore inline colors
+    wrapperRef.current?.querySelectorAll('.ai-generated-highlight').forEach((el) => {
+      el.classList.remove('ai-generated-highlight');
+      el.style.removeProperty('color');
+      el.querySelectorAll('*').forEach((child) => {
+        child.style.removeProperty('color');
+      });
+    });
+    for (const id of ids) {
+      const el = wrapperRef.current?.querySelector(`[data-id="${id}"]`);
+      if (el) {
+        el.classList.add('ai-generated-highlight');
+        forceLavenderOnBlock(el);
+      }
+    }
+    // Start observer to keep colors enforced during streaming re-renders
+    if (ids.length > 0) startAiObserver();
+    if (showCursor) {
+      moveSparkleToLastAiBlock();
+    } else {
+      hideSparkle();
+    }
+  }, [moveSparkleToLastAiBlock, hideSparkle, forceLavenderOnBlock, startAiObserver]);
 
   // Get current AI block IDs by position relative to anchor
   const getAiBlockIds = useCallback(() => {
@@ -392,19 +580,27 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
   }, [editor]);
 
   const handleAIKeep = useCallback(() => {
-    // Remove highlights, keep the text
+    // Stop observer, remove highlights, restore white color, hide sparkle
+    stopAiObserver();
     wrapperRef.current?.querySelectorAll('.ai-generated-highlight').forEach((el) => {
       el.classList.remove('ai-generated-highlight');
+      el.style.removeProperty('color');
+      el.querySelectorAll('*').forEach((child) => {
+        child.style.removeProperty('color');
+      });
     });
+    hideSparkle();
     setAiBlockIds(new Set());
     aiBlockIdsRef.current = new Set();
     aiBlockCountRef.current = 0;
     aiAnchorIdRef.current = null;
     setShowAIActions(false);
-  }, []);
+  }, [stopAiObserver]);
 
   const handleAIDiscard = useCallback(() => {
-    // Remove AI-generated blocks
+    // Stop observer, hide sparkle and remove AI-generated blocks
+    stopAiObserver();
+    hideSparkle();
     const ids = getAiBlockIds();
     if (ids.length > 0) {
       try { editor.removeBlocks(ids); } catch {}
@@ -414,7 +610,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
     aiBlockCountRef.current = 0;
     aiAnchorIdRef.current = null;
     setShowAIActions(false);
-  }, [editor, getAiBlockIds]);
+  }, [editor, getAiBlockIds, stopAiObserver]);
 
   // Click on AI content to show keep/discard
   useEffect(() => {
@@ -442,13 +638,53 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
     return () => wrapper?.removeEventListener('click', handleClick);
   }, [aiBlockIds]);
 
+  // Helper: extract full blog text from editor document
+  const getFullBlogContext = useCallback(() => {
+    try {
+      const doc = editor.document;
+      return doc.map((b) => {
+        const text = (b.content || []).map((c) => c.text || '').join('');
+        if (b.type === 'heading') return `${'#'.repeat(b.props?.level || 1)} ${text}`;
+        if (b.type === 'bulletListItem') return `- ${text}`;
+        if (b.type === 'numberedListItem') return `1. ${text}`;
+        if (b.type === 'codeBlock') return `\`\`\`\n${text}\n\`\`\``;
+        return text;
+      }).filter(Boolean).join('\n');
+    } catch { return ''; }
+  }, [editor]);
+
   const handleAISubmit = useCallback(async (userPrompt) => {
     setShowAIMenu(false);
     setShowAIActions(false);
+
+    // Detect title-related prompts
+    const titleKeywords = /\b(title|heading|name.*blog|blog.*name)\b/i;
+    const isTitlePrompt = titleKeywords.test(userPrompt);
+
     const cursor = editor.getTextCursorPosition();
     if (!cursor?.block) return;
 
-    const anchorBlockId = cursor.block.id;
+    // Get full blog context
+    const fullBlogText = getFullBlogContext();
+
+    // Detect if cursor is between text (edit mode)
+    const cursorBlock = cursor.block;
+    const blockText = (cursorBlock.content || []).map((c) => c.text || '').join('');
+    const isEditMode = blockText.trim().length > 0;
+
+    // Gather nearby context for edit mode (5 blocks before/after for better locality)
+    let contextBefore = '';
+    let contextAfter = '';
+    if (isEditMode) {
+      const doc = editor.document;
+      const blockIdx = doc.findIndex((b) => b.id === cursorBlock.id);
+      const before = doc.slice(Math.max(0, blockIdx - 5), blockIdx);
+      const after = doc.slice(blockIdx + 1, blockIdx + 6);
+      contextBefore = before.map((b) => (b.content || []).map((c) => c.text || '').join('')).filter(Boolean).join('\n');
+      contextAfter = after.map((b) => (b.content || []).map((c) => c.text || '').join('')).filter(Boolean).join('\n');
+    }
+
+    const anchorBlockId = cursorBlock.id;
     aiAnchorIdRef.current = anchorBlockId;
 
     // Insert initial placeholder
@@ -463,36 +699,63 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
     aiBlockIdsRef.current = new Set(currentIds);
 
     setAiGenerating(true);
+    setAiPhase('thinking');
     setAiGeneratingBlockId(insertedBlock.id);
     const abortController = new AbortController();
     aiAbortRef.current = abortController;
 
-    // Apply initial highlight
-    requestAnimationFrame(() => highlightAiBlocks(currentIds));
+    // Apply initial highlight + glob cursor immediately
+    requestAnimationFrame(() => {
+      highlightAiBlocks(currentIds, true);
+      // Scroll to the placeholder
+      const el = wrapperRef.current?.querySelector(`[data-id="${insertedBlock.id}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
 
     try {
       const { streamAI } = await import('../../ai/stream');
-      const { WRITE_SYSTEM_PROMPT } = await import('../../ai/prompts');
+      const { WRITE_SYSTEM_PROMPT, EDIT_SYSTEM_PROMPT } = await import('../../ai/prompts');
+
+      // Build prompt with full blog context
+      let finalPrompt;
+      if (isEditMode) {
+        finalPrompt = `## Full blog content (for context):\n${fullBlogText}\n\n---\n\n## Nearby context:\nBefore:\n${contextBefore}\n\nCurrent block (cursor is here):\n${blockText}\n\nAfter:\n${contextAfter}\n\n---\n\nInstruction: ${userPrompt}`;
+      } else {
+        finalPrompt = fullBlogText
+          ? `## Full blog content so far (for context):\n${fullBlogText}\n\n---\n\nContinue/add the following: ${userPrompt}`
+          : userPrompt;
+      }
 
       await streamAI({
-        systemPrompt: WRITE_SYSTEM_PROMPT,
-        userPrompt,
+        systemPrompt: isEditMode ? EDIT_SYSTEM_PROMPT : WRITE_SYSTEM_PROMPT,
+        userPrompt: finalPrompt,
         signal: abortController.signal,
         onChunk: (chunk, fullText) => {
-          const newBlocks = parseMarkdownToBlocks(fullText);
+          setAiPhase('typing');
+
+          // Extract title if first line is TITLE:
+          let contentText = fullText;
+          if (contentText.trim().startsWith('TITLE:')) {
+            const lines = contentText.split('\n');
+            const titleLine = lines.shift();
+            const newTitle = titleLine.replace(/^TITLE:\s*/, '').trim();
+            if (onTitleChange && newTitle) onTitleChange(newTitle);
+            contentText = lines.join('\n').trim();
+            if (!contentText) return; // Only title so far, no content yet
+          }
+
+          const newBlocks = parseMarkdownToBlocks(contentText);
           const oldIds = getAiBlockIds();
 
           if (oldIds.length === 0) return;
 
           try {
             if (newBlocks.length !== aiBlockCountRef.current) {
-              // Block structure changed — replace all
               editor.replaceBlocks(oldIds, newBlocks);
               aiBlockCountRef.current = newBlocks.length;
               currentIds = getAiBlockIds();
               aiBlockIdsRef.current = new Set(currentIds);
             } else {
-              // Same structure — just update the last block text
               const lastId = oldIds[oldIds.length - 1];
               const lastBlock = newBlocks[newBlocks.length - 1];
               editor.updateBlock(lastId, {
@@ -503,18 +766,54 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
               currentIds = oldIds;
               aiBlockIdsRef.current = new Set(currentIds);
             }
+            // Use double rAF to ensure BlockNote has finished re-rendering
             requestAnimationFrame(() => {
-              highlightAiBlocks(currentIds);
-              // Auto-scroll to follow AI typing
-              const lastId = currentIds[currentIds.length - 1];
-              const lastEl = wrapperRef.current?.querySelector(`[data-id="${lastId}"]`);
-              if (lastEl) lastEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              requestAnimationFrame(() => {
+                highlightAiBlocks(currentIds);
+                const lastId = currentIds[currentIds.length - 1];
+                const lastEl = wrapperRef.current?.querySelector(`[data-id="${lastId}"]`);
+                if (lastEl) {
+                  const rect = lastEl.getBoundingClientRect();
+                  const viewportH = window.innerHeight;
+                  if (rect.bottom > viewportH * 0.7) {
+                    const scrollTarget = window.scrollY + rect.top - viewportH * 0.5;
+                    window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+                  }
+                }
+              });
             });
           } catch { /* block may have been removed */ }
         },
         onDone: (fullText) => {
+          // Extract title if first line is TITLE:
+          let contentText = fullText;
+          if (contentText.trim().startsWith('TITLE:')) {
+            const lines = contentText.trim().split('\n');
+            const titleLine = lines.shift();
+            const newTitle = titleLine.replace(/^TITLE:\s*/, '').trim();
+            if (onTitleChange && newTitle) onTitleChange(newTitle);
+            contentText = lines.join('\n').trim();
+          }
+
+          // Title-only response — no content to insert
+          if (!contentText) {
+            const oldIds = getAiBlockIds();
+            try { if (oldIds.length > 0) editor.removeBlocks(oldIds); } catch {}
+            stopAiObserver();
+            setAiGenerating(false);
+            setAiPhase('idle');
+            setAiGeneratingBlockId(null);
+            aiAbortRef.current = null;
+            hideSparkle();
+            aiBlockIdsRef.current = new Set();
+            aiBlockCountRef.current = 0;
+            setAiBlockIds(new Set());
+            setShowAIActions(false);
+            return;
+          }
+
           // Final parse into proper blocks
-          const newBlocks = parseMarkdownToBlocks(fullText);
+          const newBlocks = parseMarkdownToBlocks(contentText);
           const oldIds = getAiBlockIds();
 
           try {
@@ -529,10 +828,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
           aiBlockIdsRef.current = finalIds;
           setAiBlockIds(finalIds);
           setAiGenerating(false);
+      setAiPhase('idle');
           setAiGeneratingBlockId(null);
           aiAbortRef.current = null;
 
-          // Highlight without cursor and show keep/discard
+          // Keep highlight, hide glob cursor, show keep/discard
           setShowAIActions(true);
           requestAnimationFrame(() => {
             highlightAiBlocks(currentIds, false);
@@ -540,8 +840,10 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
         },
         onError: (err) => {
           setAiGenerating(false);
+      setAiPhase('idle');
           setAiGeneratingBlockId(null);
           aiAbortRef.current = null;
+          hideSparkle();
           try {
             const ids = getAiBlockIds();
             if (ids.length > 0) editor.removeBlocks(ids);
@@ -554,9 +856,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
       });
     } catch (err) {
       setAiGenerating(false);
+      setAiPhase('idle');
       setAiGeneratingBlockId(null);
       aiAbortRef.current = null;
       if (err.name === 'AbortError') return;
+      hideSparkle();
       try {
         const ids = getAiBlockIds();
         if (ids.length > 0) editor.removeBlocks(ids);
@@ -566,7 +870,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
       setShowAIActions(false);
       setAiErrorToast(err.message || 'AI generation failed');
     }
-  }, [editor, getAiBlockIds, highlightAiBlocks]);
+  }, [editor, getAiBlockIds, highlightAiBlocks, getFullBlogContext]);
 
   return (
     <div className="blog-editor-wrapper" ref={wrapperRef} style={{ position: 'relative' }}>
@@ -581,6 +885,20 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
           getItems={getItems}
         />
       </BlockNoteView>
+
+      {/* @ Mention menu */}
+      {showMentionMenu && mentionQuery && (
+        <div
+          className="absolute z-[60]"
+          style={{ top: mentionPos.top, left: mentionPos.left }}
+        >
+          <MentionMenu
+            editor={editor}
+            query={mentionQuery}
+            onClose={handleMentionClose}
+          />
+        </div>
+      )}
 
       {showAIMenu && (
         <AICommandMenu
@@ -597,7 +915,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent }, 
             <img src="/base-logo.png" alt="Elixpo" className="elixpo-typing-avatar" />
             <div className="elixpo-typing-text">
               <span className="elixpo-typing-name">Elixpo</span>
-              <span className="elixpo-typing-status">is typing<span className="elixpo-typing-dots"><span /><span /><span /></span></span>
+              <span className="elixpo-typing-status">{aiPhase === 'thinking' ? 'is thinking' : 'is typing'}<span className="elixpo-typing-dots"><span /><span /><span /></span></span>
             </div>
             <button className="elixpo-stop-btn" onClick={handleAIStop}>
               <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">

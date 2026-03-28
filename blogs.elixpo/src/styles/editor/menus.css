@@ -63,6 +63,7 @@
   border: 1px solid #232d3f;
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
 }
 
 .blog-editor-wrapper .bn-toolbar button {
@@ -107,21 +108,78 @@
   color: #b69aff;
 }
 
-.ai-star-btn:hover::after {
-  content: 'Edit with AI';
-  position: absolute;
-  bottom: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-size: 11px;
-  color: #e0e0e0;
-  background: #0c1017;
-  border: 1px solid #232d3f;
+
+/* ===== Toolbar Color/Highlight Buttons ===== */
+
+.toolbar-color-btn,
+.toolbar-highlight-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
   border-radius: 6px;
-  padding: 3px 8px;
-  pointer-events: none;
-  z-index: 100;
+  background: transparent;
+  color: #c0c8d4;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.toolbar-color-btn:hover,
+.toolbar-highlight-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e0e0e0;
+}
+
+.toolbar-color-indicator {
+  display: block;
+  width: 12px;
+  height: 2.5px;
+  border-radius: 1px;
+  margin-top: -2px;
+}
+
+.toolbar-color-popover {
+  background: #141a26;
+  border: 1px solid #232d3f;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  animation: aiMenuFadeIn 0.1s ease-out;
+  min-width: 160px;
+}
+
+.toolbar-color-popover-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7a8d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.toolbar-color-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.toolbar-color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.15s;
+}
+
+.toolbar-color-swatch:hover {
+  transform: scale(1.15);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* ===== AI Command Menu (space trigger) ===== */
