@@ -35,6 +35,11 @@ const EmojiPicker = dynamic(
   { ssr: false }
 );
 
+const KeyboardShortcutsModal = dynamic(
+  () => import('../components/Editor/KeyboardShortcutsModal'),
+  { ssr: false }
+);
+
 const STORAGE_KEY_PREFIX = 'lixblogs_draft_';
 
 function getDraftKey(slugid) {
@@ -189,7 +194,7 @@ function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTop
           <div className="h-px bg-[#232d3f]" />
           <div className="py-1.5">
             <button
-              onClick={() => setOpen(false)}
+              onClick={() => { setOpen(false); document.querySelector('[data-shortcuts-btn]')?.click(); }}
               className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-[#c8c8c8] hover:text-white hover:bg-[#ffffff06] transition-colors"
             >
               <ion-icon name="keyboard-outline" style={{ fontSize: '15px' }} />
@@ -233,7 +238,63 @@ export default function WritePage({ slugid }) {
   const [isDraggingCover, setIsDraggingCover] = useState(false);
   const coverDragStart = useRef({ x: 0, y: 0, posX: 50, posY: 50 });
 
+  const [syncStatus, setSyncStatus] = useState('idle'); // idle | local | syncing | synced
+  const [showSavedToast, setShowSavedToast] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
   const username = user?.username || 'you';
+
+  // Ctrl+S → save to localStorage immediately, then sync to cloud
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+
+        // Save to localStorage first
+        if (title || editorContent) {
+          saveDraft(slugid, { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji });
+          setLastSaved(Date.now());
+          setSyncStatus('syncing');
+
+          // Sync to cloud
+          (async () => {
+            try {
+              const res = await fetch('/api/blogs/draft', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  slugid,
+                  title,
+                  subtitle,
+                  tags,
+                  publishAs,
+                  coverPreview,
+                  editorContent,
+                  pageEmoji,
+                }),
+              });
+
+              if (res.ok) {
+                setSyncStatus('synced');
+                setShowSavedToast(true);
+                setTimeout(() => setShowSavedToast(false), 3000);
+                setTimeout(() => setSyncStatus('idle'), 5000);
+              } else {
+                setSyncStatus('local');
+                setTimeout(() => setSyncStatus('idle'), 5000);
+              }
+            } catch {
+              setSyncStatus('local');
+              setTimeout(() => setSyncStatus('idle'), 5000);
+            }
+          })();
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, slugid]);
 
   useEffect(() => {
     // Small delay to show skeleton and let the UI mount before heavy JSON parsing
@@ -352,6 +413,21 @@ export default function WritePage({ slugid }) {
           {lastSaved && (
             <span className="text-[#7c8a9e] text-[11px] hidden md:block">{formatSavedTime(lastSaved)}</span>
           )}
+          {/* Sync status dot */}
+          {syncStatus !== 'idle' && (
+            <span
+              className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${
+                syncStatus === 'syncing' ? 'bg-yellow-400 animate-pulse' :
+                syncStatus === 'synced' ? 'bg-green-400' :
+                syncStatus === 'local' ? 'bg-yellow-500' : ''
+              }`}
+              title={
+                syncStatus === 'syncing' ? 'Syncing to cloud...' :
+                syncStatus === 'synced' ? 'Saved to cloud' :
+                syncStatus === 'local' ? 'Saved locally' : ''
+              }
+            />
+          )}
         </div>
 
         {/* Right: Actions */}
@@ -397,6 +473,16 @@ export default function WritePage({ slugid }) {
               </>
             )}
           </div>
+
+          {/* Shortcuts help */}
+          <button
+            data-shortcuts-btn
+            onClick={() => setShowShortcuts(true)}
+            className="h-8 w-8 rounded-lg bg-[#141a26] border border-[#232d3f] flex items-center justify-center hover:border-[#333] transition-colors text-[#6b7a8d] hover:text-[#c4b5fd] text-sm font-bold"
+            title="Keyboard shortcuts"
+          >
+            ?
+          </button>
 
           {/* Hamburger menu */}
           <HamburgerMenu
@@ -889,6 +975,26 @@ export default function WritePage({ slugid }) {
           </button>
         </div>
       </div>
+
+      {/* Keyboard shortcuts modal */}
+      {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
+
+      {/* Saved to cloud toast */}
+      <AnimatePresence>
+        {showSavedToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-green-500/20 bg-[#141a26]/90 backdrop-blur-lg shadow-2xl"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span className="text-[13px] text-green-300 font-medium">Saved to cloud</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

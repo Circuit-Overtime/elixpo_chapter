@@ -4,12 +4,21 @@
   background: #0c1017;
   border: 1px solid #232d3f;
   border-radius: 10px;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family: 'lixCode', monospace;
 }
 
 .blog-editor-wrapper [data-content-type="codeBlock"] code {
   color: #c9d1d9;
   font-size: 0.85em;
+  font-family: inherit;
+  background: none;
+  padding: 0;
+}
+
+/* Remove line highlights from code blocks */
+.blog-editor-wrapper [data-content-type="codeBlock"] .hljs-ln-line,
+.blog-editor-wrapper [data-content-type="codeBlock"] .line-highlight {
+  background: none !important;
 }
 
 /* Code block copy button */

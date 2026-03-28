@@ -1,10 +1,10 @@
 'use client';
 
 import { createReactInlineContentSpec } from '@blocknote/react';
+import katex from 'katex';
 
 function renderKaTeXInline(latex) {
   try {
-    const katex = require('katex');
     return katex.renderToString(latex, { displayMode: false, throwOnError: false });
   } catch {
     return `<span style="color:#f87171">${latex}</span>`;

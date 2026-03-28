@@ -19,7 +19,6 @@ import { ButtonBlock } from './blocks/ButtonBlock';
 import { Breadcrumbs } from './blocks/Breadcrumbs';
 import { TabsBlock } from './blocks/TabsBlock';
 import { AIBlock } from './blocks/AIBlock';
-
 // Custom inline content
 import { InlineEquation } from './blocks/InlineEquation';
 import { DateInline } from './blocks/DateInline';
@@ -221,6 +220,145 @@ function isCurrentBlockEmpty(editor) {
 
 // ── BlogEditor ──
 
+// Sanitize saved content — convert raw LaTeX/code paragraphs back into proper block types
+// Block types known to the schema — used to filter out stale/removed block types
+const KNOWN_BLOCK_TYPES = new Set([
+  'paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'image',
+  'table', 'codeBlock', 'checkListItem', 'file', 'video', 'audio',
+  'tableOfContents', 'blockEquation', 'buttonBlock', 'breadcrumbs',
+  'tabsBlock', 'aiBlock',
+]);
+
+function sanitizeInitialContent(blocks) {
+  if (!blocks || !Array.isArray(blocks)) return blocks;
+
+  // Filter out unknown block types (e.g. removed custom blocks)
+  const filtered = blocks.filter((b) => !b.type || KNOWN_BLOCK_TYPES.has(b.type));
+
+  const sanitized = doSanitize(filtered);
+  return sanitized;
+}
+
+function doSanitize(blocks) {
+  if (!blocks || !Array.isArray(blocks)) return blocks;
+  const result = [];
+  let i = 0;
+
+  const getText = (b) => (b.content || []).map(c => {
+    if (c.type === 'inlineEquation') return c.props?.latex || '';
+    return c.text || '';
+  }).join('').trim();
+
+  while (i < blocks.length) {
+    const block = blocks[i];
+    // Recursively sanitize children
+    if (block.children && block.children.length > 0) {
+      block = { ...block, children: doSanitize(block.children) };
+    }
+    if (block.type !== 'paragraph') { result.push(block); i++; continue; }
+
+    const text = getText(block);
+
+    // Paragraph containing only a single inlineEquation → convert to blockEquation
+    const contentItems = (block.content || []).filter(c => !(c.type === 'text' && !c.text?.trim()));
+    if (contentItems.length === 1 && contentItems[0].type === 'inlineEquation' && contentItems[0].props?.latex) {
+      result.push({ id: block.id, type: 'blockEquation', props: { latex: contentItems[0].props.latex }, children: [] });
+      i++; continue;
+    }
+
+    // Single-line \[...\] — may have \] at end of content
+    const singleBracket = text.match(/^\\\[(.+?)\\\]$/s);
+    if (singleBracket) {
+      result.push({ id: block.id, type: 'blockEquation', props: { latex: singleBracket[1].trim() } });
+      i++; continue;
+    }
+
+    // Single-line $$...$$
+    const singleDollar = text.match(/^\$\$(.+?)\$\$$/s);
+    if (singleDollar) {
+      result.push({ id: block.id, type: 'blockEquation', props: { latex: singleDollar[1].trim() } });
+      i++; continue;
+    }
+
+    // Multi-line \[ opener — collect until a block containing \]
+    if (text === '\\[' || text.startsWith('\\[')) {
+      const firstContent = text === '\\[' ? '' : text.slice(2);
+      // Check if \] is already in this block
+      const closeInFirst = firstContent.indexOf('\\]');
+      if (closeInFirst !== -1) {
+        const latex = firstContent.slice(0, closeInFirst).trim();
+        if (latex) result.push({ id: block.id, type: 'blockEquation', props: { latex }, children: [] });
+        i++; continue;
+      }
+      const latexParts = firstContent ? [firstContent] : [];
+      i++;
+      while (i < blocks.length) {
+        const nextText = getText(blocks[i]);
+        // Check if this block contains the closing \]
+        const closeIdx = nextText.indexOf('\\]');
+        if (closeIdx !== -1) {
+          const before = nextText.slice(0, closeIdx).trim();
+          if (before) latexParts.push(before);
+          i++; break;
+        }
+        if (nextText === '\\]') { i++; break; }
+        latexParts.push(nextText);
+        i++;
+      }
+      const latex = latexParts.join('\n').trim();
+      if (latex) result.push({ id: block.id, type: 'blockEquation', props: { latex }, children: [] });
+      continue;
+    }
+
+    // Multi-line $$ opener
+    if (text === '$$' || (text.startsWith('$$') && !text.endsWith('$$'))) {
+      const firstContent = text === '$$' ? '' : text.slice(2);
+      const latexParts = firstContent ? [firstContent] : [];
+      i++;
+      while (i < blocks.length) {
+        const nextText = getText(blocks[i]);
+        const closeIdx = nextText.indexOf('$$');
+        if (closeIdx !== -1) {
+          const before = nextText.slice(0, closeIdx).trim();
+          if (before) latexParts.push(before);
+          i++; break;
+        }
+        if (nextText === '$$') { i++; break; }
+        latexParts.push(nextText);
+        i++;
+      }
+      const latex = latexParts.join('\n').trim();
+      if (latex) result.push({ id: block.id, type: 'blockEquation', props: { latex }, children: [] });
+      continue;
+    }
+
+    // Code fence opener: ```lang — collect until closing ```
+    const fenceMatch = text.match(/^```(\w*)$/);
+    if (fenceMatch) {
+      const lang = fenceMatch[1] || '';
+      const codeLines = [];
+      i++;
+      while (i < blocks.length) {
+        const nextText = getText(blocks[i]);
+        if (nextText === '```') { i++; break; }
+        codeLines.push(nextText);
+        i++;
+      }
+      result.push({
+        id: block.id,
+        type: 'codeBlock',
+        props: { language: lang },
+        content: [{ type: 'text', text: codeLines.join('\n') }],
+      });
+      continue;
+    }
+
+    result.push(block);
+    i++;
+  }
+  return result;
+}
+
 const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId }, ref) {
   const [showMentionMenu, setShowMentionMenu] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
@@ -241,9 +379,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const aiAnchorIdRef = useRef(null);
   const wrapperRef = useRef(null);
 
+  const sanitizedContent = useMemo(() => sanitizeInitialContent(initialContent), [initialContent]);
+
   const editor = useCreateBlockNote({
     schema,
-    initialContent: initialContent || undefined,
+    initialContent: sanitizedContent || undefined,
     domAttributes: {
       editor: { class: 'blog-editor' },
     },
@@ -258,6 +398,100 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     getHTML: async () => await editor.blocksToHTMLLossy(editor.document),
     getMarkdown: async () => await editor.blocksToMarkdownLossy(editor.document),
   }), [editor]);
+
+  // Prevent backspace from triggering browser back navigation when editor is empty
+  useEffect(() => {
+    const editorEl = wrapperRef.current?.querySelector('.bn-editor');
+    if (!editorEl) return;
+
+    function handleBackspace(e) {
+      if (e.key === 'Backspace') {
+        // Always prevent browser back when focused inside the editor
+        const isEditorFocused = editorEl.contains(document.activeElement) || editorEl === document.activeElement;
+        if (isEditorFocused) {
+          // Let BlockNote handle it, but stop the event from reaching the browser
+          e.stopPropagation();
+        }
+      }
+    }
+
+    // Use capture phase to catch it before the browser navigation handler
+    editorEl.addEventListener('keydown', handleBackspace, { capture: true });
+    return () => editorEl.removeEventListener('keydown', handleBackspace, { capture: true });
+  }, [editor]);
+
+  // Handle clipboard paste of images — compress, upload, insert native image block
+  useEffect(() => {
+    const editorEl = wrapperRef.current?.querySelector('.bn-editor');
+    if (!editorEl) return;
+
+    function handlePaste(e) {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const file = item.getAsFile();
+          if (!file) return;
+
+          const cursor = editor.getTextCursorPosition();
+          if (!cursor?.block) return;
+
+          // Insert image block + empty paragraph below so user can keep typing
+          editor.insertBlocks(
+            [
+              { type: 'image', props: { url: '', caption: '', previewWidth: 740 } },
+              { type: 'paragraph', content: [] },
+            ],
+            cursor.block,
+            'after'
+          );
+
+          const doc = editor.document;
+          const cursorIdx = doc.findIndex((b) => b.id === cursor.block.id);
+          const newBlock = doc[cursorIdx + 1];
+          if (!newBlock) return;
+
+          // Compress and upload, then update with real URL
+          (async () => {
+            try {
+              const { compressBlogImage } = await import('../../utils/compressImage');
+              const { blob } = await compressBlogImage(file);
+
+              const formData = new FormData();
+              formData.append('file', blob, `image_${Date.now()}.webp`);
+              if (blogId) formData.append('blogId', blogId);
+              formData.append('type', 'image');
+
+              const res = await fetch('/api/media/upload', {
+                method: 'POST',
+                body: formData,
+              });
+
+              if (!res.ok) throw new Error('Upload failed');
+              const data = await res.json();
+
+              editor.updateBlock(newBlock.id, {
+                type: 'image',
+                props: { url: data.url, caption: '', previewWidth: 740 },
+              });
+            } catch (err) {
+              console.error('Clipboard image upload failed:', err);
+              try { editor.removeBlocks([newBlock.id]); } catch {}
+            }
+          })();
+
+          return;
+        }
+      }
+    }
+
+    editorEl.addEventListener('paste', handlePaste);
+    return () => editorEl.removeEventListener('paste', handlePaste);
+  }, [editor, blogId]);
 
   // Disable spellcheck on code blocks + inject copy buttons
   const patchCodeBlocks = useCallback(() => {
@@ -290,13 +524,16 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     requestAnimationFrame(patchCodeBlocks);
   }, [onChange, editor, patchCodeBlocks]);
 
-  // Patch code blocks on initial mount + signal ready
+  // Patch code blocks on initial mount + signal ready (double rAF for sanitized blocks)
   useEffect(() => {
     requestAnimationFrame(() => {
-      patchCodeBlocks();
-      onReady?.();
+      requestAnimationFrame(() => {
+        patchCodeBlocks();
+        onReady?.();
+      });
     });
   }, [patchCodeBlocks, onReady]);
+
 
   // AI sparkle star — fixed position, follows the last AI block's text end
   const sparkleRef = useRef(null);
@@ -492,9 +729,10 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       aiAbortRef.current = null;
     }
     setAiGenerating(false);
-      setAiPhase('idle');
+    setAiPhase('idle');
     setAiGeneratingBlockId(null);
     hideSparkle();
+    wrapperRef.current?.querySelectorAll('.ai-skeleton-nearby').forEach((el) => el.classList.remove('ai-skeleton-nearby'));
 
     // Scroll to the AI-generated content and show keep/discard
     const ids = aiBlockIdsRef.current;
@@ -704,12 +942,32 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     const abortController = new AbortController();
     aiAbortRef.current = abortController;
 
-    // Apply initial highlight + glob cursor immediately
+    // Show glob cursor at the space-press position (the anchor block) immediately
     requestAnimationFrame(() => {
-      highlightAiBlocks(currentIds, true);
-      // Scroll to the placeholder
-      const el = wrapperRef.current?.querySelector(`[data-id="${insertedBlock.id}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      highlightAiBlocks(currentIds, false); // highlight but don't move sparkle yet
+      // Position sparkle at the anchor block (where space was pressed)
+      const star = sparkleRef.current;
+      if (star) {
+        const anchorEl = wrapperRef.current?.querySelector(`[data-id="${anchorBlockId}"]`);
+        if (anchorEl) {
+          const anchorRect = anchorEl.getBoundingClientRect();
+          star.style.left = (anchorRect.right - 10) + 'px';
+          star.style.top = (anchorRect.top + anchorRect.height / 2 - 10) + 'px';
+          star.style.display = 'block';
+        }
+      }
+      // Add skeleton loading to nearby lines during thinking
+      const placeholderEl = wrapperRef.current?.querySelector(`[data-id="${insertedBlock.id}"]`);
+      if (placeholderEl) {
+        let sibling = placeholderEl.nextElementSibling;
+        let count = 0;
+        while (sibling && count < 3) {
+          sibling.classList.add('ai-skeleton-nearby');
+          sibling = sibling.nextElementSibling;
+          count++;
+        }
+        placeholderEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     });
 
     try {
@@ -728,6 +986,10 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
       // Helper to update blocks from streamed text
       const updateBlocksFromText = (fullText) => {
+        // Remove skeleton loading once AI starts writing
+        wrapperRef.current?.querySelectorAll('.ai-skeleton-nearby').forEach((el) => {
+          el.classList.remove('ai-skeleton-nearby');
+        });
         let contentText = fullText;
         if (contentText.trim().startsWith('TITLE:')) {
           const lines = contentText.split('\n');
@@ -786,7 +1048,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
       // Use simple stream for edit mode, agent for write mode
       if (isEditMode) {
-        const { streamAI } = await import('../../ai/stream');
+        const { streamAI } = await import('../../ai/agent');
         await streamAI({
           systemPrompt: EDIT_SYSTEM_PROMPT,
           userPrompt: finalPrompt,
@@ -811,17 +1073,24 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
             updateBlocksFromText(fullText);
           },
           onImageStart: ({ id, prompt, alt }) => {
-            // Image placeholder is already in the text via the agent
             setAiPhase('generating_image');
+            // Apply skeleton frame to the image placeholder block
+            requestAnimationFrame(() => {
+              wrapperRef.current?.querySelectorAll('[data-content-type="image"]').forEach((imgBlock) => {
+                const img = imgBlock.querySelector('img');
+                if (!img || !img.src || img.src === window.location.href || img.src.includes('IMG_LOADING')) {
+                  imgBlock.closest('[data-node-type="blockContainer"]')?.classList.add('ai-image-skeleton');
+                }
+              });
+            });
           },
           onImageDone: ({ id, url, alt }) => {
-            // Replace the placeholder image block with the real URL
             replaceImagePlaceholder(id, url, alt);
             setAiPhase('writing');
           },
           onImageError: ({ id, error }) => {
-            // Remove the broken placeholder
             removeImagePlaceholder(id);
+            setAiErrorToast(error || 'Image generation failed');
           },
           onDone: (fullText) => {
             finishAI(fullText);
@@ -962,7 +1231,25 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       for (const block of doc) {
         if (block.type === 'image' && block.props?._imageId === imageId) {
           editor.removeBlocks([block.id]);
-          break;
+          return;
+        }
+        // Also check paragraph blocks with IMG_LOADING text
+        if (block.type === 'paragraph') {
+          const text = (block.content || []).map(c => c.text || '').join('');
+          if (text.includes(`IMG_LOADING:${imageId}`)) {
+            editor.removeBlocks([block.id]);
+            return;
+          }
+        }
+      }
+      // Fallback: remove any image block with no URL (empty placeholder)
+      for (const block of doc) {
+        if (block.type === 'image' && (!block.props?.url || block.props.url === '')) {
+          const el = wrapperRef.current?.querySelector(`[data-id="${block.id}"]`);
+          if (el?.classList.contains('ai-image-skeleton')) {
+            editor.removeBlocks([block.id]);
+            return;
+          }
         }
       }
     } catch {}
@@ -1053,7 +1340,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       )}
 
       {/* AI selection toolbar — appears on text selection */}
-      <AISelectionToolbar editor={editor} />
+      <AISelectionToolbar editor={editor} onTitleChange={onTitleChange} />
 
       {/* AI error toast */}
       {aiErrorToast && (

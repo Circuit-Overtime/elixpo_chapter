@@ -17,7 +17,7 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Kanit:wght@500;600;700&family=Source+Serif+4:wght@400;600;700;800&display=swap" rel="stylesheet" />
       </head>
-      <body className="bg-[#0c1017] text-[#e8edf5] antialiased" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <body className="bg-[#0c1017] text-[#e8edf5] antialiased" style={{ fontFamily: "'lixFont', sans-serif" }}>
         <AuthProvider>
           {children}
         </AuthProvider>

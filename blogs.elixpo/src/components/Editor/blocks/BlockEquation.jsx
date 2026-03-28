@@ -2,10 +2,10 @@
 
 import { createReactBlockSpec } from '@blocknote/react';
 import { useState, useEffect, useRef } from 'react';
+import katex from 'katex';
 
 function renderKaTeX(latex, displayMode = true) {
   try {
-    const katex = require('katex');
     return katex.renderToString(latex, { displayMode, throwOnError: false });
   } catch {
     return `<span style="color:#f87171">${latex}</span>`;
