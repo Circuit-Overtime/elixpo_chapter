@@ -2,8 +2,9 @@
 
 export function parseInlineContent(text) {
   const content = [];
-  // Match: \(...\) inline LaTeX, ***bold italic***, **bold**, *italic*, `code`
-  const regex = /(\\\((.+?)\\\)|\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`|\$([^$]+?)\$)/g;
+  // Match: \[...\] block LaTeX inline, \(...\) inline LaTeX, ***bold italic***, **bold**, *italic*, `code`, $...$
+  // Note: \[...\] matched first to extract block equations that appear inline in paragraphs
+  const regex = /(\\\[(.+?)\\\]|\\\((.+?)\\\)|\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`|\$\$(.+?)\$\$|\$([^$]+?)\$)/g;
   let lastIndex = 0;
   let match;
 
@@ -12,19 +13,25 @@ export function parseInlineContent(text) {
       content.push({ type: 'text', text: text.slice(lastIndex, match.index) });
     }
     if (match[2]) {
-      // \(...\) inline LaTeX
+      // \[...\] — treat as inline equation (will be rendered display-mode by KaTeX)
       content.push({ type: 'inlineEquation', props: { latex: match[2].trim() } });
     } else if (match[3]) {
-      content.push({ type: 'text', text: match[3], styles: { bold: true, italic: true } });
+      // \(...\) inline LaTeX
+      content.push({ type: 'inlineEquation', props: { latex: match[3].trim() } });
     } else if (match[4]) {
-      content.push({ type: 'text', text: match[4], styles: { bold: true } });
+      content.push({ type: 'text', text: match[4], styles: { bold: true, italic: true } });
     } else if (match[5]) {
-      content.push({ type: 'text', text: match[5], styles: { italic: true } });
+      content.push({ type: 'text', text: match[5], styles: { bold: true } });
     } else if (match[6]) {
-      content.push({ type: 'text', text: match[6], styles: { code: true } });
+      content.push({ type: 'text', text: match[6], styles: { italic: true } });
     } else if (match[7]) {
+      content.push({ type: 'text', text: match[7], styles: { code: true } });
+    } else if (match[8]) {
+      // $$...$$ inline — treat as equation
+      content.push({ type: 'inlineEquation', props: { latex: match[8].trim() } });
+    } else if (match[9]) {
       // $...$ inline math
-      content.push({ type: 'inlineEquation', props: { latex: match[7].trim() } });
+      content.push({ type: 'inlineEquation', props: { latex: match[9].trim() } });
     }
     lastIndex = match.index + match[0].length;
   }
@@ -61,7 +68,6 @@ export function parseMarkdownToBlocks(text) {
       }
       if (i < lines.length) i++; // skip closing ```
       const codeText = codeLines.join('\n');
-      // Use codeBlock type — BlockNote's defaultBlockSpecs includes it
       blocks.push({
         type: 'codeBlock',
         props: { language: lang },
@@ -70,7 +76,7 @@ export function parseMarkdownToBlocks(text) {
       continue;
     }
 
-    // Block LaTeX: \[...\] (may span multiple lines)
+    // Block LaTeX: \[ on its own line (multi-line block)
     if (trimmed === '\\[') {
       const latexLines = [];
       i++;
@@ -86,17 +92,30 @@ export function parseMarkdownToBlocks(text) {
       continue;
     }
 
-    // Block LaTeX: $$...$$ (may span multiple lines)
-    if (trimmed.startsWith('$$') && !trimmed.endsWith('$$')) {
-      // Multi-line $$
-      const latexLines = [trimmed.slice(2)];
-      i++;
-      while (i < lines.length && !lines[i].trim().endsWith('$$')) {
-        latexLines.push(lines[i]);
-        i++;
+    // Block LaTeX: \[ with content on the same line, possibly closing on same or later lines
+    if (trimmed.startsWith('\\[')) {
+      const firstContent = trimmed.slice(2);
+      // Check if it closes on the same line
+      const closeIdx = firstContent.indexOf('\\]');
+      if (closeIdx !== -1) {
+        const latex = firstContent.slice(0, closeIdx).trim();
+        if (latex) {
+          blocks.push({ type: 'blockEquation', props: { latex } });
+        }
+        i++; continue;
       }
-      if (i < lines.length) {
-        latexLines.push(lines[i].trim().slice(0, -2));
+      // Multi-line: collect until \]
+      const latexLines = [firstContent];
+      i++;
+      while (i < lines.length) {
+        const l = lines[i].trim();
+        const ci = l.indexOf('\\]');
+        if (ci !== -1) {
+          latexLines.push(l.slice(0, ci));
+          i++;
+          break;
+        }
+        latexLines.push(lines[i]);
         i++;
       }
       const latex = latexLines.join('\n').trim();
@@ -106,17 +125,43 @@ export function parseMarkdownToBlocks(text) {
       continue;
     }
 
-    // Single-line block LaTeX: $$...$$ on one line
-    const singleBlockMath = trimmed.match(/^\$\$(.+)\$\$$/);
-    if (singleBlockMath) {
-      blocks.push({ type: 'blockEquation', props: { latex: singleBlockMath[1].trim() } });
-      i++; continue;
+    // Block LaTeX: $$...$$ (may span multiple lines)
+    if (trimmed.startsWith('$$')) {
+      const afterOpen = trimmed.slice(2);
+      // Check if it closes on the same line
+      const closeIdx = afterOpen.indexOf('$$');
+      if (closeIdx !== -1) {
+        const latex = afterOpen.slice(0, closeIdx).trim();
+        if (latex) {
+          blocks.push({ type: 'blockEquation', props: { latex } });
+        }
+        i++; continue;
+      }
+      // Multi-line $$
+      const latexLines = [afterOpen];
+      i++;
+      while (i < lines.length) {
+        const l = lines[i].trim();
+        const ci = l.indexOf('$$');
+        if (ci !== -1) {
+          latexLines.push(l.slice(0, ci));
+          i++;
+          break;
+        }
+        latexLines.push(lines[i]);
+        i++;
+      }
+      const latex = latexLines.join('\n').trim();
+      if (latex) {
+        blocks.push({ type: 'blockEquation', props: { latex } });
+      }
+      continue;
     }
 
-    // Single-line \[...\] on one line
-    const singleBracketMath = trimmed.match(/^\\\[(.+)\\\]$/);
-    if (singleBracketMath) {
-      blocks.push({ type: 'blockEquation', props: { latex: singleBracketMath[1].trim() } });
+    // Line that is purely a \[...\] equation (e.g. from reload / saved paragraph)
+    const pureBlockMath = trimmed.match(/^\\\[(.+)\\\]$/);
+    if (pureBlockMath) {
+      blocks.push({ type: 'blockEquation', props: { latex: pureBlockMath[1].trim() } });
       i++; continue;
     }
 
@@ -186,7 +231,6 @@ export function parseMarkdownToBlocks(text) {
           url: isLoading ? '' : src,
           caption: alt,
           previewWidth: 740,
-          // Custom props for skeleton loading state
           ...(isLoading ? { _loading: true, _imageId: imageId } : {}),
         },
       });

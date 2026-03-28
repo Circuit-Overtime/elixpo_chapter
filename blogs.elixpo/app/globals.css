@@ -2,6 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== Custom Fonts ===== */
+
+@font-face {
+  font-family: 'lixFont';
+  src: url('/fonts/lixFont.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'lixFancy';
+  src: url('/fonts/lixFancy.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'lixCode';
+  src: url('/fonts/lixCode.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'lixDefault';
+  src: url('/fonts/lixDefault.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'lixDocs';
+  src: url('/fonts/lixDocs.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 /* Color tokens — soothing dark theme for reading */
 :root {
   --bg-base: #0c1017;
