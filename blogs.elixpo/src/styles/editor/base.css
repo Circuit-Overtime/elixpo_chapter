@@ -22,6 +22,56 @@
   background: #3a3f4f;
 }
 
+/* ===== Subtle noise texture background ===== */
+
+.editor-texture-bg {
+  position: relative;
+  background-color: #0e121b;
+}
+
+/* Noise grain — paper texture */
+.editor-texture-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 512px 512px;
+}
+
+/* Soft fiber lines — like paper weave */
+.editor-texture-bg::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.018;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(255, 255, 255, 0.03) 3px,
+      rgba(255, 255, 255, 0.03) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 5px,
+      rgba(255, 255, 255, 0.015) 5px,
+      rgba(255, 255, 255, 0.015) 6px
+    );
+}
+
+.editor-texture-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* ===== BlogEditor (BlockNote) Dark Theme ===== */
 
 .blog-editor-wrapper .bn-editor {
@@ -52,33 +102,22 @@
   font-style: normal;
 }
 
-/* Reset browser default heading sizes inside BlockNote */
-.blog-editor-wrapper h1,
-.blog-editor-wrapper h2,
-.blog-editor-wrapper h3 {
-  font-size: 1em !important;
-  margin: 0 !important;
-}
-
-/* Headings — set size on the block wrapper so em doesn't compound */
+/* Headings — override BlockNote's --level custom property */
 .blog-editor-wrapper [data-content-type="heading"][data-level="1"] {
-  font-size: 1.85em !important;
+  --level: 1.75em !important;
   font-weight: 700 !important;
-  line-height: 1.3 !important;
   color: #e4e4e7;
 }
 
 .blog-editor-wrapper [data-content-type="heading"][data-level="2"] {
-  font-size: 1.35em !important;
+  --level: 1.35em !important;
   font-weight: 650 !important;
-  line-height: 1.35 !important;
   color: #e4e4e7;
 }
 
 .blog-editor-wrapper [data-content-type="heading"][data-level="3"] {
-  font-size: 1.15em !important;
+  --level: 1.15em !important;
   font-weight: 600 !important;
-  line-height: 1.4 !important;
   color: #e4e4e7;
 }
 
@@ -93,12 +132,128 @@
   font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
 }
 
+/* Map BlockNote block-level text color (data-text-color on block containers) */
+.blog-editor-wrapper [data-text-color="#ffffff"] { color: #ffffff !important; }
+.blog-editor-wrapper [data-text-color="#9ca3af"] { color: #9ca3af !important; }
+.blog-editor-wrapper [data-text-color="#f87171"] { color: #f87171 !important; }
+.blog-editor-wrapper [data-text-color="#fb923c"] { color: #fb923c !important; }
+.blog-editor-wrapper [data-text-color="#fbbf24"] { color: #fbbf24 !important; }
+.blog-editor-wrapper [data-text-color="#4ade80"] { color: #4ade80 !important; }
+.blog-editor-wrapper [data-text-color="#60a5fa"] { color: #60a5fa !important; }
+.blog-editor-wrapper [data-text-color="#a78bfa"] { color: #a78bfa !important; }
+.blog-editor-wrapper [data-text-color="#f472b6"] { color: #f472b6 !important; }
+
+/* Map BlockNote inline text color marks (data-style-type="textColor" with data-value) */
+.blog-editor-wrapper [data-style-type="textColor"][data-value="#ffffff"] { color: #ffffff !important; }
+.blog-editor-wrapper [data-style-type="textColor"][data-value="#9ca3af"] { color: #9ca3af !important; }
+.blog-editor-wrapper [data-style-type="textColor"][data-value="#f87171"] { color: #f87171 !important; }
+.blog-editor-wrapper [data-style-type="textColor"][data-value="#fb923c"] { color: #fb923c !important; }
+.blog-editor-wrapper [data-style-type="textColor"][data-value="#fbbf24"] { color: #fbbf24 !important; }
+.blog-editor-wrapper [data-style-type="textColor"][data-value="#4ade80"] { color: #4ade80 !important; }
+.blog-editor-wrapper [data-style-type="textColor"][data-value="#60a5fa"] { color: #60a5fa !important; }
+.blog-editor-wrapper [data-style-type="textColor"][data-value="#a78bfa"] { color: #a78bfa !important; }
+.blog-editor-wrapper [data-style-type="textColor"][data-value="#f472b6"] { color: #f472b6 !important; }
+
+/* Map BlockNote block-level background color */
+.blog-editor-wrapper [data-background-color="rgba(156,163,175,0.25)"] { background-color: rgba(156,163,175,0.25) !important; }
+.blog-editor-wrapper [data-background-color="rgba(248,113,113,0.25)"] { background-color: rgba(248,113,113,0.25) !important; }
+.blog-editor-wrapper [data-background-color="rgba(251,146,60,0.25)"] { background-color: rgba(251,146,60,0.25) !important; }
+.blog-editor-wrapper [data-background-color="rgba(251,191,36,0.25)"] { background-color: rgba(251,191,36,0.25) !important; }
+.blog-editor-wrapper [data-background-color="rgba(74,222,128,0.25)"] { background-color: rgba(74,222,128,0.25) !important; }
+.blog-editor-wrapper [data-background-color="rgba(96,165,250,0.25)"] { background-color: rgba(96,165,250,0.25) !important; }
+.blog-editor-wrapper [data-background-color="rgba(167,139,250,0.25)"] { background-color: rgba(167,139,250,0.25) !important; }
+.blog-editor-wrapper [data-background-color="rgba(244,114,182,0.25)"] { background-color: rgba(244,114,182,0.25) !important; }
+
+/* Map BlockNote inline background color marks */
+.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(156,163,175,0.25)"] { background-color: rgba(156,163,175,0.25) !important; }
+.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(248,113,113,0.25)"] { background-color: rgba(248,113,113,0.25) !important; }
+.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(251,146,60,0.25)"] { background-color: rgba(251,146,60,0.25) !important; }
+.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(251,191,36,0.25)"] { background-color: rgba(251,191,36,0.25) !important; }
+.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(74,222,128,0.25)"] { background-color: rgba(74,222,128,0.25) !important; }
+.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(96,165,250,0.25)"] { background-color: rgba(96,165,250,0.25) !important; }
+.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(167,139,250,0.25)"] { background-color: rgba(167,139,250,0.25) !important; }
+.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(244,114,182,0.25)"] { background-color: rgba(244,114,182,0.25) !important; }
+
+/* Cover gradient blur placeholder */
+.cover-gradient-blur {
+  background: linear-gradient(
+    135deg,
+    rgba(155, 123, 247, 0.4) 0%,
+    rgba(96, 165, 250, 0.35) 25%,
+    rgba(244, 114, 182, 0.3) 50%,
+    rgba(52, 211, 153, 0.3) 75%,
+    rgba(251, 191, 36, 0.3) 100%
+  );
+  filter: blur(40px) saturate(1.5);
+}
+
+/* Cover banner slide-in animation */
+@keyframes coverBannerIn {
+  from {
+    opacity: 0;
+    transform: scaleY(0.92);
+    transform-origin: top;
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+}
+
+.cover-banner-enter {
+  animation: coverBannerIn 0.35s ease-out;
+}
+
+/* Cover toolbar buttons */
+.cover-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cover-toolbar-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+}
+
+.cover-toolbar-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+/* Glassmorphic emoji picker wrapper */
+.emoji-picker-glass {
+  background: rgba(14, 18, 27, 0.7);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
 /* Side menu (+ / drag handle) */
 .blog-editor-wrapper .bn-side-menu {
   background: #232d3f;
   border: 1px solid #2a2e3a;
   border-radius: 8px;
   margin-right: 16px;
+  height: 28px !important;
+  max-height: 28px !important;
+  min-height: 28px !important;
+  align-items: center;
+  align-self: flex-start !important;
+  overflow: hidden;
 }
 
 .blog-editor-wrapper .bn-drag-handle {

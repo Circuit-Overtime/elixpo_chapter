@@ -4,9 +4,11 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import '../styles/editor/editor.css';
+import { compressCoverImage } from '../utils/compressImage';
 
 const BlockNoteEditor = dynamic(
   () => import('../components/Editor/BlogEditor'),
@@ -224,6 +226,12 @@ export default function WritePage({ slugid }) {
   const [wordCount, setWordCount] = useState(0);
   const [lastSaved, setLastSaved] = useState(null);
   const [draftLoading, setDraftLoading] = useState(true);
+  const [editorReady, setEditorReady] = useState(false);
+  const [aiTitleKey, setAiTitleKey] = useState(0);
+  const [coverZoom, setCoverZoom] = useState(1);
+  const [coverPos, setCoverPos] = useState({ x: 50, y: 50 });
+  const [isDraggingCover, setIsDraggingCover] = useState(false);
+  const coverDragStart = useRef({ x: 0, y: 0, posX: 50, posY: 50 });
 
   const username = user?.username || 'you';
 
@@ -394,7 +402,7 @@ export default function WritePage({ slugid }) {
           <HamburgerMenu
             onShareDraft={() => {}}
             onChangeCover={() => setShowCoverModal(true)}
-            onChangeTitle={() => document.querySelector('input[placeholder="Blog title..."]')?.focus()}
+            onChangeTitle={() => document.querySelector('textarea[placeholder="Blog title..."]')?.focus()}
             onChangeTopics={() => setShowPublishPanel(true)}
             onRevisionHistory={() => {}}
             onMoreSettings={() => setShowPublishPanel(true)}
@@ -406,7 +414,7 @@ export default function WritePage({ slugid }) {
       </header>
 
       {/* Main Content Area */}
-      <main className="pt-14 flex justify-center">
+      <main className="pt-14 flex justify-center editor-texture-bg">
         <div className={`w-full max-w-[720px] px-6 py-8 ${showPublishPanel ? 'mr-[400px]' : ''} transition-all`}>
 
           {/* Mode icons */}
@@ -433,13 +441,11 @@ export default function WritePage({ slugid }) {
           {/* === EDIT MODE === */}
           {mode === 'edit' && (
             <>
-              {draftLoading ? (
+              {/* Skeleton — visible until editor is ready */}
+              {(draftLoading || !editorReady) && (
                 <div className="animate-pulse space-y-4">
-                  {/* Cover skeleton */}
-                  <div className="w-full h-[180px] bg-[#1a2030] rounded-xl" />
-                  {/* Title skeleton */}
+                  <div className="w-full h-[200px] bg-[#1a2030] rounded-xl" />
                   <div className="h-10 bg-[#1a2030] rounded-lg w-3/4" />
-                  {/* Editor body skeleton lines */}
                   <div className="space-y-3 mt-6">
                     <div className="h-4 bg-[#1a2030] rounded w-full" />
                     <div className="h-4 bg-[#1a2030] rounded w-5/6" />
@@ -450,33 +456,206 @@ export default function WritePage({ slugid }) {
                     <div className="h-4 bg-[#1a2030] rounded w-4/5" />
                     <div className="h-4 bg-[#1a2030] rounded w-full" />
                     <div className="h-4 bg-[#1a2030] rounded w-3/4" />
-                    <div className="h-4 bg-[#1a2030] rounded w-5/6" />
-                    <div className="h-6 bg-[#1a2030] rounded w-2/5 mt-5" />
-                    <div className="h-4 bg-[#1a2030] rounded w-full" />
-                    <div className="h-4 bg-[#1a2030] rounded w-2/3" />
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {/* Editor — rendered hidden until ready, then shown */}
+              {!draftLoading && (
+                <div style={{ display: editorReady ? 'block' : 'none' }}>
                 <>
-                  {coverPreview && (
-                    <div className="relative mb-6 rounded-xl overflow-hidden group" style={{ aspectRatio: '3/1' }}>
-                      <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                        <button onClick={() => setShowCoverModal(true)} className="px-3 py-1.5 bg-white/20 backdrop-blur rounded-lg text-xs hover:bg-[#b69aff]/30 transition-colors">Change</button>
-                        <button onClick={removeCover} className="px-3 py-1.5 bg-red-500/60 backdrop-blur rounded-lg text-xs hover:bg-red-500/80 transition-colors">Remove</button>
+                  {/* Cover banner with emoji overlay */}
+                  <div className="relative mb-2">
+                    {coverPreview ? (
+                      <div
+                        className="relative rounded-xl overflow-hidden group cover-banner-enter"
+                        style={{ height: '220px', cursor: isDraggingCover ? 'grabbing' : 'default' }}
+                        onMouseDown={(e) => {
+                          if (e.button !== 0) return;
+                          setIsDraggingCover(true);
+                          coverDragStart.current = { x: e.clientX, y: e.clientY, posX: coverPos.x, posY: coverPos.y };
+                        }}
+                        onMouseMove={(e) => {
+                          if (!isDraggingCover) return;
+                          const dx = ((e.clientX - coverDragStart.current.x) / 7) * -1;
+                          const dy = ((e.clientY - coverDragStart.current.y) / 3) * -1;
+                          setCoverPos({
+                            x: Math.max(0, Math.min(100, coverDragStart.current.posX + dx)),
+                            y: Math.max(0, Math.min(100, coverDragStart.current.posY + dy)),
+                          });
+                        }}
+                        onMouseUp={() => setIsDraggingCover(false)}
+                        onMouseLeave={() => setIsDraggingCover(false)}
+                      >
+                        <img
+                          src={coverPreview}
+                          alt="Cover"
+                          className="w-full h-full object-cover select-none"
+                          draggable={false}
+                          style={{
+                            objectPosition: `${coverPos.x}% ${coverPos.y}%`,
+                            transform: `scale(${coverZoom})`,
+                            transition: isDraggingCover ? 'none' : 'transform 0.2s ease',
+                          }}
+                        />
+                        {/* Hover toolbar — top-right */}
+                        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Zoom out */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setCoverZoom((z) => Math.max(1, z - 0.1)); }}
+                            className="cover-toolbar-btn"
+                            title="Zoom out"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="8" y1="11" x2="14" y2="11" />
+                            </svg>
+                          </button>
+                          {/* Zoom in */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setCoverZoom((z) => Math.min(3, z + 0.1)); }}
+                            className="cover-toolbar-btn"
+                            title="Zoom in"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" />
+                            </svg>
+                          </button>
+                          {/* Reset position */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setCoverZoom(1); setCoverPos({ x: 50, y: 50 }); }}
+                            className="cover-toolbar-btn"
+                            title="Reset"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 105.64-8.36L1 10" />
+                            </svg>
+                          </button>
+                          {/* Separator */}
+                          <div className="w-px h-4 bg-white/20 mx-0.5" />
+                          {/* Replace */}
+                          <label className="cover-toolbar-btn cursor-pointer" title="Replace">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+                            </svg>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setCoverImage(file);
+                                  setCoverPreview(URL.createObjectURL(file));
+                                  setCoverZoom(1);
+                                  setCoverPos({ x: 50, y: 50 });
+                                }
+                              }}
+                            />
+                          </label>
+                          {/* Remove */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); removeCover(); setCoverZoom(1); setCoverPos({ x: 50, y: 50 }); }}
+                            className="cover-toolbar-btn cover-toolbar-btn-danger"
+                            title="Remove"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                            </svg>
+                          </button>
+                        </div>
+                        {/* Drag hint */}
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-white/50 bg-black/30 backdrop-blur rounded-full px-3 py-1 pointer-events-none select-none">
+                          Drag to reposition
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    ) : showCoverModal ? (
+                      <div className="relative rounded-xl overflow-hidden cover-banner-enter" style={{ height: '220px' }}>
+                        <div className="absolute inset-0 cover-gradient-blur" />
+                        <div className="absolute inset-0 flex items-center justify-center gap-6 z-10">
+                          <label className="flex flex-col items-center gap-2 cursor-pointer group/upload">
+                            <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover/upload:bg-white/20 transition-colors">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                              </svg>
+                            </div>
+                            <span className="text-xs text-white/70 font-medium">From device</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  compressCoverImage(file).then(({ blob, url }) => {
+                                    setCoverImage(blob);
+                                    setCoverPreview(url);
+                                    setShowCoverModal(false);
+                                  });
+                                }
+                              }}
+                            />
+                          </label>
+                          <button
+                            onClick={() => {
+                              const url = prompt('Paste image URL:');
+                              if (url?.trim()) {
+                                setCoverPreview(url.trim());
+                                setShowCoverModal(false);
+                              }
+                            }}
+                            className="flex flex-col items-center gap-2 group/url"
+                          >
+                            <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover/url:bg-white/20 transition-colors">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                              </svg>
+                            </div>
+                            <span className="text-xs text-white/70 font-medium">From URL</span>
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => setShowCoverModal(false)}
+                          className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-black/30 backdrop-blur flex items-center justify-center text-white/60 hover:text-white transition-colors"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : null}
 
-                  {pageEmoji && (
-                    <div className="relative group w-fit mb-2">
-                      <span className="text-5xl cursor-pointer select-none" onClick={() => setShowEmojiPicker(true)}>{pageEmoji}</span>
-                      <button onClick={() => setPageEmoji(null)} className="absolute -top-1 -right-3 opacity-0 group-hover:opacity-100 h-5 w-5 rounded-full bg-[#232d3f] border border-[#333] flex items-center justify-center text-[#888] hover:text-white transition-all text-[10px]">&times;</button>
-                    </div>
-                  )}
+                    {/* Emoji overlapping banner bottom-left */}
+                    {pageEmoji && (
+                      <div
+                        className="absolute group"
+                        style={{
+                          bottom: coverPreview || showCoverModal ? '-24px' : 'auto',
+                          left: '16px',
+                          position: coverPreview || showCoverModal ? 'absolute' : 'relative',
+                          zIndex: 10,
+                        }}
+                      >
+                        <div
+                          className="w-[72px] h-[72px] rounded-full bg-[#0e121b] border-[3px] border-[#0e121b] shadow-lg flex items-center justify-center cursor-pointer relative"
+                          onClick={() => setShowEmojiPicker(true)}
+                        >
+                          <span className="text-[55px] leading-none select-none">{pageEmoji}</span>
+                          <div className="absolute inset-[-2px] rounded-full" />
+                        </div>
+                        <button onClick={() => setPageEmoji(null)} className="absolute -top-1 -right-3 opacity-0 group-hover:opacity-100 h-5 w-5 rounded-full bg-[#232d3f] border border-[#333] flex items-center justify-center text-[#888] hover:text-white transition-all text-[10px]">&times;</button>
+                      </div>
+                    )}
+                  </div>
 
-                  {(!coverPreview || !pageEmoji) && (
-                    <div className="flex items-center gap-3 mb-4">
+                  {/* Spacer when emoji overlaps banner */}
+                  {pageEmoji && (coverPreview || showCoverModal) && <div className="h-8" />}
+
+                  {/* Add cover / Add emoji buttons */}
+                  {(!coverPreview || !pageEmoji) && !showCoverModal && (
+                    <div className="flex items-center gap-3 mb-4 mt-2">
                       {!coverPreview && (
                         <button onClick={() => setShowCoverModal(true)} className="inline-flex items-center gap-1.5 text-[#7c8a9e] hover:text-[#9b7bf7] transition-colors text-xs">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -492,36 +671,96 @@ export default function WritePage({ slugid }) {
                     </div>
                   )}
 
+                  {/* Emoji picker — absolute positioned, glassmorphic */}
                   {showEmojiPicker && (
-                    <EmojiPicker
-                      onSelect={(emoji) => { setPageEmoji(emoji); setShowEmojiPicker(false); }}
-                      onRemove={() => { setPageEmoji(null); setShowEmojiPicker(false); }}
-                      onClose={() => setShowEmojiPicker(false)}
+                    <div className="relative">
+                      <div className="absolute left-0 top-0 z-50 emoji-picker-glass">
+                        <EmojiPicker
+                          onSelect={(emoji) => { setPageEmoji(emoji); setShowEmojiPicker(false); }}
+                          onRemove={() => { setPageEmoji(null); setShowEmojiPicker(false); }}
+                          onClose={() => setShowEmojiPicker(false)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="relative">
+                    <textarea
+                      value={title}
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        setAiTitleKey(0);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = e.target.scrollHeight + 'px';
+                      }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                      placeholder="Blog title..."
+                      className={`w-full bg-transparent text-[2em] font-extrabold outline-none placeholder-[#4a5568] mb-1 leading-tight resize-none overflow-hidden ${aiTitleKey > 0 ? 'text-transparent' : ''}`}
+                      rows={1}
                     />
-                  )}
+                    {/* AI title word animation overlay */}
+                    {aiTitleKey > 0 && title && (
+                      <div className="absolute inset-0 pointer-events-none text-[2em] font-extrabold leading-tight flex flex-wrap items-start" key={aiTitleKey}>
+                        {title.split(/(\s+)/).map((word, i) => (
+                          word.match(/^\s+$/) ? <span key={i}>&nbsp;</span> : (
+                            <motion.span
+                              key={i}
+                              initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }}
+                              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                              transition={{ duration: 0.35, delay: i * 0.06, ease: 'easeOut' }}
+                              className="text-[#c4b5fd]"
+                              onAnimationComplete={() => {
+                                // After last word animation, switch back to normal textarea
+                                if (i === title.split(/(\s+)/).length - 1) {
+                                  setTimeout(() => setAiTitleKey(0), 800);
+                                }
+                              }}
+                            >
+                              {word}
+                            </motion.span>
+                          )
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                  {showCoverModal && (
-                    <CoverUploadModal onSelect={handleCoverSelect} onClose={() => setShowCoverModal(false)} />
-                  )}
+                  {/* Author bar — stacked avatars, name, read time, word count */}
+                  <div className="flex items-center gap-3 mt-3 mb-4">
+                    <div className="flex -space-x-2">
+                      {user?.avatar_url ? (
+                        <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[#0e121b]" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-[#232d3f] border-2 border-[#0e121b] flex items-center justify-center text-[11px] font-bold text-[#9ca3af]">
+                          {(user?.display_name || user?.username || '?')[0].toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-[13px] text-[#6b7a8d]">
+                      <span className="text-[#9ca3af] font-medium">{user?.display_name || user?.username || 'Author'}</span>
+                      <span className="text-[#3a3f4f]">·</span>
+                      <span>{Math.max(1, Math.ceil(wordCount / 200))} min read</span>
+                      <span className="text-[#3a3f4f]">·</span>
+                      <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
+                    </div>
+                  </div>
 
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Blog title..."
-                    className="w-full bg-transparent text-[2em] font-extrabold outline-none placeholder-[#4a5568] mb-1 leading-tight"
-                  />
-
-                  <div className="min-h-[500px] mt-4">
-                    <BlockNoteEditor ref={editorRef} onChange={handleEditorChange} initialContent={editorContent} />
+                  <div className="min-h-[60vh] pb-[100px]">
+                    <BlockNoteEditor
+                      ref={editorRef}
+                      onChange={handleEditorChange}
+                      initialContent={editorContent}
+                      onReady={() => setEditorReady(true)}
+                      onTitleChange={(newTitle) => { setTitle(newTitle); setAiTitleKey(k => k + 1); }}
+                    />
                   </div>
                 </>
+                </div>
               )}
             </>
           )}
 
           {mode === 'preview' && (
-            <BlogPreview title={title} subtitle={subtitle} coverPreview={coverPreview} tags={tags} html={previewHtml} />
+            <BlogPreview title={title} subtitle={subtitle} coverPreview={coverPreview} coverZoom={coverZoom} coverPos={coverPos} pageEmoji={pageEmoji} tags={tags} html={previewHtml} user={user} wordCount={wordCount} />
           )}
 
           {mode === 'code' && (
@@ -529,6 +768,11 @@ export default function WritePage({ slugid }) {
           )}
         </div>
       </main>
+
+      {/* Publish Side Panel backdrop */}
+      {showPublishPanel && (
+        <div className="fixed inset-0 z-40" onClick={() => setShowPublishPanel(false)} />
+      )}
 
       {/* Publish Side Panel */}
       <div

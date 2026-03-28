@@ -120,6 +120,40 @@ export function parseMarkdownToBlocks(text) {
       i++; continue;
     }
 
+    // Horizontal rule: ---, ***, ___
+    if (/^([-*_])\1{2,}$/.test(trimmed)) {
+      blocks.push({ type: 'paragraph', content: [{ type: 'text', text: '———' }] });
+      i++; continue;
+    }
+
+    // Blockquote: > text (collect consecutive > lines)
+    if (trimmed.startsWith('> ') || trimmed === '>') {
+      const quoteLines = [];
+      while (i < lines.length) {
+        const ql = lines[i].trim();
+        if (ql.startsWith('> ')) {
+          quoteLines.push(ql.slice(2));
+        } else if (ql === '>') {
+          quoteLines.push('');
+        } else {
+          break;
+        }
+        i++;
+      }
+      const quoteText = quoteLines.join('\n').trim();
+      if (quoteText) {
+        blocks.push({
+          type: 'paragraph',
+          props: { textColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.08)' },
+          content: [
+            { type: 'text', text: '  ', styles: {} },
+            ...parseInlineContent(quoteText),
+          ],
+        });
+      }
+      continue;
+    }
+
     // Heading
     const headingMatch = trimmed.match(/^(#{1,3})\s+(.+)/);
     if (headingMatch) {

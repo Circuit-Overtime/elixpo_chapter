@@ -7,14 +7,24 @@ export const MentionInline = createReactInlineContentSpec(
     type: 'mention',
     propSchema: {
       username: { default: '' },
+      displayName: { default: '' },
+      avatarUrl: { default: '' },
     },
     content: 'none',
   },
   {
     render: ({ inlineContent }) => {
+      const { username, displayName, avatarUrl } = inlineContent.props;
       return (
-        <span className="text-[#9b7bf7] hover:text-[#b69aff] cursor-pointer font-medium mx-0.5 transition-colors">
-          @{inlineContent.props.username}
+        <span className="mention-chip">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="" className="mention-chip-avatar" />
+          ) : (
+            <span className="mention-chip-initial">
+              {(displayName || username || '?')[0].toUpperCase()}
+            </span>
+          )}
+          @{displayName || username}
         </span>
       );
     },
