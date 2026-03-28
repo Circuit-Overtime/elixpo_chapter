@@ -14,15 +14,23 @@ async function sha1(message) {
   return [...new Uint8Array(hashBuffer)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-export async function uploadToCloudinary(fileBuffer, { folder, publicId, resourceType = 'image' }) {
+// Profile images (avatar/banner) get heavy compression + overwrite
+const PROFILE_TRANSFORMS = 'q_auto:low,f_webp';
+const AVATAR_TRANSFORMS = 'q_auto:low,f_webp,w_256,h_256,c_fill,g_face';
+const BANNER_TRANSFORMS = 'q_auto:low,f_webp,w_1920,h_480,c_fill';
+
+export async function uploadToCloudinary(fileBuffer, { folder, publicId, overwrite = false, resourceType = 'image' }) {
   const config = getConfig();
   const timestamp = Math.floor(Date.now() / 1000);
 
-  // Build params to sign
+  // Build params to sign (must be alphabetically sorted)
   const params = { folder, timestamp };
   if (publicId) params.public_id = publicId;
+  if (overwrite) {
+    params.overwrite = 'true';
+    params.invalidate = 'true';
+  }
 
-  // Generate signature: alphabetically sorted key=value joined by &, appended with api_secret
   const signStr = Object.keys(params).sort().map(k => `${k}=${params[k]}`).join('&') + config.apiSecret;
   const signature = await sha1(signStr);
 
@@ -33,6 +41,10 @@ export async function uploadToCloudinary(fileBuffer, { folder, publicId, resourc
   formData.append('api_key', config.apiKey);
   formData.append('signature', signature);
   if (publicId) formData.append('public_id', publicId);
+  if (overwrite) {
+    formData.append('overwrite', 'true');
+    formData.append('invalidate', 'true');
+  }
 
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${config.cloudName}/${resourceType}/upload`,
@@ -78,3 +90,13 @@ export function getCloudinaryUrl(publicId, transforms = '') {
   const t = transforms ? `${transforms}/` : '';
   return `https://res.cloudinary.com/${config.cloudName}/image/upload/${t}${publicId}`;
 }
+
+export function getAvatarUrl(publicId) {
+  return getCloudinaryUrl(publicId, AVATAR_TRANSFORMS);
+}
+
+export function getBannerUrl(publicId) {
+  return getCloudinaryUrl(publicId, BANNER_TRANSFORMS);
+}
+
+export { PROFILE_TRANSFORMS, AVATAR_TRANSFORMS, BANNER_TRANSFORMS };

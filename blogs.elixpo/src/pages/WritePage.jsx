@@ -751,6 +751,7 @@ export default function WritePage({ slugid }) {
                       initialContent={editorContent}
                       onReady={() => setEditorReady(true)}
                       onTitleChange={(newTitle) => { setTitle(newTitle); setAiTitleKey(k => k + 1); }}
+                      blogId={slugid}
                     />
                   </div>
                 </>

@@ -437,3 +437,77 @@
 .ai-error-toast button:hover {
   color: #ff6b6b;
 }
+
+/* ===== AI Image Skeleton Loading ===== */
+
+.ai-image-skeleton {
+  position: relative;
+  min-height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(167, 139, 250, 0.06);
+  border: 1px dashed rgba(196, 181, 253, 0.25);
+}
+
+.ai-image-skeleton::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(167, 139, 250, 0.04) 25%,
+    rgba(167, 139, 250, 0.12) 50%,
+    rgba(167, 139, 250, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: aiSkeletonShimmer 1.8s ease-in-out infinite;
+  border-radius: 10px;
+  z-index: 1;
+}
+
+.ai-image-skeleton::after {
+  content: '✦ Generating image...';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(196, 181, 253, 0.5);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+@keyframes aiSkeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ===== AI Image Loaded Animation ===== */
+
+.ai-image-loaded {
+  animation: aiImageReveal 0.6s ease-out;
+}
+
+.ai-image-loaded img {
+  animation: aiImageFadeIn 0.5s ease-out 0.1s both;
+}
+
+@keyframes aiImageReveal {
+  from {
+    opacity: 0.3;
+    transform: scale(0.97);
+    border-color: rgba(196, 181, 253, 0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    border-color: transparent;
+  }
+}
+
+@keyframes aiImageFadeIn {
+  from { opacity: 0; filter: blur(8px) saturate(0.5); }
+  to { opacity: 1; filter: blur(0) saturate(1); }
+}
