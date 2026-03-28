@@ -12,15 +12,18 @@
  * @returns {Promise<{blob: Blob, url: string, originalSize: number, compressedSize: number, quality: number}>}
  */
 export async function compressImage(file, opts = {}) {
+  const HARD_CAP_KB = 200;
   const {
-    maxSizeKB = 100,
+    maxSizeKB = HARD_CAP_KB,
     maxWidth = 1920,
     maxHeight = 1080,
     initialQuality = 0.85,
     minQuality = 0.3,
   } = opts;
 
-  const maxBytes = maxSizeKB * 1024;
+  // Enforce 200KB hard cap regardless of what caller requests
+  const effectiveMaxKB = Math.min(maxSizeKB, HARD_CAP_KB);
+  const maxBytes = effectiveMaxKB * 1024;
   const originalSize = file.size;
 
   // Load image

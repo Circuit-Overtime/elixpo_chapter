@@ -13,7 +13,8 @@ export async function GET() {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
     const user = await db.prepare(`
-      SELECT id, email, username, display_name, bio, avatar_url, avatar_r2_key, banner_r2_key, locale, created_at, updated_at
+      SELECT id, email, username, display_name, bio, avatar_url, avatar_r2_key, banner_r2_key, locale,
+             tier, storage_used_bytes, ai_usage_today, ai_usage_date, created_at, updated_at
       FROM users WHERE id = ?
     `).bind(session.userId).first();
 
