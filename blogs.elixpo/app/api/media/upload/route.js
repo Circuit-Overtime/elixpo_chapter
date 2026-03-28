@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { getLimits } from '../../../../lib/tiers';
-import { uploadToCloudinary, deleteFromCloudinary, getCloudinaryUrl } from '../../../../lib/cloudinary';
+import { uploadToCloudinary } from '../../../../lib/cloudinary';
+
+// Profile image types — these get overwritten (no history), no storage tracking
+const PROFILE_TYPES = ['avatar', 'banner', 'org_avatar', 'org_banner'];
 
 export async function POST(request) {
   const session = await getSession();
@@ -12,7 +15,8 @@ export async function POST(request) {
   const formData = await request.formData();
   const file = formData.get('file');
   const blogId = formData.get('blogId');
-  const mediaType = formData.get('type') || 'image'; // image | avatar | banner | cover
+  const orgId = formData.get('orgId');
+  const mediaType = formData.get('type') || 'image'; // image | avatar | banner | cover | org_avatar | org_banner
 
   if (!file || !(file instanceof File)) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -21,97 +25,132 @@ export async function POST(request) {
   const { getDB } = await import('../../../../lib/cloudflare');
   const db = getDB();
 
-  const user = await db.prepare('SELECT tier, storage_used_bytes FROM users WHERE id = ?')
-    .bind(session.userId).first();
+  const isProfileImage = PROFILE_TYPES.includes(mediaType);
 
-  if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  // For org uploads, verify membership
+  if (mediaType === 'org_avatar' || mediaType === 'org_banner') {
+    if (!orgId) {
+      return NextResponse.json({ error: 'Missing orgId' }, { status: 400 });
+    }
+    const membership = await db.prepare(
+      'SELECT role FROM org_members WHERE org_id = ? AND user_id = ?'
+    ).bind(orgId, session.userId).first();
+    const org = await db.prepare('SELECT owner_id FROM orgs WHERE id = ?').bind(orgId).first();
+    const isOwner = org?.owner_id === session.userId;
+    const isAdmin = membership?.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ error: 'Not authorized to update org media' }, { status: 403 });
+    }
   }
 
-  const limits = getLimits(user.tier);
-  const fileBytes = file.size;
+  // Storage checks only for non-profile images (blog content images)
+  if (!isProfileImage) {
+    const user = await db.prepare('SELECT tier, storage_used_bytes FROM users WHERE id = ?')
+      .bind(session.userId).first();
 
-  // Check total storage limit
-  if (user.storage_used_bytes + fileBytes > limits.totalStorageBytes) {
-    return NextResponse.json({
-      error: 'Storage limit exceeded',
-      used: user.storage_used_bytes,
-      limit: limits.totalStorageBytes,
-      tier: user.tier,
-    }, { status: 413 });
-  }
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
-  // Check per-blog image limit
-  if (blogId) {
-    const blogUsage = await db.prepare(
-      'SELECT COALESCE(SUM(size_bytes), 0) as total FROM media_uploads WHERE blog_id = ?'
-    ).bind(blogId).first();
+    const limits = getLimits(user.tier);
+    const fileBytes = file.size;
 
-    if (blogUsage.total + fileBytes > limits.imagePerBlogBytes) {
+    if (user.storage_used_bytes + fileBytes > limits.totalStorageBytes) {
       return NextResponse.json({
-        error: 'Per-blog image limit exceeded',
-        used: blogUsage.total,
-        limit: limits.imagePerBlogBytes,
+        error: 'Storage limit exceeded',
+        used: user.storage_used_bytes,
+        limit: limits.totalStorageBytes,
         tier: user.tier,
       }, { status: 413 });
+    }
+
+    if (blogId) {
+      const blogUsage = await db.prepare(
+        'SELECT COALESCE(SUM(size_bytes), 0) as total FROM media_uploads WHERE blog_id = ?'
+      ).bind(blogId).first();
+
+      if (blogUsage.total + fileBytes > limits.imagePerBlogBytes) {
+        return NextResponse.json({
+          error: 'Per-blog image limit exceeded',
+          used: blogUsage.total,
+          limit: limits.imagePerBlogBytes,
+          tier: user.tier,
+        }, { status: 413 });
+      }
     }
   }
 
   // Build Cloudinary folder and public_id
   let folder, publicId;
-  if (mediaType === 'avatar') {
-    folder = `lixblogs/users/${session.userId}`;
-    publicId = 'avatar';
-  } else if (mediaType === 'banner') {
-    folder = `lixblogs/users/${session.userId}`;
-    publicId = 'banner';
-  } else if (mediaType === 'cover' && blogId) {
-    folder = `lixblogs/${blogId}`;
-    publicId = 'cover';
-  } else if (blogId) {
-    folder = `lixblogs/${blogId}`;
-    publicId = crypto.randomUUID();
-  } else {
-    folder = `lixblogs/users/${session.userId}`;
-    publicId = crypto.randomUUID();
+  switch (mediaType) {
+    case 'avatar':
+      folder = `lixblogs/users/${session.userId}`;
+      publicId = 'avatar';
+      break;
+    case 'banner':
+      folder = `lixblogs/users/${session.userId}`;
+      publicId = 'banner';
+      break;
+    case 'org_avatar':
+      folder = `lixblogs/orgs/${orgId}`;
+      publicId = 'avatar';
+      break;
+    case 'org_banner':
+      folder = `lixblogs/orgs/${orgId}`;
+      publicId = 'banner';
+      break;
+    case 'cover':
+      folder = `lixblogs/${blogId}`;
+      publicId = 'cover';
+      break;
+    default:
+      folder = `lixblogs/${blogId}`;
+      publicId = crypto.randomUUID();
+      break;
   }
 
-  const fullPublicId = `${folder}/${publicId}`;
-
-  // For avatar/banner/cover, delete old file first
-  if (mediaType === 'avatar' || mediaType === 'banner' || mediaType === 'cover') {
-    const old = await db.prepare('SELECT id, size_bytes, cloudinary_public_id FROM media_uploads WHERE cloudinary_public_id = ?')
-      .bind(fullPublicId).first();
-    if (old) {
-      try { await deleteFromCloudinary(old.cloudinary_public_id); } catch { /* ok if missing */ }
-      await db.prepare('DELETE FROM media_uploads WHERE id = ?').bind(old.id).run();
-      await db.prepare('UPDATE users SET storage_used_bytes = MAX(0, storage_used_bytes - ?) WHERE id = ?')
-        .bind(old.size_bytes, session.userId).run();
-    }
-  }
-
-  // Upload to Cloudinary
+  // Upload to Cloudinary — profile images always overwrite
   const arrayBuffer = await file.arrayBuffer();
-  const result = await uploadToCloudinary(arrayBuffer, { folder, publicId });
+  const result = await uploadToCloudinary(arrayBuffer, {
+    folder,
+    publicId,
+    overwrite: isProfileImage,
+  });
 
-  // Track in media_uploads
+  // Profile images: just update the DB pointer, no storage tracking
+  if (isProfileImage) {
+    if (mediaType === 'avatar') {
+      await db.prepare('UPDATE users SET avatar_r2_key = ? WHERE id = ?')
+        .bind(result.public_id, session.userId).run();
+    } else if (mediaType === 'banner') {
+      await db.prepare('UPDATE users SET banner_r2_key = ? WHERE id = ?')
+        .bind(result.public_id, session.userId).run();
+    } else if (mediaType === 'org_avatar') {
+      await db.prepare('UPDATE orgs SET logo_r2_key = ? WHERE id = ?')
+        .bind(result.public_id, orgId).run();
+    } else if (mediaType === 'org_banner') {
+      await db.prepare('UPDATE orgs SET banner_r2_key = ? WHERE id = ?')
+        .bind(result.public_id, orgId).run();
+    }
+
+    return NextResponse.json({
+      publicId: result.public_id,
+      url: result.secure_url,
+    });
+  }
+
+  // Blog content images: track in media_uploads + update storage
+  const fileBytes = file.size;
   const mediaId = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
+
   await db.prepare(`
     INSERT INTO media_uploads (id, user_id, blog_id, cloudinary_public_id, size_bytes, media_type, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).bind(mediaId, session.userId, blogId || null, result.public_id, fileBytes, mediaType, now).run();
 
-  // Update user storage
   await db.prepare('UPDATE users SET storage_used_bytes = storage_used_bytes + ? WHERE id = ?')
     .bind(fileBytes, session.userId).run();
-
-  // Update user profile keys if avatar/banner
-  if (mediaType === 'avatar') {
-    await db.prepare('UPDATE users SET avatar_r2_key = ? WHERE id = ?').bind(result.public_id, session.userId).run();
-  } else if (mediaType === 'banner') {
-    await db.prepare('UPDATE users SET banner_r2_key = ? WHERE id = ?').bind(result.public_id, session.userId).run();
-  }
 
   return NextResponse.json({
     id: mediaId,

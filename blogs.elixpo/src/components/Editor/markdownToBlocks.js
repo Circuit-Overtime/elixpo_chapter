@@ -173,6 +173,26 @@ export function parseMarkdownToBlocks(text) {
       i++; continue;
     }
 
+    // Image: ![alt](url) or ![alt](IMG_LOADING:id)
+    const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    if (imgMatch) {
+      const alt = imgMatch[1];
+      const src = imgMatch[2];
+      const isLoading = src.startsWith('IMG_LOADING:');
+      const imageId = isLoading ? src.replace('IMG_LOADING:', '') : null;
+      blocks.push({
+        type: 'image',
+        props: {
+          url: isLoading ? '' : src,
+          caption: alt,
+          previewWidth: 740,
+          // Custom props for skeleton loading state
+          ...(isLoading ? { _loading: true, _imageId: imageId } : {}),
+        },
+      });
+      i++; continue;
+    }
+
     // Default paragraph with inline formatting (including inline LaTeX)
     blocks.push({ type: 'paragraph', content: parseInlineContent(trimmed) });
     i++;

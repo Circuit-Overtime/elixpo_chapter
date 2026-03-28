@@ -221,7 +221,7 @@ function isCurrentBlockEmpty(editor) {
 
 // ── BlogEditor ──
 
-const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange }, ref) {
+const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId }, ref) {
   const [showMentionMenu, setShowMentionMenu] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionPos, setMentionPos] = useState({ top: 0, left: 0 });
@@ -230,7 +230,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const [aiMenuPos, setAiMenuPos] = useState({ top: 0, left: 0 });
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiGeneratingBlockId, setAiGeneratingBlockId] = useState(null);
-  const [aiPhase, setAiPhase] = useState('idle'); // idle | thinking | typing
+  const [aiPhase, setAiPhase] = useState('idle'); // idle | thinking | writing | generating_image | uploading
   const [aiErrorToast, setAiErrorToast] = useState(null);
   const [aiBlockIds, setAiBlockIds] = useState(new Set());
   const [showAIActions, setShowAIActions] = useState(false);
@@ -713,8 +713,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     });
 
     try {
-      const { streamAI } = await import('../../ai/stream');
-      const { WRITE_SYSTEM_PROMPT, EDIT_SYSTEM_PROMPT } = await import('../../ai/prompts');
+      const { streamAgent } = await import('../../ai/agent');
+      const { AGENT_SYSTEM_PROMPT, EDIT_SYSTEM_PROMPT } = await import('../../ai/prompts');
 
       // Build prompt with full blog context
       let finalPrompt;
@@ -726,134 +726,174 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           : userPrompt;
       }
 
-      await streamAI({
-        systemPrompt: isEditMode ? EDIT_SYSTEM_PROMPT : WRITE_SYSTEM_PROMPT,
-        userPrompt: finalPrompt,
-        signal: abortController.signal,
-        onChunk: (chunk, fullText) => {
-          setAiPhase('typing');
+      // Helper to update blocks from streamed text
+      const updateBlocksFromText = (fullText) => {
+        let contentText = fullText;
+        if (contentText.trim().startsWith('TITLE:')) {
+          const lines = contentText.split('\n');
+          const titleLine = lines.shift();
+          const newTitle = titleLine.replace(/^TITLE:\s*/, '').trim();
+          if (onTitleChange && newTitle) onTitleChange(newTitle);
+          contentText = lines.join('\n').trim();
+          if (!contentText) return;
+        }
 
-          // Extract title if first line is TITLE:
-          let contentText = fullText;
-          if (contentText.trim().startsWith('TITLE:')) {
-            const lines = contentText.split('\n');
-            const titleLine = lines.shift();
-            const newTitle = titleLine.replace(/^TITLE:\s*/, '').trim();
-            if (onTitleChange && newTitle) onTitleChange(newTitle);
-            contentText = lines.join('\n').trim();
-            if (!contentText) return; // Only title so far, no content yet
+        const newBlocks = parseMarkdownToBlocks(contentText);
+        const oldIds = getAiBlockIds();
+        if (oldIds.length === 0) return;
+
+        try {
+          if (newBlocks.length !== aiBlockCountRef.current) {
+            editor.replaceBlocks(oldIds, newBlocks);
+            aiBlockCountRef.current = newBlocks.length;
+            currentIds = getAiBlockIds();
+            aiBlockIdsRef.current = new Set(currentIds);
+          } else {
+            const lastId = oldIds[oldIds.length - 1];
+            const lastBlock = newBlocks[newBlocks.length - 1];
+            editor.updateBlock(lastId, {
+              type: lastBlock.type,
+              props: lastBlock.props || {},
+              content: lastBlock.content,
+            });
+            currentIds = oldIds;
+            aiBlockIdsRef.current = new Set(currentIds);
           }
-
-          const newBlocks = parseMarkdownToBlocks(contentText);
-          const oldIds = getAiBlockIds();
-
-          if (oldIds.length === 0) return;
-
-          try {
-            if (newBlocks.length !== aiBlockCountRef.current) {
-              editor.replaceBlocks(oldIds, newBlocks);
-              aiBlockCountRef.current = newBlocks.length;
-              currentIds = getAiBlockIds();
-              aiBlockIdsRef.current = new Set(currentIds);
-            } else {
-              const lastId = oldIds[oldIds.length - 1];
-              const lastBlock = newBlocks[newBlocks.length - 1];
-              editor.updateBlock(lastId, {
-                type: lastBlock.type,
-                props: lastBlock.props || {},
-                content: lastBlock.content,
-              });
-              currentIds = oldIds;
-              aiBlockIdsRef.current = new Set(currentIds);
-            }
-            // Use double rAF to ensure BlockNote has finished re-rendering
+          requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                highlightAiBlocks(currentIds);
-                const lastId = currentIds[currentIds.length - 1];
-                const lastEl = wrapperRef.current?.querySelector(`[data-id="${lastId}"]`);
-                if (lastEl) {
-                  const rect = lastEl.getBoundingClientRect();
-                  const viewportH = window.innerHeight;
-                  if (rect.bottom > viewportH * 0.7) {
-                    const scrollTarget = window.scrollY + rect.top - viewportH * 0.5;
-                    window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-                  }
+              highlightAiBlocks(currentIds);
+              // Add skeleton class to loading images
+              wrapperRef.current?.querySelectorAll('[data-content-type="image"]').forEach((imgBlock) => {
+                const img = imgBlock.querySelector('img');
+                if (!img || !img.src || img.src === window.location.href) {
+                  imgBlock.classList.add('ai-image-skeleton');
                 }
               });
+              const lastId = currentIds[currentIds.length - 1];
+              const lastEl = wrapperRef.current?.querySelector(`[data-id="${lastId}"]`);
+              if (lastEl) {
+                const rect = lastEl.getBoundingClientRect();
+                const viewportH = window.innerHeight;
+                if (rect.bottom > viewportH * 0.7) {
+                  const scrollTarget = window.scrollY + rect.top - viewportH * 0.5;
+                  window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+                }
+              }
             });
-          } catch { /* block may have been removed */ }
-        },
-        onDone: (fullText) => {
-          // Extract title if first line is TITLE:
-          let contentText = fullText;
-          if (contentText.trim().startsWith('TITLE:')) {
-            const lines = contentText.trim().split('\n');
-            const titleLine = lines.shift();
-            const newTitle = titleLine.replace(/^TITLE:\s*/, '').trim();
-            if (onTitleChange && newTitle) onTitleChange(newTitle);
-            contentText = lines.join('\n').trim();
-          }
-
-          // Title-only response — no content to insert
-          if (!contentText) {
-            const oldIds = getAiBlockIds();
-            try { if (oldIds.length > 0) editor.removeBlocks(oldIds); } catch {}
-            stopAiObserver();
-            setAiGenerating(false);
-            setAiPhase('idle');
-            setAiGeneratingBlockId(null);
-            aiAbortRef.current = null;
-            hideSparkle();
-            aiBlockIdsRef.current = new Set();
-            aiBlockCountRef.current = 0;
-            setAiBlockIds(new Set());
-            setShowAIActions(false);
-            return;
-          }
-
-          // Final parse into proper blocks
-          const newBlocks = parseMarkdownToBlocks(contentText);
-          const oldIds = getAiBlockIds();
-
-          try {
-            if (oldIds.length > 0) {
-              editor.replaceBlocks(oldIds, newBlocks);
-              aiBlockCountRef.current = newBlocks.length;
-              currentIds = getAiBlockIds();
-            }
-          } catch {}
-
-          const finalIds = new Set(currentIds);
-          aiBlockIdsRef.current = finalIds;
-          setAiBlockIds(finalIds);
-          setAiGenerating(false);
-      setAiPhase('idle');
-          setAiGeneratingBlockId(null);
-          aiAbortRef.current = null;
-
-          // Keep highlight, hide glob cursor, show keep/discard
-          setShowAIActions(true);
-          requestAnimationFrame(() => {
-            highlightAiBlocks(currentIds, false);
           });
-        },
-        onError: (err) => {
+        } catch { /* block may have been removed */ }
+      };
+
+      // Use simple stream for edit mode, agent for write mode
+      if (isEditMode) {
+        const { streamAI } = await import('../../ai/stream');
+        await streamAI({
+          systemPrompt: EDIT_SYSTEM_PROMPT,
+          userPrompt: finalPrompt,
+          signal: abortController.signal,
+          onChunk: (_chunk, fullText) => {
+            setAiPhase('writing');
+            updateBlocksFromText(fullText);
+          },
+          onDone: (fullText) => {
+            finishAI(fullText);
+          },
+          onError: (err) => { handleAIError(err); },
+        });
+      } else {
+        await streamAgent({
+          systemPrompt: AGENT_SYSTEM_PROMPT,
+          userPrompt: finalPrompt,
+          blogId,
+          signal: abortController.signal,
+          onPhase: (phase) => setAiPhase(phase),
+          onChunk: (_chunk, fullText) => {
+            updateBlocksFromText(fullText);
+          },
+          onImageStart: ({ id, prompt, alt }) => {
+            // Image placeholder is already in the text via the agent
+            setAiPhase('generating_image');
+          },
+          onImageDone: ({ id, url, alt }) => {
+            // Replace the placeholder image block with the real URL
+            replaceImagePlaceholder(id, url, alt);
+            setAiPhase('writing');
+          },
+          onImageError: ({ id, error }) => {
+            // Remove the broken placeholder
+            removeImagePlaceholder(id);
+          },
+          onDone: (fullText) => {
+            finishAI(fullText);
+          },
+          onError: (err) => { handleAIError(err); },
+        });
+      }
+
+      function finishAI(fullText) {
+        let contentText = fullText;
+        if (contentText.trim().startsWith('TITLE:')) {
+          const lines = contentText.trim().split('\n');
+          const titleLine = lines.shift();
+          const newTitle = titleLine.replace(/^TITLE:\s*/, '').trim();
+          if (onTitleChange && newTitle) onTitleChange(newTitle);
+          contentText = lines.join('\n').trim();
+        }
+
+        if (!contentText) {
+          const oldIds = getAiBlockIds();
+          try { if (oldIds.length > 0) editor.removeBlocks(oldIds); } catch {}
+          stopAiObserver();
           setAiGenerating(false);
-      setAiPhase('idle');
+          setAiPhase('idle');
           setAiGeneratingBlockId(null);
           aiAbortRef.current = null;
           hideSparkle();
-          try {
-            const ids = getAiBlockIds();
-            if (ids.length > 0) editor.removeBlocks(ids);
-          } catch {}
-          setAiBlockIds(new Set());
           aiBlockIdsRef.current = new Set();
+          aiBlockCountRef.current = 0;
+          setAiBlockIds(new Set());
           setShowAIActions(false);
-          setAiErrorToast(err.message || 'AI generation failed');
-        },
-      });
+          return;
+        }
+
+        const newBlocks = parseMarkdownToBlocks(contentText);
+        const oldIds = getAiBlockIds();
+        try {
+          if (oldIds.length > 0) {
+            editor.replaceBlocks(oldIds, newBlocks);
+            aiBlockCountRef.current = newBlocks.length;
+            currentIds = getAiBlockIds();
+          }
+        } catch {}
+
+        const finalIds = new Set(currentIds);
+        aiBlockIdsRef.current = finalIds;
+        setAiBlockIds(finalIds);
+        setAiGenerating(false);
+        setAiPhase('idle');
+        setAiGeneratingBlockId(null);
+        aiAbortRef.current = null;
+        setShowAIActions(true);
+        requestAnimationFrame(() => {
+          highlightAiBlocks(currentIds, false);
+        });
+      }
+
+      function handleAIError(err) {
+        setAiGenerating(false);
+        setAiPhase('idle');
+        setAiGeneratingBlockId(null);
+        aiAbortRef.current = null;
+        hideSparkle();
+        try {
+          const ids = getAiBlockIds();
+          if (ids.length > 0) editor.removeBlocks(ids);
+        } catch {}
+        setAiBlockIds(new Set());
+        aiBlockIdsRef.current = new Set();
+        setShowAIActions(false);
+        setAiErrorToast(err.message || 'AI generation failed');
+      }
     } catch (err) {
       setAiGenerating(false);
       setAiPhase('idle');
@@ -870,7 +910,63 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       setShowAIActions(false);
       setAiErrorToast(err.message || 'AI generation failed');
     }
-  }, [editor, getAiBlockIds, highlightAiBlocks, getFullBlogContext]);
+  }, [editor, getAiBlockIds, highlightAiBlocks, getFullBlogContext, blogId]);
+
+  // Replace an image placeholder with the real Cloudinary URL
+  const replaceImagePlaceholder = useCallback((imageId, url, alt) => {
+    try {
+      const doc = editor.document;
+      for (const block of doc) {
+        if (block.type === 'image' && block.props?._imageId === imageId) {
+          editor.updateBlock(block.id, {
+            type: 'image',
+            props: { url, caption: alt || block.props.caption || '', previewWidth: 740 },
+          });
+          // Remove skeleton class and add fade-in animation
+          requestAnimationFrame(() => {
+            const el = wrapperRef.current?.querySelector(`[data-id="${block.id}"]`);
+            if (el) {
+              el.classList.remove('ai-image-skeleton');
+              el.classList.add('ai-image-loaded');
+            }
+          });
+          break;
+        }
+      }
+      // Also look for the IMG_LOADING: text in paragraph blocks (fallback)
+      for (const block of doc) {
+        if (block.type === 'paragraph') {
+          const text = (block.content || []).map(c => c.text || '').join('');
+          if (text.includes(`IMG_LOADING:${imageId}`)) {
+            editor.updateBlock(block.id, {
+              type: 'image',
+              props: { url, caption: alt || '', previewWidth: 740 },
+            });
+            requestAnimationFrame(() => {
+              const el = wrapperRef.current?.querySelector(`[data-id="${block.id}"]`);
+              if (el) {
+                el.classList.remove('ai-image-skeleton');
+                el.classList.add('ai-image-loaded');
+              }
+            });
+            break;
+          }
+        }
+      }
+    } catch (e) { console.error('Failed to replace image placeholder:', e); }
+  }, [editor]);
+
+  const removeImagePlaceholder = useCallback((imageId) => {
+    try {
+      const doc = editor.document;
+      for (const block of doc) {
+        if (block.type === 'image' && block.props?._imageId === imageId) {
+          editor.removeBlocks([block.id]);
+          break;
+        }
+      }
+    } catch {}
+  }, [editor]);
 
   return (
     <div className="blog-editor-wrapper" ref={wrapperRef} style={{ position: 'relative' }}>
@@ -915,7 +1011,12 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
             <img src="/base-logo.png" alt="Elixpo" className="elixpo-typing-avatar" />
             <div className="elixpo-typing-text">
               <span className="elixpo-typing-name">Elixpo</span>
-              <span className="elixpo-typing-status">{aiPhase === 'thinking' ? 'is thinking' : 'is typing'}<span className="elixpo-typing-dots"><span /><span /><span /></span></span>
+              <span className="elixpo-typing-status">{
+                aiPhase === 'thinking' ? 'is thinking' :
+                aiPhase === 'generating_image' ? 'is creating an image' :
+                aiPhase === 'uploading' ? 'is uploading' :
+                'is writing'
+              }<span className="elixpo-typing-dots"><span /><span /><span /></span></span>
             </div>
             <button className="elixpo-stop-btn" onClick={handleAIStop}>
               <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
