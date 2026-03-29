@@ -1,0 +1,185 @@
+export const runtime = 'edge';
+import { NextResponse } from 'next/server';
+import { getSession } from '../../../lib/auth';
+import { getLimits } from '../../../lib/tiers';
+
+// List user's orgs
+export async function GET() {
+  const session = await getSession();
+  if (!session?.userId) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  try {
+    const { getDB } = await import('../../../lib/cloudflare');
+    const db = getDB();
+
+    // Orgs the user owns or is a member of
+    const owned = await db.prepare(`
+      SELECT o.*, 'admin' as role,
+        (SELECT COUNT(*) FROM org_members WHERE org_id = o.id) as member_count
+      FROM orgs o WHERE o.owner_id = ?
+    `).bind(session.userId).all();
+
+    const memberships = await db.prepare(`
+      SELECT o.*, om.role,
+        (SELECT COUNT(*) FROM org_members WHERE org_id = o.id) as member_count
+      FROM org_members om
+      JOIN orgs o ON o.id = om.org_id
+      WHERE om.user_id = ? AND o.owner_id != ?
+    `).bind(session.userId, session.userId).all();
+
+    const orgs = [...(owned?.results || []), ...(memberships?.results || [])];
+    return NextResponse.json({ orgs });
+  } catch {
+    return NextResponse.json({ orgs: [] });
+  }
+}
+
+// Create org
+export async function POST(request) {
+  const session = await getSession();
+  if (!session?.userId) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  const { name, slug, description, bio, website, visibility } = await request.json();
+
+  if (!name?.trim() || !slug?.trim()) {
+    return NextResponse.json({ error: 'Name and slug are required' }, { status: 400 });
+  }
+
+  // Validate slug format
+  const cleanSlug = slug.toLowerCase().replace(/[^\w-]/g, '').slice(0, 40);
+  if (!cleanSlug) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
+
+  try {
+    const { getDB } = await import('../../../lib/cloudflare');
+    const db = getDB();
+
+    // Check tier limit
+    const user = await db.prepare('SELECT tier FROM users WHERE id = ?').bind(session.userId).first();
+    const limits = getLimits(user?.tier || 'free');
+    const ownedCount = await db.prepare('SELECT COUNT(*) as c FROM orgs WHERE owner_id = ?').bind(session.userId).first();
+
+    if ((ownedCount?.c || 0) >= limits.ownedOrgs) {
+      return NextResponse.json({ error: `You can own up to ${limits.ownedOrgs} org(s) on the ${user?.tier || 'free'} plan` }, { status: 403 });
+    }
+
+    // Check namespace — slug must not conflict with any username or org slug
+    const { checkNameAvailable, reserveName } = await import('../../../lib/namespace');
+    const nsCheck = await checkNameAvailable(db, cleanSlug);
+    if (!nsCheck.available) {
+      return NextResponse.json({
+        error: nsCheck.takenBy === 'user'
+          ? 'This name is taken by a user'
+          : 'This org slug is already taken',
+      }, { status: 409 });
+    }
+
+    const orgId = crypto.randomUUID();
+    const now = Math.floor(Date.now() / 1000);
+
+    await db.prepare(`
+      INSERT INTO orgs (id, slug, name, description, bio, website, visibility, owner_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(orgId, cleanSlug, name.trim(), description || '', bio || '', website || '', visibility || 'public', session.userId, now, now).run();
+
+    // Reserve in shared namespace
+    await reserveName(db, cleanSlug, 'org', orgId);
+
+    // Owner is also a member with admin role
+    await db.prepare(`
+      INSERT INTO org_members (org_id, user_id, role, joined_at) VALUES (?, ?, 'admin', ?)
+    `).bind(orgId, session.userId, now).run();
+
+    return NextResponse.json({ ok: true, id: orgId, slug: cleanSlug });
+  } catch (e) {
+    console.error('Create org error:', e);
+    return NextResponse.json({ error: 'Failed to create organization' }, { status: 500 });
+  }
+}
+
+// Update org
+export async function PUT(request) {
+  const session = await getSession();
+  if (!session?.userId) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  const { orgId, name, description, bio, website, links, visibility, featured_blog_ids } = await request.json();
+  if (!orgId) {
+    return NextResponse.json({ error: 'Missing orgId' }, { status: 400 });
+  }
+
+  try {
+    const { getDB } = await import('../../../lib/cloudflare');
+    const db = getDB();
+
+    // Only owner or admin can update
+    const org = await db.prepare('SELECT owner_id FROM orgs WHERE id = ?').bind(orgId).first();
+    if (!org) return NextResponse.json({ error: 'Org not found' }, { status: 404 });
+
+    const isOwner = org.owner_id === session.userId;
+    const membership = await db.prepare('SELECT role FROM org_members WHERE org_id = ? AND user_id = ?').bind(orgId, session.userId).first();
+    const isAdmin = membership?.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    await db.prepare(`
+      UPDATE orgs SET name = COALESCE(?, name), description = COALESCE(?, description),
+        bio = COALESCE(?, bio), website = COALESCE(?, website),
+        links = COALESCE(?, links), visibility = COALESCE(?, visibility),
+        featured_blog_ids = COALESCE(?, featured_blog_ids), updated_at = ?
+      WHERE id = ?
+    `).bind(
+      name || null, description || null, bio || null, website || null,
+      links ? JSON.stringify(links) : null, visibility || null,
+      featured_blog_ids ? JSON.stringify(featured_blog_ids) : null, now, orgId
+    ).run();
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error('Update org error:', e);
+    return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
+  }
+}
+
+// Delete org
+export async function DELETE(request) {
+  const session = await getSession();
+  if (!session?.userId) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  const { orgId } = await request.json();
+  if (!orgId) return NextResponse.json({ error: 'Missing orgId' }, { status: 400 });
+
+  try {
+    const { getDB } = await import('../../../lib/cloudflare');
+    const db = getDB();
+
+    const org = await db.prepare('SELECT owner_id, slug FROM orgs WHERE id = ?').bind(orgId).first();
+    if (!org || org.owner_id !== session.userId) {
+      return NextResponse.json({ error: 'Only the owner can delete an organization' }, { status: 403 });
+    }
+
+    // Cascade: members, invites, collections, namespace
+    const { releaseName } = await import('../../../lib/namespace');
+    await db.prepare('DELETE FROM org_members WHERE org_id = ?').bind(orgId).run();
+    await db.prepare('DELETE FROM org_invites WHERE org_id = ?').bind(orgId).run();
+    await db.prepare('DELETE FROM collections WHERE org_id = ?').bind(orgId).run();
+    await db.prepare('DELETE FROM orgs WHERE id = ?').bind(orgId).run();
+    if (org.slug) await releaseName(db, org.slug);
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error('Delete org error:', e);
+    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+  }
+}

@@ -1,7 +1,7 @@
 /* ===== Code blocks ===== */
 
 .blog-editor-wrapper [data-content-type="codeBlock"] {
-  background: #0c1017;
+  background: #131922;
   border: 1px solid #232d3f;
   border-radius: 10px;
   font-family: 'lixCode', monospace;
@@ -206,7 +206,7 @@
 
 .mermaid-block-textarea {
   width: 100%;
-  background: #0c1017;
+  background: #131922;
   border: none;
   border-top: 1px solid #232d3f;
   margin-top: 8px;

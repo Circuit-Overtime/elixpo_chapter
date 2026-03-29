@@ -155,7 +155,7 @@ export default function App() {
         {/* Center Feed */}
         <div className="flex-1 min-w-0 border-r border-[#232d3f]">
           {/* Topic Tabs */}
-          <div className="sticky top-14 z-40 bg-[#0c1017]/95 backdrop-blur-md border-b border-[#232d3f]">
+          <div className="sticky top-14 z-40 bg-[#131922]/95 backdrop-blur-md border-b border-[#232d3f]">
             <div className="flex items-center gap-0 px-6 overflow-x-auto scrollbar-none">
               {TOPICS.map((topic, i) => (
                 <button

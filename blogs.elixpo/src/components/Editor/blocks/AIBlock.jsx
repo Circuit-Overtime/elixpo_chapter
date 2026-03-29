@@ -133,7 +133,7 @@ export const AIBlock = createReactBlockSpec(
           <div className="relative mb-4" ref={typeRef}>
             <button
               onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-              className="w-full flex items-center justify-between bg-[#0c1017] border border-[#232d3f] rounded-lg px-3 py-2.5 text-[13px] text-[#e0e0e0] hover:border-[#333] transition-colors"
+              className="w-full flex items-center justify-between bg-[#131922] border border-[#232d3f] rounded-lg px-3 py-2.5 text-[13px] text-[#e0e0e0] hover:border-[#333] transition-colors"
             >
               <span className="flex items-center gap-2">
                 <ion-icon name={selectedType.icon} style={{ fontSize: '15px', color: '#9b7bf7' }} />
@@ -142,7 +142,7 @@ export const AIBlock = createReactBlockSpec(
               <svg className="w-3.5 h-3.5 text-[#8896a8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             {showTypeDropdown && (
-              <div className="absolute top-full mt-1 left-0 right-0 bg-[#0c1017] border border-[#232d3f] rounded-lg shadow-xl z-10 overflow-hidden">
+              <div className="absolute top-full mt-1 left-0 right-0 bg-[#131922] border border-[#232d3f] rounded-lg shadow-xl z-10 overflow-hidden">
                 {GENERATE_TYPES.map((t) => (
                   <button
                     key={t.value}
@@ -166,7 +166,7 @@ export const AIBlock = createReactBlockSpec(
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Describe the content that should be generated. Use '@' to mention people, pages, or dates"
             rows={4}
-            className="w-full bg-[#0c1017] border border-[#232d3f] rounded-lg p-3 text-[13px] text-[#e0e0e0] resize-none outline-none focus:border-[#333] transition-colors placeholder-[#6b7a8d] mb-4"
+            className="w-full bg-[#131922] border border-[#232d3f] rounded-lg p-3 text-[13px] text-[#e0e0e0] resize-none outline-none focus:border-[#333] transition-colors placeholder-[#6b7a8d] mb-4"
           />
 
           {/* Context dropdown */}
@@ -179,7 +179,7 @@ export const AIBlock = createReactBlockSpec(
           <div className="relative" ref={contextRef}>
             <button
               onClick={() => setShowContextDropdown(!showContextDropdown)}
-              className="w-full flex items-center justify-between bg-[#0c1017] border border-[#232d3f] rounded-lg px-3 py-2.5 text-[13px] text-[#e0e0e0] hover:border-[#333] transition-colors"
+              className="w-full flex items-center justify-between bg-[#131922] border border-[#232d3f] rounded-lg px-3 py-2.5 text-[13px] text-[#e0e0e0] hover:border-[#333] transition-colors"
             >
               <span className="flex items-center gap-2">
                 <ion-icon name="document-outline" style={{ fontSize: '14px', color: '#888' }} />
@@ -191,7 +191,7 @@ export const AIBlock = createReactBlockSpec(
               <svg className="w-3.5 h-3.5 text-[#8896a8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             {showContextDropdown && (
-              <div className="absolute bottom-full mb-1 left-0 right-0 bg-[#0c1017] border border-[#232d3f] rounded-lg shadow-xl z-10 overflow-hidden">
+              <div className="absolute bottom-full mb-1 left-0 right-0 bg-[#131922] border border-[#232d3f] rounded-lg shadow-xl z-10 overflow-hidden">
                 {CONTEXT_TYPES.map((c) => (
                   <button
                     key={c.value}

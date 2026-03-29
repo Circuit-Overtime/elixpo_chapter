@@ -19,79 +19,79 @@ export default function MentionMenu({ editor, query, onClose }) {
     ...results.blogs.map((b) => ({ ...b, _type: 'blog' })),
   ];
 
-  // Search on query change
+  // Search on query change — debounced 300ms, min 2 chars
   useEffect(() => {
     const q = (query || '').trim();
-    if (!q) {
+    if (q.length < 2) {
       setResults({ users: [], orgs: [], blogs: [] });
       setActiveIndex(0);
+      setLoading(false);
       return;
     }
 
     setLoading(true);
     const controller = new AbortController();
 
-    // Fetch all three in parallel
-    Promise.all([
-      fetch(`/api/search/users?q=${encodeURIComponent(q)}`, { signal: controller.signal })
-        .then((r) => r.ok ? r.json() : [])
-        .catch(() => []),
-      fetch(`/api/search/orgs?q=${encodeURIComponent(q)}`, { signal: controller.signal })
-        .then((r) => r.ok ? r.json() : [])
-        .catch(() => []),
-      fetch(`/api/search/blogs?q=${encodeURIComponent(q)}`, { signal: controller.signal })
-        .then((r) => r.ok ? r.json() : [])
-        .catch(() => []),
-    ]).then(([users, orgs, blogs]) => {
-      setResults({
-        users: (users || []).slice(0, 5),
-        orgs: (orgs || []).slice(0, 5),
-        blogs: (blogs || []).slice(0, 5),
-      });
-      setActiveIndex(0);
-      setLoading(false);
-    });
+    const timer = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
+        .then((r) => r.ok ? r.json() : { users: [], orgs: [], blogs: [] })
+        .then((data) => {
+          setResults({
+            users: (data.users || []).slice(0, 5),
+            orgs: (data.orgs || []).slice(0, 5),
+            blogs: (data.blogs || []).slice(0, 5),
+          });
+          setActiveIndex(0);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    }, 300);
 
-    return () => controller.abort();
+    return () => { clearTimeout(timer); controller.abort(); };
   }, [query]);
 
   const insertMention = useCallback((item) => {
     if (!editor) return;
 
-    if (item._type === 'user') {
-      editor.insertInlineContent([
-        {
-          type: 'mention',
-          props: {
-            username: item.username,
-            displayName: item.display_name || item.username,
-            avatarUrl: item.avatar_url || '',
-          },
-        },
-        ' ',
-      ]);
-    } else if (item._type === 'org') {
-      editor.insertInlineContent([
-        {
-          type: 'orgMention',
-          props: {
-            name: item.name || item.slug,
-            slug: item.slug,
-          },
-        },
-        ' ',
-      ]);
-    } else if (item._type === 'blog') {
-      editor.insertInlineContent([
-        {
-          type: 'blogMention',
-          props: {
-            title: item.title,
-            slugid: item.slugid,
-          },
-        },
-        ' ',
-      ]);
+    // Delete the @query text before inserting mention
+    try {
+      const cursor = editor.getTextCursorPosition();
+      if (cursor?.block) {
+        const block = cursor.block;
+        const fullText = (block.content || []).map(c => c.text || '').join('');
+        const lastAt = fullText.lastIndexOf('@');
+        if (lastAt !== -1) {
+          // Replace block content: text before @, then the mention, then text after query
+          const before = fullText.slice(0, lastAt);
+          const afterQuery = ''; // cursor is at the end of the query
+          const beforeContent = before ? [{ type: 'text', text: before, styles: {} }] : [];
+          const afterContent = afterQuery ? [{ type: 'text', text: afterQuery, styles: {} }] : [];
+
+          let mentionNode;
+          if (item._type === 'user') {
+            mentionNode = { type: 'mention', props: { username: item.username, displayName: item.display_name || item.username, avatarUrl: item.avatar_url || '' } };
+          } else if (item._type === 'org') {
+            mentionNode = { type: 'orgMention', props: { name: item.name || item.slug, slug: item.slug } };
+          } else {
+            mentionNode = { type: 'blogMention', props: { title: item.title, slugid: item.slugid } };
+          }
+
+          editor.updateBlock(block, {
+            content: [...beforeContent, mentionNode, { type: 'text', text: ' ', styles: {} }, ...afterContent],
+          });
+        }
+      }
+    } catch {
+      // Fallback: just insert without deleting (better than nothing)
+      let content;
+      if (item._type === 'user') {
+        content = [{ type: 'mention', props: { username: item.username, displayName: item.display_name || item.username, avatarUrl: item.avatar_url || '' } }, ' '];
+      } else if (item._type === 'org') {
+        content = [{ type: 'orgMention', props: { name: item.name || item.slug, slug: item.slug } }, ' '];
+      } else {
+        content = [{ type: 'blogMention', props: { title: item.title, slugid: item.slugid } }, ' '];
+      }
+      editor.insertInlineContent(content);
     }
 
     onClose?.();

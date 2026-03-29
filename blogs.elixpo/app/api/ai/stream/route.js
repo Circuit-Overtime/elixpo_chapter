@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 // Server-side proxy for Pollinations AI streaming
 // Keeps API key server-side, enforces auth + rate limits
 

@@ -42,7 +42,7 @@ export const TabsBlock = createReactBlockSpec(
               onChange={(e) => setText(e.target.value)}
               placeholder={"Getting Started\nContent for first tab\n---\nAdvanced\nContent for second tab"}
               rows={8}
-              className="w-full bg-[#0c1017] border border-[#232d3f] rounded-lg p-3 text-[13px] text-[#e0e0e0] font-mono resize-none outline-none focus:border-[#333] placeholder-[#6b7a8d]"
+              className="w-full bg-[#131922] border border-[#232d3f] rounded-lg p-3 text-[13px] text-[#e0e0e0] font-mono resize-none outline-none focus:border-[#333] placeholder-[#6b7a8d]"
             />
             <div className="flex justify-end gap-2 mt-2">
               <button onClick={() => setEditing(false)} className="px-3 py-1 text-[12px] text-[#888]">Cancel</button>

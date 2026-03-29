@@ -21,6 +21,7 @@ import { TabsBlock } from './blocks/TabsBlock';
 import { AIBlock } from './blocks/AIBlock';
 import { BlogImageBlock } from './blocks/BlogImageBlock';
 import { MermaidBlock } from './blocks/MermaidBlock';
+import { PDFEmbedBlock } from './blocks/PDFEmbedBlock';
 // Custom inline content
 import { InlineEquation } from './blocks/InlineEquation';
 import { DateInline } from './blocks/DateInline';
@@ -42,6 +43,7 @@ const schema = BlockNoteSchema.create({
     tabsBlock: TabsBlock({}),
     aiBlock: AIBlock({}),
     mermaidBlock: MermaidBlock({}),
+    pdfEmbed: PDFEmbedBlock({}),
   },
   inlineContentSpecs: {
     ...defaultInlineContentSpecs,
@@ -80,7 +82,7 @@ function Icon({ d, d2, color }) {
 function getCustomSlashMenuItems(editor) {
   const defaults = getDefaultReactSlashMenuItems(editor).filter((item) => {
     const t = item.title.toLowerCase();
-    return t !== 'video' && t !== 'audio';
+    return t !== 'video' && t !== 'audio' && t !== 'file';
   });
 
   const customBlocks = [
@@ -131,6 +133,14 @@ function getCustomSlashMenuItems(editor) {
       aliases: ['mermaid', 'diagram', 'flowchart', 'sequence', 'chart', 'graph'],
       icon: <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM8.5 14h7v7h-7z" d2="M6.5 10v4M17.5 10v4" />,
       onItemClick: () => editor.insertBlocks([{ type: 'mermaidBlock' }], editor.getTextCursorPosition().block, 'after'),
+    },
+    {
+      title: 'PDF Embed',
+      subtext: 'Embed a PDF document from URL',
+      group: 'Custom Blocks',
+      aliases: ['pdf', 'document', 'embed pdf', 'file'],
+      icon: <Icon d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" d2="M14 2v6h6" />,
+      onItemClick: () => editor.insertBlocks([{ type: 'pdfEmbed' }], editor.getTextCursorPosition().block, 'after'),
     },
     {
       title: 'AI Block',
@@ -762,7 +772,32 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     }
   }, []);
 
-  // No MutationObserver needed — CSS handles lavender via -webkit-text-fill-color
+  // Re-apply ai-generated-highlight after BlockNote re-renders (which destroys DOM classes)
+  useEffect(() => {
+    if (aiBlockIds.size === 0) return;
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    let applyPending = false;
+    const applyHighlights = () => {
+      if (applyPending) return;
+      applyPending = true;
+      requestAnimationFrame(() => {
+        applyPending = false;
+        for (const id of aiBlockIds) {
+          const el = wrapper.querySelector(`[data-id="${id}"]`);
+          if (el && !el.classList.contains('ai-generated-highlight')) {
+            el.classList.add('ai-generated-highlight');
+          }
+        }
+      });
+    };
+
+    applyHighlights();
+    const observer = new MutationObserver(applyHighlights);
+    observer.observe(wrapper, { childList: true, subtree: true, attributes: false });
+    return () => observer.disconnect();
+  }, [aiBlockIds]);
 
   // Highlight AI blocks in the DOM with lavender class + position sparkle
   const highlightAiBlocks = useCallback((ids, showCursor = true) => {
@@ -839,9 +874,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           });
         }
         setShowAIActions(true);
-      } else if (!e.target.closest?.('.ai-inline-actions')) {
-        setShowAIActions(false);
       }
+      // Don't close on click elsewhere — user must explicitly Keep or Undo
     }
 
     const wrapper = wrapperRef.current;
@@ -986,14 +1020,32 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       text: (b.content || []).map((c) => c.text || '').join(''),
     }));
 
-    const anchorBlockId = cursorBlock.id;
+    let anchorBlockId = cursorBlock.id;
     aiAnchorIdRef.current = anchorBlockId;
 
-    // Insert initial placeholder block
-    editor.insertBlocks([{ type: 'paragraph', content: [] }], cursor.block, 'after');
+    // The space handler already inserted an empty paragraph after the anchor block.
+    // Find and reuse it as the placeholder instead of inserting another one.
     const doc = editor.document;
-    const cursorIdx = doc.findIndex((b) => b.id === anchorBlockId);
-    const insertedBlock = doc[cursorIdx + 1];
+    const anchorIdx = doc.findIndex((b) => b.id === menuPos.anchorBlockId || b.id === anchorBlockId);
+    let insertedBlock = null;
+
+    if (anchorIdx !== -1 && anchorIdx + 1 < doc.length) {
+      const nextBlock = doc[anchorIdx + 1];
+      // Reuse if it's the empty paragraph from the space handler
+      const nextText = (nextBlock.content || []).map((c) => c.text || '').join('');
+      if (nextBlock.type === 'paragraph' && nextText.trim() === '') {
+        insertedBlock = nextBlock;
+      }
+    }
+
+    // Fallback: insert a new placeholder if we couldn't find the space handler's block
+    if (!insertedBlock) {
+      editor.insertBlocks([{ type: 'paragraph', content: [] }], cursor.block, 'after');
+      const freshDoc = editor.document;
+      const cursorIdx = freshDoc.findIndex((b) => b.id === anchorBlockId);
+      insertedBlock = freshDoc[cursorIdx + 1];
+    }
+
     if (!insertedBlock) return;
 
     aiBlockCountRef.current = 1;
@@ -1050,8 +1102,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     function cleanupSkeletons() {
       if (aiStatusTimerRef.current) { clearInterval(aiStatusTimerRef.current); aiStatusTimerRef.current = null; }
       setAiStatusInline(false);
-      wrapperRef.current?.querySelectorAll('.ai-placeholder-skeleton, .ai-skeleton-nearby, .ai-edit-selected-block, .ai-hide-placeholder').forEach((el) => {
-        el.classList.remove('ai-placeholder-skeleton', 'ai-skeleton-nearby', 'ai-edit-selected-block', 'ai-hide-placeholder');
+      wrapperRef.current?.querySelectorAll('.ai-placeholder-skeleton, .ai-skeleton-nearby, .ai-edit-selected-block, .ai-hide-placeholder, .ai-typing-skeleton').forEach((el) => {
+        el.classList.remove('ai-placeholder-skeleton', 'ai-skeleton-nearby', 'ai-edit-selected-block', 'ai-hide-placeholder', 'ai-typing-skeleton');
       });
     }
 
@@ -1070,7 +1122,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       aiBlockIdsRef.current = new Set();
       setShowAIActions(false);
       if (err.name !== 'AbortError') {
-        setAiErrorToast(err.message || 'AI generation failed');
+        console.error('AI generation error:', err);
+        setAiErrorToast('AI generation failed');
       }
     }
 
@@ -1083,8 +1136,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       async function animateTyping(blockId, contentStr, signal) {
         if (!contentStr || signal?.aborted) return;
         const chars = [...contentStr];
-        const BATCH = 3;
-        const DELAY = 20;
+        const BATCH = 8;
+        const DELAY = 12;
 
         for (let i = 0; i <= chars.length; i += BATCH) {
           if (signal?.aborted) return;
@@ -1093,7 +1146,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           try {
             editor.updateBlock(blockId, { content: partialContent });
           } catch { return; }
-          if (i % 30 === 0) {
+          if (i % 40 === 0) {
             const el = wrapperRef.current?.querySelector(`[data-id="${blockId}"]`);
             if (el) {
               const rect = el.getBoundingClientRect();
@@ -1160,11 +1213,12 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         return;
       }
 
-      // Remove the initial placeholder — we'll insert real blocks
-      try { editor.removeBlocks([insertedBlock.id]); } catch {}
-      currentIds = [];
-      aiBlockIdsRef.current = new Set();
-      aiBlockCountRef.current = 0;
+      // Keep the placeholder — reuse it as the first AI block instead of removing and reinserting
+      // This avoids stale ProseMirror references after removeBlocks
+      currentIds = [insertedBlock.id];
+      aiBlockIdsRef.current = new Set(currentIds);
+      aiBlockCountRef.current = 1;
+      let isFirstBlock = true;
 
       // Track pending image generations
       const pendingImages = [];
@@ -1177,18 +1231,122 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           for (const blockDef of blocks) {
             if (abortController.signal.aborted) break;
 
-            // Determine insert position (after last AI block, or after anchor)
-            const afterId = currentIds.length > 0
-              ? currentIds[currentIds.length - 1]
-              : anchorBlockId;
+            // For the very first block, reuse the placeholder instead of inserting
+            if (isFirstBlock) {
+              isFirstBlock = false;
+
+              if (blockDef.type === 'image') {
+                // Convert placeholder to image block
+                const imageId = `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                try {
+                  editor.updateBlock(insertedBlock.id, {
+                    type: 'image',
+                    props: { _imageId: imageId, caption: blockDef.props?.alt || '' },
+                  });
+                } catch (updateErr) {
+                  console.error('Failed to update placeholder to image:', updateErr);
+                  continue;
+                }
+
+                requestAnimationFrame(() => {
+                  const el = wrapperRef.current?.querySelector(`[data-id="${insertedBlock.id}"]`);
+                  if (el) el.classList.add('ai-image-skeleton');
+                });
+
+                const imgPrompt = blockDef.props?.prompt || blockDef.props?.alt || 'blog image';
+                pendingImages.push(
+                  generateAndUploadImage({
+                    imageId,
+                    prompt: imgPrompt,
+                    alt: blockDef.props?.alt || '',
+                    width: blockDef.props?.width || 1024,
+                    height: blockDef.props?.height || 576,
+                    blogId,
+                    onPreview: ({ id, previewUrl, alt }) => {
+                      replaceImagePlaceholder(id, previewUrl, alt);
+                    },
+                    onDone: ({ id, url, alt }) => {
+                      replaceImagePlaceholder(id, url, alt);
+                    },
+                    onError: ({ id, error }) => {
+                      removeImagePlaceholder(id);
+                      console.error('AI image generation error:', error);
+                      setAiErrorToast('Image generation failed');
+                    },
+                    onPhase: (phase) => setAiPhase(phase),
+                    signal: abortController.signal,
+                  })
+                );
+              } else {
+                // Convert placeholder to the correct block type
+                const blockType = blockDef.type || 'paragraph';
+                const props = {};
+                if (blockType === 'heading') {
+                  const lvl = parseInt(blockDef.props?.level) || 2;
+                  props.level = String(Math.max(lvl, 2));
+                }
+                if (blockType === 'codeBlock' && blockDef.props?.language) {
+                  props.language = blockDef.props.language;
+                }
+
+                try {
+                  // Only change type if it differs from the placeholder paragraph
+                  if (blockType !== 'paragraph') {
+                    editor.updateBlock(insertedBlock.id, { type: blockType, props });
+                  } else if (Object.keys(props).length > 0) {
+                    editor.updateBlock(insertedBlock.id, { props });
+                  }
+                } catch (updateErr) {
+                  // Fallback: remove old block, insert new one with correct type
+                  try {
+                    const anchorId = aiAnchorIdRef.current;
+                    editor.removeBlocks([insertedBlock.id]);
+                    editor.insertBlocks([{ type: blockType, props, content: [] }], anchorId, 'after');
+                    const refreshedDoc = editor.document;
+                    const anchorIdx = refreshedDoc.findIndex((b) => b.id === anchorId);
+                    if (anchorIdx !== -1 && anchorIdx + 1 < refreshedDoc.length) {
+                      insertedBlock = refreshedDoc[anchorIdx + 1];
+                      currentIds = [insertedBlock.id];
+                      aiBlockIdsRef.current = new Set(currentIds);
+                    }
+                  } catch (fallbackErr) {
+                    console.error('Failed to update placeholder block:', fallbackErr);
+                    continue;
+                  }
+                }
+
+                highlightAiBlocks(currentIds, true);
+
+                const newBlockEl = wrapperRef.current?.querySelector(`[data-id="${insertedBlock.id}"]`);
+                if (newBlockEl) newBlockEl.classList.add('ai-typing-skeleton');
+
+                const contentStr = blockDef.content || '';
+                if (contentStr && blockType !== 'codeBlock') {
+                  if (newBlockEl) newBlockEl.classList.remove('ai-typing-skeleton');
+                  await animateTyping(insertedBlock.id, contentStr, abortController.signal);
+                } else if (contentStr) {
+                  const content = parseInlineContent(contentStr);
+                  try { editor.updateBlock(insertedBlock.id, { content }); } catch {}
+                }
+              }
+              continue;
+            }
+
+            // Subsequent blocks — insert after the last AI block
+            const afterId = currentIds[currentIds.length - 1];
 
             if (blockDef.type === 'image') {
               // Image generation block
               const imageId = `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-              editor.insertBlocks([{
-                type: 'image',
-                props: { _imageId: imageId, caption: blockDef.props?.alt || '' },
-              }], afterId, 'after');
+              try {
+                editor.insertBlocks([{
+                  type: 'image',
+                  props: { _imageId: imageId, caption: blockDef.props?.alt || '' },
+                }], afterId, 'after');
+              } catch (insertErr) {
+                console.error('Failed to insert image block after', afterId, insertErr);
+                continue;
+              }
 
               const updatedDoc = editor.document;
               const afterIdx = updatedDoc.findIndex((b) => b.id === afterId);
@@ -1222,7 +1380,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                     },
                     onError: ({ id, error }) => {
                       removeImagePlaceholder(id);
-                      setAiErrorToast(error || 'Image generation failed');
+                      console.error('AI image generation error:', error);
+                      setAiErrorToast('Image generation failed');
                     },
                     onPhase: (phase) => setAiPhase(phase),
                     signal: abortController.signal,
@@ -1241,11 +1400,16 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                 props.language = blockDef.props.language;
               }
 
-              editor.insertBlocks([{
-                type: blockType,
-                props,
-                content: [],
-              }], afterId, 'after');
+              try {
+                editor.insertBlocks([{
+                  type: blockType,
+                  props,
+                  content: [],
+                }], afterId, 'after');
+              } catch (insertErr) {
+                console.error('Failed to insert block after', afterId, insertErr);
+                continue;
+              }
 
               const updatedDoc = editor.document;
               const afterIdx = updatedDoc.findIndex((b) => b.id === afterId);
@@ -1258,9 +1422,15 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                 // Highlight this block
                 highlightAiBlocks(currentIds, true);
 
+                // Add skeleton shimmer while waiting to type
+                const newBlockEl = wrapperRef.current?.querySelector(`[data-id="${newBlock.id}"]`);
+                if (newBlockEl) newBlockEl.classList.add('ai-typing-skeleton');
+
                 // Animate typing for text content
                 const contentStr = blockDef.content || '';
                 if (contentStr && blockType !== 'codeBlock') {
+                  // Remove skeleton once typing starts
+                  if (newBlockEl) newBlockEl.classList.remove('ai-typing-skeleton');
                   await animateTyping(newBlock.id, contentStr, abortController.signal);
                 } else if (contentStr) {
                   // For code blocks, insert all at once (no char animation)
@@ -1279,11 +1449,16 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
             if (origEl) origEl.classList.add('ai-edit-original-block');
 
             // Insert replacement after the original
-            editor.insertBlocks([{
-              type: targetBlock.type,
-              props: targetBlock.props || {},
-              content: [],
-            }], op.blockId, 'after');
+            try {
+              editor.insertBlocks([{
+                type: targetBlock.type,
+                props: targetBlock.props || {},
+                content: [],
+              }], op.blockId, 'after');
+            } catch (insertErr) {
+              console.error('Failed to insert edit block after', op.blockId, insertErr);
+              continue;
+            }
 
             const updatedDoc = editor.document;
             const origIdx = updatedDoc.findIndex((b) => b.id === op.blockId);
@@ -1329,16 +1504,14 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       setAiGeneratingBlockId(null);
       aiAbortRef.current = null;
       setShowAIActions(currentIds.length > 0);
-      requestAnimationFrame(() => {
-        highlightAiBlocks(currentIds, false);
-      });
+      highlightAiBlocks(currentIds, false);
     } catch (err) {
       handleAIError(err);
     }
   }, [editor, getAiBlockIds, highlightAiBlocks, getFullBlogContext, blogId, handleAIKeep, aiMenuPos, hideSparkle, onTitleChange, replaceImagePlaceholder, removeImagePlaceholder]);
 
   return (
-    <div className={`blog-editor-wrapper${(showAIActions && aiBlockIds.size > 0) ? ' ai-editor-locked' : ''}`} ref={wrapperRef} style={{ position: 'relative' }}>
+    <div className={`blog-editor-wrapper${aiGenerating ? ' ai-editor-locked' : ''}`} ref={wrapperRef} style={{ position: 'relative' }}>
       <BlockNoteView
         editor={editor}
         onChange={handleChange}

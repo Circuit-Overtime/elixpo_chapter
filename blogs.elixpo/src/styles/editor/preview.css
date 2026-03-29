@@ -1,15 +1,91 @@
+/* ===== Preview Floating TOC (top-right sidebar) ===== */
+
+.preview-floating-toc {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  width: 180px;
+  z-index: 30;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.preview-floating-toc-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #666;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.preview-floating-toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preview-floating-toc-link {
+  font-size: 12px;
+  color: #8896a8;
+  text-decoration: none;
+  display: block;
+  padding: 2px 0;
+  transition: color 0.15s;
+}
+
+.preview-floating-toc-link:hover {
+  color: #c4b5fd;
+}
+
+/* Hide when viewport too narrow for sidebar */
+@media (max-width: 1400px) {
+  .preview-floating-toc {
+    display: none;
+  }
+}
+
+/* ===== Back to Top Button ===== */
+
+.preview-back-to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 30;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #232d3f;
+  background: #141a26;
+  color: #8896a8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.preview-back-to-top:hover {
+  color: #c4b5fd;
+  border-color: rgba(196, 181, 253, 0.25);
+}
+
 /* ===== Full-width preview wrapper — breaks out of 720px parent ===== */
 
 .blog-preview-fullwidth {
   width: 100vw;
-  max-width: 900px;
-  margin-left: 50%;
-  transform: translateX(-50%);
+  margin-left: calc(-50vw + 50%);
   min-height: calc(100vh - 120px);
-  padding: 0 24px;
+  padding: 0;
 }
 
 .blog-preview-fullwidth .blog-preview {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 24px;
   min-height: calc(100vh - 160px);
 }
 
@@ -56,12 +132,12 @@
   margin-bottom: 0.75em;
 }
 
-.blog-preview-content a {
+.blog-preview-content a:not(.mention-chip) {
   color: #7ba8f0;
   text-decoration: underline;
 }
 
-.blog-preview-content a:hover {
+.blog-preview-content a:not(.mention-chip):hover {
   color: #9dc0ff;
 }
 
@@ -123,7 +199,7 @@
 }
 
 .blog-preview-content pre {
-  background: #0c1017;
+  background: #131922;
   border: 1px solid #232d3f;
   border-radius: 10px;
   padding: 1.2em;
@@ -145,7 +221,7 @@
   font-size: 0.85em;
 }
 
-.blog-preview-content img {
+.blog-preview-content img:not(.mention-chip-avatar) {
   border-radius: 10px;
   max-width: 100%;
   width: 100%;

@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 // Server-side proxy for Pollinations image generation
 // Keeps API key server-side
 

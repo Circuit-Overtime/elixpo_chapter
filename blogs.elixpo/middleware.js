@@ -10,6 +10,14 @@ const PROTECTED_PATHS = [
 export function middleware(request) {
   const { pathname } = request.nextUrl;
 
+  // Rewrite /@name/... paths to /handle/name/... (Next.js treats @ as parallel route prefix)
+  if (pathname.startsWith('/@')) {
+    const rest = pathname.slice(2); // remove "/@"
+    const rewriteUrl = new URL(`/handle/${rest}`, request.url);
+    rewriteUrl.search = request.nextUrl.search;
+    return NextResponse.rewrite(rewriteUrl);
+  }
+
   // Only protect specific routes — everything else is public
   const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
 

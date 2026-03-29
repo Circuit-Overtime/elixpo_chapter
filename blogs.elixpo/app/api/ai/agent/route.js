@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 // Agentic AI endpoint — returns structured JSON response (no streaming)
 
 import { enforceAILimits } from '../../../../lib/aiRateLimit';
