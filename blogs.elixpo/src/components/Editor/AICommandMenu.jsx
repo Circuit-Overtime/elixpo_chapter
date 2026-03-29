@@ -24,7 +24,7 @@ export default function AICommandMenu({ position, onSubmit, onClose }) {
   }, [onClose]);
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
+    if (e.key === 'Escape' || (e.key === 'Backspace' && !query)) {
       e.preventDefault();
       onClose();
     } else if (e.key === 'Enter' && query.trim()) {
@@ -44,39 +44,42 @@ export default function AICommandMenu({ position, onSubmit, onClose }) {
         zIndex: 100,
       }}
     >
-      {/* Inline style — blends into the editor line, no dark box */}
-      <div className="flex items-center gap-2.5 px-1 py-0.5">
-        {/* AI logo */}
-        <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden opacity-70">
-          <img src="/base-logo.png" alt="AI" className="w-full h-full object-cover" />
-        </div>
+      <div className="ai-inline-input-container">
+        <div className="flex items-center gap-2.5 px-3 py-2">
+          {/* AI logo */}
+          <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden">
+            <img src="/base-logo.png" alt="AI" className="w-full h-full object-cover" />
+          </div>
 
-        {/* Input — looks like editor text */}
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask AI anything..."
-          className="flex-1 bg-transparent text-[1em] text-[#c4b5fd] placeholder-[#6b7a8d] outline-none leading-[1.75]"
-          autoComplete="off"
-          spellCheck="false"
-          style={{ fontFamily: 'inherit' }}
-        />
+          {/* Input */}
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask AI anything..."
+            className="flex-1 bg-transparent text-[14px] text-[#e0e0e0] placeholder-[#566479] outline-none"
+            autoComplete="off"
+            spellCheck="false"
+          />
 
-        {/* Submit button — subtle */}
-        {query.trim() && (
+          {/* Submit button */}
           <button
-            onClick={() => onSubmit(query.trim())}
-            className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-[#9b7bf7] hover:bg-[#b69aff] cursor-pointer transition-colors"
+            onClick={() => query.trim() && onSubmit(query.trim())}
+            disabled={!query.trim()}
+            className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+              query.trim()
+                ? 'bg-[#9b7bf7] hover:bg-[#b69aff] cursor-pointer'
+                : 'bg-transparent cursor-default'
+            }`}
           >
-            <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg className={`w-3 h-3 ${query.trim() ? 'text-white' : 'text-[#3a4553]'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="19" x2="12" y2="5" />
               <polyline points="5 12 12 5 19 12" />
             </svg>
           </button>
-        )}
+        </div>
       </div>
     </div>
   );
