@@ -378,10 +378,14 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const [mentionPos, setMentionPos] = useState({ top: 0, left: 0 });
   const mentionStartRef = useRef(null);
   const [showAIMenu, setShowAIMenu] = useState(false);
-  const [aiMenuPos, setAiMenuPos] = useState({ top: 0, left: 0 });
+  const [aiMenuPos, setAiMenuPos] = useState({ top: 0, left: 0, anchorBlockId: null });
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiGeneratingBlockId, setAiGeneratingBlockId] = useState(null);
   const [aiPhase, setAiPhase] = useState('idle'); // idle | thinking | writing | generating_image | uploading
+  const [aiStatusInline, setAiStatusInline] = useState(false); // true = inline status bar, false = bottom bar
+  const [aiInlinePos, setAiInlinePos] = useState({ top: 0 }); // position for inline status bar
+  const [aiStatusText, setAiStatusText] = useState('is thinking'); // cycling status text
+  const aiStatusTimerRef = useRef(null);
   const [aiErrorToast, setAiErrorToast] = useState(null);
   const [aiBlockIds, setAiBlockIds] = useState(new Set());
   const [showAIActions, setShowAIActions] = useState(false);
@@ -622,38 +626,24 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           const wrapperRect = wrapperRef.current?.getBoundingClientRect();
           if (!wrapperRect) return;
 
-          // Try to get position from the focused block element directly
-          // The cursor block DOM element is more reliable than selection range on empty blocks
-          let top = 0;
           const cursor = editor.getTextCursorPosition();
-          if (cursor?.block?.id) {
-            const blockEl = wrapperRef.current?.querySelector(`[data-id="${cursor.block.id}"]`);
-            if (blockEl) {
-              const blockRect = blockEl.getBoundingClientRect();
-              top = blockRect.bottom - wrapperRect.top + 6;
-            }
-          }
+          if (!cursor?.block?.id) return;
 
-          // Fallback: use selection range
-          if (top === 0) {
-            const sel = window.getSelection();
-            if (sel && sel.rangeCount > 0) {
-              const range = sel.getRangeAt(0);
-              const rect = range.getBoundingClientRect();
-              if (rect.height > 0) {
-                top = rect.bottom - wrapperRect.top + 6;
-              } else {
-                // Zero rect — use the focused element
-                const activeEl = document.activeElement;
-                if (activeEl) {
-                  const activeRect = activeEl.getBoundingClientRect();
-                  top = activeRect.bottom - wrapperRect.top + 6;
-                }
-              }
-            }
-          }
+          const anchorBlockId = cursor.block.id;
+          const blockEl = wrapperRef.current?.querySelector(`[data-id="${anchorBlockId}"]`);
+          if (!blockEl) return;
 
-          setAiMenuPos({ top, left: 0 });
+          // Hide the empty line's placeholder content — the AI input will take its place
+          blockEl.classList.add('ai-input-host');
+
+          // Insert a new empty paragraph below so the placeholder text moves there
+          editor.insertBlocks([{ type: 'paragraph', content: [] }], anchorBlockId, 'after');
+
+          // Position the AI input at the block
+          const blockRect = blockEl.getBoundingClientRect();
+          const top = blockRect.top - wrapperRect.top;
+
+          setAiMenuPos({ top, left: 0, anchorBlockId });
           setShowAIMenu(true);
         }
       }
@@ -725,11 +715,18 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       aiAbortRef.current.abort();
       aiAbortRef.current = null;
     }
+    if (aiStatusTimerRef.current) {
+      clearInterval(aiStatusTimerRef.current);
+      aiStatusTimerRef.current = null;
+    }
+    setAiStatusInline(false);
     setAiGenerating(false);
     setAiPhase('idle');
     setAiGeneratingBlockId(null);
     hideSparkle();
-    wrapperRef.current?.querySelectorAll('.ai-skeleton-nearby').forEach((el) => el.classList.remove('ai-skeleton-nearby'));
+    wrapperRef.current?.querySelectorAll('.ai-skeleton-nearby, .ai-placeholder-skeleton').forEach((el) => {
+      el.classList.remove('ai-skeleton-nearby', 'ai-placeholder-skeleton');
+    });
 
     // Scroll to the AI-generated content and show keep/discard
     const ids = aiBlockIdsRef.current;
@@ -846,7 +843,14 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   }, [editor]);
 
   const handleAISubmit = useCallback(async (userPrompt) => {
+    const menuPos = aiMenuPos; // capture before closing
     setShowAIMenu(false);
+
+    // Clean up the host block styling
+    if (menuPos.anchorBlockId) {
+      const hostEl = wrapperRef.current?.querySelector(`[data-id="${menuPos.anchorBlockId}"]`);
+      if (hostEl) hostEl.classList.remove('ai-input-host');
+    }
 
     // Auto-keep previous AI content if any exists
     if (aiBlockIdsRef.current.size > 0) {
@@ -903,12 +907,25 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     const abortController = new AbortController();
     aiAbortRef.current = abortController;
 
-    // Highlight the placeholder block and show sparkle
+    // Show inline status bar at the same position as the AI command menu
+    setAiStatusInline(true);
+    setAiInlinePos({ top: menuPos.top });
+    setAiStatusText('is thinking');
+
+    // Cycle through status messages before streaming starts
+    const statusMessages = ['is thinking', 'is understanding', 'is preparing'];
+    let statusIdx = 0;
+    aiStatusTimerRef.current = setInterval(() => {
+      statusIdx = (statusIdx + 1) % statusMessages.length;
+      setAiStatusText(statusMessages[statusIdx]);
+    }, 1800);
+
+    // Add skeleton shimmer to the placeholder block
     requestAnimationFrame(() => {
-      highlightAiBlocks(currentIds, true);
-      // Add skeleton loading to nearby lines during thinking
       const placeholderEl = wrapperRef.current?.querySelector(`[data-id="${insertedBlock.id}"]`);
       if (placeholderEl) {
+        placeholderEl.classList.add('ai-placeholder-skeleton');
+        // Add skeleton to nearby lines too
         let sibling = placeholderEl.nextElementSibling;
         let count = 0;
         while (sibling && count < 3) {
@@ -916,7 +933,6 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           sibling = sibling.nextElementSibling;
           count++;
         }
-        placeholderEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
 
@@ -934,8 +950,27 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           : userPrompt;
       }
 
+      // Track if first chunk has arrived (for inline→bottom transition)
+      let firstChunkReceived = false;
+
       // Helper to update blocks from streamed text
       const updateBlocksFromText = (fullText) => {
+        // First chunk: transition from inline status to bottom bar
+        if (!firstChunkReceived) {
+          firstChunkReceived = true;
+          // Stop cycling status messages
+          if (aiStatusTimerRef.current) {
+            clearInterval(aiStatusTimerRef.current);
+            aiStatusTimerRef.current = null;
+          }
+          setAiStatusInline(false); // move to bottom bar
+          // Remove skeleton from placeholder and nearby lines
+          wrapperRef.current?.querySelectorAll('.ai-placeholder-skeleton').forEach((el) => {
+            el.classList.remove('ai-placeholder-skeleton');
+          });
+          // Highlight and show sparkle on AI blocks
+          highlightAiBlocks(currentIds, true);
+        }
         // Remove skeleton loading once AI starts writing
         wrapperRef.current?.querySelectorAll('.ai-skeleton-nearby').forEach((el) => {
           el.classList.remove('ai-skeleton-nearby');
@@ -1080,7 +1115,19 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         });
       }
 
+      function cleanupInlineStatus() {
+        if (aiStatusTimerRef.current) {
+          clearInterval(aiStatusTimerRef.current);
+          aiStatusTimerRef.current = null;
+        }
+        setAiStatusInline(false);
+        wrapperRef.current?.querySelectorAll('.ai-placeholder-skeleton, .ai-skeleton-nearby').forEach((el) => {
+          el.classList.remove('ai-placeholder-skeleton', 'ai-skeleton-nearby');
+        });
+      }
+
       function finishAI(fullText) {
+        cleanupInlineStatus();
         let contentText = fullText;
         if (contentText.trim().startsWith('TITLE:')) {
           const lines = contentText.trim().split('\n');
@@ -1153,6 +1200,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       }
 
       function handleAIError(err) {
+        cleanupInlineStatus();
         setAiGenerating(false);
         setAiPhase('idle');
         setAiGeneratingBlockId(null);
@@ -1168,6 +1216,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         setAiErrorToast(err.message || 'AI generation failed');
       }
     } catch (err) {
+      if (aiStatusTimerRef.current) { clearInterval(aiStatusTimerRef.current); aiStatusTimerRef.current = null; }
+      setAiStatusInline(false);
+      wrapperRef.current?.querySelectorAll('.ai-placeholder-skeleton, .ai-skeleton-nearby').forEach((el) => {
+        el.classList.remove('ai-placeholder-skeleton', 'ai-skeleton-nearby');
+      });
       setAiGenerating(false);
       setAiPhase('idle');
       setAiGeneratingBlockId(null);
@@ -1183,7 +1236,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       setShowAIActions(false);
       setAiErrorToast(err.message || 'AI generation failed');
     }
-  }, [editor, getAiBlockIds, highlightAiBlocks, getFullBlogContext, blogId, handleAIKeep]);
+  }, [editor, getAiBlockIds, highlightAiBlocks, getFullBlogContext, blogId, handleAIKeep, aiMenuPos]);
 
   // Replace an image placeholder with the real Cloudinary URL
   const replaceImagePlaceholder = useCallback((imageId, url, alt) => {
@@ -1261,7 +1314,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   }, [editor]);
 
   return (
-    <div className={`blog-editor-wrapper${(aiGenerating || (showAIActions && aiBlockIds.size > 0)) ? ' ai-editor-locked' : ''}`} ref={wrapperRef} style={{ position: 'relative' }}>
+    <div className={`blog-editor-wrapper${(showAIActions && aiBlockIds.size > 0) ? ' ai-editor-locked' : ''}`} ref={wrapperRef} style={{ position: 'relative' }}>
       <BlockNoteView
         editor={editor}
         onChange={handleChange}
@@ -1293,12 +1346,66 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         <AICommandMenu
           position={aiMenuPos}
           onSubmit={handleAISubmit}
-          onClose={() => setShowAIMenu(false)}
+          onClose={() => {
+            setShowAIMenu(false);
+            // Restore the host block and remove the inserted empty paragraph
+            if (aiMenuPos.anchorBlockId) {
+              const hostEl = wrapperRef.current?.querySelector(`[data-id="${aiMenuPos.anchorBlockId}"]`);
+              if (hostEl) hostEl.classList.remove('ai-input-host');
+              // Remove the extra paragraph we inserted below
+              try {
+                const doc = editor.document;
+                const idx = doc.findIndex((b) => b.id === aiMenuPos.anchorBlockId);
+                if (idx !== -1 && idx + 1 < doc.length) {
+                  const nextBlock = doc[idx + 1];
+                  const isEmpty = nextBlock.type === 'paragraph' &&
+                    (!nextBlock.content || nextBlock.content.length === 0 ||
+                      (nextBlock.content.length === 1 && nextBlock.content[0].text === ''));
+                  if (isEmpty) editor.removeBlocks([nextBlock.id]);
+                }
+              } catch {}
+              // Refocus the original block
+              try { editor.setTextCursorPosition(aiMenuPos.anchorBlockId, 'start'); } catch {}
+            }
+          }}
         />
       )}
 
-      {/* Elixpo AI typing bar — fixed bottom glassmorphism */}
-      {aiGenerating && (
+      {/* Inline AI status bar — appears at the empty line before streaming starts */}
+      {aiGenerating && aiStatusInline && (
+        <div
+          className="ai-inline-status-bar"
+          style={{
+            position: 'absolute',
+            top: aiInlinePos.top,
+            left: 0,
+            right: 0,
+            zIndex: 100,
+          }}
+        >
+          <div className="mx-auto w-full max-w-[600px] bg-[#141a26] border border-[#232d3f] rounded-xl shadow-2xl overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border-[1.5px] border-[rgba(196,181,253,0.3)]">
+                <img src="/base-logo.png" alt="Elixpo" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[13px] font-semibold text-[#c4b5fd]">Elixpo</span>
+                <span className="text-[13px] text-[#8b8fa3] ai-status-text-fade">{aiStatusText}<span className="elixpo-typing-dots"><span /><span /><span /></span></span>
+              </div>
+              <button
+                onClick={handleAIStop}
+                className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-lg text-[12px] font-medium text-[#f87171] bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.25)] hover:bg-[rgba(248,113,113,0.15)] transition-colors"
+              >
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="10" height="10" rx="2" /></svg>
+                Stop
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Elixpo AI typing bar — fixed bottom glassmorphism (shown after first chunk) */}
+      {aiGenerating && !aiStatusInline && (
         <div className="elixpo-typing-bar">
           <div className="elixpo-typing-bar-inner">
             <img src="/base-logo.png" alt="Elixpo" className="elixpo-typing-avatar" />
