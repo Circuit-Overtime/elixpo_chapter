@@ -40,7 +40,7 @@ export async function POST(request) {
   if (error) return error;
 
   const body = await request.json();
-  const { systemPrompt, userPrompt, messages, model = 'openai' } = body;
+  const { systemPrompt, userPrompt, messages, model = 'gemini-fast' } = body;
 
   const chatMessages = messages || [
     ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
