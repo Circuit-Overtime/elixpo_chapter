@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { generatePixelAvatar } from '../../utils/pixelAvatar';
 import AppShell from '../../components/AppShell';
 import Link from 'next/link';
 
@@ -335,10 +336,162 @@ function NotificationsTab() {
   );
 }
 
+// Random org name suggestions (GitHub-style)
+const ORG_NAME_ADJECTIVES = ['curious', 'bold', 'swift', 'bright', 'calm', 'cool', 'epic', 'kind', 'lucky', 'neat', 'rare', 'wise', 'keen', 'cozy', 'zesty'];
+const ORG_NAME_NOUNS = ['panda', 'falcon', 'lotus', 'spark', 'pixel', 'orbit', 'coral', 'cedar', 'flint', 'prism', 'ridge', 'bloom', 'ember', 'drift', 'grove'];
+
+function getRandomOrgNames(count = 3) {
+  const names = [];
+  const used = new Set();
+  while (names.length < count) {
+    const adj = ORG_NAME_ADJECTIVES[Math.floor(Math.random() * ORG_NAME_ADJECTIVES.length)];
+    const noun = ORG_NAME_NOUNS[Math.floor(Math.random() * ORG_NAME_NOUNS.length)];
+    const combo = `${adj}-${noun}`;
+    if (!used.has(combo)) { used.add(combo); names.push(combo); }
+  }
+  return names;
+}
+
+// ── Create Org Modal ──
+function CreateOrgModal({ onClose, onCreated }) {
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [description, setDescription] = useState('');
+  const [bio, setBio] = useState('');
+  const [website, setWebsite] = useState('');
+  const [visibility, setVisibility] = useState('public');
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
+  const [suggestions] = useState(() => getRandomOrgNames(3));
+
+  useEffect(() => {
+    if (name) {
+      setSlug(name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 40));
+    }
+  }, [name]);
+
+  const handleCreate = async () => {
+    if (!name.trim() || !slug.trim() || creating) return;
+    setCreating(true);
+    setError('');
+    try {
+      const res = await fetch('/api/orgs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), slug, description, bio, website, visibility }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onCreated?.(data);
+        onClose();
+      } else {
+        setError(data.error || 'Failed to create');
+      }
+    } catch { setError('Network error'); }
+    setCreating(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-lg bg-[#141a26] border border-[#232d3f] rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 border-b border-[#232d3f]">
+          <h2 className="text-[16px] font-bold text-white">Create Organization</h2>
+          <button onClick={onClose} className="text-[#8896a8] hover:text-white p-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+          {/* Pixel avatar preview */}
+          <div className="flex items-center gap-4">
+            <img src={generatePixelAvatar(slug || name || 'org')} alt="" className="w-14 h-14 rounded-xl" />
+            <div className="text-[12px] text-[#8896a8]">Auto-generated avatar based on your org name. You can change it later.</div>
+          </div>
+
+          {/* Name suggestions */}
+          {!name && (
+            <div>
+              <label className="text-[11px] text-[#666] mb-1.5 block">Need inspiration?</label>
+              <div className="flex flex-wrap gap-2">
+                {suggestions.map(s => (
+                  <button key={s} onClick={() => setName(s)}
+                    className="px-3 py-1.5 text-[12px] text-[#9b7bf7] bg-[#9b7bf70a] border border-[#9b7bf720] rounded-lg hover:bg-[#9b7bf714] transition-colors">
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Name *</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="My Organization"
+              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2.5 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] transition-colors placeholder-[#6b7a8d]" />
+          </div>
+          <div>
+            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Slug *</label>
+            <div className="flex items-center bg-[#131922] rounded-lg border border-[#232d3f] overflow-hidden">
+              <span className="text-[#8896a8] text-[13px] px-3">@</span>
+              <input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^\w-]/g, ''))}
+                className="flex-1 bg-transparent text-[#e0e0e0] py-2.5 pr-3 outline-none text-[13px]" />
+            </div>
+          </div>
+          <div>
+            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Description</label>
+            <input value={description} onChange={e => setDescription(e.target.value)} placeholder="A short tagline..."
+              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2.5 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] transition-colors placeholder-[#6b7a8d]" />
+          </div>
+          <div>
+            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Bio (Markdown)</label>
+            <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Tell people about your org..."
+              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2.5 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] transition-colors placeholder-[#6b7a8d] resize-none" />
+          </div>
+          <div>
+            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Website</label>
+            <input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://..."
+              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2.5 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] transition-colors placeholder-[#6b7a8d]" />
+          </div>
+          <div>
+            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Visibility</label>
+            <div className="flex gap-2">
+              {['public', 'private'].map(v => (
+                <button key={v} onClick={() => setVisibility(v)}
+                  className={`flex-1 py-2 rounded-lg text-[13px] font-medium transition-colors ${visibility === v ? 'bg-[#9b7bf7] text-white' : 'bg-[#131922] border border-[#232d3f] text-[#9ca3af] hover:border-[#444]'}`}>
+                  {v.charAt(0).toUpperCase() + v.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          {error && <p className="text-[12px] text-[#f87171]">{error}</p>}
+        </div>
+
+        <div className="p-5 border-t border-[#232d3f] flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-[13px] text-[#9ca3af] hover:text-white transition-colors">Cancel</button>
+          <button onClick={handleCreate} disabled={!name.trim() || !slug.trim() || creating}
+            className="px-5 py-2 bg-[#9b7bf7] text-white font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40">
+            {creating ? 'Creating...' : 'Create Organization'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Organization Tab ──
 function OrganizationTab({ user }) {
-  // TODO: fetch user's orgs from API
-  const orgs = [];
+  const [orgs, setOrgs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const fetchOrgs = useCallback(() => {
+    fetch('/api/orgs')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.orgs) setOrgs(d.orgs); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchOrgs(); }, [fetchOrgs]);
 
   return (
     <div>
@@ -347,22 +500,35 @@ function OrganizationTab({ user }) {
           <h3 className="text-[15px] text-[#e0e0e0] font-semibold">Your Organizations</h3>
           <p className="text-[12px] text-[#8896a8] mt-0.5">Create and manage organizations to publish collaboratively.</p>
         </div>
-        <button className="px-4 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-lg transition-colors">
+        <button onClick={() => setShowCreateModal(true)} className="px-4 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-lg transition-colors">
           Create Organization
         </button>
       </div>
 
-      {orgs.length > 0 ? (
+      {loading ? (
+        <div className="space-y-3">
+          {[...Array(2)].map((_, i) => <div key={i} className="h-16 bg-[#141a26] border border-[#232d3f] rounded-xl animate-pulse" />)}
+        </div>
+      ) : orgs.length > 0 ? (
         <div className="space-y-3">
           {orgs.map((org) => (
             <div key={org.id} className="flex items-center gap-4 p-4 bg-[#141a26] border border-[#232d3f] rounded-xl">
-              <div className="h-10 w-10 rounded-lg bg-[#232d3f] flex-shrink-0 flex items-center justify-center text-[14px] text-[#9ca3af] font-bold">
-                {org.name[0]}
-              </div>
+              {org.logo_url ? (
+                <img src={org.logo_url} alt="" className="h-10 w-10 rounded-lg object-cover flex-shrink-0" />
+              ) : (
+                <div className="h-10 w-10 rounded-lg bg-[#232d3f] flex-shrink-0 flex items-center justify-center text-[14px] text-[#9ca3af] font-bold">
+                  {(org.name || '?')[0].toUpperCase()}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] text-[#e0e0e0] font-medium truncate">{org.name}</p>
-                <p className="text-[12px] text-[#8896a8] truncate">@{org.slug} &middot; {org.role}</p>
+                <p className="text-[12px] text-[#8896a8] truncate">
+                  @{org.slug} &middot; {org.role} &middot; {org.member_count || 1} member{(org.member_count || 1) !== 1 ? 's' : ''}
+                </p>
               </div>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${org.visibility === 'private' ? 'bg-[#f8717114] text-[#f87171]' : 'bg-[#4ade8014] text-[#4ade80]'}`}>
+                {org.visibility}
+              </span>
               <Link href={`/settings/org/${org.slug}`} className="text-[12px] text-[#9b7bf7] hover:text-[#b69aff] transition-colors font-medium">
                 Manage
               </Link>
@@ -376,35 +542,18 @@ function OrganizationTab({ user }) {
           </svg>
           <p className="text-[#9ca3af] text-[14px] font-medium mb-1">No organizations yet</p>
           <p className="text-[#8896a8] text-[12px] mb-5">Create one to collaborate with others.</p>
-          <button className="px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
+          <button onClick={() => setShowCreateModal(true)} className="px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
             Create your first organization
           </button>
         </div>
       )}
 
-      <div className="h-px bg-[#232d3f] my-8" />
-
-      <SectionHeader title="Organization Settings" />
-      <SettingRow
-        title="Default visibility"
-        description="New organizations will use this visibility by default."
-        right={
-          <DropdownSelect
-            value="public"
-            onChange={() => {}}
-            options={[
-              { value: 'public', label: 'Public' },
-              { value: 'private', label: 'Private' },
-            ]}
-          />
-        }
-      />
-      <SettingRow
-        title="Allow org invitations"
-        description="Other users can invite you to join their organizations."
-        right={<Toggle checked={true} onChange={() => {}} />}
-        border={false}
-      />
+      {showCreateModal && (
+        <CreateOrgModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={() => fetchOrgs()}
+        />
+      )}
     </div>
   );
 }

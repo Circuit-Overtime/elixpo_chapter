@@ -255,7 +255,7 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
                   onChange={(e) => { setUrlInput(e.target.value); setUrlError(''); }}
                   onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
                   placeholder="https://example.com/banner.jpg"
-                  className="flex-1 bg-[#0c1017] text-[#e0e0e0] rounded-lg px-4 py-2.5 outline-none text-[13px] border border-[#232d3f] focus:border-[#333] transition-colors placeholder-[#6b7a8d]"
+                  className="flex-1 bg-[#131922] text-[#e0e0e0] rounded-lg px-4 py-2.5 outline-none text-[13px] border border-[#232d3f] focus:border-[#333] transition-colors placeholder-[#6b7a8d]"
                 />
                 <button
                   onClick={handleUrlSubmit}
@@ -368,7 +368,7 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
                   className="px-6 py-2 bg-[#9b7bf7] text-white font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   {saving ? (
-                    <div className="h-4 w-4 border-2 border-[#0c1017] border-t-transparent rounded-full animate-spin" />
+                    <div className="h-4 w-4 border-2 border-[#131922] border-t-transparent rounded-full animate-spin" />
                   ) : (
                     'Save Banner'
                   )}

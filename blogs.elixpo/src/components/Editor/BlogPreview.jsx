@@ -12,6 +12,19 @@ function renderBlocksToHTML(blocks) {
       if (c.type === 'inlineEquation' && c.props?.latex) {
         return `<span class="preview-inline-equation" data-latex="${encodeURIComponent(c.props.latex)}"></span>`;
       }
+      if (c.type === 'mention' && c.props?.username) {
+        const name = c.props.displayName || c.props.username;
+        const avatar = c.props.avatarUrl
+          ? `<img src="${c.props.avatarUrl}" alt="" class="mention-chip-avatar">`
+          : `<span class="mention-chip-initial">${(name || '?')[0].toUpperCase()}</span>`;
+        return `<a href="/@${c.props.username}" class="mention-chip">${avatar}@${name}</a>`;
+      }
+      if (c.type === 'blogMention' && c.props?.slugid) {
+        return `<a href="/${c.props.slugid}" class="mention-chip">${c.props.title || 'Untitled blog'}</a>`;
+      }
+      if (c.type === 'orgMention' && c.props?.slug) {
+        return `<a href="/@${c.props.slug}" class="mention-chip">@${c.props.name || c.props.slug}</a>`;
+      }
       let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       if (!text) return '';
       const s = c.styles || {};
@@ -21,19 +34,36 @@ function renderBlocksToHTML(blocks) {
       if (s.code) text = `<code>${text}</code>`;
       if (s.underline) text = `<u>${text}</u>`;
       if (c.type === 'link' && c.href) text = `<a href="${c.href}">${text}</a>`;
-      // Inline text color
       if (s.textColor) text = `<span style="color:${s.textColor}">${text}</span>`;
       if (s.backgroundColor) text = `<span style="background:${s.backgroundColor};border-radius:3px;padding:0 2px">${text}</span>`;
       return text;
     }).join('');
   }
 
+  // Collect headings for TOC
+  const headings = [];
+  for (const block of blocks) {
+    if (block.type === 'heading') {
+      const text = (block.content || []).map(c => c.text || '').join('');
+      if (text.trim()) {
+        const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
+        headings.push({ id, text: text.trim(), level: block.props?.level || 1 });
+      }
+    }
+  }
+
   for (const block of blocks) {
     const content = inlineToHTML(block.content);
     switch (block.type) {
+      case 'tableOfContents':
+        // Placeholder — will be replaced with actual TOC after all headings are collected
+        parts.push('__TOC_PLACEHOLDER__');
+        break;
       case 'heading': {
         const level = block.props?.level || 1;
-        parts.push(`<h${level}>${content}</h${level}>`);
+        const text = (block.content || []).map(c => c.text || '').join('');
+        const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
+        parts.push(`<h${level} id="${id}">${content}</h${level}>`);
         break;
       }
       case 'bulletListItem':
@@ -104,10 +134,17 @@ function renderBlocksToHTML(blocks) {
     }
   }
 
+  // TOC is rendered as a floating sidebar in the component, not in the HTML
+  let tocHTML = '';
+
   // Wrap consecutive bullet/numbered items in lists
   let html = parts.join('\n');
   html = html.replace(/((?:<li class="preview-bullet">.*?<\/li>\n?)+)/g, '<ul>$1</ul>');
   html = html.replace(/((?:<li class="preview-numbered">.*?<\/li>\n?)+)/g, '<ol>$1</ol>');
+
+  // Remove TOC placeholder (rendered separately as floating sidebar)
+  html = html.replace('__TOC_PLACEHOLDER__', '');
+
   return html;
 }
 
@@ -116,6 +153,15 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
 
   // Determine which HTML to use — prefer blocks-based rendering
   const renderedHTML = blocks && blocks.length > 0 ? renderBlocksToHTML(blocks) : html;
+
+  // Extract headings for floating TOC
+  const headings = (blocks || [])
+    .filter(b => b.type === 'heading' && b.content?.length > 0)
+    .map(b => {
+      const text = b.content.map(c => c.text || '').join('');
+      return { id: `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`, text: text.trim(), level: b.props?.level || 1 };
+    })
+    .filter(h => h.text);
 
   // Render KaTeX equations and mermaid diagrams after mount
   useEffect(() => {
@@ -199,7 +245,39 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
   }, [renderedHTML]);
 
   return (
-    <div className="blog-preview">
+    <div className="blog-preview" id="blog-preview-top">
+      {/* Floating TOC — top right */}
+      {headings.length >= 2 && (
+        <nav className="preview-floating-toc">
+          <p className="preview-floating-toc-label">On this page</p>
+          <ul className="preview-floating-toc-list">
+            {headings.map(h => (
+              <li key={h.id}>
+                <a
+                  href={`#${h.id}`}
+                  className="preview-floating-toc-link"
+                  style={{ paddingLeft: (h.level - 1) * 12 }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                >
+                  {h.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
+      {/* Back to top */}
+      <button
+        className="preview-back-to-top"
+        onClick={() => document.getElementById('blog-preview-top')?.scrollIntoView({ behavior: 'smooth' })}
+        title="Back to top"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </button>
       {/* Cover + emoji */}
       <div className="relative mb-2">
         {coverPreview && (
@@ -225,7 +303,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
               zIndex: 10,
             }}
           >
-            <div className="w-[72px] h-[72px] rounded-full bg-[#0e121b] border-[3px] border-[#0e121b] shadow-lg flex items-center justify-center relative">
+            <div className="w-[72px] h-[72px] rounded-full bg-[#131922] border-[3px] border-[#131922] shadow-lg flex items-center justify-center relative">
               <span className="text-[42px] leading-none select-none">{pageEmoji}</span>
               <div className="absolute inset-[-2px] rounded-full border border-[#232d3f]" />
             </div>
@@ -236,22 +314,14 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       {/* Spacer when emoji overlaps cover */}
       {pageEmoji && coverPreview && <div className="h-8" />}
 
-      {title && (
-        <h1 className="text-[2em] font-extrabold leading-tight mb-1">{title}</h1>
-      )}
-
-      {subtitle && (
-        <p className="text-xl text-[#888] mb-4">{subtitle}</p>
-      )}
-
-      {/* Author bar */}
+      {/* Author bar — above title */}
       {user && (
-        <div className="flex items-center gap-3 mt-3 mb-4">
+        <div className="flex items-center gap-3 mt-3 mb-5">
           <div className="flex -space-x-2">
             {user.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[#0e121b]" />
+              <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[#131922]" />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-[#232d3f] border-2 border-[#0e121b] flex items-center justify-center text-[11px] font-bold text-[#9ca3af]">
+              <div className="w-7 h-7 rounded-full bg-[#232d3f] border-2 border-[#131922] flex items-center justify-center text-[11px] font-bold text-[#9ca3af]">
                 {(user.display_name || user.username || '?')[0].toUpperCase()}
               </div>
             )}
@@ -266,17 +336,26 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
         </div>
       )}
 
+      {/* Tags — under author bar */}
       {tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-1.5">
           {tags.map((tag) => (
-            <span
-              key={tag}
-              className="px-3 py-1 bg-[#1D202A] rounded-full text-sm text-[#7ba8f0]"
-            >
+            <span key={tag} className="px-2.5 py-0.5 bg-[#9b7bf70a] rounded-full text-[12px] text-[#9b7bf7]">
               #{tag}
             </span>
           ))}
         </div>
+      )}
+
+      {/* 30px gap before title */}
+      <div style={{ height: '30px' }} />
+
+      {title && (
+        <h1 className="text-[2em] font-extrabold leading-tight mb-1">{title}</h1>
+      )}
+
+      {subtitle && (
+        <p className="text-xl text-[#888] mb-4">{subtitle}</p>
       )}
 
       <div className="mt-4">

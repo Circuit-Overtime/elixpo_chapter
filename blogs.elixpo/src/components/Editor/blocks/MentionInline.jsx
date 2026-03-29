@@ -1,6 +1,115 @@
 'use client';
 
 import { createReactInlineContentSpec } from '@blocknote/react';
+import { useState, useRef, useEffect } from 'react';
+
+function MentionChip({ username, displayName, avatarUrl }) {
+  const [showCard, setShowCard] = useState(false);
+  const [cardPos, setCardPos] = useState({ top: 0, left: 0 });
+  const [profile, setProfile] = useState(null);
+  const [fetched, setFetched] = useState(false);
+  const chipRef = useRef(null);
+  const hoverTimer = useRef(null);
+
+  const handleMouseEnter = () => {
+    hoverTimer.current = setTimeout(() => {
+      if (chipRef.current) {
+        const rect = chipRef.current.getBoundingClientRect();
+        setCardPos({ top: rect.bottom + 6, left: rect.left });
+      }
+      setShowCard(true);
+      // Fetch full profile on first hover
+      if (!fetched) {
+        setFetched(true);
+        fetch(`/api/resolve?name=${encodeURIComponent(username)}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => { if (d) setProfile(d); })
+          .catch(() => {});
+      }
+    }, 350);
+  };
+
+  const handleMouseLeave = () => {
+    clearTimeout(hoverTimer.current);
+    setShowCard(false);
+  };
+
+  const u = profile?.user || null;
+  const orgs = profile?.orgs || [];
+
+  return (
+    <>
+      <a
+        ref={chipRef}
+        href={`/@${username}`}
+        className="mention-chip"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={(e) => { e.stopPropagation(); }}
+        style={{ textDecoration: 'none' }}
+      >
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="mention-chip-avatar" />
+        ) : (
+          <span className="mention-chip-initial">
+            {(displayName || username || '?')[0].toUpperCase()}
+          </span>
+        )}
+        @{displayName || username}
+      </a>
+
+      {showCard && (
+        <div
+          style={{ position: 'fixed', top: cardPos.top, left: cardPos.left, zIndex: 9999 }}
+          className="mention-hover-card"
+          onMouseEnter={() => clearTimeout(hoverTimer.current)}
+          onMouseLeave={handleMouseLeave}
+        >
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+            {(u?.avatar_url || avatarUrl) ? (
+              <img src={u?.avatar_url || avatarUrl} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #232d3f' }} />
+            ) : (
+              <div style={{
+                width: 40, height: 40, borderRadius: '50%', background: '#232d3f',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 16, fontWeight: 700, color: '#9ca3af',
+              }}>
+                {(displayName || username || '?')[0].toUpperCase()}
+              </div>
+            )}
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#e0e0e0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {u?.display_name || displayName || username}
+              </div>
+              <div style={{ fontSize: 11, color: '#8896a8' }}>@{username}</div>
+            </div>
+          </div>
+
+          {/* Bio */}
+          {u?.bio && (
+            <div style={{ fontSize: 12, color: '#b0b0b0', lineHeight: 1.5, marginBottom: '10px', maxHeight: '3em', overflow: 'hidden' }}>
+              {u.bio}
+            </div>
+          )}
+
+          {/* Stats row */}
+          <div style={{ display: 'flex', gap: '14px', fontSize: 12, color: '#8896a8', marginBottom: '10px' }}>
+            <span><strong style={{ color: '#e0e0e0' }}>{u?.followers ?? 0}</strong> followers</span>
+            <span><strong style={{ color: '#e0e0e0' }}>{u?.following ?? 0}</strong> following</span>
+            {(profile?.blogs?.length > 0) && (
+              <span><strong style={{ color: '#e0e0e0' }}>{profile.blogs.length}</strong> blogs</span>
+            )}
+          </div>
+
+          {/* Orgs — show if available from blogs or fetch */}
+          {/* TODO: orgs could be fetched separately if needed */}
+
+        </div>
+      )}
+    </>
+  );
+}
 
 export const MentionInline = createReactInlineContentSpec(
   {
@@ -15,18 +124,7 @@ export const MentionInline = createReactInlineContentSpec(
   {
     render: ({ inlineContent }) => {
       const { username, displayName, avatarUrl } = inlineContent.props;
-      return (
-        <span className="mention-chip">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="mention-chip-avatar" />
-          ) : (
-            <span className="mention-chip-initial">
-              {(displayName || username || '?')[0].toUpperCase()}
-            </span>
-          )}
-          @{displayName || username}
-        </span>
-      );
+      return <MentionChip username={username} displayName={displayName} avatarUrl={avatarUrl} />;
     },
   }
 );

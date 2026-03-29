@@ -158,12 +158,10 @@ function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTop
   }, [open]);
 
   const items = [
-    { label: 'Share draft link', action: onShareDraft, icon: 'share-outline' },
-    { label: 'Share to X', action: () => {}, icon: 'logo-twitter' },
+    { label: 'Copy publishable link', action: onShareDraft, icon: 'link-outline' },
     { label: 'Change featured image', action: onChangeCover, icon: 'image-outline' },
     { label: 'Change display title', action: onChangeTitle, icon: 'text-outline' },
     { label: 'Change topics', action: onChangeTopics, icon: 'pricetags-outline' },
-    { label: 'See revision history', action: onRevisionHistory, icon: 'time-outline' },
     { label: 'More settings', action: onMoreSettings, icon: 'options-outline' },
   ];
 
@@ -223,6 +221,8 @@ export default function WritePage({ slugid }) {
   const [showPublishPanel, setShowPublishPanel] = useState(false);
   const [showPublishMenu, setShowPublishMenu] = useState(false);
   const [showCoverModal, setShowCoverModal] = useState(false);
+  const [coverUrlMode, setCoverUrlMode] = useState(false);
+  const [coverUrlInput, setCoverUrlInput] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [pageEmoji, setPageEmoji] = useState(null);
   const [editorContent, setEditorContent] = useState(null);
@@ -241,60 +241,110 @@ export default function WritePage({ slugid }) {
   const [syncStatus, setSyncStatus] = useState('idle'); // idle | local | syncing | synced
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showColorPanel, setShowColorPanel] = useState(false);
+  const [pageColor, setPageColor] = useState(null);
+  const [slug, setSlug] = useState('');
+  const [publishing, setPublishing] = useState(false);
+  const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
+  const [inviteUsername, setInviteUsername] = useState('');
+  const [inviteRole, setInviteRole] = useState('editor');
+  const [collaborators, setCollaborators] = useState([]);
+  const [inviteError, setInviteError] = useState('');
+  const ownerDropdownRef = useRef(null);
 
   const username = user?.username || 'you';
 
-  // Ctrl+S → save to localStorage immediately, then sync to cloud
+  // Refs to always hold latest draft data (avoids stale closures in intervals/beforeunload)
+  const draftDataRef = useRef({ title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji });
+  useEffect(() => {
+    draftDataRef.current = { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji };
+  }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji]);
+
+  // Cloud sync function — saves localStorage then pushes to cloud
+  const syncToCloud = useCallback(async ({ showToast = false, silent = false } = {}) => {
+    const data = draftDataRef.current;
+    if (!data.title && !data.editorContent) return;
+
+    // Always save to localStorage first
+    saveDraft(slugid, data);
+    setLastSaved(Date.now());
+
+    if (!silent) setSyncStatus('syncing');
+
+    try {
+      const res = await fetch('/api/blogs/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slugid, ...data }),
+      });
+
+      if (res.ok) {
+        if (!silent) {
+          setSyncStatus('synced');
+          if (showToast) {
+            setShowSavedToast(true);
+            setTimeout(() => setShowSavedToast(false), 3000);
+          }
+          setTimeout(() => setSyncStatus('idle'), 5000);
+        }
+      } else {
+        if (!silent) {
+          setSyncStatus('local');
+          setTimeout(() => setSyncStatus('idle'), 5000);
+        }
+      }
+    } catch {
+      if (!silent) {
+        setSyncStatus('local');
+        setTimeout(() => setSyncStatus('idle'), 5000);
+      }
+    }
+  }, [slugid]);
+
+  // Ctrl+S → save + sync
   useEffect(() => {
     function handleKeyDown(e) {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-
-        // Save to localStorage first
-        if (title || editorContent) {
-          saveDraft(slugid, { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji });
-          setLastSaved(Date.now());
-          setSyncStatus('syncing');
-
-          // Sync to cloud
-          (async () => {
-            try {
-              const res = await fetch('/api/blogs/draft', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  slugid,
-                  title,
-                  subtitle,
-                  tags,
-                  publishAs,
-                  coverPreview,
-                  editorContent,
-                  pageEmoji,
-                }),
-              });
-
-              if (res.ok) {
-                setSyncStatus('synced');
-                setShowSavedToast(true);
-                setTimeout(() => setShowSavedToast(false), 3000);
-                setTimeout(() => setSyncStatus('idle'), 5000);
-              } else {
-                setSyncStatus('local');
-                setTimeout(() => setSyncStatus('idle'), 5000);
-              }
-            } catch {
-              setSyncStatus('local');
-              setTimeout(() => setSyncStatus('idle'), 5000);
-            }
-          })();
-        }
+        syncToCloud({ showToast: true });
       }
     }
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, slugid]);
+  }, [syncToCloud]);
+
+  // Auto-sync to cloud every 10 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      syncToCloud({ silent: true });
+    }, 10 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [syncToCloud]);
+
+  // Sync on page load (after draft loads)
+  useEffect(() => {
+    if (!draftLoading) {
+      // Small delay to let editor content settle
+      const timer = setTimeout(() => syncToCloud({ silent: true }), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [draftLoading, syncToCloud]);
+
+  // Sync before page unload
+  useEffect(() => {
+    function handleBeforeUnload() {
+      const data = draftDataRef.current;
+      if (!data.title && !data.editorContent) return;
+      saveDraft(slugid, data);
+      // Use sendBeacon with Blob for reliable fire-and-forget on unload
+      try {
+        const blob = new Blob([JSON.stringify({ slugid, ...data })], { type: 'application/json' });
+        navigator.sendBeacon('/api/blogs/draft', blob);
+      } catch { /* best effort */ }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [slugid]);
 
   useEffect(() => {
     // Small delay to show skeleton and let the UI mount before heavy JSON parsing
@@ -374,20 +424,107 @@ export default function WritePage({ slugid }) {
     setMode(newMode);
   }, []);
 
-  const handleSaveDraft = () => {
+  // Auto-generate slug from title
+  useEffect(() => {
+    if (!title.trim()) { setSlug(''); return; }
+    const generated = title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .slice(0, 60)
+      .replace(/^-|-$/g, '');
+    setSlug(generated || slugid);
+  }, [title, slugid]);
+
+  // Load collaborators
+  useEffect(() => {
+    if (!slugid) return;
+    fetch(`/api/blogs/invite?slugid=${slugid}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.collaborators) setCollaborators(d.collaborators); })
+      .catch(() => {});
+  }, [slugid]);
+
+  // Close owner dropdown on outside click
+  useEffect(() => {
+    if (!showOwnerDropdown) return;
+    function handleClick(e) {
+      if (ownerDropdownRef.current && !ownerDropdownRef.current.contains(e.target)) setShowOwnerDropdown(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showOwnerDropdown]);
+
+  const handleSaveDraft = async () => {
     saveDraft(slugid, { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji });
     setLastSaved(Date.now());
     setShowPublishMenu(false);
+    syncToCloud({ showToast: true });
   };
 
-  const handlePublish = () => {
-    console.log('Publishing:', { title, subtitle, content: editorContent, tags, publishAs, coverImage });
+  const handlePublish = async () => {
+    if (!title.trim() || publishing) return;
+    setPublishing(true);
     setShowPublishMenu(false);
+    try {
+      const res = await fetch('/api/blogs/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, status: 'published' }),
+      });
+      if (res.ok) {
+        setShowPublishPanel(false);
+        setShowSavedToast(true);
+        setTimeout(() => setShowSavedToast(false), 3000);
+      }
+    } catch { /* silent */ }
+    setPublishing(false);
   };
 
-  const handlePublishBeta = () => {
-    console.log('Publishing beta:', { title, subtitle, content: editorContent, tags, publishAs, coverImage, status: 'unlisted' });
+  const handlePublishBeta = async () => {
+    if (!title.trim() || publishing) return;
+    setPublishing(true);
     setShowPublishMenu(false);
+    try {
+      await fetch('/api/blogs/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, status: 'unlisted' }),
+      });
+      setShowPublishPanel(false);
+    } catch { /* silent */ }
+    setPublishing(false);
+  };
+
+  const handleInvite = async () => {
+    if (!inviteUsername.trim()) return;
+    setInviteError('');
+    try {
+      const res = await fetch('/api/blogs/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slugid, username: inviteUsername.trim(), role: inviteRole }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCollaborators(prev => [...prev.filter(c => c.username !== inviteUsername.trim()), { username: inviteUsername.trim(), role: inviteRole, display_name: '', avatar_url: '' }]);
+        setInviteUsername('');
+      } else {
+        setInviteError(data.error || 'Failed to invite');
+      }
+    } catch { setInviteError('Network error'); }
+  };
+
+  const handleRemoveCollab = async (userId) => {
+    try {
+      await fetch('/api/blogs/invite', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slugid, userId }),
+      });
+      setCollaborators(prev => prev.filter(c => c.id !== userId));
+    } catch { /* silent */ }
   };
 
   const readTime = Math.max(1, Math.ceil(wordCount / 250));
@@ -402,9 +539,9 @@ export default function WritePage({ slugid }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0c1017] text-white edit-page">
+    <div className="min-h-screen bg-[#131922] text-white edit-page">
       {/* Header */}
-      <header className="fixed top-0 left-0 w-full h-14 border-b border-[#232d3f] flex items-center justify-between px-5 bg-[#0c1017]/95 backdrop-blur-md z-50">
+      <header className="fixed top-0 left-0 w-full h-14 border-b border-[#232d3f] flex items-center justify-between px-5 bg-[#131922]/95 backdrop-blur-md z-50">
         {/* Left: Logo + breadcrumb */}
         <div className="flex items-center gap-3 min-w-0">
           <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
@@ -413,7 +550,7 @@ export default function WritePage({ slugid }) {
           </Link>
           <span className="text-[#4a5568] text-sm">/</span>
           <span className="text-[#8896a8] text-[13px] truncate">
-            @{username}/{truncateSlug(slugid)}
+            @{username}/{truncateSlug(slug || slugid)}
           </span>
           {lastSaved && (
             <span className="text-[#7c8a9e] text-[11px] hidden md:block">{formatSavedTime(lastSaved)}</span>
@@ -450,7 +587,7 @@ export default function WritePage({ slugid }) {
               </button>
               <button
                 onClick={() => setShowPublishMenu(!showPublishMenu)}
-                className="px-2 py-1.5 bg-[#9b7bf7] text-white rounded-r-full border-l border-[#0c1017]/10 hover:bg-[#b69aff] transition-colors"
+                className="px-2 py-1.5 bg-[#9b7bf7] text-white rounded-r-full border-l border-[#131922]/10 hover:bg-[#b69aff] transition-colors"
               >
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 12 15 18 9" />
@@ -489,9 +626,23 @@ export default function WritePage({ slugid }) {
             ?
           </button>
 
+          {/* Page color (members only) */}
+          {user?.tier === 'member' && (
+            <button
+              onClick={() => setShowColorPanel(!showColorPanel)}
+              className="h-8 w-8 rounded-lg bg-[#141a26] border border-[#232d3f] flex items-center justify-center hover:border-[#333] transition-colors"
+              title="Page theme color"
+            >
+              <div className="w-4 h-4 rounded-full" style={{ background: pageColor || 'linear-gradient(135deg, #9b7bf7, #60a5fa, #4ade80)', border: '1.5px solid #333' }} />
+            </button>
+          )}
+
           {/* Hamburger menu */}
           <HamburgerMenu
-            onShareDraft={() => {}}
+            onShareDraft={() => {
+              const url = `${window.location.origin}/@${username}/${slug || slugid}`;
+              navigator.clipboard.writeText(url).catch(() => {});
+            }}
             onChangeCover={() => setShowCoverModal(true)}
             onChangeTitle={() => document.querySelector('textarea[placeholder="Blog title..."]')?.focus()}
             onChangeTopics={() => setShowPublishPanel(true)}
@@ -505,7 +656,7 @@ export default function WritePage({ slugid }) {
       </header>
 
       {/* Main Content Area */}
-      <main className="pt-14 flex justify-center editor-texture-bg">
+      <main className="pt-14 flex justify-center editor-texture-bg" style={pageColor ? { backgroundColor: pageColor } : undefined}>
         <div className={`w-full max-w-[720px] px-6 py-8 ${showPublishPanel ? 'mr-[400px]' : ''} transition-all`}>
 
           {/* Mode icons */}
@@ -689,13 +840,7 @@ export default function WritePage({ slugid }) {
                             />
                           </label>
                           <button
-                            onClick={() => {
-                              const url = prompt('Paste image URL:');
-                              if (url?.trim()) {
-                                setCoverPreview(url.trim());
-                                setShowCoverModal(false);
-                              }
-                            }}
+                            onClick={() => setCoverUrlMode(true)}
                             className="flex flex-col items-center gap-2 group/url"
                           >
                             <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover/url:bg-white/20 transition-colors">
@@ -707,6 +852,43 @@ export default function WritePage({ slugid }) {
                             <span className="text-xs text-white/70 font-medium">From URL</span>
                           </button>
                         </div>
+                        {/* Inline URL input — slides up from bottom */}
+                        {coverUrlMode && (
+                          <div className="absolute bottom-0 left-0 right-0 z-20 bg-black/60 backdrop-blur-md p-4 rounded-b-xl">
+                            <div className="flex gap-2">
+                              <input
+                                autoFocus
+                                type="url"
+                                value={coverUrlInput}
+                                onChange={(e) => setCoverUrlInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && coverUrlInput.trim()) {
+                                    setCoverPreview(coverUrlInput.trim());
+                                    setShowCoverModal(false);
+                                    setCoverUrlMode(false);
+                                    setCoverUrlInput('');
+                                  }
+                                  if (e.key === 'Escape') { setCoverUrlMode(false); setCoverUrlInput(''); }
+                                }}
+                                placeholder="Paste image URL and press Enter..."
+                                className="flex-1 bg-white/10 text-white rounded-lg px-3 py-2 text-[13px] outline-none border border-white/20 focus:border-white/40 placeholder-white/40"
+                              />
+                              <button
+                                onClick={() => {
+                                  if (coverUrlInput.trim()) {
+                                    setCoverPreview(coverUrlInput.trim());
+                                    setShowCoverModal(false);
+                                    setCoverUrlMode(false);
+                                    setCoverUrlInput('');
+                                  }
+                                }}
+                                className="px-4 py-2 bg-white/15 text-white rounded-lg text-[13px] font-medium hover:bg-white/25 transition-colors"
+                              >
+                                Set
+                              </button>
+                            </div>
+                          </div>
+                        )}
                         <button
                           onClick={() => setShowCoverModal(false)}
                           className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-black/30 backdrop-blur flex items-center justify-center text-white/60 hover:text-white transition-colors"
@@ -764,17 +946,53 @@ export default function WritePage({ slugid }) {
 
                   {/* Emoji picker — absolute positioned, glassmorphic */}
                   {showEmojiPicker && (
-                    <div className="relative">
-                      <div className="absolute left-0 top-0 z-50 emoji-picker-glass">
-                        <EmojiPicker
-                          onSelect={(emoji) => { setPageEmoji(emoji); setShowEmojiPicker(false); }}
-                          onRemove={() => { setPageEmoji(null); setShowEmojiPicker(false); }}
-                          onClose={() => setShowEmojiPicker(false)}
-                        />
+                    <>
+                      <div className="fixed inset-0 z-[60]" onClick={() => setShowEmojiPicker(false)} />
+                      <div className="relative">
+                        <div className="absolute left-0 top-0 z-[61] emoji-picker-glass">
+                          <EmojiPicker
+                            onSelect={(emoji) => { setPageEmoji(emoji); setShowEmojiPicker(false); }}
+                            onRemove={() => { setPageEmoji(null); setShowEmojiPicker(false); }}
+                            onClose={() => setShowEmojiPicker(false)}
+                          />
+                        </div>
                       </div>
+                    </>
+                  )}
+
+                  {/* Author bar — above title */}
+                  <div className="flex items-center gap-3 mt-2 mb-2">
+                    <div className="flex -space-x-2">
+                      {user?.avatar_url ? (
+                        <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[#131922]" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-[#232d3f] border-2 border-[#131922] flex items-center justify-center text-[11px] font-bold text-[#9ca3af]">
+                          {(user?.display_name || user?.username || '?')[0].toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-[13px] text-[#6b7a8d]">
+                      <span className="text-[#9ca3af] font-medium">{user?.display_name || user?.username || 'Author'}</span>
+                      <span className="text-[#3a3f4f]">·</span>
+                      <span>{Math.max(1, Math.ceil(wordCount / 200))} min read</span>
+                      <span className="text-[#3a3f4f]">·</span>
+                      <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
+                    </div>
+                  </div>
+
+                  {/* Tags — shown under author bar */}
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-0">
+                      {tags.map((tag) => (
+                        <span key={tag} className="px-2.5 py-0.5 bg-[#9b7bf70a] rounded-full text-[12px] text-[#9b7bf7]">#{tag}</span>
+                      ))}
                     </div>
                   )}
 
+                  {/* 30px gap before title */}
+                  <div style={{ height: '30px' }} />
+
+                  {/* Title */}
                   <div className="relative">
                     <textarea
                       value={title}
@@ -789,7 +1007,6 @@ export default function WritePage({ slugid }) {
                       className={`w-full bg-transparent text-[2em] font-extrabold outline-none placeholder-[#4a5568] mb-1 leading-tight resize-none overflow-hidden ${aiTitleKey > 0 ? 'text-transparent' : ''}`}
                       rows={1}
                     />
-                    {/* AI title word animation overlay */}
                     {aiTitleKey > 0 && title && (
                       <div className="absolute inset-0 pointer-events-none text-[2em] font-extrabold leading-tight flex flex-wrap items-start" key={aiTitleKey}>
                         {title.split(/(\s+)/).map((word, i) => (
@@ -801,7 +1018,6 @@ export default function WritePage({ slugid }) {
                               transition={{ duration: 0.35, delay: i * 0.06, ease: 'easeOut' }}
                               className="text-[#c4b5fd]"
                               onAnimationComplete={() => {
-                                // After last word animation, switch back to normal textarea
                                 if (i === title.split(/(\s+)/).length - 1) {
                                   setTimeout(() => setAiTitleKey(0), 800);
                                 }
@@ -813,26 +1029,6 @@ export default function WritePage({ slugid }) {
                         ))}
                       </div>
                     )}
-                  </div>
-
-                  {/* Author bar — stacked avatars, name, read time, word count */}
-                  <div className="flex items-center gap-3 mt-3 mb-4">
-                    <div className="flex -space-x-2">
-                      {user?.avatar_url ? (
-                        <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[#0e121b]" />
-                      ) : (
-                        <div className="w-7 h-7 rounded-full bg-[#232d3f] border-2 border-[#0e121b] flex items-center justify-center text-[11px] font-bold text-[#9ca3af]">
-                          {(user?.display_name || user?.username || '?')[0].toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-[13px] text-[#6b7a8d]">
-                      <span className="text-[#9ca3af] font-medium">{user?.display_name || user?.username || 'Author'}</span>
-                      <span className="text-[#3a3f4f]">·</span>
-                      <span>{Math.max(1, Math.ceil(wordCount / 200))} min read</span>
-                      <span className="text-[#3a3f4f]">·</span>
-                      <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
-                    </div>
                   </div>
 
                   <div className="min-h-[60vh] pb-[100px] relative">
@@ -918,7 +1114,7 @@ export default function WritePage({ slugid }) {
 
         <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin">
           {/* Blog Properties */}
-          <div className="flex items-center gap-4 text-[13px] text-[#9ca3af] bg-[#0c1017] border border-[#232d3f] rounded-lg px-4 py-3">
+          <div className="flex items-center gap-4 text-[13px] text-[#9ca3af] bg-[#131922] border border-[#232d3f] rounded-lg px-4 py-3">
             <span className="flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
               {wordCount} words
@@ -930,27 +1126,56 @@ export default function WritePage({ slugid }) {
             </span>
           </div>
 
-          {/* Publish As */}
+          {/* Owner — GitHub-style dropdown */}
           <div>
-            <label className="text-[12px] text-[#9ca3af] mb-2 block font-medium">Publish as</label>
-            <div className="flex gap-2">
-              {['personal', 'organization'].map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => setPublishAs(opt)}
-                  className={`flex-1 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-                    publishAs === opt ? 'bg-white text-white' : 'bg-[#0c1017] border border-[#232d3f] text-[#9ca3af] hover:text-white hover:border-[#333]'
-                  }`}
-                >
-                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                </button>
-              ))}
+            <label className="text-[12px] text-[#9ca3af] mb-2 block font-medium">Owner</label>
+            <div className="relative" ref={ownerDropdownRef}>
+              <button
+                onClick={() => setShowOwnerDropdown(!showOwnerDropdown)}
+                className="w-full flex items-center gap-2.5 bg-[#131922] border border-[#232d3f] rounded-lg px-3 py-2.5 text-[13px] hover:border-[#444] transition-colors"
+              >
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover" />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-[#2a2d3a] flex items-center justify-center text-[10px] text-[#b0b0b0] font-bold">
+                    {(user?.display_name || username || '?')[0].toUpperCase()}
+                  </div>
+                )}
+                <span className="text-[#e0e0e0] font-medium flex-1 text-left">{publishAs === 'personal' ? username : publishAs}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              {showOwnerDropdown && (
+                <div className="absolute top-full mt-1 left-0 right-0 bg-[#131922] border border-[#232d3f] rounded-lg shadow-xl z-10 overflow-hidden">
+                  <div className="px-3 py-2 text-[11px] text-[#666] font-medium uppercase tracking-wider border-b border-[#232d3f]">Choose an owner</div>
+                  {/* Personal account */}
+                  <button
+                    onClick={() => { setPublishAs('personal'); setShowOwnerDropdown(false); }}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] hover:bg-[#ffffff08] transition-colors ${publishAs === 'personal' ? 'bg-[#ffffff06]' : ''}`}
+                  >
+                    {user?.avatar_url ? (
+                      <img src={user.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-[#2a2d3a] flex items-center justify-center text-[10px] text-[#b0b0b0] font-bold">
+                        {(user?.display_name || username || '?')[0].toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-[#e0e0e0]">{username}</span>
+                    {publishAs === 'personal' && (
+                      <svg className="ml-auto w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    )}
+                  </button>
+                  {/* TODO: Populate user's orgs from API */}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Tags */}
           <div>
-            <label className="text-[12px] text-[#9ca3af] mb-2 block font-medium">Tags (up to 5)</label>
+            <label className="text-[12px] text-[#9ca3af] mb-2 block font-medium">Tags (up to 5) <span className="text-[#666] font-normal">— press Enter to attach</span></label>
             <div className="flex flex-wrap gap-2 mb-2">
               {tags.map((tag) => (
                 <span key={tag} className="flex items-center gap-1 px-2.5 py-1 bg-[#9b7bf714] rounded-full text-[12px] text-[#9b7bf7]">
@@ -965,8 +1190,8 @@ export default function WritePage({ slugid }) {
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
-                placeholder="Add a tag..."
-                className="w-full bg-[#0c1017] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#333] transition-colors placeholder-[#6b7a8d]"
+                placeholder="Add a tag, press Enter..."
+                className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#333] transition-colors placeholder-[#6b7a8d]"
               />
             )}
           </div>
@@ -974,21 +1199,78 @@ export default function WritePage({ slugid }) {
           {/* URL Slug */}
           <div>
             <label className="text-[12px] text-[#9ca3af] mb-2 block font-medium">URL Slug</label>
-            <div className="flex items-center bg-[#0c1017] rounded-lg border border-[#232d3f] overflow-hidden">
-              <span className="text-[#8896a8] text-[13px] px-3">@{username}/</span>
+            <div className="flex items-center bg-[#131922] rounded-lg border border-[#232d3f] overflow-hidden">
+              <span className="text-[#8896a8] text-[13px] px-3 flex-shrink-0">@{username}/</span>
               <input
                 type="text"
-                defaultValue={slugid || ''}
-                placeholder="auto-generated"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^\w-]/g, '-').replace(/-+/g, '-'))}
+                placeholder={slugid}
                 className="flex-1 bg-transparent text-[#e0e0e0] py-2 pr-3 outline-none text-[13px]"
               />
             </div>
           </div>
 
+          {/* Collaborators / Invite */}
+          <div>
+            <label className="text-[12px] text-[#9ca3af] mb-2 block font-medium">Collaborators</label>
+            {/* Existing collaborators */}
+            {collaborators.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {collaborators.map((c) => (
+                  <div key={c.id || c.username} className="flex items-center gap-2.5 bg-[#131922] border border-[#232d3f] rounded-lg px-3 py-2">
+                    {c.avatar_url ? (
+                      <img src={c.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-[#2a2d3a] flex items-center justify-center text-[9px] text-[#b0b0b0] font-bold">
+                        {(c.display_name || c.username || '?')[0].toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-[13px] text-[#e0e0e0] flex-1">@{c.username}</span>
+                    <span className="text-[11px] text-[#666] bg-[#232d3f] px-2 py-0.5 rounded-full">{c.role}</span>
+                    <button onClick={() => handleRemoveCollab(c.id)} className="text-[#666] hover:text-[#f87171] transition-colors">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Invite form */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={inviteUsername}
+                onChange={(e) => { setInviteUsername(e.target.value); setInviteError(''); }}
+                onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
+                placeholder="Username..."
+                className="flex-1 bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#333] transition-colors placeholder-[#6b7a8d]"
+              />
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value)}
+                className="bg-[#131922] text-[#9ca3af] border border-[#232d3f] rounded-lg px-2 py-2 text-[12px] outline-none"
+              >
+                <option value="viewer">Viewer</option>
+                <option value="editor">Editor</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button
+                onClick={handleInvite}
+                className="px-3 py-2 bg-[#232d3f] text-[#e0e0e0] rounded-lg text-[12px] font-medium hover:bg-[#2a3548] transition-colors"
+              >
+                Invite
+              </button>
+            </div>
+            {inviteError && <p className="text-[11px] text-[#f87171] mt-1.5">{inviteError}</p>}
+          </div>
+
           {/* Preview Card */}
           <div>
             <label className="text-[12px] text-[#9ca3af] mb-2 block font-medium">Preview</label>
-            <div className="bg-[#0c1017] border border-[#232d3f] rounded-xl p-4">
+            <div className="bg-[#131922] border border-[#232d3f] rounded-xl p-4">
               {coverPreview && (
                 <img src={coverPreview} alt="Cover" className="w-full h-[100px] object-cover rounded-lg mb-3" />
               )}
@@ -1005,16 +1287,87 @@ export default function WritePage({ slugid }) {
           </div>
         </div>
 
-        <div className="p-5 border-t border-[#232d3f]">
+        <div className="p-5 border-t border-[#232d3f] space-y-2">
           <button
             onClick={handlePublish}
-            disabled={!title.trim()}
+            disabled={!title.trim() || publishing}
             className="w-full py-2.5 bg-[#9b7bf7] text-white font-bold rounded-xl text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Publish now
+            {publishing ? 'Publishing...' : 'Publish now'}
           </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handlePublishBeta}
+              disabled={!title.trim() || publishing}
+              className="flex-1 py-2 bg-[#232d3f] text-[#9ca3af] font-medium rounded-xl text-[12px] hover:text-white transition-colors disabled:opacity-40"
+            >
+              Publish Beta
+            </button>
+            <button
+              onClick={handleSaveDraft}
+              className="flex-1 py-2 bg-[#232d3f] text-[#9ca3af] font-medium rounded-xl text-[12px] hover:text-white transition-colors"
+            >
+              Save Draft
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Page Color Side Panel (members only) */}
+      {showColorPanel && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowColorPanel(false)} />
+          <div className="fixed top-0 right-0 h-full w-[320px] bg-[#141a26] border-l border-[#232d3f] z-50 flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b border-[#232d3f]">
+              <h2 className="text-[15px] font-bold text-white">Page Theme</h2>
+              <button onClick={() => setShowColorPanel(false)} className="text-[#8896a8] hover:text-white p-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              <p className="text-[12px] text-[#8896a8]">Choose a background accent for your blog page. Visible to readers.</p>
+
+              {/* Reset */}
+              <button
+                onClick={() => setPageColor(null)}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors ${!pageColor ? 'border-[#9b7bf7] bg-[#9b7bf714]' : 'border-[#232d3f] hover:border-[#333]'}`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#131922] border border-[#232d3f]" />
+                <span className="text-[13px] text-[#e0e0e0]">Default (none)</span>
+              </button>
+
+              {/* Predefined colors */}
+              <div className="space-y-2">
+                {[
+                  { name: 'Midnight Purple', color: '#1a1028', accent: '#9b7bf7' },
+                  { name: 'Deep Ocean', color: '#0f1a2e', accent: '#60a5fa' },
+                  { name: 'Forest', color: '#0f1f17', accent: '#4ade80' },
+                  { name: 'Warm Ember', color: '#1f150f', accent: '#fb923c' },
+                  { name: 'Rose', color: '#1f0f18', accent: '#f472b6' },
+                  { name: 'Slate', color: '#171b22', accent: '#9ca3af' },
+                  { name: 'Golden', color: '#1a1708', accent: '#fbbf24' },
+                  { name: 'Crimson', color: '#1f0f0f', accent: '#f87171' },
+                  { name: 'Teal', color: '#0f1f1f', accent: '#2dd4bf' },
+                  { name: 'Indigo', color: '#13102a', accent: '#818cf8' },
+                ].map(({ name, color, accent }) => (
+                  <button
+                    key={name}
+                    onClick={() => setPageColor(color)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors ${pageColor === color ? 'border-[' + accent + '] bg-[' + accent + '14]' : 'border-[#232d3f] hover:border-[#333]'}`}
+                    style={pageColor === color ? { borderColor: accent, background: `${accent}14` } : {}}
+                  >
+                    <div className="w-8 h-8 rounded-lg border border-[#333]" style={{ background: color }} />
+                    <div className="flex-1 text-left">
+                      <span className="text-[13px] text-[#e0e0e0]">{name}</span>
+                    </div>
+                    <div className="w-3 h-3 rounded-full" style={{ background: accent }} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Keyboard shortcuts modal */}
       {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}

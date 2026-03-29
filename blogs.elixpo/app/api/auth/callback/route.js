@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getOAuthConfig } from '../../../../lib/auth';
 
@@ -69,19 +70,27 @@ export async function GET(request) {
 
     if (!existingUser) {
       isNewUser = true;
+      const username = userInfo.displayName || userInfo.email.split('@')[0];
       await db.prepare(`
         INSERT INTO users (id, email, username, display_name, avatar_url, locale, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         userId,
         userInfo.email,
-        userInfo.displayName || userInfo.email.split('@')[0],
+        username,
         userInfo.displayName || '',
         userInfo.avatar || '',
         'en',
         now,
         now
       ).run();
+
+      // Reserve username in shared namespace
+      try {
+        await db.prepare(
+          'INSERT OR IGNORE INTO namespaces (name, owner_type, owner_id, created_at) VALUES (?, ?, ?, ?)'
+        ).bind(username.toLowerCase(), 'user', userId, now).run();
+      } catch { /* namespace may not exist yet in local dev */ }
     } else {
       await db.prepare(`
         UPDATE users SET email = ?, display_name = ?, avatar_url = ?, updated_at = ?
@@ -116,7 +125,7 @@ export async function GET(request) {
     },
   });
 
-  const redirectTo = isNewUser ? '/intro' : '/';
+  const redirectTo = '/';
   const response = NextResponse.redirect(new URL(redirectTo, request.url));
   response.cookies.set('lixblogs_session', session, {
     httpOnly: true,

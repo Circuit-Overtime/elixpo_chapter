@@ -26,6 +26,6 @@
     "build": "npx @cloudflare/next-on-pages",
     "preview": "npx wrangler pages dev .vercel/output/static --compatibility-flags=nodejs_compat",
     "deploy": "npm run build && npx wrangler pages deploy .vercel/output/static",
-    "db:migrate": "wrangler d1 execute elixpoblogs --remote --file=migrations/0001_init.sql"
+    "db:migrate": "wrangler d1 execute elixpoblogs --remote --file=migrations/0006_blog_collab_roles.sql"
   }
 }

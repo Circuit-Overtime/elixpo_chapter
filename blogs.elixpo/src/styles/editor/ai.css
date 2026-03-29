@@ -1,8 +1,8 @@
 /* ===== AI Generated Block Highlight (pink) ===== */
 
 .ai-generated-highlight {
-  background: rgba(244, 114, 182, 0.08) !important;
-  border-left: 3px solid rgba(244, 114, 182, 0.5) !important;
+  background: rgba(74, 222, 128, 0.08) !important;
+  border-left: 3px solid rgba(74, 222, 128, 0.5) !important;
   border-radius: 0 6px 6px 0;
   margin-left: -3px;
 }
@@ -17,9 +17,9 @@
  */
 .ai-generated-highlight [contenteditable="true"],
 .ai-generated-highlight [contenteditable="true"] * {
-  color: #f472b6 !important;
-  caret-color: #f472b6 !important;
-  -webkit-text-fill-color: #f472b6 !important;
+  color: #4ade80 !important;
+  caret-color: #4ade80 !important;
+  -webkit-text-fill-color: #4ade80 !important;
 }
 
 /* Also cover non-editable rendered content inside AI blocks */
@@ -34,8 +34,8 @@
 .ai-generated-highlight h1,
 .ai-generated-highlight h2,
 .ai-generated-highlight h3 {
-  color: #f472b6 !important;
-  -webkit-text-fill-color: #f472b6 !important;
+  color: #4ade80 !important;
+  -webkit-text-fill-color: #4ade80 !important;
 }
 
 /* ===== AI Edit Diff Styles (lavender theme) ===== */
@@ -397,7 +397,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(10, 14, 22, 0.15);
+  background: rgba(19, 25, 34, 0.15);
   pointer-events: none;
   z-index: 5;
   border-radius: 8px;
@@ -497,6 +497,39 @@
   background: rgba(196, 181, 253, 0.1);
   border-radius: 4px;
   z-index: 0;
+  pointer-events: none;
+}
+
+/* ===== AI Typing Skeleton — shimmer on block before text arrives ===== */
+
+.ai-typing-skeleton {
+  position: relative;
+  min-height: 28px;
+  overflow: hidden;
+}
+
+.ai-typing-skeleton .bn-inline-content,
+.ai-typing-skeleton .bn-inline-content * {
+  opacity: 0 !important;
+}
+
+.ai-typing-skeleton::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 70%;
+  height: 12px;
+  background: linear-gradient(
+    90deg,
+    rgba(196, 181, 253, 0.12) 0%,
+    rgba(196, 181, 253, 0.25) 50%,
+    rgba(196, 181, 253, 0.12) 100%
+  );
+  background-size: 200% 100%;
+  animation: aiSkeletonShimmer 1.8s ease-in-out infinite;
+  border-radius: 6px;
   pointer-events: none;
 }
 

@@ -117,32 +117,42 @@
 
 /* ===== Mention Chips (inline in editor) ===== */
 
+a.mention-chip,
+span.mention-chip,
 .mention-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   background: rgba(155, 123, 247, 0.1);
-  border-radius: 4px;
-  padding: 1px 6px 1px 3px;
-  color: #c4b5fd;
+  border-radius: 999px;
+  padding: 2px 8px 2px 2px;
+  color: #c4b5fd !important;
   font-weight: 500;
-  font-size: 0.95em;
+  font-size: 0.9em;
   cursor: pointer;
   transition: background 0.15s;
-  vertical-align: baseline;
-  margin: 0 1px;
+  vertical-align: middle;
+  margin: 0 2px;
+  text-decoration: none !important;
+  line-height: 1.4;
 }
 
+a.mention-chip:hover,
+span.mention-chip:hover,
 .mention-chip:hover {
   background: rgba(155, 123, 247, 0.18);
-  color: #ddd6fe;
+  color: #ddd6fe !important;
+  text-decoration: none !important;
 }
 
 .mention-chip-avatar {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  object-fit: cover;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px;
+  min-height: 16px;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  flex-shrink: 0;
 }
 
 .mention-chip-initial {
@@ -156,4 +166,18 @@
   font-size: 9px;
   font-weight: 700;
   color: #c4b5fd;
+}
+
+/* ===== Mention Hover Card ===== */
+
+.mention-hover-card {
+  background: #141a26;
+  border: 1px solid #232d3f;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+  min-width: 240px;
+  max-width: 300px;
+  animation: mentionMenuIn 0.15s ease-out;
+  backdrop-filter: blur(12px);
 }

@@ -49,13 +49,13 @@ export const ButtonBlock = createReactBlockSpec(
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder="Button label"
-              className="w-full bg-[#0c1017] border border-[#232d3f] rounded-lg px-3 py-2 text-[13px] text-[#e0e0e0] outline-none focus:border-[#333] placeholder-[#6b7a8d]"
+              className="w-full bg-[#131922] border border-[#232d3f] rounded-lg px-3 py-2 text-[13px] text-[#e0e0e0] outline-none focus:border-[#333] placeholder-[#6b7a8d]"
             />
             <div className="flex gap-2">
-              <select value={action} onChange={(e) => setAction(e.target.value)} className="bg-[#0c1017] border border-[#232d3f] rounded-lg px-3 py-2 text-[13px] text-[#e0e0e0] outline-none flex-1">
+              <select value={action} onChange={(e) => setAction(e.target.value)} className="bg-[#131922] border border-[#232d3f] rounded-lg px-3 py-2 text-[13px] text-[#e0e0e0] outline-none flex-1">
                 {BUTTON_ACTIONS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
               </select>
-              <select value={variant} onChange={(e) => setVariant(e.target.value)} className="bg-[#0c1017] border border-[#232d3f] rounded-lg px-3 py-2 text-[13px] text-[#e0e0e0] outline-none">
+              <select value={variant} onChange={(e) => setVariant(e.target.value)} className="bg-[#131922] border border-[#232d3f] rounded-lg px-3 py-2 text-[13px] text-[#e0e0e0] outline-none">
                 {BUTTON_VARIANTS.map((v) => <option key={v.value} value={v.value}>{v.label}</option>)}
               </select>
             </div>
@@ -65,7 +65,7 @@ export const ButtonBlock = createReactBlockSpec(
                 value={actionValue}
                 onChange={(e) => setActionValue(e.target.value)}
                 placeholder={action === 'link' ? 'https://...' : 'Text to copy'}
-                className="w-full bg-[#0c1017] border border-[#232d3f] rounded-lg px-3 py-2 text-[13px] text-[#e0e0e0] outline-none focus:border-[#333] placeholder-[#6b7a8d]"
+                className="w-full bg-[#131922] border border-[#232d3f] rounded-lg px-3 py-2 text-[13px] text-[#e0e0e0] outline-none focus:border-[#333] placeholder-[#6b7a8d]"
               />
             )}
             <div className="flex justify-end gap-2">

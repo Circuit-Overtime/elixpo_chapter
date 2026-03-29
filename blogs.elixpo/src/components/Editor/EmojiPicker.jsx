@@ -101,21 +101,46 @@ export default function EmojiPicker({ onSelect, onRemove, onClose }) {
     inputRef.current?.focus();
   }, []);
 
+  // Build searchable emoji index once
+  const emojiIndex = useMemo(() => {
+    const index = [];
+    const keywords = {
+      '😀':'grin happy','😃':'smile happy','😄':'laugh happy','😁':'beam grin','😆':'laughing','😅':'sweat smile',
+      '🤣':'rofl laugh','😂':'joy tears laugh','🙂':'slight smile','😉':'wink','😊':'blush','😇':'angel halo',
+      '🥰':'hearts love','😍':'heart eyes love','🤩':'star struck','😘':'kiss','😎':'cool sunglasses',
+      '🤔':'think hmm','😢':'cry sad','😭':'sob cry','😡':'angry mad','😱':'scream fear','🤯':'mind blown',
+      '🥳':'party celebrate','😴':'sleep zzz','🤮':'vomit sick','🤒':'sick ill','💀':'skull dead','👻':'ghost',
+      '👽':'alien','🤖':'robot','💩':'poop','🤡':'clown','👹':'ogre','👺':'goblin',
+      '👋':'wave hello','👍':'thumbs up good','👎':'thumbs down bad','👏':'clap','🙏':'pray please thanks',
+      '💪':'muscle strong','✊':'fist','👊':'punch','✌️':'peace victory','🤝':'handshake',
+      '❤️':'red heart love','💔':'broken heart','💕':'hearts love','🖤':'black heart','💯':'hundred perfect',
+      '🔥':'fire hot lit','⭐':'star','✨':'sparkle shine','💡':'light bulb idea','🎉':'party tada celebrate',
+      '🎊':'confetti','🎁':'gift present','🏆':'trophy winner','🎯':'target bullseye','🚀':'rocket launch',
+      '✅':'check done','❌':'cross no wrong','⚠️':'warning','💬':'speech bubble chat','📝':'memo write note',
+      '📚':'books','💻':'laptop computer','📱':'phone mobile','🔒':'lock','🔑':'key',
+      '☀️':'sun','🌙':'moon','🌈':'rainbow','🌊':'wave ocean','🌸':'cherry blossom flower',
+      '🌹':'rose flower','🍀':'clover luck','🌿':'herb leaf','🌲':'tree','🔥':'fire flame',
+      '🐶':'dog','🐱':'cat','🐼':'panda','🦊':'fox','🐻':'bear','🦁':'lion',
+      '🍎':'apple','🍕':'pizza','🍔':'burger','☕':'coffee','🍺':'beer','🎂':'cake birthday',
+      '⚽':'soccer football','🏀':'basketball','🎮':'game controller','🎵':'music note','🎨':'art palette',
+    };
+    for (const cat of CATEGORY_NAMES) {
+      for (const em of CATEGORIES[cat].emojis) {
+        const kw = keywords[em] || '';
+        index.push({ emoji: em, search: `${cat.toLowerCase()} ${kw}` });
+      }
+    }
+    return index;
+  }, []);
+
   const filteredEmojis = useMemo(() => {
     if (!filter.trim()) return null;
     const q = filter.toLowerCase();
-    const results = [];
-    for (const cat of CATEGORY_NAMES) {
-      for (const em of CATEGORIES[cat].emojis) {
-        if (results.length >= 80) break;
-        // Simple filter: just include all when searching (emoji search by character match)
-        results.push(em);
-      }
-    }
-    // Filter by checking if the emoji string itself contains the query (works for flag codes etc.)
-    // For a basic approach, we just show all emojis and let the user scroll
-    return results;
-  }, [filter]);
+    return emojiIndex
+      .filter(e => e.search.includes(q))
+      .map(e => e.emoji)
+      .slice(0, 80);
+  }, [filter, emojiIndex]);
 
   const displayEmojis = filteredEmojis || CATEGORIES[activeCategory]?.emojis || [];
 
@@ -123,22 +148,9 @@ export default function EmojiPicker({ onSelect, onRemove, onClose }) {
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div className="relative z-50 mb-4 w-[352px] bg-[#10141E] border border-[#1D202A] rounded-xl shadow-2xl overflow-hidden">
-        {/* Top tabs */}
+        {/* Header */}
         <div className="flex items-center justify-between px-3 pt-2.5 pb-0">
-          <div className="flex gap-3">
-            {['Emoji', 'Icons'].map((tab) => (
-              <button
-                key={tab}
-                className={`text-xs font-medium pb-1.5 transition-colors ${
-                  tab === 'Emoji'
-                    ? 'text-white border-b-2 border-[#7ba8f0]'
-                    : 'text-[#555] cursor-default'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+          <span className="text-xs font-medium text-white border-b-2 border-[#7ba8f0] pb-1.5">Emoji</span>
           <button
             onClick={onRemove}
             className="text-xs text-[#888] hover:text-red-400 transition-colors"
