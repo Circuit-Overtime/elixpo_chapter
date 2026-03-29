@@ -2,9 +2,10 @@
 
 export function parseInlineContent(text) {
   const content = [];
-  // Match: \[...\] block LaTeX inline, \(...\) inline LaTeX, ***bold italic***, **bold**, *italic*, `code`, $...$
+  // Match: \[...\] block LaTeX inline, \(...\) inline LaTeX, ***bold italic***, **bold**, ~~strikethrough~~, *italic*, `code`, $$..$$, $...$
   // Note: \[...\] matched first to extract block equations that appear inline in paragraphs
-  const regex = /(\\\[(.+?)\\\]|\\\((.+?)\\\)|\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`|\$\$(.+?)\$\$|\$([^$]+?)\$)/g;
+  // $...$ uses [^$]+ (greedy enough to capture nested braces like \frac{}{})
+  const regex = /(\\\[(.+?)\\\]|\\\((.+?)\\\)|\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|~~(.+?)~~|\*(.+?)\*|`(.+?)`|\$\$([\s\S]+?)\$\$|\$([^$\n]+)\$)/g;
   let lastIndex = 0;
   let match;
 
@@ -23,15 +24,18 @@ export function parseInlineContent(text) {
     } else if (match[5]) {
       content.push({ type: 'text', text: match[5], styles: { bold: true } });
     } else if (match[6]) {
-      content.push({ type: 'text', text: match[6], styles: { italic: true } });
+      // ~~strikethrough~~
+      content.push({ type: 'text', text: match[6], styles: { strike: true } });
     } else if (match[7]) {
-      content.push({ type: 'text', text: match[7], styles: { code: true } });
+      content.push({ type: 'text', text: match[7], styles: { italic: true } });
     } else if (match[8]) {
-      // $$...$$ inline — treat as equation
-      content.push({ type: 'inlineEquation', props: { latex: match[8].trim() } });
+      content.push({ type: 'text', text: match[8], styles: { code: true } });
     } else if (match[9]) {
-      // $...$ inline math
+      // $$...$$ inline — treat as equation
       content.push({ type: 'inlineEquation', props: { latex: match[9].trim() } });
+    } else if (match[10]) {
+      // $...$ inline math
+      content.push({ type: 'inlineEquation', props: { latex: match[10].trim() } });
     }
     lastIndex = match.index + match[0].length;
   }
@@ -68,11 +72,19 @@ export function parseMarkdownToBlocks(text) {
       }
       if (i < lines.length) i++; // skip closing ```
       const codeText = codeLines.join('\n');
-      blocks.push({
-        type: 'codeBlock',
-        props: { language: lang },
-        content: [{ type: 'text', text: codeText }],
-      });
+      // Mermaid fences → MermaidBlock instead of codeBlock
+      if (lang === 'mermaid') {
+        blocks.push({
+          type: 'mermaidBlock',
+          props: { diagram: codeText },
+        });
+      } else {
+        blocks.push({
+          type: 'codeBlock',
+          props: { language: lang },
+          content: [{ type: 'text', text: codeText }],
+        });
+      }
       continue;
     }
 

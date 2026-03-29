@@ -1,7 +1,7 @@
 'use client';
 
 import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs } from '@blocknote/core';
-import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems } from '@blocknote/react';
+import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems, TableHandlesController } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
@@ -19,6 +19,8 @@ import { ButtonBlock } from './blocks/ButtonBlock';
 import { Breadcrumbs } from './blocks/Breadcrumbs';
 import { TabsBlock } from './blocks/TabsBlock';
 import { AIBlock } from './blocks/AIBlock';
+import { BlogImageBlock } from './blocks/BlogImageBlock';
+import { MermaidBlock } from './blocks/MermaidBlock';
 // Custom inline content
 import { InlineEquation } from './blocks/InlineEquation';
 import { DateInline } from './blocks/DateInline';
@@ -32,12 +34,14 @@ import { OrgMentionInline } from './blocks/OrgMentionInline';
 const schema = BlockNoteSchema.create({
   blockSpecs: {
     ...defaultBlockSpecs,
+    image: BlogImageBlock({}),
     tableOfContents: TableOfContents({}),
     blockEquation: BlockEquation({}),
     buttonBlock: ButtonBlock({}),
     breadcrumbs: Breadcrumbs({}),
     tabsBlock: TabsBlock({}),
     aiBlock: AIBlock({}),
+    mermaidBlock: MermaidBlock({}),
   },
   inlineContentSpecs: {
     ...defaultInlineContentSpecs,
@@ -119,6 +123,14 @@ function getCustomSlashMenuItems(editor) {
       aliases: ['tabs', 'tabbed', 'sections', 'panels'],
       icon: <Icon d="M4 6h16M4 6v12a2 2 0 002 2h12a2 2 0 002-2V6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />,
       onItemClick: () => editor.insertBlocks([{ type: 'tabsBlock' }], editor.getTextCursorPosition().block, 'after'),
+    },
+    {
+      title: 'Diagram',
+      subtext: 'Mermaid flowchart, sequence, or class diagram',
+      group: 'Custom Blocks',
+      aliases: ['mermaid', 'diagram', 'flowchart', 'sequence', 'chart', 'graph'],
+      icon: <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM8.5 14h7v7h-7z" d2="M6.5 10v4M17.5 10v4" />,
+      onItemClick: () => editor.insertBlocks([{ type: 'mermaidBlock' }], editor.getTextCursorPosition().block, 'after'),
     },
     {
       title: 'AI Block',
@@ -226,7 +238,7 @@ const KNOWN_BLOCK_TYPES = new Set([
   'paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'image',
   'table', 'codeBlock', 'checkListItem', 'file', 'video', 'audio',
   'tableOfContents', 'blockEquation', 'buttonBlock', 'breadcrumbs',
-  'tabsBlock', 'aiBlock',
+  'tabsBlock', 'aiBlock', 'mermaidBlock',
 ]);
 
 function sanitizeInitialContent(blocks) {
@@ -250,7 +262,7 @@ function doSanitize(blocks) {
   }).join('').trim();
 
   while (i < blocks.length) {
-    const block = blocks[i];
+    let block = blocks[i];
     // Recursively sanitize children
     if (block.children && block.children.length > 0) {
       block = { ...block, children: doSanitize(block.children) };
@@ -265,6 +277,7 @@ function doSanitize(blocks) {
       result.push({ id: block.id, type: 'blockEquation', props: { latex: contentItems[0].props.latex }, children: [] });
       i++; continue;
     }
+
 
     // Single-line \[...\] — may have \] at end of content
     const singleBracket = text.match(/^\\\[(.+?)\\\]$/s);
@@ -377,6 +390,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const aiBlockIdsRef = useRef(new Set());
   const aiBlockCountRef = useRef(0);
   const aiAnchorIdRef = useRef(null);
+  const resolvedImagesRef = useRef({}); // Track resolved AI image URLs: { imageId: { url, alt } }
   const wrapperRef = useRef(null);
 
   const sanitizedContent = useMemo(() => sanitizeInitialContent(initialContent), [initialContent]);
@@ -392,12 +406,30 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     },
   });
 
+  // Build HTML that includes custom blocks (equations, mermaid)
+  const getCustomHTML = useCallback(async () => {
+    const baseHTML = await editor.blocksToHTMLLossy(editor.document);
+    const doc = editor.document;
+    // Collect custom block HTML to append/inject
+    const customParts = [];
+    for (const block of doc) {
+      if (block.type === 'blockEquation' && block.props?.latex) {
+        customParts.push(`<div class="preview-block-equation" data-latex="${encodeURIComponent(block.props.latex)}"></div>`);
+      } else if (block.type === 'mermaidBlock' && block.props?.diagram) {
+        customParts.push(`<div class="preview-mermaid-block" data-diagram="${encodeURIComponent(block.props.diagram)}"></div>`);
+      }
+    }
+    // Append custom blocks at the positions where empty divs were generated
+    return baseHTML + (customParts.length ? '\n' + customParts.join('\n') : '');
+  }, [editor]);
+
   useImperativeHandle(ref, () => ({
     getDocument: () => editor.document,
     getEditor: () => editor,
-    getHTML: async () => await editor.blocksToHTMLLossy(editor.document),
+    getBlocks: () => editor.document,
+    getHTML: async () => await getCustomHTML(),
     getMarkdown: async () => await editor.blocksToMarkdownLossy(editor.document),
-  }), [editor]);
+  }), [editor, getCustomHTML]);
 
   // Prevent backspace from triggering browser back navigation when editor is empty
   useEffect(() => {
@@ -535,80 +567,45 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   }, [patchCodeBlocks, onReady]);
 
 
-  // AI sparkle star — fixed position, follows the last AI block's text end
+  // AI sparkle star — inline element appended to last AI text block
   const sparkleRef = useRef(null);
 
-  useEffect(() => {
-    // Create sparkle once, keep hidden until AI starts
-    const star = document.createElement('div');
-    star.className = 'ai-glob-cursor';
-    star.style.cssText = '';
-    document.body.appendChild(star);
-    sparkleRef.current = star;
-    return () => { star.remove(); sparkleRef.current = null; };
-  }, []);
-
   const moveSparkleToLastAiBlock = useCallback(() => {
-    const star = sparkleRef.current;
-    if (!star) return;
-    const ids = aiBlockIdsRef.current;
-    if (!ids || ids.size === 0) { star.style.display = 'none'; return; }
+    // Remove any existing sparkle from DOM
+    const existing = wrapperRef.current?.querySelector('.ai-glob-cursor');
+    if (existing) existing.remove();
 
-    const lastId = [...ids][ids.size - 1];
-    const blockEl = wrapperRef.current?.querySelector(`[data-id="${lastId}"]`);
-    if (!blockEl) { star.style.display = 'none'; return; }
+    const ids = aiBlockIdsRef.current;
+    if (!ids || ids.size === 0) return;
+
+    // Find the last text block (skip image blocks)
+    let lastTextId = null;
+    for (const id of [...ids].reverse()) {
+      const el = wrapperRef.current?.querySelector(`[data-id="${id}"]`);
+      if (el && !el.querySelector('.blog-img-empty, .blog-img-loaded, .blog-img-generating')) {
+        lastTextId = id;
+        break;
+      }
+    }
+    if (!lastTextId) return;
+
+    const blockEl = wrapperRef.current?.querySelector(`[data-id="${lastTextId}"]`);
+    if (!blockEl) return;
 
     const inlineEl = blockEl.querySelector('.bn-inline-content') || blockEl.querySelector('p') || blockEl;
 
-    // Try to find the last text node and position at its end
-    try {
-      const textNodes = [];
-      const walker = document.createTreeWalker(inlineEl, NodeFilter.SHOW_TEXT);
-      let n;
-      while ((n = walker.nextNode())) textNodes.push(n);
-
-      if (textNodes.length > 0) {
-        const lastText = textNodes[textNodes.length - 1];
-        const range = document.createRange();
-        range.setStart(lastText, lastText.length);
-        range.collapse(true);
-        const rect = range.getBoundingClientRect();
-        if (rect.width !== undefined && rect.height > 0) {
-          star.style.left = (rect.right) + 'px';
-          star.style.top = (rect.top + rect.height / 2 - 10) + 'px';
-          star.style.display = 'block';
-          return;
-        }
-      }
-    } catch {}
-
-    // Fallback: position at the left edge of the block (for empty blocks)
-    const blockRect = blockEl.getBoundingClientRect();
-    if (blockRect.height > 0) {
-      star.style.left = (blockRect.left + 4) + 'px';
-      star.style.top = (blockRect.top + 2) + 'px';
-      star.style.display = 'block';
-    }
+    // Create and append sparkle inline at the end of the text
+    const star = document.createElement('span');
+    star.className = 'ai-glob-cursor';
+    inlineEl.appendChild(star);
+    sparkleRef.current = star;
   }, []);
 
   const hideSparkle = useCallback(() => {
-    if (sparkleRef.current) {
-      sparkleRef.current.style.display = 'none';
-      sparkleRef.current.style.left = '-100px';
-      sparkleRef.current.style.top = '-100px';
-    }
+    const existing = wrapperRef.current?.querySelector('.ai-glob-cursor');
+    if (existing) existing.remove();
+    sparkleRef.current = null;
   }, []);
-
-  // Reposition sparkle on scroll so it stays with the text
-  useEffect(() => {
-    function onScroll() {
-      if (sparkleRef.current && sparkleRef.current.style.display === 'block') {
-        moveSparkleToLastAiBlock();
-      }
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [moveSparkleToLastAiBlock]);
 
   const getItems = useMemo(
     () => async (query) => filterItems(getCustomSlashMenuItems(editor), query),
@@ -746,65 +743,25 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     }
   }, []);
 
-  // Force lavender on all children of a block element
-  const forceLavenderOnBlock = useCallback((el) => {
-    el.style.setProperty('color', '#c4b5fd', 'important');
-    el.querySelectorAll('*').forEach((child) => {
-      child.style.setProperty('color', '#c4b5fd', 'important');
-    });
-  }, []);
-
-  // MutationObserver to re-apply lavender when BlockNote re-renders AI blocks
-  const aiObserverRef = useRef(null);
-
-  const startAiObserver = useCallback(() => {
-    if (aiObserverRef.current) aiObserverRef.current.disconnect();
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-
-    const observer = new MutationObserver((mutations) => {
-      // Pause observer while we apply styles to avoid infinite loop
-      observer.disconnect();
-      wrapper.querySelectorAll('.ai-generated-highlight').forEach(forceLavenderOnBlock);
-      // Re-observe after styles are applied
-      observer.observe(wrapper, { childList: true, subtree: true, characterData: true });
-    });
-    observer.observe(wrapper, { childList: true, subtree: true, characterData: true });
-    aiObserverRef.current = observer;
-  }, [forceLavenderOnBlock]);
-
-  const stopAiObserver = useCallback(() => {
-    if (aiObserverRef.current) {
-      aiObserverRef.current.disconnect();
-      aiObserverRef.current = null;
-    }
-  }, []);
+  // No MutationObserver needed — CSS handles lavender via -webkit-text-fill-color
 
   // Highlight AI blocks in the DOM with lavender class + position sparkle
   const highlightAiBlocks = useCallback((ids, showCursor = true) => {
-    // Remove old highlights and restore inline colors
+    // Remove old highlights
     wrapperRef.current?.querySelectorAll('.ai-generated-highlight').forEach((el) => {
       el.classList.remove('ai-generated-highlight');
-      el.style.removeProperty('color');
-      el.querySelectorAll('*').forEach((child) => {
-        child.style.removeProperty('color');
-      });
     });
+    // Add highlight to current AI blocks — CSS handles the lavender color
     for (const id of ids) {
       const el = wrapperRef.current?.querySelector(`[data-id="${id}"]`);
-      if (el) {
-        el.classList.add('ai-generated-highlight');
-        forceLavenderOnBlock(el);
-      }
+      if (el) el.classList.add('ai-generated-highlight');
     }
-    // Start observer to keep colors enforced during streaming re-renders
-    if (ids.length > 0) startAiObserver();
     if (showCursor) {
       moveSparkleToLastAiBlock();
     } else {
       hideSparkle();
     }
-  }, [moveSparkleToLastAiBlock, hideSparkle, forceLavenderOnBlock, startAiObserver]);
+  }, [moveSparkleToLastAiBlock, hideSparkle]);
 
   // Get current AI block IDs by position relative to anchor
   const getAiBlockIds = useCallback(() => {
@@ -818,37 +775,34 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   }, [editor]);
 
   const handleAIKeep = useCallback(() => {
-    // Stop observer, remove highlights, restore white color, hide sparkle
-    stopAiObserver();
+    hideSparkle();
     wrapperRef.current?.querySelectorAll('.ai-generated-highlight').forEach((el) => {
       el.classList.remove('ai-generated-highlight');
-      el.style.removeProperty('color');
-      el.querySelectorAll('*').forEach((child) => {
-        child.style.removeProperty('color');
-      });
     });
-    hideSparkle();
     setAiBlockIds(new Set());
     aiBlockIdsRef.current = new Set();
     aiBlockCountRef.current = 0;
     aiAnchorIdRef.current = null;
     setShowAIActions(false);
-  }, [stopAiObserver]);
+  }, [hideSparkle]);
 
   const handleAIDiscard = useCallback(() => {
-    // Stop observer, hide sparkle and remove AI-generated blocks
-    stopAiObserver();
     hideSparkle();
-    const ids = getAiBlockIds();
-    if (ids.length > 0) {
-      try { editor.removeBlocks(ids); } catch {}
+    const storedIds = [...aiBlockIdsRef.current];
+    if (storedIds.length > 0) {
+      try { editor.removeBlocks(storedIds); } catch {
+        try { const fb = getAiBlockIds(); if (fb.length > 0) editor.removeBlocks(fb); } catch {}
+      }
     }
+    wrapperRef.current?.querySelectorAll('.ai-generated-highlight').forEach((el) => {
+      el.classList.remove('ai-generated-highlight');
+    });
     setAiBlockIds(new Set());
     aiBlockIdsRef.current = new Set();
     aiBlockCountRef.current = 0;
     aiAnchorIdRef.current = null;
     setShowAIActions(false);
-  }, [editor, getAiBlockIds, stopAiObserver]);
+  }, [editor, getAiBlockIds, hideSparkle]);
 
   // Click on AI content to show keep/discard
   useEffect(() => {
@@ -893,7 +847,14 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
   const handleAISubmit = useCallback(async (userPrompt) => {
     setShowAIMenu(false);
+
+    // Auto-keep previous AI content if any exists
+    if (aiBlockIdsRef.current.size > 0) {
+      handleAIKeep();
+    }
+
     setShowAIActions(false);
+    resolvedImagesRef.current = {};
 
     // Detect title-related prompts
     const titleKeywords = /\b(title|heading|name.*blog|blog.*name)\b/i;
@@ -942,20 +903,9 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     const abortController = new AbortController();
     aiAbortRef.current = abortController;
 
-    // Show glob cursor at the space-press position (the anchor block) immediately
+    // Highlight the placeholder block and show sparkle
     requestAnimationFrame(() => {
-      highlightAiBlocks(currentIds, false); // highlight but don't move sparkle yet
-      // Position sparkle at the anchor block (where space was pressed)
-      const star = sparkleRef.current;
-      if (star) {
-        const anchorEl = wrapperRef.current?.querySelector(`[data-id="${anchorBlockId}"]`);
-        if (anchorEl) {
-          const anchorRect = anchorEl.getBoundingClientRect();
-          star.style.left = (anchorRect.right - 10) + 'px';
-          star.style.top = (anchorRect.top + anchorRect.height / 2 - 10) + 'px';
-          star.style.display = 'block';
-        }
-      }
+      highlightAiBlocks(currentIds, true);
       // Add skeleton loading to nearby lines during thinking
       const placeholderEl = wrapperRef.current?.querySelector(`[data-id="${insertedBlock.id}"]`);
       if (placeholderEl) {
@@ -1074,7 +1024,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           },
           onImageStart: ({ id, prompt, alt }) => {
             setAiPhase('generating_image');
-            // Apply skeleton frame to the image placeholder block
+            // Apply skeleton frame to the image placeholder block and add empty line below
             requestAnimationFrame(() => {
               wrapperRef.current?.querySelectorAll('[data-content-type="image"]').forEach((imgBlock) => {
                 const img = imgBlock.querySelector('img');
@@ -1082,9 +1032,40 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                   imgBlock.closest('[data-node-type="blockContainer"]')?.classList.add('ai-image-skeleton');
                 }
               });
+              // Insert an empty paragraph after the image block so cursor can go there
+              try {
+                const doc = editor.document;
+                for (const block of doc) {
+                  if (block.type === 'image' && block.props?._imageId === id) {
+                    // Check if next block is already an empty paragraph
+                    const idx = doc.findIndex(b => b.id === block.id);
+                    const nextBlock = doc[idx + 1];
+                    const nextIsEmpty = nextBlock?.type === 'paragraph' &&
+                      (!nextBlock.content || nextBlock.content.length === 0 ||
+                        (nextBlock.content.length === 1 && nextBlock.content[0].text === ''));
+                    if (!nextIsEmpty) {
+                      editor.insertBlocks([{ type: 'paragraph', content: [] }], block.id, 'after');
+                    }
+                    // Move cursor to the empty paragraph below the image
+                    const updatedDoc = editor.document;
+                    const newIdx = updatedDoc.findIndex(b => b.id === block.id);
+                    const targetBlock = updatedDoc[newIdx + 1];
+                    if (targetBlock) {
+                      editor.setTextCursorPosition(targetBlock.id, 'start');
+                    }
+                    break;
+                  }
+                }
+              } catch {}
             });
           },
+          onImagePreview: ({ id, previewUrl, alt }) => {
+            // Show image immediately with blob URL before upload finishes
+            replaceImagePlaceholder(id, previewUrl, alt);
+          },
           onImageDone: ({ id, url, alt }) => {
+            resolvedImagesRef.current[id] = { url, alt };
+            // Replace blob URL with final Cloudinary URL
             replaceImagePlaceholder(id, url, alt);
             setAiPhase('writing');
           },
@@ -1112,7 +1093,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         if (!contentText) {
           const oldIds = getAiBlockIds();
           try { if (oldIds.length > 0) editor.removeBlocks(oldIds); } catch {}
-          stopAiObserver();
+          // observer removed — CSS handles highlighting
           setAiGenerating(false);
           setAiPhase('idle');
           setAiGeneratingBlockId(null);
@@ -1125,13 +1106,36 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           return;
         }
 
+        // Replace IMG_LOADING: markers with resolved image URLs so we don't overwrite them
+        const resolved = resolvedImagesRef.current;
+        for (const [imageId, { url, alt }] of Object.entries(resolved)) {
+          contentText = contentText.replace(
+            new RegExp(`!\\[([^\\]]*)\\]\\(IMG_LOADING:${imageId}\\)`),
+            `![${alt || '$1'}](${url})`
+          );
+        }
+
         const newBlocks = parseMarkdownToBlocks(contentText);
         const oldIds = getAiBlockIds();
         try {
           if (oldIds.length > 0) {
             editor.replaceBlocks(oldIds, newBlocks);
             aiBlockCountRef.current = newBlocks.length;
-            currentIds = getAiBlockIds();
+            // Read actual IDs from document after replacement
+            const anchorId = aiAnchorIdRef.current;
+            const doc = editor.document;
+            const anchorIdx = doc.findIndex((b) => b.id === anchorId);
+            if (anchorIdx !== -1) {
+              currentIds = doc.slice(anchorIdx + 1, anchorIdx + 1 + newBlocks.length).map((b) => b.id);
+            }
+          }
+        } catch {}
+
+        // Insert an empty paragraph after the last AI block so user can keep typing
+        try {
+          const lastAiId = currentIds[currentIds.length - 1];
+          if (lastAiId) {
+            editor.insertBlocks([{ type: 'paragraph', content: [] }], lastAiId, 'after');
           }
         } catch {}
 
@@ -1179,7 +1183,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       setShowAIActions(false);
       setAiErrorToast(err.message || 'AI generation failed');
     }
-  }, [editor, getAiBlockIds, highlightAiBlocks, getFullBlogContext, blogId]);
+  }, [editor, getAiBlockIds, highlightAiBlocks, getFullBlogContext, blogId, handleAIKeep]);
 
   // Replace an image placeholder with the real Cloudinary URL
   const replaceImagePlaceholder = useCallback((imageId, url, alt) => {
@@ -1189,7 +1193,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         if (block.type === 'image' && block.props?._imageId === imageId) {
           editor.updateBlock(block.id, {
             type: 'image',
-            props: { url, caption: alt || block.props.caption || '', previewWidth: 740 },
+            props: { url, caption: alt || block.props.caption || '', previewWidth: 740, _imageId: imageId },
           });
           // Remove skeleton class and add fade-in animation
           requestAnimationFrame(() => {
@@ -1230,24 +1234,25 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       const doc = editor.document;
       for (const block of doc) {
         if (block.type === 'image' && block.props?._imageId === imageId) {
-          editor.removeBlocks([block.id]);
+          // Convert to empty paragraph instead of removing — leaves an empty line
+          editor.updateBlock(block.id, { type: 'paragraph', props: {}, content: [] });
           return;
         }
         // Also check paragraph blocks with IMG_LOADING text
         if (block.type === 'paragraph') {
           const text = (block.content || []).map(c => c.text || '').join('');
           if (text.includes(`IMG_LOADING:${imageId}`)) {
-            editor.removeBlocks([block.id]);
+            editor.updateBlock(block.id, { type: 'paragraph', props: {}, content: [] });
             return;
           }
         }
       }
-      // Fallback: remove any image block with no URL (empty placeholder)
+      // Fallback: convert any image block with no URL (empty placeholder)
       for (const block of doc) {
         if (block.type === 'image' && (!block.props?.url || block.props.url === '')) {
           const el = wrapperRef.current?.querySelector(`[data-id="${block.id}"]`);
           if (el?.classList.contains('ai-image-skeleton')) {
-            editor.removeBlocks([block.id]);
+            editor.updateBlock(block.id, { type: 'paragraph', props: {}, content: [] });
             return;
           }
         }
@@ -1256,7 +1261,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   }, [editor]);
 
   return (
-    <div className="blog-editor-wrapper" ref={wrapperRef} style={{ position: 'relative' }}>
+    <div className={`blog-editor-wrapper${(aiGenerating || (showAIActions && aiBlockIds.size > 0)) ? ' ai-editor-locked' : ''}`} ref={wrapperRef} style={{ position: 'relative' }}>
       <BlockNoteView
         editor={editor}
         onChange={handleChange}
@@ -1267,6 +1272,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           triggerCharacter="/"
           getItems={getItems}
         />
+        <TableHandlesController />
       </BlockNoteView>
 
       {/* @ Mention menu */}

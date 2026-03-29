@@ -88,6 +88,52 @@
   padding: 8px 12px;
 }
 
+/* Table handles dark theme */
+.blog-editor-wrapper .bn-table-handle {
+  background: #232d3f;
+  border: 1px solid #333;
+  color: #8896a8;
+}
+
+.blog-editor-wrapper .bn-table-handle:hover {
+  background: #2a3346;
+  color: #c4b5fd;
+}
+
+/* Table handle dropdown menu */
+.blog-editor-wrapper .bn-table-handle-menu,
+.bn-table-handle-menu {
+  background: #141a26 !important;
+  border: 1px solid #232d3f !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+.blog-editor-wrapper .bn-table-handle-menu button,
+.bn-table-handle-menu button {
+  color: #e0e0e0 !important;
+}
+
+.blog-editor-wrapper .bn-table-handle-menu button:hover,
+.bn-table-handle-menu button:hover {
+  background: rgba(196, 181, 253, 0.1) !important;
+  color: #c4b5fd !important;
+}
+
+/* Table extend (add row/col) button */
+.blog-editor-wrapper .bn-extend-button {
+  background: rgba(196, 181, 253, 0.08);
+  border: 1px dashed rgba(196, 181, 253, 0.2);
+  color: #8896a8;
+  transition: all 0.15s;
+}
+
+.blog-editor-wrapper .bn-extend-button:hover {
+  background: rgba(196, 181, 253, 0.15);
+  border-color: rgba(196, 181, 253, 0.4);
+  color: #c4b5fd;
+}
+
 /* ===== KaTeX overrides ===== */
 
 .blog-editor-wrapper .katex {
@@ -113,4 +159,327 @@
 /* Inline equation */
 .blog-editor-wrapper .inline-equation .katex {
   font-size: 1em;
+}
+
+/* ===== Mermaid diagram blocks ===== */
+
+.mermaid-block {
+  border: 1px solid #232d3f;
+  border-radius: 12px;
+  background: #141a26;
+  my: 8px;
+  overflow: hidden;
+}
+
+.mermaid-block--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 16px;
+  border-style: dashed;
+  background: rgba(20, 26, 38, 0.5);
+  color: #8896a8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.mermaid-block--empty:hover {
+  border-color: #333;
+  color: #c4b5fd;
+}
+
+.mermaid-block--editing {
+  padding: 0;
+}
+
+.mermaid-block-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: #8896a8;
+}
+
+.mermaid-block-textarea {
+  width: 100%;
+  background: #0c1017;
+  border: none;
+  border-top: 1px solid #232d3f;
+  margin-top: 8px;
+  padding: 12px 14px;
+  color: #e0e0e0;
+  font-family: 'lixCode', monospace;
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+  min-height: 120px;
+}
+
+.mermaid-block-textarea::placeholder {
+  color: #6b7a8d;
+}
+
+.mermaid-block-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 14px;
+  border-top: 1px solid #232d3f;
+}
+
+.mermaid-btn-cancel {
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #888;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.mermaid-btn-cancel:hover {
+  color: white;
+}
+
+.mermaid-btn-save {
+  padding: 4px 12px;
+  font-size: 12px;
+  color: white;
+  background: #9b7bf7;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mermaid-btn-save:hover {
+  background: #b69aff;
+}
+
+.mermaid-btn-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mermaid-block--rendered {
+  position: relative;
+  padding: 0;
+  cursor: default;
+  min-height: 280px;
+}
+
+.mermaid-viewport {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  overflow: hidden;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.mermaid-viewport:active {
+  cursor: grabbing;
+}
+
+.mermaid-block-svg {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.05s linear;
+  will-change: transform;
+  padding: 24px;
+}
+
+.mermaid-block-svg svg {
+  max-width: none !important;
+  height: auto !important;
+}
+
+/* Make text inside mermaid SVG bigger and more readable */
+.mermaid-block-svg svg text {
+  font-size: 15px !important;
+}
+
+.mermaid-block-svg svg .nodeLabel,
+.mermaid-block-svg svg .edgeLabel {
+  font-size: 15px !important;
+}
+
+/* Zoom controls */
+.mermaid-zoom-controls {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(14, 18, 27, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid #232d3f;
+  border-radius: 8px;
+  padding: 4px 6px;
+  z-index: 5;
+}
+
+.mermaid-zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: #8896a8;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.mermaid-zoom-btn:hover {
+  color: #c4b5fd;
+  background: rgba(196, 181, 253, 0.1);
+}
+
+.mermaid-zoom-label {
+  font-size: 11px;
+  color: #6b7a8d;
+  min-width: 36px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.mermaid-block-hover {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.mermaid-block--rendered:hover .mermaid-block-hover,
+.group:hover .mermaid-block-hover {
+  opacity: 1;
+}
+
+.mermaid-hover-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(14, 18, 27, 0.85);
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #8896a8;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.mermaid-hover-btn:hover {
+  color: white;
+  background: #232d3f;
+}
+
+.mermaid-hover-delete:hover {
+  color: #f87171;
+}
+
+/* ===== Editor Outline Sidebar ===== */
+
+.editor-outline-sidebar {
+  position: fixed;
+  right: 24px;
+  top: 80px;
+  width: 200px;
+  max-height: 70vh;
+  overflow-y: auto;
+  z-index: 30;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.editor-outline-sidebar:hover {
+  opacity: 1;
+}
+
+.editor-outline-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b7a8d;
+  margin-bottom: 8px;
+  padding-left: 12px;
+}
+
+.editor-outline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.editor-outline-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.editor-outline-item:hover {
+  background: rgba(155, 123, 247, 0.08);
+}
+
+.editor-outline-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #9b7bf7;
+  flex-shrink: 0;
+}
+
+.editor-outline-text {
+  font-size: 13px;
+  color: #8896a8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s;
+}
+
+.editor-outline-item:hover .editor-outline-text {
+  color: #c4b5fd;
+}
+
+/* Hide on smaller screens where there's no room */
+@media (max-width: 1200px) {
+  .editor-outline-sidebar {
+    display: none;
+  }
+}
+
+/* Scrollbar styling for outline */
+.editor-outline-sidebar::-webkit-scrollbar {
+  width: 2px;
+}
+
+.editor-outline-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(155, 123, 247, 0.2);
+  border-radius: 2px;
 }

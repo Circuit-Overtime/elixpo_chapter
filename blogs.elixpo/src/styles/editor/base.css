@@ -104,25 +104,48 @@
 }
 
 /* Headings — override BlockNote's --level custom property */
-.blog-editor-wrapper [data-content-type="heading"][data-level="1"] {
-  --level: 1.75em !important;
+.blog-editor-wrapper .bn-block-content[data-content-type="heading"][data-level="1"],
+.blog-editor-wrapper .bn-block-content[data-content-type="heading"][data-level="1"] * {
+  font-size: 1.45em !important;
   font-family: 'lixFont', sans-serif;
   font-weight: 700 !important;
   color: #e4e4e7;
 }
 
-.blog-editor-wrapper [data-content-type="heading"][data-level="2"] {
-  --level: 1.35em !important;
+.blog-editor-wrapper .bn-block-content[data-content-type="heading"][data-level="2"],
+.blog-editor-wrapper .bn-block-content[data-content-type="heading"][data-level="2"] * {
+  font-size: 1.2em !important;
   font-family: 'lixFont', sans-serif;
   font-weight: 650 !important;
   color: #e4e4e7;
 }
 
-.blog-editor-wrapper [data-content-type="heading"][data-level="3"] {
-  --level: 1.15em !important;
+.blog-editor-wrapper .bn-block-content[data-content-type="heading"][data-level="3"],
+.blog-editor-wrapper .bn-block-content[data-content-type="heading"][data-level="3"] * {
+  font-size: 1.05em !important;
   font-family: 'lixFont', sans-serif;
   font-weight: 600 !important;
   color: #e4e4e7;
+}
+
+/* Override BlockNote's --level and --prev-level transition sizing */
+.blog-editor-wrapper [data-content-type="heading"][data-level="1"] {
+  --level: 1.45em !important;
+}
+.blog-editor-wrapper [data-content-type="heading"][data-level="2"] {
+  --level: 1.2em !important;
+}
+.blog-editor-wrapper [data-content-type="heading"][data-level="3"] {
+  --level: 1.05em !important;
+}
+.blog-editor-wrapper [data-prev-level="1"] {
+  --prev-level: 1.45em !important;
+}
+.blog-editor-wrapper [data-prev-level="2"] {
+  --prev-level: 1.2em !important;
+}
+.blog-editor-wrapper [data-prev-level="3"] {
+  --prev-level: 1.05em !important;
 }
 
 /* Inline code — lavender theme */
@@ -132,7 +155,7 @@
   background: rgba(196, 181, 253, 0.1);
   border-radius: 4px;
   padding: 0.15em 0.4em;
-  font-size: 0.95em;
+  font-size: 0.82em;
   font-family: 'lixCode', monospace;
 }
 
