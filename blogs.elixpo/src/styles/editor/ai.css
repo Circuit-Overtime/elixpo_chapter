@@ -1,63 +1,44 @@
 /* ===== AI Generated Block Highlight ===== */
 
 .ai-generated-highlight {
-  background: rgba(167, 139, 250, 0.15) !important;
-  border-left: 3px solid rgba(167, 139, 250, 0.7) !important;
+  background: rgba(167, 139, 250, 0.12) !important;
+  border-left: 3px solid rgba(167, 139, 250, 0.6) !important;
   border-radius: 0 6px 6px 0;
   margin-left: -3px;
-  transition: background 0.3s ease, border-color 0.3s ease;
-  animation: aiBlockFadeIn 0.3s ease-out;
-}
-
-@keyframes aiBlockFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .ai-generated-highlight .bn-block-content {
-  background: rgba(167, 139, 250, 0.12) !important;
-  border-radius: 4px;
+  background: transparent !important;
 }
 
-/* Smooth text appearance during AI streaming — word-level fade in effect */
-.ai-generated-highlight .bn-inline-content {
-  animation: aiTextFadeIn 0.4s ease-out;
+/*
+ * Force lavender color on AI-highlighted text.
+ * CSS !important CANNOT beat inline styles. So we use the only approach that works:
+ * override via the cascade layer + color on the contenteditable itself.
+ * BlockNote sets color on span children, so we need to nuke those inline colors
+ * using the CSS "revert" trick within an @layer.
+ */
+.ai-generated-highlight [contenteditable="true"],
+.ai-generated-highlight [contenteditable="true"] * {
+  color: #c4b5fd !important;
+  caret-color: #c4b5fd !important;
+  -webkit-text-fill-color: #c4b5fd !important;
 }
 
-.ai-generated-highlight .bn-inline-content span,
-.ai-generated-highlight .bn-inline-content a,
-.ai-generated-highlight .bn-inline-content code,
-.ai-generated-highlight .bn-inline-content strong,
-.ai-generated-highlight .bn-inline-content em {
-  animation: aiWordFadeIn 0.35s ease-out both;
-}
-
-@keyframes aiTextFadeIn {
-  from { opacity: 0.3; filter: blur(2px); }
-  to { opacity: 1; filter: blur(0); }
-}
-
-@keyframes aiWordFadeIn {
-  from { opacity: 0; transform: translateY(4px); filter: blur(2px); }
-  to { opacity: 1; transform: translateY(0); filter: blur(0); }
-}
-
-/* Force lavender color on ALL text inside AI blocks — use broad selectors to beat inline styles */
-.ai-generated-highlight,
-.ai-generated-highlight *,
-[data-node-type="blockContainer"].ai-generated-highlight *,
+/* Also cover non-editable rendered content inside AI blocks */
 .ai-generated-highlight .bn-inline-content,
-.ai-generated-highlight .bn-inline-content *,
-.ai-generated-highlight [data-content-type] *,
 .ai-generated-highlight p,
 .ai-generated-highlight span,
 .ai-generated-highlight strong,
 .ai-generated-highlight em,
 .ai-generated-highlight code,
 .ai-generated-highlight a,
-.ai-generated-highlight li {
+.ai-generated-highlight li,
+.ai-generated-highlight h1,
+.ai-generated-highlight h2,
+.ai-generated-highlight h3 {
   color: #c4b5fd !important;
-  caret-color: #c4b5fd !important;
+  -webkit-text-fill-color: #c4b5fd !important;
 }
 
 /* ===== AI Edit Diff Styles (lavender theme) ===== */
@@ -103,6 +84,8 @@
   pointer-events: none;
 }
 
+.ai-edit-original-block [contenteditable="true"],
+.ai-edit-original-block [contenteditable="true"] *,
 .ai-edit-original-block .bn-inline-content,
 .ai-edit-original-block .bn-inline-content *,
 .ai-edit-original-block p,
@@ -115,6 +98,7 @@
   text-decoration: line-through !important;
   text-decoration-color: rgba(196, 181, 253, 0.6) !important;
   color: rgba(196, 181, 253, 0.35) !important;
+  -webkit-text-fill-color: rgba(196, 181, 253, 0.35) !important;
 }
 
 /* ===== Inline AI Edit Diff — new AI blocks (lavender) ===== */
@@ -143,6 +127,8 @@
 
 .ai-edit-new-block,
 .ai-edit-new-block *,
+.ai-edit-new-block [contenteditable="true"],
+.ai-edit-new-block [contenteditable="true"] *,
 .ai-edit-new-block .bn-inline-content,
 .ai-edit-new-block .bn-inline-content *,
 .ai-edit-new-block p,
@@ -151,33 +137,27 @@
 .ai-edit-new-block em,
 .ai-edit-new-block code,
 .ai-edit-new-block a,
-.ai-edit-new-block li {
+.ai-edit-new-block li,
+.ai-edit-new-block h1,
+.ai-edit-new-block h2,
+.ai-edit-new-block h3 {
   color: #c4b5fd !important;
+  -webkit-text-fill-color: #c4b5fd !important;
   caret-color: #c4b5fd !important;
 }
 
-.ai-streaming-cursor::after {
-  content: '|';
-  color: #c4b5fd;
-  animation: aiCursorBlink 0.8s infinite;
-  font-weight: 300;
-}
+/* Streaming cursor removed — sparkle is inline now */
 
-@keyframes aiCursorBlink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
-}
-
-/* ===== AI Sparkle Star Cursor (inline, follows text) ===== */
+/* ===== AI Sparkle Star Cursor (inline, appended to text) ===== */
 
 .ai-glob-cursor {
-  display: none;
-  position: fixed;
-  width: 30px;
-  height: 30px;
+  display: inline-block;
+  position: relative;
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  margin-left: 2px;
   pointer-events: none;
-  z-index: 9999;
-  transition: left 0.15s ease-out, top 0.15s ease-out;
 }
 
 /* Main sparkle star — 4-point star shape */
@@ -186,34 +166,17 @@
   position: absolute !important;
   top: 50% !important;
   left: 50% !important;
-  width: 20px !important;
-  height: 20px !important;
+  width: 14px !important;
+  height: 14px !important;
   background: #c4b5fd !important;
   clip-path: polygon(
     50% 0%, 61% 35%, 100% 50%, 61% 65%,
     50% 100%, 39% 65%, 0% 50%, 39% 35%
   ) !important;
   filter: drop-shadow(0 0 4px rgba(196, 181, 253, 0.9))
-          drop-shadow(0 0 10px rgba(167, 139, 250, 0.6))
-          drop-shadow(0 0 20px rgba(167, 139, 250, 0.3)) !important;
+          drop-shadow(0 0 8px rgba(167, 139, 250, 0.5)) !important;
   animation: aiStarSpin 3s linear infinite, aiStarPulse 1.4s ease-in-out infinite !important;
-}
-
-/* Smaller offset sparkle */
-.ai-glob-cursor::before {
-  content: '' !important;
-  position: absolute !important;
-  top: 20% !important;
-  right: -2px !important;
-  width: 12px !important;
-  height: 12px !important;
-  background: #ddd6fe !important;
-  clip-path: polygon(
-    50% 0%, 61% 35%, 100% 50%, 61% 65%,
-    50% 100%, 39% 65%, 0% 50%, 39% 35%
-  ) !important;
-  filter: drop-shadow(0 0 3px rgba(196, 181, 253, 0.7)) !important;
-  animation: aiStarSpinReverse 2s linear infinite, aiStarTrail 1.6s ease-in-out infinite !important;
+  transform-origin: center center;
 }
 
 @keyframes aiStarSpin {
@@ -221,28 +184,9 @@
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-@keyframes aiStarSpinReverse {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-360deg); }
-}
-
 @keyframes aiStarPulse {
-  0%, 100% {
-    opacity: 0.7;
-    filter: drop-shadow(0 0 3px rgba(196, 181, 253, 0.5))
-            drop-shadow(0 0 8px rgba(167, 139, 250, 0.3));
-  }
-  50% {
-    opacity: 1;
-    filter: drop-shadow(0 0 6px rgba(196, 181, 253, 1))
-            drop-shadow(0 0 14px rgba(167, 139, 250, 0.7))
-            drop-shadow(0 0 24px rgba(167, 139, 250, 0.3));
-  }
-}
-
-@keyframes aiStarTrail {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.9; }
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
 /* ===== Elixpo Typing Bar (fixed bottom, glassmorphism) ===== */
@@ -422,25 +366,65 @@
 .ai-editor-locked .bn-editor [contenteditable] {
   pointer-events: none !important;
   user-select: none !important;
-  opacity: 0.85;
+  cursor: not-allowed !important;
+}
+
+.ai-editor-locked .bn-editor {
+  position: relative;
+}
+
+.ai-editor-locked .bn-editor::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 14, 22, 0.15);
+  pointer-events: none;
+  z-index: 5;
+  border-radius: 8px;
+  animation: aiLockFadeIn 0.3s ease-out;
+}
+
+@keyframes aiLockFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .ai-editor-locked .bn-toolbar {
   display: none !important;
 }
 
-/* ===== AI Selected Block — lavender highlight before AI starts editing ===== */
+/* ===== AI Selected Block — shimmer skeleton while AI is thinking ===== */
 
 .ai-edit-selected-block {
-  background: rgba(196, 181, 253, 0.15) !important;
+  position: relative;
+  background: rgba(196, 181, 253, 0.10) !important;
   border-left: 3px solid rgba(196, 181, 253, 0.4) !important;
   border-radius: 0 6px 6px 0;
   margin-left: -3px;
-  transition: background 0.3s ease;
+  overflow: hidden;
+}
+
+.ai-edit-selected-block::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 25%,
+    rgba(196, 181, 253, 0.13) 50%,
+    transparent 75%
+  );
+  background-size: 200% 100%;
+  animation: aiSkeletonShimmer 1.8s ease-in-out infinite;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: 0 6px 6px 0;
 }
 
 .ai-edit-selected-block .bn-inline-content,
 .ai-edit-selected-block .bn-inline-content *,
+.ai-edit-selected-block [contenteditable="true"],
+.ai-edit-selected-block [contenteditable="true"] *,
 .ai-edit-selected-block p,
 .ai-edit-selected-block span,
 .ai-edit-selected-block strong,
@@ -448,7 +432,8 @@
 .ai-edit-selected-block code,
 .ai-edit-selected-block a,
 .ai-edit-selected-block li {
-  color: #c4b5fd !important;
+  color: rgba(196, 181, 253, 0.6) !important;
+  -webkit-text-fill-color: rgba(196, 181, 253, 0.6) !important;
 }
 
 /* ===== AI Skeleton Loading — shimmer on nearby lines during thinking ===== */
@@ -544,16 +529,19 @@
   border: 1.5px dashed rgba(196, 181, 253, 0.3) !important;
 }
 
-/* Hide the default white image placeholder inside skeleton */
-.ai-image-skeleton .bn-file-default-preview,
+/* Hide ALL default BlockNote image UI inside skeleton — the white "Add image" box */
 .ai-image-skeleton .bn-add-file-button,
-.ai-image-skeleton .bn-file-block-content-wrapper > div:first-child,
-.ai-image-skeleton [class*="AddFile"],
-.ai-image-skeleton img[src=""],
-.ai-image-skeleton img:not([src]),
-.ai-image-skeleton .bn-image-block-content-wrapper > div {
+.ai-image-skeleton .bn-file-block-content-wrapper,
+.ai-image-skeleton .bn-file-name-with-icon,
+.ai-image-skeleton .bn-visual-media-wrapper,
+.ai-image-skeleton .bn-file-caption,
+.ai-image-skeleton [data-file-block] > *,
+.ai-image-skeleton .bn-block-content > * {
   opacity: 0 !important;
+  visibility: hidden !important;
   pointer-events: none !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
 }
 
 .ai-image-skeleton::before {

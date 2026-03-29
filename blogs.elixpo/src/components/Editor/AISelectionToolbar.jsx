@@ -24,7 +24,7 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
   const menuRef = useRef(null);
   const aiBlockCountRef = useRef(0);
   const injectedRef = useRef(false);
-  const observerRef = useRef(null);
+  const originalBlockIdsRef = useRef([]); // Ref mirror for use in streaming callbacks
 
   // Inject star button + color buttons into BlockNote's native toolbar
   useEffect(() => {
@@ -88,6 +88,8 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
             } else {
               editor.addStyles({ textColor: color });
             }
+            // Deselect so user can see the applied color
+            setTimeout(() => { window.getSelection()?.removeAllRanges(); }, 50);
           } catch (err) { console.error('Failed to apply text color:', err); }
           pop.remove();
         });
@@ -142,6 +144,8 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
             } else {
               editor.addStyles({ backgroundColor: color });
             }
+            // Deselect so user can see the applied highlight
+            setTimeout(() => { window.getSelection()?.removeAllRanges(); }, 50);
           } catch (err) { console.error('Failed to apply highlight:', err); }
           pop.remove();
         });
@@ -201,6 +205,18 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
           setPrompt('');
           setAiBlockIds([]);
           setOriginalBlockIds([]);
+          originalBlockIdsRef.current = [];
+
+          // Highlight selected blocks so user sees what's being edited
+          requestAnimationFrame(() => {
+            const wrapper = document.querySelector('.blog-editor-wrapper');
+            if (wrapper) {
+              blockIds.forEach((id) => {
+                const el = wrapper.querySelector(`[data-id="${id}"]`);
+                if (el) el.classList.add('ai-edit-selected-block');
+              });
+            }
+          });
         } catch { /* editor not ready */ }
       };
 
@@ -233,35 +249,7 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [mode]);
 
-  // Force lavender color on AI-generated block elements
-  const forceLavenderOnBlock = useCallback((el) => {
-    el.style.setProperty('color', '#c4b5fd', 'important');
-    el.querySelectorAll('*').forEach((child) => {
-      child.style.setProperty('color', '#c4b5fd', 'important');
-    });
-  }, []);
-
-  // Start MutationObserver to keep lavender enforced during re-renders
-  const startObserver = useCallback(() => {
-    if (observerRef.current) observerRef.current.disconnect();
-    const wrapper = document.querySelector('.blog-editor-wrapper');
-    if (!wrapper) return;
-
-    const observer = new MutationObserver(() => {
-      observer.disconnect();
-      wrapper.querySelectorAll('.ai-edit-new-block').forEach(forceLavenderOnBlock);
-      observer.observe(wrapper, { childList: true, subtree: true, characterData: true });
-    });
-    observer.observe(wrapper, { childList: true, subtree: true, characterData: true });
-    observerRef.current = observer;
-  }, [forceLavenderOnBlock]);
-
-  const stopObserver = useCallback(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-      observerRef.current = null;
-    }
-  }, []);
+  // No MutationObserver needed — CSS handles lavender via -webkit-text-fill-color
 
   // Apply strikethrough + dim styling on original blocks via DOM
   const markOriginalBlocks = useCallback((ids) => {
@@ -275,27 +263,25 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
     }
   }, []);
 
-  // Apply lavender styling on AI blocks via DOM
+  // Apply lavender styling on AI blocks via DOM (CSS handles color)
   const markAiBlocks = useCallback((ids) => {
     const wrapper = document.querySelector('.blog-editor-wrapper');
     if (!wrapper) return;
     for (const id of ids) {
       const el = wrapper.querySelector(`[data-id="${id}"]`);
-      if (el) {
-        el.classList.add('ai-edit-new-block');
-        forceLavenderOnBlock(el);
-      }
+      if (el) el.classList.add('ai-edit-new-block');
     }
-  }, [forceLavenderOnBlock]);
+  }, []);
 
   // Get current AI block IDs by position (after last original block)
   const getAiBlockIdsFromDoc = useCallback(() => {
-    if (originalBlockIds.length === 0) return [];
+    const origIds = originalBlockIdsRef.current;
+    if (origIds.length === 0) return [];
     const doc = editor.document;
-    const lastOrigIdx = doc.findIndex((b) => b.id === originalBlockIds[originalBlockIds.length - 1]);
+    const lastOrigIdx = doc.findIndex((b) => b.id === origIds[origIds.length - 1]);
     if (lastOrigIdx === -1) return [];
     return doc.slice(lastOrigIdx + 1, lastOrigIdx + 1 + aiBlockCountRef.current).map((b) => b.id);
-  }, [editor, originalBlockIds]);
+  }, [editor]);
 
   // Hide the native toolbar
   const hideToolbar = useCallback(() => {
@@ -336,17 +322,16 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
     });
   }, []);
 
-  // Add skeleton loading to nearby lines
+  // Add skeleton loading to nearby lines below selection
   const addSkeletonLoading = useCallback((blockIds) => {
     const wrapper = document.querySelector('.blog-editor-wrapper');
     if (!wrapper) return;
     const lastId = blockIds[blockIds.length - 1];
     const lastEl = wrapper.querySelector(`[data-id="${lastId}"]`);
     if (!lastEl) return;
-    // Add skeleton to next 2-3 sibling blocks
     let sibling = lastEl.nextElementSibling;
     let count = 0;
-    while (sibling && count < 3) {
+    while (sibling && count < 2) {
       sibling.classList.add('ai-skeleton-nearby');
       sibling = sibling.nextElementSibling;
       count++;
@@ -367,14 +352,11 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
     hideToolbar();
     lockEditor();
 
-    // Mark selected blocks with lavender highlight (pre-edit indicator)
+    // Mark selected blocks with shimmer skeleton (thinking phase)
     markSelectedLavender(selectedBlockIds);
-
-    // Add skeleton loading to nearby lines
     addSkeletonLoading(selectedBlockIds);
 
-    // Mark original blocks with strikethrough
-    markOriginalBlocks(selectedBlockIds);
+    originalBlockIdsRef.current = [...selectedBlockIds];
     setOriginalBlockIds([...selectedBlockIds]);
 
     // Insert initial AI placeholder block after the last selected block
@@ -395,7 +377,7 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
     // Apply lavender styling and remove skeleton once streaming starts
     requestAnimationFrame(() => {
       markAiBlocks(initialAiIds);
-      startObserver();
+      // CSS handles highlighting via -webkit-text-fill-color
       const el = document.querySelector(`.blog-editor-wrapper [data-id="${insertedBlock.id}"]`);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
@@ -421,9 +403,10 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
         userPrompt,
         signal: controller.signal,
         onChunk: (_chunk, fullText) => {
-          // Remove skeleton and selected highlight once AI starts writing
+          // First chunk: transition from skeleton to strikethrough originals
           removeSkeletonLoading();
           clearSelectedLavender();
+          markOriginalBlocks(originalBlockIdsRef.current);
 
           // Handle TITLE: prefix — update blog title
           let contentText = fullText;
@@ -494,7 +477,8 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
             const oldAiIds = getAiBlockIdsFromDoc();
             try { if (oldAiIds.length > 0) editor.removeBlocks(oldAiIds); } catch {}
             // Also remove original strikethrough blocks since title was changed
-            try { if (originalBlockIds.length > 0) editor.removeBlocks(originalBlockIds); } catch {}
+            const origIds = originalBlockIdsRef.current;
+            try { if (origIds.length > 0) editor.removeBlocks(origIds); } catch {}
           }
 
           const finalIds = getAiBlockIdsFromDoc();
@@ -517,33 +501,25 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
         handleUndo();
       }
     }
-  }, [prompt, selectedText, selectedBlockIds, editor, markOriginalBlocks, markAiBlocks, startObserver, getAiBlockIdsFromDoc]);
+  }, [prompt, selectedText, selectedBlockIds, editor, markOriginalBlocks, markAiBlocks, getAiBlockIdsFromDoc]);
 
   const handleKeep = useCallback(() => {
-    stopObserver();
     showToolbar();
     unlockEditor();
     removeSkeletonLoading();
     clearSelectedLavender();
     // Remove original (strikethrough) blocks
     try {
-      if (originalBlockIds.length > 0) {
-        editor.removeBlocks(originalBlockIds);
-      }
+      if (originalBlockIds.length > 0) editor.removeBlocks(originalBlockIds);
     } catch {}
-    // Clean up lavender styling from AI blocks
+    // Clean up highlight class from AI blocks
     const wrapper = document.querySelector('.blog-editor-wrapper');
-    wrapper?.querySelectorAll('.ai-edit-new-block').forEach((el) => {
-      el.classList.remove('ai-edit-new-block');
-      el.style.removeProperty('color');
-      el.querySelectorAll('*').forEach((child) => child.style.removeProperty('color'));
-    });
+    wrapper?.querySelectorAll('.ai-edit-new-block').forEach((el) => el.classList.remove('ai-edit-new-block'));
     resetState();
-  }, [editor, originalBlockIds, stopObserver, showToolbar, unlockEditor, removeSkeletonLoading, clearSelectedLavender]);
+  }, [editor, originalBlockIds, showToolbar, unlockEditor, removeSkeletonLoading, clearSelectedLavender]);
 
   const handleUndo = useCallback(() => {
     abortRef.current?.abort();
-    stopObserver();
     showToolbar();
     unlockEditor();
     removeSkeletonLoading();
@@ -553,19 +529,13 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
     try {
       if (currentAiIds.length > 0) editor.removeBlocks(currentAiIds);
     } catch {}
-    // Restore original blocks from snapshots
-    if (selectedBlocks.length > 0 && originalBlockIds.length > 0) {
-      try {
-        editor.replaceBlocks(originalBlockIds, selectedBlocks);
-      } catch {}
-    }
-    // Clean up strikethrough styling
+    // Remove strikethrough from originals (restore to normal)
     const wrapper = document.querySelector('.blog-editor-wrapper');
     wrapper?.querySelectorAll('.ai-edit-original-block').forEach((el) => {
       el.classList.remove('ai-edit-original-block');
     });
     resetState();
-  }, [editor, selectedBlocks, originalBlockIds, getAiBlockIdsFromDoc, stopObserver, showToolbar, unlockEditor, removeSkeletonLoading, clearSelectedLavender]);
+  }, [editor, originalBlockIds, getAiBlockIdsFromDoc, showToolbar, unlockEditor, removeSkeletonLoading, clearSelectedLavender]);
 
   function resetState() {
     setMode('idle');
@@ -574,14 +544,13 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
     setSelectedBlocks([]);
     setSelectedBlockIds([]);
     setOriginalBlockIds([]);
+    originalBlockIdsRef.current = [];
     setAiBlockIds([]);
     aiBlockCountRef.current = 0;
-    // Clean up any leftover DOM classes
+    // Clean up leftover DOM classes
     const wrapper = document.querySelector('.blog-editor-wrapper');
-    wrapper?.querySelectorAll('.ai-edit-original-block, .ai-edit-new-block').forEach((el) => {
-      el.classList.remove('ai-edit-original-block', 'ai-edit-new-block');
-      el.style.removeProperty('color');
-      el.querySelectorAll('*').forEach((child) => child.style.removeProperty('color'));
+    wrapper?.querySelectorAll('.ai-edit-original-block, .ai-edit-new-block, .ai-edit-selected-block, .ai-skeleton-nearby').forEach((el) => {
+      el.classList.remove('ai-edit-original-block', 'ai-edit-new-block', 'ai-edit-selected-block', 'ai-skeleton-nearby');
     });
   }
 

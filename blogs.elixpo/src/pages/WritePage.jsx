@@ -197,7 +197,7 @@ function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTop
               onClick={() => { setOpen(false); document.querySelector('[data-shortcuts-btn]')?.click(); }}
               className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-[#c8c8c8] hover:text-white hover:bg-[#ffffff06] transition-colors"
             >
-              <ion-icon name="keyboard-outline" style={{ fontSize: '15px' }} />
+              <svg width="15" height="15" viewBox="0 0 512 512" fill="none" stroke="currentColor" strokeWidth="36" strokeLinecap="round" strokeLinejoin="round"><rect x="48" y="128" width="416" height="256" rx="48" ry="48"/><path d="M160 304h192"/><path d="M160 240h16m48 0h16m48 0h16m48 0h16"/><path d="M160 176h16m48 0h16m48 0h16m48 0h16"/></svg>
               Keyboard shortcuts
             </button>
           </div>
@@ -358,12 +358,17 @@ export default function WritePage({ slugid }) {
     setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
   }, []);
 
+  const [previewBlocks, setPreviewBlocks] = useState([]);
+
   const switchMode = useCallback(async (newMode) => {
     if (newMode !== 'edit' && editorRef.current) {
       try {
         const [html, md] = await Promise.all([editorRef.current.getHTML(), editorRef.current.getMarkdown()]);
         setPreviewHtml(html);
         setMarkdown(md);
+        if (editorRef.current.getBlocks) {
+          setPreviewBlocks(editorRef.current.getBlocks());
+        }
       } catch { /* not ready */ }
     }
     setMode(newMode);
@@ -725,13 +730,13 @@ export default function WritePage({ slugid }) {
                         }}
                       >
                         <div
-                          className="w-[72px] h-[72px] rounded-full bg-[#0e121b] border-[3px] border-[#0e121b] shadow-lg flex items-center justify-center cursor-pointer relative"
+                          className="w-[72px] h-[72px] rounded-full bg-[#151820] flex items-center justify-center cursor-pointer relative"
+                          style={{ borderRadius: '50%' }}
                           onClick={() => setShowEmojiPicker(true)}
                         >
-                          <span className="text-[55px] leading-none select-none">{pageEmoji}</span>
-                          <div className="absolute inset-[-2px] rounded-full" />
+                          <span className="text-[42px] leading-none select-none">{pageEmoji}</span>
                         </div>
-                        <button onClick={() => setPageEmoji(null)} className="absolute -top-1 -right-3 opacity-0 group-hover:opacity-100 h-5 w-5 rounded-full bg-[#232d3f] border border-[#333] flex items-center justify-center text-[#888] hover:text-white transition-all text-[10px]">&times;</button>
+                        <button onClick={() => setPageEmoji(null)} className="absolute -top-1 -left-1 opacity-0 group-hover:opacity-100 h-5 w-5 rounded-full bg-[#232d3f] border border-[#333] flex items-center justify-center text-[#888] hover:text-white transition-all text-[10px] z-20">&times;</button>
                       </div>
                     )}
                   </div>
@@ -830,7 +835,7 @@ export default function WritePage({ slugid }) {
                     </div>
                   </div>
 
-                  <div className="min-h-[60vh] pb-[100px]">
+                  <div className="min-h-[60vh] pb-[100px] relative">
                     <BlockNoteEditor
                       ref={editorRef}
                       onChange={handleEditorChange}
@@ -839,6 +844,39 @@ export default function WritePage({ slugid }) {
                       onTitleChange={(newTitle) => { setTitle(newTitle); setAiTitleKey(k => k + 1); }}
                       blogId={slugid}
                     />
+                    {/* Outline sidebar — shows heading positions */}
+                    {editorContent && editorContent.length > 0 && (() => {
+                      const headings = (editorContent || []).filter(
+                        (b) => b.type === 'heading' && b.content?.length > 0
+                      );
+                      if (headings.length === 0) return null;
+                      return (
+                        <div className="editor-outline-sidebar">
+                          <p className="editor-outline-title">Outline</p>
+                          <ul className="editor-outline-list">
+                            {headings.map((h, i) => {
+                              const level = parseInt(h.props?.level || '1', 10);
+                              const text = h.content.map((c) => c.text || '').join('');
+                              if (!text.trim()) return null;
+                              return (
+                                <li
+                                  key={h.id || i}
+                                  className="editor-outline-item"
+                                  style={{ paddingLeft: `${(level - 1) * 12}px` }}
+                                  onClick={() => {
+                                    const el = document.querySelector(`[data-id="${h.id}"]`);
+                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  }}
+                                >
+                                  <span className="editor-outline-dot" style={{ opacity: level === 1 ? 1 : level === 2 ? 0.7 : 0.4 }} />
+                                  <span className="editor-outline-text">{text}</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </>
                 </div>
@@ -847,7 +885,9 @@ export default function WritePage({ slugid }) {
           )}
 
           {mode === 'preview' && (
-            <BlogPreview title={title} subtitle={subtitle} coverPreview={coverPreview} coverZoom={coverZoom} coverPos={coverPos} pageEmoji={pageEmoji} tags={tags} html={previewHtml} user={user} wordCount={wordCount} />
+            <div className="blog-preview-fullwidth">
+              <BlogPreview title={title} subtitle={subtitle} coverPreview={coverPreview} coverZoom={coverZoom} coverPos={coverPos} pageEmoji={pageEmoji} tags={tags} html={previewHtml} blocks={previewBlocks} user={user} wordCount={wordCount} />
+            </div>
           )}
 
           {mode === 'code' && (

@@ -1,6 +1,203 @@
 'use client';
 
-export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, user, wordCount }) {
+import { useEffect, useRef } from 'react';
+
+function renderBlocksToHTML(blocks) {
+  if (!blocks || !blocks.length) return '';
+  const parts = [];
+
+  function inlineToHTML(content) {
+    if (!content || !Array.isArray(content)) return '';
+    return content.map((c) => {
+      if (c.type === 'inlineEquation' && c.props?.latex) {
+        return `<span class="preview-inline-equation" data-latex="${encodeURIComponent(c.props.latex)}"></span>`;
+      }
+      let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      if (!text) return '';
+      const s = c.styles || {};
+      if (s.bold) text = `<strong>${text}</strong>`;
+      if (s.italic) text = `<em>${text}</em>`;
+      if (s.strike) text = `<del>${text}</del>`;
+      if (s.code) text = `<code>${text}</code>`;
+      if (s.underline) text = `<u>${text}</u>`;
+      if (c.type === 'link' && c.href) text = `<a href="${c.href}">${text}</a>`;
+      // Inline text color
+      if (s.textColor) text = `<span style="color:${s.textColor}">${text}</span>`;
+      if (s.backgroundColor) text = `<span style="background:${s.backgroundColor};border-radius:3px;padding:0 2px">${text}</span>`;
+      return text;
+    }).join('');
+  }
+
+  for (const block of blocks) {
+    const content = inlineToHTML(block.content);
+    switch (block.type) {
+      case 'heading': {
+        const level = block.props?.level || 1;
+        parts.push(`<h${level}>${content}</h${level}>`);
+        break;
+      }
+      case 'bulletListItem':
+        parts.push(`<li class="preview-bullet">${content}</li>`);
+        break;
+      case 'numberedListItem':
+        parts.push(`<li class="preview-numbered">${content}</li>`);
+        break;
+      case 'checkListItem':
+        parts.push(`<li class="preview-check">${block.props?.checked ? '&#9745; ' : '&#9744; '}${content}</li>`);
+        break;
+      case 'blockEquation':
+        if (block.props?.latex) {
+          parts.push(`<div class="preview-block-equation" data-latex="${encodeURIComponent(block.props.latex)}"></div>`);
+        }
+        break;
+      case 'mermaidBlock':
+        if (block.props?.diagram) {
+          parts.push(`<div class="preview-mermaid-block" data-diagram="${encodeURIComponent(block.props.diagram)}"></div>`);
+        }
+        break;
+      case 'codeBlock': {
+        const lang = block.props?.language || '';
+        const code = (block.content || []).map((c) => c.text || '').join('');
+        parts.push(`<pre><code class="language-${lang}">${code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`);
+        break;
+      }
+      case 'image':
+        if (block.props?.url) {
+          parts.push(`<figure><img src="${block.props.url}" alt="${block.props?.caption || ''}" />${block.props?.caption ? `<figcaption>${block.props.caption}</figcaption>` : ''}</figure>`);
+        }
+        break;
+      case 'table': {
+        const tableContent = block.content;
+        const rows = tableContent?.rows || [];
+        if (rows.length) {
+          const headerRows = tableContent?.headerRows || 0;
+          let table = '<table>';
+          rows.forEach((row, ri) => {
+            table += '<tr>';
+            (row.cells || []).forEach((cell) => {
+              const tag = ri < headerRows ? 'th' : 'td';
+              // cell can be InlineContent[] or TableCell { type, props, content }
+              let cellContent;
+              if (Array.isArray(cell)) {
+                cellContent = cell;
+              } else if (cell && typeof cell === 'object' && cell.content) {
+                cellContent = Array.isArray(cell.content) ? cell.content : [];
+              } else {
+                cellContent = [];
+              }
+              const cellHTML = inlineToHTML(cellContent);
+              table += `<${tag}>${cellHTML}</${tag}>`;
+            });
+            table += '</tr>';
+          });
+          table += '</table>';
+          parts.push(table);
+        }
+        break;
+      }
+      case 'paragraph':
+      default:
+        if (content) {
+          parts.push(`<p>${content}</p>`);
+        }
+        break;
+    }
+  }
+
+  // Wrap consecutive bullet/numbered items in lists
+  let html = parts.join('\n');
+  html = html.replace(/((?:<li class="preview-bullet">.*?<\/li>\n?)+)/g, '<ul>$1</ul>');
+  html = html.replace(/((?:<li class="preview-numbered">.*?<\/li>\n?)+)/g, '<ol>$1</ol>');
+  return html;
+}
+
+export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, wordCount }) {
+  const contentRef = useRef(null);
+
+  // Determine which HTML to use — prefer blocks-based rendering
+  const renderedHTML = blocks && blocks.length > 0 ? renderBlocksToHTML(blocks) : html;
+
+  // Render KaTeX equations and mermaid diagrams after mount
+  useEffect(() => {
+    if (!contentRef.current) return;
+    let cancelled = false;
+
+    // Render block equations
+    const eqEls = contentRef.current.querySelectorAll('.preview-block-equation[data-latex]');
+    if (eqEls.length) {
+      import('katex').then(({ default: katex }) => {
+        if (cancelled) return;
+        eqEls.forEach((el) => {
+          try {
+            const latex = decodeURIComponent(el.dataset.latex);
+            el.innerHTML = katex.renderToString(latex, { displayMode: true, throwOnError: false });
+          } catch (err) {
+            el.innerHTML = `<span style="color:#f87171">${err.message}</span>`;
+          }
+        });
+      });
+    }
+
+    // Render inline equations
+    const inlineEls = contentRef.current.querySelectorAll('.preview-inline-equation[data-latex]');
+    if (inlineEls.length) {
+      import('katex').then(({ default: katex }) => {
+        if (cancelled) return;
+        inlineEls.forEach((el) => {
+          try {
+            const latex = decodeURIComponent(el.dataset.latex);
+            el.innerHTML = katex.renderToString(latex, { displayMode: false, throwOnError: false });
+          } catch (err) {
+            el.innerHTML = `<span style="color:#f87171">${err.message}</span>`;
+          }
+        });
+      });
+    }
+
+    // Render mermaid diagrams
+    const mermaidEls = contentRef.current.querySelectorAll('.preview-mermaid-block[data-diagram]');
+    if (mermaidEls.length) {
+      import('mermaid').then(({ default: mermaid }) => {
+        if (cancelled) return;
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: 'dark',
+          themeVariables: {
+            primaryColor: '#232d3f',
+            primaryTextColor: '#e4e4e7',
+            primaryBorderColor: '#c4b5fd',
+            lineColor: '#8b8fa3',
+            secondaryColor: '#1e1e2e',
+            tertiaryColor: '#141a26',
+            fontFamily: "'lixFont', sans-serif",
+            fontSize: '16px',
+          },
+          flowchart: { useMaxWidth: false, padding: 20, nodeSpacing: 50, rankSpacing: 60 },
+        });
+        mermaidEls.forEach(async (el) => {
+          try {
+            const diagram = decodeURIComponent(el.dataset.diagram);
+            const id = `preview-mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            const { svg } = await mermaid.render(id, diagram.trim());
+            el.innerHTML = svg;
+            const svgEl = el.querySelector('svg');
+            if (svgEl) {
+              svgEl.removeAttribute('width');
+              svgEl.style.width = '100%';
+              svgEl.style.maxWidth = 'none';
+              svgEl.style.height = 'auto';
+              svgEl.style.minHeight = '180px';
+            }
+          } catch (err) {
+            el.innerHTML = `<pre style="color:#f87171;font-size:12px">${err.message || 'Diagram error'}</pre>`;
+          }
+        });
+      });
+    }
+
+    return () => { cancelled = true; };
+  }, [renderedHTML]);
+
   return (
     <div className="blog-preview">
       {/* Cover + emoji */}
@@ -83,10 +280,11 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       )}
 
       <div className="mt-4">
-        {html ? (
+        {renderedHTML ? (
           <div
+            ref={contentRef}
             className="blog-preview-content max-w-none"
-            dangerouslySetInnerHTML={{ __html: html }}
+            dangerouslySetInnerHTML={{ __html: renderedHTML }}
           />
         ) : (
           <p className="text-[#555] italic">Start writing to see a preview...</p>

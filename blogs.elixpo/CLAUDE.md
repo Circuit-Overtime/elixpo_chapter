@@ -1,3 +1,75 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+```bash
+npm run dev              # Dev server on port 3000
+npm run build            # Build for Cloudflare Pages (via @cloudflare/next-on-pages)
+npm run preview          # Local Cloudflare Pages preview (wrangler)
+npm run deploy           # Build + deploy to Cloudflare Pages
+npm run db:migrate       # Run D1 migrations (remote)
+```
+
+No test or lint commands are configured.
+
+## Tech Stack
+
+- **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS 3.4
+- **Editor**: BlockNote 0.47 with custom blocks (image, equations, AI, mentions, tabs, TOC)
+- **Deployment**: Cloudflare Pages via `@cloudflare/next-on-pages`
+- **Database**: Cloudflare D1 (SQLite) — accessed via `getRequestContext().env.DB`
+- **Media**: Cloudinary (upload/delete via `/api/media/upload`)
+- **Auth**: Elixpo Accounts OAuth 2.0 — session in httpOnly cookie (`lixblogs_session`)
+- **AI**: Pollinations API (text streaming + image generation) — proxied through `/api/ai/*`
+- **KV**: Cloudflare KV namespace bound in wrangler.toml
+
+## Architecture
+
+### Directory Layout
+
+- `app/` — Next.js App Router: pages, layouts, API routes
+- `src/components/` — React components, especially `Editor/` (BlockNote editor with 20+ files)
+- `src/pages/` — Page-level components imported by `app/` pages (migration artifact from Vite)
+- `src/context/AuthContext.jsx` — Auth state via React Context (no Redux/Zustand)
+- `src/ai/` — Client-side AI module: `agent.js` (streaming + tool calls), `prompts.js` (system prompts)
+- `src/styles/` — CSS files organized by feature
+- `lib/` — Server-side utilities: `auth.js`, `cloudinary.js`, `aiRateLimit.js`, `tiers.js`
+- `migrations/` — D1 SQL migration files
+
+### Key Patterns
+
+**App Router pages are thin wrappers** — they import full page components from `src/pages/`. Example: `app/new-blog/page.jsx` renders `src/pages/WritePage.jsx`.
+
+**Auth flow**: OAuth redirect → `/api/auth/callback` exchanges code for tokens, upserts user in D1, sets session cookie → new users go to `/intro`, returning users to `/`. Middleware protects `/settings`, `/new-blog`, `/intro`.
+
+**Editor architecture**: `BlogEditor.jsx` is the core — uses BlockNote with a custom schema (`src/components/Editor/schema.js`). AI features: space on empty line opens AI command menu, text selection shows AI edit toolbar. AI generates text via streaming and images via tool calls. The sparkle cursor (`ai-glob-cursor`) follows text blocks only (skips image blocks).
+
+**Image blocks** (`BlogImageBlock.jsx`): Three modes — upload, embed URL, AI generate. When AI agent inserts an image, it sets `_imageId` prop as a placeholder; the block shows a skeleton shimmer until the URL is populated. On failure, block converts to empty paragraph + toast.
+
+**Media uploads** go through `/api/media/upload` → Cloudinary. Tier-based storage limits enforced server-side. Images are compressed client-side to WebP before upload (`src/utils/compressImage.js`).
+
+**AI rate limiting**: `lib/aiRateLimit.js` checks daily usage against tier limits (free: 15/day, member: 50/day). Usage tracked in D1 `users` table (`ai_usage_today`, `ai_usage_date`).
+
+### D1 Access
+
+D1 is only available in Cloudflare runtime. In local dev, `getRequestContext().env.DB` may be unavailable — API routes handle this gracefully with try/catch fallbacks.
+
+### Environment Variables
+
+- `NEXT_PUBLIC_ELIXPO_CLIENT_ID` / `ELIXPO_CLIENT_SECRET` — OAuth
+- `NEXT_PUBLIC_URL` — Base URL (default: http://localhost:3000)
+- `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` — Media
+- `POLLINATIONS_TEXT_API_KEY` / `POLLINATIONS_IMAGE_API_KEY` — AI
+- D1 and KV configured in `wrangler.toml`
+
+### Path Alias
+
+`@/*` resolves to `src/*` (configured in tsconfig.json).
+
+---
+
 # LixBlogs — Platform Architecture Plan
 
 ## Overview
