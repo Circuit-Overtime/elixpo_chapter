@@ -1,11 +1,237 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
+
+// ─── Notification type config ───
+const NOTIF_CONFIG = {
+  follow:         { icon: 'person-add-outline',     color: '#9b7bf7', label: 'followed you' },
+  comment:        { icon: 'chatbubble-outline',     color: '#60a5fa', label: 'commented on' },
+  like:           { icon: 'heart-outline',           color: '#f87171', label: 'liked' },
+  mention:        { icon: 'at-outline',              color: '#fbbf24', label: 'mentioned you in' },
+  org_invite:     { icon: 'people-outline',          color: '#4ade80', label: 'invited you to' },
+  blog_invite:    { icon: 'create-outline',          color: '#c084fc', label: 'invited you to collaborate on' },
+  blog_published: { icon: 'document-text-outline',   color: '#60a5fa', label: 'published' },
+};
+
+function timeAgo(ts) {
+  const diff = Math.floor(Date.now() / 1000) - ts;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
+  return new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function NotificationDropdown() {
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unread, setUnread] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    if (open) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch('/api/notifications?limit=20');
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications || []);
+        setUnread(data.unread || 0);
+      }
+    } catch {}
+  }, []);
+
+  // Poll every 30s for new notifications
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  // Fetch fresh data when opening
+  useEffect(() => {
+    if (open) fetchNotifications();
+  }, [open, fetchNotifications]);
+
+  const markAllRead = async () => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ all: true }),
+      });
+      setUnread(0);
+      setNotifications(prev => prev.map(n => ({ ...n, read: 1 })));
+    } catch {}
+  };
+
+  const markRead = async (id) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: 1 } : n));
+      setUnread(prev => Math.max(0, prev - 1));
+    } catch {}
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="relative flex items-center justify-center w-9 h-9 rounded-lg transition-colors"
+        style={{ color: 'var(--text-muted)' }}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+        title="Notifications"
+      >
+        <ion-icon name={unread > 0 ? 'notifications' : 'notifications-outline'} style={{ fontSize: '18px' }} />
+        {unread > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#9b7bf7] text-white text-[10px] font-bold px-1">
+            {unread > 99 ? '99+' : unread}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-2 w-[380px] max-h-[480px] rounded-2xl z-50 overflow-hidden flex flex-col"
+          style={{ backgroundColor: 'var(--dropdown-bg)', border: '1px solid var(--dropdown-border)', boxShadow: 'var(--shadow-lg)' }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: '1px solid var(--divider)' }}>
+            <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>Notifications</h3>
+            {unread > 0 && (
+              <button
+                onClick={markAllRead}
+                className="text-[12px] font-medium transition-colors"
+                style={{ color: 'var(--accent)' }}
+              >
+                Mark all read
+              </button>
+            )}
+          </div>
+
+          {/* List */}
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
+            {notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 px-6">
+                <ion-icon name="notifications-off-outline" style={{ fontSize: '32px', color: 'var(--text-faint)' }} />
+                <p className="text-[13px] mt-3" style={{ color: 'var(--text-muted)' }}>No notifications yet</p>
+                <p className="text-[12px] mt-1" style={{ color: 'var(--text-faint)' }}>When someone interacts with your content, you'll see it here.</p>
+              </div>
+            ) : (
+              notifications.map(n => {
+                const cfg = NOTIF_CONFIG[n.type] || NOTIF_CONFIG.follow;
+                return (
+                  <Link
+                    key={n.id}
+                    href={n.target_url || '#'}
+                    onClick={() => { if (!n.read) markRead(n.id); setOpen(false); }}
+                    className="flex items-start gap-3 px-5 py-3.5 transition-colors"
+                    style={{
+                      backgroundColor: n.read ? 'transparent' : 'var(--accent-subtle)',
+                      borderBottom: '1px solid var(--divider)',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = n.read ? 'var(--bg-hover)' : 'var(--accent-subtle)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = n.read ? 'transparent' : 'var(--accent-subtle)'}
+                  >
+                    {/* Actor avatar */}
+                    <div className="relative flex-shrink-0">
+                      {n.actor_avatar ? (
+                        <img src={n.actor_avatar} alt="" className="h-9 w-9 rounded-full object-cover" />
+                      ) : (
+                        <div className="h-9 w-9 rounded-full flex items-center justify-center text-[13px] font-bold"
+                          style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
+                          {(n.actor_name || '?')[0].toUpperCase()}
+                        </div>
+                      )}
+                      {/* Type icon badge */}
+                      <div className="absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: 'var(--card-bg)', border: '1.5px solid var(--divider)' }}>
+                        <ion-icon name={cfg.icon} style={{ fontSize: '10px', color: cfg.color }} />
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>{n.actor_name || 'Someone'}</strong>
+                        {' '}{cfg.label}
+                        {n.target_title && (
+                          <> <strong style={{ color: 'var(--text-primary)' }}>{n.target_title}</strong></>
+                        )}
+                      </p>
+                      <p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>{timeAgo(n.created_at)}</p>
+                    </div>
+
+                    {/* Unread dot */}
+                    {!n.read && (
+                      <div className="w-2 h-2 rounded-full bg-[#9b7bf7] mt-2 flex-shrink-0" />
+                    )}
+                  </Link>
+                );
+              })
+            )}
+          </div>
+
+          {/* Footer */}
+          {notifications.length > 0 && (
+            <div className="px-5 py-3 text-center" style={{ borderTop: '1px solid var(--divider)' }}>
+              <Link
+                href="/notifications"
+                onClick={() => setOpen(false)}
+                className="text-[12px] font-medium"
+                style={{ color: 'var(--accent)' }}
+              >
+                View all notifications
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Avatar with fallback — handles broken image URLs gracefully */
+function UserAvatar({ src, name, size = 32, className = '', style = {} }) {
+  const [failed, setFailed] = useState(false);
+  const initial = (name || '?')[0].toUpperCase();
+  const s = { width: size, height: size, ...style };
+
+  if (src && !failed) {
+    return (
+      <img
+        src={src} alt="" className={`rounded-full object-cover ${className}`}
+        style={s}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <div
+      className={`rounded-full flex items-center justify-center font-bold ${className}`}
+      style={{ ...s, backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)', fontSize: Math.round(size * 0.38) }}
+    >
+      {initial}
+    </div>
+  );
+}
 
 const NAV_ITEMS = [
   { label: 'Home', icon: 'home-outline', href: '/' },
@@ -43,17 +269,10 @@ function ProfileDropdown({ user, logout }) {
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 px-1 py-1 rounded-full transition-colors"
-        style={{ '--hover-bg': 'var(--bg-hover)' }}
         onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
         onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
       >
-        {user.avatar_url ? (
-          <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" style={{ border: '2px solid var(--border-default)' }} />
-        ) : (
-          <div className="h-8 w-8 rounded-full flex items-center justify-center text-[13px] font-medium" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '2px solid var(--border-default)' }}>
-            {initial}
-          </div>
-        )}
+        <UserAvatar src={user.avatar_url} name={user.display_name || user.username} size={32} style={{ border: '2px solid var(--border-default)' }} />
       </button>
 
       {open && (
@@ -61,22 +280,17 @@ function ProfileDropdown({ user, logout }) {
           <Link
             href={`/${user.username}`}
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3.5 px-5 py-4 transition-colors"
-            style={{ backgroundColor: 'var(--bg-surface)' }}
+            className="flex items-center gap-3.5 px-4 py-3.5 m-2 rounded-xl transition-colors"
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-elevated)'}
             onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
           >
-            {user.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover flex-shrink-0" style={{ border: '2px solid var(--accent)', opacity: 0.9 }} />
-            ) : (
-              <div className="h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center text-lg font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '2px solid var(--accent)', opacity: 0.9 }}>
-                {initial}
-              </div>
-            )}
+            <UserAvatar src={user.avatar_url} name={user.display_name || user.username} size={44} style={{ border: '2px solid var(--accent)', flexShrink: 0 }} />
             <div className="min-w-0 flex-1">
               <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.display_name || user.username}</p>
               <p className="text-[12px] truncate" style={{ color: 'var(--text-muted)' }}>@{user.username}</p>
             </div>
+            <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-faint)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
           </Link>
 
           <div style={{ height: '1px', backgroundColor: 'var(--divider)' }} />
@@ -184,7 +398,7 @@ export default function AppShell({ children }) {
         <div className="max-w-[1400px] mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-cover bg-center logo-themed" style={{ backgroundImage: "url(/logo.png)" }} />
+              <img src={isDark ? '/logo-light.png' : '/logo-dark.png'} alt="" className="h-8 w-8 rounded-full" />
               <span className="text-xl font-bold tracking-tight font-kanit" style={{ color: 'var(--text-primary)' }}>LixBlogs</span>
             </Link>
           </div>
@@ -214,18 +428,21 @@ export default function AppShell({ children }) {
             {loading ? (
               <div className="h-8 w-8 rounded-full animate-pulse" style={{ backgroundColor: 'var(--bg-elevated)' }} />
             ) : user ? (
-              <ProfileDropdown user={user} logout={logout} />
+              <>
+                <NotificationDropdown />
+                <ProfileDropdown user={user} logout={logout} />
+              </>
             ) : (
               <>
-                <button
-                  onClick={handleLogin}
+                <Link
+                  href="/sign-in"
                   className="text-[14px] transition-colors px-3 py-1.5 rounded-lg"
                   style={{ color: 'var(--text-muted)' }}
                   onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
                   onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
                 >
                   Sign In
-                </button>
+                </Link>
                 <button onClick={handleLogin} className="text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] transition-colors px-4 py-1.5 rounded-full">
                   Get Started
                 </button>
@@ -276,15 +493,9 @@ export default function AppShell({ children }) {
             </div>
           </nav>
           {user && (
-            <Link href="/profile" className="block px-3 py-3 rounded-xl transition-colors cursor-pointer" style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+            <Link href="/profile" className="block px-3 py-3 rounded-xl transition-colors cursor-pointer" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
               <div className="flex items-center gap-2.5">
-                {user.avatar_url ? (
-                  <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
-                ) : (
-                  <div className="h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center text-[13px] font-medium" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
-                    {(user.display_name || user.username || '?')[0].toUpperCase()}
-                  </div>
-                )}
+                <UserAvatar src={user.avatar_url} name={user.display_name || user.username} size={32} className="flex-shrink-0" />
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{user.display_name || user.username}</p>
                   <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>@{user.username}</p>

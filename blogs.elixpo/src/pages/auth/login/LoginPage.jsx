@@ -38,7 +38,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <div className="h-16 w-16 mx-auto rounded-full bg-[url('/logo.png')] bg-cover mb-4" />
-          <h1 className="text-3xl font-bold text-white font-[Kanit,serif]">LixBlogs</h1>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] font-[Kanit,serif]">LixBlogs</h1>
           <p className="text-[#888] text-sm mt-2">Sign in to start writing</p>
         </div>
 

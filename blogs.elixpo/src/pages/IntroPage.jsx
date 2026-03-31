@@ -7,7 +7,7 @@ export default function IntroPage() {
         <section className="w-full h-[60px]">
           <div className="relative top-0 left-0 w-full h-[60px] border-b-2 border-[#1D202A] flex items-center bg-[#030712] z-[1000]">
             <div className="absolute left-[3%] h-10 w-10 rounded-full bg-[url('/logo.png')] bg-cover"></div>
-            <p className="absolute left-[5%] text-3xl font-bold font-[Kanit,serif] text-white cursor-pointer">
+            <p className="absolute left-[5%] text-3xl font-bold font-[Kanit,serif] text-[var(--text-primary)] cursor-pointer">
               LixBlogs
             </p>
             <ion-icon
@@ -53,7 +53,7 @@ export default function IntroPage() {
         className="fixed inset-0 bg-black bg-opacity-80 backdrop-blur flex items-center justify-center z-[2000] hidden"
       >
         <div className="bg-slate-800 p-6 w-[90%] max-w-[700px] rounded-lg shadow-2xl border border-slate-700">
-          <h2 className="text-white text-xl font-semibold mb-4 text-center">
+          <h2 className="text-[var(--text-primary)] text-xl font-semibold mb-4 text-center">
             Edit & Crop Image
           </h2>
         </div>

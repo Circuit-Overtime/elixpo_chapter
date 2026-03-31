@@ -43,19 +43,19 @@
 
 /* Light theme (default) */
 :root {
-  --bg-base: #f5f5f7;
+  --bg-base: #f4f4f6;
   --bg-app: #ffffff;
-  --bg-surface: #f0f0f3;
-  --bg-elevated: #e8e8ed;
+  --bg-surface: #f7f7f9;
+  --bg-elevated: #eeeff2;
   --bg-hover: rgba(0, 0, 0, 0.04);
-  --bg-active: rgba(0, 0, 0, 0.06);
-  --border-default: #e0e0e6;
-  --border-hover: #d0d0d8;
-  --text-primary: #1a1a2e;
-  --text-secondary: #3a3a50;
-  --text-body: #4a4a62;
-  --text-muted: #7a7a8e;
-  --text-faint: #a0a0b0;
+  --bg-active: rgba(0, 0, 0, 0.07);
+  --border-default: #dcdce4;
+  --border-hover: #c8c8d4;
+  --text-primary: #111118;
+  --text-secondary: #2d2d3a;
+  --text-body: #3d3d50;
+  --text-muted: #5c5c72;
+  --text-faint: #8585a0;
   --accent: #9b7bf7;
   --accent-hover: #8b6ae6;
   --accent-subtle: rgba(155, 123, 247, 0.08);
@@ -65,19 +65,19 @@
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
   --logo-filter: invert(1) brightness(0.15);
   --selection-bg: rgba(155, 123, 247, 0.15);
-  --selection-text: #1a1a2e;
-  --scrollbar-thumb: #d0d0d8;
-  --scrollbar-hover: #b0b0bc;
+  --selection-text: #111118;
+  --scrollbar-thumb: #c8c8d4;
+  --scrollbar-hover: #a8a8b8;
   --card-bg: #ffffff;
-  --card-border: #e8e8ed;
+  --card-border: #e4e4ec;
   --dropdown-bg: #ffffff;
-  --dropdown-border: #e0e0e6;
-  --badge-bg: #f0f0f3;
-  --badge-border: #e0e0e6;
-  --input-bg: #f5f5f7;
-  --input-border: #e0e0e6;
+  --dropdown-border: #dcdce4;
+  --badge-bg: #f0f0f4;
+  --badge-border: #dcdce4;
+  --input-bg: #f4f4f6;
+  --input-border: #dcdce4;
   --input-focus: #9b7bf7;
-  --divider: #ececf0;
+  --divider: #e8e8ee;
 }
 
 /* Dark theme */
@@ -126,10 +126,19 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  font-size: 15px;
+}
+
 body {
   background-color: var(--bg-app);
   color: var(--text-primary);
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Keep editor at standard size */
+.editor-container {
+  font-size: 14px;
 }
 
 /* Selection */

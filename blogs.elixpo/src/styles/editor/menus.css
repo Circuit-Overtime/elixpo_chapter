@@ -2,12 +2,12 @@
 
 .blog-editor-wrapper .mantine-Menu-dropdown,
 .blog-editor-wrapper .bn-suggestion-menu {
-  background: #141a26 !important;
-  border: 1px solid #232d3f !important;
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-default) !important;
   border-radius: 12px !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
   scrollbar-width: thin;
-  scrollbar-color: #2a2e3a transparent;
+  scrollbar-color: var(--bg-elevated) transparent;
 }
 
 .blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar {
@@ -19,17 +19,17 @@
 }
 
 .blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar-thumb {
-  background: #2a2e3a;
+  background: var(--bg-elevated);
   border-radius: 3px;
 }
 
 .blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar-thumb:hover {
-  background: #3a3f4f;
+  background: var(--border-hover);
 }
 
 /* Slash menu group headers */
 .blog-editor-wrapper .bn-suggestion-menu [class*="group"] {
-  color: #6b7a8d !important;
+  color: var(--text-faint) !important;
   font-size: 11px !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
@@ -41,11 +41,11 @@
 }
 
 .blog-editor-wrapper .mantine-Menu-item:hover {
-  background: #232d3f !important;
+  background: var(--border-default) !important;
 }
 
 .blog-editor-wrapper .mantine-Menu-item[data-hovered] {
-  background: #232d3f !important;
+  background: var(--border-default) !important;
 }
 
 .blog-editor-wrapper .mantine-Menu-itemLabel {
@@ -59,20 +59,20 @@
 /* ===== Formatting toolbar ===== */
 
 .blog-editor-wrapper .bn-toolbar {
-  background: #141a26;
-  border: 1px solid #232d3f;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   overflow: hidden;
 }
 
 .blog-editor-wrapper .bn-toolbar button {
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .blog-editor-wrapper .bn-toolbar button:hover {
   color: #7ba8f0;
-  background: #232d3f;
+  background: var(--border-default);
 }
 
 .blog-editor-wrapper .bn-toolbar button[data-active="true"] {
@@ -83,7 +83,7 @@
 .ai-toolbar-sep {
   width: 1px;
   height: 18px;
-  background: #232d3f;
+  background: var(--border-default);
   margin: 0 4px;
   align-self: center;
 }
@@ -121,7 +121,7 @@
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #c0c8d4;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   position: relative;
@@ -132,7 +132,7 @@
 .toolbar-color-btn:hover,
 .toolbar-highlight-btn:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #e0e0e0;
+  color: var(--text-primary);
 }
 
 .toolbar-color-indicator {
@@ -144,8 +144,8 @@
 }
 
 .toolbar-color-popover {
-  background: #141a26;
-  border: 1px solid #232d3f;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 10px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
@@ -156,7 +156,7 @@
 .toolbar-color-popover-label {
   font-size: 10px;
   font-weight: 600;
-  color: #6b7a8d;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 8px;
@@ -186,8 +186,8 @@
 
 .ai-command-menu {
   width: 260px;
-  background: #141a26;
-  border: 1px solid #232d3f;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
   padding: 6px;
@@ -215,7 +215,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #6b7a8d;
+  color: var(--text-faint);
   padding: 8px 10px 4px;
 }
 
@@ -227,7 +227,7 @@
   padding: 8px 10px;
   border: none;
   background: transparent;
-  color: #c8c8c8;
+  color: var(--text-secondary);
   font-size: 13px;
   border-radius: 8px;
   cursor: pointer;
@@ -237,7 +237,7 @@
 
 .ai-command-item:hover,
 .ai-command-item-active {
-  background: #232d3f;
+  background: var(--border-default);
   color: #fff;
 }
 
@@ -252,9 +252,9 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: #1c2333;
-  border: 1px solid #232d3f;
-  color: #9ca3af;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-muted);
   flex-shrink: 0;
   font-size: 16px;
   transition: color 0.1s;
@@ -281,7 +281,7 @@
 
 /* Link tooltip */
 .blog-editor-wrapper .bn-link-toolbar {
-  background: #141a26;
-  border: 1px solid #232d3f;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
 }

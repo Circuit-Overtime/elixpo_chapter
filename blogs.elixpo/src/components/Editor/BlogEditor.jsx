@@ -7,6 +7,7 @@ import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import 'katex/dist/katex.min.css';
 import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef, useEffect } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import AICommandMenu from './AICommandMenu';
 import AISelectionToolbar from './AISelectionToolbar';
 import MentionMenu from './MentionMenu';
@@ -383,6 +384,7 @@ function doSanitize(blocks) {
 }
 
 const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId }, ref) {
+  const { isDark } = useTheme();
   const [showMentionMenu, setShowMentionMenu] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionPos, setMentionPos] = useState({ top: 0, left: 0 });
@@ -1515,7 +1517,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       <BlockNoteView
         editor={editor}
         onChange={handleChange}
-        theme="dark"
+        theme={isDark ? "dark" : "light"}
         slashMenu={false}
       >
         <SuggestionMenuController
@@ -1588,7 +1590,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
             zIndex: 100,
           }}
         >
-          <div className="mx-auto w-full max-w-[600px] bg-[#141a26] border border-[#232d3f] rounded-xl shadow-2xl overflow-hidden">
+          <div className="mx-auto w-full max-w-[600px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border-[1.5px] border-[rgba(196,181,253,0.3)]">
                 <img src="/base-logo.png" alt="Elixpo" className="w-full h-full object-cover" />

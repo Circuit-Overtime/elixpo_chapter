@@ -15,10 +15,10 @@ export const TableOfContents = createReactBlockSpec(
       );
 
       return (
-        <div className="toc-block border border-[#232d3f] rounded-xl bg-[#141a26] px-5 py-4 my-2 select-none">
-          <p className="text-[11px] uppercase tracking-wider text-[#8896a8] font-bold mb-3">Table of Contents</p>
+        <div className="toc-block border border-[var(--border-default)] rounded-xl bg-[var(--bg-surface)] px-5 py-4 my-2 select-none">
+          <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-bold mb-3">Table of Contents</p>
           {headings.length === 0 ? (
-            <p className="text-[13px] text-[#6b7a8d] italic">Add headings to see the outline here.</p>
+            <p className="text-[13px] text-[var(--text-faint)] italic">Add headings to see the outline here.</p>
           ) : (
             <ul className="space-y-1.5">
               {headings.map((h) => {

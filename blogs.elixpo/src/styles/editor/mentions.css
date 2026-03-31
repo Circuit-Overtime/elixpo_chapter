@@ -4,14 +4,14 @@
   width: 280px;
   max-height: 320px;
   overflow-y: auto;
-  background: #141a26;
-  border: 1px solid #232d3f;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
   padding: 6px;
   animation: mentionMenuIn 0.12s ease-out;
   scrollbar-width: thin;
-  scrollbar-color: #2a2e3a transparent;
+  scrollbar-color: var(--bg-elevated) transparent;
 }
 
 @keyframes mentionMenuIn {
@@ -23,7 +23,7 @@
   padding: 16px 12px;
   text-align: center;
   font-size: 13px;
-  color: #6b7a8d;
+  color: var(--text-faint);
 }
 
 .mention-menu-group {
@@ -35,7 +35,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #6b7a8d;
+  color: var(--text-faint);
   padding: 8px 10px 4px;
 }
 
@@ -47,7 +47,7 @@
   padding: 7px 10px;
   border: none;
   background: transparent;
-  color: #c8c8c8;
+  color: var(--text-secondary);
   font-size: 13px;
   border-radius: 8px;
   cursor: pointer;
@@ -57,7 +57,7 @@
 
 .mention-item:hover,
 .mention-item-active {
-  background: #232d3f;
+  background: var(--border-default);
   color: #fff;
 }
 
@@ -73,7 +73,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #232d3f;
+  background: var(--border-default);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,7 +101,7 @@
 .mention-item-name {
   font-size: 13px;
   font-weight: 500;
-  color: #e0e0e0;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -109,7 +109,7 @@
 
 .mention-item-sub {
   font-size: 11px;
-  color: #6b7a8d;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -171,8 +171,8 @@ span.mention-chip:hover,
 /* ===== Mention Hover Card ===== */
 
 .mention-hover-card {
-  background: #141a26;
-  border: 1px solid #232d3f;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 14px;
   padding: 14px 16px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);

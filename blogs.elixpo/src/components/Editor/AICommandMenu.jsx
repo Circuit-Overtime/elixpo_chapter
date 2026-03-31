@@ -59,7 +59,7 @@ export default function AICommandMenu({ position, onSubmit, onClose }) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask AI anything..."
-            className="flex-1 bg-transparent text-[14px] text-[#e0e0e0] placeholder-[#566479] outline-none"
+            className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] placeholder-[#566479] outline-none"
             autoComplete="off"
             spellCheck="false"
           />
@@ -74,7 +74,7 @@ export default function AICommandMenu({ position, onSubmit, onClose }) {
                 : 'bg-transparent cursor-default'
             }`}
           >
-            <svg className={`w-3 h-3 ${query.trim() ? 'text-white' : 'text-[#3a4553]'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg className={`w-3 h-3 ${query.trim() ? 'text-[var(--text-primary)]' : 'text-[#3a4553]'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="19" x2="12" y2="5" />
               <polyline points="5 12 12 5 19 12" />
             </svg>

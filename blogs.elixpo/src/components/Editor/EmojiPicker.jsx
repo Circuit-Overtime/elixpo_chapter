@@ -150,7 +150,7 @@ export default function EmojiPicker({ onSelect, onRemove, onClose }) {
       <div className="relative z-50 mb-4 w-[352px] bg-[#10141E] border border-[#1D202A] rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-3 pt-2.5 pb-0">
-          <span className="text-xs font-medium text-white border-b-2 border-[#7ba8f0] pb-1.5">Emoji</span>
+          <span className="text-xs font-medium text-[var(--text-primary)] border-b-2 border-[#7ba8f0] pb-1.5">Emoji</span>
           <button
             onClick={onRemove}
             className="text-xs text-[#888] hover:text-red-400 transition-colors"
@@ -161,7 +161,7 @@ export default function EmojiPicker({ onSelect, onRemove, onClose }) {
 
         {/* Search */}
         <div className="px-3 py-2">
-          <div className="flex items-center gap-2 bg-[#1D202A] rounded-lg px-2.5 py-1.5 border border-[#333] focus-within:border-[#7ba8f0] transition-colors">
+          <div className="flex items-center gap-2 bg-[#1D202A] rounded-lg px-2.5 py-1.5 border border-[var(--border-hover)] focus-within:border-[#7ba8f0] transition-colors">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -171,11 +171,11 @@ export default function EmojiPicker({ onSelect, onRemove, onClose }) {
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Filter..."
-              className="flex-1 bg-transparent outline-none text-xs text-white placeholder-[#555]"
+              className="flex-1 bg-transparent outline-none text-xs text-[var(--text-primary)] placeholder-[#555]"
             />
             {!filter && (
               <div className="flex items-center gap-1">
-                <span className="text-[10px] text-[#555] bg-[#10141E] px-1 rounded">⌘</span>
+                <span className="text-[10px] text-[var(--text-faint)] bg-[#10141E] px-1 rounded">⌘</span>
                 <span className="text-lg select-none">{CATEGORIES[activeCategory]?.icon}</span>
               </div>
             )}
@@ -185,7 +185,7 @@ export default function EmojiPicker({ onSelect, onRemove, onClose }) {
         {/* Category label */}
         {!filter && (
           <div className="px-3 pb-1">
-            <span className="text-[10px] font-semibold text-[#555] uppercase tracking-wider">{activeCategory}</span>
+            <span className="text-[10px] font-semibold text-[var(--text-faint)] uppercase tracking-wider">{activeCategory}</span>
           </div>
         )}
 

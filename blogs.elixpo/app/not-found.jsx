@@ -4,7 +4,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--bg-app)' }}>
       <div className="text-center max-w-md">
-        <div className="h-14 w-14 mx-auto rounded-full bg-[url('/logo.png')] bg-cover mb-6 opacity-40 logo-themed" />
+        <div className="h-14 w-14 mx-auto rounded-full bg-[url('/logo-dark.png')] bg-cover mb-6 opacity-40" />
         <h1 className="text-7xl font-extrabold mb-2" style={{ color: 'var(--border-default)' }}>404</h1>
         <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Page not found</h2>
         <p className="text-sm mb-8" style={{ color: 'var(--text-muted)' }}>

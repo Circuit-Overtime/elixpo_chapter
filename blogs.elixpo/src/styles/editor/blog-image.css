@@ -112,7 +112,7 @@
   background: rgba(196, 181, 253, 0.04);
   border: 1.5px dashed rgba(196, 181, 253, 0.25);
   border-radius: 8px;
-  color: #e0e0e0;
+  color: var(--text-primary);
   font-size: 13px;
   padding: 9px 12px;
   outline: none;
@@ -357,7 +357,7 @@
 .blog-img-caption {
   text-align: center;
   font-size: 13px;
-  color: #6b7a8d;
+  color: var(--text-faint);
   margin: 6px 0 0;
   padding: 2px 8px;
   cursor: pointer;
@@ -382,7 +382,7 @@
   width: 100%;
   text-align: center;
   font-size: 13px;
-  color: #e0e0e0;
+  color: var(--text-primary);
   background: rgba(196, 181, 253, 0.04);
   border: 1px solid rgba(196, 181, 253, 0.15);
   border-radius: 6px;
@@ -396,7 +396,7 @@
 }
 
 .blog-img-caption-input::placeholder {
-  color: #4a5568;
+  color: var(--text-faint);
 }
 
 /* ===== Fail Toast ===== */

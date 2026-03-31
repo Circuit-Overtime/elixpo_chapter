@@ -20,7 +20,7 @@ export default function BlogCodeView({ blocks, markdown }) {
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
               viewMode === 'markdown'
                 ? 'bg-[#7ba8f0] text-[#030712]'
-                : 'text-[#888] hover:text-white'
+                : 'text-[#888] hover:text-[var(--text-primary)]'
             }`}
           >
             Markdown
@@ -30,7 +30,7 @@ export default function BlogCodeView({ blocks, markdown }) {
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
               viewMode === 'json'
                 ? 'bg-[#7ba8f0] text-[#030712]'
-                : 'text-[#888] hover:text-white'
+                : 'text-[#888] hover:text-[var(--text-primary)]'
             }`}
           >
             JSON Blocks
@@ -49,7 +49,7 @@ export default function BlogCodeView({ blocks, markdown }) {
       </div>
 
       <pre className="bg-[#0a0e17] border border-[#1D202A] rounded-xl p-5 overflow-auto max-h-[calc(100vh-260px)] text-sm leading-relaxed">
-        <code className={viewMode === 'markdown' ? 'text-[#c9d1d9]' : 'text-[#7ba8f0]'}>
+        <code className={viewMode === 'markdown' ? 'text-[var(--text-secondary)]' : 'text-[#7ba8f0]'}>
           {content || (viewMode === 'markdown' ? '# Start writing...' : '[]')}
         </code>
       </pre>

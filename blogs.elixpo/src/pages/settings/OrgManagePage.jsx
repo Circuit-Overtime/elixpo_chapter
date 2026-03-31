@@ -252,8 +252,8 @@ export default function OrgManagePage({ slug }) {
     return (
       <AppShell>
         <div className="max-w-3xl mx-auto px-6 py-10">
-          <div className="h-8 w-48 bg-[#1a2030] animate-pulse rounded mb-6" />
-          <div className="h-64 bg-[#1a2030] animate-pulse rounded-xl" />
+          <div className="h-8 w-48 bg-[var(--bg-elevated)] animate-pulse rounded mb-6" />
+          <div className="h-64 bg-[var(--bg-elevated)] animate-pulse rounded-xl" />
         </div>
       </AppShell>
     );
@@ -262,8 +262,8 @@ export default function OrgManagePage({ slug }) {
   if (!org) {
     return (
       <AppShell>
-        <div className="max-w-3xl mx-auto px-6 py-20 text-center">
-          <p className="text-[#9ca3af]">Organization not found.</p>
+        <div className="max-w-3xl mx-auto px-6 py-20 text-[var(--text-muted)]enter">
+          <p className="text-[var(--text-muted)]">Organization not found.</p>
           <Link href="/settings" className="text-[#9b7bf7] text-[13px] mt-3 inline-block">Back to settings</Link>
         </div>
       </AppShell>
@@ -273,11 +273,11 @@ export default function OrgManagePage({ slug }) {
   // Helper: styled input
   const Input = ({ label, sublabel, value, onChange, placeholder, type = 'text', ...props }) => (
     <div>
-      <label className="text-[13px] text-[#e0e0e0] mb-1 block font-medium">{label}</label>
-      {sublabel && <p className="text-[11px] text-[#5a657a] mb-2">{sublabel}</p>}
+      <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">{label}</label>
+      {sublabel && <p className="text-[11px] text-[var(--text-faint)] mb-2">{sublabel}</p>}
       <input
         type={type} value={value} onChange={onChange} placeholder={placeholder}
-        className="w-full bg-[#0c1017] text-[#e0e0e0] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[#1e2736] focus:border-[#9b7bf7]/50 transition-colors placeholder-[#6b7f99]"
+        className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors placeholder-[var(--text-faint)]"
         {...props}
       />
     </div>
@@ -299,17 +299,17 @@ export default function OrgManagePage({ slug }) {
       <div className="max-w-3xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-7">
-          <Link href="/settings" className="text-[#5a657a] hover:text-white transition-colors p-1">
+          <Link href="/settings" className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors p-1">
             <ion-icon name="arrow-back" style={{ fontSize: '18px' }} />
           </Link>
           <img src={org.logo_url || generatePixelAvatar(org.slug)} alt="" className="h-10 w-10 rounded-xl" />
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-white leading-tight">{org.name}</h1>
-            <p className="text-[12px] text-[#5a657a]">@{org.slug}</p>
+            <h1 className="text-lg font-bold text-[var(--text-primary)] leading-tight">{org.name}</h1>
+            <p className="text-[12px] text-[var(--text-faint)]">@{org.slug}</p>
           </div>
           <Link
             href={`/${org.slug}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111823] border border-[#1e2736] rounded-lg text-[12px] text-[#7c8a9e] hover:text-white hover:border-[#334155] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-lg text-[12px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[#334155] transition-colors"
           >
             <ion-icon name="eye-outline" style={{ fontSize: '13px' }} />
             View Profile
@@ -323,37 +323,37 @@ export default function OrgManagePage({ slug }) {
           <div className="space-y-8">
             {/* ── Identity ── */}
             <section>
-              <h3 className="text-[11px] font-semibold text-[#5a657a] uppercase tracking-widest mb-4">Identity</h3>
+              <h3 className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-widest mb-4">Identity</h3>
               <div className="space-y-4">
                 <Input label="Organization name" value={name} onChange={e => setName(e.target.value)} placeholder="My Organization" />
                 <div>
-                  <label className="text-[13px] text-[#e0e0e0] mb-1 block font-medium">Short description</label>
-                  <p className="text-[11px] text-[#5a657a] mb-2">A one-liner that appears under your org name</p>
+                  <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">Short description</label>
+                  <p className="text-[11px] text-[var(--text-faint)] mb-2">A one-liner that appears under your org name</p>
                   <input
                     value={description} onChange={e => setDescription(e.target.value)}
                     placeholder="Building the future of..."
                     maxLength={160}
-                    className="w-full bg-[#0c1017] text-[#e0e0e0] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[#1e2736] focus:border-[#9b7bf7]/50 transition-colors placeholder-[#6b7f99]"
+                    className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors placeholder-[var(--text-faint)]"
                   />
-                  <p className="text-[10px] text-[#6b7f99] mt-1 text-right">{description.length}/160</p>
+                  <p className="text-[10px] text-[var(--text-muted)] mt-1 text-right">{description.length}/160</p>
                 </div>
                 <div>
-                  <label className="text-[13px] text-[#e0e0e0] mb-1 block font-medium">Bio</label>
-                  <p className="text-[11px] text-[#5a657a] mb-2">Tell people about your organization</p>
+                  <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">Bio</label>
+                  <p className="text-[11px] text-[var(--text-faint)] mb-2">Tell people about your organization</p>
                   <textarea
                     value={bio} onChange={e => setBio(e.target.value)} rows={4}
                     placeholder="We are a team of..."
-                    className="w-full bg-[#0c1017] text-[#e0e0e0] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[#1e2736] focus:border-[#9b7bf7]/50 transition-colors resize-none placeholder-[#6b7f99]"
+                    className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors resize-none placeholder-[var(--text-faint)]"
                   />
                 </div>
               </div>
             </section>
 
-            <div className="h-px bg-[#1e2736]" />
+            <div className="h-px bg-[var(--divider)]" />
 
             {/* ── Location & Contact ── */}
             <section>
-              <h3 className="text-[11px] font-semibold text-[#5a657a] uppercase tracking-widest mb-4">Location & Contact</h3>
+              <h3 className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-widest mb-4">Location & Contact</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Location"
@@ -362,11 +362,11 @@ export default function OrgManagePage({ slug }) {
                   placeholder="San Francisco, CA"
                 />
                 <div>
-                  <label className="text-[13px] text-[#e0e0e0] mb-1 block font-medium">Timezone</label>
-                  <p className="text-[11px] text-[#5a657a] mb-2">Displayed on your org profile</p>
+                  <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">Timezone</label>
+                  <p className="text-[11px] text-[var(--text-faint)] mb-2">Displayed on your org profile</p>
                   <select
                     value={timezone} onChange={e => setTimezone(e.target.value)}
-                    className="w-full bg-[#0c1017] text-[#e0e0e0] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[#1e2736] focus:border-[#9b7bf7]/50 transition-colors"
+                    className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors"
                   >
                     <option value="">Select timezone...</option>
                     {TIMEZONES.filter(Boolean).map(tz => (
@@ -390,11 +390,11 @@ export default function OrgManagePage({ slug }) {
               </div>
             </section>
 
-            <div className="h-px bg-[#1e2736]" />
+            <div className="h-px bg-[var(--divider)]" />
 
             {/* ── Visibility ── */}
             <section>
-              <h3 className="text-[11px] font-semibold text-[#5a657a] uppercase tracking-widest mb-4">Visibility</h3>
+              <h3 className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-widest mb-4">Visibility</h3>
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { value: 'public', label: 'Public', desc: 'Visible to everyone', icon: 'earth-outline' },
@@ -406,13 +406,13 @@ export default function OrgManagePage({ slug }) {
                     className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
                       visibility === opt.value
                         ? 'bg-[#9b7bf7]/10 border-[#9b7bf7]/40 ring-1 ring-[#9b7bf7]/20'
-                        : 'bg-[#0c1017] border-[#1e2736] hover:border-[#2d3a4d]'
+                        : 'bg-[var(--bg-base)] border-[var(--border-default)] hover:border-[#2d3a4d]'
                     }`}
                   >
                     <ion-icon name={opt.icon} style={{ fontSize: '20px', color: visibility === opt.value ? '#c4b5fd' : '#5a657a', marginTop: '2px' }} />
                     <div>
-                      <p className={`text-[13px] font-semibold ${visibility === opt.value ? 'text-white' : 'text-[#9ca3af]'}`}>{opt.label}</p>
-                      <p className="text-[11px] text-[#5a657a] mt-0.5">{opt.desc}</p>
+                      <p className={`text-[13px] font-semibold ${visibility === opt.value ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{opt.label}</p>
+                      <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{opt.desc}</p>
                     </div>
                   </button>
                 ))}
@@ -423,7 +423,7 @@ export default function OrgManagePage({ slug }) {
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={handleSave} disabled={saving}
-                className="px-6 py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40"
+                className="px-6 py-2.5 bg-[#9b7bf7] text-[var(--text-primary)] font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40"
               >
                 {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
               </button>
@@ -436,8 +436,8 @@ export default function OrgManagePage({ slug }) {
         {activeTab === 'links' && (
           <div className="space-y-6">
             <section>
-              <h3 className="text-[11px] font-semibold text-[#5a657a] uppercase tracking-widest mb-1">Social & Links</h3>
-              <p className="text-[12px] text-[#5a657a] mb-5">Add links that appear on your organization profile.</p>
+              <h3 className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-widest mb-1">Social & Links</h3>
+              <p className="text-[12px] text-[var(--text-faint)] mb-5">Add links that appear on your organization profile.</p>
 
               {/* Existing links */}
               {links.length > 0 && (
@@ -445,8 +445,8 @@ export default function OrgManagePage({ slug }) {
                   {links.map((link, i) => {
                     const preset = LINK_PRESETS.find(p => p.key === link.type) || LINK_PRESETS.at(-1);
                     return (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-[#111823] border border-[#1e2736] rounded-xl group">
-                        <div className="h-9 w-9 rounded-lg bg-[#0c1017] flex items-center justify-center shrink-0">
+                      <div key={i} className="flex items-center gap-3 p-3 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl group">
+                        <div className="h-9 w-9 rounded-lg bg-[var(--bg-base)] flex items-center justify-center shrink-0">
                           <ion-icon name={preset.icon} style={{ fontSize: '18px', color: '#7c8a9e' }} />
                         </div>
                         <div className="flex-1 min-w-0 space-y-1.5">
@@ -454,21 +454,21 @@ export default function OrgManagePage({ slug }) {
                             <input
                               value={link.label || ''} onChange={e => updateLink(i, 'label', e.target.value)}
                               placeholder="Label"
-                              className="w-full bg-transparent text-[13px] text-[#e0e0e0] outline-none placeholder-[#6b7f99] font-medium"
+                              className="w-full bg-transparent text-[13px] text-[var(--text-primary)] outline-none placeholder-[var(--text-faint)] font-medium"
                             />
                           )}
                           {link.type !== 'custom' && (
-                            <p className="text-[12px] text-[#7c8a9e] font-medium">{link.label || preset.label}</p>
+                            <p className="text-[12px] text-[var(--text-muted)] font-medium">{link.label || preset.label}</p>
                           )}
                           <input
                             value={link.url || ''} onChange={e => updateLink(i, 'url', e.target.value)}
                             placeholder={preset.placeholder}
-                            className="w-full bg-transparent text-[13px] text-[#e0e0e0] outline-none placeholder-[#6b7f99]"
+                            className="w-full bg-transparent text-[13px] text-[var(--text-primary)] outline-none placeholder-[var(--text-faint)]"
                           />
                         </div>
                         <button
                           onClick={() => removeLink(i)}
-                          className="text-[#6b7f99] hover:text-[#f87171] transition-colors p-1.5 opacity-0 group-hover:opacity-100"
+                          className="text-[var(--text-muted)] hover:text-[#f87171] transition-colors p-1.5 opacity-0 group-hover:opacity-100"
                         >
                           <ion-icon name="trash-outline" style={{ fontSize: '16px' }} />
                         </button>
@@ -480,14 +480,14 @@ export default function OrgManagePage({ slug }) {
 
               {/* Add link buttons */}
               <div>
-                <p className="text-[12px] text-[#5a657a] mb-3">Add a link:</p>
+                <p className="text-[12px] text-[var(--text-faint)] mb-3">Add a link:</p>
                 <div className="flex flex-wrap gap-2">
                   {LINK_PRESETS.map(preset => (
                     <button
                       key={preset.key}
                       onClick={() => addLink(preset)}
                       disabled={preset.key !== 'custom' && addedLinkTypes.has(preset.key)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111823] border border-[#1e2736] rounded-lg text-[12px] text-[#7c8a9e] hover:text-white hover:border-[#2d3a4d] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-lg text-[12px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[#2d3a4d] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <ion-icon name={preset.icon} style={{ fontSize: '14px' }} />
                       {preset.label}
@@ -501,7 +501,7 @@ export default function OrgManagePage({ slug }) {
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={handleSave} disabled={saving}
-                className="px-6 py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40"
+                className="px-6 py-2.5 bg-[#9b7bf7] text-[var(--text-primary)] font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40"
               >
                 {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Links'}
               </button>
@@ -514,34 +514,34 @@ export default function OrgManagePage({ slug }) {
         {activeTab === 'members' && (
           <div className="space-y-3">
             {members.map(m => (
-              <div key={m.id} className="flex items-center gap-3 p-3.5 bg-[#111823] border border-[#1e2736] rounded-xl">
+              <div key={m.id} className="flex items-center gap-3 p-3.5 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl">
                 {m.avatar_url ? (
                   <img src={m.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-[#1a2030] flex items-center justify-center text-[12px] text-[#9ca3af] font-bold">
+                  <div className="w-9 h-9 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center text-[12px] text-[var(--text-muted)] font-bold">
                     {(m.display_name || m.username || '?')[0].toUpperCase()}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] text-[#e0e0e0] font-medium">{m.display_name || m.username}</p>
-                  <p className="text-[11px] text-[#5a657a]">@{m.username}</p>
+                  <p className="text-[13px] text-[var(--text-primary)] font-medium">{m.display_name || m.username}</p>
+                  <p className="text-[11px] text-[var(--text-faint)]">@{m.username}</p>
                 </div>
                 {m.is_owner ? (
                   <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#9b7bf7]/10 text-[#c4b5fd] border border-[#9b7bf7]/20 font-medium">Owner</span>
                 ) : (
                   <select value={m.role} onChange={e => handleChangeRole(m.id, e.target.value)}
-                    className="bg-[#0c1017] text-[#9ca3af] border border-[#1e2736] rounded-lg px-2.5 py-1.5 text-[11px] outline-none focus:border-[#9b7bf7]/50 transition-colors">
+                    className="bg-[var(--bg-base)] text-[var(--text-muted)] border border-[var(--border-default)] rounded-lg px-2.5 py-1.5 text-[11px] outline-none focus:border-[#9b7bf7]/50 transition-colors">
                     {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
                 )}
                 {!m.is_owner && (
-                  <button onClick={() => handleRemoveMember(m.id)} className="text-[#6b7f99] hover:text-[#f87171] transition-colors p-1">
+                  <button onClick={() => handleRemoveMember(m.id)} className="text-[var(--text-muted)] hover:text-[#f87171] transition-colors p-1">
                     <ion-icon name="close" style={{ fontSize: '16px' }} />
                   </button>
                 )}
               </div>
             ))}
-            {members.length === 0 && <p className="text-[13px] text-[#5a657a] text-center py-12">No members yet.</p>}
+            {members.length === 0 && <p className="text-[13px] text-[var(--text-faint)] text-[var(--text-muted)]enter py-12">No members yet.</p>}
           </div>
         )}
 
@@ -549,31 +549,31 @@ export default function OrgManagePage({ slug }) {
         {activeTab === 'collections' && (
           <div className="space-y-4">
             {collections.map(c => (
-              <div key={c.id} className="flex items-center gap-3 p-4 bg-[#111823] border border-[#1e2736] rounded-xl">
-                <div className="h-9 w-9 rounded-lg bg-[#0c1017] flex items-center justify-center shrink-0">
+              <div key={c.id} className="flex items-center gap-3 p-4 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl">
+                <div className="h-9 w-9 rounded-lg bg-[var(--bg-base)] flex items-center justify-center shrink-0">
                   <ion-icon name="folder" style={{ fontSize: '18px', color: '#60a5fa' }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] text-[#e0e0e0] font-medium">{c.name}</p>
-                  <p className="text-[11px] text-[#5a657a]">/{c.slug} &middot; {c.blog_count || 0} blog{(c.blog_count || 0) !== 1 ? 's' : ''}</p>
+                  <p className="text-[14px] text-[var(--text-primary)] font-medium">{c.name}</p>
+                  <p className="text-[11px] text-[var(--text-faint)]">/{c.slug} &middot; {c.blog_count || 0} blog{(c.blog_count || 0) !== 1 ? 's' : ''}</p>
                 </div>
-                <button onClick={() => handleDeleteCollection(c.id)} className="text-[#6b7f99] hover:text-[#f87171] transition-colors p-1">
+                <button onClick={() => handleDeleteCollection(c.id)} className="text-[var(--text-muted)] hover:text-[#f87171] transition-colors p-1">
                   <ion-icon name="trash-outline" style={{ fontSize: '16px' }} />
                 </button>
               </div>
             ))}
 
-            <div className="border border-[#1e2736] rounded-xl p-5 space-y-4 bg-[#111823]">
-              <p className="text-[13px] text-[#e0e0e0] font-semibold flex items-center gap-2">
+            <div className="border border-[var(--border-default)] rounded-xl p-5 space-y-4 bg-[var(--card-bg)]">
+              <p className="text-[13px] text-[var(--text-primary)] font-semibold flex items-center gap-2">
                 <ion-icon name="add-circle-outline" style={{ fontSize: '16px', color: '#9b7bf7' }} />
                 New Collection
               </p>
               <input value={newColName} onChange={e => { setNewColName(e.target.value); setNewColSlug(e.target.value.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').slice(0, 40)); }} placeholder="Collection name"
-                className="w-full bg-[#0c1017] text-[#e0e0e0] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[#1e2736] focus:border-[#9b7bf7]/50 transition-colors placeholder-[#6b7f99]" />
+                className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors placeholder-[var(--text-faint)]" />
               <input value={newColDesc} onChange={e => setNewColDesc(e.target.value)} placeholder="Description (optional)"
-                className="w-full bg-[#0c1017] text-[#e0e0e0] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[#1e2736] focus:border-[#9b7bf7]/50 transition-colors placeholder-[#6b7f99]" />
+                className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors placeholder-[var(--text-faint)]" />
               <button onClick={handleCreateCollection} disabled={!newColName.trim()}
-                className="px-4 py-2 bg-[#9b7bf7] text-white font-medium rounded-lg text-[12px] hover:bg-[#b69aff] disabled:opacity-40 transition-colors">
+                className="px-4 py-2 bg-[#9b7bf7] text-[var(--text-primary)] font-medium rounded-lg text-[12px] hover:bg-[#b69aff] disabled:opacity-40 transition-colors">
                 Create
               </button>
             </div>
@@ -584,8 +584,8 @@ export default function OrgManagePage({ slug }) {
         {activeTab === 'invites' && (
           <div className="space-y-5">
             {/* Direct invite by username */}
-            <div className="border border-[#1e2736] rounded-xl p-5 space-y-4 bg-[#111823]">
-              <p className="text-[13px] text-[#e0e0e0] font-semibold flex items-center gap-2">
+            <div className="border border-[var(--border-default)] rounded-xl p-5 space-y-4 bg-[var(--card-bg)]">
+              <p className="text-[13px] text-[var(--text-primary)] font-semibold flex items-center gap-2">
                 <ion-icon name="person-add-outline" style={{ fontSize: '16px', color: '#9b7bf7' }} />
                 Invite by username
               </p>
@@ -595,26 +595,26 @@ export default function OrgManagePage({ slug }) {
                     value={directQuery}
                     onChange={e => { setDirectQuery(e.target.value); setDirectError(''); }}
                     placeholder="Search username..."
-                    className="w-full bg-[#0c1017] text-[#e0e0e0] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[#1e2736] focus:border-[#9b7bf7]/50 transition-colors placeholder-[#6b7f99]"
+                    className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors placeholder-[var(--text-faint)]"
                   />
                   {directResults.length > 0 && (
-                    <div className="absolute top-full mt-1 left-0 right-0 bg-[#141a26] border border-[#1e2736] rounded-lg shadow-xl z-10 overflow-hidden max-h-[200px] overflow-y-auto">
+                    <div className="absolute top-full mt-1 left-0 right-0 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg shadow-xl z-10 overflow-hidden max-h-[200px] overflow-y-auto">
                       {directResults.map(u => (
                         <button
                           key={u.id}
                           onClick={() => handleDirectInvite(u.id, u.username)}
-                          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-[#ffffff06] transition-colors"
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-[var(--bg-hover)] transition-colors"
                         >
                           {u.avatar_url ? (
                             <img src={u.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
                           ) : (
-                            <div className="w-7 h-7 rounded-full bg-[#1a2030] flex items-center justify-center text-[10px] text-[#9ca3af] font-bold">
+                            <div className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center text-[10px] text-[var(--text-muted)] font-bold">
                               {(u.display_name || u.username || '?')[0].toUpperCase()}
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-[13px] text-[#e0e0e0] truncate">{u.display_name || u.username}</p>
-                            <p className="text-[11px] text-[#5a657a]">@{u.username}</p>
+                            <p className="text-[13px] text-[var(--text-primary)] truncate">{u.display_name || u.username}</p>
+                            <p className="text-[11px] text-[var(--text-faint)]">@{u.username}</p>
                           </div>
                           <span className="text-[11px] text-[#9b7bf7] font-medium flex-shrink-0">Add</span>
                         </button>
@@ -622,13 +622,13 @@ export default function OrgManagePage({ slug }) {
                     </div>
                   )}
                   {directQuery.length >= 2 && directResults.length === 0 && !directSearching && (
-                    <div className="absolute top-full mt-1 left-0 right-0 bg-[#141a26] border border-[#1e2736] rounded-lg shadow-xl z-10 px-3 py-3 text-[12px] text-[#5a657a]">
+                    <div className="absolute top-full mt-1 left-0 right-0 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg shadow-xl z-10 px-3 py-3 text-[12px] text-[var(--text-faint)]">
                       No users found
                     </div>
                   )}
                 </div>
                 <select value={directRole} onChange={e => setDirectRole(e.target.value)}
-                  className="bg-[#0c1017] text-[#9ca3af] border border-[#1e2736] rounded-lg px-2.5 py-2.5 text-[12px] outline-none focus:border-[#9b7bf7]/50 transition-colors">
+                  className="bg-[var(--bg-base)] text-[var(--text-muted)] border border-[var(--border-default)] rounded-lg px-2.5 py-2.5 text-[12px] outline-none focus:border-[#9b7bf7]/50 transition-colors">
                   {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
@@ -637,32 +637,32 @@ export default function OrgManagePage({ slug }) {
             </div>
 
             {/* Generate invite link */}
-            <div className="border border-[#1e2736] rounded-xl p-5 space-y-4 bg-[#111823]">
-              <p className="text-[13px] text-[#e0e0e0] font-semibold flex items-center gap-2">
+            <div className="border border-[var(--border-default)] rounded-xl p-5 space-y-4 bg-[var(--card-bg)]">
+              <p className="text-[13px] text-[var(--text-primary)] font-semibold flex items-center gap-2">
                 <ion-icon name="link-outline" style={{ fontSize: '16px', color: '#9b7bf7' }} />
                 Generate invite link
               </p>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="text-[11px] text-[#5a657a] mb-1 block">Role</label>
+                  <label className="text-[11px] text-[var(--text-faint)] mb-1 block">Role</label>
                   <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}
-                    className="w-full bg-[#0c1017] text-[#e0e0e0] border border-[#1e2736] rounded-lg px-2.5 py-2 text-[12px] outline-none focus:border-[#9b7bf7]/50 transition-colors">
+                    className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] border border-[var(--border-default)] rounded-lg px-2.5 py-2 text-[12px] outline-none focus:border-[#9b7bf7]/50 transition-colors">
                     {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#5a657a] mb-1 block">Expires in (hours)</label>
+                  <label className="text-[11px] text-[var(--text-faint)] mb-1 block">Expires in (hours)</label>
                   <input value={inviteExpiry} onChange={e => setInviteExpiry(e.target.value)} placeholder="Never"
-                    className="w-full bg-[#0c1017] text-[#e0e0e0] border border-[#1e2736] rounded-lg px-2.5 py-2 text-[12px] outline-none focus:border-[#9b7bf7]/50 transition-colors placeholder-[#6b7f99]" />
+                    className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] border border-[var(--border-default)] rounded-lg px-2.5 py-2 text-[12px] outline-none focus:border-[#9b7bf7]/50 transition-colors placeholder-[var(--text-faint)]" />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#5a657a] mb-1 block">Max uses</label>
+                  <label className="text-[11px] text-[var(--text-faint)] mb-1 block">Max uses</label>
                   <input value={inviteMaxUses} onChange={e => setInviteMaxUses(e.target.value)} placeholder="Unlimited"
-                    className="w-full bg-[#0c1017] text-[#e0e0e0] border border-[#1e2736] rounded-lg px-2.5 py-2 text-[12px] outline-none focus:border-[#9b7bf7]/50 transition-colors placeholder-[#6b7f99]" />
+                    className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] border border-[var(--border-default)] rounded-lg px-2.5 py-2 text-[12px] outline-none focus:border-[#9b7bf7]/50 transition-colors placeholder-[var(--text-faint)]" />
                 </div>
               </div>
               <button onClick={handleCreateInvite} disabled={creatingInvite}
-                className="px-4 py-2 bg-[#9b7bf7] text-white font-medium rounded-lg text-[12px] hover:bg-[#b69aff] disabled:opacity-40 transition-colors">
+                className="px-4 py-2 bg-[#9b7bf7] text-[var(--text-primary)] font-medium rounded-lg text-[12px] hover:bg-[#b69aff] disabled:opacity-40 transition-colors">
                 {creatingInvite ? 'Creating...' : 'Generate & Copy Link'}
               </button>
             </div>
@@ -670,19 +670,19 @@ export default function OrgManagePage({ slug }) {
             {/* Active invites */}
             {invites.length > 0 && (
               <div>
-                <p className="text-[11px] text-[#5a657a] uppercase tracking-widest font-semibold mb-3">Active Invites</p>
+                <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-widest font-semibold mb-3">Active Invites</p>
                 <div className="space-y-2">
                   {invites.map(inv => (
-                    <div key={inv.id} className="flex items-center gap-3 p-3.5 bg-[#111823] border border-[#1e2736] rounded-xl">
+                    <div key={inv.id} className="flex items-center gap-3 p-3.5 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl">
                       <div className="flex-1 min-w-0">
-                        <p className="text-[12px] text-[#e0e0e0] font-mono truncate">{inv.id}</p>
-                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#5a657a]">
+                        <p className="text-[12px] text-[var(--text-primary)] font-mono truncate">{inv.id}</p>
+                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[var(--text-faint)]">
                           <span className="capitalize">{inv.role}</span>
                           {inv.uses !== undefined && <span>&middot; {inv.uses}/{inv.max_uses || '∞'} uses</span>}
                           {inv.expires_at && <span>&middot; Expires {new Date(inv.expires_at * 1000).toLocaleDateString()}</span>}
                         </div>
                       </div>
-                      <button onClick={() => handleDeleteInvite(inv.id)} className="text-[#6b7f99] hover:text-[#f87171] transition-colors p-1">
+                      <button onClick={() => handleDeleteInvite(inv.id)} className="text-[var(--text-muted)] hover:text-[#f87171] transition-colors p-1">
                         <ion-icon name="trash-outline" style={{ fontSize: '16px' }} />
                       </button>
                     </div>
@@ -692,16 +692,16 @@ export default function OrgManagePage({ slug }) {
             )}
 
             {/* Shareable org link */}
-            <div className="border border-[#1e2736] rounded-xl p-4 flex items-center gap-3 bg-[#111823]">
+            <div className="border border-[var(--border-default)] rounded-xl p-4 flex items-center gap-3 bg-[var(--card-bg)]">
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] text-[#5a657a] mb-1">Share this org&apos;s profile</p>
-                <p className="text-[13px] text-[#e0e0e0] font-mono truncate">
+                <p className="text-[11px] text-[var(--text-faint)] mb-1">Share this org&apos;s profile</p>
+                <p className="text-[13px] text-[var(--text-primary)] font-mono truncate">
                   {typeof window !== 'undefined' ? window.location.origin : ''}/{org?.slug}
                 </p>
               </div>
               <button
                 onClick={() => navigator.clipboard.writeText(`${window.location.origin}/${org?.slug}`)}
-                className="px-3 py-1.5 bg-[#0c1017] border border-[#1e2736] text-[#9ca3af] rounded-lg text-[12px] font-medium hover:text-white hover:border-[#2d3a4d] transition-colors flex-shrink-0"
+                className="px-3 py-1.5 bg-[var(--bg-base)] border border-[var(--border-default)] text-[var(--text-muted)] rounded-lg text-[12px] font-medium hover:text-[var(--text-primary)] hover:border-[#2d3a4d] transition-colors flex-shrink-0"
               >
                 Copy
               </button>

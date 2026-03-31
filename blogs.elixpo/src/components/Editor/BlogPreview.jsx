@@ -303,9 +303,9 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
               zIndex: 10,
             }}
           >
-            <div className="w-[72px] h-[72px] rounded-full bg-[#131922] border-[3px] border-[#131922] shadow-lg flex items-center justify-center relative">
+            <div className="w-[72px] h-[72px] rounded-full bg-[var(--bg-app)] border-[3px] border-[#131922] shadow-lg flex items-center justify-center relative">
               <span className="text-[42px] leading-none select-none">{pageEmoji}</span>
-              <div className="absolute inset-[-2px] rounded-full border border-[#232d3f]" />
+              <div className="absolute inset-[-2px] rounded-full border border-[var(--border-default)]" />
             </div>
           </div>
         )}
@@ -321,13 +321,13 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
             {user.avatar_url ? (
               <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[#131922]" />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-[#232d3f] border-2 border-[#131922] flex items-center justify-center text-[11px] font-bold text-[#9ca3af]">
+              <div className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] border-2 border-[#131922] flex items-center justify-center text-[11px] font-bold text-[var(--text-muted)]">
                 {(user.display_name || user.username || '?')[0].toUpperCase()}
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 text-[13px] text-[#6b7a8d]">
-            <span className="text-[#9ca3af] font-medium">{user.display_name || user.username || 'Author'}</span>
+          <div className="flex items-center gap-2 text-[13px] text-[var(--text-faint)]">
+            <span className="text-[var(--text-muted)] font-medium">{user.display_name || user.username || 'Author'}</span>
             <span className="text-[#3a3f4f]">·</span>
             <span>{Math.max(1, Math.ceil((wordCount || 0) / 200))} min read</span>
             <span className="text-[#3a3f4f]">·</span>
@@ -366,7 +366,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
             dangerouslySetInnerHTML={{ __html: renderedHTML }}
           />
         ) : (
-          <p className="text-[#555] italic">Start writing to see a preview...</p>
+          <p className="text-[var(--text-faint)] italic">Start writing to see a preview...</p>
         )}
       </div>
     </div>

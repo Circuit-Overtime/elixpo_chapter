@@ -567,7 +567,7 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
           zIndex: 100,
         }}
       >
-        <div className="mx-auto w-full max-w-[600px] bg-[#141a26] border border-[#232d3f] rounded-xl shadow-2xl overflow-hidden">
+        <div className="mx-auto w-full max-w-[600px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
               <img src="/base-logo.png" alt="AI" className="w-full h-full object-cover" />
@@ -582,7 +582,7 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
                 if (e.key === 'Escape') resetState();
               }}
               placeholder="Edit: improve, fix grammar, translate, rewrite..."
-              className="flex-1 bg-transparent text-[14px] text-[#e0e0e0] placeholder-[#6b7a8d] outline-none"
+              className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] placeholder-[#6b7a8d] outline-none"
               autoComplete="off"
               spellCheck="false"
             />
@@ -592,10 +592,10 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
               className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                 prompt.trim()
                   ? 'bg-[#9b7bf7] hover:bg-[#b69aff] cursor-pointer'
-                  : 'bg-[#232d3f] cursor-not-allowed'
+                  : 'bg-[var(--bg-elevated)] cursor-not-allowed'
               }`}
             >
-              <svg className={`w-3.5 h-3.5 ${prompt.trim() ? 'text-white' : 'text-[#4a5568]'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg className={`w-3.5 h-3.5 ${prompt.trim() ? 'text-[var(--text-primary)]' : 'text-[#4a5568]'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="19" x2="12" y2="5" />
                 <polyline points="5 12 12 5 19 12" />
               </svg>

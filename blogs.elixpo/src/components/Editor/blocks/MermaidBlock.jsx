@@ -161,7 +161,7 @@ function MermaidViewer({ diagram }) {
   if (!svgHTML) {
     return (
       <div className="mermaid-viewport" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ color: '#6b7a8d', fontSize: '13px' }}>Loading diagram...</span>
+        <span style={{ color: 'var(--text-faint)', fontSize: '13px' }}>Loading diagram...</span>
       </div>
     );
   }
