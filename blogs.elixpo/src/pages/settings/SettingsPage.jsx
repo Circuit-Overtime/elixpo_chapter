@@ -5,9 +5,16 @@ import { useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { generatePixelAvatar } from '../../utils/pixelAvatar';
 import AppShell from '../../components/AppShell';
+import TabBar from '../../components/TabBar';
 import Link from 'next/link';
 
-const TABS = ['Account', 'Publishing', 'Notifications', 'Organization', 'Subscription'];
+const TABS = [
+  { label: 'Account', icon: 'person-outline' },
+  { label: 'Publishing', icon: 'create-outline' },
+  { label: 'Notifications', icon: 'notifications-outline' },
+  { label: 'Organization', icon: 'people-outline' },
+  { label: 'Subscription', icon: 'diamond-outline' },
+];
 
 function Toggle({ checked, onChange }) {
   return (
@@ -362,6 +369,7 @@ function CreateOrgModal({ onClose, onCreated }) {
   const [website, setWebsite] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [category, setCategory] = useState('');
+  const [bioPreview, setBioPreview] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [slugAvailable, setSlugAvailable] = useState(null);
@@ -386,7 +394,7 @@ function CreateOrgModal({ onClose, onCreated }) {
           setSlugError(d.available ? '' : (d.error || 'Already taken'));
         })
         .catch(() => { setSlugAvailable(null); setSlugError(''); });
-    }, 400);
+    }, 800);
     return () => clearTimeout(timer);
   }, [slug]);
 
@@ -479,15 +487,27 @@ function CreateOrgModal({ onClose, onCreated }) {
               </select>
             </div>
             <div>
-              <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Website</label>
-              <input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://"
-                className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] placeholder-[#6b7a8d]" />
+              <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">
+                Website
+                {website && !website.startsWith('https://') && website.length > 3 && <span className="text-[#f87171] ml-1.5 font-normal">must start with https://</span>}
+              </label>
+              <div className="flex items-center bg-[#131922] rounded-lg border border-[#232d3f] overflow-hidden">
+                <span className="text-[#666] text-[12px] px-2.5 flex-shrink-0">https://</span>
+                <input
+                  value={website.replace(/^https?:\/\//, '')}
+                  onChange={e => setWebsite('https://' + e.target.value.replace(/^https?:\/\//, ''))}
+                  placeholder="example.com"
+                  className="flex-1 bg-transparent text-[#e0e0e0] py-2 pr-3 outline-none text-[13px]" />
+              </div>
             </div>
           </div>
 
           <div>
-            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Contact email</label>
-            <input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="org@example.com"
+            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">
+              Contact email
+              {contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail) && <span className="text-[#f87171] ml-1.5 font-normal">invalid email</span>}
+            </label>
+            <input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="org@example.com" type="email"
               className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] placeholder-[#6b7a8d]" />
           </div>
 
@@ -497,10 +517,43 @@ function CreateOrgModal({ onClose, onCreated }) {
               className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] placeholder-[#6b7a8d]" />
           </div>
 
+          {/* About — code/preview toggle like GitHub */}
           <div>
-            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">About (Markdown)</label>
-            <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Mission, what you publish..."
-              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] placeholder-[#6b7a8d] resize-none" />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[12px] text-[#9ca3af] font-medium">About</label>
+              <div className="flex bg-[#131922] rounded-md border border-[#232d3f] overflow-hidden">
+                <button type="button" onClick={() => setBioPreview(false)}
+                  className={`px-3 py-1 text-[11px] font-medium transition-colors ${!bioPreview ? 'bg-[#232d3f] text-white' : 'text-[#666] hover:text-[#999]'}`}>
+                  Write
+                </button>
+                <button type="button" onClick={() => setBioPreview(true)}
+                  className={`px-3 py-1 text-[11px] font-medium transition-colors ${bioPreview ? 'bg-[#232d3f] text-white' : 'text-[#666] hover:text-[#999]'}`}>
+                  Preview
+                </button>
+              </div>
+            </div>
+            {!bioPreview ? (
+              <textarea value={bio} onChange={e => setBio(e.target.value)} rows={4} placeholder="Supports **bold**, *italic*, [links](url), `code`, lists..."
+                className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] font-mono border border-[#232d3f] focus:border-[#444] placeholder-[#6b7a8d] resize-none" />
+            ) : (
+              <div className="bg-[#131922] border border-[#232d3f] rounded-lg px-3 py-2 min-h-[100px] text-[13px] text-[#c8c8c8] leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: bio
+                  ? bio
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/^### (.+)$/gm, '<h3 style="font-size:15px;font-weight:600;color:#e0e0e0;margin:12px 0 4px">$1</h3>')
+                    .replace(/^## (.+)$/gm, '<h2 style="font-size:17px;font-weight:700;color:#e0e0e0;margin:14px 0 4px">$1</h2>')
+                    .replace(/^# (.+)$/gm, '<h1 style="font-size:20px;font-weight:800;color:#fff;margin:16px 0 6px">$1</h1>')
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                    .replace(/~~(.+?)~~/g, '<del>$1</del>')
+                    .replace(/`(.+?)`/g, '<code style="background:#232d3f;padding:1px 4px;border-radius:3px;font-size:12px;color:#c4b5fd">$1</code>')
+                    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:#60a5fa;text-decoration:none">$1</a>')
+                    .replace(/^- (.+)$/gm, '<li style="margin-left:16px">$1</li>')
+                    .replace(/^&gt; (.+)$/gm, '<blockquote style="border-left:3px solid #9b7bf740;padding-left:12px;color:#9ca3af;margin:8px 0">$1</blockquote>')
+                    .replace(/\n/g, '<br>')
+                  : '<span style="color:#666">Nothing to preview</span>'
+                }} />
+            )}
           </div>
 
           {/* Info box */}
@@ -674,22 +727,7 @@ export default function SettingsPage() {
       <div className="max-w-2xl mx-auto px-6 py-10">
         <h1 className="text-3xl font-bold text-white mb-8">Settings</h1>
 
-        {/* Tabs */}
-        <div className="flex gap-4 border-b border-[#232d3f] mb-8 overflow-x-auto scrollbar-none">
-          {TABS.map((tab, i) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(i)}
-              className={`pb-3 text-[13px] font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
-                i === activeTab
-                  ? 'text-white border-white'
-                  : 'text-[#9ca3af] border-transparent hover:text-[#b0b0b0]'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
         {activeTab === 0 && <AccountTab user={user} />}
         {activeTab === 1 && <PublishingTab user={user} />}

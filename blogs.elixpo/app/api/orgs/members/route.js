@@ -28,6 +28,48 @@ export async function GET(request) {
   }
 }
 
+// Add member directly (by userId)
+export async function POST(request) {
+  const session = await getSession();
+  if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+
+  const { orgId, userId, role } = await request.json();
+  if (!orgId || !userId || !['admin', 'maintain', 'write', 'read'].includes(role)) {
+    return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
+  }
+
+  try {
+    const { getDB } = await import('../../../../lib/cloudflare');
+    const db = getDB();
+
+    // Must be owner or admin
+    const org = await db.prepare('SELECT owner_id FROM orgs WHERE id = ?').bind(orgId).first();
+    if (!org) return NextResponse.json({ error: 'Org not found' }, { status: 404 });
+
+    const isOwner = org.owner_id === session.userId;
+    const myRole = await db.prepare('SELECT role FROM org_members WHERE org_id = ? AND user_id = ?').bind(orgId, session.userId).first();
+    if (!isOwner && myRole?.role !== 'admin') {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+    }
+
+    // Check user exists
+    const targetUser = await db.prepare('SELECT id, username FROM users WHERE id = ?').bind(userId).first();
+    if (!targetUser) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    // Add or update member
+    const now = Math.floor(Date.now() / 1000);
+    await db.prepare(`
+      INSERT INTO org_members (org_id, user_id, role, joined_at) VALUES (?, ?, ?, ?)
+      ON CONFLICT(org_id, user_id) DO UPDATE SET role = ?
+    `).bind(orgId, userId, role, now, role).run();
+
+    return NextResponse.json({ ok: true, username: targetUser.username });
+  } catch (e) {
+    console.error('Add member error:', e);
+    return NextResponse.json({ error: 'Failed to add member' }, { status: 500 });
+  }
+}
+
 // Update member role
 export async function PUT(request) {
   const session = await getSession();

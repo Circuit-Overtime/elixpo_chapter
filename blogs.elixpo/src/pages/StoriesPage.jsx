@@ -3,9 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
+import TabBar from '../components/TabBar';
 import Link from 'next/link';
 
-const TABS = ['Drafts', 'Published'];
+const TABS = [
+  { label: 'Drafts', icon: 'document-outline' },
+  { label: 'Published', icon: 'globe-outline' },
+];
 
 function StoryCard({ story, onDelete }) {
   const isDraft = story.status === 'draft';
@@ -133,21 +137,11 @@ export default function StoriesPage() {
           </Link>
         </div>
 
-        <div className="flex gap-6 border-b border-[#232d3f] mb-6">
-          {TABS.map((tab, i) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(i)}
-              className={`pb-3 text-[14px] font-medium border-b-2 transition-colors ${
-                i === activeTab
-                  ? 'text-white border-white'
-                  : 'text-[#9ca3af] border-transparent hover:text-[#b0b0b0]'
-              }`}
-            >
-              {tab} ({i === 0 ? drafts.length : published.length})
-            </button>
-          ))}
-        </div>
+        <TabBar
+          tabs={TABS.map((t, i) => ({ ...t, count: i === 0 ? drafts.length : published.length }))}
+          active={activeTab}
+          onChange={setActiveTab}
+        />
 
         {blogsLoading ? (
           <div className="space-y-4">

@@ -3,9 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
+import TabBar from '../components/TabBar';
 import Link from 'next/link';
 
-const TABS = ['Overview', 'Posts', 'Followers'];
+const TABS = [
+  { label: 'Overview', icon: 'analytics-outline' },
+  { label: 'Posts', icon: 'document-text-outline' },
+  { label: 'Followers', icon: 'people-outline' },
+];
 
 function MiniStatCard({ label, value, icon }) {
   return (
@@ -145,22 +150,7 @@ export default function StatsPage() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-6 border-b border-[#232d3f] mb-8">
-          {TABS.map((tab, i) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(i)}
-              className={`pb-3 text-[14px] font-medium border-b-2 transition-colors ${
-                i === activeTab
-                  ? 'text-white border-white'
-                  : 'text-[#9ca3af] border-transparent hover:text-[#b0b0b0]'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
         {statsLoading ? (
           <div className="space-y-4">
