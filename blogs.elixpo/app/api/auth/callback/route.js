@@ -71,6 +71,17 @@ export async function GET(request) {
     if (!existingUser) {
       isNewUser = true;
       const username = (userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, '');
+
+      // Mirror OAuth avatar to Cloudinary at deterministic path
+      let avatarUrl = userInfo.avatar || '';
+      try {
+        if (avatarUrl) {
+          const { uploadRemoteAvatar, userAvatarPublicId, userAvatarCdnUrl } = await import('../../../../lib/cloudinary');
+          await uploadRemoteAvatar(avatarUrl, userAvatarPublicId(username));
+          avatarUrl = userAvatarCdnUrl(username);
+        }
+      } catch (e) { console.warn('Avatar mirror failed:', e.message); }
+
       await db.prepare(`
         INSERT INTO users (id, email, username, display_name, avatar_url, locale, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -79,7 +90,7 @@ export async function GET(request) {
         userInfo.email,
         username,
         userInfo.displayName || '',
-        userInfo.avatar || '',
+        avatarUrl,
         'en',
         now,
         now
@@ -91,13 +102,26 @@ export async function GET(request) {
         await tryReserveName(db, username, 'user', userId);
       } catch { /* namespace table may not exist in local dev */ }
     } else {
+      // Get username for deterministic avatar path
+      const existingData = await db.prepare('SELECT username FROM users WHERE id = ?').bind(userId).first();
+      const username = existingData?.username || userId;
+
+      let avatarUrl = userInfo.avatar || '';
+      try {
+        if (avatarUrl) {
+          const { uploadRemoteAvatar, userAvatarPublicId, userAvatarCdnUrl } = await import('../../../../lib/cloudinary');
+          await uploadRemoteAvatar(avatarUrl, userAvatarPublicId(username));
+          avatarUrl = userAvatarCdnUrl(username);
+        }
+      } catch (e) { console.warn('Avatar mirror failed:', e.message); }
+
       await db.prepare(`
         UPDATE users SET email = ?, display_name = ?, avatar_url = ?, updated_at = ?
         WHERE id = ?
       `).bind(
         userInfo.email,
         userInfo.displayName || '',
-        userInfo.avatar || '',
+        avatarUrl,
         now,
         userId
       ).run();

@@ -1,84 +1,130 @@
-import { baseLayout, ctaButton, muted, escHtml, avatar } from './base.js';
+import { baseLayout, ctaButton, buttonRow, muted, divider, escHtml } from './base.js';
 
 /**
- * Generic notification email — new follower, new comment, blog published, etc.
+ * Email notification templates — only for significant events worth emailing.
  *
- * @param {object} data
- * @param {string} data.type          - 'new_follower' | 'new_comment' | 'blog_published' | 'blog_liked'
- * @param {string} data.actorName     - Who triggered the event
- * @param {string} [data.actorAvatar] - Actor avatar URL
- * @param {string} [data.blogTitle]   - Blog title (if relevant)
- * @param {string} [data.comment]     - Comment text (if relevant)
- * @param {string} data.actionUrl     - URL to view the activity
- * @returns {{ subject: string, html: string }}
+ * Types: blog_published, org_created
+ *
+ * Follower/comment/like notifications are in-app only, not emailed.
  */
 export function notification(data) {
-  const { type, actorName, actorAvatar, blogTitle, comment, actionUrl } = data;
+  const { type } = data;
 
-  const templates = {
-    new_follower: {
-      subject: `${actorName} started following you`,
-      heading: `New follower`,
-      message: `<strong style="color:#ffffff">${escHtml(actorName)}</strong> is now following you on LixBlogs.`,
-      cta: 'View Profile',
-    },
-    new_comment: {
-      subject: `${actorName} commented on "${blogTitle}"`,
-      heading: `New comment`,
-      message: `<strong style="color:#ffffff">${escHtml(actorName)}</strong> commented on <strong style="color:#ffffff">${escHtml(blogTitle)}</strong>.`,
-      cta: 'View Comment',
-    },
-    blog_published: {
-      subject: `${actorName} published "${blogTitle}"`,
-      heading: `New post`,
-      message: `<strong style="color:#ffffff">${escHtml(actorName)}</strong> published a new blog: <strong style="color:#ffffff">${escHtml(blogTitle)}</strong>.`,
-      cta: 'Read Post',
-    },
-    blog_liked: {
-      subject: `${actorName} liked "${blogTitle}"`,
-      heading: `New like`,
-      message: `<strong style="color:#ffffff">${escHtml(actorName)}</strong> liked your blog <strong style="color:#ffffff">${escHtml(blogTitle)}</strong>.`,
-      cta: 'View Blog',
-    },
-  };
+  switch (type) {
+    case 'blog_published': return publishedEmail(data);
+    case 'org_created': return orgCreatedEmail(data);
+    default: return publishedEmail(data);
+  }
+}
 
-  const t = templates[type] || templates.new_follower;
+// ─── Blog Published ─────────────────────────────────────────────────────
+function publishedEmail(data) {
+  const { actorName, actorAvatar, blogTitle, blogSubtitle, blogCover, blogTags, blogReadTime, actionUrl } = data;
+  const tags = blogTags || [];
+
+  const subject = `${actorName} published "${blogTitle}"`;
 
   const body = `
-    <p style="margin:0 0 6px;font-size:11px;font-weight:600;color:#6b7f99;text-transform:uppercase;letter-spacing:1px">${t.heading}</p>
+    <div style="text-align:center">
 
-    <!-- Actor card -->
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background-color:#0c1017;border:1px solid #1e2736;border-radius:12px;overflow:hidden">
-      <tr>
-        <td style="padding:16px 20px">
-          <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-            <td style="padding-right:12px;vertical-align:middle">
-              ${avatar(actorAvatar, actorName, 40)}
-            </td>
-            <td style="vertical-align:middle">
-              <p style="margin:0;font-size:15px;color:#d1d5db;line-height:1.5">${t.message}</p>
-            </td>
-          </tr></table>
-        </td>
-      </tr>
-    </table>
+      ${circleAvatar(actorAvatar, actorName, 48)}
 
-    ${comment ? `
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0c1017;border:1px solid #1e2736;border-radius:12px;overflow:hidden;margin-bottom:8px">
-      <tr>
-        <td style="padding:16px 20px;border-left:3px solid #9b7bf740">
-          <p style="margin:0;font-size:13px;color:#d1d5db;line-height:1.5;font-style:italic">"${escHtml(comment)}"</p>
-        </td>
-      </tr>
-    </table>` : ''}
+      <p style="margin:14px 0 2px;font-size:11px;color:#a0a0b0;font-weight:600;text-transform:uppercase;letter-spacing:1px">New Post</p>
+      <p style="margin:0 0 24px;font-size:15px;color:#5a5a70">
+        <strong style="color:#1a1a2e">${escHtml(actorName)}</strong> published a new blog
+      </p>
 
-    ${ctaButton(t.cta, actionUrl)}
+      ${blogCard({ blogTitle, blogSubtitle, blogCover, blogTags: tags, blogReadTime, actorName })}
 
-    ${muted('You can manage your notification preferences in <a href="https://blogs.elixpo.com/settings?tab=notifications" style="color:#9b7bf7;text-decoration:none">Settings</a>.')}
+      ${ctaButton('Read Post', actionUrl)}
+
+      ${muted('Manage notifications in <a href="https://blogs.elixpo.com/settings?tab=notifications" style="color:#9b7bf7;text-decoration:none">Settings</a>.')}
+    </div>
   `;
 
   return {
-    subject: t.subject,
-    html: baseLayout({ title: t.subject, body, preheader: t.message.replace(/<[^>]*>/g, '') }),
+    subject,
+    html: baseLayout({ title: subject, body, preheader: `${actorName} published "${blogTitle}"` }),
   };
+}
+
+// ─── Org Created ────────────────────────────────────────────────────────
+function orgCreatedEmail(data) {
+  const { orgName, orgSlug, orgDescription, orgLogoUrl, actorName, actorAvatar, memberCount, actionUrl } = data;
+
+  const subject = `${actorName} created a new organization: ${orgName}`;
+
+  const body = `
+    <div style="text-align:center">
+
+      ${squareAvatar(orgLogoUrl, orgName, 64)}
+
+      <p style="margin:16px 0 2px;font-size:20px;font-weight:700;color:#1a1a2e">${escHtml(orgName)}</p>
+      <p style="margin:0 0 4px;font-size:13px;color:#a0a0b0">@${escHtml(orgSlug)}</p>
+
+      ${orgDescription ? `<p style="margin:12px auto 0;font-size:13px;color:#5a5a70;line-height:1.55;max-width:380px">${escHtml(orgDescription)}</p>` : ''}
+
+      <div style="display:inline-block;margin:20px 0;padding:10px 20px;background-color:#f7f7fa;border:1px solid #ececf0;border-radius:24px">
+        ${circleAvatar(actorAvatar, actorName, 22)}
+        <span style="font-size:13px;color:#5a5a70;vertical-align:middle;margin-left:6px">Created by <strong style="color:#1a1a2e">${escHtml(actorName)}</strong></span>
+      </div>
+
+      ${memberCount ? `<p style="margin:0 0 4px;font-size:12px;color:#a0a0b0">${memberCount} member${memberCount !== 1 ? 's' : ''}</p>` : ''}
+
+      ${divider()}
+
+      <p style="margin:0;font-size:13px;color:#7a7a8e;line-height:1.6">
+        You're receiving this because you follow <strong style="color:#3a3a50">@${escHtml(actorName)}</strong>.
+        <br/>Check out their new organization and its upcoming publications.
+      </p>
+
+      ${buttonRow(
+        { text: 'View Organization', href: actionUrl },
+        { text: 'View Profile', href: `https://blogs.elixpo.com/${actorName}` },
+      )}
+
+      ${muted('Manage notifications in <a href="https://blogs.elixpo.com/settings?tab=notifications" style="color:#9b7bf7;text-decoration:none">Settings</a>.')}
+    </div>
+  `;
+
+  return {
+    subject,
+    html: baseLayout({ title: subject, body, preheader: `${actorName} created ${orgName} on LixBlogs` }),
+  };
+}
+
+// ─── Shared: Blog Card ──────────────────────────────────────────────────
+function blogCard({ blogTitle, blogSubtitle, blogCover, blogTags = [], blogReadTime, actorName }) {
+  return `
+    <div style="display:inline-block;text-align:left;width:100%;max-width:440px;background-color:#f7f7fa;border:1px solid #ececf0;border-radius:12px;overflow:hidden;margin-bottom:20px">
+      ${blogCover ? `<img src="${escHtml(blogCover)}" alt="" width="440" style="display:block;width:100%;height:160px;object-fit:cover" />` : ''}
+      <div style="padding:18px 20px">
+        <p style="margin:0;font-size:17px;font-weight:700;color:#1a1a2e;line-height:1.35">${escHtml(blogTitle || 'Untitled')}</p>
+        ${blogSubtitle ? `<p style="margin:5px 0 0;font-size:13px;color:#7a7a8e;line-height:1.45">${escHtml(blogSubtitle)}</p>` : ''}
+        <p style="margin:10px 0 0;font-size:12px;color:#a0a0b0">
+          by <strong style="color:#5a5a70">@${escHtml(actorName)}</strong>${blogReadTime ? ` &middot; ${blogReadTime} min read` : ''}
+        </p>
+        ${blogTags.length > 0 ? `
+        <div style="margin-top:12px">
+          ${blogTags.map(t => `<span style="display:inline-block;padding:3px 10px;background-color:#ffffff;border:1px solid #e2e2ea;border-radius:12px;font-size:11px;color:#5a5a70;margin:0 4px 4px 0">${escHtml(t)}</span>`).join('')}
+        </div>` : ''}
+      </div>
+    </div>`;
+}
+
+// ─── Avatar helpers ─────────────────────────────────────────────────────
+function circleAvatar(url, name, size) {
+  if (url) {
+    return `<img src="${escHtml(url)}" alt="${escHtml(name)}" width="${size}" height="${size}" style="display:inline-block;border-radius:50%;border:2px solid #ececf0;object-fit:cover" />`;
+  }
+  const initial = (name || '?')[0].toUpperCase();
+  return `<div style="display:inline-block;width:${size}px;height:${size}px;border-radius:50%;background-color:#f0f0f3;border:2px solid #ececf0;color:#7a7a8e;font-size:${Math.round(size * 0.36)}px;font-weight:700;line-height:${size}px;text-align:center">${initial}</div>`;
+}
+
+function squareAvatar(url, name, size) {
+  if (url) {
+    return `<img src="${escHtml(url)}" alt="${escHtml(name)}" width="${size}" height="${size}" style="display:inline-block;border-radius:14px;border:2px solid #ececf0;object-fit:cover" />`;
+  }
+  const initial = (name || '?')[0].toUpperCase();
+  return `<div style="display:inline-block;width:${size}px;height:${size}px;border-radius:14px;background-color:#f0f0f3;border:2px solid #ececf0;color:#7a7a8e;font-size:${Math.round(size * 0.36)}px;font-weight:700;line-height:${size}px;text-align:center">${initial}</div>`;
 }

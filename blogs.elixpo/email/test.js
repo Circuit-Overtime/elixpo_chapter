@@ -32,20 +32,19 @@ const SAMPLES = {
     recipientAvatar: '',
     role: 'write',
     inviteUrl: 'https://blogs.elixpo.com/org/join/abc123',
-    orgUrl: 'https://blogs.elixpo.com/elixpo',
-    message: 'Hey! Come write some cool blog posts with us.',
+    declineUrl: 'https://blogs.elixpo.com/org/join/abc123?decline=1',
   }),
 
   'blog-invite': () => blogInvite({
     blogTitle: 'Building AI-Powered Editors',
-    blogEmoji: '🤖',
+    blogEmoji: '',
     inviterName: 'selenium-cutlet',
     inviterAvatar: 'https://lh3.googleusercontent.com/a/ACg8ocJlCSczaUeHuK0Vu79xKBwghqBj60V9evGwmf0aO_k36BCZ1aE=s96-c',
     recipientName: 'Ada Lovelace',
     recipientAvatar: '',
     role: 'editor',
     editUrl: 'https://blogs.elixpo.com/edit/abc123',
-    message: 'Would love your input on this one!',
+    declineUrl: 'https://blogs.elixpo.com/edit/abc123?decline=1',
   }),
 
   'welcome': () => welcome({
@@ -54,36 +53,28 @@ const SAMPLES = {
     avatarUrl: 'https://lh3.googleusercontent.com/a/ACg8ocJlCSczaUeHuK0Vu79xKBwghqBj60V9evGwmf0aO_k36BCZ1aE=s96-c',
   }),
 
-  'notification-follower': () => notification({
-    type: 'new_follower',
-    actorName: 'Ada Lovelace',
-    actorAvatar: '',
-    actionUrl: 'https://blogs.elixpo.com/ada-lovelace',
-  }),
-
-  'notification-comment': () => notification({
-    type: 'new_comment',
-    actorName: 'Alan Turing',
-    actorAvatar: '',
-    blogTitle: 'Building AI-Powered Editors',
-    comment: 'This is a brilliant approach to streaming LLM output into a block editor!',
-    actionUrl: 'https://blogs.elixpo.com/selenium-cutlet/building-ai-powered-editors',
-  }),
-
   'notification-published': () => notification({
     type: 'blog_published',
     actorName: 'Elixpo',
     actorAvatar: '',
     blogTitle: 'Introducing LixBlogs 2.0',
+    blogSubtitle: 'A complete rewrite with organizations, collaborative editing, and AI-powered writing.',
+    blogCover: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=300&fit=crop',
+    blogTags: ['Announcement', 'Product', 'Open Source'],
+    blogReadTime: 5,
     actionUrl: 'https://blogs.elixpo.com/elixpo/introducing-lixblogs-2',
   }),
 
-  'notification-liked': () => notification({
-    type: 'blog_liked',
-    actorName: 'Grace Hopper',
-    actorAvatar: '',
-    blogTitle: 'Building AI-Powered Editors',
-    actionUrl: 'https://blogs.elixpo.com/selenium-cutlet/building-ai-powered-editors',
+  'notification-org-created': () => notification({
+    type: 'org_created',
+    actorName: 'selenium-cutlet',
+    actorAvatar: 'https://lh3.googleusercontent.com/a/ACg8ocJlCSczaUeHuK0Vu79xKBwghqBj60V9evGwmf0aO_k36BCZ1aE=s96-c',
+    orgName: 'Elixpo',
+    orgSlug: 'elixpo',
+    orgDescription: 'Building tools for the modern web. Open source, collaborative, and creative.',
+    orgLogoUrl: '',
+    memberCount: 1,
+    actionUrl: 'https://blogs.elixpo.com/elixpo',
   }),
 };
 
