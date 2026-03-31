@@ -640,7 +640,7 @@ export default function WritePage({ slugid }) {
           {/* Hamburger menu */}
           <HamburgerMenu
             onShareDraft={() => {
-              const url = `${window.location.origin}/@${username}/${slug || slugid}`;
+              const url = `${window.location.origin}/${username}/${slug || slugid}`;
               navigator.clipboard.writeText(url).catch(() => {});
             }}
             onChangeCover={() => setShowCoverModal(true)}

@@ -39,7 +39,8 @@ export async function GET(request) {
     // Resolve profile
     if (ns.owner_type === 'user') {
       const user = await db.prepare(`
-        SELECT id, username, display_name, bio, avatar_url, banner_r2_key, created_at
+        SELECT id, username, display_name, bio, avatar_url, banner_r2_key,
+          location, timezone, pronouns, website, company, links, created_at
         FROM users WHERE id = ?
       `).bind(ns.owner_id).first();
 
@@ -97,7 +98,7 @@ export async function GET(request) {
       const org = await db.prepare(`
         SELECT id, slug, name, description, bio, website, links, visibility,
           logo_url, logo_r2_key, banner_url, banner_r2_key, featured_blog_ids,
-          owner_id, created_at
+          timezone, location, contact_email, owner_id, created_at
         FROM orgs WHERE id = ?
       `).bind(ns.owner_id).first();
 
@@ -144,10 +145,14 @@ export async function GET(request) {
         });
       }
 
-      // Org profile — fetch members, collections, blogs
-      const [members, collections, blogs] = await Promise.all([
+      // Org profile — fetch owner, members, collections, blogs
+      const [owner, members, collections, blogs] = await Promise.all([
         db.prepare(`
-          SELECT u.id, u.username, u.display_name, u.avatar_url, om.role
+          SELECT id, username, display_name, avatar_url, bio, created_at
+          FROM users WHERE id = ?
+        `).bind(org.owner_id).first(),
+        db.prepare(`
+          SELECT u.id, u.username, u.display_name, u.avatar_url, om.role, om.joined_at
           FROM org_members om JOIN users u ON u.id = om.user_id
           WHERE om.org_id = ? ORDER BY om.joined_at LIMIT 50
         `).bind(ns.owner_id).all(),
@@ -163,6 +168,7 @@ export async function GET(request) {
       return NextResponse.json({
         type: 'org',
         org,
+        owner: owner || null,
         members: members?.results || [],
         collections: collections?.results || [],
         blogs: blogs?.results || [],

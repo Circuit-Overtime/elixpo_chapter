@@ -102,7 +102,7 @@ export async function PUT(request) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  const { orgId, name, description, bio, website, links, visibility, featured_blog_ids } = await request.json();
+  const { orgId, name, description, bio, website, links, visibility, featured_blog_ids, timezone, location, contact_email } = await request.json();
   if (!orgId) {
     return NextResponse.json({ error: 'Missing orgId' }, { status: 400 });
   }
@@ -128,12 +128,15 @@ export async function PUT(request) {
       UPDATE orgs SET name = COALESCE(?, name), description = COALESCE(?, description),
         bio = COALESCE(?, bio), website = COALESCE(?, website),
         links = COALESCE(?, links), visibility = COALESCE(?, visibility),
-        featured_blog_ids = COALESCE(?, featured_blog_ids), updated_at = ?
+        featured_blog_ids = COALESCE(?, featured_blog_ids),
+        timezone = COALESCE(?, timezone), location = COALESCE(?, location),
+        contact_email = COALESCE(?, contact_email), updated_at = ?
       WHERE id = ?
     `).bind(
       name || null, description || null, bio || null, website || null,
       links ? JSON.stringify(links) : null, visibility || null,
-      featured_blog_ids ? JSON.stringify(featured_blog_ids) : null, now, orgId
+      featured_blog_ids ? JSON.stringify(featured_blog_ids) : null,
+      timezone || null, location || null, contact_email || null, now, orgId
     ).run();
 
     return NextResponse.json({ ok: true });

@@ -86,7 +86,7 @@ export async function POST(request) {
       slugid,
       slug,
       status: targetStatus,
-      url: `/@${session.profile?.username || 'user'}/${slug}`,
+      url: `/${session.profile?.username || 'user'}/${slug}`,
     });
   } catch (e) {
     console.error('Publish error:', e);

@@ -16,6 +16,8 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
+    "dotenv": "^17.3.1",
+    "nodemailer": "^8.0.4",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "typescript": "6.0.2",
