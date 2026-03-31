@@ -66,7 +66,7 @@ export const PDFEmbedBlock = createReactBlockSpec(
                 <line x1="16" y1="17" x2="8" y2="17" />
                 <polyline points="10 9 9 9 8 9" />
               </svg>
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#e0e0e0' }}>Embed PDF</span>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Embed PDF</span>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
@@ -76,7 +76,7 @@ export const PDFEmbedBlock = createReactBlockSpec(
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 placeholder="Paste PDF link..."
                 style={{
-                  flex: 1, background: '#131922', color: '#e0e0e0', border: '1px solid #232d3f',
+                  flex: 1, background: 'var(--bg-app)', color: 'var(--text-primary)', border: '1px solid #232d3f',
                   borderRadius: '8px', padding: '8px 12px', fontSize: '13px', outline: 'none',
                 }}
               />
@@ -100,7 +100,7 @@ export const PDFEmbedBlock = createReactBlockSpec(
       return (
         <div style={{
           display: 'flex', borderRadius: '12px', overflow: 'hidden',
-          border: '1px solid #232d3f', background: '#141a26',
+          border: '1px solid #232d3f', background: 'var(--bg-surface)',
         }}>
           {/* Left — PDF preview iframe */}
           <div style={{
@@ -141,20 +141,20 @@ export const PDFEmbedBlock = createReactBlockSpec(
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: '#e0e0e0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {title || 'Document'}
                 </span>
               </div>
 
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 {fileSize && (
-                  <span style={{ fontSize: '12px', color: '#8896a8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                     {fileSize}
                   </span>
                 )}
                 {pageCount && (
-                  <span style={{ fontSize: '12px', color: '#8896a8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
                     {pageCount} pages
                   </span>
@@ -180,7 +180,7 @@ export const PDFEmbedBlock = createReactBlockSpec(
               <button onClick={handleReplace} style={{
                 padding: '6px 12px', background: 'rgba(255,255,255,0.04)',
                 border: '1px solid #232d3f', borderRadius: '6px',
-                fontSize: '12px', color: '#9ca3af', cursor: 'pointer',
+                fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer',
               }}>
                 Replace
               </button>

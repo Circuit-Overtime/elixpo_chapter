@@ -51,12 +51,12 @@ export default function HistoryPage() {
       <section className="w-full h-[60px]">
         <div className="relative top-0 left-0 w-full h-[60px] border-b-2 border-[#1D202A] flex items-center bg-[#030712] z-[1000]">
           <div className="absolute left-[3%] h-10 w-10 rounded-full bg-[url('/logo.png')] bg-cover"></div>
-          <p className="absolute left-[5%] text-3xl font-bold font-[Kanit,serif] text-white cursor-pointer">LixBlogs</p>
-          <div className="absolute left-[80%] text-white text-[1.3em] cursor-pointer px-2.5 py-1.5 bg-[#10141E] border border-[#7ba8f0] rounded-[15px] flex items-center">
+          <p className="absolute left-[5%] text-3xl font-bold font-[Kanit,serif] text-[var(--text-primary)] cursor-pointer">LixBlogs</p>
+          <div className="absolute left-[80%] text-[var(--text-primary)] text-[1.3em] cursor-pointer px-2.5 py-1.5 bg-[#10141E] border border-[#7ba8f0] rounded-[15px] flex items-center">
             <ion-icon name="pencil" className="text-[0.8em] mr-1 text-[#7ba8f0]"></ion-icon>
             Write
           </div>
-          <div className="absolute left-[88%] text-white text-[1.3em] cursor-pointer">Sign-In</div>
+          <div className="absolute left-[88%] text-[var(--text-primary)] text-[1.3em] cursor-pointer">Sign-In</div>
           <ion-icon name="logo-github" className="githubLogo absolute left-[95%] text-[#888] text-2xl"></ion-icon>
         </div>
       </section>
@@ -74,7 +74,7 @@ export default function HistoryPage() {
           {/* Right Content Area */}
           <div className="historyControl w-[80%] h-full max-h-[calc(100vh-80px)] overflow-y-auto bg-[#030712] px-10 box-border flex flex-col items-start">
             <div className="historyHeader w-full h-[30%] flex flex-row items-center">
-              <h1 className="text-white text-[4em] my-auto font-bold">Reading History</h1>
+              <h1 className="text-[var(--text-primary)] text-[4em] my-auto font-bold">Reading History</h1>
             </div>
 
             <div className="historyNav flex flex-row w-full h-[10%] items-center justify-left gap-10 mt-2 border-b-2 border-[#1D202A]">

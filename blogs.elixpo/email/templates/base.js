@@ -25,7 +25,7 @@ export function baseLayout({ title, body, preheader = '' }) {
 
     <!-- Logo -->
     <div style="text-align:center;padding-bottom:24px">
-      <img src="https://res.cloudinary.com/ds4qzqb4y/image/upload/v1774947344/lixblogs/logo.png" alt="LixBlogs" width="32" height="32" style="display:inline-block;border-radius:8px;vertical-align:middle" />
+      <img src="https://res.cloudinary.com/ds4qzqb4y/image/upload/v1774950476/lixblogs/logo-dark.png" alt="LixBlogs" width="32" height="32" style="display:inline-block;border-radius:8px;vertical-align:middle" />
       <span style="font-size:18px;font-weight:700;color:#1a1a2e;letter-spacing:-0.3px;vertical-align:middle;margin-left:8px">LixBlogs</span>
     </div>
 

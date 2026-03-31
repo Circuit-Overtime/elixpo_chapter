@@ -2,7 +2,7 @@
 
 .edit-page {
   scrollbar-width: thin;
-  scrollbar-color: #2a2e3a transparent;
+  scrollbar-color: var(--bg-elevated) transparent;
 }
 
 .edit-page::-webkit-scrollbar {
@@ -14,19 +14,19 @@
 }
 
 .edit-page::-webkit-scrollbar-thumb {
-  background: #2a2e3a;
+  background: var(--bg-elevated);
   border-radius: 4px;
 }
 
 .edit-page::-webkit-scrollbar-thumb:hover {
-  background: #3a3f4f;
+  background: var(--border-hover);
 }
 
 /* ===== Subtle noise texture background ===== */
 
 .editor-texture-bg {
   position: relative;
-  background-color: #131922;
+  background-color: var(--bg-app);
 }
 
 
@@ -39,7 +39,7 @@
 
 .blog-editor-wrapper .bn-editor {
   background: transparent;
-  color: #e4e4e7;
+  color: var(--text-primary);
   font-family: 'lixFont', sans-serif;
   font-size: 1em;
   line-height: 1.75;
@@ -62,7 +62,7 @@
 
 /* Placeholder */
 .blog-editor-wrapper .bn-inline-content[data-placeholder]::before {
-  color: #566479;
+  color: var(--text-faint);
   font-style: normal;
 }
 
@@ -71,19 +71,19 @@
   font-size: 30px !important;
   font-family: 'lixFont', sans-serif;
   font-weight: 700 !important;
-  color: #e4e4e7;
+  color: var(--text-primary);
 }
 .blog-editor-wrapper .bn-default-styles h2 {
   font-size: 24px !important;
   font-family: 'lixFont', sans-serif;
   font-weight: 650 !important;
-  color: #e4e4e7;
+  color: var(--text-primary);
 }
 .blog-editor-wrapper .bn-default-styles h3 {
   font-size: 20px !important;
   font-family: 'lixFont', sans-serif;
   font-weight: 600 !important;
-  color: #e4e4e7;
+  color: var(--text-primary);
 }
 
 /* Inline code — lavender theme */
@@ -115,7 +115,7 @@
 
 /* Map BlockNote block-level text color (data-text-color on block containers) */
 .blog-editor-wrapper [data-text-color="#ffffff"] { color: #ffffff !important; }
-.blog-editor-wrapper [data-text-color="#9ca3af"] { color: #9ca3af !important; }
+.blog-editor-wrapper [data-text-color="#9ca3af"] { color: var(--text-muted) !important; }
 .blog-editor-wrapper [data-text-color="#f87171"] { color: #f87171 !important; }
 .blog-editor-wrapper [data-text-color="#fb923c"] { color: #fb923c !important; }
 .blog-editor-wrapper [data-text-color="#fbbf24"] { color: #fbbf24 !important; }
@@ -126,7 +126,7 @@
 
 /* Map BlockNote inline text color marks (data-style-type="textColor" with data-value) */
 .blog-editor-wrapper [data-style-type="textColor"][data-value="#ffffff"] { color: #ffffff !important; }
-.blog-editor-wrapper [data-style-type="textColor"][data-value="#9ca3af"] { color: #9ca3af !important; }
+.blog-editor-wrapper [data-style-type="textColor"][data-value="#9ca3af"] { color: var(--text-muted) !important; }
 .blog-editor-wrapper [data-style-type="textColor"][data-value="#f87171"] { color: #f87171 !important; }
 .blog-editor-wrapper [data-style-type="textColor"][data-value="#fb923c"] { color: #fb923c !important; }
 .blog-editor-wrapper [data-style-type="textColor"][data-value="#fbbf24"] { color: #fbbf24 !important; }
@@ -278,16 +278,16 @@
 }
 
 .dark-scrollbar::-webkit-scrollbar-thumb {
-  background: #2a2e3a;
+  background: var(--bg-elevated);
   border-radius: 3px;
 }
 
 .dark-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #3a3f4f;
+  background: var(--border-hover);
 }
 
 /* Firefox */
 .dark-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #2a2e3a transparent;
+  scrollbar-color: var(--bg-elevated) transparent;
 }

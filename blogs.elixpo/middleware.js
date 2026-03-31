@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 
-const PROTECTED_PATHS = ['/settings', '/new-blog'];
+const PROTECTED_PATHS = ['/settings', '/new-blog', '/notifications'];
 
 // All known app route prefixes — anything NOT in this set gets treated as a profile/blog handle
 const APP_ROUTES = new Set([
-  'about', 'api', 'callback', 'feed', 'handle', 'intro', 'library',
-  'login', 'new-blog', 'profile', 'pricing', 'register', 'settings',
+  'about', 'api', 'callback', 'edit', 'feed', 'handle', 'intro', 'library',
+  'login', 'new-blog', 'notifications', 'profile', 'pricing', 'register', 'settings',
   'sign-in', 'sign-up', 'stats', 'stories', 'org',
-  '_next', 'favicon.ico', 'logo.png', 'base-logo.png',
+  '_next', 'favicon.ico', 'logo.png', 'logo-dark.png', 'logo-light.png', 'base-logo.png',
 ]);
 
 export function middleware(request) {

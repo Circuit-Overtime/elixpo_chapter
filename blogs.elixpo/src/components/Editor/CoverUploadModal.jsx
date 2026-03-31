@@ -127,11 +127,11 @@ export default function CoverUploadModal({ onSelect, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100]" onClick={onClose}>
-      <div className="bg-[#141a26] border border-[#232d3f] rounded-2xl w-full max-w-[680px] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl w-full max-w-[680px] shadow-2xl" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#232d3f]">
-          <h3 className="text-sm font-bold text-white">Cover Image</h3>
-          <button onClick={onClose} className="text-[#888] hover:text-white transition-colors">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border-default)]">
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">Cover Image</h3>
+          <button onClick={onClose} className="text-[#888] hover:text-[var(--text-primary)] transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -139,7 +139,7 @@ export default function CoverUploadModal({ onSelect, onClose }) {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-0 border-b border-[#232d3f]">
+        <div className="flex gap-0 border-b border-[var(--border-default)]">
           {[
             { key: 'upload', label: 'Upload' },
             { key: 'gallery', label: 'Gallery' },
@@ -151,7 +151,7 @@ export default function CoverUploadModal({ onSelect, onClose }) {
               className={`flex-1 py-2 text-xs font-medium transition-colors ${
                 tab === t.key
                   ? 'text-[#7ba8f0] border-b-2 border-[#7ba8f0]'
-                  : 'text-[#888] hover:text-white'
+                  : 'text-[#888] hover:text-[var(--text-primary)]'
               }`}
             >
               {t.label}
@@ -164,14 +164,14 @@ export default function CoverUploadModal({ onSelect, onClose }) {
           {tab === 'upload' && !imageSrc && (
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-[#232d3f] rounded-xl h-[200px] flex flex-col items-center justify-center cursor-pointer hover:border-[#7ba8f0] transition-colors"
+              className="border-2 border-dashed border-[var(--border-default)] rounded-xl h-[200px] flex flex-col items-center justify-center cursor-pointer hover:border-[#7ba8f0] transition-colors"
             >
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
-              <p className="text-[#555] text-xs mt-2">Click to upload an image</p>
+              <p className="text-[var(--text-faint)] text-xs mt-2">Click to upload an image</p>
               <p className="text-[#333] text-[10px] mt-1">Recommended: 1200x400 (3:1)</p>
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
             </div>
@@ -202,7 +202,7 @@ export default function CoverUploadModal({ onSelect, onClose }) {
                   onChange={(e) => { setUrlInput(e.target.value); setUrlError(''); }}
                   onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
                   placeholder="Paste an image URL..."
-                  className="flex-1 bg-[#232d3f] text-white rounded-lg px-3 py-2 outline-none text-xs border border-[#333] focus:border-[#7ba8f0] transition-colors"
+                  className="flex-1 bg-[var(--bg-elevated)] text-[var(--text-primary)] rounded-lg px-3 py-2 outline-none text-xs border border-[var(--border-hover)] focus:border-[#7ba8f0] transition-colors"
                 />
                 <button
                   onClick={handleUrlSubmit}
@@ -220,7 +220,7 @@ export default function CoverUploadModal({ onSelect, onClose }) {
             <div className="space-y-3">
               <p className="text-[#888] text-[10px]">Drag to reposition. Scroll to zoom. 3:1 crop.</p>
               <div
-                className="relative rounded-xl overflow-hidden border border-[#232d3f] cursor-grab active:cursor-grabbing mx-auto"
+                className="relative rounded-xl overflow-hidden border border-[var(--border-default)] cursor-grab active:cursor-grabbing mx-auto"
                 style={{ width: '100%', aspectRatio: '3/1', maxHeight: CANVAS_HEIGHT }}
                 onMouseDown={handleMouseDown}
                 onWheel={handleWheel}
@@ -251,7 +251,7 @@ export default function CoverUploadModal({ onSelect, onClose }) {
               <div className="flex gap-2 justify-end">
                 <button
                   onClick={() => { setImageSrc(null); setCrop({ x: 0, y: 0, scale: 1 }); }}
-                  className="px-3 py-1.5 text-xs text-[#888] hover:text-white bg-[#232d3f] rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs text-[#888] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] rounded-lg transition-colors"
                 >
                   Back
                 </button>

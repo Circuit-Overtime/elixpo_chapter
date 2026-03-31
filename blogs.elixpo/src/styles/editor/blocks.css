@@ -1,14 +1,14 @@
 /* ===== Code blocks ===== */
 
 .blog-editor-wrapper [data-content-type="codeBlock"] {
-  background: #131922;
-  border: 1px solid #232d3f;
+  background: var(--bg-app);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   font-family: 'lixCode', monospace;
 }
 
 .blog-editor-wrapper [data-content-type="codeBlock"] code {
-  color: #c9d1d9;
+  color: var(--text-secondary);
   font-size: 0.85em;
   font-family: inherit;
   background: none;
@@ -58,11 +58,11 @@
 }
 
 .blog-editor-wrapper [data-content-type="bulletListItem"]::before {
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .blog-editor-wrapper [data-content-type="numberedListItem"]::before {
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 /* ===== Image blocks ===== */
@@ -79,39 +79,39 @@
 /* ===== Table ===== */
 
 .blog-editor-wrapper [data-content-type="table"] {
-  border-color: #232d3f;
+  border-color: var(--border-default);
 }
 
 .blog-editor-wrapper [data-content-type="table"] td,
 .blog-editor-wrapper [data-content-type="table"] th {
-  border-color: #232d3f;
+  border-color: var(--border-default);
   padding: 8px 12px;
 }
 
 /* Table handles dark theme */
 .blog-editor-wrapper .bn-table-handle {
-  background: #232d3f;
+  background: var(--border-default);
   border: 1px solid #333;
-  color: #8896a8;
+  color: var(--text-muted);
 }
 
 .blog-editor-wrapper .bn-table-handle:hover {
-  background: #2a3346;
+  background: var(--border-hover);
   color: #c4b5fd;
 }
 
 /* Table handle dropdown menu */
 .blog-editor-wrapper .bn-table-handle-menu,
 .bn-table-handle-menu {
-  background: #141a26 !important;
-  border: 1px solid #232d3f !important;
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-default) !important;
   border-radius: 8px !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
 }
 
 .blog-editor-wrapper .bn-table-handle-menu button,
 .bn-table-handle-menu button {
-  color: #e0e0e0 !important;
+  color: var(--text-primary) !important;
 }
 
 .blog-editor-wrapper .bn-table-handle-menu button:hover,
@@ -124,7 +124,7 @@
 .blog-editor-wrapper .bn-extend-button {
   background: rgba(196, 181, 253, 0.08);
   border: 1px dashed rgba(196, 181, 253, 0.2);
-  color: #8896a8;
+  color: var(--text-muted);
   transition: all 0.15s;
 }
 
@@ -137,7 +137,7 @@
 /* ===== KaTeX overrides ===== */
 
 .blog-editor-wrapper .katex {
-  color: #e0e0e0;
+  color: var(--text-primary);
   font-size: 1.1em;
 }
 
@@ -164,9 +164,9 @@
 /* ===== Mermaid diagram blocks ===== */
 
 .mermaid-block {
-  border: 1px solid #232d3f;
+  border: 1px solid var(--border-default);
   border-radius: 12px;
-  background: #141a26;
+  background: var(--bg-surface);
   my: 8px;
   overflow: hidden;
 }
@@ -179,7 +179,7 @@
   padding: 32px 16px;
   border-style: dashed;
   background: rgba(20, 26, 38, 0.5);
-  color: #8896a8;
+  color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
@@ -201,17 +201,17 @@
   padding: 10px 14px 0;
   font-size: 11px;
   font-weight: 500;
-  color: #8896a8;
+  color: var(--text-muted);
 }
 
 .mermaid-block-textarea {
   width: 100%;
-  background: #131922;
+  background: var(--bg-app);
   border: none;
-  border-top: 1px solid #232d3f;
+  border-top: 1px solid var(--border-default);
   margin-top: 8px;
   padding: 12px 14px;
-  color: #e0e0e0;
+  color: var(--text-primary);
   font-family: 'lixCode', monospace;
   font-size: 13px;
   resize: vertical;
@@ -220,7 +220,7 @@
 }
 
 .mermaid-block-textarea::placeholder {
-  color: #6b7a8d;
+  color: var(--text-faint);
 }
 
 .mermaid-block-actions {
@@ -228,7 +228,7 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 8px 14px;
-  border-top: 1px solid #232d3f;
+  border-top: 1px solid var(--border-default);
 }
 
 .mermaid-btn-cancel {
@@ -323,7 +323,7 @@
   gap: 4px;
   background: rgba(14, 18, 27, 0.85);
   backdrop-filter: blur(12px);
-  border: 1px solid #232d3f;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 4px 6px;
   z-index: 5;
@@ -338,7 +338,7 @@
   background: none;
   border: none;
   border-radius: 5px;
-  color: #8896a8;
+  color: var(--text-muted);
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
 }
@@ -350,7 +350,7 @@
 
 .mermaid-zoom-label {
   font-size: 11px;
-  color: #6b7a8d;
+  color: var(--text-faint);
   min-width: 36px;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -381,14 +381,14 @@
   background: rgba(14, 18, 27, 0.85);
   border: 1px solid #333;
   border-radius: 6px;
-  color: #8896a8;
+  color: var(--text-muted);
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
 }
 
 .mermaid-hover-btn:hover {
   color: white;
-  background: #232d3f;
+  background: var(--border-default);
 }
 
 .mermaid-hover-delete:hover {
@@ -418,7 +418,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6b7a8d;
+  color: var(--text-faint);
   margin-bottom: 8px;
   padding-left: 12px;
 }
@@ -456,7 +456,7 @@
 
 .editor-outline-text {
   font-size: 13px;
-  color: #8896a8;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

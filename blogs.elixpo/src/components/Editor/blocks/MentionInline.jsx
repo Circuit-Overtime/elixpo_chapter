@@ -73,16 +73,16 @@ function MentionChip({ username, displayName, avatarUrl }) {
               <div style={{
                 width: 40, height: 40, borderRadius: '50%', background: '#232d3f',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 16, fontWeight: 700, color: '#9ca3af',
+                fontSize: 16, fontWeight: 700, color: 'var(--text-muted)',
               }}>
                 {(displayName || username || '?')[0].toUpperCase()}
               </div>
             )}
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#e0e0e0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {u?.display_name || displayName || username}
               </div>
-              <div style={{ fontSize: 11, color: '#8896a8' }}>@{username}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>@{username}</div>
             </div>
           </div>
 
@@ -94,11 +94,11 @@ function MentionChip({ username, displayName, avatarUrl }) {
           )}
 
           {/* Stats row */}
-          <div style={{ display: 'flex', gap: '14px', fontSize: 12, color: '#8896a8', marginBottom: '10px' }}>
-            <span><strong style={{ color: '#e0e0e0' }}>{u?.followers ?? 0}</strong> followers</span>
-            <span><strong style={{ color: '#e0e0e0' }}>{u?.following ?? 0}</strong> following</span>
+          <div style={{ display: 'flex', gap: '14px', fontSize: 12, color: 'var(--text-muted)', marginBottom: '10px' }}>
+            <span><strong style={{ color: 'var(--text-primary)' }}>{u?.followers ?? 0}</strong> followers</span>
+            <span><strong style={{ color: 'var(--text-primary)' }}>{u?.following ?? 0}</strong> following</span>
             {(profile?.blogs?.length > 0) && (
-              <span><strong style={{ color: '#e0e0e0' }}>{profile.blogs.length}</strong> blogs</span>
+              <span><strong style={{ color: 'var(--text-primary)' }}>{profile.blogs.length}</strong> blogs</span>
             )}
           </div>
 

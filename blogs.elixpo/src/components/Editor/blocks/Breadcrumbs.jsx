@@ -30,18 +30,18 @@ export const Breadcrumbs = createReactBlockSpec(
 
       if (editing) {
         return (
-          <div className="border border-[#232d3f] rounded-xl bg-[#141a26] p-4 my-2">
-            <p className="text-[11px] text-[#8896a8] font-medium mb-2">Breadcrumbs (one per line: label|url)</p>
+          <div className="border border-[var(--border-default)] rounded-xl bg-[var(--bg-surface)] p-4 my-2">
+            <p className="text-[11px] text-[var(--text-muted)] font-medium mb-2">Breadcrumbs (one per line: label|url)</p>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={"Home|/\nBlog|/blog\nCurrent Page"}
               rows={4}
-              className="w-full bg-[#131922] border border-[#232d3f] rounded-lg p-3 text-[13px] text-[#e0e0e0] font-mono resize-none outline-none focus:border-[#333] placeholder-[#6b7a8d]"
+              className="w-full bg-[var(--bg-app)] border border-[var(--border-default)] rounded-lg p-3 text-[13px] text-[var(--text-primary)] font-mono resize-none outline-none focus:border-[var(--border-hover)] placeholder-[#6b7a8d]"
             />
             <div className="flex justify-end gap-2 mt-2">
               <button onClick={() => setEditing(false)} className="px-3 py-1 text-[12px] text-[#888]">Cancel</button>
-              <button onClick={save} className="px-3 py-1 text-[12px] bg-[#9b7bf7] text-white rounded-md font-medium hover:bg-[#b69aff] transition-colors">Done</button>
+              <button onClick={save} className="px-3 py-1 text-[12px] bg-[#9b7bf7] text-[var(--text-primary)] rounded-md font-medium hover:bg-[#b69aff] transition-colors">Done</button>
             </div>
           </div>
         );
@@ -55,7 +55,7 @@ export const Breadcrumbs = createReactBlockSpec(
               {item.href ? (
                 <span className="text-[#9b7bf7] hover:text-[#b69aff] cursor-pointer transition-colors">{item.label}</span>
               ) : (
-                <span className="text-[#9ca3af]">{item.label}</span>
+                <span className="text-[var(--text-muted)]">{item.label}</span>
               )}
             </span>
           ))}

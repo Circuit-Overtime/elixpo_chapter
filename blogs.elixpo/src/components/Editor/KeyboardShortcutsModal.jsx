@@ -7,6 +7,7 @@ const SHORTCUT_GROUPS = [
     title: 'General',
     shortcuts: [
       { keys: ['Ctrl', 'S'], desc: 'Save & sync to cloud' },
+      { keys: ['Ctrl', 'Shift', 'P'], desc: 'Toggle editor / preview' },
       { keys: ['Ctrl', 'Z'], desc: 'Undo' },
       { keys: ['Ctrl', 'Shift', 'Z'], desc: 'Redo' },
       { keys: ['Ctrl', 'A'], desc: 'Select all' },
@@ -68,20 +69,20 @@ export default function KeyboardShortcutsModal({ onClose }) {
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div
         ref={ref}
-        className="w-full max-w-[520px] max-h-[80vh] bg-[#141a26]/95 backdrop-blur-xl border border-[rgba(196,181,253,0.15)] rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-[520px] max-h-[80vh] bg-[var(--bg-surface)]/95 backdrop-blur-xl border border-[rgba(196,181,253,0.15)] rounded-2xl shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#232d3f]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-default)]">
           <div className="flex items-center gap-2.5">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="2" y="4" width="20" height="16" rx="2" />
               <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10" />
             </svg>
-            <h2 className="text-[15px] font-bold text-white">Keyboard Shortcuts</h2>
+            <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Keyboard Shortcuts</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-[#6b7a8d] hover:text-white transition-colors p-1"
+            className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors p-1"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -97,7 +98,7 @@ export default function KeyboardShortcutsModal({ onClose }) {
               <div className="space-y-1.5">
                 {group.shortcuts.map((s, i) => (
                   <div key={i} className="flex items-center justify-between py-1.5">
-                    <span className="text-[13px] text-[#9ca3af]">{s.desc}</span>
+                    <span className="text-[13px] text-[var(--text-muted)]">{s.desc}</span>
                     <div className="flex items-center gap-1">
                       {s.keys.map((key, j) => (
                         <span key={j}>
