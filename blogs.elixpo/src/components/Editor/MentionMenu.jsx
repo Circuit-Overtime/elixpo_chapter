@@ -45,7 +45,7 @@ export default function MentionMenu({ editor, query, onClose }) {
           setLoading(false);
         })
         .catch(() => setLoading(false));
-    }, 300);
+    }, 600);
 
     return () => { clearTimeout(timer); controller.abort(); };
   }, [query]);

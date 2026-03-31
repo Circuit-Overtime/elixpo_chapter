@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
+import TabBar from '../components/TabBar';
 import BannerUploadModal from '../components/BannerUploadModal';
 import Link from 'next/link';
 
@@ -226,11 +227,14 @@ export default function ProfilePage() {
 
         <div className="h-px bg-[#232d3f] mb-8" />
 
-        {/* Blog tabs */}
-        <div className="flex gap-6 border-b border-[#232d3f] mb-8">
-          <button className="pb-3 text-[14px] font-medium text-white border-b-2 border-white">Published</button>
-          <button className="pb-3 text-[14px] font-medium text-[#9ca3af] border-b-2 border-transparent hover:text-[#b0b0b0] transition-colors">Drafts</button>
-        </div>
+        <TabBar
+          tabs={[
+            { label: 'Published', icon: 'globe-outline' },
+            { label: 'Drafts', icon: 'document-outline' },
+          ]}
+          active={0}
+          onChange={() => {}}
+        />
 
         {/* Empty state */}
         <div className="text-center py-16">
