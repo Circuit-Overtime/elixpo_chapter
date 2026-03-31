@@ -99,4 +99,71 @@ export function getBannerUrl(publicId) {
   return getCloudinaryUrl(publicId, BANNER_TRANSFORMS);
 }
 
+/**
+ * Deterministic avatar paths on Cloudinary.
+ * Re-uploads overwrite the same public_id — one stable URL per entity.
+ *
+ *  Users: lixblogs/avatars/users/{username}
+ *  Orgs:  lixblogs/avatars/orgs/{slug}
+ */
+export function userAvatarPublicId(username) {
+  return `lixblogs/avatars/users/${username}`;
+}
+
+export function orgAvatarPublicId(slug) {
+  return `lixblogs/avatars/orgs/${slug}`;
+}
+
+/** Get the full Cloudinary URL for a user avatar at the deterministic path */
+export function userAvatarCdnUrl(username) {
+  const config = getConfig();
+  return `https://res.cloudinary.com/${config.cloudName}/image/upload/${AVATAR_TRANSFORMS}/${userAvatarPublicId(username)}`;
+}
+
+/** Get the full Cloudinary URL for an org avatar at the deterministic path */
+export function orgAvatarCdnUrl(slug) {
+  const config = getConfig();
+  return `https://res.cloudinary.com/${config.cloudName}/image/upload/${AVATAR_TRANSFORMS}/${orgAvatarPublicId(slug)}`;
+}
+
+/**
+ * Upload a remote image URL to Cloudinary at a deterministic public_id.
+ * Used to mirror OAuth avatars (Google, etc.) onto Cloudinary.
+ */
+export async function uploadRemoteAvatar(imageUrl, publicId) {
+  const config = getConfig();
+  const timestamp = Math.floor(Date.now() / 1000);
+
+  const params = {
+    invalidate: 'true',
+    overwrite: 'true',
+    public_id: publicId,
+    timestamp: timestamp.toString(),
+  };
+
+  const signStr = Object.keys(params).sort().map(k => `${k}=${params[k]}`).join('&') + config.apiSecret;
+  const signature = await sha1(signStr);
+
+  const formData = new FormData();
+  formData.append('file', imageUrl);
+  formData.append('public_id', publicId);
+  formData.append('overwrite', 'true');
+  formData.append('invalidate', 'true');
+  formData.append('timestamp', timestamp.toString());
+  formData.append('api_key', config.apiKey);
+  formData.append('signature', signature);
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`,
+    { method: 'POST', body: formData }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Cloudinary remote upload failed: ${err}`);
+  }
+
+  return res.json();
+}
+
 export { PROFILE_TRANSFORMS, AVATAR_TRANSFORMS, BANNER_TRANSFORMS };

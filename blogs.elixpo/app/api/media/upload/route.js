@@ -94,20 +94,35 @@ export async function POST(request) {
     }
 
     // Build Cloudinary folder and public_id
+    // Avatars use deterministic slug-based paths so URLs are stable and human-readable
     let folder, publicId;
     switch (mediaType) {
-      case 'avatar':
-        folder = `lixblogs/users/${session.userId}`;
-        publicId = 'avatar';
+      case 'avatar': {
+        // Deterministic: lixblogs/avatars/users/{username}
+        let username = session.userId;
+        if (db) {
+          const u = await db.prepare('SELECT username FROM users WHERE id = ?').bind(session.userId).first();
+          if (u?.username) username = u.username;
+        }
+        folder = 'lixblogs/avatars/users';
+        publicId = username;
         break;
+      }
       case 'banner':
         folder = `lixblogs/users/${session.userId}`;
         publicId = 'banner';
         break;
-      case 'org_avatar':
-        folder = `lixblogs/orgs/${orgId}`;
-        publicId = 'avatar';
+      case 'org_avatar': {
+        // Deterministic: lixblogs/avatars/orgs/{slug}
+        let orgSlug = orgId;
+        if (db) {
+          const o = await db.prepare('SELECT slug FROM orgs WHERE id = ?').bind(orgId).first();
+          if (o?.slug) orgSlug = o.slug;
+        }
+        folder = 'lixblogs/avatars/orgs';
+        publicId = orgSlug;
         break;
+      }
       case 'org_banner':
         folder = `lixblogs/orgs/${orgId}`;
         publicId = 'banner';
