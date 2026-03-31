@@ -1,31 +1,31 @@
 import { NextResponse } from 'next/server';
 
-// Routes that require authentication — redirect to /sign-in if no session
-const PROTECTED_PATHS = [
-  '/settings',
-  '/new-blog',
-  '/intro',
-];
+const PROTECTED_PATHS = ['/settings', '/new-blog'];
+
+// All known app route prefixes — anything NOT in this set gets treated as a profile/blog handle
+const APP_ROUTES = new Set([
+  'about', 'api', 'callback', 'feed', 'handle', 'intro', 'library',
+  'login', 'new-blog', 'profile', 'pricing', 'register', 'settings',
+  'sign-in', 'sign-up', 'stats', 'stories', 'org',
+  '_next', 'favicon.ico', 'logo.png', 'base-logo.png',
+]);
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;
 
-  // Rewrite /@name/... paths to /handle/name/... (Next.js treats @ as parallel route prefix)
-  if (pathname.startsWith('/@')) {
-    const rest = pathname.slice(2).toLowerCase(); // remove "/@", normalize case
-    const rewriteUrl = new URL(`/handle/${rest}`, request.url);
-    rewriteUrl.search = request.nextUrl.search;
-    return NextResponse.rewrite(rewriteUrl);
-  }
+  // Get the first path segment (e.g. /elixpo/slug → "elixpo")
+  const segments = pathname.split('/').filter(Boolean);
+  const firstSegment = segments[0] || '';
 
-  // Only protect specific routes — everything else is public
+  // Dynamic handle routes are now served by app/[...path]/page.jsx directly
+  // (no middleware rewrite needed)
+
+  // Auth protection
   const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
-
   if (isProtected) {
     const session = request.cookies.get('lixblogs_session')?.value;
     if (!session) {
-      const signInUrl = new URL('/sign-in', request.url);
-      return NextResponse.redirect(signInUrl);
+      return NextResponse.redirect(new URL('/sign-in', request.url));
     }
   }
 

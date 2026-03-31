@@ -13,7 +13,7 @@ const TABS = [
 
 function StoryCard({ story, onDelete }) {
   const isDraft = story.status === 'draft';
-  const editUrl = `/${story.slugid || story.id}/edit`;
+  const editUrl = `/edit/${story.slugid || story.id}`;
 
   return (
     <article className="flex gap-5 py-6 border-b border-[#232d3f] last:border-b-0">

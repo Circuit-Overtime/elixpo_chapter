@@ -57,7 +57,7 @@ function ProfileDropdown({ user, logout }) {
         <div className="absolute right-0 top-full mt-2 w-[280px] bg-[#171d2a] border border-[#2a3344] rounded-2xl shadow-2xl z-50 overflow-hidden" style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03)' }}>
           {/* User info header — darker contrast bg */}
           <Link
-            href={`/@${user.username}`}
+            href={`/${user.username}`}
             onClick={() => setOpen(false)}
             className="flex items-center gap-3.5 px-5 py-4 bg-[#131922] hover:bg-[#161c28] transition-colors"
           >
@@ -85,7 +85,7 @@ function ProfileDropdown({ user, logout }) {
                 {orgs.slice(0, 4).map(org => (
                   <Link
                     key={org.id}
-                    href={`/@${org.slug}`}
+                    href={`/${org.slug}`}
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-3 px-5 py-2 text-[13px] text-[#c8c8c8] hover:text-white hover:bg-[#ffffff06] transition-colors"
                   >

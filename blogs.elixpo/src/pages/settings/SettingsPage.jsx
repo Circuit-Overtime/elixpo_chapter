@@ -61,71 +61,228 @@ function DropdownSelect({ value, options, onChange }) {
   );
 }
 
+const TIMEZONES = [
+  '', 'UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+  'America/Sao_Paulo', 'America/Argentina/Buenos_Aires', 'Europe/London', 'Europe/Paris',
+  'Europe/Berlin', 'Europe/Moscow', 'Asia/Dubai', 'Asia/Kolkata', 'Asia/Shanghai',
+  'Asia/Tokyo', 'Asia/Seoul', 'Asia/Singapore', 'Australia/Sydney', 'Pacific/Auckland',
+  'Africa/Cairo', 'Africa/Nairobi', 'Africa/Lagos',
+];
+
+const USER_LINK_PRESETS = [
+  { key: 'website', label: 'Website', icon: 'globe-outline', placeholder: 'https://example.com' },
+  { key: 'github', label: 'GitHub', icon: 'logo-github', placeholder: 'https://github.com/username' },
+  { key: 'twitter', label: 'X / Twitter', icon: 'logo-twitter', placeholder: 'https://x.com/username' },
+  { key: 'linkedin', label: 'LinkedIn', icon: 'logo-linkedin', placeholder: 'https://linkedin.com/in/username' },
+  { key: 'mastodon', label: 'Mastodon', icon: 'globe-outline', placeholder: 'https://mastodon.social/@user' },
+  { key: 'custom', label: 'Custom Link', icon: 'link-outline', placeholder: 'https://...' },
+];
+
 // ── Account Tab ──
-function AccountTab({ user }) {
+function AccountTab({ user, refetchUser }) {
+  const [displayName, setDisplayName] = useState(user.display_name || '');
   const [bio, setBio] = useState(user.bio || '');
+  const [pronouns, setPronouns] = useState(user.pronouns || '');
+  const [location, setLocation] = useState(user.location || '');
+  const [timezone, setTimezone] = useState(user.timezone || '');
+  const [website, setWebsite] = useState(user.website || '');
+  const [company, setCompany] = useState(user.company || '');
+  const [links, setLinks] = useState(() => {
+    try { const p = JSON.parse(user.links || '[]'); return Array.isArray(p) ? p : []; } catch { return []; }
+  });
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [digestFreq, setDigestFreq] = useState('daily');
+
+  const addLink = (preset) => setLinks([...links, { type: preset.key, label: preset.label, url: '' }]);
+  const updateLink = (i, field, value) => { const u = [...links]; u[i] = { ...u[i], [field]: value }; setLinks(u); };
+  const removeLink = (i) => setLinks(links.filter((_, idx) => idx !== i));
+  const addedTypes = new Set(links.map(l => l.type));
+
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          display_name: displayName, bio, pronouns, location, timezone, website, company,
+          links: links.filter(l => l.url?.trim()),
+        }),
+      });
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+        refetchUser?.();
+      }
+    } catch {}
+    setSaving(false);
+  };
+
+  const inputCls = "w-full bg-[#0c1017] text-[#e0e0e0] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[#1e2736] focus:border-[#9b7bf7]/50 transition-colors placeholder-[#6b7f99]";
 
   return (
-    <div>
-      <SettingRow
-        title="Email"
-        right={<span className="text-[14px] text-[#9ca3af]">{user.email}</span>}
-      />
-      <SettingRow
-        title="Username"
-        right={<span className="text-[14px] text-[#9ca3af]">@{user.username}</span>}
-      />
-      <SettingRow
-        title="Display Name"
-        right={<span className="text-[14px] text-[#9ca3af]">{user.display_name || 'Not set'}</span>}
-      />
-      <SettingRow
-        title="Locale"
-        right={<span className="text-[14px] text-[#9ca3af]">{user.locale || 'en'}</span>}
-      />
-
-      <div className="py-4">
-        <label className="block text-[14px] text-[#e0e0e0] font-medium mb-2">Bio</label>
-        <textarea
-          value={bio}
-          onChange={(e) => { setBio(e.target.value); setSaved(false); }}
-          rows={3}
-          className="w-full bg-[#141a26] border border-[#232d3f] rounded-lg p-3 text-[14px] text-[#c8c8c8] resize-none focus:outline-none focus:border-[#333] transition-colors placeholder-[#6b7a8d]"
-          placeholder="Tell readers about yourself..."
-        />
-        {saved && <p className="text-[#4ade80] text-[12px] mt-1.5">Changes saved!</p>}
-      </div>
-      <div className="h-px bg-[#232d3f]" />
-
-      <SettingRow
-        title="LixBlogs Digest"
-        description="How often you receive our curated digest email."
-        right={
-          <div className="flex gap-1.5">
-            {['daily', 'weekly', 'monthly'].map((f) => (
-              <button
-                key={f}
-                onClick={() => setDigestFreq(f)}
-                className={`px-3 py-1 text-[12px] rounded-full border transition-colors capitalize ${
-                  digestFreq === f
-                    ? 'border-white text-white'
-                    : 'border-[#232d3f] text-[#9ca3af] hover:text-[#b0b0b0] hover:border-[#333]'
-                }`}
-              >
-                {f}
-              </button>
-            ))}
+    <div className="space-y-8">
+      {/* ── Identity ── */}
+      <section>
+        <h3 className="text-[11px] font-semibold text-[#5a657a] uppercase tracking-widest mb-4">Profile</h3>
+        <div className="space-y-4">
+          <div className="flex items-center gap-4 p-4 bg-[#111823] border border-[#1e2736] rounded-xl">
+            {user.avatar_url ? (
+              <img src={user.avatar_url} alt="" className="h-16 w-16 rounded-full object-cover ring-2 ring-[#1e2736]" />
+            ) : (
+              <div className="h-16 w-16 rounded-full bg-[#1a2030] flex items-center justify-center text-2xl text-[#7c8a9e] font-bold ring-2 ring-[#1e2736]">
+                {(user.display_name || user.username || '?')[0].toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-[15px] text-white font-semibold">{user.display_name || user.username}</p>
+              <p className="text-[13px] text-[#5a657a]">@{user.username} &middot; {user.email}</p>
+            </div>
           </div>
-        }
-      />
 
-      <div className="mt-12 space-y-3">
-        <button className="text-[13px] text-red-400 hover:text-red-300 transition-colors">Disable Account</button>
-        <br />
-        <button className="text-[13px] text-red-400 hover:text-red-300 transition-colors">Delete Account</button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[13px] text-[#e0e0e0] mb-1 block font-medium">Display name</label>
+              <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your name" className={inputCls} />
+            </div>
+            <div>
+              <label className="text-[13px] text-[#e0e0e0] mb-1 block font-medium">Pronouns</label>
+              <select value={pronouns} onChange={e => setPronouns(e.target.value)} className={inputCls}>
+                <option value="">Don&apos;t specify</option>
+                <option value="he/him">he/him</option>
+                <option value="she/her">she/her</option>
+                <option value="they/them">they/them</option>
+                <option value="he/they">he/they</option>
+                <option value="she/they">she/they</option>
+                <option value="custom">Custom</option>
+              </select>
+              {pronouns === 'custom' && (
+                <input value={pronouns} onChange={e => setPronouns(e.target.value)} placeholder="Your pronouns" className={`${inputCls} mt-2`} />
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[13px] text-[#e0e0e0] mb-1 block font-medium">Bio</label>
+            <p className="text-[11px] text-[#5a657a] mb-2">Tell readers a little about yourself</p>
+            <textarea
+              value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Developer, writer, creator..."
+              maxLength={300}
+              className={`${inputCls} resize-none`}
+            />
+            <p className="text-[10px] text-[#6b7f99] mt-1 text-right">{bio.length}/300</p>
+          </div>
+        </div>
+      </section>
+
+      <div className="h-px bg-[#1e2736]" />
+
+      {/* ── Location & Work ── */}
+      <section>
+        <h3 className="text-[11px] font-semibold text-[#5a657a] uppercase tracking-widest mb-4">Location & Work</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-[13px] text-[#e0e0e0] mb-1 block font-medium">Location</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7f99]"><ion-icon name="location-outline" style={{ fontSize: '15px' }} /></span>
+              <input value={location} onChange={e => setLocation(e.target.value)} placeholder="City, Country" className={`${inputCls} pl-9`} />
+            </div>
+          </div>
+          <div>
+            <label className="text-[13px] text-[#e0e0e0] mb-1 block font-medium">Company</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7f99]"><ion-icon name="business-outline" style={{ fontSize: '15px' }} /></span>
+              <input value={company} onChange={e => setCompany(e.target.value)} placeholder="Where you work" className={`${inputCls} pl-9`} />
+            </div>
+          </div>
+          <div>
+            <label className="text-[13px] text-[#e0e0e0] mb-1 block font-medium">Timezone</label>
+            <select value={timezone} onChange={e => setTimezone(e.target.value)} className={inputCls}>
+              <option value="">Select timezone...</option>
+              {TIMEZONES.filter(Boolean).map(tz => <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[13px] text-[#e0e0e0] mb-1 block font-medium">Website</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7f99]"><ion-icon name="globe-outline" style={{ fontSize: '15px' }} /></span>
+              <input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yoursite.com" className={`${inputCls} pl-9`} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="h-px bg-[#1e2736]" />
+
+      {/* ── Social Links ── */}
+      <section>
+        <h3 className="text-[11px] font-semibold text-[#5a657a] uppercase tracking-widest mb-1">Social Links</h3>
+        <p className="text-[11px] text-[#5a657a] mb-4">Add links to your profiles on other platforms.</p>
+
+        {links.length > 0 && (
+          <div className="space-y-2.5 mb-4">
+            {links.map((link, i) => {
+              const preset = USER_LINK_PRESETS.find(p => p.key === link.type) || USER_LINK_PRESETS.at(-1);
+              return (
+                <div key={i} className="flex items-center gap-3 p-3 bg-[#111823] border border-[#1e2736] rounded-xl group">
+                  <div className="h-8 w-8 rounded-lg bg-[#0c1017] flex items-center justify-center shrink-0">
+                    <ion-icon name={preset.icon} style={{ fontSize: '16px', color: '#7c8a9e' }} />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    {link.type === 'custom' && (
+                      <input value={link.label || ''} onChange={e => updateLink(i, 'label', e.target.value)} placeholder="Label"
+                        className="w-full bg-transparent text-[12px] text-[#e0e0e0] outline-none placeholder-[#6b7f99] font-medium" />
+                    )}
+                    {link.type !== 'custom' && (
+                      <p className="text-[11px] text-[#5a657a] font-medium">{preset.label}</p>
+                    )}
+                    <input value={link.url || ''} onChange={e => updateLink(i, 'url', e.target.value)} placeholder={preset.placeholder}
+                      className="w-full bg-transparent text-[13px] text-[#e0e0e0] outline-none placeholder-[#6b7f99]" />
+                  </div>
+                  <button onClick={() => removeLink(i)} className="text-[#6b7f99] hover:text-[#f87171] transition-colors p-1 opacity-0 group-hover:opacity-100">
+                    <ion-icon name="trash-outline" style={{ fontSize: '15px' }} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          {USER_LINK_PRESETS.map(preset => (
+            <button key={preset.key} onClick={() => addLink(preset)}
+              disabled={preset.key !== 'custom' && addedTypes.has(preset.key)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111823] border border-[#1e2736] rounded-lg text-[12px] text-[#7c8a9e] hover:text-white hover:border-[#2d3a4d] transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+              <ion-icon name={preset.icon} style={{ fontSize: '13px' }} />
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <div className="h-px bg-[#1e2736]" />
+
+      {/* ── Save ── */}
+      <div className="flex items-center gap-3">
+        <button onClick={handleSave} disabled={saving}
+          className="px-6 py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40">
+          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Profile'}
+        </button>
+        {saved && <span className="text-[12px] text-[#4ade80] flex items-center gap-1"><ion-icon name="checkmark-circle" style={{ fontSize: '14px' }} /> Profile updated</span>}
       </div>
+
+      <div className="h-px bg-[#1e2736]" />
+
+      {/* ── Danger zone ── */}
+      <section>
+        <h3 className="text-[11px] font-semibold text-[#f8717180] uppercase tracking-widest mb-4">Danger Zone</h3>
+        <div className="space-y-2">
+          <button className="text-[13px] text-[#f87171]/70 hover:text-[#f87171] transition-colors">Disable Account</button>
+          <br />
+          <button className="text-[13px] text-[#f87171]/70 hover:text-[#f87171] transition-colors">Delete Account</button>
+        </div>
+      </section>
     </div>
   );
 }
@@ -687,7 +844,7 @@ function SubscriptionTab() {
 
 // ── Main Settings Page ──
 export default function SettingsPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, refetchUser } = useAuth();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
   const initialTab = tabParam ? TABS.findIndex(t => t.toLowerCase() === tabParam.toLowerCase()) : 0;
@@ -729,7 +886,7 @@ export default function SettingsPage() {
 
         <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-        {activeTab === 0 && <AccountTab user={user} />}
+        {activeTab === 0 && <AccountTab user={user} refetchUser={refetchUser} />}
         {activeTab === 1 && <PublishingTab user={user} />}
         {activeTab === 2 && <NotificationsTab />}
         {activeTab === 3 && <OrganizationTab user={user} />}
