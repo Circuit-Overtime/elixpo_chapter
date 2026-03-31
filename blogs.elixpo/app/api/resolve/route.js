@@ -1,12 +1,24 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
+import { decompressBlogContent } from '../../../lib/compress';
+
+function decompressBlog(blog) {
+  if (!blog) return blog;
+  try {
+    blog.content = decompressBlogContent(blog.content);
+  } catch {
+    // If decompression fails, try parsing as raw JSON
+    try { blog.content = JSON.parse(blog.content); } catch { /* leave as-is */ }
+  }
+  return blog;
+}
 
 // Resolve @name to user or org, optionally fetch a blog by slug
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const name = (searchParams.get('name') || '').trim().toLowerCase();
-  const slug = searchParams.get('slug') || '';
-  const collection = searchParams.get('collection') || '';
+  const slug = (searchParams.get('slug') || '').trim().toLowerCase();
+  const collection = (searchParams.get('collection') || '').trim().toLowerCase();
 
   if (!name) {
     return NextResponse.json({ error: 'Missing name' }, { status: 400 });
@@ -42,7 +54,7 @@ export async function GET(request) {
             u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
           FROM blogs b
           JOIN users u ON u.id = b.author_id
-          WHERE b.slug = ? AND b.author_id = ? AND b.status IN ('published', 'unlisted')
+          WHERE LOWER(b.slug) = ? AND b.author_id = ? AND b.status IN ('published', 'unlisted')
         `).bind(slug, ns.owner_id).first();
 
         if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
@@ -54,7 +66,7 @@ export async function GET(request) {
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'user', ...user },
-          blog: { ...blog, tags: (tags?.results || []).map(t => t.tag) },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag) },
         });
       }
 
@@ -93,14 +105,14 @@ export async function GET(request) {
 
       // If collection + slug, find blog in collection
       if (collection && slug) {
-        const col = await db.prepare('SELECT id FROM collections WHERE org_id = ? AND slug = ?')
+        const col = await db.prepare('SELECT id FROM collections WHERE org_id = ? AND LOWER(slug) = ?')
           .bind(ns.owner_id, collection).first();
         if (!col) return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
 
         const blog = await db.prepare(`
           SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
           FROM blogs b JOIN users u ON u.id = b.author_id
-          WHERE b.slug = ? AND b.collection_id = ? AND b.status IN ('published', 'unlisted')
+          WHERE LOWER(b.slug) = ? AND b.collection_id = ? AND b.status IN ('published', 'unlisted')
         `).bind(slug, col.id).first();
 
         if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
@@ -110,7 +122,7 @@ export async function GET(request) {
           type: 'blog',
           owner: { type: 'org', ...org },
           collection: { id: col.id, slug: collection },
-          blog: { ...blog, tags: (tags?.results || []).map(t => t.tag) },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag) },
         });
       }
 
@@ -119,7 +131,7 @@ export async function GET(request) {
         const blog = await db.prepare(`
           SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
           FROM blogs b JOIN users u ON u.id = b.author_id
-          WHERE b.slug = ? AND b.published_as = ? AND b.status IN ('published', 'unlisted')
+          WHERE LOWER(b.slug) = ? AND b.published_as = ? AND b.status IN ('published', 'unlisted')
         `).bind(slug, `org:${ns.owner_id}`).first();
 
         if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
@@ -128,7 +140,7 @@ export async function GET(request) {
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'org', ...org },
-          blog: { ...blog, tags: (tags?.results || []).map(t => t.tag) },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag) },
         });
       }
 

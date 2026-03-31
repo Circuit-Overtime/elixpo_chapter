@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { generatePixelAvatar } from '../../utils/pixelAvatar';
 import AppShell from '../../components/AppShell';
@@ -359,16 +360,35 @@ function CreateOrgModal({ onClose, onCreated }) {
   const [description, setDescription] = useState('');
   const [bio, setBio] = useState('');
   const [website, setWebsite] = useState('');
-  const [visibility, setVisibility] = useState('public');
+  const [contactEmail, setContactEmail] = useState('');
+  const [category, setCategory] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const [slugAvailable, setSlugAvailable] = useState(null);
   const [suggestions] = useState(() => getRandomOrgNames(3));
+  const [avatarSeed] = useState(() => `org-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`);
 
   useEffect(() => {
     if (name) {
       setSlug(name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 40));
     }
   }, [name]);
+
+  // Check slug availability (debounced)
+  const [slugError, setSlugError] = useState('');
+  useEffect(() => {
+    if (!slug || slug.length < 2) { setSlugAvailable(null); setSlugError(''); return; }
+    const timer = setTimeout(() => {
+      fetch(`/api/check-name?name=${encodeURIComponent(slug)}`)
+        .then(r => r.json())
+        .then(d => {
+          setSlugAvailable(d.available);
+          setSlugError(d.available ? '' : (d.error || 'Already taken'));
+        })
+        .catch(() => { setSlugAvailable(null); setSlugError(''); });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [slug]);
 
   const handleCreate = async () => {
     if (!name.trim() || !slug.trim() || creating) return;
@@ -378,7 +398,7 @@ function CreateOrgModal({ onClose, onCreated }) {
       const res = await fetch('/api/orgs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), slug, description, bio, website, visibility }),
+        body: JSON.stringify({ name: name.trim(), slug, description, bio, website, visibility: 'public' }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -391,86 +411,127 @@ function CreateOrgModal({ onClose, onCreated }) {
     setCreating(false);
   };
 
+  const ORG_CATEGORIES = ['Tech', 'Open Source', 'Education', 'Media', 'Community', 'Business', 'Non-profit', 'Creative', 'Research', 'Other'];
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-lg bg-[#141a26] border border-[#232d3f] rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5 border-b border-[#232d3f]">
-          <h2 className="text-[16px] font-bold text-white">Create Organization</h2>
+      <div className="w-full max-w-2xl bg-[#141a26] border border-[#232d3f] rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-[#232d3f]">
+          <div>
+            <h2 className="text-[18px] font-bold text-white">Create Organization</h2>
+            <p className="text-[12px] text-[#8896a8] mt-0.5">Organizations are always public and visible to everyone.</p>
+          </div>
           <button onClick={onClose} className="text-[#8896a8] hover:text-white p-1">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
-        <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
-          {/* Pixel avatar preview */}
-          <div className="flex items-center gap-4">
-            <img src={generatePixelAvatar(slug || name || 'org')} alt="" className="w-14 h-14 rounded-xl" />
-            <div className="text-[12px] text-[#8896a8]">Auto-generated avatar based on your org name. You can change it later.</div>
+        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+          {/* Avatar centered */}
+          <div className="flex flex-col items-center mb-2">
+            <img src={generatePixelAvatar(slug || name || avatarSeed)} alt="" className="w-28 h-28 rounded-2xl" />
+            <p className="text-[10px] text-[#666] mt-2">Auto-generated — change later in settings</p>
           </div>
 
-          {/* Name suggestions */}
-          {!name && (
+          <div className="space-y-3">
             <div>
-              <label className="text-[11px] text-[#666] mb-1.5 block">Need inspiration?</label>
-              <div className="flex flex-wrap gap-2">
-                {suggestions.map(s => (
-                  <button key={s} onClick={() => setName(s)}
-                    className="px-3 py-1.5 text-[12px] text-[#9b7bf7] bg-[#9b7bf70a] border border-[#9b7bf720] rounded-lg hover:bg-[#9b7bf714] transition-colors">
-                    {s}
-                  </button>
-                ))}
+              <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Organization name *</label>
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Name"
+                className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] transition-colors placeholder-[#6b7a8d]" />
+            </div>
+            <div>
+              <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">
+                URL slug *
+                {slug && slugAvailable === true && <span className="text-[#4ade80] ml-2">Available</span>}
+                {slug && slugAvailable === false && <span className="text-[#f87171] ml-2">{slugError || 'Taken'}</span>}
+              </label>
+              <div className="flex items-center bg-[#131922] rounded-lg border border-[#232d3f] overflow-hidden">
+                <span className="text-[#8896a8] text-[13px] px-3 flex-shrink-0">@</span>
+                <input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^\w-]/g, ''))}
+                  className="flex-1 bg-transparent text-[#e0e0e0] py-2 pr-3 outline-none text-[13px]" />
               </div>
             </div>
-          )}
+          </div>
 
-          <div>
-            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Name *</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="My Organization"
-              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2.5 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] transition-colors placeholder-[#6b7a8d]" />
-          </div>
-          <div>
-            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Slug *</label>
-            <div className="flex items-center bg-[#131922] rounded-lg border border-[#232d3f] overflow-hidden">
-              <span className="text-[#8896a8] text-[13px] px-3">@</span>
-              <input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^\w-]/g, ''))}
-                className="flex-1 bg-transparent text-[#e0e0e0] py-2.5 pr-3 outline-none text-[13px]" />
-            </div>
-          </div>
-          <div>
-            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Description</label>
-            <input value={description} onChange={e => setDescription(e.target.value)} placeholder="A short tagline..."
-              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2.5 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] transition-colors placeholder-[#6b7a8d]" />
-          </div>
-          <div>
-            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Bio (Markdown)</label>
-            <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Tell people about your org..."
-              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2.5 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] transition-colors placeholder-[#6b7a8d] resize-none" />
-          </div>
-          <div>
-            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Website</label>
-            <input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://..."
-              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2.5 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] transition-colors placeholder-[#6b7a8d]" />
-          </div>
-          <div>
-            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Visibility</label>
-            <div className="flex gap-2">
-              {['public', 'private'].map(v => (
-                <button key={v} onClick={() => setVisibility(v)}
-                  className={`flex-1 py-2 rounded-lg text-[13px] font-medium transition-colors ${visibility === v ? 'bg-[#9b7bf7] text-white' : 'bg-[#131922] border border-[#232d3f] text-[#9ca3af] hover:border-[#444]'}`}>
-                  {v.charAt(0).toUpperCase() + v.slice(1)}
+          {/* Suggestions */}
+          {!name && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] text-[#666]">Try:</span>
+              {suggestions.map(s => (
+                <button key={s} onClick={() => setName(s)}
+                  className="px-3 py-1 text-[12px] text-[#9b7bf7] bg-[#9b7bf70a] border border-[#9b7bf720] rounded-full hover:bg-[#9b7bf714] transition-colors">
+                  {s}
                 </button>
               ))}
             </div>
+          )}
+
+          <div className="h-px bg-[#232d3f]" />
+
+          {/* Two-column layout */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Category</label>
+              <select value={category} onChange={e => setCategory(e.target.value)}
+                className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#444]">
+                <option value="">Select...</option>
+                {ORG_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Website</label>
+              <input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://"
+                className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] placeholder-[#6b7a8d]" />
+            </div>
           </div>
+
+          <div>
+            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Contact email</label>
+            <input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="org@example.com"
+              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] placeholder-[#6b7a8d]" />
+          </div>
+
+          <div>
+            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">Description</label>
+            <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Short tagline"
+              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] placeholder-[#6b7a8d]" />
+          </div>
+
+          <div>
+            <label className="text-[12px] text-[#9ca3af] mb-1.5 block font-medium">About (Markdown)</label>
+            <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Mission, what you publish..."
+              className="w-full bg-[#131922] text-[#e0e0e0] rounded-lg px-3 py-2 outline-none text-[13px] border border-[#232d3f] focus:border-[#444] placeholder-[#6b7a8d] resize-none" />
+          </div>
+
+          {/* Info box */}
+          <div className="bg-[#131922] border border-[#232d3f] rounded-lg p-4 flex gap-3">
+            <svg className="w-5 h-5 text-[#60a5fa] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <div className="text-[12px] text-[#8896a8] leading-relaxed">
+              <p className="mb-1">As the owner you&apos;ll have full admin access. You can:</p>
+              <ul className="list-disc ml-4 space-y-0.5">
+                <li>Invite members with admin, maintain, write, or read roles</li>
+                <li>Create collections to organize blogs</li>
+                <li>Publish blogs under the org name</li>
+                <li>Generate shareable invite links with expiry</li>
+              </ul>
+            </div>
+          </div>
+
           {error && <p className="text-[12px] text-[#f87171]">{error}</p>}
         </div>
 
-        <div className="p-5 border-t border-[#232d3f] flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-[13px] text-[#9ca3af] hover:text-white transition-colors">Cancel</button>
-          <button onClick={handleCreate} disabled={!name.trim() || !slug.trim() || creating}
-            className="px-5 py-2 bg-[#9b7bf7] text-white font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40">
-            {creating ? 'Creating...' : 'Create Organization'}
-          </button>
+        <div className="p-6 border-t border-[#232d3f] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
+            <span className="text-[12px] text-[#8896a8]">Public — visible to everyone</span>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="px-4 py-2.5 text-[13px] text-[#9ca3af] hover:text-white transition-colors">Cancel</button>
+            <button onClick={handleCreate} disabled={!name.trim() || !slug.trim() || slugAvailable === false || creating}
+              className="px-6 py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40">
+              {creating ? 'Creating...' : 'Create Organization'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -574,7 +635,10 @@ function SubscriptionTab() {
 // ── Main Settings Page ──
 export default function SettingsPage() {
   const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState(0);
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const initialTab = tabParam ? TABS.findIndex(t => t.toLowerCase() === tabParam.toLowerCase()) : 0;
+  const [activeTab, setActiveTab] = useState(initialTab >= 0 ? initialTab : 0);
 
   if (loading) {
     return (

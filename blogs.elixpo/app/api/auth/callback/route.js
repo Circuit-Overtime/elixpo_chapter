@@ -70,7 +70,7 @@ export async function GET(request) {
 
     if (!existingUser) {
       isNewUser = true;
-      const username = userInfo.displayName || userInfo.email.split('@')[0];
+      const username = (userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, '');
       await db.prepare(`
         INSERT INTO users (id, email, username, display_name, avatar_url, locale, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -85,12 +85,11 @@ export async function GET(request) {
         now
       ).run();
 
-      // Reserve username in shared namespace
+      // Reserve username in shared namespace (atomic — ignores if already taken)
       try {
-        await db.prepare(
-          'INSERT OR IGNORE INTO namespaces (name, owner_type, owner_id, created_at) VALUES (?, ?, ?, ?)'
-        ).bind(username.toLowerCase(), 'user', userId, now).run();
-      } catch { /* namespace may not exist yet in local dev */ }
+        const { tryReserveName } = await import('../../../../lib/namespace');
+        await tryReserveName(db, username, 'user', userId);
+      } catch { /* namespace table may not exist in local dev */ }
     } else {
       await db.prepare(`
         UPDATE users SET email = ?, display_name = ?, avatar_url = ?, updated_at = ?
@@ -118,7 +117,7 @@ export async function GET(request) {
     profile: {
       id: userId,
       email: userInfo.email,
-      username: userInfo.displayName || userInfo.email.split('@')[0],
+      username: (userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, ''),
       display_name: userInfo.displayName || '',
       avatar_url: userInfo.avatar || '',
       isAdmin: userInfo.isAdmin || false,

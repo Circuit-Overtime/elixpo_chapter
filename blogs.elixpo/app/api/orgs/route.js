@@ -68,27 +68,20 @@ export async function POST(request) {
       return NextResponse.json({ error: `You can own up to ${limits.ownedOrgs} org(s) on the ${user?.tier || 'free'} plan` }, { status: 403 });
     }
 
-    // Check namespace — slug must not conflict with any username or org slug
-    const { checkNameAvailable, reserveName } = await import('../../../lib/namespace');
-    const nsCheck = await checkNameAvailable(db, cleanSlug);
-    if (!nsCheck.available) {
-      return NextResponse.json({
-        error: nsCheck.takenBy === 'user'
-          ? 'This name is taken by a user'
-          : 'This org slug is already taken',
-      }, { status: 409 });
+    // Atomically reserve the slug — prevents race conditions
+    const { tryReserveName } = await import('../../../lib/namespace');
+    const orgId = crypto.randomUUID();
+    const reserve = await tryReserveName(db, cleanSlug, 'org', orgId);
+    if (!reserve.success) {
+      return NextResponse.json({ error: reserve.error || 'This name is already taken' }, { status: 409 });
     }
 
-    const orgId = crypto.randomUUID();
     const now = Math.floor(Date.now() / 1000);
 
     await db.prepare(`
       INSERT INTO orgs (id, slug, name, description, bio, website, visibility, owner_id, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(orgId, cleanSlug, name.trim(), description || '', bio || '', website || '', visibility || 'public', session.userId, now, now).run();
-
-    // Reserve in shared namespace
-    await reserveName(db, cleanSlug, 'org', orgId);
 
     // Owner is also a member with admin role
     await db.prepare(`

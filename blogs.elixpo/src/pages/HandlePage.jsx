@@ -13,9 +13,9 @@ export default function HandlePage({ path }) {
   const [error, setError] = useState(null);
 
   // Parse: path[0] = name, path[1] = slug or collection, path[2] = slug (if collection)
-  const name = path?.[0] || '';
-  const second = path?.[1] || '';
-  const third = path?.[2] || '';
+  const name = (path?.[0] || '').toLowerCase();
+  const second = (path?.[1] || '').toLowerCase();
+  const third = (path?.[2] || '').toLowerCase();
 
   // If 1 segment: profile. If 2: blog or collection listing. If 3: blog in collection.
   const isProfile = path?.length === 1;

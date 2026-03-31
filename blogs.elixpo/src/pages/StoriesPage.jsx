@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
 import Link from 'next/link';
 
 const TABS = ['Drafts', 'Published'];
 
-function StoryCard({ story }) {
+function StoryCard({ story, onDelete }) {
   const isDraft = story.status === 'draft';
+  const editUrl = `/${story.slugid || story.id}/edit`;
+
   return (
     <article className="flex gap-5 py-6 border-b border-[#232d3f] last:border-b-0">
       <div className="flex-1 min-w-0">
@@ -16,15 +18,25 @@ function StoryCard({ story }) {
           {isDraft && (
             <span className="text-[11px] font-medium text-[#e8a840] bg-[#e8a84014] px-2 py-0.5 rounded-full">Draft</span>
           )}
+          {story.status === 'unlisted' && (
+            <span className="text-[11px] font-medium text-[#60a5fa] bg-[#60a5fa14] px-2 py-0.5 rounded-full">Beta</span>
+          )}
           {!isDraft && story.published_at && (
             <span className="text-[12px] text-[#9ca3af]">
-              Published {new Date(story.published_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {new Date(story.published_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          )}
+          {isDraft && story.updated_at && (
+            <span className="text-[12px] text-[#666]">
+              Edited {new Date(story.updated_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           )}
         </div>
-        <h3 className="text-[17px] font-bold text-[#e8e8e8] leading-[1.35] mb-1 font-serif">
-          {story.title || 'Untitled'}
-        </h3>
+        <Link href={editUrl}>
+          <h3 className="text-[17px] font-bold text-[#e8e8e8] leading-[1.35] mb-1 font-serif hover:text-white transition-colors">
+            {story.page_emoji && `${story.page_emoji} `}{story.title || 'Untitled'}
+          </h3>
+        </Link>
         {story.subtitle && (
           <p className="text-[14px] text-[#9ca3af] line-clamp-2 mb-3">{story.subtitle}</p>
         )}
@@ -49,18 +61,15 @@ function StoryCard({ story }) {
             <span>{story.read_time_minutes} min read</span>
           )}
           <span className="ml-auto flex items-center gap-2">
-            <Link href={`/${story.slugid}/edit`} className="hover:text-[#b0b0b0] transition-colors p-1" title="Edit">
+            <Link href={editUrl} className="hover:text-[#b0b0b0] transition-colors p-1" title="Edit">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
             </Link>
-            <button className="hover:text-red-400 transition-colors p-1" title="Delete">
+            <button onClick={() => onDelete?.(story)} className="hover:text-red-400 transition-colors p-1" title="Delete">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </button>
           </span>
         </div>
       </div>
-      {story.cover_image_r2_key && (
-        <div className="w-[100px] h-[80px] bg-[#232d3f] rounded-md flex-shrink-0" />
-      )}
     </article>
   );
 }
@@ -68,10 +77,21 @@ function StoryCard({ story }) {
 export default function StoriesPage() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
+  const [blogs, setBlogs] = useState([]);
+  const [blogsLoading, setBlogsLoading] = useState(true);
 
-  // TODO: fetch from API
-  const drafts = [];
-  const published = [];
+  useEffect(() => {
+    if (!user) return;
+    fetch('/api/blogs/list')
+      .then(r => r.ok ? r.json() : { blogs: [] })
+      .then(d => setBlogs(d.blogs || []))
+      .catch(() => {})
+      .finally(() => setBlogsLoading(false));
+  }, [user]);
+
+  const drafts = blogs.filter(b => b.status === 'draft');
+  const published = blogs.filter(b => b.status === 'published' || b.status === 'unlisted');
+  const stories = activeTab === 0 ? drafts : published;
 
   if (loading) {
     return (
@@ -90,7 +110,6 @@ export default function StoriesPage() {
     return (
       <AppShell>
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
-          <svg className="w-12 h-12 text-[#2a2d3a] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
           <h2 className="text-xl font-bold text-white mb-2">Sign in to see your stories</h2>
           <p className="text-[#9ca3af] text-sm mb-6">Your drafts and published posts will appear here.</p>
           <Link href="/sign-in" className="px-6 py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-full text-sm hover:bg-[#b69aff] transition-colors">
@@ -100,8 +119,6 @@ export default function StoriesPage() {
       </AppShell>
     );
   }
-
-  const stories = activeTab === 0 ? drafts : published;
 
   return (
     <AppShell>
@@ -116,7 +133,6 @@ export default function StoriesPage() {
           </Link>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-6 border-b border-[#232d3f] mb-6">
           {TABS.map((tab, i) => (
             <button
@@ -133,8 +149,11 @@ export default function StoriesPage() {
           ))}
         </div>
 
-        {/* Story list */}
-        {stories.length > 0 ? (
+        {blogsLoading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-[#232d3f] animate-pulse rounded" />)}
+          </div>
+        ) : stories.length > 0 ? (
           <div>
             {stories.map((story) => (
               <StoryCard key={story.id} story={story} />
@@ -153,14 +172,9 @@ export default function StoriesPage() {
               {activeTab === 0 ? 'No drafts yet' : 'No published stories yet'}
             </p>
             <p className="text-[#8896a8] text-[13px] mb-6">
-              {activeTab === 0
-                ? 'Start writing and your drafts will show up here.'
-                : 'Once you publish a story, it will appear here.'}
+              {activeTab === 0 ? 'Start writing and your drafts will show up here.' : 'Once you publish a story, it will appear here.'}
             </p>
-            <Link
-              href="/new-blog"
-              className="px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors"
-            >
+            <Link href="/new-blog" className="px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
               Write a story
             </Link>
           </div>

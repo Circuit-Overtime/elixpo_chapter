@@ -17,14 +17,17 @@ export async function POST(request) {
 
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
+    const { compressBlogContent } = await import('../../../../lib/compress');
     const db = getDB();
     const now = Math.floor(Date.now() / 1000);
+
+    // Compress content before storing
+    const compressedContent = editorContent ? compressBlogContent(editorContent) : '';
 
     // Check if blog exists
     const existing = await db.prepare('SELECT id, author_id FROM blogs WHERE id = ?').bind(slugid).first();
 
     if (existing) {
-      // Only author can update
       if (existing.author_id !== session.userId) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
       }
@@ -33,11 +36,10 @@ export async function POST(request) {
           page_emoji = ?, updated_at = ?
         WHERE id = ?
       `).bind(
-        title || '', subtitle || '', JSON.stringify(editorContent), publishAs || 'personal',
+        title || '', subtitle || '', compressedContent, publishAs || 'personal',
         pageEmoji || '', now, slugid
       ).run();
     } else {
-      // Create new draft
       const { ensureUniqueBlogSlug } = await import('../../../../lib/namespace');
       const baseSlug = generateSlug(title);
       const slug = await ensureUniqueBlogSlug(db, baseSlug, slugid);
@@ -45,7 +47,7 @@ export async function POST(request) {
         INSERT INTO blogs (id, slug, title, subtitle, content, author_id, published_as, status, page_emoji, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)
       `).bind(
-        slugid, slug, title || '', subtitle || '', JSON.stringify(editorContent),
+        slugid, slug, title || '', subtitle || '', compressedContent,
         session.userId, publishAs || 'personal', pageEmoji || '', now, now
       ).run();
     }

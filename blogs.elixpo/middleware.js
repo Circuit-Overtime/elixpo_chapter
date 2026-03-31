@@ -12,7 +12,7 @@ export function middleware(request) {
 
   // Rewrite /@name/... paths to /handle/name/... (Next.js treats @ as parallel route prefix)
   if (pathname.startsWith('/@')) {
-    const rest = pathname.slice(2); // remove "/@"
+    const rest = pathname.slice(2).toLowerCase(); // remove "/@", normalize case
     const rewriteUrl = new URL(`/handle/${rest}`, request.url);
     rewriteUrl.search = request.nextUrl.search;
     return NextResponse.rewrite(rewriteUrl);
