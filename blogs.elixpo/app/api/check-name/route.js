@@ -1,12 +1,15 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
+import { validateNameFormat } from '../../../lib/namespace';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const name = (searchParams.get('name') || '').trim().toLowerCase();
 
-  if (!name || name.length < 2) {
-    return NextResponse.json({ available: false, error: 'Name too short' });
+  // Format validation (no DB hit)
+  const fmt = validateNameFormat(name);
+  if (!fmt.valid) {
+    return NextResponse.json({ available: false, error: fmt.error });
   }
 
   try {
@@ -16,7 +19,6 @@ export async function GET(request) {
     const result = await checkNameAvailable(db, name);
     return NextResponse.json(result);
   } catch {
-    // D1 not available — assume available in local dev
     return NextResponse.json({ available: true });
   }
 }

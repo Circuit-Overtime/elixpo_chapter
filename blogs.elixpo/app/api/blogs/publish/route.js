@@ -24,11 +24,13 @@ export async function POST(request) {
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
     const { ensureUniqueBlogSlug } = await import('../../../../lib/namespace');
+    const { compressBlogContent } = await import('../../../../lib/compress');
     const db = getDB();
     const now = Math.floor(Date.now() / 1000);
     const baseSlug = generateSlug(title);
     const slug = await ensureUniqueBlogSlug(db, baseSlug, slugid);
     const readTime = Math.max(1, Math.ceil(countWords(editorContent) / 250));
+    const compressedContent = editorContent ? compressBlogContent(editorContent) : '';
 
     const existing = await db.prepare('SELECT id, author_id, status FROM blogs WHERE id = ?').bind(slugid).first();
 
@@ -45,7 +47,7 @@ export async function POST(request) {
         UPDATE blogs SET title = ?, subtitle = ?, slug = ?, content = ?, published_as = ?,
           status = ?, page_emoji = ?, cover_image_r2_key = ?, read_time_minutes = ?, updated_at = ?
       `;
-      const params = [title, subtitle || '', slug, JSON.stringify(editorContent), publishAs || 'personal',
+      const params = [title, subtitle || '', slug, compressedContent, publishAs || 'personal',
         targetStatus, pageEmoji || '', coverUrl || '', readTime, now];
 
       if (publishedAt) {
@@ -63,7 +65,7 @@ export async function POST(request) {
           page_emoji, cover_image_r2_key, read_time_minutes, created_at, updated_at, published_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        slugid, slug, title, subtitle || '', JSON.stringify(editorContent),
+        slugid, slug, title, subtitle || '', compressedContent,
         session.userId, publishAs || 'personal', targetStatus,
         pageEmoji || '', coverUrl || '', readTime, now, now,
         (targetStatus === 'published' || targetStatus === 'unlisted') ? now : null
