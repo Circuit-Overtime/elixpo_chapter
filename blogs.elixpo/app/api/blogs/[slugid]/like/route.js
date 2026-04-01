@@ -43,6 +43,9 @@ export async function POST(request, { params }) {
       await db.prepare('INSERT INTO likes (blog_id, user_id, created_at) VALUES (?, ?, unixepoch())')
         .bind(slugid, session.userId).run();
 
+      // Record taste signal
+      try { const { recordSignal } = await import('../../../../../lib/taste'); await recordSignal(db, session.userId, 'like', { blogId: slugid }); } catch {}
+
       // Notify blog author
       try {
         const blog = await db.prepare('SELECT author_id, title FROM blogs WHERE id = ?').bind(slugid).first();

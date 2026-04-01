@@ -6,6 +6,7 @@ import AppShell from '../components/AppShell';
 import Link from 'next/link';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
 import { useAuth } from '../context/AuthContext';
+import BlogInteractionBar from '../components/BlogInteractionBar';
 import '../styles/editor/editor.css';
 
 const BlogPreview = dynamic(() => import('../components/Editor/BlogPreview'), { ssr: false });
@@ -109,6 +110,9 @@ export default function HandlePage({ path }) {
             user={{ username: blog.author_username, display_name: blog.author_name, avatar_url: blog.author_avatar }}
             wordCount={wc}
           />
+
+          {/* Interaction bar — like, clap, bookmark, share, views */}
+          <BlogInteractionBar blogId={blog.id} />
         </div>
       </AppShell>
     );

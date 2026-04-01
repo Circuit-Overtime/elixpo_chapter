@@ -26,6 +26,9 @@ export async function POST(request, { params }) {
       await db.prepare(
         'INSERT INTO blog_views (blog_id, user_id, ip_hash, created_at) VALUES (?, ?, ?, ?)'
       ).bind(slugid, session?.userId || null, ipHash, now).run();
+
+      // Record taste signal
+      try { const { recordSignal } = await import('../../../../../lib/taste'); if (session?.userId) await recordSignal(db, session.userId, 'read', { blogId: slugid }); } catch {}
     }
 
     const count = await db.prepare('SELECT COUNT(*) as c FROM blog_views WHERE blog_id = ?').bind(slugid).first();
