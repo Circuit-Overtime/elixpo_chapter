@@ -6,6 +6,7 @@ import AppShell from '../components/AppShell';
 import Link from 'next/link';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
 import { useAuth } from '../context/AuthContext';
+import '../styles/editor/editor.css';
 
 const BlogPreview = dynamic(() => import('../components/Editor/BlogPreview'), { ssr: false });
 
@@ -72,9 +73,32 @@ export default function HandlePage({ path }) {
     let blocks = [];
     try { blocks = typeof blog.content === 'string' ? JSON.parse(blog.content) : blog.content || []; } catch { blocks = []; }
 
+    // Count words from blocks
+    const countBlockWords = (b) => (b || []).reduce((sum, block) => {
+      const text = (block.content || []).map(c => c.text || '').join(' ');
+      return sum + text.split(/\s+/).filter(Boolean).length + countBlockWords(block.children);
+    }, 0);
+    const wc = countBlockWords(blocks);
+
+    // Check if current user can edit
+    const isAuthor = currentUser && blog.author_id === currentUser.id;
+    const canEdit = isAuthor; // org membership check would need an extra API call — author check is sufficient for now
+
     return (
       <AppShell>
         <div className="max-w-3xl mx-auto px-6 py-8">
+          {canEdit && (
+            <div className="flex items-center justify-end mb-4">
+              <Link
+                href={`/edit/${blog.id}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors"
+                style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent)30' }}
+              >
+                <ion-icon name="create-outline" style={{ fontSize: '15px' }} />
+                Edit this post
+              </Link>
+            </div>
+          )}
           <BlogPreview
             title={blog.title}
             subtitle={blog.subtitle}
@@ -83,8 +107,92 @@ export default function HandlePage({ path }) {
             blocks={blocks}
             coverPreview={blog.cover_image_r2_key}
             user={{ username: blog.author_username, display_name: blog.author_name, avatar_url: blog.author_avatar }}
-            wordCount={0}
+            wordCount={wc}
           />
+        </div>
+      </AppShell>
+    );
+  }
+
+  // ── Collection listing ──
+  if (data.type === 'collection') {
+    const org = data.owner;
+    const col = data.collection;
+    const blogs = data.blogs || [];
+
+    return (
+      <AppShell>
+        <div className="max-w-3xl mx-auto px-6 py-8">
+          {/* Collection header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 text-[13px] mb-3" style={{ color: 'var(--text-muted)' }}>
+              <Link href={`/${org.slug}`} className="hover:opacity-70 transition-opacity" style={{ color: 'var(--accent)' }}>
+                {org.name}
+              </Link>
+              <span style={{ color: 'var(--text-faint)' }}>/</span>
+              <span style={{ color: 'var(--text-secondary)' }}>{col.name}</span>
+            </div>
+            <h1 className="text-[28px] font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>{col.name}</h1>
+            {col.description && (
+              <p className="text-[15px] mt-2 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{col.description}</p>
+            )}
+            <p className="text-[13px] mt-3" style={{ color: 'var(--text-faint)' }}>
+              {blogs.length} post{blogs.length !== 1 ? 's' : ''} in this collection
+            </p>
+            <div style={{ height: '1px', backgroundColor: 'var(--divider)', marginTop: '20px' }} />
+          </div>
+
+          {/* Blog list — feed-style cards */}
+          {blogs.length > 0 ? (
+            <div>
+              {blogs.map(b => (
+                <Link key={b.id} href={`/${org.slug}/${col.slug}/${b.slug}`}>
+                  <article className="group py-6 cursor-pointer" style={{ borderBottom: '1px solid var(--divider)' }}>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      {b.author_avatar ? (
+                        <img src={b.author_avatar} alt="" className="h-6 w-6 rounded-full object-cover" />
+                      ) : (
+                        <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
+                          {(b.author_name || b.author_username || '?')[0].toUpperCase()}
+                        </div>
+                      )}
+                      <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>{b.author_name || b.author_username}</span>
+                    </div>
+                    <div className="flex gap-6">
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-[19px] font-bold leading-[1.3] mb-1.5 group-hover:opacity-75 transition-opacity font-serif" style={{ color: 'var(--text-primary)' }}>
+                          {b.page_emoji && <span className="mr-1.5">{b.page_emoji}</span>}
+                          {b.title || 'Untitled'}
+                        </h2>
+                        {b.subtitle && (
+                          <p className="text-[15px] leading-[1.5] line-clamp-2 mb-3" style={{ color: 'var(--text-muted)' }}>{b.subtitle}</p>
+                        )}
+                        <div className="flex items-center gap-3.5 text-[12px]" style={{ color: 'var(--text-faint)' }}>
+                          {(b.tags || []).length > 0 && (
+                            <span className="text-[#9b7bf7] text-[11px] bg-[#9b7bf714] px-2.5 py-0.5 rounded-full font-medium">{b.tags[0]}</span>
+                          )}
+                          {b.published_at && <span>{new Date(b.published_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+                          {b.read_time_minutes > 0 && <span>{b.read_time_minutes} min read</span>}
+                          {b.like_count > 0 && <span>{b.like_count} likes</span>}
+                          {b.comment_count > 0 && <span>{b.comment_count} comments</span>}
+                        </div>
+                      </div>
+                      {b.cover_image_r2_key ? (
+                        <img src={b.cover_image_r2_key} alt="" className="w-[120px] h-[80px] rounded-md object-cover flex-shrink-0 hidden sm:block" />
+                      ) : (
+                        <div className="w-[120px] h-[80px] rounded-md flex-shrink-0 hidden sm:block" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+                      )}
+                    </div>
+                  </article>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <ion-icon name="folder-open-outline" style={{ fontSize: '40px', color: 'var(--text-faint)' }} />
+              <p className="text-[15px] mt-4" style={{ color: 'var(--text-muted)' }}>No posts in this collection yet</p>
+            </div>
+          )}
         </div>
       </AppShell>
     );

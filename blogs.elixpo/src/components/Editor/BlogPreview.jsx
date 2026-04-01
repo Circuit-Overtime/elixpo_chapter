@@ -303,7 +303,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
               zIndex: 10,
             }}
           >
-            <div className="w-[72px] h-[72px] rounded-full bg-[var(--bg-app)] border-[3px] border-[#131922] shadow-lg flex items-center justify-center relative">
+            <div className="w-[72px] h-[72px] rounded-full bg-[var(--bg-app)] border-[3px] border-[var(--bg-app)] shadow-lg flex items-center justify-center relative">
               <span className="text-[42px] leading-none select-none">{pageEmoji}</span>
               <div className="absolute inset-[-2px] rounded-full border border-[var(--border-default)]" />
             </div>
@@ -319,18 +319,18 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
         <div className="flex items-center gap-3 mt-3 mb-5">
           <div className="flex -space-x-2">
             {user.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[#131922]" />
+              <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[var(--bg-app)]" />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] border-2 border-[#131922] flex items-center justify-center text-[11px] font-bold text-[var(--text-muted)]">
+              <div className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] border-2 border-[var(--bg-app)] flex items-center justify-center text-[11px] font-bold text-[var(--text-muted)]">
                 {(user.display_name || user.username || '?')[0].toUpperCase()}
               </div>
             )}
           </div>
           <div className="flex items-center gap-2 text-[13px] text-[var(--text-faint)]">
             <span className="text-[var(--text-muted)] font-medium">{user.display_name || user.username || 'Author'}</span>
-            <span className="text-[#3a3f4f]">·</span>
+            <span className="text-[var(--text-faint)]">·</span>
             <span>{Math.max(1, Math.ceil((wordCount || 0) / 200))} min read</span>
-            <span className="text-[#3a3f4f]">·</span>
+            <span className="text-[var(--text-faint)]">·</span>
             <span>{wordCount || 0} {(wordCount || 0) === 1 ? 'word' : 'words'}</span>
           </div>
         </div>
@@ -355,7 +355,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       )}
 
       {subtitle && (
-        <p className="text-xl text-[#888] mb-4">{subtitle}</p>
+        <p className="text-xl text-[var(--text-muted)] mb-4">{subtitle}</p>
       )}
 
       <div className="mt-4">

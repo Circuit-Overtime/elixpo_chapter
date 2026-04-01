@@ -17,8 +17,8 @@ function timeAgo(ts) {
 function FeedCard({ post }) {
   const author = post.author || {};
   return (
-    <Link href={`/${author.username || 'unknown'}/${post.slug}`}>
-      <article className="group py-6 cursor-pointer" style={{ borderBottom: '1px solid var(--divider)' }}>
+    <article className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
+      <Link href={`/${author.username || 'unknown'}/${post.slug}`} className="block cursor-pointer">
         <div className="flex items-center gap-2 mb-2.5">
           {author.avatar_url ? (
             <img src={author.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
@@ -27,9 +27,12 @@ function FeedCard({ post }) {
               {(author.display_name || author.username || '?')[0].toUpperCase()}
             </div>
           )}
-          <span className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
+          <span className="text-[13px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+            {post.is_staff && (
+              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
+            )}
             {post.published_as && post.published_as.startsWith('org:') && (
-              <><span style={{ color: 'var(--text-secondary)' }}>in {post.published_as.replace('org:', '')}</span><span className="mx-1.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
+              <><span style={{ color: 'var(--text-secondary)' }}>in {post.published_as.replace(/^org:.*/, author.username)}</span><span className="mx-0.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
             )}
             <span style={{ color: 'var(--text-secondary)' }}>{author.display_name || author.username}</span>
           </span>
@@ -72,8 +75,21 @@ function FeedCard({ post }) {
             <div className="w-[120px] h-[80px] rounded-md flex-shrink-0 hidden sm:block" style={{ backgroundColor: 'var(--bg-elevated)' }} />
           )}
         </div>
-      </article>
-    </Link>
+      </Link>
+      {post.can_edit && (
+        <div className="mt-2 flex items-center">
+          <Link
+            href={`/edit/${post.id}`}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors"
+            style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <ion-icon name="create-outline" style={{ fontSize: '13px' }} />
+            Edit
+          </Link>
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -261,9 +277,9 @@ export default function App() {
           <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
             <h3 className="text-[14px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Writing on LixBlogs</h3>
             <ul className="text-[13px] space-y-1.5 mt-3" style={{ color: 'var(--text-muted)' }}>
-              <li className="cursor-pointer transition-colors hover:opacity-70">New to LixBlogs? Start here</li>
-              <li className="cursor-pointer transition-colors hover:opacity-70">Read LixBlogs writing tips</li>
-              <li className="cursor-pointer transition-colors hover:opacity-70">Get practical writing advice</li>
+              <li><Link href="/elixpo/guides/getting-started" className="hover:opacity-70 transition-opacity">New to LixBlogs? Start here</Link></li>
+              <li><Link href="/elixpo/guides/writing-tips" className="hover:opacity-70 transition-opacity">Read LixBlogs writing tips</Link></li>
+              <li><Link href="/elixpo/guides/practical-advice" className="hover:opacity-70 transition-opacity">Get practical writing advice</Link></li>
             </ul>
             <Link
               href="/new-blog"
