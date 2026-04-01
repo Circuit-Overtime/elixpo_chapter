@@ -253,6 +253,10 @@ const KNOWN_BLOCK_TYPES = new Set([
 ]);
 
 function sanitizeInitialContent(blocks) {
+  // Parse JSON string if needed
+  if (typeof blocks === 'string') {
+    try { blocks = JSON.parse(blocks); } catch { return undefined; }
+  }
   if (!blocks || !Array.isArray(blocks)) return blocks;
 
   // Filter out unknown block types (e.g. removed custom blocks)

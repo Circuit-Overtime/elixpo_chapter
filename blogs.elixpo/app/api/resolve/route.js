@@ -1,6 +1,7 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { decompressBlogContent } from '../../../lib/compress';
+import { STAFF_ORG_ID } from '../../../lib/staff';
 
 function decompressBlog(blog) {
   if (!blog) return blog;
@@ -127,8 +128,49 @@ export async function GET(request) {
         });
       }
 
-      // If just slug (no collection), find blog under org
+      // If just slug (no collection), check if it's a collection first, then a blog
       if (slug) {
+        // Check if slug matches a collection under this org
+        const col = await db.prepare(
+          'SELECT id, slug, name, description FROM collections WHERE org_id = ? AND LOWER(slug) = ?'
+        ).bind(ns.owner_id, slug).first();
+
+        if (col) {
+          // Return collection listing with its blogs
+          const colBlogs = await db.prepare(`
+            SELECT b.id, b.slug, b.title, b.subtitle, b.cover_image_r2_key, b.page_emoji,
+              b.read_time_minutes, b.published_at, b.author_id,
+              u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar,
+              (SELECT COUNT(*) FROM likes WHERE blog_id = b.id) as like_count,
+              (SELECT COUNT(*) FROM comments WHERE blog_id = b.id) as comment_count
+            FROM blogs b JOIN users u ON u.id = b.author_id
+            WHERE b.collection_id = ? AND b.status IN ('published', 'unlisted')
+            ORDER BY b.published_at DESC LIMIT 50
+          `).bind(col.id).all();
+
+          // Fetch tags for each blog
+          const blogIds = (colBlogs?.results || []).map(b => b.id);
+          let tagMap = {};
+          if (blogIds.length > 0) {
+            const placeholders = blogIds.map(() => '?').join(',');
+            const tagResult = await db.prepare(
+              `SELECT blog_id, tag FROM blog_tags WHERE blog_id IN (${placeholders})`
+            ).bind(...blogIds).all();
+            for (const t of (tagResult?.results || [])) {
+              if (!tagMap[t.blog_id]) tagMap[t.blog_id] = [];
+              tagMap[t.blog_id].push(t.tag);
+            }
+          }
+
+          return NextResponse.json({
+            type: 'collection',
+            owner: { type: 'org', ...org },
+            collection: col,
+            blogs: (colBlogs?.results || []).map(b => ({ ...b, tags: tagMap[b.id] || [] })),
+          });
+        }
+
+        // Otherwise treat as a blog slug
         const blog = await db.prepare(`
           SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
           FROM blogs b JOIN users u ON u.id = b.author_id

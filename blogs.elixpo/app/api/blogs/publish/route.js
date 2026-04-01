@@ -9,7 +9,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, status } = body;
+  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, status, lastKnownUpdatedAt } = body;
 
   // status: 'published' (feed), 'unlisted' (beta/public but no feed), 'draft'
   const targetStatus = status || 'published';
@@ -25,6 +25,7 @@ export async function POST(request) {
     const { getDB } = await import('../../../../lib/cloudflare');
     const { ensureUniqueBlogSlug } = await import('../../../../lib/namespace');
     const { compressBlogContent } = await import('../../../../lib/compress');
+    const { checkPublishSafety } = await import('../../../../lib/blog-version');
     const db = getDB();
     const now = Math.floor(Date.now() / 1000);
     const baseSlug = generateSlug(title);
@@ -32,11 +33,30 @@ export async function POST(request) {
     const readTime = Math.max(1, Math.ceil(countWords(editorContent) / 250));
     const compressedContent = editorContent ? compressBlogContent(editorContent) : '';
 
-    const existing = await db.prepare('SELECT id, author_id, status FROM blogs WHERE id = ?').bind(slugid).first();
+    const existing = await db.prepare('SELECT id, author_id, status, published_as FROM blogs WHERE id = ?').bind(slugid).first();
 
     if (existing) {
-      if (existing.author_id !== session.userId) {
-        return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+      // Permission check: author or org member with write+
+      let canEdit = existing.author_id === session.userId;
+      if (!canEdit && existing.published_as?.startsWith('org:')) {
+        const orgId = existing.published_as.replace('org:', '');
+        const member = await db.prepare(
+          "SELECT role FROM org_members WHERE org_id = ? AND user_id = ? AND role IN ('admin','maintain','write')"
+        ).bind(orgId, session.userId).first();
+        canEdit = !!member;
+      }
+      if (!canEdit) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+
+      // Race condition check: ensure upstream hasn't changed since we loaded
+      if (lastKnownUpdatedAt) {
+        const safety = await checkPublishSafety(db, slugid, lastKnownUpdatedAt);
+        if (!safety.safe) {
+          return NextResponse.json({
+            error: 'conflict',
+            message: 'This blog was updated by someone else. Please sync before publishing.',
+            currentVersion: safety.currentVersion,
+          }, { status: 409 });
+        }
       }
 
       const publishedAt = (targetStatus === 'published' || targetStatus === 'unlisted')
@@ -86,6 +106,7 @@ export async function POST(request) {
       slugid,
       slug,
       status: targetStatus,
+      updatedAt: now,
       url: `/${session.profile?.username || 'user'}/${slug}`,
     });
   } catch (e) {
