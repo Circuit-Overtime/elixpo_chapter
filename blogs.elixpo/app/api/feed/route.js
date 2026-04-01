@@ -120,9 +120,10 @@ async function queryFollowing(db, userId, now, limit, offset) {
   return result?.results || [];
 }
 
-// ─── Bucket B: Interest-matched ──────────────────────────────────────
+// ─── Bucket B: Interest-matched (explicit picks + implicit taste signals) ──
 async function queryInterests(db, userId, now, limit) {
   const cutoff = now - 14 * 86400;
+  const signalCutoff = now - 30 * 86400;
   const result = await db.prepare(`
     SELECT ${BLOG_FIELDS},
       (SELECT COUNT(*) FROM likes WHERE blog_id = b.id) as like_count,
@@ -132,12 +133,14 @@ async function queryInterests(db, userId, now, limit) {
       AND b.id IN (
         SELECT blog_id FROM blog_tags WHERE tag IN (
           SELECT tag FROM user_interests WHERE user_id = ?
+          UNION
+          SELECT DISTINCT tag FROM user_signals WHERE user_id = ? AND tag IS NOT NULL AND created_at > ?
         )
       )
       AND b.author_id != ?
     ORDER BY b.published_at DESC
     LIMIT ?
-  `).bind(cutoff, userId, userId, limit).all();
+  `).bind(cutoff, userId, userId, signalCutoff, userId, limit).all();
   return result?.results || [];
 }
 

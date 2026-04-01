@@ -44,6 +44,9 @@ export async function POST(request, { params }) {
       DO UPDATE SET count = MIN(50, claps.count + excluded.count), updated_at = unixepoch()
     `).bind(session.userId, slugid, claps).run();
 
+    // Record taste signal
+    try { const { recordSignal } = await import('../../../../../lib/taste'); await recordSignal(db, session.userId, 'clap', { blogId: slugid }); } catch {}
+
     const [totalRow, userRow] = await Promise.all([
       db.prepare('SELECT COALESCE(SUM(count), 0) as c FROM claps WHERE blog_id = ?').bind(slugid).first(),
       db.prepare('SELECT count FROM claps WHERE blog_id = ? AND user_id = ?').bind(slugid, session.userId).first(),

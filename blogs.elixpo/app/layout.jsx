@@ -27,7 +27,7 @@ export default function RootLayout({ children }) {
           })();
         `}} />
       </head>
-      <body className="antialiased" style={{ fontFamily: "'lixFont', sans-serif" }}>
+      <body className="antialiased" style={{ fontFamily: "'Source Serif 4', 'Georgia', serif" }}>
         <ThemeProvider>
           <AuthProvider>
             {children}
