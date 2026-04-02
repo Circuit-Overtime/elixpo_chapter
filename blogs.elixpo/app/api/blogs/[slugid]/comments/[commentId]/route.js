@@ -50,10 +50,17 @@ export async function DELETE(request, { params }) {
     if (!isOwner && !isBlogAuthor) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
 
     // If top-level, delete all replies too
+    let deleted = 1;
     if (!comment.parent_id) {
+      const replyCount = await db.prepare('SELECT COUNT(*) as c FROM comments WHERE parent_id = ?').bind(commentId).first();
+      deleted += replyCount?.c || 0;
       await db.prepare('DELETE FROM comments WHERE parent_id = ?').bind(commentId).run();
     }
     await db.prepare('DELETE FROM comments WHERE id = ?').bind(commentId).run();
+
+    // Decrement denormalized count + invalidate cache
+    await db.prepare('UPDATE blogs SET comment_count = MAX(0, comment_count - ?) WHERE id = ?').bind(deleted, slugid).run();
+    try { const { kvInvalidate } = await import('../../../../../../lib/cache'); await kvInvalidate(`v1:interactions:${slugid}`); } catch {}
 
     return NextResponse.json({ ok: true });
   } catch {

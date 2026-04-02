@@ -4,19 +4,19 @@
   position: fixed;
   top: 80px;
   right: 24px;
-  width: 180px;
+  width: 220px;
   z-index: 30;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
 }
 
 .preview-floating-toc-label {
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color: var(--text-faint);
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 14px;
 }
 
 .preview-floating-toc-list {
@@ -25,20 +25,21 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .preview-floating-toc-link {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
   text-decoration: none;
   display: block;
-  padding: 2px 0;
-  transition: color 0.15s;
+  padding: 3px 0;
+  transition: color 0.15s, font-weight 0.15s;
+  line-height: 1.4;
 }
 
 .preview-floating-toc-link:hover {
-  color: #c4b5fd;
+  color: var(--accent);
 }
 
 /* Hide when viewport too narrow for sidebar */
@@ -93,13 +94,13 @@
 
 .blog-preview-content {
   color: var(--text-primary);
-  font-family: 'lixFont', 'lixFont', 'Inter', sans-serif;
+  font-family: 'Source Serif 4', 'Georgia', serif;
   font-size: 1.05em;
   line-height: 1.85;
 }
 
 .blog-preview-content h1 {
-  font-family: 'lixFont', sans-serif;
+  font-family: 'Source Serif 4', 'Georgia', serif;
   font-size: 32px;
   font-weight: 700;
   line-height: 1.3;
@@ -108,7 +109,7 @@
 }
 
 .blog-preview-content h2 {
-  font-family: 'lixFont', sans-serif;
+  font-family: 'Source Serif 4', 'Georgia', serif;
   font-size: 26px;
   font-weight: 650;
   line-height: 1.35;
@@ -117,7 +118,7 @@
 }
 
 .blog-preview-content h3 {
-  font-family: 'lixFont', sans-serif;
+  font-family: 'Source Serif 4', 'Georgia', serif;
   font-size: 21px;
   font-weight: 600;
   line-height: 1.4;

@@ -44,15 +44,19 @@ export async function POST(request, { params }) {
       DO UPDATE SET count = MIN(50, claps.count + excluded.count), updated_at = unixepoch()
     `).bind(session.userId, slugid, claps).run();
 
+    // Update denormalized count
+    const total = await db.prepare('SELECT COALESCE(SUM(count), 0) as c FROM claps WHERE blog_id = ?').bind(slugid).first();
+    await db.prepare('UPDATE blogs SET clap_total = ? WHERE id = ?').bind(total?.c || 0, slugid).run();
+
     // Record taste signal
     try { const { recordSignal } = await import('../../../../../lib/taste'); await recordSignal(db, session.userId, 'clap', { blogId: slugid }); } catch {}
 
-    const [totalRow, userRow] = await Promise.all([
-      db.prepare('SELECT COALESCE(SUM(count), 0) as c FROM claps WHERE blog_id = ?').bind(slugid).first(),
-      db.prepare('SELECT count FROM claps WHERE blog_id = ? AND user_id = ?').bind(slugid, session.userId).first(),
-    ]);
+    const userRow = await db.prepare('SELECT count FROM claps WHERE blog_id = ? AND user_id = ?').bind(slugid, session.userId).first();
 
-    return NextResponse.json({ userClaps: userRow?.count || 0, totalClaps: totalRow?.c || 0 });
+    // Invalidate cache
+    try { const { kvInvalidate } = await import('../../../../../lib/cache'); await kvInvalidate(`v1:interactions:${slugid}`); } catch {}
+
+    return NextResponse.json({ userClaps: userRow?.count || 0, totalClaps: total?.c || 0 });
   } catch (e) {
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }

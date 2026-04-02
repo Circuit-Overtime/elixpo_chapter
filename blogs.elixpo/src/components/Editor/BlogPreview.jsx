@@ -1,6 +1,85 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+
+function FloatingTOC({ headings }) {
+  const [activeId, setActiveId] = useState('');
+  const listRef = useRef(null);
+  const itemRefs = useRef({});
+  const [sliderStyle, setSliderStyle] = useState({ top: 0, height: 16 });
+
+  useEffect(() => {
+    const els = headings.map(h => document.getElementById(h.id)).filter(Boolean);
+    if (els.length === 0) return;
+
+    const onScroll = () => {
+      const scrollY = window.scrollY + 120;
+      let current = headings[0]?.id || '';
+      for (const el of els) {
+        if (el.offsetTop <= scrollY) current = el.id;
+      }
+      setActiveId(current);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [headings]);
+
+  // Update slider position based on active item's DOM position
+  useEffect(() => {
+    if (!activeId || !listRef.current) return;
+    const item = itemRefs.current[activeId];
+    if (!item) return;
+    const listRect = listRef.current.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    setSliderStyle({
+      top: itemRect.top - listRect.top,
+      height: itemRect.height,
+    });
+  }, [activeId]);
+
+  return (
+    <nav className="preview-floating-toc">
+      <p className="preview-floating-toc-label">On this page</p>
+      <div className="relative flex">
+        {/* Track line + slider */}
+        <div className="relative mr-3 flex-shrink-0" style={{ width: '2px' }}>
+          <div className="absolute inset-0 rounded-full" style={{ backgroundColor: 'var(--border-default)' }} />
+          <div
+            className="absolute left-0 w-full rounded-full transition-all duration-300 ease-out"
+            style={{
+              backgroundColor: '#9b7bf7',
+              top: sliderStyle.top,
+              height: sliderStyle.height,
+            }}
+          />
+        </div>
+        <ul className="preview-floating-toc-list flex-1" ref={listRef}>
+          {headings.map(h => (
+            <li key={h.id} ref={el => { itemRefs.current[h.id] = el; }}>
+              <a
+                href={`#${h.id}`}
+                className="preview-floating-toc-link"
+                style={{
+                  paddingLeft: (h.level - 1) * 12,
+                  color: h.id === activeId ? 'var(--text-primary)' : undefined,
+                  fontWeight: h.id === activeId ? '600' : undefined,
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+              >
+                {h.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </nav>
+  );
+}
 
 function renderBlocksToHTML(blocks) {
   if (!blocks || !blocks.length) return '';
@@ -150,6 +229,13 @@ function renderBlocksToHTML(blocks) {
 
 export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, wordCount }) {
   const contentRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Determine which HTML to use — prefer blocks-based rendering
   const renderedHTML = blocks && blocks.length > 0 ? renderBlocksToHTML(blocks) : html;
@@ -246,38 +332,19 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
 
   return (
     <div className="blog-preview" id="blog-preview-top">
-      {/* Floating TOC — top right */}
-      {headings.length >= 2 && (
-        <nav className="preview-floating-toc">
-          <p className="preview-floating-toc-label">On this page</p>
-          <ul className="preview-floating-toc-list">
-            {headings.map(h => (
-              <li key={h.id}>
-                <a
-                  href={`#${h.id}`}
-                  className="preview-floating-toc-link"
-                  style={{ paddingLeft: (h.level - 1) * 12 }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                >
-                  {h.text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
+      {/* Floating TOC with scroll spy */}
+      {headings.length >= 2 && <FloatingTOC headings={headings} />}
 
-      {/* Back to top */}
-      <button
-        className="preview-back-to-top"
-        onClick={() => document.getElementById('blog-preview-top')?.scrollIntoView({ behavior: 'smooth' })}
-        title="Back to top"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-      </button>
+      {/* Back to top — only visible after scrolling down */}
+      {showBackToTop && (
+        <button
+          className="preview-back-to-top"
+          onClick={() => document.getElementById('blog-preview-top')?.scrollIntoView({ behavior: 'smooth' })}
+          title="Back to top"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+      )}
       {/* Cover + emoji */}
       <div className="relative mb-2">
         {coverPreview && (
@@ -347,15 +414,15 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
         </div>
       )}
 
-      {/* 30px gap before title */}
-      <div style={{ height: '30px' }} />
+      {/* Gap before title */}
+      <div style={{ height: '48px' }} />
 
       {title && (
-        <h1 className="text-[2em] font-extrabold leading-tight mb-1">{title}</h1>
+        <h1 className="text-[2.2em] font-extrabold leading-tight mb-2" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>{title}</h1>
       )}
 
       {subtitle && (
-        <p className="text-xl text-[var(--text-muted)] mb-4">{subtitle}</p>
+        <p className="text-xl mb-5" style={{ color: 'var(--text-muted)', fontFamily: "'Source Serif 4', Georgia, serif" }}>{subtitle}</p>
       )}
 
       <div className="mt-4">

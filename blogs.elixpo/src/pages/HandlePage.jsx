@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import AppShell from '../components/AppShell';
 import Link from 'next/link';
-import { generatePixelAvatar } from '../utils/pixelAvatar';
+import { generatePixelAvatar, generateBlogBanner } from '../utils/pixelAvatar';
 import { useAuth } from '../context/AuthContext';
 import BlogInteractionBar from '../components/BlogInteractionBar';
+import BlogComments from '../components/BlogComments';
 import '../styles/editor/editor.css';
 
 const BlogPreview = dynamic(() => import('../components/Editor/BlogPreview'), { ssr: false });
@@ -106,13 +107,16 @@ export default function HandlePage({ path }) {
             pageEmoji={blog.page_emoji}
             tags={blog.tags || []}
             blocks={blocks}
-            coverPreview={blog.cover_image_r2_key}
+            coverPreview={blog.cover_image_r2_key || generateBlogBanner(blog.id || blog.slug)}
             user={{ username: blog.author_username, display_name: blog.author_name, avatar_url: blog.author_avatar }}
             wordCount={wc}
           />
 
           {/* Interaction bar — like, clap, bookmark, share, views */}
           <BlogInteractionBar blogId={blog.id} />
+
+          {/* Comments section — always expanded */}
+          <BlogComments blogId={blog.id} blogAuthorId={blog.author_id} />
         </div>
       </AppShell>
     );
@@ -181,11 +185,7 @@ export default function HandlePage({ path }) {
                           {b.comment_count > 0 && <span>{b.comment_count} comments</span>}
                         </div>
                       </div>
-                      {b.cover_image_r2_key ? (
-                        <img src={b.cover_image_r2_key} alt="" className="w-[120px] h-[80px] rounded-md object-cover flex-shrink-0 hidden sm:block" />
-                      ) : (
-                        <div className="w-[120px] h-[80px] rounded-md flex-shrink-0 hidden sm:block" style={{ backgroundColor: 'var(--bg-elevated)' }} />
-                      )}
+                      <img src={b.cover_image_r2_key || generateBlogBanner(b.id || b.slug)} alt="" className="w-[120px] h-[80px] rounded-md object-cover flex-shrink-0 hidden sm:block" />
                     </div>
                   </article>
                 </Link>

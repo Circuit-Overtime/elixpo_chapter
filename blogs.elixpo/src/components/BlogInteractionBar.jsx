@@ -68,8 +68,12 @@ export default function BlogInteractionBar({ blogId }) {
     };
   }, [blogId, user]);
 
+  const [likeAnim, setLikeAnim] = useState(false);
+
   const toggleLike = async () => {
     if (!user) return;
+    setLikeAnim(true);
+    setTimeout(() => setLikeAnim(false), 400);
     const res = await fetch(`/api/blogs/${blogId}/like`, { method: 'POST' });
     if (res.ok) {
       const data = await res.json();
@@ -107,13 +111,33 @@ export default function BlogInteractionBar({ blogId }) {
     }
   };
 
-  const handleShare = () => {
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareRef = useRef(null);
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    const handleClick = (e) => { if (shareRef.current && !shareRef.current.contains(e.target)) setShareOpen(false); };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [shareOpen]);
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.href).catch(() => {});
+    setShareOpen(false);
+  };
+
+  const copyEmbed = () => {
     const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({ url }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(url).catch(() => {});
-    }
+    const code = `<iframe src="${url}?embed=1" width="100%" height="600" frameborder="0"></iframe>`;
+    navigator.clipboard.writeText(code).catch(() => {});
+    setShareOpen(false);
+  };
+
+  const copyMarkdown = () => {
+    const url = window.location.href;
+    const md = `[${document.title || 'Blog post'}](${url})`;
+    navigator.clipboard.writeText(md).catch(() => {});
+    setShareOpen(false);
   };
 
   if (!interactions) return null;
@@ -131,10 +155,12 @@ export default function BlogInteractionBar({ blogId }) {
         {/* Like */}
         <button
           onClick={toggleLike}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-medium transition-all"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-medium"
           style={{
             color: interactions.liked ? '#f87171' : 'var(--text-muted)',
             backgroundColor: interactions.liked ? '#f8717110' : 'transparent',
+            transform: likeAnim ? 'scale(1.25)' : 'scale(1)',
+            transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s, background-color 0.15s',
           }}
           title={interactions.liked ? 'Unlike' : 'Like'}
         >
@@ -145,11 +171,12 @@ export default function BlogInteractionBar({ blogId }) {
         {/* Clap */}
         <button
           onClick={addClap}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-medium transition-all"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-medium"
           style={{
             color: interactions.userClaps > 0 ? '#9b7bf7' : 'var(--text-muted)',
             backgroundColor: interactions.userClaps > 0 ? '#9b7bf710' : 'transparent',
-            transform: clapAnim ? 'scale(1.15)' : 'scale(1)',
+            transform: clapAnim ? 'scale(1.3) rotate(-8deg)' : 'scale(1) rotate(0deg)',
+            transition: 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s, background-color 0.15s',
           }}
           title={`Clap (${interactions.userClaps}/50)`}
         >
@@ -184,15 +211,39 @@ export default function BlogInteractionBar({ blogId }) {
           <ion-icon name={interactions.bookmarked ? 'bookmark' : 'bookmark-outline'} style={{ fontSize: '18px' }} />
         </button>
 
-        {/* Share */}
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full transition-all"
-          style={{ color: 'var(--text-muted)' }}
-          title="Share"
-        >
-          <ion-icon name="share-outline" style={{ fontSize: '18px' }} />
-        </button>
+        {/* Share dropdown */}
+        <div className="relative" ref={shareRef}>
+          <button
+            onClick={() => setShareOpen(!shareOpen)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full transition-all"
+            style={{ color: 'var(--text-muted)' }}
+            title="Share"
+          >
+            <ion-icon name="share-outline" style={{ fontSize: '18px' }} />
+          </button>
+          {shareOpen && (
+            <div className="absolute bottom-full mb-2 right-0 w-[200px] rounded-xl shadow-xl z-50 overflow-hidden py-1" style={{ backgroundColor: 'var(--dropdown-bg)', border: '1px solid var(--dropdown-border)' }}>
+              <button onClick={copyLink} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] transition-colors text-left" style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                <ion-icon name="link-outline" style={{ fontSize: '16px', color: 'var(--text-faint)' }} />
+                Copy link
+              </button>
+              <button onClick={copyEmbed} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] transition-colors text-left" style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                <ion-icon name="code-slash-outline" style={{ fontSize: '16px', color: 'var(--text-faint)' }} />
+                Embed
+              </button>
+              <button onClick={copyMarkdown} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] transition-colors text-left" style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                <ion-icon name="document-text-outline" style={{ fontSize: '16px', color: 'var(--text-faint)' }} />
+                Copy Markdown
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

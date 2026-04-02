@@ -10,37 +10,41 @@ export async function GET(request, { params }) {
 
   try {
     const { getDB } = await import('../../../../../lib/cloudflare');
+    const { kvCache } = await import('../../../../../lib/cache');
     const db = getDB();
 
-    const queries = [
-      db.prepare('SELECT COUNT(*) as c FROM likes WHERE blog_id = ?').bind(slugid).first(),
-      db.prepare('SELECT COALESCE(SUM(count), 0) as c FROM claps WHERE blog_id = ?').bind(slugid).first(),
-      db.prepare('SELECT COUNT(*) as c FROM comments WHERE blog_id = ?').bind(slugid).first(),
-      db.prepare('SELECT COUNT(*) as c FROM blog_views WHERE blog_id = ?').bind(slugid).first(),
-    ];
+    // Public counts — cached (denormalized, single row read)
+    const publicCounts = await kvCache(`v1:interactions:${slugid}`, 60, async () => {
+      const blog = await db.prepare(
+        'SELECT like_count, clap_total, comment_count, view_count FROM blogs WHERE id = ?'
+      ).bind(slugid).first();
+      return {
+        likeCount: blog?.like_count || 0,
+        totalClaps: blog?.clap_total || 0,
+        commentCount: blog?.comment_count || 0,
+        viewCount: blog?.view_count || 0,
+      };
+    });
 
+    // Per-user state — NOT cached, must be real-time
+    let userState = { liked: false, userClaps: 0, bookmarked: false, bookmarkCollectionId: null, readProgress: 0 };
     if (userId) {
-      queries.push(
+      const [liked, claps, bookmark, progress] = await Promise.all([
         db.prepare('SELECT 1 FROM likes WHERE blog_id = ? AND user_id = ?').bind(slugid, userId).first(),
         db.prepare('SELECT count FROM claps WHERE blog_id = ? AND user_id = ?').bind(slugid, userId).first(),
         db.prepare('SELECT collection_id FROM bookmarks WHERE blog_id = ? AND user_id = ?').bind(slugid, userId).first(),
         db.prepare('SELECT read_progress FROM read_history WHERE blog_id = ? AND user_id = ?').bind(slugid, userId).first(),
-      );
+      ]);
+      userState = {
+        liked: !!liked,
+        userClaps: claps?.count || 0,
+        bookmarked: !!bookmark,
+        bookmarkCollectionId: bookmark?.collection_id || null,
+        readProgress: progress?.read_progress || 0,
+      };
     }
 
-    const results = await Promise.all(queries);
-
-    return NextResponse.json({
-      likeCount: results[0]?.c || 0,
-      totalClaps: results[1]?.c || 0,
-      commentCount: results[2]?.c || 0,
-      viewCount: results[3]?.c || 0,
-      liked: userId ? !!results[4] : false,
-      userClaps: userId ? (results[5]?.count || 0) : 0,
-      bookmarked: userId ? !!results[6] : false,
-      bookmarkCollectionId: userId ? (results[6]?.collection_id || null) : null,
-      readProgress: userId ? (results[7]?.read_progress || 0) : 0,
-    });
+    return NextResponse.json({ ...publicCounts, ...userState });
   } catch {
     return NextResponse.json({ likeCount: 0, totalClaps: 0, commentCount: 0, viewCount: 0, liked: false, userClaps: 0, bookmarked: false, readProgress: 0 });
   }
