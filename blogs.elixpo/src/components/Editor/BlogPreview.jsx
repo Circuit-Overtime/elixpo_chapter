@@ -227,7 +227,7 @@ function renderBlocksToHTML(blocks) {
   return html;
 }
 
-export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, wordCount }) {
+export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, wordCount }) {
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -393,8 +393,17 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 text-[13px] text-[var(--text-faint)]">
+          <div className="flex items-center gap-2 text-[13px] text-[var(--text-faint)] flex-wrap">
+            {org && (
+              <>
+                <span className="text-[var(--text-secondary)] font-medium">{org.name}</span>
+                <span className="text-[var(--text-faint)]">·</span>
+              </>
+            )}
             <span className="text-[var(--text-muted)] font-medium">{user.display_name || user.username || 'Author'}</span>
+            {coAuthorCount > 0 && (
+              <span className="text-[var(--text-faint)]">+ {coAuthorCount} {coAuthorCount === 1 ? 'other' : 'others'}</span>
+            )}
             <span className="text-[var(--text-faint)]">·</span>
             <span>{Math.max(1, Math.ceil((wordCount || 0) / 200))} min read</span>
             <span className="text-[var(--text-faint)]">·</span>

@@ -198,10 +198,13 @@ function FeedCard({ post }) {
             {post.is_staff && (
               <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
             )}
-            {post.published_as && post.published_as.startsWith('org:') && (
-              <><span style={{ color: 'var(--text-secondary)' }}>in {post.published_as.replace(/^org:.*/, author.username)}</span><span className="mx-0.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
+            {post.org && (
+              <><span style={{ color: 'var(--text-secondary)' }}>in {post.org.name}</span><span className="mx-0.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
             )}
             <span style={{ color: 'var(--text-secondary)' }}>{author.display_name || author.username}</span>
+            {post.co_author_count > 0 && (
+              <span style={{ color: 'var(--text-faint)' }}>+ {post.co_author_count} {post.co_author_count === 1 ? 'other' : 'others'}</span>
+            )}
           </span>
         </div>
         <div className="flex gap-6">
@@ -238,7 +241,7 @@ function FeedCard({ post }) {
           <img
             src={post.cover_image_r2_key || generateBlogBanner(post.id || post.slug)}
             alt=""
-            className="w-[120px] h-[80px] rounded-md object-cover flex-shrink-0 hidden sm:block"
+            className="w-[140px] h-[90px] rounded-lg flex-shrink-0 hidden sm:block object-cover"
           />
         </div>
       </Link>

@@ -61,14 +61,16 @@ export async function GET(request) {
 
         if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
 
-        // Fetch tags
-        const tags = await db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?')
-          .bind(blog.id).all();
+        // Fetch tags + co-author count
+        const [tags, coAuthorRow] = await Promise.all([
+          db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all(),
+          db.prepare('SELECT COUNT(*) as c FROM blog_co_authors WHERE blog_id = ?').bind(blog.id).first(),
+        ]);
 
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'user', ...user },
-          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag) },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_author_count: coAuthorRow?.c || 0 },
         });
       }
 
@@ -119,12 +121,15 @@ export async function GET(request) {
 
         if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
 
-        const tags = await db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all();
+        const [tags, coAuthorRow] = await Promise.all([
+          db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all(),
+          db.prepare('SELECT COUNT(*) as c FROM blog_co_authors WHERE blog_id = ?').bind(blog.id).first(),
+        ]);
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'org', ...org },
           collection: { id: col.id, slug: collection },
-          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag) },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_author_count: coAuthorRow?.c || 0 },
         });
       }
 
@@ -179,11 +184,14 @@ export async function GET(request) {
 
         if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
 
-        const tags = await db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all();
+        const [tags, coAuthorRow] = await Promise.all([
+          db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all(),
+          db.prepare('SELECT COUNT(*) as c FROM blog_co_authors WHERE blog_id = ?').bind(blog.id).first(),
+        ]);
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'org', ...org },
-          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag) },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_author_count: coAuthorRow?.c || 0 },
         });
       }
 
