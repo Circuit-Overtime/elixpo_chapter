@@ -8,6 +8,7 @@ import { generatePixelAvatar, generateBlogBanner } from '../utils/pixelAvatar';
 import { useAuth } from '../context/AuthContext';
 import BlogInteractionBar from '../components/BlogInteractionBar';
 import BlogComments from '../components/BlogComments';
+import AuthorAttribution from '../components/AuthorAttribution';
 import '../styles/editor/editor.css';
 
 const BlogPreview = dynamic(() => import('../components/Editor/BlogPreview'), { ssr: false });
@@ -109,6 +110,8 @@ export default function HandlePage({ path }) {
             blocks={blocks}
             coverPreview={blog.cover_image_r2_key || generateBlogBanner(blog.id || blog.slug)}
             user={{ username: blog.author_username, display_name: blog.author_name, avatar_url: blog.author_avatar }}
+            org={data.owner?.type === 'org' ? { name: data.owner.name, slug: data.owner.slug, logo_url: data.owner.logo_url || data.owner.logo_r2_key } : null}
+            coAuthorCount={blog.co_author_count || 0}
             wordCount={wc}
           />
 
@@ -156,15 +159,15 @@ export default function HandlePage({ path }) {
               {blogs.map(b => (
                 <Link key={b.id} href={`/${org.slug}/${col.slug}/${b.slug}`}>
                   <article className="group py-6 cursor-pointer" style={{ borderBottom: '1px solid var(--divider)' }}>
-                    <div className="flex items-center gap-2 mb-2.5">
-                      {b.author_avatar ? (
-                        <img src={b.author_avatar} alt="" className="h-6 w-6 rounded-full object-cover" />
-                      ) : (
-                        <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
-                          {(b.author_name || b.author_username || '?')[0].toUpperCase()}
-                        </div>
-                      )}
-                      <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>{b.author_name || b.author_username}</span>
+                    <div className="mb-2.5">
+                      <AuthorAttribution
+                        org={{ name: org.name, slug: org.slug, logo_url: org.logo_r2_key }}
+                        authors={[
+                          { name: b.author_name, username: b.author_username, avatar_url: b.author_avatar },
+                          ...(b.co_authors || []).map(ca => ({ name: ca.display_name, username: ca.username, avatar_url: ca.avatar_url }))
+                        ]}
+                        size="sm"
+                      />
                     </div>
                     <div className="flex gap-6">
                       <div className="flex-1 min-w-0">

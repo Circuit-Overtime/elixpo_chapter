@@ -83,10 +83,10 @@ export function generateBlogBanner(seed) {
 
   const W = 720;
   const H = 240;
-  const PX = 8;
-  // Corner block size in cells — bigger = pixels reach further toward center
-  const CX = 14;
-  const CY = 12;
+  const PX = 10;
+  // Corner block size in cells
+  const CX = 10;
+  const CY = 8;
 
   // Generate one corner pattern (CX x CY), then mirror to all 4
   const bits = [];
@@ -117,26 +117,19 @@ export function generateBlogBanner(seed) {
   drawCorner(0, H, false, true);        // bottom-left
   drawCorner(W, H, true, true);         // bottom-right
 
-  // Scattered low-opacity pixels across the whole banner for blocksy texture
+  // Scattered low-opacity pixels for blocksy texture
   let bgPixels = '';
-  for (let y = 0; y < Math.floor(H / PX); y++) {
-    for (let x = 0; x < Math.floor(W / PX); x++) {
-      const val = ((h * (y * 53 + x * 37 + 19)) & 0xFF);
-      if (val > 230) {
-        const fill = val % 3 === 0 ? fgLight : fg;
-        bgPixels += `<rect x="${x * PX}" y="${y * PX}" width="${PX}" height="${PX}" fill="${fill}" opacity="0.06" rx="1"/>`;
+  for (let y = 0; y < Math.floor(H / PX); y += 2) {
+    for (let x = 0; x < Math.floor(W / PX); x += 2) {
+      const v = (h * (y * 53 + x * 37 + 19)) & 0xFF;
+      if (v > 220) {
+        const fill = v > 240 ? fgLight : fg;
+        const op = v > 240 ? '0.12' : '0.08';
+        bgPixels += `<rect x="${x * PX}" y="${y * PX}" width="${PX}" height="${PX}" fill="${fill}" opacity="${op}" rx="1"/>`;
       }
     }
   }
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
-    <rect width="${W}" height="${H}" fill="${bg}" rx="12"/>
-    <ellipse cx="${W/2}" cy="${H/2}" rx="220" ry="90" fill="${fg}" opacity="0.12" filter="url(#gb)"/>
-    <ellipse cx="${W*0.35}" cy="${H*0.4}" rx="140" ry="70" fill="${fgLight}" opacity="0.08" filter="url(#gb)"/>
-    <ellipse cx="${W*0.65}" cy="${H*0.6}" rx="160" ry="80" fill="${fg}" opacity="0.10" filter="url(#gb)"/>
-    <defs><filter id="gb"><feGaussianBlur stdDeviation="50"/></filter></defs>
-    ${bgPixels}
-    ${rects}
-  </svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice"><rect width="${W}" height="${H}" fill="${bg}"/>${bgPixels}${rects}</svg>`;
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }

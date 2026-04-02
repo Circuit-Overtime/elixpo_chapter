@@ -1,4 +1,5 @@
 import '../styles/community/trending.css'
+import AuthorAttribution from '@/components/AuthorAttribution'
 
 export default function FeedPage() {
     return (
@@ -83,13 +84,12 @@ export default function FeedPage() {
 
                 <div className="recommendationCards w-[50%] h-full bg-[#10141E] box-border flex flex-col items-left justify-start">
                     <div className="recommendationContainer relative w-full max-h-[75%] overflow-y-auto flex flex-col items-center box-border mt-10">
+                        {/* Card 1: Org + single author */}
                         <div className="recommendCard relative shrink-0 flex flex-col w-[98%] h-[250px] bg-[#1D202A] rounded-[8px] mx-auto p-5 box-border mb-5">
-                            <div className="attributionCard flex flex-row gap-2 w-full h-[30px] ">
-                                <div className="logo h-[25px] w-[25px] rounded-[8px] bg-[#888]"></div>
-                                <span className="text-[#fff] underline cursor-pointer organization">Elixpo Organization</span>
-                                <span className="text-[#888]">by</span>
-                                <span className="text-[#fff] cursor-pointer author">John Doe</span>
-                            </div>
+                            <AuthorAttribution
+                              org={{ name: 'Elixpo Organization' }}
+                              authors={[{ name: 'John Doe' }]}
+                            />
                             <div className="contentInfo flex flex-row w-full gap-2">
                                 <div className="contentTitle flex flex-col gap-1 w-[75%] box-border">
                                     <p className="contentText text-[#fff] text-[2em] font-extrabold">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
@@ -112,13 +112,12 @@ export default function FeedPage() {
                             </div>
                         </div>
 
+                        {/* Card 2: Org + multiple authors (+ 2 others) */}
                         <div className="recommendCard relative shrink-0 flex flex-col w-[98%] h-[250px] bg-[#1D202A] rounded-[8px] mx-auto p-5 box-border mb-5">
-                            <div className="attributionCard flex flex-row gap-2 w-full h-[30px] ">
-                                <div className="logo h-[25px] w-[25px] rounded-[8px] bg-[#888]"></div>
-                                <span className="text-[#fff] underline cursor-pointer organization">Elixpo Organization</span>
-                                <span className="text-[#888]">by</span>
-                                <span className="text-[#fff] cursor-pointer author">John Doe</span>
-                            </div>
+                            <AuthorAttribution
+                              org={{ name: 'Elixpo Organization' }}
+                              authors={[{ name: 'John Doe' }, { name: 'Jane Smith' }, { name: 'Alex Lee' }]}
+                            />
                             <div className="contentInfo flex flex-row w-full gap-2">
                                 <div className="contentTitle flex flex-col gap-1 w-[75%] box-border">
                                     <p className="contentText text-[#fff] text-[2em] font-extrabold">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
@@ -141,13 +140,11 @@ export default function FeedPage() {
                             </div>
                         </div>
 
+                        {/* Card 3: Personal blog (no org) */}
                         <div className="recommendCard relative shrink-0 flex flex-col w-[98%] h-[250px] bg-[#1D202A] rounded-[8px] mx-auto p-5 box-border mb-5">
-                            <div className="attributionCard flex flex-row gap-2 w-full h-[30px] ">
-                                <div className="logo h-[25px] w-[25px] rounded-[8px] bg-[#888]"></div>
-                                <span className="text-[#fff] underline cursor-pointer organization">Elixpo Organization</span>
-                                <span className="text-[#888]">by</span>
-                                <span className="text-[#fff] cursor-pointer author">John Doe</span>
-                            </div>
+                            <AuthorAttribution
+                              authors={[{ name: 'Sarah Connor' }]}
+                            />
                             <div className="contentInfo flex flex-row w-full gap-2">
                                 <div className="contentTitle flex flex-col gap-1 w-[75%] box-border">
                                     <p className="contentText text-[#fff] text-[2em] font-extrabold">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
@@ -176,12 +173,11 @@ export default function FeedPage() {
                     <p className="picksHeader text-[#7ba8f0] text-[1.2em] font-bold mt-10">Top Developer Picks</p>
                     <div className="topPicksContainer relative w-full max-h-[70%] overflow-y-auto flex-col items-center box-border flex-grow">
                         <div className="pickCard flex-shrink-0 relative flex flex-col w-full h-[150px] bg-[#1D202A] rounded-[8px] mx-auto p-5 box-border mt-3">
-                            <div className="attributionCard flex flex-row gap-2 w-full h-[30px] ">
-                                <div className="logo h-[25px] w-[25px] rounded-[8px] bg-[#888]"></div>
-                                <span className="text-[#fff] underline cursor-pointer organization">Elixpo Organization</span>
-                                <span className="text-[#888]">by</span>
-                                <span className="text-[#fff] cursor-pointer author">John Doe</span>
-                            </div>
+                            <AuthorAttribution
+                              org={{ name: 'Elixpo Organization' }}
+                              authors={[{ name: 'John Doe' }]}
+                              size="sm"
+                            />
                             <div className="contentInfo flex flex-row w-full gap-2">
                                 <div className="contentTitle flex flex-col gap-1 w-[75%] box-border">
                                     <p className="contentText text-[#fff] text-[1.2em] font-bold">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
@@ -193,12 +189,11 @@ export default function FeedPage() {
                         </div>
 
                         <div className="pickCard flex-shrink-0 relative flex flex-col w-full h-[150px] bg-[#1D202A] rounded-[8px] mx-auto p-5 box-border mt-3">
-                            <div className="attributionCard flex flex-row gap-2 w-full h-[30px] ">
-                                <div className="logo h-[25px] w-[25px] rounded-[8px] bg-[#888]"></div>
-                                <span className="text-[#fff] underline cursor-pointer organization">Elixpo Organization</span>
-                                <span className="text-[#888]">by</span>
-                                <span className="text-[#fff] cursor-pointer author">John Doe</span>
-                            </div>
+                            <AuthorAttribution
+                              org={{ name: 'Elixpo Organization' }}
+                              authors={[{ name: 'John Doe' }, { name: 'Jane Smith' }]}
+                              size="sm"
+                            />
                             <div className="contentInfo flex flex-row w-full gap-2">
                                 <div className="contentTitle flex flex-col gap-1 w-[75%] box-border">
                                     <p className="contentText text-[#fff] text-[1.2em] font-bold">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
@@ -210,12 +205,11 @@ export default function FeedPage() {
                         </div>
 
                         <div className="pickCard flex-shrink-0 relative flex flex-col w-full h-[150px] bg-[#1D202A] rounded-[8px] mx-auto p-5 box-border mt-3">
-                            <div className="attributionCard flex flex-row gap-2 w-full h-[30px] ">
-                                <div className="logo h-[25px] w-[25px] rounded-[8px] bg-[#888]"></div>
-                                <span className="text-[#fff] underline cursor-pointer organization">Elixpo Organization</span>
-                                <span className="text-[#888]">by</span>
-                                <span className="text-[#fff] cursor-pointer author">John Doe</span>
-                            </div>
+                            <AuthorAttribution
+                              org={{ name: 'Elixpo Organization' }}
+                              authors={[{ name: 'John Doe' }]}
+                              size="sm"
+                            />
                             <div className="contentInfo flex flex-row w-full gap-2">
                                 <div className="contentTitle flex flex-col gap-1 w-[75%] box-border">
                                     <p className="contentText text-[#fff] text-[1.2em] font-bold">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>

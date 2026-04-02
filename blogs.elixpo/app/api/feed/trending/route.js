@@ -31,6 +31,20 @@ export async function GET(request) {
         ).bind(...authorIds).all();
         const authorMap = Object.fromEntries((authors?.results || []).map(a => [a.id, a]));
         posts = posts.map(p => ({ ...p, author: authorMap[p.author_id] || { username: 'unknown' } }));
+
+        // Fetch org names
+        const orgIds = [...new Set(posts.filter(p => p.published_as?.startsWith('org:')).map(p => p.published_as.replace('org:', '')))];
+        if (orgIds.length > 0) {
+          const orgPlaceholders = orgIds.map(() => '?').join(',');
+          const orgs = await db.prepare(
+            `SELECT id, slug, name, logo_r2_key FROM orgs WHERE id IN (${orgPlaceholders})`
+          ).bind(...orgIds).all();
+          const orgMap = Object.fromEntries((orgs?.results || []).map(o => [o.id, o]));
+          posts = posts.map(p => {
+            const oid = p.published_as?.startsWith('org:') ? p.published_as.replace('org:', '') : null;
+            return { ...p, org: oid && orgMap[oid] ? { id: orgMap[oid].id, slug: orgMap[oid].slug, name: orgMap[oid].name, logo_url: orgMap[oid].logo_r2_key } : null };
+          });
+        }
       }
       return { posts };
     });
