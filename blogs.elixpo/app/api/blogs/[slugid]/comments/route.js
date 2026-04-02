@@ -97,6 +97,10 @@ export async function POST(request, { params }) {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).bind(id, slugid, session.userId, parentId || null, content.trim(), now, now).run();
 
+    // Increment denormalized count + invalidate cache
+    await db.prepare('UPDATE blogs SET comment_count = comment_count + 1 WHERE id = ?').bind(slugid).run();
+    try { const { kvInvalidate } = await import('../../../../../lib/cache'); await kvInvalidate(`v1:interactions:${slugid}`); } catch {}
+
     // Notify blog author (if not self)
     try {
       const user = await db.prepare('SELECT username, display_name, avatar_url FROM users WHERE id = ?').bind(session.userId).first();

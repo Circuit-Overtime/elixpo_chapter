@@ -36,6 +36,9 @@ export async function PUT(request) {
       links ? JSON.stringify(links) : null, now, session.userId,
     ).run();
 
+    // Invalidate user cache
+    try { const { kvInvalidate } = await import('../../../../lib/cache'); await kvInvalidate(`v1:user:${session.userId}`); } catch {}
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error('Update user error:', e);

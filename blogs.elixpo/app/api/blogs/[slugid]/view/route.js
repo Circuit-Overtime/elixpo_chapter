@@ -27,12 +27,15 @@ export async function POST(request, { params }) {
         'INSERT INTO blog_views (blog_id, user_id, ip_hash, created_at) VALUES (?, ?, ?, ?)'
       ).bind(slugid, session?.userId || null, ipHash, now).run();
 
+      // Increment denormalized count
+      await db.prepare('UPDATE blogs SET view_count = view_count + 1 WHERE id = ?').bind(slugid).run();
+
       // Record taste signal
       try { const { recordSignal } = await import('../../../../../lib/taste'); if (session?.userId) await recordSignal(db, session.userId, 'read', { blogId: slugid }); } catch {}
     }
 
-    const count = await db.prepare('SELECT COUNT(*) as c FROM blog_views WHERE blog_id = ?').bind(slugid).first();
-    return NextResponse.json({ views: count?.c || 0 });
+    const blog = await db.prepare('SELECT view_count FROM blogs WHERE id = ?').bind(slugid).first();
+    return NextResponse.json({ views: blog?.view_count || 0 });
   } catch {
     return NextResponse.json({ views: 0 });
   }

@@ -52,7 +52,7 @@ export async function GET(request) {
         const blog = await db.prepare(`
           SELECT b.id, b.slug, b.title, b.subtitle, b.content, b.cover_image_r2_key,
             b.status, b.published_as, b.page_emoji, b.read_time_minutes,
-            b.published_at, b.created_at, b.updated_at,
+            b.published_at, b.created_at, b.updated_at, b.author_id,
             u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
           FROM blogs b
           JOIN users u ON u.id = b.author_id

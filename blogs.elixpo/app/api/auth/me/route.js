@@ -9,29 +9,26 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  // Try to fetch fresh user data from D1
   try {
-    const { getDB } = await import('../../../../lib/cloudflare');
-    const db = getDB();
-    const user = await db.prepare(`
-      SELECT id, email, username, display_name, bio, avatar_url, avatar_r2_key, banner_r2_key, locale,
-             tier, storage_used_bytes, ai_usage_today, ai_usage_date,
-             location, timezone, pronouns, website, company, links,
-             created_at, updated_at
-      FROM users WHERE id = ?
-    `).bind(session.userId).first();
+    const { kvCache } = await import('../../../../lib/cache');
+    const user = await kvCache(`v1:user:${session.userId}`, 300, async () => {
+      const { getDB } = await import('../../../../lib/cloudflare');
+      const db = getDB();
+      return db.prepare(`
+        SELECT id, email, username, display_name, bio, avatar_url, avatar_r2_key, banner_r2_key, locale,
+               tier, storage_used_bytes, ai_usage_today, ai_usage_date,
+               location, timezone, pronouns, website, company, links,
+               created_at, updated_at
+        FROM users WHERE id = ?
+      `).bind(session.userId).first();
+    });
 
-    if (user) {
-      return NextResponse.json(user);
-    }
+    if (user) return NextResponse.json(user);
   } catch {
-    // D1 not available (local dev) — fall through to cached profile
+    // D1/KV not available — fall through
   }
 
-  // Return cached profile from session cookie
-  if (session.profile) {
-    return NextResponse.json(session.profile);
-  }
+  if (session.profile) return NextResponse.json(session.profile);
 
   return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 }

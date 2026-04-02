@@ -39,9 +39,11 @@ export async function POST(request, { params }) {
 
     if (existing) {
       await db.prepare('DELETE FROM likes WHERE blog_id = ? AND user_id = ?').bind(slugid, session.userId).run();
+      await db.prepare('UPDATE blogs SET like_count = MAX(0, like_count - 1) WHERE id = ?').bind(slugid).run();
     } else {
       await db.prepare('INSERT INTO likes (blog_id, user_id, created_at) VALUES (?, ?, unixepoch())')
         .bind(slugid, session.userId).run();
+      await db.prepare('UPDATE blogs SET like_count = like_count + 1 WHERE id = ?').bind(slugid).run();
 
       // Record taste signal
       try { const { recordSignal } = await import('../../../../../lib/taste'); await recordSignal(db, session.userId, 'like', { blogId: slugid }); } catch {}
@@ -62,8 +64,12 @@ export async function POST(request, { params }) {
       } catch {}
     }
 
-    const count = await db.prepare('SELECT COUNT(*) as c FROM likes WHERE blog_id = ?').bind(slugid).first();
-    return NextResponse.json({ liked: !existing, count: count?.c || 0 });
+    const count = await db.prepare('SELECT like_count FROM blogs WHERE id = ?').bind(slugid).first();
+
+    // Invalidate interaction cache
+    try { const { kvInvalidate } = await import('../../../../../lib/cache'); await kvInvalidate(`v1:interactions:${slugid}`); } catch {}
+
+    return NextResponse.json({ liked: !existing, count: count?.like_count || 0 });
   } catch (e) {
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }

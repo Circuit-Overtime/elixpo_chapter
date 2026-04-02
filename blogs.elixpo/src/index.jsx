@@ -5,6 +5,7 @@ import { useAuth } from './context/AuthContext';
 import AppShell from './components/AppShell';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { generateBlogBanner } from './utils/pixelAvatar';
 
 function timeAgo(ts) {
   if (!ts) return '';
@@ -234,12 +235,11 @@ function FeedCard({ post }) {
               )}
             </div>
           </div>
-          {post.cover_image_r2_key && (
-            <img src={post.cover_image_r2_key} alt="" className="w-[120px] h-[80px] rounded-md object-cover flex-shrink-0 hidden sm:block" />
-          )}
-          {!post.cover_image_r2_key && (
-            <div className="w-[120px] h-[80px] rounded-md flex-shrink-0 hidden sm:block" style={{ backgroundColor: 'var(--bg-elevated)' }} />
-          )}
+          <img
+            src={post.cover_image_r2_key || generateBlogBanner(post.id || post.slug)}
+            alt=""
+            className="w-[120px] h-[80px] rounded-md object-cover flex-shrink-0 hidden sm:block"
+          />
         </div>
       </Link>
       {post.can_edit && (
