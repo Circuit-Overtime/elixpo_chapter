@@ -113,10 +113,14 @@ async def search(pipeline_initialized: bool):
                             if line.startswith('event:'):
                                 event_type = line.replace('event:', '').strip()
                             elif line.startswith('data:'):
-                                event_data_lines.append(line.replace('data:', '', 1).lstrip())
+                                # Strip exactly one leading space (SSE spec), preserve the rest
+                                raw = line[5:]  # skip "data:"
+                                if raw.startswith(' '):
+                                    raw = raw[1:]
+                                event_data_lines.append(raw)
 
                         event_data = "\n".join(event_data_lines) if event_data_lines else None
-                        if event_type and event_data:
+                        if event_type and event_data is not None:
                             openai_sse = format_sse_event_openai(event_type, event_data, request_id)
                             yield openai_sse.encode('utf-8')
                         else:
@@ -132,6 +136,7 @@ async def search(pipeline_initialized: bool):
                     'Cache-Control': 'no-cache',
                     'Connection': 'keep-alive',
                     'Content-Type': 'text/event-stream',
+                    'X-Accel-Buffering': 'no',
                 }
             )
         else:

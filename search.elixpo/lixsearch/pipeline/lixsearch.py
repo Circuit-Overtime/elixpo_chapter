@@ -50,7 +50,8 @@ MODEL = LLM_MODEL
 async def _stream_llm_call(payload: dict, headers: dict):
     """Stream an LLM call from Pollinations. Yields ("content", str) for text
     deltas and ("done", assistant_message_dict) when finished. Tool call deltas
-    are accumulated silently and returned in the final message."""
+    are accumulated silently and returned in the final message.
+    Yields ("keepalive", None) every few seconds while waiting for the first token."""
     loop = asyncio.get_event_loop()
     queue = asyncio.Queue()
 
@@ -73,11 +74,17 @@ async def _stream_llm_call(payload: dict, headers: dict):
 
     content = ""
     tool_calls = []
+    got_first_token = False
+    _keepalive_count = 0
 
     while True:
         try:
-            line = await asyncio.wait_for(queue.get(), timeout=60.0)
+            line = await asyncio.wait_for(queue.get(), timeout=8.0)
         except asyncio.TimeoutError:
+            if not got_first_token and _keepalive_count < 7:
+                _keepalive_count += 1
+                yield ("keepalive", None)
+                continue
             break
         if line is None:
             break
@@ -96,6 +103,7 @@ async def _stream_llm_call(payload: dict, headers: dict):
             delta = choices[0].get("delta", {})
 
             if "content" in delta and delta["content"]:
+                got_first_token = True
                 content += delta["content"]
                 yield ("content", delta["content"])
 
@@ -432,7 +440,12 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                 try:
                     assistant_message = None
                     async for _stype, _sdata in _stream_llm_call(payload, headers):
-                        if _stype == "content":
+                        if _stype == "keepalive":
+                            _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
+                            if _ke:
+                                yield _ke
+                            status_tracker.touch()
+                        elif _stype == "content":
                             _streamed_content += _sdata
                             yield format_sse("RESPONSE", _sdata)
                             status_tracker.touch()
