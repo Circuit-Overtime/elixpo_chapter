@@ -172,7 +172,6 @@ export default function HandlePage({ path }) {
                     <div className="flex gap-6">
                       <div className="flex-1 min-w-0">
                         <h2 className="text-[19px] font-bold leading-[1.3] mb-1.5 group-hover:opacity-75 transition-opacity font-serif" style={{ color: 'var(--text-primary)' }}>
-                          {b.page_emoji && <span className="mr-1.5">{b.page_emoji}</span>}
                           {b.title || 'Untitled'}
                         </h2>
                         {b.subtitle && (
@@ -324,7 +323,6 @@ export default function HandlePage({ path }) {
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-[15px] text-[var(--text-primary)] font-semibold group-hover:text-[var(--text-primary)] transition-colors leading-snug">
-                        {b.page_emoji && <span className="mr-1.5">{b.page_emoji}</span>}
                         {b.title || 'Untitled'}
                       </p>
                       {b.subtitle && <p className="text-[13px] text-[var(--text-muted)] mt-1 line-clamp-1">{b.subtitle}</p>}

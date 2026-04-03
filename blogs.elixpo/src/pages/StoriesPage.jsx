@@ -38,7 +38,7 @@ function StoryCard({ story, onDelete }) {
         </div>
         <Link href={editUrl}>
           <h3 className="text-[17px] font-bold text-[#e8e8e8] leading-[1.35] mb-1 font-serif hover:text-[var(--text-primary)] transition-colors">
-            {story.page_emoji && `${story.page_emoji} `}{story.title || 'Untitled'}
+            {story.title || 'Untitled'}
           </h3>
         </Link>
         {story.subtitle && (

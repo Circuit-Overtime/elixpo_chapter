@@ -824,14 +824,25 @@ function OrganizationTab({ user }) {
 }
 
 // ── Subscription Tab ──
-function SubscriptionTab() {
+function SubscriptionTab({ user }) {
+  const currentTier = user?.tier || 'free';
   return (
-    <div className="flex flex-col items-center justify-center py-20">
+    <div className="flex flex-col items-center justify-center py-16">
       <div className="w-14 h-14 rounded-full bg-[#9b7bf714] flex items-center justify-center mb-5">
-        <ion-icon name="diamond-outline" style={{ fontSize: '28px', color: '#9b7bf7' }} />
+        <ion-icon name={currentTier === 'member' ? 'diamond' : 'diamond-outline'} style={{ fontSize: '28px', color: '#9b7bf7' }} />
       </div>
-      <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Subscription</h3>
-      <p className="text-[var(--text-muted)] text-[14px] text-[var(--text-secondary)]enter max-w-sm">Pricing and subscription management is coming soon. Stay tuned for LixBlogs Pro.</p>
+      <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">Your Plan</h3>
+      <p className="text-[14px] text-[var(--text-muted)] mb-6">
+        You're currently on the <span className="font-semibold text-[var(--text-primary)]">{currentTier === 'member' ? 'Member' : 'Free'}</span> plan.
+      </p>
+      <Link
+        href="/pricing"
+        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-semibold text-white transition-all hover:-translate-y-0.5"
+        style={{ background: 'linear-gradient(135deg, #9b7bf7, #7c5ce7)', boxShadow: '0 2px 12px rgba(155,123,247,0.3)' }}
+      >
+        <ion-icon name="pricetags-outline" style={{ fontSize: '16px' }} />
+        {currentTier === 'member' ? 'Manage Subscription' : 'View Plans & Upgrade'}
+      </Link>
     </div>
   );
 }
@@ -884,7 +895,7 @@ export default function SettingsPage() {
         {activeTab === 1 && <PublishingTab user={user} />}
         {activeTab === 2 && <NotificationsTab />}
         {activeTab === 3 && <OrganizationTab user={user} />}
-        {activeTab === 4 && <SubscriptionTab />}
+        {activeTab === 4 && <SubscriptionTab user={user} />}
       </div>
     </AppShell>
   );
