@@ -803,8 +803,8 @@ export default function WritePage({ slugid }) {
             ))}
           </div>
 
-          {/* === EDIT MODE === */}
-          {mode === 'edit' && (
+          {/* === EDIT MODE (always mounted, hidden when not active so AI can keep typing) === */}
+          <div style={{ display: mode === 'edit' ? 'block' : 'none' }}>
             <>
               {/* Skeleton — visible until editor is ready */}
               {(draftLoading || !editorReady) && (
@@ -938,14 +938,14 @@ export default function WritePage({ slugid }) {
                         <div className="absolute inset-0 cover-gradient-blur" />
                         <div className="absolute inset-0 flex items-center justify-center gap-6 z-10">
                           <label className="flex flex-col items-center gap-2 cursor-pointer group/upload">
-                            <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover/upload:bg-white/20 transition-colors">
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <div className="w-12 h-12 rounded-full bg-black/10 backdrop-blur-md border border-black/20 flex items-center justify-center group-hover/upload:bg-black/20 transition-colors">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                                 <polyline points="17 8 12 3 7 8" />
                                 <line x1="12" y1="3" x2="12" y2="15" />
                               </svg>
                             </div>
-                            <span className="text-xs text-[var(--text-primary)]/70 font-medium">From device</span>
+                            <span className="text-xs text-black/70 font-medium">From device</span>
                             <input
                               type="file"
                               accept="image/*"
@@ -966,13 +966,57 @@ export default function WritePage({ slugid }) {
                             onClick={() => setCoverUrlMode(true)}
                             className="flex flex-col items-center gap-2 group/url"
                           >
-                            <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover/url:bg-white/20 transition-colors">
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <div className="w-12 h-12 rounded-full bg-black/10 backdrop-blur-md border border-black/20 flex items-center justify-center group-hover/url:bg-black/20 transition-colors">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
                                 <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
                               </svg>
                             </div>
-                            <span className="text-xs text-[var(--text-primary)]/70 font-medium">From URL</span>
+                            <span className="text-xs text-black/70 font-medium">From URL</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Generate a blocky default banner using canvas
+                              const canvas = document.createElement('canvas');
+                              canvas.width = 1200;
+                              canvas.height = 400;
+                              const ctx = canvas.getContext('2d');
+                              // Soft gradient background
+                              const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                              const hue1 = Math.floor(Math.random() * 360);
+                              const hue2 = (hue1 + 40 + Math.floor(Math.random() * 80)) % 360;
+                              grad.addColorStop(0, `hsl(${hue1}, 60%, 75%)`);
+                              grad.addColorStop(1, `hsl(${hue2}, 50%, 80%)`);
+                              ctx.fillStyle = grad;
+                              ctx.fillRect(0, 0, canvas.width, canvas.height);
+                              // Draw random blocky shapes
+                              const blockCount = 12 + Math.floor(Math.random() * 10);
+                              for (let b = 0; b < blockCount; b++) {
+                                const bx = Math.random() * canvas.width;
+                                const by = Math.random() * canvas.height;
+                                const bw = 30 + Math.random() * 120;
+                                const bh = 30 + Math.random() * 120;
+                                const bHue = (hue1 + Math.floor(Math.random() * 120)) % 360;
+                                ctx.fillStyle = `hsla(${bHue}, 50%, ${60 + Math.random() * 20}%, ${0.15 + Math.random() * 0.25})`;
+                                ctx.fillRect(bx, by, bw, bh);
+                              }
+                              canvas.toBlob((blob) => {
+                                if (blob) {
+                                  const url = URL.createObjectURL(blob);
+                                  setCoverImage(blob);
+                                  setCoverPreview(url);
+                                  setShowCoverModal(false);
+                                }
+                              }, 'image/webp', 0.85);
+                            }}
+                            className="flex flex-col items-center gap-2 group/gen"
+                          >
+                            <div className="w-12 h-12 rounded-full bg-black/10 backdrop-blur-md border border-black/20 flex items-center justify-center group-hover/gen:bg-black/20 transition-colors">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+                              </svg>
+                            </div>
+                            <span className="text-xs text-black/70 font-medium">Generate default</span>
                           </button>
                         </div>
                         {/* Inline URL input — slides up from bottom */}
@@ -1197,7 +1241,7 @@ export default function WritePage({ slugid }) {
                 </div>
               )}
             </>
-          )}
+          </div>
 
           {mode === 'preview' && (
             <div className="blog-preview-fullwidth">

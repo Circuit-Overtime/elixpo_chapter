@@ -19,6 +19,8 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
   const [diffBlockIds, setDiffBlockIds] = useState([]); // IDs of diff blocks that replaced originals
   const [aiResponseText, setAiResponseText] = useState(''); // AI's full response for keep
   const [diffResult, setDiffResult] = useState(null); // word-level diff array for keep/undo
+  const [streamingText, setStreamingText] = useState(''); // live SSE text feed for streaming bar
+  const [statusText, setStatusText] = useState(''); // lixsearch task status text
   const [promptPos, setPromptPos] = useState({ top: 0 });
   const abortRef = useRef(null);
   const promptRef = useRef(null);
@@ -212,7 +214,13 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
           setDiffBlockIds([]);
           setAiResponseText('');
 
-          // Add subtle highlight on selected blocks
+          // Lock editor and hide toolbar so user can't edit during AI work
+          const wrapper2 = document.querySelector('.blog-editor-wrapper');
+          if (wrapper2) wrapper2.classList.add('ai-editor-locked');
+          const tb = document.querySelector('.blog-editor-wrapper .bn-toolbar');
+          if (tb) tb.style.display = 'none';
+
+          // Add highlight on selected blocks
           requestAnimationFrame(() => {
             const wrapper = document.querySelector('.blog-editor-wrapper');
             if (wrapper) {
@@ -374,12 +382,17 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
     setDiffBlockIds([]);
     setAiResponseText('');
     setDiffResult(null);
+    setStreamingText('');
+    setStatusText('');
     savedSelectionRef.current = null;
-    // Clean up leftover DOM classes
+    // Clean up leftover DOM classes and unlock editor
     const wrapper = document.querySelector('.blog-editor-wrapper');
+    wrapper?.classList.remove('ai-editor-locked');
     wrapper?.querySelectorAll('.ai-edit-selected-block, .ai-edit-selection-highlight, .ai-skeleton-nearby').forEach((el) => {
       el.classList.remove('ai-edit-selected-block', 'ai-edit-selection-highlight', 'ai-skeleton-nearby');
     });
+    const toolbar = document.querySelector('.blog-editor-wrapper .bn-toolbar');
+    if (toolbar) toolbar.style.display = '';
   }
 
   // Core submit logic — streams AI response, then applies word-level diff inline
@@ -425,9 +438,13 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
         userPrompt,
         signal: controller.signal,
 
-        onChunk: () => {
-          // Just remove skeleton once first chunk arrives — text stays highlighted
+        onTask: (taskText) => {
+          setStatusText(taskText);
+        },
+
+        onChunk: (_chunk, fullText) => {
           removeSkeletonLoading();
+          setStreamingText(fullText);
         },
 
         onDone: (fullText) => {
@@ -606,47 +623,75 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
     );
   }
 
-  // Streaming: show Elixpo typing bar at bottom
+  // Streaming: inline status card (same style as content creation)
   if (mode === 'streaming') {
     return (
-      <div className="elixpo-typing-bar">
-        <div className="elixpo-typing-bar-inner">
-          <img src="/base-logo.png" alt="Elixpo" className="elixpo-typing-avatar" />
-          <div className="elixpo-typing-text">
-            <span className="elixpo-typing-name">Elixpo</span>
-            <span className="elixpo-typing-status">is editing<span className="elixpo-typing-dots"><span /><span /><span /></span></span>
+      <div
+        style={{
+          position: 'absolute',
+          top: promptPos.top,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+        }}
+      >
+        <div className="mx-auto w-full max-w-[600px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border-[1.5px] border-[rgba(196,181,253,0.3)]">
+              <img src="/base-logo.png" alt="Elixpo" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[13px] font-semibold text-[#c4b5fd]">Elixpo</span>
+              <span className="text-[13px] text-[#8b8fa3] ai-status-text-fade">
+                {statusText || (streamingText ? 'is editing' : 'is thinking')}
+                <span className="elixpo-typing-dots"><span /><span /><span /></span>
+              </span>
+            </div>
+            <button
+              onClick={handleUndo}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-lg text-[12px] font-medium text-[#f87171] bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.25)] hover:bg-[rgba(248,113,113,0.15)] transition-colors cursor-pointer"
+            >
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="10" height="10" rx="2" /></svg>
+              Stop
+            </button>
           </div>
-          <button className="elixpo-stop-btn" onClick={handleUndo}>
-            <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
-              <rect x="1" y="1" width="10" height="10" rx="2" />
-            </svg>
-            Stop
-          </button>
         </div>
       </div>
     );
   }
 
-  // Done: show keep/undo bar at bottom
+  // Done: inline keep/undo card (same style as content creation)
   if (mode === 'done') {
     return (
-      <div className="elixpo-done-bar">
-        <div className="elixpo-done-bar-inner">
-          <img src="/base-logo.png" alt="Elixpo" className="elixpo-typing-avatar" />
-          <span className="elixpo-done-label">Elixpo finished editing</span>
-          <div className="elixpo-done-actions">
-            <button className="elixpo-done-keep" onClick={handleKeep} title="Keep">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              Keep
-            </button>
-            <button className="elixpo-done-discard" onClick={handleUndo} title="Undo">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-              </svg>
-              Undo
-            </button>
+      <div
+        style={{
+          position: 'absolute',
+          top: promptPos.top,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+        }}
+      >
+        <div className="mx-auto w-full max-w-[600px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border-[1.5px] border-[rgba(196,181,253,0.3)]">
+              <img src="/base-logo.png" alt="Elixpo" className="w-full h-full object-cover" />
+            </div>
+            <span className="text-[13px] text-[#c4b5fd]">Elixpo finished editing</span>
+            <div className="ml-auto flex items-center gap-2">
+              <button className="elixpo-done-keep" onClick={handleKeep} title="Keep">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Keep
+              </button>
+              <button className="elixpo-done-discard" onClick={handleUndo} title="Undo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                </svg>
+                Undo
+              </button>
+            </div>
           </div>
         </div>
       </div>
