@@ -1,0 +1,35 @@
+# Repository Platform Reference
+#
+# This file is embedded into Tommy's system prompt as {repo_info}.
+# It gives the bot permanent knowledge about your project so it can
+# answer questions without needing to search every time.
+#
+# Populate this with YOUR project's info:
+#   - Architecture overview
+#   - API endpoints and usage
+#   - Key concepts, models, or terminology
+#   - Links to docs, dashboards, important resources
+#   - Anything you'd tell a new team member on day one
+#
+# Keep it concise — this is injected into every conversation.
+# The bot also has code_search and doc_search tools for deeper lookups.
+
+## Project
+
+Tommy — Discord-to-GitHub orchestrator bot.
+Repo: configured in config.json → bot.default_repo
+
+## Capabilities
+
+- GitHub issue & PR management (create, search, comment, review)
+- Code search via embeddings (semantic search over the codebase)
+- Documentation search (crawled and embedded doc sites)
+- Discord channel history search
+- Web search and scraping
+- Data visualization
+- Code execution sandbox (Docker-based)
+
+## How to Customize
+
+Replace this file's contents with your project's platform reference.
+The bot will use this as built-in knowledge for every conversation.
