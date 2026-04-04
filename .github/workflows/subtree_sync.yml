@@ -37,6 +37,7 @@ jobs:
             "accounts.elixpo https://github.com/elixpo/elixpoaccounts.git"
             "search.elixpo https://github.com/pollinations/lixsearch.git"
             "url.elixpo https://github.com/elixpo/elixpourl.git"
+            "tommy.elixpo https://github.com/elixpo/tommy.git"
           )
 
           COAUTHOR=$'\n\nCo-authored-by: Circuit-Overtime <ayushbhatt633@gmail.com>'
