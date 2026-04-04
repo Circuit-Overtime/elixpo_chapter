@@ -1,6 +1,6 @@
 'use client';
 
-import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs } from '@blocknote/core';
+import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs, createCodeBlockSpec } from '@blocknote/core';
 import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems, TableHandlesController } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import '@blocknote/core/fonts/inter.css';
@@ -32,10 +32,27 @@ import { OrgMentionInline } from './blocks/OrgMentionInline';
 
 // ── Schema ──
 
+// Code block with Shiki syntax highlighting (lazy-loaded)
+const codeBlockWithHighlighting = createCodeBlockSpec({
+  createHighlighter: async () => {
+    const { createHighlighter } = await import('shiki');
+    return createHighlighter({
+      themes: ['vitesse-dark'],
+      langs: [
+        'javascript', 'typescript', 'python', 'java', 'c', 'cpp', 'csharp',
+        'go', 'rust', 'ruby', 'php', 'swift', 'kotlin', 'html', 'css',
+        'json', 'yaml', 'markdown', 'bash', 'shell', 'sql', 'graphql',
+        'jsx', 'tsx', 'vue', 'svelte', 'dart', 'lua', 'r', 'scala',
+      ],
+    });
+  },
+});
+
 // Block specs from createReactBlockSpec are factories — call them to get the spec
 const schema = BlockNoteSchema.create({
   blockSpecs: {
     ...defaultBlockSpecs,
+    codeBlock: codeBlockWithHighlighting,
     image: BlogImageBlock({}),
     tableOfContents: TableOfContents({}),
     blockEquation: BlockEquation({}),
@@ -247,9 +264,9 @@ function isCurrentBlockEmpty(editor) {
 // Block types known to the schema — used to filter out stale/removed block types
 const KNOWN_BLOCK_TYPES = new Set([
   'paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'image',
-  'table', 'codeBlock', 'checkListItem', 'file', 'video', 'audio',
+  'table', 'codeBlock', 'checkListItem', 'file', 'video', 'audio', 'divider',
   'tableOfContents', 'blockEquation', 'buttonBlock', 'breadcrumbs',
-  'tabsBlock', 'aiBlock', 'mermaidBlock',
+  'tabsBlock', 'aiBlock', 'mermaidBlock', 'pdfEmbed',
 ]);
 
 function sanitizeInitialContent(blocks) {
@@ -282,6 +299,42 @@ function doSanitize(blocks) {
     if (block.children && block.children.length > 0) {
       block = { ...block, children: doSanitize(block.children) };
     }
+    // Code block containing LaTeX \[...\] expressions → extract as blockEquations
+    if (block.type === 'codeBlock') {
+      const codeText = getText(block);
+      const latexPattern = /\\\[[\s\S]*?\\\]/g;
+      const latexMatches = codeText.match(latexPattern);
+      if (latexMatches && latexMatches.length > 0) {
+        // Split code block into text segments and LaTeX blocks
+        const parts = codeText.split(latexPattern);
+        let mIdx = 0;
+        for (let p = 0; p < parts.length; p++) {
+          const segment = parts[p].trim();
+          // Non-LaTeX text segments become paragraphs (e.g. comments like "% Time-Dependent...")
+          if (segment) {
+            const lines = segment.split('\n').filter(l => l.trim());
+            for (const line of lines) {
+              const trimLine = line.trim();
+              // Skip comment-only lines (% ...)
+              if (trimLine.startsWith('%')) {
+                result.push({ type: 'paragraph', content: [{ type: 'text', text: trimLine, styles: { italic: true } }], children: [] });
+              } else {
+                result.push({ type: 'paragraph', content: [{ type: 'text', text: trimLine }], children: [] });
+              }
+            }
+          }
+          if (mIdx < latexMatches.length) {
+            const latex = latexMatches[mIdx].replace(/^\\\[/, '').replace(/\\\]$/, '').trim();
+            if (latex) {
+              result.push({ type: 'blockEquation', props: { latex }, children: [] });
+            }
+            mIdx++;
+          }
+        }
+        i++; continue;
+      }
+    }
+
     if (block.type !== 'paragraph') { result.push(block); i++; continue; }
 
     const text = getText(block);
@@ -360,6 +413,12 @@ function doSanitize(blocks) {
       continue;
     }
 
+    // Horizontal rule: ---, ***, ___, ———, ––– etc → divider
+    if (/^([-*_])\1{2,}$/.test(text) || /^[—–]{2,}$/.test(text)) {
+      result.push({ id: block.id, type: 'divider', children: [] });
+      i++; continue;
+    }
+
     // Code fence opener: ```lang — collect until closing ```
     const fenceMatch = text.match(/^```(\w*)$/);
     if (fenceMatch) {
@@ -372,12 +431,20 @@ function doSanitize(blocks) {
         codeLines.push(nextText);
         i++;
       }
-      result.push({
-        id: block.id,
-        type: 'codeBlock',
-        props: { language: lang },
-        content: [{ type: 'text', text: codeLines.join('\n') }],
-      });
+      if (lang === 'mermaid') {
+        result.push({
+          id: block.id,
+          type: 'mermaidBlock',
+          props: { diagram: codeLines.join('\n') },
+        });
+      } else {
+        result.push({
+          id: block.id,
+          type: 'codeBlock',
+          props: { language: lang },
+          content: [{ type: 'text', text: codeLines.join('\n') }],
+        });
+      }
       continue;
     }
 
@@ -552,27 +619,42 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     return () => editorEl.removeEventListener('paste', handlePaste);
   }, [editor, blogId]);
 
-  // Disable spellcheck on code blocks + inject copy buttons
+  // Disable spellcheck on code blocks + inject copy buttons + language labels
   const patchCodeBlocks = useCallback(() => {
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
     wrapper.querySelectorAll('[data-content-type="codeBlock"]').forEach((block) => {
       const editable = block.querySelector('[contenteditable]');
       if (editable) editable.spellcheck = false;
+      block.style.position = 'relative';
+
+      // Language label — language attr is on the inner pre/code element
+      if (!block.querySelector('.code-lang-label')) {
+        const langEl = block.querySelector('[data-language]');
+        const lang = langEl?.getAttribute('data-language') || '';
+        if (lang && lang !== 'text') {
+          const label = document.createElement('span');
+          label.className = 'code-lang-label';
+          label.textContent = lang;
+          block.appendChild(label);
+        }
+      }
+
+      // Copy button
       if (!block.querySelector('.code-copy-btn')) {
+        const copyIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        const checkIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
         const btn = document.createElement('button');
         btn.className = 'code-copy-btn';
         btn.title = 'Copy code';
-        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        btn.innerHTML = copyIcon;
         btn.onclick = () => {
           const code = block.querySelector('[contenteditable]')?.textContent || '';
           navigator.clipboard.writeText(code);
-          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-          setTimeout(() => {
-            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-          }, 1500);
+          btn.innerHTML = checkIcon;
+          btn.style.color = '#86efac';
+          setTimeout(() => { btn.innerHTML = copyIcon; btn.style.color = ''; }, 1500);
         };
-        block.style.position = 'relative';
         block.appendChild(btn);
       }
     });
@@ -761,17 +843,19 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     setAiPhase('idle');
     setAiGeneratingBlockId(null);
     hideSparkle();
+    wrapperRef.current?.classList.remove('ai-editor-locked');
     wrapperRef.current?.querySelectorAll('.ai-skeleton-nearby, .ai-placeholder-skeleton, .ai-edit-selected-block, .ai-hide-placeholder, .ai-writing-active').forEach((el) => {
       el.classList.remove('ai-skeleton-nearby', 'ai-placeholder-skeleton', 'ai-edit-selected-block', 'ai-hide-placeholder', 'ai-writing-active');
     });
 
     // Ensure AI blocks have color props and show keep/discard
     const ids = aiBlockIdsRef.current;
+    const _noColorTypes = new Set(['image', 'divider', 'mermaidBlock', 'blockEquation']);
     if (ids && ids.size > 0) {
       for (const id of ids) {
         try {
           const block = editor.document.find((b) => b.id === id);
-          if (block && block.type !== 'image') {
+          if (block && !_noColorTypes.has(block.type)) {
             editor.updateBlock(id, { props: { textColor: 'purple', backgroundColor: 'purple' } });
           }
         } catch {}
@@ -856,11 +940,13 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
   const handleAIKeep = useCallback(() => {
     hideSparkle();
+    wrapperRef.current?.classList.remove('ai-editor-locked');
     // Reset textColor and backgroundColor to default on all AI blocks
+    const _noReset = new Set(['image', 'divider', 'mermaidBlock', 'blockEquation']);
     for (const id of aiBlockIdsRef.current) {
       try {
         const block = editor.document.find((b) => b.id === id);
-        if (block && block.type !== 'image') {
+        if (block && !_noReset.has(block.type)) {
           editor.updateBlock(id, { props: { textColor: 'default', backgroundColor: 'default' } });
         }
       } catch {}
@@ -877,6 +963,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
   const handleAIDiscard = useCallback(() => {
     hideSparkle();
+    wrapperRef.current?.classList.remove('ai-editor-locked');
     const storedIds = [...aiBlockIdsRef.current];
     if (storedIds.length > 0) {
       try { editor.removeBlocks(storedIds); } catch {
@@ -1050,6 +1137,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     setAiGenerating(true);
     setAiPhase('thinking');
     setAiGeneratingBlockId(insertedBlock.id);
+    wrapperRef.current?.classList.add('ai-editor-locked');
     const abortController = new AbortController();
     aiAbortRef.current = abortController;
 
@@ -1212,40 +1300,79 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
             const anchorIdxNow = docNow.findIndex((b) => b.id === anchorId);
             if (anchorIdxNow === -1) return;
 
-            // Filter out image blocks from newBlocks — images come through onImage
-            const textBlocks = newBlocks.filter((b) => b.type !== 'image');
+            // Separate blocks: inline-content blocks go through replaceBlocks,
+            // content-none blocks (image, mermaid, divider, blockEquation) are inserted after
+            const specialTypes = new Set(['image', 'mermaidBlock', 'divider', 'blockEquation']);
+            const inlineBlocks = newBlocks.filter((b) => !specialTypes.has(b.type));
+            const specialBlocks = newBlocks
+              .map((b, idx) => ({ block: b, origIdx: idx }))
+              .filter(({ block }) => specialTypes.has(block.type) && block.type !== 'image');
 
-            // Get existing AI text block IDs (exclude image placeholders)
-            const existingAiIds = currentIds.filter((id) => {
+            // Get existing AI inline block IDs (exclude special blocks)
+            const existingInlineIds = currentIds.filter((id) => {
               const block = docNow.find((b) => b.id === id);
-              return block && block.type !== 'image';
+              return block && !specialTypes.has(block.type);
             });
 
-            if (existingAiIds.length > 0 && textBlocks.length > 0) {
-              // Replace existing text AI blocks with updated parsed blocks
-              editor.replaceBlocks(existingAiIds, textBlocks);
+            // Keep track of special block IDs already in the document
+            const existingSpecialIds = currentIds.filter((id) => {
+              const block = docNow.find((b) => b.id === id);
+              return block && specialTypes.has(block.type) && block.type !== 'image';
+            });
 
-              // Refresh currentIds after replacement
-              const refreshedDoc = editor.document;
-              const newAnchorIdx = refreshedDoc.findIndex((b) => b.id === anchorId);
-              // Collect new IDs: text blocks after anchor + any image blocks we're tracking
-              const imageIds = currentIds.filter((id) => {
-                const block = docNow.find((b) => b.id === id);
-                return block && block.type === 'image';
-              });
-              const newTextIds = refreshedDoc
-                .slice(newAnchorIdx + 1, newAnchorIdx + 1 + textBlocks.length)
-                .map((b) => b.id);
-              currentIds = [...newTextIds, ...imageIds];
-              aiBlockIdsRef.current = new Set(currentIds);
-              aiBlockCountRef.current = currentIds.length;
+            // Remove old special blocks (they'll be re-inserted in correct positions)
+            if (existingSpecialIds.length > 0) {
+              try { editor.removeBlocks(existingSpecialIds); } catch {}
             }
 
+            // Replace inline blocks
+            if (existingInlineIds.length > 0 && inlineBlocks.length > 0) {
+              editor.replaceBlocks(existingInlineIds, inlineBlocks);
+            }
+
+            // Refresh doc and collect new inline IDs
+            const refreshedDoc = editor.document;
+            const newAnchorIdx = refreshedDoc.findIndex((b) => b.id === anchorId);
+            const imageIds = currentIds.filter((id) => {
+              const block = docNow.find((b) => b.id === id);
+              return block && block.type === 'image';
+            });
+            const newInlineIds = refreshedDoc
+              .slice(newAnchorIdx + 1, newAnchorIdx + 1 + inlineBlocks.length)
+              .map((b) => b.id);
+
+            // Insert special blocks (mermaid, divider) at their correct positions
+            // They go after the inline block that precedes them in the original order
+            let insertedSpecialIds = [];
+            for (const { block: specBlock, origIdx } of specialBlocks) {
+              // Find how many inline blocks come before this special block
+              const inlineBefore = newBlocks.slice(0, origIdx).filter((b) => !specialTypes.has(b.type)).length;
+              const afterId = inlineBefore > 0 && inlineBefore <= newInlineIds.length
+                ? newInlineIds[inlineBefore - 1]
+                : (newInlineIds.length > 0 ? newInlineIds[newInlineIds.length - 1] : anchorId);
+              try {
+                editor.insertBlocks([specBlock], afterId, 'after');
+                const updDoc = editor.document;
+                const afterIdx = updDoc.findIndex((b) => b.id === afterId);
+                const inserted = updDoc[afterIdx + 1];
+                if (inserted) {
+                  insertedSpecialIds.push(inserted.id);
+                  // Update newInlineIds to account for insertion shifting
+                  newInlineIds.splice(inlineBefore, 0, inserted.id);
+                }
+              } catch {}
+            }
+
+            currentIds = [...newInlineIds, ...imageIds];
+            aiBlockIdsRef.current = new Set(currentIds);
+            aiBlockCountRef.current = currentIds.length;
+
             // Set BlockNote textColor + backgroundColor on AI blocks (survives re-renders)
+            const noColorProps = new Set(['image', 'divider', 'mermaidBlock', 'blockEquation']);
             for (const id of currentIds) {
               try {
                 const block = editor.document.find((b) => b.id === id);
-                if (block && block.type !== 'image') {
+                if (block && !noColorProps.has(block.type)) {
                   editor.updateBlock(id, { props: { textColor: 'purple', backgroundColor: 'purple' } });
                 }
               } catch {}
@@ -1333,30 +1460,58 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
           if (contentText) {
             const finalBlocks = parseMarkdownToBlocks(contentText);
-            const textBlocks = finalBlocks.filter((b) => b.type !== 'image');
-            if (textBlocks.length > 0) {
+            const _special = new Set(['image', 'mermaidBlock', 'divider', 'blockEquation']);
+            const inlineOnly = finalBlocks.filter((b) => !_special.has(b.type));
+            const specialOnly = finalBlocks
+              .map((b, idx) => ({ block: b, origIdx: idx }))
+              .filter(({ block }) => _special.has(block.type) && block.type !== 'image');
+
+            if (inlineOnly.length > 0) {
               try {
                 const anchorId = aiAnchorIdRef.current;
                 const docNow = editor.document;
-                const existingAiIds = currentIds.filter((id) => {
+                const existingInline = currentIds.filter((id) => {
                   const block = docNow.find((b) => b.id === id);
-                  return block && block.type !== 'image';
+                  return block && !_special.has(block.type);
                 });
-                if (existingAiIds.length > 0) {
-                  editor.replaceBlocks(existingAiIds, textBlocks);
-                  const refreshedDoc = editor.document;
-                  const newAnchorIdx = refreshedDoc.findIndex((b) => b.id === anchorId);
-                  const imageIds = currentIds.filter((id) => {
-                    const block = docNow.find((b) => b.id === id);
-                    return block && block.type === 'image';
-                  });
-                  const newTextIds = refreshedDoc
-                    .slice(newAnchorIdx + 1, newAnchorIdx + 1 + textBlocks.length)
-                    .map((b) => b.id);
-                  currentIds = [...newTextIds, ...imageIds];
-                  aiBlockIdsRef.current = new Set(currentIds);
-                  aiBlockCountRef.current = currentIds.length;
+                const existingSpecial = currentIds.filter((id) => {
+                  const block = docNow.find((b) => b.id === id);
+                  return block && _special.has(block.type) && block.type !== 'image';
+                });
+                if (existingSpecial.length > 0) {
+                  try { editor.removeBlocks(existingSpecial); } catch {}
                 }
+                if (existingInline.length > 0) {
+                  editor.replaceBlocks(existingInline, inlineOnly);
+                }
+                const refreshedDoc = editor.document;
+                const newAnchorIdx = refreshedDoc.findIndex((b) => b.id === anchorId);
+                const imageIds = currentIds.filter((id) => {
+                  const block = docNow.find((b) => b.id === id);
+                  return block && block.type === 'image';
+                });
+                const newInlineIds = refreshedDoc
+                  .slice(newAnchorIdx + 1, newAnchorIdx + 1 + inlineOnly.length)
+                  .map((b) => b.id);
+
+                // Insert special blocks at correct positions
+                for (const { block: specBlock, origIdx } of specialOnly) {
+                  const inlineBefore = finalBlocks.slice(0, origIdx).filter((b) => !_special.has(b.type)).length;
+                  const afterId = inlineBefore > 0 && inlineBefore <= newInlineIds.length
+                    ? newInlineIds[inlineBefore - 1]
+                    : (newInlineIds.length > 0 ? newInlineIds[newInlineIds.length - 1] : anchorId);
+                  try {
+                    editor.insertBlocks([specBlock], afterId, 'after');
+                    const updDoc = editor.document;
+                    const afterIdx = updDoc.findIndex((b) => b.id === afterId);
+                    const inserted = updDoc[afterIdx + 1];
+                    if (inserted) newInlineIds.splice(inlineBefore, 0, inserted.id);
+                  } catch {}
+                }
+
+                currentIds = [...newInlineIds, ...imageIds];
+                aiBlockIdsRef.current = new Set(currentIds);
+                aiBlockCountRef.current = currentIds.length;
               } catch {}
             }
           } else {
@@ -1374,10 +1529,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           } catch {}
 
           // Set final BlockNote textColor + backgroundColor on AI blocks
+          const _skipColor = new Set(['image', 'divider', 'mermaidBlock', 'blockEquation']);
           for (const id of currentIds) {
             try {
               const block = editor.document.find((b) => b.id === id);
-              if (block && block.type !== 'image') {
+              if (block && !_skipColor.has(block.type)) {
                 editor.updateBlock(id, { props: { textColor: 'purple', backgroundColor: 'purple' } });
               }
             } catch {}

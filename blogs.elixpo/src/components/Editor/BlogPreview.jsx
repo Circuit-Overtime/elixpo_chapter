@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 
 function FloatingTOC({ headings }) {
   const [activeId, setActiveId] = useState('');
@@ -164,6 +165,9 @@ function renderBlocksToHTML(blocks) {
           parts.push(`<div class="preview-mermaid-block" data-diagram="${encodeURIComponent(block.props.diagram)}"></div>`);
         }
         break;
+      case 'divider':
+        parts.push('<hr class="preview-divider" />');
+        break;
       case 'codeBlock': {
         const lang = block.props?.language || '';
         const code = (block.content || []).map((c) => c.text || '').join('');
@@ -228,6 +232,7 @@ function renderBlocksToHTML(blocks) {
 }
 
 export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, wordCount }) {
+  const { isDark } = useTheme();
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -293,14 +298,23 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
         if (cancelled) return;
         mermaid.initialize({
           startOnLoad: false,
-          theme: 'dark',
-          themeVariables: {
+          theme: isDark ? 'dark' : 'default',
+          themeVariables: isDark ? {
             primaryColor: '#232d3f',
             primaryTextColor: '#e4e4e7',
             primaryBorderColor: '#c4b5fd',
             lineColor: '#8b8fa3',
             secondaryColor: '#1e1e2e',
             tertiaryColor: '#141a26',
+            fontFamily: "'lixFont', sans-serif",
+            fontSize: '16px',
+          } : {
+            primaryColor: '#e8e0ff',
+            primaryTextColor: '#1a1a2e',
+            primaryBorderColor: '#7c5cbf',
+            lineColor: '#6b7280',
+            secondaryColor: '#f3f0ff',
+            tertiaryColor: '#f9fafb',
             fontFamily: "'lixFont', sans-serif",
             fontSize: '16px',
           },
@@ -328,7 +342,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
     }
 
     return () => { cancelled = true; };
-  }, [renderedHTML]);
+  }, [renderedHTML, isDark]);
 
   return (
     <div className="blog-preview" id="blog-preview-top">

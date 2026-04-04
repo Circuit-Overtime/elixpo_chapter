@@ -281,7 +281,7 @@
 
 .elixpo-typing-status {
   font-size: 13px;
-  color: var(--text-muted);
+  color: #8b8fa3;
 }
 
 .elixpo-typing-dots {
@@ -328,6 +328,20 @@
   border-color: #f87171;
 }
 
+/* ===== Stream preview — live SSE text in typing bar ===== */
+
+.elixpo-stream-preview {
+  max-width: 260px;
+  font-size: 12px;
+  color: rgba(196, 181, 253, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 1px solid rgba(196, 181, 253, 0.15);
+  padding-left: 10px;
+  margin-left: 2px;
+}
+
 /* ===== Elixpo Done Bar (keep/discard) ===== */
 
 .elixpo-done-bar {
@@ -354,7 +368,7 @@
 
 .elixpo-done-label {
   font-size: 13px;
-  color: var(--text-muted);
+  color: #c4b5fd;
 }
 
 .elixpo-done-actions {
@@ -444,19 +458,27 @@
   opacity: 0.9;
 }
 
-/* ===== AI Edit Selection Highlight — subtle border on selected blocks ===== */
+/* ===== AI Edit Selection Highlight — visible selection on blocks being edited ===== */
 
 .ai-edit-selection-highlight {
-  background: rgba(196, 181, 253, 0.06) !important;
-  border-left: 3px solid rgba(196, 181, 253, 0.35) !important;
+  background: rgba(196, 181, 253, 0.12) !important;
+  border-left: 3px solid rgba(196, 181, 253, 0.5) !important;
   border-radius: 0 6px 6px 0;
   margin-left: -3px;
-  animation: aiSelectionPulse 2s ease-in-out infinite;
+  pointer-events: none !important;
+  user-select: none !important;
 }
 
-@keyframes aiSelectionPulse {
-  0%, 100% { background: rgba(196, 181, 253, 0.04) !important; }
-  50% { background: rgba(196, 181, 253, 0.1) !important; }
+/* Fake selection highlight on text within selected blocks */
+.ai-edit-selection-highlight [contenteditable] {
+  pointer-events: none !important;
+  user-select: none !important;
+  caret-color: transparent !important;
+}
+
+.ai-edit-selection-highlight .bn-inline-content {
+  background: rgba(196, 181, 253, 0.15) !important;
+  border-radius: 3px;
 }
 
 /* ===== AI Inline Input Container ===== */

@@ -36,24 +36,59 @@
 }
 
 .blog-editor-wrapper .mantine-Menu-item {
-  color: #e4e4e7 !important;
+  color: var(--text-primary) !important;
   border-radius: 8px !important;
 }
 
-.blog-editor-wrapper .mantine-Menu-item:hover {
-  background: var(--border-default) !important;
-}
-
+.blog-editor-wrapper .mantine-Menu-item:hover,
 .blog-editor-wrapper .mantine-Menu-item[data-hovered] {
-  background: var(--border-default) !important;
+  background: var(--bg-active) !important;
 }
 
 .blog-editor-wrapper .mantine-Menu-itemLabel {
-  color: #e4e4e7 !important;
+  color: var(--text-primary) !important;
 }
 
 .blog-editor-wrapper .mantine-Menu-itemSection {
-  color: #7ba8f0 !important;
+  color: var(--text-muted) !important;
+}
+
+/* Block type selector dropdown */
+.blog-editor-wrapper .bn-toolbar select,
+.blog-editor-wrapper .bn-toolbar [class*="select"],
+.blog-editor-wrapper .bn-toolbar [role="listbox"] {
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-default) !important;
+}
+
+/* Mantine Select / Combobox dropdowns (block type picker) */
+.blog-editor-wrapper .mantine-Combobox-dropdown,
+.blog-editor-wrapper .mantine-Select-dropdown {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+.blog-editor-wrapper .mantine-Combobox-option {
+  color: var(--text-primary) !important;
+  border-radius: 6px !important;
+}
+
+.blog-editor-wrapper .mantine-Combobox-option:hover,
+.blog-editor-wrapper .mantine-Combobox-option[data-combobox-selected] {
+  background: var(--bg-active) !important;
+}
+
+.blog-editor-wrapper .mantine-Combobox-option[data-combobox-active] {
+  background: var(--bg-active) !important;
+}
+
+.blog-editor-wrapper .mantine-Input-input {
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-default) !important;
 }
 
 /* ===== Formatting toolbar ===== */

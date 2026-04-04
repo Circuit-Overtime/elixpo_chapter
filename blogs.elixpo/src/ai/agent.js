@@ -10,29 +10,10 @@
  * @param {string} slugid - Blog slug ID
  * @returns {Promise<string>} sessionId
  */
-export async function getOrCreateSession(slugid) {
-  // Try to get existing session
-  const getRes = await fetch(`/api/ai/session?slugid=${encodeURIComponent(slugid)}`);
-  if (getRes.ok) {
-    const data = await getRes.json();
-    if (data.sessionId) return data.sessionId;
-  }
-
-  // Create new session (generates ID locally, stored in D1)
-  const postRes = await fetch('/api/ai/session', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slugid }),
-  });
-
-  if (!postRes.ok) {
-    const err = await postRes.json().catch(() => ({ error: 'Session creation failed' }));
-    throw new Error(err.error || 'Session creation failed');
-  }
-
-  const data = await postRes.json();
-  if (!data.sessionId) throw new Error('No session ID returned');
-  return data.sessionId;
+export function getOrCreateSession(blogId) {
+  // Session ID is deterministic: blog_<blogId>
+  // search.elixpo.com auto-creates sessions on first use
+  return `blog_${blogId}`;
 }
 
 // ── TASK status parsing ──
