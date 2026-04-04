@@ -8,22 +8,20 @@ import { isSignedIn, getUser } from '../../lib/auth';
 import styles from './Session.module.css';
 
 const IMAGE_MODELS = [
-  { id: 'flux', label: 'Flux' },
+  { id: 'flux', label: 'Flux Schnell' },
+  { id: 'flux-2-dev', label: 'FLUX.2 Dev' },
   { id: 'gptimage', label: 'GPT Image' },
-  { id: 'seedream5', label: 'Seedream 5' },
-  { id: 'nanobanana', label: 'Nano Banana' },
-  { id: 'kontext', label: 'Kontext' },
-  { id: 'imagen-4', label: 'Imagen 4' },
+  { id: 'dirtberry', label: 'Dirtberry' },
+  { id: 'dirtberry-pro', label: 'Dirtberry Pro' },
   { id: 'zimage', label: 'Z-Image' },
+  { id: 'imagen-4', label: 'Imagen 4' },
+  { id: 'grok-imagine', label: 'Grok Imagine' },
   { id: 'klein', label: 'Klein' },
+  { id: 'kontext', label: 'Kontext' },
 ];
 
 const VIDEO_MODELS = [
-  { id: 'veo', label: 'Veo' },
-  { id: 'seedance', label: 'Seedance' },
-  { id: 'seedance-pro', label: 'Seedance Pro' },
-  { id: 'wan', label: 'Wan' },
-  { id: 'ltx-2', label: 'LTX-2' },
+  { id: 'grok-video', label: 'Grok Video' },
 ];
 
 const ALL_MODELS = [...IMAGE_MODELS, ...VIDEO_MODELS];
@@ -354,7 +352,7 @@ export default function SessionPage({ params }) {
     if (!resultSrc) return;
     const id = crypto.randomUUID();
     sessionStorage.setItem(`gen_${id}`, JSON.stringify({
-      prompt, model: 'wan', width, height, mode: 'video', duration: 5, imageUrl: resultSrc, timestamp: Date.now(),
+      prompt, model: 'grok-video', width, height, mode: 'video', duration: 5, imageUrl: resultSrc, timestamp: Date.now(),
     }));
     router.push(`/generate/${id}`);
   };

@@ -9,7 +9,7 @@ import {
   RESEARCH_PAPER_SYSTEM_PROMPT,
   RESEARCH_PAPER_USER_PROMPT,
   RESEARCH_PAPER_EDIT_PROMPT,
-} from '@/engine/core/ai-system-prompt.js'
+} from '@elixpo/lixsketch/src/core/ai-system-prompt.js'
 import {
   LIXSCRIPT_LLM_SPEC,
   LIXSCRIPT_USER_PROMPT,

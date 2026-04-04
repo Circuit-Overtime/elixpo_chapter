@@ -7,6 +7,7 @@ import { getBlogPost, blogPosts } from '@/content/blog'
 import MarkdownRenderer from '@/components/blog/MarkdownRenderer'
 
 // Raw markdown imports
+import enginePackageLaunch from '@/content/blog/engine-package-launch.md'
 import e2eEncryption from '@/content/blog/e2e-encryption.md'
 import websocketCollaboration from '@/content/blog/websocket-collaboration.md'
 import lixscriptDsl from '@/content/blog/lixscript-dsl.md'
@@ -14,6 +15,7 @@ import roughjsCanvas from '@/content/blog/roughjs-canvas.md'
 import imagePipeline from '@/content/blog/image-pipeline.md'
 
 const contentMap = {
+  'engine-package-launch': enginePackageLaunch,
   'e2e-encryption': e2eEncryption,
   'websocket-collaboration': websocketCollaboration,
   'lixscript-dsl': lixscriptDsl,

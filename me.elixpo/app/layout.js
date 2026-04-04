@@ -15,13 +15,13 @@ export const metadata = {
     siteName: "Elixpo",
     title: "Elixpo",
     description: "Personalized portfolio showcase for Elixpo organization members",
-    images: [{ url: "/assets/og-image.png", width: 1200, height: 630, alt: "Elixpo" }],
+    images: [{ url: "/assets/og-image.webp", width: 1200, height: 630, alt: "Elixpo" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Elixpo",
     description: "Personalized portfolio showcase for Elixpo organization members",
-    images: ["/assets/og-image.png"],
+    images: ["/assets/og-image.webp"],
   },
   metadataBase: new URL("https://me.elixpo.com"),
 };

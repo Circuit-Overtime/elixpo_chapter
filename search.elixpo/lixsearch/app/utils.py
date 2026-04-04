@@ -30,7 +30,7 @@ def format_openai_response(content: str, request_id: str = None) -> str:
     prompt_tokens = 0
 
     response = {
-        "id": request_id or f"chatcmpl-{uuid.uuid4().hex[:REQUEST_ID_HEX_SLICE_SIZE]}",
+        "id": request_id or f"elixpo-{uuid.uuid4().hex[:REQUEST_ID_HEX_SLICE_SIZE]}",
         "object": "chat.completion",
         "created": int(datetime.now(timezone.utc).timestamp()),
         "model": RESPONSE_MODEL,

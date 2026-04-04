@@ -120,10 +120,18 @@ def assemble_images(final_content, collected_images_from_web, collected_similar_
 
 def append_sources(response_parts, collected_sources):
     if collected_sources:
-        response_parts.append("\n\n---\n**Sources:**\n")
-        unique = sorted(list(set(collected_sources)))[:5]
-        for i, src in enumerate(unique):
-            response_parts.append(f"{i+1}. [{src}]({src})\n")
+        from pipeline.utils import clean_source_list
+        cleaned = clean_source_list(collected_sources)[:5]
+        if cleaned:
+            response_parts.append("\n\n---\n**Sources:**\n")
+            for i, src in enumerate(cleaned):
+                # Use domain as display name instead of the full URL
+                try:
+                    from urllib.parse import urlparse
+                    _display = urlparse(src).netloc.replace("www.", "")
+                except Exception:
+                    _display = src
+                response_parts.append(f"{i+1}. [{_display}]({src})\n")
     return "".join(response_parts)
 
 
@@ -162,26 +170,27 @@ def build_fallback_response(user_query, collected_sources, collected_images_from
 async def save_to_caches(user_query, final_content, collected_sources, tool_call_count,
                           current_iteration, memoized_results, core_service, conversation_cache,
                           session_context, session_id):
-    try:
-        _embedding = None
-        if core_service:
-            try:
-                _embedding = core_service.embed_single_text(user_query)
-            except Exception:
-                pass
-        conversation_cache.add_to_cache(
-            query=user_query,
-            response=final_content,
-            metadata={
-                "sources": collected_sources[:5],
-                "tool_calls": tool_call_count,
-                "iteration": current_iteration,
-                "had_cache_hit": memoized_results.get("cache_hit", False)
-            },
-            query_embedding=_embedding,
-        )
-    except Exception as e:
-        logger.warning(f"[Pipeline] Failed to save to cache: {e}")
+    if conversation_cache is not None:
+        try:
+            _embedding = None
+            if core_service:
+                try:
+                    _embedding = core_service.embed_single_text(user_query)
+                except Exception:
+                    pass
+            conversation_cache.add_to_cache(
+                query=user_query,
+                response=final_content,
+                metadata={
+                    "sources": collected_sources[:5],
+                    "tool_calls": tool_call_count,
+                    "iteration": current_iteration,
+                    "had_cache_hit": memoized_results.get("cache_hit", False)
+                },
+                query_embedding=_embedding,
+            )
+        except Exception as e:
+            logger.warning(f"[Pipeline] Failed to save to cache: {e}")
 
     if session_context:
         try:

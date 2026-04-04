@@ -9,7 +9,7 @@ Fun facts: I am a researcher developer and love creating tools like you lixSearc
 """
 
 
-def system_instruction(rag_context, current_utc_time, is_detailed=False):
+def system_instruction(rag_context, current_utc_time, is_detailed=False, session_id=None):
     if is_detailed:
         length_guide = "Simple: 2-5 sentences. Moderate: 600-1000 words. Complex: 1000-2500 words."
     else:
@@ -75,7 +75,8 @@ FORMAT: Markdown. Start with the answer. Cite as [Title](URL). Never mention too
 
 CONTEXT:
 {rag_context}
-UTC: {current_utc_time}"""
+UTC: {current_utc_time}
+SESSION: {session_id or "none"}"""
 
 
 def user_instruction(query, image_url, is_detailed=False):

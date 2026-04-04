@@ -8,6 +8,7 @@
   <strong>Fast URL shortener running on the edge.</strong>
 </p>
 
+
 <p align="center">
   <a href="https://url.elixpo.com"><img src="https://img.shields.io/badge/live-url.elixpo.com-a3e635?style=flat-square" alt="Live" /></a>
   <img src="https://img.shields.io/badge/platform-Cloudflare%20Pages-f38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Pages" />
@@ -27,9 +28,10 @@
 
 ## What is ElixpoURL?
 
-ElixpoURL is the URL shortener built for the [Elixpo](https://elixpo.com) ecosystem. It turns long URLs into clean, shareable short links — instantly.
+ElixpoURL is the URL shortener built for the [Elixpo](https://elixpo.com) ecosystem. It turns long URLs into clean, shareable short links — instantly. Every redirect runs on Cloudflare's global edge network, meaning your links resolve in milliseconds no matter where your audience is.
 
-Every redirect runs on Cloudflare's global edge network, meaning your links resolve in milliseconds no matter where your audience is.
+> Huge thanks to [Karan](https://github.com/karanray06) from our [GDG JIS University](https://gdg.community.dev/gdg-on-campus-jis-university-kolkata-india/) community for preparing the basis foundation of the HLD with us on which we have the [Elixpo URL](https://url.elixpo.com) was built with modifications made based on scale.
+
 
 ## Why ElixpoURL?
 

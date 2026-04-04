@@ -1,17 +1,39 @@
 {
   "name": "elixpo",
-  "version": "0.1.0",
+  "version": "2.1.2",
+  "description": "Elixpo — An open-source ecosystem of AI-powered tools for art, search, sketching, and more. Built by a global community.",
+  "author": {
+    "name": "Ayushman Bhattacharya",
+    "url": "https://github.com/Circuit-Overtime"
+  },
+  "license": "GPL-3.0",
+  "homepage": "https://elixpo.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elixpo/elixpo_chapter"
+  },
+  "keywords": [
+    "elixpo",
+    "open-source",
+    "ai",
+    "developer-tools",
+    "next.js",
+    "community"
+  ],
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NEXT_PRIVATE_NO_CACHE=1 next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "next": "16.2.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

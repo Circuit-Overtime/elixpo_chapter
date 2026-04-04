@@ -111,7 +111,8 @@ const LoginContent = () => {
 
   const handleSSOLogin = (provider: 'google' | 'github') => {
     // Redirect through our backend so state cookie is set correctly before going to provider
-    window.location.href = `/api/auth/oauth/${provider}?mode=login`;
+    const url = `/api/auth/oauth/${provider}?mode=login${next ? `&next=${encodeURIComponent(next)}` : ''}`;
+    window.location.href = url;
   };
 
   if (checkingAuth) {
@@ -155,7 +156,7 @@ const LoginContent = () => {
 
           <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'center' }}>
             <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 1 }}>Don't have an account?</Typography>
-            <Link href="/register" style={{ color: '#a3e635', textDecoration: 'none', fontWeight: 600 }}>Create account</Link>
+            <Link href={next ? `/register?next=${encodeURIComponent(next)}` : '/register'} style={{ color: '#a3e635', textDecoration: 'none', fontWeight: 600 }}>Create account</Link>
           </Box>
         </Box>
 

@@ -248,6 +248,408 @@ test_scaling() {
     echo ""
 }
 
+_bump_version() {
+    local pyproject=$1
+    local bump_type=$2
+    local current=$(grep '^version' "$pyproject" | sed 's/version = "\(.*\)"/\1/')
+    IFS='.' read -r major minor patch <<< "$current"
+    case "$bump_type" in
+        major) major=$((major + 1)); minor=0; patch=0 ;;
+        minor) minor=$((minor + 1)); patch=0 ;;
+        patch) patch=$((patch + 1)) ;;
+    esac
+    echo "${major}.${minor}.${patch}"
+}
+
+_build_and_upload_pypi() {
+    local pkg_dir=$1
+    local pkg_name=$2
+    local new_version=$3
+
+    info "Building ${pkg_name}..."
+    cd "$pkg_dir"
+    rm -rf dist/ build/ *.egg-info
+    python -m build
+    cd ..
+    success "Built dist files"
+
+    info "Uploading ${pkg_name} to PyPI..."
+    twine upload "${pkg_dir}/dist/*"
+    success "Published ${pkg_name} ${new_version} to PyPI"
+}
+
+_github_release() {
+    local tag=$1
+    local title=$2
+    local notes=$3
+    shift 3
+    local assets=("$@")
+
+    if ! command -v gh &> /dev/null; then
+        warning "gh CLI not installed — skipping GitHub release"
+        info "Install: https://cli.github.com"
+        return 1
+    fi
+
+    info "Creating GitHub release ${tag}..."
+    git add -A
+    git commit -m "release: ${title}"
+    git tag "$tag"
+    git push origin main --tags
+    gh release create "$tag" "${assets[@]}" \
+        --title "$title" \
+        --notes "$notes"
+    success "GitHub release ${tag} created"
+}
+
+# ── Package paths ──────────────────────────────────────
+
+CACHE_PKG="package/lix_open_cache_pkg"
+# SEARCH_PKG removed — lix-open-search deprecated and removed from PyPI
+
+_pkg_version() {
+    local pkg_dir=$1
+    grep '^version' "${pkg_dir}/pyproject.toml" | sed 's/version = "\(.*\)"/\1/'
+}
+
+# ── Fine-grained release commands ──────────────────────
+
+release_bump() {
+    local target=${1:?Usage: release bump <cache|search|all> [patch|minor|major]}
+    local bump_type=${2:-patch}
+
+    _do_bump() {
+        local pkg_dir=$1 pkg_name=$2
+        local current=$(_pkg_version "$pkg_dir")
+        local new=$(_bump_version "${pkg_dir}/pyproject.toml" "$bump_type")
+        sed -i "s/^version = \".*\"/version = \"${new}\"/" "${pkg_dir}/pyproject.toml"
+        # Sync __init__.__version__ if present
+        local init="${pkg_dir}/$(basename "$pkg_dir" _pkg)/__init__.py"
+        sed -i "s/^__version__ = \".*\"/__version__ = \"${new}\"/" "$init" 2>/dev/null || true
+        success "${pkg_name}: ${current} → ${new}"
+    }
+
+    case "$target" in
+        cache)  _do_bump "$CACHE_PKG" "lix-open-cache" ;;
+        all)    _do_bump "$CACHE_PKG" "lix-open-cache" ;;
+        *)      error "Unknown target: $target (use cache, search, or all)"; exit 1 ;;
+    esac
+}
+
+release_build() {
+    local target=${1:?Usage: release build <cache|search|all>}
+
+    _do_build() {
+        local pkg_dir=$1 pkg_name=$2
+        local v=$(_pkg_version "$pkg_dir")
+        info "Building ${pkg_name} v${v}..."
+        cd "$pkg_dir"
+        rm -rf dist/ build/ *.egg-info
+        python -m build
+        cd - > /dev/null
+        success "Built ${pkg_dir}/dist/"
+    }
+
+    case "$target" in
+        cache)  _do_build "$CACHE_PKG" "lix-open-cache" ;;
+        all)    _do_build "$CACHE_PKG" "lix-open-cache" ;;
+        *)      error "Unknown target: $target"; exit 1 ;;
+    esac
+}
+
+release_pypi() {
+    local target=${1:?Usage: release pypi <cache|search|all>}
+
+    _do_pypi() {
+        local pkg_dir=$1 pkg_name=$2
+        local target_name=$(echo "$pkg_name" | sed 's/lix-open-//')
+        # Always rebuild to ensure dist matches current version
+        release_build "$target_name"
+        local v=$(_pkg_version "$pkg_dir")
+        info "Uploading ${pkg_name} v${v} to PyPI..."
+        twine upload "${pkg_dir}/dist/"*
+        success "Published: pip install ${pkg_name}==${v}"
+    }
+
+    case "$target" in
+        cache)  _do_pypi "$CACHE_PKG" "lix-open-cache" ;;
+        all)    _do_pypi "$CACHE_PKG" "lix-open-cache" ;;
+        *)      error "Unknown target: $target"; exit 1 ;;
+    esac
+}
+
+release_docker() {
+    # Load credentials from .env
+    if [ -f ".env" ]; then
+        set -a
+        source .env
+        set +a
+    fi
+
+    if [ -z "$GITHUB_TOKEN" ]; then
+        error "GITHUB_TOKEN not set in .env"
+        exit 1
+    fi
+    if [ -z "$DOCKER_HUB_API" ]; then
+        warning "DOCKER_HUB_API not set in .env — skipping Docker Hub push"
+    fi
+
+    local ghcr_image="ghcr.io/${GITHUB_USER:-Circuit-Overtime}/lixsearch"
+    local hub_image="${DOCKERHUB_USER:-elixpo}/lixsearch"
+    local version=$(_pkg_version "$CACHE_PKG")
+    info "Building Docker image v${version}"
+
+    check_docker
+
+    docker build -f Dockerfile \
+        -t "${ghcr_image}:${version}" \
+        -t "${ghcr_image}:latest" \
+        -t "${hub_image}:${version}" \
+        -t "${hub_image}:latest" \
+        .
+    success "Built image v${version}"
+
+    info "Pushing to ghcr.io..."
+    echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_USER:-Circuit-Overtime}" --password-stdin
+    docker push "${ghcr_image}:${version}"
+    docker push "${ghcr_image}:latest"
+    success "Pushed ${ghcr_image}:${version}"
+
+    if [ -n "$DOCKER_HUB_API" ]; then
+        info "Pushing to Docker Hub..."
+        echo "${DOCKER_HUB_API}" | docker login -u "${DOCKERHUB_USER:-elixpo}" --password-stdin
+        docker push "${hub_image}:${version}"
+        docker push "${hub_image}:latest"
+        success "Pushed ${hub_image}:${version}"
+    fi
+
+    echo ""
+    success "Docker image v${version} published"
+    info "GHCR: docker pull ${ghcr_image}:${version}"
+    info "Hub:  docker pull ${hub_image}:${version}"
+    echo ""
+    info "NOTE: If the image doesn't appear in GitHub Packages, ensure your"
+    info "      GITHUB_TOKEN has the 'write:packages' scope enabled."
+    info "      GitHub → Settings → Developer settings → Personal access tokens → Edit"
+}
+
+release_github() {
+    local target=${1:?Usage: release github <cache|search|all>}
+
+    if ! command -v gh &> /dev/null; then
+        error "gh CLI not installed (https://cli.github.com)"
+        exit 1
+    fi
+
+    local repo_url
+    repo_url=$(git remote get-url origin | sed 's|.*github.com/||;s|\.git||')
+
+    git add -A
+    git commit -m "release: update packages" 2>/dev/null || true
+    git push origin main 2>/dev/null || true
+
+    _cache_notes() {
+        local v=$1
+        cat <<NOTES
+## lix-open-cache v${v}
+
+Standalone multi-layer Redis caching + Huffman disk archival for conversational AI.
+
+### Install
+
+\`\`\`bash
+pip install lix-open-cache==${v}
+\`\`\`
+
+### Quick Start
+
+\`\`\`python
+from lix_open_cache import CacheConfig, CacheCoordinator
+
+config = CacheConfig(redis_host="localhost", redis_port=6379)
+cache = CacheCoordinator(session_id="user-abc", config=config)
+
+# Store & retrieve conversation context
+cache.add_message_to_context("user", "What's the weather in Tokyo?")
+cache.add_message_to_context("assistant", "22°C and sunny.")
+history = cache.get_context_messages()
+
+# Semantic cache — skip LLM on similar queries
+import numpy as np
+embedding = np.random.rand(384).astype(np.float32)
+cached = cache.get_semantic_response("https://weather.com", embedding)
+\`\`\`
+
+### Three Cache Layers
+
+| Layer | Purpose | Backend | TTL |
+|-------|---------|---------|-----|
+| **Session Context Window** | Rolling 20-message window + disk overflow | Redis DB 2 + \`.huff\` files | 24h |
+| **Semantic Query Cache** | Deduplicate similar queries (cosine ≥ 0.90) | Redis DB 0 | 5 min |
+| **URL Embedding Cache** | Cache embedding vectors per URL | Redis DB 1 | 24h |
+
+### Key Features
+
+- **Two-tier hybrid storage** — Redis hot window + Huffman-compressed disk cold archive
+- **LRU eviction daemon** — auto-migrates idle sessions to disk, re-hydrates on return
+- **smart_context()** — recent messages + semantically relevant history from disk
+- **Pure Python Huffman codec** — ~54% compression, zero native dependencies
+- **CacheConfig dataclass** — all tunables in one place, 12-factor env var support
+- **Connection pooling** — shared Redis pools keyed by (host, port, db)
+
+### Dependencies
+
+Only 3: \`redis\`, \`numpy\`, \`loguru\`
+
+### Links
+
+- [PyPI](https://pypi.org/project/lix-open-cache/${v}/)
+- [Docs](https://github.com/${repo_url}/tree/main/${CACHE_PKG})
+- [Research Paper](https://github.com/${repo_url}/blob/main/docs/paper/lix_cache_paper.pdf)
+- [Live Demo](https://search.elixpo.com)
+NOTES
+    }
+
+    # lix-open-search release notes removed — package deprecated
+
+    _do_gh_release() {
+        local pkg_dir=$1 pkg_name=$2 tag=$3
+        local v=$(_pkg_version "$pkg_dir")
+
+        local notes
+        notes=$(_cache_notes "$v")
+
+        # Collect dist assets
+        local assets=()
+        [ -d "${pkg_dir}/dist" ] && assets=(${pkg_dir}/dist/*)
+
+        # Delete existing release + tag, then recreate
+        gh release delete "$tag" --yes --cleanup-tag 2>/dev/null || true
+        git tag -d "$tag" 2>/dev/null || true
+        git push origin ":refs/tags/$tag" 2>/dev/null || true
+
+        git tag "$tag"
+        git push origin "$tag"
+
+        if [ ${#assets[@]} -gt 0 ]; then
+            gh release create "$tag" "${assets[@]}" \
+                --title "${pkg_name} v${v}" \
+                --notes "$notes" \
+                --latest=false
+        else
+            gh release create "$tag" \
+                --title "${pkg_name} v${v}" \
+                --notes "$notes" \
+                --latest=false
+        fi
+        success "${pkg_name} v${v} → GitHub release '${tag}' (overwritten)"
+    }
+
+    case "$target" in
+        cache)  _do_gh_release "$CACHE_PKG" "lix-open-cache" "lix-open-cache" ;;
+        all)
+            _do_gh_release "$CACHE_PKG" "lix-open-cache" "lix-open-cache"
+            ;;
+        *)      error "Unknown target: $target (use cache, search, or all)"; exit 1 ;;
+    esac
+}
+
+# ── Frontend ───────────────────────────────────────────
+
+_sync_paper() {
+    local src=""
+    for f in docs/paper/paper.pdf docs/paper/arXiv_research_paper.pdf docs/paper/lix_cache_paper.pdf; do
+        [ -f "$f" ] && src="$f" && break
+    done
+    if [ -n "$src" ]; then
+        cp "$src" search.elixpo/public/paper.pdf
+        success "Synced research paper → search.elixpo/public/paper.pdf"
+    else
+        warning "No paper PDF found in docs/paper/ — skipping paper sync"
+    fi
+}
+
+frontend_build() {
+    _sync_paper
+    info "Building search.elixpo frontend..."
+    cd search.elixpo
+
+    export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+    [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh" 2>/dev/null && nvm use 22 2>/dev/null || true
+
+    if ! command -v node &> /dev/null; then
+        error "Node.js not found. Run: ./deploy.sh frontend install-node"
+        cd ..; exit 1
+    fi
+
+    if [ ! -d "node_modules" ]; then
+        info "Installing dependencies..."
+        npm install --prefer-offline --no-audit
+    fi
+
+    npx next build || { cd ..; error "Frontend build failed"; exit 1; }
+    cd ..
+    success "Frontend built — search.elixpo/out/"
+    info "Restart nginx/docker to pick up changes"
+}
+
+frontend_install_node() {
+    info "Installing Node.js 22 LTS via nvm..."
+    export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+    if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+    fi
+    source "$NVM_DIR/nvm.sh"
+    nvm install 22
+    nvm use 22
+    success "Node $(node --version) ready"
+}
+
+frontend_deploy() {
+    frontend_build
+    info "Deploying to Cloudflare Pages..."
+    cd search.elixpo
+    npx wrangler pages deploy out || { cd ..; error "Pages deploy failed"; exit 1; }
+    cd ..
+    success "Frontend deployed to Cloudflare Pages"
+    docker restart lixsearch-nginx
+    success "Nginx restarted to serve new frontend"
+}
+
+# ── Version display ────────────────────────────────────
+
+release_version() {
+    local target=${1:-all}
+    case "$target" in
+        cache)  info "lix-open-cache: $(_pkg_version "$CACHE_PKG")" ;;
+        all)
+            info "lix-open-cache:  $(_pkg_version "$CACHE_PKG")"
+            ;;
+    esac
+}
+
+# ── Release all ────────────────────────────────────────
+
+release_all() {
+    local bump_type=${1:-patch}
+    info "Full release (${bump_type} bump)..."
+    echo ""
+
+    release_bump all "$bump_type"
+    echo ""
+    release_build all
+    echo ""
+    release_pypi all
+    echo ""
+    release_docker
+    echo ""
+    release_github all
+
+    echo ""
+    success "All released!"
+    release_version all
+}
+
 show_help() {
     cat << EOF
 ${BLUE}lixSearch Production Deployment Helper${NC}
@@ -269,6 +671,8 @@ ${YELLOW}Commands:${NC}
   backup            Backup Redis data
   clean             Remove all data (volumes)
   test-scale        Test scalability (1→2→3→5 containers)
+  release <sub>       Package release (run ./deploy.sh release for full help)
+  frontend <sub>      Frontend (build | deploy | install-node)
   help              Show this help message
 
 ${YELLOW}Examples:${NC}
@@ -280,6 +684,14 @@ ${YELLOW}Examples:${NC}
   ./deploy.sh logs app                    # View app logs
   ./deploy.sh health                      # Check all services
   ./deploy.sh backup                      # Backup Redis
+  ./deploy.sh release version              # Show all package versions
+  ./deploy.sh release bump cache          # Bump lix-open-cache (patch)
+  ./deploy.sh release build cache         # Build lix-open-cache
+  ./deploy.sh release pypi cache          # Upload lix-open-cache to PyPI
+  ./deploy.sh release docker              # Push Docker to ghcr.io + Hub
+  ./deploy.sh release all minor           # Full release (minor bump)
+  ./deploy.sh frontend build              # Build Next.js static site
+  ./deploy.sh frontend deploy             # Build + deploy to Cloudflare Pages
 
 ${YELLOW}Environment:${NC}
   Use the root .env file with required variables:
@@ -376,6 +788,55 @@ case "${1:-help}" in
         ;;
     test-scale)
         test_scaling
+        ;;
+    frontend)
+        case "${2:-build}" in
+            build)        frontend_build ;;
+            deploy)       frontend_deploy ;;
+            install-node) frontend_install_node ;;
+            *)            error "Usage: ./deploy.sh frontend <build|deploy|install-node>"; exit 1 ;;
+        esac
+        ;;
+    release)
+        case "${2:-help}" in
+            version) release_version "$3" ;;
+            bump)    release_bump "$3" "$4" ;;
+            build)   release_build "$3" ;;
+            pypi)    release_pypi "$3" ;;
+            docker)  release_docker ;;
+            github)  release_github "$3" ;;
+            all)     release_all "$3" ;;
+            *)
+                cat <<RELEASE_HELP
+${YELLOW}Usage:${NC} ./deploy.sh release <command> [target] [bump_type]
+
+${YELLOW}Targets:${NC} cache | search | all
+
+${YELLOW}Commands:${NC}
+  version [target]            Show package version(s)
+  bump <target> [TYPE]        Bump version (patch|minor|major)
+  build <target>              Build .whl + .tar.gz locally
+  pypi <target>               Upload to PyPI (auto-builds if needed)
+  docker                      Build + push Docker image to ghcr.io + Docker Hub
+  github <target>             Create/update GitHub release (cache|search|all)
+  all [TYPE]                  Full release: bump + build + PyPI + Docker + GitHub
+
+${YELLOW}Examples:${NC}
+  ./deploy.sh release version              # Show all versions
+  ./deploy.sh release version cache        # Show cache version
+  ./deploy.sh release bump cache           # Bump cache patch
+  ./deploy.sh release bump all minor       # Bump both minor
+  ./deploy.sh release build search         # Build search .whl
+  ./deploy.sh release pypi cache           # Upload cache to PyPI
+  ./deploy.sh release pypi all             # Upload both to PyPI
+  ./deploy.sh release docker               # Push Docker image
+  ./deploy.sh release github cache          # Create/update cache release
+  ./deploy.sh release github all           # Create/update both releases
+  ./deploy.sh release all                  # Everything (patch)
+  ./deploy.sh release all minor            # Everything (minor)
+RELEASE_HELP
+                ;;
+        esac
         ;;
     status)
         show_status

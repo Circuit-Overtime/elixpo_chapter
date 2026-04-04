@@ -6,6 +6,10 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['lixFont', 'sans-serif'],
+        code: ['lixCode', 'monospace'],
+      },
       animation: {
         'fade-in-up': 'fadeInUp 0.6s ease-out',
       },

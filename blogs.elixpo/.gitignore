@@ -1,4 +1,11 @@
 node_modules/
-database.json
-bloomFilters/*.bin
 .next/
+.env
+.env.local
+.env.production
+email/preview/
+.next
+out/
+dist/
+.wrangler/
+wrangler.toml

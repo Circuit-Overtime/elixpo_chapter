@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import navigationData from "@/data/navigation.json";
+import GitHubStarButton from "@/components/GitHubStarButton";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -11,8 +13,17 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Brand */}
-        <Link href="/" className="text-xl font-bold tracking-tight text-foreground">
-          {navigationData.brand.name}
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src={navigationData.brand.logo}
+            alt="Elixpo"
+            width={32}
+            height={32}
+            className="rounded-lg"
+          />
+          <span className="text-xl font-bold tracking-tight text-foreground">
+            {navigationData.brand.name}
+          </span>
         </Link>
 
         {/* Desktop Links */}
@@ -26,15 +37,7 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          <Link href="/signin" className="text-sm text-muted hover:text-foreground transition-colors">
-            Sign In
-          </Link>
-          <Link
-            href={navigationData.cta.href}
-            className="text-sm font-medium px-5 py-2 rounded-full border border-foreground text-foreground hover:bg-foreground hover:text-white transition-colors"
-          >
-            {navigationData.cta.label}
-          </Link>
+          <GitHubStarButton className="inline-flex items-center gap-2 text-sm font-medium px-5 py-2 rounded-full bg-foreground text-white hover:opacity-90 transition-opacity" />
         </div>
 
         {/* Mobile toggle */}
@@ -66,13 +69,7 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          <Link
-            href={navigationData.cta.href}
-            className="block text-sm font-medium px-5 py-2 rounded-full border border-foreground text-foreground text-center hover:bg-foreground hover:text-white transition-colors"
-            onClick={() => setMobileOpen(false)}
-          >
-            {navigationData.cta.label}
-          </Link>
+          <GitHubStarButton className="flex items-center justify-center gap-2 text-sm font-medium px-5 py-2 rounded-full bg-foreground text-white hover:opacity-90 transition-opacity" />
         </div>
       )}
     </nav>

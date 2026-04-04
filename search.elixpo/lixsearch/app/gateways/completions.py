@@ -1,7 +1,6 @@
 import logging
 import uuid
 import json
-import hashlib
 from datetime import datetime, timezone
 from quart import request, jsonify, Response
 from pipeline.searchPipeline import run_elixposearch_pipeline
@@ -15,19 +14,8 @@ from pipeline.config import (
 logger = logging.getLogger("lixsearch-api")
 
 
-def _generate_session_id(messages: list) -> str:
-
-    first_user = ""
-    for msg in messages:
-        if msg.get("role") == "user":
-            content = msg.get("content", "")
-            if isinstance(content, str):
-                first_user = content[:200]
-            break
-    if first_user:
-        digest = hashlib.sha256(first_user.encode()).hexdigest()[:16]
-        return f"oai-{digest}"
-    return f"oai-{uuid.uuid4().hex[:16]}"
+def _ephemeral_session_id() -> str:
+    return f"eph-{uuid.uuid4().hex[:16]}"
 
 
 def _format_chunk(request_id: str, content: str, finish_reason=None, event_type: str = "RESPONSE") -> str:
@@ -76,7 +64,7 @@ async def chat_completions(pipeline_initialized: bool):
     if not pipeline_initialized:
         return jsonify({"error": {"message": "Server not initialized", "type": "server_error"}}), 503
 
-    request_id = f"chatcmpl-{uuid.uuid4().hex[:REQUEST_ID_HEX_SLICE_SIZE]}"
+    request_id = f"elixpo-{uuid.uuid4().hex[:REQUEST_ID_HEX_SLICE_SIZE]}"
 
     try:
         data = await request.get_json()
@@ -125,8 +113,10 @@ async def chat_completions(pipeline_initialized: bool):
                 chat_history.append({"role": role, "content": content})
 
         # Auto-generate session_id if not provided
+        is_ephemeral = not session_id
         if not session_id:
-            session_id = _generate_session_id(messages)
+            session_id = _ephemeral_session_id()
+            logger.info(f"[completions] No session_id provided, using ephemeral: {session_id}")
 
         image_url = image_urls[0] if image_urls else None
 
@@ -155,6 +145,7 @@ async def chat_completions(pipeline_initialized: bool):
                     event_id=request_id,
                     session_id=session_id,
                     chat_history=chat_history if chat_history else None,
+                    is_ephemeral=is_ephemeral,
                 ):
                     chunk_str = chunk if isinstance(chunk, str) else chunk.decode("utf-8")
 
@@ -199,6 +190,7 @@ async def chat_completions(pipeline_initialized: bool):
                 event_id=None,
                 session_id=session_id,
                 chat_history=chat_history if chat_history else None,
+                is_ephemeral=is_ephemeral,
             ):
                 if chunk:
                     response_content = chunk  # non-streaming: pipeline yields final text

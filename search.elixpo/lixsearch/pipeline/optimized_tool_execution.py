@@ -362,30 +362,6 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
             if web_event:
                 yield web_event
 
-            from ragService.cacheCoordinator import CacheCoordinator
-            from pipeline.queryDecomposition import QueryAnalyzer
-
-            _session_id_for_cache = memoized_results.get("session_id", "pipeline")
-            cache_coordinator = CacheCoordinator(session_id=_session_id_for_cache)
-            cached_embedding = cache_coordinator.get_url_embedding(url)
-
-            search_query = memoized_results.get("search_query", "").lower()
-            analyzer = QueryAnalyzer()
-            detected_aspects = analyzer._detect_aspects(search_query)
-
-            is_ephemeral_query = "ephemeral" in detected_aspects
-            is_stable_content = "stable" in detected_aspects
-
-            should_use_cache = cached_embedding is not None and is_stable_content and not is_ephemeral_query
-
-            cache_decision = "SKIP (ephemeral)" if is_ephemeral_query else ("USE (stable)" if is_stable_content else "SKIP (conservative)")
-            logger.info(f"[Pipeline] Content freshness: {cache_decision} | Aspects: {detected_aspects}")
-
-            if should_use_cache:
-                logger.info(f"[Pipeline] URL embedding cache HIT for {url} (stable content, using 24h cache)")
-                yield f"[CACHED] Retrieved previously fetched content from {url} (24h cached)"
-                return
-
             try:
                 queries = memoized_results.get("search_query", "")
                 if isinstance(queries, str):
@@ -400,28 +376,6 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
                 fetch_elapsed = time.time() - fetch_start
                 content_len = len(parallel_results) if parallel_results else 0
                 logger.info(f"[fetch_full_text] Fetched {content_len} chars from {url[:50]} in {fetch_elapsed:.1f}s")
-
-                try:
-                    from ipcService.coreServiceManager import get_core_embedding_service
-                    core_service = get_core_embedding_service()
-                    ingest_result = await asyncio.to_thread(core_service.ingest_url, url)
-                    chunks_count = ingest_result.get('chunks_ingested', 0)
-                    logger.info(f"[Pipeline] Ingested {chunks_count} chunks from {url} into vector store")
-
-                    if chunks_count > 0 and is_stable_content and not is_ephemeral_query:
-                        try:
-                            url_embedding = await asyncio.to_thread(
-                                core_service.embed_single,
-                                parallel_results[:200] if parallel_results else url
-                            )
-                            cache_coordinator.set_url_embedding(url, url_embedding)
-                            logger.info(f"[Pipeline] Cached stable content from {url} (24h TTL)")
-                        except Exception as e:
-                            logger.debug(f"[Pipeline] Failed to cache URL embedding: {e}")
-                    elif is_ephemeral_query:
-                        logger.info(f"[Pipeline] Skipping cache for ephemeral content (freshness priority)")
-                except Exception as e:
-                    logger.warning(f"[Pipeline] Failed to ingest content to vector store: {e}")
 
                 yield parallel_results if parallel_results else "[No content fetched from URL]"
             except asyncio.TimeoutError:

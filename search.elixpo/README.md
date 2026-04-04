@@ -3,6 +3,13 @@
 <h1 style="display: flex; align-items: center; justify-content: center; gap: 10px; color: #6391F8;"> <img src="./public/images/icon.png" height="48px" width=48px" alt="searchIcon"> LixSearch </h1>
 
 **Intelligent search assistant with real-time web research, RAG, and OpenAI-compatible API**
+<div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+
+[![Pollinations Attribute](https://img.shields.io/badge/Built%20with-Pollinations-8a2be2?style=for-the-badge)](https://img.shields.io/badge/Built%20with-Pollinations-8a2be2?style=for-the-badge)
+</div>
+
+<hr>
+<br>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
@@ -39,7 +46,20 @@
 
 ---
 
-## ⚙️ How It Works (In Plain English)
+## 🚩 Released Packages
+
+| Package | Registry | Install / Pull | Description |
+|---------|----------|---------------|-------------|
+| [`lix-open-cache`](https://pypi.org/project/lix-open-cache/) | PyPI | `pip install lix-open-cache` | Standalone 3-layer Redis caching + Huffman disk archival for conversational AI |
+| [`LixSearch`](https://hub.docker.com/r/elixpo/lixsearch) | Docker Hub / GHCR | `docker pull elixpo/lixsearch` OR `docker pull ghcr.io/circuit-overtime/lixsearch` | Full self-hostable search engine (API + Redis + ChromaDB + Playwright) both on Docker Hub and GitHub Container Registry |
+
+- **lix-open-cache** — standalone caching library, works independently with just Redis. No server needed. Only depends on `redis`, `numpy`, `loguru`.
+- **LixSearch Docker** — the full search engine. Run `docker compose up` and get a working API.
+
+---
+
+
+## ⚙️ How It Works
 
 When you ask lixSearch a question, here's what happens behind the scenes:
 
@@ -73,7 +93,7 @@ When you ask lixSearch a question, here's what happens behind the scenes:
 
 ---
 
-## 🛠️ How The System Works (The Simple Version)
+## 🛠️ How The System Design HLD
 
 ```mermaid
 flowchart TD
@@ -136,7 +156,7 @@ lixSearch exposes an **OpenAI-compatible** API. Any client that works with OpenA
 
 ### Basic search
 ```bash
-curl -X POST https://apisearch.elixpo.com/v1/chat/completions \
+curl -X POST https://search.elixpo.com/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [{"role": "user", "content": "What is the best way to learn Python?"}],
@@ -146,7 +166,7 @@ curl -X POST https://apisearch.elixpo.com/v1/chat/completions \
 
 ### Multi-turn conversation
 ```bash
-curl -X POST https://apisearch.elixpo.com/v1/chat/completions \
+curl -X POST https://search.elixpo.com/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [
@@ -161,7 +181,7 @@ The full conversation history is injected into the model context — no session 
 
 ### Non-streaming (JSON response)
 ```bash
-curl -X POST https://apisearch.elixpo.com/v1/chat/completions \
+curl -X POST https://search.elixpo.com/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [{"role": "user", "content": "Latest breakthroughs in AI"}],
@@ -170,16 +190,6 @@ curl -X POST https://apisearch.elixpo.com/v1/chat/completions \
 ```
 Returns a standard `chat.completion` object with `usage` (prompt/completion tokens) and `choices[0].message.content`.
 
-### Deep search
-```bash
-curl -X POST https://apisearch.elixpo.com/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [{"role": "user", "content": "Compare transformer architectures for long-context reasoning"}],
-    "stream": true,
-    "deep_search": true
-  }'
-```
 
 ### Available endpoints
 
@@ -245,11 +255,11 @@ Each will give you a complete, sourced answer.
 > This is the flow of the request that we have from the CF Reverse proxy 
 
 ```
-Browser → apisearch.elixpo.com (Cloudflare Pages, edge)
+Browser → search.elixpo.com (Cloudflare Pages, edge)
            ↓
          Next.js API route (e.g. /api/search/route.ts)
            ↓
-         backendUrl("/api/search") → "http://apisearch.elixpo.com/api/search"
+         backendUrl("/api/search") → "http://search.elixpo.com/api/search"
            ↓
          fetch() with headers:
            X-API-Key: <API_KEY secret>           ← nginx auth on :10001

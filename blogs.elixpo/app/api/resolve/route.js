@@ -1,0 +1,234 @@
+export const runtime = 'edge';
+import { NextResponse } from 'next/server';
+import { decompressBlogContent } from '../../../lib/compress';
+import { STAFF_ORG_ID } from '../../../lib/staff';
+
+function decompressBlog(blog) {
+  if (!blog) return blog;
+  try {
+    blog.content = decompressBlogContent(blog.content);
+  } catch {
+    // If decompression fails, try parsing as raw JSON
+    try { blog.content = JSON.parse(blog.content); } catch { /* leave as-is */ }
+  }
+  return blog;
+}
+
+// Resolve @name to user or org, optionally fetch a blog by slug
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const name = (searchParams.get('name') || '').trim().toLowerCase();
+  const slug = (searchParams.get('slug') || '').trim().toLowerCase();
+  const collection = (searchParams.get('collection') || '').trim().toLowerCase();
+
+  if (!name) {
+    return NextResponse.json({ error: 'Missing name' }, { status: 400 });
+  }
+
+  try {
+    const { getDB } = await import('../../../lib/cloudflare');
+    const db = getDB();
+
+    // Check namespace to determine type
+    const ns = await db.prepare('SELECT owner_type, owner_id FROM namespaces WHERE name = ?')
+      .bind(name).first();
+
+    if (!ns) {
+      return NextResponse.json({ error: 'Not found', type: null }, { status: 404 });
+    }
+
+    // Resolve profile
+    if (ns.owner_type === 'user') {
+      const user = await db.prepare(`
+        SELECT id, username, display_name, bio, avatar_url, banner_r2_key,
+          location, timezone, pronouns, website, company, links, created_at
+        FROM users WHERE id = ?
+      `).bind(ns.owner_id).first();
+
+      if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+      // If slug requested, find the blog
+      if (slug) {
+        const blog = await db.prepare(`
+          SELECT b.id, b.slug, b.title, b.subtitle, b.content, b.cover_image_r2_key,
+            b.status, b.published_as, b.page_emoji, b.read_time_minutes,
+            b.published_at, b.created_at, b.updated_at, b.author_id,
+            u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
+          FROM blogs b
+          JOIN users u ON u.id = b.author_id
+          WHERE LOWER(b.slug) = ? AND b.author_id = ? AND b.status IN ('published', 'unlisted')
+        `).bind(slug, ns.owner_id).first();
+
+        if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
+
+        // Fetch tags + co-author count
+        const [tags, coAuthorRow] = await Promise.all([
+          db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all(),
+          db.prepare('SELECT COUNT(*) as c FROM blog_co_authors WHERE blog_id = ?').bind(blog.id).first(),
+        ]);
+
+        return NextResponse.json({
+          type: 'blog',
+          owner: { type: 'user', ...user },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_author_count: coAuthorRow?.c || 0 },
+        });
+      }
+
+      // Profile only — also fetch published blogs
+      const blogs = await db.prepare(`
+        SELECT id, slug, title, subtitle, cover_image_r2_key, page_emoji,
+          read_time_minutes, published_at, status
+        FROM blogs WHERE author_id = ? AND status IN ('published', 'unlisted')
+        ORDER BY published_at DESC LIMIT 20
+      `).bind(ns.owner_id).all();
+
+      const followerCount = await db.prepare(
+        "SELECT COUNT(*) as c FROM follows WHERE following_id = ? AND following_type = 'user'"
+      ).bind(ns.owner_id).first();
+
+      const followingCount = await db.prepare(
+        'SELECT COUNT(*) as c FROM follows WHERE follower_id = ?'
+      ).bind(ns.owner_id).first();
+
+      return NextResponse.json({
+        type: 'user',
+        user: { ...user, followers: followerCount?.c || 0, following: followingCount?.c || 0 },
+        blogs: blogs?.results || [],
+      });
+    }
+
+    if (ns.owner_type === 'org') {
+      const org = await db.prepare(`
+        SELECT id, slug, name, description, bio, website, links, visibility,
+          logo_url, logo_r2_key, banner_url, banner_r2_key, featured_blog_ids,
+          timezone, location, contact_email, owner_id, created_at
+        FROM orgs WHERE id = ?
+      `).bind(ns.owner_id).first();
+
+      if (!org) return NextResponse.json({ error: 'Org not found' }, { status: 404 });
+
+      // If collection + slug, find blog in collection
+      if (collection && slug) {
+        const col = await db.prepare('SELECT id FROM collections WHERE org_id = ? AND LOWER(slug) = ?')
+          .bind(ns.owner_id, collection).first();
+        if (!col) return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
+
+        const blog = await db.prepare(`
+          SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
+          FROM blogs b JOIN users u ON u.id = b.author_id
+          WHERE LOWER(b.slug) = ? AND b.collection_id = ? AND b.status IN ('published', 'unlisted')
+        `).bind(slug, col.id).first();
+
+        if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
+
+        const [tags, coAuthorRow] = await Promise.all([
+          db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all(),
+          db.prepare('SELECT COUNT(*) as c FROM blog_co_authors WHERE blog_id = ?').bind(blog.id).first(),
+        ]);
+        return NextResponse.json({
+          type: 'blog',
+          owner: { type: 'org', ...org },
+          collection: { id: col.id, slug: collection },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_author_count: coAuthorRow?.c || 0 },
+        });
+      }
+
+      // If just slug (no collection), check if it's a collection first, then a blog
+      if (slug) {
+        // Check if slug matches a collection under this org
+        const col = await db.prepare(
+          'SELECT id, slug, name, description FROM collections WHERE org_id = ? AND LOWER(slug) = ?'
+        ).bind(ns.owner_id, slug).first();
+
+        if (col) {
+          // Return collection listing with its blogs
+          const colBlogs = await db.prepare(`
+            SELECT b.id, b.slug, b.title, b.subtitle, b.cover_image_r2_key, b.page_emoji,
+              b.read_time_minutes, b.published_at, b.author_id,
+              u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar,
+              (SELECT COUNT(*) FROM likes WHERE blog_id = b.id) as like_count,
+              (SELECT COUNT(*) FROM comments WHERE blog_id = b.id) as comment_count
+            FROM blogs b JOIN users u ON u.id = b.author_id
+            WHERE b.collection_id = ? AND b.status IN ('published', 'unlisted')
+            ORDER BY b.published_at DESC LIMIT 50
+          `).bind(col.id).all();
+
+          // Fetch tags for each blog
+          const blogIds = (colBlogs?.results || []).map(b => b.id);
+          let tagMap = {};
+          if (blogIds.length > 0) {
+            const placeholders = blogIds.map(() => '?').join(',');
+            const tagResult = await db.prepare(
+              `SELECT blog_id, tag FROM blog_tags WHERE blog_id IN (${placeholders})`
+            ).bind(...blogIds).all();
+            for (const t of (tagResult?.results || [])) {
+              if (!tagMap[t.blog_id]) tagMap[t.blog_id] = [];
+              tagMap[t.blog_id].push(t.tag);
+            }
+          }
+
+          return NextResponse.json({
+            type: 'collection',
+            owner: { type: 'org', ...org },
+            collection: col,
+            blogs: (colBlogs?.results || []).map(b => ({ ...b, tags: tagMap[b.id] || [] })),
+          });
+        }
+
+        // Otherwise treat as a blog slug
+        const blog = await db.prepare(`
+          SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
+          FROM blogs b JOIN users u ON u.id = b.author_id
+          WHERE LOWER(b.slug) = ? AND b.published_as = ? AND b.status IN ('published', 'unlisted')
+        `).bind(slug, `org:${ns.owner_id}`).first();
+
+        if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
+
+        const [tags, coAuthorRow] = await Promise.all([
+          db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all(),
+          db.prepare('SELECT COUNT(*) as c FROM blog_co_authors WHERE blog_id = ?').bind(blog.id).first(),
+        ]);
+        return NextResponse.json({
+          type: 'blog',
+          owner: { type: 'org', ...org },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_author_count: coAuthorRow?.c || 0 },
+        });
+      }
+
+      // Org profile — fetch owner, members, collections, blogs
+      const [owner, members, collections, blogs] = await Promise.all([
+        db.prepare(`
+          SELECT id, username, display_name, avatar_url, bio, created_at
+          FROM users WHERE id = ?
+        `).bind(org.owner_id).first(),
+        db.prepare(`
+          SELECT u.id, u.username, u.display_name, u.avatar_url, om.role, om.joined_at
+          FROM org_members om JOIN users u ON u.id = om.user_id
+          WHERE om.org_id = ? ORDER BY om.joined_at LIMIT 50
+        `).bind(ns.owner_id).all(),
+        db.prepare('SELECT id, slug, name, description FROM collections WHERE org_id = ? ORDER BY created_at')
+          .bind(ns.owner_id).all(),
+        db.prepare(`
+          SELECT id, slug, title, subtitle, cover_image_r2_key, page_emoji, read_time_minutes, published_at
+          FROM blogs WHERE published_as = ? AND status IN ('published', 'unlisted')
+          ORDER BY published_at DESC LIMIT 20
+        `).bind(`org:${ns.owner_id}`).all(),
+      ]);
+
+      return NextResponse.json({
+        type: 'org',
+        org,
+        owner: owner || null,
+        members: members?.results || [],
+        collections: collections?.results || [],
+        blogs: blogs?.results || [],
+      });
+    }
+
+    return NextResponse.json({ error: 'Unknown type' }, { status: 500 });
+  } catch (e) {
+    console.error('Resolve error:', e?.message || e);
+    const isDbError = e?.message?.includes('D1_ERROR') || e?.message?.includes('SQLITE');
+    return NextResponse.json({ error: isDbError ? 'Service unavailable' : 'Not found' }, { status: isDbError ? 503 : 404 });
+  }
+}
