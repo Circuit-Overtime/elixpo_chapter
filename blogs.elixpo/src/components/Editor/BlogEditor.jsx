@@ -761,21 +761,38 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     setAiPhase('idle');
     setAiGeneratingBlockId(null);
     hideSparkle();
-    wrapperRef.current?.querySelectorAll('.ai-skeleton-nearby, .ai-placeholder-skeleton, .ai-edit-selected-block, .ai-hide-placeholder').forEach((el) => {
-      el.classList.remove('ai-skeleton-nearby', 'ai-placeholder-skeleton', 'ai-edit-selected-block', 'ai-hide-placeholder');
+    wrapperRef.current?.querySelectorAll('.ai-skeleton-nearby, .ai-placeholder-skeleton, .ai-edit-selected-block, .ai-hide-placeholder, .ai-writing-active').forEach((el) => {
+      el.classList.remove('ai-skeleton-nearby', 'ai-placeholder-skeleton', 'ai-edit-selected-block', 'ai-hide-placeholder', 'ai-writing-active');
     });
 
-    // Scroll to the AI-generated content and show keep/discard
+    // Ensure AI blocks have color props and show keep/discard
     const ids = aiBlockIdsRef.current;
     if (ids && ids.size > 0) {
+      for (const id of ids) {
+        try {
+          const block = editor.document.find((b) => b.id === id);
+          if (block && block.type !== 'image') {
+            editor.updateBlock(id, { props: { textColor: 'purple', backgroundColor: 'purple' } });
+          }
+        } catch {}
+      }
       setShowAIActions(true);
+      // Apply highlight via DOM directly (can't use highlightAiBlocks — defined later)
+      const cls = 'ai-generated-highlight';
+      for (const id of ids) {
+        const el = wrapperRef.current?.querySelector(`[data-id="${id}"]`);
+        if (el) {
+          el.classList.remove('ai-writing-active');
+          el.classList.add(cls);
+        }
+      }
       requestAnimationFrame(() => {
         const firstId = [...ids][0];
         const el = wrapperRef.current?.querySelector(`[data-id="${firstId}"]`);
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
     }
-  }, []);
+  }, [editor, hideSparkle]);
 
   // Re-apply ai-generated-highlight after BlockNote re-renders (which destroys DOM classes)
   useEffect(() => {
@@ -789,10 +806,13 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       applyPending = true;
       requestAnimationFrame(() => {
         applyPending = false;
+        // During generation use blue (ai-writing-active), after done use green (ai-generated-highlight)
+        const cls = aiGenerating ? 'ai-writing-active' : 'ai-generated-highlight';
         for (const id of aiBlockIds) {
           const el = wrapper.querySelector(`[data-id="${id}"]`);
-          if (el && !el.classList.contains('ai-generated-highlight')) {
-            el.classList.add('ai-generated-highlight');
+          if (el && !el.classList.contains(cls)) {
+            el.classList.remove('ai-writing-active', 'ai-generated-highlight');
+            el.classList.add(cls);
           }
         }
       });
@@ -805,15 +825,16 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   }, [aiBlockIds]);
 
   // Highlight AI blocks in the DOM with lavender class + position sparkle
-  const highlightAiBlocks = useCallback((ids, showCursor = true) => {
+  const highlightAiBlocks = useCallback((ids, showCursor = true, writing = false) => {
     // Remove old highlights
-    wrapperRef.current?.querySelectorAll('.ai-generated-highlight').forEach((el) => {
-      el.classList.remove('ai-generated-highlight');
+    wrapperRef.current?.querySelectorAll('.ai-generated-highlight, .ai-writing-active').forEach((el) => {
+      el.classList.remove('ai-generated-highlight', 'ai-writing-active');
     });
-    // Add highlight to current AI blocks — CSS handles the lavender color
+    // Add highlight: blue while writing, green when done
+    const cls = writing ? 'ai-writing-active' : 'ai-generated-highlight';
     for (const id of ids) {
       const el = wrapperRef.current?.querySelector(`[data-id="${id}"]`);
-      if (el) el.classList.add('ai-generated-highlight');
+      if (el) el.classList.add(cls);
     }
     if (showCursor) {
       moveSparkleToLastAiBlock();
@@ -835,15 +856,24 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
   const handleAIKeep = useCallback(() => {
     hideSparkle();
-    wrapperRef.current?.querySelectorAll('.ai-generated-highlight').forEach((el) => {
-      el.classList.remove('ai-generated-highlight');
+    // Reset textColor and backgroundColor to default on all AI blocks
+    for (const id of aiBlockIdsRef.current) {
+      try {
+        const block = editor.document.find((b) => b.id === id);
+        if (block && block.type !== 'image') {
+          editor.updateBlock(id, { props: { textColor: 'default', backgroundColor: 'default' } });
+        }
+      } catch {}
+    }
+    wrapperRef.current?.querySelectorAll('.ai-generated-highlight, .ai-writing-active').forEach((el) => {
+      el.classList.remove('ai-generated-highlight', 'ai-writing-active');
     });
     setAiBlockIds(new Set());
     aiBlockIdsRef.current = new Set();
     aiBlockCountRef.current = 0;
     aiAnchorIdRef.current = null;
     setShowAIActions(false);
-  }, [hideSparkle]);
+  }, [editor, hideSparkle]);
 
   const handleAIDiscard = useCallback(() => {
     hideSparkle();
@@ -853,8 +883,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         try { const fb = getAiBlockIds(); if (fb.length > 0) editor.removeBlocks(fb); } catch {}
       }
     }
-    wrapperRef.current?.querySelectorAll('.ai-generated-highlight').forEach((el) => {
-      el.classList.remove('ai-generated-highlight');
+    wrapperRef.current?.querySelectorAll('.ai-generated-highlight, .ai-writing-active').forEach((el) => {
+      el.classList.remove('ai-generated-highlight', 'ai-writing-active');
     });
     setAiBlockIds(new Set());
     aiBlockIdsRef.current = new Set();
@@ -1031,13 +1061,13 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       anchorEl.classList.add('ai-edit-selected-block', 'ai-hide-placeholder');
     }
 
-    // Position inline status bar below anchor
+    // Position inline status bar below anchor (offset past the thin shimmer bar)
     const wrapperRect = wrapperRef.current?.getBoundingClientRect();
     const anchorBottom = anchorEl && wrapperRect
       ? anchorEl.getBoundingClientRect().bottom - wrapperRect.top
       : menuPos.top + 36;
     setAiStatusInline(true);
-    setAiInlinePos({ top: anchorBottom + 4 });
+    setAiInlinePos({ top: anchorBottom + 16 });
     setAiStatusText('is thinking');
 
     // Skeleton on placeholder block
@@ -1059,8 +1089,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     function cleanupSkeletons() {
       if (aiStatusTimerRef.current) { clearInterval(aiStatusTimerRef.current); aiStatusTimerRef.current = null; }
       setAiStatusInline(false);
-      wrapperRef.current?.querySelectorAll('.ai-placeholder-skeleton, .ai-skeleton-nearby, .ai-edit-selected-block, .ai-hide-placeholder, .ai-typing-skeleton').forEach((el) => {
-        el.classList.remove('ai-placeholder-skeleton', 'ai-skeleton-nearby', 'ai-edit-selected-block', 'ai-hide-placeholder', 'ai-typing-skeleton');
+      wrapperRef.current?.querySelectorAll('.ai-placeholder-skeleton, .ai-skeleton-nearby, .ai-edit-selected-block, .ai-hide-placeholder, .ai-typing-skeleton, .ai-writing-active').forEach((el) => {
+        el.classList.remove('ai-placeholder-skeleton', 'ai-skeleton-nearby', 'ai-edit-selected-block', 'ai-hide-placeholder', 'ai-typing-skeleton', 'ai-writing-active');
       });
     }
 
@@ -1211,8 +1241,18 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
               aiBlockCountRef.current = currentIds.length;
             }
 
-            // Highlight and scroll
-            highlightAiBlocks(currentIds, true);
+            // Set BlockNote textColor + backgroundColor on AI blocks (survives re-renders)
+            for (const id of currentIds) {
+              try {
+                const block = editor.document.find((b) => b.id === id);
+                if (block && block.type !== 'image') {
+                  editor.updateBlock(id, { props: { textColor: 'purple', backgroundColor: 'purple' } });
+                }
+              } catch {}
+            }
+
+            // Highlight while streaming and scroll
+            highlightAiBlocks(currentIds, true, true);
             requestAnimationFrame(() => {
               const lastId = currentIds[currentIds.length - 1];
               const lastEl = wrapperRef.current?.querySelector(`[data-id="${lastId}"]`);
@@ -1332,6 +1372,16 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
               editor.insertBlocks([{ type: 'paragraph', content: [] }], lastAiId, 'after');
             }
           } catch {}
+
+          // Set final BlockNote textColor + backgroundColor on AI blocks
+          for (const id of currentIds) {
+            try {
+              const block = editor.document.find((b) => b.id === id);
+              if (block && block.type !== 'image') {
+                editor.updateBlock(id, { props: { textColor: 'purple', backgroundColor: 'purple' } });
+              }
+            } catch {}
+          }
 
           const finalIds = new Set(currentIds);
           aiBlockIdsRef.current = finalIds;

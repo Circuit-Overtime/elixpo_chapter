@@ -1,9 +1,8 @@
 export const runtime = 'edge';
-// Session management for lixsearch AI — create/retrieve per-blog sessions
+// Session management for lixsearch AI — generate/retrieve per-blog session IDs.
+// LixSearch auto-creates sessions on first use, so we just generate + store IDs.
 
 import { getSession } from '../../../../lib/auth';
-
-const LIXSEARCH_BASE = 'https://search.elixpo.com';
 
 /**
  * GET /api/ai/session?slugid=xxx
@@ -31,7 +30,6 @@ export async function GET(request) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch {
-    // D1 unavailable (local dev)
     return new Response(JSON.stringify({ sessionId: null }), {
       headers: { 'Content-Type': 'application/json' },
     });
@@ -40,8 +38,9 @@ export async function GET(request) {
 
 /**
  * POST /api/ai/session
- * Creates a new lixsearch session and stores it on the blog record.
- * Body: { slugid, query? }
+ * Generates a session ID and stores it on the blog record.
+ * LixSearch will auto-create the session on first chat request.
+ * Body: { slugid }
  */
 export async function POST(request) {
   const session = await getSession();
@@ -50,15 +49,16 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { slugid, query = 'Blog writing assistant session' } = body;
+  const { slugid } = body;
   if (!slugid) {
     return new Response(JSON.stringify({ error: 'Missing slugid' }), { status: 400 });
   }
 
-  // Check if blog already has a session
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
+
+    // Check if blog already has a session
     const blog = await db.prepare('SELECT ai_session_id FROM blogs WHERE slugid = ? AND author_id = ?')
       .bind(slugid, session.userId).first();
 
@@ -67,44 +67,22 @@ export async function POST(request) {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-  } catch {
-    // D1 unavailable — proceed to create session anyway
-  }
 
-  // Create a new lixsearch session
-  try {
-    const res = await fetch(`${LIXSEARCH_BASE}/api/session/create`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
-    });
+    // Generate a new session ID
+    const sessionId = `lixblogs-${slugid}-${crypto.randomUUID().slice(0, 8)}`;
 
-    if (!res.ok) {
-      const err = await res.text();
-      return new Response(JSON.stringify({ error: `Failed to create session: ${err}` }), { status: 502 });
-    }
-
-    const data = await res.json();
-    const sessionId = data.session_id;
-
-    if (!sessionId) {
-      return new Response(JSON.stringify({ error: 'No session_id returned' }), { status: 502 });
-    }
-
-    // Store session_id on the blog record
-    try {
-      const { getDB } = await import('../../../../lib/cloudflare');
-      const db = getDB();
-      await db.prepare('UPDATE blogs SET ai_session_id = ? WHERE slugid = ? AND author_id = ?')
-        .bind(sessionId, slugid, session.userId).run();
-    } catch {
-      // D1 unavailable — session created but not persisted (will work for current session)
-    }
+    // Store on blog record
+    await db.prepare('UPDATE blogs SET ai_session_id = ? WHERE slugid = ? AND author_id = ?')
+      .bind(sessionId, slugid, session.userId).run();
 
     return new Response(JSON.stringify({ sessionId }), {
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message || 'Session creation failed' }), { status: 500 });
+  } catch {
+    // D1 unavailable — generate ephemeral session ID (works for current session only)
+    const sessionId = `lixblogs-eph-${crypto.randomUUID().slice(0, 12)}`;
+    return new Response(JSON.stringify({ sessionId }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
