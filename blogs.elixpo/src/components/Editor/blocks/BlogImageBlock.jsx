@@ -122,48 +122,43 @@ function BlogImageRenderer({ block, editor }) {
     setEmbedError('');
   }, [embedUrl, editor, block.id]);
 
-  // AI image generate
+  // AI image generate via lixsearch
   const handleGenerate = useCallback(async () => {
     if (!aiPrompt.trim()) return;
     setMode('generating');
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 120000);
-      const res = await fetch('/api/ai/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt.trim(), width: 1024, height: 576 }),
-        signal: controller.signal,
+      const { getOrCreateSession, streamAI, reuploadImage } = await import('../../../ai/agent');
+
+      // Use a lightweight ephemeral session for manual image generation
+      // We pass a dummy slugid — the session route handles missing blogs gracefully
+      const sessionId = await getOrCreateSession('_img_gen');
+
+      // Stream a "generate image" request through lixsearch
+      let imageUrl = null;
+      await streamAI({
+        sessionId,
+        systemPrompt: 'You are an image generation assistant. When asked to generate an image, create it. Output only the image, no extra text.',
+        userPrompt: `Generate an image: ${aiPrompt.trim()}`,
+        onImage: ({ url }) => { imageUrl = url; },
+        onDone: () => {},
       });
-      clearTimeout(timeout);
-      if (!res.ok) throw new Error(`Generation failed (${res.status})`);
-      const data = await res.json();
-      const b64 = data.data?.[0]?.b64_json;
-      if (!b64) throw new Error('No image data');
 
-      // Convert to blob and upload
-      const byteChars = atob(b64);
-      const byteArray = new Uint8Array(byteChars.length);
-      for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
-      const blob = new Blob([byteArray], { type: 'image/png' });
+      if (!imageUrl) throw new Error('No image generated');
 
-      const { compressBlogImage } = await import('../../../utils/compressImage');
-      const compressed = await compressBlogImage(blob);
+      // Show the lixsearch URL as preview immediately
+      editor.updateBlock(block.id, { props: { url: imageUrl } });
 
-      const formData = new FormData();
-      formData.append('file', compressed.blob, `ai_${Date.now()}.webp`);
-      formData.append('type', 'image');
-      const uploadRes = await fetch('/api/media/upload', { method: 'POST', body: formData });
-      if (!uploadRes.ok) throw new Error('Upload failed');
-      const uploadData = await uploadRes.json();
+      // Re-upload to Cloudinary for persistence
+      const uploaded = await reuploadImage(imageUrl, aiPrompt.trim());
+      if (uploaded) {
+        editor.updateBlock(block.id, { props: { url: uploaded.url, _mediaId: uploaded.id } });
+      }
 
-      editor.updateBlock(block.id, { props: { url: uploadData.url, _mediaId: uploadData.id || '' } });
       setMode('idle');
       setAiPrompt('');
     } catch (err) {
       console.error('AI image generation failed:', err);
       showFailToast(err.message || 'Image generation failed');
-      // Replace image block with empty paragraph
       try {
         editor.updateBlock(block.id, { type: 'paragraph', props: {}, content: [] });
       } catch { /* block may already be gone */ }

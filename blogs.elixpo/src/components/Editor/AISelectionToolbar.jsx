@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { streamAI } from '../../ai/agent';
+import { streamAI, getOrCreateSession } from '../../ai/agent';
 import { EDIT_SYSTEM_PROMPT } from '../../ai/prompts';
 import { parseMarkdownToBlocks } from './markdownToBlocks';
 
@@ -10,7 +10,7 @@ import { parseMarkdownToBlocks } from './markdownToBlocks';
  * Star icon click → toolbar hides, inline AI prompt appears below selection →
  * AI edits inline with diff (strikethrough original, lavender new) → keep/undo.
  */
-export default function AISelectionToolbar({ editor, onTitleChange }) {
+export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
   const [mode, setMode] = useState('idle'); // idle | prompting | streaming | done
   const [prompt, setPrompt] = useState('');
   const [selectedText, setSelectedText] = useState('');
@@ -398,7 +398,11 @@ export default function AISelectionToolbar({ editor, onTitleChange }) {
     const userPrompt = `## Full blog (for context):\n${fullBlogText}\n\n---\n\nSelected text to edit:\n\`\`\`\n${selectedText}\n\`\`\`\n\nInstruction: ${prompt}`;
 
     try {
+      // Get or create lixsearch session
+      const sessionId = await getOrCreateSession(blogId);
+
       await streamAI({
+        sessionId,
         systemPrompt: EDIT_SYSTEM_PROMPT,
         userPrompt,
         signal: controller.signal,

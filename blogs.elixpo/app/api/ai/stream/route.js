@@ -1,54 +1,46 @@
 export const runtime = 'edge';
-// Server-side proxy for Pollinations AI streaming
-// Keeps API key server-side, enforces auth + rate limits
+// Server-side proxy for lixsearch AI streaming
+// Proxies SSE from search.elixpo.com session chat completions
 
 import { enforceAILimits } from '../../../../lib/aiRateLimit';
 
-const POLLINATIONS_BASE = 'https://gen.pollinations.ai/v1';
+const LIXSEARCH_BASE = 'https://search.elixpo.com';
 
 export async function POST(request) {
-  const apiKey = process.env.POLLINATIONS_TEXT_API_KEY;
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 500 });
-  }
-
-  const { error } = await enforceAILimits();
+  const { session: userSession, error } = await enforceAILimits();
   if (error) return error;
 
   const body = await request.json();
-  const { systemPrompt, userPrompt, model = 'openai', temperature = 0.7 } = body;
+  const { sessionId, messages } = body;
 
-  if (!userPrompt) {
-    return new Response(JSON.stringify({ error: 'Missing userPrompt' }), { status: 400 });
+  if (!sessionId || !messages?.length) {
+    return new Response(JSON.stringify({ error: 'Missing sessionId or messages' }), { status: 400 });
   }
 
-  const aiRes = await fetch(`${POLLINATIONS_BASE}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-        { role: 'user', content: userPrompt },
-      ],
-      temperature,
-      stream: true,
-    }),
-  });
+  try {
+    const aiRes = await fetch(`${LIXSEARCH_BASE}/api/session/${sessionId}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages,
+        stream: true,
+      }),
+    });
 
-  if (!aiRes.ok) {
-    const err = await aiRes.text();
-    return new Response(JSON.stringify({ error: `AI error: ${err}` }), { status: aiRes.status });
+    if (!aiRes.ok) {
+      const err = await aiRes.text();
+      return new Response(JSON.stringify({ error: `LixSearch error: ${err}` }), { status: aiRes.status });
+    }
+
+    // Pass through the SSE stream
+    return new Response(aiRes.body, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message || 'Stream request failed' }), { status: 500 });
   }
-
-  return new Response(aiRes.body, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-    },
-  });
 }
