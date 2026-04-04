@@ -329,13 +329,8 @@ export default function WritePage({ slugid }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [syncToCloud]);
 
-  // Auto-sync to cloud every 10 minutes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      syncToCloud({ showToast: true });
-    }, 2 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [syncToCloud]);
+  // Auto-sync to cloud removed — localStorage acts as buffer,
+  // cloud sync only on Ctrl+S, page load, and beforeunload
 
   // Sync on page load (after draft loads)
   useEffect(() => {

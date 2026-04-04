@@ -86,10 +86,11 @@ export function computeWordDiff(oldText, newText) {
 }
 
 /**
- * Convert merged diff result into BlockNote paragraph blocks with inline styles.
- * - All text: textColor 'purple'
- * - Deleted words: strikethrough + reduced opacity via textColor
- * - Each block: backgroundColor 'purple'
+ * Convert merged diff result into BlockNote paragraph blocks.
+ * - Block-level props: textColor 'purple', backgroundColor 'purple'
+ *   (BlockNote renders these as colored block background + text)
+ * - Deleted words: strike inline style (strikethrough)
+ * - Added/equal words: no extra inline style
  * - Paragraph breaks at '\n' tokens
  */
 export function diffToBlocks(diffResult) {
@@ -99,16 +100,20 @@ export function diffToBlocks(diffResult) {
   for (const item of diffResult) {
     if (item.text === '\n') {
       if (currentContent.length > 0) {
-        blocks.push({ type: 'paragraph', content: currentContent, props: { backgroundColor: 'purple' } });
+        blocks.push({
+          type: 'paragraph',
+          content: currentContent,
+          props: { textColor: 'purple', backgroundColor: 'purple' },
+        });
         currentContent = [];
       }
       continue;
     }
 
-    const styles = { textColor: 'purple' };
+    // Only inline style we can use is 'strike' for deleted words
+    const styles = {};
     if (item.type === 'delete') {
-      styles.strikethrough = true;
-      styles.textColor = 'gray';
+      styles.strike = true;
     }
 
     const needsSpace = currentContent.length > 0;
@@ -116,7 +121,42 @@ export function diffToBlocks(diffResult) {
   }
 
   if (currentContent.length > 0) {
-    blocks.push({ type: 'paragraph', content: currentContent, props: { backgroundColor: 'purple' } });
+    blocks.push({
+      type: 'paragraph',
+      content: currentContent,
+      props: { textColor: 'purple', backgroundColor: 'purple' },
+    });
+  }
+
+  return blocks.length > 0 ? blocks : [{ type: 'paragraph', content: [] }];
+}
+
+/**
+ * Build clean "keep" blocks from a diff result — removes deleted words,
+ * keeps only equal + added words, resets block props to default.
+ */
+export function diffToKeepBlocks(diffResult) {
+  const blocks = [];
+  let currentContent = [];
+
+  for (const item of diffResult) {
+    if (item.text === '\n') {
+      if (currentContent.length > 0) {
+        blocks.push({ type: 'paragraph', content: currentContent });
+        currentContent = [];
+      }
+      continue;
+    }
+
+    // Skip deleted words — they are being removed
+    if (item.type === 'delete') continue;
+
+    const needsSpace = currentContent.length > 0;
+    currentContent.push({ type: 'text', text: (needsSpace ? ' ' : '') + item.text, styles: {} });
+  }
+
+  if (currentContent.length > 0) {
+    blocks.push({ type: 'paragraph', content: currentContent });
   }
 
   return blocks.length > 0 ? blocks : [{ type: 'paragraph', content: [] }];
