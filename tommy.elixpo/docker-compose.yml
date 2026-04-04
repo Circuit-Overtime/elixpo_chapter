@@ -1,0 +1,45 @@
+services:
+  tommy:
+    build: .
+    container_name: tommy
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - ./src/context/repo_info.txt:/app/src/context/repo_info.txt:ro
+      - tommy-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock  # needed for code agent sandbox
+    depends_on:
+      - chromadb
+
+    # ChromaDB runs as a separate service so embeddings persist
+    # independently and don't bloat the bot container's memory.
+    environment:
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: tommy-chromadb
+    restart: unless-stopped
+    volumes:
+      - tommy-chroma:/chroma/chroma
+    ports:
+      - "8000"  # internal only, not exposed to host
+
+  # Persistent sandbox for the code agent.
+  # Tommy creates and manages this container via Docker socket,
+  # but we define it here so it uses the same network and volumes.
+  sandbox:
+    image: python:3.11-slim
+    container_name: tommy_sandbox
+    restart: unless-stopped
+    command: sleep infinity
+    volumes:
+      - tommy-sandbox:/workspace
+    working_dir: /workspace
+
+volumes:
+  tommy-data:       # repo clones, doc cache
+  tommy-chroma:     # ChromaDB vector storage
+  tommy-sandbox:    # code agent workspace

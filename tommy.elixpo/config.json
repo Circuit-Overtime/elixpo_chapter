@@ -1,0 +1,38 @@
+{
+  "bot": {
+    "name": "Tommy",
+    "default_repo": ""
+  },
+  "discord": {
+    "admin_role_ids": []
+  },
+  "github": {
+    "bot_username": "tommy-bot",
+    "admin_users": [],
+    "whitelisted_repos": [],
+    "admin_only_mentions": false
+  },
+  "webhook": {
+    "port": 8002,
+    "enabled": false
+  },
+  "api": {
+    "enabled": false,
+    "port": 55288
+  },
+  "ai": {
+    "model": "openai",
+    "fallback_model": ""
+  },
+  "embeddings": {
+    "provider": "api",
+    "model": "text-embedding-3-small",
+    "api_base_url": "https://api.openai.com/v1"
+  },
+  "features": {
+    "local_embeddings_enabled": false,
+    "embeddings_repo": "",
+    "doc_embeddings_enabled": false,
+    "doc_sites": []
+  }
+}

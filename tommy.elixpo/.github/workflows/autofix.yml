@@ -1,0 +1,138 @@
+# Tommy CI — Autofix
+# When an issue gets the configured label (default: "tommy"),
+# the AI reads the issue, finds the bug in the codebase, fixes it,
+# and opens a PR — fully autonomously.
+#
+# Config lives in .github/tommy.yml → autofix section.
+
+name: Tommy Autofix
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  autofix:
+    # Only run when the configured label is added
+    if: github.event.label.name == 'tommy'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            config.json
+          sparse-checkout-cone-mode: false
+
+      - name: Load Config
+        id: cfg
+        run: |
+          echo "secret_app_id=$(yq -r '.github.secrets.app_id' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "secret_private_key=$(yq -r '.github.secrets.private_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "secret_ai_token=$(yq -r '.github.secrets.ai_token' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "anthropic_api_key=$(yq -r '.ai.router.anthropic_api_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "autofix_enabled=$(yq -r '.autofix.enabled' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "bot_name=$(jq -r '.bot.name' config.json)" >> "$GITHUB_OUTPUT"
+
+          # Read multiline system prompt safely
+          PROMPT=$(yq -r '.autofix.system_prompt' .github/tommy.yml)
+          echo "autofix_prompt<<PROMPT_EOF" >> "$GITHUB_OUTPUT"
+          echo "$PROMPT" >> "$GITHUB_OUTPUT"
+          echo "PROMPT_EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Check if enabled
+        id: guard
+        run: |
+          if [ "${{ steps.cfg.outputs.autofix_enabled }}" != "true" ]; then
+            echo "Autofix is disabled in .github/tommy.yml"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/create-github-app-token@v1
+        if: steps.guard.outputs.skip != 'true'
+        id: token
+        with:
+          app-id: ${{ secrets[steps.cfg.outputs.secret_app_id] }}
+          private-key: ${{ secrets[steps.cfg.outputs.secret_private_key] }}
+
+      - name: React to issue
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
+          gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments \
+            -f body="${{ steps.cfg.outputs.bot_name }} is looking into this. A PR will be opened if a fix is found." || true
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+
+      - name: Setup Bun
+        if: steps.guard.outputs.skip != 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Router
+        if: steps.guard.outputs.skip != 'true'
+        id: setup
+        run: |
+          BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
+          echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
+
+          pip install pyyaml -q
+          mkdir -p $HOME/.claude-code-router
+          python3 -c "
+          import sys; sys.path.insert(0, '.github/scripts')
+          from ci_config import router_config_json
+          import os
+          print(router_config_json(os.environ['POLLINATIONS_TOKEN']))
+          " > $HOME/.claude-code-router/config.json
+
+          bunx @musistudio/claude-code-router start &
+          until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets[steps.cfg.outputs.secret_ai_token] }}
+
+      # Full checkout for code access
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.skip != 'true'
+        with:
+          fetch-depth: 0
+          token: ${{ steps.token.outputs.token }}
+
+      - uses: anthropics/claude-code-action@v1
+        if: steps.guard.outputs.skip != 'true'
+        env:
+          ANTHROPIC_BASE_URL: http://localhost:3456
+          GIT_AUTHOR_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          GIT_AUTHOR_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          GIT_COMMITTER_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          GIT_COMMITTER_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+        with:
+          anthropic_api_key: ${{ steps.cfg.outputs.anthropic_api_key }}
+          show_full_output: true
+          github_token: ${{ steps.token.outputs.token }}
+          direct_prompt: |
+            You are working on issue #${{ github.event.issue.number }}: "${{ github.event.issue.title }}"
+
+            Issue body:
+            ${{ github.event.issue.body }}
+
+            Instructions:
+            ${{ steps.cfg.outputs.autofix_prompt }}
+
+            After fixing the issue:
+            1. Create a branch named `autofix/issue-${{ github.event.issue.number }}`
+            2. Commit your changes with a clear message referencing the issue
+            3. Open a pull request that links to issue #${{ github.event.issue.number }} using "Fixes #${{ github.event.issue.number }}" in the PR body
+          claude_args: |
+            --system-prompt "${{ steps.cfg.outputs.autofix_prompt }}"
+          additional_permissions: |
+            actions: read
