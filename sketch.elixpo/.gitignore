@@ -9,3 +9,5 @@ plans/
 .wrangler
 .vscode 
 .next.vercel
+*.vsix
+*.lixsketch

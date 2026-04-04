@@ -3,11 +3,15 @@
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import useAuthStore from '@/store/useAuthStore'
 import LandingNav from './LandingNav'
 import LandingFooter from './LandingFooter'
 
 export default function ComingSoon({ title, description, icon }) {
   const canvasRef = useRef(null)
+  const router = useRouter()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -82,13 +86,20 @@ export default function ComingSoon({ title, description, icon }) {
               <i className="bx bx-arrow-back" />
               Back to Home
             </Link>
-            <Link
-              href={`/c/lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`}
+            <button
+              onClick={() => {
+                if (isAuthenticated) {
+                  router.push('/profile')
+                } else {
+                  const id = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+                  router.push(`/c/${id}?new=1`)
+                }
+              }}
               className="px-6 py-2.5 bg-accent-blue hover:bg-accent-blue-hover text-white rounded-lg text-sm transition-all duration-200 flex items-center gap-2"
             >
               <i className="bx bx-palette" />
-              Open Canvas
-            </Link>
+              {isAuthenticated ? 'My Canvases' : 'Open Canvas'}
+            </button>
           </div>
         </motion.div>
       </main>

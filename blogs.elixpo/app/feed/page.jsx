@@ -1,7 +1,5 @@
-'use client';
-
-import FeedPage from '../../src/pages/FeedPage';
+import { redirect } from 'next/navigation';
 
 export default function Feed() {
-  return <FeedPage />;
+  redirect('/');
 }

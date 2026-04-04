@@ -7,21 +7,19 @@
   },
   "costs": {
     "image": {
-      "flux": 2,
-      "klein": 2,
+      "flux": 1,
+      "flux-2-dev": 1,
+      "dirtberry": 1,
+      "dirtberry-pro": 2,
       "zimage": 2,
-      "nanobanana": 3,
-      "seedream5": 4,
+      "imagen-4": 3,
+      "grok-imagine": 3,
+      "klein": 1,
       "kontext": 4,
-      "imagen-4": 5,
       "gptimage": 8
     },
     "video": {
-      "ltx-2": 10,
-      "wan": 12,
-      "seedance": 15,
-      "seedance-pro": 20,
-      "veo": 25
+      "grok-video": 15
     },
     "edit": 5,
     "enhance": 1,

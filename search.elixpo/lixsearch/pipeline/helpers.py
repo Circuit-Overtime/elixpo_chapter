@@ -249,9 +249,9 @@ async def sanitize_final_response(content: str, query: str, sources: list[str], 
                 POLLINATIONS_ENDPOINT,
                 json=payload,
                 headers=headers,
-                timeout=20
+                timeout=10
             ),
-            timeout=22.0
+            timeout=12.0
         )
         response.raise_for_status()
         response_data = response.json()
@@ -267,7 +267,13 @@ async def sanitize_final_response(content: str, query: str, sources: list[str], 
 
     fallback = f"Here is a concise update on '{query}'."
     if sources:
-        fallback += "\n\n**Sources:**\n" + "\n".join([f"- {s}" for s in sources[:3]])
+        from pipeline.utils import clean_source_list
+        from urllib.parse import urlparse
+        cleaned = clean_source_list(sources)[:3]
+        if cleaned:
+            fallback += "\n\n**Sources:**\n" + "\n".join(
+                [f"- [{urlparse(s).netloc.replace('www.', '')}]({s})" for s in cleaned]
+            )
     return fallback
 
 
@@ -344,9 +350,9 @@ async def _decompose_query_with_llm(query: str, headers: dict, max_parts: int = 
                 POLLINATIONS_ENDPOINT,
                 json=payload,
                 headers=headers,
-                timeout=20
+                timeout=12
             ),
-            timeout=float(TOPIC_DECOMPOSITION_TIMEOUT)
+            timeout=15.0
         )
         response.raise_for_status()
         data = response.json()
@@ -401,15 +407,16 @@ async def _synthesize_subtopic(
     max_tokens: int,
     rag_context: str = "",
 ) -> str:
-    synthesis_messages = messages_context[:2]
+    # Keep system message + all tool results (the actual fetched content)
+    synthesis_messages = list(messages_context)
 
     focused_prompt = {
         "role": "user",
         "content": (
-            f"Focus specifically on this aspect of the query '{original_query}':\n\n"
+            f"Using the information gathered above, write a focused response about this aspect of '{original_query}':\n\n"
             f"Sub-topic: {subtopic}\n\n"
-            f"Provide a focused, detailed response for this specific aspect. "
-            f"Use markdown formatting with \\n for line breaks. "
+            f"Synthesize the fetched content into a detailed answer for this specific aspect. "
+            f"Use markdown formatting. Cite sources as [Title](URL). "
             f"Do not repeat information that would belong to other sub-topics. "
             f"Be thorough but concise for this specific angle.\n"
             f"NEVER mention internal tool names, function calls, or cache operations."
@@ -431,9 +438,9 @@ async def _synthesize_subtopic(
             POLLINATIONS_ENDPOINT,
             json=payload,
             headers=headers,
-            timeout=20
+            timeout=15
         ),
-        timeout=22.0
+        timeout=18.0
     )
     response.raise_for_status()
     data = response.json()

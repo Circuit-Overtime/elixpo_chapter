@@ -1,64 +1,58 @@
-cff-version: 1.2.0
+cff-version: 2.2.0
 type: software
-title: "lixSearch: Intelligent Multi-Worker Search & RAG System"
-abstract: "A production-grade, horizontally-scalable search and Retrieval-Augmented Generation (RAG) system featuring 10-worker load-balanced architecture, dedicated vector database server, semantic caching, and advanced optimization strategies for sub-100ms cache hits and 50x throughput improvement."
+title: "A Three-Layer Caching Architecture for Low-Latency LLM Web Search on Commodity CPU Hardware"
+abstract: "A production-grade, horizontally-scalable search and Retrieval-Augmented Generation (RAG) system featuring multi-layer caching, Playwright-based search agents, and Huffman-compressed session archival on commodity CPU hardware."
 
 authors:
-  - family-names: "Pollinations"
-    name-particle: ""
-    given-names: "Team"
-    affiliation: "Pollinations"
-    
+  - family-names: "Bhattacharya"
+    given-names: "Ayushman"
+    email: "ayushman@myceli.ai"
+    affiliation: "Pollinations.ai"
+
 contact:
-  - family-names: "Pollinations"
-    name-particle: ""
-    given-names: "Support"
-    email: "hello@elixpo.ai"
-    website: "https://elixpo.ai"
+  - family-names: "Bhattacharya"
+    given-names: "Ayushman"
+    email: "ayushman@myceli.ai"
 
 date-released: 2026-02-25
 identifiers:
   - type: "url"
     value: "https://github.com/pollinations/lixsearch"
-  - type: "swh"
-    value: "swh:1:rel:..."
 
 keywords:
   - "search"
   - "RAG"
   - "retrieval-augmented-generation"
-  - "vector-database"
-  - "semantic-search"
-  - "load-balancing"
-  - "web-search"
+  - "caching"
   - "LLM"
+  - "web-search"
+  - "Redis"
+  - "Huffman-coding"
+  - "session-management"
   - "embeddings"
-  - "chroma"
+  - "CPU-inference"
   - "python"
 
 license: "MIT"
 license-url: "https://opensource.org/licenses/MIT"
 
 repository-code: "https://github.com/pollinations/lixsearch"
-url: "https://github.com/pollinations/lixsearch"
+url: "https://search.elixpo.com"
 
 version: "1.0.0"
 
-repository: "https://github.com/pollinations/lixsearch"
-repository-artifact: "https://hub.docker.com/r/pollinations/lixsearch"
-
 preferred-citation:
-  type: "software"
+  type: "article"
+  title: "A Three-Layer Caching Architecture for Low-Latency LLM Web Search on Commodity CPU Hardware"
   authors:
-    - family-names: "Ayushman Bhattacharya"
-      name-particle: ""
-      given-names: "Team"
-  title: "lixSearch: Intelligent Multi-Worker Search & RAG System"
-  version: "1.0.0"
-  date-released: 2026-02-25
-  url: "https://github.com/pollinations/lixsearch"
-  license: "MIT"
-  repository-code: "https://github.com/pollinations/lixsearch"
+    - family-names: "Bhattacharya"
+      given-names: "Ayushman"
+      email: "ayushman@myceli.ai"
+      affiliation: "Pollinations.ai"
+  year: 2026
+  url: "https://github.com/pollinations/lixsearch/blob/main/docs/paper/lix_cache_paper.pdf"
+  license: "CC-BY-NC-ND-4.0"
+  abstract: "We present a three-layer caching architecture for scaling LLM-powered web search on commodity CPU hardware. Deployed on a single 8-vCPU server, the system achieves an 89.3% cache hit rate with 0.1ms Redis read latency, reducing per-query cost by 1,000x compared to commercial search APIs."
 
 references:
   - type: "software"
@@ -68,7 +62,6 @@ references:
         given-names: "Team"
     url: "https://github.com/chroma-core/chroma"
     license: "Apache-2.0"
-    date-released: 2023-01-01
 
   - type: "software"
     title: "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks"
@@ -78,8 +71,6 @@ references:
       - family-names: "Gurevych"
         given-names: "Iryna"
     repository-code: "https://github.com/UKPLab/sentence-transformers"
-    url: "https://github.com/UKPLab/sentence-transformers"
-    date-released: 2019-08-26
 
   - type: "software"
     title: "Quart: Async Python web microframework"
@@ -87,7 +78,6 @@ references:
       - family-names: "Quart"
         given-names: "Contributors"
     repository-code: "https://github.com/pallets/quart"
-    url: "https://quart.palletsprojects.com"
     license: "MIT"
 
   - type: "software"
@@ -96,13 +86,4 @@ references:
       - family-names: "Microsoft"
         given-names: "Playwright Team"
     repository-code: "https://github.com/microsoft/playwright"
-    url: "https://playwright.dev"
     license: "Apache-2.0"
-
-  - type: "software"
-    title: "ChromaDB Embeddings"
-    authors:
-      - family-names: "BeautifulSoup"
-        given-names: "Contributors"
-    url: "https://www.crummy.com/software/BeautifulSoup/"
-    license: "MIT"

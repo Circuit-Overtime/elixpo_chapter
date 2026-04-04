@@ -241,6 +241,13 @@ class YahooSearchAgentText:
             "yahoo.com/account",
             "login.yahoo.com",
             "yahoo.com/gdpr",
+            "ad.doubleclick.net",
+            "doubleclick.net",
+            "googleadservices.com",
+            "googlesyndication.com",
+            "clickserve.dartsearch.net",
+            "bing.com/aclick",
+            "r.search.yahoo.com/cbclk",
         ]
         results = []
         page = None
@@ -340,6 +347,13 @@ class YahooSearchAgentText:
             "yahoo.com/account",
             "login.yahoo.com",
             "yahoo.com/gdpr",
+            "ad.doubleclick.net",
+            "doubleclick.net",
+            "googleadservices.com",
+            "googlesyndication.com",
+            "clickserve.dartsearch.net",
+            "bing.com/aclick",
+            "r.search.yahoo.com/cbclk",
         ]
         results = []
         page = None

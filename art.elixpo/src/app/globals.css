@@ -24,26 +24,26 @@
   --color-coral: #ff6b6b;
   --color-indigo: #6366f1;
 
-  /* Canvas — deeper, richer dark */
-  --color-bg-primary: #060a14;
-  --color-bg-secondary: #0c1220;
-  --color-bg-tertiary: #111827;
-  --color-bg-surface: #1a2332;
-  --color-bg-card: rgba(17, 24, 39, 0.7);
-  --color-bg-card-hover: rgba(26, 35, 50, 0.85);
+  /* Canvas — brighter dark theme */
+  --color-bg-primary: #0c1220;
+  --color-bg-secondary: #131b2e;
+  --color-bg-tertiary: #1a2540;
+  --color-bg-surface: #222e48;
+  --color-bg-card: rgba(25, 34, 56, 0.75);
+  --color-bg-card-hover: rgba(34, 46, 72, 0.85);
 
   /* Text */
   --color-text-primary: #f8fafc;
-  --color-text-secondary: #cbd5e1;
-  --color-text-tertiary: #64748b;
+  --color-text-secondary: #d4dce8;
+  --color-text-tertiary: #8093b0;
   --color-text-accent: #06d6a0;
 
   /* Borders & surfaces */
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-hover: rgba(255, 255, 255, 0.15);
-  --color-border-accent: rgba(141, 73, 253, 0.3);
-  --color-surface: rgba(255, 255, 255, 0.04);
-  --color-surface-hover: rgba(255, 255, 255, 0.08);
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-hover: rgba(255, 255, 255, 0.18);
+  --color-border-accent: rgba(141, 73, 253, 0.35);
+  --color-surface: rgba(255, 255, 255, 0.06);
+  --color-surface-hover: rgba(255, 255, 255, 0.1);
 
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #8d49fd 0%, #5691f3 100%);
@@ -146,10 +146,10 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 20% 50%, rgba(141, 73, 253, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 80% at 80% 20%, rgba(86, 145, 243, 0.05) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 50% at 50% 85%, rgba(236, 72, 153, 0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 70% 60%, rgba(6, 214, 160, 0.03) 0%, transparent 50%);
+    radial-gradient(ellipse 80% 60% at 20% 50%, rgba(141, 73, 253, 0.09) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 20%, rgba(86, 145, 243, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 85%, rgba(236, 72, 153, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 70% 60%, rgba(6, 214, 160, 0.05) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }

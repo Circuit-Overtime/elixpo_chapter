@@ -3,6 +3,28 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import useAuthStore from '@/store/useAuthStore'
+
+function OpenCanvasButton({ className }) {
+  const router = useRouter()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
+  const handleClick = () => {
+    if (isAuthenticated) {
+      router.push('/profile')
+    } else {
+      const id = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+      router.push(`/c/${id}?new=1`)
+    }
+  }
+
+  return (
+    <button onClick={handleClick} className={className}>
+      {isAuthenticated ? 'My Canvases' : 'Open Canvas'}
+    </button>
+  )
+}
 
 const resourceLinks = [
   { href: '/resources/how-to-start', label: 'How to start', icon: 'bx bx-rocket' },
@@ -10,7 +32,6 @@ const resourceLinks = [
   { href: '/resources/use-cases', label: 'Use Cases', icon: 'bx bx-bulb' },
   { href: '/resources/security', label: 'Security', icon: 'bx bx-shield' },
   { href: '/docs', label: 'Docs', icon: 'bx bx-book-open' },
-  { href: '/docs#blog', label: 'Blog', icon: 'bx bx-news' },
 ]
 
 export default function LandingNav() {
@@ -53,6 +74,9 @@ export default function LandingNav() {
           <Link href="/roadmap" className="hover:text-text-primary transition-colors">
             Roadmap
           </Link>
+          <Link href="/docs#blog" className="hover:text-text-primary transition-colors">
+            Blog
+          </Link>
 
           {/* Resources dropdown */}
           <div ref={dropdownRef} className="relative">
@@ -73,17 +97,23 @@ export default function LandingNav() {
                   transition={{ duration: 0.15 }}
                   className="absolute top-full right-0 mt-2 w-52 bg-surface-card border border-border-light rounded-xl overflow-hidden shadow-2xl shadow-black/40"
                 >
-                  {resourceLinks.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setResourcesOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-150 text-sm"
-                    >
-                      <i className={`${item.icon} text-base text-text-dim`} />
-                      {item.label}
-                    </Link>
-                  ))}
+                  {resourceLinks.map((item) => {
+                    const Tag = item.external ? 'a' : Link
+                    const extraProps = item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {}
+                    return (
+                      <Tag
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setResourcesOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-150 text-sm"
+                        {...extraProps}
+                      >
+                        <i className={`${item.icon} text-base text-text-dim`} />
+                        {item.label}
+                        {item.external && <i className="bx bx-link-external text-xs text-text-dim ml-auto" />}
+                      </Tag>
+                    )
+                  })}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -96,17 +126,14 @@ export default function LandingNav() {
             href="https://github.com/elixpo/lixsketch"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden md:flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-muted hover:text-text-primary border border-border-light hover:border-white/20 rounded-lg transition-all duration-200"
           >
             <i className="bx bxl-github text-lg" />
+            <i className="bx bx-star text-sm" />
+            <span className="hidden lg:inline">GitHub</span>
           </a>
 
-          <Link
-            href={`/c/lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`}
-            className="px-4 py-2 bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-accent-blue/20"
-          >
-            Open Canvas
-          </Link>
+          <OpenCanvasButton className="px-4 py-2 cursor-pointer bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-accent-blue/20" />
 
           {/* Mobile hamburger */}
           <button
@@ -133,6 +160,7 @@ export default function LandingNav() {
                 { href: '/pricing', label: 'Pricing' },
                 { href: '/teams', label: 'Teams' },
                 { href: '/roadmap', label: 'Roadmap' },
+                { href: '/docs#blog', label: 'Blog' },
               ].map((item) => (
                 <Link
                   key={item.href}
@@ -145,17 +173,23 @@ export default function LandingNav() {
               ))}
 
               <div className="py-2 text-text-dim text-xs uppercase tracking-wider mt-2">Resources</div>
-              {resourceLinks.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2.5 py-2 text-text-muted hover:text-text-primary transition-colors text-sm pl-1"
-                >
-                  <i className={`${item.icon} text-sm text-text-dim`} />
-                  {item.label}
-                </Link>
-              ))}
+              {resourceLinks.map((item) => {
+                const Tag = item.external ? 'a' : Link
+                const extraProps = item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {}
+                return (
+                  <Tag
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2.5 py-2 text-text-muted hover:text-text-primary transition-colors text-sm pl-1"
+                    {...extraProps}
+                  >
+                    <i className={`${item.icon} text-sm text-text-dim`} />
+                    {item.label}
+                    {item.external && <i className="bx bx-link-external text-xs text-text-dim ml-1" />}
+                  </Tag>
+                )
+              })}
 
               <a
                 href="https://github.com/elixpo/lixsketch"
@@ -164,7 +198,8 @@ export default function LandingNav() {
                 className="flex items-center gap-2 py-2.5 text-text-muted hover:text-text-primary transition-colors text-sm mt-2 border-t border-white/5 pt-3"
               >
                 <i className="bx bxl-github text-base" />
-                GitHub
+                <i className="bx bx-star text-sm" />
+                Star us on GitHub
               </a>
             </div>
           </motion.div>

@@ -33,13 +33,13 @@ export const colors = {
   cyan:         '#22d3ee',
   indigo:       '#6366f1',
 
-  // Backgrounds — deep dark canvas
-  canvas:       '#060a14',
-  canvasAlt:    '#0c1220',
-  surface:      '#111827',
-  surfaceLight: '#1a2332',
-  card:         'rgba(17, 24, 39, 0.7)',
-  cardHover:    'rgba(26, 35, 50, 0.85)',
+  // Backgrounds — brighter dark canvas
+  canvas:       '#0c1220',
+  canvasAlt:    '#131b2e',
+  surface:      '#1a2540',
+  surfaceLight: '#222e48',
+  card:         'rgba(25, 34, 56, 0.75)',
+  cardHover:    'rgba(34, 46, 72, 0.85)',
 
   // Text
   textPrimary:   '#f8fafc',

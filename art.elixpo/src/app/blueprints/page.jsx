@@ -306,9 +306,6 @@ export default function BlueprintsPage() {
     <div className={styles.page}>
       <Navbar />
       <main className={styles.main}>
-        <div className={styles.bgImage} aria-hidden="true" />
-        <div className={styles.brushStroke1} aria-hidden="true" />
-        <div className={styles.brushStroke2} aria-hidden="true" />
 
         <div className={styles.content}>
           <div className={styles.header}>
@@ -350,7 +347,11 @@ export default function BlueprintsPage() {
                 onClick={() => openBlueprint(bp)}
               >
                 <img src={bp.cover} alt={bp.title} className={styles.cardImg} loading="lazy" decoding="async" />
+                {bp.thumbnailPrompt && (
+                  <span className={styles.cardPromptEffect}>{bp.thumbnailPrompt}</span>
+                )}
                 <div className={styles.cardOverlay}>
+                  <span className={styles.cardBadge}>{bp.type === 'video' ? 'Video' : 'Image'}</span>
                   <h3 className={styles.cardTitle}>{bp.title}</h3>
                   <p className={styles.cardDesc}>{bp.description}</p>
                 </div>

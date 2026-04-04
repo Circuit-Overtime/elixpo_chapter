@@ -1,10 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    turbo: {
-      unstablePersistentCaching: false,
-    },
+  output: "export",
+  images: {
+    unoptimized: true,
   },
 };
 

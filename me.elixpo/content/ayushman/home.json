@@ -12,8 +12,8 @@
       "4x Hackathon Wins"
     ],
     "images": {
-      "portrait": "/assets/ayushman/punchlineSection/vr-pic1.png",
-      "landscape": "/assets/ayushman/punchlineSection/hz-pic1.png"
+      "portrait": "/assets/ayushman/punchlineSection/vr-pic1.webp",
+      "landscape": "/assets/ayushman/punchlineSection/hz-pic1.webp"
     }
   },
   "websiteSection": {
@@ -21,9 +21,9 @@
     "futurePlans": "The suite is planned to connect all the elixpo projects as a sitemap keeping this as the entry point in the development series of elixpo. This is a college project series personally for me as a documentation of the progress of 4 years of what I did in development! Hoping that you guys would like the attempt and explore the site for better details and attributes, much love. With time and development the Elixpo Series has got love from a lot of users worldwide, and I am really happy to see that. I hope you like the site and the projects (you will find them in the projects route) do give it a visit and share your feedbacks with me! Thank you for visiting.",
     "codeStory": "Initially I used to procrastinate a lot on stuffs which made me ponder on living the moment with something productive. Elixpo series was made to collaborate with my peers who were interested in development alongside with me! I am really happy to be able to colla in this journey.\n\nI really wanna mention a thanks to Vivek Yadav & Anwesha Chakraborty who has been a core-development member for the Elixpo projects so far, they really helped me think and reshape the ideas and sometimes through direct code contributions! Huge shout-out to my homies!\n\nThe portfolio has links to the other sections of the site like the projects, publications and the abouts. I duely requests you dear visitor to give it a visit from the navbar, it would mean a lot to me. Expecting more projects with time, hoping to make a complete micro-system.",
     "images": {
-      "owl": "/assets/ayushman/websiteSection/hz-owl1.png",
-      "humanThink": "/assets/ayushman/websiteSection/human-think1.png",
-      "seal": "/assets/ayushman/websiteSection/sq-seal1.png"
+      "owl": "/assets/ayushman/websiteSection/hz-owl1.webp",
+      "humanThink": "/assets/ayushman/websiteSection/human-think1.webp",
+      "seal": "/assets/ayushman/websiteSection/sq-seal1.webp"
     }
   },
   "techSection": {
@@ -57,9 +57,9 @@
       { "type": "icon", "src": "https://img.icons8.com/color/144/python.png", "alt": "Python" }
     ],
     "images": {
-      "wand": "/assets/ayushman/techTracks/wand-1.png",
-      "landscape": "/assets/ayushman/techTracks/hz-image1.png",
-      "banner": "/assets/ayushman/hrz-image1.png"
+      "wand": "/assets/ayushman/techTracks/wand-1.webp",
+      "landscape": "/assets/ayushman/techTracks/hz-image1.webp",
+      "banner": "/assets/ayushman/hrz-image1.webp"
     }
   }
 }

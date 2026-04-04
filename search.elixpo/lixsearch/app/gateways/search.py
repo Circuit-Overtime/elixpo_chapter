@@ -1,4 +1,3 @@
-import hashlib
 import logging
 import uuid
 import json
@@ -9,12 +8,8 @@ from app.utils import validate_query, validate_url, format_openai_response
 from pipeline.config import X_REQ_ID_SLICE_SIZE, REQUEST_ID_HEX_SLICE_SIZE, LOG_MESSAGE_QUERY_TRUNCATE, RESPONSE_MODEL
 
 
-def _session_id_from_ip() -> str:
-
-    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
-    # Take the first IP if X-Forwarded-For has multiple
-    client_ip = client_ip.split(",")[0].strip()
-    return f"ip-{hashlib.sha256(client_ip.encode()).hexdigest()[:16]}"
+def _ephemeral_session_id() -> str:
+    return f"eph-{uuid.uuid4().hex[:16]}"
 
 logger = logging.getLogger("lixsearch-api")
 
@@ -22,7 +17,7 @@ logger = logging.getLogger("lixsearch-api")
 def format_sse_event_openai(event_type: str, content: str, request_id: str = None) -> str:
     is_done_signal = (event_type == "INFO" and "<TASK>DONE</TASK>" in content)
     response = {
-        "id": request_id or f"chatcmpl-{uuid.uuid4().hex[:REQUEST_ID_HEX_SLICE_SIZE]}",
+        "id": request_id or f"elixpo-{uuid.uuid4().hex[:REQUEST_ID_HEX_SLICE_SIZE]}",
         "object": "chat.completion.chunk",
         "created": int(datetime.now(timezone.utc).timestamp()),
         "model": RESPONSE_MODEL,
@@ -53,14 +48,14 @@ async def search(pipeline_initialized: bool):
             query = request.args.get("query", "").strip()
             image_url = request.args.get("image_url") or request.args.get("image")
             images_param = request.args.getlist("images")
-            stream_param = request.args.get("stream", "true").lower()
+            stream_param = request.args.get("stream", "false").lower()
         else:
             data = await request.get_json()
             session_id = data.get("session_id", "").strip()
             query = data.get("query", "").strip()
             image_url = data.get("image_url") or data.get("image")
             images_param = data.get("images", [])
-            stream_param = str(data.get("stream", "true")).lower()
+            stream_param = str(data.get("stream", "false")).lower()
 
         # Normalize images: support both single `image` and `images` array (max 3)
         image_urls = []
@@ -74,9 +69,10 @@ async def search(pipeline_initialized: bool):
         if image_urls:
             image_url = image_urls[0]
 
+        is_ephemeral = not session_id
         if not session_id:
-            session_id = _session_id_from_ip()
-            logger.info(f"[search] No session_id provided, derived from IP: {session_id}")
+            session_id = _ephemeral_session_id()
+            logger.info(f"[search] No session_id provided, using ephemeral: {session_id}")
 
         if not validate_query(query) and not image_urls:
             logger.warning(f"[{session_id}] Invalid query and no image: {query[:50]}")
@@ -104,6 +100,7 @@ async def search(pipeline_initialized: bool):
                     user_images=image_urls,
                     event_id=request_id,
                     session_id=session_id,
+                    is_ephemeral=is_ephemeral,
                 ):
                     chunk_str = chunk if isinstance(chunk, str) else chunk.decode('utf-8')
 
@@ -116,10 +113,14 @@ async def search(pipeline_initialized: bool):
                             if line.startswith('event:'):
                                 event_type = line.replace('event:', '').strip()
                             elif line.startswith('data:'):
-                                event_data_lines.append(line.replace('data:', '', 1).lstrip())
+                                # Strip exactly one leading space (SSE spec), preserve the rest
+                                raw = line[5:]  # skip "data:"
+                                if raw.startswith(' '):
+                                    raw = raw[1:]
+                                event_data_lines.append(raw)
 
                         event_data = "\n".join(event_data_lines) if event_data_lines else None
-                        if event_type and event_data:
+                        if event_type and event_data is not None:
                             openai_sse = format_sse_event_openai(event_type, event_data, request_id)
                             yield openai_sse.encode('utf-8')
                         else:
@@ -135,6 +136,7 @@ async def search(pipeline_initialized: bool):
                     'Cache-Control': 'no-cache',
                     'Connection': 'keep-alive',
                     'Content-Type': 'text/event-stream',
+                    'X-Accel-Buffering': 'no',
                 }
             )
         else:
@@ -145,6 +147,7 @@ async def search(pipeline_initialized: bool):
                 user_images=image_urls,
                 event_id=None,
                 session_id=session_id,
+                is_ephemeral=is_ephemeral,
             ):
                 if chunk:
                     response_content = chunk  # non-streaming mode: pipeline yields raw text

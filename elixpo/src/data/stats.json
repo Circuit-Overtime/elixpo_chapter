@@ -1,9 +1,9 @@
 {
-  "headline": "Trusted by teams worldwide",
+  "headline": "Built in the open, growing fast",
   "items": [
-    { "value": "10K+", "label": "Active Teams" },
-    { "value": "50M+", "label": "Tasks Completed" },
-    { "value": "99.9%", "label": "Uptime" },
-    { "value": "150+", "label": "Integrations" }
+    { "value": "13+", "label": "Projects Built" },
+    { "value": "35+", "label": "Global Contributors" },
+    { "value": "20+", "label": "Hackathons" },
+    { "value": "100%", "label": "Open Source" }
   ]
 }

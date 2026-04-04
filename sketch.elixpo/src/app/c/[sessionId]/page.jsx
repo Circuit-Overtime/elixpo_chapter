@@ -83,7 +83,7 @@ export default function CanvasPage() {
       <FindBar />
       <CanvasLoadingOverlay />
 
-      {/* Quick-save toast */}
+      {/* Quick-save toast — shown only on explicit Ctrl+S save */}
       <div
         id="save-toast"
         className="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-9999 px-4 py-2 rounded-xl bg-surface/80 backdrop-blur-md border border-border-light text-text-secondary text-xs font-[lixFont] pointer-events-none animate-fade-in"

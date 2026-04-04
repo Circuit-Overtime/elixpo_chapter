@@ -1,0 +1,39 @@
+export const runtime = 'edge';
+import { NextResponse } from 'next/server';
+import { getSession } from '../../../../../lib/auth';
+
+// GET — private: own saved/bookmarked blogs only
+export async function GET(request, { params }) {
+  const { username } = await params;
+  const session = await getSession();
+  if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+
+  try {
+    const { getDB } = await import('../../../../../lib/cloudflare');
+    const db = getDB();
+
+    const user = await db.prepare('SELECT id FROM users WHERE LOWER(username) = LOWER(?)').bind(username).first();
+    if (!user || user.id !== session.userId) return NextResponse.json({ error: 'Private' }, { status: 403 });
+
+    const { searchParams } = new URL(request.url);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
+    const offset = parseInt(searchParams.get('offset') || '0', 10);
+
+    const result = await db.prepare(`
+      SELECT bk.created_at as saved_at, bk.collection_id,
+        b.id, b.slug, b.title, b.subtitle, b.cover_image_r2_key, b.page_emoji,
+        b.read_time_minutes, b.published_at,
+        u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
+      FROM bookmarks bk
+      JOIN blogs b ON b.id = bk.blog_id
+      JOIN users u ON u.id = b.author_id
+      WHERE bk.user_id = ?
+      ORDER BY bk.created_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(session.userId, limit, offset).all();
+
+    return NextResponse.json({ blogs: result?.results || [] });
+  } catch {
+    return NextResponse.json({ blogs: [] });
+  }
+}

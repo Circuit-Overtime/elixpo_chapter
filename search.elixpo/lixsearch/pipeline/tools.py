@@ -178,16 +178,11 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_session_conversation_history",
-            "description": "Retrieve conversation history for current session. Use when user asks for summary or recap.",
+            "description": "Retrieve conversation history for current session. Session ID is auto-detected. Use when user asks about past conversation, summary, or recap.",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "session_id": {
-                        "type": "string",
-                        "description": "Session ID"
-                    }
-                },
-                "required": ["session_id"]
+                "properties": {},
+                "required": []
             }
         }
     },

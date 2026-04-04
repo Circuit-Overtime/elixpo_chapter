@@ -5,7 +5,7 @@
     radial-gradient(ellipse 90% 60% at 15% 5%, rgba(86, 145, 243, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse 70% 50% at 85% 90%, rgba(141, 73, 253, 0.07) 0%, transparent 50%),
     radial-gradient(ellipse 50% 40% at 50% 50%, rgba(6, 214, 160, 0.03) 0%, transparent 60%),
-    linear-gradient(180deg, #060a14 0%, #0a0f1e 40%, #0d1425 100%);
+    linear-gradient(180deg, #0c1220 0%, #111b2e 40%, #141f35 100%);
   display: flex;
   flex-direction: column;
 }

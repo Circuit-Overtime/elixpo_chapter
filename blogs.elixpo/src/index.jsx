@@ -1,178 +1,492 @@
-import './App.css';
-import './styles/homepage/header.css'
-import './styles/homepage/innerLayout.css'
-import './styles/homepage/innerLayoutPseudo.css'
-import './styles/homepage/responsive.css'
-export default function App() {
+'use client';
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useAuth } from './context/AuthContext';
+import AppShell from './components/AppShell';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { generateBlogBanner } from './utils/pixelAvatar';
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const diff = Math.floor(Date.now() / 1000) - ts;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function SearchBar() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState({ users: [], orgs: [], blogs: [] });
+  const [suggestions, setSuggestions] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const ref = useRef(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // Fetch suggestions on empty/short query, search results on longer query
+  useEffect(() => {
+    if (!query || query.length < 2) {
+      setResults({ users: [], orgs: [], blogs: [] });
+      if (query.length === 0) {
+        fetch('/api/search/suggestions').then(r => r.json()).then(d => setSuggestions(d.suggestions || [])).catch(() => {});
+      }
+      return;
+    }
+
+    setLoading(true);
+    const timer = setTimeout(() => {
+      Promise.all([
+        fetch(`/api/search?q=${encodeURIComponent(query)}&scope=all`).then(r => r.json()).catch(() => ({})),
+        fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`).then(r => r.json()).catch(() => ({ suggestions: [] })),
+      ]).then(([searchData, sugData]) => {
+        setResults({ users: searchData.users || [], orgs: searchData.orgs || [], blogs: searchData.blogs || [] });
+        setSuggestions(sugData.suggestions || []);
+        setLoading(false);
+      });
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const handleSelect = (type, item) => {
+    setOpen(false);
+    setQuery('');
+    // Record search
+    fetch('/api/search/suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) }).catch(() => {});
+    if (type === 'user') router.push(`/${item.username}`);
+    else if (type === 'org') router.push(`/${item.slug}`);
+    else if (type === 'blog') router.push(`/${item.author_username || 'blog'}/${item.slug}`);
+    else if (type === 'suggestion') { setQuery(item.query); setOpen(true); }
+  };
+
+  const hasResults = results.users.length > 0 || results.orgs.length > 0 || results.blogs.length > 0;
+
   return (
-    <>
-   <div className="fixed top-0 left-0 w-full h-16 border-b-2 border-[#1D202A] flex items-center bg-[#030712] z-1000">
-        <div className="absolute left-3 h-10 w-10 rounded-full bg-cover" style={{backgroundImage: "url(../IMAGES/logo.png)"}}></div>
-        <p className="absolute left-[5%] text-3xl font-bold font-kanit text-white cursor-pointer">LixBlogs</p>
+    <div className="relative" ref={ref}>
+      <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 transition-colors" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+        <ion-icon name="search-outline" style={{ fontSize: '16px', color: 'var(--text-faint)' }} />
+        <input
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          placeholder="Search blogs, people, topics..."
+          className="flex-1 bg-transparent outline-none text-[14px]"
+          style={{ color: 'var(--text-primary)' }}
+        />
+        {query && (
+          <button onClick={() => { setQuery(''); setOpen(false); }} className="flex items-center justify-center w-6 h-6 rounded-full transition-colors" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-elevated)' }}>
+            <ion-icon name="close" style={{ fontSize: '14px' }} />
+          </button>
+        )}
+        <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)', border: '1px solid var(--border-default)' }}>
+          /
+        </kbd>
+      </div>
 
-        <div className="absolute left-[70%] text-white text-lg cursor-pointer px-2 py-1 bg-[#10141E] border border-[#7ba8f0] rounded-2xl"> <ion-icon name="pencil"></ion-icon> Write</div>
-        <div className="absolute left-[78%] text-white text-lg cursor-pointer">Sign-In</div>
-        <button className="absolute left-[85%] cursor-pointer font-medium text-sm rounded-full text-white bg-gradient-to-b from-[#8d49fd] via-[#7f56f3] to-[#5691f3] px-6 py-3 getStartedBtn">
-            <span>Get started</span>
-        </button>
-        <ion-icon name="logo-github" className="absolute left-[95%] text-[#888] text-2xl"></ion-icon>
+      {open && (hasResults || suggestions.length > 0 || loading) && (
+        <div className="absolute left-0 right-0 top-full mt-2 rounded-xl shadow-xl z-50 overflow-hidden max-h-[400px] overflow-y-auto" style={{ backgroundColor: 'var(--dropdown-bg)', border: '1px solid var(--dropdown-border)' }}>
+
+          {/* Suggestions */}
+          {!hasResults && suggestions.length > 0 && (
+            <div className="p-2">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSelect('suggestion', s)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg transition-colors text-[13px]"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <ion-icon name={s.type === 'recent' ? 'time-outline' : 'pricetag-outline'} style={{ fontSize: '14px', color: 'var(--text-faint)' }} />
+                  {s.query}
+                  <span className="ml-auto text-[10px]" style={{ color: 'var(--text-faint)' }}>{s.type === 'recent' ? 'Recent' : 'Topic'}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Blog results */}
+          {results.blogs.length > 0 && (
+            <div>
+              <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>Blogs</p>
+              {results.blogs.map(b => (
+                <button key={b.slugid || b.id} onClick={() => handleSelect('blog', b)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  <ion-icon name="document-text-outline" style={{ fontSize: '16px', color: 'var(--text-faint)' }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{b.title || 'Untitled'}</p>
+                    {b.author_name && <p className="text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>by {b.author_name}</p>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* User results */}
+          {results.users.length > 0 && (
+            <div>
+              <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>People</p>
+              {results.users.map(u => (
+                <button key={u.id} onClick={() => handleSelect('user', u)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" /> :
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>{(u.display_name || u.username || '?')[0].toUpperCase()}</div>}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u.display_name || u.username}</p>
+                    <p className="text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>@{u.username}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Org results */}
+          {results.orgs.length > 0 && (
+            <div>
+              <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>Organizations</p>
+              {results.orgs.map(o => (
+                <button key={o.id} onClick={() => handleSelect('org', o)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  <ion-icon name="people-outline" style={{ fontSize: '16px', color: 'var(--text-faint)' }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{o.name}</p>
+                    <p className="text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>@{o.slug}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {loading && !hasResults && suggestions.length === 0 && (
+            <div className="px-4 py-6 text-center text-[13px]" style={{ color: 'var(--text-faint)' }}>Searching...</div>
+          )}
+
+          {!loading && query.length >= 2 && !hasResults && suggestions.length === 0 && (
+            <div className="px-4 py-6 text-center text-[13px]" style={{ color: 'var(--text-faint)' }}>No results for "{query}"</div>
+          )}
+        </div>
+      )}
     </div>
-    <div className="absolute top-0 left-0 h-full w-full overflow-x-hidden overflow-y-auto bg-[#030712]" id="container">
+  );
+}
 
-
-        <div className="relative top-16 w-full h-auto bg-transparent overflow-hidden">
-            <div className="relative top-0 h-[90px] w-full bg-transparent border-b-[5px] border-b-[#1D202A] border-l border-l-[#1D202A] border-r border-r-[#1D202A] section-striped">
-                <div className="absolute top-[80%] left-[4%] transform -translate-y-1/2 font-kanit text-sm text-[#c6c0c091] z-10">console.log("A place to read write and enjoy the creative aspect");</div>
+function FeedCard({ post }) {
+  const author = post.author || {};
+  return (
+    <article className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
+      <Link href={`/${author.username || 'unknown'}/${post.slug}`} className="block cursor-pointer">
+        <div className="flex items-center gap-2 mb-2.5">
+          {author.avatar_url ? (
+            <img src={author.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
+          ) : (
+            <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
+              {(author.display_name || author.username || '?')[0].toUpperCase()}
             </div>
-            <div className="relative top-0 h-[250px] w-full bg-transparent border-b-[5px] border-b-[#1D202A] border-l border-l-[#1D202A] border-r border-r-[#1D202A] overflow-hidden flex-wrap z-10 section-striped">
-                <p className="absolute top-[20%] left-[4%] w-[90%] transform -translate-y-1/2 font-kanit text-5xl font-medium text-[#f4eaeae6] z-10">Write Read and Endulge into creativity, enjoy the power of AI and Imagination.</p>
-                <div className="absolute left-[90%] h-full aspect-square transform scale-150 overflow-hidden bg-cover opacity-50 z-0" style={{backgroundImage: "url(../IMAGES/mainframeDesign.png)"}}></div>
+          )}
+          <span className="text-[13px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+            {post.is_staff && (
+              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
+            )}
+            {post.org && (
+              <><span style={{ color: 'var(--text-secondary)' }}>in {post.org.name}</span><span className="mx-0.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
+            )}
+            <span style={{ color: 'var(--text-secondary)' }}>{author.display_name || author.username}</span>
+            {post.co_author_count > 0 && (
+              <span style={{ color: 'var(--text-faint)' }}>+ {post.co_author_count} {post.co_author_count === 1 ? 'other' : 'others'}</span>
+            )}
+          </span>
+        </div>
+        <div className="flex gap-6">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-[19px] font-bold leading-[1.3] mb-1.5 group-hover:opacity-75 transition-opacity font-serif tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
+              {post.title || 'Untitled'}
+            </h2>
+            {post.subtitle && (
+              <p className="text-[15px] leading-[1.5] line-clamp-2 mb-3" style={{ color: 'var(--text-muted)' }}>
+                {post.subtitle}
+              </p>
+            )}
+            <div className="flex items-center gap-3.5 text-[12px]" style={{ color: 'var(--text-faint)' }}>
+              {(post.tags || []).length > 0 && (
+                <span className="text-[#9b7bf7] text-[11px] bg-[#9b7bf714] px-2.5 py-0.5 rounded-full font-medium">{post.tags[0]}</span>
+              )}
+              <span>{timeAgo(post.published_at)}</span>
+              {post.read_time_minutes > 0 && <span>{post.read_time_minutes} min read</span>}
+              {post.like_count > 0 && (
+                <span className="flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                  {post.like_count}
+                </span>
+              )}
+              {post.comment_count > 0 && (
+                <span className="flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                  {post.comment_count}
+                </span>
+              )}
             </div>
-            <div className="relative top-0 h-[100px] w-full bg-transparent border-b border-b-[#1D202A] border-l border-l-[#1D202A] border-r border-r-[#1D202A] overflow-hidden flex-wrap" style={{backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.171) 2px, transparent 0)", backgroundSize: "30px 30px", backgroundPosition: "-5px -5px"}}>
-                <div className="absolute left-[35%] top-1/2 transform -translate-y-1/2 scale-125 border-none outline-none bg-[#3a3a3a] w-[120px] h-10 text-lg text-white font-semibold rounded-2xl flex justify-center items-center cursor-pointer transition-all readBlogsBtn">
-                    <span className="block px-1.5 py-1.5 rounded-2xl overflow-hidden relative bg-gradient-to-b from-[#e9d1ff] to-transparent bg-no-repeat z-0 font-kanit font-medium text-base">{`>`} Read Blogs</span>
-                    <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[106%] h-[130%] overflow-hidden rounded-2xl will-change-transform z-[-2] blur-[10px] transition-all">
-                        <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[105%] aspect-square rounded-3xl transition-all bg-gradient-to-r from-cyan-400 to-cyan-300 animate-spin filter blur-[10px]"></span>
-                    </span>
-                </div>
-                <div className="absolute left-[55%] top-1/2 transform -translate-y-1/2 scale-125 border-none outline-none bg-[#3a3a3a] w-[120px] h-10 text-lg text-white font-semibold rounded-2xl flex justify-center items-center cursor-pointer transition-all starGithub">
-                    <span className="block px-1.5 py-1.5 rounded-2xl overflow-hidden relative bg-gradient-to-b from-[#e9d1ff] to-transparent bg-no-repeat z-0 font-kanit font-medium text-base">⭐ GitHub Star</span>
-                </div>
+          </div>
+          <img
+            src={post.cover_image_r2_key || generateBlogBanner(post.id || post.slug)}
+            alt=""
+            className="w-[140px] h-[90px] rounded-lg flex-shrink-0 hidden sm:block object-cover"
+          />
+        </div>
+      </Link>
+      {post.can_edit && (
+        <div className="mt-2 flex items-center">
+          <Link
+            href={`/edit/${post.id}`}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors"
+            style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <ion-icon name="create-outline" style={{ fontSize: '13px' }} />
+            Edit
+          </Link>
+        </div>
+      )}
+    </article>
+  );
+}
+
+function TopPickCard({ post }) {
+  const author = post.author || {};
+  return (
+    <Link href={`/${author.username || 'unknown'}/${post.slug}`}>
+      <div className="py-3.5 cursor-pointer group" style={{ borderBottom: '1px solid var(--divider)' }}>
+        <div className="flex items-center gap-2 mb-1.5">
+          {author.avatar_url ? (
+            <img src={author.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover" />
+          ) : (
+            <div className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
+              {(author.display_name || author.username || '?')[0].toUpperCase()}
             </div>
+          )}
+          <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+            {author.display_name || author.username}
+          </span>
+        </div>
+        <h3 className="text-[14px] font-bold leading-[1.35] group-hover:opacity-75 transition-opacity font-serif" style={{ color: 'var(--text-primary)' }}>
+          {post.title || 'Untitled'}
+        </h3>
+        <span className="text-[11px] mt-1 block" style={{ color: 'var(--text-faint)' }}>{timeAgo(post.published_at)}</span>
+      </div>
+    </Link>
+  );
+}
 
-            <div className="relative top-0 h-[450px] w-full bg-transparent border-l border-l-[#1D202A] border-r border-r-[#1D202A] overflow-hidden section-striped">
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-full w-[94%] bg-[#1D202A]">
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-3xl h-[95%] w-[98%] bg-[#030712] border border-[#616678] overflow-hidden">
-                        <ion-icon name="document-outline" className="absolute top-[5%] left-[5%] text-5xl text-white font-medium"></ion-icon>
-                        <div className="absolute left-[12%] top-[5%] text-2xl text-white font-kanit">Easy UI For Quick Production</div>
-                        <div className="absolute top-[15%] left-[12%] text-[#888] w-[40%] flex-wrap font-kanit">Ultimately, our goal is to deepen our collective understanding of the world through the power of writing.</div>
-
-                        <div className="absolute top-[30%] w-[97%] left-[1.5%] h-full bg-[#030712] border border-[#555] rounded-3xl overflow-x-hidden" style={{backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.171) 1px, transparent 0)", backgroundSize: "10px 10px", backgroundPosition: "-5px -5px"}}>
-                            <div className="absolute left-[3%] top-0 bg-[#030712] rounded-2xl overflow-hidden w-[1180px] m-5">
-                                <div className="flex justify-between items-center bg-[#030712] p-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex gap-1">
-                                            <span className="w-3 h-3 rounded-full bg-[#353941]"></span>
-                                            <span className="w-3 h-3 rounded-full bg-[#353941]"></span>
-                                            <span className="w-3 h-3 rounded-full bg-[#353941]"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="min-h-[280px] bg-[#10141E] w-[99%] left-0.5 relative rounded-2xl">
-                                    <div className="relative top-5 left-1/2 transform -translate-x-1/2 w-[90%] h-[50px] flex gap-2 mb-5 pointer-events-none">
-                                        <input type="text" placeholder="You know, where you are at!" className="border-none bg-transparent w-[90%] outline-none indent-2.5 text-[#888] placeholder-[#888] text-2xl" /> 
-                                    </div>
-                                    <div className="relative top-5 left-1/2 transform -translate-x-1/2 w-[90%] h-auto flex gap-2 pointer-events-none">
-                                        <ion-icon name="add-circle-outline" className="text-3xl text-[#888]"></ion-icon>
-                                        <div className="border-none bg-transparent w-[90%] outline-none indent-2.5 text-[#888] text-lg font-kanit">
-                                            Welcome to LixBlogs! Your go-to platform for reading, writing, and indulging
-                                            in creativity. Enjoy the power of AI and imagination.
-                                            Explore a wide range of topics, from technology to lifestyle, and connect
-                                            with a community of like-minded individuals.
-                                            Start your journey today and unleash your creative potential with LixBlogs.
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+function FeedSkeleton() {
+  return (
+    <div className="space-y-6 py-6">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="animate-pulse" style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '24px' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-6 w-6 rounded-full" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+            <div className="h-3 w-32 rounded" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+          </div>
+          <div className="flex gap-6">
+            <div className="flex-1">
+              <div className="h-5 w-3/4 rounded mb-2" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+              <div className="h-4 w-full rounded mb-2" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+              <div className="h-3 w-1/3 rounded" style={{ backgroundColor: 'var(--bg-elevated)' }} />
             </div>
+            <div className="w-[120px] h-[80px] rounded-md hidden sm:block" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
-            <div className="relative top-0 h-[450px] w-full bg-transparent border-b-[5px] border-b-[#1D202A] border-l border-l-[#1D202A] border-r border-r-[#1D202A] overflow-hidden section-striped">
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-full w-[94%] bg-[#1D202A] flex">
-                    <div className="absolute top-1/2 left-[1%] transform -translate-y-1/2 rounded-3xl h-[95%] w-[48%] bg-[#030712] border border-[#616678] overflow-hidden">
-                        <ion-icon name="chatbox-ellipses-outline" className="absolute top-[5%] left-[5%] text-5xl text-white font-medium"></ion-icon>
-                        <div className="absolute left-[12%] top-[5%] text-2xl text-white font-kanit">Quick Elixpo AI Co-pilot </div>
-                        <div className="absolute top-[15%] left-[12%] text-[#888] w-[40%] flex-wrap font-kanit">I'm your AI Search Engine, ready to help you with any questions or tasks you have.</div>
+const RECOMMENDED_TOPICS = [
+  'Programming', 'Self Improvement', 'Data Science', 'Writing',
+  'Relationships', 'Technology', 'Design', 'Startups',
+];
 
-                        <div className="absolute top-[20%] w-[90%] left-[5%] h-auto" style={{backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.171) 1px, transparent 0)", backgroundSize: "10px 10px", backgroundPosition: "-5px -5px"}}>
-                            <div className="w-full">
-                                <input type="text" className="border-none bg-transparent w-full outline-none indent-2.5 text-[#888] placeholder-[#888]" placeholder="Search anything..." value="Starlink Latest Purchase of OpenAI" readOnly spellCheck="false" autoComplete="off" />
-                                <div className="flex gap-4 absolute top-[50%] right-[5%] transform -translate-y-1/2">
-                                    <ion-icon name="refresh-outline" className="text-[#888]"></ion-icon>
-                                </div>
-                            </div>
+export default function App() {
+  const { user } = useAuth();
+  const [posts, setPosts] = useState([]);
+  const [topPicks, setTopPicks] = useState([]);
+  const [popularTags, setPopularTags] = useState([]);
+  const [userInterests, setUserInterests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTopic, setActiveTopic] = useState(0);
 
-                            <button className="absolute top-[50px] left-[30px] w-12 h-12 rounded-lg border border-[#616678] flex justify-center items-center cursor-pointer text-lg text-[#888] bg-transparent hover:bg-[#1D202A]">
-                                <ion-icon name="newspaper-outline"></ion-icon>
-                            </button>
-                            <button className="absolute top-[50px] left-[90px] w-12 h-12 rounded-lg border border-[#616678] flex justify-center items-center cursor-pointer text-lg text-[#888] bg-transparent hover:bg-[#1D202A]">
-                                <ion-icon name="code-outline"></ion-icon>
-                            </button>
-                            <button className="absolute top-[50px] left-[150px] w-12 h-12 rounded-lg border border-[#616678] flex justify-center items-center cursor-pointer text-lg text-[#888] bg-transparent hover:bg-[#1D202A]">
-                                <ion-icon name="reader-outline"></ion-icon>
-                            </button>
-                            <button className="absolute top-[50px] left-[210px] w-12 h-12 rounded-lg border border-[#616678] flex justify-center items-center cursor-pointer text-lg text-[#888] bg-transparent hover:bg-[#1D202A]">
-                                <ion-icon name="text"></ion-icon>
-                            </button>
-                            <button className="absolute top-[50px] left-[270px] w-12 h-12 rounded-lg border border-[#616678] flex justify-center items-center cursor-pointer text-lg text-[#888] bg-transparent hover:bg-[#1D202A]">
-                                <ion-icon name="calculator-outline"></ion-icon>
-                            </button>
-                        </div>
-                    </div>
-                    <div className="absolute top-1/2 right-[1%] transform -translate-y-1/2 rounded-3xl h-[95%] w-[48%] bg-[#030712] border border-[#616678] overflow-hidden">
-                        <ion-icon name="aperture" className="absolute top-[5%] left-[5%] text-5xl text-white font-medium"></ion-icon>
-                        <div className="absolute left-[12%] top-[5%] text-2xl text-white font-kanit">Text to Image Integration</div>
-                        <div className="absolute top-[15%] left-[12%] text-[#888] w-[40%] flex-wrap font-kanit">Transform your thoughts into embedded arts inside your blogs in one click</div>
-                        <div className="absolute top-[35%] w-[90%] left-[5%] h-auto" style={{backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.171) 2px, transparent 0)", backgroundSize: "20px 20px", backgroundPosition: "-5px -5px"}}>
-                            <div className="relative w-full h-16 flex items-center">
-                                <input type="text" name="text" className="border-none bg-transparent w-full outline-none indent-2.5 text-[#888] placeholder-[#888]" placeholder="" value="Type in Your Prompt" readOnly spellCheck="false" autoComplete="off" />
-                                <div className="absolute right-[5%] top-1/2 transform -translate-y-1/2 cursor-pointer text-2xl text-[#888]">
-                                    <ion-icon name="sparkles"></ion-icon>
-                                </div>
-                            </div>
-                            <div className="flex gap-4 mt-8 flex-wrap">
-                                <div className="w-32 h-32 rounded-lg bg-gradient-to-br from-[#1D202A] to-[#030712] border border-[#616678]"></div>
-                                <div className="w-32 h-32 rounded-lg bg-gradient-to-br from-[#1D202A] to-[#030712] border border-[#616678]"></div>
-                                <div className="w-32 h-32 rounded-lg bg-gradient-to-br from-[#1D202A] to-[#030712] border border-[#616678]"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  // Build topic tabs
+  const fixedTabs = [
+    { label: 'For You', icon: 'sparkles', filter: null },
+    ...(user ? [{ label: 'Following', icon: null, filter: 'following' }] : []),
+  ];
+  const interestTabs = (user ? userInterests : popularTags.slice(0, 6)).map(tag => ({ label: tag, icon: null, tag }));
+  const topics = [...fixedTabs, ...interestTabs];
+
+  // Fetch feed
+  useEffect(() => {
+    const topic = topics[activeTopic];
+    if (!topic) return;
+
+    setLoading(true);
+    let url = '/api/feed?limit=20';
+    if (topic.filter === 'following') url += '&filter=following';
+    else if (topic.tag) url += `&tag=${encodeURIComponent(topic.tag)}`;
+
+    fetch(url)
+      .then(r => r.json())
+      .then(data => setPosts(data.posts || []))
+      .catch(() => setPosts([]))
+      .finally(() => setLoading(false));
+  }, [activeTopic, user]);
+
+  // Fetch sidebar data once
+  useEffect(() => {
+    fetch('/api/feed/trending?limit=3').then(r => r.json()).then(d => setTopPicks(d.posts || [])).catch(() => {});
+    fetch('/api/tags/popular?limit=12').then(r => r.json()).then(d => setPopularTags((d.tags || []).map(t => t.tag))).catch(() => {});
+    if (user) {
+      fetch('/api/users/me/interests').then(r => r.json()).then(d => setUserInterests(d.interests || [])).catch(() => {});
+    }
+  }, [user]);
+
+  return (
+    <AppShell>
+      <div className="flex">
+        {/* Center Feed */}
+        <div className="flex-1 min-w-0" style={{ borderRight: '1px solid var(--divider)' }}>
+          {/* Search + Topic Tabs — sticky header */}
+          <div className="sticky top-14 z-40 backdrop-blur-md" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-app) 92%, transparent)', borderBottom: '1px solid var(--divider)' }}>
+            {/* Search bar */}
+            <div className="px-6 pt-3 pb-2">
+              <SearchBar />
             </div>
-
-            <div className="relative top-0 w-full bg-transparent border-l border-l-[#1D202A] border-r border-r-[#1D202A] overflow-hidden">
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-auto w-[94%] bg-[#1D202A]">
-                    <div className="absolute top-1/2 left-[1%] right-[1%] transform -translate-y-1/2 rounded-3xl h-auto w-[98%] bg-[#030712] border border-[#616678] overflow-hidden py-12 px-8" style={{backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.171) 2px, transparent 0)", backgroundSize: "30px 30px", backgroundPosition: "-5px -5px"}}>
-                        <div className="absolute top-[5%] left-[5%]">
-                            <ion-icon name="triangle-outline" className="text-4xl text-white"></ion-icon>
-                            <ion-icon name="triangle-outline" className="absolute text-4xl text-[#888] blur-sm"></ion-icon>
-                            <ion-icon name="ellipse-outline" className="absolute text-4xl text-white mt-12"></ion-icon>
-                            <ion-icon name="ellipse-outline" className="absolute text-4xl text-[#888] blur-sm mt-12"></ion-icon>
-                            <ion-icon name="square-outline" className="absolute text-4xl text-white mt-24"></ion-icon>
-                            <ion-icon name="square-outline" className="absolute text-4xl text-[#888] blur-sm mt-24"></ion-icon>
-                        </div>
-                        <div className="absolute left-20 top-[5%] font-kanit text-xl text-white font-medium">Inkflow - Collaborative Workspace for Creative Ones</div>
-                        <div className="absolute top-[12%] left-20 text-[#888] font-kanit w-[50%] text-sm">Lorem ipsum dolor, sit amet consectetur adipisicing elit. Corrupti dolores vero totam voluptatem tenetur</div>
-                        <div className="absolute top-[30%] left-[5%] w-[90%] h-[60%] rounded-2xl border border-[#616678] overflow-hidden flex items-center justify-center">
-                            <div className="w-full h-full bg-gradient-to-br from-[#1D202A] to-[#030712] rounded-2xl"></div>
-                        </div>
-                    </div>
-                
-
-                    <div className="absolute top-1/2 right-[1%] transform -translate-y-1/2 rounded-3xl h-auto w-[98%] bg-[#030712] border border-[#616678] overflow-hidden py-12 px-8">
-                        <div className="font-kanit text-xl text-white font-medium mb-4">Create ASCII Art Visuals directly from text</div>
-                        <div className="text-[#888] font-kanit text-sm mb-6">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptates neque nisi numquam veritatis sit error</div>
-                        <div className="text-white text-2xl mb-6">
-                            <ion-icon name="aperture-outline"></ion-icon>
-                        </div>
-
-                        <div className="w-full">
-                            <textarea className="w-full h-32 bg-[#10141E] border border-[#616678] rounded-lg p-4 text-[#888] resize-none font-mono text-sm" defaultValue="A Car Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime fuga vero esse earum quaerat provident asperiores soluta quae at eum dignissimos excepturi aliquam dolorum cumque facere, dolores unde fugiat neque?" readOnly></textarea>
-                            <pre className="w-full bg-[#10141E] border border-[#616678] rounded-lg p-4 mt-4 text-[#888] font-mono text-xs overflow-auto max-h-48">
-{`                            ______
-                            /|_||_\`.__
-                           (   _    _ _\\
-                           =\`-(_)--(_)-'`}
-                            </pre>
-                        </div>
-                    </div>
-                </div>
+            {/* Topic tabs */}
+            <div className="flex items-center gap-0 px-6 overflow-x-auto scrollbar-none">
+              {topics.map((topic, i) => (
+                <button
+                  key={topic.label}
+                  onClick={() => setActiveTopic(i)}
+                  className="flex items-center gap-1.5 px-4 py-3 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors flex-shrink-0"
+                  style={{
+                    color: i === activeTopic ? 'var(--text-primary)' : 'var(--text-muted)',
+                    borderBottomColor: i === activeTopic ? 'var(--text-primary)' : 'transparent',
+                  }}
+                >
+                  {topic.icon && <ion-icon name={topic.icon} style={{ fontSize: '14px' }} />}
+                  {topic.label}
+                </button>
+              ))}
             </div>
+          </div>
+
+          {/* Feed */}
+          <div className="px-6">
+            {loading ? (
+              <FeedSkeleton />
+            ) : posts.length > 0 ? (
+              posts.map(post => <FeedCard key={post.id} post={post} />)
+            ) : topics[activeTopic]?.filter === 'following' ? (
+              <div className="text-center py-20">
+                <ion-icon name="people-outline" style={{ fontSize: '44px', color: 'var(--text-faint)' }} />
+                <p className="text-[17px] font-semibold mt-4" style={{ color: 'var(--text-primary)' }}>Your following feed is empty</p>
+                <p className="text-[14px] mt-2 max-w-sm mx-auto" style={{ color: 'var(--text-muted)' }}>
+                  Follow writers and organizations to see their latest posts here.
+                </p>
+                <button
+                  onClick={() => setActiveTopic(0)}
+                  className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] rounded-full transition-colors"
+                >
+                  <ion-icon name="sparkles" style={{ fontSize: '16px' }} />
+                  Discover writers
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <ion-icon name="document-text-outline" style={{ fontSize: '40px', color: 'var(--text-faint)' }} />
+                <p className="text-[15px] mt-4" style={{ color: 'var(--text-muted)' }}>No posts yet</p>
+                <p className="text-[13px] mt-1" style={{ color: 'var(--text-faint)' }}>
+                  {user ? 'Follow writers or pick topics you like to fill your feed.' : 'Be the first to publish something.'}
+                </p>
+                {user && (
+                  <Link href="/new-blog" className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] rounded-full transition-colors">
+                    Start writing
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-    </div>
-    </>
+        {/* Right Sidebar */}
+        <aside className="hidden xl:block w-[340px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto px-8 py-6 scrollbar-thin">
+          {/* Top Picks */}
+          <div className="mb-8">
+            <h3 className="text-[14px] font-bold pb-2 mb-1 tracking-wide" style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--divider)' }}>Top Picks</h3>
+            {topPicks.length > 0 ? (
+              <div>
+                {topPicks.map(pick => <TopPickCard key={pick.id} post={pick} />)}
+              </div>
+            ) : (
+              <p className="text-[13px] py-4" style={{ color: 'var(--text-faint)' }}>No picks yet</p>
+            )}
+          </div>
+
+          {/* Recommended Topics */}
+          <div className="mb-8">
+            <h3 className="text-[14px] font-bold mb-3 tracking-wide" style={{ color: 'var(--text-primary)' }}>Recommended Topics</h3>
+            <div className="flex flex-wrap gap-2">
+              {(popularTags.length > 0 ? popularTags.slice(0, 8) : RECOMMENDED_TOPICS).map(topic => (
+                <button
+                  key={topic}
+                  onClick={() => {
+                    const idx = topics.findIndex(t => t.label === topic);
+                    if (idx >= 0) setActiveTopic(idx);
+                  }}
+                  className="px-3.5 py-1.5 rounded-full text-[13px] transition-colors"
+                  style={{ color: 'var(--text-body)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+                >
+                  {topic}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Writing Prompt */}
+          <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+            <h3 className="text-[14px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Writing on LixBlogs</h3>
+            <ul className="text-[13px] space-y-1.5 mt-3" style={{ color: 'var(--text-muted)' }}>
+              <li><Link href="/elixpo/guides/getting-started" className="hover:opacity-70 transition-opacity">New to LixBlogs? Start here</Link></li>
+              <li><Link href="/elixpo/guides/writing-tips" className="hover:opacity-70 transition-opacity">Read LixBlogs writing tips</Link></li>
+              <li><Link href="/elixpo/guides/practical-advice" className="hover:opacity-70 transition-opacity">Get practical writing advice</Link></li>
+            </ul>
+            <Link
+              href="/new-blog"
+              className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] rounded-full transition-colors"
+            >
+              Start writing
+            </Link>
+          </div>
+
+          {/* Footer Links */}
+          <div className="mt-8 flex flex-wrap gap-x-4 gap-y-1 text-[12px]" style={{ color: 'var(--text-faint)' }}>
+            <span className="cursor-pointer transition-colors hover:opacity-70">Help</span>
+            <span className="cursor-pointer transition-colors hover:opacity-70">Status</span>
+            <span className="cursor-pointer transition-colors hover:opacity-70">About</span>
+            <span className="cursor-pointer transition-colors hover:opacity-70">Blog</span>
+            <span className="cursor-pointer transition-colors hover:opacity-70">Privacy</span>
+            <span className="cursor-pointer transition-colors hover:opacity-70">Terms</span>
+          </div>
+        </aside>
+      </div>
+    </AppShell>
   );
 }

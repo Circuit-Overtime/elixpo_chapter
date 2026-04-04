@@ -1,13 +1,10 @@
 import './globals.css';
-import '../src/App.css';
-import '../src/styles/homepage/header.css';
-import '../src/styles/homepage/innerLayout.css';
-import '../src/styles/homepage/innerLayoutPseudo.css';
-import '../src/styles/homepage/responsive.css';
+import { AuthProvider } from '../src/context/AuthContext';
+import { ThemeProvider } from '../src/context/ThemeContext';
 
 export const metadata = {
-  title: 'Blogs | Elixpo',
-  description: 'A place to read, write and enjoy the creative aspect',
+  title: 'LixBlogs',
+  description: 'A place to read, write, and enjoy the creative aspect',
   icons: {
     icon: '/logo.png',
   },
@@ -16,7 +13,29 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Kanit:wght@500;600;700&family=Source+Serif+4:wght@400;600;700;800&display=swap" rel="stylesheet" />
+        {/* Prevent flash of wrong theme */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            try {
+              var t = localStorage.getItem('lixblogs_theme');
+              if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            } catch(e) {}
+          })();
+        `}} />
+      </head>
+      <body className="antialiased" style={{ fontFamily: "'Source Serif 4', 'Georgia', serif" }}>
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js" defer />
+        <script noModule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js" defer />
+      </body>
     </html>
   );
 }

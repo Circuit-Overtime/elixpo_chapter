@@ -129,13 +129,38 @@ function ProfileDropdown() {
 
 function SaveStatusDot() {
   const saveStatus = useUIStore((s) => s.saveStatus)
+  const [pulsing, setPulsing] = useState(false)
+
+  // Listen for local save events to trigger a pulse
+  useEffect(() => {
+    let timer
+    window.__onLocalSave = () => {
+      setPulsing(true)
+      clearTimeout(timer)
+      timer = setTimeout(() => setPulsing(false), 800)
+    }
+    return () => {
+      window.__onLocalSave = null
+      clearTimeout(timer)
+    }
+  }, [])
+
   if (saveStatus === 'idle') return null
 
-  const isCloud = saveStatus === 'cloud'
+  const colorMap = {
+    cloud: 'bg-green-400',
+    local: 'bg-yellow-400',
+    failed: 'bg-red-400',
+  }
+  const titleMap = {
+    cloud: 'Synced to cloud — Ctrl+S to force sync',
+    local: 'Saved locally — auto-syncs every 5min or press Ctrl+S',
+    failed: 'Sync failed — will retry automatically',
+  }
   return (
     <span
-      className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-300 ${isCloud ? 'bg-green-400' : 'bg-yellow-400'}`}
-      title={isCloud ? 'Synced to cloud — Ctrl+S to force sync' : 'Saved locally — auto-syncs every 10min or press Ctrl+S'}
+      className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-300 ${colorMap[saveStatus] || 'bg-yellow-400'} ${pulsing ? 'animate-pulse' : ''}`}
+      title={titleMap[saveStatus] || ''}
     />
   )
 }

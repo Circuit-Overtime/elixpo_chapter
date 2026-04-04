@@ -509,38 +509,38 @@ async def _run_deep_search_pipeline(
         "generated_images": [],
     }
 
-    _embed_fn = core_service.embed_single_text if core_service else None
-    conversation_cache = ConversationCacheManager(
-        window_size=CACHE_WINDOW_SIZE,
-        max_entries=CACHE_MAX_ENTRIES,
-        ttl_seconds=CACHE_TTL_SECONDS,
-        compression_method=CACHE_COMPRESSION_METHOD,
-        embedding_model=CACHE_EMBEDDING_MODEL,
-        similarity_threshold=CACHE_SIMILARITY_THRESHOLD,
-        cache_dir=CONVERSATION_CACHE_DIR,
-        embed_fn=_embed_fn,
-    )
-    memoized_results["conversation_cache"] = conversation_cache
+    conversation_cache = None
+    semantic_cache = None
     if session_id:
+        _embed_fn = core_service.embed_single_text if core_service else None
+        conversation_cache = ConversationCacheManager(
+            window_size=CACHE_WINDOW_SIZE,
+            max_entries=CACHE_MAX_ENTRIES,
+            ttl_seconds=CACHE_TTL_SECONDS,
+            compression_method=CACHE_COMPRESSION_METHOD,
+            embedding_model=CACHE_EMBEDDING_MODEL,
+            similarity_threshold=CACHE_SIMILARITY_THRESHOLD,
+            cache_dir=CONVERSATION_CACHE_DIR,
+            embed_fn=_embed_fn,
+        )
+        memoized_results["conversation_cache"] = conversation_cache
         try:
             conversation_cache.load_from_disk(session_id=session_id)
         except Exception as e:
             logger.warning(f"[DeepSearch] Failed to load conversation cache: {e}")
 
-    semantic_cache = None
-    try:
-        semantic_cache = SemanticCache(
-            session_id=session_id or "pipeline",
-            ttl_seconds=SEMANTIC_CACHE_TTL_SECONDS,
-            similarity_threshold=SEMANTIC_CACHE_SIMILARITY_THRESHOLD,
-            redis_host=SEMANTIC_CACHE_REDIS_HOST,
-            redis_port=SEMANTIC_CACHE_REDIS_PORT,
-            redis_db=SEMANTIC_CACHE_REDIS_DB,
-        )
-        if session_id:
+        try:
+            semantic_cache = SemanticCache(
+                session_id=session_id,
+                ttl_seconds=SEMANTIC_CACHE_TTL_SECONDS,
+                similarity_threshold=SEMANTIC_CACHE_SIMILARITY_THRESHOLD,
+                redis_host=SEMANTIC_CACHE_REDIS_HOST,
+                redis_port=SEMANTIC_CACHE_REDIS_PORT,
+                redis_db=SEMANTIC_CACHE_REDIS_DB,
+            )
             semantic_cache.load_for_request(session_id)
-    except Exception as e:
-        logger.warning(f"[DeepSearch] Semantic cache init failed: {e}")
+        except Exception as e:
+            logger.warning(f"[DeepSearch] Semantic cache init failed: {e}")
 
     decompose_event = emit_event("INFO", "<TASK>Analyzing query for deep search</TASK>")
     if decompose_event:
@@ -707,12 +707,13 @@ async def _run_deep_search_pipeline(
                     _cache_embedding = core_service.embed_single_text(user_query)
                 except Exception:
                     pass
-            conversation_cache.add_to_cache(
-                query=user_query,
-                response=combined_content,
-                metadata=cache_metadata,
-                query_embedding=_cache_embedding,
-            )
+            if conversation_cache is not None:
+                conversation_cache.add_to_cache(
+                    query=user_query,
+                    response=combined_content,
+                    metadata=cache_metadata,
+                    query_embedding=_cache_embedding,
+                )
 
             if session_context:
                 session_context.add_message(role="assistant", content=combined_content)
@@ -723,7 +724,7 @@ async def _run_deep_search_pipeline(
     try:
         if session_id and semantic_cache is not None:
             semantic_cache.save_for_request(session_id)
-        if session_id:
+        if session_id and conversation_cache is not None:
             conversation_cache.save_to_disk(session_id=session_id)
     except Exception:
         pass

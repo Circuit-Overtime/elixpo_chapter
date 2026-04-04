@@ -17,12 +17,12 @@
 Returns Server-Sent Events in OpenAI-compatible JSON format:
 ```bash
 # GET request
-curl "http://localhost:8000/api/search?query=latest%20news&stream=true"
+curl "http://localhost:9002/api/search?query=latest%20news&stream=true"
 
 # or POST request
 curl -X POST -H "Content-Type: application/json" \
   -d '{"query":"latest news","stream":true}' \
-  http://localhost:8000/api/search
+  http://localhost:9002/api/search
 ```
 
 Response format: `text/event-stream` with OpenAI-compatible JSON events
@@ -44,12 +44,12 @@ Each event is a complete OpenAI-format JSON object that can be parsed consistent
 Returns single OpenAI-format JSON response:
 ```bash
 # GET request
-curl "http://localhost:8000/api/search?query=latest%20news&stream=false"
+curl "http://localhost:9002/api/search?query=latest%20news&stream=false"
 
 # or POST request
 curl -X POST -H "Content-Type: application/json" \
   -d '{"query":"latest news","stream":false}' \
-  http://localhost:8000/api/search
+  http://localhost:9002/api/search
 ```
 
 Response format: `application/json` (OpenAI chat completion format)
@@ -94,7 +94,7 @@ graph TB
     end
 
     subgraph Entry["Entry Point"]
-        APP_PY["app.py<br/>Server launcher"]
+        APP_PY["app/main.py<br/>Server launcher"]
     end
 
     subgraph AppPackage["app Package"]

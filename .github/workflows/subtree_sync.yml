@@ -26,6 +26,7 @@ jobs:
       - name: Sync subtrees
         run: |
           repos=(
+            "agent.elixpo https://github.com/elixpo/elixpoagent.git"
             "elixpo https://github.com/elixpo/elixpo.git"
             "art.elixpo https://github.com/elixpo/elixpoart.git"
             "jackey.elixpo https://github.com/elixpo/elixpojackey.git"

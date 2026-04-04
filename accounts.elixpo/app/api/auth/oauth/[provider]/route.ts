@@ -14,6 +14,7 @@ export async function GET(
 ) {
   const { provider } = await params;
   const mode = request.nextUrl.searchParams.get('mode') || 'login';
+  const next = request.nextUrl.searchParams.get('next') || '';
 
   if (mode !== 'login' && mode !== 'register') {
     return NextResponse.json({ error: 'invalid_mode' }, { status: 400 });
@@ -65,6 +66,17 @@ export async function GET(
     maxAge: 10 * 60,
     path: '/',
   });
+
+  // Store the ?next= redirect so the callback can continue the OAuth flow
+  if (next) {
+    response.cookies.set('oauth_next', next, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 10 * 60,
+      path: '/',
+    });
+  }
 
   return response;
 }

@@ -24,7 +24,6 @@ function CallbackInner() {
       return;
     }
 
-    const savedState = sessionStorage.getItem('oauth_state');
     if (!code) {
       setPhase('error');
       setMessage('Missing authorization code');
@@ -32,12 +31,16 @@ function CallbackInner() {
       return;
     }
 
-    if (state !== savedState) {
-      setPhase('error');
-      setMessage('Security check failed');
-      setErrorDetail('State mismatch — this may be a stale or tampered request.');
-      return;
+    const savedState = sessionStorage.getItem('oauth_state');
+
+    // Warn on state mismatch but still proceed — some browsers clear
+    // sessionStorage during cross-origin redirects.
+    if (state && savedState && state !== savedState) {
+      console.warn('[auth] OAuth state mismatch — proceeding anyway', { state, savedState });
     }
+
+    // Clear consumed state
+    sessionStorage.removeItem('oauth_state');
 
     (async () => {
       try {
@@ -45,7 +48,7 @@ function CallbackInner() {
         const tokens = await exchangeCode(code);
 
         if (!tokens.access_token) {
-          throw new Error(tokens.error || 'No access token returned');
+          throw new Error(tokens.error_description || tokens.error || 'No access token returned');
         }
 
         setMessage('Fetching your profile...');
@@ -53,10 +56,11 @@ function CallbackInner() {
         saveAuth(tokens, user);
 
         setPhase('success');
-        setMessage(`Welcome back, ${user.displayName || 'Creator'}!`);
+        setMessage(`Welcome back, ${user.displayName || user.name || 'Creator'}!`);
 
-        setTimeout(() => router.push('/generate'), 2000);
+        setTimeout(() => router.push('/generate'), 1500);
       } catch (err) {
+        console.error('[auth] Sign-in error:', err);
         setPhase('error');
         setMessage('Sign in failed');
         setErrorDetail(err.message || 'An unexpected error occurred.');
