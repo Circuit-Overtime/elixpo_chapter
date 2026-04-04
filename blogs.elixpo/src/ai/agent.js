@@ -1,5 +1,5 @@
 // Client-side AI module — lixsearch session-based streaming
-// Uses search.elixpo.com SSE via /api/ai/stream proxy
+// Uses search.elixpo.com/api/search?query=...&stream=true&session_id=... via /api/ai/stream proxy
 
 // ── Session management ──
 
@@ -18,7 +18,7 @@ export async function getOrCreateSession(slugid) {
     if (data.sessionId) return data.sessionId;
   }
 
-  // Create new session
+  // Create new session (generates ID locally, stored in D1)
   const postRes = await fetch('/api/ai/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -39,18 +39,11 @@ export async function getOrCreateSession(slugid) {
 
 const TASK_REGEX = /<TASK>(.*?)<\/TASK>/;
 
-/**
- * Extract task status from a TASK-tagged string.
- * Returns the task text or null if not a TASK message.
- */
 function parseTask(content) {
   const match = content.match(TASK_REGEX);
   return match ? match[1] : null;
 }
 
-/**
- * Map lixsearch task status to editor phase.
- */
 function taskToPhase(taskText) {
   const t = taskText.toLowerCase();
   if (t === 'done') return 'done';
@@ -67,10 +60,6 @@ function taskToPhase(taskText) {
 
 const IMAGE_MD_REGEX = /!\[([^\]]*)\]\(([^)]+)\)/g;
 
-/**
- * Extract all image markdown references from text.
- * Returns array of { alt, url, fullMatch }
- */
 function extractImages(text) {
   const images = [];
   let match;
@@ -86,10 +75,6 @@ function extractImages(text) {
 /**
  * Download an image from a temporary URL, compress it, and upload to Cloudinary.
  * Returns the permanent Cloudinary URL, or null on failure.
- *
- * @param {string} srcUrl - Temporary image URL from lixsearch
- * @param {string} [alt] - Alt text / caption
- * @returns {Promise<{ url: string, id: string } | null>}
  */
 export async function reuploadImage(srcUrl, alt) {
   try {
@@ -118,15 +103,16 @@ export async function reuploadImage(srcUrl, alt) {
 // ── Main streaming function ──
 
 /**
- * Stream AI response from lixsearch via session-scoped SSE.
+ * Stream AI response from lixsearch via SSE.
+ * Sends a single query string (system prompt + user prompt combined) to the search API.
  *
  * @param {Object} opts
  * @param {string} opts.sessionId - lixsearch session ID
- * @param {string} opts.systemPrompt - System prompt
+ * @param {string} opts.systemPrompt - System prompt (prepended to query)
  * @param {string} opts.userPrompt - User message
  * @param {Function} [opts.onTask] - Called with (taskText, phase) on INFO events
  * @param {Function} [opts.onChunk] - Called with (newText, fullText) on RESPONSE chunks
- * @param {Function} [opts.onImage] - Called with ({ alt, url }) when an image URL appears in the response
+ * @param {Function} [opts.onImage] - Called with ({ alt, url }) when an image URL appears
  * @param {Function} [opts.onDone] - Called with (fullText) when stream completes
  * @param {Function} [opts.onError] - Called with (error) on failure
  * @param {AbortSignal} [opts.signal] - Abort signal
@@ -136,15 +122,16 @@ export async function streamAI({ sessionId, systemPrompt, userPrompt, onTask, on
   let fullText = '';
   let knownImages = new Set();
 
-  const messages = [];
-  if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
-  messages.push({ role: 'user', content: userPrompt });
+  // Combine system prompt and user prompt into a single query
+  const query = systemPrompt
+    ? `[System: ${systemPrompt}]\n\n${userPrompt}`
+    : userPrompt;
 
   try {
     const res = await fetch('/api/ai/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId, messages }),
+      body: JSON.stringify({ sessionId, query }),
       signal,
     });
 
@@ -183,12 +170,10 @@ export async function streamAI({ sessionId, systemPrompt, userPrompt, onTask, on
           if (!content) continue;
 
           if (eventType === 'INFO') {
-            // Parse TASK status
             const task = parseTask(content);
             if (task) {
               const phase = taskToPhase(task);
               onTask?.(task, phase);
-
               if (phase === 'done') {
                 onDone?.(fullText);
                 return fullText;
@@ -198,7 +183,7 @@ export async function streamAI({ sessionId, systemPrompt, userPrompt, onTask, on
             fullText += content;
             onChunk?.(content, fullText);
 
-            // Check for new image URLs in the accumulated text
+            // Detect new image URLs in the stream
             if (onImage) {
               const images = extractImages(fullText);
               for (const img of images) {
@@ -210,7 +195,6 @@ export async function streamAI({ sessionId, systemPrompt, userPrompt, onTask, on
             }
           }
 
-          // Handle finish_reason regardless of event_type
           if (finishReason === 'stop') {
             onDone?.(fullText);
             return fullText;
@@ -229,4 +213,3 @@ export async function streamAI({ sessionId, systemPrompt, userPrompt, onTask, on
     throw err;
   }
 }
-

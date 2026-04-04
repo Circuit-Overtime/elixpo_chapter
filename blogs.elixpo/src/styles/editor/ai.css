@@ -1,8 +1,47 @@
-/* ===== AI Generated Block Highlight (pink) ===== */
+/* ===== AI Writing Active — handwritten lavender text while AI is streaming ===== */
+
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap');
+
+.ai-writing-active {
+  background: rgba(196, 181, 253, 0.06) !important;
+  border-left: 3px solid rgba(196, 181, 253, 0.4) !important;
+  border-radius: 0 6px 6px 0;
+  margin-left: -3px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.ai-writing-active .bn-block-content {
+  background: transparent !important;
+}
+
+.ai-writing-active [contenteditable="true"],
+.ai-writing-active [contenteditable="true"] *,
+.ai-writing-active .bn-inline-content,
+.ai-writing-active .bn-inline-content *,
+.ai-writing-active p,
+.ai-writing-active span,
+.ai-writing-active strong,
+.ai-writing-active em,
+.ai-writing-active code,
+.ai-writing-active a,
+.ai-writing-active li,
+.ai-writing-active h1,
+.ai-writing-active h2,
+.ai-writing-active h3 {
+  color: #c4b5fd !important;
+  caret-color: #c4b5fd !important;
+  -webkit-text-fill-color: #c4b5fd !important;
+  font-family: 'Caveat', cursive !important;
+  font-size: 1.35em !important;
+  font-weight: 500 !important;
+  line-height: 1.6 !important;
+}
+
+/* ===== AI Generated Block Highlight (green, shown after AI is done) ===== */
 
 .ai-generated-highlight {
-  background: rgba(74, 222, 128, 0.08) !important;
-  border-left: 3px solid rgba(74, 222, 128, 0.5) !important;
+  background: rgba(196, 181, 253, 0.08) !important;
+  border-left: 3px solid rgba(196, 181, 253, 0.4) !important;
   border-radius: 0 6px 6px 0;
   margin-left: -3px;
 }
@@ -11,18 +50,17 @@
   background: transparent !important;
 }
 
-/*
- * Force pink color on AI-generated text.
- * -webkit-text-fill-color overrides inline styles that CSS !important alone cannot beat.
- */
 .ai-generated-highlight [contenteditable="true"],
 .ai-generated-highlight [contenteditable="true"] * {
-  color: #4ade80 !important;
-  caret-color: #4ade80 !important;
-  -webkit-text-fill-color: #4ade80 !important;
+  color: #c4b5fd !important;
+  caret-color: #c4b5fd !important;
+  -webkit-text-fill-color: #c4b5fd !important;
+  font-family: 'Caveat', cursive !important;
+  font-size: 1.35em !important;
+  font-weight: 500 !important;
+  line-height: 1.6 !important;
 }
 
-/* Also cover non-editable rendered content inside AI blocks */
 .ai-generated-highlight .bn-inline-content,
 .ai-generated-highlight p,
 .ai-generated-highlight span,
@@ -34,8 +72,12 @@
 .ai-generated-highlight h1,
 .ai-generated-highlight h2,
 .ai-generated-highlight h3 {
-  color: #4ade80 !important;
-  -webkit-text-fill-color: #4ade80 !important;
+  color: #c4b5fd !important;
+  -webkit-text-fill-color: #c4b5fd !important;
+  font-family: 'Caveat', cursive !important;
+  font-size: 1.35em !important;
+  font-weight: 500 !important;
+  line-height: 1.6 !important;
 }
 
 /* ===== AI Edit Diff Styles (lavender theme) ===== */
@@ -358,6 +400,65 @@
   background: rgba(248, 113, 113, 0.15);
 }
 
+/* ===== AI Quick Action Buttons (edit toolbar presets) ===== */
+
+.ai-quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  height: 30px;
+  padding: 0 14px;
+  margin-bottom: 5px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted, #8b8fa3);
+  background: var(--bg-surface, rgba(20, 24, 33, 0.85));
+  border: 1px solid var(--border-default, rgba(155, 123, 247, 0.12));
+  border-radius: 15px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), 0 0 0 0.5px rgba(155, 123, 247, 0.06);
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.ai-quick-action-btn:hover {
+  background: rgba(155, 123, 247, 0.1);
+  border-color: rgba(155, 123, 247, 0.3);
+  color: #c4b5fd;
+  box-shadow: 0 3px 12px rgba(155, 123, 247, 0.15), 0 1px 4px rgba(0, 0, 0, 0.2);
+  transform: translateX(2px);
+}
+
+.ai-quick-action-btn:active {
+  background: rgba(155, 123, 247, 0.18);
+  transform: translateX(2px) scale(0.98);
+}
+
+.ai-quick-action-btn svg {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.ai-quick-action-btn:hover svg {
+  opacity: 0.9;
+}
+
+/* ===== AI Edit Selection Highlight — subtle border on selected blocks ===== */
+
+.ai-edit-selection-highlight {
+  background: rgba(196, 181, 253, 0.06) !important;
+  border-left: 3px solid rgba(196, 181, 253, 0.35) !important;
+  border-radius: 0 6px 6px 0;
+  margin-left: -3px;
+  animation: aiSelectionPulse 2s ease-in-out infinite;
+}
+
+@keyframes aiSelectionPulse {
+  0%, 100% { background: rgba(196, 181, 253, 0.04) !important; }
+  50% { background: rgba(196, 181, 253, 0.1) !important; }
+}
+
 /* ===== AI Inline Input Container ===== */
 
 .ai-inline-input-container {
@@ -386,117 +487,112 @@
 .ai-editor-locked .bn-editor [contenteditable] {
   pointer-events: none !important;
   user-select: none !important;
-  cursor: not-allowed !important;
-}
-
-.ai-editor-locked .bn-editor {
-  position: relative;
-}
-
-.ai-editor-locked .bn-editor::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(19, 25, 34, 0.15);
-  pointer-events: none;
-  z-index: 5;
-  border-radius: 8px;
-  animation: aiLockFadeIn 0.3s ease-out;
-}
-
-@keyframes aiLockFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  cursor: default !important;
 }
 
 .ai-editor-locked .bn-toolbar {
   display: none !important;
 }
 
-/* ===== AI Selected Block — shimmer skeleton while AI is thinking ===== */
+/* ===== AI Selected Block — thin single-line bar with shimmer, non-editable ===== */
 
 .ai-edit-selected-block {
-  position: relative;
-  background: rgba(196, 181, 253, 0.10) !important;
-  border-left: 3px solid rgba(196, 181, 253, 0.4) !important;
-  border-radius: 0 6px 6px 0;
-  margin-left: -3px;
-  overflow: hidden;
+  position: relative !important;
+  height: 3px !important;
+  min-height: 3px !important;
+  max-height: 3px !important;
+  overflow: hidden !important;
+  background: rgba(196, 181, 253, 0.18) !important;
+  border-radius: 2px !important;
+  border: none !important;
+  border-left: none !important;
+  margin: 8px 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+  user-select: none !important;
 }
 
-.ai-edit-selected-block::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 25%,
-    rgba(196, 181, 253, 0.13) 50%,
-    transparent 75%
-  );
-  background-size: 200% 100%;
-  animation: aiSkeletonShimmer 1.8s ease-in-out infinite;
-  z-index: 1;
-  pointer-events: none;
-  border-radius: 0 6px 6px 0;
-}
-
+/* Collapse all BlockNote inner elements to zero */
+.ai-edit-selected-block *,
+.ai-edit-selected-block .bn-block,
+.ai-edit-selected-block .bn-block-content,
 .ai-edit-selected-block .bn-inline-content,
-.ai-edit-selected-block .bn-inline-content *,
-.ai-edit-selected-block [contenteditable="true"],
-.ai-edit-selected-block [contenteditable="true"] *,
+.ai-edit-selected-block [contenteditable],
 .ai-edit-selected-block p,
 .ai-edit-selected-block span,
-.ai-edit-selected-block strong,
-.ai-edit-selected-block em,
-.ai-edit-selected-block code,
-.ai-edit-selected-block a,
-.ai-edit-selected-block li {
-  color: rgba(196, 181, 253, 0.6) !important;
-  -webkit-text-fill-color: rgba(196, 181, 253, 0.6) !important;
+.ai-edit-selected-block .bn-side-menu,
+.ai-edit-selected-block .bn-drag-handle-menu {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  user-select: none !important;
 }
 
-/* ===== AI Placeholder Skeleton — shimmer on the empty line where AI will type ===== */
+/* Shimmer animation across the thin bar */
+.ai-edit-selected-block::before {
+  content: '' !important;
+  display: block !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(
+    90deg,
+    rgba(196, 181, 253, 0.1) 0%,
+    rgba(196, 181, 253, 0.5) 50%,
+    rgba(196, 181, 253, 0.1) 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: aiBarShimmer 1.5s ease-in-out infinite !important;
+  border-radius: 2px !important;
+  pointer-events: none !important;
+}
+
+@keyframes aiBarShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ===== AI Placeholder Skeleton — single-line shimmer where AI will start typing ===== */
 
 .ai-placeholder-skeleton {
   position: relative;
-  min-height: 28px;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
   overflow: hidden;
-  background: rgba(167, 139, 250, 0.08) !important;
-  border-left: 3px solid rgba(196, 181, 253, 0.35) !important;
-  border-radius: 0 6px 6px 0;
-  margin-left: -3px;
+  background: transparent !important;
+  margin-left: 0;
 }
 
-.ai-placeholder-skeleton::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 25%,
-    rgba(196, 181, 253, 0.15) 50%,
-    transparent 75%
-  );
-  background-size: 200% 100%;
-  animation: aiSkeletonShimmer 1.8s ease-in-out infinite;
-  z-index: 1;
-  pointer-events: none;
-  border-radius: 0 6px 6px 0;
+/* Hide BlockNote placeholder text */
+.ai-placeholder-skeleton .bn-inline-content[data-placeholder]::before {
+  display: none !important;
 }
 
-/* Fake text lines inside skeleton */
+/* Single shimmer bar */
 .ai-placeholder-skeleton::after {
   content: '';
   position: absolute;
   top: 50%;
-  left: 12px;
+  left: 0;
   transform: translateY(-50%);
-  width: 60%;
-  height: 10px;
-  background: rgba(196, 181, 253, 0.1);
+  width: 40%;
+  height: 8px;
+  background: linear-gradient(
+    90deg,
+    rgba(196, 181, 253, 0.12) 0%,
+    rgba(196, 181, 253, 0.3) 50%,
+    rgba(196, 181, 253, 0.12) 100%
+  );
+  background-size: 200% 100%;
+  animation: aiSkeletonShimmer 1.8s ease-in-out infinite;
   border-radius: 4px;
-  z-index: 0;
   pointer-events: none;
 }
 
