@@ -1,3 +1,4 @@
+'use client';
 import '../../../styles/library/library.css';
 
 export default function SavedPage() {

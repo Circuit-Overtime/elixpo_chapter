@@ -1,5 +1,27 @@
 {
-  "name": "elixpo-blogs",
+  "name": "lixblogs",
+  "description": "A modern blogging platform with a rich block editor, AI writing tools, real-time collaboration, and organizations — deployed on Cloudflare's edge.",
+  "author": "Circuit-Overtime <https://github.com/Circuit-Overtime>",
+  "license": "MIT",
+  "homepage": "https://blogs.elixpo.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Circuit-Overtime/elixpo_blogs"
+  },
+  "bugs": {
+    "url": "https://github.com/Circuit-Overtime/elixpo_blogs/issues"
+  },
+  "keywords": [
+    "blog",
+    "blogging",
+    "editor",
+    "ai",
+    "collaboration",
+    "nextjs",
+    "cloudflare",
+    "blocknote"
+  ],
+  "private": true,
   "type": "module",
   "dependencies": {
     "@blocknote/core": "^0.47.1",
@@ -13,7 +35,9 @@
     "next": "^15.3.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "shiki": "^4.0.2"
+    "shiki": "^4.0.2",
+    "y-websocket": "^3.0.0",
+    "yjs": "^13.6.30"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
@@ -26,9 +50,11 @@
   },
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "npx @cloudflare/next-on-pages",
+    "build": "next build",
+    "pages:build": "npx @cloudflare/next-on-pages",
     "preview": "npx wrangler pages dev .vercel/output/static --compatibility-flags=nodejs_compat",
-    "deploy": "npm run build && npx wrangler pages deploy .vercel/output/static",
+    "deploy": "npm run pages:build && npx wrangler pages deploy .vercel/output/static",
     "db:migrate": "wrangler d1 execute elixpoblogs --remote --file=migrations/0006_blog_collab_roles.sql"
-  }
+  },
+  "version": "0.0.12"
 }

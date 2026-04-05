@@ -1,4 +1,6 @@
-import "../../../styles/history/history/history.css";
+'use client';
+import { useEffect } from 'react';
+import "../../../styles/history/history.css";
 
 
 
