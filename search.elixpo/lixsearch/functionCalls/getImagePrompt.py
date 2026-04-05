@@ -12,6 +12,14 @@ load_dotenv()
 
 
 def image_url_to_base64(image_url):
+    # Handle data: URLs (already base64-encoded)
+    if image_url.startswith("data:"):
+        # Format: data:image/jpeg;base64,/9j/4AAQ...
+        try:
+            _, payload = image_url.split(",", 1)
+            return payload
+        except ValueError:
+            pass
     response = requests.get(image_url, timeout=15)
     response.raise_for_status()
     image_bytes = response.content

@@ -75,6 +75,8 @@ LLM_MODEL = os.getenv("LLM_MODEL", "kimi")
 IMAGE_MODEL1 = os.getenv("IMAGE_MODEL1", "gptimage")
 IMAGE_MODEL2 = os.getenv("IMAGE_MODEL2", "qwen-image")
 VISION_MODEL = os.getenv("VISION_MODEL", "gemini-fast")
+
+
 RESPONSE_MODEL = os.getenv("RESPONSE_MODEL", "lixsearch")
 LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "1500"))
 LLM_MAX_TOKENS_DETAILED = int(os.getenv("LLM_MAX_TOKENS_DETAILED", "4096"))
