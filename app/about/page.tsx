@@ -49,38 +49,6 @@ export default function AboutPage() {
         <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.15rem', maxWidth: '600px', mx: 'auto', lineHeight: 1.7 }}>
           A modern OAuth 2.0 identity provider built on the edge. Authenticate users across your services with a single, secure account.
         </Typography>
-
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 4 }}>
-          <Box
-            component={Link}
-            href="/register"
-            sx={{
-              px: 3, py: 1.5, borderRadius: '10px',
-              background: 'rgba(163, 230, 53, 0.15)',
-              color: '#a3e635',
-              border: '1px solid rgba(163, 230, 53, 0.3)',
-              fontWeight: 600, fontSize: '0.95rem', textDecoration: 'none',
-              transition: 'all 0.2s',
-              '&:hover': { background: 'rgba(163, 230, 53, 0.25)', borderColor: 'rgba(163, 230, 53, 0.5)' },
-            }}
-          >
-            Create Account
-          </Box>
-          <Box
-            component={Link}
-            href="/login"
-            sx={{
-              px: 3, py: 1.5, borderRadius: '10px',
-              color: 'rgba(255,255,255,0.6)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              fontWeight: 500, fontSize: '0.95rem', textDecoration: 'none',
-              transition: 'all 0.2s',
-              '&:hover': { borderColor: 'rgba(255,255,255,0.25)', color: '#fff' },
-            }}
-          >
-            Sign In
-          </Box>
-        </Box>
       </Box>
 
       {/* Features Grid */}
