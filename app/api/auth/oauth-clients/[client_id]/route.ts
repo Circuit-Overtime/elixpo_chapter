@@ -298,13 +298,13 @@ export async function GET(
     return NextResponse.json({
       client_id,
       name: (app as any).name,
+      description: (app as any).description || null,
+      homepage_url: (app as any).homepage_url || null,
       redirect_uris,
       scopes,
       is_active: Boolean((app as any).is_active),
       created_at: (app as any).created_at,
       ...(isOwner && {
-        description: (app as any).description,
-        homepage_url: (app as any).homepage_url,
         logo_url: (app as any).logo_url,
         request_count: (app as any).request_count ?? 0,
         last_used: (app as any).last_used,
