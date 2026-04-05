@@ -35,16 +35,6 @@ interface UserProfile {
   displayName?: string | null;
 }
 
-interface ConnectedService {
-  client_id: string;
-  name: string;
-  description?: string;
-  homepage_url?: string;
-  logo_url?: string;
-  first_authorized: string;
-  last_authorized: string;
-}
-
 interface NotificationPreferences {
   email_login_alerts: boolean;
   email_app_activity: boolean;
@@ -152,7 +142,6 @@ const ProfilePage = () => {
   useEffect(() => {
     fetchProfile();
     fetchNotifPrefs();
-    fetchConnectedServices();
   }, []);
 
   const fetchProfile = async () => {
@@ -166,39 +155,6 @@ const ProfilePage = () => {
       setProfileError(err instanceof Error ? err.message : 'Failed to load profile');
     } finally {
       setProfileLoading(false);
-    }
-  };
-
-  const fetchConnectedServices = async () => {
-    try {
-      setServicesLoading(true);
-      const res = await fetch('/api/auth/connected-services', { credentials: 'include' });
-      if (res.ok) {
-        const data: any = await res.json();
-        setConnectedServices(data.services || []);
-      }
-    } catch {
-      // fail silently
-    } finally {
-      setServicesLoading(false);
-    }
-  };
-
-  const revokeService = async (clientId: string) => {
-    if (!confirm('Revoke access for this service? You will need to re-authorize it to use it again.')) return;
-    setRevoking(clientId);
-    try {
-      const res = await fetch(`/api/auth/connected-services?client_id=${clientId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (res.ok) {
-        setConnectedServices((prev) => prev.filter((s) => s.client_id !== clientId));
-      }
-    } catch {
-      // fail silently
-    } finally {
-      setRevoking(null);
     }
   };
 
@@ -843,95 +799,7 @@ const ProfilePage = () => {
           )}
         </Box>
 
-        {/* 4. Connected Services Card */}
-        <Box sx={cardSx}>
-          <Typography variant="h6" sx={sectionTitleSx}>
-            <AppsIcon sx={{ color: '#a3e635' }} />
-            Connected Services
-          </Typography>
-          <Typography sx={sectionSubtitleSx}>
-            Applications you've authorized to access your Elixpo account.
-          </Typography>
-
-          {servicesLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-              <CircularProgress size={24} sx={{ color: '#a3e635' }} />
-            </Box>
-          ) : connectedServices.length === 0 ? (
-            <Box sx={{ py: 3, textAlign: 'center' }}>
-              <Typography sx={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.9rem' }}>
-                No connected services yet. When you sign in to apps using Elixpo, they'll appear here.
-              </Typography>
-            </Box>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {connectedServices.map((svc) => (
-                <Box
-                  key={svc.client_id}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
-                    p: 2,
-                    borderRadius: '12px',
-                    bgcolor: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    transition: 'border-color 0.2s',
-                    '&:hover': { borderColor: 'rgba(255,255,255,0.12)' },
-                  }}
-                >
-                  {/* App icon */}
-                  {svc.homepage_url ? (
-                    <Box
-                      component="img"
-                      src={`https://www.google.com/s2/favicons?domain=${new URL(svc.homepage_url).hostname}&sz=32`}
-                      alt=""
-                      sx={{ width: 32, height: 32, borderRadius: '6px', flexShrink: 0 }}
-                      onError={(e: any) => { e.target.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <Box sx={{
-                      width: 32, height: 32, borderRadius: '6px', flexShrink: 0,
-                      bgcolor: 'rgba(163,230,53,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#a3e635', fontSize: '0.9rem', fontWeight: 700,
-                    }}>
-                      {svc.name.charAt(0).toUpperCase()}
-                    </Box>
-                  )}
-
-                  {/* App info */}
-                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography sx={{ color: '#f5f5f4', fontWeight: 600, fontSize: '0.9rem' }}>
-                      {svc.name}
-                    </Typography>
-                    <Typography sx={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem' }}>
-                      Authorized {new Date(svc.first_authorized).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-
-                  {/* Revoke */}
-                  <Button
-                    size="small"
-                    startIcon={<LinkOffIcon />}
-                    onClick={() => revokeService(svc.client_id)}
-                    disabled={revoking === svc.client_id}
-                    sx={{
-                      color: 'rgba(255,255,255,0.4)',
-                      textTransform: 'none',
-                      fontSize: '0.8rem',
-                      flexShrink: 0,
-                      '&:hover': { color: '#ef4444', bgcolor: 'rgba(239,68,68,0.08)' },
-                    }}
-                  >
-                    {revoking === svc.client_id ? 'Revoking...' : 'Revoke'}
-                  </Button>
-                </Box>
-              ))}
-            </Box>
-          )}
-        </Box>
-
-        {/* 5. Danger Zone Card */}
+        {/* 4. Danger Zone Card */}
         <Box
           sx={{
             ...cardSx,
