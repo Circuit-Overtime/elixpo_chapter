@@ -64,17 +64,28 @@ function AuthorizeContent() {
       const state = searchParams.get('state');
       const clientId = searchParams.get('client_id');
       const redirectUri = searchParams.get('redirect_uri');
-      const scopes = searchParams.get('scope')?.split(' ') || [];
+      const scope = searchParams.get('scope') || 'openid profile email';
+      const scopes = scope.split(' ').filter(Boolean);
 
       if (!state || !clientId || !redirectUri) {
         setError('Invalid authorization request');
         return;
       }
 
+      // 1. Check if user is logged in
+      const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!meRes.ok) {
+        // Not logged in — redirect to login with ?next= pointing back here
+        const currentUrl = `/authorize?${searchParams.toString()}`;
+        window.location.href = `/login?next=${encodeURIComponent(currentUrl)}`;
+        return;
+      }
+
       try {
+        // 2. Fetch client info (public endpoint, no auth needed)
         const [configRes, clientRes] = await Promise.all([
           fetch('/api/auth/config'),
-          fetch(`/api/auth/oauth-clients/${clientId}?validate_redirect_uri=${encodeURIComponent(redirectUri)}`),
+          fetch(`/api/auth/oauth-clients?client_id=${encodeURIComponent(clientId)}`),
         ]);
 
         if (configRes.ok) {
@@ -89,6 +100,13 @@ function AuthorizeContent() {
         }
 
         const client: any = await clientRes.json();
+
+        // 3. Validate redirect URI is registered
+        const registeredUris: string[] = client.redirect_uris || [];
+        if (!registeredUris.includes(redirectUri)) {
+          setError('Redirect URI is not registered for this application');
+          return;
+        }
 
         setAuthRequest({
           clientId,
