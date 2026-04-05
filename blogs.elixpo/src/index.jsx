@@ -310,10 +310,7 @@ function FeedSkeleton() {
   );
 }
 
-const RECOMMENDED_TOPICS = [
-  'Programming', 'Self Improvement', 'Data Science', 'Writing',
-  'Relationships', 'Technology', 'Design', 'Startups',
-];
+const FIXED_TAGS = ['Tech', 'Finance', 'Sports', 'Entertainment'];
 
 export default function App() {
   const { user } = useAuth();
@@ -327,10 +324,10 @@ export default function App() {
   // Build topic tabs
   const fixedTabs = [
     { label: 'For You', icon: 'sparkles', filter: null },
-    ...(user ? [{ label: 'Following', icon: null, filter: 'following' }] : []),
+    { label: 'Following', icon: null, filter: 'following' },
   ];
-  const interestTabs = (user ? userInterests : popularTags.slice(0, 6)).map(tag => ({ label: tag, icon: null, tag }));
-  const topics = [...fixedTabs, ...interestTabs];
+  const tagTabs = FIXED_TAGS.map(tag => ({ label: tag, icon: null, tag }));
+  const topics = [...fixedTabs, ...tagTabs];
 
   // Fetch feed
   useEffect(() => {
