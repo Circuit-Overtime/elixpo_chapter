@@ -76,7 +76,7 @@ export function SessionProgress({ sessionId, onComplete }: SessionProgressProps)
       <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-text-primary font-[family-name:var(--font-display)]">
+            <h2 className="text-lg font-semibold text-text-primary font-display">
               {state.status === "completed" ? "Rewrite Complete" :
                state.status === "failed" ? "Rewrite Failed" :
                state.status === "interrupted" ? "Session Interrupted" :
@@ -149,7 +149,7 @@ export function SessionProgress({ sessionId, onComplete }: SessionProgressProps)
       {/* Per-paragraph progress */}
       {state.paragraphs.length > 0 && (
         <div className="glass-card p-6">
-          <h3 className="text-sm font-semibold text-text-secondary mb-3 font-[family-name:var(--font-display)]">
+          <h3 className="text-sm font-semibold text-text-secondary mb-3 font-display">
             Paragraphs ({state.paragraphs.filter(p => p.status === "done").length}/{state.paragraphs.length})
           </h3>
           <div className="space-y-2 max-h-80 overflow-y-auto">
@@ -164,7 +164,7 @@ export function SessionProgress({ sessionId, onComplete }: SessionProgressProps)
       {state.status === "completed" && state.result?.rewritten && (
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-text-secondary font-[family-name:var(--font-display)]">Rewritten Text</h3>
+            <h3 className="text-sm font-semibold text-text-secondary font-display">Rewritten Text</h3>
             <button
               onClick={() => navigator.clipboard.writeText(state.result!.rewritten)}
               className="text-xs px-3 py-1 rounded bg-bg-glass text-text-muted border border-border-light hover:bg-bg-glass-hover transition-all"

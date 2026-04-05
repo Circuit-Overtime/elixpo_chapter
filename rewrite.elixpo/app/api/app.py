@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.middleware import RateLimitMiddleware
-from app.api.routes import detect, paraphrase, jobs
+from app.api.routes import detect, paraphrase, jobs, sse
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,6 +38,7 @@ def create_app() -> FastAPI:
     app.include_router(detect.router)
     app.include_router(paraphrase.router)
     app.include_router(jobs.router)
+    app.include_router(sse.router)
 
     # Global error handler
     @app.exception_handler(Exception)

@@ -1,46 +1,52 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg-deep: #0c0f0a;
-  --color-bg-card: rgba(16, 24, 12, 0.8);
-  --color-bg-glass: rgba(255, 255, 255, 0.05);
-  --color-bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --color-bg-deep: #141916;
+  --color-bg-card: rgba(24, 32, 22, 0.7);
+  --color-bg-glass: rgba(255, 255, 255, 0.06);
+  --color-bg-glass-hover: rgba(255, 255, 255, 0.1);
 
   --color-lime: #a3e635;
   --color-lime-light: #bef264;
-  --color-lime-dim: rgba(163, 230, 53, 0.15);
+  --color-lime-dim: rgba(163, 230, 53, 0.12);
   --color-lime-border: rgba(163, 230, 53, 0.3);
-  --color-lime-glow: rgba(163, 230, 53, 0.6);
+  --color-lime-glow: rgba(163, 230, 53, 0.5);
 
   --color-sage: #86efac;
-  --color-sage-dim: rgba(134, 239, 172, 0.15);
+  --color-sage-dim: rgba(134, 239, 172, 0.12);
 
   --color-honey: #fbbf24;
-  --color-honey-dim: rgba(251, 191, 36, 0.15);
+  --color-honey-dim: rgba(251, 191, 36, 0.12);
 
   --color-lavender: #c4b5fd;
-  --color-lavender-dim: rgba(196, 181, 253, 0.15);
+  --color-lavender-dim: rgba(196, 181, 253, 0.12);
 
-  --color-text-primary: #f5f5f4;
-  --color-text-secondary: rgba(245, 245, 244, 0.8);
-  --color-text-muted: rgba(245, 245, 244, 0.7);
-  --color-text-subtle: rgba(255, 255, 255, 0.5);
+  --color-text-primary: #e8e8e6;
+  --color-text-secondary: rgba(232, 232, 230, 0.75);
+  --color-text-muted: rgba(232, 232, 230, 0.55);
+  --color-text-subtle: rgba(255, 255, 255, 0.4);
 
-  --color-border-light: rgba(255, 255, 255, 0.1);
-  --color-border-medium: rgba(255, 255, 255, 0.15);
-  --color-border-hover: rgba(255, 255, 255, 0.3);
+  --color-border-light: rgba(255, 255, 255, 0.08);
+  --color-border-medium: rgba(255, 255, 255, 0.14);
+  --color-border-hover: rgba(255, 255, 255, 0.25);
 
   --color-success: #4ade80;
   --color-warning: #fbbf24;
   --color-error: #f87171;
 
+  --color-editor-bg: #1a1f1c;
+  --color-editor-gutter: #232a26;
+  --color-editor-line: rgba(163, 230, 53, 0.06);
+  --color-editor-selection: rgba(163, 230, 53, 0.15);
+
   --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: "Space Grotesk", "DM Sans", sans-serif;
-  --font-mono: monospace;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
 }
 
 body {
-  background: linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%);
+  background: #141916;
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(163, 230, 53, 0.03) 0%, transparent 60%);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   min-height: 100vh;
@@ -48,15 +54,15 @@ body {
 
 /* Glass card */
 .glass-card {
-  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
-  backdrop-filter: blur(20px);
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--color-border-light);
-  border-radius: 16px;
-  transition: all 0.3s ease;
+  border-radius: 14px;
+  transition: all 0.25s ease;
 }
 .glass-card:hover {
   border-color: var(--color-border-hover);
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
+  box-shadow: 0 12px 32px -8px rgba(0,0,0,0.3);
 }
 
 /* Score colors */
@@ -66,7 +72,7 @@ body {
 
 /* Progress bar */
 .progress-track {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 9999px;
   overflow: hidden;
 }
@@ -77,21 +83,127 @@ body {
   height: 100%;
 }
 
-/* Glow effect */
-.glow-lime {
-  box-shadow: 0 0 20px var(--color-lime-glow);
-}
-
 /* Gradient text */
 .text-gradient {
-  background: linear-gradient(135deg, #f5f5f4 0%, #a3e635 30%, #86efac 60%, #fbbf24 100%);
+  background: linear-gradient(135deg, #e8e8e6 0%, #a3e635 40%, #86efac 70%, #fbbf24 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+/* Code editor area */
+.editor-container {
+  background: var(--color-editor-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+}
+.editor-container:focus-within {
+  border-color: var(--color-lime-border);
+  box-shadow: 0 0 0 2px rgba(163, 230, 53, 0.08);
+}
+
+/* Editor toolbar */
+.editor-toolbar {
+  background: var(--color-editor-gutter);
+  border-bottom: 1px solid var(--color-border-light);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Line numbers gutter */
+.editor-gutter {
+  background: var(--color-editor-gutter);
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  line-height: 1.7;
+  padding: 12px 0;
+  text-align: right;
+  user-select: none;
+  min-width: 44px;
+}
+.editor-gutter span {
+  display: block;
+  padding: 0 10px;
+}
+
+/* Editor textarea */
+.editor-content {
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 12px 16px;
+  resize: none;
+  outline: none;
+  border: none;
+  width: 100%;
+  min-height: 400px;
+  tab-size: 2;
+}
+.editor-content::placeholder {
+  color: var(--color-text-subtle);
+}
+.editor-content::selection {
+  background: var(--color-editor-selection);
+}
+
+/* LaTeX syntax highlights (applied via spans in overlay) */
+.tex-command { color: #a3e635; }
+.tex-brace { color: #fbbf24; }
+.tex-comment { color: rgba(255,255,255,0.3); font-style: italic; }
+.tex-math { color: #c4b5fd; }
+.tex-env { color: #86efac; }
+.tex-section { color: #f9a8d4; font-weight: 600; }
+
+/* Score annotation markers in editor */
+.score-marker {
+  position: absolute;
+  right: 8px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  padding: 1px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.score-marker.high { background: rgba(239,68,68,0.15); color: #f87171; }
+.score-marker.medium { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.score-marker.low { background: rgba(34,197,94,0.15); color: #4ade80; }
+
 /* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* Button base */
+.btn-primary {
+  background: var(--color-lime-dim);
+  color: var(--color-lime);
+  border: 1px solid var(--color-lime-border);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover:not(:disabled) {
+  background: rgba(163, 230, 53, 0.22);
+  border-color: rgba(163, 230, 53, 0.5);
+}
+.btn-primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: var(--color-bg-glass);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-light);
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover {
+  background: var(--color-bg-glass-hover);
+  border-color: var(--color-border-medium);
+}
