@@ -90,7 +90,7 @@ function AuthorizeContent() {
 
         if (configRes.ok) {
           const config = await configRes.json();
-          setTimeRemaining(config.authorizationTimeoutSeconds || 600);
+          setTimeRemaining((config as any).authorizationTimeoutSeconds || 600);
         }
 
         if (!clientRes.ok) {
