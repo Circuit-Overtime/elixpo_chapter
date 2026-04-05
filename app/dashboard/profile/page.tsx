@@ -178,7 +178,7 @@ const ProfilePage = () => {
   // Connected services state
   const [connectedServices, setConnectedServices] = useState<ConnectedService[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
-  const [expandedService, setExpandedService] = useState<string | null>(null);
+  const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
 
   // Email verification state
   const [verifyStep, setVerifyStep] = useState<'idle' | 'sent' | 'verifying'>('idle');
@@ -668,26 +668,28 @@ const ProfilePage = () => {
         </Box>
 
         {/* Connected Services — right column */}
-        <Box sx={cardSx}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Box sx={{ ...cardSx, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexShrink: 0 }}>
             <Box>
               <Typography variant="h6" sx={sectionTitleSx}>
                 <DevicesOtherIcon sx={{ color: '#a3e635', fontSize: '1.2rem' }} />
                 Connected Services
               </Typography>
-              <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mt: 0.25 }}>
-                {connectedServices.length} app{connectedServices.length !== 1 ? 's' : ''} connected
+              <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.78rem', mt: 0.25 }}>
+                Apps you&apos;ve signed in to with Elixpo
               </Typography>
             </Box>
-            <Button
-              component={Link}
-              href="/dashboard/services"
-              size="small"
-              endIcon={<ArrowForwardIcon sx={{ fontSize: '0.85rem !important' }} />}
-              sx={{ color: '#a3e635', textTransform: 'none', fontSize: '0.8rem', '&:hover': { bgcolor: 'rgba(163,230,53,0.08)' } }}
-            >
-              View all
-            </Button>
+            {connectedServices.length > 0 && (
+              <Button
+                component={Link}
+                href="/dashboard/services"
+                size="small"
+                endIcon={<ArrowForwardIcon sx={{ fontSize: '0.8rem !important' }} />}
+                sx={{ color: '#a3e635', textTransform: 'none', fontSize: '0.78rem', flexShrink: 0, '&:hover': { bgcolor: 'rgba(163,230,53,0.08)' } }}
+              >
+                View all
+              </Button>
+            )}
           </Box>
 
           {servicesLoading ? (
@@ -695,71 +697,71 @@ const ProfilePage = () => {
               <CircularProgress size={20} sx={{ color: '#a3e635' }} />
             </Box>
           ) : connectedServices.length === 0 ? (
-            <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', textAlign: 'center', py: 3 }}>
-              No connected services yet
-            </Typography>
+            <Box sx={{ py: 4, textAlign: 'center' }}>
+              <DevicesOtherIcon sx={{ fontSize: '2rem', color: 'rgba(255,255,255,0.1)', mb: 1 }} />
+              <Typography sx={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem' }}>
+                No connected services yet
+              </Typography>
+            </Box>
           ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, overflowY: 'auto', flex: 1, '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 2 } }}>
               {connectedServices.slice(0, 5).map((svc) => {
                 const isExpanded = expandedService === svc.client_id;
                 return (
                   <Box
                     key={svc.client_id}
                     sx={{
-                      borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.025)',
+                      border: '1px solid rgba(255,255,255,0.05)',
                       overflow: 'hidden',
                       transition: 'border-color 0.2s',
-                      '&:hover': { borderColor: 'rgba(255,255,255,0.12)' },
+                      '&:hover': { borderColor: 'rgba(163,230,53,0.15)' },
+                      flexShrink: 0,
                     }}
                   >
-                    {/* Clickable row */}
                     <Box
                       onClick={() => setExpandedService(isExpanded ? null : svc.client_id)}
-                      sx={{
-                        display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5,
-                        cursor: 'pointer', userSelect: 'none',
-                      }}
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1.25, p: 1.25, cursor: 'pointer', userSelect: 'none' }}
                     >
                       <ServiceIconSmall svc={svc} />
                       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                        <Typography sx={{ color: '#f5f5f4', fontWeight: 500, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600, fontSize: '0.82rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {svc.name}
+                        </Typography>
+                        <Typography sx={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.7rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {svc.description || (svc.homepage_url ? (() => { try { return new URL(svc.homepage_url).hostname; } catch { return ''; } })() : 'Connected service')}
                         </Typography>
                       </Box>
                       <ExpandMoreIcon
                         sx={{
-                          fontSize: '1.1rem', color: 'rgba(255,255,255,0.25)',
+                          fontSize: '1rem', color: 'rgba(255,255,255,0.15)',
                           transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)',
-                          transition: 'transform 0.2s',
+                          transition: 'transform 0.2s', flexShrink: 0,
                         }}
                       />
                     </Box>
 
-                    {/* Expanded details */}
                     {isExpanded && (
-                      <Box sx={{ px: 1.5, pb: 1.5, pt: 0, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                      <Box sx={{ px: 1.25, pb: 1.25, pt: 0.5, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                         {svc.description && (
-                          <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', mt: 1, lineHeight: 1.5 }}>
+                          <Typography sx={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem', lineHeight: 1.5, mb: 0.75 }}>
                             {svc.description}
                           </Typography>
                         )}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 1 }}>
-                          {svc.homepage_url && (
-                            <Typography
-                              component="a"
-                              href={svc.homepage_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.72rem', fontFamily: 'monospace', textDecoration: 'none', '&:hover': { color: '#a3e635' } }}
-                            >
-                              {svc.homepage_url}
-                            </Typography>
-                          )}
-                          <Typography sx={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.72rem' }}>
-                            Connected {new Date(svc.first_authorized).toLocaleDateString()} · Last used {new Date(svc.last_authorized).toLocaleDateString()}
+                        {svc.homepage_url && (
+                          <Typography
+                            component="a"
+                            href={svc.homepage_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ color: '#a3e635', fontSize: '0.7rem', fontFamily: 'monospace', textDecoration: 'none', display: 'block', mb: 0.5, opacity: 0.7, '&:hover': { opacity: 1 } }}
+                          >
+                            {svc.homepage_url}
                           </Typography>
-                        </Box>
+                        )}
+                        <Typography sx={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.68rem' }}>
+                          Connected {new Date(svc.first_authorized).toLocaleDateString()} · Last used {new Date(svc.last_authorized).toLocaleDateString()}
+                        </Typography>
                       </Box>
                     )}
                   </Box>
@@ -770,9 +772,9 @@ const ProfilePage = () => {
                   component={Link}
                   href="/dashboard/services"
                   size="small"
-                  sx={{ color: 'rgba(255,255,255,0.4)', textTransform: 'none', fontSize: '0.8rem', mt: 0.5, '&:hover': { color: '#a3e635' } }}
+                  sx={{ color: 'rgba(255,255,255,0.3)', textTransform: 'none', fontSize: '0.75rem', mt: 0.25, flexShrink: 0, '&:hover': { color: '#a3e635' } }}
                 >
-                  +{connectedServices.length - 5} more
+                  +{connectedServices.length - 5} more services
                 </Button>
               )}
             </Box>

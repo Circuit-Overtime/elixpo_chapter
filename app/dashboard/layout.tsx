@@ -14,7 +14,7 @@ import {
   ListItemText,
   Divider,
 } from '@mui/material';
-import { Apps, Person, Webhook, Logout, DevicesOther } from '@mui/icons-material';
+import { Apps, Person, Webhook, Logout, DevicesOther, GitHub } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -162,6 +162,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </IconButton>
               ))}
             </Box>
+
+            {/* GitHub */}
+            <IconButton
+              component="a"
+              href="https://github.com/Circuit-Overtime/elixpo_accounts"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="GitHub"
+              sx={{
+                color: 'rgba(255,255,255,0.35)',
+                width: 38, height: 38, borderRadius: '8px',
+                '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.06)' },
+              }}
+            >
+              <GitHub sx={{ fontSize: '1.2rem' }} />
+            </IconButton>
 
             {/* User Avatar / Menu */}
             <IconButton
