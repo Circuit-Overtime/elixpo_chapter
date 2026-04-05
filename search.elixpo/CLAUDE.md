@@ -120,7 +120,8 @@ User → Cloudflare → nginx:10001 (API key check) → app:9002 → gateway (se
 | `lixsearch/pipeline/tools.py` | Tool definitions (web_search, fetch_full_text, etc.) |
 | `lixsearch/pipeline/instruction.py` | System/user/synthesis prompts |
 | `lixsearch/app/main.py` | Quart app with lifecycle hooks |
-| `lixsearch/app/gateways/` | HTTP handlers: search.py, chat.py, session.py, health.py |
+| `lixsearch/app/gateways/` | HTTP handlers: search.py, chat.py, completions.py, session.py, health.py |
+| `lixsearch/app/gateways/completions.py` | OpenAI-compatible `/v1/chat/completions` (primary Pollinations endpoint) |
 | `lixsearch/ragService/cacheCoordinator.py` | Orchestrates all 3 Redis cache layers |
 | `lixsearch/ragService/semanticCacheRedis.py` | SessionContextWindow, SemanticCacheRedis, URLEmbeddingCache |
 | `lixsearch/sessions/hybrid_conversation_cache.py` | Two-tier Redis hot + disk cold cache |
