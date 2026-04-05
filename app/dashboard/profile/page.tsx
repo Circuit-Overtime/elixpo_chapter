@@ -39,6 +39,12 @@ interface UserProfile {
   avatar?: string | null;
   emailVerified?: boolean;
   displayName?: string | null;
+  bio?: string | null;
+  country?: string | null;
+  city?: string | null;
+  location?: string | null;
+  locale?: string | null;
+  timezone?: string | null;
 }
 
 interface ConnectedService {
@@ -136,6 +142,10 @@ const ProfilePage = () => {
   const [profileError, setProfileError] = useState('');
 
   // Update profile state
+  const [bio, setBio] = useState('');
+  const [country, setCountry] = useState('');
+  const [city, setCity] = useState('');
+  const [location, setLocation] = useState('');
   const [locale, setLocale] = useState('en');
   const [timezone, setTimezone] = useState('UTC');
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -197,6 +207,12 @@ const ProfilePage = () => {
       if (!res.ok) throw new Error('Failed to fetch profile');
       const data: UserProfile = await res.json();
       setProfile(data);
+      if (data.bio) setBio(data.bio);
+      if (data.country) setCountry(data.country);
+      if (data.city) setCity(data.city);
+      if (data.location) setLocation(data.location);
+      if (data.locale) setLocale(data.locale);
+      if (data.timezone) setTimezone(data.timezone);
     } catch (err) {
       setProfileError(err instanceof Error ? err.message : 'Failed to load profile');
     } finally {
@@ -239,7 +255,7 @@ const ProfilePage = () => {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ locale, timezone }),
+        body: JSON.stringify({ locale, timezone, bio, country, city, location }),
       });
       if (!res.ok) {
         const data: any = await res.json();
@@ -769,7 +785,7 @@ const ProfilePage = () => {
             <EditIcon sx={{ color: '#a3e635', fontSize: '1.2rem' }} />
             Update Profile
           </Typography>
-          <Typography sx={sectionSubtitleSx}>Set your locale and timezone preferences</Typography>
+          <Typography sx={sectionSubtitleSx}>Personal info and preferences</Typography>
 
           {updateSuccess && (
             <Alert
@@ -791,30 +807,69 @@ const ProfilePage = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               fullWidth
-              label="Locale"
-              value={locale}
-              onChange={(e) => setLocale(e.target.value)}
-              placeholder="en"
-              helperText="Language/locale code (e.g. en, fr, de)"
-              sx={{
-                ...textFieldSx,
-                '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' },
-              }}
+              label="Bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell us about yourself"
+              multiline
+              rows={2}
+              inputProps={{ maxLength: 256 }}
+              helperText={`${bio.length}/256`}
+              sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.3)', textAlign: 'right' } }}
               disabled={updateLoading}
             />
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="India"
+                sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' } }}
+                disabled={updateLoading}
+              />
+              <TextField
+                fullWidth
+                label="City"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Bangalore"
+                sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' } }}
+                disabled={updateLoading}
+              />
+            </Box>
             <TextField
               fullWidth
-              label="Timezone"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              placeholder="UTC"
-              helperText="IANA timezone (e.g. UTC, America/New_York, Europe/London)"
-              sx={{
-                ...textFieldSx,
-                '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' },
-              }}
+              label="Location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. San Francisco, CA"
+              helperText="Free-form location text"
+              sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' } }}
               disabled={updateLoading}
             />
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Locale"
+                value={locale}
+                onChange={(e) => setLocale(e.target.value)}
+                placeholder="en"
+                helperText="e.g. en, fr, de"
+                sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' } }}
+                disabled={updateLoading}
+              />
+              <TextField
+                fullWidth
+                label="Timezone"
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                placeholder="UTC"
+                helperText="e.g. Asia/Kolkata, America/New_York"
+                sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' } }}
+                disabled={updateLoading}
+              />
+            </Box>
           </Box>
 
           <Box sx={{ mt: 3 }}>
