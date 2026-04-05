@@ -1,6 +1,6 @@
 export const colors = {
     bg: {
-        deep: "#0c0f0a",
+        deep: "#141a16",
         card: "rgba(16, 24, 12, 0.8)",
         cardGlass: "rgba(255,255,255,0.05)",
         cardGlassHover: "rgba(255,255,255,0.08)",
@@ -126,7 +126,7 @@ export const gradients = {
         "linear-gradient(135deg, #f5f5f4 0%, #a3e635 30%, #86efac 60%, #fbbf24 100%)",
     textAccent:
         "linear-gradient(135deg, #a3e635 0%, #86efac 50%, #fbbf24 100%)",
-    bgPage: "linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)",
+    bgPage: "linear-gradient(135deg, #141a16 0%, #0f1410 50%, #141a16 100%)",
     bgCard: "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
     bgOverlay:
         "linear-gradient(135deg, rgba(12, 15, 10, 0.95) 0%, rgba(12, 15, 10, 0.8) 100%)",
