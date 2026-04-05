@@ -174,3 +174,91 @@ export async function resumeSession(sessionId: string): Promise<any> {
 export function getReportUrl(sessionId: string): string {
   return `${API_BASE}/api/session/${sessionId}/report`;
 }
+
+// --- SSE streaming ---
+
+export function streamSession(
+  sessionId: string,
+  onProgress: (data: SessionState) => void,
+  onDone: (data: SessionState) => void,
+  onError: (error: string) => void,
+): () => void {
+  const url = `${API_BASE}/api/session/${sessionId}/stream`;
+  const es = new EventSource(url);
+
+  es.addEventListener("progress", (e) => {
+    const data = JSON.parse((e as MessageEvent).data);
+    onProgress({ session_id: sessionId, ...data });
+  });
+
+  es.addEventListener("done", (e) => {
+    const data = JSON.parse((e as MessageEvent).data);
+    onDone({ session_id: sessionId, ...data });
+    es.close();
+  });
+
+  es.addEventListener("error", (e) => {
+    if (e instanceof MessageEvent) {
+      const data = JSON.parse(e.data);
+      onError(data.error || "Stream error");
+    } else {
+      onError("Connection lost");
+    }
+    es.close();
+  });
+
+  // Return cleanup function
+  return () => es.close();
+}
+
+// --- Auth helpers ---
+
+export function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("rewrite_auth_token");
+}
+
+export function setAuthToken(token: string) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("rewrite_auth_token", token);
+  }
+}
+
+export function clearAuth() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("rewrite_auth_token");
+    localStorage.removeItem("rewrite_user_id");
+    localStorage.removeItem("rewrite_user");
+  }
+}
+
+export function getStoredUser(): { id: string; email: string; displayName: string } | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem("rewrite_user");
+  return raw ? JSON.parse(raw) : null;
+}
+
+export function setStoredUser(user: { id: string; email: string; displayName: string }) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("rewrite_user", JSON.stringify(user));
+  }
+}
+
+export function isLoggedIn(): boolean {
+  return getAuthToken() !== null;
+}
+
+// --- Guest usage tracking ---
+
+export function getGuestUsageToday(): number {
+  if (typeof window === "undefined") return 0;
+  const key = `rewrite_guest_usage_${new Date().toISOString().slice(0, 10)}`;
+  return parseInt(localStorage.getItem(key) || "0");
+}
+
+export function incrementGuestUsage() {
+  if (typeof window === "undefined") return;
+  const key = `rewrite_guest_usage_${new Date().toISOString().slice(0, 10)}`;
+  const current = parseInt(localStorage.getItem(key) || "0");
+  localStorage.setItem(key, String(current + 1));
+}
