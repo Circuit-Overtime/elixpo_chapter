@@ -23,6 +23,8 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import LinkOffIcon from '@mui/icons-material/LinkOff';
+import AppsIcon from '@mui/icons-material/Apps';
 import { useRouter } from 'next/navigation';
 
 interface UserProfile {
@@ -33,6 +35,16 @@ interface UserProfile {
   avatar?: string | null;
   emailVerified?: boolean;
   displayName?: string | null;
+}
+
+interface ConnectedService {
+  client_id: string;
+  name: string;
+  description?: string;
+  homepage_url?: string;
+  logo_url?: string;
+  first_authorized: string;
+  last_authorized: string;
 }
 
 interface NotificationPreferences {
@@ -125,6 +137,11 @@ const ProfilePage = () => {
   const [nameLoading, setNameLoading] = useState(false);
   const [nameMsg, setNameMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
+  // Connected services state
+  const [connectedServices, setConnectedServices] = useState<ConnectedService[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [revoking, setRevoking] = useState<string | null>(null);
+
   // Email verification state
   const [verifyStep, setVerifyStep] = useState<'idle' | 'sent' | 'verifying'>('idle');
   const [verifyCode, setVerifyCode] = useState('');
@@ -142,6 +159,7 @@ const ProfilePage = () => {
   useEffect(() => {
     fetchProfile();
     fetchNotifPrefs();
+    fetchConnectedServices();
   }, []);
 
   const fetchProfile = async () => {
