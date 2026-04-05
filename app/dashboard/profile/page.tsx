@@ -24,6 +24,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface UserProfile {
   email: string;
@@ -799,7 +800,39 @@ const ProfilePage = () => {
           )}
         </Box>
 
-        {/* 4. Danger Zone Card */}
+        {/* 4. Connected Services Link */}
+        <Box
+          sx={{
+            ...cardSx,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Box>
+            <Typography sx={{ color: '#f5f5f4', fontWeight: 600, fontSize: '0.95rem' }}>
+              Connected Services
+            </Typography>
+            <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
+              See which apps have access to your Elixpo account
+            </Typography>
+          </Box>
+          <Button
+            component={Link}
+            href="/dashboard/services"
+            sx={{
+              color: '#a3e635',
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              '&:hover': { bgcolor: 'rgba(163,230,53,0.08)' },
+            }}
+          >
+            View services
+          </Button>
+        </Box>
+
+        {/* 5. Danger Zone Card */}
         <Box
           sx={{
             ...cardSx,
