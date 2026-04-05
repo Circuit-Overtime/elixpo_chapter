@@ -215,8 +215,8 @@ const OAuthAppsPage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)', p: 3 }}>
-      <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
+    <Box>
+      <Box>
         {/* Header */}
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>

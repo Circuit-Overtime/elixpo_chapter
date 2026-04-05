@@ -332,7 +332,7 @@ const ProfilePage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', background: '#0f0f0f', p: 3 }}>
+    <Box>
       <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
         {/* Page Header */}
         <Box sx={{ mb: 4 }}>

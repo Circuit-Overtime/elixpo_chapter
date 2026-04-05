@@ -206,7 +206,7 @@ export default function WebhooksPage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', background: '#0f0f0f', p: 3 }}>
+    <Box>
       <Box sx={{ maxWidth: '1100px', mx: 'auto' }}>
         {/* Header */}
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
