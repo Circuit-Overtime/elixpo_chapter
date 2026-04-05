@@ -1,3 +1,4 @@
+'use client';
 import '../styles/intro/introStyle.css';
 
 export default function IntroPage() {

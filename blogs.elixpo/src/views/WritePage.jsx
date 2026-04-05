@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -10,6 +10,7 @@ import '@blocknote/mantine/style.css';
 import '../styles/editor/editor.css';
 import { compressCoverImage } from '../utils/compressImage';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
+import { useCollaboration } from '../hooks/useCollaboration';
 
 function AvatarImg({ src, name, size = 32 }) {
   const [failed, setFailed] = useState(false);
@@ -215,6 +216,99 @@ function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTop
   );
 }
 
+// ── Editor Outline with slider (matches preview TOC style) ──
+function EditorOutline({ editorContent }) {
+  const [activeId, setActiveId] = useState('');
+  const listRef = useRef(null);
+  const itemRefs = useRef({});
+  const [sliderStyle, setSliderStyle] = useState({ top: 0, height: 16 });
+
+  const blocks = useMemo(() => {
+    if (Array.isArray(editorContent)) return editorContent;
+    try { return JSON.parse(editorContent); } catch { return []; }
+  }, [editorContent]);
+
+  const headings = useMemo(() => {
+    return blocks
+      .filter((b) => b.type === 'heading' && b.content?.length > 0)
+      .map((h) => {
+        const level = parseInt(h.props?.level || '1', 10);
+        const text = h.content.map((c) => c.text || '').join('');
+        return { id: h.id, level, text: text.trim() };
+      })
+      .filter((h) => h.text);
+  }, [blocks]);
+
+  // Scroll spy — track which heading is in view
+  useEffect(() => {
+    if (headings.length === 0) return;
+    const onScroll = () => {
+      const scrollY = window.scrollY + 150;
+      let current = headings[0]?.id || '';
+      for (const h of headings) {
+        const el = document.querySelector(`[data-id="${h.id}"]`);
+        if (el && el.offsetTop <= scrollY) current = h.id;
+      }
+      setActiveId(current);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [headings]);
+
+  // Update slider position
+  useEffect(() => {
+    if (!activeId || !listRef.current) return;
+    const item = itemRefs.current[activeId];
+    if (!item) return;
+    const listRect = listRef.current.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    setSliderStyle({ top: itemRect.top - listRect.top, height: itemRect.height });
+  }, [activeId]);
+
+  if (headings.length === 0) return null;
+
+  return (
+    <div className="editor-outline-sidebar">
+      <p className="editor-outline-title">Outline</p>
+      <div className="relative flex">
+        {/* Track line + slider */}
+        <div className="relative mr-3 flex-shrink-0" style={{ width: '2px' }}>
+          <div className="absolute inset-0 rounded-full" style={{ backgroundColor: 'var(--border-default)' }} />
+          <div
+            className="absolute left-0 w-full rounded-full transition-all duration-300 ease-out"
+            style={{ backgroundColor: '#9b7bf7', top: sliderStyle.top, height: sliderStyle.height }}
+          />
+        </div>
+        <ul className="editor-outline-list flex-1" ref={listRef}>
+          {headings.map((h) => (
+            <li
+              key={h.id}
+              ref={(el) => { itemRefs.current[h.id] = el; }}
+              className="editor-outline-item"
+              style={{ paddingLeft: `${(h.level - 1) * 12}px` }}
+              onClick={() => {
+                const el = document.querySelector(`[data-id="${h.id}"]`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+            >
+              <span
+                className="editor-outline-text"
+                style={{
+                  color: h.id === activeId ? 'var(--text-primary)' : undefined,
+                  fontWeight: h.id === activeId ? '600' : undefined,
+                }}
+              >
+                {h.text}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 // ── Main WritePage ──
 export default function WritePage({ slugid }) {
   const { user, logout } = useAuth();
@@ -223,7 +317,6 @@ export default function WritePage({ slugid }) {
   const [mode, setMode] = useState('edit');
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
-  const [coverImage, setCoverImage] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
   const [publishAs, setPublishAs] = useState('personal');
   const [tags, setTags] = useState([]);
@@ -267,8 +360,31 @@ export default function WritePage({ slugid }) {
   const [collaborators, setCollaborators] = useState([]);
   const [inviteError, setInviteError] = useState('');
   const ownerDropdownRef = useRef(null);
+  const [collabLock, setCollabLock] = useState(null); // { lockedBy, expiresIn } when someone else is editing
+  const [collabLockDismissed, setCollabLockDismissed] = useState(false);
 
   const username = user?.username || 'you';
+
+  // Real-time collaboration (enabled when blog has co-authors)
+  const hasCollaborators = collaborators.length > 0;
+  const { collaboration: collabConfig, isConnected: collabConnected, connectedUsers, error: collabError, needsSeed, clearSeed } = useCollaboration({
+    blogId: slugid,
+    user,
+    enabled: hasCollaborators,
+  });
+
+  // Check collab status / lock on mount when collaborators exist
+  useEffect(() => {
+    if (!slugid || !hasCollaborators) return;
+    fetch(`/api/collab/status?blogId=${slugid}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.isLocked && d.lockedBy) {
+          setCollabLock({ lockedBy: d.lockedBy, expiresIn: 300 });
+        }
+      })
+      .catch(() => {});
+  }, [slugid, hasCollaborators]);
 
   // Refs to always hold latest draft data (avoids stale closures in intervals/beforeunload)
   const draftDataRef = useRef({ title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji });
@@ -416,11 +532,10 @@ export default function WritePage({ slugid }) {
 
   const handleCoverSelect = (dataUrl) => {
     setCoverPreview(dataUrl);
-    fetch(dataUrl).then(r => r.blob()).then(blob => setCoverImage(blob));
+    fetch(dataUrl).then(r => r.blob()).then(blob => uploadCover(blob));
   };
 
   const removeCover = () => {
-    setCoverImage(null);
     setCoverPreview(null);
   };
 
@@ -530,6 +645,27 @@ export default function WritePage({ slugid }) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showOwnerDropdown]);
 
+  // Upload cover image blob to Cloudinary → set coverPreview to permanent URL
+  const uploadCover = useCallback(async (blob) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', blob, `cover_${slugid}.webp`);
+      formData.append('type', 'cover');
+      if (slugid) formData.append('blogId', slugid);
+      const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          setCoverPreview(data.url);
+          return data.url;
+        }
+      }
+    } catch (err) {
+      console.error('Cover upload failed:', err);
+    }
+    return null;
+  }, [slugid]);
+
   const handleSaveDraft = async () => {
     saveDraft(slugid, { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji });
     setLastSaved(Date.now());
@@ -545,7 +681,7 @@ export default function WritePage({ slugid }) {
       const res = await fetch('/api/blogs/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, status: targetStatus, lastKnownUpdatedAt }),
+        body: JSON.stringify({ slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl: coverPreview, status: targetStatus, lastKnownUpdatedAt }),
       });
 
       if (res.status === 409) {
@@ -909,10 +1045,12 @@ export default function WritePage({ slugid }) {
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                  setCoverImage(file);
-                                  setCoverPreview(URL.createObjectURL(file));
-                                  setCoverZoom(1);
-                                  setCoverPos({ x: 50, y: 50 });
+                                  compressCoverImage(file).then(({ blob, url }) => {
+                                    setCoverPreview(url);
+                                    setCoverZoom(1);
+                                    setCoverPos({ x: 50, y: 50 });
+                                    uploadCover(blob);
+                                  });
                                 }
                               }}
                             />
@@ -954,9 +1092,9 @@ export default function WritePage({ slugid }) {
                                 const file = e.target.files?.[0];
                                 if (file) {
                                   compressCoverImage(file).then(({ blob, url }) => {
-                                    setCoverImage(blob);
                                     setCoverPreview(url);
                                     setShowCoverModal(false);
+                                    uploadCover(blob);
                                   });
                                 }
                               }}
@@ -1003,9 +1141,9 @@ export default function WritePage({ slugid }) {
                               canvas.toBlob((blob) => {
                                 if (blob) {
                                   const url = URL.createObjectURL(blob);
-                                  setCoverImage(blob);
                                   setCoverPreview(url);
                                   setShowCoverModal(false);
+                                  uploadCover(blob);
                                 }
                               }, 'image/webp', 0.85);
                             }}
@@ -1030,7 +1168,8 @@ export default function WritePage({ slugid }) {
                                 onChange={(e) => setCoverUrlInput(e.target.value)}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter' && coverUrlInput.trim()) {
-                                    setCoverPreview(coverUrlInput.trim());
+                                    const url = coverUrlInput.trim();
+                                    setCoverPreview(url);
                                     setShowCoverModal(false);
                                     setCoverUrlMode(false);
                                     setCoverUrlInput('');
@@ -1043,7 +1182,8 @@ export default function WritePage({ slugid }) {
                               <button
                                 onClick={() => {
                                   if (coverUrlInput.trim()) {
-                                    setCoverPreview(coverUrlInput.trim());
+                                    const url = coverUrlInput.trim();
+                                    setCoverPreview(url);
                                     setShowCoverModal(false);
                                     setCoverUrlMode(false);
                                     setCoverUrlInput('');
@@ -1192,6 +1332,54 @@ export default function WritePage({ slugid }) {
                     )}
                   </div>
 
+                  {/* Collab lock warning — someone else was editing */}
+                  {collabLock && !collabLockDismissed && (
+                    <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                      <ion-icon name="warning-outline" style={{ fontSize: '16px', color: '#f59e0b' }} />
+                      <span className="text-[12px] text-[var(--text-muted)] flex-1">
+                        <strong>{collabLock.lockedBy?.displayName || collabLock.lockedBy?.username || 'Someone'}</strong> was recently editing this blog. Your changes will sync in real-time.
+                      </span>
+                      <button
+                        onClick={() => setCollabLockDismissed(true)}
+                        className="text-[11px] px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors"
+                      >
+                        Got it
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Collab error toast */}
+                  {collabError && (
+                    <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                      <ion-icon name="alert-circle-outline" style={{ fontSize: '16px', color: '#ef4444' }} />
+                      <span className="text-[12px] text-red-400 flex-1">
+                        Collaboration failed to connect: {collabError}. Editing locally.
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Collab presence banner */}
+                  {collabConnected && connectedUsers.length > 1 && (
+                    <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-[var(--accent-subtle)] border border-[var(--accent)]/20">
+                      <div className="flex -space-x-1.5">
+                        {connectedUsers.slice(0, 5).map((u, i) => (
+                          <div
+                            key={u.id || i}
+                            className="w-6 h-6 rounded-full border-2 border-[var(--bg-app)] flex items-center justify-center text-[10px] font-bold text-white"
+                            style={{ backgroundColor: u.color || '#9b7bf7' }}
+                            title={u.name}
+                          >
+                            {(u.name || '?')[0].toUpperCase()}
+                          </div>
+                        ))}
+                      </div>
+                      <span className="text-[12px] text-[var(--text-muted)]">
+                        {connectedUsers.length} {connectedUsers.length === 1 ? 'person' : 'people'} editing
+                      </span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                    </div>
+                  )}
+
                   <div className="min-h-[60vh] pb-[100px] relative">
                     <BlockNoteEditor
                       ref={editorRef}
@@ -1200,42 +1388,11 @@ export default function WritePage({ slugid }) {
                       onReady={() => setEditorReady(true)}
                       onTitleChange={(newTitle) => { setTitle(newTitle); setAiTitleKey(k => k + 1); }}
                       blogId={slugid}
+                      collaboration={collabConfig}
+                      onCollabSeeded={needsSeed ? clearSeed : undefined}
                     />
-                    {/* Outline sidebar — shows heading positions */}
-                    {editorContent && (() => {
-                      const blocks = Array.isArray(editorContent) ? editorContent : (() => { try { return JSON.parse(editorContent); } catch { return []; } })();
-                      if (!blocks.length) return null;
-                      const headings = blocks.filter(
-                        (b) => b.type === 'heading' && b.content?.length > 0
-                      );
-                      if (headings.length === 0) return null;
-                      return (
-                        <div className="editor-outline-sidebar">
-                          <p className="editor-outline-title">Outline</p>
-                          <ul className="editor-outline-list">
-                            {headings.map((h, i) => {
-                              const level = parseInt(h.props?.level || '1', 10);
-                              const text = h.content.map((c) => c.text || '').join('');
-                              if (!text.trim()) return null;
-                              return (
-                                <li
-                                  key={h.id || i}
-                                  className="editor-outline-item"
-                                  style={{ paddingLeft: `${(level - 1) * 12}px` }}
-                                  onClick={() => {
-                                    const el = document.querySelector(`[data-id="${h.id}"]`);
-                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                  }}
-                                >
-                                  <span className="editor-outline-dot" style={{ opacity: level === 1 ? 1 : level === 2 ? 0.7 : 0.4 }} />
-                                  <span className="editor-outline-text">{text}</span>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      );
-                    })()}
+                    {/* Outline sidebar — shows heading positions with slider */}
+                    {editorContent && <EditorOutline editorContent={editorContent} />}
                   </div>
                 </>
                 </div>

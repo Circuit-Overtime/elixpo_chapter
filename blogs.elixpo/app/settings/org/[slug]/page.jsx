@@ -1,9 +1,7 @@
-'use client';
+export const runtime = 'edge';
 
-import { use } from 'react';
-import OrgManagePage from '../../../../src/pages/settings/OrgManagePage';
+import OrgSettingsClient from './client';
 
 export default function OrgSettings({ params }) {
-  const { slug } = use(params);
-  return <OrgManagePage slug={slug} />;
+  return <OrgSettingsClient params={params} />;
 }

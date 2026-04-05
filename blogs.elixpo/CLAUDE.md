@@ -31,7 +31,7 @@ No test or lint commands are configured.
 
 - `app/` — Next.js App Router: pages, layouts, API routes
 - `src/components/` — React components, especially `Editor/` (BlockNote editor with 20+ files)
-- `src/pages/` — Page-level components imported by `app/` pages (migration artifact from Vite)
+- `src/views/` — Page-level components imported by `app/` pages (migration artifact from Vite)
 - `src/context/AuthContext.jsx` — Auth state via React Context (no Redux/Zustand)
 - `src/ai/` — Client-side AI module: `agent.js` (lixsearch SSE streaming + session management), `prompts.js` (system prompts)
 - `src/styles/` — CSS files organized by feature
@@ -40,7 +40,7 @@ No test or lint commands are configured.
 
 ### Key Patterns
 
-**App Router pages are thin wrappers** — they import full page components from `src/pages/`. Example: `app/new-blog/page.jsx` renders `src/pages/WritePage.jsx`.
+**App Router pages are thin wrappers** — they import full page components from `src/views/`. Example: `app/new-blog/page.jsx` renders `src/views/WritePage.jsx`.
 
 **Auth flow**: OAuth redirect → `/api/auth/callback` exchanges code for tokens, upserts user in D1, sets session cookie → new users go to `/intro`, returning users to `/`. Middleware protects `/settings`, `/new-blog`, `/intro`.
 

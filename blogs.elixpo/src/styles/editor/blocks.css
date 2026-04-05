@@ -528,38 +528,23 @@
 }
 
 .editor-outline-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 8px 3px 12px;
+  display: block;
+  padding: 3px 0;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.15s;
-}
-
-.editor-outline-item:hover {
-  background: rgba(155, 123, 247, 0.08);
-}
-
-.editor-outline-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #9b7bf7;
-  flex-shrink: 0;
+  transition: color 0.15s;
 }
 
 .editor-outline-text {
   font-size: 13px;
   color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: color 0.15s;
+  text-decoration: none;
+  display: block;
+  line-height: 1.4;
+  transition: color 0.15s, font-weight 0.15s;
 }
 
 .editor-outline-item:hover .editor-outline-text {
-  color: #c4b5fd;
+  color: var(--accent);
 }
 
 /* Hide on smaller screens where there's no room */

@@ -1,9 +1,11 @@
+'use client';
+import { useEffect } from 'react';
 import '../styles/community/trending.css'
 import AuthorAttribution from '@/components/AuthorAttribution'
 
 export default function FeedPage() {
+    useEffect(() => { document.title = "LixBlogs - Feed"; }, []);
     return (
-        document.title = "LixBlogs - Feed",
         <div className="container absolute flex flex-col h-full max-w-[2560px] bg-[var(--bg-base)] box-border">
             <section className="w-full h-[60px]">
                 <div className="relative top-0 left-0 w-full h-[60px] border-b-2 border-[#1D202A] flex items-center bg-[var(--bg-base)] z-[1000]">

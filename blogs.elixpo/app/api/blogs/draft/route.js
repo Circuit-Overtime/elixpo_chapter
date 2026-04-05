@@ -68,7 +68,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji } = body;
+  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverPreview } = body;
 
   if (!slugid) {
     return NextResponse.json({ error: 'Missing slugid' }, { status: 400 });
@@ -102,22 +102,22 @@ export async function POST(request) {
       if (!canEdit) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
       await db.prepare(`
         UPDATE blogs SET title = ?, subtitle = ?, content = ?, published_as = ?,
-          page_emoji = ?, updated_at = ?
+          page_emoji = ?, cover_image_r2_key = ?, updated_at = ?
         WHERE id = ?
       `).bind(
         title || '', subtitle || '', compressedContent, publishAs || 'personal',
-        pageEmoji || '', now, slugid
+        pageEmoji || '', coverPreview || '', now, slugid
       ).run();
     } else {
       const { ensureUniqueBlogSlug } = await import('../../../../lib/namespace');
       const baseSlug = generateSlug(title);
       const slug = await ensureUniqueBlogSlug(db, baseSlug, slugid);
       await db.prepare(`
-        INSERT INTO blogs (id, slug, title, subtitle, content, author_id, published_as, status, page_emoji, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)
+        INSERT INTO blogs (id, slug, title, subtitle, content, author_id, published_as, status, page_emoji, cover_image_r2_key, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)
       `).bind(
         slugid, slug, title || '', subtitle || '', compressedContent,
-        session.userId, publishAs || 'personal', pageEmoji || '', now, now
+        session.userId, publishAs || 'personal', pageEmoji || '', coverPreview || '', now, now
       ).run();
     }
 

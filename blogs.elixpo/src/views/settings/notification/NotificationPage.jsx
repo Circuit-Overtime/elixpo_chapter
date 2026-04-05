@@ -1,3 +1,5 @@
+'use client';
+
 export default function NotificationPage() {
     return (
         <div className="container absolute flex flex-col h-full max-w-[2560px] bg-[#030712] box-border">

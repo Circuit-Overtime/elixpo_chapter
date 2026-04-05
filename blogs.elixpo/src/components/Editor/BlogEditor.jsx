@@ -454,7 +454,7 @@ function doSanitize(blocks) {
   return result;
 }
 
-const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId }, ref) {
+const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, collaboration, onCollabSeeded }, ref) {
   const { isDark } = useTheme();
   const [showMentionMenu, setShowMentionMenu] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
@@ -483,7 +483,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
   const editor = useCreateBlockNote({
     schema,
-    initialContent: sanitizedContent || undefined,
+    // When in collab mode, Yjs doc is the source of truth — no initialContent
+    ...(collaboration ? { collaboration } : { initialContent: sanitizedContent || undefined }),
     domAttributes: {
       editor: { class: 'blog-editor' },
     },
@@ -491,6 +492,24 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       default: "Press 'Space' for AI, type '/' for commands",
     },
   });
+
+  // Seed Yjs doc from existing content when collab starts on a blog that already has content
+  useEffect(() => {
+    if (!collaboration || !onCollabSeeded || !initialContent) return;
+    // Check if the Yjs fragment is empty (first collab session for this blog)
+    const fragment = collaboration.fragment;
+    if (fragment && fragment.length === 0 && Array.isArray(initialContent) && initialContent.length > 0) {
+      const sanitized = sanitizeInitialContent(initialContent);
+      if (sanitized && sanitized.length > 0) {
+        try {
+          editor.replaceBlocks(editor.document, sanitized);
+        } catch (e) {
+          console.error('Failed to seed collab doc:', e);
+        }
+      }
+      onCollabSeeded();
+    }
+  }, [collaboration, onCollabSeeded]);
 
   // Build HTML that includes custom blocks (equations, mermaid)
   const getCustomHTML = useCallback(async () => {

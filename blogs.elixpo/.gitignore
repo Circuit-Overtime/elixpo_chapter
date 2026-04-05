@@ -9,3 +9,6 @@ out/
 dist/
 .wrangler/
 wrangler.toml
+.vercel
+output/
+build/
