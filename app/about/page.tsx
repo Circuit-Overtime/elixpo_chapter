@@ -136,7 +136,7 @@ export default function AboutPage() {
           </Box>
           <Box
             component="a"
-            href="https://github.com/Circuit-Overtime/elixpo_accounts"
+            href="https://github.com/elixpo/elixpoaccounts"
             target="_blank"
             rel="noopener noreferrer"
             sx={{

@@ -166,7 +166,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* GitHub */}
             <IconButton
               component="a"
-              href="https://github.com/Circuit-Overtime/elixpo_accounts"
+              href="https://github.com/elixpo/elixpoaccounts"
               target="_blank"
               rel="noopener noreferrer"
               title="GitHub"
