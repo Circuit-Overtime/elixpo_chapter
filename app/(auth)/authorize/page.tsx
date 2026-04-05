@@ -176,7 +176,7 @@ function AuthorizeContent() {
   // --- Error state ---
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)', padding: 16 }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)', padding: 16 }}>
         <div style={{ maxWidth: 380, width: '100%', textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 16, padding: 32 }}>
           <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 24 }}>!</div>
           <p style={{ color: '#f87171', fontWeight: 600, fontSize: 16, marginBottom: 8 }}>Authorization Error</p>
@@ -195,7 +195,7 @@ function AuthorizeContent() {
   // --- Loading state ---
   if (!authRequest) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ width: 36, height: 36, border: '3px solid rgba(163,230,53,0.2)', borderTopColor: '#a3e635', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Loading...</p>
@@ -209,7 +209,7 @@ function AuthorizeContent() {
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)', padding: 16,
+      background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)', padding: 16,
     }}>
       <div style={{ maxWidth: 420, width: '100%' }}>
         {/* Main Card */}

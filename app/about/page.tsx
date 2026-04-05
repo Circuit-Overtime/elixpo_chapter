@@ -39,7 +39,7 @@ const features = [
 
 export default function AboutPage() {
   return (
-    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)' }}>
+    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)' }}>
       {/* Hero */}
       <Box sx={{ maxWidth: '900px', mx: 'auto', px: 3, pt: 10, pb: 8, textAlign: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 3 }}>
@@ -60,7 +60,7 @@ export default function AboutPage() {
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 4 }}>
           <Box
             component={Link}
-            href="/register"
+            href="/login"
             sx={{
               px: 3, py: 1.5, borderRadius: '10px',
               background: 'rgba(163, 230, 53, 0.15)',
@@ -71,21 +71,7 @@ export default function AboutPage() {
               '&:hover': { background: 'rgba(163, 230, 53, 0.25)', borderColor: 'rgba(163, 230, 53, 0.5)' },
             }}
           >
-            Create Account
-          </Box>
-          <Box
-            component={Link}
-            href="/login"
-            sx={{
-              px: 3, py: 1.5, borderRadius: '10px',
-              color: 'rgba(255,255,255,0.6)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              fontWeight: 500, fontSize: '0.95rem', textDecoration: 'none',
-              transition: 'all 0.2s',
-              '&:hover': { borderColor: 'rgba(255,255,255,0.25)', color: '#fff' },
-            }}
-          >
-            Sign In
+            Get Started
           </Box>
         </Box>
       </Box>

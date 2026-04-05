@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   if (!authChecked) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#0c0f0a' }}>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#141a16' }}>
         <CircularProgress sx={{ color: '#a3e635' }} />
       </Box>
     );
@@ -88,13 +88,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <Box sx={{ minHeight: '100vh', bgcolor: '#0c0f0a' }}>
+      <Box sx={{ minHeight: '100vh', bgcolor: '#141a16' }}>
         {/* Top Navbar */}
         <AppBar
           position="sticky"
           elevation={0}
           sx={{
-            bgcolor: 'rgba(12, 15, 10, 0.85)',
+            bgcolor: 'rgba(20, 26, 22, 0.9)',
             backdropFilter: 'blur(16px)',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           }}
@@ -208,7 +208,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     justifyContent: 'center',
                     fontSize: '0.95rem',
                     fontWeight: 700,
-                    color: '#0f0f0f',
+                    color: '#161816',
                   }}
                 >
                   {(displayName || userEmail)?.charAt(0).toUpperCase() || 'E'}

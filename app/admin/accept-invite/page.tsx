@@ -80,7 +80,7 @@ function AcceptInviteContent() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)',
+        background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)',
         p: 2,
       }}
     >
@@ -161,7 +161,7 @@ export default function AcceptInvitePage() {
   return (
     <Suspense
       fallback={
-        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#0c0f0a' }}>
+        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#141a16' }}>
           <CircularProgress sx={{ color: '#a3e635' }} />
         </Box>
       }

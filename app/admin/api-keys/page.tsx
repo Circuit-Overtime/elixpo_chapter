@@ -272,7 +272,7 @@ export default function ApiKeysPage() {
               display: 'flex',
               gap: 1,
               alignItems: 'center',
-              backgroundColor: '#1a1a1a',
+              backgroundColor: '#1e2420',
               p: 1.5,
               borderRadius: 1,
               fontFamily: 'monospace',
@@ -300,7 +300,7 @@ export default function ApiKeysPage() {
         </Alert>
       )}
 
-      <TableContainer component={Paper} sx={{ backgroundColor: '#1a1a1a' }}>
+      <TableContainer component={Paper} sx={{ backgroundColor: '#1e2420' }}>
         <Table>
           <TableHead>
             <TableRow>
@@ -333,7 +333,7 @@ export default function ApiKeysPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <code style={{ backgroundColor: '#0f0f0f', padding: '2px 6px', borderRadius: '4px' }}>
+                    <code style={{ backgroundColor: '#161816', padding: '2px 6px', borderRadius: '4px' }}>
                       {key.prefix}...
                     </code>
                   </TableCell>

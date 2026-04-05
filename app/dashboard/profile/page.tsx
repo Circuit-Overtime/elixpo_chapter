@@ -457,7 +457,7 @@ const ProfilePage = () => {
                     sx={{ width: 48, height: 48, borderRadius: '50%', border: '2px solid rgba(163,230,53,0.3)' }}
                   />
                 ) : (
-                  <Box sx={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #a3e635 0%, #65a30d 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', fontWeight: 700, color: '#0f0f0f' }}>
+                  <Box sx={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #a3e635 0%, #65a30d 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', fontWeight: 700, color: '#161816' }}>
                     {(profile.displayName || profile.email)?.charAt(0).toUpperCase()}
                   </Box>
                 )}

@@ -159,7 +159,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#0f0f0f' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#161816' }}>
       {/* Sidebar */}
       <Drawer
         variant="permanent"
@@ -169,7 +169,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
             boxSizing: 'border-box',
-            bgcolor: '#1a1a1a',
+            bgcolor: '#1e2420',
             borderRight: '1px solid #333',
             color: '#e5e7eb',
           },
@@ -217,7 +217,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
         </Box>
 
         {/* Admin Label */}
-        <Box sx={{ p: 2, bgcolor: '#111', borderBottom: '1px solid #333' }}>
+        <Box sx={{ p: 2, bgcolor: '#1a201c', borderBottom: '1px solid #333' }}>
           <Typography
             variant="caption"
             sx={{
@@ -288,7 +288,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
           sx={{
             p: 2,
             borderTop: '1px solid #333',
-            bgcolor: '#111',
+            bgcolor: '#1a201c',
           }}
         >
           <Typography
@@ -306,14 +306,14 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
           flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',
-          bgcolor: '#0f0f0f',
+          bgcolor: '#161816',
         }}
       >
         {/* Top Bar */}
         <AppBar
           position="static"
           sx={{
-            bgcolor: '#1a1a1a',
+            bgcolor: '#1e2420',
             borderBottom: '1px solid #333',
             boxShadow: 'none',
           }}
@@ -356,7 +356,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
               slotProps={{
                 paper: {
                   sx: {
-                    bgcolor: '#1a1a1a',
+                    bgcolor: '#1e2420',
                     border: '1px solid #333',
                     width: 360,
                     maxHeight: 480,
@@ -525,7 +525,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
                 slotProps={{
                   paper: {
                     sx: {
-                      bgcolor: '#1a1a1a',
+                      bgcolor: '#1e2420',
                       border: '1px solid #333',
                       '& .MuiMenuItem-root': {
                         color: '#e5e7eb',
@@ -537,7 +537,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
               >
                 <MenuItem>Profile</MenuItem>
                 <MenuItem component={Link} href="/admin/settings">Settings</MenuItem>
-                <Divider sx={{ bgcolor: '#333' }} />
+                <Divider sx={{ bgcolor: '#3a4a3e' }} />
                 <MenuItem onClick={handleLogout} sx={{ color: '#ef4444 !important' }}>
                   <Logout fontSize="small" sx={{ mr: 1 }} />
                   Logout
