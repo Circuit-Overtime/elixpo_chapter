@@ -138,7 +138,7 @@ export default function AppsPage() {
         </Typography>
       </Box>
 
-      <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
+      <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
         <CardContent>
           <TextField
             placeholder="Search apps or owner email..."
@@ -156,7 +156,7 @@ export default function AppsPage() {
             sx={{
               '& .MuiOutlinedInput-root': {
                 color: '#e5e7eb',
-                '& fieldset': { borderColor: '#333' },
+                '& fieldset': { borderColor: '#3a4a3e' },
                 '&:hover fieldset': { borderColor: '#22c55e' },
               },
               '& .MuiOutlinedInput-input::placeholder': { color: '#6b7280', opacity: 1 },
@@ -165,7 +165,7 @@ export default function AppsPage() {
         </CardContent>
       </Card>
 
-      <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden' }}>
+      <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden' }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
             <CircularProgress sx={{ color: '#22c55e' }} />
@@ -174,7 +174,7 @@ export default function AppsPage() {
           <Box sx={{ overflowX: 'auto' }}>
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: '#111', borderBottom: '1px solid #333' }}>
+                <TableRow sx={{ bgcolor: '#1a201c', borderBottom: '1px solid #333' }}>
                   <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Application Name</TableCell>
                   <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Owner</TableCell>
                   <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Status</TableCell>
@@ -242,7 +242,7 @@ export default function AppsPage() {
         slotProps={{
           paper: {
             sx: {
-              bgcolor: '#1a1a1a',
+              bgcolor: '#1e2420',
               border: '1px solid #333',
               '& .MuiMenuItem-root': { color: '#e5e7eb', fontSize: '0.9rem', '&:hover': { bgcolor: 'rgba(34, 197, 94, 0.1)' } },
             },
@@ -273,7 +273,7 @@ export default function AppsPage() {
         slotProps={{
           paper: {
             sx: {
-              bgcolor: '#1a1a1a',
+              bgcolor: '#1e2420',
               border: '1px solid #333',
               minWidth: 400,
               '& .MuiDialogTitle-root': { color: '#fff', fontWeight: 600 },

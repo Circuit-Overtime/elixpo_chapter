@@ -45,7 +45,7 @@ const StatCard = ({
 }) => (
   <Card
     sx={{
-      bgcolor: '#1a1a1a',
+      bgcolor: '#1e2420',
       border: '1px solid #333',
       borderRadius: '12px',
       '&:hover': {
@@ -109,7 +109,7 @@ const ChartCard = ({
 }) => (
   <Card
     sx={{
-      bgcolor: '#1a1a1a',
+      bgcolor: '#1e2420',
       border: '1px solid #333',
       borderRadius: '12px',
       p: 2.5,
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
           exclusive
           onChange={handleTimeRangeChange}
           sx={{
-            bgcolor: '#1a1a1a',
+            bgcolor: '#1e2420',
             border: '1px solid #333',
             borderRadius: '8px',
             '& .MuiToggleButton-root': {
@@ -397,7 +397,7 @@ export default function AdminDashboard() {
           <Grid container spacing={2}>
             {/* Recent Users */}
             <Grid size={{ xs: 12, lg: 6 }}>
-              <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px' }}>
+              <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px' }}>
                 <CardContent sx={{ pb: '12px !important' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                     <People sx={{ color: '#3b82f6', fontSize: '1.2rem' }} />
@@ -413,9 +413,9 @@ export default function AdminDashboard() {
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>Email</TableCell>
-                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>Status</TableCell>
-                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>Joined</TableCell>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#3a4a3e', fontSize: '0.75rem', py: 0.75 }}>Email</TableCell>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#3a4a3e', fontSize: '0.75rem', py: 0.75 }}>Status</TableCell>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#3a4a3e', fontSize: '0.75rem', py: 0.75 }}>Joined</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -450,7 +450,7 @@ export default function AdminDashboard() {
 
             {/* Recent OAuth Apps */}
             <Grid size={{ xs: 12, lg: 6 }}>
-              <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px' }}>
+              <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px' }}>
                 <CardContent sx={{ pb: '12px !important' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                     <AppsIcon sx={{ color: '#f59e0b', fontSize: '1.2rem' }} />
@@ -466,9 +466,9 @@ export default function AdminDashboard() {
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>App Name</TableCell>
-                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>Client ID</TableCell>
-                          <TableCell sx={{ color: '#6b7280', borderColor: '#333', fontSize: '0.75rem', py: 0.75 }}>Created</TableCell>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#3a4a3e', fontSize: '0.75rem', py: 0.75 }}>App Name</TableCell>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#3a4a3e', fontSize: '0.75rem', py: 0.75 }}>Client ID</TableCell>
+                          <TableCell sx={{ color: '#6b7280', borderColor: '#3a4a3e', fontSize: '0.75rem', py: 0.75 }}>Created</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
