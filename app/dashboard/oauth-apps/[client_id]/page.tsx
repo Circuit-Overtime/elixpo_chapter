@@ -24,10 +24,9 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
 const cardSx = {
   background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: '16px',
   p: 3,
-  mb: 3,
 };
 
 const textFieldSx = {
@@ -108,10 +107,7 @@ export default function OAuthAppSettingsPage() {
     setSaving(true);
     setMessage(null);
     try {
-      const redirectUris = form.redirect_uris
-        .map((u) => u.trim())
-        .filter(Boolean);
-
+      const redirectUris = form.redirect_uris.map((u) => u.trim()).filter(Boolean);
       const res = await fetch(`/api/auth/oauth-clients/${clientId}`, {
         method: 'PUT',
         credentials: 'include',
@@ -123,12 +119,10 @@ export default function OAuthAppSettingsPage() {
           redirect_uris: redirectUris,
         }),
       });
-
       if (!res.ok) {
         const err: any = await res.json();
         throw new Error(err.error || 'Failed to save');
       }
-
       const updated: any = await res.json();
       setApp(updated);
       setMessage({ text: 'Application updated successfully', type: 'success' });
@@ -154,7 +148,7 @@ export default function OAuthAppSettingsPage() {
   };
 
   const handleRegenerateSecret = async () => {
-    if (!confirm('Regenerate client secret? The old secret will stop working immediately. Make sure to update your application with the new secret.')) return;
+    if (!confirm('Regenerate client secret? The old secret will stop working immediately.')) return;
     setRegenerating(true);
     setMessage(null);
     try {
@@ -168,13 +162,17 @@ export default function OAuthAppSettingsPage() {
       }
       const data: any = await res.json();
       setRegeneratedSecret(data.client_secret);
-      setMessage({ text: 'Client secret regenerated. Copy it now — it won\'t be shown again.', type: 'success' });
+      setMessage({ text: 'Client secret regenerated. Copy it now.', type: 'success' });
     } catch (err: any) {
       setMessage({ text: err.message, type: 'error' });
     } finally {
       setRegenerating(false);
     }
   };
+
+  const faviconUrl = form.homepage_url
+    ? (() => { try { return `https://www.google.com/s2/favicons?domain=${new URL(form.homepage_url).hostname}&sz=64`; } catch { return null; } })()
+    : null;
 
   if (loading) {
     return (
@@ -186,150 +184,176 @@ export default function OAuthAppSettingsPage() {
 
   return (
     <Box>
-      <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => router.push('/dashboard/oauth-apps')}
-            sx={{ color: 'rgba(255,255,255,0.5)', mb: 2, textTransform: 'none', '&:hover': { color: '#fff' } }}
-          >
-            Back to OAuth Apps
-          </Button>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: '#f5f5f4' }}>
-                {app?.name || 'Application Settings'}
-              </Typography>
-              {app?.is_active === false && (
-                <Chip label="Inactive" size="small" sx={{ mt: 0.5, bgcolor: 'rgba(107,114,128,0.2)', color: '#9ca3af' }} />
-              )}
-            </Box>
+      {/* Back + Header */}
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => router.push('/dashboard/oauth-apps')}
+        sx={{ color: 'rgba(255,255,255,0.5)', mb: 2, textTransform: 'none', '&:hover': { color: '#fff' } }}
+      >
+        Back to OAuth Apps
+      </Button>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+        {/* Favicon */}
+        {faviconUrl ? (
+          <Box
+            component="img"
+            src={faviconUrl}
+            alt=""
+            sx={{ width: 40, height: 40, borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.05)', p: 0.5 }}
+            onError={(e: any) => { e.target.style.display = 'none'; }}
+          />
+        ) : (
+          <Box sx={{
+            width: 40, height: 40, borderRadius: '10px',
+            bgcolor: 'rgba(163,230,53,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#a3e635', fontSize: '1.2rem', fontWeight: 700,
+          }}>
+            {(app?.name || 'A').charAt(0).toUpperCase()}
           </Box>
-        </Box>
-
-        {message && (
-          <Alert
-            severity={message.type}
-            onClose={() => setMessage(null)}
-            sx={{
-              mb: 3,
-              bgcolor: message.type === 'success' ? 'rgba(163,230,53,0.1)' : 'rgba(239,68,68,0.1)',
-              color: message.type === 'success' ? '#a3e635' : '#ef4444',
-              border: `1px solid ${message.type === 'success' ? 'rgba(163,230,53,0.3)' : 'rgba(239,68,68,0.3)'}`,
-              '& .MuiAlert-icon': { color: message.type === 'success' ? '#a3e635' : '#ef4444' },
-            }}
-          >
-            {message.text}
-          </Alert>
         )}
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: '#f5f5f4' }}>
+            {app?.name || 'Application Settings'}
+          </Typography>
+          {form.homepage_url && (
+            <Typography
+              component="a"
+              href={form.homepage_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', textDecoration: 'none', fontFamily: 'monospace', '&:hover': { color: '#a3e635' } }}
+            >
+              {(() => { try { return new URL(form.homepage_url).hostname; } catch { return form.homepage_url; } })()}
+            </Typography>
+          )}
+        </Box>
+        {app?.is_active === false && (
+          <Chip label="Inactive" size="small" sx={{ bgcolor: 'rgba(107,114,128,0.2)', color: '#9ca3af' }} />
+        )}
+      </Box>
 
-        {/* Credentials (read-only) */}
+      {message && (
+        <Alert
+          severity={message.type}
+          onClose={() => setMessage(null)}
+          sx={{
+            mb: 3,
+            bgcolor: message.type === 'success' ? 'rgba(163,230,53,0.1)' : 'rgba(239,68,68,0.1)',
+            color: message.type === 'success' ? '#a3e635' : '#ef4444',
+            border: `1px solid ${message.type === 'success' ? 'rgba(163,230,53,0.3)' : 'rgba(239,68,68,0.3)'}`,
+            '& .MuiAlert-icon': { color: message.type === 'success' ? '#a3e635' : '#ef4444' },
+          }}
+        >
+          {message.text}
+        </Alert>
+      )}
+
+      {/* Bento Grid */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+          gap: 2.5,
+          mb: 3,
+        }}
+      >
+        {/* Client ID */}
         <Box sx={cardSx}>
-          <Typography sx={{ color: '#f5f5f4', fontWeight: 600, mb: 2 }}>Credentials</Typography>
-
-          <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', mb: 0.75 }}>Client ID</Typography>
-          <Box sx={{ ...monoBox, mb: 2 }}>
-            <Typography sx={{ color: '#a3e635', fontFamily: 'monospace', fontSize: '0.85rem', flex: 1, wordBreak: 'break-all' }}>
+          <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', mb: 1, fontWeight: 500 }}>
+            Client ID
+          </Typography>
+          <Box sx={monoBox}>
+            <Typography sx={{ color: '#a3e635', fontFamily: 'monospace', fontSize: '0.8rem', flex: 1, wordBreak: 'break-all' }}>
               {app?.client_id || clientId}
             </Typography>
             <Tooltip title={copiedField === 'client_id' ? 'Copied!' : 'Copy'}>
-              <IconButton
-                size="small"
-                onClick={() => copyToClipboard(app?.client_id || clientId, 'client_id')}
-                sx={{ color: '#a3e635' }}
-              >
+              <IconButton size="small" onClick={() => copyToClipboard(app?.client_id || clientId, 'client_id')} sx={{ color: '#a3e635' }}>
                 <ContentCopyIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           </Box>
+        </Box>
 
-          <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', mb: 0.75 }}>Client Secret</Typography>
+        {/* Client Secret */}
+        <Box sx={cardSx}>
+          <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', mb: 1, fontWeight: 500 }}>
+            Client Secret
+          </Typography>
           {regeneratedSecret ? (
             <>
               <Box sx={{ ...monoBox, border: '1px solid rgba(163,230,53,0.4)' }}>
-                <Typography sx={{ color: '#a3e635', fontFamily: 'monospace', fontSize: '0.85rem', flex: 1, wordBreak: 'break-all' }}>
+                <Typography sx={{ color: '#a3e635', fontFamily: 'monospace', fontSize: '0.8rem', flex: 1, wordBreak: 'break-all' }}>
                   {regeneratedSecret}
                 </Typography>
                 <Tooltip title={copiedField === 'secret' ? 'Copied!' : 'Copy'}>
-                  <IconButton
-                    size="small"
-                    onClick={() => copyToClipboard(regeneratedSecret, 'secret')}
-                    sx={{ color: '#a3e635' }}
-                  >
+                  <IconButton size="small" onClick={() => copyToClipboard(regeneratedSecret, 'secret')} sx={{ color: '#a3e635' }}>
                     <ContentCopyIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               </Box>
               <Typography variant="caption" sx={{ color: '#a3e635', mt: 0.5, display: 'block' }}>
-                Copy this secret now. It won't be shown again.
+                Copy now — won't be shown again.
               </Typography>
             </>
           ) : (
             <>
               <Box sx={{ ...monoBox, border: '1px solid rgba(239,68,68,0.2)' }}>
                 <Typography sx={{ color: '#9ca3af', fontFamily: 'monospace', fontSize: '0.85rem', flex: 1 }}>
-                  ••••••••••••••••••••••••••••••••
+                  ••••••••••••••••••••••••••••
                 </Typography>
                 <Tooltip title="Regenerate secret">
-                  <IconButton
-                    size="small"
-                    onClick={handleRegenerateSecret}
-                    disabled={regenerating}
-                    sx={{ color: '#a3e635', '&:hover': { color: '#d9f99d' } }}
-                  >
+                  <IconButton size="small" onClick={handleRegenerateSecret} disabled={regenerating} sx={{ color: '#a3e635' }}>
                     <RefreshIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               </Box>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', mt: 0.5, display: 'block' }}>
-                Lost your secret? Click the refresh icon to regenerate it.
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.25)', mt: 0.5, display: 'block' }}>
+                Click refresh to regenerate
               </Typography>
             </>
           )}
         </Box>
 
-        {/* General Settings */}
-        <Box sx={cardSx}>
+        {/* General Settings (spans full width on lg) */}
+        <Box sx={{ ...cardSx, gridColumn: { lg: '1 / -1' } }}>
           <Typography sx={{ color: '#f5f5f4', fontWeight: 600, mb: 2 }}>General</Typography>
-          <TextField
-            fullWidth
-            label="Application Name"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            sx={{ ...textFieldSx, mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Homepage URL"
-            placeholder="https://example.com"
-            value={form.homepage_url}
-            onChange={(e) => setForm({ ...form, homepage_url: e.target.value })}
-            sx={{ ...textFieldSx, mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Description"
-            placeholder="What does your application do?"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            multiline
-            rows={2}
-            sx={textFieldSx}
-          />
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Application Name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              sx={textFieldSx}
+            />
+            <TextField
+              fullWidth
+              label="Homepage URL"
+              placeholder="https://example.com"
+              value={form.homepage_url}
+              onChange={(e) => setForm({ ...form, homepage_url: e.target.value })}
+              sx={textFieldSx}
+            />
+            <Box sx={{ gridColumn: { md: '1 / -1' } }}>
+              <TextField
+                fullWidth
+                label="Description"
+                placeholder="What does your application do?"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                multiline
+                rows={2}
+                sx={textFieldSx}
+              />
+            </Box>
+          </Box>
         </Box>
 
-        {/* OAuth Settings */}
+        {/* Redirect URIs */}
         <Box sx={cardSx}>
-          <Typography sx={{ color: '#f5f5f4', fontWeight: 600, mb: 1 }}>OAuth Settings</Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', display: 'block', mb: 2 }}>
-            Scopes: {Array.isArray(app?.scopes) ? app.scopes.join(', ') : (app?.scopes || 'openid profile email')}
-          </Typography>
-          <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', mb: 0.5 }}>
-            Redirect URIs
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', display: 'block', mb: 1.5 }}>
-            Callback URLs where users are redirected after authorization (up to 5)
+          <Typography sx={{ color: '#f5f5f4', fontWeight: 600, mb: 0.5 }}>Redirect URIs</Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.35)', display: 'block', mb: 2 }}>
+            Callback URLs for authorization (up to 5)
           </Typography>
           {form.redirect_uris.map((uri, index) => (
             <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -371,51 +395,88 @@ export default function OAuthAppSettingsPage() {
           )}
         </Box>
 
-        {/* Save */}
-        <Box sx={{ mb: 4 }}>
-          <Button
-            variant="contained"
-            startIcon={<SaveIcon />}
-            onClick={handleSave}
-            disabled={saving}
-            sx={{
-              background: 'rgba(163,230,53,0.15)',
-              color: '#a3e635',
-              border: '1px solid rgba(163,230,53,0.3)',
-              fontWeight: 600,
-              textTransform: 'none',
-              '&:hover': { background: 'rgba(163,230,53,0.25)' },
-            }}
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </Box>
+        {/* Scopes + Stats */}
+        <Box sx={cardSx}>
+          <Typography sx={{ color: '#f5f5f4', fontWeight: 600, mb: 2 }}>Info</Typography>
 
-        {/* Danger Zone */}
-        <Box sx={{ ...cardSx, border: '1px solid rgba(239,68,68,0.35)' }}>
-          <Typography sx={{ color: '#ef4444', fontWeight: 600, mb: 1 }}>Danger Zone</Typography>
-          <Divider sx={{ borderColor: 'rgba(239,68,68,0.2)', mb: 2 }} />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box>
-              <Typography sx={{ color: '#f5f5f4', fontWeight: 500 }}>Delete application</Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                Permanently delete this app and revoke all issued OAuth tokens
+          <Box sx={{ mb: 2 }}>
+            <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', mb: 0.75 }}>Scopes</Typography>
+            <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+              {(Array.isArray(app?.scopes) ? app.scopes : ['openid', 'profile', 'email']).map((s: string) => (
+                <Chip
+                  key={s}
+                  label={s}
+                  size="small"
+                  sx={{ bgcolor: 'rgba(163,230,53,0.1)', color: '#a3e635', border: '1px solid rgba(163,230,53,0.2)' }}
+                />
+              ))}
+            </Box>
+          </Box>
+
+          {app?.request_count !== undefined && (
+            <Box sx={{ mb: 2 }}>
+              <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', mb: 0.25 }}>Requests</Typography>
+              <Typography sx={{ color: '#f5f5f4', fontWeight: 600, fontSize: '1.5rem' }}>
+                {app.request_count.toLocaleString()}
               </Typography>
             </Box>
-            <Button
-              variant="outlined"
-              startIcon={<DeleteIcon />}
-              onClick={handleDelete}
-              sx={{
-                borderColor: 'rgba(239,68,68,0.4)',
-                color: '#ef4444',
-                textTransform: 'none',
-                '&:hover': { bgcolor: 'rgba(239,68,68,0.1)', borderColor: '#ef4444' },
-              }}
-            >
-              Delete
-            </Button>
+          )}
+
+          {app?.created_at && (
+            <Box>
+              <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', mb: 0.25 }}>Created</Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
+                {new Date(app.created_at).toLocaleDateString()}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
+
+      {/* Save Button */}
+      <Box sx={{ mb: 3 }}>
+        <Button
+          variant="contained"
+          startIcon={<SaveIcon />}
+          onClick={handleSave}
+          disabled={saving}
+          sx={{
+            background: 'rgba(163,230,53,0.15)',
+            color: '#a3e635',
+            border: '1px solid rgba(163,230,53,0.3)',
+            fontWeight: 600,
+            textTransform: 'none',
+            '&:hover': { background: 'rgba(163,230,53,0.25)' },
+          }}
+        >
+          {saving ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </Box>
+
+      {/* Danger Zone */}
+      <Box sx={{ ...cardSx, border: '1px solid rgba(239,68,68,0.3)' }}>
+        <Typography sx={{ color: '#ef4444', fontWeight: 600, mb: 1 }}>Danger Zone</Typography>
+        <Divider sx={{ borderColor: 'rgba(239,68,68,0.15)', mb: 2 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography sx={{ color: '#f5f5f4', fontWeight: 500 }}>Delete application</Typography>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+              Permanently delete this app and revoke all issued tokens
+            </Typography>
           </Box>
+          <Button
+            variant="outlined"
+            startIcon={<DeleteIcon />}
+            onClick={handleDelete}
+            sx={{
+              borderColor: 'rgba(239,68,68,0.4)',
+              color: '#ef4444',
+              textTransform: 'none',
+              '&:hover': { bgcolor: 'rgba(239,68,68,0.1)', borderColor: '#ef4444' },
+            }}
+          >
+            Delete
+          </Button>
         </Box>
       </Box>
     </Box>

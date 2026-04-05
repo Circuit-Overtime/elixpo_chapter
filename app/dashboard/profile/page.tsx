@@ -23,6 +23,9 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import LinkOffIcon from '@mui/icons-material/LinkOff';
+import BlockIcon from '@mui/icons-material/Block';
+import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -45,10 +48,9 @@ interface NotificationPreferences {
 
 const cardSx = {
   bgcolor: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: '16px',
   p: 3,
-  mb: 3,
 };
 
 const textFieldSx = {
@@ -334,19 +336,21 @@ const ProfilePage = () => {
 
   return (
     <Box>
-      <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
-        {/* Page Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#f5f5f4', mb: 1 }}>
-            Profile
-          </Typography>
-          <Typography sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
-            Manage your account information and preferences
-          </Typography>
-        </Box>
+      {/* Page Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: '#f5f5f4', mb: 1 }}>
+          Profile
+        </Typography>
+        <Typography sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+          Manage your account information and preferences
+        </Typography>
+      </Box>
 
-        {/* 1. Profile Info Card */}
-        <Box sx={cardSx}>
+      {/* Bento Grid */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2.5 }}>
+
+        {/* 1. Profile Info Card — spans full width */}
+        <Box sx={{ ...cardSx, gridColumn: { lg: '1 / -1' } }}>
           <Typography variant="h6" sx={sectionTitleSx}>
             <PersonIcon sx={{ color: '#a3e635', fontSize: '1.2rem' }} />
             Profile Info
@@ -804,6 +808,7 @@ const ProfilePage = () => {
         <Box
           sx={{
             ...cardSx,
+            gridColumn: { lg: '1 / -1' },
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -836,8 +841,8 @@ const ProfilePage = () => {
         <Box
           sx={{
             ...cardSx,
+            gridColumn: { lg: '1 / -1' },
             border: '1px solid rgba(239,68,68,0.35)',
-            mb: 0,
           }}
         >
           <Typography variant="h6" sx={{ ...sectionTitleSx, color: '#f87171' }}>
