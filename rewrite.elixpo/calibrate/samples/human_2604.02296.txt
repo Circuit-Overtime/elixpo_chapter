@@ -1,0 +1,84 @@
+# VOID: Video Object and Interaction Deletion
+# arXiv: 2604.02296
+# Words: 1529
+
+Approach
+
+figure*[t]
+ 
+ void-data.jpg
+ Counterfactual supervision examples.
+ Top: videos where O is outlined in red.
+ Bottom: re-simulated counterfactuals generated without O .
+ In Kubric scenes, downstream motion changes when the initiating object is removed.
+ In HUMOTO scenes, supported objects transition naturally under gravity.
+ 
+figure*
+
+figure*[t]
+ 
+ void.jpg
+ : Interaction-Aware Counterfactual Video Generation. A user provides an input video and clicks on an object to mask it for removal. A VLM-based pipeline expands the mask to identify other areas that will be affected. VOID's first pass then predicts a counterfactual trajectory. The optional second pass stabilizes object deformation using flow-warped noise derived from the initially predicted motion.
+ 
+figure*
+
+We start from an input video = \I_t\_t=1^T and a mask sequence = \m_t\_t=1^T identifying one or more target objects to remove, O . Our objective is to learn a model f that generates a counterfactual video , in which O and all induced interactions are removed:
+
+ [equation] 
+In general, the interactions can be complex. Removing a support can cause something to fall. Removing an obstacle can prevent a collision. To work well in these settings, f cannot rely on spatial hole filling but must conceptualize how the scene would have evolved in the target object's absence. It should then (i) eliminate the target object, (ii) regenerate regions affected through potentially complex relationships, and (iii) preserve unaffected regions.
+
+Counterfactual Dataset Supervision
+
+Training this model requires a dataset of counterfactual video pairs ( , ) with and without object O , respectively. Video pairs used by existing video inpainting and omnimatte datasets~[citation] focus mostly on photometric effects such as shadows and lack supervision for the removal of objects that physically affect other objects in the scene. We generate new counterfactual pairs to address this gap with physics-based simulations from Kubric~[citation] and human motion capture data from HUMOTO~[citation].
+
+For both datasets, we randomize camera trajectories and focal zoom during rendering to help with the disentanglement of object effects and camera trajectories.
+
+We show in [ref] that training on these two synthetic datasets enables extensive generalization to real-world domains.
+
+Rigid-body dynamics (Kubric).
+The diverse set of objects offered by Kubric is ideal for simulating collisions, falling, and structural dependencies. We create videos by sampling initial conditions of multiple objects with varying initial positions and velocities, and simulating the interactions over time. We then define one or more of the objects to be O . The counterfactual video is created by removing O while keeping initial conditions for all other objects the same, and re-simulating the scene. This yields a new, physically consistent alternative set of interactions. We generate 1900 videos pairs in this manner.
+
+Articulated interactions (HUMOTO).
+We use HUMOTO, a 4D motion-capture dataset of human-object interactions, to collect articulated interaction data. 
+
+In these sequences, O corresponds to the human performing diverse activities. and are created by passes over the simulation and rendering engine with and without the human.
+
+These videos teach the model how to perform object removal in videos containing dynamic manipulations. We randomize the textures of the objects in the scene, the background wall and the human, and generate 4500 video pairs. 
+
+Interaction-Aware Quadmask Conditioning
+
+To provide further guidance over the binary object mask , Lee et al.~[citation] proposed a trimask which distinguishes between three image regions: the object to be removed (black), the area affected by its removal (light gray), and areas which should stay the same (white). Their setup, however, creates two ambiguities. 
+
+The first is that they highlight almost the entire region of each image frame in light gray and mark only specific objects as white. Their model therefore learns that it typically needs to modify only a small portion of the light gray mask to remove the effects.
+
+We provide stronger guidance by focusing the light gray region closely on where effects take place. While generating data, we use the rendering engines to determine these regions. We then gridify the regions to better match our inference time procedure described in [ref].
+
+The second ambiguity occurs when there is overlap between the object to remove and the area with dynamic effects. In the example in [ref], we want to remove a child and once they are removed, the ball should fall to the ground instead of them catching it. Consider what value the trimask should have around the boy's upper body while he catches the ball. Should it be black because the boy is being removed? Or should it be light gray because the ``effect'' of the removal is that the ball should now continue its trajectory and pass through this area? To resolve these ambiguities, we extend the trimask to a quadmask with a fourth color (dark grey) that describes overlap between (i) the object to be removed and (ii) other parts of the scene that are affected. See [ref] for examples.
+
+Backbone Initialization and Counterfactual Generation
+
+We propose , a model built upon the CogVideoX diffusion transformer backbone~[citation] and initialized from the weights released with Generative Omnimatte~[citation]. This initialization provides a strong prior for layered object–effect disentanglement under trimask guidance. We finetune it with quadmask conditioning on the counterfactual video pairs described previously. This teaches the model mask semantics and re-enables the underlying video model's native capacity for physically plausible trajectory synthesis, transforming it from a layered removal model to a dynamic counterfactual rewriting model.
+
+Pass~1: Counterfactual Trajectory Synthesis
+
+In its first pass, generates an initial counterfactual prediction:
+ [equation] 
+where z N(0, I) denotes the Gaussian diffusion noise,
+ is the input video sequence, and _p1 is 's first-pass prediction of how the scene would evolve in the absence of the target object. This pass typically captures broadly correct hypotheses around motion, such as previously supported objects entering free-fall and previously-obstructed objects continuing their motion. However, we find that the objects undergoing newly synthesized motion can exhibit structural deformation.
+
+Pass~2: Flow-Warped Noise Stabilization
+
+Why deformation occurs.
+Video diffusion models, especially relatively lightweight models like the 5 billion parameter CogVideoX model we build on, struggle to maintain temporal coherence when generating complex, motion-heavy videos~[citation]. Prior work mitigates this issue through large-scale tracking supervision or explicit motion conditioning~[citation]. In the simple object removal case where only photometric effects need to be corrected, the input video provides similarly strong constraints on the generated motion. For example, if we need to remove a shadow from a surface, the motion and geometry of the surface in the output video should be the same as in the input. In our more complex settings, the diffusion model often needs to generate new motion. We find that this leads to bending, stretching, or structural drift of the objects undergoing changed motion, similar to the artifacts seen from running the CogVideoX image-to-video model without motion guidance. We now describe how to resolve these artifacts in the object removal setting without changing the base model. 
+
+Second pass to fix deformation
+Go-with-the-Flow~[citation] observed that using temporally correlated noise based on predicted motion trajectories can encourage the diffusion model to denoise consistently along those trajectories. We follow Go-with-the-Flow~[citation] to derive warped noise from the optical flow field of our first-pass output _p1 , and then use it as input to a second pass as:
+ [equation] 
+where VOID_warp is a warped noise variant of . It is trained with the same data and quadmask conditioning but with flow-aligned noise derived from each training target .
+
+This second pass is not always required so we trigger it only when object removal is predicted to cause substantial dynamic reconfiguration. The same VLM used to create a quadmask additionally classifies whether removal induces significant object motion (e.g., free-fall or trajectory change). We trigger the second pass only when such dynamics are detected. Figure~[ref] shows the effect of pass 2 on two objects.
+
+VLM-Guided Quadmask Generation at Inference Time
+
+At inference time, we start from an input video and user-provided binary object mask . To run , we need to first infer the affected region and use it to create the quadmask .
+Doing so requires reasoning about counterfactual dependencies and object dynamics, so we use a VLM~[citation]. We start by inputting and to the VLM and using it to produce a list of descriptions of objects that are affected by the removed object. We use Segment Anything 3~[citation] to get a mask ^orig covering all objects in the list. Since the affected objects may be in different places in the counterfactual scenario, we also need to predict their counterfactual positions to fully capture the changes between and . We therefore feed ^orig into the VLM and use it to predict the mask sequence describing the positions of these objects in the counterfactual scenario. This is done by overlaying a coarse spatial grid on the input video and asking it to list which cells in each frame may contain effects. This gives us a block-structured mask ^count describing where the affected objects in ^orig go in the counterfactual scenario. We combine the masks to get the final affected area mask := ^orig ^count . We finally compute the quadmask by setting it to black for pixels only in ; dark grey for pixels where and overlap; light grey for pixels only in ; and white everywhere else.
