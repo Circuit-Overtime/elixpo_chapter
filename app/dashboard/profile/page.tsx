@@ -226,7 +226,10 @@ const ProfilePage = () => {
       const res = await fetch('/api/auth/connected-services', { credentials: 'include' });
       if (res.ok) {
         const data: any = await res.json();
-        setConnectedServices(data.services || []);
+        const svcs = data.services || [];
+        setConnectedServices(svcs);
+        // Auto-expand top 3
+        setExpandedServices(new Set(svcs.slice(0, 3).map((s: any) => s.client_id)));
       }
     } catch { /* silent */ }
     finally { setServicesLoading(false); }
@@ -705,8 +708,8 @@ const ProfilePage = () => {
             </Box>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, overflowY: 'auto', flex: 1, '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 2 } }}>
-              {connectedServices.slice(0, 5).map((svc) => {
-                const isExpanded = expandedService === svc.client_id;
+              {connectedServices.slice(0, 3).map((svc) => {
+                const isExpanded = expandedServices.has(svc.client_id);
                 return (
                   <Box
                     key={svc.client_id}
@@ -720,7 +723,7 @@ const ProfilePage = () => {
                     }}
                   >
                     <Box
-                      onClick={() => setExpandedService(isExpanded ? null : svc.client_id)}
+                      onClick={() => setExpandedServices((prev) => { const next = new Set(prev); if (next.has(svc.client_id)) next.delete(svc.client_id); else next.add(svc.client_id); return next; })}
                       sx={{ display: 'flex', alignItems: 'center', gap: 1.25, p: 1.25, cursor: 'pointer', userSelect: 'none' }}
                     >
                       <ServiceIconSmall svc={svc} />
@@ -767,14 +770,14 @@ const ProfilePage = () => {
                   </Box>
                 );
               })}
-              {connectedServices.length > 5 && (
+              {connectedServices.length > 3 && (
                 <Button
                   component={Link}
                   href="/dashboard/services"
                   size="small"
                   sx={{ color: 'rgba(255,255,255,0.3)', textTransform: 'none', fontSize: '0.75rem', mt: 0.25, flexShrink: 0, '&:hover': { color: '#a3e635' } }}
                 >
-                  +{connectedServices.length - 5} more services
+                  +{connectedServices.length - 3} more — view all services
                 </Button>
               )}
             </Box>
