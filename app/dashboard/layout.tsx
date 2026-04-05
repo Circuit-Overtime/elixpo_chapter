@@ -14,7 +14,7 @@ import {
   ListItemText,
   Divider,
 } from '@mui/material';
-import { Apps, Person, Webhook, Logout } from '@mui/icons-material';
+import { Apps, Person, Webhook, Logout, DevicesOther } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -31,6 +31,7 @@ interface DashboardLayoutProps {
 
 const navItems = [
   { label: 'OAuth Apps', icon: Apps, href: '/dashboard/oauth-apps' },
+  { label: 'Services', icon: DevicesOther, href: '/dashboard/services' },
   { label: 'Profile', icon: Person, href: '/dashboard/profile' },
   { label: 'Webhooks', icon: Webhook, href: '/dashboard/webhooks' },
 ];
