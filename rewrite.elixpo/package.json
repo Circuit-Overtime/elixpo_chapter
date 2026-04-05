@@ -1,0 +1,12 @@
+{
+  "name": "rewrite",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm start",
+    "worker:dev": "cd worker && npx wrangler dev",
+    "worker:deploy": "cd worker && npx wrangler deploy",
+    "backend": "uvicorn app.api.app:app --host 0.0.0.0 --port 8000 --reload"
+  }
+}
