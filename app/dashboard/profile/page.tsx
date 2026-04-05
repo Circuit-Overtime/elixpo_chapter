@@ -39,6 +39,15 @@ interface UserProfile {
   displayName?: string | null;
 }
 
+interface ConnectedService {
+  client_id: string;
+  name: string;
+  description?: string;
+  homepage_url?: string;
+  first_authorized: string;
+  last_authorized: string;
+}
+
 interface NotificationPreferences {
   email_login_alerts: boolean;
   email_app_activity: boolean;
@@ -128,6 +137,11 @@ const ProfilePage = () => {
   const [nameLoading, setNameLoading] = useState(false);
   const [nameMsg, setNameMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
+  // Connected services state
+  const [connectedServices, setConnectedServices] = useState<ConnectedService[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [revoking, setRevoking] = useState<string | null>(null);
+
   // Email verification state
   const [verifyStep, setVerifyStep] = useState<'idle' | 'sent' | 'verifying'>('idle');
   const [verifyCode, setVerifyCode] = useState('');
@@ -145,6 +159,7 @@ const ProfilePage = () => {
   useEffect(() => {
     fetchProfile();
     fetchNotifPrefs();
+    fetchConnectedServices();
   }, []);
 
   const fetchProfile = async () => {
@@ -159,6 +174,28 @@ const ProfilePage = () => {
     } finally {
       setProfileLoading(false);
     }
+  };
+
+  const fetchConnectedServices = async () => {
+    try {
+      setServicesLoading(true);
+      const res = await fetch('/api/auth/connected-services', { credentials: 'include' });
+      if (res.ok) {
+        const data: any = await res.json();
+        setConnectedServices(data.services || []);
+      }
+    } catch { /* silent */ }
+    finally { setServicesLoading(false); }
+  };
+
+  const revokeService = async (clientId: string) => {
+    if (!confirm('Revoke access for this service?')) return;
+    setRevoking(clientId);
+    try {
+      const res = await fetch(`/api/auth/connected-services?client_id=${clientId}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) setConnectedServices((prev) => prev.filter((s) => s.client_id !== clientId));
+    } catch { /* silent */ }
+    finally { setRevoking(null); }
   };
 
   const fetchNotifPrefs = async () => {
@@ -349,8 +386,8 @@ const ProfilePage = () => {
       {/* Bento Grid */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2.5 }}>
 
-        {/* 1. Profile Info Card — spans full width */}
-        <Box sx={{ ...cardSx, gridColumn: { lg: '1 / -1' } }}>
+        {/* 1. Profile Info Card — left column */}
+        <Box sx={cardSx}>
           <Typography variant="h6" sx={sectionTitleSx}>
             <PersonIcon sx={{ color: '#a3e635', fontSize: '1.2rem' }} />
             Profile Info
@@ -596,6 +633,66 @@ const ProfilePage = () => {
           ) : null}
         </Box>
 
+        {/* Connected Services — right column */}
+        <Box sx={cardSx}>
+          <Typography variant="h6" sx={sectionTitleSx}>
+            <DevicesOtherIcon sx={{ color: '#a3e635', fontSize: '1.2rem' }} />
+            Connected Services
+          </Typography>
+          <Typography sx={{ ...sectionSubtitleSx, mb: 2 }}>Apps using your Elixpo account</Typography>
+
+          {servicesLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress size={20} sx={{ color: '#a3e635' }} />
+            </Box>
+          ) : connectedServices.length === 0 ? (
+            <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', textAlign: 'center', py: 3 }}>
+              No connected services yet
+            </Typography>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {connectedServices.map((svc) => (
+                <Box
+                  key={svc.client_id}
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5,
+                    borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    '&:hover': { borderColor: 'rgba(255,255,255,0.12)' },
+                  }}
+                >
+                  {svc.homepage_url ? (
+                    <Box
+                      component="img"
+                      src={`https://www.google.com/s2/favicons?domain=${(() => { try { return new URL(svc.homepage_url).hostname; } catch { return ''; } })()}&sz=32`}
+                      alt=""
+                      sx={{ width: 24, height: 24, borderRadius: '4px', flexShrink: 0 }}
+                      onError={(e: any) => { e.target.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <Box sx={{ width: 24, height: 24, borderRadius: '4px', bgcolor: 'rgba(163,230,53,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a3e635', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 }}>
+                      {svc.name.charAt(0).toUpperCase()}
+                    </Box>
+                  )}
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography sx={{ color: '#f5f5f4', fontWeight: 500, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {svc.name}
+                    </Typography>
+                  </Box>
+                  <Button
+                    size="small"
+                    onClick={() => revokeService(svc.client_id)}
+                    disabled={revoking === svc.client_id}
+                    sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.7rem', textTransform: 'none', minWidth: 'auto', p: 0.5, '&:hover': { color: '#ef4444' } }}
+                  >
+                    <LinkOffIcon sx={{ fontSize: '1rem' }} />
+                  </Button>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+
         {/* 2. Update Profile Card */}
         <Box sx={cardSx}>
           <Typography variant="h6" sx={sectionTitleSx}>
@@ -804,40 +901,7 @@ const ProfilePage = () => {
           )}
         </Box>
 
-        {/* 4. Connected Services Link */}
-        <Box
-          sx={{
-            ...cardSx,
-            gridColumn: { lg: '1 / -1' },
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Box>
-            <Typography sx={{ color: '#f5f5f4', fontWeight: 600, fontSize: '0.95rem' }}>
-              Connected Services
-            </Typography>
-            <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
-              See which apps have access to your Elixpo account
-            </Typography>
-          </Box>
-          <Button
-            component={Link}
-            href="/dashboard/services"
-            sx={{
-              color: '#a3e635',
-              textTransform: 'none',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              '&:hover': { bgcolor: 'rgba(163,230,53,0.08)' },
-            }}
-          >
-            View services
-          </Button>
-        </Box>
-
-        {/* 5. Danger Zone Card */}
+        {/* 4. Danger Zone — full width */}
         <Box
           sx={{
             ...cardSx,
@@ -862,46 +926,72 @@ const ProfilePage = () => {
             </Alert>
           )}
 
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 2,
-              p: 2,
-              borderRadius: '10px',
-              background: 'rgba(239,68,68,0.04)',
-              border: '1px solid rgba(239,68,68,0.15)',
-            }}
-          >
-            <Box>
-              <Typography sx={{ color: '#f5f5f4', fontWeight: 600, fontSize: '0.95rem' }}>
-                Delete Account
-              </Typography>
-              <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.83rem', mt: 0.2 }}>
-                Permanently remove your account and all associated data
-              </Typography>
-            </Box>
-            <Button
-              variant="outlined"
-              onClick={() => setDeleteDialogOpen(true)}
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+            {/* Disable Account */}
+            <Box
               sx={{
-                color: '#ef4444',
-                borderColor: 'rgba(239,68,68,0.5)',
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                py: 0.9,
-                px: 2.5,
-                '&:hover': {
-                  borderColor: '#ef4444',
-                  backgroundColor: 'rgba(239,68,68,0.08)',
-                },
+                flex: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                flexWrap: 'wrap', gap: 2, p: 2,
+                borderRadius: '10px',
+                background: 'rgba(245,158,11,0.04)',
+                border: '1px solid rgba(245,158,11,0.15)',
               }}
             >
-              Delete Account
-            </Button>
+              <Box>
+                <Typography sx={{ color: '#f5f5f4', fontWeight: 600, fontSize: '0.95rem' }}>
+                  Disable Account
+                </Typography>
+                <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.83rem', mt: 0.2 }}>
+                  Temporarily deactivate your account
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                startIcon={<BlockIcon />}
+                sx={{
+                  color: '#f59e0b',
+                  borderColor: 'rgba(245,158,11,0.4)',
+                  fontWeight: 600, textTransform: 'none', fontSize: '0.85rem',
+                  '&:hover': { borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)' },
+                }}
+              >
+                Disable
+              </Button>
+            </Box>
+
+            {/* Delete Account */}
+            <Box
+              sx={{
+                flex: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                flexWrap: 'wrap', gap: 2, p: 2,
+                borderRadius: '10px',
+                background: 'rgba(239,68,68,0.04)',
+                border: '1px solid rgba(239,68,68,0.15)',
+              }}
+            >
+              <Box>
+                <Typography sx={{ color: '#f5f5f4', fontWeight: 600, fontSize: '0.95rem' }}>
+                  Delete Account
+                </Typography>
+                <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.83rem', mt: 0.2 }}>
+                  Permanently remove your account and data
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                onClick={() => setDeleteDialogOpen(true)}
+                sx={{
+                  color: '#ef4444',
+                  borderColor: 'rgba(239,68,68,0.4)',
+                  fontWeight: 600, textTransform: 'none', fontSize: '0.85rem',
+                  '&:hover': { borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)' },
+                }}
+              >
+                Delete
+              </Button>
+            </Box>
           </Box>
         </Box>
       </Box>
