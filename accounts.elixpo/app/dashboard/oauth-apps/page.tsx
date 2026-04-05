@@ -13,6 +13,7 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import SettingsIcon from '@mui/icons-material/Settings';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Link from 'next/link';
+import { generatePixelAvatar } from '@/lib/pixel-avatar';
 
 interface OAuthApp {
   client_id: string;
@@ -64,6 +65,32 @@ const tableBodySx = {
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
   },
 };
+
+function AppIcon({ app, size = 28 }: { app: OAuthApp; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const hostname = app.homepage_url ? (() => { try { return new URL(app.homepage_url).hostname; } catch { return ''; } })() : '';
+
+  if (app.homepage_url && hostname && !failed) {
+    return (
+      <Box
+        component="img"
+        src={`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`}
+        alt=""
+        sx={{ width: size, height: size, borderRadius: '6px', flexShrink: 0 }}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <Box
+      component="img"
+      src={generatePixelAvatar(app.client_id + app.name, size)}
+      alt=""
+      sx={{ width: size, height: size, borderRadius: '6px', flexShrink: 0 }}
+    />
+  );
+}
 
 const OAuthAppsPage = () => {
   const [apps, setApps] = useState<OAuthApp[]>([]);
@@ -215,8 +242,8 @@ const OAuthAppsPage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)', p: 3 }}>
-      <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
+    <Box>
+      <Box>
         {/* Header */}
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
@@ -307,12 +334,17 @@ const OAuthAppsPage = () => {
                   {apps.map((app) => (
                     <TableRow key={app.client_id}>
                       <TableCell>
-                        <Typography sx={{ fontWeight: 500, color: '#f5f5f4' }}>{app.name}</Typography>
-                        {app.homepage_url && (
-                          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
-                            {app.homepage_url}
-                          </Typography>
-                        )}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <AppIcon app={app} size={28} />
+                          <Box>
+                            <Typography sx={{ fontWeight: 500, color: '#f5f5f4' }}>{app.name}</Typography>
+                            {app.homepage_url && (
+                              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace', fontSize: '0.7rem' }}>
+                                {(() => { try { return new URL(app.homepage_url).hostname; } catch { return app.homepage_url; } })()}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
                       </TableCell>
                       <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
