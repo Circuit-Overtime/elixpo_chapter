@@ -250,7 +250,7 @@ export async function createOAuthClient(
 
 export async function getOAuthClientById(db: D1Database, clientId: string) {
   const stmt = db.prepare(
-    'SELECT client_id, name, redirect_uris, scopes, created_at, is_active FROM oauth_clients WHERE client_id = ?'
+    'SELECT client_id, name, redirect_uris, scopes, description, homepage_url, created_at, is_active FROM oauth_clients WHERE client_id = ?'
   );
   return await stmt.bind(clientId).first();
 }

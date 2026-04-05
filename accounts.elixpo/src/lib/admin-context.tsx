@@ -94,7 +94,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
             justifyContent: 'center',
             alignItems: 'center',
             minHeight: '100vh',
-            bgcolor: '#0f0f0f',
+            bgcolor: '#161816',
           }}
         >
           <CircularProgress sx={{ color: '#22c55e' }} />

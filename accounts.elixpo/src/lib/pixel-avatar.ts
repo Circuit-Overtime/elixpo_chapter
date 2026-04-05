@@ -27,7 +27,7 @@ const COLORS = [
 export function generatePixelAvatar(seed: string, size: number = 64): string {
   const h = hashCode(seed);
   const color = COLORS[h % COLORS.length];
-  const bgColor = '#1a1a2e';
+  const bgColor = '#1e2530';
 
   // 5x5 grid, mirrored horizontally (only need 3 cols)
   const grid: boolean[][] = [];

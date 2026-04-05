@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 const NotFound = () => {
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)', p: 2 }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)', p: 2 }}>
       <Box sx={{ maxWidth: '500px', width: '100%', textAlign: 'center' }}>
         {/* Big 404 */}
         <Typography sx={{ fontSize: '120px', fontWeight: 800, color: '#a3e635', mb: 2, lineHeight: 1 }}>

@@ -206,6 +206,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       client_id: clientId,
       name: (client as any).name,
+      description: (client as any).description || null,
+      homepage_url: (client as any).homepage_url || null,
       redirect_uris: JSON.parse((client as any).redirect_uris || '[]'),
       scopes: JSON.parse((client as any).scopes || '[]'),
       created_at: (client as any).created_at,
