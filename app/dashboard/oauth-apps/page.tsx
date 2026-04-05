@@ -66,6 +66,32 @@ const tableBodySx = {
   },
 };
 
+function AppIcon({ app, size = 28 }: { app: OAuthApp; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const hostname = app.homepage_url ? (() => { try { return new URL(app.homepage_url).hostname; } catch { return ''; } })() : '';
+
+  if (app.homepage_url && hostname && !failed) {
+    return (
+      <Box
+        component="img"
+        src={`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`}
+        alt=""
+        sx={{ width: size, height: size, borderRadius: '6px', flexShrink: 0 }}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <Box
+      component="img"
+      src={generatePixelAvatar(app.client_id + app.name, size)}
+      alt=""
+      sx={{ width: size, height: size, borderRadius: '6px', flexShrink: 0 }}
+    />
+  );
+}
+
 const OAuthAppsPage = () => {
   const [apps, setApps] = useState<OAuthApp[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
