@@ -23,11 +23,13 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import LinkOffIcon from '@mui/icons-material/LinkOff';
 import BlockIcon from '@mui/icons-material/Block';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { generatePixelAvatar } from '@/lib/pixel-avatar';
 
 interface UserProfile {
   email: string;
@@ -99,6 +101,32 @@ const dividerSx = {
   my: 2.5,
 };
 
+function ServiceIconSmall({ svc }: { svc: ConnectedService }) {
+  const [failed, setFailed] = useState(false);
+  const hostname = svc.homepage_url ? (() => { try { return new URL(svc.homepage_url).hostname; } catch { return ''; } })() : '';
+
+  if (svc.homepage_url && hostname && !failed) {
+    return (
+      <Box
+        component="img"
+        src={`https://www.google.com/s2/favicons?domain=${hostname}&sz=32`}
+        alt=""
+        sx={{ width: 24, height: 24, borderRadius: '4px', flexShrink: 0 }}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <Box
+      component="img"
+      src={generatePixelAvatar(svc.client_id + svc.name, 24)}
+      alt=""
+      sx={{ width: 24, height: 24, borderRadius: '4px', flexShrink: 0 }}
+    />
+  );
+}
+
 const ProfilePage = () => {
   const router = useRouter();
 
@@ -140,7 +168,7 @@ const ProfilePage = () => {
   // Connected services state
   const [connectedServices, setConnectedServices] = useState<ConnectedService[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
-  const [revoking, setRevoking] = useState<string | null>(null);
+  const [expandedService, setExpandedService] = useState<string | null>(null);
 
   // Email verification state
   const [verifyStep, setVerifyStep] = useState<'idle' | 'sent' | 'verifying'>('idle');
@@ -186,16 +214,6 @@ const ProfilePage = () => {
       }
     } catch { /* silent */ }
     finally { setServicesLoading(false); }
-  };
-
-  const revokeService = async (clientId: string) => {
-    if (!confirm('Revoke access for this service?')) return;
-    setRevoking(clientId);
-    try {
-      const res = await fetch(`/api/auth/connected-services?client_id=${clientId}`, { method: 'DELETE', credentials: 'include' });
-      if (res.ok) setConnectedServices((prev) => prev.filter((s) => s.client_id !== clientId));
-    } catch { /* silent */ }
-    finally { setRevoking(null); }
   };
 
   const fetchNotifPrefs = async () => {
@@ -635,11 +653,26 @@ const ProfilePage = () => {
 
         {/* Connected Services — right column */}
         <Box sx={cardSx}>
-          <Typography variant="h6" sx={sectionTitleSx}>
-            <DevicesOtherIcon sx={{ color: '#a3e635', fontSize: '1.2rem' }} />
-            Connected Services
-          </Typography>
-          <Typography sx={{ ...sectionSubtitleSx, mb: 2 }}>Apps using your Elixpo account</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box>
+              <Typography variant="h6" sx={sectionTitleSx}>
+                <DevicesOtherIcon sx={{ color: '#a3e635', fontSize: '1.2rem' }} />
+                Connected Services
+              </Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mt: 0.25 }}>
+                {connectedServices.length} app{connectedServices.length !== 1 ? 's' : ''} connected
+              </Typography>
+            </Box>
+            <Button
+              component={Link}
+              href="/dashboard/services"
+              size="small"
+              endIcon={<ArrowForwardIcon sx={{ fontSize: '0.85rem !important' }} />}
+              sx={{ color: '#a3e635', textTransform: 'none', fontSize: '0.8rem', '&:hover': { bgcolor: 'rgba(163,230,53,0.08)' } }}
+            >
+              View all
+            </Button>
+          </Box>
 
           {servicesLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
@@ -651,44 +684,81 @@ const ProfilePage = () => {
             </Typography>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {connectedServices.map((svc) => (
-                <Box
-                  key={svc.client_id}
-                  sx={{
-                    display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5,
-                    borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    '&:hover': { borderColor: 'rgba(255,255,255,0.12)' },
-                  }}
-                >
-                  {svc.homepage_url ? (
-                    <Box
-                      component="img"
-                      src={`https://www.google.com/s2/favicons?domain=${(() => { try { return new URL(svc.homepage_url).hostname; } catch { return ''; } })()}&sz=32`}
-                      alt=""
-                      sx={{ width: 24, height: 24, borderRadius: '4px', flexShrink: 0 }}
-                      onError={(e: any) => { e.target.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <Box sx={{ width: 24, height: 24, borderRadius: '4px', bgcolor: 'rgba(163,230,53,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a3e635', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 }}>
-                      {svc.name.charAt(0).toUpperCase()}
-                    </Box>
-                  )}
-                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography sx={{ color: '#f5f5f4', fontWeight: 500, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {svc.name}
-                    </Typography>
-                  </Box>
-                  <Button
-                    size="small"
-                    onClick={() => revokeService(svc.client_id)}
-                    disabled={revoking === svc.client_id}
-                    sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.7rem', textTransform: 'none', minWidth: 'auto', p: 0.5, '&:hover': { color: '#ef4444' } }}
+              {connectedServices.slice(0, 5).map((svc) => {
+                const isExpanded = expandedService === svc.client_id;
+                return (
+                  <Box
+                    key={svc.client_id}
+                    sx={{
+                      borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      overflow: 'hidden',
+                      transition: 'border-color 0.2s',
+                      '&:hover': { borderColor: 'rgba(255,255,255,0.12)' },
+                    }}
                   >
-                    <LinkOffIcon sx={{ fontSize: '1rem' }} />
-                  </Button>
-                </Box>
-              ))}
+                    {/* Clickable row */}
+                    <Box
+                      onClick={() => setExpandedService(isExpanded ? null : svc.client_id)}
+                      sx={{
+                        display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5,
+                        cursor: 'pointer', userSelect: 'none',
+                      }}
+                    >
+                      <ServiceIconSmall svc={svc} />
+                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Typography sx={{ color: '#f5f5f4', fontWeight: 500, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {svc.name}
+                        </Typography>
+                      </Box>
+                      <ExpandMoreIcon
+                        sx={{
+                          fontSize: '1.1rem', color: 'rgba(255,255,255,0.25)',
+                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)',
+                          transition: 'transform 0.2s',
+                        }}
+                      />
+                    </Box>
+
+                    {/* Expanded details */}
+                    {isExpanded && (
+                      <Box sx={{ px: 1.5, pb: 1.5, pt: 0, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                        {svc.description && (
+                          <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', mt: 1, lineHeight: 1.5 }}>
+                            {svc.description}
+                          </Typography>
+                        )}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 1 }}>
+                          {svc.homepage_url && (
+                            <Typography
+                              component="a"
+                              href={svc.homepage_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.72rem', fontFamily: 'monospace', textDecoration: 'none', '&:hover': { color: '#a3e635' } }}
+                            >
+                              {svc.homepage_url}
+                            </Typography>
+                          )}
+                          <Typography sx={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.72rem' }}>
+                            Connected {new Date(svc.first_authorized).toLocaleDateString()} · Last used {new Date(svc.last_authorized).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                );
+              })}
+              {connectedServices.length > 5 && (
+                <Button
+                  component={Link}
+                  href="/dashboard/services"
+                  size="small"
+                  sx={{ color: 'rgba(255,255,255,0.4)', textTransform: 'none', fontSize: '0.8rem', mt: 0.5, '&:hover': { color: '#a3e635' } }}
+                >
+                  +{connectedServices.length - 5} more
+                </Button>
+              )}
             </Box>
           )}
         </Box>
