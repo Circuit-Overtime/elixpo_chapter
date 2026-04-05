@@ -13,6 +13,7 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import SettingsIcon from '@mui/icons-material/Settings';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Link from 'next/link';
+import { generatePixelAvatar } from '@/lib/pixel-avatar';
 
 interface OAuthApp {
   client_id: string;
@@ -307,12 +308,17 @@ const OAuthAppsPage = () => {
                   {apps.map((app) => (
                     <TableRow key={app.client_id}>
                       <TableCell>
-                        <Typography sx={{ fontWeight: 500, color: '#f5f5f4' }}>{app.name}</Typography>
-                        {app.homepage_url && (
-                          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
-                            {app.homepage_url}
-                          </Typography>
-                        )}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <AppIcon app={app} size={28} />
+                          <Box>
+                            <Typography sx={{ fontWeight: 500, color: '#f5f5f4' }}>{app.name}</Typography>
+                            {app.homepage_url && (
+                              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace', fontSize: '0.7rem' }}>
+                                {(() => { try { return new URL(app.homepage_url).hostname; } catch { return app.homepage_url; } })()}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
                       </TableCell>
                       <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
