@@ -126,12 +126,21 @@ export default function ProfilePage() {
             <h1 className="text-2xl font-bold text-[var(--text-primary)]">{user.display_name || user.username}</h1>
             <p className="text-[var(--text-muted)] text-sm mt-0.5">@{user.username}</p>
           </div>
-          <Link
-            href="/settings"
-            className="px-4 py-2 text-[13px] font-medium text-[var(--text-body)] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] transition-colors"
-          >
-            Edit Profile
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/settings"
+              className="px-4 py-2 text-[13px] font-medium text-[var(--text-body)] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] transition-colors"
+            >
+              Edit Profile
+            </Link>
+            <Link
+              href="/settings"
+              className="flex items-center justify-center w-9 h-9 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] hover:border-[var(--border-hover)] transition-colors"
+              title="Settings"
+            >
+              <ion-icon name="settings-outline" style={{ fontSize: '16px', color: 'var(--text-muted)' }} />
+            </Link>
+          </div>
         </div>
 
         {user.bio && (

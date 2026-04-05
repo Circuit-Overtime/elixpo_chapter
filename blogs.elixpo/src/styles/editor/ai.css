@@ -477,8 +477,15 @@
 }
 
 .ai-edit-selection-highlight .bn-inline-content {
-  background: rgba(196, 181, 253, 0.15) !important;
+  background: rgba(155, 123, 247, 0.2) !important;
   border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Simulate text selection appearance on highlighted blocks */
+.ai-edit-selection-highlight .bn-inline-content * {
+  color: inherit !important;
 }
 
 /* ===== AI Inline Input Container ===== */
