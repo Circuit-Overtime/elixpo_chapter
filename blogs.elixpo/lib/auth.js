@@ -10,7 +10,7 @@ export function getOAuthConfig() {
     authorizeUrl: 'https://accounts.elixpo.com/oauth/authorize',
     tokenUrl: 'https://accounts.elixpo.com/api/auth/token',
     userInfoUrl: 'https://accounts.elixpo.com/api/auth/me',
-    redirectUri: (process.env.NEXT_PUBLIC_URL || 'http://localhost:3000') + '/api/auth/callback',
+    redirectUri: null, // set dynamically per-request from the request URL
     scope: 'openid profile email',
   };
 }

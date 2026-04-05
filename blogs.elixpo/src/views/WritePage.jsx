@@ -321,7 +321,12 @@ export default function WritePage({ slugid }) {
   const [publishAs, setPublishAs] = useState('personal');
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-  const [showPublishPanel, setShowPublishPanel] = useState(false);
+  const [showPublishPanel, setShowPublishPanel] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('panel') === 'settings';
+    }
+    return false;
+  });
   const [showPublishMenu, setShowPublishMenu] = useState(false);
   const [showCoverModal, setShowCoverModal] = useState(false);
   const [coverUrlMode, setCoverUrlMode] = useState(false);

@@ -243,19 +243,13 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
     return () => clearInterval(interval);
   }, [editor]);
 
-  // Focus prompt input when entering prompting mode, then restore text selection
+  // Focus prompt input when entering prompting mode
+  // The selected blocks stay visually highlighted via CSS class, and pointer events
+  // are blocked on the editor to prevent the user from accidentally deselecting
   useEffect(() => {
     if (mode === 'prompting') {
       setTimeout(() => {
         promptRef.current?.focus();
-        // Restore the saved native selection so highlighted text stays visible
-        const range = savedSelectionRef.current;
-        if (range) {
-          const nativeSel = window.getSelection();
-          if (nativeSel) {
-            nativeSel.addRange(range);
-          }
-        }
       }, 50);
     }
   }, [mode]);
