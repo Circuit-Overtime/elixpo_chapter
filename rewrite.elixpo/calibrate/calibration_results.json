@@ -1,0 +1,91 @@
+{
+  "n_pairs": 10,
+  "separations": {
+    "burstiness": {
+      "h_avg": 12.55,
+      "a_avg": 38.58,
+      "gap": 26.029999999999998,
+      "cohens_d": 2.010814836485857
+    },
+    "vocabulary_markers": {
+      "h_avg": 6.17,
+      "a_avg": 18.83,
+      "gap": 12.659999999999998,
+      "cohens_d": 1.8058260800178394
+    },
+    "type_token_ratio": {
+      "h_avg": 18.830000000000002,
+      "a_avg": 3.8200000000000003,
+      "gap": -15.010000000000002,
+      "cohens_d": -1.908106262688481
+    },
+    "sentence_starters": {
+      "h_avg": 41.040000000000006,
+      "a_avg": 41.51,
+      "gap": 0.46999999999999176,
+      "cohens_d": 0.04087781115768513
+    },
+    "paragraph_structure": {
+      "h_avg": 50.0,
+      "a_avg": 62.660000000000004,
+      "gap": 12.660000000000004,
+      "cohens_d": 1.1525333070770334
+    },
+    "punctuation_diversity": {
+      "h_avg": 19.2,
+      "a_avg": 29.53,
+      "gap": 10.330000000000002,
+      "cohens_d": 0.4649644648018623
+    },
+    "perplexity": {
+      "h_avg": 97.59,
+      "a_avg": 96.85,
+      "gap": -0.7400000000000091,
+      "cohens_d": -0.15663103385435728
+    },
+    "n_gram_uniformity": {
+      "h_avg": 96.79,
+      "a_avg": 99.42999999999999,
+      "gap": 2.6399999999999864,
+      "cohens_d": 1.0284370068147608
+    },
+    "coherence": {
+      "h_avg": 27.919999999999998,
+      "a_avg": 19.95,
+      "gap": -7.969999999999999,
+      "cohens_d": -1.839315390568844
+    },
+    "readability": {
+      "h_avg": 47.37,
+      "a_avg": 15.3,
+      "gap": -32.06999999999999,
+      "cohens_d": -1.3943200849283408
+    },
+    "repetition": {
+      "h_avg": 19.56,
+      "a_avg": 26.389999999999997,
+      "gap": 6.829999999999998,
+      "cohens_d": 0.9512788546385641
+    },
+    "entropy": {
+      "h_avg": 64.99000000000001,
+      "a_avg": 50.42,
+      "gap": -14.570000000000007,
+      "cohens_d": -2.122426786913167
+    }
+  },
+  "recommended_weights": {
+    "burstiness": 0.2697,
+    "vocabulary_markers": 0.2422,
+    "type_token_ratio": 0.0,
+    "sentence_starters": 0.0055,
+    "paragraph_structure": 0.1546,
+    "punctuation_diversity": 0.0624,
+    "perplexity": 0.0,
+    "n_gram_uniformity": 0.138,
+    "coherence": 0.0,
+    "readability": 0.0,
+    "repetition": 0.1276,
+    "entropy": 0.0
+  }
+}

@@ -1,0 +1,112 @@
+# ActionParty: Multi-Subject Action Binding in Generative Video Games
+# arXiv: 2604.02330
+# Words: 1677
+
+Experiments
+
+Setup
+
+Implementation details.
+We fine-tune Wan2.1-1.3B~[citation], an open-source text-to-video (T2V) DiT with the training setup outlined in [ref].
+To speed up model convergence, we first pretrain the model on raw game videos to adapt to the autoregressive setup.
+For this stage, we only provide text conditioning, which is a simple description of the game, without action control, subject state, or any architecture modification.
+We train on all games ( |G|=46 ) for 22.5k steps with a batch size of 64.
+Then, we add action control and fine-tune the full model for 65k steps with the same batch size.
+We train our method with T=5 timesteps, corresponding to 4 unique actions per rollout.
+We use Adam~[citation] to optimize the flow matching loss~[citation] computed on x_t+1^i and z_t+1^i .
+We consider a maximum of 7 subjects in a scene and use zeros for padded subject states.
+At inference time, we sample for 20 steps with a timestep shift of 5.0~[citation].
+We implement attention masking with FlexAttention~[citation], only adding N T subject tokens per subject, which brings minimal overhead compared to the number of video tokens.
+In practice, we only add a 6\% overhead for 7 players for T=5 (40 extra tokens).
+Note that this is significantly more efficient than other methods~[citation] that generate multiple views of the scene for each subject.
+
+Datasets and action space.
+We train on gameplay videos of 46 different 2D games from the Melting Pot benchmark~[citation].
+These games feature character sprites moving on a tile grid with different environments and static objects.
+Some characters may look identical, making action binding more challenging.
+ is trained with an action set A including 25 different actions.
+Notably, some actions are only present in specific games.
+There are 7 base actions shared by all games, which we categorize in 4 different groups: Idle action (staying still), Move actions: \forward, backward, strafe left, strafe right\, Turn actions: \turn left, turn right\ and Interact.
+The ``Interact'' action involves game-specific interaction with the environment, such as highlighting tiles in front of it to fire a beam.
+Importantly, subject movements are relative to the subject's orientation.
+For example, the ``forward'' action moves a sprite one tile forward in the direction it is facing.
+This is particularly interesting in our setup as subject orientations can only be inferred from raw video frames; hence, the model has to comprehend visual information to get the correct action outcome, rather than learning absolute directional instructions like ``move up''.
+We generate game-specific text descriptions using an LLM from the Melting Pot paper and videos of each game (full details in Supplementary).
+For training, we gather 2,000 videos per game at a resolution of 512 512.
+We generate diverse rollouts for each game by executing either random actions or pretrained policies at each step t .
+For evaluation, we collect 230 rollouts (5 per game).
+As completely random actions result in players staying close to their initial positions, we enforced a_t^i \Move, Turn\ for t<2 to leave its initial state, and at least one subject is assigned an ``Interact'' action for t 2 . 
+
+Baselines.
+Since there is no open-source method capable of controlling more than two subjects, we design several baselines.
+To demonstrate the challenge of action binding from text prompts, we propose a naive Zero-shot I2V baseline where we simply prompt a video model with a textual description of the initial subject positions and the actions to execute.
+We use the Wan2.1-14B I2V model~[citation], which is much larger than the 1.3B model fine-tunes from.
+We also study such Text-Action control on our autoregressive setup, using the same backbone as , but trained only using textual conditioning.
+Finally, we take the autoregressive model pretrained on game videos without action control (termed Pretrained AR) as a random action lower bound.
+
+Evaluation.
+The effect of an action on a subject depends on its state and the environment, e.g., position/orientation and occlusion.
+To evaluate action binding, direct visual comparison with ground-truth videos is unreliable as the correct action may be performed even if the subject's state has drifted. 
+We propose a Movement Accuracy metric (MA) that extracts each subject's movement (left, right, up, down, or still) from consecutive video frames and compares it with the input action.
+To do so, we train simple subject detectors that achieve near 100\% accuracy on raw video frames.
+To measure the effect of context-dependent ``Interact'' actions, we introduce an Effect Accuracy metric (EA) that extracts a 3 3 tile patch centered on the ground truth player position and evaluate dissimilarity with the previous frame with SSIM.
+We empirically set a threshold patch SSIM 0.85 to detect executed actions.
+We also introduce two simple metrics to monitor subjects: Subject Preservation (SP) and Detection Rate (DR).
+SP measures how many subjects are retained at the end of the generation.
+DR measures the percentage of steps where the subject's position aligns with ground-truth.
+Please refer to Supplementary for more details on metric implementations.
+For completeness, we also report standard visual quality metrics between ground-truth and generated videos, including PSNR, LPIPS~[citation], and FVD~[citation].
+Finally, as our model also predicts subject coordinates, we compute z_t error as the L2 distance between ground-truth and predicted positions.
+
+ 
+
+ 
+
+Action binding evaluation
+
+Quantitative evaluation.
+We compare action binding performance for and baselines in [ref]. 
+First, we notice that baselines dramatically fail in movement accuracy, for which the best baseline (Text-Action) achieves 0.158.
+ instead yields 0.779, showcasing that our contributions are fundamental to correctly bind actions to specific subjects.
+Interestingly, we noticed that baselines tend to remove the subject from the scene, as highlighted from our improved SP (0.903) with respect to the closest baseline (0.668).
+Finally, we report improvements in DR, showing that subjects are rendered in the correct position most of the time (0.886).
+The trained methods demonstrate consistency with ground-truth, with ours achieving the highest alignment due to improved action following as shown by the visual fidelity metrics. 
+We also break down the effect accuracy in each category in [ref].
+ works the best across all types of actions. Especially on the context-dependent ``Interact'' action, our model more than doubles the success rate of existing baselines.
+
+Autoregressive stability.
+In [ref], we measure the stability of our autoregressive inference.
+We plot, for different autoregressive steps, the movement accuracy of and baselines.
+While some baselines, such as Text-Action, yield suboptimal yet acceptable results on the first step, it quickly degrades in subsequent steps.
+Conversely, thanks to the joint modeling of subject states, allows for a relatively stable autoregressive inference, showing that our action binding performance remains consistent over time.
+
+Qualitative comparison. 
+In [ref], we compare with baselines on a sample from the Paintball game (more results in Supplementary).
+In this game, subjects can move around, turn, and shoot a colored beam with the ``Interact'' action.
+In the figure, we use small arrows to denote the ground-truth position and orientation of all subjects at a given step.
+Compared to baselines, is the only method that successfully binds all actions to subjects.
+Our rendered frames are similar to the ground-truth, with arrows overlaid on subjects, and we successfully bind the ``Interact'' action in the last step, as a red beam appears in front of the subject.
+Conversely, the Text-Action baseline fails whenever subjects move away from their initial positions, as it is unable to differentiate distinct subjects.
+The zero-shot I2V approach fails drastically at assigning separate actions to different subjects and applies a continuous downwards movement to detected sprites.
+It also fails to maintain the appearance of subjects.
+This aligns with our reported metrics, and showcases the importance of our problem setup as a common failure mode of video diffusion models.
+
+Qualitative results. In [ref], we test our method on a range of games including Cooking, Chemistry, and Predator-Prey, which have 2, 4, and 7 subjects being controlled, respectively. We plot a zoomed-in view of two subjects in each frame to aid visibility, however all subjects are indeed being controlled in a single scene. Coordinate predictions z_t are plotted as colored circles. Our position control can successfully control identical-looking subjects as in the Chemistry game. Our single learned action space can also apply the same actions to diverse appearances in unique backgrounds as seen in the bottom two rows. Even if the coordinate prediction is slightly off, action binding may still be successful if it is enough to spatially disambiguate different subjects.
+
+Ablation studies
+
+We conduct ablation studies in a smaller-scale setup due to excessive training costs.
+Here, we collect 2.5k samples from one of the game environments called Coins at a resolution of 256 256.
+This game involves two players walking around and picking up coins that are randomly scattered around a map.
+All ablations are initialized from the same autoregressive pretrained checkpoint and fine-tuned with action control for 45k steps.
+In this setup, our model achieves 87.2\% movement accuracy (MA) and maintains a subject detection rate (DR) at ground truth positions of 91.3\%.
+
+We list results in [ref] and qualitatively compare the final generated frame and subject trajectories z_t in [ref].
+We first study the importance of the attention masks in .
+By removing the self-attention mask M_SA , subject tokens are allowed to attend to each other, causing information leak between subjects and ultimately reducing MA to 58\%.
+We also tried removing the cross-attention mask M_CA , which results in a drop of MA to 5.2\%.
+Evidently, the presence of M_CA ensures the assignment of actions to the correct subject state tokens, and thus is a fundamental component for correct action binding.
+Similarly, adding a frame-wise M_CA that only allows each subject token to attend to the action at its own frame, rather than all frames, reduces performance drastically.
+Attending to the full action sequence in z_t may improve action following.
+Finally, removing the RoPE bias in self-attention prevents any action binding as the subject tokens do not attend to the correct video tokens (MA drops to 3.2\%).
+In general, we notice that the z_t error and detection rate closely align with MA, meaning that action binding relies on accurate localization of subjects.

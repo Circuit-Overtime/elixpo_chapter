@@ -1,0 +1,23 @@
+# Core
+openai>=1.6.0
+nltk>=3.8.1
+python-dotenv>=1.0.0
+
+# Document parsing
+PyPDF2>=3.0.0
+python-docx>=1.1.0
+
+# PDF report generation
+reportlab>=4.0.0
+
+# Embeddings & similarity
+sentence-transformers>=2.2.0
+torch>=2.1.0
+
+# Session management
+redis>=5.0.0
+
+# API (Phase 6)
+fastapi>=0.104.0
+uvicorn>=0.24.0
+python-multipart>=0.0.6
