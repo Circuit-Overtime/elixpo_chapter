@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg-deep: #0c0f0a;
+  --color-bg-card: rgba(16, 24, 12, 0.8);
+  --color-bg-glass: rgba(255, 255, 255, 0.05);
+  --color-bg-glass-hover: rgba(255, 255, 255, 0.08);
+
+  --color-lime: #a3e635;
+  --color-lime-light: #bef264;
+  --color-lime-dim: rgba(163, 230, 53, 0.15);
+  --color-lime-border: rgba(163, 230, 53, 0.3);
+  --color-lime-glow: rgba(163, 230, 53, 0.6);
+
+  --color-sage: #86efac;
+  --color-sage-dim: rgba(134, 239, 172, 0.15);
+
+  --color-honey: #fbbf24;
+  --color-honey-dim: rgba(251, 191, 36, 0.15);
+
+  --color-lavender: #c4b5fd;
+  --color-lavender-dim: rgba(196, 181, 253, 0.15);
+
+  --color-text-primary: #f5f5f4;
+  --color-text-secondary: rgba(245, 245, 244, 0.8);
+  --color-text-muted: rgba(245, 245, 244, 0.7);
+  --color-text-subtle: rgba(255, 255, 255, 0.5);
+
+  --color-border-light: rgba(255, 255, 255, 0.1);
+  --color-border-medium: rgba(255, 255, 255, 0.15);
+  --color-border-hover: rgba(255, 255, 255, 0.3);
+
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Space Grotesk", "DM Sans", sans-serif;
+  --font-mono: monospace;
+}
+
+body {
+  background: linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* Glass card */
+.glass-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--color-border-light);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+.glass-card:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
+}
+
+/* Score colors */
+.score-green { color: var(--color-success); }
+.score-yellow { color: var(--color-warning); }
+.score-red { color: var(--color-error); }
+
+/* Progress bar */
+.progress-track {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.progress-fill {
+  background: linear-gradient(90deg, var(--color-lime), var(--color-sage));
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+  height: 100%;
+}
+
+/* Glow effect */
+.glow-lime {
+  box-shadow: 0 0 20px var(--color-lime-glow);
+}
+
+/* Gradient text */
+.text-gradient {
+  background: linear-gradient(135deg, #f5f5f4 0%, #a3e635 30%, #86efac 60%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }

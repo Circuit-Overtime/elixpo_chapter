@@ -1,6 +1,6 @@
 # ReWrite — Production Build TODO
 
-## Phase 1: Core Infrastructure (Current — Local)
+## Phase 1: Core Infrastructure (Complete)
 
 - [x] Project scaffold + venv
 - [x] Pollinations API wrapper (llm.py)
@@ -17,7 +17,7 @@
 - [x] Enhanced LLM wrapper (retries, timeout handling, streaming, Bearer auth)
 - [x] Default model set to `kimi` via Pollinations API
 
-## Phase 2: Detection Engine
+## Phase 2: Detection Engine (Complete)
 
 - [x] **Deep linguistic analysis** (beyond simple heuristics)
   - [x] Perplexity estimation — self-surprise via bigram model (linguistic.py)
@@ -31,40 +31,81 @@
 - [x] Segment-level analysis (~150-word chunks preserving sentence boundaries)
 - [x] Ensemble scorer (weighted: 0.25 LLM judge + 0.43 linguistic + 0.32 heuristic, with fallback)
 
-## Phase 3: Document Pipeline
+## Phase 3: Document Pipeline (Complete)
 
 - [x] PDF text extraction (PyPDF2)
 - [x] DOCX text extraction (python-docx)
 - [x] **LaTeX (.tex) text extraction** — strip commands, preserve section structure, handle math environments (parser.py)
-- [x] Document structure model (sections → paragraphs → sentences hierarchy)
+- [x] Document structure model (sections -> paragraphs -> sentences hierarchy)
 - [x] Annotated PDF report generation (color-coded highlights, per-paragraph scores, summary page)
 - [ ] Clean rewritten PDF output (rewritten text in original formatting)
 
-## Phase 4: Smart Paraphraser
+## Phase 4: Smart Paraphraser (Complete)
 
 - [x] Domain-aware prompt templates (CS, medicine, law, humanities, general)
 - [x] Targeted rewriting pipeline (only segments >20% AI, with surrounding context)
 - [x] Semantic similarity verification via embeddings (all-MiniLM-L6-v2, reject <0.85)
-- [x] Iterative refinement loop (rewrite → re-score → retry, max 3, escalating intensity)
+- [x] Iterative refinement loop (rewrite -> re-score -> retry, max 5, escalating intensity)
 - [x] Post-processing pipeline (marker removal, burstiness injection, sentence starter dedup)
 
-## Phase 5: Session & Context Management (VPS)
+## Phase 5: Session & Context Management (Complete)
 
 - [x] Redis session store (document state, scores, TTL expiry, in-memory fallback)
 - [x] Context compression for long papers (LLM summarization, sliding window)
 - [x] Semantic similarity via sentence-transformers (all-MiniLM-L6-v2, 384-dim, CPU)
 
-## Phase 6: API & Deployment (VPS)
+## Phase 6: API & Deployment — P0 (In Progress)
 
-- [ ] FastAPI REST API
-  - POST /api/detect — text or file upload, returns segment-level scores
-  - POST /api/paraphrase — text or file, returns rewritten + scores
-  - GET /api/job/{id} — poll long-running jobs
-  - GET /api/report/{id}/pdf — download annotated PDF
-- [ ] Background job processing (asyncio tasks)
-- [ ] Rate limiting and API key management
-- [ ] Docker compose (app + Redis)
-- [ ] Nginx reverse proxy + SSL
+### 6.1 FastAPI REST API
+- [ ] App factory + CORS + error handlers
+- [ ] `POST /api/detect` — text or file upload, returns segment-level scores
+- [ ] `POST /api/paraphrase` — text or file, returns job ID for polling
+- [ ] `GET /api/job/{id}` — poll long-running paraphrase jobs (status + progress)
+- [ ] `GET /api/report/{id}/pdf` — download annotated PDF report
+- [ ] `POST /api/upload` — file upload endpoint (PDF, DOCX, LaTeX, TXT)
+
+### 6.2 Background Job Processing
+- [ ] In-memory job store (dict-based, upgradeable to Redis)
+- [ ] Async job runner for paraphrase tasks (threaded to avoid blocking API)
+- [ ] Job progress tracking (per-paragraph updates)
+- [ ] Job result cleanup (TTL-based expiry)
+
+### 6.3 Input Validation & Security
+- [ ] File size limit (10 MB max)
+- [ ] Max page/paragraph count limits
+- [ ] Supported file type validation
+- [ ] Text length validation (min 50 chars, max 100k chars)
+- [ ] Request body size limits
+
+### 6.4 Rate Limiting
+- [ ] Per-IP rate limiting on all endpoints
+- [ ] Stricter limits on paraphrase (expensive LLM calls)
+- [ ] Rate limit headers in responses (X-RateLimit-*)
+
+### 6.5 Deployment
+- [ ] Dockerfile (Python 3.11 slim + deps)
+- [ ] docker-compose.yml (app + Redis)
+- [ ] .env.example with placeholder values
+- [ ] Gunicorn/uvicorn production config
+
+### 6.6 Documentation
+- [ ] README.md (installation, usage, API reference, supported formats)
+
+## Phase 7: Frontend & Auth (Planned)
+
+- [ ] Web frontend (file upload, results view, download rewritten doc)
+- [ ] Elixpo OAuth integration (login/signup)
+- [ ] Per-user usage tracking and history
+- [ ] Progress indicator for long paraphrase jobs
+
+## Phase 8: Performance & Polish (Planned)
+
+- [ ] Parallel paragraph processing (concurrent LLM calls)
+- [ ] Clean rewritten PDF output (formatted like original)
+- [ ] Slim torch dependency (CPU-only wheel or onnxruntime)
+- [ ] User-friendly error messages
+- [ ] Core test suite (detection, paraphrasing, parsing, reports)
+- [ ] Proper Python packaging (pyproject.toml, __version__)
 
 ## Architecture Reference
 
@@ -86,29 +127,36 @@ app/
 │   ├── postprocess.py       # Marker removal, burstiness injection, starter dedup
 │   └── targeted.py          # Only rewrite flagged segments with context
 ├── document/
-│   ├── parser.py            # PDF/DOCX/LaTeX/TXT → structured text
+│   ├── parser.py            # PDF/DOCX/LaTeX/TXT -> structured text
 │   ├── report.py            # Generate annotated + clean PDFs
-│   └── structure.py         # Document hierarchy model
+│   ├── structure.py         # Document hierarchy model
+│   └── tex_writer.py        # LaTeX rewriting preserving structure
 ├── session/
 │   ├── store.py             # Redis + in-memory fallback session store
 │   └── compression.py       # Summarize sections for context window management
+├── api/                     # NEW — Phase 6
+│   ├── app.py               # FastAPI application factory
+│   ├── routes/
+│   │   ├── detect.py        # Detection endpoints
+│   │   ├── paraphrase.py    # Paraphrase endpoints
+│   │   ├── jobs.py          # Job polling endpoints
+│   │   └── reports.py       # Report download endpoints
+│   ├── jobs.py              # Background job runner
+│   ├── middleware.py        # Rate limiting, CORS, error handling
+│   └── schemas.py           # Pydantic request/response models
 └── cli.py                   # CLI with file I/O, domain, segments, report flags
 ```
 
-## Detection Ensemble Weights
+## Detection Ensemble Weights (Calibrated)
 
 ```
-Final Score = 0.25 × LLM_judge
-            + 0.15 × perplexity
-            + 0.12 × burstiness
-            + 0.10 × vocab_markers
-            + 0.10 × coherence
-            + 0.08 × n_gram_uniformity
-            + 0.07 × TTR
-            + 0.05 × readability
-            + 0.03 × sentence_starters
-            + 0.03 × paragraph_structure
-            + 0.02 × punctuation_diversity
+Final Score = 0.25 x LLM_judge
+            + 0.20 x burstiness        (d=2.01)
+            + 0.18 x vocab_markers      (d=1.81)
+            + 0.12 x paragraph_structure (d=1.15)
+            + 0.10 x n_gram_uniformity  (d=1.03)
+            + 0.10 x repetition         (d=0.95)
+            + 0.05 x punctuation_div    (d=0.46)
 ```
 
 ## Thresholds
@@ -116,8 +164,8 @@ Final Score = 0.25 × LLM_judge
 | Metric | Green | Yellow | Red |
 |--------|-------|--------|-----|
 | AI score per segment | <20% | 20-60% | >60% |
-| Semantic similarity | ≥0.85 | 0.70-0.85 | <0.70 |
-| Max rewrite attempts | — | — | 3 |
+| Semantic similarity | >=0.85 | 0.70-0.85 | <0.70 |
+| Max rewrite attempts | -- | -- | 5 |
 
 ## Notes
 
@@ -126,3 +174,5 @@ Final Score = 0.25 × LLM_judge
 - Sentence-transformers running on CPU (all-MiniLM-L6-v2, 384-dim)
 - LaTeX parser strips commands but preserves section/paragraph structure
 - Deep linguistic features (perplexity, coherence, entropy) don't require GPU — all CPU-based with nltk/numpy
+- Paraphrase temperatures kept LOW (0.6-0.9) — high temps produce more detectable text
+- Always rewrite from original text, not from failed rewrites
