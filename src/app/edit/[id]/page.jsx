@@ -31,7 +31,7 @@ const TOOL_ICONS = {
 const EDIT_PRESETS = [
   { id: 'remove-bg', label: 'Remove Background', icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 9h6v6H9z" /></>, prompt: null, comingSoon: true },
   { id: 'outpaint', label: 'Extend Image', icon: <><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></>, prompt: 'Extend the image beyond its current borders, seamlessly continuing the scene' },
-  { id: 'fix-pose', label: 'Fix Character Pose', icon: <><circle cx="12" cy="4" r="2" /><path d="M12 6v5" /><path d="M9 11l-3 5" /><path d="M15 11l3 5" /></>, prompt: 'Fix and adjust the character pose naturally while keeping the same identity and style' },
+  { id: 'fix-pose', label: 'Fix Character Pose', icon: <><circle cx="12" cy="4" r="2" /><path d="M12 6v5" /><path d="M9 11l-3 5" /><path d="M15 11l3 5" /></>, prompt: null, isPosePicker: true },
   { id: 'upscale', label: 'Enhance / Upscale', icon: <><path d="M15 3h6v6" /><path d="M14 10l7-7" /><path d="M9 21H3v-6" /><path d="M10 14l-7 7" /></>, prompt: null, comingSoon: true },
   { id: 'relight', label: 'Relight Scene', icon: <><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2" /></>, prompt: null, isRelight: true },
   { id: 'style-transfer', label: 'Style Transfer', icon: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /></>, prompt: null, isStyleTransfer: true },
@@ -47,6 +47,80 @@ const RELIGHT_OPTIONS = [
   { id: 'candlelight', label: 'Candlelight', prompt: 'Relight with warm flickering candlelight, intimate mood, orange-amber glow' },
   { id: 'moonlight', label: 'Moonlight', prompt: 'Relight with cool silvery moonlight, night scene, subtle blue highlights' },
 ];
+
+const POSE_LIMBS = [
+  ['nose', 'leftShoulder', '#ff6b6b'],
+  ['nose', 'rightShoulder', '#ff6b6b'],
+  ['leftShoulder', 'leftElbow', '#74c0fc'],
+  ['leftElbow', 'leftWrist', '#74c0fc'],
+  ['rightShoulder', 'rightElbow', '#ffa94d'],
+  ['rightElbow', 'rightWrist', '#ffa94d'],
+  ['leftShoulder', 'rightShoulder', '#a9e34b'],
+  ['leftHip', 'rightHip', '#a9e34b'],
+  ['leftShoulder', 'leftHip', '#a9e34b'],
+  ['rightShoulder', 'rightHip', '#a9e34b'],
+  ['leftHip', 'leftKnee', '#ffd43b'],
+  ['leftKnee', 'leftAnkle', '#ffd43b'],
+  ['rightHip', 'rightKnee', '#da77f2'],
+  ['rightKnee', 'rightAnkle', '#da77f2'],
+];
+
+const DEFAULT_SKELETON = {
+  nose:           { x: 0.50, y: 0.08 },
+  leftShoulder:   { x: 0.42, y: 0.22 },
+  rightShoulder:  { x: 0.58, y: 0.22 },
+  leftElbow:      { x: 0.38, y: 0.35 },
+  rightElbow:     { x: 0.62, y: 0.35 },
+  leftWrist:      { x: 0.36, y: 0.48 },
+  rightWrist:     { x: 0.64, y: 0.48 },
+  leftHip:        { x: 0.44, y: 0.52 },
+  rightHip:       { x: 0.56, y: 0.52 },
+  leftKnee:       { x: 0.43, y: 0.70 },
+  rightKnee:      { x: 0.57, y: 0.70 },
+  leftAnkle:      { x: 0.43, y: 0.88 },
+  rightAnkle:     { x: 0.57, y: 0.88 },
+};
+
+const JOINT_COLORS = {
+  nose: '#ff6b6b', leftShoulder: '#74c0fc', rightShoulder: '#ffa94d',
+  leftElbow: '#74c0fc', rightElbow: '#ffa94d', leftWrist: '#74c0fc', rightWrist: '#ffa94d',
+  leftHip: '#a9e34b', rightHip: '#a9e34b', leftKnee: '#ffd43b', rightKnee: '#da77f2',
+  leftAnkle: '#ffd43b', rightAnkle: '#da77f2',
+};
+
+function buildPosePrompt(joints) {
+  const parts = [];
+  // Arm height
+  if (joints.leftWrist.y < joints.leftShoulder.y - 0.05) parts.push('left arm raised above head');
+  else if (joints.leftWrist.y < joints.leftElbow.y - 0.03) parts.push('left arm raised');
+  else parts.push('left arm at side');
+
+  if (joints.rightWrist.y < joints.rightShoulder.y - 0.05) parts.push('right arm raised above head');
+  else if (joints.rightWrist.y < joints.rightElbow.y - 0.03) parts.push('right arm raised');
+  else parts.push('right arm at side');
+
+  // Arm extension
+  const shoulderSpan = Math.abs(joints.rightShoulder.x - joints.leftShoulder.x);
+  if (Math.abs(joints.leftWrist.x - joints.leftShoulder.x) > shoulderSpan * 0.8) parts.push('left arm extended outward');
+  if (Math.abs(joints.rightWrist.x - joints.rightShoulder.x) > shoulderSpan * 0.8) parts.push('right arm extended outward');
+
+  // Leg bend
+  if (Math.abs(joints.leftKnee.x - joints.leftHip.x) > 0.08) parts.push('left leg bent');
+  if (Math.abs(joints.rightKnee.x - joints.rightHip.x) > 0.08) parts.push('right leg bent');
+
+  // Stance width
+  const hipSpan = Math.abs(joints.rightHip.x - joints.leftHip.x);
+  const ankleSpan = Math.abs(joints.rightAnkle.x - joints.leftAnkle.x);
+  if (ankleSpan > hipSpan * 1.5) parts.push('wide stance legs apart');
+  else if (ankleSpan < hipSpan * 0.5) parts.push('legs together');
+
+  // Body lean
+  const torsoCenter = (joints.leftShoulder.x + joints.rightShoulder.x) / 2;
+  if (joints.nose.x < torsoCenter - 0.06) parts.push('leaning left');
+  else if (joints.nose.x > torsoCenter + 0.06) parts.push('leaning right');
+
+  return `character with ${parts.join(', ')}, full body visible`;
+}
 
 export default function EditorPage({ params }) {
   const { id } = use(params);
@@ -75,6 +149,11 @@ export default function EditorPage({ params }) {
   const [stylePicker, setStylePicker] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState(null);
   const [relightPicker, setRelightPicker] = useState(false);
+  const [posePicker, setPosePicker] = useState(false);
+  const [checkingCharacter, setCheckingCharacter] = useState(false);
+  const [skeletonJoints, setSkeletonJoints] = useState({ ...DEFAULT_SKELETON });
+  const [poseNote, setPoseNote] = useState('');
+  const draggingJoint = useRef(null);
   const abortRef = useRef(null);
 
   // Pan state
@@ -135,6 +214,7 @@ export default function EditorPage({ params }) {
         setHelpTooltip(null);
         setStylePicker(false);
         setRelightPicker(false);
+        setPosePicker(false);
       }
       // Tool shortcuts
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -324,16 +404,49 @@ export default function EditorPage({ params }) {
     }
   };
 
-  const handlePresetClick = (preset) => {
+  const handlePresetClick = async (preset) => {
     if (preset.comingSoon) return;
     if (preset.isStyleTransfer) {
       setStylePicker(true);
       setRelightPicker(false);
+      setPosePicker(false);
       return;
     }
     if (preset.isRelight) {
       setRelightPicker(true);
       setStylePicker(false);
+      setPosePicker(false);
+      return;
+    }
+    if (preset.isPosePicker) {
+      if (!imageSrc) return;
+      setCheckingCharacter(true);
+      setError(null);
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: imageSrc,
+            query: 'Does this image contain a visible human or humanoid character with a body? Reply with JSON: {"hasCharacter": true, "reason": "..."} or {"hasCharacter": false, "reason": "..."}'
+          }),
+        });
+        const data = await res.json();
+        if (!data.hasCharacter) {
+          setError('No character detected. Pose editing requires a visible character in the image.');
+          return;
+        }
+        setSkeletonJoints({ ...DEFAULT_SKELETON });
+        setPoseNote('');
+        setPosePicker(true);
+      } catch {
+        // On error, allow through
+        setSkeletonJoints({ ...DEFAULT_SKELETON });
+        setPoseNote('');
+        setPosePicker(true);
+      } finally {
+        setCheckingCharacter(false);
+      }
       return;
     }
     setPrompt(preset.prompt);
@@ -352,6 +465,31 @@ export default function EditorPage({ params }) {
     setPrompt(option.prompt);
     setRelightPicker(false);
     handleEdit(option.prompt);
+  };
+
+  // ─── Pose editor handlers ───
+  const handleJointDown = (name, e) => {
+    e.stopPropagation();
+    draggingJoint.current = name;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePoseSVGMove = (e) => {
+    if (!draggingJoint.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const ny = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+    setSkeletonJoints(prev => ({ ...prev, [draggingJoint.current]: { x: nx, y: ny } }));
+  };
+
+  const handlePoseSVGUp = () => { draggingJoint.current = null; };
+
+  const handlePoseGenerate = () => {
+    const poseDesc = buildPosePrompt(skeletonJoints);
+    const final = poseDesc + (poseNote.trim() ? `, ${poseNote.trim()}` : '') + ', keep same character identity, clothing, and art style';
+    setPosePicker(false);
+    setPrompt(final);
+    handleEdit(final);
   };
 
   const handleImportImage = (e) => {
@@ -706,6 +844,75 @@ export default function EditorPage({ params }) {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pose Editor Modal */}
+      {posePicker && imageSrc && (
+        <div className={styles.pickerOverlay} onClick={() => setPosePicker(false)}>
+          <div className={styles.poseModal} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.pickerTitle}>Adjust Character Pose</h3>
+            <p className={styles.poseHint}>Drag the joints to set the target pose, then hit Generate</p>
+
+            <div className={styles.poseImageWrap}>
+              <img src={imageSrc} alt="Pose reference" className={styles.poseImage} draggable={false} />
+              <svg
+                className={styles.poseSVG}
+                viewBox="0 0 1 1"
+                preserveAspectRatio="none"
+                onPointerMove={handlePoseSVGMove}
+                onPointerUp={handlePoseSVGUp}
+                onPointerLeave={handlePoseSVGUp}
+              >
+                {/* Limbs */}
+                {POSE_LIMBS.map(([a, b, color], i) => (
+                  <line
+                    key={i}
+                    x1={skeletonJoints[a].x} y1={skeletonJoints[a].y}
+                    x2={skeletonJoints[b].x} y2={skeletonJoints[b].y}
+                    stroke={color} strokeWidth="0.008" strokeLinecap="round"
+                  />
+                ))}
+                {/* Joints */}
+                {Object.entries(skeletonJoints).map(([name, pos]) => (
+                  <circle
+                    key={name}
+                    cx={pos.x} cy={pos.y} r="0.015"
+                    fill="#fff" stroke={JOINT_COLORS[name]} strokeWidth="0.005"
+                    style={{ cursor: 'grab', filter: 'drop-shadow(0 0.002px 0.005px rgba(0,0,0,0.8))' }}
+                    onPointerDown={(e) => handleJointDown(name, e)}
+                  />
+                ))}
+              </svg>
+            </div>
+
+            <textarea
+              className={styles.poseTextarea}
+              placeholder="Optional: describe additional pose details (e.g. 'sitting on a chair', 'dancing')..."
+              value={poseNote}
+              onChange={(e) => setPoseNote(e.target.value)}
+              rows={2}
+            />
+
+            <div className={styles.poseActions}>
+              <button className={styles.poseResetBtn} onClick={() => setSkeletonJoints({ ...DEFAULT_SKELETON })}>
+                Reset Skeleton
+              </button>
+              <button className={styles.poseGenerateBtn} onClick={handlePoseGenerate} disabled={generating}>
+                Generate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Character checking overlay */}
+      {checkingCharacter && (
+        <div className={styles.pickerOverlay}>
+          <div className={styles.checkingBox}>
+            <div className={styles.canvasSpinner} />
+            <span>Checking for character...</span>
           </div>
         </div>
       )}
