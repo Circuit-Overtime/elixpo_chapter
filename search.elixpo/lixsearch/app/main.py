@@ -12,7 +12,7 @@ from sessions.main import get_session_manager
 from ragService.main import get_retrieval_system
 from chatEngine.main import initialize_chat_engine
 from commons.requestID import RequestIDMiddleware
-from app.gateways import health, search, session, chat, stats, websocket, surf, discover, completions, image, export, content
+from app.gateways import health, search, session, stats, surf, completions, image, export, content
 logger = logging.getLogger("lixsearch-api")
 
 
@@ -105,19 +105,10 @@ class lixSearch:
     def _register_routes(self):
         async def health_check_wrapper():
             return await health.health_check(self.pipeline_initialized)
-        
+
         async def search_wrapper():
             return await search.search(self.pipeline_initialized)
-        
-        async def chat_wrapper():
-            return await chat.chat(self.pipeline_initialized)
-        
-        async def session_chat_wrapper(session_id):
-            return await chat.session_chat(session_id, self.pipeline_initialized)
-        
-        async def chat_completions_wrapper(session_id):
-            return await chat.chat_completions(session_id, self.pipeline_initialized)
-        
+
         _public_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'public')
 
         async def scalar_ui():
@@ -141,16 +132,15 @@ class lixSearch:
         async def serve_favicon():
             favicon_path = os.path.join(_public_dir, 'images', 'icon.png')
             return await send_file(favicon_path, mimetype='image/png')
-        
+
         self.app.route('/api/health', methods=['GET'])(health_check_wrapper)
-        self.app.route('/api/search', methods=['POST', 'GET'])(search_wrapper)
+        self.app.route('/api/search', methods=['GET'])(search_wrapper)
 
         async def completions_wrapper():
             return await completions.chat_completions(self.pipeline_initialized)
         self.app.route('/v1/chat/completions', methods=['POST'])(completions_wrapper)
 
         async def models_list():
-
             from pipeline.config import RESPONSE_MODEL
             return jsonify({
                 "object": "list",
@@ -164,16 +154,11 @@ class lixSearch:
                 ],
             })
         self.app.route('/v1/models', methods=['GET'])(models_list)
-        self.app.route('/api/session/create', methods=['POST'])(session.create_session)
+        self.app.route('/api/models', methods=['GET'])(models_list)
+        self.app.route('/api/session/create', methods=['GET'])(session.create_session)
         self.app.route('/api/session/<session_id>', methods=['GET'])(session.get_session_info)
-        self.app.route('/api/session/<session_id>/summary', methods=['GET'])(session.get_session_summary)
         self.app.route('/api/session/<session_id>', methods=['DELETE'])(session.delete_session)
-        self.app.route('/api/chat', methods=['POST'])(chat_wrapper)
-        self.app.route('/api/session/<session_id>/chat', methods=['POST'])(session_chat_wrapper)
-        self.app.route('/api/session/<session_id>/chat/completions', methods=['POST'])(chat_completions_wrapper)
-        self.app.route('/api/session/<session_id>/history', methods=['GET'])(chat.get_chat_history)
         self.app.route('/api/stats', methods=['GET'])(stats.get_stats)
-        self.app.websocket('/ws/search')(websocket.websocket_search)
         
         # Scalar API documentation UI
         self.app.route('/docs', methods=['GET'])(scalar_ui)
@@ -208,11 +193,7 @@ class lixSearch:
         async def surf_wrapper():
             return await surf.surf(self.pipeline_initialized)
 
-        async def discover_generate_wrapper():
-            return await discover.generate_discover(self.pipeline_initialized)
-
-        self.app.route('/api/surf', methods=['POST', 'GET'])(surf_wrapper)
-        self.app.route('/api/discover/generate', methods=['POST'])(discover_generate_wrapper)
+        self.app.route('/api/surf', methods=['GET'])(surf_wrapper)
 
         # Image proxy endpoint (serves generated images by ID)
         async def serve_image_wrapper(image_id):

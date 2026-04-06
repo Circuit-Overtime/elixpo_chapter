@@ -1,0 +1,119 @@
+# ─────────────────────────────────────────────────────────────────────
+# Tommy CI Configuration
+# ─────────────────────────────────────────────────────────────────────
+# Single source of truth for ALL workflow and script settings.
+# Every org-specific value lives here — nothing is hardcoded in
+# workflow YAMLs or Python scripts.
+#
+# To adopt Tommy for your own org:
+#   1. Fork this repo
+#   2. Edit this file with your values
+#   3. Set the required GitHub secrets (see "secrets" section below)
+# ─────────────────────────────────────────────────────────────────────
+
+# ── Bot Identity ────────────────────────────────────────────────────
+bot:
+  name: "Tommy"
+  trigger_phrase: "tommy"               # lowercase keyword that activates the bot in issues/PRs
+  system_prompt: >-
+    You are Tommy, a helpful developer on the team.
+    Never mention Claude, Claude Code, AI, or LLMs — you are just a team member.
+    Be casual, concise, and human. Use bullet points.
+    No verbose explanations. When commenting on issues or reviewing PRs,
+    write like a friendly dev — short, direct, helpful.
+
+# ── GitHub ──────────────────────────────────────────────────────────
+github:
+  # Users allowed to invoke the bot via trigger_phrase.
+  # Loaded from config.json → github.admin_users at CI runtime.
+  # Do NOT duplicate the list here — edit config.json instead.
+
+  # GitHub secret names (must match what you set in repo Settings → Secrets)
+  secrets:
+    app_id: "TOMMY_BOT_APP_ID"
+    private_key: "TOMMY_BOT_PRIVATE_KEY"
+    ai_token: "PLN_GITHUB_TOMMY_KEY"
+
+  # Owner for cross-repo app token (set to your GitHub org or user)
+  app_token_owner: ""                   # leave empty to use current repo owner
+
+# ── AI Provider ─────────────────────────────────────────────────────
+ai:
+  api_base_url: "https://gen.pollinations.ai/v1/chat/completions"
+  image_api_base_url: "https://gen.pollinations.ai/image"
+
+  models:
+    text: "gemini-large"                # general text generation
+    review: "claude-large"              # code review (needs large context)
+    image: "nanobanana-2"               # image generation
+    websearch: "perplexity-reasoning"   # web search / research
+
+  # Claude Code Router config (used by pr-issue-assist and pr-review workflows)
+  router:
+    providers:
+      - name: "pollinations"
+        api_base_url: "https://gen.pollinations.ai/v1/chat/completions"
+        # api_key is injected at runtime from secrets.ai_token
+        models:
+          - "claude-large"
+          - "perplexity-reasoning"
+    default_route: "pollinations,glm"
+    websearch_route: "pollinations,perplexity-reasoning"
+    anthropic_api_key: "ccr-pollinations"   # passed to claude-code-action
+
+# ── PR Review ───────────────────────────────────────────────────────
+pr_review:
+  auto_review: false                    # auto-review when PR is opened
+  review_on_sync: false                 # review on every push to the PR
+  review_trigger: "Review=True"         # comment keyword to force a review
+  max_input_tokens: 900000
+  max_output_tokens: 65000
+
+# ── Image Generation ────────────────────────────────────────────────
+image:
+  size: 2048
+  style_suffix: >-
+    Cozy pixel art, 8-bit aesthetic, large visible chunky pixels,
+    soft pastel gradients, warm ambient glow lighting, CRT glow effects.
+    Lime green #ecf874 used BOLDLY.
+    Tiny pixel sparkles and glowing particles floating in the air. Magical warm atmosphere.
+    Lo-fi retro gaming vibes like Stardew Valley or A Short Hike.
+    The attached image is a CHARACTER REFERENCE SHEET only — use it for character design,
+    proportions, and art style consistency. Do NOT copy the layout or background from it.
+    Only draw the characters mentioned in the prompt above, not all characters from the sheet.
+  character_ref_url: ""                 # URL to character reference image (leave empty to skip)
+
+# ── News / Social Pipeline ──────────────────────────────────────────
+news:
+  gists_branch: "news"                  # unprotected branch for gist data
+  gists_dir: "social/news/gists"        # relative path in the repo
+
+# ── Discord ─────────────────────────────────────────────────────────
+discord:
+  char_limit: 2000
+  chunk_size: 1900
+
+# ── Autofix ──────────────────────────────────────────────────────────
+autofix:
+  enabled: true
+  label: "tommy"                        # issues with this label get auto-fixed
+  system_prompt: >-
+    You are Tommy, an autonomous developer. You have been assigned a GitHub issue
+    to fix. You have full access to the codebase via checkout.
+    Read the issue carefully, understand the problem, find the relevant code,
+    implement the fix, and commit it. Create a pull request when done.
+    Be surgical — change only what's needed. Run tests if they exist.
+    Write a clear PR description explaining what you changed and why.
+
+# ── Project Manager ─────────────────────────────────────────────────
+project_manager:
+  # GitHub Project (V2) number — set to your project board number
+  # Leave as 0 to disable project board integration
+  project_number: 0
+
+  # Default labels applied to issues/PRs when categorized
+  labels:
+    bug: "bug"
+    feature: "enhancement"
+    docs: "documentation"
+    question: "question"

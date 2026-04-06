@@ -1,0 +1,940 @@
+# go-$m$HC: Direct Parameterization of Manifold-Constrained Hyper-Connections via Generalized Orthostochastic Matrices
+# arXiv: 2604.02309
+# Words: 11269
+
+[
+ go- : Direct Parameterization of Manifold-Constrained\ -Connections via Generalized Orthostochastic Matrices
+
+ equal*
+
+ icmlauthorlist
+ Torque Dandachicomp
+ Sophia Diggs-Galligancomp
+ icmlauthorlist
+
+ compIndependent, San Francisco, United States of America
+
+ Torque Dandachihi@itstorque.com
+ 
+
+ 0.3in
+]
+
+abstract
+ Doubly stochastic matrices enable learned mixing across residual streams, but parameterizing the set of doubly stochastic matrices (the Birkhoff polytope) exactly and efficiently remains an open challenge. Existing exact methods scale factorially with the number of streams ( d ), while Kronecker-factorized approaches are efficient but expressivity-limited. We introduce a novel exact parameterization grounded in the theory of generalized orthostochastic matrices, which scales as O(d^3) and exposes a single hyperparameter s which continuously interpolates between a computationally efficient boundary and the fully expressive Birkhoff polytope. Building on Manifold-Constrained Hyper-Connections ( ), a framework for learned dynamic layer connectivity, we instantiate this parameterization in go- . Our method composes naturally with Kronecker-factorized methods, substantially recovering expressivity at similar FLOP costs. Spectral analysis indicates that go- \ fills the Birkhoff polytope far more completely than Kronecker-factorized baselines. On synthetic stream-mixing tasks, go- \ achieves the minimum theoretical loss while converging up to 10 faster. We validate our approach in a 30M parameter GPT-style language model. The expressivity, efficiency, and exactness of go- \ offer a practical avenue for scaling d as a new dimension of model capacity.
+abstract
+
+Introduction
+
+The performance and stability of modern machine learning models increasingly depends on the geometric structure of their underlying matrix parameterizations [citation]. While traditional constraints—such as symmetry or orthogonality—have long served as foundational tools [citation], recent breakthroughs have pivoted toward more complex geometric structures [citation].
+A promising frontier for addressing these limitations lies in leveraging manifold theory to map unconstrained optimization spaces onto computationally tractable, constrained geometries [citation]. Of particular interest is the Birkhoff polytope [citation], the manifold of doubly stochastic matrices. By enforcing unit row and column sum constraints, the Birkhoff polytope offers a rigorous framework for learning permutations, alignments, and hyper-connections, yet its practical utility has been bottlenecked by the trade-off between exactness and computational scalability [citation].
+
+[citation] demonstrated that constraining the attention pattern to doubly stochastic matrices both improved accuracy in vision and language models while providing an elegant interpretation of learned parameters as probability trajectories [citation]. [citation] investigated memory-efficient implementations of Sinkhorn Attention due to it's ability to mix internal representations and have an associated smooth optimization landscape.
+
+A more recent application of such manifold constraints is in the generalization of residual connections [citation].
+Residual connections have become a crucial component in stabilizing the training of deep neural networks [citation] and a critical building block of modern large language models [citation].
+Ongoing work investigates dynamic generalizations of the residual streams aimed at increasing the topological complexity of residual function connectivity by increasing the number of streams, d , while preserving the identity mapping property of the residual stream [citation]. 
+
+figure*[t] 
+ 
+ figures/main_fig.pdf
+ Spectral analysis and architectural integration of go- . 
+(Left) Spectral Comparison: Illustration of spectral reach and approximation gaps across several manifold parameterization methods.
+ (and the Sinkhorn-Knopp algorithm) is not guaranteed to always remain within the manifold after finite iterations iterations (red points). 
+go- \ (Ours) closely approximates the Birkhoff polytope B_d within an (s) error margin using only d(d-1)2 parameters. 
+ -lite provides full coverage but requires d! parameters, while KromHC is restricted to tensors of B_2 , disallowing non-adjacent cycles of length >2 and severely restricting the space of learnable matrices.
+(Middle) Parameterization Pipeline: Our method maps learned skew-symmetric parameters X = -X^ R^ds ds to an orthogonal matrix Q Q(ds) via the Cayley Transform (I-X)(I+X)^-1 . The final doubly stochastic matrix B R^d d is obtained by a block-wise Frobenius norm projection 1s \|Q_ij\|_F^2 .
+(Right) Hyper-Connections: The transformation ^res is integrated into the residual stream x_l+1 = _l^resx_l + Layer F(x_l) , where the doubly stochastic constraint ensures training stability and improved gradient flow.
+ 
+figure*
+
+Manifold-Constrained Hyper-Connections ( ) [citation] provides evidence that constraining the residual connections to the interior of the Birkhoff polytope significantly improves training stability and scalability. These dynamic generalizations reveal the possibility for a new scaling dimension complementing that of traditional scaling laws: the number of residual streams, d . Follow-up works have already implemented \ as the default backbone due to its superior modeling capabilities [citation].
+
+In order to further explore the feasibility of this scaling dimension, two works have since introduced the use of exact parameterizations to prevent error accumulation across layers [citation]. These methods additionally avoid the overhead introduced by iterative normalization and overcome the need for custom infrastructure optimization. 
+ -lite [citation] invokes the Birkhoff--von Neumann theorem to parameterize ^res as a convex combination of all d! permutation matrices.
+However, the (d d!) parameter count explodes super-exponentially: at d=8 , 8!=40,320 permutations are required, rendering this approach memory-prohibitive without sampling approximations that restore an approximation gap.
+Conversely, KromHC [citation] uses the Kronecker products of small doubly stochastic matrices to achieve exact constraints at (d^2) complexity, but in doing so, severely trades off expresivity.
+
+We propose a complementary solution rooted in the algebraic theory of generalized orthostochastic matrices [citation].
+Our framework for exactly learning doubly stochastic matrices attempts to balance the need for efficiency and expressivity, while exposing a hyperparameter s that allows for tunability across these attributes. This opens up the possibility for further exploration and new approaches towards scaling Hyper-Connections.
+
+In this work, we focus on \ as an example application, but our generalized orthostochastic construction (go- ) can be applied more broadly as a way to parameterize and learn the interior of the Birkhoff polytope. We characterize our parameterization in the context of a synthetic data task mixing d residual streams and a 30M parameter GPT-style language model.
+
+We specifically contribute analytics and explorations that indicate that our method:
+
+Achieves faster convergence and better reachability than parametrizations invoking the Birkhoff von-neumann theorem, as in -lite and KromHC
+
+Scales as (d^3) with the number of residual streams d , both in FLOP complexity and parameter count, surpassing the super-exponential scaling of -lite and KromHC's component factors.
+
+Requires no custom CUDA kernels, relying only on batched linear solves and tensor contractions.
+
+Achieves exact double stochasticity by construction, with no iterations and no approximation gap.
+
+Includes a hyperparameter s , which serves as a tunable degree of freedom, interpolating between the orthostochastic boundary ( s=1 ) and the dense interior of the Birkhoff polytope ( s ).
+
+We believe that this method presents a potential avenue for scaling Hyper-Connections with tractable complexity while maintaining significant expressivity. Additionally, our method can be used simultaneously with KromHC to allow for larger Kronecker factors due to the mitigation of the super-exponential scaling introduced in -lite. 
+
+Related Work
+
+Residual connections and their generalizations.
+He et al.\ [citation] introduced skip connections that enable gradient flow via identity shortcuts in ResNets.
+This paradigm has evolved to become a key component in the design of large language models (LLMs) owing to its stability and scalability [citation].
+DenseNet [citation], FractalNet [citation], and subsequent works explored richer connectivity patterns passing intermediate features across networks. Other works have explored novel ways of increasing the effective size of the residual stream [citation], examples include: ResiDual [citation], which explored improvements to layer normalization by doubling the size of the residual stream, and AltUp [citation], which widened the effective hidden dimension while maintaining low compute by processing partitioned representations in different layers.
+
+Hyper-Connections (HC) [citation] proposed the first learnable, multi-stream generalization of residual streams allowing for dynamic mixing matrices. A sketch of one such residual block is shown in the green box of figure~[ref]. HC can theoretically enable models to learn depth and width connections to dynamically rearrange layer connectivity and potentially adds a new avenue for scaling.
+Multiple approaches have expanded on this work since, such as splitting
+the feature dimension into independent sub-streams [citation] and applying HC to vision and graph neural networks [citation].
+
+However, the unconstrained dynamic connectivity of residual blocks in HC removes the explicit guarantee of the identity property -- introducing the risk of gradient instability after repeated applications of the mixing terms [citation]. This instability impacts deep networks and restricts scalability due to vanishing and exploding gradients. Subsequent works investigate constraining this connectivity to a manifold that bounds gradient updates through the spectral norm in order to address this instability.
+
+Manifold-Constrained Hyper-Connections.
+Building on top of Hyper-Connections, Manifold-Constrained Hyper Connections ( ) constrain the dynamic residual matrices to a manifold to improve training stability while still allowing for dynamic connections [citation]. \ primarily changes the definition of _l^res such that it converges to the Birkhoff polytope B_d , where B_d denotes the closed set of doubly stochastic matrices, defined as positive matrices with the following property:
+$ 
+M^ J_d = M J_d = J_d,
+ 
+where J_d denotes the d d ones matrix. See the blue spectral region in figure~[ref] of .
+
+While \ attempts to enforce this constraint after weight updates using the Sinkhorn-Knopp (SK) algorithm [citation], an iterative normalization method for generating doubly stochastic matrices, recent works [citation] aim to build HC networks where the learned map is exactly constrained to the polytope. This has two major implications: 1. implementing the SK kernel requires careful kernel-level optimization for efficiency, and 2. finite SK iterations introduce an approximation gap that accumulates with network depth.
+
+ -lite [citation] attempts to circumvent the approximation gap and customized kernel by making use of the Birkhoff--von Neumann theorem to define the learned connections as a convex combination of the d! permutation matrices (where d is the number of residual streams), at an (dC d!) cost. This method works well for small d , however, this is not tenable in the limit of scaling d > 8 . KromHC [citation] sacrifices expressivity and complete coverage of B_d by using tensor products to train residual connections on a much smaller set of exactly double-stochastic matrices with the added benefit of costing only (d^2 C) .
+
+Cayley transforms in neural networks.
+
+The Cayley transform has been used to parameterize orthogonal matrices in recurrent networks [citation], and comparisons with the matrix exponential show similar quality and better stability at lower FLOP cost [citation].
+Li et al. ([citation]) further demonstrate that iterative Cayley-based optimization outperforms matrix exponential approaches for Stiefel manifold problems.
+
+Doubly Stochastic \& Orthostochastic matrices.
+
+Multiple works have investigated the use of doubly stochastic matrices in the context of neural network parameterization [citation]. [citation] introduced generalized orthostochastic matrices, and more recently, [citation] proved that the set of generalized s -orthostochastic matrices is contained in _d and spans all of _d as s . Other works have investigated further properties of the spectral span of the Birkhoff polytope [citation] and the geometry of s -orthostochastic matrices in the quantum setting [citation].
+These theoretical foundations underlie our choice of parameterization.
+To our knowledge, we are the first to apply this construction in a machine learning setting and, more specifically, to learned residual stream routing in deep networks.
+
+go- : Generalized Orthostochastic Manifold-Constrained Hyper-Connections
+
+Hyper-Connections
+
+Following the illustration in figure~[ref] and prior work [citation], we define a single Hyper-Connection block's d -stream state _l ^d B L D with the recursion relation including a residual block :
+ [equation] 
+where _l^res ^d d mixes residual streams, _l^pre ^1 d aggregates streams into the branch input, and _l^post ^1 d distributes branch output back to streams. With _0 defined as d repetitions of the initial input as done in [citation]. In the limit of _l^res= _l^pre= _l^post=[1] , this is the typical single-stream residual connection.
+
+To allow for a dynamic topology of the network, the d -stream mixing, readout and write-in terms are
+allowed to be dynamic with learned parameters \( ^s_l, W^s_l, b^s_l)\_s \pre, post, res\ :
+
+ [equation] 
+
+In , the manifold constraint operator = _SK is realized via 20 iterations of the Sinkhorn-Knopp algorithm, where rows and columns are normalized iteratively.
+
+As done in -lite and KromHC, we opt to keep the above formulation
+and choose to only modify _l^res in equation~[ref] to be an exact projection.
+We instead take = _go as a map from ds(ds-1)2 parameters generated by our learned parameters ( ^res_l, W^res_l, b^res_l) to the target d d mixing matrix using the algebraic theory of generalized orthostochastic matrices.
+
+Generalized Orthostochastic Matrices
+
+A matrix B _d is called orthostochastic if B_ij = Q_ij^2 for some orthogonal matrix Q (n) . When n 3 , the set of orthostochastic matrices are proper non-convex subsets of _d [citation].
+
+For d, s Z^+ , let Q (ds) be viewed as a d d block matrix with s s blocks Q_ij . Define:
+ [equation] 
+Proposition (Nechita et al., Theorem 2.8 [citation]): _d,s(Q) _d for all Q (ds) and all s , and the set \ _d,s(Q) : Q (ds)\ converges to _d as s .
+
+The parameter s determines the rank of the block-wise Frobenius projection, where larger s provides a more faithful representation of the polytope interior. At s=1 , we recover the orthostochastic set by definition. The geometry of the orthostochastic set is a concave cycloid that meets the permutation vertices of B_d without completely occupying the interior of B_d when d>2 . Theorem 2.8 guarantees convergence to span the full polytope _d as s with monotonically increasing volume. Based on this and results in [citation] we choose to primarily focus on s=2 as our default variant of go- , but we show comparisons with s=1 and s=3 whenever mentioned. We further discuss the implications of s on geometry in appendix~[ref].
+
+Learning the s -Orthostochastic Manifold
+
+We write out our full projection, replacing equation~[ref], below:
+ [equation] 
+where the function skew maps vectors of size ds(ds-1)2 to a ds ds skew-symmetric matrix
+ ( A_l^ = -A_l ) . Equation~[ref] makes use of the Cayley transform to map
+ A_l to the space of special orthogonal matrices ( Q_l^ Q_l=I ) . We can then use _d, s from equation~[ref] to map Q_l to an exactly doubly stochastic matrix _l^res _d in equation~[ref].
+
+The Cayley transform specifically generates matrices with (Q_l)=+1 , which 
+is sufficient for full coverage since the orthostochastic transform takes the || ||_F^2 of the block matrices and removes information about reflections, keeping only the positive determinant solutions. This is also advantageous due to the path-connectedness of the special orthogonal group, the group of all ``pure'' rotations in R^d -- more on this in appendix~[ref].
+
+By leveraging the Cayley transform to map learned parameters onto Q_l , the necessity for a softmax activation on the inputs is bypassed. The Cayley transform is inherently norm-preserving which ensures numerical stability without the need for the additional normalization step. We suspect that this replacement of softmax with the Cayley transform is one of the reasons that go- \ accelerates convergence, due to its avoidance of the saturation regions of the exponential function (see results in section~[ref]). While additionally mitigating potential vanishing gradients (appendix~[ref]) and maintaining a well-conditioned Jacobian throughout training. These vanishing gradients trade-off how close mixing matrices near the boundary of the polytope can be learned and the ability to ``unlearn them'' and return to the Barycenter.
+
+While [citation] use the Amax Gain Magnitude (AGM) to quantify the worst-case amplification for _l L^res = _i=1^L-l _L-i^res :
+ [equation] 
+
+We don't rely on this metric due to the exactness of _go :
+by definition, _i _j |( _l^res)_ij|= _j _i |( _l^res)_ij|=1 . Moreover, since _d is closed under matrix multiplication, the product _l L^res remains doubly stochastic regardless of depth. Since go- , -lite, and KromHC all perform equally well on the AGM metric due to their exactness, we use two additional metrics to benchmark our method: expressivity and convergence.
+
+Expressivity
+
+Motivated by the effect of bounding the spectrum on having stable gradients (see appendix~[ref]) [citation], we choose to evaluate the expressivity of
+the different methods by using the spectrum of matrices constructed with _M as a surrogate for expressivity -- quantifying how many unique matrices can be spanned using their set of eigenvalues. We rely on surrogate measures for the expressivity of doubly stochastic matrices due to the complicated geometry of the Birkhoff polytope and given that finding the exact volume of B_d is an open problem [citation]. Formally, we define the spectral reach of H^res matrices constructed using a given method M as:
+ [equation] 
+
+Spectral Reach of B
+
+_d Subsets
+
+A mapping M with high spectral reach generates matrices spanning a larger volume of the Karpelevic region—the compact subset of the unit disk containing all possible eigenvalues of stochastic matrices. This region's boundary is defined by algebraic curves connecting the roots of unity [citation]:
+ \e^i2 d' j [1, d'], d' d\ 
+
+figure*[t!]
+ 
+ figures/spectra_numerics_compare.pdf
+ 
+ Histogram of the spectral reach of a toy model implementing the maps _SK , _lite , _krom , and _go on random targets in B_4 .
+ The blue and green lines in (a-e) are the boundary of the spectrum of the B_3 B_2 and B_4 B_3 polytopes respectively,
+ as illustrated in figure~[ref].
+ (a) (implemented via _SK ) contains points outside of B_4 (this effect is exaggerated for illustration via initial conditions with large variance).
+ (b) -lite shows good expressivity, filling the region near the boundary almost completely, without extending past it.
+ (c) KromHC fails to represent the complex region inside of B_4 -- since the ``shadow'' is 1 -dimensional, it fills an infinitesimal slice of the full polytope.
+ (d) For s=1 , we see go- represent a sizeable portion of the region, although it cannot represent all matrices near the boundary of the polytope.
+ (e) With s=2 , go- begins to represent larger regions of B_4 , filling the region more densely.
+ 
+figure*
+
+An illustration of the Karpelevic region for d=2 to d=5 is shown in figure~[ref]. If a method's spectrum is clustered within a small sub-region, it is poorly expressive; conversely, a method that ``fills'' the Karpelevic region captures the diverse dynamics represented by the polytope's extremal points. The spectral reach of , KromHC, and go- \ can all be found in ~[ref]\&[ref].
+
+Eigenvalue Coverage of s -Orthostochastic Matrices
+
+The eigenvalue distribution of d d s -orthostochastic matrices is fundamentally constrained by their membership in the Birkhoff polytope B_d and residence within the Karpelevic region. While 1 -orthostochastic matrices exhibit a restricted, hypo-cycloidal boundary, increasing the parameter s provides a progressively denser approximation of the full B_d [citation]. Consequently, as s increases, the spectral support of s -orthostochastic matrices expands to fill the Karpelevic region, approaching the density of general doubly stochastic matrices, as demonstrated in figure~[ref].
+
+The Spectral Limitation of Kronecker Products
+
+While KromHC is the most efficient of the proposed methods, it imposes a symmetry on the d -streams that significantly prunes the space of potential mixing terms in ^res , as shown in figure~[ref]c. We demonstrate that KromHC parameterizes only a sparse subset of B_d for d>2 by analyzing the spectral reach of k -fold Kronecker products. Specifically, we prove that the spectral space of a k -fold Kronecker product of doubly stochastic matrices is invariant to the index k , effectively restricting the expressive reach of the resulting constraint to that of its constituent base manifold. A formal proof of this invariance is provided in Appendix~[ref].
+
+To illustrate this expressivity bottleneck, consider the 4 4 case where A, B B_2 . Their individual spectra are defined as \1, _A\ and \1, _B\ for [-1, 1] . The spectrum of the Kronecker product A B is thus \1, _A, _B, _A _B\ . Crucially, since the product _A _B remains real and within the interval [-1, 1] , the resulting eigenvalues are strictly contained within the spectral hull of B_2 (see Figure~[ref]b for emperical results and a full proof in [ref]). Due to this closure, the spectral reach of the Kronecker-parameterized manifold is invariant to the number of products and fails to expand into the broader Karpelevic region available to the full Birkhoff polytope, representing increasingly smaller fractions of the full polytope. By volume, this is a negligible portion of the full B_d when d > i_k , and we show emperically in appendix~[ref] that this translates to a (d) additional error in the minimum achievable loss compared to -lite and go- .
+
+The collapse in spectral volume for Kronecker-based transforms represents a significant loss in functional diversity. Specifically, these constraints fail to represent cyclic permutations of order greater than i_k=2 (e.g., 1 2 3 1 ), effectively preventing the model from learning complex periodic dependencies. Furthermore, the restriction to real eigenvalues in the 2 2 base case implies that the system can only model pure diffusion (information spreading) without advection (directed rotation of information), severely limiting the directional flow of signals within the reservoir.
+
+Parameter Complexity
+
+go- 's per-layer parameter complexity is similar to that of , and much lower than that of -lite.
+We note that it is (dC d^2s^2) , similar to 's (dC d^2) and much better than the exact solution in
+ -lite that requires (dC d!) . KromHC trades off expressivity for a much smaller parameter
+count that is (dC d) . See table [ref] for exact expressions and figure~[ref]
+for a visual comparison for residual streams of size d [2,32] .
+
+We note that KromHC and go- \ are complementary methods that can be used simultaneously. Using both methods, we can learn tensor products of
+generalized orthostochastic matrices, which would allow KromHC to gain back some expressivity (using larger product sizes, i_k ) at quadratic expressivity cost instead of factorial:
+
+ blue(dC+1) _k=1^K 12si_k(si_k-1) . This allows the expressivity to become a tunable parameter that scales as (s^2i_k^2 _i_kd) instead of (i_k! _i_kd) -- allowing for greater flexibility across a variety of compute-limited applications.
+
+FLOP Complexity
+
+We additionally track the additional overhead of our method on top of Hyper-Connections. In unconstrained HC, experiments show negligible incurred FLOP complexity ( 0.15\% increase) during a forward pass in a 7B parameter model [citation]. Projecting onto a manifold with P_M incurs an additional FLOP complexity due to the procedure introduced by M . In , this is significant ( 8\% additional time overhead for a 27B model) even after the development of custom kernels and major infrastructure improvements to perform the Sinkhorn-Knopp iterations. KromHC and -lite (in the small d regime) both show significant speed ups due to the removal of the iterative updates. We here calculate the FLOP complexity of our method to show that it is superexponentially better than -lite and incurs a small relative overhead compared to KromHC for the increased expressivity. For example, for d=16 , the flop complexity of go- \ is 2 orders of magnitude slower than KromHC, compared to the 16 orders of magnitude imposed by -lite. It is also approximately the same order of magnitude in complexity as \ with SK iterations due to (d) (S) .
+
+In general, the model performance improvement is larger than the incurred computational
+cost; however, when considering scaling the number of residual streams to allow for richer
+topology, the complexity begins to set a practical limit -- we hope to provide a 
+middle ground method that provides a good balance of incurred FLOP cost while maintaining
+rich enough expressivity to allow for scaling.
+
+Convergence
+
+The performance and convergence properties of _M are fundamentally governed by the geometry of the underlying loss landscape introduced by M and the stability of the associated gradient signals. In the context of \, this indicates that any target matrix should be reachable regardless of initial conditions using finite optimization iterations. We do expect go- \ to have learnable gradients, be convergent and fully connected (able to get to any target matrix). See appendix [ref] for more details on this claim and associated proofs.
+
+Not all matrix parameterizations are learnable and fully connected. -lite should generally perform well by choosing a good initialization, but we suspect that this does not mitigate the fact that it may become very difficult to relearn an n -stream transform after having previously converged as the model trains for longer due to the potential of vanishing gradients (a heuristic example is from needing to remap streams due to generalization). Numerics and further discussion can be found in the appendix [ref].
+
+Synthetic Stream Mixing Performance
+
+To establish a baseline for performance, we first conduct a synthetic ``toy model'' experiment designed to evaluate the reconstruction capabilities of
+the proposed manifold parameterizations in a controlled environment. 
+The framework generates a set of ground truth doubly stochastic matrices T_i and a dataset of dense activations in the residual stream X_j X . We then calculate noisy targets Y_i,j representing
+a target latent representation within the residual stream:
+ [equation] 
+
+with U(0, 1) and noise magnitude .
+
+We assess the fidelity of various manifold parameterizations by minimizing the mean squared error between Y and Y calculated from the learned residual mapping ^res_i :
+ [equation] 
+
+We investigate the regime of random dense vectors X_j in this section to mimic the residual stream's dense non-priveleged basis [citation], however, appendix~[ref] showcases that the introduction of sparsity in our toy model does not impact our claims.
+
+Figure~[ref] showcases a representative sample of training loss
+curves exhibited by -lite, KromHC and go- , illustrative of the performance trends observed in general. go- \ generally (1) reaches the lowest observed losses, and (2) begins descending and reaches this loss almost 10 times faster than previous methods. We also see that due to the symmetry imposed by KromHC, it consistently sees higher errors in our toy models for d>2 . Section [ref] numerically investigates additional symmetry breaking terms from read/write projections and showcases that our conclusions are invariant to their inclusion.
+
+We additionally see this trend in figure~[ref], where throughout training, go- \ consistently has better loss regardless of the level of noise added to features. Figure~[ref] shows that this trend is sustained over various number of streams d and across multiple epochs. More ablations, including additional optimizer configurations, parameter sweeps, and models of latent data \& target transformations are offered in appendix~[ref].
+
+We note a potential symmetry-breaking effect introduced by the projection H^pre as it interfaces with the computational layers F . However, as detailed in appendix~[ref], go- ’s improved expressivity and convergence remain robust to these interface terms.
+
+Validating with Tiny Language Model
+
+We validate our observations in a tiny language models by comparing the convergence of
+go- \ with that of -lite and KromHC in a 30M parameter model with 6 layers and 6 heads in nanoGPT [citation]. We demonstrated similar performance using any of -lite, KromHC and go- \ on TinyStories and Character-level datasets, shown in figure~[ref]. We also ran our method with d=8 (as shown in [ref]), a stream size that would be prohibitively large to run with -lite due to the factorial scaling of its parameter count and complexity as shown in figure~[ref]. This validates our method in principle, and demonstrates it's potential scalability over -lite, but requires additional verification in larger models to more rigourously evaluate and compare the methods. 
+
+We evaluate go- \ against baselines using the LLM-as-a-Judge framework with GPT-4.1, to grade the grammar, creativity, and consistency of stories generated by the models. Our evaluation results are listed in table~[ref]. We generate 70 stories from each model with consensus of 3 independent trials. We use the independent trials to calculate the intraclass correlation coefficient, where we see fairly good reliability. We tested smaller variants of GPT-4.1 and inter-model reliability in appendix~[ref].
+
+Our method achieves parity with established baselines, suggesting our method scales from our toy model as intended. Due to compute limitations, we restrict our experiments to a tiny model, however, prior work [citation] suggests that model performance improves as the number of residual streams is scaled, so we instead attempt to demonstrate that our model achieves equivalent performance to prior work without the ability to claim advantage outside of the small model scenario. We suspect that the ability of go- \ to learn the full polytope would be more advantageous in the limit of deeper models that require multi-step reasoning with indirect composition [citation] where computation may be more distributed across layers.
+table_llm_judge
+
+Discussion
+
+In this work, we introduced an exact parameterization of the Birkhoff polytope using generalized orthostochastic matrices and demonstrated its application to manifold-constrained hyper-connections. By leveraging the algebraic properties of generalized orthostochastic matrices, go- \ addresses a long-standing trade-off between computational scalability and expressive reach in parameterizing doubly stochastic matrices. Our spectral analysis and loss benchmarks demonstrate that go- \ significantly outperforms existing exact methods like KromHC by filling the Karpelevic region more substantially. This allows the model to capture a broader range of mixing dynamics and maintain expressivity as the residual stream is scaled. Furthermore, our empirical results on synthetic tasks---showing up to a 10 speedup in convergence---suggest that the orthogonal matrix parameterized path within B_d provides a more favorable optimization landscape than the convex combinations used in -lite and KromHC. This efficiency, combined with (d^3) scaling, provides a viable technical path for increasing the number of residual streams as a new scaling dimension for deep networks.
+
+Despite these advantages, our approach has several limitations. Our experiments were primarily conducted with synthetic tasks and scale-limited language models. While these results establish the method's correctness and relative advantages, the degree to which these convergence benefits translate to real-world performance remains an open question. Additionally, while (d^3) complexity is a significant improvement over -lite’s factorial scaling, it introduces a nontrivial overhead compared to KromHC’s (d^2) cost for large d . Using go- \ in tandem with Kronecker-factored methods remains a promising strategy for bridging this complexity gap while maintaining expressivity. Finally, the dependence on the Cayley transform introduces a matrix inversion bottleneck; future work could explore alternative mappings to the orthogonal group, such as Householder reflections or Hurwitz angles, to further optimize hardware-level efficiency.
+
+Author Contributions
+
+TD and SDG jointly developed the codebase, executed the large-scale simulations, and performed all toy model training, including hyperparameter optimization and sensitivity analysis. The manuscript was written collaboratively, with both authors contributing equally to the text, figures, and the final synthesis of results.
+
+TD conceptualized the research and established the theoretical framework, including the formulation of toy models and formal analysis. Specifically, TD provided the mathematical derivations for parameter and computational complexity, manifold projections, spectra calculations, and training dynamics. The training and analysis of the small language models was also done by TD.
+
+Acknowledgments
+
+The authors would like to thank Ayodeji Lindblad for insights that helped our understanding of the geometry and shadows of the Birkhoff polytope in higher dimensions.
+
+We would also like to express our appreciation to the authors of the paper; their insightful work was the primary catalyst for our interest in manifold-constraints and directly motivated the research questions explored in this study. Additionally, we thank the maintainers of nanoGPT and the authors of -lite and KromHC for publishing the codebase that helped facilitate our verification experiments in tiny language models.
+
+Reproducibility
+
+To ensure reproducibility, we provide the complete source code, pre-trained models, and instructions to reproduce the main experimental results in our GitHub repository: https://github.com/itstorque/go-mHC.
+
+ 
+
+plainnat 
+refs
+ 
+ 
+ 
+
+ 
+
+Appendix
+
+ 1em
+ 
+ [label= ., leftmargin=0cm, itemsep=2ex]
+ 
+ Sensitivity Analysis and Model Variations app:sensitivity_main
+ [label=enumi. , leftmargin=0cm, labelsep=5pt]
+ Number of Streams app:loss_curve_vs_d
+ Sparsity app:sparsity
+ SGD instead of Adam app:convergence_MHC_lite_w_sgd
+ Alternative Sampling Distributions for Doubly Stochastic Matrices app:target_perms
+ Other Toy Models app:other_toy_models
+ 
+ [label=enumi.enumii. , leftmargin=0.27cm, labelsep=5pt]
+ Model for numerically calculating the spectra app:spectra_model
+ Learned matrix distance app:learned_dist_model
+ 
+ 
+ 
+ Theoretical Derivations and Numerical Analysis app:theory_main
+ [label=enumi. , leftmargin=0cm, labelsep=5pt]
+ Derivation of the Theoretical MSE Lower Bound app:mse_derivation
+ Impact of Projector Noise app:projector_noise_impact
+ Spectral Equivalence of k -fold and 1 -fold Kronecker app:kron_kfold_2
+ [label=enumi.enumii. , leftmargin=0.27cm, labelsep=5pt]
+ Proof of (A_j) ( A_i) app:kron_kfold_2_proof
+ Effect of d on approximation error app:kron_kfold_2_app_err
+ 
+ Residual Stream Constraints app:res_constraints
+ Depth Decoupling in Random Doubly Stochastic Mixing Terms app:depth_decoupling
+ Approximate FLOP Expressions app:complexity_full
+ Proofs of Coverage, Path Connectedness and Gradient Stability app:proof_of_connectedness
+ Impact of Spectral Radius on Gradient Stability app:gradient_stability_from_spectral_radius
+ Analyzing Convergence in Sinkhorn-Knopp app:sk_conv
+ Gradient Vanishing and Crosstalk in -lite app:mhclite_vanishing_gradients
+ 
+ 
+ Symmetry Breaking and Residual Stream Projections app:symmetry_breaking
+ 
+ Geometry of s -Orthostochastic Matrices app:geometry
+ 
+ The Orthostochastic--Unistochastic Gap app:stochastic_gap
+ 
+ Other Performance \& Distance Metrics app:metrics_main
+ [label=enumi. , leftmargin=0cm, labelsep=5pt]
+ The Geodesic Distance app:geodesic
+ KL Divergence app:kl_divergence
+ Time to Convergence app:time_conv
+ 
+
+ 30M Parameter Language Model app:tiny_lm
+ [label=enumi. , leftmargin=0cm, labelsep=5pt]
+ Hyperparameters app:tiny_lm_hyper
+ Loss Curves app:tiny_lm_training
+ LLM-as-a-Judge Results for GPT-4.1 Mini and Nano app:judges
+ Total Number of Parameters app:tiny_lm_parameters
+ 
+
+ Weighted-Average of Doubly Stochastic Matrices app:alt_form
+ [label=enumi. , leftmargin=0cm, labelsep=5pt]
+ Application to Orthostochastic\&Unistochastic Matrices app:alt_form_weight_avg_ortho
+ Application to KromHC app:alt_form_weight_avg_krom
+ 
+ 
+ 
+ 
+ 1em
+ 
+
+ figure
+ figure0
+ 
+ 
+
+Sensitivity Analysis and Model Variations
+
+ 
+ 
+ 
+
+Number of Streams
+
+ 
+ 
+ We show that our method consistently outperforms our baselines for d=2 to d=10 by probing averaged training loss curves in figure~[ref]. 
+ We see that as d 
+ increases, the starting loss increases monotonically with d for all go- \ and KromHC instantiations, while staying constant in -lite likely.
+ We attribute this to the initialization where in -lite we parameterize closer to the barycenter 1dJ_d due to the vanishing gradients at
+ the polytope corners as shown in appendix [ref], which in general is closer to a random matrix sampled from within the polytope.
+ 
+ go- \ maintains the 10 speedup comapred to our baselines for the same learning rate across all values of d . We also see that go- \ ( s 2 ) and -lite both converge to the theoretical optimal (dashed blue line in figure [ref]) calculated in appendix [ref].
+ 
+ 
+
+Sparsity
+
+ 
+ 
+ We primarily investigated the dense regime (with sparsity S=0 as defined in Elhage et al.~
+ [citation]) in the main text. We use this appendix to further show that
+ our toy model results remain robust when modeling the input distribution X to be sparse. We plot sparsity values of S [0, 0.5, 0.99] for d \2, , 10\ in figure~[ref].
+ 
+ This allows us to apply our manifold constraints to a wide variety of networks regardless of
+ the sparsity regime. We believe that this indicates that this method should work regardless of our exact interpretation of
+ the mechanism of embedding of features in the residual stream given our lack of a complete mechanistic model of the residual stream [citation].
+ 
+ 
+
+SGD instead of Adam
+
+ 
+ 
+ 
+ While Adam's adaptive moments tend to produce more efficient convergence, we test the effect of using SGD instead to verify the robustness of our findings. We postulate that this ablation is necessary due to the nontrivial difference in the gradient landscape between our method and baseline. We show that figure~[ref] maintains similar performance as that of figure~[ref] with Adam. We conclude that the choice of static vs adaptive optimizer should have minimal impact on our parametrization's robustness.
+ 
+ 
+ 
+ 
+
+Alternative Sampling Distributions for Doubly Stochastic Matrices
+
+ 
+
+To further evaluate the robustness of our experiments, we further test the effect of the sampling distribution of target doubly stochastic matrices M R^d d . We implement the following four sampling techniques:
+
+ Sinkhorn-Knopp (SK) Normalization: We sample an initial matrix X where each entry X_ij Uniform(0, 1) and project the matrix using the Sinkhorn-Knopp algorithm, denoted as _SK(X) . This procedure iteratively normalizes rows and columns to converge toward a doubly stochastic matrix.
+ 
+ Haar-Orthogonal Mapping: We generate a Haar-random orthogonal matrix Q R^sd sd and apply our construction from the paper to generate a random matrix. Specifically, we construct M as:
+ [equation] 
+ 
+ Haar-Unitary Mapping: Analogous to the orthogonal case, we sample a Haar-random unitary matrix U C^sd sd . The entries are similarly defined as M_ij = 1s \|U_B_i,j\|_F^2 , where U_B_i,j represents the (i, j) -th sub-block of size s s . This has additional phases that challenge our special orthogonal representation that is insensitive to phases.
+ 
+ Birkhoff-von Neumann Convex Combination: Following the Birkhoff-von Neumann theorem, we can describe the set of doubly stochastic matrices as the convex hull of the set of d! permutation matrices \P_p\_p=1^d! and we can generate M as:
+ [equation] 
+ where the prefactors are sampled from a symmetric Dirichlet distribution ( =1 ), representing a uniform distribution over the (d!-1) -simplex.
+
+We use method 1 in all figures in the text, unless otherwise specified.
+
+We see in figure~[ref] that regardless of the method chosen to sample target doubly stochastic matrices, our method maintains the advantages discussed in the main text.
+ 
+ 
+ 
+
+Other Toy Models
+
+ 
+
+ We discuss two substantial toy models in section~[ref] and section~[ref], respectively, the model for adding projector noise and for including
+ read and write terms ( ^pre and ^post ) that can break stream symmetry. In this section however, we discuss two specific models, the one used in computing figures~[ref]~\&~ [ref] and an alternative formulation of our model that minimizes the distance between the learned and target matrices via the d^2 -entrywise MSE.
+ 
+ 
+
+Model for numerically calculating the spectra
+
+ 
+ 
+ In figure~[ref], we aim to explore the size of the Karpelevic region we can access using some method M . Since we don't want to rely on M 's initialization distribution or define a measure on the space of M 's manifold, we opt to instead modify our toy model's objective to minimize the below loss function:
+ [equation] 
+ 
+ where H^res_i is computed and optimized using M( ) and e_i C is a target eigenvalue sampled uniformly from the complex square \e_t C \; \; |Re(e_i) | 1, |Im(e_i) | 1 \ .
+ 
+ This allows us to probe the reachability of different regions in the Birkhoff polytope using a surrogate metric that post-selects on target eigenvalues. We sample N=10^5 random target eigenvalues and plot a histogram of all M -reachable eigenvalues: _i=1^N (H^res_i) .
+ 
+ 
+
+Learned Matrix Distance
+
+ 
+
+ 
+ 
+ We also investigated using a target matrix instead of target input features to F ,
+ there we see the same overall behaviour. The objective function we used there is:
+ 
+ L= _ij (H^res_ij-B_ij)^2
+ 
+ for a target doubly stochastic matrix B .
+
+ We are able to draw similar conclusions as in the main text using this method as demonstrated by the sample loss curve drawn in figure~[ref](b). When analyzing -lite analytically in appendix~[ref], we use this model due to it's ease of reparameterizing using the Birkhoff–von Neumann theorem.
+
+ 
+ 
+ figure*[ht]
+ 
+ figures/appendix_loss_trajectories_by_residual_streams.pdf
+ Convergence dynamics across the number of residual streams ( d ) and residual stream configurations ( s ). Each panel illustrates the training trajectory (MSE vs. Iterations) for dimensions d [2, 10] . We compare the baseline m HC-lite and KromHC against three configurations of go- m HC. While KromHC (red) and m HC-lite (orange) exhibit slower convergence and higher error floors as d increases, go- m HC demonstrates robust scalability. Notably, increasing the number of residual streams ( s=2, 3 ) in go- m HC accelerates convergence speed and improves final accuracy. We ran KromHC for powers of 2 only, as this constitutes the regime where KromHC is fastest, if i_k 2 , the performance interpolates to that of -lite in the limit. We don't run -lite for d 7 due to the factorial scaling of the model.
+ 
+ figure*
+ 
+ figure*[p]
+ 
+ figures/loss_traj_sparsity_grid.pdf
+ 
+ Similar to figure~[ref], sweeping sparsity S \0, 0.5, 0.9\ . We see that sparsity doesn't change the overall trend, and only rescales loss due to the sparse vectors having smaller contributions.
+ 
+ figure*
+ 
+ 
+ 
+
+Theoretical Derivations and Numerical Analysis
+
+ 
+ 
+ 
+
+Derivation of the Theoretical MSE Lower Bound
+
+ 
+ In this section, we derive the minimum achievable MSE when learning a doubly stochastic matrix W to approximate a target T . Let R_>0 denote the noise magnitude, and let R^d be a random noise vector sampled such that each component _i U(0, ) .
+ 
+ The observed target is given by y = Tv + . We define the loss function as the expected mean squared error over the data distribution:
+ [equation] 
+ 
+ Assuming the model successfully converges to the target transformation ( W = T ), the structural error term vanishes. The residual loss is then dictated by the second raw moment of the noise distribution:
+ [equation] 
+ 
+ For a variable X distributed uniformly on [0, ] , the second moment is E[X^2] = ^23 . Substituting this into the summation:
+ [equation] 
+ 
+ This result demonstrates that the minimum MSE is independent of the dimension d and is solely a function of the noise magnitude . For our experimental setup where = 0.1 , the theoretical floor is L_min 3.33 10^-3 , which aligns with our empirical findings in figures [ref], [ref], [ref], and [ref].
+
+ 
+ 
+ 
+
+Impact of Projector Noise
+
+ 
+ We further consider the case where the target transformation is subject to multiplicative noise applied on the target matrix. Let the target mixing signal have gradients that point in the direction of T = T + , where R^d d represents stochastic fluctuations on the projector. The resulting observation is y = Tv + . 
+ 
+ This noise is non-trivial since the W exists within the manifold B_d , while T has no such restriction.
+ Under the assumption W=T (in the limit of not taking us out of B_d ), the minimum MSE decomposes into additive and multiplicative components:
+ [equation] 
+ 
+ 
+ If we assume the elements of are i.i.d. with variance _p^2 and v is sampled from a distribution with E[ vv^ ] = _v^2 I , the multiplicative term simplifies to d _p^2 _v^2 . We can remove the assumption of W=T by introducing a structural error term that scales with _v^2 (a measure of distance away from the closest point in the Birkhoff Manifold. The total MSE floor becomes:
+ [equation] 
+
+ With the last term coming from the structural error comes from the projection of the target matrix noise onto the Birkhoff polytope.
+ 
+ The result in equation~[ref] suggests that if projector noise is present, the MSE floor will no longer be invariant to the dimension d , and will instead scale linearly with the input dimensionality. This is a similar scaling to the one found in appendix~[ref].
+
+ Experiments in toy models reveal that we maintain the same behaviour in the limits of small and large _p \10^-6, 10^-4, 10^-3, 10^-2, 10^-1\ as shown in figure~[ref].
+
+ figure*
+ 
+ figures/sigma_p_depedence.pdf
+ 
+ 
+ figure*
+ 
+ 
+
+Spectral Equivalence of k -fold and 1 -fold Kronecker Products
+
+ We show in this section that the mixing terms expressed by
+ k -fold Kronecker Products of doubly stochastic matrices sampled from B_q cannot model dynamics outside of B_q . We show a proof of this claim below and demonstrate emperically that the loss scales as (d) as d>i_k .
+ 
+ 
+ 
+
+Proof of (A
+
+_j) ( A_i) 
+ 
+ 
+ proposition
+ The spectral space of a k -fold Kronecker product _i=1^k A_i , where each A_i B_q , is identically the spectral space of B_q .
+ proposition
+ 
+ proof
+ Let (A_i) be the spectrum of A_i B_q . The spectrum of the k -fold Kronecker product is given by the set of all possible k -way products:
+ [equation] 
+ Since 1 (A_i) for all i , we can choose _j (A_j) and set all other _i j = 1 , which recovers the original spectrum (A_j) ( A_i) . 
+ 
+ Conversely, for any doubly stochastic matrix, the eigenvalues lie within the Karpelevic region K_q . Because K_q is star-shaped with respect to the origin and closed under multiplication for elements on the unit circle, the products _i do not expand the spectral boundary beyond K_q (all _i 1 ). Thus, the span of the spectra remains invariant under the k -fold Kronecker transformation.
+ proof
+
+ 
+
+Effect of d on approximation error in KromHC
+
+ 
+
+ We show in figure figure~[ref] that regardless of choice of i_k , the MSE approximation error incurred by KromHC scales with (d) . We also show that choosing higher i_k doesn't necessarily lead to a better MSE when i_k<d as shown in the examples of i_k=2 and i_k=4 for d=16 .
+
+ We note that this scaling is similar to that found in appendix~[ref]. This is in part due to being able to rewrite the deviation of our target matrix in B_d from it's optimal Kronecker factorized counterpart in \ _i B_i B_i B_q\ as noise on the target matrix , with large variance -- this would also explain the same MSE scaling regardless of i_k (independent of the q in B_q ).
+
+ 
+ 
+ 
+
+Residual Stream Constraints
+
+ 
+ 
+ Unrolling equation [ref] between two layers l to L yields:
+ [equation] 
+ 
+ The shortcut product _l L^res controls the effective gain of the residual path. The Amax Gain Magnitude (AGM) [citation] quantifies worst-case amplification:
+ [equation] 
+ This metric is the proxy metric used in [citation] as a surrogate for stability \& double-stochasticity.
+ 
+ In this paper, we chose to not rely on this metric due to the exact nature of our
+ algorithm:
+ the definition of doubly stochastic matrices implies _i _j |( _l^res)_ij|= _j _i |( _l^res)_ij|=1 . Moreover, since _d is closed under matrix multiplication, the product _l L^res remains doubly stochastic regardless of depth ( L-l ). 
+ Learning matrices from the Birkhoff polytope B_d is of interest here as it provides a
+ closed structure with a guarantee that the shortcut path in the residual
+ stream will have a constant AGM, and therefore, avoid vanishing and exploding gradients similar to the identity mapping in ResNets.
+ 
+ Furthermore, in the limit of L , if the
+ sum _i=1^L-l 1- _2( _L-i^res) = , then the product _i=1^L-l _L-i^res will
+ tend to the barycenter 1dJ_d , where J_d is the all-ones matrix [citation]. This limit can be viewed as the identity for a repetition code on the mean-centered stream representation -- on average, far away layers have little influence on which stream information is encoded into. We show this emperically in appendix~[ref] and discuss potential implications of this.
+ 
+ 
+
+Depth Decoupling in Random Doubly Stochastic Mixing Terms
+
+ 
+ 
+ Another, to our knowledge, unstated advantage of using doubly stochastic matrices
+ is the decoupling of ^res_l from ^res_L 
+ when L l . We show that numerically in figure~[ref].
+ 
+ 
+
+ This is the same result from the previous section, where in effect, if all ^res_i between l and L are learned independently (to some extent), the product tends to approximate the barycenter. This argument is the same as all eigenvalues _i 1 tend to 0 , until we get to 1dJ_d . We think this implies that a model can simultaneously learn mixing matrices without having backward dependencies on what is in the stream, greatly simplifying the gradient lightcones (necessary gradient pathways). This would be interesting to investigate for parallelizing training and to better understand the mechanisms exhibited by structures that tend to the mean within a network.
+ 
+ 
+
+Approximate FLOP Expressions
+
+ 
+ 
+ We provide our explicit FLOP estimates in table~[ref]. We used this to generate the asymptotics in table~[ref].
+ 
+ 
+ 
+ 
+
+Proofs of Coverage, Path Connectedness and Gradient Stability
+
+ 
+
+The learnability of our proposed mapping is fundamentally governed by the geometry of the underlying loss landscape and the stability of the associated gradient signals. By employing parameterizations that ensure a smooth, well-conditioned objective function L( ) , the optimization manifold avoids the sharp curvatures and isolated local minima that typically sequester gradient descent. This structural smoothness, characterized by a bounded Hessian ^2 L( ) and a surjective mapping P_ M to the target matrix space, mitigates the vanishing gradient problem by maintaining a non-vanishing Jacobian P_ M / . We observe that our method offers a better parameterization compared to -lite within the polytope from toy models. In this appendix, we attempt to prove the coverage, path-connectedness, and gradient stability of our approach. We provide a formal sketch of one mechanism we encountered for vanishing gradients in -lite and a characterization of the associated cross-talk terms in appendix~[ref].
+ 
+ Analytical Gradients. 
+ We expect this space to be smoothly interpolatable within the polytope, i.e. the learned parameters X have a well defined gradient to smoothly learn B= _d,s ((I-X)(I+X)^-1 ) .
+ Given a loss L , the gradient with respect to the orthogonal matrix Q follows:
+ G_Q = 2s ( L B 1_s s ) Q 
+ 
+ Applying the chain rule through the Cayley transform C yields:
+ [equation] 
+ The parameter gradient _ L is then the vectorization of the skew-symmetric projection proj_so(n)( _X L) , where R^ds(ds-1)/2 parameterizes the skew-symmetric matrix X so(n) via the map I .
+ 
+ lemma
+ The map _go = _d,s C I is C^ (infinitely differentiable) over R^p .
+ lemma
+ proof
+ I is linear, and _d,s is a quadratic polynomial, both of which are C^ . The Cayley transform C is a rational matrix function. Since X is skew-symmetric, its eigenvalues are purely imaginary and (I+X) is strictly non-singular ( (I+X) 1 ). As a result, C has no poles in R^ds(ds-1)/2 . The composition of these smooth maps ensures that for any _0 , there exists a neighborhood U R^ds(ds-1)/2 such that the image _go(U) is a continuous deformation in B_d . This guarantees that gradient-based updates allow for stable, infinitesimal ``local movement'' across the bistochastic surface during training.
+ proof
+ 
+ We also know that the entire polytope is connected, and therefore we can learn any target s -orthostocastic matrix.
+ proposition
+ The reachable set R = \ _go( ) R^ds(ds-1)/2 \ is path-connected and contains the barycenter 1dJ_d B_d .
+ proposition
+ proof
+ The parameter space R^ds(ds-1)/2 is a convex topological space. As shown previously, (I+X) 0 for all skew-symmetric X , ensuring _go is continuous on the entire domain. By the preservation of connectedness under continuous maps, R is path-connected. 
+ 
+ To show 1dJ_d cl(R) , let Q SO(ds) be a matrix with uniform entries |Q_uv| = (ds)^-1/2 . This yields \|Q_block_ij\|_F^2 = s/d for every s s blocks, and thus B_ij = 1/d . Since the image of the Cayley transform is dense in SO(n) , there exists a sequence _k ^* such that ( _k) 1dJ_d . Thus, the optimization can reach the maximally entropic state from any initial configuration via a continuous path.
+ proof
+
+ 
+
+Impact of Spectral Radius on Gradient Stability
+
+ 
+ We show in this section a connection between the spectral radius of our learned matrices ( ^res_l) and exploding or vanishing gradients during training.
+ 
+ Consider a deep linear model with n layers and error signal _n = L y . The gradient of the loss L with respect to an early weight matrix H^res_1 is given by the chain rule as _H^res_1 L = ( _i=n^2 (H^res_i)^ ) _n x^ . For the homogeneous case where H^res_i = H^res , the magnitude of the gradient is governed by the power of the spectral radius (H^res) = \; (H^res) :
+ [equation] 
+ where C = \| _n x^ \| . As the depth n , the term (H^res)^n-1 dictates the asymptotic behavior: if (W) > 1 , the gradient norm grows exponentially ( \| _H^res_1 L\| ), causing exploding gradients. Conversely, if (H^res) < 1 , the gradient norm decays exponentially ( \| _H_1^res L\| 0 ), resulting in vanishing gradients. 
+
+ 
+
+Analyzing Convergence in Sinkhorn-Knopp
+
+ 
+
+ We point to the absence of the softmax as one of the primary mechanisms our method achieves faster convergence in. We can test a similar mechanism by ablating the mapping in _SK to make a linear version, where the algorithm is:
+ 
+
+ 
+
+ We show in figure~[ref] that the convergence rate of \ with _SK linear is faster than that of _SK , converging around the same time as go- . This speed-up is similar in order to that of -lite to go- . If we add a redundant softmax normalization to go- , this also slows it down -- verifying that the softmax is a choke for gradients when optimizing paths in the Birkhoff polytope.
+ 
+ We suspect that go- \ starts out faster than even _SK linear due to the parameterization as a rotation matrix, which exists on a smooth manifold with large proportionate action. In Sinkhorn-Knopps, the path to a target matrix ``zig-zags'' due to the iterative procedure of updating (which usually forces you out of the manifold) followed by a projection down onto the manifold-of-interest.
+ 
+ 
+
+Gradient Vanishing and Crosstalk in -lite
+
+ 
+ 
+ Let be the learned n! parameters for constructing a n n doubly stochastic matrix
+ as in -lite. We will calculate the gradient for parameter updates assuming mean squared error loss
+ from some target matrix:
+ 
+ [equation] 
+ 
+ Analytically solving for the gradients in -lite when optimizing to reach a final permutation matrix P_target , we get that
+ 
+ [equation] 
+ 
+ Where = softmax(z) , the subscript target corresponds to the entry at the index corresponding to P_target , and the loss gradient wrt. is:
+ 
+ [equation] 
+
+ Note that the gradient update for z_target is gated by the factor _target , which creates an inherent tension in early optimization: when _target is initialized near 1n! (i.e., the softmax is approximately uniform), this prefactor is small, suppressing the effective gradient signal and slowing initial convergence toward P_target . This is a structural feature of the softmax parameterization---the model cannot ``commit'' quickly to a target permutation until it has already begun to assign probability mass to it, yielding a self-reinforcing but initially sluggish convergence regime.
+
+The crosstalk term _k i _k P_k, P_i captures interference from competing permutations. Since all permutation matrices satisfy P_k, P_i \0, 1, , n\ depending on the number of shared assignments, permutations that agree with P_i on many positions contribute disproportionately to this term. In the regime where is near-uniform, the crosstalk sum approximates B, P_i with B 1nJ (where J is the all-ones matrix), corresponding to the Birkhoff--von Neumann barycenter of the permutation polytope. This provides a geometric interpretation: early in training, the gradient updates push B away from the barycenter toward P_target , but the crosstalk from near-uniform keeps B gravitating toward the interior of the polytope. As _target grows and mass concentrates, crosstalk diminishes and the gradient signal from the Signal term dominates, driving B toward a vertex of the polytope.
+
+The Noise Floor term E, P_i contributes a constant bias to each gradient, reflecting the deviation of the target T = P_target + E from a pure permutation. When E = 0 (i.e., the target is itself a permutation matrix), this term vanishes and the gradient structure simplifies considerably. For noisy targets, however, the noise floor introduces a persistent gradient offset that prevents exact convergence to any vertex of the polytope, instead biasing B toward a weighted combination of permutations that collectively minimize projection error against E .
+ 
+ 
+
+Symmetry Breaking and Residual Stream Projections
+
+ 
+
+ The residual stream in Hyper-Connections has non-trivial boundaries -- connections to computation layers ( ) through projection matrices (e.g. ^pre ). While the mixing terms have imposed constraints (in the Birkhoff Polytope for the baselines and our method, any highly imposed symmetry from factor products in KromHC), the effective mixing term into includes a component derived by the read and write matrices in the model. An example pathway we can come up with is that where the residual block learns to average out a feature in a trace by writing -x back to the residual stream on one of the streams, causing an asymmetric write even if the manifold usually has an imposed symmetry on mixing. We can also have a pathway where from the residual blocks point of view, _i^pre ( _i^resX_j) breaks the symmetry of _i^res and similarly allow for asymmetric reads.
+ 
+ In this appendix, we investigate the effect of adding a read term to our toy model and see that it doesn't impact the claims in the main paper as shown in figure~[ref].
+
+ 
+ 
+ We introduce a tensor contraction into our model that implements a ``circuit''
+ involving the ^pre term. While ^res 
+ calculated via Kronecker products preserves symmetry, ^pre is allowed to break this symmetry. We now assume the best case scenario of static
+ mappings where we learn input-independent ^pre and ^res with the objective:
+ [equation] 
+ where denotes a linear projection from the d -residual streams to 1 stream in the MLP input basis and P_i denotes a random target projection matrix.
+ 
+ When comparing the ability of ^pre to break symmetry when
+ reading from (or equivalently, ^post writing to) the residual stream, we compare the convergence of a learned ^pre_i 
+ transformation with that of fixing ^pre_i = P_i to normalize the loss units.
+
+ 
+
+Geometry of s -Orthostochastic Matrices
+
+ 
+
+ In the main text, we use the spectrum as a surrogate for expressivity due to its ease of interpretability while still being able to represent all d d k -cycles for k d . The spectrum can be thought of as the ``shadow'' of the Birkhoff polytope. In figure~[ref], we show a slice through the polytope instead of the shadow, where we look at the polygon composed of the 3 -cycle in the d=3 case. Namely the matrices defined by the cyclic permutations: (), (123), (132) are the corners of the slice shown in figure~[ref]. The coverage in figure~[ref] for s=1 and s=2 matches that of the spectrum coverage within the Karpelevic region. This motivates our choice of a metric that approximates expressivity despite it only probing the ``shadow'' of the polytope. We know the s -unistochastic set is dense, and don't expect there to be holes within it. We use the emperical results that we can usually approximate s -unistochastic matrices with an s -orthostochastic matrix to justify that the holes are few to non-existent.
+
+To visualize the density and support of s -orthostochastic matrices within the Birkhoff polytope B_3 , we project B B_3 onto the 2D plane defined by the cyclic group C_3 = \I, , ^2\ . We compute coefficients c_k = 13 Tr(( ^k)^ B) and map them to R^2 using the vertices of an equilateral triangle \v_k\_k=0^2 :
+ [equation] 
+The support is estimated by sampling N=10^8 matrices and computing a binary occupancy grid over the projected coordinates, with boundaries extracted via contouring the resulting indicator function.
+
+We alternatively also show multiple 3D visualiztions of the polytope using different support bases and rotations in R^3 in figure~[ref]. 
+
+ 
+ 
+ 
+
+ 
+
+The Orthostochastic--Unistochastic Gap
+
+ 
+
+ While we used orthogonal matrices in go- , we in principle could have also used unitary matrices with complex entries instead. We conjecture that the implications on the geometry and expressivity are minimal when s 2 , and that the convergence is of similar order of magnitude, although it might exhibit a different curvature depending on the position and velocity vectors within the manifold.
+ 
+ If expressivity is reduced, we expect that when sampling matrices, we get worse overall performance. We see in the 3 examples from figure~[ref] that the total achievable loss is similar for unistochastic and doubly stochastic matrices for d \3, 6\, s=2, \10^-4, 10^-2\, _p \0, 1\ , regardless of the target matrix location. Plot~[ref](a) targets a matrix at the boundary of the polytope (specifically, the average of two permutation matrices) and Plot~[ref](b-c) target a random matrix sampled from (0, 1) with Sinkhorn-Knopp applied on it.
+ 
+ Since the boundaries of the sets of orthostochastic and unistochastic matrices are the
+ same, we additionally expect that they are both equally able to express the boundary of the polytope, except for the additional relative phases that need to cancel out in the unitary matrices. We see this manifest as slower convergence for the unitaries.
+
+ On the other hand, for a random point within the polytope, there are many more solutions of phases
+ that satisfy the target matrix condition, and therefore, we see faster convergence. We think this is due to being able to go to a point that is overall closer to the initialization due to the phase terms allowing for interference.
+
+ 
+
+ 
+
+Other Performance \& Distance Metrics
+
+ 
+ 
+ 
+
+The Geodesic Distance
+
+ 
+
+ To better understand the rate of convergence of different methods, we investigate the use of a distance metric to quantify the ``progress'' and ``degree of change'' in the path taken within the polytope. Given any doubly stochastic matrix W , we can estimate a matrix R^W in SO(d) such that W_ij (R^W_ij )^2 -- we can also calculate higher-dimensional generalizations of this (using the norm of s s blocks to have a matrix in SO(ds) ) to reduce the approximation error. We don't explore higher-dimensional generalization of this method here for brevity.
+
+ We implement a version of the s=1 reverse map W R^W as:
+ [equation] 
+ with H a parity matrix that fixes the sign-gauge symmety and W^ 12 denoting the elementwise square root.
+
+ This then allows us to measure the geodesic distance in radians between W and a target matrix T :
+ [equation] 
+
+ _R( ) is the angle between the two approximate orthogonal matrices composing our target. We plot _R(S, W) and _R(W, T) in figure~[ref].
+
+ 
+
+ Additionally, to account for the O(n) sign-gauge symmetry inherent in the unistochastic mapping O_ij = M_ij^2 , we align the recovered matrix by performing a combinatorial sign-alignment (gauge fixing) to ensure the recovered rotation is compared to the target in the same quadrant of the Stiefel manifold.
+
+ We don't discuss this metric in the main paper due to it's structure favoring our method, but we think this is an interesting metric to study convergence from, especially using the two angle metrics from start and to target, or a comparative angle between two methods.
+
+ 
+
+KL Divergence
+
+ 
+
+ We also explore modelling matrix distance using the KL divergence due to their exact forms, instead of only relying on the Karpelevic region and the geodesic distance (which is inherent to our method and potentially favors our formulation). Each row/column can be thought of as a discrete probability distribution and therefore, we can measure the distance between two distributions, the set of possible target distributions T and our method distribution P . We show in figure [ref] results consistent with the rest of the paper where KromHC tends to have the worst approximation (higher KL divergence) and the approximation improves with s and, emperically, it tends to be near the optimal limit (no divergence) when s 2 .
+
+ 
+
+ 
+ 
+
+Time to Convergence
+
+ Another measure we use in the main text is the epochs to convergence for each parameterization method. We also consider whether or not the method converges to the theoretical minimum achievable loss, calculated as a function of noise magnitude ( ):
+
+ [equation] 
+
+ For most figures in the main text, we use =10^-1 , however the trend is irrespective of the value chosen.
+
+ We calculate time to convergence as the time at which a method that reaches a 5\% threshold in loss away from it's final converged value. We showcase sample training curves where label the converged epoch in figure~[ref].
+
+ In the loss curves shown throughout the paper (e.g. Figure~[ref]), we can see go- \ converge at around 500 epochs for s \2,3\ , while -lite converges significantly later (around 10,000 epochs). KromHC converges to a higher overall value. We investigate the limits of KromHC in figure~[ref].
+ 
+ 
+ 
+
+ 
+
+ 
+
+30M Parameter Language Model
+
+ 
+
+ 
+
+Model, Hyperparameters \& Training Details
+
+ 
+
+ We trained a 6-layer Transformer-based language model on the TinyStories dataset using a modified version of the nanoGPT codebase [citation]. 
+
+ The model follows the decoder-only transformer architecture, specifically configured for the TinyStories synthetic dataset. The model consists of 6 layers with an embedding dimension of d_model = 384 . Each layer utilizes a multi-head attention mechanism with h=6 heads, resulting in a per-head dimension of d_k = d_v = 64 . The position-wise feed-forward networks (FFN) employ a hidden dimensionality of d_ff = 4d_model = 1536 .
+
+ Our model utilizes the standard GPT-2 tokenizer with a vocabulary size of V = 50,257 . The embedding layer, W_e R^V d_model , accounts for approximately two thirds of our parameters (20M of the 30M total parameters). We did not test smaller embedding matrices, but this would be interesting to do given the simpler vocabulary of TinyStories.
+ 
+ Training was performed using the AdamW optimizer with a peak learning rate of 1 10^-3 , decaying to 1 10^-4 via a cosine schedule over 20,000 iterations. To ensure training stability, we employed a linear warmup of 500 steps. We utilized an effective batch size of 128 sequences, achieved through gradient accumulation on a single NVIDIA RTX 4090 GPU using bfloat16 mixed-precision training. Detailed hyperparameters are summarized in Table [ref].
+
+ 
+
+ In our experiments, we swap out the residual stream with the various proposed hyper-connection variants, all of which were built on top of the code in Appendix J of [citation] and the code published by [citation]. We additionally use the implementation of KromHC from [citation].
+
+ 
+
+Loss Curves \& Training Stability
+
+ 
+
+ Figure~[ref] shows the cross-entropy loss when training various proposed HC variants. There are no perceptable difference in the CE Loss between the different methods while training -- we suspect further experiments using smaller embedding matrices might help with any visibility issues here.
+
+ 
+
+ We attempt to quantify training stability across architectural variants using a jitter metric J_t , in figure [ref]b, as the normalized rolling standard deviation of the gradient norm g_t = \| _ L( _t)\|_2 .Using a sliding window of size w=10 , we calculate the rolling mean _t and standard deviation _t : _t = mean(\g_i\_i=t-w+1^t) , _t = std(\g_i\_i=t-w+1^t) The final jitter is the Coefficient of Variation (CV), adjusted for numerical stability with = 10^-8 : J_t = _t _t + This dimensionless ratio measures the relative volatility of gradient updates, allowing for a fair stability comparison between models with different gradient magnitudes.
+
+ 
+
+ 
+
+ 
+
+LLM-as-a-Judge Results for GPT-4.1 Mini and Nano
+
+Tables~[ref] and [ref] provide the full performance breakdown for the smaller judge variants. Table~[ref] provides the inter-judge alignment.
+
+tables_llm_judge_appendix
+
+ 
+
+Total Number of Parameters
+
+ 
+
+ We detail the total number of parameters needed to parameterize our full language models using the various methods in table~[ref]. We note that for efficiency purposes, we generated skew-symmetric matrices using d^2 parameters instead of d(d-1)2 parameters due to faster performance on GPUs from our tests, even for small d .
+
+ Table~[ref] shows how to maintain using -lite at d=8 , we need to allocate 1.4B parameters to our model that has 20M parameters for embedding and 10M parameters in the transformer blocks. This leads us to believe that -lite is not scalable with d . go- is consistently between -lite and KromHC, even for tiny d .
+
+ table*[h]
+ 
+Model Parameter Overhead ( ) Grouped by Dimension d 
+
+tabularlccc
+ 
+Model Variant & Config & Parameters (M) & Total Parameters (M) \\ 
+Residual Baseline & --- & 0.00 & 30.14 \\ 
+ -lite & d=4 & 0.60 & 30.74 \\
+KromHC & d=4 & 0.23 & 30.37 \\
+go- \ (s=1) & d=4 & 0.46 & 30.60 \\
+go- \ (s=2) & d=4 & 1.34 & 31.48 \\ 
+KromHC & d=8 & 0.84 & 30.98 \\
+go- \ (s=1) & d=8 & 2.98 & 33.12 \\
+go- \ (s=2) & d=8 & 10.06 & 40.20 \\
+ -lite & d=8 & 1487.46 & 1517.60 \\ 
+tabular
+table*
+
+ 
+
+Weighted-Average of Doubly-Stochastic Matrices
+
+ 
+
+ We discuss two alternative formulations one can use for parameterizing doubly-stochastic matrices. We add an additional s learned parameters \ _i i \1, ,s\\ and instead weighted average a set of s d d orthostochastic matrices using the weights _i .
+
+ 
+
+Application to Orthostochastic\&Unistochastic Matrices
+
+ 
+
+ While we use the d^2 s s blocks in our construction to build the class of matrices, this scales as (s^3d^3) . We have found that an alternative formulation here where a transition matrix can be described as the sum of Orthostochastic (or Unistochastic) matrices to be effective at filling the Birkhoff polytope. This scales as (sd^3) instead of (s^3d^3) and fills the Birkhoff polytope in a different manner. Any Doubly Stochastic matrix, in the limit of multiple sums, can be represented as the sum of other doubly stochastic matrices. While the Karpelevic region is filled entirely almost immediately (see figure~[ref]), this prioritizes filling the facets of the Birkhoff polytope first (hence the Karpelevic region being filled entirely). This method however leaves substantial gaps while filling the facets and therefore we opt to use the method in the main text. Further exploration of this would be interesting as a potentially lower-complexity way of learning the manifold.
+
+ 
+ 
+ 
+
+Application to KromHC
+
+ 
+
+ KromHC introduces an inherent symmetry, we can attempt to break the symmetry by introducing weighted sums similar to section~[ref] and summing the outcomes of indivdual KromHC forward passes. Emperically, we see that we need n^2/ (n)$ terms to achieve full expressivity, which takes us close to the limit of performance in go- .

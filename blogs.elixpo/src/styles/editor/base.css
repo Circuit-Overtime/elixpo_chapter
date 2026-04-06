@@ -40,7 +40,7 @@
 .blog-editor-wrapper .bn-editor {
   background: transparent;
   color: var(--text-primary);
-  font-family: 'lixFont', sans-serif;
+  font-family: 'Source Serif 4', Georgia, serif;
   font-size: 1em;
   line-height: 1.75;
   padding-left: 0;
@@ -69,34 +69,40 @@
 /* Headings — override BlockNote's .bn-default-styles h1 { font-size: inherit } */
 .blog-editor-wrapper .bn-default-styles h1 {
   font-size: 30px !important;
-  font-family: 'lixFont', sans-serif;
+  font-family: 'Source Serif 4', Georgia, serif;
   font-weight: 700 !important;
   color: var(--text-primary);
 }
 .blog-editor-wrapper .bn-default-styles h2 {
   font-size: 24px !important;
-  font-family: 'lixFont', sans-serif;
+  font-family: 'Source Serif 4', Georgia, serif;
   font-weight: 650 !important;
   color: var(--text-primary);
 }
 .blog-editor-wrapper .bn-default-styles h3 {
   font-size: 20px !important;
-  font-family: 'lixFont', sans-serif;
+  font-family: 'Source Serif 4', Georgia, serif;
   font-weight: 600 !important;
   color: var(--text-primary);
 }
 
-/* Inline code — lavender theme */
+/* Inline code — purple accent, adapts to theme */
 .blog-editor-wrapper code,
 .blog-preview-content code {
-  color: #c4b5fd;
-  background: rgba(196, 181, 253, 0.1);
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.08);
   border-radius: 4px;
   padding: 0.15em 0.4em;
   font-size: 0.82em;
   font-family: 'lixCode', monospace;
   -webkit-hyphens: none;
   hyphens: none;
+}
+
+[data-theme="dark"] .blog-editor-wrapper code,
+[data-theme="dark"] .blog-preview-content code {
+  color: #c4b5fd;
+  background: rgba(196, 181, 253, 0.1);
 }
 
 /* Code blocks — lixCode font, no line highlights */
@@ -112,6 +118,10 @@
 .blog-editor-wrapper [data-content-type="codeBlock"] .bn-line-number {
   background: none !important;
 }
+
+/* AI-generated blocks use named 'purple' — ensure readable text in both themes */
+.blog-editor-wrapper [data-text-color="purple"] { color: var(--text-secondary) !important; }
+.blog-editor-wrapper [data-background-color="purple"] { background-color: rgba(155, 123, 247, 0.06) !important; }
 
 /* Map BlockNote block-level text color (data-text-color on block containers) */
 .blog-editor-wrapper [data-text-color="#ffffff"] { color: #ffffff !important; }

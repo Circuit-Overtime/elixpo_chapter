@@ -12,11 +12,10 @@ logger = logging.getLogger("lixsearch-api")
 
 async def create_session():
     try:
-        data = await request.get_json()
-        query = data.get("query", "").strip()
+        query = request.args.get("query", "").strip()
 
         if not query:
-            return jsonify({"error": "Query is required"}), 400
+            return jsonify({"error": "Query is required. Pass as ?query=..."}), 400
 
         session_manager = get_session_manager()
         session_id = session_manager.create_session(query)

@@ -19,7 +19,7 @@ export default function Home() {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)',
+        background: 'linear-gradient(135deg, #1e2420 0%, #141a16 100%)',
       }}
     >
       <CircularProgress sx={{ color: '#22c55e' }} size={60} />

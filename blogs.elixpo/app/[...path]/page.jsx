@@ -1,9 +1,7 @@
-'use client';
+export const runtime = 'edge';
 
-import { use } from 'react';
-import HandlePage from '../../src/pages/HandlePage';
+import CatchAllClient from './client';
 
 export default function CatchAllHandle({ params }) {
-  const { path } = use(params);
-  return <HandlePage path={path} />;
+  return <CatchAllClient params={params} />;
 }

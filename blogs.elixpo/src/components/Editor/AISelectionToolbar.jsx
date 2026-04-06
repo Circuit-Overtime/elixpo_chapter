@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { streamAI, getOrCreateSession } from '../../ai/agent';
 import { EDIT_SYSTEM_PROMPT } from '../../ai/prompts';
-import { parseMarkdownToBlocks } from './markdownToBlocks';
+import { computeWordDiff, diffToBlocks, diffToKeepBlocks } from './wordDiff';
 
 /**
  * AI toolbar button injected into BlockNote's native formatting toolbar.
- * Star icon click → toolbar hides, inline AI prompt appears below selection →
- * AI edits inline with diff (strikethrough original, lavender new) → keep/undo.
+ * Star icon click → inline AI prompt below selection →
+ * AI edits inline with word-level diff (strikethrough deletions, purple additions) → keep/undo.
  */
 export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
   const [mode, setMode] = useState('idle'); // idle | prompting | streaming | done
@@ -16,15 +16,17 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
   const [selectedText, setSelectedText] = useState('');
   const [selectedBlocks, setSelectedBlocks] = useState([]); // full block snapshots for undo
   const [selectedBlockIds, setSelectedBlockIds] = useState([]);
-  const [originalBlockIds, setOriginalBlockIds] = useState([]); // IDs of strikethrough originals
-  const [aiBlockIds, setAiBlockIds] = useState([]); // IDs of AI-generated blocks
+  const [diffBlockIds, setDiffBlockIds] = useState([]); // IDs of diff blocks that replaced originals
+  const [aiResponseText, setAiResponseText] = useState(''); // AI's full response for keep
+  const [diffResult, setDiffResult] = useState(null); // word-level diff array for keep/undo
+  const [streamingText, setStreamingText] = useState(''); // live SSE text feed for streaming bar
+  const [statusText, setStatusText] = useState(''); // lixsearch task status text
   const [promptPos, setPromptPos] = useState({ top: 0 });
   const abortRef = useRef(null);
   const promptRef = useRef(null);
   const menuRef = useRef(null);
-  const aiBlockCountRef = useRef(0);
   const injectedRef = useRef(false);
-  const originalBlockIdsRef = useRef([]); // Ref mirror for use in streaming callbacks
+  const savedSelectionRef = useRef(null); // Save native DOM selection range
 
   // Inject star button + color buttons into BlockNote's native toolbar
   useEffect(() => {
@@ -171,6 +173,12 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
         e.stopPropagation();
 
         try {
+          // Save the native DOM selection range before anything else
+          const nativeSel = window.getSelection();
+          if (nativeSel && nativeSel.rangeCount > 0) {
+            savedSelectionRef.current = nativeSel.getRangeAt(0).cloneRange();
+          }
+
           const sel = editor.getSelection();
           if (!sel?.blocks?.length) return;
 
@@ -203,17 +211,22 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
           setPromptPos({ top });
           setMode('prompting');
           setPrompt('');
-          setAiBlockIds([]);
-          setOriginalBlockIds([]);
-          originalBlockIdsRef.current = [];
+          setDiffBlockIds([]);
+          setAiResponseText('');
 
-          // Highlight selected blocks so user sees what's being edited
+          // Lock editor and hide toolbar so user can't edit during AI work
+          const wrapper2 = document.querySelector('.blog-editor-wrapper');
+          if (wrapper2) wrapper2.classList.add('ai-editor-locked');
+          const tb = document.querySelector('.blog-editor-wrapper .bn-toolbar');
+          if (tb) tb.style.display = 'none';
+
+          // Add highlight on selected blocks
           requestAnimationFrame(() => {
             const wrapper = document.querySelector('.blog-editor-wrapper');
             if (wrapper) {
               blockIds.forEach((id) => {
                 const el = wrapper.querySelector(`[data-id="${id}"]`);
-                if (el) el.classList.add('ai-edit-selected-block');
+                if (el) el.classList.add('ai-edit-selection-highlight');
               });
             }
           });
@@ -231,9 +244,13 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
   }, [editor]);
 
   // Focus prompt input when entering prompting mode
+  // The selected blocks stay visually highlighted via CSS class, and pointer events
+  // are blocked on the editor to prevent the user from accidentally deselecting
   useEffect(() => {
     if (mode === 'prompting') {
-      setTimeout(() => promptRef.current?.focus(), 50);
+      setTimeout(() => {
+        promptRef.current?.focus();
+      }, 50);
     }
   }, [mode]);
 
@@ -249,39 +266,7 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [mode]);
 
-  // No MutationObserver needed — CSS handles lavender via -webkit-text-fill-color
-
-  // Apply strikethrough + dim styling on original blocks via DOM
-  const markOriginalBlocks = useCallback((ids) => {
-    const wrapper = document.querySelector('.blog-editor-wrapper');
-    if (!wrapper) return;
-    for (const id of ids) {
-      const el = wrapper.querySelector(`[data-id="${id}"]`);
-      if (el) {
-        el.classList.add('ai-edit-original-block');
-      }
-    }
-  }, []);
-
-  // Apply lavender styling on AI blocks via DOM (CSS handles color)
-  const markAiBlocks = useCallback((ids) => {
-    const wrapper = document.querySelector('.blog-editor-wrapper');
-    if (!wrapper) return;
-    for (const id of ids) {
-      const el = wrapper.querySelector(`[data-id="${id}"]`);
-      if (el) el.classList.add('ai-edit-new-block');
-    }
-  }, []);
-
-  // Get current AI block IDs by position (after last original block)
-  const getAiBlockIdsFromDoc = useCallback(() => {
-    const origIds = originalBlockIdsRef.current;
-    if (origIds.length === 0) return [];
-    const doc = editor.document;
-    const lastOrigIdx = doc.findIndex((b) => b.id === origIds[origIds.length - 1]);
-    if (lastOrigIdx === -1) return [];
-    return doc.slice(lastOrigIdx + 1, lastOrigIdx + 1 + aiBlockCountRef.current).map((b) => b.id);
-  }, [editor]);
+  // (Old block-level helpers removed — diff is now inline via word-level diff)
 
   // Hide the native toolbar
   const hideToolbar = useCallback(() => {
@@ -317,8 +302,8 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
 
   const clearSelectedLavender = useCallback(() => {
     const wrapper = document.querySelector('.blog-editor-wrapper');
-    wrapper?.querySelectorAll('.ai-edit-selected-block').forEach((el) => {
-      el.classList.remove('ai-edit-selected-block');
+    wrapper?.querySelectorAll('.ai-edit-selected-block, .ai-edit-selection-highlight').forEach((el) => {
+      el.classList.remove('ai-edit-selected-block', 'ai-edit-selection-highlight');
     });
   }, []);
 
@@ -345,47 +330,88 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
     });
   }, []);
 
-  const handleSubmit = useCallback(async () => {
-    if (!prompt.trim() || !editor) return;
+  const handleKeep = useCallback(() => {
+    removeSkeletonLoading();
+    clearSelectedLavender();
 
-    // Hide toolbar and prevent editing
+    // Build clean blocks from diff: remove deleted words, keep additions, reset colors
+    const ids = [...diffBlockIds];
+    if (ids.length > 0 && diffResult) {
+      try {
+        const keepBlocks = diffToKeepBlocks(diffResult);
+        if (keepBlocks.length > 0) {
+          editor.replaceBlocks(ids, keepBlocks);
+        }
+      } catch (err) { console.error('Keep failed:', err); }
+    }
+
+    unlockEditor();
+    showToolbar();
+    resetState();
+  }, [editor, diffBlockIds, diffResult, showToolbar, unlockEditor, removeSkeletonLoading, clearSelectedLavender]);
+
+  const handleUndo = useCallback(() => {
+    abortRef.current?.abort();
+    removeSkeletonLoading();
+    clearSelectedLavender();
+
+    if (diffBlockIds.length > 0 && selectedBlocks.length > 0) {
+      // Replace diff blocks with original block snapshots
+      try {
+        editor.replaceBlocks(diffBlockIds, selectedBlocks);
+      } catch (err) { console.error('Undo failed:', err); }
+    }
+
+    unlockEditor();
+    showToolbar();
+    resetState();
+  }, [editor, diffBlockIds, selectedBlocks, showToolbar, unlockEditor, removeSkeletonLoading, clearSelectedLavender]);
+
+  function resetState() {
+    setMode('idle');
+    setPrompt('');
+    setSelectedText('');
+    setSelectedBlocks([]);
+    setSelectedBlockIds([]);
+    setDiffBlockIds([]);
+    setAiResponseText('');
+    setDiffResult(null);
+    setStreamingText('');
+    setStatusText('');
+    savedSelectionRef.current = null;
+    // Clean up leftover DOM classes and unlock editor
+    const wrapper = document.querySelector('.blog-editor-wrapper');
+    wrapper?.classList.remove('ai-editor-locked');
+    wrapper?.querySelectorAll('.ai-edit-selected-block, .ai-edit-selection-highlight, .ai-skeleton-nearby').forEach((el) => {
+      el.classList.remove('ai-edit-selected-block', 'ai-edit-selection-highlight', 'ai-skeleton-nearby');
+    });
+    const toolbar = document.querySelector('.blog-editor-wrapper .bn-toolbar');
+    if (toolbar) toolbar.style.display = '';
+  }
+
+  // Core submit logic — streams AI response, then applies word-level diff inline
+  const submitWithPrompt = useCallback(async (promptText) => {
+    if (!promptText.trim() || !editor) return;
+
     hideToolbar();
     lockEditor();
 
-    // Mark selected blocks with shimmer skeleton (thinking phase)
-    markSelectedLavender(selectedBlockIds);
+    // Highlight selected blocks during streaming (keeps text visible)
+    const wrapper = document.querySelector('.blog-editor-wrapper');
+    if (wrapper) {
+      selectedBlockIds.forEach((id) => {
+        const el = wrapper.querySelector(`[data-id="${id}"]`);
+        if (el) el.classList.add('ai-edit-selection-highlight');
+      });
+    }
     addSkeletonLoading(selectedBlockIds);
 
-    originalBlockIdsRef.current = [...selectedBlockIds];
-    setOriginalBlockIds([...selectedBlockIds]);
-
-    // Insert initial AI placeholder block after the last selected block
-    const lastOrigId = selectedBlockIds[selectedBlockIds.length - 1];
-    editor.insertBlocks([{ type: 'paragraph', content: [] }], lastOrigId, 'after');
-
-    const doc = editor.document;
-    const lastOrigIdx = doc.findIndex((b) => b.id === lastOrigId);
-    const insertedBlock = doc[lastOrigIdx + 1];
-    if (!insertedBlock) return;
-
-    aiBlockCountRef.current = 1;
-    const initialAiIds = [insertedBlock.id];
-    setAiBlockIds(initialAiIds);
-
     setMode('streaming');
-
-    // Apply lavender styling and remove skeleton once streaming starts
-    requestAnimationFrame(() => {
-      markAiBlocks(initialAiIds);
-      // CSS handles highlighting via -webkit-text-fill-color
-      const el = document.querySelector(`.blog-editor-wrapper [data-id="${insertedBlock.id}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
 
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Build prompt with context
+    // Build context
     let fullBlogText = '';
     try {
       fullBlogText = editor.document.map((b) => {
@@ -395,10 +421,9 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
       }).filter(Boolean).join('\n');
     } catch {}
 
-    const userPrompt = `## Full blog (for context):\n${fullBlogText}\n\n---\n\nSelected text to edit:\n\`\`\`\n${selectedText}\n\`\`\`\n\nInstruction: ${prompt}`;
+    const userPrompt = `## Full blog (for context):\n${fullBlogText}\n\n---\n\nSelected text to edit:\n\`\`\`\n${selectedText}\n\`\`\`\n\nInstruction: ${promptText}`;
 
     try {
-      // Get or create lixsearch session
       const sessionId = await getOrCreateSession(blogId);
 
       await streamAI({
@@ -406,157 +431,126 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
         systemPrompt: EDIT_SYSTEM_PROMPT,
         userPrompt,
         signal: controller.signal,
+
+        onTask: (taskText) => {
+          setStatusText(taskText);
+        },
+
         onChunk: (_chunk, fullText) => {
-          // First chunk: transition from skeleton to strikethrough originals
+          removeSkeletonLoading();
+          setStreamingText(fullText);
+        },
+
+        onDone: (fullText) => {
           removeSkeletonLoading();
           clearSelectedLavender();
-          markOriginalBlocks(originalBlockIdsRef.current);
 
-          // Handle TITLE: prefix — update blog title
           let contentText = fullText;
+          // Handle TITLE: prefix
           if (contentText.trim().startsWith('TITLE:')) {
             const lines = contentText.trim().split('\n');
             const titleLine = lines.shift();
             const newTitle = titleLine.replace(/^TITLE:\s*/, '').trim();
             if (onTitleChange && newTitle) onTitleChange(newTitle);
             contentText = lines.join('\n').trim();
-            if (!contentText) return;
           }
 
-          const newBlocks = parseMarkdownToBlocks(contentText);
-          const oldAiIds = getAiBlockIdsFromDoc();
-          if (oldAiIds.length === 0) return;
+          if (!contentText) {
+            // No content — just clean up
+            setMode('idle');
+            unlockEditor();
+            showToolbar();
+            return;
+          }
 
+          // Store AI response for reference
+          setAiResponseText(contentText);
+
+          // Strip markdown syntax for clean diff comparison
+          const cleanAiText = contentText
+            .replace(/\*\*(.+?)\*\*/g, '$1')
+            .replace(/\*(.+?)\*/g, '$1')
+            .replace(/__(.+?)__/g, '$1')
+            .replace(/_(.+?)_/g, '$1')
+            .replace(/~~(.+?)~~/g, '$1')
+            .replace(/`(.+?)`/g, '$1')
+            .replace(/^#{1,6}\s+/gm, '');
+
+          // Compute word-level diff and store it for keep/undo
+          const diff = computeWordDiff(selectedText, cleanAiText);
+          setDiffResult(diff);
+          const diffBlocks = diffToBlocks(diff);
+
+          // Find the block before the first selected block (anchor for finding new IDs)
+          const doc = editor.document;
+          const firstSelIdx = doc.findIndex((b) => b.id === selectedBlockIds[0]);
+          const beforeBlockId = firstSelIdx > 0 ? doc[firstSelIdx - 1].id : null;
+
+          // Replace original blocks with diff blocks
           try {
-            if (newBlocks.length !== aiBlockCountRef.current) {
-              editor.replaceBlocks(oldAiIds, newBlocks);
-              aiBlockCountRef.current = newBlocks.length;
-            } else {
-              const lastId = oldAiIds[oldAiIds.length - 1];
-              const lastBlock = newBlocks[newBlocks.length - 1];
-              editor.updateBlock(lastId, {
-                type: lastBlock.type,
-                props: lastBlock.props || {},
-                content: lastBlock.content,
-              });
-            }
-            const updatedIds = getAiBlockIdsFromDoc();
-            setAiBlockIds(updatedIds);
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                markAiBlocks(updatedIds);
-                // Auto-scroll to last AI block
-                const lastEl = document.querySelector(`.blog-editor-wrapper [data-id="${updatedIds[updatedIds.length - 1]}"]`);
-                if (lastEl) {
-                  const rect = lastEl.getBoundingClientRect();
-                  if (rect.bottom > window.innerHeight * 0.7) {
-                    window.scrollTo({ top: window.scrollY + rect.top - window.innerHeight * 0.5, behavior: 'smooth' });
-                  }
-                }
-              });
-            });
-          } catch { /* block may have been removed */ }
-        },
-        onDone: (fullText) => {
-          let contentText = fullText;
-          if (contentText.trim().startsWith('TITLE:')) {
-            const lines = contentText.trim().split('\n');
-            const titleLine = lines.shift();
-            const newTitle = titleLine.replace(/^TITLE:\s*/, '').trim();
-            if (onTitleChange && newTitle) onTitleChange(newTitle);
-            contentText = lines.join('\n').trim();
-          }
+            editor.replaceBlocks(selectedBlockIds, diffBlocks);
+          } catch { /* blocks may have been removed */ }
 
-          if (contentText) {
-            const newBlocks = parseMarkdownToBlocks(contentText);
-            const oldAiIds = getAiBlockIdsFromDoc();
-            try {
-              if (oldAiIds.length > 0) {
-                editor.replaceBlocks(oldAiIds, newBlocks);
-                aiBlockCountRef.current = newBlocks.length;
-              }
-            } catch {}
-          } else {
-            // Title-only response — remove placeholder blocks
-            const oldAiIds = getAiBlockIdsFromDoc();
-            try { if (oldAiIds.length > 0) editor.removeBlocks(oldAiIds); } catch {}
-            // Also remove original strikethrough blocks since title was changed
-            const origIds = originalBlockIdsRef.current;
-            try { if (origIds.length > 0) editor.removeBlocks(origIds); } catch {}
-          }
+          // Track the new diff block IDs
+          const newDoc = editor.document;
+          const startIdx = beforeBlockId
+            ? newDoc.findIndex((b) => b.id === beforeBlockId) + 1
+            : 0;
+          const newDiffIds = newDoc
+            .slice(startIdx, startIdx + diffBlocks.length)
+            .map((b) => b.id);
+          setDiffBlockIds(newDiffIds);
 
-          const finalIds = getAiBlockIdsFromDoc();
-          setAiBlockIds(finalIds);
           setMode('done');
           abortRef.current = null;
 
+          // Scroll to diff
           requestAnimationFrame(() => {
-            if (finalIds.length > 0) markAiBlocks(finalIds);
+            const firstEl = document.querySelector(`.blog-editor-wrapper [data-id="${newDiffIds[0]}"]`);
+            if (firstEl) firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
           });
         },
+
         onError: (err) => {
           console.error('AI stream error:', err);
-          handleUndo();
+          removeSkeletonLoading();
+          clearSelectedLavender();
+          unlockEditor();
+          showToolbar();
+          resetState();
         },
       });
     } catch (err) {
       if (err.name !== 'AbortError') {
         console.error('AI error:', err);
-        handleUndo();
+        removeSkeletonLoading();
+        clearSelectedLavender();
+        unlockEditor();
+        showToolbar();
+        resetState();
       }
     }
-  }, [prompt, selectedText, selectedBlockIds, editor, markOriginalBlocks, markAiBlocks, getAiBlockIdsFromDoc]);
+  }, [selectedText, selectedBlockIds, editor, hideToolbar, lockEditor, addSkeletonLoading, removeSkeletonLoading, clearSelectedLavender, unlockEditor, showToolbar, onTitleChange, blogId]);
 
-  const handleKeep = useCallback(() => {
-    showToolbar();
-    unlockEditor();
-    removeSkeletonLoading();
-    clearSelectedLavender();
-    // Remove original (strikethrough) blocks
-    try {
-      if (originalBlockIds.length > 0) editor.removeBlocks(originalBlockIds);
-    } catch {}
-    // Clean up highlight class from AI blocks
-    const wrapper = document.querySelector('.blog-editor-wrapper');
-    wrapper?.querySelectorAll('.ai-edit-new-block').forEach((el) => el.classList.remove('ai-edit-new-block'));
-    resetState();
-  }, [editor, originalBlockIds, showToolbar, unlockEditor, removeSkeletonLoading, clearSelectedLavender]);
+  const handleSubmit = useCallback(async () => {
+    if (!prompt.trim() || !editor) return;
+    submitWithPrompt(prompt);
+  }, [prompt, editor, submitWithPrompt]);
 
-  const handleUndo = useCallback(() => {
-    abortRef.current?.abort();
-    showToolbar();
-    unlockEditor();
-    removeSkeletonLoading();
-    clearSelectedLavender();
-    // Remove AI-generated blocks
-    const currentAiIds = getAiBlockIdsFromDoc();
-    try {
-      if (currentAiIds.length > 0) editor.removeBlocks(currentAiIds);
-    } catch {}
-    // Remove strikethrough from originals (restore to normal)
-    const wrapper = document.querySelector('.blog-editor-wrapper');
-    wrapper?.querySelectorAll('.ai-edit-original-block').forEach((el) => {
-      el.classList.remove('ai-edit-original-block');
-    });
-    resetState();
-  }, [editor, originalBlockIds, getAiBlockIdsFromDoc, showToolbar, unlockEditor, removeSkeletonLoading, clearSelectedLavender]);
+  // Quick-action: submit preset instruction directly
+  const handleQuickAction = useCallback((instruction) => {
+    submitWithPrompt(instruction);
+  }, [submitWithPrompt]);
 
-  function resetState() {
-    setMode('idle');
-    setPrompt('');
-    setSelectedText('');
-    setSelectedBlocks([]);
-    setSelectedBlockIds([]);
-    setOriginalBlockIds([]);
-    originalBlockIdsRef.current = [];
-    setAiBlockIds([]);
-    aiBlockCountRef.current = 0;
-    // Clean up leftover DOM classes
-    const wrapper = document.querySelector('.blog-editor-wrapper');
-    wrapper?.querySelectorAll('.ai-edit-original-block, .ai-edit-new-block, .ai-edit-selected-block, .ai-skeleton-nearby').forEach((el) => {
-      el.classList.remove('ai-edit-original-block', 'ai-edit-new-block', 'ai-edit-selected-block', 'ai-skeleton-nearby');
-    });
-  }
+  // Quick action presets
+  const quickActions = [
+    { label: 'Fix Grammar', instruction: 'Fix all grammar, spelling, and punctuation errors. Keep the original meaning and tone intact.', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> },
+    { label: 'Paraphrase', instruction: 'Paraphrase this text while preserving the original meaning. Use different word choices and sentence structures.', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg> },
+    { label: 'Improve Writing', instruction: 'Improve the clarity, flow, and readability of this text. Make the language more polished and professional while keeping the original voice.', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/></svg> },
+    { label: 'Make Concise', instruction: 'Make this text more concise and to the point. Remove unnecessary words and redundancy without losing meaning.', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h10"/></svg> },
+    { label: 'Make Formal', instruction: 'Rewrite this text in a more formal and professional tone.', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg> },
+    { label: 'Simplify', instruction: 'Simplify this text so it is easy to understand. Use shorter sentences and simpler vocabulary.', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg> },
+  ];
 
   // Render the inline AI prompt (same style as space-trigger AICommandMenu)
   if (mode === 'prompting') {
@@ -606,51 +600,92 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  // Streaming: show Elixpo typing bar at bottom
-  if (mode === 'streaming') {
-    return (
-      <div className="elixpo-typing-bar">
-        <div className="elixpo-typing-bar-inner">
-          <img src="/base-logo.png" alt="Elixpo" className="elixpo-typing-avatar" />
-          <div className="elixpo-typing-text">
-            <span className="elixpo-typing-name">Elixpo</span>
-            <span className="elixpo-typing-status">is editing<span className="elixpo-typing-dots"><span /><span /><span /></span></span>
-          </div>
-          <button className="elixpo-stop-btn" onClick={handleUndo}>
-            <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
-              <rect x="1" y="1" width="10" height="10" rx="2" />
-            </svg>
-            Stop
-          </button>
+        {/* Quick action buttons — floating below the input card */}
+        <div className="mx-auto w-full max-w-[600px] flex flex-col mt-1 py-1">
+          {quickActions.map((action) => (
+            <button
+              key={action.label}
+              onClick={() => handleQuickAction(action.instruction)}
+              className="ai-quick-action-btn"
+            >
+              {action.icon}
+              {action.label}
+            </button>
+          ))}
         </div>
       </div>
     );
   }
 
-  // Done: show keep/undo bar at bottom
+  // Streaming: inline status card (same style as content creation)
+  if (mode === 'streaming') {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: promptPos.top,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+        }}
+      >
+        <div className="mx-auto w-full max-w-[600px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border-[1.5px] border-[rgba(196,181,253,0.3)]">
+              <img src="/base-logo.png" alt="Elixpo" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[13px] font-semibold text-[#c4b5fd]">Elixpo</span>
+              <span className="text-[13px] text-[#8b8fa3] ai-status-text-fade">
+                {statusText || (streamingText ? 'is editing' : 'is thinking')}
+                <span className="elixpo-typing-dots"><span /><span /><span /></span>
+              </span>
+            </div>
+            <button
+              onClick={handleUndo}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-lg text-[12px] font-medium text-[#f87171] bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.25)] hover:bg-[rgba(248,113,113,0.15)] transition-colors cursor-pointer"
+            >
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="10" height="10" rx="2" /></svg>
+              Stop
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Done: inline keep/undo card (same style as content creation)
   if (mode === 'done') {
     return (
-      <div className="elixpo-done-bar">
-        <div className="elixpo-done-bar-inner">
-          <img src="/base-logo.png" alt="Elixpo" className="elixpo-typing-avatar" />
-          <span className="elixpo-done-label">Elixpo finished editing</span>
-          <div className="elixpo-done-actions">
-            <button className="elixpo-done-keep" onClick={handleKeep} title="Keep">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              Keep
-            </button>
-            <button className="elixpo-done-discard" onClick={handleUndo} title="Undo">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-              </svg>
-              Undo
-            </button>
+      <div
+        style={{
+          position: 'absolute',
+          top: promptPos.top,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+        }}
+      >
+        <div className="mx-auto w-full max-w-[600px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border-[1.5px] border-[rgba(196,181,253,0.3)]">
+              <img src="/base-logo.png" alt="Elixpo" className="w-full h-full object-cover" />
+            </div>
+            <span className="text-[13px] text-[#c4b5fd]">Elixpo finished editing</span>
+            <div className="ml-auto flex items-center gap-2">
+              <button className="elixpo-done-keep" onClick={handleKeep} title="Keep">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Keep
+              </button>
+              <button className="elixpo-done-discard" onClick={handleUndo} title="Undo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                </svg>
+                Undo
+              </button>
+            </div>
           </div>
         </div>
       </div>

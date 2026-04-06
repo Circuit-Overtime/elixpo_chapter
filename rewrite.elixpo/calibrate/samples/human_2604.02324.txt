@@ -1,0 +1,182 @@
+# Grounded Token Initialization for New Vocabulary in LMs for Generative Recommendation
+# arXiv: 2604.02324
+# Words: 1672
+
+Experiments
+
+We evaluate \ within the highly demanding domain of generative recommendation. This domain serves as an ideal testbed for the initialization bottleneck, as it requires incorporating thousands of new Semantic-ID (SID) tokens into a pretrained language model. To empirically validate whether aligning these tokens with the model’s pre-existing linguistic geometry can prevent semantic collapse, we evaluate across two diverse environments: an industrial-scale candidate retrieval system and the public Vibrent Clothes Rental benchmark.
+
+Setup
+
+Datasets. We evaluate across two distinct scales and domains.
+
+(1) Industrial candidate retrieval. (Data access and use complied with internal privacy and security frameworks. Member profile attributes were processed in accordance with applicable member controls and visibility settings, and analyses were conducted on de‑identified datasets with results reported in aggregate only.) This dataset consists of job requirement--candidate pairs from a world-leading recruitment platform. Each pair is categorized into three relevance levels (good, good\&maybe, and not match) by an internal LLM evaluator according to how many job requirements a candidate satisfies. Due to data-sharing constraints, we report only relative performance gains over the SFT baseline for this dataset.
+
+(2) Vibrent Clothes Rental. To validate generalizability, we adapt the public Vibrent Clothes Rental Dataset~[citation] into a generative retrieval task, treating users as queries and clothing items as candidates based on historical rental transactions.
+
+Baselines. 
+To strictly isolate the initialization bottleneck, all methods share an identical Qwen3-0.6B backbone and RQ-VAE tokenization structure, differing only in how they introduce novel tokens. 
+
+(1)~Vanilla SFT: New SID tokens are mean-initialized (Eq.~[ref]), inducing a semantic collapse. The model relies entirely on downstream fine-tuning to disambiguate tokens from this degenerate starting point.
+
+(2)~LC-Rec~[citation]: A recent multi-task approach that begins from the same collapsed state but attempts to recover semantic structure by applying auxiliary natural language alignment objectives during fine-tuning.
+
+(3)~GTI\ (Ours): Using the grounding stage described in Section~[ref], we ground the new SID tokens into distinct, semantically meaningful regions of the frozen LM's embedding space, providing a structurally rich starting point for the subsequent SFT procedure.
+
+Evaluation Metrics. We measure retrieval accuracy using Top- K Precision, Recall, and NDCG. For the industrial dataset, we sample 200 jobs as evaluation queries (retrieving 200 candidates each). To comply with data-sharing constraints, we isolate the direct performance uplift of our grounding stage by reporting results strictly as a relative percentage gain over the standard SFT baseline, formulated as (M_method - M_Baseline) / M_Baseline . For the public Vibrent dataset, we adopt the standard leave-one-out sequence splitting strategy~[citation].
+
+ 
+table*[b!]
+-20pt
+Relative Precision@K gain (\%) over SFT baseline on a real-world candidate retrieval dataset. Bold and underline denote the best result.
+5pt
+ 
+ [ ][c]
+1.1 !
+tabularcl|ccccc|ccccc
+ 
+2c|2*Methodology & 5c|Precision@K (Good Match) & 5cPrecision@K (Good \& Maybe Match) \\
+2c| & P@5 & P@10 & P@20 & P@50 & P@100 & P@5 & P@10 & P@20 & P@50 & P@100 \\ 
+ 
+
+2c|MI+Vanilla SFT (Baseline) 
+& 0.00\% & 0.00\% & 0.00\% & 0.00\% & 0.00\%
+& 0.00\% & 0.00\% & 0.00\% & 0.00\% & 0.00\% \\
+
+2c|MI+Multi-task SFT (LC-Rec)
+& +6.38\% & +5.20\% & +3.87\% & +3.00\% & +3.47\%
+& +5.63\% & +5.35\% & +2.98\% & +3.32\% & +3.05\% \\
+
+2c|GTI+Multi-task SFT (Ours) 
+& +21.63\% & +13.59\% & +8.16\% & +6.35\% & +4.25\%
+& +15.83\% & +10.89\% & +5.74\% & +5.87\% & +4.10\% \\
+
+ 
+
+gray!15
+2c|grayGTI: extra gain over LC-Rec ( )
+& gray+15.25\% & gray+8.39\% & gray+4.29\% & gray+3.35\% & gray+0.78\%
+& gray+10.20\% & gray+5.54\% & gray+2.76\% & gray+2.55\% & gray+1.05\% \\
+
+ 
+tabular
+
+-5pt
+table*
+
+figure*[b!]
+ 
+ -7pt
+ [ ][c]assets/imgs/relative_gain_industrial.png
+ -20pt
+ Relative gain versus candidate pool size. Left/Middle: Relative Precision@K gain under Good Match and Good \& Maybe Match; Right: Relative NDCG@K gain (Composite). \ consistently outperforms both baselines across all pool sizes, with the largest gains at small K . Shaded areas denote variability across runs.
+ -10pt
+ 
+figure*
+
+Implementation Details.
+Across both datasets, we employ Qwen3-0.6B as the backbone language model. Semantic IDs are constructed via RQ-VAE, following the formulation in [citation]. For , the grounding stage freezes all parameters except E_new and trains for 8,000 steps with batch size 128; all parameters are then unfrozen for an additional 8,000 steps at the same batch size, followed by the standard SFT procedure used for the baseline. All experiments use four NVIDIA H100 GPUs.
+
+Industrial dataset. Candidate-level semantic representations are obtained by fine-tuning Mistral-E5 in a two-tower architecture with recruiter engagement signals, producing 1024-dimensional embeddings. The RQ-VAE uses L=3 codebook levels with K=8,192 codes per level. The subsequent SFT baseline trains with a batch size of 512 for 1,600 steps.
+
+Public dataset. Item-level semantic representations are derived using the off-the-shelf Qwen3-Embedding-0.6B encoder, yielding 1024-dimensional vectors. The RQ-VAE uses a 3-layer MLP encoder--decoder with ReLU activations, L=4 codebook levels with K=256 codes per level (32-dimensional codes), and the diversity regularizer of [citation] to encourage balanced codebook utilization. The RQ-VAE is trained for 20K epochs. The SFT baseline trains with batch size 512 for 1,600 steps.
+
+table*[]
+-40pt
+ 
+Relative NDCG@K (Composite) gain (\%) over SFT baseline on a real-world candidate retrieval dataset. Bold and underline denote the best result.
+5pt
+ 
+tabularclccccc
+ 
+2c|2*Methodology & 5cNDCG@K (Composite) \\
+2c| & @5 & @10 & @20 & @50 & @100 \\ 
+ 
+
+2c|MI+Vanilla SFT (Baseline)
+& 0.00\% & 0.00\% & 0.00\% & 0.00\% & 0.00\% \\
+
+2c|MI+Multi-task SFT (LC-Rec)
+& +6.94\% & +4.38\% & +1.94\% & +1.95\% & +1.01\% \\
+
+2c|GTI+Multi-task SFT (Ours)
+& +17.88\% & +12.03\% & +6.90\% & +4.99\% & +2.89\% \\
+
+ 
+
+gray!15
+2c|grayGTI: extra gain over LC-Rec ( )
+& gray+10.94\% & gray+7.65\% & gray+4.96\% & gray+3.04\% & gray+1.88\% \\
+
+ 
+tabular
+
+-10pt
+table*
+
+table*[b!]
+-20pt
+Relative Recall@K and NDCG@K (\%) over SFT baseline on Vibrent Dataset.
+5pt
+ [ ][c]
+1.1 !
+tabularcl|ccccc|ccccc
+ 
+2c|2*Methodology 
+& 5c|Recall@K 
+& 5cNDCG@K \\
+2c| 
+& @5 & @10 & @20 & @50 & @100 
+& @5 & @10 & @20 & @50 & @100 \\
+ 
+
+2c|MI+Vanilla SFT (Baseline) 
+& 0.00\% & 0.00\% & 0.00\% & 0.00\% & 0.00\%
+& 0.00\% & 0.00\% & 0.00\% & 0.00\% & 0.00\% \\
+
+2c|MI+Multi-task SFT (LC-Rec) 
+& +7.69\% & +11.86\% & +13.41\% & +12.03\% & +15.73\%
+& +8.47\% & +10.74\% & +11.30\% & +11.18\% & +13.26\% \\
+
+2c|GTI+Vanilla SFT (Ours) 
+& +1.71\% & +22.03\% & +26.02\% & +21.55\% & +18.54\%
+& -5.19\% & +8.02\% & +12.23\% & +12.83\% & +12.46\% \\
+
+ 
+tabular
+
+-5pt
+table*
+
+figure*[b!]
+ 
+ -5pt
+ [ ][c]assets/imgs/relative_gain_recall_ndcg_public.png
+ -25pt
+ Relative gain versus candidate pool size. Left: Relative Recall@K gain; Right: Relative NDCG@K gain. Shaded areas denote variability across runs.
+ -15pt
+ 
+figure*
+
+Overall Performance Analysis
+
+Tables~[ref] \& ~[ref] and Figure~[ref] detail the overall performance on the industrial-scale dataset.
+
+The effectiveness of \ Initialization. Across all cutoffs, evaluation metrics, and relevance thresholds (Good Match and Good \& Maybe Match), \ outperforms both baselines. Under the strict Good Match criterion, \ achieves +21.63\% relative gain at P@5 over vanilla SFT, compared to +6.38\% for LC-Rec, yielding an extra gain of 15.25\% attributable to the grounding stage. This pattern is consistent across evaluation settings: under Good \& Maybe Match, \ maintains a clear advantage (+15.83\% vs.\ +5.63\% at P@5), and NDCG@5 exhibits the same trend (+17.88\% vs.\ +6.94\%). Sweeping the candidate pool size from 5 to 200 (Figure~[ref]) further confirms that the improvement is robust across retrieval scales.
+
+Evidence for the \ hypothesis. The comparison between LC-Rec and \ provides a controlled test of our hypothesis, as both methods introduce linguistic supervision for new tokens but differ in when it is applied: LC-Rec incorporates auxiliary language modeling objectives during fine-tuning while retaining mean initialization, whereas \ addresses the initialization directly through a grounding stage that precedes fine-tuning. The consistent performance gap (grayextra gain ) between the two methods, despite sharing the same downstream SFT procedure, suggests that grounding new tokens before fine-tuning provides a more effective starting point than relying on auxiliary objectives alone, consistent with the Grounded Token Initialization hypothesis.
+
+Controlled comparison on public dataset. To disentangle the effect of grounded initialization from that of multi-task adaptation and assess the generalization of our method beyond the proprietary dataset, we compare +Vanilla SFT against LC-Rec (Multi-task SFT) on the public Vibrent dataset (Table~[ref] and Figure~[ref]). Even without auxiliary objectives during fine-tuning, \ achieves substantially higher Recall at K 10 (e.g., +26.02\% vs.\ +13.41\% at Recall@20) and comparable NDCG, indicating that the grounding stage alone accounts for a large portion of the downstream improvement.
+
+Further Analysis
+
+For better visualization, we randomly choose 50 tokens separately from pretrained tokens or Semantic-ID tokens
+
+ 
+
+The preceding results establish that grounded initialization improves downstream performance; we now investigate why. We use spectral and geometric diagnostics on the SID embedding subspace, both at initialization and after fine-tuning. These analyses provide direct evidence to the Grounded Token
+Initialization Hypothesis (Section~[ref]).
+
+Grounded initialization produces differentiated embedding geometry. Figure~[ref] visualizes pairwise cosine similarities among pretrained vocabulary tokens and SID tokens under three initialization strategies. Random initialization avoids uniformity but yields unstructured noise with no coherent affinity to the pretrained manifold. Mean initialization produces a uniform SID block, confirming the collapse diagnosed in Section~[ref]. In contrast, \ produces rich, differentiated structure within the SID block together with coherent cross-block affinities to relevant lexical tokens.
+
+Grounded structure persists through fine-tuning. We next examine whether the structure induced by grounding persists through fine-tuning. (1)~ Pairwise cosine similarities among SID embeddings after fine-tuning on the public dataset (Figure~[ref]) show that only the -initialized model preserves the blockwise hierarchical structure encoded by the RQ-VAE; mean and random initialization produce flat or noisy similarity patterns. (2)~ The singular-value spectrum of E_SID R^|V_SID| d after fine-tuning on the industrial dataset (Figure~[ref]a) shows that mean initialization leads to rapid spectral decay and low effective rank, while grounded initialization yields slower decay and higher effective rank, indicating a non-degenerate subspace with multiple active directions along which items differ (see Appendix for extended SVD analysis of the industrial dataset).(3)~Representational similarity analysis (RSA) between the learned SID embeddings and the ground-truth RQ-VAE codebook vectors (Figure~[ref]b) shows that -initialized embeddings better preserve the original semantic structure through training. Taken together, these results suggest that the grounding stage seeds embedding structure that persists through fine-tuning, corroborating the downstream performance gains.

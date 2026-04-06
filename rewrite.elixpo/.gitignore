@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.env
+nltk_data/
+wrangler.toml
+.next/
+output/
+dist/
+build/
+*.egg-info/
+node_modules/

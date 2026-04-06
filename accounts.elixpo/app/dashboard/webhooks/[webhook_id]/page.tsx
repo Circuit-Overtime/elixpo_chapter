@@ -147,14 +147,14 @@ export default function WebhookDetailPage() {
 
   if (loading) {
     return (
-      <Box sx={{ minHeight: '100vh', background: '#0f0f0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 10 }}>
         <CircularProgress sx={{ color: '#a3e635' }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', background: '#0f0f0f', p: 3 }}>
+    <Box>
       <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
         {/* Back + Header */}
         <Box sx={{ mb: 4 }}>

@@ -202,14 +202,14 @@ function ForgotPasswordContent() {
 
   if (tokenLoading) {
     return (
-      <Box sx={{ minHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)' }}>
+      <Box sx={{ minHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)' }}>
         <CircularProgress sx={{ color: '#a3e635' }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)', p: 2 }}>
+    <Box sx={{ minHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)', p: 2 }}>
       <Box sx={{ maxWidth: '420px', width: '100%', backdropFilter: 'blur(20px)', background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '16px', p: 3 }}>
         <Box sx={{ mb: 3, textAlign: 'center' }}>
           <Typography variant="h4" sx={{ fontWeight: 700, color: '#f5f5f4', mb: 0.5 }}>Reset Password</Typography>
@@ -311,7 +311,7 @@ export default function ForgotPasswordPage() {
   return (
     <Suspense
       fallback={
-        <Box sx={{ minHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)' }}>
+        <Box sx={{ minHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)' }}>
           <CircularProgress sx={{ color: '#a3e635' }} />
         </Box>
       }

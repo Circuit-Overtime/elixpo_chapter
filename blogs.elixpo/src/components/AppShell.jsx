@@ -384,7 +384,7 @@ export default function AppShell({ children }) {
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: process.env.NEXT_PUBLIC_ELIXPO_CLIENT_ID,
-      redirect_uri: (process.env.NEXT_PUBLIC_URL || window.location.origin) + '/api/auth/callback',
+      redirect_uri: window.location.origin + '/api/auth/callback',
       state,
       scope: 'openid profile email',
     });
@@ -399,7 +399,7 @@ export default function AppShell({ children }) {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3">
               <img src={isDark ? '/logo-light.png' : '/logo-dark.png'} alt="" className="h-8 w-8 rounded-full" />
-              <span className="text-xl font-bold tracking-tight font-kanit" style={{ color: 'var(--text-primary)' }}>LixBlogs</span>
+              <span className="hidden sm:inline text-xl font-bold tracking-tight font-kanit" style={{ color: 'var(--text-primary)' }}>LixBlogs</span>
             </Link>
           </div>
           <div className="flex items-center gap-2">
@@ -423,7 +423,7 @@ export default function AppShell({ children }) {
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
             >
               <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-              Write
+              <span className="hidden sm:inline">Write</span>
             </Link>
             {loading ? (
               <div className="h-8 w-8 rounded-full animate-pulse" style={{ backgroundColor: 'var(--bg-elevated)' }} />
@@ -443,8 +443,9 @@ export default function AppShell({ children }) {
                 >
                   Sign In
                 </Link>
-                <button onClick={handleLogin} className="text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] transition-colors px-4 py-1.5 rounded-full">
-                  Get Started
+                <button onClick={handleLogin} className="text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] transition-colors rounded-full px-2.5 py-2 sm:px-4 sm:py-1.5 flex items-center justify-center">
+                  <span className="hidden sm:inline">Get Started</span>
+                  <span className="sm:hidden"><ion-icon name="log-in-outline" style={{ fontSize: '18px' }} /></span>
                 </button>
               </>
             )}

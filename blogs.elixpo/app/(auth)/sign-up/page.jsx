@@ -3,10 +3,12 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTheme } from '../../../src/context/ThemeContext';
 
 function SignUpContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
+  const { isDark } = useTheme();
 
   function handleSignUp() {
     const state = crypto.randomUUID();
@@ -15,7 +17,7 @@ function SignUpContent() {
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: process.env.NEXT_PUBLIC_ELIXPO_CLIENT_ID,
-      redirect_uri: (process.env.NEXT_PUBLIC_URL || window.location.origin) + '/api/auth/callback',
+      redirect_uri: window.location.origin + '/api/auth/callback',
       state,
       scope: 'openid profile email',
     });
@@ -32,15 +34,15 @@ function SignUpContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0c1017] flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--bg-app)' }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
-          <div className="h-14 w-14 mx-auto rounded-full bg-[url('/logo.png')] bg-cover mb-4" />
-          <h1 className="text-2xl font-bold text-white font-kanit">Create your account</h1>
-          <p className="text-[#9ca3af] text-sm mt-1.5">Join the LixBlogs community</p>
+          <img src={isDark ? '/logo-light.png' : '/logo-dark.png'} alt="" className="h-14 w-14 mx-auto rounded-full mb-4" />
+          <h1 className="text-2xl font-bold font-kanit" style={{ color: 'var(--text-primary)' }}>Create your account</h1>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>Join the LixBlogs community</p>
         </div>
 
-        <div className="bg-[#141a26] border border-[#232d3f] rounded-2xl p-6">
+        <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
           {error && (
             <div className="mb-5 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-[13px] text-center">
               {errorMessages[error] || 'An error occurred. Please try again.'}
@@ -49,7 +51,7 @@ function SignUpContent() {
 
           <button
             onClick={handleSignUp}
-            className="w-full py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-xl text-[14px] hover:bg-[#b69aff] transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-xl text-[14px] hover:bg-[#8b6ae6] transition-colors flex items-center justify-center gap-2"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
@@ -60,17 +62,17 @@ function SignUpContent() {
             Sign up with Elixpo Accounts
           </button>
 
-          <p className="text-[#8896a8] text-[11px] text-center mt-5 leading-relaxed">
+          <p className="text-[11px] text-center mt-5 leading-relaxed" style={{ color: 'var(--text-faint)' }}>
             By continuing, you agree to our Terms of Service and Privacy Policy.
           </p>
         </div>
 
-        <p className="text-center mt-6 text-[14px] text-[#9ca3af]">
+        <p className="text-center mt-6 text-[14px]" style={{ color: 'var(--text-muted)' }}>
           Already have an account?{' '}
-          <Link href="/sign-in" className="text-[#e8e8e8] hover:text-white transition-colors font-medium">Sign in</Link>
+          <Link href="/sign-in" className="font-medium transition-colors" style={{ color: 'var(--text-primary)' }}>Sign in</Link>
         </p>
 
-        <p className="text-center text-[#7c8a9e] text-[11px] mt-6">
+        <p className="text-center text-[11px] mt-6" style={{ color: 'var(--text-faint)' }}>
           Secured by Elixpo Accounts
         </p>
       </div>
@@ -80,7 +82,7 @@ function SignUpContent() {
 
 export default function SignUp() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0c1017]" />}>
+    <Suspense fallback={<div className="min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }} />}>
       <SignUpContent />
     </Suspense>
   );

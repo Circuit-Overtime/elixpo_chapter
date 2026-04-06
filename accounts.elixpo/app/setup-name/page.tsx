@@ -107,14 +107,14 @@ const SetupNameContent = () => {
 
   if (pageLoading) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)' }}>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)' }}>
         <Typography sx={{ color: 'rgba(255,255,255,0.5)' }}>Loading...</Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)', p: 2 }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)', p: 2 }}>
       <Box sx={{
         maxWidth: '460px',
         width: '100%',

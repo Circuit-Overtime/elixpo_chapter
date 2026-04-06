@@ -1,6 +1,6 @@
 'use client';
 
-import CallbackPage from '../../../src/pages/auth/callback/CallbackPage';
+import CallbackPage from '../../../src/views/auth/callback/CallbackPage';
 
 export default function Callback() {
   return <CallbackPage />;

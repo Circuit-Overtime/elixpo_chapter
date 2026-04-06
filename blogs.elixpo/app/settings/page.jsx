@@ -1,7 +1,15 @@
-'use client';
+import { Suspense } from 'react';
+import SettingsPage from '../../src/views/settings/SettingsPage';
 
-import SettingsPage from '../../src/pages/settings/SettingsPage';
+export const metadata = {
+  title: 'Settings',
+  description: 'Manage your LixBlogs account settings, profile, and preferences.',
+};
 
 export default function Settings() {
-  return <SettingsPage />;
+  return (
+    <Suspense>
+      <SettingsPage />
+    </Suspense>
+  );
 }

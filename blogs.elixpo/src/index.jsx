@@ -183,45 +183,65 @@ function SearchBar() {
 
 function FeedCard({ post }) {
   const author = post.author || {};
+  const bannerSrc = post.cover_image_r2_key || generateBlogBanner(post.id || post.slug);
   return (
-    <article className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
-      <Link href={`/${author.username || 'unknown'}/${post.slug}`} className="block cursor-pointer">
-        <div className="flex items-center gap-2 mb-2.5">
-          {author.avatar_url ? (
-            <img src={author.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
-          ) : (
-            <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
-              {(author.display_name || author.username || '?')[0].toUpperCase()}
-            </div>
-          )}
-          <span className="text-[13px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-            {post.is_staff && (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
+    <article
+      className="group rounded-xl mb-3 transition-all duration-200 hover:shadow-md overflow-hidden relative"
+      style={{
+        backgroundColor: 'var(--bg-surface)',
+        border: '1px solid var(--border-default)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      }}
+    >
+      {/* Banner fading in from the right */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <img
+          src={bannerSrc}
+          alt=""
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          style={{ opacity: 0.18 }}
+        />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, var(--bg-surface) 30%, transparent 100%)' }} />
+      </div>
+
+      <div className="relative p-5">
+        <Link href={`/${author.username || 'unknown'}/${post.slug}`} className="block cursor-pointer">
+          <div className="flex items-center gap-2 mb-3">
+            {author.avatar_url ? (
+              <img src={author.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover ring-1 ring-[var(--border-default)]" />
+            ) : (
+              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
+                {(author.display_name || author.username || '?')[0].toUpperCase()}
+              </div>
             )}
-            {post.org && (
-              <><span style={{ color: 'var(--text-secondary)' }}>in {post.org.name}</span><span className="mx-0.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
-            )}
-            <span style={{ color: 'var(--text-secondary)' }}>{author.display_name || author.username}</span>
-            {post.co_author_count > 0 && (
-              <span style={{ color: 'var(--text-faint)' }}>+ {post.co_author_count} {post.co_author_count === 1 ? 'other' : 'others'}</span>
-            )}
-          </span>
-        </div>
-        <div className="flex gap-6">
+            <span className="text-[13px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+              {post.is_staff && (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
+              )}
+              {post.org && (
+                <><span style={{ color: 'var(--text-secondary)' }}>in {post.org.name}</span><span className="mx-0.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
+              )}
+              <span style={{ color: 'var(--text-secondary)' }}>{author.display_name || author.username}</span>
+              {post.co_author_count > 0 && (
+                <span style={{ color: 'var(--text-faint)' }}>+ {post.co_author_count} {post.co_author_count === 1 ? 'other' : 'others'}</span>
+              )}
+            </span>
+            <span className="ml-auto text-[11px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(post.published_at)}</span>
+          </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-[19px] font-bold leading-[1.3] mb-1.5 group-hover:opacity-75 transition-opacity font-serif tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
+            <h2 className="text-[18px] font-bold leading-[1.3] mb-1 group-hover:opacity-75 transition-opacity font-serif tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
+              {post.page_emoji && <span className="mr-1.5">{post.page_emoji}</span>}
               {post.title || 'Untitled'}
             </h2>
             {post.subtitle && (
-              <p className="text-[15px] leading-[1.5] line-clamp-2 mb-3" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-[14px] leading-[1.55] line-clamp-2 mb-3" style={{ color: 'var(--text-muted)' }}>
                 {post.subtitle}
               </p>
             )}
-            <div className="flex items-center gap-3.5 text-[12px]" style={{ color: 'var(--text-faint)' }}>
-              {(post.tags || []).length > 0 && (
-                <span className="text-[#9b7bf7] text-[11px] bg-[#9b7bf714] px-2.5 py-0.5 rounded-full font-medium">{post.tags[0]}</span>
-              )}
-              <span>{timeAgo(post.published_at)}</span>
+            <div className="flex items-center gap-3 text-[12px] flex-wrap" style={{ color: 'var(--text-faint)' }}>
+              {(post.tags || []).slice(0, 2).map(tag => (
+                <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--accent-subtle)', color: 'var(--accent)' }}>{tag}</span>
+              ))}
               {post.read_time_minutes > 0 && <span>{post.read_time_minutes} min read</span>}
               {post.like_count > 0 && (
                 <span className="flex items-center gap-1">
@@ -237,51 +257,77 @@ function FeedCard({ post }) {
               )}
             </div>
           </div>
-          <img
-            src={post.cover_image_r2_key || generateBlogBanner(post.id || post.slug)}
-            alt=""
-            className="w-[140px] h-[90px] rounded-lg flex-shrink-0 hidden sm:block object-cover"
-          />
-        </div>
-      </Link>
-      {post.can_edit && (
-        <div className="mt-2 flex items-center">
-          <Link
-            href={`/edit/${post.id}`}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors"
-            style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
-            onClick={e => e.stopPropagation()}
-          >
-            <ion-icon name="create-outline" style={{ fontSize: '13px' }} />
-            Edit
-          </Link>
-        </div>
-      )}
+        </Link>
+        {post.can_edit && (
+          <div className="mt-3 pt-3 flex items-center gap-2" style={{ borderTop: '1px solid var(--divider)' }}>
+            <Link
+              href={`/edit/${post.id}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
+              style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <ion-icon name="create-outline" style={{ fontSize: '13px' }} />
+              Edit
+            </Link>
+            <Link
+              href={`/edit/${post.id}?panel=settings`}
+              className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
+              style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
+              onClick={e => e.stopPropagation()}
+              title="Blog settings"
+            >
+              <ion-icon name="settings-outline" style={{ fontSize: '14px' }} />
+            </Link>
+          </div>
+        )}
+      </div>
     </article>
   );
 }
 
-function TopPickCard({ post }) {
+function TopPickCard({ post, index }) {
   const author = post.author || {};
+  const gradients = [
+    'linear-gradient(135deg, rgba(155,123,247,0.1) 0%, rgba(96,165,250,0.06) 100%)',
+    'linear-gradient(135deg, rgba(96,165,250,0.1) 0%, rgba(74,222,128,0.06) 100%)',
+    'linear-gradient(135deg, rgba(244,114,182,0.1) 0%, rgba(155,123,247,0.06) 100%)',
+  ];
+  const accents = ['#9b7bf7', '#60a5fa', '#f472b6'];
   return (
     <Link href={`/${author.username || 'unknown'}/${post.slug}`}>
-      <div className="py-3.5 cursor-pointer group" style={{ borderBottom: '1px solid var(--divider)' }}>
-        <div className="flex items-center gap-2 mb-1.5">
+      <div
+        className="p-3.5 rounded-xl cursor-pointer group mb-2.5 transition-all duration-200 hover:scale-[1.02]"
+        style={{
+          background: gradients[index % 3],
+          border: `1px solid color-mix(in srgb, ${accents[index % 3]} 15%, transparent)`,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        }}
+      >
+        <div className="flex items-center gap-2 mb-2">
           {author.avatar_url ? (
-            <img src={author.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover" />
+            <img src={author.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover ring-1 ring-white/10" />
           ) : (
             <div className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
               {(author.display_name || author.username || '?')[0].toUpperCase()}
             </div>
           )}
-          <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+          <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
             {author.display_name || author.username}
           </span>
+          <span className="ml-auto text-[10px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(post.published_at)}</span>
         </div>
-        <h3 className="text-[14px] font-bold leading-[1.35] group-hover:opacity-75 transition-opacity font-serif" style={{ color: 'var(--text-primary)' }}>
+        <h3 className="text-[13.5px] font-bold leading-[1.35] group-hover:opacity-80 transition-opacity font-serif" style={{ color: 'var(--text-primary)' }}>
+          {post.page_emoji && <span className="mr-1">{post.page_emoji}</span>}
           {post.title || 'Untitled'}
         </h3>
-        <span className="text-[11px] mt-1 block" style={{ color: 'var(--text-faint)' }}>{timeAgo(post.published_at)}</span>
+        {post.read_time_minutes > 0 && (
+          <div className="flex items-center gap-1.5 mt-2">
+            <div className="h-[3px] flex-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-elevated)' }}>
+              <div className="h-full rounded-full" style={{ width: `${Math.min(100, post.read_time_minutes * 20)}%`, backgroundColor: accents[index % 3], opacity: 0.5 }} />
+            </div>
+            <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>{post.read_time_minutes} min</span>
+          </div>
+        )}
       </div>
     </Link>
   );
@@ -310,10 +356,7 @@ function FeedSkeleton() {
   );
 }
 
-const RECOMMENDED_TOPICS = [
-  'Programming', 'Self Improvement', 'Data Science', 'Writing',
-  'Relationships', 'Technology', 'Design', 'Startups',
-];
+const FIXED_TAGS = ['Tech', 'Finance', 'Sports', 'Entertainment'];
 
 export default function App() {
   const { user } = useAuth();
@@ -327,10 +370,10 @@ export default function App() {
   // Build topic tabs
   const fixedTabs = [
     { label: 'For You', icon: 'sparkles', filter: null },
-    ...(user ? [{ label: 'Following', icon: null, filter: 'following' }] : []),
+    { label: 'Following', icon: null, filter: 'following' },
   ];
-  const interestTabs = (user ? userInterests : popularTags.slice(0, 6)).map(tag => ({ label: tag, icon: null, tag }));
-  const topics = [...fixedTabs, ...interestTabs];
+  const tagTabs = FIXED_TAGS.map(tag => ({ label: tag, icon: null, tag }));
+  const topics = [...fixedTabs, ...tagTabs];
 
   // Fetch feed
   useEffect(() => {
@@ -389,7 +432,7 @@ export default function App() {
           </div>
 
           {/* Feed */}
-          <div className="px-6">
+          <div className="px-6 pt-4">
             {loading ? (
               <FeedSkeleton />
             ) : posts.length > 0 ? (
@@ -430,10 +473,13 @@ export default function App() {
         <aside className="hidden xl:block w-[340px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto px-8 py-6 scrollbar-thin">
           {/* Top Picks */}
           <div className="mb-8">
-            <h3 className="text-[14px] font-bold pb-2 mb-1 tracking-wide" style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--divider)' }}>Top Picks</h3>
+            <h3 className="text-[13px] font-bold pb-2 mb-3 tracking-wider uppercase flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+              <ion-icon name="trophy-outline" style={{ fontSize: '14px', color: '#9b7bf7' }} />
+              Top Picks
+            </h3>
             {topPicks.length > 0 ? (
               <div>
-                {topPicks.map(pick => <TopPickCard key={pick.id} post={pick} />)}
+                {topPicks.map((pick, i) => <TopPickCard key={pick.id} post={pick} index={i} />)}
               </div>
             ) : (
               <p className="text-[13px] py-4" style={{ color: 'var(--text-faint)' }}>No picks yet</p>
@@ -444,7 +490,7 @@ export default function App() {
           <div className="mb-8">
             <h3 className="text-[14px] font-bold mb-3 tracking-wide" style={{ color: 'var(--text-primary)' }}>Recommended Topics</h3>
             <div className="flex flex-wrap gap-2">
-              {(popularTags.length > 0 ? popularTags.slice(0, 8) : RECOMMENDED_TOPICS).map(topic => (
+              {(popularTags.length > 0 ? popularTags.slice(0, 8) : FIXED_TAGS).map(topic => (
                 <button
                   key={topic}
                   onClick={() => {

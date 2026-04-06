@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import WritePage from '../../src/pages/WritePage';
+import WritePage from '../../src/views/WritePage';
 
 function generateBlogId() {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';

@@ -39,5 +39,7 @@ lix_chat.egg-info/
 *.log
 *.out
 *.gz
+*bbl
+*.blg
 *.fdb_latexmk
 *.egg-info/

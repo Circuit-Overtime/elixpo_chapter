@@ -60,13 +60,13 @@ export function parseMarkdownToBlocks(text) {
 
     if (!trimmed) { i++; continue; }
 
-    // Code fence: ```lang ... ```
-    const fenceMatch = trimmed.match(/^```(\w*)/);
+    // Code fence: ```lang ... ``` (also match curly/smart backticks)
+    const fenceMatch = trimmed.match(/^[`\u2018\u2019\u201C\u201D]{3}(\w*)/);
     if (fenceMatch) {
       const lang = fenceMatch[1] || '';
       const codeLines = [];
       i++;
-      while (i < lines.length && !lines[i].trim().startsWith('```')) {
+      while (i < lines.length && !/^[`\u2018\u2019\u201C\u201D]{3}/.test(lines[i].trim())) {
         codeLines.push(lines[i]);
         i++;
       }
@@ -78,6 +78,26 @@ export function parseMarkdownToBlocks(text) {
           type: 'mermaidBlock',
           props: { diagram: codeText },
         });
+      } else if (!lang && /\\\[[\s\S]*?\\\]/.test(codeText)) {
+        // Code block containing LaTeX \[...\] → extract as block equations
+        const latexPattern = /\\\[[\s\S]*?\\\]/g;
+        const latexMatches = codeText.match(latexPattern);
+        const parts = codeText.split(latexPattern);
+        let mIdx = 0;
+        for (let p = 0; p < parts.length; p++) {
+          const segment = parts[p].trim();
+          if (segment) {
+            for (const line of segment.split('\n').filter(l => l.trim())) {
+              const t = line.trim();
+              blocks.push({ type: 'paragraph', content: [{ type: 'text', text: t, ...(t.startsWith('%') ? { styles: { italic: true } } : {}) }] });
+            }
+          }
+          if (mIdx < latexMatches.length) {
+            const latex = latexMatches[mIdx].replace(/^\\\[/, '').replace(/\\\]$/, '').trim();
+            if (latex) blocks.push({ type: 'blockEquation', props: { latex } });
+            mIdx++;
+          }
+        }
       } else {
         blocks.push({
           type: 'codeBlock',
@@ -177,9 +197,9 @@ export function parseMarkdownToBlocks(text) {
       i++; continue;
     }
 
-    // Horizontal rule: ---, ***, ___
-    if (/^([-*_])\1{2,}$/.test(trimmed)) {
-      blocks.push({ type: 'paragraph', content: [{ type: 'text', text: '———' }] });
+    // Horizontal rule: ---, ***, ___, ———, ———
+    if (/^([-*_])\1{2,}$/.test(trimmed) || /^[—–]{2,}$/.test(trimmed)) {
+      blocks.push({ type: 'divider' });
       i++; continue;
     }
 

@@ -1,6 +1,8 @@
 import logging
 import uuid
 import json
+import base64
+import os
 from datetime import datetime, timezone
 from quart import request, jsonify, Response
 from pipeline.searchPipeline import run_elixposearch_pipeline
@@ -10,12 +12,32 @@ from pipeline.config import (
     LOG_MESSAGE_QUERY_TRUNCATE,
     RESPONSE_MODEL,
 )
+from app.gateways.image import store_image
 
 logger = logging.getLogger("lixsearch-api")
+
+_PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://search.elixpo.com").rstrip("/")
 
 
 def _ephemeral_session_id() -> str:
     return f"eph-{uuid.uuid4().hex[:16]}"
+
+
+def _b64_data_url_to_hosted(data_url: str) -> str:
+    """Convert a data:image/...;base64,... URL to a hosted /api/image/ URL."""
+    try:
+        header, payload = data_url.split(",", 1)
+        # header looks like "data:image/png;base64"
+        ct = "image/png"
+        if ":" in header and ";" in header:
+            ct = header.split(":")[1].split(";")[0]
+        image_bytes = base64.b64decode(payload)
+        image_id = uuid.uuid4().hex[:16]
+        store_image(image_id, image_bytes, ct)
+        return f"{_PUBLIC_BASE_URL}/api/image/{image_id}"
+    except Exception as e:
+        logger.warning(f"[completions] Failed to host base64 image: {e}")
+        return data_url  # fallback: pass through as-is
 
 
 def _format_chunk(request_id: str, content: str, finish_reason=None, event_type: str = "RESPONSE") -> str:
@@ -94,6 +116,9 @@ async def chat_completions(pipeline_initialized: bool):
                         elif part.get("type") == "image_url":
                             url = part.get("image_url", {}).get("url", "")
                             if url:
+                                # Convert base64 data URLs to hosted URLs
+                                if url.startswith("data:"):
+                                    url = _b64_data_url_to_hosted(url)
                                 image_urls.append(url)
                 break
 
@@ -157,7 +182,11 @@ async def chat_completions(pipeline_initialized: bool):
                         if line.startswith("event:"):
                             event_type = line.replace("event:", "").strip()
                         elif line.startswith("data:"):
-                            event_data_lines.append(line.replace("data:", "", 1).lstrip())
+                            # Strip exactly one leading space (SSE spec)
+                            raw = line[5:]
+                            if raw.startswith(" "):
+                                raw = raw[1:]
+                            event_data_lines.append(raw)
 
                     event_data = "\n".join(event_data_lines) if event_data_lines else None
 
@@ -177,6 +206,7 @@ async def chat_completions(pipeline_initialized: bool):
                     "Cache-Control": "no-cache",
                     "Connection": "keep-alive",
                     "Content-Type": "text/event-stream",
+                    "X-Accel-Buffering": "no",
                     "X-Request-ID": request_id,
                 },
             )
@@ -198,7 +228,12 @@ async def chat_completions(pipeline_initialized: bool):
             if not response_content:
                 return jsonify({"error": {"message": "No response generated", "type": "server_error"}}), 500
 
-            prompt_tokens = sum(len(m.get("content", "")) // 4 for m in messages)
+            def _msg_tokens(m):
+                c = m.get("content", "")
+                if isinstance(c, list):
+                    return sum(len(p.get("text", "")) for p in c if p.get("type") == "text") // 4
+                return len(c) // 4
+            prompt_tokens = sum(_msg_tokens(m) for m in messages)
             result = _format_completion(request_id, response_content, prompt_tokens)
 
             return Response(

@@ -1,0 +1,158 @@
+# Tommy CI — PR Review
+# Config lives in .github/tommy.yml — edit that file, not this workflow.
+
+name: Tommy
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  tommy:
+    # NOTE: trigger phrase is duplicated here because `if:` runs before steps.
+    # Keep it in sync with bot.trigger_phrase in .github/tommy.yml.
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'tommy')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, 'tommy')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, 'tommy')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, 'tommy') || contains(github.event.issue.title, 'tommy')))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            config.json
+          sparse-checkout-cone-mode: false
+
+      - name: Load Config
+        id: cfg
+        run: |
+          # CI config from .github/tommy.yml
+          echo "trigger=$(yq '.bot.trigger_phrase' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "system_prompt=$(yq -r '.bot.system_prompt' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "secret_app_id=$(yq -r '.github.secrets.app_id' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "secret_private_key=$(yq -r '.github.secrets.private_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "secret_ai_token=$(yq -r '.github.secrets.ai_token' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "anthropic_api_key=$(yq -r '.ai.router.anthropic_api_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          # Runtime config from config.json (single source of truth for identity & admin users)
+          echo "bot_name=$(jq -r '.bot.name' config.json)" >> "$GITHUB_OUTPUT"
+          echo "whitelist=$(jq -r '.github.admin_users | join(",")' config.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/create-github-app-token@v1
+        id: token
+        with:
+          app-id: ${{ secrets[steps.cfg.outputs.secret_app_id] }}
+          private-key: ${{ secrets[steps.cfg.outputs.secret_private_key] }}
+
+      - name: Check Whitelist
+        id: whitelist
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const trigger = '${{ steps.cfg.outputs.trigger }}';
+            let body = '';
+            if (context.eventName === 'issue_comment' || context.eventName === 'pull_request_review_comment') {
+              body = context.payload.comment?.body || '';
+            } else if (context.eventName === 'issues') {
+              body = (context.payload.issue?.body || '') + (context.payload.issue?.title || '');
+            } else if (context.eventName === 'pull_request_review') {
+              body = context.payload.review?.body || '';
+            }
+            if (!body.includes(trigger)) {
+              console.log(`Strict check failed: "${trigger}" must appear in the body.`);
+              core.setOutput('authorized', 'false');
+              return;
+            }
+            const whitelist = '${{ steps.cfg.outputs.whitelist }}'.split(',').map(s => s.trim());
+            const actor = context.actor;
+            if (!whitelist.includes(actor)) {
+              const botName = '${{ steps.cfg.outputs.bot_name }}';
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue?.number || context.payload.pull_request?.number,
+                body: `Sorry @${actor}, only whitelisted users can use ${botName}.`
+              });
+              core.setOutput('authorized', 'false');
+            } else {
+              core.setOutput('authorized', 'true');
+            }
+
+      - name: Setup Bun
+        if: steps.whitelist.outputs.authorized == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Router
+        if: steps.whitelist.outputs.authorized == 'true'
+        id: setup
+        run: |
+          # Add eyes reaction
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
+          elif [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
+            gh api repos/${{ github.repository }}/pulls/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
+          elif [ "${{ github.event_name }}" = "issues" ]; then
+            gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
+          elif [ "${{ github.event_name }}" = "pull_request_review" ]; then
+            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/reactions -f content=eyes || true
+          fi
+
+          BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
+          echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
+
+          pip install pyyaml -q
+          mkdir -p $HOME/.claude-code-router
+          python3 -c "
+          import sys; sys.path.insert(0, '.github/scripts')
+          from ci_config import router_config_json
+          import os
+          print(router_config_json(os.environ['POLLINATIONS_TOKEN']))
+          " > $HOME/.claude-code-router/config.json
+
+          bunx @musistudio/claude-code-router start &
+          until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets[steps.cfg.outputs.secret_ai_token] }}
+
+      - uses: actions/checkout@v4
+        if: steps.whitelist.outputs.authorized == 'true'
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
+          repository: ${{ github.repository }}
+          token: ${{ steps.token.outputs.token }}
+
+      - uses: anthropics/claude-code-action@v1
+        if: steps.whitelist.outputs.authorized == 'true'
+        env:
+          ANTHROPIC_BASE_URL: http://localhost:3456
+          GIT_AUTHOR_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          GIT_AUTHOR_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          GIT_COMMITTER_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          GIT_COMMITTER_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+        with:
+          anthropic_api_key: ${{ steps.cfg.outputs.anthropic_api_key }}
+          show_full_output: true
+          github_token: ${{ steps.token.outputs.token }}
+          trigger_phrase: ${{ steps.cfg.outputs.trigger }}
+          claude_args: |
+            --system-prompt "${{ steps.cfg.outputs.system_prompt }}"
+          additional_permissions: |
+            actions: read

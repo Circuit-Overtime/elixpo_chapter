@@ -26,6 +26,8 @@ export async function GET(request) {
   }
 
   const config = getOAuthConfig();
+  const redirectBase = new URL(request.url).origin;
+  const redirectUri = `${redirectBase}/api/auth/callback`;
 
   // Exchange code for tokens
   const tokenRes = await fetch(config.tokenUrl, {
@@ -36,7 +38,7 @@ export async function GET(request) {
       code,
       client_id: config.clientId,
       client_secret: config.clientSecret,
-      redirect_uri: config.redirectUri,
+      redirect_uri: redirectUri,
     }),
   });
 
@@ -65,7 +67,12 @@ export async function GET(request) {
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
-    const existingUser = await db.prepare('SELECT id FROM users WHERE id = ?').bind(userId).first();
+    const existingUser = await db.prepare('SELECT id, account_status FROM users WHERE id = ?').bind(userId).first();
+
+    // Block permanently deleted accounts
+    if (existingUser?.account_status === 'removed') {
+      return NextResponse.redirect(new URL('/sign-in?error=account_deleted', redirectBase));
+    }
     const now = Math.floor(Date.now() / 1000);
 
     if (!existingUser) {
@@ -116,7 +123,7 @@ export async function GET(request) {
       } catch (e) { console.warn('Avatar mirror failed:', e.message); }
 
       await db.prepare(`
-        UPDATE users SET email = ?, display_name = ?, avatar_url = ?, updated_at = ?
+        UPDATE users SET email = ?, display_name = ?, avatar_url = ?, account_status = 'active', updated_at = ?
         WHERE id = ?
       `).bind(
         userInfo.email,
@@ -129,6 +136,20 @@ export async function GET(request) {
   } catch (e) {
     // D1 not available (local dev) — user data lives in session cookie only
     console.warn('D1 not available, skipping user upsert:', e.message);
+  }
+
+  // Send login alert email (fire and forget)
+  if (!isNewUser && userInfo.email) {
+    try {
+      const { sendLoginAlert } = await import('../../../../lib/email');
+      const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+      const city = request.headers.get('cf-ipcity') || '';
+      const country = request.headers.get('cf-ipcountry') || '';
+      const location = [city, country].filter(Boolean).join(', ') || 'Unknown location';
+      const ua = request.headers.get('user-agent') || '';
+      const time = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC';
+      sendLoginAlert(userInfo.email, { displayName: userInfo.displayName, ip, location, userAgent: ua, time }).catch(() => {});
+    } catch {}
   }
 
   // Build session with user profile from OAuth provider

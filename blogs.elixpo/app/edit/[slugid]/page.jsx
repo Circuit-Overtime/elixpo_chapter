@@ -1,9 +1,7 @@
-'use client';
+export const runtime = 'edge';
 
-import { use } from 'react';
-import WritePage from '../../../src/pages/WritePage';
+import EditBlogClient from './client';
 
 export default function EditBlog({ params }) {
-  const { slugid } = use(params);
-  return <WritePage slugid={slugid} />;
+  return <EditBlogClient params={params} />;
 }
