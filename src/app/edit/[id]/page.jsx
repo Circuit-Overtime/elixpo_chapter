@@ -14,10 +14,7 @@ const TOOLS = [
   { id: 'eraser', label: 'Eraser', hint: 'Erase parts of the sketch mask' },
 ];
 
-const CANVAS_MODES = [
-  { id: 'img2img', label: 'Img2Img', hint: 'Transforms the whole image based on your prompt — no mask needed', icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></> },
-  { id: 'sketch2img', label: 'Sketch', hint: 'Draw a rough sketch on or around the image, then AI generates from it', icon: <><path d="M3 17c1-2 3-6 5-6s3 4 5 4 3-5 5-5" strokeLinecap="round" /></> },
-];
+const CANVAS_MODES = [];
 
 const TOOL_ICONS = {
   select: <><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /><path d="M13 13l6 6" /></>,
@@ -811,19 +808,6 @@ export default function EditorPage({ params }) {
 
         {/* Right settings panel */}
         <div className={styles.settingsPanel}>
-
-          <div className={styles.settingsSection}>
-            <div className={styles.settingsRow}>
-              <span className={styles.settingsLabel}>Inpaint Strength</span>
-              <span className={styles.settingsValue}>{inpaintStrength.toFixed(2)}</span>
-            </div>
-            <input
-              type="range" min="0" max="1" step="0.05"
-              value={inpaintStrength}
-              onChange={(e) => setInpaintStrength(parseFloat(e.target.value))}
-              className={styles.slider}
-            />
-          </div>
 
           <div className={styles.settingsSection}>
             <div className={styles.settingsRow}>
