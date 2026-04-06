@@ -389,6 +389,28 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+.stopBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  pointer-events: auto;
+}
+
+.stopBtn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
 .canvasEmpty {
   position: absolute;
   inset: 0;
@@ -653,4 +675,123 @@
   .toolbar { width: 40px; }
   .topBar { padding: 0.4rem 0.5rem; }
   .promptBar { padding: 0.4rem 0.5rem; }
+}
+
+/* ─── Picker Overlay (Style Transfer / Relight) ─── */
+.pickerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+}
+
+.pickerModal {
+  background: linear-gradient(145deg, rgba(14, 18, 32, 0.98), rgba(10, 14, 26, 0.99));
+  border: 1px solid rgba(86, 145, 243, 0.1);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
+  max-width: 560px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: pickerIn 0.2s ease;
+}
+
+@keyframes pickerIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.pickerTitle {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md);
+}
+
+.pickerHint {
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+/* ─── Style grid ─── */
+.styleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.styleCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.15s ease;
+}
+
+.styleCard:hover {
+  border-color: rgba(86, 145, 243, 0.3);
+  transform: translateY(-2px);
+}
+
+.styleCardActive {
+  border-color: #5691f3;
+  box-shadow: 0 0 12px rgba(86, 145, 243, 0.2);
+}
+
+.styleImg {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.styleLabel {
+  padding: 0.3rem 0;
+  font-family: var(--font-family-primary);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* ─── Relight grid ─── */
+.relightGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.relightCard {
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.relightCard:hover {
+  background: rgba(86, 145, 243, 0.08);
+  border-color: rgba(86, 145, 243, 0.2);
+}
+
+.relightLabel {
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }

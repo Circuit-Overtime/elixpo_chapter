@@ -33,8 +33,19 @@ const EDIT_PRESETS = [
   { id: 'outpaint', label: 'Extend Image', icon: <><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></>, prompt: 'Extend the image beyond its current borders, seamlessly continuing the scene' },
   { id: 'fix-pose', label: 'Fix Character Pose', icon: <><circle cx="12" cy="4" r="2" /><path d="M12 6v5" /><path d="M9 11l-3 5" /><path d="M15 11l3 5" /></>, prompt: 'Fix and adjust the character pose naturally while keeping the same identity and style' },
   { id: 'upscale', label: 'Enhance / Upscale', icon: <><path d="M15 3h6v6" /><path d="M14 10l7-7" /><path d="M9 21H3v-6" /><path d="M10 14l-7 7" /></>, prompt: null, comingSoon: true },
-  { id: 'relight', label: 'Relight Scene', icon: <><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2" /></>, prompt: 'Relight this scene with warm cinematic golden-hour lighting, soft shadows' },
+  { id: 'relight', label: 'Relight Scene', icon: <><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2" /></>, prompt: null, isRelight: true },
   { id: 'style-transfer', label: 'Style Transfer', icon: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /></>, prompt: null, isStyleTransfer: true },
+];
+
+const RELIGHT_OPTIONS = [
+  { id: 'golden-hour', label: 'Golden Hour', prompt: 'Relight this scene with warm golden-hour sunlight, long soft shadows, amber tones' },
+  { id: 'blue-hour', label: 'Blue Hour', prompt: 'Relight this scene with cool blue-hour twilight, soft diffused light, blue-purple tones' },
+  { id: 'neon', label: 'Neon Glow', prompt: 'Relight this scene with vibrant neon lighting, pink and cyan glow, cyberpunk atmosphere' },
+  { id: 'studio', label: 'Studio Light', prompt: 'Relight with professional studio lighting, soft key light, rim light, clean shadows' },
+  { id: 'dramatic', label: 'Dramatic', prompt: 'Relight with dramatic chiaroscuro lighting, strong contrast, deep shadows, single light source' },
+  { id: 'overcast', label: 'Overcast', prompt: 'Relight with soft overcast daylight, even diffused lighting, no harsh shadows' },
+  { id: 'candlelight', label: 'Candlelight', prompt: 'Relight with warm flickering candlelight, intimate mood, orange-amber glow' },
+  { id: 'moonlight', label: 'Moonlight', prompt: 'Relight with cool silvery moonlight, night scene, subtle blue highlights' },
 ];
 
 export default function EditorPage({ params }) {
@@ -61,6 +72,10 @@ export default function EditorPage({ params }) {
   const [error, setError] = useState(null);
   const [modelOpen, setModelOpen] = useState(false);
   const [selected, setSelected] = useState(false);
+  const [stylePicker, setStylePicker] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState(null);
+  const [relightPicker, setRelightPicker] = useState(false);
+  const abortRef = useRef(null);
 
   // Pan state
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
@@ -113,10 +128,13 @@ export default function EditorPage({ params }) {
           sessionStorage.setItem(`gen_${id}`, JSON.stringify(session));
         }
       }
-      // Escape deselects
+      // Escape deselects and dismisses
       if (e.key === 'Escape') {
         setSelected(false);
         setModelOpen(false);
+        setHelpTooltip(null);
+        setStylePicker(false);
+        setRelightPicker(false);
       }
       // Tool shortcuts
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -128,6 +146,15 @@ export default function EditorPage({ params }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selected, imageSrc, id]);
+
+  // Click outside dismisses help tooltip and pickers
+  useEffect(() => {
+    const handleClick = () => {
+      setHelpTooltip(null);
+    };
+    window.addEventListener('pointerdown', handleClick);
+    return () => window.removeEventListener('pointerdown', handleClick);
+  }, []);
 
   // Scroll to zoom
   useEffect(() => {
@@ -256,11 +283,15 @@ export default function EditorPage({ params }) {
     setGenerating(true);
     setError(null);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       const res = await fetch(`${API_BASE}/generate/edit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: finalPrompt, imageUrl: imageSrc, model, width, height }),
+        signal: controller.signal,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Edit failed');
@@ -276,15 +307,51 @@ export default function EditorPage({ params }) {
       }
       clearMask();
     } catch (err) {
-      setError(err.message);
+      if (err.name === 'AbortError') {
+        setError(null);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setGenerating(false);
+      abortRef.current = null;
+    }
+  };
+
+  const handleStop = () => {
+    if (abortRef.current) {
+      abortRef.current.abort();
     }
   };
 
   const handlePresetClick = (preset) => {
+    if (preset.comingSoon) return;
+    if (preset.isStyleTransfer) {
+      setStylePicker(true);
+      setRelightPicker(false);
+      return;
+    }
+    if (preset.isRelight) {
+      setRelightPicker(true);
+      setStylePicker(false);
+      return;
+    }
     setPrompt(preset.prompt);
     handleEdit(preset.prompt);
+  };
+
+  const handleStyleTransfer = (style) => {
+    const p = `Apply a ${style.label} art style to this image, transform it into ${style.label.toLowerCase()} aesthetic while preserving the composition and subjects`;
+    setSelectedStyle(style.id);
+    setPrompt(p);
+    setStylePicker(false);
+    handleEdit(p);
+  };
+
+  const handleRelightOption = (option) => {
+    setPrompt(option.prompt);
+    setRelightPicker(false);
+    handleEdit(option.prompt);
   };
 
   const handleImportImage = (e) => {
@@ -493,6 +560,10 @@ export default function EditorPage({ params }) {
                   <div className={styles.canvasLoading}>
                     <div className={styles.canvasSpinner} />
                     <span>Generating...</span>
+                    <button className={styles.stopBtn} onClick={handleStop}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1" /></svg>
+                      Stop
+                    </button>
                   </div>
                 )}
               </div>
@@ -600,6 +671,44 @@ export default function EditorPage({ params }) {
           {error && <p className={styles.error}>{error}</p>}
         </div>
       </div>
+
+      {/* Style Transfer Picker */}
+      {stylePicker && (
+        <div className={styles.pickerOverlay} onClick={() => setStylePicker(false)}>
+          <div className={styles.pickerModal} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.pickerTitle}>Choose a Style</h3>
+            <div className={styles.styleGrid}>
+              {STYLE_PRESETS.map((s) => (
+                <button
+                  key={s.id}
+                  className={`${styles.styleCard} ${selectedStyle === s.id ? styles.styleCardActive : ''}`}
+                  onClick={() => handleStyleTransfer(s)}
+                >
+                  <img src={s.image} alt={s.label} className={styles.styleImg} loading="lazy" />
+                  <span className={styles.styleLabel}>{s.label}</span>
+                </button>
+              ))}
+            </div>
+            <p className={styles.pickerHint}>Or type a custom style in the prompt bar and hit Generate</p>
+          </div>
+        </div>
+      )}
+
+      {/* Relight Picker */}
+      {relightPicker && (
+        <div className={styles.pickerOverlay} onClick={() => setRelightPicker(false)}>
+          <div className={styles.pickerModal} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.pickerTitle}>Choose Lighting</h3>
+            <div className={styles.relightGrid}>
+              {RELIGHT_OPTIONS.map((o) => (
+                <button key={o.id} className={styles.relightCard} onClick={() => handleRelightOption(o)}>
+                  <span className={styles.relightLabel}>{o.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
