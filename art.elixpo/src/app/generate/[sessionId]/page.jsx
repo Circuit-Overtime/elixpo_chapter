@@ -5,32 +5,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar/Navbar';
 import { saveToLibrary } from '../../lib/library';
 import { isSignedIn, getUser } from '../../lib/auth';
+import { useModels } from '../../lib/useModels';
 import styles from './Session.module.css';
-
-const IMAGE_MODELS = [
-  { id: 'flux', label: 'Flux Schnell' },
-  { id: 'flux-2-dev', label: 'FLUX.2 Dev' },
-  { id: 'gptimage', label: 'GPT Image' },
-  { id: 'dirtberry', label: 'Dirtberry' },
-  { id: 'dirtberry-pro', label: 'Dirtberry Pro' },
-  { id: 'zimage', label: 'Z-Image' },
-  { id: 'imagen-4', label: 'Imagen 4' },
-  { id: 'grok-imagine', label: 'Grok Imagine' },
-  { id: 'klein', label: 'Klein' },
-  { id: 'kontext', label: 'Kontext' },
-];
-
-const VIDEO_MODELS = [
-  { id: 'grok-video', label: 'Grok Video' },
-];
-
-const ALL_MODELS = [...IMAGE_MODELS, ...VIDEO_MODELS];
 
 const API_BASE = '/api';
 
 export default function SessionPage({ params }) {
   const { sessionId } = use(params);
   const router = useRouter();
+  const { imageModels: IMAGE_MODELS, videoModels: VIDEO_MODELS, all: ALL_MODELS } = useModels();
 
   const [prompt, setPrompt] = useState('');
   const [newPrompt, setNewPrompt] = useState('');
