@@ -45,6 +45,7 @@ load_dotenv()
 
 POLLINATIONS_TOKEN = os.getenv("TOKEN")
 MODEL = LLM_MODEL
+MODEL_FALLBACK = LLM_MODEL_FALLBACK
 
 
 async def _stream_llm_call(payload: dict, headers: dict):
@@ -437,54 +438,68 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             _streamed_content = ""
 
             if _use_streaming:
-                try:
-                    assistant_message = None
-                    async for _stype, _sdata in _stream_llm_call(payload, headers):
-                        if _stype == "keepalive":
-                            _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
-                            if _ke:
-                                yield _ke
-                            status_tracker.touch()
-                        elif _stype == "content":
-                            _streamed_content += _sdata
-                            yield format_sse("RESPONSE", _sdata)
-                            status_tracker.touch()
-                        elif _stype == "done":
-                            assistant_message = _sdata
-                    if not assistant_message:
-                        break
-                except Exception as e:
-                    logger.error(f"Streaming API error at iteration {current_iteration}: {e}")
-                    break
-            else:
-                # --- Non-streaming path: blocking call with keepalive ---
-                try:
-                    _api_task = asyncio.ensure_future(
-                        asyncio.to_thread(requests.post, POLLINATIONS_ENDPOINT, json=payload, headers=headers, timeout=55)
-                    )
-                    while not _api_task.done():
-                        await asyncio.wait({_api_task}, timeout=5.0)
-                        if not _api_task.done() and event_id:
-                            _thinking_event = status_tracker.refresh_if_stale()
-                            if _thinking_event:
-                                yield _thinking_event
-                            else:
+                assistant_message = None
+                for _stream_model in (payload.get("model", MODEL), MODEL_FALLBACK):
+                    try:
+                        _stream_payload = {**payload, "model": _stream_model}
+                        _streamed_content = ""
+                        async for _stype, _sdata in _stream_llm_call(_stream_payload, headers):
+                            if _stype == "keepalive":
                                 _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
                                 if _ke:
                                     yield _ke
                                 status_tracker.touch()
-                    response = _api_task.result()
-                    response.raise_for_status()
-                    response_data = response.json()
-                    status_tracker.touch()
-                except asyncio.TimeoutError:
-                    logger.error(f"API timeout at iteration {current_iteration}")
+                            elif _stype == "content":
+                                _streamed_content += _sdata
+                                yield format_sse("RESPONSE", _sdata)
+                                status_tracker.touch()
+                            elif _stype == "done":
+                                assistant_message = _sdata
+                        if assistant_message and assistant_message.get("content"):
+                            break  # success
+                        logger.warning(f"Streaming model={_stream_model} returned empty, trying fallback")
+                    except Exception as e:
+                        logger.warning(f"Streaming API error with model={_stream_model}: {e}")
+                        if _stream_model == MODEL_FALLBACK:
+                            logger.error(f"Streaming fallback also failed at iteration {current_iteration}")
+                        continue
+                if not assistant_message:
                     break
-                except requests.exceptions.RequestException as e:
-                    logger.error(f"API error at iteration {current_iteration}: {e}")
-                    break
-                except Exception as e:
-                    logger.error(f"Unexpected API error at iteration {current_iteration}: {e}")
+            else:
+                # --- Non-streaming path: blocking call with keepalive + fallback ---
+                response_data = None
+                for _model_attempt in (payload.get("model", MODEL), MODEL_FALLBACK):
+                    _attempt_payload = {**payload, "model": _model_attempt}
+                    try:
+                        _api_task = asyncio.ensure_future(
+                            asyncio.to_thread(requests.post, POLLINATIONS_ENDPOINT, json=_attempt_payload, headers=headers, timeout=55)
+                        )
+                        while not _api_task.done():
+                            await asyncio.wait({_api_task}, timeout=5.0)
+                            if not _api_task.done() and event_id:
+                                _thinking_event = status_tracker.refresh_if_stale()
+                                if _thinking_event:
+                                    yield _thinking_event
+                                else:
+                                    _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
+                                    if _ke:
+                                        yield _ke
+                                    status_tracker.touch()
+                        response = _api_task.result()
+                        response.raise_for_status()
+                        response_data = response.json()
+                        status_tracker.touch()
+                        break  # success — no need for fallback
+                    except (requests.exceptions.RequestException, asyncio.TimeoutError) as e:
+                        logger.warning(f"API error with model={_model_attempt} at iteration {current_iteration}: {e}")
+                        if _model_attempt == MODEL_FALLBACK:
+                            logger.error(f"Fallback model also failed at iteration {current_iteration}")
+                        continue
+                    except Exception as e:
+                        logger.error(f"Unexpected API error at iteration {current_iteration}: {e}")
+                        break
+
+                if not response_data:
                     break
 
                 choice = response_data.get("choices", [{}])[0]
