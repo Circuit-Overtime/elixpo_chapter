@@ -150,8 +150,9 @@ export default function LandingPage() {
             </a>
             <span
               className="text-sm font-medium px-4 py-2 rounded-lg bg-indigo-600/50 text-white/60 cursor-default"
+              title="Currently available for internal users only"
             >
-              Coming soon
+              Internal Beta
             </span>
           </div>
         </nav>
@@ -169,9 +170,12 @@ export default function LandingPage() {
             <span className="text-white/90">understand.</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-white/40 max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-lg md:text-xl text-white/40 max-w-2xl mx-auto mb-6 leading-relaxed">
             An intelligent search assistant that searches the web, fetches content,
             and synthesizes answers with real sources and citations.
+          </p>
+          <p className="text-sm text-white/25 max-w-lg mx-auto mb-10">
+            Currently in internal beta. Public access opening soon.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
@@ -179,7 +183,7 @@ export default function LandingPage() {
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600/50 text-white/60 font-medium cursor-default"
             >
               Try lixSearch
-              <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-white/40 font-semibold">Coming soon</span>
+              <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-white/40 font-semibold">Public access coming soon</span>
             </span>
             <a
               href={LINKS.docs}

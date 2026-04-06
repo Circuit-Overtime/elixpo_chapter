@@ -321,7 +321,7 @@ export default function DocsPage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)', p: 3 }}>
+    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)', p: 3 }}>
       <Box sx={{ maxWidth: '860px', mx: 'auto' }}>
         {/* Header */}
         <Box sx={{ mb: 1 }}>

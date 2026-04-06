@@ -60,7 +60,7 @@ const cardSx = {
 
 const dialogSx = {
   backdropFilter: 'blur(20px)',
-  background: 'linear-gradient(135deg, rgba(15,20,16,0.97) 0%, rgba(12,15,10,0.97) 100%)',
+  background: 'linear-gradient(135deg, rgba(22,28,24,0.97) 0%, rgba(20,24,20,0.97) 100%)',
   border: '1px solid rgba(255, 255, 255, 0.1)',
   borderRadius: '16px',
 };
@@ -206,7 +206,7 @@ export default function WebhooksPage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', background: '#0f0f0f', p: 3 }}>
+    <Box>
       <Box sx={{ maxWidth: '1100px', mx: 'auto' }}>
         {/* Header */}
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

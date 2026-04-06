@@ -98,7 +98,7 @@ const RegisterContent = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%)', p: 2 }}>
+    <Box sx={{ minHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)', p: 2 }}>
       <Box sx={{ maxWidth: '900px', maxHeight: '85vh', width: '100%', display: 'flex', gap: 2.5, backdropFilter: 'blur(20px)', background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '16px', p: 3, flexDirection: { xs: 'column', md: 'row' }, overflowY: 'auto' }}>
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <Box sx={{ mb: 2, textAlign: 'center' }}>

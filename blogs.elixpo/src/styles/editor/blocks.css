@@ -1,24 +1,81 @@
 /* ===== Code blocks ===== */
 
 .blog-editor-wrapper [data-content-type="codeBlock"] {
-  background: var(--bg-app);
+  background: var(--code-bg);
   border: 1px solid var(--border-default);
   border-radius: 10px;
   font-family: 'lixCode', monospace;
+  padding: 4px 0;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+/* Light mode code block vars */
+:root {
+  --code-bg: #f8f8fb;
+  --code-text: #3d3d50;
+  --code-lang-bg: #eeeef2;
+  --code-lang-text: #6b7280;
+}
+
+[data-theme="dark"] {
+  --code-bg: #0e1219;
+  --code-text: #c8d1e0;
+  --code-lang-bg: #1a2030;
+  --code-lang-text: #6b7a8d;
 }
 
 .blog-editor-wrapper [data-content-type="codeBlock"] code {
-  color: var(--text-secondary);
-  font-size: 0.85em;
+  color: var(--code-text);
+  font-size: 0.84em;
   font-family: inherit;
   background: none;
   padding: 0;
+  line-height: 1.7;
 }
 
-/* Remove line highlights from code blocks */
-.blog-editor-wrapper [data-content-type="codeBlock"] .hljs-ln-line,
-.blog-editor-wrapper [data-content-type="codeBlock"] .line-highlight {
+.blog-editor-wrapper [data-content-type="codeBlock"] [contenteditable] {
+  padding: 8px 16px !important;
+}
+
+/* Shiki syntax highlighting — let inline styles override default color */
+.blog-editor-wrapper [data-content-type="codeBlock"] code span[style] {
   background: none !important;
+}
+
+/* Language selector dropdown (BlockNote built-in) */
+.blog-editor-wrapper [data-content-type="codeBlock"] select {
+  background: var(--code-lang-bg);
+  color: var(--code-lang-text);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-family: 'lixCode', monospace;
+  cursor: pointer;
+  outline: none;
+  margin: 4px 8px;
+}
+
+.blog-editor-wrapper [data-content-type="codeBlock"] select:focus {
+  border-color: #a78bfa;
+}
+
+/* Language label */
+.code-lang-label {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--code-lang-text);
+  background: var(--code-lang-bg);
+  padding: 2px 8px;
+  border-radius: 0 0 6px 6px;
+  pointer-events: none;
+  line-height: 1.5;
 }
 
 /* Code block copy button */
@@ -32,10 +89,10 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--code-lang-bg);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  color: #7c8a9e;
+  color: var(--code-lang-text);
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s, background 0.15s, color 0.15s;
@@ -46,15 +103,28 @@
 }
 
 .code-copy-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #c4b5fd;
+  background: var(--bg-active);
+  color: #a78bfa;
+}
+
+/* ===== Divider / Horizontal Rule ===== */
+
+.blog-editor-wrapper [data-content-type="divider"] {
+  margin: 16px 0;
+  padding: 8px 0;
+}
+
+.blog-editor-wrapper [data-content-type="divider"] hr {
+  border: none;
+  height: 1px;
+  background: var(--border-default);
 }
 
 /* ===== Lists ===== */
 
 .blog-editor-wrapper [data-content-type="bulletListItem"],
 .blog-editor-wrapper [data-content-type="numberedListItem"] {
-  color: #e4e4e7;
+  color: var(--text-primary);
 }
 
 .blog-editor-wrapper [data-content-type="bulletListItem"]::before {
@@ -163,12 +233,18 @@
 
 /* ===== Mermaid diagram blocks ===== */
 
+.blog-editor-wrapper [data-content-type="mermaidBlock"],
+.blog-editor-wrapper [data-content-type="blockEquation"] {
+  width: 100%;
+}
+
 .mermaid-block {
   border: 1px solid var(--border-default);
   border-radius: 12px;
   background: var(--bg-surface);
-  my: 8px;
+  margin: 8px 0;
   overflow: hidden;
+  width: 100%;
 }
 
 .mermaid-block--empty {
@@ -178,14 +254,23 @@
   gap: 8px;
   padding: 32px 16px;
   border-style: dashed;
-  background: rgba(20, 26, 38, 0.5);
+  background: rgba(240, 240, 245, 0.5);
   color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
 
+[data-theme="dark"] .mermaid-block--empty {
+  background: rgba(20, 26, 38, 0.5);
+}
+
 .mermaid-block--empty:hover {
+  border-color: #ccc;
+  color: #7c5cbf;
+}
+
+[data-theme="dark"] .mermaid-block--empty:hover {
   border-color: #333;
   color: #c4b5fd;
 }
@@ -206,6 +291,7 @@
 
 .mermaid-block-textarea {
   width: 100%;
+  box-sizing: border-box;
   background: var(--bg-app);
   border: none;
   border-top: 1px solid var(--border-default);
@@ -216,7 +302,7 @@
   font-size: 13px;
   resize: vertical;
   outline: none;
-  min-height: 120px;
+  min-height: 160px;
 }
 
 .mermaid-block-textarea::placeholder {
@@ -242,7 +328,7 @@
 }
 
 .mermaid-btn-cancel:hover {
-  color: white;
+  color: var(--text-primary);
 }
 
 .mermaid-btn-save {
@@ -321,12 +407,16 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(14, 18, 27, 0.85);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 4px 6px;
   z-index: 5;
+}
+
+[data-theme="dark"] .mermaid-zoom-controls {
+  background: rgba(14, 18, 27, 0.85);
 }
 
 .mermaid-zoom-btn {
@@ -378,16 +468,21 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: rgba(14, 18, 27, 0.85);
-  border: 1px solid #333;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #ddd;
   border-radius: 6px;
   color: var(--text-muted);
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
 }
 
+[data-theme="dark"] .mermaid-hover-btn {
+  background: rgba(14, 18, 27, 0.85);
+  border-color: #333;
+}
+
 .mermaid-hover-btn:hover {
-  color: white;
+  color: var(--text-primary);
   background: var(--border-default);
 }
 
@@ -433,38 +528,23 @@
 }
 
 .editor-outline-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 8px 3px 12px;
+  display: block;
+  padding: 3px 0;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.15s;
-}
-
-.editor-outline-item:hover {
-  background: rgba(155, 123, 247, 0.08);
-}
-
-.editor-outline-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #9b7bf7;
-  flex-shrink: 0;
+  transition: color 0.15s;
 }
 
 .editor-outline-text {
   font-size: 13px;
   color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: color 0.15s;
+  text-decoration: none;
+  display: block;
+  line-height: 1.4;
+  transition: color 0.15s, font-weight 0.15s;
 }
 
 .editor-outline-item:hover .editor-outline-text {
-  color: #c4b5fd;
+  color: var(--accent);
 }
 
 /* Hide on smaller screens where there's no room */
@@ -482,4 +562,37 @@
 .editor-outline-sidebar::-webkit-scrollbar-thumb {
   background: rgba(155, 123, 247, 0.2);
   border-radius: 2px;
+}
+
+/* ===== Table delete button ===== */
+
+.table-delete-btn {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  z-index: 20;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--text-faint);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background-color 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+[data-content-type="table"]:hover .table-delete-btn,
+.table-delete-btn:focus {
+  opacity: 1;
+}
+
+.table-delete-btn:hover {
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.3);
 }

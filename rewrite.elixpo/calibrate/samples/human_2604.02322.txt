@@ -1,0 +1,1094 @@
+# Batched Contextual Reinforcement: A Task-Scaling Law for Efficient Reasoning
+# arXiv: 2604.02322
+# Words: 11376
+
+Implementation Details
+
+Training Configuration
+
+Base Model. We initialize from JustRL-DeepSeek-1.5B, a 1.5B parameter model pretrained with standard GRPO~[citation] on mathematical reasoning tasks. This baseline derives from DeepSeek-R1-Distill-Qwen-1.5B and exhibits strong reasoning capabilities but lacks efficiency optimization---making it an ideal testbed for studying whether BCR can induce efficiency without sacrificing existing reasoning ability. Importantly, JustRL was itself trained with a pure accuracy reward (no length penalties), which means any efficiency gains from BCR cannot be attributed to residual length supervision in the base model. We additionally train BCR from Qwen3-4B-Thinking-2507. The reward formulation, grouped-prompt construction, answer extraction, and evaluation pipeline remain the same as in the JustRL-based setting for direct comparability. In our logged Qwen3 runs, we keep the same learning-rate scale ( 5 10^-6 ) and use max\_completion\_length=8000 to better accommodate longer intermediate traces from the 4B model under grouped reasoning.
+
+System Prompt. During grouped training, we prepend the following system instruction:
+
+verbatim
+[system]
+You are an expert mathematics tutor.
+Your task is to solve **multiple** math problems sequentially in a single response.
+Please strictly follow these rules:
+1. Use Markdown headers (### Problem X) to separate each problem.
+2. For each problem, show detailed step-by-step reasoning, then immediately put
+ the final answer right after the reasoning.
+3. Put the final answer for each problem immediately after solving it, in the
+ following format:
+ After Problem 1: Answer1: ...
+ After Problem 2: Answer2: ...
+ After Problem 3: Answer3: ...
+4. Each answer should appear right after its corresponding problem's reasoning,
+ before moving to the next problem.
+5. Do not include any other text in your response.
+verbatim
+
+Prompt Template. The model produces answers in a structured format that enables precise per-problem extraction while maintaining global coherence:
+
+verbatim
+### Problem 1
+[detailed reasoning steps]
+Answer1: ...
+
+### Problem 2
+[detailed reasoning steps]
+Answer2: ...
+
+### Problem N
+[detailed reasoning steps]
+AnswerN: ...
+verbatim
+
+This template serves two purposes: (1) the explicit section markers (\#\#\# Problem i ) enable our stack-based parser to reliably segment the completion into per-problem reasoning traces, and (2) the Answer i : boxed\...\ format ensures answers are unambiguously demarcated for verification. During training, the format reward r_fmt enforces adherence to this structure. We chose the markdown-style headers (\#\#\#) because preliminary experiments showed higher format compliance compared to alternatives such as numbered lists or XML-style tags. The model quickly learns to produce well-structured outputs, with format compliance reaching > 98\% within the first 50 training steps.
+
+Hyperparameters. Our main experiments use the following configuration:
+[leftmargin=*, noitemsep, topsep=4pt]
+ Training duration: 3 epochs over 3,000 groups
+ Learning rate: 5 10^-6 with cosine annealing
+ Batch configuration: 2 samples per device, 4 gradient accumulation steps
+ Generation: M=4 candidate completions per group for advantage estimation (Eq.~3)
+ KL penalty: = 0.01 
+ Reward weights: w_acc = 2.0 , w_fmt = 1.0 
+ Token budget: max\_completion\_length = 5120 tokens for N=3 problems
+ Qwen3-4B token budget: max\_completion\_length = 8000 (other reward and optimization settings unchanged unless otherwise stated)
+ Precision: Mixed-precision (bfloat16) on NVIDIA RTX PRO 6000 GPUs
+
+Token Budget Design. The token budget of 5120 for N=3 problems corresponds to approximately 1,707 tokens per problem---roughly one-third of the baseline's average usage (5,000+ tokens). This aggressive budget is intentional: it forces the model to discover compression strategies early in training rather than gradually. For each base model, we select B_ by first estimating the average output length on a small probe set of questions ( L_avg ), then applying a target compression ratio (default 0.5 ):
+ [equation] 
+Algorithm~[ref] summarizes the procedure. For the JustRL-1.5B setting with N=3 , this estimate leads to the default budget of 5120. The main-text ablation in [ref] compares 4096, 5120, and 6144 and shows a clear trade-off: 4096 is too restrictive and hurts accuracy, while 6144 relaxes the budget pressure and weakens token-efficiency gains. Unless otherwise specified, the analyses in this paper use the JustRL-1.5B run with 5120 tokens; the Qwen3-4B configuration follows the same procedure with an 8000-token budget.
+
+Data Construction. Our training data comprises 3,000 groups constructed from DeepMath-103K~[citation]. For each group, we use stratified sampling based on estimated problem difficulty. Difficulty is proxied by the base model's average reasoning length on each problem (computed from 4 rollouts): problems requiring more tokens are considered harder. Each group is constructed to have approximately the same average difficulty, ensuring that the model encounters a balanced mix of easy and hard problems in every training example. Within each group, problem order is randomized to prevent the model from learning position-dependent strategies (e.g., always allocating more tokens to the last problem).
+
+Training Infrastructure. All experiments were conducted on a single node with 4 NVIDIA RTX PRO 6000 GPUs (48GB VRAM each). Training time is a key practical result: for the JustRL-1.5B setting, the full 3-epoch run over 1,000 groups with M=4 rollouts takes approximately 50 hours wall-clock. This corresponds to about 200 GPU-hours, computed as 4 50 (number of GPUs wall-clock hours). For BCR-Qwen3-4B-Thinking-2507, the corresponding run takes approximately 180 hours wall-clock on the same 4-GPU node, i.e., about 720 GPU-hours ( 4 180 ). Despite the increased runtime for the larger backbone, both settings remain single-stage, single-node training jobs and still avoid multi-stage scheduling overhead. This remains substantially lighter than pipelines such as ProRL (8 stages) or FastCuRL (5 stages), which require multiple sequential runs with different configurations.
+
+ 
+
+Answer Extraction Algorithm
+
+Reliable answer extraction from multi-problem completions is non-trivial. Mathematical expressions frequently contain nested braces (e.g., | 15|), which naive regex-based approaches fail to parse correctly. We implement a stack-based parser (Algorithms~[ref]--[ref]) with a three-stage fallback strategy.
+
+Three-Stage Fallback Strategy. The extraction pipeline employs three stages of decreasing specificity to maximize answer recovery:
+
+Stage 1: Section-specific pattern matching. The primary strategy splits the completion by \#\#\# Problem headers and searches for the exact pattern ``Answer i : |...|'' within each section. This is the most reliable strategy and succeeds on > 95\% of completions. The stack-based parser correctly handles arbitrarily nested braces, ensuring that expressions like a^2 + b^2c (d+e) are extracted in full.
+
+Stage 2: Global pattern search. When section headers are missing or malformed (which occurs more frequently under tight token budgets where the model may skip formatting), the parser searches for all ``Answer i :'' patterns globally in the completion text, regardless of section boundaries. This stage recovers answers from approximately 3\% of completions.
+
+Stage 3: Position-based ordering. As a last resort, the parser collects all |...| expressions in the completion and assigns them to problems by position (first boxed expression Problem 1, etc.). This heuristic is imperfect---it can fail when models produce intermediate boxed expressions during reasoning---but it recovers answers from approximately 1\% of completions that would otherwise yield no output.
+
+Verification Pipeline. After extraction, each candidate answer a_i is verified against the ground truth a_i using a multi-stage verification process: (1) symbolic equivalence checking via SymPy when both expressions are parseable, (2) numeric comparison with tolerance = 10^-6 for numeric answers, and (3) string matching after LaTeX normalization (removing whitespace, standardizing fraction notation, etc.) as a final fallback. This multi-stage verification ensures that mathematically equivalent but syntactically different answers (e.g., 12 vs.\ 0.5 vs.\ 24 ) are correctly recognized.
+
+Extraction Reliability. Across all training runs and evaluations, our extraction pipeline achieves a 99.2\% answer recovery rate (i.e., successfully extracting a parseable answer from the completion). The remaining 0.8\% of failures are predominantly caused by severely truncated completions where the model runs out of tokens before producing any boxed answer for the last problem in a group. These cases receive zero accuracy reward, which naturally incentivizes the model to budget tokens appropriately.
+
+ 
+
+Extended Experimental Results
+
+Complete Group Size Ablation
+
+Table~[ref] extends the group size ablation from the main paper (Table~[ref]) to the remaining two benchmarks: MATH-500 and Olympiad. Combined with the main paper results, this provides a comprehensive view of how training group size affects the learned efficiency policy across all five benchmarks.
+
+Detailed Analysis. The results on these two additional benchmarks complement and nuance the findings from the main paper. We organize our analysis around four key observations.
+
+(1) Difficulty-dependent optimal group size. The most striking finding is that the optimal N depends on benchmark difficulty. On MATH-500---a benchmark where the baseline already achieves 91.4\% accuracy, indicating relatively moderate difficulty--- N=3 yields the best accuracy (90.0\%). However, on Olympiad---the most challenging benchmark in our suite, where the baseline achieves only 62.1\%--- N=5 achieves the best accuracy (64.4\%) and the lowest token count (3,873). This counterintuitive result suggests that for harder problems, stronger implicit pressure from larger N may actually help the model focus on essential reasoning steps by more aggressively pruning the verbose exploration that characterizes baseline models on difficult tasks.
+
+(2) Accuracy stability across configurations. Across all five benchmarks (combining Table~4 and Table~[ref]), accuracy varies by less than 6\% across group sizes. On MATH-500, the range is 89.2--90.0\%; on Olympiad, it is 61.4--64.4\%. This robustness is practically important: it means that BCR's benefits are not critically sensitive to the choice of N , and practitioners can select N based on infrastructure constraints without risking significant accuracy degradation.
+
+(3) Token efficiency patterns. Token usage shows more variation across N than accuracy, but the patterns are consistent. On MATH-500, N=5 achieves the lowest token count (2,001) followed by N=3 (2,185) and N=4 (2,386). The non-monotonic relationship between N and token usage on MATH-500 (where N=4 uses more tokens than N=3 ) may reflect the interaction between optimization difficulty and compression pressure: at N=4 , the model faces harder optimization than N=3 but less aggressive pressure than N=5 , potentially leading to suboptimal convergence in 300 training steps. On Olympiad, the pattern is also non-monotonic, with N=4 yielding the highest token count (4,594). This suggests that training for more steps could resolve these non-monotonicities.
+
+(4) Comparison with baseline. To contextualize these results, recall that the JustRL baseline uses 3,099 tokens on MATH-500 and 7,017 tokens on Olympiad. All BCR configurations achieve substantial reductions: even the least efficient configuration ( N=4 on MATH-500) uses only 2,386 tokens---a 23\% reduction. The most efficient ( N=5 on MATH-500) achieves a 35\% reduction. On Olympiad, reductions range from 35\% ( N=4 ) to 45\% ( N=3 ). These gains are achieved with < 2\% accuracy loss on MATH-500 and with accuracy improvements on Olympiad, reinforcing the ``free lunch'' phenomenon described in the main paper.
+
+Recommendation. Based on the comprehensive five-benchmark analysis, we recommend N=3 as the default group size for general use. It provides the most consistent accuracy-efficiency trade-off, avoids the optimization challenges of larger N , and achieves strong compression on both easy and hard benchmarks. For deployment scenarios that prioritize maximum efficiency on challenging problems, N=5 may be preferred, but with the caveat that extended training may be necessary to fully realize its potential.
+
+ 
+
+Complete Multi-Problem Inference Results
+
+Table~[ref] extends the task-scaling analysis from the main paper (Table~[ref]) to the MATH-500 and Olympiad benchmarks, providing a complete picture of how both models behave under varying inference-time concurrency.
+
+Detailed Analysis. The MATH-500 and Olympiad results confirm and strengthen the task-scaling law described in the main paper. We present a comprehensive analysis organized around five key findings.
+
+(1) BCR dominates across all N on both benchmarks. Starting from N=2 , BCR achieves both higher accuracy and lower token usage on every benchmark. At N=1 , BCR trails the baseline by 3.8\% on MATH-500 accuracy (87.6\% vs.\ 91.4\%) but compensates with a 40\% token reduction (1,868 vs.\ 3,099). On Olympiad, BCR leads on both metrics even at N=1 (62.9\% vs.\ 62.1\% accuracy, with 58\% fewer tokens). This demonstrates that the efficiency learned during batched training transfers fully to standard single-problem inference.
+
+(2) The accuracy gap widens dramatically with N . This is the most compelling evidence for BCR's adaptive resource allocation capability. On MATH-500, as N increases from 1 to 5:
+[leftmargin=*, noitemsep, topsep=3pt]
+ The baseline drops from 91.4\% to 63.2\%---a 31\% relative decline.
+ BCR drops from 87.6\% to 79.0\%---only a 10\% relative decline.
+
+On Olympiad, the contrast is even more dramatic:
+[leftmargin=*, noitemsep, topsep=3pt]
+ The baseline drops from 62.1\% to 26.1\%---a 58\% relative decline.
+ BCR drops from 62.9\% to 40.0\%---only a 36\% relative decline.
+
+The baseline's accuracy on Olympiad at N=5 (26.1\%) is barely above random guessing on many competition problems, while BCR retains 40.0\%---demonstrating that BCR trains the model to allocate resources adaptively under pressure rather than simply truncating reasoning uniformly.
+
+(3) Token efficiency follows a smooth, predictable curve for BCR. An important practical finding is that BCR's per-problem token usage decreases monotonically with N on both benchmarks: 1,868 1,290 1,063 878 839 on MATH-500, and 2,969 1,919 1,528 1,148 1,051 on Olympiad. In contrast, the baseline's token usage is erratic---on Olympiad, it decreases from N=1 to N=4 (7,017 3,902) but then increases at N=5 (3,222), and on MATH-500 it similarly shows non-monotonic behavior. BCR's smooth scaling curve means that N can be reliably used as a throughput-accuracy knob in deployment: doubling N from 1 to 2 roughly halves per-problem cost while maintaining accuracy, with further diminishing returns at higher N .
+
+(4) BCR achieves greater absolute accuracy gains on harder benchmarks. At N=3 , BCR outperforms the baseline by 8.8\% on MATH-500 (82.4\% vs.\ 73.6\%) and by 7.0\% on Olympiad (45.7\% vs.\ 38.7\%). At N=5 , the gaps widen to 15.8\% on MATH-500 and 13.9\% on Olympiad. This pattern---larger absolute accuracy advantages under higher concurrency---suggests that BCR's learned compression strategies become increasingly valuable as resource constraints tighten. In practical deployment scenarios where batching is used to improve throughput, BCR offers substantial accuracy advantages over baseline models.
+
+(5) Implications for cost-efficient deployment. Combining the efficiency and accuracy results, BCR enables favorable cost-accuracy trade-offs. For example, a practitioner could solve 5 problems per API call using BCR at N=5 and achieve 79.0\% accuracy on MATH-500 with only 839 tokens per problem. The baseline at N=1 achieves 91.4\% accuracy but requires 3,099 tokens---a 3.7 higher per-problem cost. For applications where 79\% accuracy is acceptable, BCR at N=5 provides a 3.7 cost reduction while processing 5 more problems per call---an 18.5 improvement in cost-adjusted throughput.
+
+ 
+
+Complete Token Budget Ablation Results
+
+Table~[ref] consolidates the complete token-budget ablation across all five benchmarks, reporting accuracy (\%) and average generated tokens per problem in the same grouped format as the main tables.
+
+Detailed Analysis. The MATH-500 and Olympiad columns refine the budget-selection story from the main paper rather than changing it. We summarize the main takeaways below.
+
+(1) 4096 is consistently too restrictive. On both benchmarks, the most aggressive budget yields the lowest token usage, but this comes with the weakest accuracy: 86.6\% on MATH-500 and 61.1\% on Olympiad. This confirms the same pattern seen on AIME25, AMC23, and Minerva in the main paper: when the budget is too tight, the model begins sacrificing completeness for compression, which directly hurts final-answer quality.
+
+(2) 6144 slightly improves accuracy on these two benchmarks, but only at higher token cost. Relative to 5120, the looser 6144 budget improves MATH-500 from 87.6\% to 88.8\% and Olympiad from 62.9\% to 63.4\%. However, it also increases token usage from 1,868 to 1,874 on MATH-500 and from 2,969 to 3,116 on Olympiad. The gain is therefore modest in accuracy and negative in efficiency, especially on Olympiad where the per-problem token cost rises by 147 tokens.
+
+(3) The cross-benchmark optimum is still 5120. The key point is that these two benchmarks should be interpreted jointly with the main-paper results. On AIME25, AMC23, and Minerva, 5120 clearly outperforms 6144. On MATH-500 and Olympiad, 6144 recovers a small amount of extra accuracy, but not enough to offset its weaker efficiency and its regressions on the other three benchmarks. This is exactly the behavior we want from a default hyperparameter: 5120 is not always the single best point on every benchmark, but it is the most reliable setting across the full evaluation suite.
+
+(4) Harder benchmarks benefit somewhat more from relaxed budgets. Compared with AMC23 and Minerva, Olympiad is more tolerant of a looser budget, which is consistent with its longer and less forgiving reasoning chains. This suggests a practical deployment interpretation: if one were optimizing only for a harder benchmark family and cared less about token efficiency, a slightly larger budget could be reasonable. For the paper's main goal---a single efficient setting with strong performance across diverse benchmarks---5120 remains the better choice.
+
+Recommendation. We retain B_ =5120 as the default. It is the best overall compromise between compression pressure and retained accuracy across all five benchmarks, while 4096 is too restrictive and 6144 is too permissive for the general setting considered in this work.
+
+ 
+
+Extended Efficiency-Accuracy Pareto Frontiers
+
+Building upon the efficiency analysis presented in the main text, Figure~[ref] visualizes the training trajectories and the resulting Pareto frontiers for the remaining four mathematical reasoning benchmarks: AIME25, AMC23, MATH-500, and Olympiad. 
+
+The scatter plots map the average token usage (x-axis, lower is better) against task accuracy (y-axis, higher is better). For both model families, we plot the intermediate checkpoints during BCR training, indicated by the connected trajectories with arrows. The final converged models are marked with prominent stars (orange for BCR-JustRL-1.5B, blue for BCR-Qwen3-4B). For context, we also plot various efficiency-agnostic and length-controlled baseline models as isolated points.
+
+Across all four benchmarks, the training dynamics exhibit a consistent and highly stable pattern: BCR optimization systematically pushes the models toward the top-left quadrant. The arrows demonstrate that the models successfully learn to compress their reasoning traces (moving left) while strictly preserving or even enhancing their problem-solving capabilities (moving up or remaining stable). The final BCR models establish a superior Pareto frontier compared to existing methods, confirming that the implicit budget constraint effectively crystallizes latent reasoning efficiency without the severe accuracy degradation often associated with naive length-minimization approaches.
+
+figure*[!ht]
+ 
+ 
+ photo/appendix/BCR_Performance_Grid_Fixed.png 
+ Extended Efficiency-Accuracy Pareto Frontiers. Training trajectories on AIME25, AMC23, MATH-500, and Olympiad. The arrows track intermediate model checkpoints during BCR optimization, demonstrating a continuous, stable shift toward lower token consumption and competitive accuracy. The final BCR models (stars) consistently dominate the Pareto frontier relative to baseline models of comparable or larger scale.
+ 
+figure*
+
+ 
+
+Qualitative Analysis
+
+Overview and Methodology
+
+To understand how BCR achieves token efficiency without sacrificing reasoning quality, we present detailed case studies from AIME 2025 ( [ref]), AMC 2023 ( [ref]), and BRUMO 2025 ( [ref]). Our qualitative analysis examines seven representative problems selected to illustrate the diversity of BCR's compression mechanisms.
+
+Selection Methodology. We selected examples according to three criteria: (1) diversity of mathematical domains---spanning algebra, geometry, number theory, complex analysis, and arithmetic; (2) diversity of compression mechanisms---covering metacognitive loop elimination, strategy exploration reduction, pedagogical narration removal, and catastrophic degeneration prevention; and (3) diversity of outcomes---including cases where both models succeed (to isolate style differences), cases where BCR succeeds and the baseline fails (to illustrate accuracy benefits), and cases with varying degrees of token reduction (37--92\%).
+
+Comparison Protocol. For each example, we show excerpts from both models' reasoning traces, highlighting key differences. We use tealgreen to mark efficient, information-dense reasoning in BCR outputs and redred to mark verbose or failed patterns in baseline outputs. Token counts are measured as total generated tokens (excluding the prompt) for each model's complete response on the given problem.
+
+Taxonomy of Compression Mechanisms. Our analysis reveals four systematic compression mechanisms that BCR induces:
+
+[leftmargin=*, topsep=4pt]
+ Metacognitive Loop Elimination. The baseline model frequently interrupts correct reasoning with self-verification phrases: ``Wait, wait, wait '', ``let me check if this makes sense'', ``let me double-check '' These loops consume 200--500 tokens per instance without contributing new mathematical content---they revisit calculations that were already correct. BCR-trained models proceed linearly: once a valid approach is identified, reasoning flows to the conclusion without unnecessary self-doubt. Importantly, BCR models still verify edge cases and boundary conditions when mathematically necessary (e.g., checking that solutions fall within specified ranges); they simply avoid redundant verification of already-correct intermediate results.
+ 
+ Strategy Exploration Reduction. Baseline models often explore multiple solution strategies before committing to one, even when the first approach is correct. For instance, on a factorization problem, the baseline might attempt both polynomial long division and the Remainder Theorem before selecting one. BCR models apply the most direct strategy immediately, suggesting that batched training improves problem recognition---the model learns to identify the most efficient solution path faster, likely because time spent on suboptimal strategies for one problem directly reduces the budget available for subsequent problems.
+ 
+ Pedagogical Narration Removal. Baseline models sometimes explain basic mathematical concepts (e.g., ``when you raise a power to a power, you multiply the exponents'') that are unnecessary given the model's demonstrated competence. This ``teaching mode'' behavior likely arises from instruction-tuning data that includes step-by-step explanations. BCR suppresses this tendency because pedagogical narration consumes tokens without improving accuracy.
+ 
+ Catastrophic Degeneration Prevention. On hard problems requiring long reasoning chains, baseline models sometimes exhaust their 32K token budget and degenerate into repetitive, non-mathematical character sequences. BCR's implicit budget constraint trains the model to commit to an answer before entering these degenerate generation regimes, effectively preventing a failure mode that the baseline is susceptible to.
+
+Crucially, all four mechanisms represent syntactic rather than semantic compression. BCR does not teach models to skip reasoning steps; it teaches them to execute each step once and move forward. This distinction is critical: it explains why BCR can achieve large token reductions without sacrificing---and sometimes improving---accuracy.
+
+ 
+
+BCR-JustRL-1.5B Case Studies
+
+AIME 2025 Examples
+
+We present three AIME 2025 examples spanning algebra, geometry, and number theory. AIME problems are competition-level and require multi-step mathematical reasoning, making them ideal for studying the quality of BCR's compression.
+
+Example 1 (Table~[ref] This example best illustrates metacognitive verbosity. The problem asks for ordered pairs (x,y) satisfying 12x^2 - xy - 6y^2 = 0 . Both models correctly factorize this as (3x+2y)(4x-3y)=0 and identify the two solution families. However, their reasoning diverges sharply after this point.
+
+The baseline model, having correctly identified that y must be divisible by 4 for the first family and by 3 for the second, enters a prolonged self-interruption spiral. The phrase ``Wait wait wait'' appears multiple times, and the model re-derives the divisibility constraints, re-counts the solutions, and even temporarily arrives at an incorrect intermediate answer ( N=2016 ) before correcting itself. This metacognitive churning consumes over 3,500 tokens---nearly half the total output---without introducing any new mathematical content.
+
+The BCR model, in contrast, executes a clean four-step solution: (1) factor the equation, (2) enumerate the integer solutions for each family, (3) identify the overlap at (0,0) , and (4) apply inclusion-exclusion. Each step is executed once. The 49.5\% token reduction comes entirely from eliminating redundant verification, not from shortcutting any mathematical reasoning.
+
+Example 2 (Table~[ref] This problem involves computing the area of a heptagon using the shoelace formula. Both models correctly set up and compute the formula. The key difference is in post-computation behavior: the baseline model, having obtained the correct answer of 588, immediately questions its own result (``Wait, but let me check if this makes sense'') and proceeds to re-verify individual terms of the shoelace formula. It revisits term6 and term7 explicitly, confirming values it had already computed correctly.
+
+The BCR model lists all seven terms in a single enumeration, computes the sum in one line, and terminates. This pattern---compute once, trust the result---is a hallmark of BCR-trained models. The moderate 37.6\% reduction reflects that the baseline's redundancy on this geometric problem is less severe than on Example 1, as the shoelace computation is more mechanical and offers fewer opportunities for self-doubt spirals.
+
+Example 3 (Table~[ref] This example highlights strategy exploration reduction. The problem asks for integers n such that n+2 divides 3(n+3)(n^2+9) . The baseline begins with informal deliberation (``Hmm, let us break this down step by step''), considers using polynomial division, attempts to simplify the expression, then discovers---after considerable exploration---that the Remainder Theorem provides the cleanest approach. Only after this exploration does it compute the remainder (39) and enumerate the divisors.
+
+The BCR model skips this exploration entirely. It opens with ``The condition is that n+2 divides 3(n+3)(n^2+9) '' and immediately applies the Remainder Theorem. Within five lines, it has the answer. The 37.2\% reduction reflects the elimination of the exploratory preamble. This example suggests that BCR training improves problem recognition: the model learns to identify the most efficient solution strategy faster, likely because wasting tokens on suboptimal strategies for one problem reduces the budget available for subsequent problems in the training batch.
+
+table*[!ht]
+ 
+AIME 2025, Example 1: Equation Factorization (49.5\% token reduction). Both models reach the correct answer via factorization, but the baseline wastes > 3,500 tokens on self-interruption loops that revisit already-correct calculations.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+JustRL-DeepSeek-1.5B (7,211 tokens) & BCR-JustRL-1.5B (3,639 tokens) \\
+ 
+2lProblem: Find the number of ordered pairs (x,y) with x,y [-100,100] such that 12x^2 - xy - 6y^2 = 0 . \\
+2lGround Truth: 117 \\
+ 
+So the solutions are x = (3y)/4 or x = (-2y)/3 . But since x and y are integers, these expressions must result in integers. So for x = (3y)/4 to be integer, 3y must be divisible by 4, which implies that y must be divisible by 4, since 3 and 4 are coprime. Similarly... 
+
+redWait wait wait, wait. Wait wait, wait wait...
+
+red[Extensive rechecking of calculations]
+
+redWait the final answer is N=2016 ... Wait wait wait let me double-check...
+&
+The equation factors as (3x + 2y)(4x - 3y) = 0 .
+
+tealTherefore, either 3x + 2y = 0 or 4x - 3y = 0 .
+
+For 3x + 2y = 0 : x = 2k , y = -3k , with k [-33, 33] . This gives 67 solutions.
+
+For 4x - 3y = 0 : x = 3k , y = 4k , with k [-25, 25] . This gives 51 solutions.
+
+tealOverlap is only (0,0) , so total = 67 + 51 - 1 = 117 .
+\\
+ 
+Answer: 117 & Answer: 117 \\
+ 
+tabular
+
+table*
+
+table*[!ht]
+ 
+AIME 2025, Example 2: Coordinate Geometry (37.6\% token reduction). The baseline re-verifies each shoelace term individually despite having computed them correctly; BCR computes once and terminates.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+JustRL-DeepSeek-1.5B (6,676 tokens) & BCR-JustRL-1.5B (4,164 tokens) \\
+ 
+2lProblem: In ABC , points on sides with given lengths. M,N are reflections. Area of DEGF is 288. \\
+2l Find area of heptagon AFNBCEM . \\
+2lGround Truth: 588 \\
+ 
+The shoelace formula applied to the heptagon gave 12 1176 = 588 .
+
+redSo the area is 588. Wait, but let me check if this makes sense.
+
+redGiven that the area of triangle ABC is 588, and the heptagon AFNBCEM is covering most of it, but the calculation gives 588.
+
+redWait, but let me think again.
+
+redBut wait, let me check the coordinates again. Wait, when I calculated term6... Yes, that is correct. And term7... So the sum is indeed...
+&
+Now compute the sum:
+
+Term1=0, Term2= -240 , Term3= +840 , Term4= +1176 , Term5= -840 , Term6= +240 , Term7=0.
+
+tealTotal sum = 0 - 240 + 840 + 1176 - 840 + 240 + 0 = 1176 .
+
+Area = 12 |1176| = 588 .
+
+tealSo the area of the heptagon is 588.
+\\
+ 
+Answer: 588 & Answer: 588 \\
+ 
+tabular
+
+table*
+
+table*[!ht]
+ 
+AIME 2025, Example 3: Divisibility Analysis (37.2\% token reduction). The baseline explores multiple strategies before finding the Remainder Theorem approach; BCR applies it directly without exploration.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+JustRL-DeepSeek-1.5B (3,530 tokens) & BCR-JustRL-1.5B (2,216 tokens) \\
+ 
+2lProblem: Find the sum of all positive integers n such that n + 2 divides 3(n + 3)(n^2 + 9) . \\
+2lGround Truth: 49 \\
+ 
+Okay, so I have got this math problem here... redHmm, let us break this down step by step. First, let us write down what is given... redTo tackle this, maybe I can use polynomial division or factor the expression somehow. Let me try to see if I can simplify... 
+
+Alternatively, since n + 2 divides the product, by the Factor Theorem, if we substitute n = -2 ... redWait, but actually, if n + 2 divides the product, then substituting n = -2 should give zero. Let us test that.
+
+red[Performs explicit polynomial long division]
+
+So the remainder is 39. Therefore... 39 must be divisible by (n + 2) .
+&
+The condition is that n + 2 divides 3(n + 3)(n^2 + 9) .
+
+tealUsing the Remainder Theorem: substituting n = -2 into the numerator gives 3(1)(13) = 39 .
+
+tealSo n + 2 must be a divisor of 39.
+
+Divisors of 39: 1, 3, 13, 39. 
+
+Since n is positive, n + 2 3 , so n \1, 11, 37\ .
+
+Sum: 1 + 11 + 37 = 49 .
+\\
+ 
+Answer: 49 & Answer: 49 \\
+ 
+tabular
+
+table*
+
+ 
+
+AMC 2023 Examples
+
+Tables~[ref]--[ref] present three AMC 2023 examples spanning complex analysis, arithmetic, and geometry. AMC problems are generally easier than AIME, which allows us to observe how BCR handles problems of varying difficulty.
+
+Example 4 (Table~[ref] This is the most striking example in our entire analysis, demonstrating that BCR's efficiency can also lead to higher accuracy---a direct illustration of the ``free lunch'' phenomenon reported in the main results. The problem asks for the maximum imaginary part of z satisfying |1+z+z^2|=4 .
+
+The baseline model generates over 10,000 tokens of verbose exploration but arrives at an incorrect answer ( m+n=5 ). Post-hoc analysis reveals the failure mechanism: the model's extended deliberation leads it through multiple possible approaches, and in the process it confuses the constraint satisfaction conditions. Specifically, it considers a candidate y = 3/2 but incorrectly evaluates whether the constraint |1+z+z^2|=4 is satisfied at this point, ultimately concluding with the wrong values m=3, n=2 .
+
+The BCR model, by contrast, identifies the key algebraic insight immediately: to maximize Im(z) , set 1+z+z^2 = -4 (the point on the circle |w|=4 that is farthest from the real axis when mapped back). This yields the quadratic z^2 + z + 5 = 0 , whose discriminant gives Im(z) = 19/2 , producing the correct answer m+n = 19+2 = 21 . The entire solution takes only 3,261 tokens.
+
+This example supports a key hypothesis: by eliminating unproductive deliberation loops, BCR reduces the probability of the model ``reasoning itself into an error.'' When the baseline explores multiple approaches, it creates more opportunities for confusion and incorrect intermediate conclusions. BCR's implicit budget pressure forces the model to commit to the most promising strategy early, which paradoxically leads to more reliable reasoning.
+
+Example 5 (Table~[ref] This simpler problem asks for the number of digits in 8^5 5^10 15^5 . The baseline's verbosity here takes a different form: rather than self-doubt, it engages in pedagogical narration, explaining basic mathematical concepts. For instance, it states ``When you raise a power to a power, you multiply the exponents''---a rule that the model clearly already knows and applies correctly. This ``teaching mode'' behavior likely arises from instruction-tuning data that contains step-by-step explanations designed for human learners. BCR suppresses this tendency because pedagogical tokens consume budget without improving accuracy.
+
+The BCR model produces a concise algebraic chain: 8^5 = 2^15 , 15^5 = 3^5 5^5 , combine to get 10^15 243 , count digits: 3 + 15 = 18 . The entire reasoning fits in 1,425 tokens---less than half the baseline's 3,464. The 58.9\% reduction is driven almost entirely by eliminating unnecessary narration, not by skipping any computational steps.
+
+Example 6 (Table~[ref] This geometry problem requires applying the Law of Cosines to find a triangle's sides, then computing its area. The baseline arrives at the correct answer but wastes tokens on two distinct self-doubt episodes: first, ``Wait, wait, wait a second'' after finding d=4 (despite having correctly derived this from a quadratic), and second, ``Let me verify if these satisfy triangle inequality'' (a valid check, but the triangle inequality is trivially satisfied for sides 6, 10, 14 and could be verified mentally).
+
+The BCR model presents a linear derivation: set up Law of Cosines solve quadratic for d compute area using 120^ identify m and n answer. Each step follows naturally from the previous one, with no backtracking or re-verification. The resulting 49.6\% token reduction illustrates that even on problems where the baseline reasons correctly, BCR produces substantially more concise output by eliminating redundant verification that adds no mathematical value.
+
+table*[!ht]
+ 
+AMC 2023, Example 4: Complex Analysis (67.8\% token reduction). BCR correct, baseline incorrect. The baseline's verbose exploration leads to a reasoning error through constraint confusion.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+JustRL-DeepSeek-1.5B (10,122 tokens) & BCR-JustRL-1.5B (3,261 tokens) \\
+ 
+2lProblem: Consider the set of complex numbers z satisfying |1+z+z^2|=4 . The maximum value of the \\
+2l imaginary part of z can be written as mn . What is m+n ? \\
+2lGround Truth: 21 \\
+ 
+... So the maximum y occurs when y=3/2 and the condition is not satisfied, so the maximum y is 3/2 , and the m+n=3+2=5 .
+
+red[Incorrect analysis: confuses constraint satisfaction]
+
+red[Concludes with wrong answer]
+&
+Set 1 + z + z^2 = -4 , giving z^2 + z + 5 = 0 .
+
+Solutions: z = -1 i 192 
+
+tealThus Im(z) = 192 , maximum is 192 .
+
+So m=19 , n=2 , thus m+n=21 .
+\\
+ 
+Answer: 5 & Answer: 21 \\
+ 
+tabular
+
+table*
+
+table*[!ht]
+ 
+AMC 2023, Example 5: Digit Counting (58.9\% token reduction). The baseline narrates basic exponent rules that it already knows; BCR computes directly without unnecessary explanation.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+JustRL-DeepSeek-1.5B (3,464 tokens) & BCR-JustRL-1.5B (1,425 tokens) \\
+ 
+2lProblem: How many digits are in the base-ten representation of 8^5 5^10 15^5 ? \\
+2lGround Truth: 18 \\
+ 
+Alright, so I have this math problem here... redHmm, okay. Let me break this down step by step.
+
+Starting with 8^5 . I know that 8 is 2 cubed, so 8 = 2^3 . Therefore, 8^5 = (2^3)^5 . redWhen you raise a power to a power, you multiply the exponents. So that would be 2^15 ...
+
+red[Extensive explanation of basic exponent rules]
+
+So 10^15 would have 16 digits. redBut let me confirm that. Yes, 10^n is a 1 followed by n zeros...
+&
+ 8^5 = (2^3)^5 = 2^15 
+
+ 15^5 = (3 5)^5 = 3^5 5^5 
+
+tealCombined: 2^15 5^15 3^5 = 10^15 243 
+
+ 243 10^15 is 243 followed by 15 zeros.
+
+tealDigits: 3 + 15 = 18 
+\\
+ 
+Answer: 18 & Answer: 18 \\
+ 
+tabular
+
+table*
+
+table*[!ht]
+ 
+AMC 2023, Example 6: Triangle Area (49.6\% token reduction). The baseline rechecks valid intermediate results with two distinct self-doubt episodes; BCR follows a linear derivation from setup to answer.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+JustRL-DeepSeek-1.5B (4,329 tokens) & BCR-JustRL-1.5B (2,182 tokens) \\
+ 
+2lProblem: Triangle ABC has side lengths in arithmetic progression, smallest side 6, and an angle of 120^ . \\
+2l Find the area in form mn . What is m+n ? \\
+2lGround Truth: 18 \\
+ 
+... So d=4 , sides are 6,10,14 .
+
+redWait, wait, wait a second. Wait, the sides are 6, 6 + d, 6 + 2d. If d=4, then sides are 6,10,14.
+
+redLet me verify if these satisfy triangle inequality...
+
+redWait, wait, wait, wait. Let me double-check the sides.
+
+Area = 12 6 10 (120^ ) = 153 
+&
+Sides: a=6 , b=6+d , c=6+2d 
+
+Law of Cosines with (120^ )=-12 :
+
+ (6+2d)^2 = 36 + (6+d)^2 + 6(6+d) 
+
+tealSolving: 3d^2 + 6d - 72 = 0 d=4 
+
+Sides: 6, 10, 14 . Area = 12(6)(10) 120^ = 153 
+
+tealSo m=15 , n=3 , m+n=18 
+\\
+ 
+Answer: 18 & Answer: 18 \\
+ 
+tabular
+
+table*
+
+ 
+
+BRUMO 2025 Example
+
+Table~[ref] presents the most extreme case in our analysis: the baseline generates over 32,000 tokens and fails entirely, while BCR solves the problem in 2,692 tokens---a 91.8\% reduction that also converts a failure into a success.
+
+Example 7 (Table~[ref] This problem requires finding the smallest positive integer n such that z^n - 1 and (z-3)^n - 1 share a common complex root. The mathematical insight is that both and - 3 must be n -th roots of unity, and the key is to find a root on the unit circle such that - 3 also has unit modulus.
+
+The baseline attempts to reason about this systematically but quickly becomes trapped in a repetitive computational loop. It considers various candidate values of n , attempts to enumerate roots of unity for each, and frequently backtracks (``Wait, that doesn't work, let me try...''). As the reasoning chain grows beyond approximately 15,000 tokens, the model's coherence degrades. Beyond 25,000 tokens, the output degenerates into non-mathematical character sequences: ``2 2 1 11 1 1 1 0, , 11 1''. This degeneration pattern---where extended autoregressive generation causes loss of coherence---is a known failure mode documented in the overthinking literature~[citation]. The model exhausts its full 32,768-token budget without producing any valid answer.
+
+The BCR model avoids this failure entirely through a remarkably direct solution. It identifies the key geometric insight: if = e^i /6 , then lies on the unit circle at angle /6 , and - 3 = e^i 5 /6 also lies on the unit circle (this can be verified by computing the modulus). Both e^i /6 and e^i 5 /6 have order 12 (since 12 /6 = 2 and 12 5 /6 = 10 = 5 2 ). The model verifies both conditions explicitly and terminates, consuming only 2,692 tokens.
+
+This example demonstrates three important properties of BCR:
+[leftmargin=*, noitemsep, topsep=3pt]
+ Efficiency prevents catastrophic failure. The baseline's 32K-token degeneration is not merely an efficiency problem---it is a correctness problem. BCR's implicit budget constraint trains the model to commit to promising approaches rather than endlessly exploring, effectively preventing a class of failure that the baseline is susceptible to.
+ Conciseness correlates with insight. The BCR model's solution is not just shorter---it demonstrates deeper mathematical insight. Rather than brute-forcing through candidate values of n , it identifies the geometric structure of the problem and solves it in a single step. This suggests that BCR training may encourage models to search for elegant solutions rather than exhaustive ones.
+ Order-of-magnitude compression is possible. The 91.8\% reduction (32,677 2,692 tokens) demonstrates that the gap between verbose and efficient reasoning can be enormous. This extreme case, while not representative of average performance, illustrates the upper bound of BCR's compression potential.
+
+table*[!ht]
+ 
+BRUMO 2025: Roots of Unity (91.8\% token reduction). The baseline generates 32K tokens and degenerates into non-mathematical character sequences; BCR identifies the key geometric insight and terminates in 2,692 tokens with the correct answer.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+JustRL-DeepSeek-1.5B (32,677 tokens) & BCR-JustRL-1.5B (2,692 tokens) \\
+ 
+2lProblem: What is the smallest positive integer n such that z^n-1 and (z-3)^n-1 share a common \\
+2l complex root? \\
+2lGround Truth: 12 \\
+ 
+red[Model generates over 32,000 tokens]
+
+red[Output degenerates into repetitive patterns:]
+
+... 2 2 1 11 1 1 1 0, , 11 1 , (1 1 ...
+
+red[No valid answer extracted]
+&
+Let be a common root. Then ^n = 1 and ( - 3)^n = 1 .
+
+If = e^i /6 , then | | = 1 and - 3 = e^i 5 /6 .
+
+tealOrder of e^i /6 is 12. Order of e^i 5 /6 is also 12.
+
+Verify: ^12 = e^i 2 = 1 
+
+ ( - 3)^12 = e^i 10 = 1 
+
+tealSmallest such n is 12.
+\\
+ 
+Answer: None & Answer: 12 \\
+ 
+tabular
+
+table*
+
+ 
+
+BCR-Qwen-4B Case Studies
+
+ 
+
+AIME 2025 Examples
+
+We present two AIME 2025 case studies selected from the local Qwen3-4B-Thinking-2507 and BCR-Qwen3-4B result dumps. The first is a free-lunch example in which BCR corrects a missing combinatorial factor; the second isolates pure compression, where both models are correct but BCR reaches the same conclusion with a much tighter derivation.
+
+table*[!ht]
+ 
+Qwen AIME 2025, Example 8: Sudoku-Style Counting (43.2\% token reduction). The baseline omits a key combinatorial factor; BCR restores it and obtains the correct answer.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (31,362 tokens) & BCR-Qwen3-4B (17,805 tokens) \\
+ 
+2lProblem: Count the valid 3 9 Sudoku-style fillings and write the total as p^a q^b r^c s^d ; compute pa+qb+rc+sd . \\
+2lGround Truth: 81 \\
+ 
+
+Uses N=9! 2^3 (3!)^3 and factors this incomplete count.
+
+Concludes N=2^13 3^7 5 7 , hence 2 13 + 3 7 + 5 + 7 = 59 .
+&
+
+Adds the missing structural multiplier: 56 feasible middle-block assignments.
+
+ N = 9! 56 (3!)^3 (3!)^3 .
+
+Therefore N=2^16 3^10 5 7^2 , so 2 16 + 3 10 + 5 + 14 = 81 .
+\\
+ 
+Answer: 59 & Answer: 81 \\
+ 
+tabular
+
+table*
+
+Example 9 (Table~[ref] Both models solve the problem by separating a rational telescoping product from a logarithmic telescoping product. The difference is entirely in execution style: the baseline repeatedly re-parses the statement and hesitates before simplifying, whereas BCR moves directly to the product decomposition and terminates once the telescoping structure is established.
+
+table*[!ht]
+ 
+Qwen AIME 2025, Example 9: Telescoping Log Product (65.3\% token reduction). Both models are correct; BCR removes prolonged setup chatter and preserves only the core derivation.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (22,817 tokens) & BCR-Qwen3-4B (7,921 tokens) \\
+ 
+2lProblem: Evaluate _k=4^63 _k(5^k^2-1) _k+1(5^k^2-4)=mn and find m+n . \\
+2lGround Truth: 106 \\
+ 
+redLong re-parsing preamble with repeated ``wait/hold on'' cycles before any real simplification.
+
+Eventually derives
+ k^2-1k^2-4=3113 and
+ _k 5 _k+15=3 .
+&
+Immediately rewrites each term using _b(a^c)=c _b(a) and splits the problem into two telescoping factors.
+
+tealRational part 3113 , logarithmic part 3 , total 9313 .
+\\
+ 
+Answer: 106 & Answer: 106 \\
+ 
+tabular
+
+table*
+
+ 
+
+AMC 2023 Examples
+
+The AMC 2023 pairs show the same two regimes visible in the quantitative table: BCR-Qwen often improves accuracy while using fewer tokens, and when the baseline is already correct, the gain comes from compressing a long explanatory trace into a short sign-based or recurrence-based argument.
+
+Example 10 (Table~[ref] The baseline begins with a reasonable exploration of row sums but eventually degenerates into a 32K-token failure case with no valid boxed answer. BCR keeps only the essential recurrence, derives the closed form S(k)=2^k-k , and computes the final units digit cleanly.
+
+table*[!ht]
+ 
+Qwen AMC 2023, Example 10: Triangular Array Sum (69.0\% token reduction). The baseline degenerates without a valid answer; BCR solves the recurrence and finishes normally.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (32,577 tokens) & BCR-Qwen3-4B (10,096 tokens) \\
+ 
+2lProblem: In a modified Pascal-like triangular array, find the units digit of the sum of the 2023 numbers in row 2023. \\
+2lGround Truth: 5 \\
+ 
+Starts with row-sum exploration, then
+
+redcollapses into extremely long repeated digit sequences
+
+redand never produces a valid final boxed answer.
+&
+Derives the recurrence
+teal S(k)=2S(k-1)+(k-2) 
+and solves it as
+teal S(k)=2^k-k .
+
+Then computes 2^2023 8 10 and obtains
+teal (8-3) 10 = 5 .
+\\
+ 
+Answer: None & Answer: 5 \\
+ 
+tabular
+
+table*
+
+Example 11 (Table~[ref] Here both models exploit the root multiplicities of (x-k)^k , but the baseline spends far more tokens on interval-by-interval narration. BCR compresses the reasoning into the real invariant of the problem: the sign flips only across odd-multiplicity roots, so the answer is obtained from a short parity table rather than repeated verbal bookkeeping.
+
+table*[!ht]
+ 
+Qwen AMC 2023, Example 11: Polynomial Sign Counting (54.1\% token reduction). BCR condenses the sign analysis to a parity table while preserving the correct answer.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (21,987 tokens) & BCR-Qwen3-4B (10,082 tokens) \\
+ 
+2lProblem: For P(x)= _k=1^10(x-k)^k , on how many of the 11 open intervals between roots is P(x) positive? \\
+2lGround Truth: 6 \\
+ 
+Carries out a long interval-by-interval narration, repeatedly restating which roots flip the sign and which do not.
+&
+Builds the sign pattern directly from multiplicity parity:
+
+tealodd multiplicity roots flip sign; even multiplicity roots preserve sign.
+
+This yields the positive intervals
+teal (1,2),(2,3),(5,6),(6,7),(9,10),(10, ) , so the count is 6 .
+\\
+ 
+Answer: 6 & Answer: 6 \\
+ 
+tabular
+
+table*
+
+ 
+
+BRUMO 2025 Examples
+
+The BRUMO 2025 examples are particularly useful because they separate two distinct Qwen gains: avoiding catastrophic overthinking on long expectation problems, and replacing loose graph-theoretic exploration with a compact structural decomposition. Both are free-lunch cases in which BCR is shorter and more accurate.
+
+Example 12 (Table~[ref] The baseline enters a long state-enumeration spiral and exhausts its budget without reaching a valid final answer. BCR reformulates the problem in terms of first-occurrence positions of rank sets and applies inclusion-exclusion at the expectation level, which both shortens the derivation and stabilizes it.
+
+table*[!ht]
+ 
+Qwen BRUMO 2025, Example 12: Card-Draw Stopping Time (66.3\% token reduction). Baseline stalls in case enumeration; BCR switches to a first-hit formulation and reaches the exact expectation.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (32,645 tokens) & BCR-Qwen3-4B (11,007 tokens) \\
+ 
+2lProblem: In a 54-card deck with two jokers, find the expected number of draws until at least one Ace, one King, and one Queen have appeared. \\
+2lGround Truth: 73739 \\
+ 
+redLarge state and permutation enumeration expands to 32K tokens and never yields a valid boxed answer.
+&
+Introduces first-hit positions for progressively larger target sets and applies the identity
+ E[T] = 3E[M] - 3E[L] + E[R] .
+
+tealWith E[M]= 555 , E[L]=559 , and E[R]=5513 , this gives E[T]=73739 .
+\\
+ 
+Answer: None & Answer: 73739 \\
+ 
+tabular
+
+table*
+
+Example 13 (Table~[ref] The baseline builds graph constraints but prematurely collapses the feasible set to \13,24\ . BCR makes the latent structure explicit: the friendship relation decomposes into equal cliques, and the enemy count then becomes a divisor condition. Once this decomposition is recognized, the full feasible set follows immediately.
+
+table*[!ht]
+ 
+Qwen BRUMO 2025, Example 13: Party Friend/Enemy Graph (45.9\% token reduction). BCR uses clique decomposition to enumerate all feasible values of n ; the baseline undercounts the solution set.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (26,146 tokens) & BCR-Qwen3-4B (14,139 tokens) \\
+ 
+2lProblem: Each guest has exactly 12 enemies and ``the friend of an enemy is an enemy.'' Find the sum of all possible values of n . \\
+2lGround Truth: 100 \\
+ 
+Builds graph-theoretic constraints but concludes only
+red n=13 and n=24 ,
+so the final answer is 37 .
+&
+Represents the friend graph as a disjoint union of k equal cliques of size s :
+ n = ks and n-s=12 , so n=12kk-1=12+12k-1 .
+
+tealSince k-1 must divide 12, the feasible values are 13,14,15,16,18,24 , whose sum is 100 .
+\\
+ 
+Answer: 37 & Answer: 100 \\
+ 
+tabular
+
+table*
+
+Taken together, these six Qwen-based case studies mirror the quantitative result in the main table: the dominant qualitative pattern is still compression-by-pruning, but the 4B model also shows repeated free-lunch behavior, where shorter reasoning is not merely cheaper but more reliable.
+ 
+
+AIME 2025 Examples
+
+We present three AIME 2025 examples spanning combinatorial enumeration, telescoping algebra, and geometry on the nine-point circle. Compared with the 1.5B case studies in Appendix C.2, the qualitative question for the 4B model is slightly different: Qwen3-4B already solves many difficult problems, so the issue is not simply whether BCR can enforce brevity, but whether it can selectively remove the parts of long-form reasoning that are least coupled to correctness. The three examples below show all of the main regimes. In one case, BCR repairs a missing combinatorial factor and flips the answer from incorrect to correct; in another, both models are correct but BCR compresses away a large amount of interpretive hesitation; and in the third, BCR still reasons at length, but unlike the baseline it commits to a coherent final answer before the trace drifts into unresolved geometric speculation.
+
+Example 8 (Table~[ref] This is the clearest AIME free-lunch example for the Qwen family. The baseline correctly recognizes the puzzle as a constrained counting problem over row permutations and block structure, but it prematurely compresses the middle-block combinatorics into a much smaller factor. The result is a superficially plausible but incomplete count, which propagates directly into the wrong prime exponents and final score 59. The main token cost comes before the mistake: the model spends a long prefix repeatedly re-describing the grid and block layout instead of isolating the single missing combinatorial multiplier.
+
+The BCR model follows the same high-level route but inserts the missing structural object: the feasible assignments of the middle 3 3 block. Once this multiplier (56) is made explicit, the rest of the derivation becomes mechanical. The important qualitative point is that BCR is not ``shorter because it skips detail''; it is shorter because it allocates detail to the only place where it matters. In this example, concision and correctness align because BCR eliminates interpretive chatter while preserving the crucial combinatorial factor that the baseline overlooked.
+
+Example 9 (Table~[ref] This example isolates pure compression without any accuracy change. Both models eventually discover the same decomposition: use the power rule for logarithms, separate the product into a rational term and a logarithmic term, telescope both pieces, and multiply the results. What differs is the amount of meta-reasoning expended before the derivation begins. Nearly all of the extra baseline tokens are spent on interpretation loops about notation and product structure rather than on the telescoping algebra itself.
+
+The baseline repeatedly re-parses the statement, questions whether the expanded product is merely illustrative or structurally important, and spends a long prefix of the trace deciding how to interpret notation that does not actually change the solution strategy. BCR still contains some setup language, but it commits much earlier to the right abstraction. This suggests that on already-solved problems, BCR's main benefit is not discovering new mathematics; it is reducing ``problem-understanding overhead'' that contributes many tokens while adding no new information once the telescoping structure is recognized.
+
+Example 10 (Table~[ref] The third AIME example is useful because it shows that BCR can help even when the token reduction is moderate rather than dramatic. The problem asks for a weighted combination of arc lengths on the circumcircle of the medial triangle. The baseline correctly recognizes the nine-point-circle setting and recalls several relevant angle-to-arc relationships, but it never stabilizes these local facts into a single consistent set of target arcs. The trace ends in unresolved discussion about whether arcs such as DG and DE should coincide, and no valid boxed answer is produced. The token-heavy failure mode here is theorem accumulation without binding: the model keeps generating related geometric facts, but never commits them to the exact variables in the question.
+
+The BCR trace is not perfectly elegant here; it still mixes theorem recall with approximate geometric estimation. But unlike the baseline, it does something qualitatively crucial: it commits. After identifying DE=72^ , it settles on HJ=24^ and FG=72^ , then cleanly evaluates the requested linear combination to obtain 336. This example therefore illustrates a different Qwen-side compression mechanism from the previous two: BCR is not merely shortening successful derivations, but helping the model exit a long geometric deliberation with a coherent final synthesis.
+
+table*[!ht]
+ 
+Qwen AIME 2025, Example 8: Sudoku-Style Counting (43.2\% token reduction). The baseline omits a key combinatorial factor; BCR restores it and obtains the correct answer.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (31,362 tokens) & BCR-Qwen3-4B (17,805 tokens) \\
+ 
+2lProblem: Count the valid 3 9 Sudoku-style fillings and write the total as p^a q^b r^c s^d ; compute pa+qb+rc+sd . \\
+2lGround Truth: 81 \\
+ 
+redUses N=9! 2^3 (3!)^3 and factors this incomplete count.
+
+redMost extra tokens are spent re-describing the grid geometry and block layout before the counting argument actually starts.
+
+redThe actual error is structural: the trace never explicitly counts the 56 feasible middle-block assignments, so a long derivation is built on the wrong combinatorial factor.
+
+redConcludes N=2^13 3^7 5 7 , hence 2 13+3 7+5+7=59 .
+&
+tealAdds the missing structural multiplier: 56 feasible middle-block assignments.
+
+ N=9! 56 (3!)^3 (3!)^3 .
+
+tealThus N=2^16 3^10 5 7^2 , so 2 16+3 10+5+14=81 .
+\\
+ 
+Answer: 59 & Answer: 81 \\
+ 
+tabular
+
+table*
+
+table*[!ht]
+ 
+Qwen AIME 2025, Example 9: Telescoping Log Product (65.3\% token reduction). Both models are correct; BCR removes prolonged setup chatter and preserves only the core derivation.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (22,817 tokens) & BCR-Qwen3-4B (7,921 tokens) \\
+ 
+2lProblem: Evaluate _k=4^63 _k(5^k^2-1) _k+1(5^k^2-4)=mn and find m+n . \\
+2lGround Truth: 106 \\
+ 
+redLong re-parsing preamble with repeated ``wait/no/hold on'' cycles before simplification.
+
+redThe token overhead comes mainly from notation interpretation loops, not from the telescoping algebra itself.
+
+Eventually derives
+ k^2-1k^2-4=3113 and
+ _k 5 _k+15=3 .
+&
+Directly applies _b(a^c)=c _b(a) and splits the product into:
+
+teal(i) rational telescoping 3113 , (ii) logarithmic telescoping 3 .
+
+Combines to 9313 and returns 106 .
+\\
+ 
+Answer: 106 & Answer: 106 \\
+ 
+tabular
+
+table*
+
+table*[!ht]
+ 
+Qwen AIME 2025, Example 10: Nine-Point Circle Arc Geometry (23.2\% token reduction). The baseline recalls relevant geometric facts but never consolidates them into a final answer; BCR commits to a coherent arc decomposition and finishes.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (32,215 tokens) & BCR-Qwen3-4B (24,754 tokens) \\
+ 
+2lProblem: In ABC with angles 84^ ,60^ ,36^ , let D,E,F be side midpoints and G,H,J be additional intersections \\
+2l on the circumcircle of DEF . Compute DE+2HJ+3FG . \\
+2lGround Truth: 336 \\
+ 
+Recognizes the nine-point-circle setting and proposes identities such as
+
+red DG=72^ ,\ EH=120^ ,\ FJ=168^ 
+
+redMost extra tokens come from theorem-recall and arc-matching loops: the model keeps generating related geometric facts without consolidating them into the three arcs actually required.
+
+redIt gets stuck on whether these are the same arcs the problem asks for, and no boxed final answer appears.
+&
+Settles on
+teal DE=72^ ,\ HJ=24^ ,\ FG=72^ 
+and then computes
+
+teal 72+2 24+3 72 = 336 .
+\\
+ 
+Answer: None & Answer: 336 \\
+ 
+tabular
+
+table*
+
+ 
+
+AMC 2023 Examples
+
+We next present three AMC 2023 examples spanning recurrence extraction, sign analysis, and complex numbers. Because AMC problems are typically shorter than AIME or BRUMO, the qualitative contrast here is less about discovering entirely different solution paths and more about whether the model drifts into a ``teaching mode'' that is useful for a human audience but unnecessary for reward optimization. The Qwen-based examples show that BCR consistently suppresses this tendency. On the hardest AMC case, it prevents full degeneration; on the other two, it compresses long explanatory traces into short, invariant-driven arguments.
+
+Example 11 (Table~[ref] This is the AMC analogue of the long-failure cases in C.2. The baseline begins sensibly by tabulating the first few row sums and looking for a pattern, but it never transitions to a stable closed-form derivation. Instead, the trace eventually degenerates into long repeated digit strings and ends without a valid boxed answer. The token increase is driven by repeated small-case recomputation after the recurrence structure is already recoverable.
+
+BCR keeps the same initial instinct but compresses it into a mathematically sufficient derivation. Once the row-sum recurrence S(k)=2S(k-1)+(k-2) is identified, the model moves immediately to the closed form S(k)=2^k-k and reduces the task to a one-line modular arithmetic computation. The important point is that the savings do not come from omitting the recurrence; they come from refusing to continue generating after the recurrence has already solved the problem.
+
+Example 12 (Table~[ref] In this problem, both models are correct and use the same underlying fact: crossing a root of odd multiplicity flips sign, while crossing an even-multiplicity root preserves sign. The baseline, however, expresses this insight in a verbose interval-by-interval narration that repeatedly restates the same invariant. This is a textbook token-overhead case: once parity is known, the remaining narration is almost entirely redundant bookkeeping.
+
+BCR compresses the argument into exactly the right state representation: a parity table over the roots. Once the initial sign on (- ,1) is fixed, the rest of the solution is a deterministic scan over odd and even multiplicities. This is a good example of what ``syntactic compression'' means for a stronger model: the mathematics is unchanged, but the surface realization becomes much denser because repeated verbal bookkeeping is replaced by a compact structural summary.
+
+Example 13 (Table~[ref] The final AMC example shows a cleaner version of pedagogical narration removal. Both models solve z^5=z by moving to polar form, isolating the modulus cases r=0 and r=1 , and then recognizing that the unit-modulus branch reduces to the sixth roots of unity. The baseline is correct, but it spends many tokens restating familiar facts about conjugates, arguments, and distinctness of the resulting roots. Here the extra tokens come almost entirely from tutorial-style explanation rather than from mathematical search.
+
+The BCR model reaches the same conclusion with much tighter exposition. After deriving z=1/z on the unit circle, it immediately reduces the problem to z^6=1 and counts the six roots together with z=0 . The value of this example is that it shows BCR's effect even when the task is already easy for the base model: the learned compression policy suppresses explanatory surplus without weakening the actual mathematical chain of reasoning.
+
+table*[!ht]
+ 
+Qwen AMC 2023, Example 11: Triangular Array Sum (69.0\% token reduction). The baseline degenerates without a valid answer; BCR solves the recurrence and finishes normally.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (32,577 tokens) & BCR-Qwen3-4B (10,096 tokens) \\
+ 
+2lProblem: In a modified Pascal-like triangular array, find the units digit of the sum of the 2023 numbers in row 2023. \\
+2lGround Truth: 5 \\
+ 
+Starts correctly with row-sum exploration, then
+
+redthe trace keeps recomputing small rows instead of collapsing early to a recurrence, so token usage grows before any real progress is made.
+
+redoutput collapses into extremely long repeated digit sequences
+
+redand no valid final boxed answer is produced.
+&
+Derives
+teal S(k)=2S(k-1)+(k-2) 
+and solves it as
+teal S(k)=2^k-k .
+
+Then computes 2^2023 8 10 and
+teal (8-3) 10=5 .
+\\
+ 
+Answer: None & Answer: 5 \\
+ 
+tabular
+
+table*
+
+table*[!ht]
+ 
+Qwen AMC 2023, Example 12: Polynomial Sign Counting (54.1\% token reduction). BCR condenses interval-by-interval narration into a short parity-based sign table.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (21,987 tokens) & BCR-Qwen3-4B (10,082 tokens) \\
+ 
+2lProblem: For P(x)= _k=1^10(x-k)^k , on how many of the 11 open intervals between roots is P(x) positive? \\
+2lGround Truth: 6 \\
+ 
+redNarrates each interval separately, repeatedly restating which root crossings flip the sign and which do not.
+
+redThe token-heavy part is not the mathematics; it is the repeated interval-by-interval bookkeeping after the odd/even multiplicity invariant is already known.
+&
+Builds the sign pattern directly from multiplicity parity:
+
+tealodd multiplicity roots flip sign; even multiplicity roots preserve sign.
+
+Positive intervals are
+teal (1,2),(2,3),(5,6),(6,7),(9,10),(10, ) , so the count is 6.
+\\
+ 
+Answer: 6 & Answer: 6 \\
+ 
+tabular
+
+table*
+
+table*[!ht]
+ 
+Qwen AMC 2023, Example 13: Complex Equation with Conjugation (56.2\% token reduction). Both models are correct; BCR strips away pedagogical narration and keeps only the polar-form argument.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (11,599 tokens) & BCR-Qwen3-4B (5,082 tokens) \\
+ 
+2lProblem: How many complex numbers satisfy the equation z^5=z ? \\
+2lGround Truth: 7 \\
+ 
+redUses polar form correctly but spends many tokens re-explaining conjugates, arguments, and why the sixth roots are distinct.
+
+redThis is mostly pedagogical overhead: once the problem is reduced to r=0 or z^6=1 , the remaining narration adds cost without changing the solution.
+&
+Moves quickly to the two modulus cases:
+
+teal r=0 z=0 , and r=1 z=1/z , so z^6=1 .
+
+Thus there are
+teal 1+6=7 solutions.
+\\
+ 
+Answer: 7 & Answer: 7 \\
+ 
+tabular
+
+table*
+
+ 
+
+BRUMO 2025 Examples
+
+The BRUMO 2025 examples are the most informative for the 4B model because they separate three qualitatively distinct gains. First, BCR avoids catastrophic overthinking on long expectation problems. Second, it finds cleaner structural decompositions on graph-style reasoning tasks. Third, even when both models are correct, it substantially shortens epistemic elimination chains by organizing the candidate set earlier. Together, these examples show that the Qwen-based ``free lunch'' is not confined to one problem type: it appears in probability, graph structure, and logic-heavy deduction.
+
+Example 14 (Table~[ref] This is the strongest BRUMO failure-to-success transition in the Qwen section. The baseline starts from a natural but dangerous strategy: enumerate states or relative orderings of first Ace/King/Queen appearances and try to average over them explicitly. That approach is mathematically viable in principle, but in practice it expands into a very long case analysis that never converges to a finished expression. The token explosion is therefore combinatorial: explicit order enumeration grows much faster than the compact expectation identity needed for the final answer.
+
+BCR replaces this with a much more stable abstraction. By reasoning in terms of first-hit positions for nested target sets, it can write the stopping time expectation directly as an inclusion-exclusion expression over expected minima. Once this representation is adopted, the computation becomes short and linear. The example therefore illustrates a recurring 4B pattern: BCR does not merely ``stop early''; it steers the model toward representations whose solution length is intrinsically shorter.
+
+Example 15 (Table~[ref] The baseline understands that the condition ``the friend of an enemy is an enemy'' imposes strong global structure, but it never fully crystallizes what that structure is. Instead, it reasons with degree bounds and tests candidate values of n , eventually concluding too early that only 13 and 24 are feasible. Most of the wasted tokens come from local case testing before the global clique decomposition is made explicit.
+
+The BCR solution makes the hidden invariant explicit: the friendship graph must decompose into equal cliques. Once this is stated, the rest of the problem collapses to the divisor identity n=12+12k-1 . That single structural move converts a diffuse graph search into a finite arithmetic enumeration. This is one of the cleanest examples in the appendix where shorter reasoning is not only cheaper but also conceptually sharper.
+
+Example 16 (Table~[ref] The final BRUMO case is included to show that BCR also compresses successful long-form elimination. Both models solve the puzzle by propagating the sequence of public statements and shrinking the feasible set of tuples (A,B,C,D) . The baseline is correct, but it revisits several candidate sets multiple times and only late in the trace organizes them around Druno's final uniqueness requirement. The dominant token cost is repeated regeneration of the same small candidate family rather than new logical progress.
+
+BCR reaches the same answer by turning the remaining ambiguity into a compact table much earlier. After fixing C=2 , it enumerates the five viable (A,B,D) combinations and observes that only one gives a unique value of D . This is exactly the kind of reasoning that benefits from BCR's training setup: once the candidate space has been compressed to a small table, any additional prose is pure overhead, so the learned policy is to stop.
+
+table*[!ht]
+ 
+Qwen BRUMO 2025, Example 14: Card-Draw Stopping Time (66.3\% token reduction). The baseline stalls in state enumeration; BCR switches to a first-hit formulation and reaches the exact expectation.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (32,645 tokens) & BCR-Qwen3-4B (11,007 tokens) \\
+ 
+2lProblem: In a 54-card deck with two jokers, find the expected number of draws until at least one Ace, one King, and one Queen have appeared. \\
+2lGround Truth: 73739 \\
+ 
+redLarge state and permutation enumeration expands to 32K tokens and never yields a valid boxed answer.
+
+redThe token explosion is caused by explicit order/case enumeration over first-hit events, which grows much faster than the final inclusion-exclusion formula actually requires.
+&
+Introduces first-hit positions for progressively larger target sets and applies
+teal E[T]=3 E[M]-3E[L]+E[R] .
+
+With E[M]=555 , E[L]=559 , and E[R]=5513 ,
+teal E[T]= 73739 .
+\\
+ 
+Answer: None & Answer: 73739 \\
+ 
+tabular
+
+table*
+
+table*[!ht]
+ 
+Qwen BRUMO 2025, Example 15: Party Friend/Enemy Graph (45.9\% token reduction). BCR uses clique decomposition to enumerate all feasible values of n ; the baseline undercounts the solution set.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (26,146 tokens) & BCR-Qwen3-4B (14,139 tokens) \\
+ 
+2lProblem: Each guest has exactly 12 enemies and ``the friend of an enemy is an enemy.'' Find the sum of all possible values of n . \\
+2lGround Truth: 100 \\
+ 
+Builds graph-theoretic constraints but concludes only
+red n=13 and n=24 ,
+so the final answer is 37 .
+
+redMost extra tokens come from testing local degree bounds and candidate sizes one by one instead of identifying the global clique decomposition early.
+&
+Represents the friend graph as a disjoint union of k equal cliques of size s :
+ n=ks and n-s=12 , so n=12kk-1=12+12k-1 .
+
+tealSince k-1 must divide 12, the feasible values are 13,14,15,16,18,24 , whose sum is 100 .
+\\
+ 
+Answer: 37 & Answer: 100 \\
+ 
+tabular
+
+table*
+
+table*[!ht]
+ 
+Qwen BRUMO 2025, Example 16: Four-Bear Deduction Puzzle (59.6\% token reduction). Both models are correct; BCR organizes the surviving candidate tuples into a compact uniqueness table much earlier.
+
+0.95 !
+tabularp0.47 p0.47 
+ 
+Qwen3-4B-Thinking-2507 (28,830 tokens) & BCR-Qwen3-4B (11,648 tokens) \\
+ 
+2lProblem: Four bears hold positive integers summing to 17 and make sequential public statements; determine the product of their four numbers. \\
+2lGround Truth: 160 \\
+ 
+redEventually identifies the valid tuple (2,5,2,8) but spends many tokens repeatedly rebuilding the remaining candidate sets before testing Druno's uniqueness condition.
+
+redThe token-heavy step is repeated candidate-set reconstruction: the same small family of tuples is regenerated several times instead of being frozen into one compact table.
+&
+After deducing C=2 , quickly tabulates the surviving possibilities:
+
+teal (2,5,8) , (2,8,5) , (5,5,5) , (5,8,2) , (8,5,2) 
+
+and observes that only
+teal D=8 is unique, yielding (A,B,C,D)=(2,5,2,8) and product 160.
+\\
+ 
+Answer: 160 & Answer: 160 \\
+ 
+tabular
+
+table*
+
+Taken together, these nine Qwen-based examples show a section-wide pattern closely paralleling Appendix C.2: BCR-Qwen is not simply more terse, but systematically better at converting long exploratory reasoning into compact structural arguments. On the easiest cases, this appears as narration removal; on mid-difficulty cases, as earlier commitment to the correct abstraction; and on the hardest cases, as outright prevention of unfinished or degenerate traces.
+ 
+
+Summary of Qualitative Patterns
+
+We conclude the qualitative analysis with a systematic summary of the compression patterns observed across all seven examples, synthesizing the individual findings into broader insights about BCR's effect on reasoning behavior.
+
+Summary Table. Table~[ref] aggregates the token counts, compression ratios, and dominant mechanisms for each example.
+
+Key Insights. Several patterns emerge from the cross-example analysis:
+
+(1) Compression scales with baseline verbosity. The token reduction percentage correlates strongly with the baseline's absolute token count. Examples where the baseline is most verbose (Ex.\ 7: 32,677 tokens; Ex.\ 4: 10,122 tokens) show the largest reductions (91.8\% and 67.8\% respectively), while examples where the baseline is already relatively concise (Ex.\ 3: 3,530 tokens) show more modest reductions (37.2\%). This suggests that BCR is particularly effective at compressing the ``tail'' of verbose outputs---the extreme cases that dominate inference costs in practice.
+
+(2) All compression is syntactic, not semantic. Across all seven examples, the mathematical content of BCR's solutions is identical to or richer than the baseline's. BCR never skips a necessary factorization, omits a boundary check, or shortcuts a logical deduction. The compression operates exclusively at the syntactic level: eliminating self-doubt phrases, removing pedagogical narration, avoiding strategy exploration dead ends, and preventing degenerate generation. This syntactic-only compression explains why BCR can achieve large token reductions without sacrificing accuracy.
+
+(3) Efficiency can improve accuracy (Ex.\ 4). The complex analysis example demonstrates that verbosity is not merely wasteful---it can be actively harmful. When the baseline explores multiple approaches over 10,000 tokens, it creates more opportunities to confuse itself, ultimately arriving at an incorrect answer. BCR's concise, committed reasoning avoids this failure mode. While this is a single example, the quantitative results in the main paper (accuracy improvements on 3/5 benchmarks, with only modest decreases on the other two) confirm that this pattern generalizes beyond individual examples.
+
+(4) Different mathematical domains trigger different compression mechanisms. Algebra problems primarily trigger metacognitive loop elimination (the model stops second-guessing its factorizations). Geometry problems primarily trigger redundant verification removal (the model stops re-checking coordinate computations). Number theory problems trigger strategy exploration reduction (the model identifies the correct approach faster). This diversity suggests that BCR learns a general principle of token economy rather than domain-specific compression heuristics.
+
+(5) The average reduction (56.1\%) is consistent with quantitative results. The mean token reduction across our seven examples (56.1\%) falls squarely within the range reported in the main paper (39.8--62.6\% across five benchmarks). This consistency between qualitative examples and quantitative results reinforces our confidence that the examples are representative of BCR's general behavior, not cherry-picked outliers.
+
+Broader Implications. These qualitative findings support our central thesis: LLMs possess latent high-density reasoning modes that are normally suppressed by single-problem training. Standard RL training with accuracy-only rewards inadvertently incentivizes verbose deliberation---the model learns that ``showing work'' correlates with higher reward, even when much of that work is redundant. BCR's multi-problem training breaks this spurious correlation by creating a setting where redundant tokens impose a real cost (reduced budget for subsequent problems), naturally selecting for information-dense reasoning strategies.

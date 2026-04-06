@@ -78,7 +78,7 @@ export default function AdminLogin() {
 
   if (checking) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: '#0f0f0f' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: '#161816' }}>
         <CircularProgress sx={{ color: '#22c55e' }} />
       </Box>
     );
@@ -91,11 +91,11 @@ export default function AdminLogin() {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        bgcolor: '#0f0f0f',
+        bgcolor: '#161816',
         backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.1) 0%, transparent 50%)',
       }}
     >
-      <Card sx={{ width: '100%', maxWidth: 420, bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '16px' }}>
+      <Card sx={{ width: '100%', maxWidth: 420, bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '16px' }}>
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ mb: 3, textAlign: 'center' }}>
             <Box
@@ -142,7 +142,7 @@ export default function AdminLogin() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   color: '#e5e7eb',
-                  '& fieldset': { borderColor: '#333' },
+                  '& fieldset': { borderColor: '#3a4a3e' },
                   '&:hover fieldset': { borderColor: '#22c55e' },
                   '&.Mui-focused fieldset': { borderColor: '#22c55e' },
                 },
@@ -161,7 +161,7 @@ export default function AdminLogin() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   color: '#e5e7eb',
-                  '& fieldset': { borderColor: '#333' },
+                  '& fieldset': { borderColor: '#3a4a3e' },
                   '&:hover fieldset': { borderColor: '#22c55e' },
                   '&.Mui-focused fieldset': { borderColor: '#22c55e' },
                 },

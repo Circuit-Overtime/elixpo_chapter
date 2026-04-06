@@ -1,15 +1,14 @@
 /**
  * Server-side email helper for use in API routes.
- *
- * Usage:
- *   import { sendOrgInvite, sendBlogInvite, sendWelcome, sendNotification } from '../../../lib/email';
- *   await sendOrgInvite('user@example.com', { orgName: '...', ... });
  */
 
 import { orgInvite } from '../email/templates/org-invite';
 import { blogInvite } from '../email/templates/blog-invite';
 import { welcome } from '../email/templates/welcome';
 import { notification } from '../email/templates/notification';
+import { loginAlert } from '../email/templates/login-alert';
+import { accountDisabled, accountDeleted } from '../email/templates/account-action';
+import { weeklyDigest } from '../email/templates/weekly-digest';
 
 const FROM_EMAIL = 'noreply@elixpo.com';
 const FROM_NAME = 'LixBlogs';
@@ -47,4 +46,20 @@ export async function sendWelcome(to, data) {
 
 export async function sendNotification(to, data) {
   return send(to, notification(data));
+}
+
+export async function sendLoginAlert(to, data) {
+  return send(to, loginAlert(data));
+}
+
+export async function sendAccountDisabled(to, data) {
+  return send(to, accountDisabled(data));
+}
+
+export async function sendAccountDeleted(to, data) {
+  return send(to, accountDeleted(data));
+}
+
+export async function sendWeeklyDigest(to, data) {
+  return send(to, weeklyDigest(data));
 }

@@ -65,7 +65,7 @@ export default function LogsPage() {
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px' }}>
+          <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px' }}>
             <CardContent>
               <Typography variant="body2" sx={{ color: '#9ca3af', mb: 1 }}>Total Logs</Typography>
               <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff' }}>
@@ -75,7 +75,7 @@ export default function LogsPage() {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px' }}>
+          <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px' }}>
             <CardContent>
               <Typography variant="body2" sx={{ color: '#9ca3af', mb: 1 }}>Success Rate</Typography>
               <Typography variant="h4" sx={{ fontWeight: 700, color: '#22c55e' }}>
@@ -87,7 +87,7 @@ export default function LogsPage() {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px' }}>
+          <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px' }}>
             <CardContent>
               <Typography variant="body2" sx={{ color: '#9ca3af', mb: 1 }}>Showing</Typography>
               <Typography variant="h4" sx={{ fontWeight: 700, color: '#3b82f6' }}>
@@ -97,7 +97,7 @@ export default function LogsPage() {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px' }}>
+          <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px' }}>
             <CardContent>
               <Typography variant="body2" sx={{ color: '#9ca3af', mb: 1 }}>Failed Actions</Typography>
               <Typography variant="h4" sx={{ fontWeight: 700, color: '#ef4444' }}>
@@ -108,7 +108,7 @@ export default function LogsPage() {
         </Grid>
       </Grid>
 
-      <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
+      <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
         <CardContent>
           <TextField
             placeholder="Search by admin email, action, or resource... (press Enter)"
@@ -127,7 +127,7 @@ export default function LogsPage() {
             sx={{
               '& .MuiOutlinedInput-root': {
                 color: '#e5e7eb',
-                '& fieldset': { borderColor: '#333' },
+                '& fieldset': { borderColor: '#3a4a3e' },
                 '&:hover fieldset': { borderColor: '#555' },
                 '&.Mui-focused fieldset': { borderColor: '#22c55e' },
               },
@@ -143,7 +143,7 @@ export default function LogsPage() {
         </Alert>
       )}
 
-      <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden' }}>
+      <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden' }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
             <CircularProgress sx={{ color: '#22c55e' }} />
@@ -156,7 +156,7 @@ export default function LogsPage() {
           <Box sx={{ overflowX: 'auto' }}>
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: '#111', borderBottom: '1px solid #333' }}>
+                <TableRow sx={{ bgcolor: '#1a201c', borderBottom: '1px solid #333' }}>
                   <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Action</TableCell>
                   <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Admin</TableCell>
                   <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Resource</TableCell>

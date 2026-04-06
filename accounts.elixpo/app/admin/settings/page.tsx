@@ -41,7 +41,7 @@ interface NotificationSettings {
 const fieldSx = {
   '& .MuiOutlinedInput-root': {
     color: '#e5e7eb',
-    '& fieldset': { borderColor: '#333' },
+    '& fieldset': { borderColor: '#3a4a3e' },
     '&:hover fieldset': { borderColor: '#555' },
     '&.Mui-focused fieldset': { borderColor: '#22c55e' },
   },
@@ -175,7 +175,7 @@ export default function SettingsPage() {
       )}
 
       {/* Rate Limiting */}
-      <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
+      <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
         <CardContent>
           <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff', mb: 2 }}>
             Rate Limiting
@@ -208,7 +208,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* JWT & Token Settings */}
-      <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
+      <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
         <CardContent>
           <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff', mb: 2 }}>
             JWT & Token Configuration
@@ -241,7 +241,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* Email Verification Settings */}
-      <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
+      <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
         <CardContent>
           <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff', mb: 2 }}>
             Email Verification
@@ -274,7 +274,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* Security Settings */}
-      <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
+      <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
         <CardContent>
           <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff', mb: 2 }}>
             Security
@@ -294,7 +294,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* Feature Toggles */}
-      <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
+      <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
         <CardContent>
           <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff', mb: 2 }}>
             Feature Toggles
@@ -317,7 +317,7 @@ export default function SettingsPage() {
                 </Box>
               }
             />
-            <Divider sx={{ borderColor: '#333' }} />
+            <Divider sx={{ borderColor: '#3a4a3e' }} />
             <FormControlLabel
               control={
                 <Switch
@@ -335,7 +335,7 @@ export default function SettingsPage() {
                 </Box>
               }
             />
-            <Divider sx={{ borderColor: '#333' }} />
+            <Divider sx={{ borderColor: '#3a4a3e' }} />
             <FormControlLabel
               control={
                 <Switch
@@ -376,7 +376,7 @@ export default function SettingsPage() {
         </Button>
         <Button
           variant="outlined"
-          sx={{ borderColor: '#333', color: '#9ca3af', '&:hover': { borderColor: '#22c55e', color: '#22c55e' } }}
+          sx={{ borderColor: '#3a4a3e', color: '#9ca3af', '&:hover': { borderColor: '#22c55e', color: '#22c55e' } }}
         >
           Cancel
         </Button>
@@ -399,7 +399,7 @@ export default function SettingsPage() {
         </Alert>
       )}
 
-      <Card sx={{ bgcolor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
+      <Card sx={{ bgcolor: '#1e2420', border: '1px solid #333', borderRadius: '12px', mb: 3 }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
             <Notifications sx={{ color: '#22c55e' }} />
@@ -428,7 +428,7 @@ export default function SettingsPage() {
                 </Box>
               }
             />
-            <Divider sx={{ borderColor: '#333' }} />
+            <Divider sx={{ borderColor: '#3a4a3e' }} />
             <FormControlLabel
               control={
                 <Switch
@@ -446,7 +446,7 @@ export default function SettingsPage() {
                 </Box>
               }
             />
-            <Divider sx={{ borderColor: '#333' }} />
+            <Divider sx={{ borderColor: '#3a4a3e' }} />
             <FormControlLabel
               control={
                 <Switch
@@ -464,7 +464,7 @@ export default function SettingsPage() {
                 </Box>
               }
             />
-            <Divider sx={{ borderColor: '#333' }} />
+            <Divider sx={{ borderColor: '#3a4a3e' }} />
             <FormControlLabel
               control={
                 <Switch
@@ -482,7 +482,7 @@ export default function SettingsPage() {
                 </Box>
               }
             />
-            <Divider sx={{ borderColor: '#333' }} />
+            <Divider sx={{ borderColor: '#3a4a3e' }} />
             <FormControlLabel
               control={
                 <Switch
@@ -515,7 +515,7 @@ export default function SettingsPage() {
                         textTransform: 'capitalize',
                         ...(notifSettings.digest_frequency === freq
                           ? { bgcolor: '#22c55e', color: '#000', '&:hover': { bgcolor: '#16a34a' } }
-                          : { borderColor: '#333', color: '#9ca3af', '&:hover': { borderColor: '#22c55e' } }),
+                          : { borderColor: '#3a4a3e', color: '#9ca3af', '&:hover': { borderColor: '#22c55e' } }),
                       }}
                     >
                       {freq}

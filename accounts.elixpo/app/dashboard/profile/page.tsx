@@ -23,7 +23,13 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import BlockIcon from '@mui/icons-material/Block';
+import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { generatePixelAvatar } from '@/lib/pixel-avatar';
 
 interface UserProfile {
   email: string;
@@ -33,6 +39,21 @@ interface UserProfile {
   avatar?: string | null;
   emailVerified?: boolean;
   displayName?: string | null;
+  bio?: string | null;
+  country?: string | null;
+  city?: string | null;
+  location?: string | null;
+  locale?: string | null;
+  timezone?: string | null;
+}
+
+interface ConnectedService {
+  client_id: string;
+  name: string;
+  description?: string;
+  homepage_url?: string;
+  first_authorized: string;
+  last_authorized: string;
 }
 
 interface NotificationPreferences {
@@ -44,10 +65,9 @@ interface NotificationPreferences {
 
 const cardSx = {
   bgcolor: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: '16px',
   p: 3,
-  mb: 3,
 };
 
 const textFieldSx = {
@@ -87,6 +107,32 @@ const dividerSx = {
   my: 2.5,
 };
 
+function ServiceIconSmall({ svc }: { svc: ConnectedService }) {
+  const [failed, setFailed] = useState(false);
+  const hostname = svc.homepage_url ? (() => { try { return new URL(svc.homepage_url).hostname; } catch { return ''; } })() : '';
+
+  if (svc.homepage_url && hostname && !failed) {
+    return (
+      <Box
+        component="img"
+        src={`https://www.google.com/s2/favicons?domain=${hostname}&sz=32`}
+        alt=""
+        sx={{ width: 24, height: 24, borderRadius: '4px', flexShrink: 0 }}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <Box
+      component="img"
+      src={generatePixelAvatar(svc.client_id + svc.name, 24)}
+      alt=""
+      sx={{ width: 24, height: 24, borderRadius: '4px', flexShrink: 0 }}
+    />
+  );
+}
+
 const ProfilePage = () => {
   const router = useRouter();
 
@@ -96,6 +142,10 @@ const ProfilePage = () => {
   const [profileError, setProfileError] = useState('');
 
   // Update profile state
+  const [bio, setBio] = useState('');
+  const [country, setCountry] = useState('');
+  const [city, setCity] = useState('');
+  const [location, setLocation] = useState('');
   const [locale, setLocale] = useState('en');
   const [timezone, setTimezone] = useState('UTC');
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -125,6 +175,11 @@ const ProfilePage = () => {
   const [nameLoading, setNameLoading] = useState(false);
   const [nameMsg, setNameMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
+  // Connected services state
+  const [connectedServices, setConnectedServices] = useState<ConnectedService[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
+
   // Email verification state
   const [verifyStep, setVerifyStep] = useState<'idle' | 'sent' | 'verifying'>('idle');
   const [verifyCode, setVerifyCode] = useState('');
@@ -142,6 +197,7 @@ const ProfilePage = () => {
   useEffect(() => {
     fetchProfile();
     fetchNotifPrefs();
+    fetchConnectedServices();
   }, []);
 
   const fetchProfile = async () => {
@@ -151,11 +207,32 @@ const ProfilePage = () => {
       if (!res.ok) throw new Error('Failed to fetch profile');
       const data: UserProfile = await res.json();
       setProfile(data);
+      if (data.bio) setBio(data.bio);
+      if (data.country) setCountry(data.country);
+      if (data.city) setCity(data.city);
+      if (data.location) setLocation(data.location);
+      if (data.locale) setLocale(data.locale);
+      if (data.timezone) setTimezone(data.timezone);
     } catch (err) {
       setProfileError(err instanceof Error ? err.message : 'Failed to load profile');
     } finally {
       setProfileLoading(false);
     }
+  };
+
+  const fetchConnectedServices = async () => {
+    try {
+      setServicesLoading(true);
+      const res = await fetch('/api/auth/connected-services', { credentials: 'include' });
+      if (res.ok) {
+        const data: any = await res.json();
+        const svcs = data.services || [];
+        setConnectedServices(svcs);
+        // Auto-expand top 3
+        setExpandedServices(new Set(svcs.slice(0, 3).map((s: any) => s.client_id)));
+      }
+    } catch { /* silent */ }
+    finally { setServicesLoading(false); }
   };
 
   const fetchNotifPrefs = async () => {
@@ -181,7 +258,7 @@ const ProfilePage = () => {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ locale, timezone }),
+        body: JSON.stringify({ locale, timezone, bio, country, city, location }),
       });
       if (!res.ok) {
         const data: any = await res.json();
@@ -332,19 +409,21 @@ const ProfilePage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', background: '#0f0f0f', p: 3 }}>
-      <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
-        {/* Page Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#f5f5f4', mb: 1 }}>
-            Profile
-          </Typography>
-          <Typography sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
-            Manage your account information and preferences
-          </Typography>
-        </Box>
+    <Box>
+      {/* Page Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: '#f5f5f4', mb: 1 }}>
+          Profile
+        </Typography>
+        <Typography sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+          Manage your account information and preferences
+        </Typography>
+      </Box>
 
-        {/* 1. Profile Info Card */}
+      {/* Bento Grid */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2.5 }}>
+
+        {/* 1. Profile Info Card — left column */}
         <Box sx={cardSx}>
           <Typography variant="h6" sx={sectionTitleSx}>
             <PersonIcon sx={{ color: '#a3e635', fontSize: '1.2rem' }} />
@@ -378,7 +457,7 @@ const ProfilePage = () => {
                     sx={{ width: 48, height: 48, borderRadius: '50%', border: '2px solid rgba(163,230,53,0.3)' }}
                   />
                 ) : (
-                  <Box sx={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #a3e635 0%, #65a30d 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', fontWeight: 700, color: '#0f0f0f' }}>
+                  <Box sx={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #a3e635 0%, #65a30d 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', fontWeight: 700, color: '#161816' }}>
                     {(profile.displayName || profile.email)?.charAt(0).toUpperCase()}
                   </Box>
                 )}
@@ -591,13 +670,127 @@ const ProfilePage = () => {
           ) : null}
         </Box>
 
+        {/* Connected Services — right column */}
+        <Box sx={{ ...cardSx, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexShrink: 0 }}>
+            <Box>
+              <Typography variant="h6" sx={sectionTitleSx}>
+                <DevicesOtherIcon sx={{ color: '#a3e635', fontSize: '1.2rem' }} />
+                Connected Services
+              </Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.78rem', mt: 0.25 }}>
+                Apps you&apos;ve signed in to with Elixpo
+              </Typography>
+            </Box>
+            {connectedServices.length > 0 && (
+              <Button
+                component={Link}
+                href="/dashboard/services"
+                size="small"
+                endIcon={<ArrowForwardIcon sx={{ fontSize: '0.8rem !important' }} />}
+                sx={{ color: '#a3e635', textTransform: 'none', fontSize: '0.78rem', flexShrink: 0, '&:hover': { bgcolor: 'rgba(163,230,53,0.08)' } }}
+              >
+                View all
+              </Button>
+            )}
+          </Box>
+
+          {servicesLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress size={20} sx={{ color: '#a3e635' }} />
+            </Box>
+          ) : connectedServices.length === 0 ? (
+            <Box sx={{ py: 4, textAlign: 'center' }}>
+              <DevicesOtherIcon sx={{ fontSize: '2rem', color: 'rgba(255,255,255,0.1)', mb: 1 }} />
+              <Typography sx={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem' }}>
+                No connected services yet
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, overflowY: 'auto', flex: 1, '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 2 } }}>
+              {connectedServices.slice(0, 3).map((svc) => {
+                const isExpanded = expandedServices.has(svc.client_id);
+                return (
+                  <Box
+                    key={svc.client_id}
+                    sx={{
+                      borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.025)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      overflow: 'hidden',
+                      transition: 'border-color 0.2s',
+                      '&:hover': { borderColor: 'rgba(163,230,53,0.15)' },
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Box
+                      onClick={() => setExpandedServices((prev) => { const next = new Set(prev); if (next.has(svc.client_id)) next.delete(svc.client_id); else next.add(svc.client_id); return next; })}
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1.25, p: 1.25, cursor: 'pointer', userSelect: 'none' }}
+                    >
+                      <ServiceIconSmall svc={svc} />
+                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600, fontSize: '0.82rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {svc.name}
+                        </Typography>
+                        <Typography sx={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.7rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {svc.description || (svc.homepage_url ? (() => { try { return new URL(svc.homepage_url).hostname; } catch { return ''; } })() : 'Connected service')}
+                        </Typography>
+                      </Box>
+                      <ExpandMoreIcon
+                        sx={{
+                          fontSize: '1rem', color: 'rgba(255,255,255,0.15)',
+                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)',
+                          transition: 'transform 0.2s', flexShrink: 0,
+                        }}
+                      />
+                    </Box>
+
+                    {isExpanded && (
+                      <Box sx={{ px: 1.25, pb: 1.25, pt: 0.5, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                        {svc.description && (
+                          <Typography sx={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem', lineHeight: 1.5, mb: 0.75 }}>
+                            {svc.description}
+                          </Typography>
+                        )}
+                        {svc.homepage_url && (
+                          <Typography
+                            component="a"
+                            href={svc.homepage_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ color: '#a3e635', fontSize: '0.7rem', fontFamily: 'monospace', textDecoration: 'none', display: 'block', mb: 0.5, opacity: 0.7, '&:hover': { opacity: 1 } }}
+                          >
+                            {svc.homepage_url}
+                          </Typography>
+                        )}
+                        <Typography sx={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.68rem' }}>
+                          Connected {new Date(svc.first_authorized).toLocaleDateString()} · Last used {new Date(svc.last_authorized).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                );
+              })}
+              {connectedServices.length > 3 && (
+                <Button
+                  component={Link}
+                  href="/dashboard/services"
+                  size="small"
+                  sx={{ color: 'rgba(255,255,255,0.3)', textTransform: 'none', fontSize: '0.75rem', mt: 0.25, flexShrink: 0, '&:hover': { color: '#a3e635' } }}
+                >
+                  +{connectedServices.length - 3} more — view all services
+                </Button>
+              )}
+            </Box>
+          )}
+        </Box>
+
         {/* 2. Update Profile Card */}
         <Box sx={cardSx}>
           <Typography variant="h6" sx={sectionTitleSx}>
             <EditIcon sx={{ color: '#a3e635', fontSize: '1.2rem' }} />
             Update Profile
           </Typography>
-          <Typography sx={sectionSubtitleSx}>Set your locale and timezone preferences</Typography>
+          <Typography sx={sectionSubtitleSx}>Personal info and preferences</Typography>
 
           {updateSuccess && (
             <Alert
@@ -619,30 +812,69 @@ const ProfilePage = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               fullWidth
-              label="Locale"
-              value={locale}
-              onChange={(e) => setLocale(e.target.value)}
-              placeholder="en"
-              helperText="Language/locale code (e.g. en, fr, de)"
-              sx={{
-                ...textFieldSx,
-                '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' },
-              }}
+              label="Bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell us about yourself"
+              multiline
+              rows={2}
+              inputProps={{ maxLength: 256 }}
+              helperText={`${bio.length}/256`}
+              sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.3)', textAlign: 'right' } }}
               disabled={updateLoading}
             />
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="India"
+                sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' } }}
+                disabled={updateLoading}
+              />
+              <TextField
+                fullWidth
+                label="City"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Bangalore"
+                sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' } }}
+                disabled={updateLoading}
+              />
+            </Box>
             <TextField
               fullWidth
-              label="Timezone"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              placeholder="UTC"
-              helperText="IANA timezone (e.g. UTC, America/New_York, Europe/London)"
-              sx={{
-                ...textFieldSx,
-                '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' },
-              }}
+              label="Location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. San Francisco, CA"
+              helperText="Free-form location text"
+              sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' } }}
               disabled={updateLoading}
             />
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Locale"
+                value={locale}
+                onChange={(e) => setLocale(e.target.value)}
+                placeholder="en"
+                helperText="e.g. en, fr, de"
+                sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' } }}
+                disabled={updateLoading}
+              />
+              <TextField
+                fullWidth
+                label="Timezone"
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                placeholder="UTC"
+                helperText="e.g. Asia/Kolkata, America/New_York"
+                sx={{ ...textFieldSx, '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.45)' } }}
+                disabled={updateLoading}
+              />
+            </Box>
           </Box>
 
           <Box sx={{ mt: 3 }}>
@@ -799,12 +1031,12 @@ const ProfilePage = () => {
           )}
         </Box>
 
-        {/* 4. Danger Zone Card */}
+        {/* 4. Danger Zone — full width */}
         <Box
           sx={{
             ...cardSx,
+            gridColumn: { lg: '1 / -1' },
             border: '1px solid rgba(239,68,68,0.35)',
-            mb: 0,
           }}
         >
           <Typography variant="h6" sx={{ ...sectionTitleSx, color: '#f87171' }}>
@@ -824,46 +1056,72 @@ const ProfilePage = () => {
             </Alert>
           )}
 
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 2,
-              p: 2,
-              borderRadius: '10px',
-              background: 'rgba(239,68,68,0.04)',
-              border: '1px solid rgba(239,68,68,0.15)',
-            }}
-          >
-            <Box>
-              <Typography sx={{ color: '#f5f5f4', fontWeight: 600, fontSize: '0.95rem' }}>
-                Delete Account
-              </Typography>
-              <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.83rem', mt: 0.2 }}>
-                Permanently remove your account and all associated data
-              </Typography>
-            </Box>
-            <Button
-              variant="outlined"
-              onClick={() => setDeleteDialogOpen(true)}
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+            {/* Disable Account */}
+            <Box
               sx={{
-                color: '#ef4444',
-                borderColor: 'rgba(239,68,68,0.5)',
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                py: 0.9,
-                px: 2.5,
-                '&:hover': {
-                  borderColor: '#ef4444',
-                  backgroundColor: 'rgba(239,68,68,0.08)',
-                },
+                flex: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                flexWrap: 'wrap', gap: 2, p: 2,
+                borderRadius: '10px',
+                background: 'rgba(245,158,11,0.04)',
+                border: '1px solid rgba(245,158,11,0.15)',
               }}
             >
-              Delete Account
-            </Button>
+              <Box>
+                <Typography sx={{ color: '#f5f5f4', fontWeight: 600, fontSize: '0.95rem' }}>
+                  Disable Account
+                </Typography>
+                <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.83rem', mt: 0.2 }}>
+                  Temporarily deactivate your account
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                startIcon={<BlockIcon />}
+                sx={{
+                  color: '#f59e0b',
+                  borderColor: 'rgba(245,158,11,0.4)',
+                  fontWeight: 600, textTransform: 'none', fontSize: '0.85rem',
+                  '&:hover': { borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)' },
+                }}
+              >
+                Disable
+              </Button>
+            </Box>
+
+            {/* Delete Account */}
+            <Box
+              sx={{
+                flex: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                flexWrap: 'wrap', gap: 2, p: 2,
+                borderRadius: '10px',
+                background: 'rgba(239,68,68,0.04)',
+                border: '1px solid rgba(239,68,68,0.15)',
+              }}
+            >
+              <Box>
+                <Typography sx={{ color: '#f5f5f4', fontWeight: 600, fontSize: '0.95rem' }}>
+                  Delete Account
+                </Typography>
+                <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.83rem', mt: 0.2 }}>
+                  Permanently remove your account and data
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                onClick={() => setDeleteDialogOpen(true)}
+                sx={{
+                  color: '#ef4444',
+                  borderColor: 'rgba(239,68,68,0.4)',
+                  fontWeight: 600, textTransform: 'none', fontSize: '0.85rem',
+                  '&:hover': { borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)' },
+                }}
+              >
+                Delete
+              </Button>
+            </Box>
           </Box>
         </Box>
       </Box>

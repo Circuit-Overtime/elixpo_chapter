@@ -159,6 +159,12 @@ export async function GET(request: NextRequest) {
         provider: payload.provider || (identity as any)?.provider || 'email',
         avatar: (identity as any)?.provider_profile_url || null,
         emailVerified: !!(dbUser as any).email_verified,
+        bio: (dbUser as any).bio || null,
+        country: (dbUser as any).country || null,
+        city: (dbUser as any).city || null,
+        location: (dbUser as any).freeform_location || null,
+        locale: (dbUser as any).locale || null,
+        timezone: (dbUser as any).timezone || null,
         expiresAt: new Date(payload.exp * 1000),
       });
     } catch (dbError) {
@@ -203,7 +209,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body: any = await request.json();
-    const { locale, timezone, display_name } = body as { locale?: string; timezone?: string; display_name?: string };
+    const { locale, timezone, display_name, bio, country, city, location } = body as {
+      locale?: string; timezone?: string; display_name?: string;
+      bio?: string; country?: string; city?: string; location?: string;
+    };
 
     const setClauses: string[] = ['updated_at = CURRENT_TIMESTAMP'];
     const values: (string | number | null)[] = [];
@@ -215,6 +224,22 @@ export async function PATCH(request: NextRequest) {
     if (timezone !== undefined) {
       setClauses.push('timezone = ?');
       values.push(timezone);
+    }
+    if (bio !== undefined) {
+      setClauses.push('bio = ?');
+      values.push(bio.slice(0, 256));
+    }
+    if (country !== undefined) {
+      setClauses.push('country = ?');
+      values.push(country.slice(0, 64));
+    }
+    if (city !== undefined) {
+      setClauses.push('city = ?');
+      values.push(city.slice(0, 64));
+    }
+    if (location !== undefined) {
+      setClauses.push('freeform_location = ?');
+      values.push(location.slice(0, 128));
     }
 
     const db = await getDatabase();
@@ -280,6 +305,10 @@ export async function PATCH(request: NextRequest) {
         displayName: (dbUser as any).display_name || null,
         locale: (dbUser as any).locale ?? null,
         timezone: (dbUser as any).timezone ?? null,
+        bio: (dbUser as any).bio ?? null,
+        country: (dbUser as any).country ?? null,
+        city: (dbUser as any).city ?? null,
+        location: (dbUser as any).freeform_location ?? null,
         isAdmin: !!(dbUser as any).is_admin,
         provider: payload.provider,
       });

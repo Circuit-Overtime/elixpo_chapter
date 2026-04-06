@@ -1,6 +1,5 @@
 export const runtime = 'edge';
-// Non-streaming AI endpoint via lixsearch session chat completions
-// Fallback for cases where streaming isn't needed
+// Non-streaming AI endpoint via lixsearch
 
 import { enforceAILimits } from '../../../../lib/aiRateLimit';
 
@@ -11,19 +10,25 @@ export async function POST(request) {
   if (error) return error;
 
   const body = await request.json();
-  const { sessionId, messages } = body;
+  const { sessionId, query } = body;
 
-  if (!sessionId || !messages?.length) {
-    return new Response(JSON.stringify({ error: 'Missing sessionId or messages' }), { status: 400 });
+  if (!sessionId || !query) {
+    return new Response(JSON.stringify({ error: 'Missing sessionId or query' }), { status: 400 });
   }
 
+  const apiKey = process.env.ELIXPO_SEARCH_API_KEY || '';
+
   try {
-    const aiRes = await fetch(`${LIXSEARCH_BASE}/api/session/${sessionId}/chat/completions`, {
+    const aiRes = await fetch(`${LIXSEARCH_BASE}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }),
+      },
       body: JSON.stringify({
-        messages,
+        query,
         stream: false,
+        session_id: sessionId,
       }),
     });
 

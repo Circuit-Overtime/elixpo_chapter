@@ -37,20 +37,25 @@ export const BlockEquation = createReactBlockSpec(
 
       if (editing) {
         return (
-          <div className="border border-[var(--border-default)] rounded-xl bg-[var(--bg-surface)] p-4 my-2">
-            <p className="text-[11px] text-[var(--text-muted)] mb-2 font-medium">LaTeX Equation</p>
+          <div className="mermaid-block mermaid-block--editing">
+            <div className="mermaid-block-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>
+              </svg>
+              <span>LaTeX Equation</span>
+            </div>
             <textarea
               ref={inputRef}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); save(); } }}
               placeholder="E = mc^2"
-              rows={3}
-              className="w-full bg-[var(--bg-app)] border border-[var(--border-default)] rounded-lg p-3 text-[13px] text-[var(--text-primary)] font-mono resize-none outline-none focus:border-[var(--border-hover)] transition-colors placeholder-[#6b7a8d]"
+              rows={6}
+              className="mermaid-block-textarea"
             />
-            <div className="flex justify-end gap-2 mt-2">
-              <button onClick={() => setEditing(false)} className="px-3 py-1 text-[12px] text-[#888] hover:text-[var(--text-primary)] transition-colors">Cancel</button>
-              <button onClick={save} className="px-3 py-1 text-[12px] bg-[#9b7bf7] text-[var(--text-primary)] rounded-md font-medium hover:bg-[#b69aff] transition-colors">Done</button>
+            <div className="mermaid-block-actions">
+              <button onClick={() => setEditing(false)} className="mermaid-btn-cancel">Cancel</button>
+              <button onClick={save} className="mermaid-btn-save" disabled={!value.trim()}>Done</button>
             </div>
           </div>
         );
