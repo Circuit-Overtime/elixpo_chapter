@@ -8,12 +8,17 @@ import styles from './Editor.module.css';
 const API_BASE = '/api';
 
 const TOOLS = [
-  { id: 'pan', label: 'Pan' },
-  { id: 'select', label: 'Select' },
-  { id: 'inpaint', label: 'Inpaint' },
-  { id: 'eraser', label: 'Eraser' },
-  { id: 'crop', label: 'Crop' },
-  { id: 'layers', label: 'Layers' },
+  { id: 'pan', label: 'Pan', hint: 'Drag to move the image around the canvas' },
+  { id: 'select', label: 'Select', hint: 'Click to select the image. Drag handles to resize. Press Delete to remove.' },
+  { id: 'inpaint', label: 'Inpaint', hint: 'Paint a mask over areas you want the AI to regenerate based on your prompt' },
+  { id: 'eraser', label: 'Eraser', hint: 'Erase parts of the inpaint mask' },
+];
+
+const CANVAS_MODES = [
+  { id: 'inpaint-mode', label: 'Inpaint', hint: 'Paint a mask, then AI regenerates only the masked area', icon: <><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></> },
+  { id: 'outpaint-mode', label: 'Outpaint', hint: 'Extends the image beyond its borders — AI fills the empty space', icon: <><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></> },
+  { id: 'img2img', label: 'Img2Img', hint: 'Transforms the whole image based on your prompt — no mask needed', icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></> },
+  { id: 'sketch2img', label: 'Sketch', hint: 'Draw a rough sketch, then AI turns it into a full image', icon: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></> },
 ];
 
 const TOOL_ICONS = {
@@ -21,15 +26,7 @@ const TOOL_ICONS = {
   select: <><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /><path d="M13 13l6 6" /></>,
   inpaint: <><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></>,
   eraser: <><path d="M20 20H7L3 16l9-9 8 8-4 4z" /><path d="M6.5 13.5l5-5" /></>,
-  crop: <><path d="M6 2v4H2v2h4v12h2V8h12V6H8V2H6z" /><path d="M18 22v-4h4v-2h-4V4h-2v12H4v2h12v4h2z" /></>,
-  layers: <><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></>,
 };
-
-const CANVAS_MODES = [
-  { id: 'inpaint', label: 'Inpaint / Outpaint' },
-  { id: 'img2img', label: 'Image to Image' },
-  { id: 'sketch2img', label: 'Sketch to Image' },
-];
 
 const EDIT_PRESETS = [
   { id: 'remove-bg', label: 'Remove Background', icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 9h6v6H9z" /></>, prompt: null, comingSoon: true },
@@ -70,6 +67,13 @@ export default function EditorPage({ params }) {
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
   const panOffsetStart = useRef({ x: 0, y: 0 });
+
+  // Resize state
+  const [imageSize, setImageSize] = useState({ w: 0, h: 0 });
+  const isResizing = useRef(false);
+  const resizeCorner = useRef(null);
+  const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
+  const [helpTooltip, setHelpTooltip] = useState(null);
 
   // Canvas refs
   const maskCanvasRef = useRef(null);
@@ -147,10 +151,45 @@ export default function EditorPage({ params }) {
     mask.height = img.naturalHeight || img.height;
     const ctx = mask.getContext('2d');
     ctx.clearRect(0, 0, mask.width, mask.height);
-  }, []);
+    // Set initial display size
+    if (imageSize.w === 0) {
+      setImageSize({ w: img.clientWidth, h: img.clientHeight });
+    }
+  }, [imageSize.w]);
 
-  // ─── Pan handlers ───
+  // ─── Resize handlers ───
+  const startResize = (corner, e) => {
+    e.stopPropagation();
+    isResizing.current = true;
+    resizeCorner.current = corner;
+    resizeStart.current = { x: e.clientX, y: e.clientY, w: imageSize.w, h: imageSize.h };
+    window.addEventListener('pointermove', onResizeMove);
+    window.addEventListener('pointerup', onResizeEnd);
+  };
+
+  const onResizeMove = (e) => {
+    if (!isResizing.current) return;
+    const dx = e.clientX - resizeStart.current.x;
+    const dy = e.clientY - resizeStart.current.y;
+    const aspect = resizeStart.current.w / resizeStart.current.h;
+    let nw = resizeStart.current.w;
+    let nh = resizeStart.current.h;
+    const c = resizeCorner.current;
+    if (c === 'BR' || c === 'TR') nw = Math.max(100, resizeStart.current.w + dx);
+    if (c === 'BL' || c === 'TL') nw = Math.max(100, resizeStart.current.w - dx);
+    nh = nw / aspect;
+    setImageSize({ w: Math.round(nw), h: Math.round(nh) });
+  };
+
+  const onResizeEnd = () => {
+    isResizing.current = false;
+    window.removeEventListener('pointermove', onResizeMove);
+    window.removeEventListener('pointerup', onResizeEnd);
+  };
+
+  // ─── Pan / draw / select handlers ───
   const handleCanvasPointerDown = (e) => {
+    if (isResizing.current) return;
     if (activeTool === 'pan') {
       isPanning.current = true;
       panStart.current = { x: e.clientX, y: e.clientY };
@@ -165,6 +204,7 @@ export default function EditorPage({ params }) {
   };
 
   const handleCanvasPointerMove = (e) => {
+    if (isResizing.current) return;
     if (isPanning.current) {
       const dx = e.clientX - panStart.current.x;
       const dy = e.clientY - panStart.current.y;
@@ -310,16 +350,46 @@ export default function EditorPage({ params }) {
         {/* Left toolbar */}
         <div className={styles.toolbar}>
           {TOOLS.map((t) => (
-            <button
-              key={t.id}
-              className={`${styles.toolBtn} ${activeTool === t.id ? styles.toolActive : ''}`}
-              onClick={() => { setActiveTool(t.id); if (t.id !== 'select') setSelected(false); }}
-              title={t.label}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                {TOOL_ICONS[t.id]}
-              </svg>
-            </button>
+            <div key={t.id} className={styles.toolWrap}>
+              <button
+                className={`${styles.toolBtn} ${activeTool === t.id ? styles.toolActive : ''}`}
+                onClick={() => { setActiveTool(t.id); if (t.id !== 'select') setSelected(false); }}
+                title={t.label}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  {TOOL_ICONS[t.id]}
+                </svg>
+              </button>
+              {activeTool === t.id && (
+                <button className={styles.helpBtn} onClick={() => setHelpTooltip(helpTooltip === t.id ? null : t.id)} title="What does this do?">?</button>
+              )}
+              {helpTooltip === t.id && (
+                <div className={styles.helpTooltip}>{t.hint}</div>
+              )}
+            </div>
+          ))}
+
+          <div className={styles.toolDivider} />
+
+          {/* Canvas modes */}
+          {CANVAS_MODES.map((m) => (
+            <div key={m.id} className={styles.toolWrap}>
+              <button
+                className={`${styles.toolBtn} ${canvasMode === m.id ? styles.toolActive : ''}`}
+                onClick={() => setCanvasMode(m.id)}
+                title={m.label}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  {m.icon}
+                </svg>
+              </button>
+              {canvasMode === m.id && (
+                <button className={styles.helpBtn} onClick={() => setHelpTooltip(helpTooltip === m.id ? null : m.id)} title="What does this do?">?</button>
+              )}
+              {helpTooltip === m.id && (
+                <div className={styles.helpTooltip}>{m.hint}</div>
+              )}
+            </div>
           ))}
 
           <div className={styles.toolDivider} />
@@ -367,7 +437,10 @@ export default function EditorPage({ params }) {
                   transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom / 100})`,
                 }}
               >
-                <div className={`${styles.imageFrame} ${selected ? styles.imageSelected : ''}`}>
+                <div
+                  className={`${styles.imageFrame} ${selected ? styles.imageSelected : ''}`}
+                  style={imageSize.w > 0 ? { width: imageSize.w, height: imageSize.h } : undefined}
+                >
                   <img
                     ref={imgRef}
                     src={imageSrc}
@@ -375,6 +448,7 @@ export default function EditorPage({ params }) {
                     className={styles.canvasImage}
                     onLoad={initMaskCanvas}
                     draggable={false}
+                    style={imageSize.w > 0 ? { width: '100%', height: '100%' } : undefined}
                   />
                   <canvas
                     ref={maskCanvasRef}
@@ -382,10 +456,11 @@ export default function EditorPage({ params }) {
                   />
                   {selected && (
                     <>
-                      <div className={`${styles.handle} ${styles.handleTL}`} />
-                      <div className={`${styles.handle} ${styles.handleTR}`} />
-                      <div className={`${styles.handle} ${styles.handleBL}`} />
-                      <div className={`${styles.handle} ${styles.handleBR}`} />
+                      <div className={`${styles.handle} ${styles.handleTL}`} onPointerDown={(e) => startResize('TL', e)} />
+                      <div className={`${styles.handle} ${styles.handleTR}`} onPointerDown={(e) => startResize('TR', e)} />
+                      <div className={`${styles.handle} ${styles.handleBL}`} onPointerDown={(e) => startResize('BL', e)} />
+                      <div className={`${styles.handle} ${styles.handleBR}`} onPointerDown={(e) => startResize('BR', e)} />
+                      <div className={styles.sizeLabel}>{imageSize.w} x {imageSize.h}</div>
                     </>
                   )}
                 </div>
@@ -509,14 +584,15 @@ export default function EditorPage({ params }) {
               {EDIT_PRESETS.map((p) => (
                 <button
                   key={p.id}
-                  className={styles.presetBtn}
-                  onClick={() => handlePresetClick(p)}
-                  disabled={generating || !imageSrc}
+                  className={`${styles.presetBtn} ${p.comingSoon ? styles.presetComingSoon : ''}`}
+                  onClick={() => !p.comingSoon && handlePresetClick(p)}
+                  disabled={generating || !imageSrc || p.comingSoon}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                     {p.icon}
                   </svg>
                   {p.label}
+                  {p.comingSoon && <span className={styles.comingSoonBadge}>Soon</span>}
                 </button>
               ))}
             </div>

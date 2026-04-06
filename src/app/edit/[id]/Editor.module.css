@@ -609,6 +609,27 @@
   cursor: not-allowed;
 }
 
+.presetComingSoon {
+  opacity: 0.5;
+}
+
+.comingSoonBadge {
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.toolComingSoon {
+  opacity: 0.35;
+  position: relative;
+}
+
 .error {
   padding: var(--spacing-sm) var(--spacing-md);
   color: #ef4444;
