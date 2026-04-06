@@ -1,5 +1,5 @@
 export const runtime = 'edge';
-// Non-streaming AI endpoint via lixsearch search API
+// Non-streaming AI endpoint via lixsearch
 
 import { enforceAILimits } from '../../../../lib/aiRateLimit';
 
@@ -16,10 +16,21 @@ export async function POST(request) {
     return new Response(JSON.stringify({ error: 'Missing sessionId or query' }), { status: 400 });
   }
 
-  try {
-    const url = `${LIXSEARCH_BASE}/api/search?query=${encodeURIComponent(query)}&stream=false&session_id=${encodeURIComponent(sessionId)}`;
+  const apiKey = process.env.ELIXPO_SEARCH_API_KEY || '';
 
-    const aiRes = await fetch(url);
+  try {
+    const aiRes = await fetch(`${LIXSEARCH_BASE}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }),
+      },
+      body: JSON.stringify({
+        query,
+        stream: false,
+        session_id: sessionId,
+      }),
+    });
 
     if (!aiRes.ok) {
       const err = await aiRes.text();
