@@ -80,6 +80,7 @@ export default function EditorPage({ params }) {
   const containerRef = useRef(null);
   const imgRef = useRef(null);
   const isDrawing = useRef(false);
+  const fileInputRef = useRef(null);
 
   // Load image from session
   useEffect(() => {
@@ -286,6 +287,20 @@ export default function EditorPage({ params }) {
     handleEdit(preset.prompt);
   };
 
+  const handleImportImage = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageSrc(reader.result);
+      setImageSize({ w: 0, h: 0 });
+      setSelected(false);
+      clearMask();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   const handleZoomIn = () => setZoom((z) => Math.min(z + 25, 400));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 25, 10));
   const handleZoomReset = () => { setZoom(100); setPanOffset({ x: 0, y: 0 }); };
@@ -410,6 +425,16 @@ export default function EditorPage({ params }) {
 
           <div className={styles.toolbarSpacer} />
 
+          {/* Import image */}
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImportImage} style={{ display: 'none' }} />
+          <button className={styles.toolBtn} onClick={() => fileInputRef.current?.click()} title="Import image">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <path d="M21 15l-5-5L5 21" />
+            </svg>
+          </button>
+
           <button className={styles.toolBtn} onClick={clearMask} title="Clear mask">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M3 10h10a5 5 0 015 5v2a5 5 0 01-5 5H3" />
@@ -510,32 +535,6 @@ export default function EditorPage({ params }) {
 
         {/* Right settings panel */}
         <div className={styles.settingsPanel}>
-          <div className={styles.settingsSection}>
-            <h3 className={styles.settingsLabel}>Canvas Mode</h3>
-            <div className={styles.modeSelector}>
-              {CANVAS_MODES.map((m) => (
-                <button
-                  key={m.id}
-                  className={`${styles.modeBtn} ${canvasMode === m.id ? styles.modeBtnActive : ''}`}
-                  onClick={() => setCanvasMode(m.id)}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.settingsSection}>
-            <div className={styles.settingsRow}>
-              <span className={styles.settingsLabel}>Outpaint</span>
-              <button
-                className={`${styles.toggle} ${outpaintEnabled ? styles.toggleOn : ''}`}
-                onClick={() => setOutpaintEnabled(!outpaintEnabled)}
-              >
-                <span className={styles.toggleThumb} />
-              </button>
-            </div>
-          </div>
 
           <div className={styles.settingsSection}>
             <div className={styles.settingsRow}>

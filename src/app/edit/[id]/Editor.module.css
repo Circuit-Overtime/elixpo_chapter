@@ -204,6 +204,56 @@
   box-shadow: inset 2px 0 0 #5691f3;
 }
 
+.toolWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.helpBtn {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(86, 145, 243, 0.2);
+  color: #5691f3;
+  font-size: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.15s ease;
+}
+
+.helpBtn:hover {
+  background: rgba(86, 145, 243, 0.4);
+}
+
+.helpTooltip {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 200px;
+  padding: 0.5rem 0.65rem;
+  background: rgba(8, 12, 24, 0.97);
+  border: 1px solid rgba(86, 145, 243, 0.15);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-primary);
+  font-size: 11px;
+  line-height: 1.5;
+  z-index: 600;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
 .toolDivider {
   width: 24px;
   height: 1px;
@@ -292,6 +342,23 @@
 .handleTR { top: -5px; right: -5px; cursor: nesw-resize; }
 .handleBL { bottom: -5px; left: -5px; cursor: nesw-resize; }
 .handleBR { bottom: -5px; right: -5px; cursor: nwse-resize; }
+
+.sizeLabel {
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  background: rgba(8, 12, 24, 0.9);
+  border: 1px solid rgba(86, 145, 243, 0.15);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
+}
 
 /* ─── Loading overlay ─── */
 .canvasLoading {
@@ -474,67 +541,6 @@
   color: var(--color-text-tertiary);
 }
 
-/* Mode selector */
-.modeSelector {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.modeBtn {
-  width: 100%;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-text-tertiary);
-  font-family: var(--font-family-primary);
-  font-size: var(--font-size-xs);
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.modeBtn:hover {
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--color-text-secondary);
-}
-
-.modeBtnActive {
-  background: rgba(86, 145, 243, 0.1);
-  border-color: rgba(86, 145, 243, 0.2);
-  color: #5691f3;
-}
-
-/* Toggle */
-.toggle {
-  width: 40px;
-  height: 22px;
-  border: none;
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.08);
-  position: relative;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  padding: 0;
-  flex-shrink: 0;
-}
-
-.toggleOn { background: rgba(86, 145, 243, 0.5); }
-
-.toggleThumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  transition: transform 0.2s ease;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-}
-
-.toggleOn .toggleThumb { transform: translateX(18px); }
 
 /* Slider */
 .slider {
