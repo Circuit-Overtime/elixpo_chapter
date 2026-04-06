@@ -9,28 +9,25 @@ import styles from './Editor.module.css';
 const API_BASE = '/api';
 
 const TOOLS = [
-  { id: 'pan', label: 'Pan', hint: 'Drag to move the image around the canvas' },
-  { id: 'select', label: 'Select', hint: 'Click to select the image. Drag handles to resize. Press Delete to remove.' },
-  { id: 'inpaint', label: 'Inpaint', hint: 'Paint a mask over areas you want the AI to regenerate based on your prompt' },
-  { id: 'eraser', label: 'Eraser', hint: 'Erase parts of the inpaint mask' },
+  { id: 'select', label: 'Select', hint: 'Click to select, drag to pan. Drag handles to resize. Press Delete to remove.' },
+  { id: 'sketch', label: 'Sketch', hint: 'Draw on or around the image — paint areas for AI to regenerate based on your prompt' },
+  { id: 'eraser', label: 'Eraser', hint: 'Erase parts of the sketch mask' },
 ];
 
 const CANVAS_MODES = [
-  { id: 'outpaint-mode', label: 'Outpaint', hint: 'Extends the image beyond its borders — AI fills the empty space', icon: <><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></> },
   { id: 'img2img', label: 'Img2Img', hint: 'Transforms the whole image based on your prompt — no mask needed', icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></> },
-  { id: 'sketch2img', label: 'Sketch', hint: 'Draw a rough sketch, then AI turns it into a full image', icon: <><path d="M3 17c1-2 3-6 5-6s3 4 5 4 3-5 5-5" strokeLinecap="round" /></> },
+  { id: 'sketch2img', label: 'Sketch', hint: 'Draw a rough sketch on or around the image, then AI generates from it', icon: <><path d="M3 17c1-2 3-6 5-6s3 4 5 4 3-5 5-5" strokeLinecap="round" /></> },
 ];
 
 const TOOL_ICONS = {
-  pan: <><path d="M18 11V6a2 2 0 00-4 0v6" /><path d="M14 10V4a2 2 0 00-4 0v7" /><path d="M10 10.5V5a2 2 0 00-4 0v9" /><path d="M18 11a2 2 0 014 0v3a8 8 0 01-8 8h-2c-2.5 0-4-1-5.5-3L4 15" /></>,
   select: <><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /><path d="M13 13l6 6" /></>,
-  inpaint: <><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></>,
+  sketch: <><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></>,
   eraser: <><path d="M20 20H7L3 16l9-9 8 8-4 4z" /><path d="M6.5 13.5l5-5" /></>,
 };
 
 const EDIT_PRESETS = [
   { id: 'remove-bg', label: 'Remove Background', icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 9h6v6H9z" /></>, prompt: null, comingSoon: true },
-  { id: 'outpaint', label: 'Extend Image', icon: <><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></>, prompt: 'Extend the image beyond its current borders, seamlessly continuing the scene' },
+  { id: 'outpaint', label: 'Extend Image', icon: <><rect x="5" y="5" width="14" height="14" rx="1" strokeDasharray="3 2" /><path d="M2 12h3M19 12h3M12 2v3M12 19v3" /></>, prompt: 'Extend the image beyond its current borders, seamlessly continuing the scene' },
   { id: 'fix-pose', label: 'Fix Character Pose', icon: <><circle cx="12" cy="4" r="2" /><path d="M12 6v5" /><path d="M9 11l-3 5" /><path d="M15 11l3 5" /></>, prompt: null, isPosePicker: true },
   { id: 'upscale', label: 'Enhance / Upscale', icon: <><path d="M15 3h6v6" /><path d="M14 10l7-7" /><path d="M9 21H3v-6" /><path d="M10 14l-7 7" /></>, prompt: null, comingSoon: true },
   { id: 'relight', label: 'Relight Scene', icon: <><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2" /></>, prompt: null, isRelight: true },
@@ -136,11 +133,9 @@ export default function EditorPage({ params }) {
   const [height, setHeight] = useState(576);
 
   // Editor state
-  const [activeTool, setActiveTool] = useState('pan');
-  const [canvasMode, setCanvasMode] = useState('inpaint');
-  const [brushSize, setBrushSize] = useState(40);
-  const [inpaintStrength, setInpaintStrength] = useState(0.65);
-  const [outpaintEnabled, setOutpaintEnabled] = useState(false);
+  const [activeTool, setActiveTool] = useState('select');
+  const [canvasMode, setCanvasMode] = useState('img2img');
+  const [brushSize, setBrushSize] = useState(8);
   const [zoom, setZoom] = useState(100);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
@@ -169,12 +164,16 @@ export default function EditorPage({ params }) {
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
   const [helpTooltip, setHelpTooltip] = useState(null);
 
+  // Undo history (stores mask canvas snapshots + image states)
+  const [undoStack, setUndoStack] = useState([]);
+
   // Canvas refs
   const maskCanvasRef = useRef(null);
   const containerRef = useRef(null);
   const imgRef = useRef(null);
   const isDrawing = useRef(false);
   const fileInputRef = useRef(null);
+  const lastPoint = useRef(null);
 
   // Load image from session
   useEffect(() => {
@@ -191,15 +190,54 @@ export default function EditorPage({ params }) {
     }
   }, [id]);
 
+  // ─── Undo helpers ───
+  const saveUndoSnapshot = useCallback(() => {
+    const mask = maskCanvasRef.current;
+    const snapshot = { imageSrc, maskData: null };
+    if (mask) {
+      snapshot.maskData = mask.toDataURL();
+    }
+    setUndoStack(prev => [...prev.slice(-20), snapshot]); // keep last 20
+  }, [imageSrc]);
+
+  const handleUndo = useCallback(() => {
+    setUndoStack(prev => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      // Restore image
+      if (last.imageSrc !== undefined) setImageSrc(last.imageSrc);
+      // Restore mask
+      if (last.maskData && maskCanvasRef.current) {
+        const img = new Image();
+        img.onload = () => {
+          const ctx = maskCanvasRef.current.getContext('2d');
+          ctx.clearRect(0, 0, maskCanvasRef.current.width, maskCanvasRef.current.height);
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = last.maskData;
+      } else if (maskCanvasRef.current) {
+        const ctx = maskCanvasRef.current.getContext('2d');
+        ctx.clearRect(0, 0, maskCanvasRef.current.width, maskCanvasRef.current.height);
+      }
+      return prev.slice(0, -1);
+    });
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Undo: Ctrl+Z
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
       // Delete image when selected
       if ((e.key === 'Delete' || e.key === 'Backspace') && selected && imageSrc) {
         e.preventDefault();
+        saveUndoSnapshot();
         setImageSrc(null);
         setSelected(false);
-        // Update session
         const raw = sessionStorage.getItem(`gen_${id}`);
         if (raw) {
           const session = JSON.parse(raw);
@@ -207,7 +245,7 @@ export default function EditorPage({ params }) {
           sessionStorage.setItem(`gen_${id}`, JSON.stringify(session));
         }
       }
-      // Escape deselects and dismisses
+      // Escape
       if (e.key === 'Escape') {
         setSelected(false);
         setModelOpen(false);
@@ -218,14 +256,39 @@ export default function EditorPage({ params }) {
       }
       // Tool shortcuts
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'v' || e.key === 'V') setActiveTool('pan');
-      if (e.key === 's' || e.key === 'S') { if (!e.ctrlKey && !e.metaKey) setActiveTool('select'); }
-      if (e.key === 'b' || e.key === 'B') setActiveTool('inpaint');
+      if (e.key === 'v' || e.key === 'V') setActiveTool('select');
+      if (e.key === 'b' || e.key === 'B') setActiveTool('sketch');
       if (e.key === 'e' || e.key === 'E') setActiveTool('eraser');
     };
+
+    // Ctrl+V paste image
+    const handlePaste = (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = () => {
+            saveUndoSnapshot();
+            setImageSrc(reader.result);
+            setImageSize({ w: 0, h: 0 });
+            setSelected(false);
+          };
+          reader.readAsDataURL(file);
+          break;
+        }
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selected, imageSrc, id]);
+    window.addEventListener('paste', handlePaste);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('paste', handlePaste);
+    };
+  }, [selected, imageSrc, id, handleUndo, saveUndoSnapshot]);
 
   // Click outside dismisses help tooltip and pickers
   useEffect(() => {
@@ -298,15 +361,16 @@ export default function EditorPage({ params }) {
   // ─── Pan / draw / select handlers ───
   const handleCanvasPointerDown = (e) => {
     if (isResizing.current) return;
-    if (activeTool === 'pan') {
+    if (activeTool === 'select') {
+      setSelected(true);
       isPanning.current = true;
       panStart.current = { x: e.clientX, y: e.clientY };
       panOffsetStart.current = { ...panOffset };
       e.currentTarget.setPointerCapture(e.pointerId);
-    } else if (activeTool === 'select') {
-      setSelected(true);
-    } else if (activeTool === 'inpaint' || activeTool === 'eraser') {
+    } else if (activeTool === 'sketch' || activeTool === 'eraser') {
+      saveUndoSnapshot();
       isDrawing.current = true;
+      lastPoint.current = null;
       drawAt(e);
     }
   };
@@ -328,9 +392,10 @@ export default function EditorPage({ params }) {
   const handleCanvasPointerUp = () => {
     isPanning.current = false;
     isDrawing.current = false;
+    lastPoint.current = null;
   };
 
-  // ─── Drawing ───
+  // ─── Drawing (smooth strokes with line interpolation) ───
   const drawAt = (e) => {
     const mask = maskCanvasRef.current;
     if (!mask) return;
@@ -339,12 +404,28 @@ export default function EditorPage({ params }) {
     const scaleY = mask.height / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
+    const r = brushSize * scaleX;
     const ctx = mask.getContext('2d');
     ctx.globalCompositeOperation = activeTool === 'eraser' ? 'destination-out' : 'source-over';
-    ctx.fillStyle = 'rgba(86, 145, 243, 0.5)';
-    ctx.beginPath();
-    ctx.arc(x, y, brushSize * scaleX, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.strokeStyle = activeTool === 'eraser' ? 'rgba(255,255,255,1)' : 'rgba(86, 145, 243, 0.5)';
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.lineWidth = r * 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (lastPoint.current) {
+      // Smooth line from last point to current
+      ctx.beginPath();
+      ctx.moveTo(lastPoint.current.x, lastPoint.current.y);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    } else {
+      // First dot
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    lastPoint.current = { x, y };
   };
 
   const clearMask = () => {
@@ -511,9 +592,8 @@ export default function EditorPage({ params }) {
   const handleZoomReset = () => { setZoom(100); setPanOffset({ x: 0, y: 0 }); };
 
   const getCursor = () => {
-    if (activeTool === 'pan') return isPanning.current ? 'grabbing' : 'grab';
-    if (activeTool === 'select') return 'default';
-    if (activeTool === 'inpaint' || activeTool === 'eraser') return 'crosshair';
+    if (activeTool === 'select') return isPanning.current ? 'grabbing' : 'grab';
+    if (activeTool === 'sketch' || activeTool === 'eraser') return 'crosshair';
     return 'default';
   };
 
