@@ -2,21 +2,28 @@
 
 import { useState, useRef, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '../../components/Navbar/Navbar';
-import { isSignedIn, spendCredits, fetchCredits } from '../../lib/auth';
 import { useModels } from '../../lib/useModels';
 import styles from './Editor.module.css';
 
 const API_BASE = '/api';
 
 const TOOLS = [
-  { id: 'pan', icon: 'M9 3h6v2H9V3zM5 7h14v2H5V7zM3 11h18v2H3v-2zM5 15h14v2H5v-2zM9 19h6v2H9v-2z', label: 'Pan' },
-  { id: 'select', icon: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z', label: 'Select' },
-  { id: 'inpaint', icon: 'M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z', label: 'Inpaint' },
-  { id: 'eraser', icon: 'M20 20H7L3 16l9-9 8 8-4 4zM6.5 13.5l5-5', label: 'Eraser' },
-  { id: 'crop', icon: 'M6 2v4H2v2h4v12h2V8h12V6H8V2H6zM18 22v-4h4v-2h-4V4h-2v12H4v2h12v4h2z', label: 'Crop' },
-  { id: 'layers', icon: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5', label: 'Layers' },
+  { id: 'pan', label: 'Pan' },
+  { id: 'select', label: 'Select' },
+  { id: 'inpaint', label: 'Inpaint' },
+  { id: 'eraser', label: 'Eraser' },
+  { id: 'crop', label: 'Crop' },
+  { id: 'layers', label: 'Layers' },
 ];
+
+const TOOL_ICONS = {
+  pan: <><path d="M18 11V6a2 2 0 00-4 0v6" /><path d="M14 10V4a2 2 0 00-4 0v7" /><path d="M10 10.5V5a2 2 0 00-4 0v9" /><path d="M18 11a2 2 0 014 0v3a8 8 0 01-8 8h-2c-2.5 0-4-1-5.5-3L4 15" /></>,
+  select: <><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /><path d="M13 13l6 6" /></>,
+  inpaint: <><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></>,
+  eraser: <><path d="M20 20H7L3 16l9-9 8 8-4 4z" /><path d="M6.5 13.5l5-5" /></>,
+  crop: <><path d="M6 2v4H2v2h4v12h2V8h12V6H8V2H6z" /><path d="M18 22v-4h4v-2h-4V4h-2v12H4v2h12v4h2z" /></>,
+  layers: <><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></>,
+};
 
 const CANVAS_MODES = [
   { id: 'inpaint', label: 'Inpaint / Outpaint' },
@@ -25,12 +32,12 @@ const CANVAS_MODES = [
 ];
 
 const EDIT_PRESETS = [
-  { id: 'remove-bg', label: 'Remove Background', icon: 'M4 4h16v16H4z M9 9h6v6H9z', prompt: 'Remove the background completely, make it transparent, keep only the main subject' },
-  { id: 'outpaint', label: 'Extend Image', icon: 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7', prompt: 'Extend the image beyond its current borders, seamlessly continuing the scene' },
-  { id: 'fix-pose', label: 'Fix Character Pose', icon: 'M12 5a2 2 0 100-4 2 2 0 000 4zM12 7v5M9 12l-3 5M15 12l3 5', prompt: 'Fix and adjust the character pose naturally while keeping the same identity and style' },
-  { id: 'upscale', label: 'Enhance / Upscale', icon: 'M15 3h6v6M14 10l7-7M9 21H3v-6M10 14l-7 7', prompt: 'Enhance and upscale this image, improve details, sharpness and quality' },
-  { id: 'relight', label: 'Relight Scene', icon: 'M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42', prompt: 'Relight this scene with warm cinematic golden-hour lighting, soft shadows' },
-  { id: 'style-transfer', label: 'Style Transfer', icon: 'M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20', prompt: 'Apply an artistic painterly style to this image while preserving the composition' },
+  { id: 'remove-bg', label: 'Remove Background', icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 9h6v6H9z" /></>, prompt: 'Remove the background completely, make it transparent, keep only the main subject' },
+  { id: 'outpaint', label: 'Extend Image', icon: <><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></>, prompt: 'Extend the image beyond its current borders, seamlessly continuing the scene' },
+  { id: 'fix-pose', label: 'Fix Character Pose', icon: <><circle cx="12" cy="4" r="2" /><path d="M12 6v5" /><path d="M9 11l-3 5" /><path d="M15 11l3 5" /></>, prompt: 'Fix and adjust the character pose naturally while keeping the same identity and style' },
+  { id: 'upscale', label: 'Enhance / Upscale', icon: <><path d="M15 3h6v6" /><path d="M14 10l7-7" /><path d="M9 21H3v-6" /><path d="M10 14l-7 7" /></>, prompt: 'Enhance and upscale this image, improve details, sharpness and quality' },
+  { id: 'relight', label: 'Relight Scene', icon: <><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2" /></>, prompt: 'Relight this scene with warm cinematic golden-hour lighting, soft shadows' },
+  { id: 'style-transfer', label: 'Style Transfer', icon: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /></>, prompt: 'Apply an artistic painterly style to this image while preserving the composition' },
 ];
 
 export default function EditorPage({ params }) {
@@ -56,9 +63,15 @@ export default function EditorPage({ params }) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
   const [modelOpen, setModelOpen] = useState(false);
+  const [selected, setSelected] = useState(false);
+
+  // Pan state
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const isPanning = useRef(false);
+  const panStart = useRef({ x: 0, y: 0 });
+  const panOffsetStart = useRef({ x: 0, y: 0 });
 
   // Canvas refs
-  const canvasRef = useRef(null);
   const maskCanvasRef = useRef(null);
   const containerRef = useRef(null);
   const imgRef = useRef(null);
@@ -79,6 +92,52 @@ export default function EditorPage({ params }) {
     }
   }, [id]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Delete image when selected
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selected && imageSrc) {
+        e.preventDefault();
+        setImageSrc(null);
+        setSelected(false);
+        // Update session
+        const raw = sessionStorage.getItem(`gen_${id}`);
+        if (raw) {
+          const session = JSON.parse(raw);
+          delete session.resultSrc;
+          sessionStorage.setItem(`gen_${id}`, JSON.stringify(session));
+        }
+      }
+      // Escape deselects
+      if (e.key === 'Escape') {
+        setSelected(false);
+        setModelOpen(false);
+      }
+      // Tool shortcuts
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'v' || e.key === 'V') setActiveTool('pan');
+      if (e.key === 's' || e.key === 'S') { if (!e.ctrlKey && !e.metaKey) setActiveTool('select'); }
+      if (e.key === 'b' || e.key === 'B') setActiveTool('inpaint');
+      if (e.key === 'e' || e.key === 'E') setActiveTool('eraser');
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selected, imageSrc, id]);
+
+  // Scroll to zoom
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handleWheel = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        setZoom((z) => Math.max(10, Math.min(400, z + (e.deltaY < 0 ? 10 : -10))));
+      }
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, []);
+
   // Initialize mask canvas when image loads
   const initMaskCanvas = useCallback(() => {
     const img = imgRef.current;
@@ -90,15 +149,41 @@ export default function EditorPage({ params }) {
     ctx.clearRect(0, 0, mask.width, mask.height);
   }, []);
 
-  // Drawing handlers
-  const startDraw = (e) => {
-    if (activeTool !== 'inpaint' && activeTool !== 'eraser') return;
-    isDrawing.current = true;
-    draw(e);
+  // ─── Pan handlers ───
+  const handleCanvasPointerDown = (e) => {
+    if (activeTool === 'pan') {
+      isPanning.current = true;
+      panStart.current = { x: e.clientX, y: e.clientY };
+      panOffsetStart.current = { ...panOffset };
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } else if (activeTool === 'select') {
+      setSelected(true);
+    } else if (activeTool === 'inpaint' || activeTool === 'eraser') {
+      isDrawing.current = true;
+      drawAt(e);
+    }
   };
 
-  const draw = (e) => {
-    if (!isDrawing.current) return;
+  const handleCanvasPointerMove = (e) => {
+    if (isPanning.current) {
+      const dx = e.clientX - panStart.current.x;
+      const dy = e.clientY - panStart.current.y;
+      setPanOffset({
+        x: panOffsetStart.current.x + dx,
+        y: panOffsetStart.current.y + dy,
+      });
+    } else if (isDrawing.current) {
+      drawAt(e);
+    }
+  };
+
+  const handleCanvasPointerUp = () => {
+    isPanning.current = false;
+    isDrawing.current = false;
+  };
+
+  // ─── Drawing ───
+  const drawAt = (e) => {
     const mask = maskCanvasRef.current;
     if (!mask) return;
     const rect = mask.getBoundingClientRect();
@@ -114,8 +199,6 @@ export default function EditorPage({ params }) {
     ctx.fill();
   };
 
-  const endDraw = () => { isDrawing.current = false; };
-
   const clearMask = () => {
     const mask = maskCanvasRef.current;
     if (!mask) return;
@@ -123,7 +206,7 @@ export default function EditorPage({ params }) {
     ctx.clearRect(0, 0, mask.width, mask.height);
   };
 
-  // Run edit
+  // ─── Run edit ───
   const handleEdit = async (editPrompt) => {
     if (!imageSrc) return;
     const finalPrompt = editPrompt || prompt.trim();
@@ -136,19 +219,12 @@ export default function EditorPage({ params }) {
       const res = await fetch(`${API_BASE}/generate/edit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: finalPrompt,
-          imageUrl: imageSrc,
-          model,
-          width,
-          height,
-        }),
+        body: JSON.stringify({ prompt: finalPrompt, imageUrl: imageSrc, model, width, height }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Edit failed');
       const newSrc = data.imageData || data.imageUrl;
       setImageSrc(newSrc);
-      // Update session
       const raw = sessionStorage.getItem(`gen_${id}`);
       if (raw) {
         const session = JSON.parse(raw);
@@ -170,9 +246,16 @@ export default function EditorPage({ params }) {
     handleEdit(preset.prompt);
   };
 
-  const handleZoomIn = () => setZoom((z) => Math.min(z + 25, 300));
-  const handleZoomOut = () => setZoom((z) => Math.max(z - 25, 25));
-  const handleZoomReset = () => setZoom(100);
+  const handleZoomIn = () => setZoom((z) => Math.min(z + 25, 400));
+  const handleZoomOut = () => setZoom((z) => Math.max(z - 25, 10));
+  const handleZoomReset = () => { setZoom(100); setPanOffset({ x: 0, y: 0 }); };
+
+  const getCursor = () => {
+    if (activeTool === 'pan') return isPanning.current ? 'grabbing' : 'grab';
+    if (activeTool === 'select') return 'default';
+    if (activeTool === 'inpaint' || activeTool === 'eraser') return 'crosshair';
+    return 'default';
+  };
 
   const selectedModel = editModels.find((m) => m.id === model) || editModels[0];
 
@@ -230,35 +313,34 @@ export default function EditorPage({ params }) {
             <button
               key={t.id}
               className={`${styles.toolBtn} ${activeTool === t.id ? styles.toolActive : ''}`}
-              onClick={() => setActiveTool(t.id)}
+              onClick={() => { setActiveTool(t.id); if (t.id !== 'select') setSelected(false); }}
               title={t.label}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d={t.icon} />
+                {TOOL_ICONS[t.id]}
               </svg>
             </button>
           ))}
 
           <div className={styles.toolDivider} />
 
-          {/* Quick edit presets */}
           {EDIT_PRESETS.slice(0, 4).map((p) => (
             <button
               key={p.id}
               className={styles.toolBtn}
               onClick={() => handlePresetClick(p)}
               title={p.label}
-              disabled={generating}
+              disabled={generating || !imageSrc}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d={p.icon} />
+                {p.icon}
               </svg>
             </button>
           ))}
 
           <div className={styles.toolbarSpacer} />
 
-          <button className={styles.toolBtn} onClick={clearMask} title="Undo mask">
+          <button className={styles.toolBtn} onClick={clearMask} title="Clear mask">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M3 10h10a5 5 0 015 5v2a5 5 0 01-5 5H3" />
               <polyline points="8 15 3 10 8 5" />
@@ -266,42 +348,63 @@ export default function EditorPage({ params }) {
           </button>
         </div>
 
-        {/* Canvas area */}
-        <div className={styles.canvasArea} ref={containerRef}>
-          {imageSrc ? (
-            <div className={styles.canvasWrap} style={{ transform: `scale(${zoom / 100})` }}>
-              <img
-                ref={imgRef}
-                src={imageSrc}
-                alt="Edit canvas"
-                className={styles.canvasImage}
-                onLoad={initMaskCanvas}
-                draggable={false}
-              />
-              <canvas
-                ref={maskCanvasRef}
-                className={styles.maskCanvas}
-                onMouseDown={startDraw}
-                onMouseMove={draw}
-                onMouseUp={endDraw}
-                onMouseLeave={endDraw}
-                style={{ cursor: activeTool === 'inpaint' || activeTool === 'eraser' ? 'crosshair' : 'grab' }}
-              />
-              {generating && (
-                <div className={styles.canvasLoading}>
-                  <div className={styles.canvasSpinner} />
-                  <span>Generating...</span>
+        {/* Canvas + prompt bar area */}
+        <div className={styles.canvasColumn}>
+          {/* Canvas viewport */}
+          <div
+            className={styles.canvasArea}
+            ref={containerRef}
+            onPointerDown={handleCanvasPointerDown}
+            onPointerMove={handleCanvasPointerMove}
+            onPointerUp={handleCanvasPointerUp}
+            onPointerLeave={handleCanvasPointerUp}
+            style={{ cursor: getCursor() }}
+          >
+            {imageSrc ? (
+              <div
+                className={styles.canvasWrap}
+                style={{
+                  transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom / 100})`,
+                }}
+              >
+                <div className={`${styles.imageFrame} ${selected ? styles.imageSelected : ''}`}>
+                  <img
+                    ref={imgRef}
+                    src={imageSrc}
+                    alt="Edit canvas"
+                    className={styles.canvasImage}
+                    onLoad={initMaskCanvas}
+                    draggable={false}
+                  />
+                  <canvas
+                    ref={maskCanvasRef}
+                    className={styles.maskCanvas}
+                  />
+                  {selected && (
+                    <>
+                      <div className={`${styles.handle} ${styles.handleTL}`} />
+                      <div className={`${styles.handle} ${styles.handleTR}`} />
+                      <div className={`${styles.handle} ${styles.handleBL}`} />
+                      <div className={`${styles.handle} ${styles.handleBR}`} />
+                    </>
+                  )}
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className={styles.canvasEmpty}>
-              <p>No image loaded</p>
-              <button className={styles.backBtn} onClick={() => router.push('/generate')}>Go to Generate</button>
-            </div>
-          )}
+                {generating && (
+                  <div className={styles.canvasLoading}>
+                    <div className={styles.canvasSpinner} />
+                    <span>Generating...</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className={styles.canvasEmpty}>
+                <p>No image loaded</p>
+                <button className={styles.backBtn} onClick={() => router.push('/generate')}>Go to Generate</button>
+              </div>
+            )}
+          </div>
 
-          {/* Prompt bar at bottom of canvas */}
+          {/* Prompt bar — always at bottom */}
           <div className={styles.promptBar}>
             <button className={styles.promptSettingsBtn} title="Settings">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -332,7 +435,6 @@ export default function EditorPage({ params }) {
 
         {/* Right settings panel */}
         <div className={styles.settingsPanel}>
-          {/* Canvas mode */}
           <div className={styles.settingsSection}>
             <h3 className={styles.settingsLabel}>Canvas Mode</h3>
             <div className={styles.modeSelector}>
@@ -348,7 +450,6 @@ export default function EditorPage({ params }) {
             </div>
           </div>
 
-          {/* Outpaint toggle */}
           <div className={styles.settingsSection}>
             <div className={styles.settingsRow}>
               <span className={styles.settingsLabel}>Outpaint</span>
@@ -361,48 +462,36 @@ export default function EditorPage({ params }) {
             </div>
           </div>
 
-          {/* Inpaint strength */}
           <div className={styles.settingsSection}>
             <div className={styles.settingsRow}>
               <span className={styles.settingsLabel}>Inpaint Strength</span>
               <span className={styles.settingsValue}>{inpaintStrength.toFixed(2)}</span>
             </div>
             <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
+              type="range" min="0" max="1" step="0.05"
               value={inpaintStrength}
               onChange={(e) => setInpaintStrength(parseFloat(e.target.value))}
               className={styles.slider}
             />
           </div>
 
-          {/* Brush size */}
           <div className={styles.settingsSection}>
             <div className={styles.settingsRow}>
               <span className={styles.settingsLabel}>Brush Size</span>
               <span className={styles.settingsValue}>{brushSize}px</span>
             </div>
             <input
-              type="range"
-              min="5"
-              max="100"
+              type="range" min="5" max="100"
               value={brushSize}
               onChange={(e) => setBrushSize(Number(e.target.value))}
               className={styles.slider}
             />
           </div>
 
-          {/* Dimensions */}
           <div className={styles.settingsSection}>
             <h3 className={styles.settingsLabel}>Image Dimensions</h3>
             <div className={styles.dimGrid}>
-              {[
-                [512, 512], [768, 768],
-                [512, 1024], [768, 1024],
-                [1024, 768], [1024, 1024],
-              ].map(([w, h]) => (
+              {[[512, 512], [768, 768], [512, 1024], [768, 1024], [1024, 768], [1024, 1024]].map(([w, h]) => (
                 <button
                   key={`${w}x${h}`}
                   className={`${styles.dimBtn} ${width === w && height === h ? styles.dimBtnActive : ''}`}
@@ -414,7 +503,6 @@ export default function EditorPage({ params }) {
             </div>
           </div>
 
-          {/* Quick edits */}
           <div className={styles.settingsSection}>
             <h3 className={styles.settingsLabel}>Quick Edits</h3>
             <div className={styles.presetGrid}>
@@ -423,10 +511,10 @@ export default function EditorPage({ params }) {
                   key={p.id}
                   className={styles.presetBtn}
                   onClick={() => handlePresetClick(p)}
-                  disabled={generating}
+                  disabled={generating || !imageSrc}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d={p.icon} />
+                    {p.icon}
                   </svg>
                   {p.label}
                 </button>
