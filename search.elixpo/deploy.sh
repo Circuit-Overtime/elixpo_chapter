@@ -24,7 +24,7 @@ COMPOSE_FILE="docker-compose.yml"
 # Only validate container count for commands that use it
 case "${1:-help}" in
     start|scale|stary|quick)
-        CONTAINER_COUNT=${2:-3}
+        CONTAINER_COUNT=${2:-5}
         if ! [[ "$CONTAINER_COUNT" =~ ^[0-9]+$ ]]; then
             echo -e "${RED}✗${NC} Container count must be a number"
             exit 1
