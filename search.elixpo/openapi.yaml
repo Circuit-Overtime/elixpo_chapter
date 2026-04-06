@@ -2,75 +2,67 @@ openapi: 3.1.0
 info:
   title: lixSearch API
   description: |
-    **lixSearch** is an intelligent multi-service search assistant that searches the web,
-    fetches videos/images, and synthesizes answers with cited sources using RAG and LLM inference.
-
-    ## Overview
-
-    - **OpenAI-compatible**: The `/v1/chat/completions` endpoint follows the OpenAI chat completions spec — drop-in replacement for any OpenAI-compatible client.
-    - **Streaming**: All search and chat endpoints support Server-Sent Events (SSE) for real-time token streaming.
-    - **Sessions**: Conversations are stateful. Each `session_id` maintains context across queries with a two-tier cache (Redis hot + Huffman-compressed disk archive).
-    - **Deep Search**: Automatic multi-step research mode — the pipeline detects complex queries and decomposes them into sub-queries for comprehensive answers. No explicit flag needed.
+    **lixSearch** is an intelligent search assistant that searches the web, fetches content,
+    and synthesizes answers with cited sources.
 
     ## Authentication
 
-    All API endpoints (except `/api/health`, `/docs`, `/v1/models`, `/api/stats`, `/api/image/*`) require an API key.
-    Pass it via any of these methods:
+    All endpoints (except `/api/health`, `/docs`, `/v1/models`) require an API key:
 
     | Method | Example |
     |--------|---------|
-    | `Authorization` header (OpenAI-compatible) | `Authorization: Bearer <key>` |
-    | `X-API-Key` header | `X-API-Key: <key>` |
-    | Query parameter (GET requests) | `?key=<key>` |
+    | Bearer token (recommended) | `Authorization: Bearer <key>` |
+    | Header | `X-API-Key: <key>` |
+    | Query param (GET only) | `?key=<key>` |
 
-    Unauthenticated requests return `401`. Invalid keys return `403`.
+    Missing key returns `401`. Invalid key returns `403`.
 
     ## Quick Start
 
     ```bash
-    # Text query (non-streaming, no session needed)
+    # Simple search (POST)
     curl -X POST https://search.elixpo.com/v1/chat/completions \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{"messages": [{"role": "user", "content": "What is quantum computing?"}]}'
 
-    # Streaming search
+    # Simple search (GET)
+    curl "https://search.elixpo.com/api/search?query=quantum+computing&key=YOUR_API_KEY"
+
+    # With image
     curl -X POST https://search.elixpo.com/v1/chat/completions \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
-      -d '{"messages": [{"role": "user", "content": "What is quantum computing?"}], "stream": true}'
+      -d '{"messages": [{"role": "user", "content": [
+            {"type": "text", "text": "What is this?"},
+            {"type": "image_url", "image_url": {"url": "https://example.com/photo.jpg"}}
+          ]}]}'
 
-    # Image input (URL)
+    # Streaming
     curl -X POST https://search.elixpo.com/v1/chat/completions \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
-      -d '{"messages": [{"role": "user", "content": [{"type": "text", "text": "What is this?"}, {"type": "image_url", "image_url": {"url": "https://example.com/photo.jpg"}}]}]}'
-
-    # Image input (base64) — auto-hosted, no session needed
-    curl -X POST https://search.elixpo.com/v1/chat/completions \
-      -H "Authorization: Bearer YOUR_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{"messages": [{"role": "user", "content": [{"type": "text", "text": "Describe this"}, {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQ..."}}]}]}'
-
-    # GET search with key as query param
-    curl "https://search.elixpo.com/api/search?query=latest+AI+news&stream=false&key=YOUR_API_KEY"
+      -d '{"messages": [{"role": "user", "content": "Latest AI news"}], "stream": true}'
     ```
 
-    ## Session-Free Usage
+    ## Sessions
 
-    The `/v1/chat/completions` endpoint works **without a `session_id`**. When omitted,
-    an ephemeral session is created automatically — no state is persisted after the request.
-    Use the `messages` array to pass full conversation context (multi-turn) in each request.
+    Pass `session_id` to persist conversation context across requests.
+    Without it, each request is stateless (ephemeral session, no history saved).
 
-    ## Image Input
+    ## Images
 
-    Images can be passed via the OpenAI vision format in the `messages` array:
+    Pass images in the `content` array using OpenAI vision format:
     - **URL**: `{"type": "image_url", "image_url": {"url": "https://..."}}`
     - **Base64**: `{"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}}`
 
-    Base64 images are automatically stored on the server and converted to a hosted URL
-    before processing. Up to 3 images per request.
-  version: 2.3.0
+    Base64 images are auto-hosted on the server. Up to 3 images per request.
+
+    ## Deep Search
+
+    Complex queries automatically trigger deep research mode — no flag needed.
+    The pipeline decomposes the query into sub-topics and synthesizes a comprehensive answer.
+  version: 3.0.0
   contact:
     name: Elixpo
     url: https://elixpo.com
@@ -82,101 +74,80 @@ servers:
     description: Production
 
 tags:
-  - name: OpenAI Compatible
-    description: Drop-in OpenAI-compatible endpoints for chat completions and model listing
-  - name: Search
-    description: Web search with RAG-augmented answer synthesis
   - name: Chat
-    description: Conversational chat endpoints with optional web search
-  - name: Sessions
-    description: Session lifecycle management and knowledge graph access
+    description: Search and chat — text, images, streaming, multi-turn conversations
   - name: Surf
-    description: Lightweight URL and image search without LLM synthesis
-  - name: Images
-    description: Generated image proxy endpoints
-  - name: Discover
-    description: AI-generated discover feed articles by category
-  - name: Export
-    description: Export search results to PDF
-  - name: Content
-    description: Serve stored content (PDFs, documents) by ID
+    description: Lightweight search — raw URLs and images, no LLM synthesis
+  - name: Sessions
+    description: Session lifecycle — create, read, delete conversation sessions
+  - name: Media
+    description: Hosted files — images and PDFs referenced in chat responses
   - name: System
-    description: Health checks, statistics, and operational endpoints
+    description: Health and models
+
+security:
+  - BearerAuth: []
+  - ApiKeyHeader: []
+  - ApiKeyQuery: []
 
 paths:
-  # ──────────────────────────────────────────────
-  # OpenAI-Compatible Endpoints
-  # ──────────────────────────────────────────────
+  # ─── Chat ───────────────────────────────────────────
+
   /v1/chat/completions:
     post:
-      operationId: createChatCompletion
-      summary: Create chat completion
+      operationId: chat
+      summary: Chat (POST)
       description: |
-        OpenAI-compatible chat completions endpoint. Accepts the standard OpenAI request format
-        and returns responses in OpenAI chat completion format (streaming and non-streaming).
+        Primary endpoint. OpenAI-compatible — works with any OpenAI SDK client.
 
-        This is the **primary endpoint** for Pollinations and other OpenAI-compatible clients.
-
-        **Behavior:**
-        - Extracts the last user message as the search query
-        - Preceding messages are used as conversation history for context
-        - System messages are accepted but not used (lixSearch has its own system prompt)
-        - `session_id` is **optional** — when omitted, an ephemeral session is used (no state persisted)
-        - `stream` defaults to **false**
-
-        **Image support** (OpenAI vision format):
-        - Pass images in the `content` array as `image_url` parts
-        - Supports both **HTTPS URLs** and **base64 data URIs** (`data:image/jpeg;base64,...`)
-        - Base64 images are auto-hosted on the server and converted to URLs before pipeline processing
-        - Up to 3 images per request
-        - If only images are provided (no text), the model describes the image(s)
-        - If text + images are provided, the model answers the query using the image(s) as context
-
-        **Extensions** (non-standard fields):
-        - `session_id`: Explicit session ID for context persistence across requests (optional)
-
-        **Deep Search**: The pipeline automatically detects complex, multi-faceted queries and
-        activates deep research mode — no explicit parameter needed.
-      tags:
-        - OpenAI Compatible
+        - Last user message is used as the search query
+        - Earlier messages provide conversation context
+        - `stream` defaults to `false`
+        - `session_id` is optional (omit for stateless usage)
+      tags: [Chat]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChatCompletionRequest'
+              $ref: '#/components/schemas/ChatRequest'
             examples:
-              simple:
+              text:
                 summary: Simple text query
                 value:
                   messages:
                     - role: user
                       content: "What is quantum computing?"
-                  stream: true
-              multi_turn:
-                summary: Multi-turn conversation
+              streaming:
+                summary: Streaming response
                 value:
                   messages:
                     - role: user
-                      content: "What is quantum computing?"
-                    - role: assistant
-                      content: "Quantum computing uses quantum bits (qubits)..."
-                    - role: user
-                      content: "How does it compare to classical computing?"
+                      content: "Latest developments in AI"
                   stream: true
+              multi_turn:
+                summary: Multi-turn with session
+                value:
+                  messages:
+                    - role: user
+                      content: "Tell me about Tokyo"
+                    - role: assistant
+                      content: "Tokyo is the capital of Japan..."
+                    - role: user
+                      content: "What about the food scene there?"
                   session_id: "my-session-123"
-              vision_url:
+              image_url:
                 summary: Image input (URL)
                 value:
                   messages:
                     - role: user
                       content:
                         - type: text
-                          text: "What is in this image?"
+                          text: "Classify this image"
                         - type: image_url
                           image_url:
                             url: "https://example.com/photo.jpg"
-              vision_base64:
+              image_base64:
                 summary: Image input (base64)
                 value:
                   messages:
@@ -186,9 +157,9 @@ paths:
                           text: "Describe this image"
                         - type: image_url
                           image_url:
-                            url: "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+                            url: "data:image/jpeg;base64,/9j/4AAQ..."
               image_only:
-                summary: Image-only (no text query)
+                summary: Image only (no text)
                 value:
                   messages:
                     - role: user
@@ -196,389 +167,150 @@ paths:
                         - type: image_url
                           image_url:
                             url: "https://example.com/photo.jpg"
-              complex_research:
-                summary: Complex query (auto-triggers deep search)
-                value:
-                  messages:
-                    - role: user
-                      content: "Compare the economic policies of the G7 nations in 2025"
-                  stream: true
       responses:
         '200':
-          description: Chat completion response
+          description: Chat response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChatCompletionResponse'
+                $ref: '#/components/schemas/ChatResponse'
             text/event-stream:
               schema:
-                description: |
-                  SSE stream of `chat.completion.chunk` objects, terminated by `data: [DONE]`.
-                  Each chunk follows the OpenAI streaming format.
+                description: "SSE stream of chat.completion.chunk objects, terminated by data: [DONE]"
                 type: string
         '400':
           $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '503':
           $ref: '#/components/responses/NotInitialized'
 
-  /v1/models:
-    get:
-      operationId: listModels
-      summary: List available models
-      description: Returns the list of models available for chat completions. Currently returns a single model (`lixsearch`).
-      tags:
-        - OpenAI Compatible
-      responses:
-        '200':
-          description: Model list
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  object:
-                    type: string
-                    const: list
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Model'
-              example:
-                object: list
-                data:
-                  - id: lixsearch
-                    object: model
-                    created: 1700000000
-                    owned_by: elixpo
-
-  # ──────────────────────────────────────────────
-  # Search Endpoints
-  # ──────────────────────────────────────────────
   /api/search:
     get:
       operationId: searchGet
       summary: Search (GET)
       description: |
-        Perform a web search and return an LLM-synthesized answer with sources.
-        Responses are in OpenAI chat completion format (streaming or non-streaming).
-      tags:
-        - Search
+        Simple GET endpoint for quick searches. Returns the same quality results as the POST endpoint.
+
+        Use `stream=true` for SSE streaming, or omit for a single JSON response.
+        Pass `session_id` for multi-turn context.
+      tags: [Chat]
       parameters:
         - name: query
           in: query
           required: true
           schema:
             type: string
-          description: Search query text
-          example: "latest breakthroughs in AI"
-        - name: session_id
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Session identifier for context persistence. If omitted, a session is derived from the client IP.
-          example: "sess-abc123"
+          description: Search query
+          example: "latest AI news"
         - name: stream
           in: query
           schema:
+            type: boolean
+            default: false
+          description: Enable SSE streaming
+        - name: session_id
+          in: query
+          schema:
             type: string
-            enum: ['true', 'false']
-            default: 'false'
-          description: Enable SSE streaming (`true`) or return complete JSON (`false`)
-        - name: image_url
+          description: Session ID for multi-turn context (optional)
+        - name: image
           in: query
           schema:
             type: string
             format: uri
-          description: URL of an image for reverse image search or visual queries
+          description: Image URL to analyze alongside the query
+        - name: key
+          in: query
+          schema:
+            type: string
+          description: API key (alternative to Authorization header)
+      responses:
+        '200':
+          description: Search response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ─── Surf ────────────────────────────────────────────
+
+  /api/surf:
+    get:
+      operationId: surf
+      summary: Surf
+      description: |
+        Lightweight search — returns raw URLs and optionally image URLs.
+        No LLM synthesis, no answer generation. Fast.
+      tags: [Surf]
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 20
+          description: Max results to return
         - name: images
           in: query
           schema:
-            type: array
-            items:
-              type: string
-              format: uri
-            maxItems: 3
-          description: Multiple image URLs (max 3)
+            type: boolean
+            default: false
+          description: Include image search results
+        - name: key
+          in: query
+          schema:
+            type: string
+          description: API key
       responses:
         '200':
-          description: Search results in OpenAI chat completion format
-          content:
-            text/event-stream:
-              schema:
-                type: string
-                description: SSE stream of OpenAI `chat.completion.chunk` objects
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChatCompletionResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '503':
-          $ref: '#/components/responses/NotInitialized'
-
-    post:
-      operationId: searchPost
-      summary: Search (POST)
-      description: |
-        Same as GET but accepts parameters in the request body.
-        Responses are in OpenAI chat completion format.
-      tags:
-        - Search
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - query
-              properties:
-                query:
-                  type: string
-                  description: Search query text
-                session_id:
-                  type: string
-                  description: Session identifier for context persistence. If omitted, derived from client IP.
-                stream:
-                  type: boolean
-                  default: false
-                  description: Enable SSE streaming
-                image_url:
-                  type: string
-                  format: uri
-                  description: Image URL for visual queries
-                image:
-                  type: string
-                  format: uri
-                  description: Alternative parameter name for `image_url`
-                images:
-                  type: array
-                  items:
-                    type: string
-                    format: uri
-                  maxItems: 3
-                  description: Multiple image URLs (max 3)
-            examples:
-              basic:
-                summary: Basic search
-                value:
-                  query: "What is quantum computing?"
-                  session_id: "sess-abc123"
-                  stream: false
-              with_images:
-                summary: Search with images
-                value:
-                  query: "Identify this architecture style"
-                  session_id: "sess-abc123"
-                  images: ["https://example.com/building.jpg"]
-      responses:
-        '200':
-          description: Search results in OpenAI chat completion format
-          content:
-            text/event-stream:
-              schema:
-                type: string
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChatCompletionResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '503':
-          $ref: '#/components/responses/NotInitialized'
-
-  # ──────────────────────────────────────────────
-  # Chat Endpoints
-  # ──────────────────────────────────────────────
-  /api/chat:
-    post:
-      operationId: chat
-      summary: Chat with optional web search
-      description: |
-        Send a message and receive an SSE-streamed response. Optionally augments the response
-        with web search results. If no `session_id` is provided, a new session is created automatically.
-      tags:
-        - Chat
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - message
-              properties:
-                message:
-                  type: string
-                  description: User message
-                session_id:
-                  type: string
-                  description: Session identifier (auto-created if omitted)
-                search:
-                  type: boolean
-                  default: true
-                  description: Enable web search augmentation
-                image_url:
-                  type: string
-                  format: uri
-                  description: Optional image URL for multimodal queries
-            example:
-              message: "Explain the transformer architecture"
-              session_id: "sess-abc123"
-              search: true
-      responses:
-        '200':
-          description: Streamed chat response (SSE)
-          content:
-            text/event-stream:
-              schema:
-                type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '503':
-          $ref: '#/components/responses/NotInitialized'
-
-  /api/session/{session_id}/chat:
-    post:
-      operationId: sessionChat
-      summary: Chat within an existing session
-      description: Send a message in an existing session context. Requires the session to exist.
-      tags:
-        - Chat
-      parameters:
-        - $ref: '#/components/parameters/SessionId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - message
-              properties:
-                message:
-                  type: string
-                  description: User message
-                search:
-                  type: boolean
-                  default: false
-                  description: Enable web search augmentation
-                image_url:
-                  type: string
-                  format: uri
-      responses:
-        '200':
-          description: Streamed chat response (SSE)
-          content:
-            text/event-stream:
-              schema:
-                type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/SessionNotFound'
-
-  /api/session/{session_id}/chat/completions:
-    post:
-      operationId: sessionChatCompletions
-      summary: Session-scoped chat completions
-      description: |
-        OpenAI-compatible chat completions scoped to a specific session.
-        Unlike `/v1/chat/completions`, this requires the session to already exist.
-      tags:
-        - Chat
-      parameters:
-        - $ref: '#/components/parameters/SessionId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - messages
-              properties:
-                messages:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/ChatMessage'
-                stream:
-                  type: boolean
-                  default: false
-      responses:
-        '200':
-          description: Chat completion response (streaming or JSON)
+          description: Search results
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChatCompletionResponse'
-            text/event-stream:
-              schema:
-                type: string
+                $ref: '#/components/schemas/SurfResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/SessionNotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  # ─── Sessions ───────────────────────────────────────
 
-  /api/session/{session_id}/history:
-    get:
-      operationId: getChatHistory
-      summary: Get conversation history
-      description: Retrieve the conversation history for a session.
-      tags:
-        - Chat
-      parameters:
-        - $ref: '#/components/parameters/SessionId'
-      responses:
-        '200':
-          description: Conversation history
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  session_id:
-                    type: string
-                  conversation_history:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/ChatMessage'
-                  message_count:
-                    type: integer
-                  request_id:
-                    type: string
-        '404':
-          $ref: '#/components/responses/SessionNotFound'
-
-  # ──────────────────────────────────────────────
-  # Session Management
-  # ──────────────────────────────────────────────
   /api/session/create:
-    post:
+    get:
       operationId: createSession
-      summary: Create a new session
-      description: Create a new conversation session with an initial query.
-      tags:
-        - Sessions
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - query
-              properties:
-                query:
-                  type: string
-                  description: Initial query to seed the session
-            example:
-              query: "Tell me about renewable energy"
+      summary: Create session
+      description: |
+        Create a new named session. Returns a `session_id` that can be passed
+        to `/v1/chat/completions` or `/api/search` for multi-turn context.
+      tags: [Sessions]
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Initial query / session topic
+          example: "Research on quantum computing"
       responses:
         '201':
           description: Session created
@@ -594,25 +326,24 @@ paths:
                   created_at:
                     type: string
                     format: date-time
-              example:
-                session_id: "sess-a1b2c3d4"
-                query: "Tell me about renewable energy"
-                created_at: "2026-03-15T12:00:00Z"
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /api/session/{session_id}:
     get:
       operationId: getSession
-      summary: Get session info
-      description: Retrieve session metadata, RAG statistics, and summary.
-      tags:
-        - Sessions
+      summary: Get session and chat history
+      description: Returns session info and full conversation history (messages array).
+      tags: [Sessions]
       parameters:
         - $ref: '#/components/parameters/SessionId'
       responses:
         '200':
-          description: Session information
+          description: Session info
           content:
             application/json:
               schema:
@@ -624,28 +355,24 @@ paths:
                     type: string
                   summary:
                     type: object
-                    description: Session summary including RAG stats, messages, and conversation turn count
                     properties:
                       messages:
                         type: array
                         items:
-                          $ref: '#/components/schemas/ChatMessage'
+                          type: object
                       conversation_turns:
                         type: integer
-                  request_id:
-                    type: string
-                  timestamp:
-                    type: string
-                    format: date-time
         '404':
           $ref: '#/components/responses/SessionNotFound'
-
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
     delete:
       operationId: deleteSession
-      summary: Delete a session
-      description: Delete a session and all associated data (cache, history, RAG context).
-      tags:
-        - Sessions
+      summary: Delete session
+      description: Permanently deletes a session and its conversation history.
+      tags: [Sessions]
       parameters:
         - $ref: '#/components/parameters/SessionId'
       responses:
@@ -658,178 +385,94 @@ paths:
                 properties:
                   message:
                     type: string
+                    example: "Session deleted"
                   session_id:
                     type: string
-                  request_id:
-                    type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
-  /api/session/{session_id}/summary:
+  # ─── System ─────────────────────────────────────────
+
+  /api/models:
     get:
-      operationId: getSessionSummary
-      summary: Get session summary
-      description: Get RAG statistics and summary for a session.
-      tags:
-        - Sessions
-      parameters:
-        - $ref: '#/components/parameters/SessionId'
+      operationId: listModels
+      summary: List models
+      description: |
+        Returns available models. Currently returns `lixsearch`.
+        Also available at `/v1/models` for OpenAI SDK compatibility.
+      tags: [System]
+      security: []
       responses:
         '200':
-          description: Session summary and stats
+          description: Model list
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  session_id:
+                  object:
                     type: string
-                  stats:
-                    type: object
-                  request_id:
-                    type: string
-        '404':
-          $ref: '#/components/responses/SessionNotFound'
+                    const: list
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: lixsearch
+                        object:
+                          type: string
+                          const: model
+                        owned_by:
+                          type: string
+                          example: elixpo
 
-  # ──────────────────────────────────────────────
-  # Surf (lightweight search)
-  # ──────────────────────────────────────────────
-  /api/surf:
+  /api/health:
     get:
-      operationId: surfGet
-      summary: Surf URLs (GET)
-      description: |
-        Lightweight web search that returns raw URLs and optionally image URLs.
-        No LLM synthesis — useful for building custom search UIs or feeding results into other pipelines.
-      tags:
-        - Surf
-      parameters:
-        - name: query
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Search query
-          example: "best python frameworks 2026"
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 20
-            default: 5
-          description: Max number of results
-        - name: images
-          in: query
-          schema:
-            type: string
-            enum: ['true', 'false']
-            default: 'false'
-          description: Include image search results
+      operationId: healthCheck
+      summary: Health check
+      description: Returns service status. No auth required.
+      tags: [System]
+      security: []
       responses:
         '200':
-          description: URL results
+          description: Healthy
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SurfResponse'
-              example:
-                urls:
-                  - "https://example.com/article1"
-                  - "https://example.com/article2"
-                query: "best python frameworks 2026"
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '503':
-          $ref: '#/components/responses/NotInitialized'
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
 
-    post:
-      operationId: surfPost
-      summary: Surf URLs (POST)
-      description: Same as GET but accepts parameters in the request body.
-      tags:
-        - Surf
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - query
-              properties:
-                query:
-                  type: string
-                limit:
-                  type: integer
-                  minimum: 1
-                  maximum: 20
-                  default: 5
-                images:
-                  type: boolean
-                  default: false
-      responses:
-        '200':
-          description: URL results
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SurfResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '503':
-          $ref: '#/components/responses/NotInitialized'
+  # ─── Images ─────────────────────────────────────────
 
-  # ──────────────────────────────────────────────
-  # WebSocket
-  # ──────────────────────────────────────────────
-  /ws/search:
-    get:
-      operationId: websocketSearch
-      summary: WebSocket search
-      description: |
-        WebSocket endpoint for real-time bidirectional search streaming.
-        Connect via `ws://` or `wss://` and send JSON messages with `query` and optional `session_id`.
-
-        **Note:** This endpoint upgrades to WebSocket — it cannot be tested from this documentation UI.
-      tags:
-        - Search
-      parameters:
-        - name: session_id
-          in: query
-          schema:
-            type: string
-        - name: query
-          in: query
-          schema:
-            type: string
-      responses:
-        '101':
-          description: WebSocket upgrade successful
-
-  # ──────────────────────────────────────────────
-  # Generated Images
-  # ──────────────────────────────────────────────
   /api/image/{image_id}:
     get:
-      operationId: getGeneratedImage
-      summary: Get generated image
+      operationId: getImage
+      summary: Get image
       description: |
-        Serve a previously generated image by its ID. Images are stored on disk with a 7-day TTL (configurable via `IMAGE_TTL_SECONDS` env var).
-        These URLs are returned by the search pipeline when image generation is triggered.
-      tags:
-        - Images
+        Serves a hosted image by ID. Images are created when:
+        - The model generates an image via `create_image` tool
+        - A base64 image is uploaded through `/v1/chat/completions`
+
+        Images have a 7-day TTL and are cleaned up automatically. No auth required.
+      tags: [Media]
+      security: []
       parameters:
         - name: image_id
           in: path
           required: true
           schema:
             type: string
-            format: uuid
-          description: Image identifier (UUID returned from image generation)
+          description: Image identifier (UUID)
       responses:
         '200':
-          description: Image data
+          description: Image file
           content:
             image/png:
               schema:
@@ -840,253 +483,54 @@ paths:
                 type: string
                 format: binary
         '404':
-          description: Image not found or expired
+          description: Image not found
 
-  # ──────────────────────────────────────────────
-  # Discover
-  # ──────────────────────────────────────────────
-  /api/discover/generate:
-    post:
-      operationId: generateDiscover
-      summary: Generate discover articles
-      description: |
-        Generate curated news/article summaries for discover feed categories.
-        Uses web search + LLM synthesis to produce structured article objects.
-      tags:
-        - Discover
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                categories:
-                  type: array
-                  items:
-                    type: string
-                  description: List of categories to generate articles for (e.g. finance, academic, sports, patent). Defaults to all categories.
-            example:
-              categories: ["finance", "academic"]
-      responses:
-        '200':
-          description: Generated articles grouped by category
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-                  dayKey:
-                    type: string
-                    description: Date key (YYYY-MM-DD)
-                    example: "2026-03-22"
-                  generated_count:
-                    type: integer
-                    description: Total number of articles generated
-                  categories:
-                    type: object
-                    additionalProperties:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          title:
-                            type: string
-                          excerpt:
-                            type: string
-                          sourceUrl:
-                            type: string
-                            format: uri
-                          sourceTitle:
-                            type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '503':
-          $ref: '#/components/responses/NotInitialized'
-
-  # ──────────────────────────────────────────────
-  # Export
-  # ──────────────────────────────────────────────
-  /api/export/pdf:
-    post:
-      operationId: exportPdf
-      summary: Export content as PDF
-      description: |
-        Convert markdown content to a PDF document. Returns the PDF as a binary download.
-      tags:
-        - Export
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - content
-              properties:
-                content:
-                  type: string
-                  description: Markdown content to convert to PDF
-                title:
-                  type: string
-                  default: "lixSearch Response"
-                  description: PDF document title
-            example:
-              content: "## My Research\n\nQuantum computing uses qubits..."
-              title: "Quantum Computing Research"
-      responses:
-        '200':
-          description: PDF document
-          content:
-            application/pdf:
-              schema:
-                type: string
-                format: binary
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  # ──────────────────────────────────────────────
-  # Content
-  # ──────────────────────────────────────────────
   /api/content/{content_id}:
     get:
       operationId: getContent
-      summary: Get stored content
+      summary: Get content
       description: |
-        Serve previously stored content (PDFs, HTML, etc.) by its ID. Content is stored on disk with a 7-day TTL.
-      tags:
-        - Content
+        Serves hosted content (PDFs, documents) by ID. Content is created when
+        the model generates a PDF via the `export_to_pdf` tool during a chat response.
+
+        The response will contain a link like `https://search.elixpo.com/api/content/{id}`.
+        Content has a 7-day TTL and is cleaned up automatically. No auth required.
+      tags: [Media]
+      security: []
       parameters:
         - name: content_id
           in: path
           required: true
           schema:
             type: string
-          description: Content identifier
+          description: Content identifier (UUID)
       responses:
         '200':
-          description: Content data
+          description: Content file (typically PDF)
           content:
             application/pdf:
               schema:
                 type: string
                 format: binary
-            text/html:
-              schema:
-                type: string
-            application/json:
-              schema:
-                type: object
         '404':
-          description: Content not found or expired
-
-  # ──────────────────────────────────────────────
-  # System
-  # ──────────────────────────────────────────────
-  /api/health:
-    get:
-      operationId: healthCheck
-      summary: Health check
-      description: Returns service health status and pipeline initialization state.
-      tags:
-        - System
-      responses:
-        '200':
-          description: Service is healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: healthy
-                  timestamp:
-                    type: string
-                    format: date-time
-                  initialized:
-                    type: boolean
-              example:
-                status: healthy
-                timestamp: "2026-03-15T12:00:00"
-                initialized: true
-
-  /api/stats:
-    get:
-      operationId: getStats
-      summary: System statistics
-      description: |
-        Returns operational statistics including active sessions, Redis memory usage,
-        and disk archive metrics.
-      tags:
-        - System
-      responses:
-        '200':
-          description: System statistics
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  timestamp:
-                    type: string
-                    format: date-time
-                  sessions:
-                    type: object
-                    description: Session manager statistics
-                  redis_memory:
-                    type: object
-                    properties:
-                      used_memory_human:
-                        type: string
-                        example: "15.42MB"
-                      used_memory_bytes:
-                        type: integer
-                      maxmemory_human:
-                        type: string
-                      mem_fragmentation_ratio:
-                        type: number
-                      evicted_keys:
-                        type: integer
-                  disk_archive:
-                    type: object
-                    properties:
-                      total_files:
-                        type: integer
-                      total_size_bytes:
-                        type: integer
-                      total_size_human:
-                        type: string
-                        example: "2.3MB"
-                  request_id:
-                    type: string
-
-security:
-  - BearerAuth: []
-  - ApiKeyHeader: []
-  - ApiKeyQuery: []
+          description: Content not found
 
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
-      description: "Pass API key as `Authorization: Bearer <key>` (OpenAI-compatible)"
+      description: "`Authorization: Bearer <key>`"
     ApiKeyHeader:
       type: apiKey
       in: header
       name: X-API-Key
-      description: "Pass API key as `X-API-Key: <key>` header"
+      description: "`X-API-Key: <key>`"
     ApiKeyQuery:
       type: apiKey
       in: query
       name: key
-      description: "Pass API key as `?key=<key>` query parameter (GET requests)"
+      description: "`?key=<key>` (GET requests)"
 
   parameters:
     SessionId:
@@ -1101,9 +545,7 @@ components:
   schemas:
     ChatMessage:
       type: object
-      required:
-        - role
-        - content
+      required: [role, content]
       properties:
         role:
           type: string
@@ -1114,12 +556,11 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/ContentPart'
-              description: OpenAI vision format (array of text and image_url parts)
+              description: "Vision format: array of text and image_url parts"
 
     ContentPart:
       type: object
-      required:
-        - type
+      required: [type]
       properties:
         type:
           type: string
@@ -1133,59 +574,51 @@ components:
             url:
               type: string
               description: |
-                Image source. Accepts:
-                - **HTTPS URL**: `https://example.com/photo.jpg`
-                - **Base64 data URI**: `data:image/jpeg;base64,/9j/4AAQ...`
+                HTTPS URL or base64 data URI (`data:image/jpeg;base64,...`).
+                Base64 images are auto-hosted before processing.
+          description: Image reference (when type is "image_url")
 
-                Base64 images are auto-hosted on the server before processing.
-          description: Image reference (when type is "image_url"). Up to 3 images per request.
-
-    ChatCompletionRequest:
+    ChatRequest:
       type: object
-      required:
-        - messages
+      required: [messages]
       properties:
         messages:
           type: array
           items:
             $ref: '#/components/schemas/ChatMessage'
           minItems: 1
-          description: Conversation messages. The last user message is used as the search query.
+          description: Conversation messages. Last user message = search query.
         model:
           type: string
-          description: Model name (accepted but ignored — always uses lixsearch)
+          description: Ignored — always uses lixsearch
           default: lixsearch
         stream:
           type: boolean
           default: false
           description: Enable SSE streaming
-        temperature:
-          type: number
-          minimum: 0
-          maximum: 2
-          description: Accepted for compatibility but not used
-        max_tokens:
-          type: integer
-          description: Accepted for compatibility but not used
         session_id:
           type: string
           description: |
-            **Extension.** Optional session ID for context persistence across requests.
-            If omitted, an ephemeral session is used — no state is persisted after the request.
-            Use the `messages` array to provide full conversation context in each request instead.
+            Session ID for multi-turn context persistence.
+            Omit for stateless (ephemeral) requests.
+        temperature:
+          type: number
+          description: Accepted for compatibility, not used
+        max_tokens:
+          type: integer
+          description: Accepted for compatibility, not used
 
-    ChatCompletionResponse:
+    ChatResponse:
       type: object
       properties:
         id:
           type: string
-          example: "chatcmpl-abc123def456"
+          example: "elixpo-abc123"
         object:
           type: string
           const: chat.completion
         created:
           type: integer
-          description: Unix timestamp
         model:
           type: string
           example: lixsearch
@@ -1208,63 +641,14 @@ components:
                 type: string
                 enum: [stop]
         usage:
-          $ref: '#/components/schemas/Usage'
-
-    ChatCompletionChunk:
-      type: object
-      description: Streaming chunk (SSE `data:` payload)
-      properties:
-        id:
-          type: string
-        object:
-          type: string
-          const: chat.completion.chunk
-        created:
-          type: integer
-        model:
-          type: string
-        choices:
-          type: array
-          items:
-            type: object
-            properties:
-              index:
-                type: integer
-              delta:
-                type: object
-                properties:
-                  role:
-                    type: string
-                  content:
-                    type: string
-              finish_reason:
-                type: string
-                nullable: true
-
-    Usage:
-      type: object
-      properties:
-        prompt_tokens:
-          type: integer
-        completion_tokens:
-          type: integer
-        total_tokens:
-          type: integer
-
-    Model:
-      type: object
-      properties:
-        id:
-          type: string
-          example: lixsearch
-        object:
-          type: string
-          const: model
-        created:
-          type: integer
-        owned_by:
-          type: string
-          example: elixpo
+          type: object
+          properties:
+            prompt_tokens:
+              type: integer
+            completion_tokens:
+              type: integer
+            total_tokens:
+              type: integer
 
     SurfResponse:
       type: object
@@ -1274,7 +658,7 @@ components:
           items:
             type: string
             format: uri
-          description: List of result URLs
+          description: Web search result URLs
         query:
           type: string
         images:
@@ -1282,23 +666,23 @@ components:
           items:
             type: string
             format: uri
-          description: Image URLs (only present when `images=true`)
+          description: Image URLs (only when images=true)
 
     Error:
       type: object
       properties:
         error:
-          oneOf:
-            - type: string
-            - type: object
-              properties:
-                message:
-                  type: string
-                type:
-                  type: string
-                  enum: [invalid_request_error, server_error]
+          type: string
 
   responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Invalid or missing query"
     Unauthorized:
       description: API key required
       content:
@@ -1307,7 +691,6 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error: "API key required. Pass via Authorization: Bearer <key>, X-API-Key header, or ?key= param"
-
     Forbidden:
       description: Invalid API key
       content:
@@ -1316,16 +699,6 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error: "Invalid API key"
-
-    BadRequest:
-      description: Invalid request parameters
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            error: "Invalid or missing query"
-
     SessionNotFound:
       description: Session not found
       content:
@@ -1334,21 +707,11 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error: "Session not found"
-
     NotInitialized:
-      description: Server pipeline not yet initialized
+      description: Server not ready
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
           example:
             error: "Server not initialized"
-
-    InternalError:
-      description: Internal server error
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            error: "Internal server error"
