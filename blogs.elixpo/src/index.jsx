@@ -183,39 +183,51 @@ function SearchBar() {
 
 function FeedCard({ post }) {
   const author = post.author || {};
+  const bannerSrc = post.cover_image_r2_key || generateBlogBanner(post.id || post.slug);
   return (
     <article
-      className="group rounded-xl p-5 mb-3 transition-all duration-200 hover:shadow-md"
+      className="group rounded-xl mb-3 transition-all duration-200 hover:shadow-md overflow-hidden relative"
       style={{
         backgroundColor: 'var(--bg-surface)',
         border: '1px solid var(--border-default)',
         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
       }}
     >
-      <Link href={`/${author.username || 'unknown'}/${post.slug}`} className="block cursor-pointer">
-        <div className="flex items-center gap-2 mb-3">
-          {author.avatar_url ? (
-            <img src={author.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover ring-1 ring-[var(--border-default)]" />
-          ) : (
-            <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
-              {(author.display_name || author.username || '?')[0].toUpperCase()}
-            </div>
-          )}
-          <span className="text-[13px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-            {post.is_staff && (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
+      {/* Banner fading in from the right */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <img
+          src={bannerSrc}
+          alt=""
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          style={{ opacity: 0.18 }}
+        />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, var(--bg-surface) 30%, transparent 100%)' }} />
+      </div>
+
+      <div className="relative p-5">
+        <Link href={`/${author.username || 'unknown'}/${post.slug}`} className="block cursor-pointer">
+          <div className="flex items-center gap-2 mb-3">
+            {author.avatar_url ? (
+              <img src={author.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover ring-1 ring-[var(--border-default)]" />
+            ) : (
+              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
+                {(author.display_name || author.username || '?')[0].toUpperCase()}
+              </div>
             )}
-            {post.org && (
-              <><span style={{ color: 'var(--text-secondary)' }}>in {post.org.name}</span><span className="mx-0.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
-            )}
-            <span style={{ color: 'var(--text-secondary)' }}>{author.display_name || author.username}</span>
-            {post.co_author_count > 0 && (
-              <span style={{ color: 'var(--text-faint)' }}>+ {post.co_author_count} {post.co_author_count === 1 ? 'other' : 'others'}</span>
-            )}
-          </span>
-          <span className="ml-auto text-[11px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(post.published_at)}</span>
-        </div>
-        <div className="flex gap-5">
+            <span className="text-[13px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+              {post.is_staff && (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
+              )}
+              {post.org && (
+                <><span style={{ color: 'var(--text-secondary)' }}>in {post.org.name}</span><span className="mx-0.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
+              )}
+              <span style={{ color: 'var(--text-secondary)' }}>{author.display_name || author.username}</span>
+              {post.co_author_count > 0 && (
+                <span style={{ color: 'var(--text-faint)' }}>+ {post.co_author_count} {post.co_author_count === 1 ? 'other' : 'others'}</span>
+              )}
+            </span>
+            <span className="ml-auto text-[11px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(post.published_at)}</span>
+          </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-[18px] font-bold leading-[1.3] mb-1 group-hover:opacity-75 transition-opacity font-serif tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
               {post.page_emoji && <span className="mr-1.5">{post.page_emoji}</span>}
@@ -245,37 +257,30 @@ function FeedCard({ post }) {
               )}
             </div>
           </div>
-          <div className="w-[100px] h-[100px] rounded-xl flex-shrink-0 hidden sm:block overflow-hidden self-center" style={{ backgroundColor: 'var(--bg-elevated)' }}>
-            <img
-              src={post.cover_image_r2_key || generateBlogBanner(post.id || post.slug)}
-              alt=""
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
+        </Link>
+        {post.can_edit && (
+          <div className="mt-3 pt-3 flex items-center gap-2" style={{ borderTop: '1px solid var(--divider)' }}>
+            <Link
+              href={`/edit/${post.id}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
+              style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <ion-icon name="create-outline" style={{ fontSize: '13px' }} />
+              Edit
+            </Link>
+            <Link
+              href={`/edit/${post.id}?panel=settings`}
+              className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
+              style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
+              onClick={e => e.stopPropagation()}
+              title="Blog settings"
+            >
+              <ion-icon name="settings-outline" style={{ fontSize: '14px' }} />
+            </Link>
           </div>
-        </div>
-      </Link>
-      {post.can_edit && (
-        <div className="mt-3 pt-3 flex items-center gap-2" style={{ borderTop: '1px solid var(--divider)' }}>
-          <Link
-            href={`/edit/${post.id}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
-            style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
-            onClick={e => e.stopPropagation()}
-          >
-            <ion-icon name="create-outline" style={{ fontSize: '13px' }} />
-            Edit
-          </Link>
-          <Link
-            href={`/edit/${post.id}?panel=settings`}
-            className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
-            style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
-            onClick={e => e.stopPropagation()}
-            title="Blog settings"
-          >
-            <ion-icon name="settings-outline" style={{ fontSize: '14px' }} />
-          </Link>
-        </div>
-      )}
+        )}
+      </div>
     </article>
   );
 }

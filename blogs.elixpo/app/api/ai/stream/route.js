@@ -1,6 +1,6 @@
 export const runtime = 'edge';
 // Server-side proxy for lixsearch AI streaming
-// Uses GET /api/search?query=...&stream=true&session_id=... which auto-creates sessions
+// Uses POST /v1/chat/completions with Bearer auth
 
 import { enforceAILimits } from '../../../../lib/aiRateLimit';
 
@@ -17,10 +17,21 @@ export async function POST(request) {
     return new Response(JSON.stringify({ error: 'Missing sessionId or query' }), { status: 400 });
   }
 
-  try {
-    const url = `${LIXSEARCH_BASE}/api/search?query=${encodeURIComponent(query)}&stream=true&session_id=${encodeURIComponent(sessionId)}`;
+  const apiKey = process.env.ELIXPO_SEARCH_API_KEY || '';
 
-    const aiRes = await fetch(url);
+  try {
+    const aiRes = await fetch(`${LIXSEARCH_BASE}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }),
+      },
+      body: JSON.stringify({
+        query,
+        stream: true,
+        session_id: sessionId,
+      }),
+    });
 
     if (!aiRes.ok) {
       const err = await aiRes.text();
