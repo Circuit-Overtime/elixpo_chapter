@@ -32,10 +32,10 @@ const CANVAS_MODES = [
 ];
 
 const EDIT_PRESETS = [
-  { id: 'remove-bg', label: 'Remove Background', icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 9h6v6H9z" /></>, prompt: 'Remove the background completely, make it transparent, keep only the main subject' },
+  { id: 'remove-bg', label: 'Remove Background', icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 9h6v6H9z" /></>, prompt: null, comingSoon: true },
   { id: 'outpaint', label: 'Extend Image', icon: <><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></>, prompt: 'Extend the image beyond its current borders, seamlessly continuing the scene' },
   { id: 'fix-pose', label: 'Fix Character Pose', icon: <><circle cx="12" cy="4" r="2" /><path d="M12 6v5" /><path d="M9 11l-3 5" /><path d="M15 11l3 5" /></>, prompt: 'Fix and adjust the character pose naturally while keeping the same identity and style' },
-  { id: 'upscale', label: 'Enhance / Upscale', icon: <><path d="M15 3h6v6" /><path d="M14 10l7-7" /><path d="M9 21H3v-6" /><path d="M10 14l-7 7" /></>, prompt: 'Enhance and upscale this image, improve details, sharpness and quality' },
+  { id: 'upscale', label: 'Enhance / Upscale', icon: <><path d="M15 3h6v6" /><path d="M14 10l7-7" /><path d="M9 21H3v-6" /><path d="M10 14l-7 7" /></>, prompt: null, comingSoon: true },
   { id: 'relight', label: 'Relight Scene', icon: <><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2" /></>, prompt: 'Relight this scene with warm cinematic golden-hour lighting, soft shadows' },
   { id: 'style-transfer', label: 'Style Transfer', icon: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /></>, prompt: 'Apply an artistic painterly style to this image while preserving the composition' },
 ];
@@ -327,10 +327,10 @@ export default function EditorPage({ params }) {
           {EDIT_PRESETS.slice(0, 4).map((p) => (
             <button
               key={p.id}
-              className={styles.toolBtn}
-              onClick={() => handlePresetClick(p)}
-              title={p.label}
-              disabled={generating || !imageSrc}
+              className={`${styles.toolBtn} ${p.comingSoon ? styles.toolComingSoon : ''}`}
+              onClick={() => !p.comingSoon && handlePresetClick(p)}
+              title={p.comingSoon ? `${p.label} (Coming Soon)` : p.label}
+              disabled={generating || !imageSrc || p.comingSoon}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 {p.icon}
