@@ -565,6 +565,42 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     return () => editorEl.removeEventListener('keydown', handleBackspace, { capture: true });
   }, [editor]);
 
+  // Inject delete button on table blocks
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper || !editor) return;
+
+    function injectTableDeleteButtons() {
+      const tables = wrapper.querySelectorAll('[data-content-type="table"]');
+      tables.forEach(tableEl => {
+        if (tableEl.querySelector('.table-delete-btn')) return;
+        const blockEl = tableEl.closest('[data-id]');
+        if (!blockEl) return;
+        const blockId = blockEl.getAttribute('data-id');
+
+        const btn = document.createElement('button');
+        btn.className = 'table-delete-btn';
+        btn.title = 'Delete table';
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
+        btn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          try { editor.removeBlocks([blockId]); } catch {}
+        };
+        // Position relative to the table container
+        const container = blockEl.querySelector('.bn-block-content') || tableEl;
+        container.style.position = 'relative';
+        container.appendChild(btn);
+      });
+    }
+
+    injectTableDeleteButtons();
+    const observer = new MutationObserver(injectTableDeleteButtons);
+    observer.observe(wrapper, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [editor]);
+
   // Handle clipboard paste of images — compress, upload, insert native image block
   useEffect(() => {
     const editorEl = wrapperRef.current?.querySelector('.bn-editor');
