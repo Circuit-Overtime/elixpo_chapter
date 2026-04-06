@@ -290,15 +290,6 @@ export default function EditorPage({ params }) {
     };
   }, [selected, imageSrc, id, handleUndo, saveUndoSnapshot]);
 
-  // Click outside dismisses help tooltip and pickers
-  useEffect(() => {
-    const handleClick = () => {
-      setHelpTooltip(null);
-    };
-    window.addEventListener('pointerdown', handleClick);
-    return () => window.removeEventListener('pointerdown', handleClick);
-  }, []);
-
   // Scroll to zoom
   useEffect(() => {
     const el = containerRef.current;
@@ -660,12 +651,10 @@ export default function EditorPage({ params }) {
                   {TOOL_ICONS[t.id]}
                 </svg>
               </button>
-              {activeTool === t.id && (
-                <button className={styles.helpBtn} onClick={() => setHelpTooltip(helpTooltip === t.id ? null : t.id)} title="What does this do?">?</button>
-              )}
-              {helpTooltip === t.id && (
+              <div className={styles.helpBtnWrap}>
+                <span className={styles.helpBtn}>?</span>
                 <div className={styles.helpTooltip}>{t.hint}</div>
-              )}
+              </div>
             </div>
           ))}
 
@@ -683,12 +672,10 @@ export default function EditorPage({ params }) {
                   {m.icon}
                 </svg>
               </button>
-              {canvasMode === m.id && (
-                <button className={styles.helpBtn} onClick={() => setHelpTooltip(helpTooltip === m.id ? null : m.id)} title="What does this do?">?</button>
-              )}
-              {helpTooltip === m.id && (
+              <div className={styles.helpBtnWrap}>
+                <span className={styles.helpBtn}>?</span>
                 <div className={styles.helpTooltip}>{m.hint}</div>
-              )}
+              </div>
             </div>
           ))}
 
@@ -712,18 +699,18 @@ export default function EditorPage({ params }) {
 
           {/* Import image */}
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImportImage} style={{ display: 'none' }} />
-          <button className={styles.toolBtn} onClick={() => fileInputRef.current?.click()} title="Import image">
+          <button className={styles.toolBtn} onClick={() => fileInputRef.current?.click()} title="Import image (or Ctrl+V)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path d="M21 15l-5-5L5 21" />
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
           </button>
 
-          <button className={styles.toolBtn} onClick={clearMask} title="Clear mask">
+          <button className={styles.toolBtn} onClick={handleUndo} disabled={undoStack.length === 0} title="Undo (Ctrl+Z)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M3 10h10a5 5 0 015 5v2a5 5 0 01-5 5H3" />
-              <polyline points="8 15 3 10 8 5" />
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 105.64-11.36L1 10" />
             </svg>
           </button>
         </div>

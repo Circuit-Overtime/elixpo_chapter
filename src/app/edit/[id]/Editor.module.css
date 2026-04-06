@@ -211,10 +211,14 @@
   justify-content: center;
 }
 
-.helpBtn {
+.helpBtnWrap {
   position: absolute;
   top: 1px;
   right: 1px;
+  z-index: 5;
+}
+
+.helpBtn {
   width: 14px;
   height: 14px;
   display: flex;
@@ -222,17 +226,17 @@
   justify-content: center;
   border: none;
   border-radius: 50%;
-  background: rgba(86, 145, 243, 0.2);
+  background: rgba(86, 145, 243, 0.15);
   color: #5691f3;
   font-size: 8px;
   font-weight: 700;
-  cursor: pointer;
-  z-index: 5;
-  transition: all 0.15s ease;
+  cursor: help;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
-.helpBtn:hover {
-  background: rgba(86, 145, 243, 0.4);
+.toolWrap:hover .helpBtn {
+  opacity: 1;
 }
 
 .helpTooltip {
@@ -252,6 +256,12 @@
   z-index: 600;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.helpBtnWrap:hover .helpTooltip {
+  opacity: 1;
 }
 
 .toolDivider {
