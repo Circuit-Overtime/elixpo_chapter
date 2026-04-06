@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useModels } from '../../lib/useModels';
+import { STYLE_PRESETS } from '../../lib/blueprints';
 import styles from './Editor.module.css';
 
 const API_BASE = '/api';
@@ -15,10 +16,9 @@ const TOOLS = [
 ];
 
 const CANVAS_MODES = [
-  { id: 'inpaint-mode', label: 'Inpaint', hint: 'Paint a mask, then AI regenerates only the masked area', icon: <><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></> },
   { id: 'outpaint-mode', label: 'Outpaint', hint: 'Extends the image beyond its borders — AI fills the empty space', icon: <><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></> },
   { id: 'img2img', label: 'Img2Img', hint: 'Transforms the whole image based on your prompt — no mask needed', icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></> },
-  { id: 'sketch2img', label: 'Sketch', hint: 'Draw a rough sketch, then AI turns it into a full image', icon: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></> },
+  { id: 'sketch2img', label: 'Sketch', hint: 'Draw a rough sketch, then AI turns it into a full image', icon: <><path d="M3 17c1-2 3-6 5-6s3 4 5 4 3-5 5-5" strokeLinecap="round" /></> },
 ];
 
 const TOOL_ICONS = {
@@ -34,7 +34,7 @@ const EDIT_PRESETS = [
   { id: 'fix-pose', label: 'Fix Character Pose', icon: <><circle cx="12" cy="4" r="2" /><path d="M12 6v5" /><path d="M9 11l-3 5" /><path d="M15 11l3 5" /></>, prompt: 'Fix and adjust the character pose naturally while keeping the same identity and style' },
   { id: 'upscale', label: 'Enhance / Upscale', icon: <><path d="M15 3h6v6" /><path d="M14 10l7-7" /><path d="M9 21H3v-6" /><path d="M10 14l-7 7" /></>, prompt: null, comingSoon: true },
   { id: 'relight', label: 'Relight Scene', icon: <><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2" /></>, prompt: 'Relight this scene with warm cinematic golden-hour lighting, soft shadows' },
-  { id: 'style-transfer', label: 'Style Transfer', icon: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /></>, prompt: 'Apply an artistic painterly style to this image while preserving the composition' },
+  { id: 'style-transfer', label: 'Style Transfer', icon: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /></>, prompt: null, isStyleTransfer: true },
 ];
 
 export default function EditorPage({ params }) {
