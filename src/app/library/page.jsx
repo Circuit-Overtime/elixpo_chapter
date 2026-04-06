@@ -5,20 +5,8 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar/Navbar';
 import { isSignedIn } from '../lib/auth';
 import { getLibrary, removeFromLibrary } from '../lib/library';
+import { useModels, modelLabel as getModelLabel } from '../lib/useModels';
 import styles from './Library.module.css';
-
-const ALL_MODELS = [
-  { id: 'flux', label: 'Flux Schnell' }, { id: 'flux-2-dev', label: 'FLUX.2 Dev' },
-  { id: 'gptimage', label: 'GPT Image' }, { id: 'dirtberry', label: 'Dirtberry' },
-  { id: 'dirtberry-pro', label: 'Dirtberry Pro' }, { id: 'zimage', label: 'Z-Image' },
-  { id: 'imagen-4', label: 'Imagen 4' }, { id: 'grok-imagine', label: 'Grok Imagine' },
-  { id: 'klein', label: 'Klein' }, { id: 'kontext', label: 'Kontext' },
-  { id: 'grok-video', label: 'Grok Video' },
-];
-
-function modelLabel(id) {
-  return ALL_MODELS.find((m) => m.id === id)?.label || id;
-}
 
 function timeAgo(ts) {
   const diff = Date.now() - ts;
@@ -33,6 +21,8 @@ function timeAgo(ts) {
 
 export default function CreationsPage() {
   const router = useRouter();
+  const { all: allModels } = useModels();
+  const modelLabel = (id) => getModelLabel(allModels, id);
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState('all'); // all | image | video
   const [selected, setSelected] = useState(null);

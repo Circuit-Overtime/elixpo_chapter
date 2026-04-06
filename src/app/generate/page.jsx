@@ -5,21 +5,8 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar/Navbar';
 import { isSignedIn, getGuestSessionId, getSignInUrl, spendCredits, fetchCredits } from '../lib/auth';
 import { getImageCost, getVideoCost } from '../lib/credits';
+import { useModels } from '../lib/useModels';
 import styles from './Generate.module.css';
-
-const MODELS = [
-  { id: 'flux', label: 'Flux', desc: 'Fast & reliable' },
-  { id: 'gptimage', label: 'GPT Image 1 Mini', desc: 'OpenAI quality' },
-  { id: 'flux', label: 'Flux Schnell', desc: 'Fast generation' },
-  { id: 'flux-2-dev', label: 'FLUX.2 Dev', desc: 'Next-gen Flux' },
-  { id: 'dirtberry', label: 'Dirtberry', desc: 'Stylized art' },
-  { id: 'dirtberry-pro', label: 'Dirtberry Pro', desc: 'High quality art' },
-  { id: 'zimage', label: 'Z-Image Turbo', desc: 'Turbo speed' },
-  { id: 'imagen-4', label: 'Imagen 4', desc: 'Google quality' },
-  { id: 'grok-imagine', label: 'Grok Imagine', desc: 'xAI generation' },
-  { id: 'klein', label: 'FLUX.2 Klein 4B', desc: 'Compact model' },
-  { id: 'kontext', label: 'Kontext', desc: 'Context-aware' },
-];
 
 const ASPECTS = [
   { id: '1:1', w: 1024, h: 1024, label: '1:1' },
@@ -41,9 +28,6 @@ const DURATIONS = [
   { id: '10', label: '10s' },
 ];
 
-const VIDEO_MODELS = [
-  { id: 'grok-video', label: 'Grok Video', desc: 'High quality video' },
-];
 
 const STYLES = [
   { id: 'dynamic', label: 'Dynamic' },
@@ -76,6 +60,7 @@ const API_BASE = '/api';
 
 export default function GeneratePage() {
   const router = useRouter();
+  const { imageModels: MODELS, videoModels: VIDEO_MODELS } = useModels();
   const [mode, setMode] = useState('image');
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState('flux');
