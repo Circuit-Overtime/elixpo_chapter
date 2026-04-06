@@ -151,6 +151,10 @@
   border-radius: var(--radius-lg);
   margin-bottom: var(--spacing-sm);
   flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+  max-height: 72px;
+  overflow: hidden;
 }
 
 .uploadPreview {
