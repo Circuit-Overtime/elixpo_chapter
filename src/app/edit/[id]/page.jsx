@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useModels } from '../../lib/useModels';
 import { STYLE_PRESETS } from '../../lib/blueprints';
-import { generateVideo, prepareImageForVideo } from '../../lib/videoGen';
+import { generateVideo } from '../../lib/videoGen';
 import styles from './Editor.module.css';
 
 const API_BASE = '/api';
@@ -667,14 +667,13 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
     abortRef.current = controller;
 
     try {
-      const refImage = imageSrc ? await prepareImageForVideo(imageSrc) : null;
       const result = await generateVideo({
         prompt: prompt.trim(),
         model: 'ltx-2',
         width,
         height,
         duration: 5,
-        imageUrl: refImage,
+        imageUrl: imageSrc,
         signal: controller.signal,
       });
 
