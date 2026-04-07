@@ -6,6 +6,8 @@ import Navbar from '../../components/Navbar/Navbar';
 import { saveToLibrary } from '../../lib/library';
 import { isSignedIn, getUser } from '../../lib/auth';
 import { useModels } from '../../lib/useModels';
+import { generateVideo } from '../../lib/videoGen';
+import { generateVideoPrompt } from '../../lib/autoPrompt';
 import styles from './Session.module.css';
 
 const API_BASE = '/api';
@@ -35,6 +37,11 @@ export default function SessionPage({ params }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+
+  // Video state
+  const [previewTab, setPreviewTab] = useState('image');
+  const [videoSrc, setVideoSrc] = useState(null);
+  const [generatingVideo, setGeneratingVideo] = useState(false);
   const [videoMaintenance, setVideoMaintenance] = useState(false);
   const hasGenerated = useRef(false);
   const moreMenuRef = useRef(null);
@@ -152,6 +159,7 @@ export default function SessionPage({ params }) {
     setDuration(p.duration);
     setImageUrl(p.imageUrl);
     if (p.seed) setSeed(p.seed);
+    if (p.videoData) setVideoSrc(p.videoData);
     if (p.resultSrc) {
       setResultSrc(p.resultSrc);
       setGenerationTime(p.generationTime);
@@ -332,13 +340,40 @@ export default function SessionPage({ params }) {
     navigator.clipboard.writeText(prompt);
   };
 
-  const handleCreateVideo = () => {
-    if (!resultSrc) return;
-    const id = crypto.randomUUID();
-    sessionStorage.setItem(`gen_${id}`, JSON.stringify({
-      prompt, model: 'grok-video', width, height, mode: 'video', duration: 5, imageUrl: resultSrc, timestamp: Date.now(),
-    }));
-    router.push(`/generate/${id}`);
+  const handleCreateVideo = async () => {
+    if (!resultSrc || generatingVideo) return;
+    setGeneratingVideo(true);
+    setPreviewTab('video');
+
+    try {
+      // Auto-generate a video prompt from the image if no custom prompt
+      let videoPrompt = prompt;
+      if (!videoPrompt || videoPrompt.length < 5) {
+        videoPrompt = await generateVideoPrompt(resultSrc);
+        console.log('[video] Auto-prompt:', videoPrompt);
+      }
+
+      const result = await generateVideo({
+        prompt: videoPrompt,
+        model: 'ltx-2',
+        width,
+        height,
+        duration: 5,
+        imageUrl: resultSrc,
+      });
+
+      if (result.success) {
+        setVideoSrc(result.videoData);
+        setPreviewTab('video');
+        saveSession({ videoData: result.videoData });
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGeneratingVideo(false);
+    }
   };
 
   const handleRemoveBackground = async () => {
@@ -547,6 +582,23 @@ export default function SessionPage({ params }) {
 
       <div className={styles.layout}>
         <div className={styles.content}>
+          {resultSrc && !loading && (videoSrc || generatingVideo) && (
+            <div className={styles.previewTabs}>
+              <button
+                className={`${styles.previewTab} ${previewTab === 'image' ? styles.previewTabActive : ''}`}
+                onClick={() => setPreviewTab('image')}
+              >
+                Image
+              </button>
+              <button
+                className={`${styles.previewTab} ${previewTab === 'video' ? styles.previewTabActive : ''}`}
+                onClick={() => setPreviewTab('video')}
+              >
+                Video
+                {generatingVideo && <span className={styles.tabSpinner} />}
+              </button>
+            </div>
+          )}
           <div className={styles.imageContainer}>
             <div className={styles.ambientBlob1} aria-hidden="true" />
             <div className={styles.ambientBlob2} aria-hidden="true" />
@@ -603,7 +655,22 @@ export default function SessionPage({ params }) {
               </div>
             )}
 
-            {resultSrc && !loading && (
+
+
+            {resultSrc && !loading && previewTab === 'video' && (
+              <div className={styles.imageWrap}>
+                {videoSrc ? (
+                  <video src={videoSrc} className={styles.generatedImage} controls autoPlay loop />
+                ) : generatingVideo ? (
+                  <div className={styles.videoLoading}>
+                    <div className={styles.bokehSpinner}><div /><div /><div /></div>
+                    <p>Generating video...</p>
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {resultSrc && !loading && previewTab === 'image' && (
               <div className={styles.imageWrap}>
                 {mode === 'video' ? (
                   <video src={resultSrc} className={styles.generatedImage} controls autoPlay loop />
@@ -878,7 +945,7 @@ export default function SessionPage({ params }) {
                     <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
                 </button>
-                <button className={styles.actionIcon} onClick={() => setVideoMaintenance(true)} disabled={!resultSrc || mode === 'video'} title="Create video">
+                <button className={styles.actionIcon} onClick={handleCreateVideo} disabled={!resultSrc || mode === 'video' || generatingVideo} title="Create video from this image">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="5 3 19 12 5 21 5 3" />
                   </svg>

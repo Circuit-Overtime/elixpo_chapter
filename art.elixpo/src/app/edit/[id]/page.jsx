@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useModels } from '../../lib/useModels';
 import { STYLE_PRESETS } from '../../lib/blueprints';
+import { generateVideo } from '../../lib/videoGen';
+import { generateVideoPrompt } from '../../lib/autoPrompt';
 import styles from './Editor.module.css';
 
 const API_BASE = '/api';
@@ -119,7 +121,7 @@ function buildPosePrompt(joints) {
 export default function EditorPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
-  const { editModels } = useModels();
+  const { editModels, videoModels } = useModels();
 
   // Image state
   const [imageSrc, setImageSrc] = useState(null);
@@ -138,14 +140,20 @@ export default function EditorPage({ params }) {
   const [error, setError] = useState(null);
   const [modelOpen, setModelOpen] = useState(false);
   const [selected, setSelected] = useState(false);
+
+  // Video state
+  const [previewTab, setPreviewTab] = useState('image'); // 'image' | 'video'
+  const [videoSrc, setVideoSrc] = useState(null);
+  const [generatingVideo, setGeneratingVideo] = useState(false);
+  const [videoModel, setVideoModel] = useState('ltx-2');
   const [stylePicker, setStylePicker] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState(null);
   const [relightPicker, setRelightPicker] = useState(false);
   const [posePicker, setPosePicker] = useState(false);
   const [checkingCharacter, setCheckingCharacter] = useState(false);
-  const [skeletonJoints, setSkeletonJoints] = useState({ ...DEFAULT_SKELETON });
+  const [skeletons, setSkeletons] = useState([{ ...DEFAULT_SKELETON }]);
   const [poseNote, setPoseNote] = useState('');
-  const draggingJoint = useRef(null);
+  const draggingJoint = useRef(null); // { charIdx, jointName }
   const abortRef = useRef(null);
 
   // Pan state
@@ -183,6 +191,7 @@ export default function EditorPage({ params }) {
         setModel(data.model || 'gptimage');
         setWidth(data.width || 1024);
         setHeight(data.height || 576);
+        if (data.videoData) setVideoSrc(data.videoData);
       } catch {}
     }
   }, [id]);
@@ -348,7 +357,7 @@ export default function EditorPage({ params }) {
 
   // ─── Pan / draw / select handlers ───
   const handleCanvasPointerDown = (e) => {
-    if (isResizing.current) return;
+    if (isResizing.current || posePicker) return;
     if (activeTool === 'select') {
       setSelected(true);
       isPanning.current = true;
@@ -423,6 +432,30 @@ export default function EditorPage({ params }) {
     ctx.clearRect(0, 0, mask.width, mask.height);
   };
 
+  // Convert image to base64 if it's a blob URL or needs conversion
+  const getImageAsBase64 = useCallback(async (src) => {
+    if (!src) return null;
+    // Already base64
+    if (src.startsWith('data:')) return src;
+    // HTTP URL or blob URL — convert via canvas
+    if (src.startsWith('http') || src.startsWith('blob:')) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth;
+          c.height = img.naturalHeight;
+          c.getContext('2d').drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve(src);
+        img.src = src;
+      });
+    }
+    return src;
+  }, []);
+
   // ─── Run edit ───
   const handleEdit = async (editPrompt) => {
     if (!imageSrc) return;
@@ -436,10 +469,11 @@ export default function EditorPage({ params }) {
     abortRef.current = controller;
 
     try {
+      const imageData = await getImageAsBase64(imageSrc);
       const res = await fetch(`${API_BASE}/generate/edit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: finalPrompt, imageUrl: imageSrc, model, width, height }),
+        body: JSON.stringify({ prompt: finalPrompt, imageUrl: imageData, model, width, height }),
         signal: controller.signal,
       });
       const data = await res.json();
@@ -491,13 +525,36 @@ export default function EditorPage({ params }) {
       if (!imageSrc) return;
       setCheckingCharacter(true);
       setError(null);
+      const detectController = new AbortController();
+      abortRef.current = detectController;
       try {
+        const imageB64 = await getImageAsBase64(imageSrc);
         const res = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: detectController.signal,
           body: JSON.stringify({
-            image: imageSrc,
-            query: 'Does this image contain a visible human or humanoid character with a body? Reply with JSON: {"hasCharacter": true, "reason": "..."} or {"hasCharacter": false, "reason": "..."}'
+            image: imageB64,
+            query: `Find ALL visible human or humanoid characters in this image. For EACH character, estimate the EXACT pixel position of their body joints as normalized coordinates (0 to 1, where 0,0 is top-left corner and 1,1 is bottom-right corner of the image).
+
+CRITICAL placement rules — be extremely precise:
+- "nose" = tip of the nose or center of the face
+- "leftShoulder" / "rightShoulder" = where the arm meets the torso, at the shoulder joint
+- "leftElbow" / "rightElbow" = the bend point of each arm
+- "leftWrist" / "rightWrist" = the wrist/hand position — this MUST be at the end of the arm, where the hand is. If arms are extended outward, wrists should be far from the body center.
+- "leftHip" / "rightHip" = where the legs meet the torso, at the waist/belt line
+- "leftKnee" / "rightKnee" = the bend point of each leg
+- "leftAnkle" / "rightAnkle" = the ankle/foot position at the bottom of each leg
+
+IMPORTANT: "left" and "right" are from the CHARACTER's perspective (mirrored from viewer). If a character faces the viewer, their left arm appears on the RIGHT side of the image.
+
+If arms are spread wide, the wrist x-coordinates should be far apart (close to the character's hand tips). If legs are apart, ankle x-coordinates should reflect that spread.
+
+Reply ONLY with valid JSON, no markdown:
+{"hasCharacter": true, "characters": [{"joints": {"nose": {"x": 0.3, "y": 0.1}, "leftShoulder": {"x": 0.25, "y": 0.25}, "rightShoulder": {"x": 0.35, "y": 0.25}, "leftElbow": {"x": 0.15, "y": 0.3}, "rightElbow": {"x": 0.45, "y": 0.3}, "leftWrist": {"x": 0.08, "y": 0.35}, "rightWrist": {"x": 0.52, "y": 0.35}, "leftHip": {"x": 0.27, "y": 0.52}, "rightHip": {"x": 0.33, "y": 0.52}, "leftKnee": {"x": 0.26, "y": 0.72}, "rightKnee": {"x": 0.34, "y": 0.72}, "leftAnkle": {"x": 0.25, "y": 0.9}, "rightAnkle": {"x": 0.35, "y": 0.9}}}]}
+
+For multiple characters, add more objects to the array.
+If no character: {"hasCharacter": false, "reason": "explanation"}`
           }),
         });
         const data = await res.json();
@@ -505,16 +562,37 @@ export default function EditorPage({ params }) {
           setError('No character detected. Pose editing requires a visible character in the image.');
           return;
         }
-        setSkeletonJoints({ ...DEFAULT_SKELETON });
+        // Parse detected characters into skeleton array
+        const parseSkeleton = (joints) => {
+          const skel = { ...DEFAULT_SKELETON };
+          if (joints && typeof joints === 'object') {
+            for (const [key, val] of Object.entries(joints)) {
+              if (skel[key] && typeof val?.x === 'number' && typeof val?.y === 'number') {
+                skel[key] = { x: Math.max(0, Math.min(1, val.x)), y: Math.max(0, Math.min(1, val.y)) };
+              }
+            }
+          }
+          return skel;
+        };
+
+        if (Array.isArray(data.characters) && data.characters.length > 0) {
+          setSkeletons(data.characters.map(c => parseSkeleton(c.joints)));
+        } else if (data.joints) {
+          // Backward compat: single joints object
+          setSkeletons([parseSkeleton(data.joints)]);
+        } else {
+          setSkeletons([{ ...DEFAULT_SKELETON }]);
+        }
         setPoseNote('');
         setPosePicker(true);
-      } catch {
-        // On error, allow through
-        setSkeletonJoints({ ...DEFAULT_SKELETON });
+      } catch (err) {
+        if (err?.name === 'AbortError') return;
+        setSkeletons([{ ...DEFAULT_SKELETON }]);
         setPoseNote('');
         setPosePicker(true);
       } finally {
         setCheckingCharacter(false);
+        abortRef.current = null;
       }
       return;
     }
@@ -536,29 +614,102 @@ export default function EditorPage({ params }) {
     handleEdit(option.prompt);
   };
 
-  // ─── Pose editor handlers ───
-  const handleJointDown = (name, e) => {
+  // ─── Pose editor handlers (RAF-throttled for smooth dragging) ───
+  const poseRAF = useRef(null);
+  const poseSVGRef = useRef(null);
+
+  const handleJointDown = (charIdx, jointName, e) => {
     e.stopPropagation();
-    draggingJoint.current = name;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    draggingJoint.current = { charIdx, jointName };
   };
 
-  const handlePoseSVGMove = (e) => {
-    if (!draggingJoint.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const ny = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-    setSkeletonJoints(prev => ({ ...prev, [draggingJoint.current]: { x: nx, y: ny } }));
-  };
+  const handlePoseSVGMove = useCallback((e) => {
+    if (!draggingJoint.current || !poseSVGRef.current) return;
+    e.preventDefault();
+    if (poseRAF.current) return; // skip if RAF pending
+    poseRAF.current = requestAnimationFrame(() => {
+      poseRAF.current = null;
+      if (!draggingJoint.current || !poseSVGRef.current) return;
+      const rect = poseSVGRef.current.getBoundingClientRect();
+      const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const ny = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+      const { charIdx, jointName } = draggingJoint.current;
+      setSkeletons(prev => {
+        const next = [...prev];
+        next[charIdx] = { ...next[charIdx], [jointName]: { x: nx, y: ny } };
+        return next;
+      });
+    });
+  }, []);
 
-  const handlePoseSVGUp = () => { draggingJoint.current = null; };
+  const handlePoseSVGUp = useCallback(() => {
+    draggingJoint.current = null;
+    if (poseRAF.current) { cancelAnimationFrame(poseRAF.current); poseRAF.current = null; }
+  }, []);
 
   const handlePoseGenerate = () => {
-    const poseDesc = buildPosePrompt(skeletonJoints);
-    const final = poseDesc + (poseNote.trim() ? `, ${poseNote.trim()}` : '') + ', keep same character identity, clothing, and art style';
+    const parts = skeletons.map((skel, i) => {
+      const desc = buildPosePrompt(skel);
+      return skeletons.length > 1 ? `character ${i + 1}: ${desc}` : desc;
+    });
+    const final = parts.join('; ') + (poseNote.trim() ? `, ${poseNote.trim()}` : '') + ', keep same character identities, clothing, and art style';
+    console.log('[pose] Generated prompt:', final);
     setPosePicker(false);
-    setPrompt(final);
+    // Don't show pose prompt in the prompt bar — it's internal
     handleEdit(final);
+  };
+
+  // ─── Video generation ───
+  const handleGenerateVideo = async () => {
+    if (generatingVideo) return;
+    setGeneratingVideo(true);
+    setPreviewTab('video');
+    setError(null);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      // Auto-generate prompt if user didn't type one
+      let videoPrompt = prompt.trim();
+      if (!videoPrompt && imageSrc) {
+        const imageB64 = await getImageAsBase64(imageSrc);
+        videoPrompt = await generateVideoPrompt(imageB64, controller.signal);
+        console.log('[video] Auto-prompt:', videoPrompt);
+      }
+      if (!videoPrompt) videoPrompt = 'cinematic scene, smooth motion, high quality';
+
+      const result = await generateVideo({
+        prompt: videoPrompt,
+        model: videoModel,
+        width,
+        height,
+        duration: 5,
+        imageUrl: imageSrc,
+        signal: controller.signal,
+      });
+
+      if (!result.success) {
+        if (result.error !== 'Cancelled') setError(result.error);
+        return;
+      }
+
+      setVideoSrc(result.videoData);
+      setPreviewTab('video');
+      // Save to session
+      const raw = sessionStorage.getItem(`gen_${id}`);
+      if (raw) {
+        const session = JSON.parse(raw);
+        session.videoData = result.videoData;
+        sessionStorage.setItem(`gen_${id}`, JSON.stringify(session));
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') setError(err.message);
+    } finally {
+      setGeneratingVideo(false);
+      abortRef.current = null;
+    }
   };
 
   const handleImportImage = (e) => {
@@ -585,7 +736,9 @@ export default function EditorPage({ params }) {
     return 'default';
   };
 
-  const selectedModel = editModels.find((m) => m.id === model) || editModels[0];
+  const activeModels = previewTab === 'video' ? videoModels : editModels;
+  const activeModelId = previewTab === 'video' ? videoModel : model;
+  const selectedModel = activeModels.find((m) => m.id === activeModelId) || activeModels[0];
 
   return (
     <div className={styles.page}>
@@ -617,11 +770,15 @@ export default function EditorPage({ params }) {
               </button>
               {modelOpen && (
                 <div className={styles.modelDropdown}>
-                  {editModels.map((m) => (
+                  {activeModels.map((m) => (
                     <button
                       key={m.id}
-                      className={`${styles.modelItem} ${m.id === model ? styles.modelItemActive : ''}`}
-                      onClick={() => { setModel(m.id); setModelOpen(false); }}
+                      className={`${styles.modelItem} ${m.id === activeModelId ? styles.modelItemActive : ''}`}
+                      onClick={() => {
+                        if (previewTab === 'video') setVideoModel(m.id);
+                        else setModel(m.id);
+                        setModelOpen(false);
+                      }}
                     >
                       <span>{m.label}</span>
                       <span className={styles.modelDesc}>{m.desc}</span>
@@ -640,9 +797,10 @@ export default function EditorPage({ params }) {
           {TOOLS.map((t) => (
             <div key={t.id} className={styles.toolWrap}>
               <button
-                className={`${styles.toolBtn} ${activeTool === t.id ? styles.toolActive : ''}`}
-                onClick={() => { setActiveTool(t.id); if (t.id !== 'select') setSelected(false); }}
+                className={`${styles.toolBtn} ${activeTool === t.id && !posePicker ? styles.toolActive : ''}`}
+                onClick={() => { if (posePicker) return; setActiveTool(t.id); if (t.id !== 'select') setSelected(false); }}
                 title={t.label}
+                disabled={posePicker}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   {TOOL_ICONS[t.id]}
@@ -661,9 +819,10 @@ export default function EditorPage({ params }) {
           {CANVAS_MODES.map((m) => (
             <div key={m.id} className={styles.toolWrap}>
               <button
-                className={`${styles.toolBtn} ${canvasMode === m.id ? styles.toolActive : ''}`}
-                onClick={() => setCanvasMode(m.id)}
+                className={`${styles.toolBtn} ${canvasMode === m.id && !posePicker ? styles.toolActive : ''}`}
+                onClick={() => { if (!posePicker) setCanvasMode(m.id); }}
                 title={m.label}
+                disabled={posePicker}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   {m.icon}
@@ -678,13 +837,13 @@ export default function EditorPage({ params }) {
 
           <div className={styles.toolDivider} />
 
-          {EDIT_PRESETS.slice(0, 4).map((p) => (
+          {EDIT_PRESETS.map((p) => (
             <button
               key={p.id}
               className={`${styles.toolBtn} ${p.comingSoon ? styles.toolComingSoon : ''}`}
               onClick={() => !p.comingSoon && handlePresetClick(p)}
               title={p.comingSoon ? `${p.label} (Coming Soon)` : p.label}
-              disabled={generating || !imageSrc || p.comingSoon}
+              disabled={generating || !imageSrc || p.comingSoon || posePicker}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 {p.icon}
@@ -692,11 +851,28 @@ export default function EditorPage({ params }) {
             </button>
           ))}
 
+          <div className={styles.toolDivider} />
+
+          {/* Generate video from canvas */}
+          <button
+            className={`${styles.toolBtn} ${generatingVideo ? styles.toolActive : ''}`}
+            onClick={() => {
+              if (!imageSrc || generatingVideo) return;
+              handleGenerateVideo();
+            }}
+            title="Generate video from this image"
+            disabled={!imageSrc || generatingVideo || posePicker}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+          </button>
+
           <div className={styles.toolbarSpacer} />
 
           {/* Import image */}
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImportImage} style={{ display: 'none' }} />
-          <button className={styles.toolBtn} onClick={() => fileInputRef.current?.click()} title="Import image (or Ctrl+V)">
+          <button className={styles.toolBtn} onClick={() => fileInputRef.current?.click()} title="Import image (or Ctrl+V)" disabled={posePicker}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
@@ -704,7 +880,7 @@ export default function EditorPage({ params }) {
             </svg>
           </button>
 
-          <button className={styles.toolBtn} onClick={handleUndo} disabled={undoStack.length === 0} title="Undo (Ctrl+Z)">
+          <button className={styles.toolBtn} onClick={handleUndo} disabled={undoStack.length === 0 || posePicker} title="Undo (Ctrl+Z)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <polyline points="1 4 1 10 7 10" />
               <path d="M3.51 15a9 9 0 105.64-11.36L1 10" />
@@ -714,6 +890,33 @@ export default function EditorPage({ params }) {
 
         {/* Canvas + prompt bar area */}
         <div className={styles.canvasColumn}>
+          {/* Image / Video tabs */}
+          {(videoSrc || generatingVideo) && (
+            <div className={styles.previewTabs}>
+              <button
+                className={`${styles.previewTab} ${previewTab === 'image' ? styles.previewTabActive : ''}`}
+                onClick={() => setPreviewTab('image')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
+                Image
+              </button>
+              <button
+                className={`${styles.previewTab} ${previewTab === 'video' ? styles.previewTabActive : ''}`}
+                onClick={() => setPreviewTab('video')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                Video
+                {generatingVideo && <span className={styles.tabSpinner} />}
+              </button>
+            </div>
+          )}
+
           {/* Canvas viewport */}
           <div
             className={styles.canvasArea}
@@ -722,7 +925,7 @@ export default function EditorPage({ params }) {
             onPointerMove={handleCanvasPointerMove}
             onPointerUp={handleCanvasPointerUp}
             onPointerLeave={handleCanvasPointerUp}
-            style={{ cursor: getCursor() }}
+            style={{ cursor: getCursor(), display: previewTab === 'video' ? 'none' : undefined }}
           >
             {imageSrc ? (
               <div
@@ -748,7 +951,7 @@ export default function EditorPage({ params }) {
                     ref={maskCanvasRef}
                     className={styles.maskCanvas}
                   />
-                  {selected && (
+                  {selected && !posePicker && (
                     <>
                       <div className={`${styles.handle} ${styles.handleTL}`} onPointerDown={(e) => startResize('TL', e)} />
                       <div className={`${styles.handle} ${styles.handleTR}`} onPointerDown={(e) => startResize('TR', e)} />
@@ -756,6 +959,42 @@ export default function EditorPage({ params }) {
                       <div className={`${styles.handle} ${styles.handleBR}`} onPointerDown={(e) => startResize('BR', e)} />
                       <div className={styles.sizeLabel}>{imageSize.w} x {imageSize.h}</div>
                     </>
+                  )}
+                  {/* Skeleton overlays — one per detected character */}
+                  {posePicker && (
+                    <svg
+                      ref={poseSVGRef}
+                      className={styles.poseSVG}
+                      viewBox="0 0 1 1"
+                      preserveAspectRatio="none"
+                      onPointerMove={handlePoseSVGMove}
+                      onPointerUp={handlePoseSVGUp}
+                      onPointerLeave={handlePoseSVGUp}
+                      style={{ touchAction: 'none' }}
+                    >
+                      {skeletons.map((skel, charIdx) => (
+                        <g key={charIdx}>
+                          {POSE_LIMBS.map(([a, b, color], i) => (
+                            <line
+                              key={i}
+                              x1={skel[a].x} y1={skel[a].y}
+                              x2={skel[b].x} y2={skel[b].y}
+                              stroke={color} strokeWidth="0.008" strokeLinecap="round"
+                              opacity={0.85}
+                            />
+                          ))}
+                          {Object.entries(skel).map(([name, pos]) => (
+                            <circle
+                              key={name}
+                              cx={pos.x} cy={pos.y} r="0.012"
+                              fill="#fff" stroke={JOINT_COLORS[name]} strokeWidth="0.004"
+                              style={{ cursor: 'grab', filter: 'drop-shadow(0 0.002px 0.005px rgba(0,0,0,0.8))' }}
+                              onPointerDown={(e) => handleJointDown(charIdx, name, e)}
+                            />
+                          ))}
+                        </g>
+                      ))}
+                    </svg>
                   )}
                 </div>
                 {generating && (
@@ -777,25 +1016,44 @@ export default function EditorPage({ params }) {
             )}
           </div>
 
+          {/* Video preview */}
+          {previewTab === 'video' && (
+            <div className={styles.videoPreview}>
+              {videoSrc ? (
+                <video src={videoSrc} controls autoPlay loop className={styles.videoPlayer} />
+              ) : generatingVideo ? (
+                <div className={styles.canvasLoading}>
+                  <div className={styles.canvasSpinner} />
+                  <span>Generating video...</span>
+                  <button className={styles.stopBtn} onClick={handleStop}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1" /></svg>
+                    Stop
+                  </button>
+                </div>
+              ) : (
+                <div className={styles.canvasEmpty}>
+                  <p>No video yet</p>
+                  <button className={styles.backBtn} onClick={() => setPreviewTab('image')}>Back to Image</button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Prompt bar — always at bottom */}
           <div className={styles.promptBar}>
-            <button className={styles.promptSettingsBtn} title="Settings">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
-              </svg>
-            </button>
             <input
               type="text"
               className={styles.promptInput}
-              placeholder="Describe your edit..."
+              placeholder={posePicker ? 'Use pose controls in the panel →' : 'Describe your edit...'}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !posePicker) handleEdit(); }}
+              disabled={posePicker}
             />
             <button
               className={styles.generateBtn}
               onClick={() => handleEdit()}
-              disabled={generating || !prompt.trim() || !imageSrc}
+              disabled={generating || !prompt.trim() || !imageSrc || posePicker}
             >
               Generate
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -803,11 +1061,56 @@ export default function EditorPage({ params }) {
                 <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
               </svg>
             </button>
+            <button
+              className={styles.videoBtn}
+              onClick={handleGenerateVideo}
+              disabled={generatingVideo || posePicker}
+              title="Generate video from prompt (uses canvas image as reference frame)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              {generatingVideo ? 'Generating...' : 'Video'}
+            </button>
           </div>
         </div>
 
         {/* Right settings panel */}
         <div className={styles.settingsPanel}>
+
+          {/* Pose controls — shown when skeleton is active */}
+          {posePicker && (
+            <>
+              <div className={styles.settingsSection}>
+                <h3 className={styles.settingsLabel}>Pose Editor</h3>
+                <p className={styles.poseBarHint}>
+                  {skeletons.length} character{skeletons.length !== 1 ? 's' : ''} detected. Drag joints to set the target pose.
+                </p>
+              </div>
+              <div className={styles.settingsSection}>
+                <span className={styles.settingsLabel}>Pose Note</span>
+                <input
+                  type="text"
+                  className={styles.poseBarInput}
+                  placeholder="e.g. sitting, dancing, arms crossed..."
+                  value={poseNote}
+                  onChange={(e) => setPoseNote(e.target.value)}
+                />
+              </div>
+              <div className={styles.settingsSection}>
+                <div className={styles.poseActions}>
+                  <button className={styles.poseResetBtn} onClick={() => setSkeletons(prev => prev.map(() => ({ ...DEFAULT_SKELETON })))}>Reset Skeleton</button>
+                  <button className={styles.poseGenerateBtn} onClick={handlePoseGenerate} disabled={generating}>Generate</button>
+                </div>
+                <button className={styles.poseCloseBtn} onClick={() => setPosePicker(false)}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                  Close Pose Editor
+                </button>
+              </div>
+            </>
+          )}
 
           <div className={styles.settingsSection}>
             <div className={styles.settingsRow}>
@@ -837,133 +1140,71 @@ export default function EditorPage({ params }) {
             </div>
           </div>
 
-          <div className={styles.settingsSection}>
-            <h3 className={styles.settingsLabel}>Quick Edits</h3>
-            <div className={styles.presetGrid}>
-              {EDIT_PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  className={`${styles.presetBtn} ${p.comingSoon ? styles.presetComingSoon : ''}`}
-                  onClick={() => !p.comingSoon && handlePresetClick(p)}
-                  disabled={generating || !imageSrc || p.comingSoon}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    {p.icon}
-                  </svg>
-                  {p.label}
-                  {p.comingSoon && <span className={styles.comingSoonBadge}>Soon</span>}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Style Transfer — shown when active */}
+          {stylePicker && (
+            <>
+              <div className={styles.settingsSection}>
+                <div className={styles.settingsRow}>
+                  <h3 className={styles.settingsLabel}>Style Transfer</h3>
+                  <button className={styles.poseCloseBtn} onClick={() => setStylePicker(false)} style={{ width: 'auto', padding: '0.2rem 0.5rem' }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                    Close
+                  </button>
+                </div>
+                <div className={styles.styleGrid}>
+                  {STYLE_PRESETS.map((s) => (
+                    <button
+                      key={s.id}
+                      className={`${styles.styleCard} ${selectedStyle === s.id ? styles.styleCardActive : ''}`}
+                      onClick={() => handleStyleTransfer(s)}
+                      disabled={generating}
+                    >
+                      <img src={s.image} alt={s.label} className={styles.styleImg} loading="lazy" />
+                      <span className={styles.styleLabel}>{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Relight — shown when active */}
+          {relightPicker && (
+            <>
+              <div className={styles.settingsSection}>
+                <div className={styles.settingsRow}>
+                  <h3 className={styles.settingsLabel}>Relight Scene</h3>
+                  <button className={styles.poseCloseBtn} onClick={() => setRelightPicker(false)} style={{ width: 'auto', padding: '0.2rem 0.5rem' }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                    Close
+                  </button>
+                </div>
+                <div className={styles.relightGrid}>
+                  {RELIGHT_OPTIONS.map((o) => (
+                    <button key={o.id} className={styles.relightCard} onClick={() => handleRelightOption(o)} disabled={generating}>
+                      <span className={styles.relightLabel}>{o.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           {error && <p className={styles.error}>{error}</p>}
         </div>
       </div>
 
       {/* Style Transfer Picker */}
-      {stylePicker && (
-        <div className={styles.pickerOverlay} onClick={() => setStylePicker(false)}>
-          <div className={styles.pickerModal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.pickerTitle}>Choose a Style</h3>
-            <div className={styles.styleGrid}>
-              {STYLE_PRESETS.map((s) => (
-                <button
-                  key={s.id}
-                  className={`${styles.styleCard} ${selectedStyle === s.id ? styles.styleCardActive : ''}`}
-                  onClick={() => handleStyleTransfer(s)}
-                >
-                  <img src={s.image} alt={s.label} className={styles.styleImg} loading="lazy" />
-                  <span className={styles.styleLabel}>{s.label}</span>
-                </button>
-              ))}
-            </div>
-            <p className={styles.pickerHint}>Or type a custom style in the prompt bar and hit Generate</p>
-          </div>
-        </div>
-      )}
-
-      {/* Relight Picker */}
-      {relightPicker && (
-        <div className={styles.pickerOverlay} onClick={() => setRelightPicker(false)}>
-          <div className={styles.pickerModal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.pickerTitle}>Choose Lighting</h3>
-            <div className={styles.relightGrid}>
-              {RELIGHT_OPTIONS.map((o) => (
-                <button key={o.id} className={styles.relightCard} onClick={() => handleRelightOption(o)}>
-                  <span className={styles.relightLabel}>{o.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Pose Editor Modal */}
-      {posePicker && imageSrc && (
-        <div className={styles.pickerOverlay} onClick={() => setPosePicker(false)}>
-          <div className={styles.poseModal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.pickerTitle}>Adjust Character Pose</h3>
-            <p className={styles.poseHint}>Drag the joints to set the target pose, then hit Generate</p>
-
-            <div className={styles.poseImageWrap}>
-              <img src={imageSrc} alt="Pose reference" className={styles.poseImage} draggable={false} />
-              <svg
-                className={styles.poseSVG}
-                viewBox="0 0 1 1"
-                preserveAspectRatio="none"
-                onPointerMove={handlePoseSVGMove}
-                onPointerUp={handlePoseSVGUp}
-                onPointerLeave={handlePoseSVGUp}
-              >
-                {/* Limbs */}
-                {POSE_LIMBS.map(([a, b, color], i) => (
-                  <line
-                    key={i}
-                    x1={skeletonJoints[a].x} y1={skeletonJoints[a].y}
-                    x2={skeletonJoints[b].x} y2={skeletonJoints[b].y}
-                    stroke={color} strokeWidth="0.008" strokeLinecap="round"
-                  />
-                ))}
-                {/* Joints */}
-                {Object.entries(skeletonJoints).map(([name, pos]) => (
-                  <circle
-                    key={name}
-                    cx={pos.x} cy={pos.y} r="0.015"
-                    fill="#fff" stroke={JOINT_COLORS[name]} strokeWidth="0.005"
-                    style={{ cursor: 'grab', filter: 'drop-shadow(0 0.002px 0.005px rgba(0,0,0,0.8))' }}
-                    onPointerDown={(e) => handleJointDown(name, e)}
-                  />
-                ))}
-              </svg>
-            </div>
-
-            <textarea
-              className={styles.poseTextarea}
-              placeholder="Optional: describe additional pose details (e.g. 'sitting on a chair', 'dancing')..."
-              value={poseNote}
-              onChange={(e) => setPoseNote(e.target.value)}
-              rows={2}
-            />
-
-            <div className={styles.poseActions}>
-              <button className={styles.poseResetBtn} onClick={() => setSkeletonJoints({ ...DEFAULT_SKELETON })}>
-                Reset Skeleton
-              </button>
-              <button className={styles.poseGenerateBtn} onClick={handlePoseGenerate} disabled={generating}>
-                Generate
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Character checking overlay */}
       {checkingCharacter && (
         <div className={styles.pickerOverlay}>
           <div className={styles.checkingBox}>
             <div className={styles.canvasSpinner} />
-            <span>Checking for character...</span>
+            <span>Detecting character pose...</span>
+            <button className={styles.stopBtn} onClick={handleStop}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1" /></svg>
+              Stop
+            </button>
           </div>
         </div>
       )}
