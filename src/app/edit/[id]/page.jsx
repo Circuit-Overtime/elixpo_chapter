@@ -516,11 +516,14 @@ export default function EditorPage({ params }) {
       if (!imageSrc) return;
       setCheckingCharacter(true);
       setError(null);
+      const detectController = new AbortController();
+      abortRef.current = detectController;
       try {
         const imageB64 = await getImageAsBase64(imageSrc);
         const res = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: detectController.signal,
           body: JSON.stringify({
             image: imageB64,
             query: `Find ALL visible human or humanoid characters in this image. For EACH character, estimate the EXACT pixel position of their body joints as normalized coordinates (0 to 1, where 0,0 is top-left corner and 1,1 is bottom-right corner of the image).
@@ -534,7 +537,7 @@ CRITICAL placement rules — be extremely precise:
 - "leftKnee" / "rightKnee" = the bend point of each leg
 - "leftAnkle" / "rightAnkle" = the ankle/foot position at the bottom of each leg
 
-IMPORTANT: "left" and "right" are from the VIEWER's perspective (not the character's). The character's arm that appears on the LEFT side of the image = "left". The arm on the RIGHT side = "right". Same for legs.
+IMPORTANT: "left" and "right" are from the CHARACTER's perspective (mirrored from viewer). If a character faces the viewer, their left arm appears on the RIGHT side of the image.
 
 If arms are spread wide, the wrist x-coordinates should be far apart (close to the character's hand tips). If legs are apart, ankle x-coordinates should reflect that spread.
 
@@ -573,12 +576,14 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
         }
         setPoseNote('');
         setPosePicker(true);
-      } catch {
+      } catch (err) {
+        if (err?.name === 'AbortError') return;
         setSkeletons([{ ...DEFAULT_SKELETON }]);
         setPoseNote('');
         setPosePicker(true);
       } finally {
         setCheckingCharacter(false);
+        abortRef.current = null;
       }
       return;
     }
@@ -600,25 +605,39 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
     handleEdit(option.prompt);
   };
 
-  // ─── Pose editor handlers ───
+  // ─── Pose editor handlers (RAF-throttled for smooth dragging) ───
+  const poseRAF = useRef(null);
+  const poseSVGRef = useRef(null);
+
   const handleJointDown = (charIdx, jointName, e) => {
     e.stopPropagation();
+    e.preventDefault();
     draggingJoint.current = { charIdx, jointName };
-    e.currentTarget.setPointerCapture(e.pointerId);
   };
 
-  const handlePoseSVGMove = (e) => {
-    if (!draggingJoint.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const ny = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-    const { charIdx, jointName } = draggingJoint.current;
-    setSkeletons(prev => prev.map((skel, i) =>
-      i === charIdx ? { ...skel, [jointName]: { x: nx, y: ny } } : skel
-    ));
-  };
+  const handlePoseSVGMove = useCallback((e) => {
+    if (!draggingJoint.current || !poseSVGRef.current) return;
+    e.preventDefault();
+    if (poseRAF.current) return; // skip if RAF pending
+    poseRAF.current = requestAnimationFrame(() => {
+      poseRAF.current = null;
+      if (!draggingJoint.current || !poseSVGRef.current) return;
+      const rect = poseSVGRef.current.getBoundingClientRect();
+      const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const ny = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+      const { charIdx, jointName } = draggingJoint.current;
+      setSkeletons(prev => {
+        const next = [...prev];
+        next[charIdx] = { ...next[charIdx], [jointName]: { x: nx, y: ny } };
+        return next;
+      });
+    });
+  }, []);
 
-  const handlePoseSVGUp = () => { draggingJoint.current = null; };
+  const handlePoseSVGUp = useCallback(() => {
+    draggingJoint.current = null;
+    if (poseRAF.current) { cancelAnimationFrame(poseRAF.current); poseRAF.current = null; }
+  }, []);
 
   const handlePoseGenerate = () => {
     const parts = skeletons.map((skel, i) => {
@@ -832,12 +851,14 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
                   {/* Skeleton overlays — one per detected character */}
                   {posePicker && (
                     <svg
+                      ref={poseSVGRef}
                       className={styles.poseSVG}
                       viewBox="0 0 1 1"
                       preserveAspectRatio="none"
                       onPointerMove={handlePoseSVGMove}
                       onPointerUp={handlePoseSVGUp}
                       onPointerLeave={handlePoseSVGUp}
+                      style={{ touchAction: 'none' }}
                     >
                       {skeletons.map((skel, charIdx) => (
                         <g key={charIdx}>
@@ -1035,7 +1056,11 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
         <div className={styles.pickerOverlay}>
           <div className={styles.checkingBox}>
             <div className={styles.canvasSpinner} />
-            <span>Checking for character...</span>
+            <span>Detecting character pose...</span>
+            <button className={styles.stopBtn} onClick={handleStop}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1" /></svg>
+              Stop
+            </button>
           </div>
         </div>
       )}
