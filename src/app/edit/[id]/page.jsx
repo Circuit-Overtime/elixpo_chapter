@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useModels } from '../../lib/useModels';
 import { STYLE_PRESETS } from '../../lib/blueprints';
+import { generateVideo, prepareImageForVideo } from '../../lib/videoGen';
 import styles from './Editor.module.css';
 
 const API_BASE = '/api';
@@ -138,6 +139,11 @@ export default function EditorPage({ params }) {
   const [error, setError] = useState(null);
   const [modelOpen, setModelOpen] = useState(false);
   const [selected, setSelected] = useState(false);
+
+  // Video state
+  const [previewTab, setPreviewTab] = useState('image'); // 'image' | 'video'
+  const [videoSrc, setVideoSrc] = useState(null);
+  const [generatingVideo, setGeneratingVideo] = useState(false);
   const [stylePicker, setStylePicker] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState(null);
   const [relightPicker, setRelightPicker] = useState(false);
@@ -183,6 +189,7 @@ export default function EditorPage({ params }) {
         setModel(data.model || 'gptimage');
         setWidth(data.width || 1024);
         setHeight(data.height || 576);
+        if (data.videoData) setVideoSrc(data.videoData);
       } catch {}
     }
   }, [id]);
@@ -650,6 +657,49 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
     handleEdit(final);
   };
 
+  // ─── Video generation ───
+  const handleGenerateVideo = async () => {
+    if (!prompt.trim() || generatingVideo) return;
+    setGeneratingVideo(true);
+    setError(null);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const refImage = imageSrc ? await prepareImageForVideo(imageSrc) : null;
+      const result = await generateVideo({
+        prompt: prompt.trim(),
+        model: 'ltx-2',
+        width,
+        height,
+        duration: 5,
+        imageUrl: refImage,
+        signal: controller.signal,
+      });
+
+      if (!result.success) {
+        if (result.error !== 'Cancelled') setError(result.error);
+        return;
+      }
+
+      setVideoSrc(result.videoData);
+      setPreviewTab('video');
+      // Save to session
+      const raw = sessionStorage.getItem(`gen_${id}`);
+      if (raw) {
+        const session = JSON.parse(raw);
+        session.videoData = result.videoData;
+        sessionStorage.setItem(`gen_${id}`, JSON.stringify(session));
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') setError(err.message);
+    } finally {
+      setGeneratingVideo(false);
+      abortRef.current = null;
+    }
+  };
+
   const handleImportImage = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -805,6 +855,33 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
 
         {/* Canvas + prompt bar area */}
         <div className={styles.canvasColumn}>
+          {/* Image / Video tabs */}
+          {(videoSrc || generatingVideo) && (
+            <div className={styles.previewTabs}>
+              <button
+                className={`${styles.previewTab} ${previewTab === 'image' ? styles.previewTabActive : ''}`}
+                onClick={() => setPreviewTab('image')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
+                Image
+              </button>
+              <button
+                className={`${styles.previewTab} ${previewTab === 'video' ? styles.previewTabActive : ''}`}
+                onClick={() => setPreviewTab('video')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                Video
+                {generatingVideo && <span className={styles.tabSpinner} />}
+              </button>
+            </div>
+          )}
+
           {/* Canvas viewport */}
           <div
             className={styles.canvasArea}
@@ -813,7 +890,7 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
             onPointerMove={handleCanvasPointerMove}
             onPointerUp={handleCanvasPointerUp}
             onPointerLeave={handleCanvasPointerUp}
-            style={{ cursor: getCursor() }}
+            style={{ cursor: getCursor(), display: previewTab === 'video' ? 'none' : undefined }}
           >
             {imageSrc ? (
               <div
@@ -904,7 +981,28 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
             )}
           </div>
 
-
+          {/* Video preview */}
+          {previewTab === 'video' && (
+            <div className={styles.videoPreview}>
+              {videoSrc ? (
+                <video src={videoSrc} controls autoPlay loop className={styles.videoPlayer} />
+              ) : generatingVideo ? (
+                <div className={styles.canvasLoading}>
+                  <div className={styles.canvasSpinner} />
+                  <span>Generating video...</span>
+                  <button className={styles.stopBtn} onClick={handleStop}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1" /></svg>
+                    Stop
+                  </button>
+                </div>
+              ) : (
+                <div className={styles.canvasEmpty}>
+                  <p>No video yet</p>
+                  <button className={styles.backBtn} onClick={() => setPreviewTab('image')}>Back to Image</button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Prompt bar — always at bottom */}
           <div className={styles.promptBar}>
@@ -927,6 +1025,17 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
               </svg>
+            </button>
+            <button
+              className={styles.videoBtn}
+              onClick={handleGenerateVideo}
+              disabled={generatingVideo || !prompt.trim() || posePicker}
+              title="Generate video from prompt (uses canvas image as reference frame)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              {generatingVideo ? 'Generating...' : 'Video'}
             </button>
           </div>
         </div>

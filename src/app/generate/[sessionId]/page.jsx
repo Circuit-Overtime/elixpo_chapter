@@ -6,6 +6,7 @@ import Navbar from '../../components/Navbar/Navbar';
 import { saveToLibrary } from '../../lib/library';
 import { isSignedIn, getUser } from '../../lib/auth';
 import { useModels } from '../../lib/useModels';
+import { generateVideo, prepareImageForVideo } from '../../lib/videoGen';
 import styles from './Session.module.css';
 
 const API_BASE = '/api';
@@ -35,6 +36,11 @@ export default function SessionPage({ params }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+
+  // Video state
+  const [previewTab, setPreviewTab] = useState('image');
+  const [videoSrc, setVideoSrc] = useState(null);
+  const [generatingVideo, setGeneratingVideo] = useState(false);
   const [videoMaintenance, setVideoMaintenance] = useState(false);
   const hasGenerated = useRef(false);
   const moreMenuRef = useRef(null);
@@ -152,6 +158,7 @@ export default function SessionPage({ params }) {
     setDuration(p.duration);
     setImageUrl(p.imageUrl);
     if (p.seed) setSeed(p.seed);
+    if (p.videoData) setVideoSrc(p.videoData);
     if (p.resultSrc) {
       setResultSrc(p.resultSrc);
       setGenerationTime(p.generationTime);

@@ -448,6 +448,100 @@
   background: rgba(86, 145, 243, 0.15);
 }
 
+/* ─── Preview tabs (image/video) ─── */
+.previewTabs {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0.3rem 1rem;
+  background: rgba(10, 14, 26, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.previewTab {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.previewTab:hover {
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.previewTabActive {
+  color: #5691f3;
+  background: rgba(86, 145, 243, 0.08);
+  border-color: rgba(86, 145, 243, 0.15);
+}
+
+.tabSpinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid rgba(86, 145, 243, 0.2);
+  border-top-color: #5691f3;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ─── Video preview ─── */
+.videoPreview {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: rgba(0, 0, 0, 0.3);
+  min-height: 0;
+}
+
+.videoPlayer {
+  max-width: 90%;
+  max-height: calc(100vh - 160px);
+  border-radius: 4px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Video generate button ─── */
+.videoBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(141, 73, 253, 0.25);
+  border-radius: var(--radius-md);
+  background: rgba(141, 73, 253, 0.1);
+  color: #a78bfa;
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.videoBtn:hover:not(:disabled) {
+  background: rgba(141, 73, 253, 0.2);
+  border-color: rgba(141, 73, 253, 0.4);
+}
+
+.videoBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ─── Prompt bar (pinned to bottom of canvas column) ─── */
 .promptBar {
   flex-shrink: 0;
