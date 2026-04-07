@@ -42,7 +42,12 @@
 \author{
 \IEEEauthorblockN{Ayushman Bhattacharya}
 \IEEEauthorblockA{MyceliAI AÜ\\ayushman@myceli.ai}
+\and
+\IEEEauthorblockN{Anwesha Chakraborty}
+\IEEEauthorblockA{Dept. CSE, JIS University\\anwesha@elixpo.com}
 }
+
+
 
 \begin{document}
 
@@ -91,14 +96,45 @@ Each of these problems had partial solutions in the ecosystem. LangChain~\cite{l
 So we built a three-layer caching architecture that grew organically out of the problems we faced in production. Each layer was created due to a specific pain point:
 
 \begin{itemize}
-\item \textbf{Layer 1: Session Context Window.} A rolling window of the 20 most recent messages in Redis, with automatic overflow to Huffman-compressed disk archives.
-\item \textbf{Layer 2: Semantic Query Cache.} Catches rephrasings by comparing query embeddings via cosine similarity ($\tau \geq 0.90$), returning cached LLM responses and skipping the entire pipeline. Created from watching the same query hit our search agents dozens of times in slightly different words.
-\item \textbf{Layer 3: URL Embedding Cache.} A global, cross-session store of pre-computed embedding vectors of visited URLs with 24-hour TTL.
+\item \textbf{Layer 1: Session Context Window.} Rolling window in Redis with Huffman-compressed disk overflow.
+\item \textbf{Layer 2: Semantic Query Cache.} Catches rephrasings via cosine similarity, skipping the entire pipeline on a hit.
+\item \textbf{Layer 3: URL Embedding Cache.} Global cross-session store of pre-computed embedding vectors.
 \end{itemize}
 
-The system also introduced a \textbf{two-tier hybrid storage model}: Redis for hot data (${\sim}1$\,ms reads) and Huffman-compressed disk archives for cold data, connected by a background LRU eviction daemon. A \textbf{custom binary archive format} with a 24-byte header achieves 45--67\% compression on conversation text using zero native dependencies. All tunables are consolidated into a single configuration object with environment variable support, making the system deployable across different environments without code changes.
+Fig.~\ref{fig:pipeline} illustrates how a user query flows through these layers before reaching the LLM.
 
-In production, this architecture serves an 89.3\% cache hit rate with just 1.38\,MB of Redis memory, enabling conversations that persist indefinitely across sessions, server restarts, and horizontal scaling events.
+\begin{figure}[h]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=0.5cm,
+    box/.style={draw, rounded corners=3pt, minimum height=0.6cm, minimum width=2.8cm, font=\scriptsize, align=center},
+    cache/.style={box, fill=green!12, draw=green!50},
+    pipe/.style={box, fill=blue!8, draw=blue!40},
+    hit/.style={box, fill=yellow!20, draw=yellow!60},
+    arr/.style={-{Stealth[length=4pt]}, thick},
+]
+\node[pipe] (query) {User Query};
+\node[cache, below=0.5cm of query] (l2) {Layer 2: Semantic Cache\\cosine sim $\geq 0.90$?};
+\node[hit, right=1.5cm of l2] (cached) {Return cached\\response};
+\node[pipe, below=0.5cm of l2] (ctx) {Layer 1: Load session\\context ($k{=}20$)};
+\node[cache, below=0.5cm of ctx] (l3) {Layer 3: URL Embedding\\Cache (24\,h TTL)};
+\node[pipe, below=0.5cm of l3] (tools) {Search agents +\\page fetches};
+\node[pipe, below=0.5cm of tools] (llm) {LLM Synthesis};
+\node[pipe, below=0.5cm of llm] (resp) {Response + Sources};
+
+\draw[arr] (query) -- (l2);
+\draw[arr, green!60] (l2) -- (cached) node[midway, above, font=\tiny] {HIT};
+\draw[arr] (l2) -- (ctx) node[midway, right, font=\tiny] {MISS};
+\draw[arr] (ctx) -- (l3);
+\draw[arr] (l3) -- (tools);
+\draw[arr] (tools) -- (llm);
+\draw[arr] (llm) -- (resp);
+\end{tikzpicture}%
+}
+\caption{Query pipeline flow. A semantic cache hit (Layer~2) short-circuits the entire pipeline. On a miss, session context is loaded (Layer~1), embeddings are checked (Layer~3), and the full search--synthesis pipeline executes.}
+\label{fig:pipeline}
+\end{figure}
 
 The remainder of this paper follows the setup of this journey. Section~\ref{sec:related} surveys related work, Section~\ref{sec:architecture} presents the architecture, Section~\ref{sec:design} explains the key design decisions, Section~\ref{sec:implementation} details the implementation, Section~\ref{sec:evaluation} evaluates production performance, and Section~\ref{sec:conclusion} concludes with limitations and future directions.
 
@@ -151,7 +187,7 @@ Standard approaches use gzip or lz4 for compressing stored conversations. Our us
 \subsection{Overview}
 
 With the problems identified, the architecture took shape around a simple 
-principle: each caching concern gets its own logical partition within a single Redis~\cite{redis2023} instance (DB~0 for semantic query cache, DB~1 for URL embeddings, DB~2 for session context), and a single coordinator process ties them together. Figure~\ref{fig:architecture} illustrates 
+principle: each caching concern gets its own logical partition within a single Redis~\cite{redis2023} instance (DB~0 for semantic query cache, DB~1 for URL embeddings, DB~2 for session context), and a single coordinator process ties them together. Fig.~\ref{fig:architecture} illustrates 
 the complete data flow when a user message arrives.
 
 \begin{figure*}[t]
@@ -200,6 +236,49 @@ Each layer of hot memory operates on a separate Redis logical database (i.e., \t
 \item \textbf{Namespace isolation}: eliminates the risk of key collisions between layers.
 \end{enumerate}
 
+Fig.~\ref{fig:redis_layers} shows how the three databases coexist within a single Redis instance, each with its own scope, TTL policy, and data format.
+
+\begin{figure}[h]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=0.4cm,
+    db/.style={draw, rounded corners=4pt, minimum width=6.5cm, minimum height=1.4cm, font=\scriptsize, align=left, inner sep=6pt},
+    lbl/.style={font=\tiny\bfseries, fill=white, inner sep=2pt},
+    arr/.style={-{Stealth[length=3pt]}, thick, gray},
+]
+% Redis container
+\node[draw, rounded corners=6pt, minimum width=7.5cm, minimum height=5.8cm, fill=red!3, draw=red!30, label={[font=\scriptsize\bfseries, text=red!60]above:Redis Instance (1.38\,MB)}] (redis) {};
+
+% DB 0
+\node[db, fill=blue!8, draw=blue!40, anchor=north] at ([yshift=-0.5cm]redis.north) (db0) {
+\textbf{DB\,0 --- Semantic Query Cache}\\[2pt]
+Scope: per-session \quad TTL: 5\,min\\
+Key: \texttt{sem:\{sid\}:\{url\}} $\rightarrow$ JSON (embeddings + responses)\\
+Up to 50 cached pairs per key
+};
+
+% DB 1
+\node[db, fill=green!8, draw=green!40, below=0.3cm of db0] (db1) {
+\textbf{DB\,1 --- URL Embedding Cache}\\[2pt]
+Scope: global (cross-session) \quad TTL: 24\,h\\
+Key: \texttt{emb:\{url\_hash\}} $\rightarrow$ raw float32 bytes (1{,}536\,B per vector)
+};
+
+% DB 2
+\node[db, fill=orange!8, draw=orange!40, below=0.3cm of db1] (db2) {
+\textbf{DB\,2 --- Session Context Window}\\[2pt]
+Scope: per-session \quad TTL: 24\,h\\
+Key: \texttt{ctx:\{sid\}:\{turn\_id\}} $\rightarrow$ JSON message\\
+Ordered list: \texttt{ctx:\{sid\}:order} (bounded at $k{=}20$)
+};
+
+\end{tikzpicture}%
+}
+\caption{Redis database layout. Three logical databases within a single Redis instance, each with distinct scope, TTL, and data format. DB\,0 stores per-session semantic cache entries (short-lived). DB\,1 stores global URL embeddings as raw bytes (long-lived). DB\,2 stores per-session conversation messages with an ordered list for windowing.}
+\label{fig:redis_layers}
+\end{figure}
+
 
 \section{Design Decisions}
 \label{sec:design}
@@ -233,17 +312,40 @@ The resulting compression achieves ${\sim}54\%$ ratio on synthetic conversation 
 
 \subsection{Rolling Window with Overflow vs.\ Truncation}
 
-Early in development, we used a simple truncation strategy: keep the last $k$ messages, throw away the rest (context window policy). This caused us trouble when users returned to a conversation after an hour and asked ``what was that article you found earlier?'' The context was gone. Our system instead \emph{overflows} compressed old messages to disk. This preserves the full conversation history for:
+Early in development, we used a simple truncation strategy: keep the last $k$ messages, throw away the rest (context window policy). This caused us trouble when users returned to a conversation after an hour and asked ``what was that article you found earlier?'' The context was gone. Our system instead \emph{overflows} compressed old messages to disk, as shown in Fig.~\ref{fig:session_lifecycle}. This preserves the full conversation history for semantic retrieval, audit/replay, and session resumption after eviction.
 
-\begin{itemize}
-\item \textbf{Semantic retrieval:} the system can search the disk archive by embedding similarity to find relevant messages from much earlier in the conversation, even if those messages left the hot window long ago.
-\item \textbf{Audit and replay:} the full conversation history can be reconstructed by merging the hot Redis window with the cold disk archive to create a complete timeline of the interaction for debugging or audit purposes.
-\item \textbf{Session resumption:} if a user returns after hours (post-eviction), the full archive is available for re-hydration.
-\end{itemize}
+\begin{figure}[h]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=0.8cm and 1.2cm,
+    box/.style={draw, rounded corners=3pt, minimum height=0.7cm, minimum width=2.2cm, font=\scriptsize, align=center},
+    hot/.style={box, fill=red!15, draw=red!50},
+    cold/.style={box, fill=blue!10, draw=blue!40},
+    daemon/.style={box, fill=orange!15, draw=orange!50, dashed},
+    arr/.style={-{Stealth[length=4pt]}, thick},
+]
+\node[hot] (redis) {Redis Hot Window\\($k{=}20$ messages)};
+\node[cold, right=1.5cm of redis] (disk) {Disk Archive\\\texttt{.huff} files};
+\node[box, fill=green!10, draw=green!50, above=0.6cm of redis] (msg) {New Message};
+\node[daemon, below=0.8cm of redis] (lru) {LRU Daemon\\(every 60\,s)};
+\node[box, fill=purple!10, draw=purple!40, below=0.8cm of disk] (ttl) {TTL Cleanup\\(30-day expiry)};
+
+\draw[arr] (msg) -- (redis) node[midway, right, font=\tiny] {push};
+\draw[arr, red!60] (redis) -- (disk) node[midway, above, font=\tiny] {overflow ($>k$)};
+\draw[arr, blue!60, bend left=25] (disk.north west) to node[midway, below, font=\tiny] {re-hydrate} (redis.east);
+\draw[arr, orange!60] (lru) -- (redis) node[midway, left, font=\tiny] {evict idle};
+\draw[arr, orange!60] (lru) -| (disk) node[near end, right, font=\tiny] {migrate};
+\draw[arr, gray] (ttl) -- (disk) node[midway, right, font=\tiny] {purge};
+\end{tikzpicture}%
+}
+\caption{Session lifecycle: new messages enter the Redis hot window. When the window exceeds $k$ entries, the oldest overflow to Huffman-compressed disk archives. The LRU daemon migrates entire idle sessions. Returning users trigger re-hydration from disk.}
+\label{fig:session_lifecycle}
+\end{figure}
 
 \subsection{LRU Eviction as a Background Daemon}
 
-We noticed that after peak hours, hundreds of idle sessions sat in Redis consuming memory while no one was reading them. Redis TTL expiry would have cleaned them up-but it would have \emph{discarded} the data entirely. We needed something smarter: a daemon that \emph{migrates} data to disk before freeing Redis memory, preserving data while reclaiming resources.
+We noticed that after peak hours, hundreds of idle sessions sat in Redis consuming memory while no one was reading them. Redis TTL expiry would have cleaned them up---but it would have \emph{discarded} the data entirely. We needed something smarter: a daemon that \emph{migrates} data to disk before freeing Redis memory, preserving data while reclaiming resources.
 
 The daemon runs as a background thread, checking every 60 seconds for sessions idle longer than the configured threshold (default 120 minutes). It starts lazily on the first cache instantiation and is shared across all sessions via shared memory state.
 
@@ -259,49 +361,97 @@ The caching system is organized into eight modules, each responsible for a singl
 
 \subsection{Huffman Codec}
 
-The codec implements canonical Huffman coding~\cite{huffman1952} in pure Python. The encoding process follows three steps:
+The codec implements canonical Huffman coding~\cite{huffman1952} in pure Python. Algorithm~\ref{alg:huffman_encode} shows the encoding procedure and Algorithm~\ref{alg:huffman_decode} shows decoding.
 
-\begin{enumerate}
-\item \textbf{Frequency counting and tree construction and Bit Packing} We follow the traditional approach for constructing the Huffman tree. Codes are assigned sequentially: the first symbol gets code 0, each subsequent symbol increments by 1, with left-shifts when the code length increases. This canonical ordering means only the symbol-to-length mapping needs to be stored-the decoder reconstructs the exact same codes. Data bytes are replaced with their variable-length codes, packed into a byte stream and padding bits (0--7) are appended to reach a byte boundary.
-\end{enumerate}
+\begin{algorithm}[h]
+\caption{Canonical Huffman Encoding}
+\label{alg:huffman_encode}
+\begin{algorithmic}[1]
+\REQUIRE byte sequence $D$
+\ENSURE compressed byte stream $C$
+\STATE $F \leftarrow$ frequency count of each byte in $D$
+\STATE Build min-heap from $(freq, symbol)$ pairs
+\WHILE{heap has $> 1$ node}
+  \STATE Pop two lowest-frequency nodes $a, b$
+  \STATE Create parent node with $freq = a.freq + b.freq$
+  \STATE Push parent back onto heap
+\ENDWHILE
+\STATE Assign bit-lengths by tree depth
+\STATE \textit{// Canonicalize: sort by (length, symbol)}
+\STATE $code \leftarrow 0$
+\FOR{each symbol in canonical order}
+  \STATE Assign $code$ to symbol
+  \STATE $code \leftarrow code + 1$
+  \IF{next symbol has longer bit-length}
+    \STATE $code \leftarrow code \ll (\text{next\_len} - \text{cur\_len})$
+  \ENDIF
+\ENDFOR
+\STATE Replace each byte in $D$ with its variable-length code
+\STATE Pack bits into byte stream, pad to byte boundary
+\STATE Prepend header: magic + data length + symbol table + padding count
+\RETURN $C$
+\end{algorithmic}
+\end{algorithm}
 
-The binary format prepends a header:
+\begin{algorithm}[h]
+\caption{Canonical Huffman Decoding}
+\label{alg:huffman_decode}
+\begin{algorithmic}[1]
+\REQUIRE compressed stream $C$ with header
+\ENSURE original byte sequence $D$
+\STATE Parse header: magic, original length, symbol table, padding
+\STATE Reconstruct canonical codes from (symbol, length) pairs
+\STATE Build lookup table: $code \rightarrow symbol$
+\STATE $D \leftarrow$ empty buffer
+\STATE $bits \leftarrow$ bitstream from $C$ (excluding padding)
+\WHILE{$|D| <$ original length}
+  \STATE Read bits one at a time, accumulating into $code$
+  \IF{$code$ matches a symbol in lookup table}
+    \STATE Append symbol to $D$
+    \STATE Reset $code$
+  \ENDIF
+\ENDWHILE
+\RETURN $D$
+\end{algorithmic}
+\end{algorithm}
 
-\begin{center}
-\begin{tabular}{lrl}
-\toprule
-\textbf{Offset} & \textbf{Size} & \textbf{Field} \\
-\midrule
-0 & 4\,B & Magic: \texttt{"HCv1"} \\
-4 & 4\,B & Original data length (uint32 LE) \\
-8 & 2\,B & Number of symbols (uint16 LE) \\
-10 & $2n$\,B & Symbol table (byte, length) pairs \\
-$10{+}2n$ & 4\,B & Padding bit count (uint32 LE) \\
-$14{+}2n$ & var & Compressed bitstream \\
-\bottomrule
-\end{tabular}
-\end{center}
+The canonical ordering means only the symbol-to-length mapping needs to be stored---the decoder reconstructs the exact same codes from this mapping alone.
 
 \subsection{Conversation Archive and .huff File Format}
 
-Each session's disk archive is a single \texttt{.huff} file with a 24-byte application header followed by a Huffman-compressed JSON payload:
+Each session's disk archive is a single \texttt{.huff} file consisting of two nested layers: a fixed 24-byte application header (readable without decompression) wrapping a Huffman-compressed payload that itself has a variable-length codec header. Fig.~\ref{fig:huff_format} shows the complete binary layout.
 
-\begin{center}
-{\scriptsize
-\begin{tabular}{@{}rrl@{}}
-\toprule
-\textbf{Off.} & \textbf{Size} & \textbf{Field} \\
-\midrule
-0 & 4\,B & Magic: \texttt{"CAv1"} \\
-4 & 8\,B & Creation timestamp (f64 LE) \\
-12 & 8\,B & Last-modified timestamp (f64 LE) \\
-20 & 4\,B & Turn count (u32 LE) \\
-24 & var & Huffman-compressed JSON \\
-\bottomrule
-\end{tabular}}
-\end{center}
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    field/.style={draw, minimum height=0.55cm, font=\tiny, align=center, inner sep=2pt},
+    app/.style={field, fill=orange!15, draw=orange!50},
+    codec/.style={field, fill=blue!10, draw=blue!40},
+    data/.style={field, fill=green!8, draw=green!40},
+    lbl/.style={font=\tiny\bfseries, text=gray},
+]
+% Application header (24 bytes fixed)
+\node[app, minimum width=1.6cm] (a0) at (0,0) {\texttt{CAv1}\\4\,B};
+\node[app, minimum width=1.8cm, right=0pt of a0] (a1) {Created\\8\,B};
+\node[app, minimum width=1.8cm, right=0pt of a1] (a2) {Modified\\8\,B};
+\node[app, minimum width=1.4cm, right=0pt of a2] (a3) {Turns\\4\,B};
 
-The fixed-size header allows reading session metadata (creation time, turn count) in a single 24-byte read without decompressing the payload. This is critical for the TTL cleanup daemon, which must scan all archives efficiently to identify expired sessions.
+\node[lbl, above=0.1cm of a1.north east] {App Header (24\,B fixed)};
+
+% Huffman codec header (variable)
+\node[codec, minimum width=1.6cm, below=0.25cm of a0.south west, anchor=north west] (h0) {\texttt{HCv1}\\4\,B};
+\node[codec, minimum width=1.4cm, right=0pt of h0] (h1) {Len\\4\,B};
+\node[codec, minimum width=1.2cm, right=0pt of h1] (h2) {$n$\\2\,B};
+\node[codec, minimum width=2.4cm, right=0pt of h2] (h3) {Symbols\\$2n$\,B};
+
+% Codec data row
+\node[codec, minimum width=1.4cm, below=0.25cm of h0.south west, anchor=north west] (h4) {Pad\\4\,B};
+\node[data, minimum width=5.2cm, right=0pt of h4] (payload) {Compressed Bitstream};
+
+\end{tikzpicture}
+\caption{Binary layout of a \texttt{.huff} archive file. The 24-byte application header (orange) stores session metadata readable in a single \texttt{read(24)} call---critical for the TTL cleanup daemon. The Huffman codec header (blue) stores the symbol table needed for decompression. The compressed bitstream (green) contains the actual conversation JSON.}
+\label{fig:huff_format}
+\end{figure}
 
 \subsection{Hybrid Conversation Cache}
 
@@ -313,6 +463,59 @@ The hybrid cache is where the hot and cold tiers meet. It manages the two-tier s
 
 \textbf{Re-hydration.} When the application requests context and finds an empty Redis list, it loads from disk and re-populates Redis with the most recent $k$ messages, restoring the hot window transparently.
 
+Fig.~\ref{fig:hybrid_cache} illustrates the internal data flow of the hybrid conversation cache, showing how messages move between the three storage tiers.
+
+\begin{figure}[h]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=0.6cm and 1.0cm,
+    box/.style={draw, rounded corners=3pt, minimum height=0.65cm, font=\scriptsize, align=center, inner sep=4pt},
+    hot/.style={box, fill=red!12, draw=red!40, minimum width=2.4cm},
+    cold/.style={box, fill=blue!10, draw=blue!40, minimum width=2.4cm},
+    op/.style={box, fill=gray!8, draw=gray!40, minimum width=2.0cm},
+    arr/.style={-{Stealth[length=4pt]}, thick},
+]
+% Application layer
+\node[op] (app) {Application\\(\texttt{add\_message})};
+
+% Redis hot tier
+\node[hot, below left=0.8cm and 0.3cm of app] (list) {Ordered List\\(\texttt{ctx:sid:order})};
+\node[hot, right=0.5cm of list] (keys) {Message Keys\\(\texttt{ctx:sid:turn})};
+
+% Boundary
+\node[below=0.5cm of list, font=\tiny\itshape, text=gray] (bound) {window size $k{=}20$};
+
+% Pipeline check
+\node[op, below=0.8cm of bound] (check) {$|list| > k$\,?};
+
+% Disk cold tier
+\node[cold, below left=0.7cm and 0.0cm of check] (huff) {Huffman Encode\\+ Append to \texttt{.huff}};
+\node[cold, below right=0.7cm and 0.0cm of check] (noop) {No action};
+
+% Read path
+\node[op, right=2.5cm of app] (read) {Application\\(\texttt{get\_context})};
+\node[hot, below=0.6cm of read] (rhit) {Redis has data?};
+\node[cold, below left=0.6cm and 0.0cm of rhit] (rdisk) {Load from disk\\re-hydrate Redis};
+\node[hot, below right=0.6cm and 0.0cm of rhit] (rret) {Return $k$\\messages};
+
+% Write path arrows
+\draw[arr] (app) -| (list);
+\draw[arr] (app) -| (keys);
+\draw[arr] (list) -- (bound);
+\draw[arr] (bound) -- (check);
+\draw[arr, red!60] (check) -| (huff) node[near start, left, font=\tiny] {yes: pop oldest};
+\draw[arr, green!60] (check) -| (noop) node[near start, right, font=\tiny] {no};
+
+% Read path arrows
+\draw[arr] (read) -- (rhit);
+\draw[arr, blue!60] (rhit) -| (rdisk) node[near start, left, font=\tiny] {empty};
+\draw[arr, green!60] (rhit) -| (rret) node[near start, right, font=\tiny] {hit};
+\end{tikzpicture}%
+}
+\caption{Hybrid conversation cache internals. \textbf{Left}: write path---new messages are pushed to Redis; overflow beyond $k$ is Huffman-compressed and appended to disk. \textbf{Right}: read path---if Redis is empty (post-eviction), the system re-hydrates from the disk archive transparently.}
+\label{fig:hybrid_cache}
+\end{figure}
 
 \subsection{Semantic Cache}
 
@@ -345,7 +548,7 @@ The original motivation for building the search assistant was cost. The fundamen
 
 \textbf{Our cost breakdown.} Our system has \emph{zero per-query API fees}. LLM inference runs through an open model API at no per-call cost. Web search is performed by automated headless browser agents that navigate search engines directly-no search API subscription required. Embedding computation (sentence-transformers, all-MiniLM-L6-v2) runs locally on CPU. The \emph{only} recurring cost is the server itself: an 8-vCPU cloud instance at ${\sim}$\$96/month, dedicated entirely to the search assistant (all services---Redis, embedding model, search agents, and application workers---run on this single machine).
 
-Table~\ref{tab:cost} and Figure~\ref{fig:cost} show the comparison across query volumes.
+Table~\ref{tab:cost} and Fig.~\ref{fig:cost} show the comparison across query volumes.
 
 \begin{table}[h]
 \centering
@@ -413,7 +616,7 @@ Commercial providers charge linearly per query-costs scale with volume. lixSearc
 
 \subsection{Latency Profile}
 
-Figure~\ref{fig:latency} visualizes the latency characteristics of each storage tier. The two-order-of-magnitude gap between Redis and disk confirms the value of keeping a hot window in memory.
+Fig.~\ref{fig:latency} visualizes the latency characteristics of each storage tier. The two-order-of-magnitude gap between Redis and disk confirms the value of keeping a hot window in memory.
 
 \begin{figure}[h]
 \centering
@@ -527,7 +730,7 @@ To justify the choice of Huffman over standard compressors, Table~\ref{tab:compr
 
 Zlib achieves better compression ratios at all sizes, as expected from a dictionary-based compressor. However, the gap narrows at smaller payloads: at 2\,KB, zlib-1 achieves 63.2\% versus Huffman's 68.8\%---a difference of only 5.6 percentage points. Huffman consistently outperforms lz4 at all tested sizes. The choice of Huffman is therefore not motivated by superior compression, but by three practical factors: (1)~the compression gap is small at typical archive sizes $<$5\,KB, (2)~the codec has zero native dependencies, and (3)~it runs on the non-critical path (overflow and re-hydration only).
 
-As shown in Figure~\ref{fig:latency}, Redis reads are two orders of magnitude faster than disk reads, confirming the value of the hot-window design. Even for the largest archive (133 turns), disk reads complete in ${\sim}$107\,ms---acceptable for session re-hydration, which occurs at most once per returning user.
+As shown in Fig.~\ref{fig:latency}, Redis reads are two orders of magnitude faster than disk reads, confirming the value of the hot-window design. Even for the largest archive (133 turns), disk reads complete in ${\sim}$107\,ms---acceptable for session re-hydration, which occurs at most once per returning user.
 
 \subsection{Redis Memory Footprint}
 
@@ -569,18 +772,11 @@ To understand each layer's contribution, we analyzed the production key distribu
 \section{Conclusion}
 \label{sec:conclusion}
 
-We started with a simple goal: build a search assistant that could compete with SearchGPT (\$0.03--0.10/query), Perplexity (\$0.005--0.018/query), and Google's grounded Gemini (\$0.014--0.035/query)---without their per-query price tags---and do it on a single 8-vCPU server with no GPU. Along the way, we discovered that the real engineering challenge was not in searching the web or calling an LLM, but in managing the state that accumulates around multi-turn conversations at scale on resource-constrained hardware.
+We set out to build a search assistant that could match commercial offerings without their per-query price tags, running entirely on commodity CPU hardware. The real engineering challenge turned out not to be searching the web or calling an LLM, but managing the state that accumulates around multi-turn conversations at scale.
 
-The caching architecture that grew out of those challenges now powers every conversation on our search pipeline. Each of its three layers---session context, semantic query deduplication, and URL embedding reuse---was born from a specific production pain point. The result is a system that is simple enough to understand in an afternoon and effective enough to sustain indefinitely long conversations in production on commodity CPU infrastructure:
+The three-layer caching architecture presented in this paper---session context, semantic query deduplication, and URL embedding reuse---addresses this challenge. As demonstrated in Section~\ref{sec:evaluation}, the system achieves sub-millisecond cache reads, effective compression for disk archival, and transparent session lifecycle management, all within a minimal Redis memory footprint.
 
-\begin{itemize}
-\item \textbf{89.3\% Redis-level cache hit rate} across all three databases over a 6-day measurement window, with total Redis memory usage of only 1.38\,MB.
-\item \textbf{Sub-millisecond Redis reads} (0.107\,ms per GET), confirming that the hot-window design delivers the latency benefits of in-memory storage.
-\item \textbf{67.2\% average compression ratio} on production conversation archives using the pure-Python Huffman codec, scaling to ${\sim}45\%$ for larger payloads.
-\item \textbf{Transparent session lifecycle management}: LRU eviction, disk archival, re-hydration, and TTL cleanup operate without application-level intervention.
-\end{itemize}
-
-The key insight is that forever-continuous conversations---sessions that can span hours, days, or weeks without losing context---are not a feature of the LLM itself, but of the infrastructure around it. By combining a bounded hot window with unbounded cold storage, aggressive semantic deduplication, and cross-session embedding reuse, we built a system where conversation length is no longer a constraint. Users can return to a session days later and pick up exactly where they left off, with full history available for semantic retrieval.
+The key insight is that forever-continuous conversations---sessions that can span hours, days, or weeks without losing context---are not a feature of the LLM itself, but of the infrastructure around it. By combining a bounded hot window with unbounded cold storage, aggressive semantic deduplication, and cross-session embedding reuse, conversation length is no longer a constraint.
 
 Our evaluation is based on a single production deployment on one hardware configuration; the reported hit rates and latency numbers are representative of our workload but may vary under different query distributions or concurrency patterns. The semantic cache uses brute-force cosine similarity ($O(n)$, $n \leq 50$), which suffices at current scale but would require a vector index for significantly larger deployments. The pure-Python Huffman codec trades throughput (${\sim}$800\,KB/s) for zero native dependencies---acceptable for typical conversation archives under 10\,KB, though a C extension would be warranted for megabyte-scale payloads. Conversation archives are compressed but not encrypted at rest; deployments handling sensitive data should layer filesystem-level or application-level encryption. Looking ahead, potential improvements include an optional native Huffman extension for larger archives, pluggable vector databases (FAISS, Chroma) for the semantic cache, adaptive TTL policies that learn optimal cache lifetimes from observed query patterns, and cross-session knowledge transfer where insights from one conversation can inform responses in another.
 
