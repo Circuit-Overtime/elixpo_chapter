@@ -428,10 +428,8 @@ export default function EditorPage({ params }) {
     if (!src) return null;
     // Already base64
     if (src.startsWith('data:')) return src;
-    // Hosted URL — pass through (API handles it)
-    if (src.startsWith('http')) return src;
-    // Blob URL — convert via canvas
-    if (src.startsWith('blob:')) {
+    // HTTP URL or blob URL — convert via canvas
+    if (src.startsWith('http') || src.startsWith('blob:')) {
       return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';

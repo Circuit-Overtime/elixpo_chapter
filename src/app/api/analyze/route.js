@@ -15,11 +15,11 @@ export async function POST(request) {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: 'openai',
+        model: 'gemini-fast',
         messages: [
           {
             role: 'system',
-            content: 'You are a precise image analysis assistant. Analyze images and reply ONLY with valid JSON, no markdown, no extra text, no code blocks.',
+            content: 'You are a precise image analysis assistant. Analyze images and reply ONLY with valid JSON. No markdown, no code blocks, no extra text.',
           },
           {
             role: 'user',
@@ -35,25 +35,30 @@ export async function POST(request) {
     });
 
     if (!res.ok) {
-      console.error('[analyze] API error:', res.status);
+      const errText = await res.text().catch(() => '');
+      console.error('[analyze] API error:', res.status, errText.slice(0, 300));
       return NextResponse.json({ hasCharacter: true, characters: [], reason: 'Analysis unavailable' });
     }
 
     const data = await res.json();
     const raw = data.choices?.[0]?.message?.content?.trim() || '';
+    console.log('[analyze] Raw response:', raw.slice(0, 500));
 
     // Try to parse JSON — may be wrapped in markdown code block
-    const jsonMatch = raw.match(/[\[{][\s\S]*[\]}]/);
+    const cleaned = raw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    const jsonMatch = cleaned.match(/[\[{][\s\S]*[\]}]/);
     if (jsonMatch) {
       try {
         const parsed = JSON.parse(jsonMatch[0]);
         return NextResponse.json(parsed);
-      } catch {}
+      } catch (e) {
+        console.error('[analyze] JSON parse error:', e.message, 'from:', jsonMatch[0].slice(0, 200));
+      }
     }
 
     // Fallback
     const lower = raw.toLowerCase();
-    const hasCharacter = lower.includes('true') || lower.includes('yes');
+    const hasCharacter = lower.includes('true') || lower.includes('yes') || lower.includes('character');
     return NextResponse.json({ hasCharacter, characters: [], reason: raw.slice(0, 200) });
   } catch (err) {
     console.error('[analyze] Error:', err.message);
