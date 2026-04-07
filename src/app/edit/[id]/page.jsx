@@ -748,7 +748,7 @@ export default function EditorPage({ params }) {
                     ref={maskCanvasRef}
                     className={styles.maskCanvas}
                   />
-                  {selected && (
+                  {selected && !posePicker && (
                     <>
                       <div className={`${styles.handle} ${styles.handleTL}`} onPointerDown={(e) => startResize('TL', e)} />
                       <div className={`${styles.handle} ${styles.handleTR}`} onPointerDown={(e) => startResize('TR', e)} />
@@ -756,6 +756,35 @@ export default function EditorPage({ params }) {
                       <div className={`${styles.handle} ${styles.handleBR}`} onPointerDown={(e) => startResize('BR', e)} />
                       <div className={styles.sizeLabel}>{imageSize.w} x {imageSize.h}</div>
                     </>
+                  )}
+                  {/* Skeleton overlay directly on image */}
+                  {posePicker && (
+                    <svg
+                      className={styles.poseSVG}
+                      viewBox="0 0 1 1"
+                      preserveAspectRatio="none"
+                      onPointerMove={handlePoseSVGMove}
+                      onPointerUp={handlePoseSVGUp}
+                      onPointerLeave={handlePoseSVGUp}
+                    >
+                      {POSE_LIMBS.map(([a, b, color], i) => (
+                        <line
+                          key={i}
+                          x1={skeletonJoints[a].x} y1={skeletonJoints[a].y}
+                          x2={skeletonJoints[b].x} y2={skeletonJoints[b].y}
+                          stroke={color} strokeWidth="0.008" strokeLinecap="round"
+                        />
+                      ))}
+                      {Object.entries(skeletonJoints).map(([name, pos]) => (
+                        <circle
+                          key={name}
+                          cx={pos.x} cy={pos.y} r="0.015"
+                          fill="#fff" stroke={JOINT_COLORS[name]} strokeWidth="0.005"
+                          style={{ cursor: 'grab', filter: 'drop-shadow(0 0.002px 0.005px rgba(0,0,0,0.8))' }}
+                          onPointerDown={(e) => handleJointDown(name, e)}
+                        />
+                      ))}
+                    </svg>
                   )}
                 </div>
                 {generating && (
@@ -776,6 +805,27 @@ export default function EditorPage({ params }) {
               </div>
             )}
           </div>
+
+          {/* Pose controls bar — shown when skeleton is active */}
+          {posePicker && (
+            <div className={styles.poseBar}>
+              <span className={styles.poseBarHint}>Drag joints to set target pose</span>
+              <input
+                type="text"
+                className={styles.poseBarInput}
+                placeholder="Optional pose note (e.g. sitting, dancing)..."
+                value={poseNote}
+                onChange={(e) => setPoseNote(e.target.value)}
+              />
+              <button className={styles.poseResetBtn} onClick={() => setSkeletonJoints({ ...DEFAULT_SKELETON })}>Reset</button>
+              <button className={styles.poseGenerateBtn} onClick={handlePoseGenerate} disabled={generating}>Generate Pose</button>
+              <button className={styles.poseCloseBtn} onClick={() => setPosePicker(false)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
 
           {/* Prompt bar — always at bottom */}
           <div className={styles.promptBar}>
@@ -894,65 +944,6 @@ export default function EditorPage({ params }) {
                   <span className={styles.relightLabel}>{o.label}</span>
                 </button>
               ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Pose Editor Modal */}
-      {posePicker && imageSrc && (
-        <div className={styles.pickerOverlay} onClick={() => setPosePicker(false)}>
-          <div className={styles.poseModal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.pickerTitle}>Adjust Character Pose</h3>
-            <p className={styles.poseHint}>Drag the joints to set the target pose, then hit Generate</p>
-
-            <div className={styles.poseImageWrap}>
-              <img src={imageSrc} alt="Pose reference" className={styles.poseImage} draggable={false} />
-              <svg
-                className={styles.poseSVG}
-                viewBox="0 0 1 1"
-                preserveAspectRatio="none"
-                onPointerMove={handlePoseSVGMove}
-                onPointerUp={handlePoseSVGUp}
-                onPointerLeave={handlePoseSVGUp}
-              >
-                {/* Limbs */}
-                {POSE_LIMBS.map(([a, b, color], i) => (
-                  <line
-                    key={i}
-                    x1={skeletonJoints[a].x} y1={skeletonJoints[a].y}
-                    x2={skeletonJoints[b].x} y2={skeletonJoints[b].y}
-                    stroke={color} strokeWidth="0.008" strokeLinecap="round"
-                  />
-                ))}
-                {/* Joints */}
-                {Object.entries(skeletonJoints).map(([name, pos]) => (
-                  <circle
-                    key={name}
-                    cx={pos.x} cy={pos.y} r="0.015"
-                    fill="#fff" stroke={JOINT_COLORS[name]} strokeWidth="0.005"
-                    style={{ cursor: 'grab', filter: 'drop-shadow(0 0.002px 0.005px rgba(0,0,0,0.8))' }}
-                    onPointerDown={(e) => handleJointDown(name, e)}
-                  />
-                ))}
-              </svg>
-            </div>
-
-            <textarea
-              className={styles.poseTextarea}
-              placeholder="Optional: describe additional pose details (e.g. 'sitting on a chair', 'dancing')..."
-              value={poseNote}
-              onChange={(e) => setPoseNote(e.target.value)}
-              rows={2}
-            />
-
-            <div className={styles.poseActions}>
-              <button className={styles.poseResetBtn} onClick={() => setSkeletonJoints({ ...DEFAULT_SKELETON })}>
-                Reset Skeleton
-              </button>
-              <button className={styles.poseGenerateBtn} onClick={handlePoseGenerate} disabled={generating}>
-                Generate
-              </button>
             </div>
           </div>
         </div>
