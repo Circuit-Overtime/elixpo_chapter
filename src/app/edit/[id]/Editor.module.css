@@ -110,12 +110,14 @@
   top: calc(100% + 6px);
   right: 0;
   min-width: 240px;
-  background: rgba(8, 12, 24, 0.97);
+  max-height: 400px;
+  overflow-y: auto;
+  background: rgba(8, 12, 24, 0.98);
   border: 1px solid rgba(86, 145, 243, 0.1);
   border-radius: var(--radius-md);
   padding: 4px;
-  z-index: 500;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(20px);
 }
 
@@ -311,10 +313,10 @@
 }
 
 .canvasImage {
-  max-width: 80vw;
-  max-height: calc(100vh - 150px);
+  max-width: 75vw;
+  max-height: calc(100vh - 200px);
   object-fit: contain;
-  border-radius: 2px;
+  border-radius: 4px;
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.5);
   user-select: none;
   -webkit-user-drag: none;

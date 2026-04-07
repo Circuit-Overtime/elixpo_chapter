@@ -121,7 +121,7 @@ function buildPosePrompt(joints) {
 export default function EditorPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
-  const { editModels } = useModels();
+  const { editModels, videoModels } = useModels();
 
   // Image state
   const [imageSrc, setImageSrc] = useState(null);
@@ -145,6 +145,7 @@ export default function EditorPage({ params }) {
   const [previewTab, setPreviewTab] = useState('image'); // 'image' | 'video'
   const [videoSrc, setVideoSrc] = useState(null);
   const [generatingVideo, setGeneratingVideo] = useState(false);
+  const [videoModel, setVideoModel] = useState('ltx-2');
   const [stylePicker, setStylePicker] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState(null);
   const [relightPicker, setRelightPicker] = useState(false);
@@ -681,7 +682,7 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
 
       const result = await generateVideo({
         prompt: videoPrompt,
-        model: 'ltx-2',
+        model: videoModel,
         width,
         height,
         duration: 5,
@@ -735,7 +736,9 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
     return 'default';
   };
 
-  const selectedModel = editModels.find((m) => m.id === model) || editModels[0];
+  const activeModels = previewTab === 'video' ? videoModels : editModels;
+  const activeModelId = previewTab === 'video' ? videoModel : model;
+  const selectedModel = activeModels.find((m) => m.id === activeModelId) || activeModels[0];
 
   return (
     <div className={styles.page}>
@@ -767,11 +770,15 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
               </button>
               {modelOpen && (
                 <div className={styles.modelDropdown}>
-                  {editModels.map((m) => (
+                  {activeModels.map((m) => (
                     <button
                       key={m.id}
-                      className={`${styles.modelItem} ${m.id === model ? styles.modelItemActive : ''}`}
-                      onClick={() => { setModel(m.id); setModelOpen(false); }}
+                      className={`${styles.modelItem} ${m.id === activeModelId ? styles.modelItemActive : ''}`}
+                      onClick={() => {
+                        if (previewTab === 'video') setVideoModel(m.id);
+                        else setModel(m.id);
+                        setModelOpen(false);
+                      }}
                     >
                       <span>{m.label}</span>
                       <span className={styles.modelDesc}>{m.desc}</span>
