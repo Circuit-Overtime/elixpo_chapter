@@ -519,12 +519,20 @@ export default function EditorPage({ params }) {
       setCheckingCharacter(true);
       setError(null);
       try {
+        const imageB64 = await getImageAsBase64(imageSrc);
         const res = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            image: imageSrc,
-            query: 'Does this image contain a visible human or humanoid character with a body? Reply with JSON: {"hasCharacter": true, "reason": "..."} or {"hasCharacter": false, "reason": "..."}'
+            image: imageB64,
+            query: `Analyze this image. If it contains a visible human or humanoid character with a body, estimate the approximate position of these body joints as normalized coordinates (0 to 1, where 0,0 is top-left and 1,1 is bottom-right of the image).
+
+Reply ONLY with valid JSON in this exact format:
+{"hasCharacter": true, "joints": {"nose": {"x": 0.5, "y": 0.1}, "leftShoulder": {"x": 0.4, "y": 0.25}, "rightShoulder": {"x": 0.6, "y": 0.25}, "leftElbow": {"x": 0.35, "y": 0.4}, "rightElbow": {"x": 0.65, "y": 0.4}, "leftWrist": {"x": 0.3, "y": 0.5}, "rightWrist": {"x": 0.7, "y": 0.5}, "leftHip": {"x": 0.45, "y": 0.55}, "rightHip": {"x": 0.55, "y": 0.55}, "leftKnee": {"x": 0.44, "y": 0.72}, "rightKnee": {"x": 0.56, "y": 0.72}, "leftAnkle": {"x": 0.44, "y": 0.9}, "rightAnkle": {"x": 0.56, "y": 0.9}}}
+
+If there is no character: {"hasCharacter": false, "reason": "brief explanation"}
+
+Be precise about where the character's joints actually are in the image. The character may not be centered.`
           }),
         });
         const data = await res.json();
@@ -532,11 +540,21 @@ export default function EditorPage({ params }) {
           setError('No character detected. Pose editing requires a visible character in the image.');
           return;
         }
-        setSkeletonJoints({ ...DEFAULT_SKELETON });
+        // Use detected joints if available, fallback to defaults
+        if (data.joints && typeof data.joints === 'object') {
+          const detected = { ...DEFAULT_SKELETON };
+          for (const [key, val] of Object.entries(data.joints)) {
+            if (detected[key] && typeof val?.x === 'number' && typeof val?.y === 'number') {
+              detected[key] = { x: Math.max(0, Math.min(1, val.x)), y: Math.max(0, Math.min(1, val.y)) };
+            }
+          }
+          setSkeletonJoints(detected);
+        } else {
+          setSkeletonJoints({ ...DEFAULT_SKELETON });
+        }
         setPoseNote('');
         setPosePicker(true);
       } catch {
-        // On error, allow through
         setSkeletonJoints({ ...DEFAULT_SKELETON });
         setPoseNote('');
         setPosePicker(true);
