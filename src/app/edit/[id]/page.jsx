@@ -640,9 +640,10 @@ export default function EditorPage({ params }) {
           {TOOLS.map((t) => (
             <div key={t.id} className={styles.toolWrap}>
               <button
-                className={`${styles.toolBtn} ${activeTool === t.id ? styles.toolActive : ''}`}
-                onClick={() => { setActiveTool(t.id); if (t.id !== 'select') setSelected(false); }}
+                className={`${styles.toolBtn} ${activeTool === t.id && !posePicker ? styles.toolActive : ''}`}
+                onClick={() => { if (posePicker) return; setActiveTool(t.id); if (t.id !== 'select') setSelected(false); }}
                 title={t.label}
+                disabled={posePicker}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   {TOOL_ICONS[t.id]}
@@ -661,9 +662,10 @@ export default function EditorPage({ params }) {
           {CANVAS_MODES.map((m) => (
             <div key={m.id} className={styles.toolWrap}>
               <button
-                className={`${styles.toolBtn} ${canvasMode === m.id ? styles.toolActive : ''}`}
-                onClick={() => setCanvasMode(m.id)}
+                className={`${styles.toolBtn} ${canvasMode === m.id && !posePicker ? styles.toolActive : ''}`}
+                onClick={() => { if (!posePicker) setCanvasMode(m.id); }}
                 title={m.label}
+                disabled={posePicker}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   {m.icon}
@@ -678,13 +680,13 @@ export default function EditorPage({ params }) {
 
           <div className={styles.toolDivider} />
 
-          {EDIT_PRESETS.slice(0, 4).map((p) => (
+          {EDIT_PRESETS.map((p) => (
             <button
               key={p.id}
               className={`${styles.toolBtn} ${p.comingSoon ? styles.toolComingSoon : ''}`}
               onClick={() => !p.comingSoon && handlePresetClick(p)}
               title={p.comingSoon ? `${p.label} (Coming Soon)` : p.label}
-              disabled={generating || !imageSrc || p.comingSoon}
+              disabled={generating || !imageSrc || p.comingSoon || posePicker}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 {p.icon}
@@ -696,7 +698,7 @@ export default function EditorPage({ params }) {
 
           {/* Import image */}
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImportImage} style={{ display: 'none' }} />
-          <button className={styles.toolBtn} onClick={() => fileInputRef.current?.click()} title="Import image (or Ctrl+V)">
+          <button className={styles.toolBtn} onClick={() => fileInputRef.current?.click()} title="Import image (or Ctrl+V)" disabled={posePicker}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
@@ -895,26 +897,6 @@ export default function EditorPage({ params }) {
                   onClick={() => { setWidth(w); setHeight(h); }}
                 >
                   {w} x {h}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.settingsSection}>
-            <h3 className={styles.settingsLabel}>Quick Edits</h3>
-            <div className={styles.presetGrid}>
-              {EDIT_PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  className={`${styles.presetBtn} ${p.comingSoon ? styles.presetComingSoon : ''}`}
-                  onClick={() => !p.comingSoon && handlePresetClick(p)}
-                  disabled={generating || !imageSrc || p.comingSoon}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    {p.icon}
-                  </svg>
-                  {p.label}
-                  {p.comingSoon && <span className={styles.comingSoonBadge}>Soon</span>}
                 </button>
               ))}
             </div>
