@@ -348,7 +348,7 @@ export default function EditorPage({ params }) {
 
   // ─── Pan / draw / select handlers ───
   const handleCanvasPointerDown = (e) => {
-    if (isResizing.current) return;
+    if (isResizing.current || posePicker) return;
     if (activeTool === 'select') {
       setSelected(true);
       isPanning.current = true;
@@ -706,7 +706,7 @@ export default function EditorPage({ params }) {
             </svg>
           </button>
 
-          <button className={styles.toolBtn} onClick={handleUndo} disabled={undoStack.length === 0} title="Undo (Ctrl+Z)">
+          <button className={styles.toolBtn} onClick={handleUndo} disabled={undoStack.length === 0 || posePicker} title="Undo (Ctrl+Z)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <polyline points="1 4 1 10 7 10" />
               <path d="M3.51 15a9 9 0 105.64-11.36L1 10" />
