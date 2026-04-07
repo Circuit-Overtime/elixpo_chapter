@@ -143,9 +143,9 @@ export default function EditorPage({ params }) {
   const [relightPicker, setRelightPicker] = useState(false);
   const [posePicker, setPosePicker] = useState(false);
   const [checkingCharacter, setCheckingCharacter] = useState(false);
-  const [skeletonJoints, setSkeletonJoints] = useState({ ...DEFAULT_SKELETON });
+  const [skeletons, setSkeletons] = useState([{ ...DEFAULT_SKELETON }]);
   const [poseNote, setPoseNote] = useState('');
-  const draggingJoint = useRef(null);
+  const draggingJoint = useRef(null); // { charIdx, jointName }
   const abortRef = useRef(null);
 
   // Pan state
@@ -525,14 +525,17 @@ export default function EditorPage({ params }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             image: imageB64,
-            query: `Analyze this image. If it contains a visible human or humanoid character with a body, estimate the approximate position of these body joints as normalized coordinates (0 to 1, where 0,0 is top-left and 1,1 is bottom-right of the image).
+            query: `Analyze this image carefully. Find ALL visible human or humanoid characters with bodies.
 
-Reply ONLY with valid JSON in this exact format:
-{"hasCharacter": true, "joints": {"nose": {"x": 0.5, "y": 0.1}, "leftShoulder": {"x": 0.4, "y": 0.25}, "rightShoulder": {"x": 0.6, "y": 0.25}, "leftElbow": {"x": 0.35, "y": 0.4}, "rightElbow": {"x": 0.65, "y": 0.4}, "leftWrist": {"x": 0.3, "y": 0.5}, "rightWrist": {"x": 0.7, "y": 0.5}, "leftHip": {"x": 0.45, "y": 0.55}, "rightHip": {"x": 0.55, "y": 0.55}, "leftKnee": {"x": 0.44, "y": 0.72}, "rightKnee": {"x": 0.56, "y": 0.72}, "leftAnkle": {"x": 0.44, "y": 0.9}, "rightAnkle": {"x": 0.56, "y": 0.9}}}
+For EACH character, estimate the approximate position of their body joints as normalized coordinates (0 to 1, where 0,0 is top-left and 1,1 is bottom-right of the image). Be very precise — place joints exactly where the character's body parts are in the image.
 
-If there is no character: {"hasCharacter": false, "reason": "brief explanation"}
+Joint names: nose, leftShoulder, rightShoulder, leftElbow, rightElbow, leftWrist, rightWrist, leftHip, rightHip, leftKnee, rightKnee, leftAnkle, rightAnkle
 
-Be precise about where the character's joints actually are in the image. The character may not be centered.`
+Reply ONLY with valid JSON:
+{"hasCharacter": true, "characters": [{"joints": {"nose": {"x": 0.3, "y": 0.1}, "leftShoulder": {"x": 0.25, "y": 0.25}, "rightShoulder": {"x": 0.35, "y": 0.25}, "leftElbow": {"x": 0.2, "y": 0.38}, "rightElbow": {"x": 0.4, "y": 0.38}, "leftWrist": {"x": 0.18, "y": 0.5}, "rightWrist": {"x": 0.42, "y": 0.5}, "leftHip": {"x": 0.27, "y": 0.55}, "rightHip": {"x": 0.33, "y": 0.55}, "leftKnee": {"x": 0.26, "y": 0.72}, "rightKnee": {"x": 0.34, "y": 0.72}, "leftAnkle": {"x": 0.26, "y": 0.9}, "rightAnkle": {"x": 0.34, "y": 0.9}}}]}
+
+For multiple characters, include multiple objects in the "characters" array.
+If no character found: {"hasCharacter": false, "reason": "explanation"}`
           }),
         });
         const data = await res.json();
@@ -540,22 +543,31 @@ Be precise about where the character's joints actually are in the image. The cha
           setError('No character detected. Pose editing requires a visible character in the image.');
           return;
         }
-        // Use detected joints if available, fallback to defaults
-        if (data.joints && typeof data.joints === 'object') {
-          const detected = { ...DEFAULT_SKELETON };
-          for (const [key, val] of Object.entries(data.joints)) {
-            if (detected[key] && typeof val?.x === 'number' && typeof val?.y === 'number') {
-              detected[key] = { x: Math.max(0, Math.min(1, val.x)), y: Math.max(0, Math.min(1, val.y)) };
+        // Parse detected characters into skeleton array
+        const parseSkeleton = (joints) => {
+          const skel = { ...DEFAULT_SKELETON };
+          if (joints && typeof joints === 'object') {
+            for (const [key, val] of Object.entries(joints)) {
+              if (skel[key] && typeof val?.x === 'number' && typeof val?.y === 'number') {
+                skel[key] = { x: Math.max(0, Math.min(1, val.x)), y: Math.max(0, Math.min(1, val.y)) };
+              }
             }
           }
-          setSkeletonJoints(detected);
+          return skel;
+        };
+
+        if (Array.isArray(data.characters) && data.characters.length > 0) {
+          setSkeletons(data.characters.map(c => parseSkeleton(c.joints)));
+        } else if (data.joints) {
+          // Backward compat: single joints object
+          setSkeletons([parseSkeleton(data.joints)]);
         } else {
-          setSkeletonJoints({ ...DEFAULT_SKELETON });
+          setSkeletons([{ ...DEFAULT_SKELETON }]);
         }
         setPoseNote('');
         setPosePicker(true);
       } catch {
-        setSkeletonJoints({ ...DEFAULT_SKELETON });
+        setSkeletons([{ ...DEFAULT_SKELETON }]);
         setPoseNote('');
         setPosePicker(true);
       } finally {
@@ -582,9 +594,9 @@ Be precise about where the character's joints actually are in the image. The cha
   };
 
   // ─── Pose editor handlers ───
-  const handleJointDown = (name, e) => {
+  const handleJointDown = (charIdx, jointName, e) => {
     e.stopPropagation();
-    draggingJoint.current = name;
+    draggingJoint.current = { charIdx, jointName };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
@@ -593,14 +605,20 @@ Be precise about where the character's joints actually are in the image. The cha
     const rect = e.currentTarget.getBoundingClientRect();
     const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const ny = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-    setSkeletonJoints(prev => ({ ...prev, [draggingJoint.current]: { x: nx, y: ny } }));
+    const { charIdx, jointName } = draggingJoint.current;
+    setSkeletons(prev => prev.map((skel, i) =>
+      i === charIdx ? { ...skel, [jointName]: { x: nx, y: ny } } : skel
+    ));
   };
 
   const handlePoseSVGUp = () => { draggingJoint.current = null; };
 
   const handlePoseGenerate = () => {
-    const poseDesc = buildPosePrompt(skeletonJoints);
-    const final = poseDesc + (poseNote.trim() ? `, ${poseNote.trim()}` : '') + ', keep same character identity, clothing, and art style';
+    const parts = skeletons.map((skel, i) => {
+      const desc = buildPosePrompt(skel);
+      return skeletons.length > 1 ? `character ${i + 1}: ${desc}` : desc;
+    });
+    const final = parts.join('; ') + (poseNote.trim() ? `, ${poseNote.trim()}` : '') + ', keep same character identities, clothing, and art style';
     setPosePicker(false);
     setPrompt(final);
     handleEdit(final);
@@ -804,7 +822,7 @@ Be precise about where the character's joints actually are in the image. The cha
                       <div className={styles.sizeLabel}>{imageSize.w} x {imageSize.h}</div>
                     </>
                   )}
-                  {/* Skeleton overlay directly on image */}
+                  {/* Skeleton overlays — one per detected character */}
                   {posePicker && (
                     <svg
                       className={styles.poseSVG}
@@ -814,22 +832,27 @@ Be precise about where the character's joints actually are in the image. The cha
                       onPointerUp={handlePoseSVGUp}
                       onPointerLeave={handlePoseSVGUp}
                     >
-                      {POSE_LIMBS.map(([a, b, color], i) => (
-                        <line
-                          key={i}
-                          x1={skeletonJoints[a].x} y1={skeletonJoints[a].y}
-                          x2={skeletonJoints[b].x} y2={skeletonJoints[b].y}
-                          stroke={color} strokeWidth="0.008" strokeLinecap="round"
-                        />
-                      ))}
-                      {Object.entries(skeletonJoints).map(([name, pos]) => (
-                        <circle
-                          key={name}
-                          cx={pos.x} cy={pos.y} r="0.015"
-                          fill="#fff" stroke={JOINT_COLORS[name]} strokeWidth="0.005"
-                          style={{ cursor: 'grab', filter: 'drop-shadow(0 0.002px 0.005px rgba(0,0,0,0.8))' }}
-                          onPointerDown={(e) => handleJointDown(name, e)}
-                        />
+                      {skeletons.map((skel, charIdx) => (
+                        <g key={charIdx}>
+                          {POSE_LIMBS.map(([a, b, color], i) => (
+                            <line
+                              key={i}
+                              x1={skel[a].x} y1={skel[a].y}
+                              x2={skel[b].x} y2={skel[b].y}
+                              stroke={color} strokeWidth="0.008" strokeLinecap="round"
+                              opacity={0.85}
+                            />
+                          ))}
+                          {Object.entries(skel).map(([name, pos]) => (
+                            <circle
+                              key={name}
+                              cx={pos.x} cy={pos.y} r="0.012"
+                              fill="#fff" stroke={JOINT_COLORS[name]} strokeWidth="0.004"
+                              style={{ cursor: 'grab', filter: 'drop-shadow(0 0.002px 0.005px rgba(0,0,0,0.8))' }}
+                              onPointerDown={(e) => handleJointDown(charIdx, name, e)}
+                            />
+                          ))}
+                        </g>
                       ))}
                     </svg>
                   )}
@@ -888,7 +911,9 @@ Be precise about where the character's joints actually are in the image. The cha
             <>
               <div className={styles.settingsSection}>
                 <h3 className={styles.settingsLabel}>Pose Editor</h3>
-                <p className={styles.poseBarHint}>Drag joints on the image to set the target pose</p>
+                <p className={styles.poseBarHint}>
+                  {skeletons.length} character{skeletons.length !== 1 ? 's' : ''} detected. Drag joints to set the target pose.
+                </p>
               </div>
               <div className={styles.settingsSection}>
                 <span className={styles.settingsLabel}>Pose Note</span>
@@ -902,7 +927,7 @@ Be precise about where the character's joints actually are in the image. The cha
               </div>
               <div className={styles.settingsSection}>
                 <div className={styles.poseActions}>
-                  <button className={styles.poseResetBtn} onClick={() => setSkeletonJoints({ ...DEFAULT_SKELETON })}>Reset Skeleton</button>
+                  <button className={styles.poseResetBtn} onClick={() => setSkeletons(prev => prev.map(() => ({ ...DEFAULT_SKELETON })))}>Reset Skeleton</button>
                   <button className={styles.poseGenerateBtn} onClick={handlePoseGenerate} disabled={generating}>Generate</button>
                 </div>
                 <button className={styles.poseCloseBtn} onClick={() => setPosePicker(false)}>

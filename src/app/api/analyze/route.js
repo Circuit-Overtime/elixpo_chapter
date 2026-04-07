@@ -15,34 +15,35 @@ export async function POST(request) {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: 'gemini-fast',
+        model: 'openai',
         messages: [
           {
             role: 'system',
-            content: 'Analyze this image and answer the question. Reply ONLY with valid JSON, no extra text.',
+            content: 'You are a precise image analysis assistant. Analyze images and reply ONLY with valid JSON, no markdown, no extra text, no code blocks.',
           },
           {
             role: 'user',
             content: [
-              { type: 'text', text: query },
               { type: 'image_url', image_url: { url: image } },
+              { type: 'text', text: query },
             ],
           },
         ],
-        max_tokens: 200,
+        max_tokens: 2000,
         temperature: 0.1,
       }),
     });
 
     if (!res.ok) {
-      return NextResponse.json({ hasCharacter: true, reason: 'Analysis unavailable, proceeding' });
+      console.error('[analyze] API error:', res.status);
+      return NextResponse.json({ hasCharacter: true, characters: [], reason: 'Analysis unavailable' });
     }
 
     const data = await res.json();
     const raw = data.choices?.[0]?.message?.content?.trim() || '';
 
-    // Parse JSON from response (may be wrapped in markdown code block)
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    // Try to parse JSON — may be wrapped in markdown code block
+    const jsonMatch = raw.match(/[\[{][\s\S]*[\]}]/);
     if (jsonMatch) {
       try {
         const parsed = JSON.parse(jsonMatch[0]);
@@ -50,12 +51,12 @@ export async function POST(request) {
       } catch {}
     }
 
-    // Fallback: check for yes/true keywords
+    // Fallback
     const lower = raw.toLowerCase();
     const hasCharacter = lower.includes('true') || lower.includes('yes');
-    return NextResponse.json({ hasCharacter, reason: raw.slice(0, 100) });
+    return NextResponse.json({ hasCharacter, characters: [], reason: raw.slice(0, 200) });
   } catch (err) {
-    // On error, allow through (don't block the feature)
-    return NextResponse.json({ hasCharacter: true, reason: 'Analysis failed, proceeding' });
+    console.error('[analyze] Error:', err.message);
+    return NextResponse.json({ hasCharacter: true, characters: [], reason: 'Analysis failed' });
   }
 }
