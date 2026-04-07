@@ -453,19 +453,19 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 0.3rem 1rem;
+  gap: 0;
+  padding: 0 1rem;
   background: rgba(10, 14, 26, 0.95);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .previewTab {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.3rem 0.8rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  padding: 0.55rem 1rem;
+  border: none;
+  border-bottom: 2px solid transparent;
   background: transparent;
   color: var(--color-text-tertiary);
   font-family: var(--font-family-primary);
@@ -473,17 +473,16 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
+  border-radius: 0;
 }
 
 .previewTab:hover {
   color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.03);
 }
 
 .previewTabActive {
   color: #5691f3;
-  background: rgba(86, 145, 243, 0.08);
-  border-color: rgba(86, 145, 243, 0.15);
+  border-bottom-color: #5691f3;
 }
 
 .tabSpinner {

@@ -1126,17 +1126,20 @@
 .previewTabs {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0.4rem 0;
+  gap: 0;
+  padding: 0 var(--spacing-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
 .previewTab {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.8rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  gap: 0.35rem;
+  padding: 0.55rem 1rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   background: transparent;
   color: var(--color-text-tertiary);
   font-family: var(--font-family-primary);
@@ -1148,13 +1151,11 @@
 
 .previewTab:hover {
   color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.03);
 }
 
 .previewTabActive {
   color: #5691f3;
-  background: rgba(86, 145, 243, 0.08);
-  border-color: rgba(86, 145, 243, 0.15);
+  border-bottom-color: #5691f3;
 }
 
 .tabSpinner {
