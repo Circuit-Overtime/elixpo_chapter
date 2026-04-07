@@ -1122,6 +1122,64 @@
   }
 }
 
+/* ─── Preview Tabs (Image / Video) ─── */
+.previewTabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 var(--spacing-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.previewTab {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 1rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.previewTab:hover {
+  color: var(--color-text-secondary);
+}
+
+.previewTabActive {
+  color: #5691f3;
+  border-bottom-color: #5691f3;
+}
+
+.tabSpinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid rgba(86, 145, 243, 0.2);
+  border-top-color: #5691f3;
+  border-radius: 50%;
+  animation: tabSpin 0.8s linear infinite;
+}
+
+@keyframes tabSpin { to { transform: rotate(360deg); } }
+
+.videoLoading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-2xl);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
 /* ─── Action Icon Bar ─── */
 .actionBar {
   display: flex;
