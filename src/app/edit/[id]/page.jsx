@@ -820,15 +820,16 @@ export default function EditorPage({ params }) {
             <input
               type="text"
               className={styles.promptInput}
-              placeholder="Describe your edit..."
+              placeholder={posePicker ? 'Use pose controls in the panel →' : 'Describe your edit...'}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !posePicker) handleEdit(); }}
+              disabled={posePicker}
             />
             <button
               className={styles.generateBtn}
               onClick={() => handleEdit()}
-              disabled={generating || !prompt.trim() || !imageSrc}
+              disabled={generating || !prompt.trim() || !imageSrc || posePicker}
             >
               Generate
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -907,43 +908,6 @@ export default function EditorPage({ params }) {
       </div>
 
       {/* Style Transfer Picker */}
-      {stylePicker && (
-        <div className={styles.pickerOverlay} onClick={() => setStylePicker(false)}>
-          <div className={styles.pickerModal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.pickerTitle}>Choose a Style</h3>
-            <div className={styles.styleGrid}>
-              {STYLE_PRESETS.map((s) => (
-                <button
-                  key={s.id}
-                  className={`${styles.styleCard} ${selectedStyle === s.id ? styles.styleCardActive : ''}`}
-                  onClick={() => handleStyleTransfer(s)}
-                >
-                  <img src={s.image} alt={s.label} className={styles.styleImg} loading="lazy" />
-                  <span className={styles.styleLabel}>{s.label}</span>
-                </button>
-              ))}
-            </div>
-            <p className={styles.pickerHint}>Or type a custom style in the prompt bar and hit Generate</p>
-          </div>
-        </div>
-      )}
-
-      {/* Relight Picker */}
-      {relightPicker && (
-        <div className={styles.pickerOverlay} onClick={() => setRelightPicker(false)}>
-          <div className={styles.pickerModal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.pickerTitle}>Choose Lighting</h3>
-            <div className={styles.relightGrid}>
-              {RELIGHT_OPTIONS.map((o) => (
-                <button key={o.id} className={styles.relightCard} onClick={() => handleRelightOption(o)}>
-                  <span className={styles.relightLabel}>{o.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Character checking overlay */}
       {checkingCharacter && (
         <div className={styles.pickerOverlay}>
