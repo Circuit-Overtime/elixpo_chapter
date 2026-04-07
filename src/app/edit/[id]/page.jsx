@@ -423,6 +423,32 @@ export default function EditorPage({ params }) {
     ctx.clearRect(0, 0, mask.width, mask.height);
   };
 
+  // Convert image to base64 if it's a blob URL or needs conversion
+  const getImageAsBase64 = useCallback(async (src) => {
+    if (!src) return null;
+    // Already base64
+    if (src.startsWith('data:')) return src;
+    // Hosted URL — pass through (API handles it)
+    if (src.startsWith('http')) return src;
+    // Blob URL — convert via canvas
+    if (src.startsWith('blob:')) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth;
+          c.height = img.naturalHeight;
+          c.getContext('2d').drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve(src);
+        img.src = src;
+      });
+    }
+    return src;
+  }, []);
+
   // ─── Run edit ───
   const handleEdit = async (editPrompt) => {
     if (!imageSrc) return;
@@ -436,10 +462,11 @@ export default function EditorPage({ params }) {
     abortRef.current = controller;
 
     try {
+      const imageData = await getImageAsBase64(imageSrc);
       const res = await fetch(`${API_BASE}/generate/edit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: finalPrompt, imageUrl: imageSrc, model, width, height }),
+        body: JSON.stringify({ prompt: finalPrompt, imageUrl: imageData, model, width, height }),
         signal: controller.signal,
       });
       const data = await res.json();
@@ -812,11 +839,6 @@ export default function EditorPage({ params }) {
 
           {/* Prompt bar — always at bottom */}
           <div className={styles.promptBar}>
-            <button className={styles.promptSettingsBtn} title="Settings">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
-              </svg>
-            </button>
             <input
               type="text"
               className={styles.promptInput}
@@ -902,6 +924,56 @@ export default function EditorPage({ params }) {
               ))}
             </div>
           </div>
+
+          {/* Style Transfer — shown when active */}
+          {stylePicker && (
+            <>
+              <div className={styles.settingsSection}>
+                <div className={styles.settingsRow}>
+                  <h3 className={styles.settingsLabel}>Style Transfer</h3>
+                  <button className={styles.poseCloseBtn} onClick={() => setStylePicker(false)} style={{ width: 'auto', padding: '0.2rem 0.5rem' }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                    Close
+                  </button>
+                </div>
+                <div className={styles.styleGrid}>
+                  {STYLE_PRESETS.map((s) => (
+                    <button
+                      key={s.id}
+                      className={`${styles.styleCard} ${selectedStyle === s.id ? styles.styleCardActive : ''}`}
+                      onClick={() => handleStyleTransfer(s)}
+                      disabled={generating}
+                    >
+                      <img src={s.image} alt={s.label} className={styles.styleImg} loading="lazy" />
+                      <span className={styles.styleLabel}>{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Relight — shown when active */}
+          {relightPicker && (
+            <>
+              <div className={styles.settingsSection}>
+                <div className={styles.settingsRow}>
+                  <h3 className={styles.settingsLabel}>Relight Scene</h3>
+                  <button className={styles.poseCloseBtn} onClick={() => setRelightPicker(false)} style={{ width: 'auto', padding: '0.2rem 0.5rem' }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                    Close
+                  </button>
+                </div>
+                <div className={styles.relightGrid}>
+                  {RELIGHT_OPTIONS.map((o) => (
+                    <button key={o.id} className={styles.relightCard} onClick={() => handleRelightOption(o)} disabled={generating}>
+                      <span className={styles.relightLabel}>{o.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           {error && <p className={styles.error}>{error}</p>}
         </div>
