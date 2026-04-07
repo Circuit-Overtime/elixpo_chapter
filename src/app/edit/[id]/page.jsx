@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useModels } from '../../lib/useModels';
 import { STYLE_PRESETS } from '../../lib/blueprints';
 import { generateVideo } from '../../lib/videoGen';
+import { generateVideoPrompt } from '../../lib/autoPrompt';
 import styles from './Editor.module.css';
 
 const API_BASE = '/api';
@@ -659,16 +660,26 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
 
   // ─── Video generation ───
   const handleGenerateVideo = async () => {
-    if (!prompt.trim() || generatingVideo) return;
+    if (generatingVideo) return;
     setGeneratingVideo(true);
+    setPreviewTab('video');
     setError(null);
 
     const controller = new AbortController();
     abortRef.current = controller;
 
     try {
+      // Auto-generate prompt if user didn't type one
+      let videoPrompt = prompt.trim();
+      if (!videoPrompt && imageSrc) {
+        const imageB64 = await getImageAsBase64(imageSrc);
+        videoPrompt = await generateVideoPrompt(imageB64, controller.signal);
+        console.log('[video] Auto-prompt:', videoPrompt);
+      }
+      if (!videoPrompt) videoPrompt = 'cinematic scene, smooth motion, high quality';
+
       const result = await generateVideo({
-        prompt: prompt.trim(),
+        prompt: videoPrompt,
         model: 'ltx-2',
         width,
         height,
@@ -839,9 +850,6 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
             className={`${styles.toolBtn} ${generatingVideo ? styles.toolActive : ''}`}
             onClick={() => {
               if (!imageSrc || generatingVideo) return;
-              // Switch to video tab and show prompt
-              setPreviewTab('video');
-              if (!prompt.trim()) setPrompt(originalPrompt || '');
               handleGenerateVideo();
             }}
             title="Generate video from this image"
@@ -1048,7 +1056,7 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
             <button
               className={styles.videoBtn}
               onClick={handleGenerateVideo}
-              disabled={generatingVideo || !prompt.trim() || posePicker}
+              disabled={generatingVideo || posePicker}
               title="Generate video from prompt (uses canvas image as reference frame)"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
