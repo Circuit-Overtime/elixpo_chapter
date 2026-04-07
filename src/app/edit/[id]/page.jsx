@@ -534,7 +534,7 @@ CRITICAL placement rules — be extremely precise:
 - "leftKnee" / "rightKnee" = the bend point of each leg
 - "leftAnkle" / "rightAnkle" = the ankle/foot position at the bottom of each leg
 
-IMPORTANT: "left" and "right" are from the CHARACTER's perspective (mirrored from viewer). If a character faces the viewer, their left arm appears on the RIGHT side of the image.
+IMPORTANT: "left" and "right" are from the VIEWER's perspective (not the character's). The character's arm that appears on the LEFT side of the image = "left". The arm on the RIGHT side = "right". Same for legs.
 
 If arms are spread wide, the wrist x-coordinates should be far apart (close to the character's hand tips). If legs are apart, ankle x-coordinates should reflect that spread.
 
