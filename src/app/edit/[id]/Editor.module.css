@@ -816,24 +816,15 @@
   pointer-events: auto;
 }
 
-.poseBar {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: 0.5rem 1rem;
-  background: rgba(10, 14, 26, 0.95);
-  border-top: 1px solid rgba(86, 145, 243, 0.1);
-}
-
 .poseBarHint {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
-  white-space: nowrap;
+  margin: 0;
+  line-height: 1.5;
 }
 
 .poseBarInput {
-  flex: 1;
+  width: 100%;
   padding: 0.4rem 0.65rem;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-sm);
@@ -842,7 +833,7 @@
   font-family: var(--font-family-primary);
   font-size: var(--font-size-xs);
   outline: none;
-  min-width: 0;
+  margin-top: 0.3rem;
 }
 
 .poseBarInput:focus {
@@ -853,8 +844,16 @@
   color: var(--color-text-tertiary);
 }
 
+.poseActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
 .poseResetBtn {
-  padding: 0.35rem 0.75rem;
+  flex: 1;
+  padding: 0.4rem 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -863,7 +862,7 @@
   font-size: var(--font-size-xs);
   font-weight: 500;
   cursor: pointer;
-  white-space: nowrap;
+  text-align: center;
   transition: all 0.15s ease;
 }
 
@@ -873,7 +872,8 @@
 }
 
 .poseGenerateBtn {
-  padding: 0.35rem 1rem;
+  flex: 1;
+  padding: 0.4rem 0.5rem;
   border: none;
   border-radius: var(--radius-sm);
   background: linear-gradient(135deg, #5691f3, #7b6cf6);
@@ -882,7 +882,7 @@
   font-size: var(--font-size-xs);
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
+  text-align: center;
   transition: all 0.15s ease;
   box-shadow: 0 2px 8px rgba(86, 145, 243, 0.3);
 }
@@ -901,15 +901,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-text-tertiary);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-xs);
   cursor: pointer;
   transition: all 0.15s ease;
-  flex-shrink: 0;
 }
 
 .poseCloseBtn:hover {

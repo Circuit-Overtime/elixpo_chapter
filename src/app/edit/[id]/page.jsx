@@ -806,26 +806,7 @@ export default function EditorPage({ params }) {
             )}
           </div>
 
-          {/* Pose controls bar — shown when skeleton is active */}
-          {posePicker && (
-            <div className={styles.poseBar}>
-              <span className={styles.poseBarHint}>Drag joints to set target pose</span>
-              <input
-                type="text"
-                className={styles.poseBarInput}
-                placeholder="Optional pose note (e.g. sitting, dancing)..."
-                value={poseNote}
-                onChange={(e) => setPoseNote(e.target.value)}
-              />
-              <button className={styles.poseResetBtn} onClick={() => setSkeletonJoints({ ...DEFAULT_SKELETON })}>Reset</button>
-              <button className={styles.poseGenerateBtn} onClick={handlePoseGenerate} disabled={generating}>Generate Pose</button>
-              <button className={styles.poseCloseBtn} onClick={() => setPosePicker(false)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )}
+
 
           {/* Prompt bar — always at bottom */}
           <div className={styles.promptBar}>
@@ -858,6 +839,38 @@ export default function EditorPage({ params }) {
 
         {/* Right settings panel */}
         <div className={styles.settingsPanel}>
+
+          {/* Pose controls — shown when skeleton is active */}
+          {posePicker && (
+            <>
+              <div className={styles.settingsSection}>
+                <h3 className={styles.settingsLabel}>Pose Editor</h3>
+                <p className={styles.poseBarHint}>Drag joints on the image to set the target pose</p>
+              </div>
+              <div className={styles.settingsSection}>
+                <span className={styles.settingsLabel}>Pose Note</span>
+                <input
+                  type="text"
+                  className={styles.poseBarInput}
+                  placeholder="e.g. sitting, dancing, arms crossed..."
+                  value={poseNote}
+                  onChange={(e) => setPoseNote(e.target.value)}
+                />
+              </div>
+              <div className={styles.settingsSection}>
+                <div className={styles.poseActions}>
+                  <button className={styles.poseResetBtn} onClick={() => setSkeletonJoints({ ...DEFAULT_SKELETON })}>Reset Skeleton</button>
+                  <button className={styles.poseGenerateBtn} onClick={handlePoseGenerate} disabled={generating}>Generate</button>
+                </div>
+                <button className={styles.poseCloseBtn} onClick={() => setPosePicker(false)}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                  Close Pose Editor
+                </button>
+              </div>
+            </>
+          )}
 
           <div className={styles.settingsSection}>
             <div className={styles.settingsRow}>
