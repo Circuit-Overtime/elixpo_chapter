@@ -653,8 +653,9 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
       return skeletons.length > 1 ? `character ${i + 1}: ${desc}` : desc;
     });
     const final = parts.join('; ') + (poseNote.trim() ? `, ${poseNote.trim()}` : '') + ', keep same character identities, clothing, and art style';
+    console.log('[pose] Generated prompt:', final);
     setPosePicker(false);
-    setPrompt(final);
+    // Don't show pose prompt in the prompt bar — it's internal
     handleEdit(final);
   };
 

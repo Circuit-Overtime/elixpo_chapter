@@ -7,6 +7,7 @@ import { saveToLibrary } from '../../lib/library';
 import { isSignedIn, getUser } from '../../lib/auth';
 import { useModels } from '../../lib/useModels';
 import { generateVideo } from '../../lib/videoGen';
+import { generateVideoPrompt } from '../../lib/autoPrompt';
 import styles from './Session.module.css';
 
 const API_BASE = '/api';
@@ -345,8 +346,15 @@ export default function SessionPage({ params }) {
     setPreviewTab('video');
 
     try {
+      // Auto-generate a video prompt from the image if no custom prompt
+      let videoPrompt = prompt;
+      if (!videoPrompt || videoPrompt.length < 5) {
+        videoPrompt = await generateVideoPrompt(resultSrc);
+        console.log('[video] Auto-prompt:', videoPrompt);
+      }
+
       const result = await generateVideo({
-        prompt,
+        prompt: videoPrompt,
         model: 'ltx-2',
         width,
         height,
