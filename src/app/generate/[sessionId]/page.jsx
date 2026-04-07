@@ -574,6 +574,23 @@ export default function SessionPage({ params }) {
 
       <div className={styles.layout}>
         <div className={styles.content}>
+          {resultSrc && !loading && (videoSrc || generatingVideo) && (
+            <div className={styles.previewTabs}>
+              <button
+                className={`${styles.previewTab} ${previewTab === 'image' ? styles.previewTabActive : ''}`}
+                onClick={() => setPreviewTab('image')}
+              >
+                Image
+              </button>
+              <button
+                className={`${styles.previewTab} ${previewTab === 'video' ? styles.previewTabActive : ''}`}
+                onClick={() => setPreviewTab('video')}
+              >
+                Video
+                {generatingVideo && <span className={styles.tabSpinner} />}
+              </button>
+            </div>
+          )}
           <div className={styles.imageContainer}>
             <div className={styles.ambientBlob1} aria-hidden="true" />
             <div className={styles.ambientBlob2} aria-hidden="true" />

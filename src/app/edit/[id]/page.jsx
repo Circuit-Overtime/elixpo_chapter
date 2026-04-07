@@ -833,6 +833,26 @@ If no character: {"hasCharacter": false, "reason": "explanation"}`
             </button>
           ))}
 
+          <div className={styles.toolDivider} />
+
+          {/* Generate video from canvas */}
+          <button
+            className={`${styles.toolBtn} ${generatingVideo ? styles.toolActive : ''}`}
+            onClick={() => {
+              if (!imageSrc || generatingVideo) return;
+              // Switch to video tab and show prompt
+              setPreviewTab('video');
+              if (!prompt.trim()) setPrompt(originalPrompt || '');
+              handleGenerateVideo();
+            }}
+            title="Generate video from this image"
+            disabled={!imageSrc || generatingVideo || posePicker}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+          </button>
+
           <div className={styles.toolbarSpacer} />
 
           {/* Import image */}

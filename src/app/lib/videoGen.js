@@ -1,6 +1,8 @@
 // Video generation module
 // Handles video creation via the /api/generate/video endpoint
 
+import { ensureHostedUrl } from './mediaUpload';
+
 const API_BASE = '/api';
 
 const VIDEO_MODELS = [
@@ -17,7 +19,7 @@ const DEFAULT_MODEL = 'ltx-2';
  * @param {number} [options.width=1024] - Width in pixels
  * @param {number} [options.height=576] - Height in pixels
  * @param {number} [options.duration=5] - Duration in seconds
- * @param {string} [options.imageUrl] - Reference image URL (starting frame)
+ * @param {string} [options.imageUrl] - Reference image (any format: base64, blob, http)
  * @param {AbortSignal} [options.signal] - AbortController signal
  * @returns {Promise<{success: boolean, videoData?: string, error?: string}>}
  */
@@ -35,6 +37,15 @@ export async function generateVideo({
   }
 
   try {
+    // Upload reference image to media storage to avoid URI too long
+    let hostedImageUrl = null;
+    if (imageUrl) {
+      const token = typeof window !== 'undefined'
+        ? process.env.NEXT_PUBLIC_POLLINATIONS_API_IMAGE
+        : null;
+      hostedImageUrl = await ensureHostedUrl(imageUrl, token);
+    }
+
     const res = await fetch(`${API_BASE}/generate/video`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -44,7 +55,7 @@ export async function generateVideo({
         width,
         height,
         duration,
-        imageUrl,
+        imageUrl: hostedImageUrl,
       }),
       signal,
     });
@@ -70,32 +81,14 @@ export async function generateVideo({
 }
 
 /**
- * Convert an image source to a URL suitable for the video API reference image
- * Handles base64, blob, and http URLs
+ * Prepare an image for video generation — uploads to media storage
+ * @deprecated Use generateVideo directly, it handles upload internally
  */
 export async function prepareImageForVideo(imageSrc) {
-  if (!imageSrc) return null;
-  // HTTP URLs can be passed directly
-  if (imageSrc.startsWith('http')) return imageSrc;
-  // Base64 data URIs — pass through (API handles them)
-  if (imageSrc.startsWith('data:')) return imageSrc;
-  // Blob URL — convert to base64
-  if (imageSrc.startsWith('blob:')) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const c = document.createElement('canvas');
-        c.width = img.naturalWidth;
-        c.height = img.naturalHeight;
-        c.getContext('2d').drawImage(img, 0, 0);
-        resolve(c.toDataURL('image/png'));
-      };
-      img.onerror = () => resolve(null);
-      img.src = imageSrc;
-    });
-  }
-  return null;
+  const token = typeof window !== 'undefined'
+    ? process.env.NEXT_PUBLIC_POLLINATIONS_API_IMAGE
+    : null;
+  return ensureHostedUrl(imageSrc, token);
 }
 
 export { VIDEO_MODELS, DEFAULT_MODEL };
