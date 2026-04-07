@@ -523,17 +523,26 @@ export default function EditorPage({ params }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             image: imageB64,
-            query: `Analyze this image carefully. Find ALL visible human or humanoid characters with bodies.
+            query: `Find ALL visible human or humanoid characters in this image. For EACH character, estimate the EXACT pixel position of their body joints as normalized coordinates (0 to 1, where 0,0 is top-left corner and 1,1 is bottom-right corner of the image).
 
-For EACH character, estimate the approximate position of their body joints as normalized coordinates (0 to 1, where 0,0 is top-left and 1,1 is bottom-right of the image). Be very precise — place joints exactly where the character's body parts are in the image.
+CRITICAL placement rules — be extremely precise:
+- "nose" = tip of the nose or center of the face
+- "leftShoulder" / "rightShoulder" = where the arm meets the torso, at the shoulder joint
+- "leftElbow" / "rightElbow" = the bend point of each arm
+- "leftWrist" / "rightWrist" = the wrist/hand position — this MUST be at the end of the arm, where the hand is. If arms are extended outward, wrists should be far from the body center.
+- "leftHip" / "rightHip" = where the legs meet the torso, at the waist/belt line
+- "leftKnee" / "rightKnee" = the bend point of each leg
+- "leftAnkle" / "rightAnkle" = the ankle/foot position at the bottom of each leg
 
-Joint names: nose, leftShoulder, rightShoulder, leftElbow, rightElbow, leftWrist, rightWrist, leftHip, rightHip, leftKnee, rightKnee, leftAnkle, rightAnkle
+IMPORTANT: "left" and "right" are from the CHARACTER's perspective (mirrored from viewer). If a character faces the viewer, their left arm appears on the RIGHT side of the image.
 
-Reply ONLY with valid JSON:
-{"hasCharacter": true, "characters": [{"joints": {"nose": {"x": 0.3, "y": 0.1}, "leftShoulder": {"x": 0.25, "y": 0.25}, "rightShoulder": {"x": 0.35, "y": 0.25}, "leftElbow": {"x": 0.2, "y": 0.38}, "rightElbow": {"x": 0.4, "y": 0.38}, "leftWrist": {"x": 0.18, "y": 0.5}, "rightWrist": {"x": 0.42, "y": 0.5}, "leftHip": {"x": 0.27, "y": 0.55}, "rightHip": {"x": 0.33, "y": 0.55}, "leftKnee": {"x": 0.26, "y": 0.72}, "rightKnee": {"x": 0.34, "y": 0.72}, "leftAnkle": {"x": 0.26, "y": 0.9}, "rightAnkle": {"x": 0.34, "y": 0.9}}}]}
+If arms are spread wide, the wrist x-coordinates should be far apart (close to the character's hand tips). If legs are apart, ankle x-coordinates should reflect that spread.
 
-For multiple characters, include multiple objects in the "characters" array.
-If no character found: {"hasCharacter": false, "reason": "explanation"}`
+Reply ONLY with valid JSON, no markdown:
+{"hasCharacter": true, "characters": [{"joints": {"nose": {"x": 0.3, "y": 0.1}, "leftShoulder": {"x": 0.25, "y": 0.25}, "rightShoulder": {"x": 0.35, "y": 0.25}, "leftElbow": {"x": 0.15, "y": 0.3}, "rightElbow": {"x": 0.45, "y": 0.3}, "leftWrist": {"x": 0.08, "y": 0.35}, "rightWrist": {"x": 0.52, "y": 0.35}, "leftHip": {"x": 0.27, "y": 0.52}, "rightHip": {"x": 0.33, "y": 0.52}, "leftKnee": {"x": 0.26, "y": 0.72}, "rightKnee": {"x": 0.34, "y": 0.72}, "leftAnkle": {"x": 0.25, "y": 0.9}, "rightAnkle": {"x": 0.35, "y": 0.9}}}]}
+
+For multiple characters, add more objects to the array.
+If no character: {"hasCharacter": false, "reason": "explanation"}`
           }),
         });
         const data = await res.json();
