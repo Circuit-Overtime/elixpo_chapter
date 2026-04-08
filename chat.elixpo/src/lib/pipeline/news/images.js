@@ -12,7 +12,7 @@ export async function generateVisualPrompt(topic) {
     "'cinematic lighting', 'soft haze', or 'distant silhouette'. Output just one 25-30 word image description suitable for a banner (1280x720).";
 
   return chatCompletion({
-    model: "openai-fast",
+    model: "gemini-fast",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: topic },

@@ -2,7 +2,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
-import { MAX_NEWS_ITEMS, VOICES } from "../config.js";
+import { MAX_NEWS_ITEMS, NEWS_VOICES } from "../config.js";
 import { uploadBuffer, deleteFolder } from "../storage.js";
 import { fetchTrendingTopics } from "./topics.js";
 import { generateNewsAnalysis, generateNewsScript } from "./analysis.js";
@@ -45,10 +45,7 @@ async function safeRetry(fn, retries = 2, wait = 5000) {
   }
 }
 
-/**
- * Run the full news generation pipeline.
- * @param {D1Database} db - Cloudflare D1 database
- */
+
 export async function runNewsPipeline(db) {
   console.log("🚀 Starting news pipeline...");
   ensureTmp();
@@ -74,8 +71,10 @@ export async function runNewsPipeline(db) {
     logBackup(backup);
   }
 
-  // Process each news item
-  for (let index = 0; index < Math.min(trendingTopics.length, MAX_NEWS_ITEMS); index++) {
+  const totalItems = Math.min(trendingTopics.length, MAX_NEWS_ITEMS);
+
+
+  for (let index = 0; index < totalItems; index++) {
     const topic = trendingTopics[index];
     const newsId = crypto.createHash("sha256").update(`${topic}-${index}-${overallId}`).digest("hex").slice(0, 16);
     const item = items[index] || {};
@@ -87,13 +86,15 @@ export async function runNewsPipeline(db) {
       continue;
     }
 
-    console.log(`⚙️ Processing topic ${index + 1}/${MAX_NEWS_ITEMS}: ${topic}`);
+    console.log(`⚙️ Processing topic ${index + 1}/${totalItems}: ${topic}`);
 
-    // Step 1: Script
+    const prevTopic = index > 0 ? trendingTopics[index - 1] : null;
+    const nextTopic = index < totalItems - 1 ? trendingTopics[index + 1] : null;
+    const voice = NEWS_VOICES[index % NEWS_VOICES.length];
     if (!item.status || item.status === "started" || item.status?.includes("script_failed")) {
       try {
         const info = await safeRetry(() => generateNewsAnalysis(topic));
-        const scriptData = await safeRetry(() => generateNewsScript(info));
+        const scriptData = await safeRetry(() => generateNewsScript(info, prevTopic, nextTopic, index, totalItems));
         item.timestamp = new Date().toISOString();
         item.script = scriptData.script;
         item.source_link = scriptData.source_link || "";
@@ -112,10 +113,9 @@ export async function runNewsPipeline(db) {
       }
     }
 
-    // Step 2: Audio
     if (item.status === "script_generated" || item.status?.includes("audio_failed")) {
       try {
-        const voice = VOICES[index % VOICES.length];
+        console.log(`🎙️ Using voice: ${voice} for topic ${index}`);
         const audioBuffer = await safeRetry(() => generateVoiceover(item.script, index, voice));
         const audioUrl = await uploadBuffer(audioBuffer, `news/${overallId}/${newsId}`, `news${index}`, "video");
         item.audio_url = audioUrl;
@@ -134,7 +134,6 @@ export async function runNewsPipeline(db) {
       }
     }
 
-    // Step 3: Image
     if (item.status === "audio_uploaded" || item.status?.includes("image_failed")) {
       try {
         const prompt = await generateVisualPrompt(item.topic);
@@ -159,7 +158,6 @@ export async function runNewsPipeline(db) {
     await new Promise((r) => setTimeout(r, 3000));
   }
 
-  // Final: Thumbnail & Summary
   const allComplete = items.every((it) => it.status === "complete");
   if (!allComplete) {
     console.log("⚠️ Not all items complete. Final steps skipped.");
@@ -175,19 +173,13 @@ export async function runNewsPipeline(db) {
     const thumbUrl = await uploadBuffer(thumbBuffer, `news/${overallId}`, "newsThumbnail");
 
     const summaryText = await createCombinedNewsSummary(completedTopics);
-
-    // Clean items for DB storage (only keep essential fields)
     const dbItems = items.map((it) => ({
       audio_url: it.audio_url,
       topic: it.topic,
       image_url: it.image_url,
       source_link: it.source_link,
     }));
-
-    // Write to D1
     await db.prepare("INSERT OR REPLACE INTO news (id, items) VALUES (?, ?)").bind(overallId, JSON.stringify(dbItems)).run();
-
-    // Get previous news ID for cleanup
     const prevStats = await db.prepare("SELECT data FROM gen_stats WHERE key = ?").bind("news").first();
     if (prevStats) {
       const prev = JSON.parse(prevStats.data);
@@ -195,8 +187,6 @@ export async function runNewsPipeline(db) {
         await deleteFolder(`news/${prev.latestNewsId}`);
       }
     }
-
-    // Update gen_stats
     const statsData = JSON.stringify({
       latestNewsId: overallId,
       latestNewsThumbnail: thumbUrl,
@@ -204,8 +194,6 @@ export async function runNewsPipeline(db) {
       latestNewsDate: new Date().toISOString(),
     });
     await db.prepare("INSERT OR REPLACE INTO gen_stats (key, data) VALUES (?, ?)").bind("news", statsData).run();
-
-    // Clean backup
     fs.unlinkSync(BACKUP_FILE);
     console.log("✅ News pipeline complete!");
   } catch (err) {

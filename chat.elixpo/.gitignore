@@ -21,3 +21,4 @@ wrangler.toml
 .wrangler
 .vercel
 .claude
+*.jpg

@@ -87,3 +87,9 @@ export async function fetchTrendingTopics() {
   console.log(`✅ Found ${headlines.length} trending topics`);
   return headlines.slice(0, MAX_NEWS_ITEMS);
 }
+
+
+fetchTrendingTopics().then((topics) => {
+  console.log("Trending Topics:");
+  topics.forEach((t, i) => console.log(`  ${i + 1}. ${t}`));
+});

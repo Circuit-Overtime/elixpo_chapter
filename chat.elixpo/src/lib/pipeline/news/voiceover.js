@@ -1,12 +1,20 @@
-import { generateSpeech } from "../pollinations.js";
+import { generateAudio } from "../pollinations.js";
 
-/**
- * Generate voiceover audio for a news script via elevenlabs TTS.
- * @returns {Buffer} MP3 audio buffer
- */
+const DEVELOPER_PROMPT =
+  "You are a charismatic news host narrating a story for Elixpo Daily. " +
+  "Your pace is lively and confident — you move with energy, like someone genuinely excited to share this news. " +
+  "But you know when to breathe. A brief pause before a big reveal, a beat after a surprising fact, then right back to momentum. " +
+  "Your voice has range: curiosity when posing questions, warmth when something matters, a spark of excitement when something is genuinely cool. " +
+  "Sound human — natural breaths, the occasional 'you know' or 'right?', a genuine reaction if something is wild or funny. " +
+  "Don't paraphrase or skip anything — narrate the script fully, word for word, with feeling and conviction. " +
+  "Think of your favorite news podcast host — sharp, relatable, clear, and engaging. Not a monotone anchor. Not a screaming YouTuber. Just a great storyteller who happens to be delivering the news. " +
+  "No robotic reading. No rushing through content. No sleepy delivery. Every sentence should land.";
+
+
 export async function generateVoiceover(script, newsIndex, voice = "shimmer") {
-  console.log(`🎙️ Generating voiceover for topic ${newsIndex} (elevenlabs)...`);
-  const buffer = await generateSpeech({ text: script, voice });
+  console.log(`🎙️ Generating voiceover for topic ${newsIndex} (${voice})...`);
+  const base64 = await generateAudio({ script, voice, developerPrompt: DEVELOPER_PROMPT });
+  const buffer = Buffer.from(base64, "base64");
   console.log(`✅ Voiceover generated for topic ${newsIndex}`);
   return buffer;
 }
