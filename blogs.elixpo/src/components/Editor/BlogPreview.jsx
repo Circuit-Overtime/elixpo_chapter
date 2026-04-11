@@ -64,7 +64,7 @@ function FloatingTOC({ headings }) {
             <li key={h.id} ref={el => { itemRefs.current[h.id] = el; }}>
               <a
                 href={`#${h.id}`}
-                className="preview-floating-toc-link"
+                className={`preview-floating-toc-link${h.isSubpage ? ' toc-subpage-link' : ''}`}
                 style={{
                   paddingLeft: (h.level - 1) * 12,
                   color: h.id === activeId ? 'var(--text-primary)' : undefined,
@@ -75,6 +75,12 @@ function FloatingTOC({ headings }) {
                   document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }}
               >
+                {h.isSubpage && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 4, verticalAlign: '-1px' }}>
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                )}
                 {h.text}
               </a>
             </li>
@@ -108,10 +114,15 @@ function renderBlocksToHTML(blocks) {
         return `<a href="/@${c.props.username}" class="mention-chip" data-username="${c.props.username}" data-avatar="${c.props.avatarUrl || ''}" data-displayname="${name}">${avatar}@${name}</a>`;
       }
       if (c.type === 'blogMention' && c.props?.slugid) {
-        return `<a href="/${c.props.slugid}" class="mention-chip">${c.props.title || 'Untitled blog'}</a>`;
+        return `<a href="/${c.props.slugid}" class="blog-mention-link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>${c.props.title || 'Untitled blog'}</a>`;
       }
       if (c.type === 'orgMention' && c.props?.slug) {
-        return `<a href="/@${c.props.slug}" class="mention-chip">@${c.props.name || c.props.slug}</a>`;
+        return `<a href="/@${c.props.slug}" class="org-mention-link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>@${c.props.name || c.props.slug}</a>`;
+      }
+      // Links wrap child content — recurse into c.content for the link text
+      if (c.type === 'link' && c.href) {
+        const linkText = c.content ? inlineToHTML(c.content) : (c.text || c.href).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return `<a href="${c.href}">${linkText || c.href}</a>`;
       }
       let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       if (!text) return '';
@@ -121,14 +132,13 @@ function renderBlocksToHTML(blocks) {
       if (s.strike) text = `<del>${text}</del>`;
       if (s.code) text = `<code>${text}</code>`;
       if (s.underline) text = `<u>${text}</u>`;
-      if (c.type === 'link' && c.href) text = `<a href="${c.href}">${text}</a>`;
       if (s.textColor) text = `<span style="color:${s.textColor}">${text}</span>`;
       if (s.backgroundColor) text = `<span style="background:${s.backgroundColor};border-radius:3px;padding:0 2px">${text}</span>`;
       return text;
     }).join('');
   }
 
-  // Collect ALL headings recursively for TOC
+  // Collect ALL headings + subpages recursively for TOC
   const headings = [];
   function collectHeadings(blockList) {
     for (const block of blockList) {
@@ -138,6 +148,16 @@ function renderBlocksToHTML(blocks) {
           const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
           headings.push({ id, text: text.trim(), level: block.props?.level || 1 });
         }
+      }
+      if (block.type === 'tabsBlock') {
+        let subTabs = [];
+        try { subTabs = JSON.parse(block.props?.tabs || '[]'); } catch {}
+        subTabs.forEach(t => {
+          if (t.title) {
+            const id = `subpage-${(t.subpageId || t.title).slice(0, 20)}`;
+            headings.push({ id, text: t.title, level: 2, isSubpage: true, subpageId: t.subpageId });
+          }
+        });
       }
       if (block.children?.length) collectHeadings(block.children);
     }
@@ -177,6 +197,17 @@ function renderBlocksToHTML(blocks) {
           return `<div class="preview-mermaid-block" data-diagram="${encodeURIComponent(block.props.diagram)}"></div>${childrenHTML}`;
         }
         return childrenHTML;
+      case 'tabsBlock': {
+        let subTabs = [];
+        try { subTabs = JSON.parse(block.props?.tabs || '[]'); } catch {}
+        if (subTabs.length === 0) return childrenHTML;
+        const tabItems = subTabs.map(t => {
+          const href = t.subpageId ? `/${t.subpageId}` : '#';
+          const id = `subpage-${(t.subpageId || t.title).slice(0, 20)}`;
+          return `<a id="${id}" href="${href}" class="subpage-item" target="_blank" rel="noopener"><div class="subpage-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></div><span class="subpage-title">${t.title}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="subpage-arrow"><polyline points="9 18 15 12 9 6"/></svg></a>`;
+        }).join('');
+        return `<div class="subpage-block">${tabItems}</div>${childrenHTML}`;
+      }
       case 'divider':
         return `<hr class="preview-divider" />${childrenHTML}`;
       case 'codeBlock': {
@@ -271,7 +302,8 @@ function renderBlocksToHTML(blocks) {
   if (headings.length > 0) {
     const tocItems = headings.map(h => {
       const indent = (h.level - 1) * 16;
-      return `<li><a href="#${h.id}" class="preview-toc-link" style="padding-left:${indent}px">${h.text}</a></li>`;
+      const icon = h.isSubpage ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;margin-right:4px;vertical-align:-1px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' : '';
+      return `<li><a href="#${h.id}" class="preview-toc-link${h.isSubpage ? ' toc-subpage-link' : ''}" style="padding-left:${indent}px">${icon}${h.text}</a></li>`;
     }).join('');
     tocHTML = `<div class="preview-toc-block"><p class="preview-toc-label">Table of Contents</p><ul class="preview-toc-list">${tocItems}</ul></div>`;
   }
@@ -301,14 +333,28 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
   // Determine which HTML to use — prefer blocks-based rendering
   const renderedHTML = blocks && blocks.length > 0 ? renderBlocksToHTML(blocks) : html;
 
-  // Extract headings for floating TOC
-  const headings = (blocks || [])
-    .filter(b => b.type === 'heading' && b.content?.length > 0)
-    .map(b => {
-      const text = b.content.map(c => c.text || '').join('');
-      return { id: `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`, text: text.trim(), level: b.props?.level || 1 };
-    })
-    .filter(h => h.text);
+  // Extract headings + subpages for floating TOC
+  const headings = (() => {
+    const result = [];
+    for (const b of (blocks || [])) {
+      if (b.type === 'heading' && b.content?.length > 0) {
+        const text = b.content.map(c => c.text || '').join('');
+        if (text.trim()) {
+          result.push({ id: `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`, text: text.trim(), level: b.props?.level || 1 });
+        }
+      }
+      if (b.type === 'tabsBlock') {
+        let tabs = [];
+        try { tabs = JSON.parse(b.props?.tabs || '[]'); } catch {}
+        tabs.forEach(t => {
+          if (t.title) {
+            result.push({ id: `subpage-${(t.subpageId || t.title).slice(0, 20)}`, text: t.title, level: 2, isSubpage: true });
+          }
+        });
+      }
+    }
+    return result;
+  })();
 
   // Set innerHTML via ref so React never overwrites our post-processed DOM.
   // Then render KaTeX, mermaid, Shiki into the live DOM elements.
@@ -541,7 +587,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       const href = link.getAttribute('href');
       if (!href) return;
       const onEnter = () => linkPreviewRef.current.show(link, href);
-      const onLeave = () => linkPreviewRef.current.hide();
+      const onLeave = () => linkPreviewRef.current.cancel();
       link.addEventListener('mouseenter', onEnter);
       link.addEventListener('mouseleave', onLeave);
       linkHandlers.push({ el: link, onEnter, onLeave });
@@ -637,9 +683,19 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       {/* Spacer when emoji overlaps cover */}
       {pageEmoji && coverPreview && <div className="h-8" />}
 
-      {/* Author bar — above title */}
+      {/* Title */}
+      {title && (
+        <h1 className="text-[2.2em] font-extrabold leading-tight mt-6 mb-2" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>{title}</h1>
+      )}
+
+      {/* Subtitle */}
+      {subtitle && (
+        <p className="text-xl mb-3" style={{ color: 'var(--text-muted)', fontFamily: "'Source Serif 4', Georgia, serif" }}>{subtitle}</p>
+      )}
+
+      {/* Author bar — under title */}
       {user && (
-        <div className="flex items-center gap-3 mt-3 mb-5">
+        <div className="flex items-center gap-3 mt-1 mb-2">
           <div className="flex -space-x-2">
             {user.avatar_url ? (
               <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[var(--bg-app)]" />
@@ -670,7 +726,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
 
       {/* Tags — under author bar */}
       {tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 mb-2">
           {tags.map((tag) => (
             <span key={tag} className="px-2.5 py-0.5 bg-[#9b7bf70a] rounded-full text-[12px] text-[#9b7bf7]">
               #{tag}
@@ -679,18 +735,10 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
         </div>
       )}
 
-      {/* Gap before title */}
-      <div style={{ height: '48px' }} />
+      {/* Gap before content */}
+      <div style={{ height: '32px' }} />
 
-      {title && (
-        <h1 className="text-[2.2em] font-extrabold leading-tight mb-2" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>{title}</h1>
-      )}
-
-      {subtitle && (
-        <p className="text-xl mb-5" style={{ color: 'var(--text-muted)', fontFamily: "'Source Serif 4', Georgia, serif" }}>{subtitle}</p>
-      )}
-
-      <div className="mt-4">
+      <div>
         {renderedHTML ? (
           <div
             ref={contentRef}
@@ -707,7 +755,6 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
           anchorEl={linkPreview.preview.anchorEl}
           url={linkPreview.preview.url}
           onClose={linkPreview.hide}
-          onKeepAlive={linkPreview.keepAlive}
         />
       )}
 

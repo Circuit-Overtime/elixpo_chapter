@@ -326,13 +326,14 @@ function sanitizeInitialContent(blocks) {
   if (typeof blocks === 'string') {
     try { blocks = JSON.parse(blocks); } catch { return undefined; }
   }
-  if (!blocks || !Array.isArray(blocks)) return blocks;
+  if (!blocks || !Array.isArray(blocks) || blocks.length === 0) return undefined;
 
   // Filter out unknown block types (e.g. removed custom blocks)
   const filtered = blocks.filter((b) => !b.type || KNOWN_BLOCK_TYPES.has(b.type));
+  if (filtered.length === 0) return undefined;
 
   const sanitized = doSanitize(filtered);
-  return sanitized;
+  return sanitized?.length ? sanitized : undefined;
 }
 
 function doSanitize(blocks) {
@@ -555,14 +556,48 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     const handleMouseOut = (e) => {
       const link = e.target.closest('a[href]');
       if (!link) return;
-      editorLinkPreview.hide();
+      editorLinkPreview.cancel();
+    };
+
+    // Ctrl+Click (or Cmd+Click) to open link in new tab
+    const handleClick = (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const link = e.target.closest('a[href]');
+      if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
+      const href = link.getAttribute('href');
+      if (href && href.startsWith('http')) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(href, '_blank', 'noopener,noreferrer');
+      }
+    };
+
+    // Ctrl/Cmd held → change link cursor to pointer
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        wrapper.classList.add('ctrl-held');
+      }
+    };
+    const handleKeyUp = () => {
+      wrapper.classList.remove('ctrl-held');
+    };
+    const handleBlur = () => {
+      wrapper.classList.remove('ctrl-held');
     };
 
     wrapper.addEventListener('mouseover', handleMouseOver);
     wrapper.addEventListener('mouseout', handleMouseOut);
+    wrapper.addEventListener('click', handleClick);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
     return () => {
       wrapper.removeEventListener('mouseover', handleMouseOver);
       wrapper.removeEventListener('mouseout', handleMouseOut);
+      wrapper.removeEventListener('click', handleClick);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
     };
   }, []);
 
@@ -579,6 +614,35 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       default: "Press 'Space' for AI, type '/' for commands",
     },
   });
+
+  // Auto-convert [text](url) to a link as you type
+  useEffect(() => {
+    if (!editor) return;
+    const tiptap = editor._tiptapEditor;
+    if (!tiptap) return;
+
+    const handleInput = () => {
+      const { state, view } = tiptap;
+      const { $from } = state.selection;
+      const textBefore = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
+      const match = textBefore.match(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+      if (!match) return;
+
+      const [fullMatch, linkText, url] = match;
+      const from = $from.pos - fullMatch.length;
+      const to = $from.pos;
+
+      const linkMark = state.schema.marks.link.create({ href: url });
+      const tr = state.tr
+        .delete(from, to)
+        .insertText(linkText, from)
+        .addMark(from, from + linkText.length, linkMark);
+      view.dispatch(tr);
+    };
+
+    tiptap.on('update', handleInput);
+    return () => tiptap.off('update', handleInput);
+  }, [editor]);
 
   // Seed Yjs doc from existing content when collab starts on a blog that already has content
   useEffect(() => {
@@ -2214,7 +2278,6 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           anchorEl={editorLinkPreview.preview.anchorEl}
           url={editorLinkPreview.preview.url}
           onClose={editorLinkPreview.hide}
-          onKeepAlive={editorLinkPreview.keepAlive}
         />
       )}
     </div>

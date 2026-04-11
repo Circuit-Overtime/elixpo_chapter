@@ -101,6 +101,15 @@
   overflow: hidden;
 }
 
+/* When a link is selected, the link toolbar appears — hide AI + link + color from formatting toolbar */
+.blog-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) [data-test="createLink"],
+.blog-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .ai-star-btn,
+.blog-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .ai-toolbar-sep,
+.blog-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .toolbar-color-btn,
+.blog-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .toolbar-color-sep {
+  display: none !important;
+}
+
 .blog-editor-wrapper .bn-toolbar button {
   color: var(--text-muted);
 }
@@ -321,8 +330,45 @@
   border-radius: 8px;
 }
 
-/* Keep only Edit link + Open link (first 2 items), hide all others at any depth */
-.blog-editor-wrapper .bn-link-toolbar > *:nth-child(n+3),
-.blog-editor-wrapper .bn-link-toolbar > * > *:nth-child(n+3) {
+/* Hide the delete/unlink button (3rd child) */
+.blog-editor-wrapper .bn-link-toolbar > *:nth-child(3) {
   display: none !important;
+}
+/* Hide any further toolbar buttons that may appear (4th+) */
+.blog-editor-wrapper .bn-link-toolbar > *:nth-child(n+4):not([data-radix-popper-content-wrapper]) {
+  display: none !important;
+}
+
+/* Style the edit link popover form */
+.blog-editor-wrapper .bn-form-popover {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  min-width: 280px;
+}
+
+[data-theme="dark"] .blog-editor-wrapper .bn-form-popover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.blog-editor-wrapper .bn-form-popover .bn-text-input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  outline: none;
+  margin-bottom: 6px;
+}
+
+.blog-editor-wrapper .bn-form-popover .bn-text-input:focus {
+  border-color: #9b7bf7;
+}
+
+.blog-editor-wrapper .bn-form-popover .bn-text-input::placeholder {
+  color: var(--text-faint);
 }

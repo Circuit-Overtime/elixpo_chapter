@@ -296,7 +296,8 @@
   text-decoration: none !important;
   border-bottom: 1px solid rgba(123, 168, 240, 0.3);
   padding-bottom: 1px;
-  cursor: pointer;
+  cursor: text;
+  pointer-events: auto;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
@@ -305,6 +306,14 @@
   color: #9dc0ff !important;
   border-bottom-color: rgba(157, 192, 255, 0.5);
   background: rgba(123, 168, 240, 0.06);
+}
+
+/* Ctrl/Cmd held — links become clickable, show pointer cursor */
+.blog-editor-wrapper.ctrl-held .bn-editor a,
+.blog-editor-wrapper.ctrl-held .bn-block-content a {
+  cursor: pointer;
+  text-decoration: underline !important;
+  border-bottom: none;
 }
 
 /* ===== Link Preview Tooltip ===== */

@@ -3,12 +3,13 @@
 import { createReactInlineContentSpec } from '@blocknote/react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
-function MiniCalendar({ selectedDate, onSelect, onClose }) {
+function MiniCalendar({ selectedDate, onSelect, onClose, anchorEl }) {
   const ref = useRef(null);
   const [viewDate, setViewDate] = useState(() => {
     const d = selectedDate ? new Date(selectedDate) : new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
   });
+  const [pos, setPos] = useState(null);
 
   useEffect(() => {
     function handleClick(e) {
@@ -17,6 +18,16 @@ function MiniCalendar({ selectedDate, onSelect, onClose }) {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [onClose]);
+
+  // Position below the anchor, clamped to viewport
+  useEffect(() => {
+    if (!anchorEl) return;
+    const rect = anchorEl.getBoundingClientRect();
+    const calWidth = 240;
+    let left = rect.left;
+    left = Math.max(8, Math.min(left, window.innerWidth - calWidth - 8));
+    setPos({ top: rect.bottom + 4, left });
+  }, [anchorEl]);
 
   const { year, month } = viewDate;
   const firstDay = new Date(year, month, 1).getDay();
@@ -34,11 +45,13 @@ function MiniCalendar({ selectedDate, onSelect, onClose }) {
 
   const toDateStr = (d) => `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
+  if (!pos) return null;
+
   return (
     <div
       ref={ref}
-      className="absolute z-[100] mt-1 rounded-xl shadow-2xl overflow-hidden"
-      style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', width: '240px', top: '100%', left: '0' }}
+      className="fixed z-[100] rounded-xl shadow-2xl overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', width: '240px', top: pos.top, left: pos.left }}
       onMouseDown={e => e.stopPropagation()}
     >
       {/* Header */}
@@ -102,6 +115,7 @@ function MiniCalendar({ selectedDate, onSelect, onClose }) {
 
 function DateChip({ inlineContent }) {
   const [showPicker, setShowPicker] = useState(false);
+  const chipRef = useRef(null);
   const d = inlineContent.props.date;
 
   let formatted;
@@ -121,6 +135,7 @@ function DateChip({ inlineContent }) {
   return (
     <span className="relative inline-flex items-center">
       <span
+        ref={chipRef}
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPicker(!showPicker); }}
         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[13px] font-medium mx-0.5 cursor-pointer transition-all hover:ring-2 hover:ring-[#9b7bf7]/30"
         style={{ color: '#9b7bf7', backgroundColor: 'rgba(155,123,247,0.06)', border: '1px solid rgba(155,123,247,0.15)' }}
@@ -134,6 +149,7 @@ function DateChip({ inlineContent }) {
           selectedDate={d}
           onSelect={handleSelect}
           onClose={() => setShowPicker(false)}
+          anchorEl={chipRef.current}
         />
       )}
     </span>

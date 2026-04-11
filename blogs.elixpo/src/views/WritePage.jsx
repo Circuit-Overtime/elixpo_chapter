@@ -285,14 +285,22 @@ function EditorOutline({ editorContent }) {
   }, [editorContent]);
 
   const headings = useMemo(() => {
-    return blocks
-      .filter((b) => b.type === 'heading' && b.content?.length > 0)
-      .map((h) => {
-        const level = parseInt(h.props?.level || '1', 10);
-        const text = h.content.map((c) => c.text || '').join('');
-        return { id: h.id, level, text: text.trim() };
-      })
-      .filter((h) => h.text);
+    const result = [];
+    for (const b of blocks) {
+      if (b.type === 'heading' && b.content?.length > 0) {
+        const level = parseInt(b.props?.level || '1', 10);
+        const text = b.content.map((c) => c.text || '').join('');
+        if (text.trim()) result.push({ id: b.id, level, text: text.trim() });
+      }
+      if (b.type === 'tabsBlock') {
+        let tabs = [];
+        try { tabs = JSON.parse(b.props?.tabs || '[]'); } catch {}
+        tabs.forEach(t => {
+          if (t.title) result.push({ id: b.id, level: 2, text: t.title, isSubpage: true });
+        });
+      }
+    }
+    return result;
   }, [blocks]);
 
   // Scroll spy — track which heading is in view
@@ -354,8 +362,17 @@ function EditorOutline({ editorContent }) {
                 style={{
                   color: h.id === activeId ? 'var(--text-primary)' : undefined,
                   fontWeight: h.id === activeId ? '600' : undefined,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
                 }}
               >
+                {h.isSubpage && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                )}
                 {h.text}
               </span>
             </li>
