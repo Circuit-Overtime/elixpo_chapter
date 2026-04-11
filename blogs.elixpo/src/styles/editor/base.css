@@ -301,3 +301,39 @@
   scrollbar-width: thin;
   scrollbar-color: var(--bg-elevated) transparent;
 }
+
+/* ===== Editor Confirm Modal ===== */
+
+.editor-confirm-overlay {
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  animation: confirmOverlayIn 0.15s ease-out;
+}
+
+@keyframes confirmOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.editor-confirm-dialog {
+  background: var(--bg-app);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  animation: confirmDialogIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes confirmDialogIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.editor-confirm-cancel {
+  color: var(--text-body);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+}
+
+.editor-confirm-cancel:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+}

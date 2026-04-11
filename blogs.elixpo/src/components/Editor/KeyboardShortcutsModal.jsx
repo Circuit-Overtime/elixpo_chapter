@@ -8,6 +8,7 @@ const SHORTCUT_GROUPS = [
     shortcuts: [
       { keys: ['Ctrl', 'S'], desc: 'Save & sync to cloud' },
       { keys: ['Ctrl', 'O'], desc: 'Import markdown file (.md)' },
+      { keys: ['Ctrl', 'D'], desc: 'Insert date chip' },
       { keys: ['Ctrl', 'Shift', 'P'], desc: 'Toggle editor / preview' },
       { keys: ['Ctrl', 'Z'], desc: 'Undo' },
       { keys: ['Ctrl', 'Shift', 'Z'], desc: 'Redo' },

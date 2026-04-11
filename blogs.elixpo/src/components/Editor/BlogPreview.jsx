@@ -259,6 +259,16 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
     if (!contentRef.current) return;
     let cancelled = false;
 
+    // Strip \[...\], $$...$$, \(...\), $...$ wrappers — KaTeX expects inner expression only
+    function stripDelimiters(raw) {
+      let s = raw.trim();
+      if (s.startsWith('\\[') && s.endsWith('\\]')) return s.slice(2, -2).trim();
+      if (s.startsWith('$$') && s.endsWith('$$')) return s.slice(2, -2).trim();
+      if (s.startsWith('\\(') && s.endsWith('\\)')) return s.slice(2, -2).trim();
+      if (s.startsWith('$') && s.endsWith('$') && s.length > 2) return s.slice(1, -1).trim();
+      return s;
+    }
+
     // Render block equations
     const eqEls = contentRef.current.querySelectorAll('.preview-block-equation[data-latex]');
     if (eqEls.length) {
@@ -266,7 +276,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
         if (cancelled) return;
         eqEls.forEach((el) => {
           try {
-            const latex = decodeURIComponent(el.dataset.latex);
+            const latex = stripDelimiters(decodeURIComponent(el.dataset.latex));
             el.innerHTML = katex.renderToString(latex, { displayMode: true, throwOnError: false });
           } catch (err) {
             el.innerHTML = `<span style="color:#f87171">${err.message}</span>`;
@@ -282,7 +292,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
         if (cancelled) return;
         inlineEls.forEach((el) => {
           try {
-            const latex = decodeURIComponent(el.dataset.latex);
+            const latex = stripDelimiters(decodeURIComponent(el.dataset.latex));
             el.innerHTML = katex.renderToString(latex, { displayMode: false, throwOnError: false });
           } catch (err) {
             el.innerHTML = `<span style="color:#f87171">${err.message}</span>`;
@@ -320,24 +330,28 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
           },
           flowchart: { useMaxWidth: false, padding: 20, nodeSpacing: 50, rankSpacing: 60 },
         });
-        mermaidEls.forEach(async (el) => {
-          try {
-            const diagram = decodeURIComponent(el.dataset.diagram);
-            const id = `preview-mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-            const { svg } = await mermaid.render(id, diagram.trim());
-            el.innerHTML = svg;
-            const svgEl = el.querySelector('svg');
-            if (svgEl) {
-              svgEl.removeAttribute('width');
-              svgEl.style.width = '100%';
-              svgEl.style.maxWidth = 'none';
-              svgEl.style.height = 'auto';
-              svgEl.style.minHeight = '180px';
+        // Render diagrams sequentially — mermaid is a singleton, concurrent renders cause conflicts
+        (async () => {
+          for (const el of mermaidEls) {
+            if (cancelled) return;
+            try {
+              const diagram = decodeURIComponent(el.dataset.diagram);
+              const id = `preview-mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+              const { svg } = await mermaid.render(id, diagram.trim());
+              el.innerHTML = svg;
+              const svgEl = el.querySelector('svg');
+              if (svgEl) {
+                svgEl.removeAttribute('width');
+                svgEl.style.width = '100%';
+                svgEl.style.maxWidth = 'none';
+                svgEl.style.height = 'auto';
+                svgEl.style.minHeight = '180px';
+              }
+            } catch (err) {
+              el.innerHTML = `<pre style="color:#f87171;font-size:12px">${err.message || 'Diagram error'}</pre>`;
             }
-          } catch (err) {
-            el.innerHTML = `<pre style="color:#f87171;font-size:12px">${err.message || 'Diagram error'}</pre>`;
           }
-        });
+        })();
       });
     }
 
