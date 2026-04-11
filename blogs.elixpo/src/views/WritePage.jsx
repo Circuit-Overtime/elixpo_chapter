@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import '../styles/editor/editor.css';
+import '../styles/katex-fonts.css';
 import { compressCoverImage } from '../utils/compressImage';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
 import { useCollaboration } from '../hooks/useCollaboration';
@@ -208,7 +209,7 @@ function HeaderProfileDropdown({ user, logout }) {
 }
 
 // ── Hamburger Menu ──
-function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTopics, onRevisionHistory, onMoreSettings }) {
+function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTopics, onRevisionHistory, onMoreSettings, onImport, onInvite }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -221,6 +222,8 @@ function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTop
   }, [open]);
 
   const items = [
+    { label: 'Import markdown', action: onImport, icon: 'folder-open-outline' },
+    { label: 'Invite collaborators', action: onInvite, icon: 'people-outline' },
     { label: 'Copy publishable link', action: onShareDraft, icon: 'link-outline' },
     { label: 'Change featured image', action: onChangeCover, icon: 'image-outline' },
     { label: 'Change display title', action: onChangeTitle, icon: 'text-outline' },
@@ -506,6 +509,10 @@ export default function WritePage({ slugid }) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
         e.preventDefault();
         mdUploadRef.current?.click();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'i' || e.key === 'I')) {
+        e.preventDefault();
+        setShowCollabPanel(true);
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
         e.preventDefault();
@@ -1004,9 +1011,16 @@ export default function WritePage({ slugid }) {
           <span className="text-[var(--text-muted)] text-[13px] truncate">
             @{username}/{truncateSlug(slug || slugid)}
           </span>
-          {lastSaved && (
-            <span className="text-[var(--text-muted)] text-[11px] hidden md:block">{formatSavedTime(lastSaved)}</span>
-          )}
+          <span className="text-[var(--text-muted)] text-[11px] hidden md:flex items-center gap-1.5">
+            {isPublished ? (
+              <span className="px-1.5 py-0.5 rounded border text-[10px] font-medium" style={{ backgroundColor: '#4ade8014', color: '#4ade80', borderColor: '#4ade8030' }}>
+                {blogVersion?.isDraftAhead ? 'Edited' : 'Published'}
+              </span>
+            ) : (
+              <span className="text-[var(--text-faint)] px-1.5 py-0.5 rounded border border-[var(--border-default)] bg-[var(--bg-surface)] text-[10px] font-medium">Draft</span>
+            )}
+            {lastSaved && <span>{formatSavedTime(lastSaved)}</span>}
+          </span>
           {/* Sync status dot */}
           {syncStatus !== 'idle' && (
             <span
@@ -1026,29 +1040,8 @@ export default function WritePage({ slugid }) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2.5">
-          {/* Status badge */}
-          <span
-            className="text-[11px] px-2 py-0.5 rounded-md border"
-            style={{
-              backgroundColor: isPublished ? '#4ade8014' : 'var(--bg-surface)',
-              color: isPublished ? '#4ade80' : 'var(--text-muted)',
-              borderColor: isPublished ? '#4ade8030' : 'var(--border-default)',
-            }}
-          >
-            {isPublished ? (blogVersion?.isDraftAhead ? 'Edited' : 'Published') : 'Draft'}
-          </span>
-
-          {/* Upload .md */}
+          {/* Hidden file input for markdown import (triggered from menu) */}
           <input ref={mdUploadRef} type="file" accept=".md,.markdown,.txt" className="hidden" onChange={handleMdUpload} />
-          <button
-            onClick={() => mdUploadRef.current?.click()}
-            className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-[12px] font-medium transition-colors"
-            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-muted)' }}
-            title="Import markdown file"
-          >
-            <ion-icon name="folder-open-outline" style={{ fontSize: '14px' }} />
-            <span className="hidden sm:inline">Import</span>
-          </button>
 
           {/* Publish / Update split button */}
           <div className="relative group/publish">
@@ -1128,17 +1121,6 @@ export default function WritePage({ slugid }) {
             })()}
           </div>
 
-          {/* Invite collaborators */}
-          <button
-            onClick={() => setShowCollabPanel(true)}
-            className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-[12px] font-medium transition-colors"
-            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-muted)' }}
-            title="Invite collaborators"
-          >
-            <ion-icon name="people-outline" style={{ fontSize: '14px' }} />
-            <span className="hidden sm:inline">Invite</span>
-          </button>
-
           {/* Shortcuts help */}
           <button
             data-shortcuts-btn
@@ -1163,6 +1145,8 @@ export default function WritePage({ slugid }) {
 
           {/* Hamburger menu */}
           <HamburgerMenu
+            onImport={() => mdUploadRef.current?.click()}
+            onInvite={() => setShowCollabPanel(true)}
             onShareDraft={() => {
               const url = `${window.location.origin}/${username}/${slug || slugid}`;
               navigator.clipboard.writeText(url).catch(() => {});

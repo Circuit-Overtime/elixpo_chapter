@@ -10,6 +10,7 @@ import BlogInteractionBar from '../components/BlogInteractionBar';
 import BlogComments from '../components/BlogComments';
 import AuthorAttribution from '../components/AuthorAttribution';
 import '../styles/editor/editor.css';
+import '../styles/katex-fonts.css';
 
 const BlogPreview = dynamic(() => import('../components/Editor/BlogPreview'), { ssr: false });
 
