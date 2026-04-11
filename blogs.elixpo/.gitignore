@@ -12,3 +12,4 @@ wrangler.toml
 .vercel
 output/
 build/
+.claude/

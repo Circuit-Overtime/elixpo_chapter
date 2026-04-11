@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(find /home/elixpo_workstation/elixpoblogs -path *app/api* -name *.js -type f)",
-      "Bash(curl -s -D - http://localhost:3000/elixpo)",
-      "Bash(grep -oP '\\\\bT\\\\s*=\\\\s*\\\\{purple[^}]*\\\\}' node_modules/@blocknote/core/dist/defaultBlocks*.js)"
-    ]
-  }
-}

@@ -95,13 +95,13 @@
 .blog-preview-content {
   color: var(--text-primary);
   font-family: 'Source Serif 4', 'Georgia', serif;
-  font-size: 1.05em;
-  line-height: 1.85;
+  font-size: 1em;
+  line-height: 1.75;
 }
 
 .blog-preview-content h1 {
   font-family: 'Source Serif 4', 'Georgia', serif;
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 700;
   line-height: 1.3;
   margin: 1.2em 0 0.5em;
@@ -110,7 +110,7 @@
 
 .blog-preview-content h2 {
   font-family: 'Source Serif 4', 'Georgia', serif;
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 650;
   line-height: 1.35;
   margin: 1em 0 0.45em;
@@ -119,7 +119,7 @@
 
 .blog-preview-content h3 {
   font-family: 'Source Serif 4', 'Georgia', serif;
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 600;
   line-height: 1.4;
   margin: 0.9em 0 0.4em;
@@ -128,18 +128,24 @@
 
 .blog-preview-content p {
   color: var(--text-primary);
-  font-size: 1.05em;
-  line-height: 1.85;
+  font-size: 1em;
+  line-height: 1.75;
   margin-bottom: 0.75em;
 }
 
-.blog-preview-content a:not(.mention-chip) {
+.blog-preview-content a:not(.mention-chip):not(.preview-toc-link):not(.link-preview-card) {
   color: #7ba8f0;
-  text-decoration: underline;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(123, 168, 240, 0.3);
+  padding-bottom: 1px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
-.blog-preview-content a:not(.mention-chip):hover {
+.blog-preview-content a:not(.mention-chip):not(.preview-toc-link):not(.link-preview-card):hover {
   color: #9dc0ff;
+  border-bottom-color: rgba(157, 192, 255, 0.5);
+  background: rgba(123, 168, 240, 0.06);
 }
 
 .blog-preview-content strong {
@@ -168,8 +174,66 @@
 
 .blog-preview-content li {
   margin-bottom: 0.35em;
-  line-height: 1.85;
+  line-height: 1.75;
   display: list-item;
+}
+
+/* Nested lists inside list items */
+.blog-preview-content li > ul,
+.blog-preview-content li > ol {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+/* ===== Checklist Styling (matches editor checkboxes) ===== */
+
+.blog-preview-content .preview-checklist {
+  list-style: none;
+  padding-left: 0;
+}
+
+.blog-preview-content .preview-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  list-style: none;
+  line-height: 1.75;
+  margin-bottom: 0.35em;
+}
+
+.preview-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border-radius: 6px;
+  border: 2px solid var(--border-default);
+  background-color: var(--bg-surface);
+  margin-top: 5px;
+}
+
+.preview-checkbox--checked {
+  background: linear-gradient(135deg, #9b7bf7, #8b6ae6);
+  border-color: #9b7bf7;
+  box-shadow: 0 1px 4px rgba(155, 123, 247, 0.3);
+}
+
+.preview-checkbox-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-check--checked .preview-check-text {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+/* Nested checklists */
+.blog-preview-content .preview-check > ul {
+  margin-top: 0.25em;
 }
 
 /* BlockNote HTML output uses data attributes — handle those too */
@@ -225,18 +289,9 @@
   background: none !important;
 }
 
-.blog-preview-content code {
-  font-family: 'lixCode', monospace;
-  font-size: 0.85em;
-  color: var(--text-secondary);
-}
-
 .blog-preview-content p code,
 .blog-preview-content li code {
-  background: var(--border-default);
   padding: 0.15em 0.4em;
-  border-radius: 4px;
-  font-size: 0.85em;
 }
 
 /* Preview code block language label */
@@ -362,6 +417,153 @@
   width: 100%;
   height: auto;
   min-height: 180px;
+}
+
+/* ===== Preview Inline TOC Block (matches editor toc-block) ===== */
+
+.blog-preview-content .preview-toc-block {
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  padding: 16px 20px;
+  margin: 0.75em 0;
+  user-select: none;
+}
+
+.blog-preview-content .preview-toc-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.blog-preview-content .preview-toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.blog-preview-content .preview-toc-list li {
+  margin: 0;
+  display: block;
+}
+
+.blog-preview-content .preview-toc-link {
+  font-size: 13px;
+  color: #9b7bf7;
+  text-decoration: none;
+  display: block;
+  padding: 2px 0;
+  transition: color 0.15s;
+  cursor: pointer;
+}
+
+.blog-preview-content .preview-toc-link:hover {
+  color: #b69aff;
+}
+
+/* ===== Preview Date Chip (matches editor DateChip) ===== */
+
+.preview-date-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #9b7bf7;
+  background: rgba(155, 123, 247, 0.06);
+  border: 1px solid rgba(155, 123, 247, 0.15);
+  margin: 0 2px;
+  white-space: nowrap;
+}
+
+.preview-date-chip svg {
+  flex-shrink: 0;
+}
+
+/* ===== Preview Mention Hover Card ===== */
+
+.mention-hover-card {
+  position: fixed;
+  z-index: 1000;
+  width: 260px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  animation: linkPreviewIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 14px;
+  pointer-events: auto;
+}
+
+[data-theme="dark"] .mention-hover-card {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.mention-hover-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.mention-hover-card-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+}
+
+.mention-hover-card-initial {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.mention-hover-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.mention-hover-card-username {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mention-hover-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9b7bf7;
+  text-decoration: none !important;
+  border: none !important;
+}
+
+.mention-hover-card-link:hover {
+  color: #b69aff;
+  background: none !important;
 }
 
 /* ===== Preview figcaption ===== */

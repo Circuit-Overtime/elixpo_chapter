@@ -32,6 +32,8 @@
   padding: 4px 0;
   margin: 12px 0;
   overflow-x: auto;
+  -webkit-hyphens: none;
+  hyphens: none;
 }
 
 /* Light mode code block vars */
@@ -60,6 +62,13 @@
 
 .blog-editor-wrapper [data-content-type="codeBlock"] [contenteditable] {
   padding: 8px 16px !important;
+  -webkit-text-decorations-in-effect: none;
+}
+
+/* Kill spellcheck red squiggles inside code blocks */
+.blog-editor-wrapper [data-content-type="codeBlock"] [contenteditable] * {
+  text-decoration: none !important;
+  -webkit-text-decoration: none !important;
 }
 
 /* Shiki syntax highlighting — let inline styles override default color */
@@ -566,6 +575,30 @@
   width: 100%;
 }
 
+/* Block equation rendered state — matches preview .preview-block-equation */
+.editor-block-equation {
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  padding: 20px 24px;
+  margin: 8px 0;
+  text-align: center;
+  overflow-x: auto;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.editor-block-equation:hover {
+  border-color: var(--border-hover);
+}
+
+.editor-block-equation .katex {
+  font-size: 1.2em;
+  color: var(--text-primary);
+}
+
 .mermaid-block {
   border: 1px solid var(--border-default);
   border-radius: 12px;
@@ -870,7 +903,7 @@
   right: 24px;
   top: 80px;
   width: 200px;
-  max-height: 70vh;
+  max-height: calc(100vh - 120px);
   overflow-y: auto;
   z-index: 30;
   opacity: 0.5;

@@ -10,6 +10,7 @@ import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef
 import { useTheme } from '../../context/ThemeContext';
 import AICommandMenu from './AICommandMenu';
 import AISelectionToolbar from './AISelectionToolbar';
+import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
 import MentionMenu from './MentionMenu';
 
 
@@ -32,18 +33,49 @@ import { OrgMentionInline } from './blocks/OrgMentionInline';
 
 // ── Schema ──
 
+// Supported languages for code blocks
+const codeBlockLanguages = {
+  text: { name: 'Text' },
+  javascript: { name: 'JavaScript', aliases: ['js'] },
+  typescript: { name: 'TypeScript', aliases: ['ts'] },
+  python: { name: 'Python', aliases: ['py'] },
+  java: { name: 'Java' },
+  c: { name: 'C' },
+  cpp: { name: 'C++' },
+  csharp: { name: 'C#', aliases: ['cs'] },
+  go: { name: 'Go' },
+  rust: { name: 'Rust', aliases: ['rs'] },
+  ruby: { name: 'Ruby', aliases: ['rb'] },
+  php: { name: 'PHP' },
+  swift: { name: 'Swift' },
+  kotlin: { name: 'Kotlin', aliases: ['kt'] },
+  html: { name: 'HTML' },
+  css: { name: 'CSS' },
+  json: { name: 'JSON' },
+  yaml: { name: 'YAML', aliases: ['yml'] },
+  markdown: { name: 'Markdown', aliases: ['md'] },
+  bash: { name: 'Bash', aliases: ['sh'] },
+  shell: { name: 'Shell' },
+  sql: { name: 'SQL' },
+  graphql: { name: 'GraphQL', aliases: ['gql'] },
+  jsx: { name: 'JSX' },
+  tsx: { name: 'TSX' },
+  vue: { name: 'Vue' },
+  svelte: { name: 'Svelte' },
+  dart: { name: 'Dart' },
+  lua: { name: 'Lua' },
+  r: { name: 'R' },
+  scala: { name: 'Scala' },
+};
+
 // Code block with Shiki syntax highlighting (lazy-loaded)
 const codeBlockWithHighlighting = createCodeBlockSpec({
+  supportedLanguages: codeBlockLanguages,
   createHighlighter: async () => {
     const { createHighlighter } = await import('shiki');
     return createHighlighter({
-      themes: ['vitesse-dark'],
-      langs: [
-        'javascript', 'typescript', 'python', 'java', 'c', 'cpp', 'csharp',
-        'go', 'rust', 'ruby', 'php', 'swift', 'kotlin', 'html', 'css',
-        'json', 'yaml', 'markdown', 'bash', 'shell', 'sql', 'graphql',
-        'jsx', 'tsx', 'vue', 'svelte', 'dart', 'lua', 'r', 'scala',
-      ],
+      themes: ['vitesse-dark', 'vitesse-light'],
+      langs: Object.keys(codeBlockLanguages).filter(k => k !== 'text'),
     });
   },
 });
@@ -504,6 +536,35 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const [showInlineLatex, setShowInlineLatex] = useState(false);
   const [inlineLatexValue, setInlineLatexValue] = useState('');
   const inlineLatexRef = useRef(null);
+  const editorLinkPreview = useLinkPreview();
+
+  // Link preview hover listeners on editor links
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    const handleMouseOver = (e) => {
+      const link = e.target.closest('a[href]');
+      if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
+      const href = link.getAttribute('href');
+      if (href && href.startsWith('http')) {
+        editorLinkPreview.show(link, href);
+      }
+    };
+
+    const handleMouseOut = (e) => {
+      const link = e.target.closest('a[href]');
+      if (!link) return;
+      editorLinkPreview.hide();
+    };
+
+    wrapper.addEventListener('mouseover', handleMouseOver);
+    wrapper.addEventListener('mouseout', handleMouseOut);
+    return () => {
+      wrapper.removeEventListener('mouseover', handleMouseOver);
+      wrapper.removeEventListener('mouseout', handleMouseOut);
+    };
+  }, []);
 
   const sanitizedContent = useMemo(() => sanitizeInitialContent(initialContent), [initialContent]);
 
@@ -897,8 +958,14 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
     wrapper.querySelectorAll('[data-content-type="codeBlock"]').forEach((block) => {
+      block.setAttribute('spellcheck', 'false');
       const editable = block.querySelector('[contenteditable]');
-      if (editable) editable.spellcheck = false;
+      if (editable) {
+        editable.spellcheck = false;
+        editable.setAttribute('spellcheck', 'false');
+        editable.setAttribute('autocorrect', 'off');
+        editable.setAttribute('autocapitalize', 'off');
+      }
       block.style.position = 'relative';
 
       // Language label — clickable to change language
@@ -2139,6 +2206,16 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
             </div>
           </div>
         </div>
+      )}
+
+      {/* Link preview tooltip */}
+      {editorLinkPreview.preview && (
+        <LinkPreviewTooltip
+          anchorEl={editorLinkPreview.preview.anchorEl}
+          url={editorLinkPreview.preview.url}
+          onClose={editorLinkPreview.hide}
+          onKeepAlive={editorLinkPreview.keepAlive}
+        />
       )}
     </div>
   );
