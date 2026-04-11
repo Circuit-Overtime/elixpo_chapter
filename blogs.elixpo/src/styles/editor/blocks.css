@@ -1,3 +1,27 @@
+/* ===== No selection outline or drag handle for custom blocks ===== */
+
+.blog-editor-wrapper [data-content-type="codeBlock"],
+.blog-editor-wrapper [data-content-type="blockEquation"],
+.blog-editor-wrapper [data-content-type="mermaidBlock"] {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: var(--border-default) !important;
+}
+
+/* Remove the blue selected ring BlockNote adds */
+.blog-editor-wrapper [data-content-type="codeBlock"] *::selection,
+.blog-editor-wrapper [data-content-type="blockEquation"] *::selection,
+.blog-editor-wrapper [data-content-type="mermaidBlock"] *::selection {
+  background: transparent;
+}
+
+.blog-editor-wrapper .bn-block-outer[data-node-type="blockContainer"]:has([data-content-type="codeBlock"]) > .bn-block,
+.blog-editor-wrapper .bn-block-outer[data-node-type="blockContainer"]:has([data-content-type="blockEquation"]) > .bn-block,
+.blog-editor-wrapper .bn-block-outer[data-node-type="blockContainer"]:has([data-content-type="mermaidBlock"]) > .bn-block {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* ===== Code blocks ===== */
 
 .blog-editor-wrapper [data-content-type="codeBlock"] {
@@ -74,8 +98,79 @@
   background: var(--code-lang-bg);
   padding: 2px 8px;
   border-radius: 0 0 6px 6px;
-  pointer-events: none;
+  cursor: pointer;
   line-height: 1.5;
+  border: none;
+  transition: color 0.15s, background 0.15s;
+  z-index: 5;
+}
+
+.code-lang-label:hover {
+  color: #9b7bf7;
+  background: var(--bg-elevated);
+}
+
+/* Language picker dropdown */
+.code-lang-picker {
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  width: 180px;
+  max-height: 280px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.code-lang-search {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 12px;
+  border: none;
+  border-bottom: 1px solid var(--divider);
+  background: transparent;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.code-lang-search::placeholder {
+  color: var(--text-faint);
+}
+
+.code-lang-list {
+  overflow-y: auto;
+  max-height: 220px;
+  padding: 4px;
+}
+
+.code-lang-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: monospace;
+  color: var(--text-body);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.code-lang-option:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.code-lang-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.code-lang-list::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 2px;
 }
 
 /* Code block copy button */
@@ -112,12 +207,25 @@
 .blog-editor-wrapper [data-content-type="divider"] {
   margin: 16px 0;
   padding: 8px 0;
+  pointer-events: none;
+  user-select: none;
+  cursor: default;
 }
 
 .blog-editor-wrapper [data-content-type="divider"] hr {
   border: none;
   height: 1px;
   background: var(--border-default);
+}
+
+/* ===== Sub-Page (Tabs) Block ===== */
+
+.blog-editor-wrapper [data-content-type="tabsBlock"] {
+  user-select: none;
+}
+
+.blog-editor-wrapper [data-content-type="tabsBlock"] .bn-block-content {
+  cursor: default;
 }
 
 /* ===== Lists ===== */
@@ -133,6 +241,82 @@
 
 .blog-editor-wrapper [data-content-type="numberedListItem"]::before {
   color: var(--text-muted);
+}
+
+/* ===== Fancy Checkboxes ===== */
+
+.blog-editor-wrapper [data-content-type="checkListItem"] [data-checked-icon],
+.blog-editor-wrapper [data-content-type="checkListItem"] [data-unchecked-icon],
+.blog-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 2px solid var(--border-default);
+  background-color: var(--bg-surface);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.blog-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"]:hover {
+  border-color: #9b7bf7;
+  box-shadow: 0 0 0 3px rgba(155, 123, 247, 0.12);
+}
+
+.blog-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"]:checked {
+  background: linear-gradient(135deg, #9b7bf7, #8b6ae6);
+  border-color: #9b7bf7;
+  box-shadow: 0 1px 4px rgba(155, 123, 247, 0.3);
+}
+
+.blog-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Checked item text gets muted + strikethrough */
+.blog-editor-wrapper [data-content-type="checkListItem"][data-checked="true"] .bn-inline-content {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+/* BlockNote's native checkbox SVG icons — style them too */
+.blog-editor-wrapper [data-content-type="checkListItem"] .bn-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 2px solid var(--border-default);
+  background-color: var(--bg-surface);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.blog-editor-wrapper [data-content-type="checkListItem"] .bn-checkbox:hover {
+  border-color: #9b7bf7;
+  box-shadow: 0 0 0 3px rgba(155, 123, 247, 0.12);
+}
+
+.blog-editor-wrapper [data-content-type="checkListItem"][data-checked="true"] .bn-checkbox {
+  background: linear-gradient(135deg, #9b7bf7, #8b6ae6);
+  border-color: #9b7bf7;
+  box-shadow: 0 1px 4px rgba(155, 123, 247, 0.3);
+}
+
+.blog-editor-wrapper [data-content-type="checkListItem"][data-checked="true"] .bn-checkbox svg {
+  color: white;
 }
 
 /* ===== Image blocks ===== */
@@ -226,9 +410,153 @@
   color: #b69aff;
 }
 
-/* Inline equation */
-.blog-editor-wrapper .inline-equation .katex {
+/* Hide KaTeX MathML accessibility layer — it renders as visible duplicate text */
+.katex-mathml {
+  display: none !important;
+}
+
+/* ===== Inline equation chip (like DateChip) ===== */
+
+.inline-equation-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  margin: 0 2px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #9b7bf7;
+  background: rgba(155, 123, 247, 0.06);
+  border: 1px solid rgba(155, 123, 247, 0.15);
+  font-size: 13px;
+}
+
+.inline-equation-chip:hover {
+  background: rgba(155, 123, 247, 0.12);
+  border-color: rgba(155, 123, 247, 0.3);
+  box-shadow: 0 0 0 2px rgba(155, 123, 247, 0.15);
+}
+
+.inline-equation-chip .katex {
   font-size: 1em;
+  color: #9b7bf7;
+}
+
+/* Inline equation dropdown editor */
+
+.inline-equation-editor {
+  position: absolute;
+  z-index: 100;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  width: 320px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-app);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  animation: confirmDialogIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inline-equation-editor-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border: none;
+  border-bottom: 1px solid var(--border-default);
+  color: var(--text-primary);
+  font-family: 'lixCode', monospace;
+  font-size: 13px;
+  outline: none;
+}
+
+.inline-equation-editor-input::placeholder {
+  color: var(--text-faint);
+}
+
+.inline-equation-editor-preview {
+  padding: 8px 12px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-default);
+  min-height: 24px;
+}
+
+.inline-equation-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 8px 12px;
+}
+
+/* ===== Inline LaTeX input popup ===== */
+
+.inline-latex-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  animation: confirmOverlayIn 0.15s ease-out;
+}
+
+.inline-latex-popup {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: confirmDialogIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inline-latex-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.inline-latex-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 16px;
+  margin-top: 8px;
+  background: var(--bg-app);
+  border: none;
+  border-top: 1px solid var(--border-default);
+  border-bottom: 1px solid var(--border-default);
+  color: var(--text-primary);
+  font-family: 'lixCode', monospace;
+  font-size: 14px;
+  outline: none;
+}
+
+.inline-latex-input::placeholder {
+  color: var(--text-faint);
+}
+
+.inline-latex-preview {
+  padding: 10px 16px;
+  text-align: center;
+  min-height: 28px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+
+.inline-latex-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 16px;
 }
 
 /* ===== Mermaid diagram blocks ===== */
@@ -308,6 +636,51 @@
 .mermaid-block-textarea::placeholder {
   color: var(--text-faint);
 }
+
+/* Live preview panel inside edit mode */
+.mermaid-live-preview {
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-app);
+}
+
+.mermaid-live-preview-label {
+  padding: 6px 14px 0;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mermaid-viewport--compact {
+  height: 200px;
+  min-height: 120px;
+  border-radius: 0;
+}
+
+/* LaTeX live preview inside edit mode */
+.latex-live-preview {
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-app);
+  padding: 12px 14px;
+  min-height: 40px;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.latex-live-preview-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.latex-live-preview .katex-display {
+  margin: 0;
+}
+
 
 .mermaid-block-actions {
   display: flex;

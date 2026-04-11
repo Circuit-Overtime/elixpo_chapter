@@ -5,7 +5,7 @@ import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuI
 import { BlockNoteView } from '@blocknote/mantine';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
-import 'katex/dist/katex.min.css';
+import '../../styles/katex-fonts.css';
 import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import AICommandMenu from './AICommandMenu';
@@ -73,6 +73,25 @@ const schema = BlockNoteSchema.create({
   },
 });
 
+// ── Inline LaTeX live preview (lazy-loads katex) ──
+
+function InlineLatexPreview({ latex }) {
+  const [html, setHtml] = useState('');
+  useEffect(() => {
+    const s = latex?.trim();
+    if (!s) { setHtml(''); return; }
+    import('katex').then(({ default: katex }) => {
+      let expr = s;
+      if (expr.startsWith('\\(') && expr.endsWith('\\)')) expr = expr.slice(2, -2).trim();
+      else if (expr.startsWith('$') && expr.endsWith('$') && expr.length > 2) expr = expr.slice(1, -1).trim();
+      try { setHtml(katex.renderToString(expr, { displayMode: false, throwOnError: false })); }
+      catch { setHtml(''); }
+    });
+  }, [latex]);
+  if (!html) return null;
+  return <div className="inline-latex-preview" dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
 // ── Helpers ──
 
 function filterItems(items, query) {
@@ -97,7 +116,7 @@ function Icon({ d, d2, color }) {
 
 // ── Slash menu items ──
 
-function getCustomSlashMenuItems(editor) {
+function getCustomSlashMenuItems(editor, callbacks = {}) {
   const defaults = getDefaultReactSlashMenuItems(editor).filter((item) => {
     const t = item.title.toLowerCase();
     return t !== 'video' && t !== 'audio' && t !== 'file';
@@ -137,11 +156,11 @@ function getCustomSlashMenuItems(editor) {
       onItemClick: () => editor.insertBlocks([{ type: 'breadcrumbs' }], editor.getTextCursorPosition().block, 'after'),
     },
     {
-      title: 'Tabs',
-      subtext: 'Tabbed content sections',
+      title: 'Sub Page',
+      subtext: 'Nested page within this blog',
       group: 'Custom Blocks',
-      aliases: ['tabs', 'tabbed', 'sections', 'panels'],
-      icon: <Icon d="M4 6h16M4 6v12a2 2 0 002 2h12a2 2 0 002-2V6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />,
+      aliases: ['subpage', 'sub page', 'tabs', 'nested', 'page in page', 'child page'],
+      icon: <Icon d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" d2="M14 2v6h6M16 13H8M16 17H8" />,
       onItemClick: () => editor.insertBlocks([{ type: 'tabsBlock' }], editor.getTextCursorPosition().block, 'after'),
     },
     {
@@ -178,8 +197,9 @@ function getCustomSlashMenuItems(editor) {
       aliases: ['inline math', 'inline latex', 'math inline'],
       icon: <Icon d="M4 4l4 16M12 4l4 16M7 8h10M6 16h10" />,
       onItemClick: () => {
-        const latex = prompt('Enter LaTeX:');
-        if (latex) editor.insertInlineContent([{ type: 'inlineEquation', props: { latex } }]);
+        if (callbacks.onInlineLatex) {
+          callbacks.onInlineLatex();
+        }
       },
     },
     {
@@ -288,10 +308,13 @@ function doSanitize(blocks) {
   const result = [];
   let i = 0;
 
-  const getText = (b) => (b.content || []).map(c => {
-    if (c.type === 'inlineEquation') return c.props?.latex || '';
-    return c.text || '';
-  }).join('').trim();
+  const getText = (b) => {
+    if (!b.content || !Array.isArray(b.content)) return '';
+    return b.content.map(c => {
+      if (c.type === 'inlineEquation') return c.props?.latex || '';
+      return c.text || '';
+    }).join('').trim();
+  };
 
   while (i < blocks.length) {
     let block = blocks[i];
@@ -478,6 +501,9 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const aiBlockCountRef = useRef(0);
   const aiAnchorIdRef = useRef(null);
   const wrapperRef = useRef(null);
+  const [showInlineLatex, setShowInlineLatex] = useState(false);
+  const [inlineLatexValue, setInlineLatexValue] = useState('');
+  const inlineLatexRef = useRef(null);
 
   const sanitizedContent = useMemo(() => sanitizeInitialContent(initialContent), [initialContent]);
 
@@ -541,28 +567,112 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     const editorEl = wrapperRef.current?.querySelector('.bn-editor');
     if (!editorEl) return;
 
-    function handleBackspace(e) {
+    // Content-none block types that should be deletable with Backspace
+    const customBlockTypes = new Set(['mermaidBlock', 'blockEquation', 'aiBlock', 'tabsBlock', 'buttonBlock', 'breadcrumbs', 'tableOfContents', 'pdfEmbed']);
+
+    function isBlockEmpty(block) {
+      if (!block) return false;
+      const type = block.type;
+      if (type === 'mermaidBlock') return !block.props?.diagram;
+      if (type === 'blockEquation') return !block.props?.latex;
+      if (type === 'aiBlock') return !block.props?.prompt;
+      if (type === 'tabsBlock') {
+        let tabs = [];
+        try { tabs = JSON.parse(block.props?.tabs || '[]'); } catch {}
+        return tabs.length === 0;
+      }
+      if (type === 'codeBlock') {
+        const code = (block.content || []).map(c => c.text || '').join('');
+        return !code.trim();
+      }
+      // For paragraph/heading: empty text
+      if (type === 'paragraph' || type === 'heading') {
+        if (!block.content || block.content.length === 0) return true;
+        if (block.content.length === 1 && block.content[0].type === 'text' && !block.content[0].text) return true;
+        return false;
+      }
+      // Other custom blocks without content prop are "always have content" (e.g. buttonBlock)
+      if (customBlockTypes.has(type)) return false;
+      return false;
+    }
+
+    // Track whether Ctrl+A just selected all text inside a code block
+    let codeBlockAllSelected = false;
+
+    function handleKeyDown(e) {
+      const isEditorFocused = editorEl.contains(document.activeElement) || editorEl === document.activeElement;
+      if (!isEditorFocused) return;
+
+      const cursor = editor.getTextCursorPosition();
+      const block = cursor?.block;
+
+      // Ctrl+A inside a code block → select all text in that code block
+      if (e.key === 'a' && (e.ctrlKey || e.metaKey) && block?.type === 'codeBlock') {
+        // Let the browser select all text inside the contenteditable code area
+        // Mark that next Backspace should delete the whole block
+        codeBlockAllSelected = true;
+        // Don't prevent — let browser select the text naturally
+        return;
+      }
+
+      // Backspace after Ctrl+A selected a code block → delete the entire block
+      if (e.key === 'Backspace' && codeBlockAllSelected && block?.type === 'codeBlock') {
+        e.preventDefault();
+        e.stopPropagation();
+        codeBlockAllSelected = false;
+        try { editor.removeBlocks([block.id]); } catch {}
+        return;
+      }
+
+      // Any other key resets the flag
+      if (e.key !== 'a' && e.key !== 'Control' && e.key !== 'Meta' && e.key !== 'Shift') {
+        codeBlockAllSelected = false;
+      }
+
+      // Ctrl+Enter inside a code block → exit to a new paragraph below
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && block?.type === 'codeBlock') {
+        e.preventDefault();
+        e.stopPropagation();
+        editor.insertBlocks([{ type: 'paragraph' }], block.id, 'after');
+        // Move cursor to the new block
+        requestAnimationFrame(() => {
+          try {
+            const doc = editor.document;
+            const idx = doc.findIndex(b => b.id === block.id);
+            if (idx >= 0 && idx + 1 < doc.length) {
+              editor.setTextCursorPosition(doc[idx + 1].id, 'start');
+            }
+          } catch {}
+        });
+        return;
+      }
+
       if (e.key === 'Backspace') {
-        // Always prevent browser back when focused inside the editor
-        const isEditorFocused = editorEl.contains(document.activeElement) || editorEl === document.activeElement;
-        if (isEditorFocused) {
-          // Convert empty heading to paragraph on backspace
-          const cursor = editor.getTextCursorPosition();
-          if (cursor?.block?.type === 'heading' && (!cursor.block.content || cursor.block.content.length === 0 || (cursor.block.content.length === 1 && cursor.block.content[0].text === ''))) {
-            e.preventDefault();
-            e.stopPropagation();
-            editor.updateBlock(cursor.block.id, { type: 'paragraph', props: {} });
-            return;
-          }
-          // Let BlockNote handle it, but stop the event from reaching the browser
+        if (!block) { e.stopPropagation(); return; }
+
+        // Convert empty heading to paragraph
+        if (block.type === 'heading' && isBlockEmpty(block)) {
+          e.preventDefault();
           e.stopPropagation();
+          editor.updateBlock(block.id, { type: 'paragraph', props: {} });
+          return;
         }
+
+        // Delete empty custom blocks (mermaid, equation, AI, tabs, code, etc.)
+        if ((customBlockTypes.has(block.type) || block.type === 'codeBlock') && isBlockEmpty(block)) {
+          e.preventDefault();
+          e.stopPropagation();
+          try { editor.removeBlocks([block.id]); } catch {}
+          return;
+        }
+
+        e.stopPropagation();
       }
     }
 
     // Use capture phase to catch it before the browser navigation handler
-    editorEl.addEventListener('keydown', handleBackspace, { capture: true });
-    return () => editorEl.removeEventListener('keydown', handleBackspace, { capture: true });
+    editorEl.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => editorEl.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, [editor]);
 
   // Inject delete button on table blocks
@@ -601,14 +711,122 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     return () => observer.disconnect();
   }, [editor]);
 
-  // Handle clipboard paste of images — compress, upload, insert native image block
+  // Handle clipboard paste — markdown auto-render + image upload
   useEffect(() => {
     const editorEl = wrapperRef.current?.querySelector('.bn-editor');
     if (!editorEl) return;
 
+    function looksLikeMarkdown(text) {
+      // Quick heuristic: contains markdown patterns
+      return /^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^\s*>\s|```|^\|.+\|/m.test(text)
+        || /\*\*.+\*\*|\[.+\]\(.+\)|!\[/.test(text);
+    }
+
     function handlePaste(e) {
       const items = e.clipboardData?.items;
       if (!items) return;
+
+      // Check for plain text with markdown first
+      const textData = e.clipboardData.getData('text/plain');
+      if (textData && looksLikeMarkdown(textData)) {
+        // Only intercept if there's no HTML (which means it's raw markdown, not rich copy)
+        const htmlData = e.clipboardData.getData('text/html');
+        if (!htmlData) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          (async () => {
+            try {
+              // Pre-process: extract mermaid fenced blocks before BlockNote parses
+              // Use placeholder format without double underscores (markdown interprets __ as bold)
+              const mermaidBlocks = [];
+              let processed = textData.replace(/```mermaid\n([\s\S]*?)```/g, (_, diagram) => {
+                const placeholder = `MERMAIDPLACEHOLDER${mermaidBlocks.length}END`;
+                mermaidBlocks.push(diagram.trim());
+                return placeholder;
+              });
+
+              // Pre-process: extract block LaTeX \[...\]
+              const blockLatex = [];
+              processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, (_, latex) => {
+                const placeholder = `LATEXBLOCKPLACEHOLDER${blockLatex.length}END`;
+                blockLatex.push(latex.trim());
+                return placeholder;
+              });
+
+              // Pre-process: extract inline LaTeX \(...\)
+              // Markdown parsers strip backslash escapes, so extract before parsing
+              const inlineLatex = [];
+              processed = processed.replace(/\\\((.+?)\\\)/g, (_, latex) => {
+                const placeholder = `LATEXINLINEPLACEHOLDER${inlineLatex.length}END`;
+                inlineLatex.push(latex.trim());
+                return placeholder;
+              });
+
+              let blocks = await editor.tryParseMarkdownToBlocks(processed);
+
+              // Post-process: replace placeholders with custom blocks
+              blocks = blocks.flatMap(block => {
+                if (!block.content || !Array.isArray(block.content)) {
+                  return [block];
+                }
+                const text = block.content.map(c => c.text || '').join('');
+
+                // Mermaid placeholder → mermaidBlock
+                const mermaidMatch = text.match(/^MERMAIDPLACEHOLDER(\d+)END$/);
+                if (mermaidMatch) {
+                  const idx = parseInt(mermaidMatch[1]);
+                  return [{ type: 'mermaidBlock', props: { diagram: mermaidBlocks[idx] || '' }, children: [] }];
+                }
+
+                // Block LaTeX placeholder → blockEquation
+                const latexMatch = text.match(/^LATEXBLOCKPLACEHOLDER(\d+)END$/);
+                if (latexMatch) {
+                  const idx = parseInt(latexMatch[1]);
+                  return [{ type: 'blockEquation', props: { latex: blockLatex[idx] || '' }, children: [] }];
+                }
+
+                // Inline LaTeX placeholders → inlineEquation
+                if (/LATEXINLINEPLACEHOLDER\d+END/.test(text)) {
+                  const parts = [];
+                  const regex = /LATEXINLINEPLACEHOLDER(\d+)END/g;
+                  let lastIdx = 0;
+                  let m;
+                  while ((m = regex.exec(text)) !== null) {
+                    if (m.index > lastIdx) {
+                      parts.push({ type: 'text', text: text.slice(lastIdx, m.index) });
+                    }
+                    parts.push({ type: 'inlineEquation', props: { latex: inlineLatex[parseInt(m[1])] || '' } });
+                    lastIdx = m.index + m[0].length;
+                  }
+                  if (lastIdx < text.length) {
+                    parts.push({ type: 'text', text: text.slice(lastIdx) });
+                  }
+                  if (parts.length > 0) {
+                    return [{ ...block, content: parts }];
+                  }
+                }
+
+                return [block];
+              });
+
+              if (blocks?.length > 0) {
+                const cursor = editor.getTextCursorPosition();
+                if (cursor?.block) {
+                  editor.insertBlocks(blocks, cursor.block, 'after');
+                }
+              }
+            } catch (err) {
+              console.error('Markdown paste failed:', err);
+              editor.insertBlocks([{
+                type: 'paragraph',
+                content: [{ type: 'text', text: textData }],
+              }], editor.getTextCursorPosition()?.block, 'after');
+            }
+          })();
+          return;
+        }
+      }
 
       for (const item of items) {
         if (item.type.startsWith('image/')) {
@@ -683,16 +901,59 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       if (editable) editable.spellcheck = false;
       block.style.position = 'relative';
 
-      // Language label — language attr is on the inner pre/code element
+      // Language label — clickable to change language
       if (!block.querySelector('.code-lang-label')) {
+        const blockEl = block.closest('[data-id]');
+        const blockId = blockEl?.getAttribute('data-id');
         const langEl = block.querySelector('[data-language]');
-        const lang = langEl?.getAttribute('data-language') || '';
-        if (lang && lang !== 'text') {
-          const label = document.createElement('span');
-          label.className = 'code-lang-label';
-          label.textContent = lang;
-          block.appendChild(label);
-        }
+        const lang = langEl?.getAttribute('data-language') || 'text';
+
+        const label = document.createElement('button');
+        label.className = 'code-lang-label';
+        label.textContent = lang || 'text';
+        label.title = 'Click to change language';
+        label.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
+        label.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Remove any existing language picker
+          document.querySelectorAll('.code-lang-picker').forEach(el => el.remove());
+
+          const langs = ['text','javascript','typescript','python','java','c','cpp','csharp','go','rust','ruby','php','swift','kotlin','html','css','json','yaml','markdown','bash','shell','sql','graphql','jsx','tsx','vue','svelte','dart','lua','r','scala'];
+          const picker = document.createElement('div');
+          picker.className = 'code-lang-picker';
+          const rect = label.getBoundingClientRect();
+          picker.style.cssText = `position:fixed;top:${rect.bottom + 4}px;right:${window.innerWidth - rect.right}px;z-index:10000;`;
+          picker.innerHTML = `<input class="code-lang-search" placeholder="Search..." autofocus /><div class="code-lang-list">${langs.map(l => `<button class="code-lang-option" data-lang="${l}">${l}</button>`).join('')}</div>`;
+
+          // Search filter
+          picker.querySelector('.code-lang-search').addEventListener('input', (ev) => {
+            const q = ev.target.value.toLowerCase();
+            picker.querySelectorAll('.code-lang-option').forEach(opt => {
+              opt.style.display = opt.dataset.lang.includes(q) ? '' : 'none';
+            });
+          });
+
+          // Select language
+          picker.addEventListener('mousedown', (ev) => {
+            const opt = ev.target.closest('.code-lang-option');
+            if (!opt || !blockId) return;
+            ev.preventDefault();
+            try {
+              editor.updateBlock(blockId, { props: { language: opt.dataset.lang } });
+              label.textContent = opt.dataset.lang;
+            } catch {}
+            picker.remove();
+          });
+
+          document.body.appendChild(picker);
+          picker.querySelector('.code-lang-search').focus();
+          setTimeout(() => {
+            const dismiss = (ev) => { if (!picker.contains(ev.target) && ev.target !== label) { picker.remove(); document.removeEventListener('mousedown', dismiss); } };
+            document.addEventListener('mousedown', dismiss);
+          }, 0);
+        };
+        block.appendChild(label);
       }
 
       // Copy button
@@ -715,20 +976,69 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     });
   }, []);
 
+  // Hide BlockNote's formatting toolbar when a custom block (code, equation, mermaid, etc.) is focused
+  const noToolbarTypes = useMemo(() => new Set(['codeBlock', 'blockEquation', 'mermaidBlock', 'image', 'tabsBlock', 'aiBlock', 'pdfEmbed', 'tableOfContents', 'buttonBlock', 'breadcrumbs']), []);
+
+  useEffect(() => {
+    function hideToolbarForCustomBlocks() {
+      try {
+        const cursor = editor.getTextCursorPosition();
+        const blockType = cursor?.block?.type;
+        if (!blockType || !noToolbarTypes.has(blockType)) return;
+        // BlockNote renders the formatting toolbar as a .bn-toolbar inside a tippy/floating container
+        document.querySelectorAll('.bn-toolbar').forEach(el => {
+          const container = el.closest('[data-tippy-root], [style*="position"]');
+          if (container) container.style.display = 'none';
+          else el.style.display = 'none';
+        });
+      } catch {}
+    }
+
+    document.addEventListener('selectionchange', hideToolbarForCustomBlocks);
+    // Also run on click (selection might not change but focus does)
+    document.addEventListener('click', hideToolbarForCustomBlocks, true);
+    return () => {
+      document.removeEventListener('selectionchange', hideToolbarForCustomBlocks);
+      document.removeEventListener('click', hideToolbarForCustomBlocks, true);
+    };
+  }, [editor, noToolbarTypes]);
+
+  // Track block count to detect structural changes (import, paste, AI) vs. normal typing
+  const blockCountRef = useRef(0);
+
   const handleChange = useCallback(() => {
     if (onChange) onChange(editor.document);
-    requestAnimationFrame(patchCodeBlocks);
+    // Only re-patch code blocks when the number of blocks changes (new block added/removed)
+    // This avoids running expensive DOM queries on every keystroke
+    const count = editor.document.length;
+    if (count !== blockCountRef.current) {
+      blockCountRef.current = count;
+      requestAnimationFrame(patchCodeBlocks);
+    }
   }, [onChange, editor, patchCodeBlocks]);
 
-  // Patch code blocks on initial mount + signal ready (double rAF for sanitized blocks)
+  // Patch code blocks on mount + when new code blocks appear in the DOM
   useEffect(() => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
+        blockCountRef.current = editor.document.length;
         patchCodeBlocks();
         onReady?.();
       });
     });
-  }, [patchCodeBlocks, onReady]);
+
+    // Lightweight observer: only watch for direct children being added (new blocks),
+    // NOT subtree mutations (which fire on every keystroke inside code blocks)
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const editorRoot = wrapper.querySelector('.bn-editor');
+    if (!editorRoot) return;
+    const observer = new MutationObserver(() => {
+      requestAnimationFrame(patchCodeBlocks);
+    });
+    observer.observe(editorRoot, { childList: true });
+    return () => observer.disconnect();
+  }, [patchCodeBlocks, onReady, editor]);
 
 
   // AI sparkle star — inline element appended to last AI text block
@@ -772,7 +1082,9 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   }, []);
 
   const getItems = useMemo(
-    () => async (query) => filterItems(getCustomSlashMenuItems(editor), query),
+    () => async (query) => filterItems(getCustomSlashMenuItems(editor, {
+      onInlineLatex: () => { setInlineLatexValue(''); setShowInlineLatex(true); },
+    }), query),
     [editor]
   );
 
@@ -1776,6 +2088,56 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           </svg>
           <span>{aiErrorToast}</span>
           <button onClick={() => setAiErrorToast(null)} aria-label="Dismiss">×</button>
+        </div>
+      )}
+
+      {/* Inline LaTeX input popup */}
+      {showInlineLatex && (
+        <div className="inline-latex-overlay" onClick={() => setShowInlineLatex(false)}>
+          <div className="inline-latex-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="inline-latex-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4l4 16M12 4l4 16M7 8h10M6 16h10"/>
+              </svg>
+              <span>Inline Equation</span>
+            </div>
+            <input
+              ref={inlineLatexRef}
+              type="text"
+              className="inline-latex-input"
+              value={inlineLatexValue}
+              onChange={(e) => setInlineLatexValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && inlineLatexValue.trim()) {
+                  e.preventDefault();
+                  editor.insertInlineContent([{ type: 'inlineEquation', props: { latex: inlineLatexValue.trim() } }]);
+                  setShowInlineLatex(false);
+                  setInlineLatexValue('');
+                }
+                if (e.key === 'Escape') {
+                  setShowInlineLatex(false);
+                  setInlineLatexValue('');
+                }
+              }}
+              placeholder="E = mc^2"
+              autoFocus
+            />
+            <InlineLatexPreview latex={inlineLatexValue} />
+            <div className="inline-latex-actions">
+              <button className="mermaid-btn-cancel" onClick={() => { setShowInlineLatex(false); setInlineLatexValue(''); }}>Cancel</button>
+              <button
+                className="mermaid-btn-save"
+                disabled={!inlineLatexValue.trim()}
+                onClick={() => {
+                  if (inlineLatexValue.trim()) {
+                    editor.insertInlineContent([{ type: 'inlineEquation', props: { latex: inlineLatexValue.trim() } }]);
+                    setShowInlineLatex(false);
+                    setInlineLatexValue('');
+                  }
+                }}
+              >Insert</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

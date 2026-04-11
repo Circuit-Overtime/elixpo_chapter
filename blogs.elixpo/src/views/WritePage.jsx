@@ -99,16 +99,40 @@ function truncateSlug(s, max = 18) {
 
 // ── Confirm Modal ──
 function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', cancelLabel = 'Cancel', onConfirm, onCancel, destructive = false }) {
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onCancel(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onCancel]);
+
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="w-full max-w-sm rounded-2xl p-6 animate-in" style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-lg)' }}>
-        <h3 className="text-[16px] font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{title}</h3>
-        <p className="text-[13px] leading-relaxed mb-5" style={{ color: 'var(--text-muted)' }}>{description}</p>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4 editor-confirm-overlay" onClick={onCancel}>
+      <div
+        className="w-full max-w-sm rounded-2xl p-6 editor-confirm-dialog"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 mb-3">
+          {destructive ? (
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(239,68,68,0.12)' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(155,123,247,0.12)' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9b7bf7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+            </div>
+          )}
+          <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        </div>
+        <p className="text-[13px] leading-relaxed mb-5" style={{ color: 'var(--text-muted)', paddingLeft: '44px' }}>{description}</p>
         <div className="flex items-center gap-3 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
-            style={{ color: 'var(--text-body)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+            className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors editor-confirm-cancel"
           >
             {cancelLabel}
           </button>
@@ -472,7 +496,7 @@ export default function WritePage({ slugid }) {
     }
   }, [slugid]);
 
-  // Ctrl+S → save + sync, Ctrl+O → import markdown
+  // Ctrl+S → save + sync, Ctrl+O → import markdown, Ctrl+D → insert date
   useEffect(() => {
     function handleKeyDown(e) {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -482,6 +506,15 @@ export default function WritePage({ slugid }) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
         e.preventDefault();
         mdUploadRef.current?.click();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        const editor = editorRef.current?.getEditor?.();
+        if (editor) {
+          try {
+            editor.insertInlineContent([{ type: 'dateInline', props: { date: new Date().toISOString().split('T')[0] } }]);
+          } catch {}
+        }
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -500,11 +533,20 @@ export default function WritePage({ slugid }) {
     }
   }, [draftLoading, syncToCloud]);
 
-  // Sync before page unload + warn about unsaved edits
+  // Intercept in-app link clicks to show custom unsaved changes modal
+  const handleNavigation = useCallback((url) => {
+    if (hasUnsavedEdits) {
+      setPendingLeaveUrl(url);
+      setShowLeaveConfirm(true);
+      return false; // blocked
+    }
+    return true; // allowed
+  }, [hasUnsavedEdits]);
+
+  // Sync before page unload + save draft (fallback for hard browser close)
   useEffect(() => {
     function handleBeforeUnload(e) {
       const data = draftDataRef.current;
-      // Always save to localStorage so nothing is lost
       if (data.title || data.editorContent) {
         saveDraft(slugid, data);
         try {
@@ -512,7 +554,6 @@ export default function WritePage({ slugid }) {
           navigator.sendBeacon('/api/blogs/draft', blob);
         } catch {}
       }
-      // Warn user if there are unsaved edits
       if (hasUnsavedEdits) {
         e.preventDefault();
         e.returnValue = '';
@@ -521,6 +562,24 @@ export default function WritePage({ slugid }) {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [slugid, hasUnsavedEdits]);
+
+  // Intercept clicks on <a> tags within the editor page to show custom modal
+  useEffect(() => {
+    function handleClick(e) {
+      if (!hasUnsavedEdits) return;
+      const anchor = e.target.closest('a[href]');
+      if (!anchor) return;
+      const href = anchor.getAttribute('href');
+      // Only intercept internal navigation links, not external or hash links
+      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('http')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setPendingLeaveUrl(href);
+      setShowLeaveConfirm(true);
+    }
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
+  }, [hasUnsavedEdits]);
 
   useEffect(() => {
     // Try local draft first, then fetch from server
@@ -762,11 +821,70 @@ export default function WritePage({ slugid }) {
       const editor = editorRef.current?.getEditor?.();
       if (editor) {
         try {
-          const blocks = await editor.tryParseMarkdownToBlocks(mdContent);
+          // Pre-process: extract mermaid fenced blocks
+          // Use placeholder format without double underscores (markdown interprets __ as bold)
+          const mermaidBlocks = [];
+          let processed = mdContent.replace(/```mermaid\n([\s\S]*?)```/g, (_, diagram) => {
+            const ph = `MERMAIDPLACEHOLDER${mermaidBlocks.length}END`;
+            mermaidBlocks.push(diagram.trim());
+            return ph;
+          });
+
+          // Pre-process: extract block LaTeX \[...\]
+          const blockLatex = [];
+          processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, (_, latex) => {
+            const ph = `LATEXBLOCKPLACEHOLDER${blockLatex.length}END`;
+            blockLatex.push(latex.trim());
+            return ph;
+          });
+
+          // Pre-process: extract inline LaTeX \(...\)
+          // Markdown parsers strip backslash escapes, so \( becomes ( — extract before parsing
+          const inlineLatex = [];
+          processed = processed.replace(/\\\((.+?)\\\)/g, (_, latex) => {
+            const ph = `LATEXINLINEPLACEHOLDER${inlineLatex.length}END`;
+            inlineLatex.push(latex.trim());
+            return ph;
+          });
+
+          let blocks = await editor.tryParseMarkdownToBlocks(processed);
+
+          // Post-process: replace placeholders with custom blocks + inline LaTeX
+          blocks = blocks.flatMap(block => {
+            if (!block.content || !Array.isArray(block.content)) return [block];
+            const txt = block.content.map(c => c.text || '').join('');
+
+            // Mermaid placeholder → mermaidBlock
+            const mm = txt.match(/^MERMAIDPLACEHOLDER(\d+)END$/);
+            if (mm) return [{ type: 'mermaidBlock', props: { diagram: mermaidBlocks[parseInt(mm[1])] || '' }, children: [] }];
+
+            // Block LaTeX placeholder → blockEquation
+            const bl = txt.match(/^LATEXBLOCKPLACEHOLDER(\d+)END$/);
+            if (bl) return [{ type: 'blockEquation', props: { latex: blockLatex[parseInt(bl[1])] || '' }, children: [] }];
+
+            // Inline LaTeX placeholders → inlineEquation
+            if (/LATEXINLINEPLACEHOLDER\d+END/.test(txt)) {
+              const parts = [];
+              const regex = /LATEXINLINEPLACEHOLDER(\d+)END/g;
+              let lastIdx = 0;
+              let m;
+              while ((m = regex.exec(txt)) !== null) {
+                if (m.index > lastIdx) parts.push({ type: 'text', text: txt.slice(lastIdx, m.index) });
+                parts.push({ type: 'inlineEquation', props: { latex: inlineLatex[parseInt(m[1])] || '' } });
+                lastIdx = m.index + m[0].length;
+              }
+              if (lastIdx < txt.length) parts.push({ type: 'text', text: txt.slice(lastIdx) });
+              if (parts.length > 0) return [{ ...block, content: parts }];
+            }
+
+            return [block];
+          });
+
           if (blocks?.length > 0) {
             editor.replaceBlocks(editor.document, blocks);
           }
-        } catch {
+        } catch (err) {
+          console.error('Markdown parse failed:', err);
           editor.replaceBlocks(editor.document, [{
             type: 'paragraph',
             content: [{ type: 'text', text: mdContent }],
