@@ -227,14 +227,164 @@
   background: var(--border-default);
 }
 
-/* ===== Sub-Page (Tabs) Block ===== */
+/* ===== Sub-Page Block ===== */
 
 .blog-editor-wrapper [data-content-type="tabsBlock"] {
   user-select: none;
+  width: 100%;
 }
 
 .blog-editor-wrapper [data-content-type="tabsBlock"] .bn-block-content {
   cursor: default;
+  width: 100%;
+}
+
+/* Shared subpage styles (editor + preview) */
+
+.subpage-block {
+  width: 100%;
+  margin: 12px 0;
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+.subpage-block-inner,
+.subpage-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  border-bottom: 1px solid var(--divider);
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+}
+
+.subpage-item:last-child {
+  border-bottom: none;
+}
+
+.subpage-item:hover {
+  background: var(--bg-hover);
+}
+
+.subpage-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--bg-app);
+  border: 1px solid var(--border-default);
+  color: var(--text-faint);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.subpage-item:hover .subpage-icon {
+  background: rgba(155, 123, 247, 0.08);
+  border-color: rgba(155, 123, 247, 0.25);
+  color: #9b7bf7;
+}
+
+.subpage-icon--add {
+  border-style: dashed;
+  border-color: rgba(155, 123, 247, 0.3);
+  background: rgba(155, 123, 247, 0.04);
+}
+
+.subpage-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subpage-arrow {
+  flex-shrink: 0;
+  color: var(--text-faint);
+  transition: color 0.15s, transform 0.15s;
+}
+
+.subpage-item:hover .subpage-arrow {
+  color: #9b7bf7;
+  transform: translateX(2px);
+}
+
+.subpage-delete-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.group\/page:hover .subpage-delete-btn {
+  opacity: 1;
+}
+
+.subpage-delete-btn:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.subpage-name-input {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  min-width: 0;
+}
+
+.subpage-name-input::placeholder {
+  color: var(--text-faint);
+}
+
+.subpage-create-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  background: #9b7bf7;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.subpage-create-btn:hover {
+  background: #8b6ae6;
+}
+
+.subpage-create-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.subpage-block-adding {
+  border: none;
 }
 
 /* ===== Lists ===== */

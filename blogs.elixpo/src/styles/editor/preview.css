@@ -133,7 +133,8 @@
   margin-bottom: 0.75em;
 }
 
-.blog-preview-content a:not(.mention-chip):not(.preview-toc-link):not(.link-preview-card) {
+/* Links — blue with subtle underline */
+.blog-preview-content a {
   color: #7ba8f0;
   text-decoration: none;
   border-bottom: 1px solid rgba(123, 168, 240, 0.3);
@@ -142,10 +143,75 @@
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
-.blog-preview-content a:not(.mention-chip):not(.preview-toc-link):not(.link-preview-card):hover {
+.blog-preview-content a:hover {
   color: #9dc0ff;
   border-bottom-color: rgba(157, 192, 255, 0.5);
   background: rgba(123, 168, 240, 0.06);
+}
+
+/* Mention chips, TOC links, subpage items have their own styling */
+.blog-preview-content a.preview-toc-link,
+.blog-preview-content a.link-preview-card,
+.blog-preview-content a.subpage-item {
+  color: inherit !important;
+  border-bottom: none !important;
+  background: none !important;
+  text-decoration: none !important;
+  padding-bottom: 10px !important;
+}
+
+/* Mention chips — match editor styling */
+.blog-preview-content a.mention-chip {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+/* Blog mention links — blue with link icon, like the editor */
+.blog-preview-content .blog-mention-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #60a5fa !important;
+  border-bottom: none !important;
+  background: none !important;
+  text-decoration: none !important;
+  padding-bottom: 0 !important;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.blog-preview-content .blog-mention-link:hover {
+  color: #93c5fd !important;
+  background: none !important;
+}
+
+/* Org mention links — blue with group icon, like the editor */
+.blog-preview-content .org-mention-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #60a5fa !important;
+  border-bottom: none !important;
+  background: none !important;
+  text-decoration: none !important;
+  padding-bottom: 0 !important;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.blog-preview-content .org-mention-link:hover {
+  color: #93c5fd !important;
+  background: none !important;
+}
+
+.blog-preview-content a.subpage-item:hover {
+  color: inherit !important;
+  background: var(--bg-hover) !important;
+}
+
+/* Subpage block in preview — proper spacing */
+.blog-preview-content .subpage-block {
+  margin: 1.5em 0;
 }
 
 .blog-preview-content strong {
@@ -391,9 +457,23 @@
   color: var(--text-primary);
 }
 
+/* Inline equation chip — matches editor .inline-equation-chip */
+.blog-preview-content .preview-inline-equation {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  margin: 0 2px;
+  border-radius: 5px;
+  color: #9b7bf7;
+  background: rgba(155, 123, 247, 0.06);
+  border: 1px solid rgba(155, 123, 247, 0.15);
+  font-size: 13px;
+  vertical-align: baseline;
+}
+
 .blog-preview-content .preview-inline-equation .katex {
   font-size: 1em;
-  color: var(--text-primary);
+  color: #9b7bf7;
 }
 
 /* ===== Preview Mermaid Diagrams ===== */

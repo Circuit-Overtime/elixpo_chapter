@@ -1,5 +1,6 @@
 {
   "name": "lixblogs",
+  "version": "4.5.17",
   "description": "A modern blogging platform with a rich block editor, AI writing tools, real-time collaboration, and organizations — deployed on Cloudflare's edge.",
   "author": "Circuit-Overtime <https://github.com/Circuit-Overtime>",
   "license": "MIT",
@@ -55,6 +56,5 @@
     "preview": "npx wrangler pages dev .vercel/output/static --compatibility-flags=nodejs_compat",
     "deploy": "npm run pages:build && npx wrangler pages deploy .vercel/output/static",
     "db:migrate": "wrangler d1 execute elixpoblogs --remote --file=migrations/0006_blog_collab_roles.sql"
-  },
-  "version": "0.0.17"
+  }
 }
