@@ -200,12 +200,29 @@
 }
 
 .blog-preview-content pre {
-  background: var(--bg-app);
+  background: var(--code-bg);
   border: 1px solid var(--border-default);
   border-radius: 10px;
-  padding: 1.2em;
+  padding: 28px 16px 12px;
   overflow-x: auto;
   margin: 0.75em 0;
+  position: relative;
+  font-family: 'lixCode', monospace;
+  font-size: 0.84em;
+  line-height: 1.7;
+}
+
+.blog-preview-content pre code {
+  font-family: inherit;
+  font-size: inherit;
+  background: none;
+  padding: 0;
+  color: var(--code-text);
+}
+
+/* Shiki syntax highlighting — let inline styles override */
+.blog-preview-content pre code span[style] {
+  background: none !important;
 }
 
 .blog-preview-content code {
@@ -220,6 +237,53 @@
   padding: 0.15em 0.4em;
   border-radius: 4px;
   font-size: 0.85em;
+}
+
+/* Preview code block language label */
+.preview-code-lang-label {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--code-lang-text);
+  background: var(--code-lang-bg);
+  padding: 2px 8px;
+  border-radius: 0 0 6px 6px;
+  line-height: 1.5;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Preview code block copy button */
+.preview-code-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--code-lang-bg);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  color: var(--code-lang-text);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.blog-preview-content pre:hover .preview-code-copy-btn {
+  opacity: 1;
+}
+
+.preview-code-copy-btn:hover {
+  background: var(--bg-active);
+  color: #a78bfa;
 }
 
 .blog-preview-content img:not(.mention-chip-avatar) {
