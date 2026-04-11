@@ -113,7 +113,7 @@ export const BlockEquation = createReactBlockSpec(
       return (
         <div
           onClick={() => setEditing(true)}
-          className="border border-[var(--border-default)] rounded-xl bg-[var(--bg-surface)] px-5 py-4 my-2 cursor-pointer hover:border-[var(--border-hover)] transition-colors text-center overflow-x-auto"
+          className="editor-block-equation"
           dangerouslySetInnerHTML={{ __html: renderKaTeX(latex) }}
         />
       );

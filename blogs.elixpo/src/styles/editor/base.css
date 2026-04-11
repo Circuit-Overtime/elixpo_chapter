@@ -86,7 +86,8 @@
   color: var(--text-primary);
 }
 
-/* Inline code — purple accent, adapts to theme */
+/* Inline code — purple accent, adapts to theme.
+   Excludes code inside code blocks so Shiki syntax highlighting isn't overridden. */
 .blog-editor-wrapper code,
 .blog-preview-content code {
   color: #7c3aed;
@@ -97,12 +98,23 @@
   font-family: 'lixCode', monospace;
   -webkit-hyphens: none;
   hyphens: none;
+  text-decoration: none !important;
+  -webkit-text-decoration: none !important;
 }
 
 [data-theme="dark"] .blog-editor-wrapper code,
 [data-theme="dark"] .blog-preview-content code {
   color: #c4b5fd;
   background: rgba(196, 181, 253, 0.1);
+}
+
+/* Reset inline code styles inside code blocks — let Shiki/theme handle these */
+.blog-editor-wrapper [data-content-type="codeBlock"] code,
+.blog-preview-content pre code {
+  color: var(--code-text);
+  background: none;
+  padding: 0;
+  border-radius: 0;
 }
 
 /* Code blocks — lixCode font, no line highlights */
@@ -275,6 +287,132 @@
 /* Selection highlight */
 .blog-editor-wrapper ::selection {
   background: rgba(123, 168, 240, 0.3);
+}
+
+/* ===== Editor links — distinct styling ===== */
+.blog-editor-wrapper .bn-editor a,
+.blog-editor-wrapper .bn-block-content a {
+  color: #7ba8f0 !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid rgba(123, 168, 240, 0.3);
+  padding-bottom: 1px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.blog-editor-wrapper .bn-editor a:hover,
+.blog-editor-wrapper .bn-block-content a:hover {
+  color: #9dc0ff !important;
+  border-bottom-color: rgba(157, 192, 255, 0.5);
+  background: rgba(123, 168, 240, 0.06);
+}
+
+/* ===== Link Preview Tooltip ===== */
+
+.link-preview-tooltip {
+  position: fixed;
+  z-index: 1000;
+  width: 320px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  animation: linkPreviewIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+[data-theme="dark"] .link-preview-tooltip {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+@keyframes linkPreviewIn {
+  from { opacity: 0; transform: translateY(4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.link-preview-card {
+  display: block;
+  text-decoration: none !important;
+  border: none !important;
+  color: inherit;
+  background: none !important;
+}
+
+.link-preview-card:hover {
+  background: none !important;
+  border: none !important;
+}
+
+.link-preview-image {
+  width: 100%;
+  height: 140px;
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+
+.link-preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.link-preview-body {
+  padding: 12px 14px;
+}
+
+.link-preview-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.link-preview-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.link-preview-domain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.link-preview-favicon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.link-preview-loading {
+  padding: 14px;
+}
+
+.link-preview-skeleton {
+  background: var(--bg-elevated);
+  border-radius: 4px;
+  animation: skeletonPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
 }
 
 /* ===== Dark scrollbar (used in emoji picker, editor dropdowns) ===== */

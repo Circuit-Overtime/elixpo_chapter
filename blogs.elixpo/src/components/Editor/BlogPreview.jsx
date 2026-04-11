@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
 
 function FloatingTOC({ headings }) {
   const [activeId, setActiveId] = useState('');
@@ -27,7 +28,7 @@ function FloatingTOC({ headings }) {
     return () => window.removeEventListener('scroll', onScroll);
   }, [headings]);
 
-  // Update slider position based on active item's DOM position
+  // Update slider position and auto-scroll TOC to keep active item visible
   useEffect(() => {
     if (!activeId || !listRef.current) return;
     const item = itemRefs.current[activeId];
@@ -38,6 +39,8 @@ function FloatingTOC({ headings }) {
       top: itemRect.top - listRect.top,
       height: itemRect.height,
     });
+    // Scroll the TOC list so the active item stays visible
+    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [activeId]);
 
   return (
@@ -84,7 +87,6 @@ function FloatingTOC({ headings }) {
 
 function renderBlocksToHTML(blocks) {
   if (!blocks || !blocks.length) return '';
-  const parts = [];
 
   function inlineToHTML(content) {
     if (!content || !Array.isArray(content)) return '';
@@ -92,18 +94,24 @@ function renderBlocksToHTML(blocks) {
       if (c.type === 'inlineEquation' && c.props?.latex) {
         return `<span class="preview-inline-equation" data-latex="${encodeURIComponent(c.props.latex)}"></span>`;
       }
+      if (c.type === 'dateInline' && c.props?.date) {
+        let formatted;
+        try { formatted = new Date(c.props.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+        catch { formatted = c.props.date; }
+        return `<span class="preview-date-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${formatted}</span>`;
+      }
       if (c.type === 'mention' && c.props?.username) {
         const name = c.props.displayName || c.props.username;
         const avatar = c.props.avatarUrl
           ? `<img src="${c.props.avatarUrl}" alt="" class="mention-chip-avatar">`
           : `<span class="mention-chip-initial">${(name || '?')[0].toUpperCase()}</span>`;
-        return `<a href="/${c.props.username}" class="mention-chip">${avatar}@${name}</a>`;
+        return `<a href="/@${c.props.username}" class="mention-chip" data-username="${c.props.username}" data-avatar="${c.props.avatarUrl || ''}" data-displayname="${name}">${avatar}@${name}</a>`;
       }
       if (c.type === 'blogMention' && c.props?.slugid) {
         return `<a href="/${c.props.slugid}" class="mention-chip">${c.props.title || 'Untitled blog'}</a>`;
       }
       if (c.type === 'orgMention' && c.props?.slug) {
-        return `<a href="/${c.props.slug}" class="mention-chip">@${c.props.name || c.props.slug}</a>`;
+        return `<a href="/@${c.props.slug}" class="mention-chip">@${c.props.name || c.props.slug}</a>`;
       }
       let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       if (!text) return '';
@@ -120,65 +128,67 @@ function renderBlocksToHTML(blocks) {
     }).join('');
   }
 
-  // Collect headings for TOC
+  // Collect ALL headings recursively for TOC
   const headings = [];
-  for (const block of blocks) {
-    if (block.type === 'heading') {
-      const text = (block.content || []).map(c => c.text || '').join('');
-      if (text.trim()) {
-        const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
-        headings.push({ id, text: text.trim(), level: block.props?.level || 1 });
+  function collectHeadings(blockList) {
+    for (const block of blockList) {
+      if (block.type === 'heading') {
+        const text = (block.content || []).map(c => c.text || '').join('');
+        if (text.trim()) {
+          const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
+          headings.push({ id, text: text.trim(), level: block.props?.level || 1 });
+        }
       }
+      if (block.children?.length) collectHeadings(block.children);
     }
   }
+  collectHeadings(blocks);
 
-  for (const block of blocks) {
+  // Render a single block to HTML, recursing into children
+  function renderBlock(block) {
     const content = inlineToHTML(block.content);
+    const childrenHTML = block.children?.length ? renderListGroup(block.children) : '';
+
     switch (block.type) {
       case 'tableOfContents':
-        // Placeholder — will be replaced with actual TOC after all headings are collected
-        parts.push('__TOC_PLACEHOLDER__');
-        break;
+        return '__TOC_PLACEHOLDER__';
       case 'heading': {
         const level = block.props?.level || 1;
         const text = (block.content || []).map(c => c.text || '').join('');
         const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
-        parts.push(`<h${level} id="${id}">${content}</h${level}>`);
-        break;
+        return `<h${level} id="${id}">${content}</h${level}>${childrenHTML}`;
       }
       case 'bulletListItem':
-        parts.push(`<li class="preview-bullet">${content}</li>`);
-        break;
+        return `<li class="preview-bullet">${content}${childrenHTML}</li>`;
       case 'numberedListItem':
-        parts.push(`<li class="preview-numbered">${content}</li>`);
-        break;
-      case 'checkListItem':
-        parts.push(`<li class="preview-check">${block.props?.checked ? '&#9745; ' : '&#9744; '}${content}</li>`);
-        break;
+        return `<li class="preview-numbered">${content}${childrenHTML}</li>`;
+      case 'checkListItem': {
+        const checked = !!block.props?.checked;
+        const checkboxHTML = `<span class="preview-checkbox${checked ? ' preview-checkbox--checked' : ''}"><span class="preview-checkbox-icon">${checked ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}</span></span>`;
+        return `<li class="preview-check${checked ? ' preview-check--checked' : ''}">${checkboxHTML}<span class="preview-check-text">${content}</span>${childrenHTML}</li>`;
+      }
       case 'blockEquation':
         if (block.props?.latex) {
-          parts.push(`<div class="preview-block-equation" data-latex="${encodeURIComponent(block.props.latex)}"></div>`);
+          return `<div class="preview-block-equation" data-latex="${encodeURIComponent(block.props.latex)}"></div>${childrenHTML}`;
         }
-        break;
+        return childrenHTML;
       case 'mermaidBlock':
         if (block.props?.diagram) {
-          parts.push(`<div class="preview-mermaid-block" data-diagram="${encodeURIComponent(block.props.diagram)}"></div>`);
+          return `<div class="preview-mermaid-block" data-diagram="${encodeURIComponent(block.props.diagram)}"></div>${childrenHTML}`;
         }
-        break;
+        return childrenHTML;
       case 'divider':
-        parts.push('<hr class="preview-divider" />');
-        break;
+        return `<hr class="preview-divider" />${childrenHTML}`;
       case 'codeBlock': {
         const lang = block.props?.language || '';
         const code = (block.content || []).map((c) => c.text || '').join('');
-        parts.push(`<pre><code class="language-${lang}">${code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`);
-        break;
+        return `<pre><code class="language-${lang}">${code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>${childrenHTML}`;
       }
       case 'image':
         if (block.props?.url) {
-          parts.push(`<figure><img src="${block.props.url}" alt="${block.props?.caption || ''}" />${block.props?.caption ? `<figcaption>${block.props.caption}</figcaption>` : ''}</figure>`);
+          return `<figure><img src="${block.props.url}" alt="${block.props?.caption || ''}" />${block.props?.caption ? `<figcaption>${block.props.caption}</figcaption>` : ''}</figure>${childrenHTML}`;
         }
-        break;
+        return childrenHTML;
       case 'table': {
         const tableContent = block.content;
         const rows = tableContent?.rows || [];
@@ -189,7 +199,6 @@ function renderBlocksToHTML(blocks) {
             table += '<tr>';
             (row.cells || []).forEach((cell) => {
               const tag = ri < headerRows ? 'th' : 'td';
-              // cell can be InlineContent[] or TableCell { type, props, content }
               let cellContent;
               if (Array.isArray(cell)) {
                 cellContent = cell;
@@ -204,29 +213,71 @@ function renderBlocksToHTML(blocks) {
             table += '</tr>';
           });
           table += '</table>';
-          parts.push(table);
+          return table + childrenHTML;
         }
-        break;
+        return childrenHTML;
       }
       case 'paragraph':
       default:
         if (content) {
-          parts.push(`<p>${content}</p>`);
+          return `<p>${content}</p>${childrenHTML}`;
         }
-        break;
+        return childrenHTML || '';
     }
   }
 
-  // TOC is rendered as a floating sidebar in the component, not in the HTML
+  // Group consecutive list items of the same type into proper <ul>/<ol> wrappers
+  function renderListGroup(blockList) {
+    if (!blockList || !blockList.length) return '';
+    const out = [];
+    let i = 0;
+
+    while (i < blockList.length) {
+      const block = blockList[i];
+
+      if (block.type === 'bulletListItem') {
+        let items = '';
+        while (i < blockList.length && blockList[i].type === 'bulletListItem') {
+          items += renderBlock(blockList[i]);
+          i++;
+        }
+        out.push(`<ul>${items}</ul>`);
+      } else if (block.type === 'numberedListItem') {
+        let items = '';
+        while (i < blockList.length && blockList[i].type === 'numberedListItem') {
+          items += renderBlock(blockList[i]);
+          i++;
+        }
+        out.push(`<ol>${items}</ol>`);
+      } else if (block.type === 'checkListItem') {
+        let items = '';
+        while (i < blockList.length && blockList[i].type === 'checkListItem') {
+          items += renderBlock(blockList[i]);
+          i++;
+        }
+        out.push(`<ul class="preview-checklist">${items}</ul>`);
+      } else {
+        out.push(renderBlock(block));
+        i++;
+      }
+    }
+    return out.join('\n');
+  }
+
+  let html = renderListGroup(blocks);
+
+  // Build inline TOC HTML matching the editor's toc-block style
   let tocHTML = '';
+  if (headings.length > 0) {
+    const tocItems = headings.map(h => {
+      const indent = (h.level - 1) * 16;
+      return `<li><a href="#${h.id}" class="preview-toc-link" style="padding-left:${indent}px">${h.text}</a></li>`;
+    }).join('');
+    tocHTML = `<div class="preview-toc-block"><p class="preview-toc-label">Table of Contents</p><ul class="preview-toc-list">${tocItems}</ul></div>`;
+  }
 
-  // Wrap consecutive bullet/numbered items in lists
-  let html = parts.join('\n');
-  html = html.replace(/((?:<li class="preview-bullet">.*?<\/li>\n?)+)/g, '<ul>$1</ul>');
-  html = html.replace(/((?:<li class="preview-numbered">.*?<\/li>\n?)+)/g, '<ol>$1</ol>');
-
-  // Remove TOC placeholder (rendered separately as floating sidebar)
-  html = html.replace('__TOC_PLACEHOLDER__', '');
+  // Replace TOC placeholder with inline TOC block
+  html = html.replace('__TOC_PLACEHOLDER__', tocHTML);
 
   return html;
 }
@@ -235,6 +286,11 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
   const { isDark } = useTheme();
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const linkPreview = useLinkPreview();
+  const linkPreviewRef = useRef(linkPreview);
+  linkPreviewRef.current = linkPreview;
+  const [mentionCard, setMentionCard] = useState(null);
+  const mentionTimerRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 400);
@@ -254,10 +310,16 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
     })
     .filter(h => h.text);
 
-  // Render KaTeX equations and mermaid diagrams after mount
+  // Set innerHTML via ref so React never overwrites our post-processed DOM.
+  // Then render KaTeX, mermaid, Shiki into the live DOM elements.
+  const effectGenRef = useRef(0);
   useEffect(() => {
-    if (!contentRef.current) return;
-    let cancelled = false;
+    const root = contentRef.current;
+    if (!root) return;
+    const gen = ++effectGenRef.current;
+
+    // Set the base HTML — we own the DOM from here, React won't touch it
+    root.innerHTML = renderedHTML || '';
 
     // Strip \[...\], $$...$$, \(...\), $...$ wrappers — KaTeX expects inner expression only
     function stripDelimiters(raw) {
@@ -269,12 +331,18 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       return s;
     }
 
-    // Render block equations
-    const eqEls = contentRef.current.querySelectorAll('.preview-block-equation[data-latex]');
-    if (eqEls.length) {
-      import('katex').then(({ default: katex }) => {
-        if (cancelled) return;
+    // Check if this effect is still the current one
+    function isStale() { return effectGenRef.current !== gen; }
+
+    // ── KaTeX: block + inline equations ──
+    const eqEls = root.querySelectorAll('.preview-block-equation[data-latex]');
+    const inlineEls = root.querySelectorAll('.preview-inline-equation[data-latex]');
+    if (eqEls.length || inlineEls.length) {
+      import('katex').then((mod) => {
+        if (isStale()) return;
+        const katex = mod.default || mod;
         eqEls.forEach((el) => {
+          if (!el.isConnected) return;
           try {
             const latex = stripDelimiters(decodeURIComponent(el.dataset.latex));
             el.innerHTML = katex.renderToString(latex, { displayMode: true, throwOnError: false });
@@ -282,15 +350,8 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
             el.innerHTML = `<span style="color:#f87171">${err.message}</span>`;
           }
         });
-      });
-    }
-
-    // Render inline equations
-    const inlineEls = contentRef.current.querySelectorAll('.preview-inline-equation[data-latex]');
-    if (inlineEls.length) {
-      import('katex').then(({ default: katex }) => {
-        if (cancelled) return;
         inlineEls.forEach((el) => {
+          if (!el.isConnected) return;
           try {
             const latex = stripDelimiters(decodeURIComponent(el.dataset.latex));
             el.innerHTML = katex.renderToString(latex, { displayMode: false, throwOnError: false });
@@ -298,16 +359,18 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
             el.innerHTML = `<span style="color:#f87171">${err.message}</span>`;
           }
         });
-      });
+      }).catch(() => {});
     }
 
-    // Render mermaid diagrams
-    const mermaidEls = contentRef.current.querySelectorAll('.preview-mermaid-block[data-diagram]');
+    // ── Mermaid diagrams (matches editor MermaidBlock config) ──
+    const mermaidEls = root.querySelectorAll('.preview-mermaid-block[data-diagram]');
     if (mermaidEls.length) {
-      import('mermaid').then(({ default: mermaid }) => {
-        if (cancelled) return;
+      import('mermaid').then((mod) => {
+        if (isStale()) return;
+        const mermaid = mod.default || mod;
         mermaid.initialize({
           startOnLoad: false,
+          securityLevel: 'loose',
           theme: isDark ? 'dark' : 'default',
           themeVariables: isDark ? {
             primaryColor: '#232d3f',
@@ -318,6 +381,18 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
             tertiaryColor: '#141a26',
             fontFamily: "'lixFont', sans-serif",
             fontSize: '16px',
+            nodeTextColor: '#e4e4e7',
+            nodeBorder: '#c4b5fd',
+            mainBkg: '#232d3f',
+            clusterBkg: '#1a1f2e',
+            clusterBorder: '#333',
+            titleColor: '#c4b5fd',
+            edgeLabelBackground: '#141a26',
+            git0: '#c4b5fd', git1: '#7c5cbf', git2: '#4ade80', git3: '#f59e0b',
+            git4: '#ef4444', git5: '#3b82f6', git6: '#ec4899', git7: '#14b8a6',
+            gitBranchLabel0: '#e4e4e7', gitBranchLabel1: '#e4e4e7',
+            gitBranchLabel2: '#e4e4e7', gitBranchLabel3: '#e4e4e7',
+            gitInv0: '#141a26',
           } : {
             primaryColor: '#e8e0ff',
             primaryTextColor: '#1a1a2e',
@@ -327,50 +402,81 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
             tertiaryColor: '#f9fafb',
             fontFamily: "'lixFont', sans-serif",
             fontSize: '16px',
+            nodeTextColor: '#1a1a2e',
+            nodeBorder: '#7c5cbf',
+            mainBkg: '#e8e0ff',
+            clusterBkg: '#f3f0ff',
+            clusterBorder: '#d1d5db',
+            titleColor: '#7c5cbf',
+            edgeLabelBackground: '#f9fafb',
+            git0: '#7c5cbf', git1: '#9b7bf7', git2: '#16a34a', git3: '#d97706',
+            git4: '#dc2626', git5: '#2563eb', git6: '#db2777', git7: '#0d9488',
           },
-          flowchart: { useMaxWidth: false, padding: 20, nodeSpacing: 50, rankSpacing: 60 },
+          flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: true, useMaxWidth: false },
+          sequence: { useMaxWidth: false, boxMargin: 10, noteMargin: 10, messageMargin: 35, mirrorActors: false },
+          gitGraph: { showBranches: true, showCommitLabel: true, mainBranchName: 'main', rotateCommitLabel: false },
         });
-        // Render diagrams sequentially — mermaid is a singleton, concurrent renders cause conflicts
+        // Render all diagrams — don't bail early on stale, just skip applying to unmounted elements
         (async () => {
           for (const el of mermaidEls) {
-            if (cancelled) return;
+            const id = `preview-mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
             try {
-              const diagram = decodeURIComponent(el.dataset.diagram);
-              const id = `preview-mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-              const { svg } = await mermaid.render(id, diagram.trim());
-              el.innerHTML = svg;
-              const svgEl = el.querySelector('svg');
-              if (svgEl) {
-                svgEl.removeAttribute('width');
-                svgEl.style.width = '100%';
-                svgEl.style.maxWidth = 'none';
-                svgEl.style.height = 'auto';
-                svgEl.style.minHeight = '180px';
+              let diagram = decodeURIComponent(el.dataset.diagram).trim();
+              diagram = diagram.replace(/^\s*gitgraph/i, 'gitGraph');
+              diagram = diagram.replace(/^\s*sequencediagram/i, 'sequenceDiagram');
+              diagram = diagram.replace(/^\s*classDiagram/i, 'classDiagram');
+              diagram = diagram.replace(/^\s*stateDiagram/i, 'stateDiagram');
+              diagram = diagram.replace(/^\s*erDiagram/i, 'erDiagram');
+              diagram = diagram.replace(/^\s*gantt/i, 'gantt');
+
+              const tempDiv = document.createElement('div');
+              tempDiv.id = 'container-' + id;
+              tempDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;opacity:0;pointer-events:none;z-index:-9999;';
+              document.body.appendChild(tempDiv);
+
+              const { svg } = await mermaid.render(id, diagram, tempDiv);
+              tempDiv.remove();
+
+              // Only apply if element is still in the DOM and this is the current effect
+              if (el.isConnected && !isStale()) {
+                el.innerHTML = svg;
+                const svgEl = el.querySelector('svg');
+                if (svgEl) {
+                  svgEl.removeAttribute('width');
+                  svgEl.style.width = '100%';
+                  svgEl.style.maxWidth = 'none';
+                  svgEl.style.height = 'auto';
+                  svgEl.style.minHeight = '180px';
+                }
               }
             } catch (err) {
-              el.innerHTML = `<pre style="color:#f87171;font-size:12px">${err.message || 'Diagram error'}</pre>`;
+              if (el.isConnected && !isStale()) {
+                el.innerHTML = `<pre style="color:#f87171;font-size:12px">${err.message || 'Diagram error'}</pre>`;
+              }
+              try { document.getElementById(id)?.remove(); } catch {}
+              try { document.getElementById('container-' + id)?.remove(); } catch {}
             }
           }
         })();
-      });
+      }).catch(() => {});
     }
 
-    // Syntax-highlight code blocks with Shiki + add copy buttons + language labels
-    const codeEls = contentRef.current.querySelectorAll('pre > code[class*="language-"]');
+    // ── Code blocks: Shiki syntax highlighting + language label + copy button ──
+    const codeEls = root.querySelectorAll('pre > code[class*="language-"]');
     if (codeEls.length) {
       import('shiki').then(({ createHighlighter }) => {
-        if (cancelled) return;
-        // Collect unique languages
+        if (isStale()) return;
         const langs = new Set();
         codeEls.forEach((el) => {
           const m = el.className.match(/language-(\w+)/);
           if (m && m[1] && m[1] !== 'text') langs.add(m[1]);
         });
-        createHighlighter({
-          themes: ['vitesse-dark'],
+        return createHighlighter({
+          themes: ['vitesse-dark', 'vitesse-light'],
           langs: [...langs],
         }).then((highlighter) => {
-          if (cancelled) return;
+          if (isStale()) return;
+          const shikiTheme = isDark ? 'vitesse-dark' : 'vitesse-light';
           codeEls.forEach((codeEl) => {
             const pre = codeEl.parentElement;
             if (!pre || pre.dataset.highlighted) return;
@@ -379,30 +485,27 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
             const lang = m?.[1] || 'text';
             const code = codeEl.textContent || '';
 
-            // Apply Shiki highlighting if language is supported
+            // Apply Shiki highlighting — use CSS vars for bg/color, only take token spans
             if (lang !== 'text' && langs.has(lang)) {
               try {
-                const highlighted = highlighter.codeToHtml(code, { lang, theme: 'vitesse-dark' });
+                const highlighted = highlighter.codeToHtml(code, { lang, theme: shikiTheme });
                 const tmp = document.createElement('div');
                 tmp.innerHTML = highlighted;
                 const shikiPre = tmp.querySelector('pre');
                 if (shikiPre) {
-                  // Copy Shiki's inline styles to our pre
-                  pre.style.backgroundColor = shikiPre.style.backgroundColor || '';
-                  pre.style.color = shikiPre.style.color || '';
                   codeEl.innerHTML = shikiPre.querySelector('code')?.innerHTML || codeEl.innerHTML;
                 }
               } catch {}
             }
 
-            // Add language label
+            // Language label (matches editor .code-lang-label)
             pre.style.position = 'relative';
             const label = document.createElement('span');
             label.className = 'preview-code-lang-label';
             label.textContent = lang || 'text';
             pre.appendChild(label);
 
-            // Add copy button
+            // Copy button (matches editor .code-copy-btn)
             const copyIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
             const checkIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
             const btn = document.createElement('button');
@@ -418,10 +521,69 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
             pre.appendChild(btn);
           });
         });
-      });
+      }).catch((err) => console.error('Shiki load failed:', err));
     }
 
-    return () => { cancelled = true; };
+    // ── Inline TOC smooth scroll ──
+    const tocLinks = root.querySelectorAll('.preview-toc-link');
+    tocLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = link.getAttribute('href')?.slice(1);
+        if (id) document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+
+    // ── Link preview on hover (use ref to avoid stale closures) ──
+    const externalLinks = root.querySelectorAll('a[href^="http"]:not(.mention-chip):not(.preview-toc-link):not(.link-preview-card)');
+    const linkHandlers = [];
+    externalLinks.forEach((link) => {
+      const href = link.getAttribute('href');
+      if (!href) return;
+      const onEnter = () => linkPreviewRef.current.show(link, href);
+      const onLeave = () => linkPreviewRef.current.hide();
+      link.addEventListener('mouseenter', onEnter);
+      link.addEventListener('mouseleave', onLeave);
+      linkHandlers.push({ el: link, onEnter, onLeave });
+    });
+
+    // ── Mention hover cards ──
+    const mentionChips = root.querySelectorAll('.mention-chip[data-username]');
+    const mentionHandlers = [];
+    mentionChips.forEach((chip) => {
+      const onEnter = () => {
+        clearTimeout(mentionTimerRef.current);
+        mentionTimerRef.current = setTimeout(() => {
+          const rect = chip.getBoundingClientRect();
+          setMentionCard({
+            username: chip.dataset.username,
+            displayName: chip.dataset.displayname || chip.dataset.username,
+            avatar: chip.dataset.avatar || '',
+            top: rect.bottom + 6,
+            left: Math.max(8, Math.min(rect.left, window.innerWidth - 268)),
+          });
+        }, 300);
+      };
+      const onLeave = () => {
+        clearTimeout(mentionTimerRef.current);
+        mentionTimerRef.current = setTimeout(() => setMentionCard(null), 200);
+      };
+      chip.addEventListener('mouseenter', onEnter);
+      chip.addEventListener('mouseleave', onLeave);
+      mentionHandlers.push({ el: chip, onEnter, onLeave });
+    });
+
+    return () => {
+      linkHandlers.forEach(({ el, onEnter, onLeave }) => {
+        el.removeEventListener('mouseenter', onEnter);
+        el.removeEventListener('mouseleave', onLeave);
+      });
+      mentionHandlers.forEach(({ el, onEnter, onLeave }) => {
+        el.removeEventListener('mouseenter', onEnter);
+        el.removeEventListener('mouseleave', onLeave);
+      });
+      clearTimeout(mentionTimerRef.current);
+    };
   }, [renderedHTML, isDark]);
 
   return (
@@ -533,12 +695,49 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
           <div
             ref={contentRef}
             className="blog-preview-content max-w-none"
-            dangerouslySetInnerHTML={{ __html: renderedHTML }}
           />
         ) : (
           <p className="text-[var(--text-faint)] italic">Start writing to see a preview...</p>
         )}
       </div>
+
+      {/* Link preview tooltip */}
+      {linkPreview.preview && (
+        <LinkPreviewTooltip
+          anchorEl={linkPreview.preview.anchorEl}
+          url={linkPreview.preview.url}
+          onClose={linkPreview.hide}
+          onKeepAlive={linkPreview.keepAlive}
+        />
+      )}
+
+      {/* Mention hover card */}
+      {mentionCard && (
+        <div
+          className="mention-hover-card"
+          style={{ top: mentionCard.top, left: mentionCard.left }}
+          onMouseEnter={() => clearTimeout(mentionTimerRef.current)}
+          onMouseLeave={() => { mentionTimerRef.current = setTimeout(() => setMentionCard(null), 150); }}
+        >
+          <div className="mention-hover-card-header">
+            {mentionCard.avatar ? (
+              <img src={mentionCard.avatar} alt="" className="mention-hover-card-avatar" />
+            ) : (
+              <div className="mention-hover-card-initial">
+                {(mentionCard.displayName || '?')[0].toUpperCase()}
+              </div>
+            )}
+            <div>
+              <div className="mention-hover-card-name">{mentionCard.displayName}</div>
+              <div className="mention-hover-card-username">@{mentionCard.username}</div>
+            </div>
+          </div>
+          <a href={`/@${mentionCard.username}`} className="mention-hover-card-link">
+            View profile
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
+          </a>
+        </div>
+      )}
     </div>
   );
 }

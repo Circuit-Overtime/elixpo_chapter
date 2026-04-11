@@ -314,9 +314,15 @@
   color: #9b7bf7 !important;
 }
 
-/* Link tooltip */
+/* Link tooltip — only keep Edit link and Open link */
 .blog-editor-wrapper .bn-link-toolbar {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: 8px;
+}
+
+/* Keep only Edit link + Open link (first 2 items), hide all others at any depth */
+.blog-editor-wrapper .bn-link-toolbar > *:nth-child(n+3),
+.blog-editor-wrapper .bn-link-toolbar > * > *:nth-child(n+3) {
+  display: none !important;
 }

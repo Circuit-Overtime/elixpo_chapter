@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -311,7 +312,7 @@ function EditorOutline({ editorContent }) {
     return () => window.removeEventListener('scroll', onScroll);
   }, [headings]);
 
-  // Update slider position
+  // Update slider position and auto-scroll TOC to keep active item visible
   useEffect(() => {
     if (!activeId || !listRef.current) return;
     const item = itemRefs.current[activeId];
@@ -319,6 +320,7 @@ function EditorOutline({ editorContent }) {
     const listRect = listRef.current.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
     setSliderStyle({ top: itemRect.top - listRect.top, height: itemRect.height });
+    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [activeId]);
 
   if (headings.length === 0) return null;
@@ -367,6 +369,7 @@ function EditorOutline({ editorContent }) {
 // ── Main WritePage ──
 export default function WritePage({ slugid }) {
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const editorRef = useRef(null);
   const autoSaveTimer = useRef(null);
   const [mode, setMode] = useState('edit');
@@ -1120,6 +1123,16 @@ export default function WritePage({ slugid }) {
               );
             })()}
           </div>
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors"
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-faint)' }}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <ion-icon name={isDark ? 'sunny-outline' : 'moon-outline'} style={{ fontSize: '16px' }} />
+          </button>
 
           {/* Shortcuts help */}
           <button
