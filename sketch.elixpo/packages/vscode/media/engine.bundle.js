@@ -5819,7 +5819,11 @@ var LixSketch = (() => {
           }
         }
         selectShape() {
-          selectElement(this.group);
+          if (typeof window !== "undefined" && window.__selectTextElement) {
+            window.__selectTextElement(this.group);
+          } else {
+            selectElement(this.group);
+          }
         }
       };
     }
@@ -11340,6 +11344,8 @@ var LixSketch = (() => {
         svg.removeEventListener("mouseup", handleCodeMouseUp);
       };
       handleCodeMouseDown = function(e3) {
+        if (!e3.target)
+          return;
         const activeContentEditor = document.querySelector(".svg-code-editor[contenteditable='true']");
         if (activeContentEditor) {
           const editorContainer = activeContentEditor.closest(".svg-code-container");
@@ -11899,7 +11905,7 @@ var LixSketch = (() => {
     }
     if (gElement.parentNode) {
       switchToSelectionTool();
-      selectElement2(gElement);
+      requestAnimationFrame(() => selectElement2(gElement));
     }
   }
   function createSelectionFeedback(groupElement) {
@@ -12744,6 +12750,8 @@ var LixSketch = (() => {
         window.removeEventListener("mouseup", handleMouseUp4);
       };
       handleTextMouseDown = function(e3) {
+        if (!e3.target)
+          return;
         const activeEditor = document.querySelector("textarea.svg-text-editor");
         if (activeEditor && activeEditor.contains(e3.target)) {
           return;
@@ -13071,6 +13079,7 @@ var LixSketch = (() => {
         }
       };
       window.__deselectTextElement = deselectElement2;
+      window.__selectTextElement = selectElement2;
       window.__convertTextToCode = function() {
         if (selectedElement3 && selectedElement3.getAttribute("data-type") === "text-group") {
           convertTextToCode(selectedElement3);
@@ -14170,10 +14179,7 @@ var LixSketch = (() => {
     const svg3 = getSVGElement2();
     if (!svg3)
       return;
-    const outline = svg3.querySelector(".selection-outline");
-    if (outline) {
-      svg3.removeChild(outline);
-    }
+    svg3.querySelectorAll(".selection-outline").forEach((el) => el.remove());
     removeResizeAnchors2();
     removeRotationAnchor2();
     if (selectedIcon) {
@@ -14280,7 +14286,7 @@ var LixSketch = (() => {
     if (!isSelectionToolActive)
       return;
     event.stopPropagation();
-    let targetIcon = event.target.closest('[type="icon"]');
+    let targetIcon = event.target.closest ? event.target.closest('[type="icon"]') : null;
     if (!targetIcon) {
       let current = event.target;
       while (current && current !== document) {
@@ -14291,36 +14297,34 @@ var LixSketch = (() => {
         current = current.parentElement;
       }
     }
-    if (selectedIcon !== targetIcon) {
-      if (selectedIcon) {
-        removeSelection();
+    if (selectedIcon) {
+      removeSelection();
+    }
+    selectedIcon = targetIcon;
+    if (!selectedIcon) {
+      console.warn("Could not find icon to select");
+      return;
+    }
+    const transform = selectedIcon.getAttribute("transform");
+    if (transform) {
+      const rotateMatch = transform.match(/rotate\(([^,\s]+)/);
+      if (rotateMatch) {
+        iconRotation = parseFloat(rotateMatch[1]);
       }
-      selectedIcon = targetIcon;
-      if (!selectedIcon) {
-        console.warn("Could not find icon to select");
-        return;
-      }
-      const transform = selectedIcon.getAttribute("transform");
-      if (transform) {
-        const rotateMatch = transform.match(/rotate\(([^,\s]+)/);
-        if (rotateMatch) {
-          iconRotation = parseFloat(rotateMatch[1]);
-        }
-      } else {
-        iconRotation = 0;
-      }
-      addSelectionOutline2();
-      originalX2 = parseFloat(selectedIcon.getAttribute("x")) || 0;
-      originalY2 = parseFloat(selectedIcon.getAttribute("y")) || 0;
-      originalWidth2 = parseFloat(selectedIcon.getAttribute("width")) || placedIconSize;
-      originalHeight2 = parseFloat(selectedIcon.getAttribute("height")) || placedIconSize;
-      const iconShape = typeof shapes !== "undefined" && Array.isArray(shapes) ? shapes.find((s3) => s3.shapeName === "icon" && s3.element === selectedIcon) : null;
-      if (iconShape) {
-        currentShape = iconShape;
-        currentShape.isSelected = true;
-        if (window.__showSidebarForShape)
-          window.__showSidebarForShape("icon");
-      }
+    } else {
+      iconRotation = 0;
+    }
+    addSelectionOutline2();
+    originalX2 = parseFloat(selectedIcon.getAttribute("x")) || 0;
+    originalY2 = parseFloat(selectedIcon.getAttribute("y")) || 0;
+    originalWidth2 = parseFloat(selectedIcon.getAttribute("width")) || placedIconSize;
+    originalHeight2 = parseFloat(selectedIcon.getAttribute("height")) || placedIconSize;
+    const iconShape = typeof shapes !== "undefined" && Array.isArray(shapes) ? shapes.find((s3) => s3.shapeName === "icon" && s3.element === selectedIcon) : null;
+    if (iconShape) {
+      currentShape = iconShape;
+      currentShape.isSelected = true;
+      if (window.__showSidebarForShape)
+        window.__showSidebarForShape("icon");
     }
   }
   function addResizeAnchors2(x3, y3, width, height, centerX, centerY, iconWidth, rotation) {
@@ -14390,10 +14394,7 @@ var LixSketch = (() => {
     const svg3 = getSVGElement2();
     if (!svg3)
       return;
-    const rotationAnchor = svg3.querySelector(".rotation-anchor");
-    if (rotationAnchor) {
-      svg3.removeChild(rotationAnchor);
-    }
+    svg3.querySelectorAll(".rotation-anchor").forEach((el) => el.remove());
   }
   function removeResizeAnchors2() {
     const svg3 = getSVGElement2();
@@ -14772,6 +14773,18 @@ var LixSketch = (() => {
       selectedIcon = null;
     }
   }
+  function cleanupIconTool() {
+    if (currentIconElement) {
+      const svg3 = getSVGElement2();
+      if (svg3 && currentIconElement.parentNode === svg3) {
+        svg3.removeChild(currentIconElement);
+      }
+      currentIconElement = null;
+    }
+    isDraggingIcon = false;
+    iconToPlace = null;
+    document.body.style.cursor = "default";
+  }
   var isDraggingIcon, iconToPlace, iconX, iconY, currentIconElement, selectedIcon, originalX2, originalY2, originalWidth2, originalHeight2, currentAnchor2, isDragging8, isRotatingIcon, dragOffsetX3, dragOffsetY3, startRotationMouseAngle2, startIconRotation, iconRotation, aspect_ratio_lock2, minIconSize, miniatureSize, placedIconSize, draggedShapeInitialFrameIcon, hoveredFrameIcon2, _pendingDragChecker, iconSearchInput, handleMouseMoveIcon, drawMiniatureIcon, handleMouseDownIcon, handleMouseUpIcon;
   var init_iconTool = __esm({
     "../lixsketch/src/tools/iconTool.js"() {
@@ -14894,6 +14907,8 @@ var LixSketch = (() => {
         }
       };
       handleMouseDownIcon = async (e3) => {
+        if (!e3.target)
+          return;
         if (isSelectionToolActive) {
           const clickedIcon = e3.target.closest('[type="icon"]');
           if (clickedIcon) {
@@ -14940,6 +14955,14 @@ var LixSketch = (() => {
               return;
             }
           }
+          if (selectedIcon) {
+            removeSelection();
+            selectedIcon = null;
+            if (currentShape && currentShape.shapeName === "icon") {
+              currentShape = null;
+            }
+          }
+          return;
         }
         if (!isDraggingIcon || !iconToPlace || !isIconToolActive) {
           return;
@@ -15031,10 +15054,10 @@ var LixSketch = (() => {
           const iconShape = wrapIconElement(finalIconGroup);
           placedIconShape = iconShape;
           if (typeof shapes !== "undefined" && Array.isArray(shapes)) {
-            shapes.push(iconShape);
-            console.log("Icon added to shapes array for arrow attachment and frame functionality");
-          } else {
-            console.warn("shapes array not found - arrows and frames may not work with icons");
+            const alreadyExists = shapes.some((s3) => s3.shapeName === "icon" && s3.element === finalIconGroup);
+            if (!alreadyExists) {
+              shapes.push(iconShape);
+            }
           }
           const finalFrame = hoveredFrameIcon2;
           if (finalFrame) {
@@ -15067,15 +15090,8 @@ var LixSketch = (() => {
         }
       };
       handleMouseUpIcon = (e3) => {
-        if (isSelectionToolActive) {
-          const clickedElement = e3.target;
-          const isIconElement = clickedElement.closest('[type="icon"]');
-          const isAnchorElement = clickedElement.classList.contains("resize-anchor") || clickedElement.classList.contains("rotation-anchor") || clickedElement.classList.contains("selection-outline");
-          if (!isIconElement && !isAnchorElement && selectedIcon) {
-            removeSelection();
-            selectedIcon = null;
-          }
-        }
+        if (!e3.target)
+          return;
         if (hoveredFrameIcon2) {
           hoveredFrameIcon2.removeHighlight();
           hoveredFrameIcon2 = null;
@@ -15086,6 +15102,7 @@ var LixSketch = (() => {
           deleteCurrentIcon();
         }
       });
+      window.__cleanupIconTool = cleanupIconTool;
       window.prepareIconPlacement = function(svgContent) {
         iconToPlace = svgContent;
         isDraggingIcon = true;
@@ -16019,17 +16036,22 @@ var LixSketch = (() => {
         };
         break;
       case "text":
-        const textElement = shape.group ? shape.group.querySelector("text") : null;
-        if (textElement) {
-          const bbox = textElement.getBBox();
-          const transform = shape.group.transform.baseVal.consolidate();
-          const matrix = transform ? transform.matrix : { e: 0, f: 0 };
-          shapeBounds = {
-            x: bbox.x + matrix.e,
-            y: bbox.y + matrix.f,
-            width: bbox.width,
-            height: bbox.height
-          };
+      case "code":
+        const textOrCodeEl = shape.group ? shape.group.querySelector("text") : null;
+        if (textOrCodeEl && shape.group.style.display !== "none") {
+          try {
+            const bbox = textOrCodeEl.getBBox();
+            const transform = shape.group.transform.baseVal.consolidate();
+            const matrix = transform ? transform.matrix : { e: 0, f: 0 };
+            shapeBounds = {
+              x: bbox.x + matrix.e,
+              y: bbox.y + matrix.f,
+              width: bbox.width,
+              height: bbox.height
+            };
+          } catch {
+            shapeBounds = { x: 0, y: 0, width: 0, height: 0 };
+          }
         } else {
           shapeBounds = { x: 0, y: 0, width: 0, height: 0 };
         }
@@ -16091,6 +16113,8 @@ var LixSketch = (() => {
     multiSelection.move(dx, dy);
   }
   function handleMultiSelectionMouseDown(e3) {
+    if (!e3.target)
+      return false;
     const { x: x3, y: y3 } = getSVGCoordsFromMouse10(e3);
     if (multiSelection.selectedShapes.size > 1) {
       const anchor = e3.target.closest(".multi-selection-anchor");
@@ -16115,6 +16139,10 @@ var LixSketch = (() => {
           multiSelection.removeShape(clickedOnSelectedShape);
           return true;
         }
+        multiSelection.startDrag(e3);
+        return true;
+      }
+      if (multiSelection.isPointInBounds(x3, y3)) {
         multiSelection.startDrag(e3);
         return true;
       }
@@ -16312,6 +16340,9 @@ var LixSketch = (() => {
             selectedShape.isSelected = true;
           } else if (typeof selectedShape.createSelection === "function") {
             selectedShape.createSelection();
+            selectedShape.isSelected = true;
+          } else if (typeof selectedShape.selectShape === "function") {
+            selectedShape.selectShape();
             selectedShape.isSelected = true;
           }
           if (typeof selectedShape.updateSidebar === "function") {
@@ -17598,6 +17629,8 @@ var LixSketch = (() => {
       _lastDragEvent = null;
       _documentDragActive = false;
       handleMainMouseDown = (e3) => {
+        if (!e3.target)
+          return;
         removeMultiSelectionRect();
         if (!isSelectionToolActive) {
           if (multiSelection.selectedShapes.size > 0) {
@@ -17874,6 +17907,8 @@ var LixSketch = (() => {
       };
       _boundSvg = null;
       handleMainDblClick = (e3) => {
+        if (!e3.target)
+          return;
         const targetTextGroup = e3.target.closest('g[data-type="text-group"]');
         if (targetTextGroup) {
           e3.stopPropagation();
@@ -22429,11 +22464,11 @@ var LixSketch = (() => {
         if (!data.elementHTML)
           return null;
         const parser = new DOMParser();
-        const doc = parser.parseFromString(data.elementHTML, "image/svg+xml");
-        const svgIcon = doc.documentElement;
-        if (!svgIcon)
+        const doc = parser.parseFromString(`<svg xmlns="${ns}">${data.elementHTML}</svg>`, "image/svg+xml");
+        const iconGroup = doc.querySelector("g");
+        if (!iconGroup)
           return null;
-        const imported = svgEl.ownerDocument.importNode(svgIcon, true);
+        const imported = svgEl.ownerDocument.importNode(iconGroup, true);
         svgEl.appendChild(imported);
         const shape = new IconShape2(imported);
         if (data.shapeID)
@@ -25438,6 +25473,9 @@ var LixSketch = (() => {
       }
       if (typeof window.forceCleanupEraserTrail === "function") {
         window.forceCleanupEraserTrail();
+      }
+      if (typeof window.__cleanupIconTool === "function") {
+        window.__cleanupIconTool();
       }
       window.isPaintToolActive = false;
       window.isSquareToolActive = false;
