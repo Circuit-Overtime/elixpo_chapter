@@ -9,6 +9,6 @@
     "lib0": "^0.2.94"
   },
   "devDependencies": {
-    "wrangler": "^3.0.0"
+    "wrangler": "^4.81.1"
   }
 }
