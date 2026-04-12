@@ -1,5 +1,155 @@
 # Changelog
 
+## v2.5.7 (2026-04-12)
+
+e16bcf4 release: v2.5.6
+8415d70 release: v2.5.2
+7c9aea0 Refactor code structure for improved readability and maintainability
+7bcb3cb Implement feature X to enhance user experience and fix bug Y in module Z
+ca4603f feat: prevent link preview conflicts by checking for active link toolbar
+6eaecd2 feat: enhance link preview behavior in EditorView to prevent conflicts with link toolbar
+4e3ecbf feat: add support for version bumping and publishing VS Code extension in deployment script
+b21e230 feat: enhance token validation in deployment script
+0f2e609 Refactor code structure for improved readability and maintainability
+150ce63 feat: implement link preview functionality with tooltip in editor
+a16e9b8 feat: add LinkPreviewTooltip and useLinkPreview to editor-src.jsx
+85a0223 Hide BlockNote's default file panel to implement custom image UI in VS Code editor
+1df3e76 feat: add export functionality for Markdown in LixEditor
+1168e2e style: update dropdown styles for improved appearance and usability in VS Code
+e1ddc32 Refactor code structure for improved readability and maintainability
+0fa4510 Enhance VS Code integration with updated styles for date chips, code block language selector, and image blocks
+757de10 feat: add save and import functionality to LixEditor
+48f2e73 Refactor code structure for improved readability and maintainability
+74b6a35 feat: add header bar and help modal to LixEditor with date inline support
+b24fc89 Add image block styles to VS Code webview CSS
+
+# Changelog
+
+## v2.5.6 (2026-04-12)
+
+8415d70 release: v2.5.2
+7c9aea0 Refactor code structure for improved readability and maintainability
+7bcb3cb Implement feature X to enhance user experience and fix bug Y in module Z
+ca4603f feat: prevent link preview conflicts by checking for active link toolbar
+6eaecd2 feat: enhance link preview behavior in EditorView to prevent conflicts with link toolbar
+4e3ecbf feat: add support for version bumping and publishing VS Code extension in deployment script
+b21e230 feat: enhance token validation in deployment script
+0f2e609 Refactor code structure for improved readability and maintainability
+150ce63 feat: implement link preview functionality with tooltip in editor
+a16e9b8 feat: add LinkPreviewTooltip and useLinkPreview to editor-src.jsx
+85a0223 Hide BlockNote's default file panel to implement custom image UI in VS Code editor
+1df3e76 feat: add export functionality for Markdown in LixEditor
+1168e2e style: update dropdown styles for improved appearance and usability in VS Code
+e1ddc32 Refactor code structure for improved readability and maintainability
+0fa4510 Enhance VS Code integration with updated styles for date chips, code block language selector, and image blocks
+757de10 feat: add save and import functionality to LixEditor
+48f2e73 Refactor code structure for improved readability and maintainability
+74b6a35 feat: add header bar and help modal to LixEditor with date inline support
+b24fc89 Add image block styles to VS Code webview CSS
+6e4bfa0 feat: update imports in BlogEditor and BlogPreview components for local LinkPreviewTooltip
+
+# Changelog
+
+## v2.5.2 (2026-04-12)
+
+7c9aea0 Refactor code structure for improved readability and maintainability
+7bcb3cb Implement feature X to enhance user experience and fix bug Y in module Z
+ca4603f feat: prevent link preview conflicts by checking for active link toolbar
+6eaecd2 feat: enhance link preview behavior in EditorView to prevent conflicts with link toolbar
+4e3ecbf feat: add support for version bumping and publishing VS Code extension in deployment script
+b21e230 feat: enhance token validation in deployment script
+0f2e609 Refactor code structure for improved readability and maintainability
+150ce63 feat: implement link preview functionality with tooltip in editor
+a16e9b8 feat: add LinkPreviewTooltip and useLinkPreview to editor-src.jsx
+85a0223 Hide BlockNote's default file panel to implement custom image UI in VS Code editor
+1df3e76 feat: add export functionality for Markdown in LixEditor
+1168e2e style: update dropdown styles for improved appearance and usability in VS Code
+e1ddc32 Refactor code structure for improved readability and maintainability
+0fa4510 Enhance VS Code integration with updated styles for date chips, code block language selector, and image blocks
+757de10 feat: add save and import functionality to LixEditor
+48f2e73 Refactor code structure for improved readability and maintainability
+74b6a35 feat: add header bar and help modal to LixEditor with date inline support
+b24fc89 Add image block styles to VS Code webview CSS
+6e4bfa0 feat: update imports in BlogEditor and BlogPreview components for local LinkPreviewTooltip
+2cdf021 Refactor code structure for improved readability and maintainability
+
+# Changelog
+
+## v2.5.5 (2026-04-12)
+
+36e7aae release: v2.5.4
+5331b44 fix: update GitHub repository links in README.md and package.json
+b26c4c7 fix: update repository URL in package.json for lixeditor
+95bf8a8 release: v2.5.3
+47663da feat: update release command usage to clarify targets for npm and GitHub publishing
+059ca44 feat: update release output to specify npm and GitHub Packages publishing
+c962434 feat: enhance release process to support separate npm and GitHub Packages publishing
+26a6430 feat: update release process to support npm and GitHub version bumps for lixeditor
+40138dc feat: update version to 4.9.1 and skip GitHub release in deployment script
+6df7772 release: v2.5.2
+c705189 Merge pull request #1 from elixpo/feat/package
+d5aeb07 release: v2.5.1
+3bbb800 feat: enhance release process with detailed build and publish steps for lixeditor
+d09bb85 feat: simplify changelog generation to list recent commits
+91e229e updated version patch number
+a16a7bf updated the release versions
+980ef26 updated the deploy.sh to sync github and npm
+fd36ceb updated the chore of the deploy to update npm too
+3f02499 fix: update GITHUB_ACCESS_TOKEN description in deploy script
+bf06094 feat: update release targets in deploy script to include editor
+
+# Changelog
+
+## v2.5.4 (2026-04-12)
+
+5331b44 fix: update GitHub repository links in README.md and package.json
+b26c4c7 fix: update repository URL in package.json for lixeditor
+95bf8a8 release: v2.5.3
+47663da feat: update release command usage to clarify targets for npm and GitHub publishing
+059ca44 feat: update release output to specify npm and GitHub Packages publishing
+c962434 feat: enhance release process to support separate npm and GitHub Packages publishing
+26a6430 feat: update release process to support npm and GitHub version bumps for lixeditor
+40138dc feat: update version to 4.9.1 and skip GitHub release in deployment script
+6df7772 release: v2.5.2
+c705189 Merge pull request #1 from elixpo/feat/package
+d5aeb07 release: v2.5.1
+3bbb800 feat: enhance release process with detailed build and publish steps for lixeditor
+d09bb85 feat: simplify changelog generation to list recent commits
+91e229e updated version patch number
+a16a7bf updated the release versions
+980ef26 updated the deploy.sh to sync github and npm
+fd36ceb updated the chore of the deploy to update npm too
+3f02499 fix: update GITHUB_ACCESS_TOKEN description in deploy script
+bf06094 feat: update release targets in deploy script to include editor
+bafa9ed dummy alterations
+
+# Changelog
+
+## v2.5.3 (2026-04-12)
+
+47663da feat: update release command usage to clarify targets for npm and GitHub publishing
+059ca44 feat: update release output to specify npm and GitHub Packages publishing
+c962434 feat: enhance release process to support separate npm and GitHub Packages publishing
+26a6430 feat: update release process to support npm and GitHub version bumps for lixeditor
+40138dc feat: update version to 4.9.1 and skip GitHub release in deployment script
+6df7772 release: v2.5.2
+c705189 Merge pull request #1 from elixpo/feat/package
+d5aeb07 release: v2.5.1
+3bbb800 feat: enhance release process with detailed build and publish steps for lixeditor
+d09bb85 feat: simplify changelog generation to list recent commits
+91e229e updated version patch number
+a16a7bf updated the release versions
+980ef26 updated the deploy.sh to sync github and npm
+fd36ceb updated the chore of the deploy to update npm too
+3f02499 fix: update GITHUB_ACCESS_TOKEN description in deploy script
+bf06094 feat: update release targets in deploy script to include editor
+bafa9ed dummy alterations
+8a1a20c feat: add loader configuration for JSX files in ESM and CJS builds
+780bdc2 created the  build file and installted esbuild package
+83411b7 updated version number patch for the package
+
+# Changelog
+
 ## v2.5.2 (2026-04-12)
 
 c705189 Merge pull request #1 from elixpo/feat/package

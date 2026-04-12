@@ -10,27 +10,22 @@ import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef
 import { useTheme } from '../../context/ThemeContext';
 import AICommandMenu from './AICommandMenu';
 import AISelectionToolbar from './AISelectionToolbar';
-import { LinkPreviewTooltip, useLinkPreview } from '@elixpo/lixeditor';
+import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
 import MentionMenu from './MentionMenu';
 
-// Core blocks from @elixpo/lixeditor package (same class names as LixBlogs CSS)
-import {
-  BlockEquation,
-  MermaidBlock,
-  TableOfContents,
-  InlineEquation,
-  DateInline,
-  ButtonBlock,
-  PDFEmbedBlock,
-} from '@elixpo/lixeditor';
-
-// LixBlogs-specific blocks (not in the package — have AI/API dependencies)
-import { BlogImageBlock } from './blocks/BlogImageBlock';
+// Custom blocks — local versions (package is for external consumers)
+import { TableOfContents } from './blocks/TableOfContents';
+import { BlockEquation } from './blocks/BlockEquation';
+import { ButtonBlock } from './blocks/ButtonBlock';
 import { Breadcrumbs } from './blocks/Breadcrumbs';
 import { TabsBlock } from './blocks/TabsBlock';
 import { AIBlock } from './blocks/AIBlock';
-
-// LixBlogs-specific inline content (mentions — require LixBlogs API)
+import { BlogImageBlock } from './blocks/BlogImageBlock';
+import { MermaidBlock } from './blocks/MermaidBlock';
+import { PDFEmbedBlock } from './blocks/PDFEmbedBlock';
+// Custom inline content
+import { InlineEquation } from './blocks/InlineEquation';
+import { DateInline } from './blocks/DateInline';
 import { MentionInline } from './blocks/MentionInline';
 import { BlogMentionInline } from './blocks/BlogMentionInline';
 import { OrgMentionInline } from './blocks/OrgMentionInline';
@@ -552,6 +547,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     const handleMouseOver = (e) => {
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
+      if (document.querySelector('.bn-link-toolbar')) return;
       const href = link.getAttribute('href');
       if (href && href.startsWith('http')) {
         editorLinkPreview.show(link, href);
