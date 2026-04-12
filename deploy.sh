@@ -72,26 +72,14 @@ start_services() {
     check_env
     check_docker
 
-    # Check if infrastructure services (redis, chroma, nginx, ipc) are already running
-    local infra_running
-    infra_running=$(docker compose -f "$COMPOSE_FILE" ps -q redis 2>/dev/null)
+    # `up -d` detects image/config changes and only recreates affected containers.
+    # Unchanged containers (redis, chroma, nginx) stay untouched — no data loss,
+    # no renaming, no extra disk usage.
+    info "Starting lixSearch with $count app container(s)..."
+    docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --scale lixsearch-app="$count"
 
-    if [ -z "$infra_running" ]; then
-        # First-time start: bring up everything
-        info "No running infrastructure found — starting all services..."
-        docker compose -f "$COMPOSE_FILE" build
-        docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --scale lixsearch-app="$count"
-        info "Waiting for services to be healthy (90 seconds)..."
-        sleep 90
-    else
-        # Infrastructure already running: rebuild app image and restart only app containers
-        info "Infrastructure already running — rebuilding app image..."
-        docker compose -f "$COMPOSE_FILE" build lixsearch-app
-        info "Restarting $count app container(s) with new image..."
-        docker compose -f "$COMPOSE_FILE" up -d --no-deps --scale lixsearch-app="$count" lixsearch-app
-        info "Waiting for app containers to be healthy (30 seconds)..."
-        sleep 30
-    fi
+    info "Waiting for services to be healthy (30 seconds)..."
+    sleep 30
 
     success "Services started ($count app containers)"
     show_status
