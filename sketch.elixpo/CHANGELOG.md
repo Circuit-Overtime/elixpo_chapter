@@ -1,5 +1,20 @@
 # Changelog
 
+## v5.4.7 (2026-04-12)
+
+### Other
+- deploy: v5.4.7
+- deploy: v5.4.5
+- deploy: v5.4.4
+- deploy: v5.4.3
+- Enhance multi-selection drag behavior to prevent accidental deselection when clicking within selection bounds
+- Fix icon drag ghost element and stale shape count in selection
+- Fix icon SVG previews being cut off in sidebar grid and
+- Enhance SVG normalization to ensure proper rendering and viewBox attributes
+- Fix event handling in multiple tools to prevent actions without a target element
+- Enhance event handling and selection logic; improve auto-save functionality and UI feedback
+
+
 ## v5.4.2 (2026-03-24)
 
 ### Other
