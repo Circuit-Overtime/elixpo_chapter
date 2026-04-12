@@ -1,6 +1,6 @@
 {
   "name": "@elixpo/lixeditor",
-  "version": "2.5.2",
+  "version": "2.5.7",
   "description": "A rich WYSIWYG block editor and renderer built on BlockNote — equations, mermaid diagrams, code highlighting, and more.",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -48,6 +48,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Elixpo-Gaming/lixeditor"
+    "url": "https://github.com/elixpo/lixblogs",
+    "directory": "packages/lixeditor"
   }
 }

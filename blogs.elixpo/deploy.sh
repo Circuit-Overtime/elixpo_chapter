@@ -247,6 +247,7 @@ do_release() {
   local SKIP_CHANGELOG=false
   local RELEASE_NPM=false
   local RELEASE_GITHUB=false
+  local RELEASE_VSCODE=false
   local RELEASE_WEB=false
   local TARGETS=()
 
@@ -261,6 +262,7 @@ do_release() {
       editor) TARGETS+=("editor") ;;
       npm)    TARGETS+=("npm") ;;
       github) TARGETS+=("github") ;;
+      vscode) TARGETS+=("vscode") ;;
       web)    TARGETS+=("web") ;;
       all)    TARGETS+=("all") ;;
     esac
@@ -276,15 +278,22 @@ do_release() {
       editor) RELEASE_NPM=true; RELEASE_GITHUB=true ;;
       npm)    RELEASE_NPM=true ;;
       github) RELEASE_GITHUB=true ;;
+      vscode) RELEASE_VSCODE=true ;;
       web)    RELEASE_WEB=true ;;
-      all)    RELEASE_NPM=true; RELEASE_GITHUB=true; RELEASE_WEB=true ;;
+      all)    RELEASE_NPM=true; RELEASE_GITHUB=true; RELEASE_VSCODE=true; RELEASE_WEB=true ;;
     esac
   done
 
   # ── Load tokens from .env ──
   load_env
-  local _NPM_TOKEN="${NPM_TOKEN:?NPM_TOKEN not set in .env}"
-  local _GH_TOKEN="${GITHUB_ACCESS_TOKEN:?GITHUB_ACCESS_TOKEN not set in .env}"
+  local _NPM_TOKEN="${NPM_TOKEN:-}"
+  local _GH_TOKEN="${GITHUB_ACCESS_TOKEN:-}"
+  local _VSCE_PAT="${VSCE_PAT:-}"
+
+  # Validate tokens based on targets
+  if $RELEASE_NPM && [ -z "$_NPM_TOKEN" ]; then echo "Error: NPM_TOKEN not set in .env"; exit 1; fi
+  if $RELEASE_GITHUB && [ -z "$_GH_TOKEN" ]; then echo "Error: GITHUB_ACCESS_TOKEN not set in .env"; exit 1; fi
+  if $RELEASE_VSCODE && [ -z "$_VSCE_PAT" ]; then echo "Error: VSCE_PAT not set in .env"; exit 1; fi
 
   echo "==> Tokens loaded from .env"
 
@@ -300,6 +309,8 @@ do_release() {
 
   if $RELEASE_NPM || $RELEASE_GITHUB; then
     NEW_VERSION=$(node -p "require('./packages/lixeditor/package.json').version" 2>/dev/null || echo "0.0.0")
+  elif $RELEASE_VSCODE; then
+    NEW_VERSION=$(node -p "require('./packages/vscode-lixeditor/package.json').version" 2>/dev/null || echo "0.0.0")
   else
     NEW_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
   fi
@@ -309,27 +320,69 @@ do_release() {
   # ── Changelog ──
   generate_changelog
 
-  # ── Build & Publish ──
-  if $RELEASE_EDITOR; then
+  # ── Build (needed for both npm and github) ──
+  if $RELEASE_NPM || $RELEASE_GITHUB; then
     echo ""
-    echo "==> [1/3] Building @elixpo/lixeditor..."
+    echo "==> Building @elixpo/lixeditor..."
     dry_run "cd '$SCRIPT_DIR/packages/lixeditor' && npm run build"
     echo "    ✓ Build complete"
+  fi
 
+  # ── Publish to npm ──
+  if $RELEASE_NPM; then
     echo ""
-    echo "==> [2/3] Publishing @elixpo/lixeditor to npm..."
+    echo "==> Publishing @elixpo/lixeditor to npm..."
     set +e
     dry_run "cd '$SCRIPT_DIR/packages/lixeditor' && sudo npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken='$_NPM_TOKEN'"
     if [ $? -eq 0 ]; then echo "    ✓ npm publish complete"; else echo "    ✗ npm publish failed"; fi
-
-    echo ""
-    echo "==> [3/3] Publishing @elixpo/lixeditor to GitHub Packages..."
-    dry_run "cd '$SCRIPT_DIR/packages/lixeditor' && sudo npm publish --access public --registry https://npm.pkg.github.com/ --//npm.pkg.github.com/:_authToken='$_GH_TOKEN'"
-    if [ $? -eq 0 ]; then echo "    ✓ GitHub Packages publish complete"; else echo "    ✗ GitHub Packages publish failed (continuing...)"; fi
     set -e
+  fi
+
+  # ── Publish to GitHub Packages ──
+  if $RELEASE_GITHUB; then
+    echo ""
+    echo "==> Publishing @elixpo/lixeditor to GitHub Packages..."
+    set +e
+    # Write a temp .npmrc for GitHub Packages auth
+    local EDITOR_DIR="$SCRIPT_DIR/packages/lixeditor"
+    local NPMRC_BAK=""
+    if [ -f "$EDITOR_DIR/.npmrc" ]; then
+      NPMRC_BAK=$(cat "$EDITOR_DIR/.npmrc")
+    fi
+    printf "@elixpo:registry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=%s\n" "$_GH_TOKEN" > "$EDITOR_DIR/.npmrc"
+
+    dry_run "cd '$EDITOR_DIR' && sudo npm publish --access public"
+    if [ $? -eq 0 ]; then echo "    ✓ GitHub Packages publish complete"; else echo "    ✗ GitHub Packages publish failed"; fi
+
+    # Restore or remove .npmrc
+    if [ -n "$NPMRC_BAK" ]; then
+      echo "$NPMRC_BAK" > "$EDITOR_DIR/.npmrc"
+    else
+      rm -f "$EDITOR_DIR/.npmrc"
+    fi
+    set -e
+  fi
+
+  # ── Publish VS Code Extension ──
+  if $RELEASE_VSCODE; then
+    echo ""
+    echo "==> [1/3] Bumping VS Code extension version ($BUMP)..."
+    dry_run "cd '$SCRIPT_DIR/packages/vscode-lixeditor' && sudo npm version $BUMP --no-git-tag-version && cd '$SCRIPT_DIR'"
+
+    local VSCODE_VERSION
+    VSCODE_VERSION=$(node -p "require('./packages/vscode-lixeditor/package.json').version" 2>/dev/null || echo "0.0.0")
+    echo "    Extension version: $VSCODE_VERSION"
 
     echo ""
-    echo "==> Editor release done"
+    echo "==> [2/3] Building VS Code extension..."
+    dry_run "cd '$SCRIPT_DIR/packages/vscode-lixeditor' && npm run build"
+
+    echo ""
+    echo "==> [3/3] Publishing LixEditor to VS Code Marketplace..."
+    set +e
+    dry_run "cd '$SCRIPT_DIR/packages/vscode-lixeditor' && npx @vscode/vsce package --no-dependencies && npx @vscode/vsce publish --no-dependencies --pat '$_VSCE_PAT'"
+    if [ $? -eq 0 ]; then echo "    ✓ VS Code extension v$VSCODE_VERSION published"; else echo "    ✗ VS Code extension publish failed"; fi
+    set -e
   fi
 
   if $RELEASE_WEB; then
@@ -352,7 +405,9 @@ do_release() {
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  Release v${NEW_VERSION} complete!"
   echo ""
-  $RELEASE_EDITOR && echo "  - @elixpo/lixeditor published to npm + GitHub"
+  $RELEASE_NPM    && echo "  - @elixpo/lixeditor published to npm"
+  $RELEASE_GITHUB && echo "  - @elixpo/lixeditor published to GitHub Packages"
+  $RELEASE_VSCODE && echo "  - LixEditor VS Code extension published"
   $RELEASE_WEB    && echo "  - Website deployed to Cloudflare Pages"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
@@ -371,7 +426,7 @@ usage() {
   echo ""
   echo "Release Commands:"
   echo "  release [targets]   Full release with version bump + changelog + publish"
-  echo "                      Targets: editor, web, all (default: all)"
+  echo "                      Targets: editor (npm+github), npm, github, web, all"
   echo ""
   echo "Release Options:"
   echo "  --patch             Patch version bump (default)"
@@ -388,6 +443,8 @@ usage() {
   echo "  ./deploy.sh deploy                     # Quick website deploy"
   echo "  ./deploy.sh release all --minor        # Release everything"
   echo "  ./deploy.sh release editor --patch     # Publish lixeditor to npm + GitHub"
+  echo "  ./deploy.sh release npm --patch        # Publish lixeditor to npm only"
+  echo "  ./deploy.sh release github --patch     # Publish lixeditor to GitHub Packages only"
   echo "  ./deploy.sh release all --dry-run      # Preview full release"
 }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import { LinkPreviewTooltip, useLinkPreview } from '@elixpo/lixeditor';
+import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
 
 function FloatingTOC({ headings }) {
   const [activeId, setActiveId] = useState('');
