@@ -147,7 +147,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
     if not user_image and user_images:
         user_image = user_images[0]
 
-    logger.info(f"[pipeline] session={session_id} query='{user_query[:LOG_MESSAGE_QUERY_TRUNCATE]}...' images={len(user_images)}")
+    logger.info(f"[pipeline] session={session_id} model={MODEL} fallback={MODEL_FALLBACK} query='{user_query[:LOG_MESSAGE_QUERY_TRUNCATE]}...' images={len(user_images)}")
 
     if session_id and not is_ephemeral:
         try:
