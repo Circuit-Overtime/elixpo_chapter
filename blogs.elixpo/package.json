@@ -1,6 +1,6 @@
 {
   "name": "lixblogs",
-  "version": "4.9.4",
+  "version": "4.9.5",
   "description": "A modern blogging platform with a rich block editor, AI writing tools, real-time collaboration, and organizations — deployed on Cloudflare's edge.",
   "author": "Elixpo <https://github.com/elixpo>",
   "license": "MIT",

@@ -428,6 +428,7 @@ export default function WritePage({ slugid }) {
   const [lastKnownUpdatedAt, setLastKnownUpdatedAt] = useState(null);
   const [userOrgs, setUserOrgs] = useState([]);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+  const hadUserGestureRef = useRef(false);
   const isPublished = blogVersion?.isPublished;
   const [coverZoom, setCoverZoom] = useState(1);
   const [coverPos, setCoverPos] = useState({ x: 50, y: 50 });
@@ -480,11 +481,43 @@ export default function WritePage({ slugid }) {
       .catch(() => {});
   }, [slugid, hasCollaborators]);
 
+  // Track user gesture so beforeunload dialog only fires after interaction
+  useEffect(() => {
+    const mark = () => { hadUserGestureRef.current = true; };
+    window.addEventListener('keydown', mark, { once: true });
+    window.addEventListener('pointerdown', mark, { once: true });
+    return () => { window.removeEventListener('keydown', mark); window.removeEventListener('pointerdown', mark); };
+  }, []);
+
   // Refs to always hold latest draft data (avoids stale closures in intervals/beforeunload)
   const draftDataRef = useRef({ title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji });
   useEffect(() => {
     draftDataRef.current = { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji };
   }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji]);
+
+  // Sync any buffered subpage drafts from localStorage to cloud
+  const syncSubpageDrafts = useCallback(async () => {
+    try {
+      const prefix = 'lixblogs_subpage_';
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith(prefix)) continue;
+        const subpageId = key.slice(prefix.length);
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const draft = JSON.parse(raw);
+        if (!draft.editorContent && !draft.title) continue;
+        const payload = { id: subpageId };
+        if (draft.title) payload.title = draft.title;
+        if (draft.editorContent) payload.content = draft.editorContent;
+        fetch('/api/subpages', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).catch(() => {});
+      }
+    } catch {}
+  }, []);
 
   // Cloud sync function — saves localStorage then pushes to cloud
   const syncToCloud = useCallback(async ({ showToast = false, silent = false } = {}) => {
@@ -496,6 +529,9 @@ export default function WritePage({ slugid }) {
     setLastSaved(Date.now());
 
     if (!silent) setSyncStatus('syncing');
+
+    // Also sync any buffered subpage drafts
+    syncSubpageDrafts();
 
     try {
       const res = await fetch('/api/blogs/draft', {
@@ -525,7 +561,7 @@ export default function WritePage({ slugid }) {
         setTimeout(() => setSyncStatus('idle'), 5000);
       }
     }
-  }, [slugid]);
+  }, [slugid, syncSubpageDrafts]);
 
   // Ctrl+S → save + sync, Ctrl+O → import markdown, Ctrl+D → insert date
   useEffect(() => {
@@ -589,14 +625,16 @@ export default function WritePage({ slugid }) {
           navigator.sendBeacon('/api/blogs/draft', blob);
         } catch {}
       }
-      if (hasUnsavedEdits) {
+      // Also flush any buffered subpage drafts on unload
+      try { syncSubpageDrafts(); } catch {}
+      if (hasUnsavedEdits && hadUserGestureRef.current) {
         e.preventDefault();
         e.returnValue = '';
       }
     }
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [slugid, hasUnsavedEdits]);
+  }, [slugid, hasUnsavedEdits, syncSubpageDrafts]);
 
   // Intercept clicks on <a> tags within the editor page to show custom modal
   useEffect(() => {

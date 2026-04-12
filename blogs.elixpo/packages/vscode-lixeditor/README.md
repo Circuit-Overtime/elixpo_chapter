@@ -3,7 +3,7 @@
 A rich WYSIWYG block editor for `.lixeditor` files — right inside VS Code.
 
 <div align="center">
-  <img src="media/icon.png" alt="LixEditor" width="80" />
+  <img src="https://blogs.elixpo.com/base-logo.png" alt="LixEditor" width="80" />
   <br /><br />
 
   [![VS Code](https://img.shields.io/badge/VS_Code-Extension-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=elixpo.lixeditor)
@@ -83,10 +83,10 @@ The editor includes a minimal header with:
 
 | Icon | Action |
 |:----:|:-------|
-| :page_facing_up: | Document title (click to rename) |
-| :open_file_folder: | Open / import a file |
-| :arrow_down: | Export as Markdown (.md) |
-| :floppy_disk: | Save to disk |
+| 📄 | Document title (click to rename) |
+| 📂 | Open / import a file |
+| ⬇️ | Export as Markdown (.md) |
+| 💾 | Save to disk |
 | **?** | Keyboard shortcuts reference |
 
 ---
