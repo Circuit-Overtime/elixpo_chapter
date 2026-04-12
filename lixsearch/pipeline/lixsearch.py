@@ -407,6 +407,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             force_synthesis = True
 
         # ==================== TOOL LOOP ====================
+        _streamed_content = ""
         while current_iteration < max_iterations:
             current_iteration += 1
 
@@ -424,8 +425,27 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     _history_msgs = _history_msgs[-8:]
                 messages = _system + _history_msgs + _tool_msgs
 
-            payload = {"model": MODEL, "messages": messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
-            if not force_synthesis:
+            # When force_synthesis is set, strip tool_calls from assistant messages
+            # and remove tool-role messages to avoid API errors (no tools in payload).
+            if force_synthesis:
+                _synth_messages = []
+                for m in messages:
+                    if m.get("role") == "tool":
+                        # Convert tool results to system context so the LLM still sees them
+                        _tool_content = m.get("content", "")
+                        if _tool_content and _tool_content != "No result":
+                            _synth_messages.append({
+                                "role": "user",
+                                "content": f"[Search result from {m.get('name', 'tool')}]: {_tool_content}"
+                            })
+                        continue
+                    _mc = dict(m)
+                    if _mc.get("role") == "assistant":
+                        _mc.pop("tool_calls", None)
+                    _synth_messages.append(_mc)
+                payload = {"model": MODEL, "messages": _synth_messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
+            else:
+                payload = {"model": MODEL, "messages": messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
                 payload["tools"] = tools
                 payload["tool_choice"] = "auto"
 
@@ -774,15 +794,75 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     yield format_sse("INFO", "<TASK>DONE</TASK>")
                 return
 
-            # Standard synthesis
-            final_message_content = await run_standard_synthesis(
-                messages, user_query, active_max_tokens, headers, is_detailed_mode,
-                image_context_provided, collected_images_from_web, collected_similar_images,
-                event_id=event_id, format_sse_fn=format_sse,
-            )
+            # Standard synthesis — use streaming to keep connection alive
+            _has_images = image_context_provided or bool(collected_images_from_web) or bool(collected_similar_images)
+            _pdf_done = bool(memoized_results.get("generated_pdfs"))
 
-            if not final_message_content:
-                final_message_content = build_synthesis_fallback(messages, user_query, rag_context, collected_sources)
+            # Clean messages for synthesis (strip tool_calls/tool-role messages)
+            _synth_msgs = []
+            for m in messages:
+                if m.get("role") == "tool":
+                    _tool_content = m.get("content", "")
+                    if _tool_content and _tool_content != "No result":
+                        _synth_msgs.append({
+                            "role": "user",
+                            "content": f"[Search result from {m.get('name', 'tool')}]: {_tool_content}"
+                        })
+                    continue
+                _mc = dict(m)
+                if _mc.get("role") == "assistant":
+                    _mc.pop("tool_calls", None)
+                _synth_msgs.append(_mc)
+
+            _synth_msgs.append({
+                "role": "user",
+                "content": synthesis_instruction(user_query, image_context=_has_images, is_detailed=is_detailed_mode, pdf_already_generated=_pdf_done)
+            })
+
+            _synth_payload = {
+                "model": MODEL, "messages": _synth_msgs,
+                "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens,
+            }
+
+            if event_id:
+                # Stream synthesis to keep connection alive and deliver content progressively
+                _synth_streamed = ""
+                _synth_ok = False
+                for _synth_model in (MODEL, MODEL_FALLBACK):
+                    try:
+                        _sp = {**_synth_payload, "model": _synth_model}
+                        _synth_streamed = ""
+                        async for _stype, _sdata in _stream_llm_call(_sp, headers):
+                            if _stype == "keepalive":
+                                _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
+                                if _ke:
+                                    yield _ke
+                                status_tracker.touch()
+                            elif _stype == "content":
+                                _synth_streamed += _sdata
+                                yield format_sse("RESPONSE", _sdata)
+                                status_tracker.touch()
+                            elif _stype == "done":
+                                pass
+                        if _synth_streamed.strip():
+                            final_message_content = _scrub_tool_names(_synth_streamed.strip())
+                            _streamed_content = final_message_content
+                            _synth_ok = True
+                            break
+                        logger.warning(f"[FORCED SYNTHESIS] model={_synth_model} returned empty, trying fallback")
+                    except Exception as e:
+                        logger.warning(f"[FORCED SYNTHESIS] Streaming error with model={_synth_model}: {e}")
+                        continue
+
+                if not _synth_ok:
+                    final_message_content = build_synthesis_fallback(messages, user_query, rag_context, collected_sources)
+            else:
+                final_message_content = await run_standard_synthesis(
+                    messages, user_query, active_max_tokens, headers, is_detailed_mode,
+                    image_context_provided, collected_images_from_web, collected_similar_images,
+                )
+                if not final_message_content:
+                    final_message_content = build_synthesis_fallback(messages, user_query, rag_context, collected_sources)
 
         # ==================== FINAL RESPONSE FORMATTING ====================
         # If PDF was generated but LLM gave a placeholder/empty response, construct one
