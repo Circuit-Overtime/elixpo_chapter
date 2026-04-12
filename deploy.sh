@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Usage:
-#   ./deploy.sh start              # Start single container
-#   ./deploy.sh start 3            # Start with 3 containers
+#   ./deploy.sh start              # Build + start with 5 containers (default)
+#   ./deploy.sh start 3            # Build + start with 3 containers
 #   ./deploy.sh scale 5            # Scale to 5 containers
 #   ./deploy.sh stop               # Stop all containers
 #   ./deploy.sh logs               # View nginx logs
@@ -72,18 +72,28 @@ start_services() {
     check_env
     check_docker
 
-    info "Starting lixSearch with $count container(s)..."
+    # Check if infrastructure services (redis, chroma, nginx, ipc) are already running
+    local infra_running
+    infra_running=$(docker compose -f "$COMPOSE_FILE" ps -q redis 2>/dev/null)
 
-    if [ "$count" -eq 1 ]; then
-        docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
-    else
+    if [ -z "$infra_running" ]; then
+        # First-time start: bring up everything
+        info "No running infrastructure found — starting all services..."
+        docker compose -f "$COMPOSE_FILE" build
         docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --scale lixsearch-app="$count"
+        info "Waiting for services to be healthy (90 seconds)..."
+        sleep 90
+    else
+        # Infrastructure already running: rebuild app image and restart only app containers
+        info "Infrastructure already running — rebuilding app image..."
+        docker compose -f "$COMPOSE_FILE" build lixsearch-app
+        info "Restarting $count app container(s) with new image..."
+        docker compose -f "$COMPOSE_FILE" up -d --no-deps --scale lixsearch-app="$count" lixsearch-app
+        info "Waiting for app containers to be healthy (30 seconds)..."
+        sleep 30
     fi
 
-    info "Waiting for services to be healthy (90 seconds)..."
-    sleep 90
-
-    success "Services started"
+    success "Services started ($count app containers)"
     show_status
 }
 
@@ -659,10 +669,10 @@ ${YELLOW}Usage:${NC}
 
 ${YELLOW}Commands:${NC}
   build [no-cache]  Build image (add 'no-cache' for --no-cache flag)
-  stary [N]         Build with cache + start (default 3 containers)
+  stary [N]         Build with cache + start (default 5 containers)
   quick [N]         Rebuild app only + rolling restart (infra/dep changes)
   hotfix            Copy code into running containers + restart (fastest, code-only)
-  start [N]         Start services (N containers, default 3)
+  start [N]         Build + start services (N containers, default 5, recreates existing)
   scale N           Scale to N containers
   stop              Stop all services
   restart           Restart all services
@@ -678,8 +688,8 @@ ${YELLOW}Commands:${NC}
 ${YELLOW}Examples:${NC}
   ./deploy.sh build                       # Build with cache
   ./deploy.sh build no-cache              # Build smallest image (no-cache)
-  ./deploy.sh start                       # Start single container
-  ./deploy.sh start 3                     # Start with 3 containers
+  ./deploy.sh start                       # Build + start with 5 containers
+  ./deploy.sh start 3                     # Build + start with 3 containers
   ./deploy.sh scale 5                     # Scale to 5 containers
   ./deploy.sh logs app                    # View app logs
   ./deploy.sh health                      # Check all services
@@ -702,9 +712,8 @@ ${YELLOW}Environment:${NC}
 
 ${YELLOW}Quick Start:${NC}
   1. Ensure .env exists in root directory
-  2. ./deploy.sh build no-cache
-  3. ./deploy.sh start 3
-  4. ./deploy.sh health
+  2. ./deploy.sh start              # builds + starts 5 containers
+  3. ./deploy.sh health
 
 EOF
 }
