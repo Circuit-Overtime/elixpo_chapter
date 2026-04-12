@@ -80,7 +80,15 @@ function loadDraft(slugid) {
 
 function saveDraft(slugid, data) {
   try {
-    localStorage.setItem(getDraftKey(slugid), JSON.stringify({
+    // Clear any other draft keys to keep only one draft in localStorage
+    const currentKey = getDraftKey(slugid);
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(STORAGE_KEY_PREFIX) && key !== currentKey) {
+        localStorage.removeItem(key);
+      }
+    }
+    localStorage.setItem(currentKey, JSON.stringify({
       ...data,
       savedAt: Date.now(),
     }));

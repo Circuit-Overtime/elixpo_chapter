@@ -290,16 +290,6 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
     if (wrapper) wrapper.classList.remove('ai-editor-locked');
   }, []);
 
-  // Mark selected blocks with lavender highlight (pre-edit indicator)
-  const markSelectedLavender = useCallback((ids) => {
-    const wrapper = document.querySelector('.blog-editor-wrapper');
-    if (!wrapper) return;
-    for (const id of ids) {
-      const el = wrapper.querySelector(`[data-id="${id}"]`);
-      if (el) el.classList.add('ai-edit-selected-block');
-    }
-  }, []);
-
   const clearSelectedLavender = useCallback(() => {
     const wrapper = document.querySelector('.blog-editor-wrapper');
     wrapper?.querySelectorAll('.ai-edit-selected-block, .ai-edit-selection-highlight').forEach((el) => {

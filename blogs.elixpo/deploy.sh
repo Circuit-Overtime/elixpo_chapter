@@ -15,7 +15,7 @@ set -euo pipefail
 #
 # Release Commands:
 #   release [targets]   Full release with version bump + changelog + publish
-#                       Targets: engine, vscode, web, all (default: all)
+#                       Targets: editor, web, all (default: all)
 #
 # Options (for release):
 #   --patch     Patch version bump (default)
@@ -29,14 +29,13 @@ set -euo pipefail
 #
 # Auth tokens are read automatically from .env:
 #   NPM_TOKEN            → npm publish
-#   VSCE_PAT             → VS Code extension publish
-#   GITHUB_ACCESS_TOKEN  → gh release create
+#   GITHUB_ACCESS_TOKEN  → gh release create + GitHub Packages
 #
 # Examples:
 #   ./deploy.sh deploy                    # Quick website deploy
 #   ./deploy.sh release all --minor       # Release everything with minor bump
-#   ./deploy.sh release engine --patch    # Publish npm package only
-#   ./deploy.sh release vscode            # Publish VS Code extension only
+#   ./deploy.sh release editor --patch   # Publish lixeditor to npm + GitHub
+#   ./deploy.sh release web               # Deploy website only
 #   ./deploy.sh release all --dry-run     # Preview full release
 #   ./deploy.sh all                       # Infra: secrets + worker + deploy
 
@@ -52,9 +51,10 @@ load_env() {
     echo "Error: .env not found at $ENV_FILE"
     exit 1
   fi
-  set -a
-  source "$ENV_FILE"
-  set +a
+  while IFS= read -r line || [ -n "$line" ]; do
+    [[ -z "$line" || "$line" =~ ^# ]] && continue
+    export "$line" 2>/dev/null || true
+  done < "$ENV_FILE"
 }
 
 get_binding_ids() {
@@ -216,49 +216,26 @@ generate_changelog() {
 
   echo "==> Generating changelog..."
 
-  LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-  if [ -z "$LAST_TAG" ]; then
-    RANGE="HEAD"
-  else
-    RANGE="${LAST_TAG}..HEAD"
-  fi
-
   local DATE
   DATE=$(date +%Y-%m-%d)
 
-  FEATS=$(git log "$RANGE" --oneline --format='%s' 2>/dev/null | grep -E '^feat' | sed 's/^feat(\([^)]*\)): /- **\1**: /' | sed 's/^feat: /- /' || true)
-  FIXES=$(git log "$RANGE" --oneline --format='%s' 2>/dev/null | grep -E '^fix' | sed 's/^fix(\([^)]*\)): /- **\1**: /' | sed 's/^fix: /- /' || true)
-  OTHER=$(git log "$RANGE" --oneline --format='%s' 2>/dev/null | grep -vE '^(feat|fix|docs|chore|ci|style|refactor|test)' || true)
+  # Simple changelog — just list recent commits
+  local COMMITS
+  COMMITS=$(git log --oneline -20 2>/dev/null || echo "No commits found")
 
-  {
-    echo ""
-    echo "## v${NEW_VERSION} ($DATE)"
-    echo ""
-    if [ -n "$FEATS" ]; then
-      echo "### Features"
-      echo "$FEATS"
-      echo ""
-    fi
-    if [ -n "$FIXES" ]; then
-      echo "### Fixes"
-      echo "$FIXES"
-      echo ""
-    fi
-    if [ -n "$OTHER" ] && [ "$(echo "$OTHER" | wc -l)" -gt 0 ]; then
-      echo "### Other"
-      echo "$OTHER" | head -10 | sed 's/^/- /'
-      echo ""
-    fi
-  } > /tmp/changelog_entry.md
+  local ENTRY
+  ENTRY="
+## v${NEW_VERSION} ($DATE)
+
+${COMMITS}
+"
 
   if [ -f "$SCRIPT_DIR/CHANGELOG.md" ]; then
-    head -1 "$SCRIPT_DIR/CHANGELOG.md" > /tmp/cl_head.md
-    cat /tmp/changelog_entry.md > /tmp/cl_new.md
-    tail -n +2 "$SCRIPT_DIR/CHANGELOG.md" > /tmp/cl_tail.md
-    cat /tmp/cl_head.md /tmp/cl_new.md /tmp/cl_tail.md > "$SCRIPT_DIR/CHANGELOG.md"
+    local EXISTING
+    EXISTING=$(cat "$SCRIPT_DIR/CHANGELOG.md")
+    printf "# Changelog\n%s\n%s" "$ENTRY" "$EXISTING" > "$SCRIPT_DIR/CHANGELOG.md"
   else
-    echo "# Changelog" > "$SCRIPT_DIR/CHANGELOG.md"
-    cat /tmp/changelog_entry.md >> "$SCRIPT_DIR/CHANGELOG.md"
+    printf "# Changelog\n%s\n" "$ENTRY" > "$SCRIPT_DIR/CHANGELOG.md"
   fi
 
   echo "==> Changelog updated"
@@ -268,8 +245,8 @@ do_release() {
   local BUMP="patch"
   local DRY_RUN=false
   local SKIP_CHANGELOG=false
-  local RELEASE_ENGINE=false
-  local RELEASE_VSCODE=false
+  local RELEASE_NPM=false
+  local RELEASE_GITHUB=false
   local RELEASE_WEB=false
   local TARGETS=()
 
@@ -281,8 +258,9 @@ do_release() {
       --major)  BUMP="major" ;;
       --dry-run) DRY_RUN=true ;;
       --skip-changelog) SKIP_CHANGELOG=true ;;
-      engine) TARGETS+=("engine") ;;
-      vscode) TARGETS+=("vscode") ;;
+      editor) TARGETS+=("editor") ;;
+      npm)    TARGETS+=("npm") ;;
+      github) TARGETS+=("github") ;;
       web)    TARGETS+=("web") ;;
       all)    TARGETS+=("all") ;;
     esac
@@ -295,17 +273,17 @@ do_release() {
 
   for t in "${TARGETS[@]}"; do
     case "$t" in
-      engine) RELEASE_ENGINE=true ;;
-      vscode) RELEASE_VSCODE=true ;;
+      editor) RELEASE_NPM=true; RELEASE_GITHUB=true ;;
+      npm)    RELEASE_NPM=true ;;
+      github) RELEASE_GITHUB=true ;;
       web)    RELEASE_WEB=true ;;
-      all)    RELEASE_ENGINE=true; RELEASE_VSCODE=true; RELEASE_WEB=true ;;
+      all)    RELEASE_NPM=true; RELEASE_GITHUB=true; RELEASE_WEB=true ;;
     esac
   done
 
   # ── Load tokens from .env ──
   load_env
   local _NPM_TOKEN="${NPM_TOKEN:?NPM_TOKEN not set in .env}"
-  local _VSCE_PAT="${VSCE_PAT:?VSCE_PAT not set in .env}"
   local _GH_TOKEN="${GITHUB_ACCESS_TOKEN:?GITHUB_ACCESS_TOKEN not set in .env}"
 
   echo "==> Tokens loaded from .env"
@@ -313,18 +291,15 @@ do_release() {
   # ── Version Bump ──
   echo "==> Bumping versions ($BUMP)..."
 
-  if $RELEASE_ENGINE; then
-    dry_run "sudo npm version $BUMP --no-git-tag-version -w packages/lixsketch"
-  fi
-  if $RELEASE_VSCODE; then
-    dry_run "sudo npm version $BUMP --no-git-tag-version -w packages/vscode"
+  if $RELEASE_NPM || $RELEASE_GITHUB; then
+    dry_run "cd '$SCRIPT_DIR/packages/lixeditor' && sudo npm version $BUMP --no-git-tag-version && cd '$SCRIPT_DIR'"
   fi
   if $RELEASE_WEB; then
     dry_run "sudo npm version $BUMP --no-git-tag-version"
   fi
 
-  if $RELEASE_ENGINE; then
-    NEW_VERSION=$(node -p "require('./packages/lixsketch/package.json').version" 2>/dev/null || echo "0.0.0")
+  if $RELEASE_NPM || $RELEASE_GITHUB; then
+    NEW_VERSION=$(node -p "require('./packages/lixeditor/package.json').version" 2>/dev/null || echo "0.0.0")
   else
     NEW_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
   fi
@@ -335,20 +310,26 @@ do_release() {
   generate_changelog
 
   # ── Build & Publish ──
-  if $RELEASE_ENGINE; then
-    echo "==> Publishing @elixpo/lixsketch to npm..."
-    dry_run "cd '$SCRIPT_DIR/packages/lixsketch' && sudo NPM_TOKEN='$_NPM_TOKEN' npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken='$_NPM_TOKEN'"
-    echo "==> Publishing @elixpo/lixsketch to GitHub Packages..."
-    dry_run "cd '$SCRIPT_DIR/packages/lixsketch' && sudo npm publish --access public --registry https://npm.pkg.github.com/ --//npm.pkg.github.com/:_authToken='$_GH_TOKEN'"
-    echo "==> Engine published (npm + GitHub Packages)"
-  fi
+  if $RELEASE_EDITOR; then
+    echo ""
+    echo "==> [1/3] Building @elixpo/lixeditor..."
+    dry_run "cd '$SCRIPT_DIR/packages/lixeditor' && npm run build"
+    echo "    ✓ Build complete"
 
-  if $RELEASE_VSCODE; then
-    echo "==> Building VS Code extension..."
-    dry_run "cd '$SCRIPT_DIR/packages/vscode' && sudo npm run build"
-    echo "==> Packaging & publishing VS Code extension..."
-    dry_run "cd '$SCRIPT_DIR/packages/vscode' && sudo npx @vscode/vsce package --no-dependencies && sudo VSCE_PAT='$_VSCE_PAT' npx @vscode/vsce publish --no-dependencies --pat '$_VSCE_PAT'"
-    echo "==> VS Code extension published"
+    echo ""
+    echo "==> [2/3] Publishing @elixpo/lixeditor to npm..."
+    set +e
+    dry_run "cd '$SCRIPT_DIR/packages/lixeditor' && sudo npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken='$_NPM_TOKEN'"
+    if [ $? -eq 0 ]; then echo "    ✓ npm publish complete"; else echo "    ✗ npm publish failed"; fi
+
+    echo ""
+    echo "==> [3/3] Publishing @elixpo/lixeditor to GitHub Packages..."
+    dry_run "cd '$SCRIPT_DIR/packages/lixeditor' && sudo npm publish --access public --registry https://npm.pkg.github.com/ --//npm.pkg.github.com/:_authToken='$_GH_TOKEN'"
+    if [ $? -eq 0 ]; then echo "    ✓ GitHub Packages publish complete"; else echo "    ✗ GitHub Packages publish failed (continuing...)"; fi
+    set -e
+
+    echo ""
+    echo "==> Editor release done"
   fi
 
   if $RELEASE_WEB; then
@@ -365,16 +346,13 @@ do_release() {
   dry_run "sudo git tag 'v${NEW_VERSION}'"
   dry_run "sudo git push \"\$(auth_remote)\" main --tags"
 
-  # ── GitHub Release ──
-  echo "==> Creating GitHub release..."
-  dry_run "sudo GH_TOKEN='$_GH_TOKEN' GITHUB_TOKEN='$_GH_TOKEN' gh release create 'v${NEW_VERSION}' --generate-notes --title 'v${NEW_VERSION}'"
+  # ── GitHub Release (skipped — using GitHub Packages instead) ──
 
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  Release v${NEW_VERSION} complete!"
   echo ""
-  $RELEASE_ENGINE && echo "  - @elixpo/lixsketch published to npm"
-  $RELEASE_VSCODE && echo "  - LixSketch VS Code extension published"
+  $RELEASE_EDITOR && echo "  - @elixpo/lixeditor published to npm + GitHub"
   $RELEASE_WEB    && echo "  - Website deployed to Cloudflare Pages"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
@@ -393,7 +371,7 @@ usage() {
   echo ""
   echo "Release Commands:"
   echo "  release [targets]   Full release with version bump + changelog + publish"
-  echo "                      Targets: engine, vscode, web, all (default: all)"
+  echo "                      Targets: editor, web, all (default: all)"
   echo ""
   echo "Release Options:"
   echo "  --patch             Patch version bump (default)"
@@ -404,14 +382,12 @@ usage() {
   echo ""
   echo "Auth (auto-loaded from .env):"
   echo "  NPM_TOKEN           npm publish authentication"
-  echo "  VSCE_PAT            VS Code Marketplace publish"
   echo "  GITHUB_ACCESS_TOKEN GitHub release creation"
   echo ""
   echo "Examples:"
   echo "  ./deploy.sh deploy                     # Quick website deploy"
   echo "  ./deploy.sh release all --minor        # Release everything"
-  echo "  ./deploy.sh release engine --patch     # Publish npm package only"
-  echo "  ./deploy.sh release vscode             # Publish VS Code extension"
+  echo "  ./deploy.sh release editor --patch     # Publish lixeditor to npm + GitHub"
   echo "  ./deploy.sh release all --dry-run      # Preview full release"
 }
 

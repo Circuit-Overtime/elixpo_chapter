@@ -10,23 +10,27 @@ import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef
 import { useTheme } from '../../context/ThemeContext';
 import AICommandMenu from './AICommandMenu';
 import AISelectionToolbar from './AISelectionToolbar';
-import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
+import { LinkPreviewTooltip, useLinkPreview } from '@elixpo/lixeditor';
 import MentionMenu from './MentionMenu';
 
+// Core blocks from @elixpo/lixeditor package (same class names as LixBlogs CSS)
+import {
+  BlockEquation,
+  MermaidBlock,
+  TableOfContents,
+  InlineEquation,
+  DateInline,
+  ButtonBlock,
+  PDFEmbedBlock,
+} from '@elixpo/lixeditor';
 
-// Custom blocks
-import { TableOfContents } from './blocks/TableOfContents';
-import { BlockEquation } from './blocks/BlockEquation';
-import { ButtonBlock } from './blocks/ButtonBlock';
+// LixBlogs-specific blocks (not in the package — have AI/API dependencies)
+import { BlogImageBlock } from './blocks/BlogImageBlock';
 import { Breadcrumbs } from './blocks/Breadcrumbs';
 import { TabsBlock } from './blocks/TabsBlock';
 import { AIBlock } from './blocks/AIBlock';
-import { BlogImageBlock } from './blocks/BlogImageBlock';
-import { MermaidBlock } from './blocks/MermaidBlock';
-import { PDFEmbedBlock } from './blocks/PDFEmbedBlock';
-// Custom inline content
-import { InlineEquation } from './blocks/InlineEquation';
-import { DateInline } from './blocks/DateInline';
+
+// LixBlogs-specific inline content (mentions — require LixBlogs API)
 import { MentionInline } from './blocks/MentionInline';
 import { BlogMentionInline } from './blocks/BlogMentionInline';
 import { OrgMentionInline } from './blocks/OrgMentionInline';
@@ -538,6 +542,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const [inlineLatexValue, setInlineLatexValue] = useState('');
   const inlineLatexRef = useRef(null);
   const editorLinkPreview = useLinkPreview();
+  const [linkEditor, setLinkEditor] = useState(null); // { anchorText, url, pos, linkEl, range }
 
   // Link preview hover listeners on editor links
   useEffect(() => {
@@ -601,6 +606,68 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     };
   }, []);
 
+  // Intercept BlockNote's "Edit link" button — replace with our custom link editor
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    const handleClick = (e) => {
+      // Check if the click is on BlockNote's edit link button
+      const editBtn = e.target.closest('.bn-link-toolbar .bn-button');
+      if (!editBtn) return;
+      // Only intercept the first button (Edit link), not the open button
+      const toolbar = editBtn.closest('.bn-link-toolbar');
+      if (!toolbar) return;
+      const buttons = toolbar.querySelectorAll('.bn-button');
+      if (buttons[0] !== editBtn) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Find the link element in the editor
+      const tiptap = editor?._tiptapEditor;
+      if (!tiptap) return;
+      const { state } = tiptap;
+      const { from, to } = state.selection;
+
+      // Find link mark at cursor
+      const $pos = state.doc.resolve(from);
+      const marks = $pos.marks();
+      const linkMark = marks.find(m => m.type.name === 'link');
+      if (!linkMark) return;
+
+      // Get the full range of the link mark
+      let linkFrom = from, linkTo = to;
+      state.doc.nodesBetween(Math.max(0, from - 200), Math.min(state.doc.content.size, to + 200), (node, pos) => {
+        if (node.isText && node.marks.some(m => m.type.name === 'link' && m.attrs.href === linkMark.attrs.href)) {
+          if (pos < linkFrom) linkFrom = pos;
+          if (pos + node.nodeSize > linkTo) linkTo = pos + node.nodeSize;
+        }
+      });
+
+      const anchorText = state.doc.textBetween(linkFrom, linkTo);
+      const url = linkMark.attrs.href;
+
+      // Position below the link element
+      const linkEl = wrapper.querySelector('.bn-link-toolbar')?.parentElement?.querySelector('a[href]')
+        || document.querySelector(`a[href="${url}"]`);
+      const rect = linkEl?.getBoundingClientRect() || editBtn.getBoundingClientRect();
+
+      setLinkEditor({
+        anchorText,
+        url,
+        from: linkFrom,
+        to: linkTo,
+        top: rect.bottom + 6,
+        left: Math.max(8, Math.min(rect.left, window.innerWidth - 340)),
+      });
+    };
+
+    // Use capture to intercept before BlockNote's handler
+    wrapper.addEventListener('click', handleClick, true);
+    return () => wrapper.removeEventListener('click', handleClick, true);
+  }, [editor]);
+
   const sanitizedContent = useMemo(() => sanitizeInitialContent(initialContent), [initialContent]);
 
   const editor = useCreateBlockNote({
@@ -615,7 +682,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     },
   });
 
-  // Auto-convert [text](url) to a link as you type
+  // Auto-convert ![alt](url) to image block and [text](url) to link as you type
   useEffect(() => {
     if (!editor) return;
     const tiptap = editor._tiptapEditor;
@@ -625,23 +692,96 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       const { state, view } = tiptap;
       const { $from } = state.selection;
       const textBefore = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
+
+      // Check for image syntax: ![alt](url)
+      const imgMatch = textBefore.match(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)$/);
+      if (imgMatch) {
+        const [fullMatch, alt, imgUrl] = imgMatch;
+        const from = $from.pos - fullMatch.length;
+        const tr = state.tr.delete(from, $from.pos);
+        view.dispatch(tr);
+        const cursorBlock = editor.getTextCursorPosition().block;
+        editor.insertBlocks(
+          [{ type: 'image', props: { url: imgUrl, caption: alt || '' } }],
+          cursorBlock, 'after'
+        );
+        requestAnimationFrame(() => {
+          try {
+            const block = editor.getTextCursorPosition().block;
+            if (block?.type === 'paragraph' && !(block.content || []).some(c => c.text?.trim())) editor.removeBlocks([block.id]);
+          } catch {}
+        });
+        return;
+      }
+
+
+      // Check for link syntax: [text](url)
       const match = textBefore.match(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
-      if (!match) return;
+      if (match) {
+        const [fullMatch, linkText, url] = match;
+        const from = $from.pos - fullMatch.length;
+        const linkMark = state.schema.marks.link.create({ href: url });
+        const tr = state.tr
+          .delete(from, $from.pos)
+          .insertText(linkText, from)
+          .addMark(from, from + linkText.length, linkMark);
+        view.dispatch(tr);
+        return;
+      }
 
-      const [fullMatch, linkText, url] = match;
-      const from = $from.pos - fullMatch.length;
-      const to = $from.pos;
-
-      const linkMark = state.schema.marks.link.create({ href: url });
-      const tr = state.tr
-        .delete(from, to)
-        .insertText(linkText, from)
-        .addMark(from, from + linkText.length, linkMark);
-      view.dispatch(tr);
+      // Auto-convert bare URL followed by space to a link chip
+      // Match: "https://example.com " (URL ending with a space)
+      const urlMatch = textBefore.match(/(https?:\/\/[^\s]+)\s$/);
+      if (urlMatch) {
+        const [fullMatch, url] = urlMatch;
+        const from = $from.pos - fullMatch.length;
+        const to = $from.pos - 1; // exclude the trailing space
+        const linkMark = state.schema.marks.link.create({ href: url });
+        const tr = state.tr.addMark(from, to, linkMark);
+        view.dispatch(tr);
+        return;
+      }
     };
 
     tiptap.on('update', handleInput);
     return () => tiptap.off('update', handleInput);
+  }, [editor]);
+
+  // Ctrl+K — create link from selection
+  useEffect(() => {
+    if (!editor) return;
+    const tiptap = editor._tiptapEditor;
+    if (!tiptap) return;
+
+    const handleCtrlK = (e) => {
+      if (!((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K'))) return;
+      e.preventDefault();
+
+      const { state, view } = tiptap;
+      const { from, to, empty } = state.selection;
+      if (empty) return; // no selection
+
+      const selectedText = state.doc.textBetween(from, to);
+      const isUrl = /^https?:\/\/\S+$/.test(selectedText.trim());
+
+      if (isUrl) {
+        // Selected text IS a URL — make it both the href and anchor text
+        const linkMark = state.schema.marks.link.create({ href: selectedText.trim() });
+        view.dispatch(state.tr.addMark(from, to, linkMark));
+      } else {
+        // Selected text is regular text — prompt for URL
+        const url = prompt('Enter URL:', 'https://');
+        if (url && url.trim() && url.trim() !== 'https://') {
+          const linkMark = state.schema.marks.link.create({ href: url.trim() });
+          view.dispatch(state.tr.addMark(from, to, linkMark));
+        }
+      }
+    };
+
+    const dom = tiptap.view?.dom;
+    if (!dom) return;
+    dom.addEventListener('keydown', handleCtrlK);
+    return () => { try { dom.removeEventListener('keydown', handleCtrlK); } catch {} };
   }, [editor]);
 
   // Seed Yjs doc from existing content when collab starts on a blog that already has content
@@ -851,8 +991,24 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       const items = e.clipboardData?.items;
       if (!items) return;
 
-      // Check for plain text with markdown first
       const textData = e.clipboardData.getData('text/plain');
+
+      // If pasting a bare URL, convert to a link inline
+      if (textData && /^https?:\/\/\S+$/.test(textData.trim()) && !e.clipboardData.getData('text/html')) {
+        const url = textData.trim();
+        e.preventDefault();
+        const tiptap = editor._tiptapEditor;
+        if (tiptap) {
+          const { state, view } = tiptap;
+          const { from } = state.selection;
+          const linkMark = state.schema.marks.link.create({ href: url });
+          const tr = state.tr.insertText(url, from).addMark(from, from + url.length, linkMark);
+          view.dispatch(tr);
+        }
+        return;
+      }
+
+      // Check for plain text with markdown
       if (textData && looksLikeMarkdown(textData)) {
         // Only intercept if there's no HTML (which means it's raw markdown, not rich copy)
         const htmlData = e.clipboardData.getData('text/html');
@@ -1017,10 +1173,18 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     return () => editorEl.removeEventListener('paste', handlePaste);
   }, [editor, blogId]);
 
-  // Disable spellcheck on code blocks + inject copy buttons + language labels
+  // Disable spellcheck on code blocks + inline code + inject copy buttons + language labels
   const patchCodeBlocks = useCallback(() => {
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
+
+    // Inline code elements — disable spellcheck
+    wrapper.querySelectorAll('.bn-inline-content code').forEach((code) => {
+      code.setAttribute('spellcheck', 'false');
+      code.setAttribute('autocorrect', 'off');
+      code.setAttribute('autocapitalize', 'off');
+    });
+
     wrapper.querySelectorAll('[data-content-type="codeBlock"]').forEach((block) => {
       block.setAttribute('spellcheck', 'false');
       const editable = block.querySelector('[contenteditable]');
@@ -1498,7 +1662,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       // Don't close on click elsewhere — user must explicitly Keep or Undo
     }
 
-    const wrapper = wrapperRef.current;
+    const wrapper = wrapperRef.current; 
     wrapper?.addEventListener('click', handleClick);
     return () => wrapper?.removeEventListener('click', handleClick);
   }, [aiBlockIds]);
@@ -2279,6 +2443,106 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           url={editorLinkPreview.preview.url}
           onClose={editorLinkPreview.hide}
         />
+      )}
+
+      {/* Custom link editor — [anchor text](url) */}
+      {linkEditor && (
+        <>
+          <div className="fixed inset-0 z-[98]" onClick={() => setLinkEditor(null)} />
+          <div
+            className="link-editor-popup"
+            style={{ top: linkEditor.top, left: linkEditor.left }}
+          >
+            <div className="link-editor-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9b7bf7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+              </svg>
+              <span>Edit Link</span>
+            </div>
+            <div className="link-editor-fields">
+              <div className="link-editor-field">
+                <label className="link-editor-label">Text</label>
+                <input
+                  type="text"
+                  value={linkEditor.anchorText}
+                  onChange={(e) => setLinkEditor(prev => ({ ...prev, anchorText: e.target.value }))}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      // Save the link
+                      const tiptap = editor._tiptapEditor;
+                      if (tiptap) {
+                        const { state, view } = tiptap;
+                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
+                        const tr = state.tr
+                          .delete(linkEditor.from, linkEditor.to)
+                          .insertText(linkEditor.anchorText || linkEditor.url, linkEditor.from)
+                          .addMark(linkEditor.from, linkEditor.from + (linkEditor.anchorText || linkEditor.url).length, linkMark);
+                        view.dispatch(tr);
+                      }
+                      setLinkEditor(null);
+                    }
+                    if (e.key === 'Escape') setLinkEditor(null);
+                  }}
+                  placeholder="Link text..."
+                  className="link-editor-input"
+                  autoFocus
+                />
+              </div>
+              <div className="link-editor-field">
+                <label className="link-editor-label">URL</label>
+                <input
+                  type="text"
+                  value={linkEditor.url}
+                  onChange={(e) => setLinkEditor(prev => ({ ...prev, url: e.target.value }))}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const tiptap = editor._tiptapEditor;
+                      if (tiptap) {
+                        const { state, view } = tiptap;
+                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
+                        const tr = state.tr
+                          .delete(linkEditor.from, linkEditor.to)
+                          .insertText(linkEditor.anchorText || linkEditor.url, linkEditor.from)
+                          .addMark(linkEditor.from, linkEditor.from + (linkEditor.anchorText || linkEditor.url).length, linkMark);
+                        view.dispatch(tr);
+                      }
+                      setLinkEditor(null);
+                    }
+                    if (e.key === 'Escape') setLinkEditor(null);
+                  }}
+                  placeholder="https://..."
+                  className="link-editor-input"
+                />
+              </div>
+            </div>
+            <div className="link-editor-actions">
+              <button className="link-editor-cancel" onClick={() => setLinkEditor(null)}>Cancel</button>
+              <button
+                className="link-editor-save"
+                disabled={!linkEditor.url.trim()}
+                onClick={() => {
+                  const tiptap = editor._tiptapEditor;
+                  if (tiptap) {
+                    const { state, view } = tiptap;
+                    const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
+                    const text = linkEditor.anchorText || linkEditor.url;
+                    const tr = state.tr
+                      .delete(linkEditor.from, linkEditor.to)
+                      .insertText(text, linkEditor.from)
+                      .addMark(linkEditor.from, linkEditor.from + text.length, linkMark);
+                    view.dispatch(tr);
+                  }
+                  setLinkEditor(null);
+                }}
+              >Save</button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
