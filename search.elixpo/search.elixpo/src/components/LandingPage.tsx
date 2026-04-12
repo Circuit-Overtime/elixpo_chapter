@@ -9,7 +9,6 @@ const LINKS = {
   pollinations: 'https://pollinations.ai',
   github: 'https://github.com/Circuit-Overtime/lixSearch',
   pypiCache: 'https://pypi.org/project/lix-open-cache/',
-  dockerHub: 'https://hub.docker.com/r/elixpo/lixsearch',
   paper: 'https://github.com/Circuit-Overtime/lixSearch/blob/main/docs/paper/lix_cache_paper.pdf',
 };
 
@@ -224,7 +223,7 @@ export default function LandingPage() {
               Use it your way
             </h2>
             <p className="text-white/40 max-w-xl mx-auto">
-              Install the Python SDK, use the caching library standalone, or self-host the entire engine with Docker.
+              Install the Python SDK, use the caching library standalone.
             </p>
           </div>
 
@@ -249,17 +248,6 @@ export default function LandingPage() {
               links={[
                 { label: 'PyPI', href: LINKS.pypiCache },
                 { label: 'Paper', href: LINKS.paper },
-              ]}
-            />
-            <PackageCard
-              icon={Box}
-              iconColor="bg-blue-500/20 border border-blue-500/30"
-              title="LixSearch"
-              description="Full self-hostable search engine. One command to run the API, Redis, ChromaDB, Playwright agents, and embeddings."
-              installCmd="docker pull elixpo/lixsearch"
-              links={[
-                { label: 'Docker Hub', href: LINKS.dockerHub },
-                { label: 'GitHub', href: LINKS.github },
               ]}
             />
           </div>

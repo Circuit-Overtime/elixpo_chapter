@@ -28,7 +28,7 @@ export default function PaperPage() {
         </div>
         <div className="flex items-center gap-3">
           <a
-            href="https://github.com/Circuit-Overtime/lixSearch/blob/main/docs/paper/arXiv_research_paper.pdf"
+            href="https://github.com/pollinations/lixSearch"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors"
