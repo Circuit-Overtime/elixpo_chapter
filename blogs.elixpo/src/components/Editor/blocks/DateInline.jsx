@@ -139,7 +139,10 @@ function DateChip({ inlineContent }) {
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPicker(!showPicker); }}
         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[13px] font-medium mx-0.5 cursor-pointer transition-all hover:ring-2 hover:ring-[#9b7bf7]/30"
         style={{ color: '#9b7bf7', backgroundColor: 'rgba(155,123,247,0.06)', border: '1px solid rgba(155,123,247,0.15)' }}
+        data-inline-type="date"
+        data-date={d}
         title="Click to change date (Ctrl+D to insert)"
+        spellCheck={false}
       >
         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth={2} /><line x1="16" y1="2" x2="16" y2="6" strokeWidth={2} /><line x1="8" y1="2" x2="8" y2="6" strokeWidth={2} /><line x1="3" y1="10" x2="21" y2="10" strokeWidth={2} /></svg>
         {formatted}
@@ -166,5 +169,11 @@ export const DateInline = createReactInlineContentSpec(
   },
   {
     render: (props) => <DateChip {...props} />,
+    parse: (el) => {
+      if (el.getAttribute('data-inline-type') === 'date') {
+        return { date: el.getAttribute('data-date') || '' };
+      }
+      return undefined;
+    },
   }
 );

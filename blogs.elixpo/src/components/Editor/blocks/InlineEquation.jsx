@@ -60,8 +60,11 @@ function InlineEquationChip({ inlineContent }) {
       <span
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setValue(inlineContent.props.latex || ''); setEditing(!editing); }}
         className="inline-equation-chip"
+        data-inline-type="equation"
+        data-latex={inlineContent.props.latex}
         dangerouslySetInnerHTML={{ __html: html }}
         title={inlineContent.props.latex}
+        spellCheck={false}
       />
       {editing && (
         <div
@@ -104,5 +107,11 @@ export const InlineEquation = createReactInlineContentSpec(
   },
   {
     render: (props) => <InlineEquationChip {...props} />,
+    parse: (el) => {
+      if (el.getAttribute('data-inline-type') === 'equation' || el.classList.contains('inline-equation-chip')) {
+        return { latex: el.getAttribute('data-latex') || el.getAttribute('title') || el.textContent?.trim() || '' };
+      }
+      return undefined;
+    },
   }
 );

@@ -602,68 +602,6 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     };
   }, []);
 
-  // Intercept BlockNote's "Edit link" button — replace with our custom link editor
-  useEffect(() => {
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-
-    const handleClick = (e) => {
-      // Check if the click is on BlockNote's edit link button
-      const editBtn = e.target.closest('.bn-link-toolbar .bn-button');
-      if (!editBtn) return;
-      // Only intercept the first button (Edit link), not the open button
-      const toolbar = editBtn.closest('.bn-link-toolbar');
-      if (!toolbar) return;
-      const buttons = toolbar.querySelectorAll('.bn-button');
-      if (buttons[0] !== editBtn) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      // Find the link element in the editor
-      const tiptap = editor?._tiptapEditor;
-      if (!tiptap) return;
-      const { state } = tiptap;
-      const { from, to } = state.selection;
-
-      // Find link mark at cursor
-      const $pos = state.doc.resolve(from);
-      const marks = $pos.marks();
-      const linkMark = marks.find(m => m.type.name === 'link');
-      if (!linkMark) return;
-
-      // Get the full range of the link mark
-      let linkFrom = from, linkTo = to;
-      state.doc.nodesBetween(Math.max(0, from - 200), Math.min(state.doc.content.size, to + 200), (node, pos) => {
-        if (node.isText && node.marks.some(m => m.type.name === 'link' && m.attrs.href === linkMark.attrs.href)) {
-          if (pos < linkFrom) linkFrom = pos;
-          if (pos + node.nodeSize > linkTo) linkTo = pos + node.nodeSize;
-        }
-      });
-
-      const anchorText = state.doc.textBetween(linkFrom, linkTo);
-      const url = linkMark.attrs.href;
-
-      // Position below the link element
-      const linkEl = wrapper.querySelector('.bn-link-toolbar')?.parentElement?.querySelector('a[href]')
-        || document.querySelector(`a[href="${url}"]`);
-      const rect = linkEl?.getBoundingClientRect() || editBtn.getBoundingClientRect();
-
-      setLinkEditor({
-        anchorText,
-        url,
-        from: linkFrom,
-        to: linkTo,
-        top: rect.bottom + 6,
-        left: Math.max(8, Math.min(rect.left, window.innerWidth - 340)),
-      });
-    };
-
-    // Use capture to intercept before BlockNote's handler
-    wrapper.addEventListener('click', handleClick, true);
-    return () => wrapper.removeEventListener('click', handleClick, true);
-  }, [editor]);
-
   const sanitizedContent = useMemo(() => sanitizeInitialContent(initialContent), [initialContent]);
 
   const editor = useCreateBlockNote({
@@ -677,6 +615,59 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       default: "Press 'Space' for AI, type '/' for commands",
     },
   });
+
+  // Intercept BlockNote's "Edit link" button — replace with our custom link editor
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper || !editor) return;
+
+    const handleClick = (e) => {
+      const editBtn = e.target.closest('.bn-link-toolbar .bn-button');
+      if (!editBtn) return;
+      const toolbar = editBtn.closest('.bn-link-toolbar');
+      if (!toolbar) return;
+      const buttons = toolbar.querySelectorAll('.bn-button');
+      if (buttons[0] !== editBtn) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const tiptap = editor?._tiptapEditor;
+      if (!tiptap) return;
+      const { state } = tiptap;
+      const { from, to } = state.selection;
+
+      const $pos = state.doc.resolve(from);
+      const marks = $pos.marks();
+      const linkMark = marks.find(m => m.type.name === 'link');
+      if (!linkMark) return;
+
+      let linkFrom = from, linkTo = to;
+      state.doc.nodesBetween(Math.max(0, from - 200), Math.min(state.doc.content.size, to + 200), (node, pos) => {
+        if (node.isText && node.marks.some(m => m.type.name === 'link' && m.attrs.href === linkMark.attrs.href)) {
+          if (pos < linkFrom) linkFrom = pos;
+          if (pos + node.nodeSize > linkTo) linkTo = pos + node.nodeSize;
+        }
+      });
+
+      const anchorText = state.doc.textBetween(linkFrom, linkTo);
+      const url = linkMark.attrs.href;
+
+      const linkEl = wrapper.querySelector('.bn-link-toolbar')?.parentElement?.querySelector('a[href]')
+        || document.querySelector(`a[href="${url}"]`);
+      const rect = linkEl?.getBoundingClientRect() || editBtn.getBoundingClientRect();
+
+      setLinkEditor({
+        anchorText, url,
+        from: linkFrom, to: linkTo,
+        top: rect.bottom + 6,
+        left: Math.max(8, Math.min(rect.left, window.innerWidth - 340)),
+      });
+    };
+
+    wrapper.addEventListener('click', handleClick, true);
+    return () => wrapper.removeEventListener('click', handleClick, true);
+  }, [editor]);
 
   // Auto-convert ![alt](url) to image block and [text](url) to link as you type
   useEffect(() => {
@@ -967,8 +958,12 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     }
 
     injectTableDeleteButtons();
+    // Only watch for new blocks being added (childList on the editor root),
+    // NOT subtree which fires on every keystroke inside any block
+    const editorRoot = wrapper.querySelector('.bn-editor');
+    if (!editorRoot) return;
     const observer = new MutationObserver(injectTableDeleteButtons);
-    observer.observe(wrapper, { childList: true, subtree: true });
+    observer.observe(editorRoot, { childList: true });
     return () => observer.disconnect();
   }, [editor]);
 
@@ -1271,26 +1266,35 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const noToolbarTypes = useMemo(() => new Set(['codeBlock', 'blockEquation', 'mermaidBlock', 'image', 'tabsBlock', 'aiBlock', 'pdfEmbed', 'tableOfContents', 'buttonBlock', 'breadcrumbs']), []);
 
   useEffect(() => {
+    let rafId = null;
     function hideToolbarForCustomBlocks() {
-      try {
-        const cursor = editor.getTextCursorPosition();
-        const blockType = cursor?.block?.type;
-        if (!blockType || !noToolbarTypes.has(blockType)) return;
-        // BlockNote renders the formatting toolbar as a .bn-toolbar inside a tippy/floating container
-        document.querySelectorAll('.bn-toolbar').forEach(el => {
-          const container = el.closest('[data-tippy-root], [style*="position"]');
-          if (container) container.style.display = 'none';
-          else el.style.display = 'none';
-        });
-      } catch {}
+      // Debounce via rAF — selectionchange fires very frequently during typing
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        try {
+          const cursor = editor.getTextCursorPosition();
+          const blockType = cursor?.block?.type;
+          const shouldHide = blockType && noToolbarTypes.has(blockType);
+          document.querySelectorAll('.bn-toolbar').forEach(el => {
+            const container = el.closest('[data-tippy-root], [style*="position"]');
+            const target = container || el;
+            if (shouldHide) {
+              target.style.display = 'none';
+            } else {
+              target.style.removeProperty('display');
+            }
+          });
+        } catch {}
+      });
     }
 
     document.addEventListener('selectionchange', hideToolbarForCustomBlocks);
-    // Also run on click (selection might not change but focus does)
     document.addEventListener('click', hideToolbarForCustomBlocks, true);
     return () => {
       document.removeEventListener('selectionchange', hideToolbarForCustomBlocks);
       document.removeEventListener('click', hideToolbarForCustomBlocks, true);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [editor, noToolbarTypes]);
 
@@ -1445,38 +1449,40 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         const block = cursor.block;
         if (!block.content || !Array.isArray(block.content)) { setShowMentionMenu(false); return; }
 
-        const fullText = block.content.map((c) => c.text || '').join('');
-        const lastAt = fullText.lastIndexOf('@');
+        // Use DOM selection to find @ at the actual cursor position
+        // This works regardless of which text node the cursor is in
+        const domSel = window.getSelection();
+        if (!domSel || domSel.rangeCount === 0 || !domSel.anchorNode) { setShowMentionMenu(false); return; }
 
-        if (lastAt === -1) { setShowMentionMenu(false); return; }
+        const anchorNode = domSel.anchorNode;
+        if (anchorNode.nodeType !== Node.TEXT_NODE) { setShowMentionMenu(false); return; }
 
-        const afterAt = fullText.slice(lastAt + 1);
+        const textUpToCursor = anchorNode.textContent.slice(0, domSel.anchorOffset);
+        const atIdx = textUpToCursor.lastIndexOf('@');
+        if (atIdx === -1) { setShowMentionMenu(false); return; }
+
+        const afterAt = textUpToCursor.slice(atIdx + 1);
         if (afterAt.includes(' ') || afterAt.length > 30) { setShowMentionMenu(false); return; }
 
-        const domSel = window.getSelection();
-        if (domSel && domSel.rangeCount > 0) {
-          const range = domSel.getRangeAt(0);
-          const rect = range.getBoundingClientRect();
-          const wrapperRect = wrapperRef.current?.getBoundingClientRect();
-          if (wrapperRect && rect.height > 0) {
-            setMentionPos({
-              top: rect.bottom - wrapperRect.top + 6,
-              left: rect.left - wrapperRect.left,
-            });
-          }
+        const range = domSel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const wrapperRect = wrapperRef.current?.getBoundingClientRect();
+        if (wrapperRect && rect.height > 0) {
+          setMentionPos({
+            top: rect.bottom - wrapperRect.top + 6,
+            left: rect.left - wrapperRect.left,
+          });
         }
 
         setMentionQuery(afterAt);
         setShowMentionMenu(true);
-        mentionStartRef.current = lastAt;
+        mentionStartRef.current = atIdx;
       } catch { setShowMentionMenu(false); }
     }
 
     editorEl.addEventListener('input', checkMention);
-    editorEl.addEventListener('keyup', checkMention);
     return () => {
       editorEl.removeEventListener('input', checkMention);
-      editorEl.removeEventListener('keyup', checkMention);
     };
   }, [editor]);
 

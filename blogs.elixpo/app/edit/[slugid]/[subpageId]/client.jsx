@@ -5,6 +5,7 @@ import { useAuth } from '../../../../src/context/AuthContext';
 import { useTheme } from '../../../../src/context/ThemeContext';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import '../../../../src/styles/editor/editor.css';
@@ -13,6 +14,30 @@ import '../../../../src/styles/katex-fonts.css';
 const BlockNoteEditor = dynamic(() => import('../../../../src/components/Editor/BlogEditor'), { ssr: false });
 const BlogPreview = dynamic(() => import('../../../../src/components/Editor/BlogPreview'), { ssr: false });
 const KeyboardShortcutsModal = dynamic(() => import('../../../../src/components/Editor/KeyboardShortcutsModal'), { ssr: false });
+
+const STORAGE_KEY_PREFIX = 'lixblogs_subpage_';
+
+function getDraftKey(subpageId) {
+  return STORAGE_KEY_PREFIX + subpageId;
+}
+
+function loadDraft(subpageId) {
+  try {
+    const raw = localStorage.getItem(getDraftKey(subpageId));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(subpageId, data) {
+  try {
+    localStorage.setItem(getDraftKey(subpageId), JSON.stringify({
+      ...data,
+      savedAt: Date.now(),
+    }));
+  } catch { /* storage full */ }
+}
 
 export default function SubpageClient({ params }) {
   const { slugid, subpageId } = use(params);
@@ -23,46 +48,118 @@ export default function SubpageClient({ params }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('idle'); // idle | syncing | synced | local
   const [lastSaved, setLastSaved] = useState(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [mode, setMode] = useState('edit'); // edit | preview
   const [previewBlocks, setPreviewBlocks] = useState([]);
   const [editorContent, setEditorContent] = useState(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showSavedToast, setShowSavedToast] = useState(false);
   const [wordCount, setWordCount] = useState(0);
+  const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+  const hadUserGestureRef = useRef(false);
+  const draftTimerRef = useRef(null);
   const titleInputRef = useRef(null);
-  const saveTimerRef = useRef(null);
 
-  // Fetch subpage data
+  // Track user gesture so beforeunload dialog only fires after interaction
   useEffect(() => {
+    const mark = () => { hadUserGestureRef.current = true; };
+    window.addEventListener('keydown', mark, { once: true });
+    window.addEventListener('pointerdown', mark, { once: true });
+    return () => { window.removeEventListener('keydown', mark); window.removeEventListener('pointerdown', mark); };
+  }, []);
+
+  // Ref to always hold latest draft data (avoids stale closures in intervals/beforeunload)
+  const draftDataRef = useRef({ title, editorContent });
+  useEffect(() => {
+    draftDataRef.current = { title, editorContent };
+  }, [title, editorContent]);
+
+  const formatSavedTime = (ts) => {
+    if (!ts) return null;
+    const diff = Math.floor((Date.now() - ts) / 1000);
+    if (diff < 10) return 'Just saved';
+    if (diff < 60) return `Saved ${diff}s ago`;
+    if (diff < 3600) return `Saved ${Math.floor(diff / 60)}m ago`;
+    return `Saved ${Math.floor(diff / 3600)}h ago`;
+  };
+
+  // Fetch subpage data — check localStorage first, then cloud
+  useEffect(() => {
+    const localDraft = loadDraft(subpageId);
+
     fetch(`/api/subpages?id=${subpageId}`)
       .then(r => r.ok ? r.json() : r.json().then(d => { throw new Error(d.error); }))
       .then(data => {
-        setTitle(data.title || 'Untitled');
         let parsed;
         try { parsed = typeof data.content === 'string' ? JSON.parse(data.content) : data.content; } catch {}
-        setContent(parsed?.length ? parsed : undefined);
+
+        // Use local draft if it's newer than cloud
+        if (localDraft && localDraft.savedAt && data.updated_at && localDraft.savedAt > data.updated_at * 1000) {
+          setTitle(localDraft.title || data.title || 'Untitled');
+          setContent(localDraft.editorContent?.length ? localDraft.editorContent : parsed?.length ? parsed : undefined);
+        } else {
+          setTitle(data.title || 'Untitled');
+          setContent(parsed?.length ? parsed : undefined);
+        }
       })
-      .catch(() => setContent(undefined))
+      .catch(() => {
+        // Offline — try localStorage
+        if (localDraft) {
+          setTitle(localDraft.title || 'Untitled');
+          setContent(localDraft.editorContent?.length ? localDraft.editorContent : undefined);
+        } else {
+          setContent(undefined);
+        }
+      })
       .finally(() => setLoading(false));
   }, [subpageId]);
 
-  // Auto-save content
-  const saveContent = useCallback(async (blocks) => {
-    clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(async () => {
-      setSaving(true);
-      try {
-        await fetch('/api/subpages', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: subpageId, content: blocks }),
-        });
-        setLastSaved(new Date());
-      } catch {}
-      setSaving(false);
-    }, 1500);
+  // Cloud sync function — saves localStorage first then pushes to cloud
+  const syncToCloud = useCallback(async ({ showToast = false, silent = false } = {}) => {
+    const data = draftDataRef.current;
+    if (!data.title && !data.editorContent) return;
+
+    // Always save to localStorage first
+    saveDraft(subpageId, data);
+    setLastSaved(Date.now());
+
+    if (!silent) setSyncStatus('syncing');
+
+    try {
+      const payload = { id: subpageId };
+      if (data.title) payload.title = data.title;
+      if (data.editorContent) payload.content = data.editorContent;
+
+      const res = await fetch('/api/subpages', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setHasUnsavedEdits(false);
+        if (!silent) {
+          setSyncStatus('synced');
+          if (showToast) {
+            setShowSavedToast(true);
+            setTimeout(() => setShowSavedToast(false), 3000);
+          }
+          setTimeout(() => setSyncStatus('idle'), 5000);
+        }
+      } else {
+        if (!silent) {
+          setSyncStatus('local');
+          setTimeout(() => setSyncStatus('idle'), 5000);
+        }
+      }
+    } catch {
+      if (!silent) {
+        setSyncStatus('local');
+        setTimeout(() => setSyncStatus('idle'), 5000);
+      }
+    }
   }, [subpageId]);
 
   // Compute word count
@@ -81,9 +178,14 @@ export default function SubpageClient({ params }) {
       const blocks = editorRef.current.getBlocks();
       setEditorContent(blocks);
       setWordCount(computeWordCount(blocks));
-      saveContent(blocks);
+      setHasUnsavedEdits(true);
+      // Debounce localStorage writes — serializing full content on every keystroke is expensive
+      clearTimeout(draftTimerRef.current);
+      draftTimerRef.current = setTimeout(() => {
+        saveDraft(subpageId, { title: draftDataRef.current.title, editorContent: blocks });
+      }, 1000);
     } catch {}
-  }, [saveContent, computeWordCount]);
+  }, [computeWordCount, subpageId]);
 
   // Switch mode
   const switchMode = useCallback(async (newMode) => {
@@ -97,23 +199,74 @@ export default function SubpageClient({ params }) {
     setMode(newMode);
   }, []);
 
-  // Ctrl+Shift+P → toggle edit/preview
+  // Keyboard shortcuts — same as parent blog
+  // Ctrl+S → save + sync, Ctrl+D → insert date, Ctrl+Shift+P → toggle preview
   useEffect(() => {
-    function handleKey(e) {
+    function handleKeyDown(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        syncToCloud({ showToast: true });
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        const editor = editorRef.current?.getEditor?.();
+        if (editor) {
+          try {
+            editor.insertInlineContent([{ type: 'dateInline', props: { date: new Date().toISOString().split('T')[0] } }]);
+          } catch {}
+        }
+      }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
         e.preventDefault();
         switchMode(mode === 'edit' ? 'preview' : 'edit');
       }
     }
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [switchMode, mode]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [syncToCloud, switchMode, mode]);
+
+  // Sync on page load (after data loads)
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => syncToCloud({ silent: true }), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, syncToCloud]);
+
+  // Sync before page unload + save draft (fallback for hard browser close)
+  useEffect(() => {
+    function handleBeforeUnload(e) {
+      const data = draftDataRef.current;
+      if (data.title || data.editorContent) {
+        saveDraft(subpageId, data);
+        try {
+          const payload = { id: subpageId };
+          if (data.title) payload.title = data.title;
+          if (data.editorContent) payload.content = data.editorContent;
+          fetch('/api/subpages', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true,
+          }).catch(() => {});
+        } catch {}
+      }
+      if (hasUnsavedEdits && hadUserGestureRef.current) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [subpageId, hasUnsavedEdits]);
 
   // Save title
   const saveTitle = useCallback(async (newTitle) => {
     const t = newTitle.trim() || 'Untitled';
     setTitle(t);
     setEditingTitle(false);
+    setHasUnsavedEdits(true);
+    saveDraft(subpageId, { ...draftDataRef.current, title: t });
     try {
       await fetch('/api/subpages', {
         method: 'PUT',
@@ -174,10 +327,28 @@ export default function SubpageClient({ params }) {
               </span>
             )}
           </div>
-          {/* Save status */}
-          <span className="text-[11px] text-[var(--text-faint)] flex-shrink-0">
-            {saving ? 'Saving...' : lastSaved ? 'Saved' : ''}
+          {/* Draft badge + saved time + sync dot — matches parent page */}
+          <span className="text-[var(--text-muted)] text-[11px] hidden md:flex items-center gap-1.5">
+            <span className="text-[var(--text-faint)] px-1.5 py-0.5 rounded border border-[var(--border-default)] bg-[var(--bg-surface)] text-[10px] font-medium">
+              {hasUnsavedEdits ? 'Unsaved' : 'Draft'}
+            </span>
+            {lastSaved && <span>{formatSavedTime(lastSaved)}</span>}
           </span>
+          {/* Sync status dot */}
+          {syncStatus !== 'idle' && (
+            <span
+              className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${
+                syncStatus === 'syncing' ? 'bg-yellow-400 animate-pulse' :
+                syncStatus === 'synced' ? 'bg-green-400' :
+                syncStatus === 'local' ? 'bg-yellow-500' : ''
+              }`}
+              title={
+                syncStatus === 'syncing' ? 'Syncing to cloud...' :
+                syncStatus === 'synced' ? 'Saved to cloud' :
+                syncStatus === 'local' ? 'Saved locally' : ''
+              }
+            />
+          )}
         </div>
 
         {/* Right: actions */}
@@ -236,7 +407,7 @@ export default function SubpageClient({ params }) {
                 {title}
               </h1>
 
-              {/* Editor — always mounted, hidden when not active */}
+              {/* Editor — blogId passed so Cloudinary uploads go to the parent blog's folder */}
               <div className="min-h-[60vh] pb-[100px]">
                 {!loading && (
                   <BlockNoteEditor
@@ -267,6 +438,23 @@ export default function SubpageClient({ params }) {
 
       {/* Keyboard shortcuts modal */}
       {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
+
+      {/* Saved to cloud toast — matches parent page */}
+      <AnimatePresence>
+        {showSavedToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-green-500/20 bg-[var(--bg-surface)]/90 backdrop-blur-lg shadow-2xl"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span className="text-[13px] text-green-300 font-medium">Saved to cloud</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

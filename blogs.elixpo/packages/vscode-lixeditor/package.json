@@ -2,7 +2,7 @@
   "name": "lixeditor",
   "displayName": "LixEditor — Rich WYSIWYG Editor",
   "description": "A rich block editor for .lixeditor files — LaTeX equations, Mermaid diagrams, syntax-highlighted code, and more.",
-  "version": "2.5.3",
+  "version": "2.5.5",
   "publisher": "elixpo",
   "icon": "media/icon.png",
   "engines": {
