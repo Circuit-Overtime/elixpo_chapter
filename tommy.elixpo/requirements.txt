@@ -48,7 +48,7 @@ multidict==6.7.1
 openai==2.16.0
 orjson>=3.10.0
 packaging==26.0
-pillow==12.1.0
+pillow==12.2.0
 posthog==5.4.0
 propcache==0.4.1
 protobuf==6.33.5
