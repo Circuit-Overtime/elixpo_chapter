@@ -13,19 +13,22 @@ import {
   streamSession,
   getReportUrl,
   resumeSession,
-  isLoggedIn,
   getGuestUsageToday,
   incrementGuestUsage,
 } from "@/lib/api";
 import type { DetectResult, SessionState, ParagraphProgress } from "@/lib/api";
-
-const GUEST_CHECK_LIMIT = 2;
+import { getLimits } from "@/lib/plans";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Home() {
+  const { loggedIn } = useAuth();
   const [texContent, setTexContent] = useState("");
   const [domain, setDomain] = useState("general");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const limits = getLimits(loggedIn, false);
+  const wordCount = texContent.trim().split(/\s+/).filter(Boolean).length;
 
   // Detection results
   const [detectResult, setDetectResult] = useState<DetectResult | null>(null);
@@ -79,10 +82,17 @@ export default function Home() {
 
   // Check AI score
   const handleCheck = async () => {
-    if (!isLoggedIn()) {
+    // Word limit enforcement
+    if (wordCount > limits.maxWords) {
+      setError(`Text exceeds ${limits.maxWords.toLocaleString()} word limit. ${loggedIn ? "Upgrade to Pro for 25,000 words." : "Sign in for 1,000 words."}`);
+      return;
+    }
+
+    // Daily check limit
+    if (!loggedIn) {
       const usage = getGuestUsageToday();
-      if (usage >= GUEST_CHECK_LIMIT) {
-        setError(`Guest limit reached (${GUEST_CHECK_LIMIT} checks/day). Sign in for more.`);
+      if (usage >= limits.checksPerDay) {
+        setError(`Daily limit reached (${limits.checksPerDay} check/day). Sign in for ${getLimits(true, false).checksPerDay}/day.`);
         return;
       }
     }
@@ -123,8 +133,16 @@ export default function Home() {
 
   // Start paraphrase
   const handleRewrite = async () => {
-    if (!isLoggedIn()) {
+    if (!loggedIn) {
       setError("Sign in to use the rewriter.");
+      return;
+    }
+    if (limits.rewritesPerDay === 0) {
+      setError("Paraphrasing is not available on the Guest plan. Sign in to unlock.");
+      return;
+    }
+    if (wordCount > limits.maxWords) {
+      setError(`Text exceeds ${limits.maxWords.toLocaleString()} word limit.`);
       return;
     }
     setLoading(true);
@@ -194,12 +212,12 @@ export default function Home() {
               onClick={() => fileRef.current?.click()}
               className="btn-ghost px-3 py-1.5 rounded-lg text-xs"
             >
-              Upload .tex
+              Upload file
             </button>
             <input
               ref={fileRef}
               type="file"
-              accept=".tex,.txt,.md"
+              accept=".tex,.docx"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
@@ -209,11 +227,16 @@ export default function Home() {
             <DomainSelect value={domain} onChange={setDomain} />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {/* Word count / limit */}
+            <span className={`text-[11px] font-mono ${wordCount > limits.maxWords ? "text-error" : "text-text-subtle"}`}>
+              {wordCount.toLocaleString()}/{limits.maxWords.toLocaleString()} words
+            </span>
+
             {/* Check button */}
             <button
               onClick={handleCheck}
-              disabled={!hasContent || loading || isRunning}
+              disabled={!hasContent || loading || isRunning || wordCount > limits.maxWords}
               className="btn-ghost px-4 py-1.5 rounded-lg text-xs font-semibold"
             >
               {loading ? "Analyzing..." : "Check AI %"}
@@ -221,8 +244,9 @@ export default function Home() {
             {/* Rewrite button */}
             <button
               onClick={handleRewrite}
-              disabled={!hasContent || loading || isRunning}
+              disabled={!hasContent || loading || isRunning || wordCount > limits.maxWords || !loggedIn}
               className="btn-primary px-4 py-1.5 rounded-lg text-xs"
+              title={!loggedIn ? "Sign in to rewrite" : undefined}
             >
               {loading ? "Starting..." : "Rewrite"}
             </button>
