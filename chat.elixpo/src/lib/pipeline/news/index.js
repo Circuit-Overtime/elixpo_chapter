@@ -172,17 +172,13 @@ export async function runNewsPipeline(db) {
     if (item.status === "image_uploaded" || item.status?.includes("audio_failed")) {
       try {
         console.log(`🎙️ Voice: ${voice} for topic ${index}`);
-        const { buffer: audioBuffer, transcript } = await safeRetry(() => generateVoiceover(item.script, index, voice));
+        const { buffer: audioBuffer } = await safeRetry(() => generateVoiceover(item.script, index, voice));
 
-        // Save audio and transcript to item folder
         fs.writeFileSync(path.join(itemDir, "audio.mp3"), audioBuffer);
-        fs.writeFileSync(path.join(itemDir, "transcript.json"), JSON.stringify(transcript, null, 2));
 
         const audioUrl = await uploadBuffer(audioBuffer, `${CLOUDINARY_ROOT}/item_${index}`, "audio", "video");
-        const transcriptUrl = await uploadBuffer(Buffer.from(JSON.stringify(transcript)), `${CLOUDINARY_ROOT}/item_${index}`, "transcript", "raw");
 
         item.audio_url = audioUrl;
-        item.transcript_url = transcriptUrl;
         item.status = "complete";
         item.error = null;
         items[index] = item;
@@ -196,7 +192,7 @@ export async function runNewsPipeline(db) {
           voice: item.voice,
           timestamp: item.timestamp,
           audio_url: item.audio_url,
-          transcript_url: item.transcript_url,
+
           image_url: item.image_url,
         });
 
@@ -236,7 +232,6 @@ export async function runNewsPipeline(db) {
 
     const dbItems = items.map((it) => ({
       audio_url: it.audio_url,
-      transcript_url: it.transcript_url,
       topic: it.topic,
       category: it.category,
       image_url: it.image_url,

@@ -20,7 +20,7 @@ export async function generateBannerImage(prompt) {
     width: 1280,
     height: 720,
     model: MODELS.imageGen,
-    seed: 42,
+    seed: 22545,
   });
 }
 
@@ -32,7 +32,7 @@ export async function createCombinedVisualPrompt(topics) {
       { role: "system", content: NEWS_THUMBNAIL_SYSTEM },
       { role: "user", content: combined },
     ],
-    seed: 42,
+    seed: 22545,
     temperature: 0.4,
   });
 }
