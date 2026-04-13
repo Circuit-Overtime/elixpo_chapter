@@ -34,7 +34,7 @@ export const metadata: Metadata = {
       "https://github.com/user-attachments/assets/ab767204-588d-4367-8551-7ac43d523e1b",
     ],
   },
-  icons: { icon: "/images/ElixpoChatIcon.png" },
+  icons: { icon: "/images/logo.png" },
 };
 
 export default function RootLayout({

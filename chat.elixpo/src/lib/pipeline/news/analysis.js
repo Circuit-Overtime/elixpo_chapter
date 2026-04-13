@@ -65,17 +65,3 @@ export async function generateNewsScript(analysisContent, prevTopic, nextTopic, 
   console.log("✅ News script generated.");
   return parsed;
 }
-
-
-generateNewsAnalysis("Regularly $999, score a MacBook Air for $200 with this limited-time deal - Mashable").then((analysis) => {
-  console.log("Analysis:", analysis);
-  return generateNewsScript(analysis, null, null, 0, 1);
-}).then((result) => {
-  console.log("Generated Script:", result.script);
-  console.log("Source Link:", result.source_link);
-}).catch((err) => {
-  console.error("Error during news analysis/script generation:", err);
-  if (err.message.includes("perplexity-fast returned empty content")) {
-    console.log("⚠️ Perplexity returned empty content. This can happen if the topic is very new or obscure. Consider trying a different topic or checking Perplexity's service status.");
-  }
-});

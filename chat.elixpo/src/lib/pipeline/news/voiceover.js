@@ -1,4 +1,4 @@
-import { generateAudio } from "../pollinations.js";
+import { generateAudio, transcribeAudio } from "../pollinations.js";
 
 const DEVELOPER_PROMPT =
   "You are a charismatic news host narrating a story for Elixpo Daily. " +
@@ -10,11 +10,22 @@ const DEVELOPER_PROMPT =
   "Think of your favorite news podcast host — sharp, relatable, clear, and engaging. Not a monotone anchor. Not a screaming YouTuber. Just a great storyteller who happens to be delivering the news. " +
   "No robotic reading. No rushing through content. No sleepy delivery. Every sentence should land.";
 
-
+/**
+ * Generate voiceover audio + transcript for a news script.
+ * @param {string} script - The news script text
+ * @param {number} newsIndex - Index of the news item
+ * @param {string} voice - "shimmer" (female) or "ash" (male)
+ * @returns {{ buffer: Buffer, transcript: object }} WAV audio buffer + whisper transcript
+ */
 export async function generateVoiceover(script, newsIndex, voice = "shimmer") {
   console.log(`🎙️ Generating voiceover for topic ${newsIndex} (${voice})...`);
   const base64 = await generateAudio({ script, voice, developerPrompt: DEVELOPER_PROMPT });
   const buffer = Buffer.from(base64, "base64");
   console.log(`✅ Voiceover generated for topic ${newsIndex}`);
-  return buffer;
+
+  console.log(`📝 Transcribing audio for topic ${newsIndex}...`);
+  const transcript = await transcribeAudio(buffer, `news${newsIndex}.wav`);
+  console.log(`✅ Transcript generated for topic ${newsIndex}`);
+
+  return { buffer, transcript };
 }

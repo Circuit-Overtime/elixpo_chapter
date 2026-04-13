@@ -5,10 +5,11 @@ import path from "path";
 import { uploadBuffer, deleteFolder } from "../storage.js";
 import { fetchPodcastTopics, pickPodcastTopic } from "./topics.js";
 import { getLatestInfo, generatePodcastScript } from "./creator.js";
-import { generatePodcastSpeech, generatePodcastMusic } from "./audio.js";
+import { generatePodcastSpeech } from "./audio.js";
 import { generatePodcastThumbnail, generatePodcastBanner } from "./images.js";
 
 const BACKUP_FILE = path.resolve("tmp/podcastBackup.json");
+const CLOUDINARY_ROOT = "elixpochat/podcast";
 
 function ensureTmp() {
   const dir = path.resolve("tmp");
@@ -27,7 +28,7 @@ function loadBackup() {
 
 function generatePodcastId(podcastName) {
   const timestamp = String(Math.floor(Date.now() / 1000));
-  return crypto.createHash("sha256").update(`${timestamp}_${podcastName}`).digest("hex");
+  return crypto.createHash("sha256").update(`${timestamp}_${podcastName}`).digest("hex").slice(0, 16);
 }
 
 /**
@@ -48,7 +49,6 @@ export async function runPodcastPipeline(db) {
     podcastScript = backup.podcast_script;
     console.log("🗂️ Resumed from backup.");
   } else {
-    // Fetch and pick topic
     const topics = await fetchPodcastTopics();
     if (!topics.length) {
       console.log("⚠️ No trending topics found.");
@@ -70,6 +70,8 @@ export async function runPodcastPipeline(db) {
     console.log(`📌 Topic stored: ${topicName} | ID: ${podcastId}`);
   }
 
+  const folder = `${CLOUDINARY_ROOT}/${podcastId}`;
+
   // Script generation
   if (backup.status === "topic_stored") {
     console.log("📝 Generating podcast script...");
@@ -81,36 +83,27 @@ export async function runPodcastPipeline(db) {
     console.log("✅ Script generated.");
   }
 
-  // Speech generation (elevenlabs)
+  // Speech + transcript
   if (backup.status === "script_generated") {
     console.log("🔊 Generating speech...");
-    const speechBuffer = await generatePodcastSpeech(podcastScript || backup.podcast_script);
-    const audioUrl = await uploadBuffer(speechBuffer, `podcast/${podcastId}`, `podcast_${podcastId}`, "video");
+    const { buffer: speechBuffer, transcript } = await generatePodcastSpeech(podcastScript || backup.podcast_script);
+    const audioUrl = await uploadBuffer(speechBuffer, folder, "audio", "video");
+    const transcriptUrl = await uploadBuffer(Buffer.from(JSON.stringify(transcript)), folder, "transcript", "raw");
     backup.audio_url = audioUrl;
-    backup.status = "speech_uploaded";
-    logBackup(backup);
-    console.log("✅ Speech uploaded.");
-  }
-
-  // Background music generation (acestep)
-  if (backup.status === "speech_uploaded") {
-    console.log("🎵 Generating background music...");
-    const musicBuffer = await generatePodcastMusic(topicName, 60);
-    const musicUrl = await uploadBuffer(musicBuffer, `podcast/${podcastId}`, `podcast_music_${podcastId}`, "video");
-    backup.music_url = musicUrl;
+    backup.transcript_url = transcriptUrl;
     backup.status = "audio_uploaded";
     logBackup(backup);
-    console.log("✅ Background music uploaded.");
+    console.log("✅ Speech + transcript uploaded.");
   }
 
-  // Thumbnail & Banner
+  // Images
   if (backup.status === "audio_uploaded") {
     console.log("🎨 Generating images...");
     const thumbBuffer = await generatePodcastThumbnail(topicName);
-    const thumbUrl = await uploadBuffer(thumbBuffer, `podcast/${podcastId}`, `podcastThumbnail_${podcastId}`);
+    const thumbUrl = await uploadBuffer(thumbBuffer, folder, "thumbnail");
 
     const bannerBuffer = await generatePodcastBanner(topicName);
-    const bannerUrl = await uploadBuffer(bannerBuffer, `podcast/${podcastId}`, `podcastBanner_${podcastId}`);
+    const bannerUrl = await uploadBuffer(bannerBuffer, folder, "banner");
 
     backup.thumbnail_url = thumbUrl;
     backup.banner_url = bannerUrl;
@@ -123,32 +116,30 @@ export async function runPodcastPipeline(db) {
   if (backup.status === "images_uploaded") {
     console.log("💾 Saving to database...");
 
-    // Insert podcast record
     await db
       .prepare(
-        "INSERT OR REPLACE INTO podcasts (id, podcast_name, podcast_audio_url, topic_source, podcast_banner_url) VALUES (?, ?, ?, ?, ?)"
+        "INSERT OR REPLACE INTO podcasts (id, podcast_name, podcast_audio_url, podcast_music_url, podcast_transcript_url, podcast_thumbnail_url, podcast_banner_url, topic_source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
       )
-      .bind(podcastId, topicName, backup.audio_url, topicSource, backup.banner_url)
+      .bind(podcastId, topicName, backup.audio_url, backup.music_url || "", backup.transcript_url || "", backup.thumbnail_url, backup.banner_url, topicSource)
       .run();
 
-    // Cleanup old podcast from Cloudinary
+    // Cleanup old podcast
     const prevStats = await db.prepare("SELECT data FROM gen_stats WHERE key = ?").bind("podcast").first();
     if (prevStats) {
       const prev = JSON.parse(prevStats.data);
       if (prev.latestPodcastID && prev.latestPodcastID !== podcastId) {
-        await deleteFolder(`podcast/${prev.latestPodcastID}`);
+        await deleteFolder(`${CLOUDINARY_ROOT}/${prev.latestPodcastID}`);
       }
     }
 
-    // Update gen_stats
     const statsData = JSON.stringify({
       latestPodcastID: podcastId,
       latestPodcastName: topicName,
       latestPodcastThumbnail: backup.thumbnail_url,
+      latestPodcastBanner: backup.banner_url,
     });
     await db.prepare("INSERT OR REPLACE INTO gen_stats (key, data) VALUES (?, ?)").bind("podcast", statsData).run();
 
-    // Cleanup backup
     fs.unlinkSync(BACKUP_FILE);
     backup.status = "complete";
     console.log("✅ Podcast pipeline complete!");

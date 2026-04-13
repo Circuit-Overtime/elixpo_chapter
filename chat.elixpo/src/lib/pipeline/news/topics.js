@@ -10,6 +10,8 @@ const CATEGORIZED_FEEDS = {
   business: "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en&gl=US&ceid=US:en",
 };
 
+export const CATEGORY_LABELS = ["Tech", "Science", "Sports", "Health", "Entertainment", "Travel", "Business"];
+
 const POSITIVE_KEYWORDS = [
   "launch", "innovation", "discovery", "research", "technology", "startup", "breakthrough",
   "win", "victory", "award", "space", "robotics", "ai", "artificial intelligence",
@@ -29,20 +31,18 @@ const EXCLUSION_KEYWORDS = [
   "disaster", "emergency", "hate", "racism", "xenophobia", "extremism", "clash", "corruption",
 ];
 
-function extractKeywords(title) {
-  return new Set(title.toLowerCase().split(/\s+/).filter((w) => w.length > 3));
-}
-
+/**
+ * Fetch exactly 1 trending headline per category (7 total).
+ * Returns array of { title, category } objects.
+ */
 export async function fetchTrendingTopics() {
-  console.log("🔍 Fetching trending topics...");
-  const headlines = [];
-  const seenKeywords = [];
+  console.log("🔍 Fetching trending topics (1 per category)...");
+  const results = [];
 
   const categories = Object.keys(CATEGORIZED_FEEDS);
-  categories.sort(() => Math.random() - 0.5);
 
   for (const category of categories) {
-    if (headlines.length >= MAX_NEWS_ITEMS) break;
+    if (results.length >= MAX_NEWS_ITEMS) break;
 
     const feedUrl = CATEGORIZED_FEEDS[category];
     try {
@@ -55,9 +55,9 @@ export async function fetchTrendingTopics() {
       const xml = await res.text();
       const titleMatches = [...xml.matchAll(/<item>[\s\S]*?<title><!\[CDATA\[(.*?)\]\]><\/title>|<item>[\s\S]*?<title>(.*?)<\/title>/g)];
 
+      let picked = false;
       for (const match of titleMatches) {
-        if (headlines.length >= MAX_NEWS_ITEMS) break;
-
+        if (picked) break;
         const rawTitle = (match[1] || match[2] || "").trim();
         if (!rawTitle) continue;
         const titleLower = rawTitle.toLowerCase();
@@ -66,16 +66,20 @@ export async function fetchTrendingTopics() {
         const hasExclusion = EXCLUSION_KEYWORDS.some((kw) => titleLower.includes(kw));
 
         if (hasPositive && !hasExclusion) {
-          const keywords = extractKeywords(rawTitle);
-          const isSimilar = seenKeywords.some((prev) => {
-            let overlap = 0;
-            for (const w of keywords) if (prev.has(w)) overlap++;
-            return overlap >= 2;
-          });
+          results.push({ title: rawTitle, category });
+          picked = true;
+        }
+      }
 
-          if (!isSimilar) {
-            seenKeywords.push(keywords);
-            headlines.push(rawTitle);
+      // Fallback: if no positive match, take the first non-excluded headline
+      if (!picked) {
+        for (const match of titleMatches) {
+          const rawTitle = (match[1] || match[2] || "").trim();
+          if (!rawTitle) continue;
+          const titleLower = rawTitle.toLowerCase();
+          if (!EXCLUSION_KEYWORDS.some((kw) => titleLower.includes(kw))) {
+            results.push({ title: rawTitle, category });
+            break;
           }
         }
       }
@@ -84,12 +88,6 @@ export async function fetchTrendingTopics() {
     }
   }
 
-  console.log(`✅ Found ${headlines.length} trending topics`);
-  return headlines.slice(0, MAX_NEWS_ITEMS);
+  console.log(`✅ Found ${results.length} topics across ${categories.length} categories`);
+  return results;
 }
-
-
-fetchTrendingTopics().then((topics) => {
-  console.log("Trending Topics:");
-  topics.forEach((t, i) => console.log(`  ${i + 1}. ${t}`));
-});
