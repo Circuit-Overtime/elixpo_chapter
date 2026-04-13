@@ -1,52 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { isLoggedIn, getStoredUser, clearAuth, setAuthToken, setStoredUser } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
 import { startLogin } from "@/lib/auth";
 
 export function Navbar() {
-  const [user, setUser] = useState<{ displayName: string; email: string } | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-
-    // Check for auth callback data in URL
-    const params = new URLSearchParams(window.location.search);
-    const authSuccess = params.get("auth_success");
-    const authError = params.get("auth_error");
-
-    if (authSuccess) {
-      try {
-        const data = JSON.parse(decodeURIComponent(authSuccess));
-        setAuthToken(data.access_token);
-        setStoredUser(data.user);
-        setUser(data.user);
-        // Clean URL
-        window.history.replaceState({}, "", "/");
-      } catch (e) {
-        console.error("Failed to parse auth data:", e);
-      }
-    }
-
-    if (authError) {
-      console.error("Auth error:", authError);
-      window.history.replaceState({}, "", "/");
-    }
-
-    // Load existing user
-    if (!authSuccess && isLoggedIn()) {
-      const stored = getStoredUser();
-      if (stored) setUser(stored);
-    }
-  }, []);
-
-  const handleSignOut = () => {
-    clearAuth();
-    setUser(null);
-  };
-
-  if (!mounted) return null;
+  const { user, loading, signOut } = useAuth();
 
   return (
     <nav className="border-b border-border-light">
@@ -59,11 +17,13 @@ export function Navbar() {
             Pricing
           </a>
 
-          {user ? (
+          {loading ? (
+            <span className="w-16 h-5 rounded bg-bg-glass animate-pulse" />
+          ) : user ? (
             <div className="flex items-center gap-3">
               <span className="text-text-secondary">{user.displayName}</span>
               <button
-                onClick={handleSignOut}
+                onClick={signOut}
                 className="text-text-muted hover:text-text-primary transition-colors"
               >
                 Sign out

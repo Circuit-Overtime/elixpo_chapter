@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getActiveSessionId, setActiveSessionId, isLoggedIn } from "@/lib/api";
+import { getActiveSessionId, setActiveSessionId } from "@/lib/api";
 import { SessionProgress } from "@/components/SessionProgress";
 import { startLogin } from "@/lib/auth";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function SessionPage() {
+  const { loggedIn } = useAuth();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [manualId, setManualId] = useState("");
-  const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
-    setLoggedIn(isLoggedIn());
     const existing = getActiveSessionId();
     if (existing) setSessionId(existing);
   }, []);
