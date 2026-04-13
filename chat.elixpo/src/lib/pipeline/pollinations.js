@@ -47,6 +47,29 @@ export async function generateAudio({ script, voice = "shimmer", developerPrompt
   return base64Audio;
 }
 
+/**
+ * Transcribe audio via Pollinations whisper model.
+ * @param {Buffer} audioBuffer - Raw audio bytes (wav/mp3)
+ * @param {string} filename - Filename with extension
+ * @returns {{ text: string, segments: Array<{ start: number, end: number, text: string }> }}
+ */
+export async function transcribeAudio(audioBuffer, filename = "audio.wav") {
+  const formData = new FormData();
+  formData.append("file", new Blob([audioBuffer]), filename);
+  formData.append("model", "whisper");
+
+  const res = await fetch(`${POLLINATIONS_BASE}/v1/audio/transcriptions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${POLLINATIONS_API_KEY}`,
+    },
+    body: formData,
+  });
+
+  if (!res.ok) throw new Error(`Transcription error ${res.status}: ${await res.text()}`);
+  return await res.json();
+}
+
 export async function generateImage({ prompt, width = 1024, height = 1024, model = "flux", seed = 42 }) {
   const params = new URLSearchParams({
     width: String(width),

@@ -51,7 +51,7 @@ export async function getTodaysPodcast(): Promise<Podcast | null> {
 
   const podcastRow = await db
     .prepare(
-      "SELECT id, podcast_name, podcast_audio_url, topic_source, podcast_banner_url FROM podcasts WHERE id = ?"
+      "SELECT id, podcast_name, podcast_audio_url, podcast_music_url, podcast_transcript_url, podcast_thumbnail_url, podcast_banner_url, topic_source FROM podcasts WHERE id = ?"
     )
     .bind(stats.latestPodcastID)
     .first<Podcast>();
