@@ -230,7 +230,6 @@ function FeedCard({ post }) {
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-[18px] font-bold leading-[1.3] mb-1 group-hover:opacity-75 transition-opacity font-serif tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
-              {post.page_emoji && <span className="mr-1.5">{post.page_emoji}</span>}
               {post.title || 'Untitled'}
             </h2>
             {post.subtitle && (
@@ -317,7 +316,6 @@ function TopPickCard({ post, index }) {
           <span className="ml-auto text-[10px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(post.published_at)}</span>
         </div>
         <h3 className="text-[13.5px] font-bold leading-[1.35] group-hover:opacity-80 transition-opacity font-serif" style={{ color: 'var(--text-primary)' }}>
-          {post.page_emoji && <span className="mr-1">{post.page_emoji}</span>}
           {post.title || 'Untitled'}
         </h3>
         {post.read_time_minutes > 0 && (
