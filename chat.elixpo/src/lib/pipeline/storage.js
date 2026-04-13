@@ -9,11 +9,8 @@ cloudinary.config({
 
 /**
  * Upload a buffer to Cloudinary.
- * @param {Buffer} buffer - File bytes
- * @param {string} folder - Cloudinary folder path
- * @param {string} publicId - Public ID for the file
- * @param {"image"|"video"|"raw"} resourceType - Type of resource
- * @returns {Promise<string>} Public URL
+ * Uses `overwrite: true` and `invalidate: true` so re-uploads
+ * replace the existing file and bust any CDN cache.
  */
 export async function uploadBuffer(buffer, folder, publicId, resourceType = "image") {
   return new Promise((resolve, reject) => {
@@ -23,6 +20,7 @@ export async function uploadBuffer(buffer, folder, publicId, resourceType = "ima
         public_id: publicId,
         resource_type: resourceType,
         overwrite: true,
+        invalidate: true,
       },
       (error, result) => {
         if (error) return reject(error);
@@ -34,12 +32,17 @@ export async function uploadBuffer(buffer, folder, publicId, resourceType = "ima
 }
 
 /**
- * Delete all resources in a Cloudinary folder.
- * @param {string} folder - Folder prefix to delete
+ * Delete all resources in a Cloudinary folder (all resource types).
  */
 export async function deleteFolder(folder) {
   try {
-    await cloudinary.api.delete_resources_by_prefix(folder);
+    for (const type of ["image", "video", "raw"]) {
+      try {
+        await cloudinary.api.delete_resources_by_prefix(folder, { resource_type: type });
+      } catch {
+        // ignore if no resources of this type
+      }
+    }
     await cloudinary.api.delete_folder(folder);
     console.log(`🧹 Deleted Cloudinary folder: ${folder}`);
   } catch (err) {

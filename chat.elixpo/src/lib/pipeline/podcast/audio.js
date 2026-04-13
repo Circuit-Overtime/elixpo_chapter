@@ -1,30 +1,127 @@
+import fs from "fs";
+import path from "path";
+import { execSync } from "child_process";
 import { generateAudio, transcribeAudio } from "../pollinations.js";
+import { compressAudio } from "../compress.js";
+import { PODCAST_VOICE_FEMALE, PODCAST_VOICE_MALE } from "../config.js";
+import { PODCAST_TTS_PROMPT } from "../prompts.js";
 
-const DEVELOPER_PROMPT =
-  "You are a charismatic, confident podcast host narrating a story your listeners NEED to hear. " +
-  "Your pace is brisk and lively — you move with energy and momentum, like someone genuinely excited about what they're sharing. " +
-  "But you're not a machine gun. You MUST breathe. Take a real, audible breath every few sentences — the kind you'd naturally take mid-thought. " +
-  "PAUSES are essential: hold a full beat before a big reveal, a half-second after a shocking stat, a tiny breath before changing direction. These pauses give the listener time to FEEL what you just said. " +
-  "Read the emotion of the text: if the content is exciting, your voice should rise with genuine thrill. If it's serious or heavy, slow down — let gravity into your voice, lower your tone slightly, speak with weight. " +
-  "If something is ironic or absurd, let a knowing smirk come through. If it's heartfelt, be warm and sincere. If it's a question, actually sound curious — don't just read it flat. " +
-  "Sound human — audible inhales between paragraphs, a soft 'hmm' when transitioning to a deeper point, a small chuckle if the moment earns it. " +
-  "Don't paraphrase or skip anything — narrate the full script word for word, but PERFORM it. Every paragraph shift is a chance to reset your energy, take a breath, and come back with the right emotion for what's next. " +
-  "Think of the best storytelling podcasts — they breathe, they pause, they feel. That's you. " +
-  "No monotone. No rushing. No robotic reading. No skipping. Deliver every word with breath, feeling, and conviction.";
+const TMP = path.resolve("tmp/podcast");
 
 /**
- * Generate podcast speech + transcript.
- * @returns {{ buffer: Buffer, transcript: object }}
+ * Generate podcast speech from parsed sections.
+ * Each [MALE]/[FEMALE] section gets its own audio with the right voice.
+ * Concatenated into one final audio. Returns buffer, transcript, and
+ * a timeline mapping each section to its time range in the final audio.
+ *
+ * @param {Array<{type: string, content: string}>} sections - Parsed script sections (male/female/image)
+ * @returns {{ buffer: Buffer, transcript: object, timeline: Array<{type: string, content: string, start: number, end: number}> }}
  */
-export async function generatePodcastSpeech(script, voice = "shimmer") {
-  console.log("🎙️ Generating podcast speech (openai-audio)...");
-  const base64 = await generateAudio({ script, voice, developerPrompt: DEVELOPER_PROMPT });
-  const buffer = Buffer.from(base64, "base64");
-  console.log("✅ Podcast speech generated.");
+export async function generatePodcastSpeech(sections) {
+  if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
 
-  console.log("📝 Transcribing podcast audio...");
-  const transcript = await transcribeAudio(buffer, "podcast.wav");
-  console.log("✅ Podcast transcript generated.");
+  const speechSections = sections.filter((s) => s.type === "male" || s.type === "female");
+  const segmentPaths = [];
+  const segmentDurations = [];
 
-  return { buffer, transcript };
+  for (let i = 0; i < speechSections.length; i++) {
+    const section = speechSections[i];
+    const voice = section.type === "male" ? PODCAST_VOICE_MALE : PODCAST_VOICE_FEMALE;
+    const segPath = path.join(TMP, `segment_${i}.mp3`);
+
+    console.log(`🎙️ [${i + 1}/${speechSections.length}] ${section.type} (${voice})...`);
+    const base64 = await generateAudio({
+      script: section.content,
+      voice,
+      developerPrompt: PODCAST_TTS_PROMPT,
+    });
+    const rawBuffer = Buffer.from(base64, "base64");
+    const compressed = compressAudio(rawBuffer, path.join(TMP, `segment_${i}`));
+    fs.writeFileSync(segPath, compressed);
+    segmentPaths.push(segPath);
+
+    // Get duration of this segment via ffprobe
+    let dur = 0;
+    try {
+      const raw = execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${segPath}" 2>/dev/null`).toString().trim();
+      dur = parseFloat(raw) || 0;
+    } catch { dur = 0; }
+    segmentDurations.push(dur);
+
+    console.log(`  ✅ Segment ${i + 1}: ${dur.toFixed(1)}s (${(compressed.length / 1024).toFixed(0)}KB)`);
+  }
+
+  // Concatenate all segments
+  console.log("🔗 Concatenating segments...");
+  const listPath = path.join(TMP, "segments.txt");
+  fs.writeFileSync(listPath, segmentPaths.map((p) => `file '${p}'`).join("\n"));
+
+  const finalPath = path.join(TMP, "audio.mp3");
+  try {
+    // Concat with 150ms crossfade between segments for natural speaker transitions
+    const filterParts = [];
+    let inputArgs = "";
+    for (let i = 0; i < segmentPaths.length; i++) inputArgs += ` -i "${segmentPaths[i]}"`;
+
+    if (segmentPaths.length === 1) {
+      execSync(`ffmpeg -y -i "${segmentPaths[0]}" -codec:a libmp3lame -b:a 128k "${finalPath}" 2>/dev/null`);
+    } else {
+      // Use acrossfade for pairs, then chain them
+      let chain = "[0:a]";
+      for (let i = 1; i < segmentPaths.length; i++) {
+        const out = i === segmentPaths.length - 1 ? "" : `[a${i}]`;
+        filterParts.push(`${chain}[${i}:a]acrossfade=d=0.15:c1=tri:c2=tri${out ? out : ""}`);
+        chain = `[a${i}]`;
+      }
+      execSync(`ffmpeg -y${inputArgs} -filter_complex "${filterParts.join(";")}" -codec:a libmp3lame -b:a 128k "${finalPath}" 2>/dev/null`);
+    }
+  } catch {
+    console.warn("  ⚠️ Concat failed, merging buffers");
+    fs.writeFileSync(finalPath, Buffer.concat(segmentPaths.map((p) => fs.readFileSync(p))));
+  }
+
+  const buffer = fs.readFileSync(finalPath);
+  console.log(`✅ Final audio: ${(buffer.length / 1024).toFixed(0)}KB`);
+
+  // Build timeline — maps each section (speech + image) to a time range
+  const timeline = [];
+  let speechIdx = 0;
+  let runningTime = 0;
+
+  for (const section of sections) {
+    if (section.type === "male" || section.type === "female") {
+      const dur = segmentDurations[speechIdx] || 0;
+      timeline.push({
+        type: section.type,
+        content: section.content,
+        start: Math.round(runningTime * 100) / 100,
+        end: Math.round((runningTime + dur) * 100) / 100,
+      });
+      runningTime += dur;
+      speechIdx++;
+    } else if (section.type === "image") {
+      // Image appears at the current time position
+      timeline.push({
+        type: "image",
+        content: section.content,
+        start: Math.round(runningTime * 100) / 100,
+        end: Math.round(runningTime * 100) / 100, // instant marker
+      });
+    }
+  }
+
+  // Save timeline
+  fs.writeFileSync(path.join(TMP, "timeline.json"), JSON.stringify(timeline, null, 2));
+  console.log(`📋 Timeline: ${timeline.length} entries`);
+
+  // Cleanup segment files
+  for (const p of segmentPaths) if (fs.existsSync(p)) fs.unlinkSync(p);
+  if (fs.existsSync(listPath)) fs.unlinkSync(listPath);
+
+  // Transcribe
+  console.log("📝 Transcribing final audio...");
+  const transcript = await transcribeAudio(buffer, "podcast.mp3");
+  console.log(`✅ Transcript: ${transcript.segments?.length || 0} segments`);
+
+  return { buffer, transcript, timeline };
 }

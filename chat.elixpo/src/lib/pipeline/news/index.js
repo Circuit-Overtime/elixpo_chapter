@@ -3,7 +3,8 @@ import fs from "fs";
 import path from "path";
 
 import { MAX_NEWS_ITEMS, NEWS_VOICES } from "../config.js";
-import { uploadBuffer, deleteFolder } from "../storage.js";
+import { uploadBuffer } from "../storage.js";
+import { compressThumbnail, compressBanner, extractDominantColor } from "../compress.js";
 import { fetchTrendingTopics } from "./topics.js";
 import { generateNewsAnalysis, generateNewsScript } from "./analysis.js";
 import { generateVoiceover } from "./voiceover.js";
@@ -15,22 +16,35 @@ import {
   createCombinedNewsSummary,
 } from "./images.js";
 
-const BACKUP_FILE = path.resolve("tmp/newsBackup.json");
+const TMP_ROOT = path.resolve("tmp/news");
+const BACKUP_FILE = path.join(TMP_ROOT, "_backup.json");
 const CLOUDINARY_ROOT = "elixpochat/news";
 
-function ensureTmp() {
-  const dir = path.resolve("tmp");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+function ensureDirs(totalItems) {
+  if (!fs.existsSync(TMP_ROOT)) fs.mkdirSync(TMP_ROOT, { recursive: true });
+  for (let i = 0; i < totalItems; i++) {
+    const dir = path.join(TMP_ROOT, `item_${i}`);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+function cleanupTmp() {
+  fs.rmSync(TMP_ROOT, { recursive: true, force: true });
+  console.log("🧹 Cleaned up tmp/news/");
 }
 
 function logBackup(state) {
-  ensureTmp();
+  if (!fs.existsSync(TMP_ROOT)) fs.mkdirSync(TMP_ROOT, { recursive: true });
   fs.writeFileSync(BACKUP_FILE, JSON.stringify(state, null, 2), "utf-8");
 }
 
 function loadBackup() {
   if (!fs.existsSync(BACKUP_FILE)) return null;
   return JSON.parse(fs.readFileSync(BACKUP_FILE, "utf-8"));
+}
+
+function writeMetadata(filePath, data) {
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
 }
 
 async function safeRetry(fn, retries = 2, wait = 5000) {
@@ -52,14 +66,13 @@ async function safeRetry(fn, retries = 2, wait = 5000) {
  */
 export async function runNewsPipeline(db) {
   console.log("🚀 Starting news pipeline...");
-  ensureTmp();
 
   let backup = loadBackup();
   let overallId, topicResults, items;
 
   if (backup) {
     overallId = backup.overall_id;
-    topicResults = backup.topics; // array of { title, category }
+    topicResults = backup.topics;
     items = backup.items;
     console.log("🗂️ Resumed from backup.");
   } else {
@@ -71,22 +84,25 @@ export async function runNewsPipeline(db) {
     const now = new Date().toISOString().replace(/\D/g, "");
     overallId = crypto.createHash("sha256").update(now).digest("hex").slice(0, 16);
     items = Array.from({ length: topicResults.length }, () => ({}));
-    backup = { overall_id: overallId, topics: topicResults, items, summary: "", thumbnail_url: "", status: "started" };
+    backup = { overall_id: overallId, topics: topicResults, items, status: "started" };
     logBackup(backup);
   }
 
   const totalItems = Math.min(topicResults.length, MAX_NEWS_ITEMS);
+  ensureDirs(totalItems);
 
   for (let index = 0; index < totalItems; index++) {
     const { title: topic, category } = topicResults[index];
     const newsId = crypto.createHash("sha256").update(`${topic}-${index}-${overallId}`).digest("hex").slice(0, 16);
     const item = items[index] || {};
+    const itemDir = path.join(TMP_ROOT, `item_${index}`);
+
     item.news_id = item.news_id || newsId;
     item.topic = item.topic || topic;
     item.category = item.category || category;
 
     if (item.status === "complete") {
-      console.log(`✅ Skipping complete topic ${index} [${category}]: ${topic}`);
+      console.log(`✅ Skipping complete [${category}]: ${topic}`);
       continue;
     }
 
@@ -104,9 +120,13 @@ export async function runNewsPipeline(db) {
         item.timestamp = new Date().toISOString();
         item.script = scriptData.script;
         item.source_link = scriptData.source_link || "";
+        item.voice = voice;
         item.status = "script_generated";
         item.error = null;
         items[index] = item;
+
+        // Save script to item folder
+        fs.writeFileSync(path.join(itemDir, "script.txt"), item.script, "utf-8");
         logBackup(backup);
         console.log(`✅ Script generated for topic ${index}`);
       } catch (err) {
@@ -119,49 +139,75 @@ export async function runNewsPipeline(db) {
       }
     }
 
-    // Step 2: Audio + Transcript
-    if (item.status === "script_generated" || item.status?.includes("audio_failed")) {
-      try {
-        console.log(`🎙️ Voice: ${voice} for topic ${index}`);
-        const { buffer: audioBuffer, transcript } = await safeRetry(() => generateVoiceover(item.script, index, voice));
-        const folder = `${CLOUDINARY_ROOT}/${overallId}/${newsId}`;
-        const audioUrl = await uploadBuffer(audioBuffer, folder, `news${index}`, "video");
-        const transcriptUrl = await uploadBuffer(Buffer.from(JSON.stringify(transcript)), folder, `news${index}_transcript`, "raw");
-        item.audio_url = audioUrl;
-        item.transcript_url = transcriptUrl;
-        item.status = "audio_uploaded";
-        item.error = null;
-        items[index] = item;
-        logBackup(backup);
-        console.log(`✅ Audio + transcript uploaded for topic ${index}`);
-      } catch (err) {
-        item.status = `news${index}_audio_failed`;
-        item.error = err.message;
-        items[index] = item;
-        logBackup(backup);
-        console.error(`❌ Audio error for topic ${index}: ${err.message}`);
-        continue;
-      }
-    }
-
-    // Step 3: Image
-    if (item.status === "audio_uploaded" || item.status?.includes("image_failed")) {
+    // Step 2: Banner (generated after topic/script is decided)
+    if (item.status === "script_generated" || item.status?.includes("image_failed")) {
       try {
         const prompt = await generateVisualPrompt(item.topic);
-        const imgBuffer = await safeRetry(() => generateBannerImage(prompt));
-        const imageUrl = await uploadBuffer(imgBuffer, `${CLOUDINARY_ROOT}/${overallId}/${newsId}`, "newsBackground");
+        const rawImg = await safeRetry(() => generateBannerImage(prompt));
+        const imgBuffer = compressBanner(rawImg, path.join(itemDir, "banner"));
+        fs.writeFileSync(path.join(itemDir, "banner.jpg"), imgBuffer);
+
+        // Extract gradient color from banner
+        const gradientColor = extractDominantColor(imgBuffer, path.join(itemDir, "banner_color"));
+
+        const imageUrl = await uploadBuffer(imgBuffer, `${CLOUDINARY_ROOT}/item_${index}`, "banner");
         item.image_url = imageUrl;
-        item.status = "complete";
+        item.gradient_color = gradientColor;
+        item.status = "image_uploaded";
         item.error = null;
         items[index] = item;
         logBackup(backup);
-        console.log(`✅ Complete: topic ${index}`);
+        console.log(`✅ Banner uploaded for topic ${index}`);
       } catch (err) {
         item.status = `news${index}_image_failed`;
         item.error = err.message;
         items[index] = item;
         logBackup(backup);
         console.error(`❌ Image error for topic ${index}: ${err.message}`);
+        continue;
+      }
+    }
+
+    // Step 3: Audio + Transcript
+    if (item.status === "image_uploaded" || item.status?.includes("audio_failed")) {
+      try {
+        console.log(`🎙️ Voice: ${voice} for topic ${index}`);
+        const { buffer: audioBuffer, transcript } = await safeRetry(() => generateVoiceover(item.script, index, voice));
+
+        // Save audio and transcript to item folder
+        fs.writeFileSync(path.join(itemDir, "audio.mp3"), audioBuffer);
+        fs.writeFileSync(path.join(itemDir, "transcript.json"), JSON.stringify(transcript, null, 2));
+
+        const audioUrl = await uploadBuffer(audioBuffer, `${CLOUDINARY_ROOT}/item_${index}`, "audio", "video");
+        const transcriptUrl = await uploadBuffer(Buffer.from(JSON.stringify(transcript)), `${CLOUDINARY_ROOT}/item_${index}`, "transcript", "raw");
+
+        item.audio_url = audioUrl;
+        item.transcript_url = transcriptUrl;
+        item.status = "complete";
+        item.error = null;
+        items[index] = item;
+
+        // Write item metadata
+        writeMetadata(path.join(itemDir, "metadata.json"), {
+          news_id: item.news_id,
+          topic: item.topic,
+          category: item.category,
+          source_link: item.source_link,
+          voice: item.voice,
+          timestamp: item.timestamp,
+          audio_url: item.audio_url,
+          transcript_url: item.transcript_url,
+          image_url: item.image_url,
+        });
+
+        logBackup(backup);
+        console.log(`✅ Complete: topic ${index}`);
+      } catch (err) {
+        item.status = `news${index}_audio_failed`;
+        item.error = err.message;
+        items[index] = item;
+        logBackup(backup);
+        console.error(`❌ Audio error for topic ${index}: ${err.message}`);
         continue;
       }
     }
@@ -181,8 +227,10 @@ export async function runNewsPipeline(db) {
     const completedTopics = items.map((it) => it.topic).filter(Boolean);
 
     const thumbPrompt = await createCombinedVisualPrompt(completedTopics);
-    const thumbBuffer = await generateThumbnailImage(thumbPrompt);
-    const thumbUrl = await uploadBuffer(thumbBuffer, `${CLOUDINARY_ROOT}/${overallId}`, "newsThumbnail");
+    const rawThumb = await generateThumbnailImage(thumbPrompt);
+    const thumbBuffer = compressThumbnail(rawThumb, path.join(TMP_ROOT, "thumbnail"));
+    fs.writeFileSync(path.join(TMP_ROOT, "thumbnail.jpg"), thumbBuffer);
+    const thumbUrl = await uploadBuffer(thumbBuffer, CLOUDINARY_ROOT, "thumbnail");
 
     const summaryText = await createCombinedNewsSummary(completedTopics);
 
@@ -193,17 +241,10 @@ export async function runNewsPipeline(db) {
       category: it.category,
       image_url: it.image_url,
       source_link: it.source_link,
+      gradient_color: it.gradient_color,
     }));
 
     await db.prepare("INSERT OR REPLACE INTO news (id, items) VALUES (?, ?)").bind(overallId, JSON.stringify(dbItems)).run();
-
-    const prevStats = await db.prepare("SELECT data FROM gen_stats WHERE key = ?").bind("news").first();
-    if (prevStats) {
-      const prev = JSON.parse(prevStats.data);
-      if (prev.latestNewsId && prev.latestNewsId !== overallId) {
-        await deleteFolder(`${CLOUDINARY_ROOT}/${prev.latestNewsId}`);
-      }
-    }
 
     const statsData = JSON.stringify({
       latestNewsId: overallId,
@@ -213,7 +254,17 @@ export async function runNewsPipeline(db) {
     });
     await db.prepare("INSERT OR REPLACE INTO gen_stats (key, data) VALUES (?, ?)").bind("news", statsData).run();
 
-    fs.unlinkSync(BACKUP_FILE);
+    // Write overall metadata
+    writeMetadata(path.join(TMP_ROOT, "metadata.json"), {
+      id: overallId,
+      date: new Date().toISOString(),
+      summary: summaryText,
+      thumbnail_url: thumbUrl,
+      total_items: totalItems,
+      items: dbItems,
+    });
+
+    // cleanupTmp();
     console.log("✅ News pipeline complete!");
   } catch (err) {
     backup.status = "final_error";
