@@ -619,7 +619,6 @@ export default function HandlePage({ path }) {
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="text-[15px] text-[var(--text-primary)] font-semibold group-hover:text-[var(--text-primary)] transition-colors leading-snug">
-                          {b.page_emoji && <span className="mr-1.5">{b.page_emoji}</span>}
                           {b.title || 'Untitled'}
                         </p>
                         {b.subtitle && <p className="text-[13px] text-[var(--text-muted)] mt-1 line-clamp-1">{b.subtitle}</p>}
