@@ -36,6 +36,10 @@ async function main() {
   const runNews = args.length === 0 || args.includes("--news");
   const runPodcast = args.length === 0 || args.includes("--podcast");
 
+  // Step targeting: --step=upload, --step=thumbnail, etc.
+  const stepArg = args.find((a) => a.startsWith("--step="));
+  const step = stepArg ? stepArg.split("=")[1] : "all";
+
   ensureTmp();
   const state = loadState();
 
@@ -76,7 +80,7 @@ async function main() {
     state.podcast = "running";
     saveState(state);
     try {
-      await runPodcastPipeline(db);
+      await runPodcastPipeline(db, { step });
       state.podcast = "complete";
       state.podcast_completed_at = new Date().toISOString();
       saveState(state);

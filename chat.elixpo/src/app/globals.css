@@ -150,3 +150,9 @@ body {
   margin: 2px 0;
   line-height: 1.2em;
 }
+
+/* Subtitle fade-up animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

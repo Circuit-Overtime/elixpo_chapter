@@ -1,152 +1,283 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import CloseButton from "@/components/CloseButton";
-import SourcePill from "@/components/SourcePill";
+import { useEffect, useRef, useState, useCallback } from "react";
+import Link from "next/link";
+
+interface TimelineEntry {
+  type: "male" | "female" | "image";
+  content: string;
+  start: number;
+  end: number;
+}
+
+interface CarouselImage {
+  time: number;
+  url: string;
+  description: string;
+}
 
 export default function PodcastPage() {
   const [podcastName, setPodcastName] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [sourceLink, setSourceLink] = useState("");
+  const [sourceDomain, setSourceDomain] = useState("");
+  const [gradientColor, setGradientColor] = useState("#1a1a2e");
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [speed, setSpeed] = useState(1);
   const [loaded, setLoaded] = useState(false);
-  const [dominantColor, setDominantColor] = useState("rgba(88, 28, 135, 0.8)");
+  const [audioError, setAudioError] = useState(false);
+  const [showCaptions, setShowCaptions] = useState(true);
+
+  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const [carouselImages, setCarouselImages] = useState<CarouselImage[]>([]);
+  const [activeIdx, setActiveIdx] = useState(-1);
+  const [activeSpeaker, setActiveSpeaker] = useState<"male" | "female" | "">("");
+  const [activeCarouselUrl, setActiveCarouselUrl] = useState("");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const seekBarRef = useRef<HTMLDivElement>(null);
-  const speeds = [1, 1.5, 2, 4];
+  const subtitleContainerRef = useRef<HTMLDivElement>(null);
+  const speeds = [1, 1.5, 2];
+
+  // The currently displayed background image (banner or carousel slide)
+  const displayImage = activeCarouselUrl || bannerUrl || thumbnailUrl;
 
   useEffect(() => {
-    fetch("/api/podcast")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) return;
-        setPodcastName(data.podcast_name);
-        setBannerUrl(data.podcast_banner_url);
-        setThumbnailUrl(data.podcast_thumbnail_url || "");
-        setSourceLink(data.topic_source);
-        audioRef.current = new Audio(data.podcast_audio_url);
-        audioRef.current.preload = "metadata";
-        audioRef.current.addEventListener("loadedmetadata", () => setDuration(audioRef.current!.duration));
-        audioRef.current.addEventListener("timeupdate", () => setCurrentTime(audioRef.current!.currentTime));
-        audioRef.current.addEventListener("play", () => setIsPlaying(true));
-        audioRef.current.addEventListener("pause", () => setIsPlaying(false));
-        audioRef.current.addEventListener("ended", () => setIsPlaying(false));
-        setLoaded(true);
+    fetch("/api/podcast").then((r) => r.json()).then((data) => {
+      if (data.error) return;
+      setPodcastName(data.podcast_name);
+      setBannerUrl(data.podcast_banner_url || "");
+      setThumbnailUrl(data.podcast_thumbnail_url || "");
+      setSourceLink(data.topic_source || "");
+      try { setSourceDomain(new URL(data.topic_source).hostname.replace(/^www\./, "")); } catch { /* */ }
+      if (data.podcast_audio_url) {
+        const audio = new Audio(data.podcast_audio_url);
+        audio.preload = "metadata";
+        audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
+        audio.addEventListener("timeupdate", () => setCurrentTime(audio.currentTime));
+        audio.addEventListener("play", () => setIsPlaying(true));
+        audio.addEventListener("pause", () => setIsPlaying(false));
+        audio.addEventListener("ended", () => setIsPlaying(false));
+        audio.addEventListener("error", () => setAudioError(true));
+        audioRef.current = audio;
+      } else { setAudioError(true); }
+      setLoaded(true);
+    }).catch(console.error);
 
-        // Get dominant color from banner
-        if (data.podcast_banner_url) {
-          fetch(`/api/dominant-color?imageUrl=${encodeURIComponent(data.podcast_banner_url)}`)
-            .then((r) => r.json())
-            .then((c) => setDominantColor(c.color))
-            .catch(() => {});
-        }
-      })
-      .catch(console.error);
+    fetch("/api/podcast-details").then((r) => r.json()).then((d) => {
+      if (d.gradientColor) setGradientColor(d.gradientColor);
+      if (d.carouselImages) setCarouselImages(d.carouselImages);
+      if (d.timeline?.length) setTimeline(d.timeline);
+      else if (d.timelineUrl) fetch(d.timelineUrl).then((r) => r.json()).then(setTimeline).catch(() => {});
+    }).catch(() => {});
 
     return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; } };
   }, []);
 
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (audioRef.current.paused) audioRef.current.play(); else audioRef.current.pause();
-  };
+  const updateTimeline = useCallback(() => {
+    if (!timeline.length) return;
+    const t = currentTime;
+    const idx = timeline.findIndex((e) => (e.type === "male" || e.type === "female") && t >= e.start && t < e.end);
+    if (idx !== -1) { setActiveIdx(idx); setActiveSpeaker(timeline[idx].type as "male" | "female"); }
+    const passed = carouselImages.filter((img) => t >= img.time);
+    if (passed.length) setActiveCarouselUrl(passed[passed.length - 1].url);
+  }, [currentTime, timeline, carouselImages]);
 
-  const cycleSpeed = () => {
-    const next = speeds[(speeds.indexOf(speed) + 1) % speeds.length];
-    setSpeed(next);
-    if (audioRef.current) audioRef.current.playbackRate = next;
-  };
+  useEffect(() => { updateTimeline(); }, [updateTimeline]);
 
-  const skip = (sec: number) => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + sec));
-  };
+  useEffect(() => {
+    if (activeIdx < 0 || !subtitleContainerRef.current) return;
+    const el = subtitleContainerRef.current.children[activeIdx] as HTMLElement;
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [activeIdx]);
 
-  const seekTo = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!seekBarRef.current || !audioRef.current) return;
-    const rect = seekBarRef.current.getBoundingClientRect();
-    audioRef.current.currentTime = (Math.max(0, Math.min(e.clientX - rect.left, rect.width)) / rect.width) * duration;
-  };
+  const togglePlay = () => { if (!audioRef.current || audioError) return; audioRef.current.paused ? audioRef.current.play() : audioRef.current.pause(); };
+  const cycleSpeed = () => { const n = speeds[(speeds.indexOf(speed) + 1) % speeds.length]; setSpeed(n); if (audioRef.current) audioRef.current.playbackRate = n; };
+  const skip = (s: number) => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + s)); };
+  const seekTo = (e: React.MouseEvent<HTMLDivElement>) => { if (!seekBarRef.current || !audioRef.current) return; const r = seekBarRef.current.getBoundingClientRect(); audioRef.current.currentTime = (Math.max(0, Math.min(e.clientX - r.left, r.width)) / r.width) * duration; };
+  const fmt = (s: number) => { s = Math.max(0, Math.floor(s)); return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`; };
+  const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const faviconUrl = sourceDomain ? `https://www.google.com/s2/favicons?domain=${sourceDomain}&sz=64` : "";
 
-  const formatTime = (sec: number) => {
-    sec = Math.max(0, Math.floor(sec));
-    return `-${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, "0")}`;
-  };
+  // Build granular sentence-level subtitles from timeline (memoized)
+  interface SubLine { text: string; speaker: "male" | "female"; start: number; end: number; }
+  const subLines = useRef<SubLine[]>([]);
 
-  const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  useEffect(() => {
+    const lines: SubLine[] = [];
+    for (const entry of timeline) {
+      if (entry.type !== "male" && entry.type !== "female") continue;
+      // Split into short chunks (~60 chars each) for smooth rolling
+      const words = entry.content.split(/\s+/);
+      const chunks: string[] = [];
+      let current = "";
+      for (const word of words) {
+        if (current.length + word.length + 1 > 60 && current.length > 0) {
+          chunks.push(current);
+          current = word;
+        } else {
+          current = current ? current + " " + word : word;
+        }
+      }
+      if (current) chunks.push(current);
+
+      const dur = entry.end - entry.start;
+      const totalChars = chunks.reduce((s, t) => s + t.length, 0);
+      let offset = entry.start;
+      for (const chunk of chunks) {
+        const chunkDur = totalChars > 0 ? (chunk.length / totalChars) * dur : dur / chunks.length;
+        lines.push({ text: chunk, speaker: entry.type as "male" | "female", start: offset, end: offset + chunkDur });
+        offset += chunkDur;
+      }
+    }
+    subLines.current = lines;
+  }, [timeline]);
+
+  // Find the active subtitle chunk
+  const [activeSubLine, setActiveSubLine] = useState<SubLine | null>(null);
+
+  useEffect(() => {
+    const t = currentTime;
+    const found = subLines.current.find((s) => t >= s.start && t < s.end) || null;
+    // Only update if text actually changed
+    setActiveSubLine((prev) => {
+      if (found?.text === prev?.text) return prev;
+      return found;
+    });
+  }, [currentTime]);
 
   return (
-    <section className="relative h-screen w-screen overflow-hidden">
-      <CloseButton />
+    <section className="relative h-screen w-screen overflow-hidden bg-black">
+      {/* Back */}
+      <Link href="/" className="fixed top-4 left-4 z-50 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+      </Link>
 
-      {/* Gradient background */}
-      <div className="absolute inset-0 transition-colors duration-1000" style={{ background: `linear-gradient(160deg, ${dominantColor}, #0a0a0a)` }} />
-
-      {/* Banner blur */}
-      {bannerUrl && (
+      {/* ═══ FULL-SCREEN BACKGROUND IMAGE (no blur) ═══ */}
+      {displayImage && (
         <div
-          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-20"
-          style={{ backgroundImage: `url(${bannerUrl})`, filter: "blur(60px) brightness(0.4)" }}
+          className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000"
+          style={{ backgroundImage: `url(${displayImage})` }}
         />
       )}
 
-      {/* Thumbnail */}
-      <div className="absolute top-[10%] left-1/2 -translate-x-1/2 z-10">
-        {(thumbnailUrl || bannerUrl) && (
-          <div
-            className="w-[240px] h-[240px] rounded-[40px] bg-cover bg-center shadow-2xl shadow-black/50 transition-all duration-700 border border-white/10 max-sm:w-[180px] max-sm:h-[180px] max-sm:rounded-[30px]"
-            style={{ backgroundImage: `url(${thumbnailUrl || bannerUrl})`, opacity: loaded ? 1 : 0 }}
-          />
-        )}
-      </div>
+      {/* Gradient overlay: image visible at top, fades to color at bottom */}
+      <div className="absolute inset-0 z-[1]" style={{
+        background: `linear-gradient(to bottom, transparent 0%, ${gradientColor}33 20%, ${gradientColor}aa 45%, ${gradientColor}ee 65%, ${gradientColor} 85%)`
+      }} />
 
-      {/* Podcast name */}
-      <p className="absolute top-[55%] left-1/2 -translate-x-1/2 text-2xl font-bold z-10 text-center font-[family-name:var(--font-parkinsans)] text-white max-w-[80%] transition-opacity duration-700 max-sm:text-lg max-sm:top-[52%]" style={{ opacity: loaded ? 1 : 0 }}>
-        {podcastName}
-      </p>
-      <p className="absolute top-[63%] left-1/2 -translate-x-1/2 text-xs z-10 w-[80%] text-center text-white/40 font-[family-name:var(--font-parkinsans)] max-sm:top-[60%]">
-        Generated by Elixpo Copilot. There might be mistakes
-      </p>
+      {/* Dark vignette edges */}
+      <div className="absolute inset-0 z-[1]" style={{ background: "radial-gradient(ellipse at center 30%, transparent 40%, rgba(0,0,0,0.4) 100%)" }} />
 
-      {/* Source */}
-      {sourceLink && (
-        <div className="absolute top-[68%] left-1/2 -translate-x-1/2 z-10 max-sm:top-[65%]">
-          <SourcePill sourceLink={sourceLink} />
-        </div>
-      )}
+      {/* ═══ CONTENT LAYER ═══ */}
+      <div className="relative z-10 h-full flex flex-col">
 
-      {/* Playback zone */}
-      <div className="absolute top-[78%] left-1/2 -translate-x-1/2 w-[30%] h-[100px] rounded-[25px] z-10 select-none max-lg:w-[50%] max-sm:w-[85%] max-sm:top-[74%]" style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(20px)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)" }}>
-        {/* Seek */}
-        <div className="relative flex items-center w-[90%] h-[40%] left-[5%] top-[10%] gap-5">
-          <button onClick={cycleSpeed} className="font-[family-name:var(--font-parkinsans)] font-bold rounded-lg px-2 py-0.5 text-white/80 text-sm cursor-pointer">{speed}x</button>
-          <div ref={seekBarRef} onClick={seekTo} className="relative w-[75%] h-[5px] rounded-[10px] cursor-pointer" style={{ background: "rgba(255,255,255,0.3)" }}>
-            <div className="absolute h-[5px] rounded-[20px] top-0 left-0 bg-white" style={{ width: `${percent}%` }} />
-            <div className="absolute w-3 h-3 rounded-full -top-[3.5px] z-[1] bg-white cursor-pointer" style={{ left: `${percent}%`, transform: "translateX(-50%)" }} />
+        {/* Top spacer — lets background image breathe */}
+        <div className="flex-1 min-h-0" />
+
+        {/* Carousel dots */}
+        {carouselImages.length > 0 && (
+          <div className="flex justify-center gap-1.5 mb-3">
+            {carouselImages.map((img, i) => (
+              <div key={i} className={`h-1 rounded-full transition-all duration-500 ${activeCarouselUrl === img.url ? "bg-white w-5" : "bg-white/25 w-1.5"}`} />
+            ))}
           </div>
-          <span className="font-[family-name:var(--font-parkinsans)] font-bold text-white/80 text-sm">{formatTime(duration - currentTime)}</span>
-        </div>
+        )}
 
-        {/* Controls */}
-        <div className="relative flex items-center justify-between w-[50%] h-[40%] left-1/2 -translate-x-1/2 top-[10%]">
-          <svg viewBox="0 0 24 24" className="w-6 h-6 cursor-pointer" onClick={() => skip(-10)}>
-            <path d="M2.74999 2.5C2.33578 2.5 2 2.83579 2 3.25V8.75C2 9.16421 2.33578 9.5 2.74999 9.5H8.25011C8.66432 9.5 9.00011 9.16421 9.00011 8.75C9.00011 8.33579 8.66432 8 8.25011 8H4.34273C5.40077 6.60212 6.77033 5.4648 8.47169 4.93832C10.5381 4.29885 12.7232 4.35354 14.7384 5.10317C16.7673 5.85787 18.6479 7.38847 19.5922 9.11081C19.7914 9.47401 20.2473 9.607 20.6104 9.40785C20.9736 9.20871 21.1066 8.75284 20.9075 8.38964C19.7655 6.30687 17.5773 4.55877 15.2614 3.69728C12.9318 2.83072 10.4069 2.7693 8.02826 3.50536C6.14955 4.08673 4.65345 5.26153 3.49999 6.64949V3.25C3.49999 2.83579 3.1642 2.5 2.74999 2.5Z" fill="white" />
-          </svg>
-          <svg viewBox="0 0 32 32" className="w-8 h-8 cursor-pointer" onClick={togglePlay}>
-            {isPlaying ? (
-              <path d="M7.25 29C5.45507 29 4 27.5449 4 25.75V7.25C4 5.45507 5.45507 4 7.25 4H10.75C12.5449 4 14 5.45507 14 7.25V25.75C14 27.5449 12.5449 29 10.75 29H7.25ZM21.25 29C19.4551 29 18 27.5449 18 25.75V7.25C18 5.45507 19.4551 4 21.25 4H24.75C26.5449 4 28 5.45507 28 7.25V25.75C28 27.5449 26.5449 29 24.75 29H21.25Z" fill="white" />
-            ) : (
-              <path d="M12.2246 27.5373C9.89137 28.8585 7 27.173 7 24.4917V7.50044C7 4.81864 9.89234 3.1332 12.2256 4.45537L27.2233 12.9542C29.5897 14.2951 29.5891 17.7047 27.2223 19.0449L12.2246 27.5373Z" fill="white" />
-            )}
-          </svg>
-          <svg viewBox="0 0 24 24" className="w-6 h-6 cursor-pointer" onClick={() => skip(10)}>
-            <path d="M21.25 2.5C21.6642 2.5 22 2.83579 22 3.25V8.75C22 9.16421 21.6642 9.5 21.25 9.5H15.7499C15.3357 9.5 14.9999 9.16421 14.9999 8.75C14.9999 8.33578 15.3357 8 15.7499 8H19.6573C18.5992 6.60212 17.2297 5.4648 15.5283 4.93832C13.4619 4.29885 11.2768 4.35354 9.26156 5.10317C7.23271 5.85787 5.35214 7.38846 4.40776 9.11081C4.20861 9.47401 3.75274 9.607 3.38955 9.40785C3.02635 9.20871 2.89336 8.75283 3.09251 8.38964C4.23451 6.30687 6.42268 4.55877 8.73861 3.69728C11.0682 2.83072 13.5931 2.7693 15.9717 3.50536C17.8504 4.08673 19.3465 5.26153 20.5 6.64949V3.25C20.5 2.83579 20.8358 2.5 21.25 2.5Z" fill="white" />
-          </svg>
+        {/* Speaker indicator */}
+        {activeSpeaker && isPlaying && (
+          <div className="flex justify-center mb-2">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/20 backdrop-blur-sm">
+              <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${activeSpeaker === "female" ? "bg-pink-400" : "bg-blue-400"}`} />
+              <span className="text-[9px] text-white/50 font-semibold tracking-widest uppercase">
+                {activeSpeaker === "female" ? "Liza" : "Lix"}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Rolling subtitle — single line above player */}
+        {showCaptions && (
+          <div className="flex-shrink-0 px-6 mb-2">
+            <div className="max-w-lg mx-auto text-center min-h-[52px] flex flex-col items-center justify-end">
+              {activeSubLine ? (
+                <>
+                  <span className={`text-[9px] uppercase tracking-widest font-bold mb-1 transition-colors duration-200 ${activeSubLine.speaker === "female" ? "text-pink-400/70" : "text-blue-400/70"}`}>
+                    {activeSubLine.speaker === "female" ? "Liza" : "Lix"}
+                  </span>
+                  <p key={`${activeSubLine.start}-${activeSubLine.text.slice(0,20)}`} className="text-sm text-white/85 font-medium leading-snug animate-[fadeUp_0.25s_ease-out]">
+                    {activeSubLine.text}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-white/20 italic">{loaded && !isPlaying ? "Press play" : "\u00A0"}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ PLAYER ═══ */}
+        <div className="flex-shrink-0 px-4 pb-6 pt-3">
+          <div className="max-w-lg mx-auto rounded-3xl px-6 py-5 bg-black/30 backdrop-blur-md border border-white/[0.06]">
+            {/* Title row */}
+            <div className="flex items-center gap-4 mb-4">
+              {/* Mini thumbnail */}
+              {(thumbnailUrl || bannerUrl) && (
+                <div className="w-14 h-14 rounded-xl bg-cover bg-center flex-shrink-0 border border-white/10 shadow-lg" style={{ backgroundImage: `url(${thumbnailUrl || bannerUrl})` }} />
+              )}
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base font-bold text-white/90 truncate">{podcastName || "Elixpo Podcast"}</h2>
+                <div className="flex items-center gap-1.5">
+                  {faviconUrl && sourceDomain ? (
+                    <a href={sourceLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 group">
+                      <img src={faviconUrl} alt="" width={14} height={14} className="rounded-sm opacity-40 group-hover:opacity-70" />
+                      <span className="text-[11px] text-white/30 group-hover:text-white/50 uppercase tracking-wider">{sourceDomain}</span>
+                    </a>
+                  ) : <span className="text-[11px] text-white/20 italic">Elixpo Copilot</span>}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCaptions(!showCaptions)}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+                  showCaptions ? "bg-white/15 border-white/20 text-white/80" : "bg-transparent border-white/8 text-white/25 hover:text-white/45"
+                }`}
+              >CC</button>
+            </div>
+
+            {/* Seek */}
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-[10px] text-white/30 font-mono w-9 text-right">{fmt(currentTime)}</span>
+              <div ref={seekBarRef} onClick={seekTo} className="flex-1 h-1 rounded-full cursor-pointer relative group hover:h-1.5 transition-all" style={{ background: "rgba(255,255,255,0.08)" }}>
+                <div className="absolute inset-y-0 left-0 rounded-full bg-white/80 transition-all" style={{ width: `${pct}%` }} />
+                <div className="absolute w-3 h-3 rounded-full bg-white -top-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" style={{ left: `calc(${pct}% - 6px)` }} />
+              </div>
+              <span className="text-[10px] text-white/30 font-mono w-9">{fmt(duration)}</span>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-center gap-6">
+              <button onClick={cycleSpeed} className="min-w-[40px] h-8 px-2.5 rounded-full text-[11px] text-white/50 font-bold bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] transition-all cursor-pointer flex items-center justify-center">{speed}x</button>
+              <button onClick={() => skip(-10)} className="text-white/40 hover:text-white/70 active:scale-90 transition-all cursor-pointer p-2 rounded-full hover:bg-white/[0.06]">
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>
+              </button>
+              <button onClick={togglePlay} disabled={audioError} className={`w-14 h-14 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-lg ${audioError ? "bg-white/10" : "bg-white hover:scale-105 active:scale-95 shadow-white/10"}`}>
+                {audioError ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                ) : isPlaying ? (
+                  <svg viewBox="0 0 32 32" className="w-6 h-6"><path d="M7.25 29C5.45507 29 4 27.5449 4 25.75V7.25C4 5.45507 5.45507 4 7.25 4H10.75C12.5449 4 14 5.45507 14 7.25V25.75C14 27.5449 12.5449 29 10.75 29H7.25ZM21.25 29C19.4551 29 18 27.5449 18 25.75V7.25C18 5.45507 19.4551 4 21.25 4H24.75C26.5449 4 28 5.45507 28 7.25V25.75C28 27.5449 26.5449 29 24.75 29H21.25Z" fill="#111" /></svg>
+                ) : (
+                  <svg viewBox="0 0 32 32" className="w-6 h-6 ml-0.5"><path d="M12.2246 27.5373C9.89137 28.8585 7 27.173 7 24.4917V7.50044C7 4.81864 9.89234 3.1332 12.2256 4.45537L27.2233 12.9542C29.5897 14.2951 29.5891 17.7047 27.2223 19.0449L12.2246 27.5373Z" fill="#111" /></svg>
+                )}
+              </button>
+              <button onClick={() => skip(10)} className="text-white/40 hover:text-white/70 active:scale-90 transition-all cursor-pointer p-2 rounded-full hover:bg-white/[0.06]">
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
+              </button>
+              <div className="w-10" />
+            </div>
+          </div>
         </div>
       </div>
     </section>
