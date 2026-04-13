@@ -47,11 +47,11 @@ export async function generateNewsScript(analysisContent, prevTopic, nextTopic, 
     "CRITICAL: Output ONLY the spoken words. NO music cues, NO sound effects, NO stage directions, NO parentheticals, NO bold text, NO asterisks, NO markdown. Just pure, clean spoken prose. " +
     "Write based ONLY on the provided analysis — don't invent facts. But tell the story with energy, clarity, and charm. " +
     "Use rhetorical questions, vivid descriptions, and natural transitions. Make the listener feel the weight or excitement of the news. " +
-    "Keep the script between 1–2 minutes of narration (250-400 words). " +
+    "Keep the script to exactly 1 minute of narration (140-160 words). Be concise but impactful — every word counts. " +
     'Return the script and the news source link as JSON: {"script": "...", "source_link": "..."}';
 
   const raw = await chatCompletion({
-    model: "gemkni-fast",
+    model: "gemini-fast",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: `Create a news script based on this analysis: ${analysisContent}` },
@@ -65,3 +65,17 @@ export async function generateNewsScript(analysisContent, prevTopic, nextTopic, 
   console.log("✅ News script generated.");
   return parsed;
 }
+
+
+generateNewsAnalysis("Regularly $999, score a MacBook Air for $200 with this limited-time deal - Mashable").then((analysis) => {
+  console.log("Analysis:", analysis);
+  return generateNewsScript(analysis, null, null, 0, 1);
+}).then((result) => {
+  console.log("Generated Script:", result.script);
+  console.log("Source Link:", result.source_link);
+}).catch((err) => {
+  console.error("Error during news analysis/script generation:", err);
+  if (err.message.includes("perplexity-fast returned empty content")) {
+    console.log("⚠️ Perplexity returned empty content. This can happen if the topic is very new or obscure. Consider trying a different topic or checking Perplexity's service status.");
+  }
+});
