@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { TexEditor } from "@/components/TexEditor";
+import { DomainSelect } from "@/components/DomainSelect";
 import { ScoreBadge, ScoreBar } from "@/components/ScoreBadge";
 import {
   detectText,
@@ -205,17 +206,7 @@ export default function Home() {
                 if (f) handleFile(f);
               }}
             />
-            <select
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
-              className="bg-bg-glass border border-border-light rounded-lg px-2.5 py-1.5 text-xs text-text-secondary focus:border-lime-border focus:outline-none"
-            >
-              <option value="general">General</option>
-              <option value="cs">Computer Science</option>
-              <option value="medicine">Medicine</option>
-              <option value="law">Law</option>
-              <option value="humanities">Humanities</option>
-            </select>
+            <DomainSelect value={domain} onChange={setDomain} />
           </div>
 
           <div className="flex items-center gap-2">
