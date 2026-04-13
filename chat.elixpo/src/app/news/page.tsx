@@ -1,18 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import CloseButton from "@/components/CloseButton";
-import SourcePill from "@/components/SourcePill";
-import type { NewsItem, TranscriptSegment } from "@/lib/types";
+import Link from "next/link";
+import type { NewsItem, TimelineEntry } from "@/lib/types";
 
 const CATEGORY_COLORS: Record<string, string> = {
-  tech: "#f59e0b",
-  science: "#10b981",
-  sports: "#3b82f6",
-  health: "#ef4444",
-  entertainment: "#a855f7",
-  travel: "#06b6d4",
-  business: "#f97316",
+  tech: "#f59e0b", science: "#10b981", sports: "#3b82f6", health: "#ef4444",
+  entertainment: "#a855f7", travel: "#06b6d4", business: "#f97316",
 };
 
 export default function NewsPage() {
@@ -22,30 +16,31 @@ export default function NewsPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [dominantColor, setDominantColor] = useState("rgba(30, 37, 56, 0.9)");
-  const [segments, setSegments] = useState<TranscriptSegment[]>([]);
-  const [activeSegmentIdx, setActiveSegmentIdx] = useState(-1);
+  const [gradientColor, setGradientColor] = useState("#1a1a2e");
+  const [showCaptions, setShowCaptions] = useState(true);
+
+  // Subtitle state
+  interface SubLine { text: string; speaker: "male" | "female"; start: number; end: number; }
+  const subLines = useRef<SubLine[]>([]);
+  const [activeSubLine, setActiveSubLine] = useState<SubLine | null>(null);
 
   const audioRefs = useRef<HTMLAudioElement[]>([]);
   const playTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const transcriptRef = useRef<HTMLDivElement>(null);
+  const seekBarRef = useRef<HTMLDivElement>(null);
 
   const headline = `Elixpo Daily — ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
 
   useEffect(() => {
-    fetch("/api/news")
-      .then((r) => r.json())
-      .then((data) => {
-        const newsItems: NewsItem[] = Array.isArray(data.items) ? data.items : Object.values(data.items);
-        setItems(newsItems);
-        audioRefs.current = newsItems.map((item) => {
-          const audio = new Audio(item.audio_url);
-          audio.preload = "auto";
-          return audio;
-        });
-        setLoading(false);
-      })
-      .catch(console.error);
+    fetch("/api/news").then((r) => r.json()).then((data) => {
+      const newsItems: NewsItem[] = Array.isArray(data.items) ? data.items : Object.values(data.items);
+      setItems(newsItems);
+      audioRefs.current = newsItems.map((item) => {
+        const audio = new Audio(item.audio_url);
+        audio.preload = "auto";
+        return audio;
+      });
+      setLoading(false);
+    }).catch(console.error);
 
     return () => {
       audioRefs.current.forEach((a) => { a.pause(); a.src = ""; });
@@ -53,47 +48,36 @@ export default function NewsPage() {
     };
   }, []);
 
-  // Load transcript when track changes
-  const loadTranscript = useCallback((item: NewsItem) => {
-    if (!item.transcript_url) { setSegments([]); return; }
-    fetch(item.transcript_url)
-      .then((r) => r.json())
-      .then((data) => {
-        const segs = data.segments || data.words || [];
-        setSegments(segs);
-        setActiveSegmentIdx(-1);
-      })
-      .catch(() => setSegments([]));
-  }, []);
-
-  const updateDominantColor = useCallback((imageUrl: string) => {
-    fetch(`/api/dominant-color?imageUrl=${encodeURIComponent(imageUrl)}`)
-      .then((r) => r.json())
-      .then((data) => setDominantColor(data.color))
-      .catch(() => {});
+  // Update gradient color from current item
+  const updateGradient = useCallback((item: NewsItem) => {
+    if (item.gradient_color) {
+      setGradientColor(item.gradient_color);
+    } else if (item.image_url) {
+      fetch(`/api/dominant-color?imageUrl=${encodeURIComponent(item.image_url)}`)
+        .then((r) => r.json())
+        .then((d) => setGradientColor(d.color))
+        .catch(() => {});
+    }
   }, []);
 
   useEffect(() => {
-    if (items.length === 0) return;
+    if (!items.length) return;
     const audio = audioRefs.current[currentIdx];
     if (!audio) return;
 
     const onTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
       setDuration(audio.duration || 0);
-      // Find active transcript segment
-      if (segments.length > 0) {
-        const t = audio.currentTime;
-        const idx = segments.findIndex((s) => t >= s.start && t < s.end);
-        setActiveSegmentIdx(idx);
-      }
+      // Update active subtitle
+      const found = subLines.current.find((s) => audio.currentTime >= s.start && audio.currentTime < s.end) || null;
+      setActiveSubLine((prev) => found?.text === prev?.text ? prev : found);
     };
     const onEnded = () => {
       if (currentIdx < items.length - 1) {
-        const nextIdx = currentIdx + 1;
-        setCurrentIdx(nextIdx);
-        audioRefs.current[nextIdx].currentTime = 0;
-        playTimeoutRef.current = setTimeout(() => { audioRefs.current[nextIdx].play(); setIsPlaying(true); }, 1200);
+        const next = currentIdx + 1;
+        setCurrentIdx(next);
+        audioRefs.current[next].currentTime = 0;
+        playTimeoutRef.current = setTimeout(() => { audioRefs.current[next].play(); setIsPlaying(true); }, 1000);
       } else { setIsPlaying(false); }
     };
     const onPlay = () => setIsPlaying(true);
@@ -104,8 +88,31 @@ export default function NewsPage() {
     audio.addEventListener("play", onPlay);
     audio.addEventListener("pause", onPause);
 
-    if (items[currentIdx]?.image_url) updateDominantColor(items[currentIdx].image_url);
-    loadTranscript(items[currentIdx]);
+    updateGradient(items[currentIdx]);
+
+    // Build subtitle chunks from timeline
+    const tl: TimelineEntry[] = items[currentIdx]?.timeline || [];
+    const lines: SubLine[] = [];
+    for (const entry of tl) {
+      const words = entry.content.split(/\s+/);
+      const chunks: string[] = [];
+      let cur = "";
+      for (const w of words) {
+        if (cur.length + w.length + 1 > 60 && cur) { chunks.push(cur); cur = w; }
+        else cur = cur ? cur + " " + w : w;
+      }
+      if (cur) chunks.push(cur);
+      const dur = entry.end - entry.start;
+      const totalChars = chunks.reduce((s, t) => s + t.length, 0);
+      let offset = entry.start;
+      for (const chunk of chunks) {
+        const chunkDur = totalChars > 0 ? (chunk.length / totalChars) * dur : dur / chunks.length;
+        lines.push({ text: chunk, speaker: entry.type as "male" | "female", start: offset, end: offset + chunkDur });
+        offset += chunkDur;
+      }
+    }
+    subLines.current = lines;
+    setActiveSubLine(null);
 
     return () => {
       audio.removeEventListener("timeupdate", onTimeUpdate);
@@ -113,159 +120,149 @@ export default function NewsPage() {
       audio.removeEventListener("play", onPlay);
       audio.removeEventListener("pause", onPause);
     };
-  }, [currentIdx, items, segments, updateDominantColor, loadTranscript]);
+  }, [currentIdx, items, updateGradient]);
 
-  // Auto-scroll transcript
-  useEffect(() => {
-    if (activeSegmentIdx < 0 || !transcriptRef.current) return;
-    const el = transcriptRef.current.children[activeSegmentIdx] as HTMLElement;
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [activeSegmentIdx]);
-
-  const togglePlay = () => {
-    const audio = audioRefs.current[currentIdx];
-    if (!audio) return;
-    if (audio.paused) audio.play(); else audio.pause();
-  };
-
+  const togglePlay = () => { const a = audioRefs.current[currentIdx]; if (a) a.paused ? a.play() : a.pause(); };
   const switchTrack = (idx: number) => {
     if (idx < 0 || idx >= items.length || idx === currentIdx) return;
     audioRefs.current[currentIdx].pause();
     if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
     setCurrentIdx(idx);
     audioRefs.current[idx].currentTime = 0;
-    playTimeoutRef.current = setTimeout(() => audioRefs.current[idx].play(), 800);
+    playTimeoutRef.current = setTimeout(() => audioRefs.current[idx].play(), 600);
   };
-
   const seekTo = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const percent = (e.clientX - rect.left) / rect.width;
-    const audio = audioRefs.current[currentIdx];
-    if (audio?.duration) audio.currentTime = percent * audio.duration;
+    if (!seekBarRef.current) return;
+    const r = seekBarRef.current.getBoundingClientRect();
+    const a = audioRefs.current[currentIdx];
+    if (a?.duration) a.currentTime = (Math.max(0, Math.min(e.clientX - r.left, r.width)) / r.width) * a.duration;
   };
+  const fmt = (s: number) => { s = Math.max(0, Math.floor(s)); return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`; };
 
-  const formatTime = (sec: number) => {
-    sec = Math.floor(sec);
-    return `${Math.floor(sec / 60).toString().padStart(2, "0")}:${(sec % 60).toString().padStart(2, "0")}`;
-  };
-
-  const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
   const currentItem = items[currentIdx];
   const categoryColor = CATEGORY_COLORS[currentItem?.category] || "#f59e0b";
+  const displayImage = currentItem?.image_url || "";
+  const sourceDomain = (() => { try { return new URL(currentItem?.source_link || "").hostname.replace(/^www\./, ""); } catch { return ""; } })();
+  const faviconUrl = sourceDomain ? `https://www.google.com/s2/favicons?domain=${sourceDomain}&sz=64` : "";
 
   return (
-    <section className="relative h-screen w-screen overflow-hidden flex">
-      <CloseButton />
+    <section className="relative h-screen w-screen overflow-hidden bg-black">
+      {/* Back */}
+      <Link href="/" className="fixed top-4 left-4 z-50 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+      </Link>
 
-      {/* Gradient background */}
-      <div className="absolute inset-0 transition-colors duration-1000" style={{ background: `linear-gradient(135deg, ${dominantColor}, #0a0a0a)` }} />
-      {currentItem?.image_url && (
-        <div className="absolute inset-0 bg-cover bg-center opacity-15 transition-all duration-700" style={{ backgroundImage: `url('${currentItem.image_url}')`, filter: "blur(50px) brightness(0.4)" }} />
+      {/* ═══ FULL-SCREEN BACKGROUND IMAGE ═══ */}
+      {displayImage && (
+        <div className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: `url(${displayImage})` }} />
       )}
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 z-[1]" style={{
+        background: `linear-gradient(to bottom, transparent 0%, ${gradientColor}33 20%, ${gradientColor}aa 45%, ${gradientColor}ee 65%, ${gradientColor} 85%)`
+      }} />
+      {/* Vignette */}
+      <div className="absolute inset-0 z-[1]" style={{ background: "radial-gradient(ellipse at center 30%, transparent 40%, rgba(0,0,0,0.4) 100%)" }} />
 
-      {/* Left: Player */}
-      <div className="relative z-10 flex flex-col items-center justify-center w-full lg:w-[60%] px-6">
+      {/* ═══ CONTENT ═══ */}
+      <div className="relative z-10 h-full flex flex-col">
+        {/* Top spacer — background image breathes */}
+        <div className="flex-1 min-h-0" />
+
         {/* Category badge */}
         {currentItem?.category && (
-          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4" style={{ background: categoryColor, color: "#fff" }}>
-            {currentItem.category}
-          </span>
-        )}
-
-        {/* Thumbnail */}
-        {currentItem?.image_url && (
-          <div className="w-[260px] h-[160px] rounded-2xl bg-cover bg-center shadow-2xl shadow-black/40 border border-white/10 mb-6 transition-all duration-500" style={{ backgroundImage: `url('${currentItem.image_url}')` }} />
-        )}
-
-        {/* Title */}
-        <p className="text-lg font-bold text-center text-white font-[family-name:var(--font-parkinsans)] max-w-lg mb-2 max-sm:text-base">
-          {loading ? headline : (currentItem?.topic?.slice(0, 100) || headline)}
-        </p>
-
-        {/* Source */}
-        {currentItem?.source_link && (
-          <div className="mb-6">
-            <SourcePill sourceLink={currentItem.source_link} />
+          <div className="flex justify-center mb-2">
+            <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ background: categoryColor, color: "#fff" }}>
+              {currentItem.category}
+            </span>
           </div>
         )}
 
-        {/* 7 Category tiles (seek bars) */}
-        <div className="flex gap-1.5 mb-4 w-full max-w-md">
-          {items.map((item, idx) => {
-            const isActive = idx === currentIdx;
-            const color = CATEGORY_COLORS[item.category] || "#666";
-            return (
-              <button
-                key={idx}
-                onClick={() => switchTrack(idx)}
-                className="flex-1 h-2 rounded-full cursor-pointer transition-all duration-300 relative overflow-hidden"
-                style={{ background: isActive ? "rgba(255,255,255,0.3)" : `${color}44` }}
-                title={`${item.category}: ${item.topic?.slice(0, 50)}`}
-              >
-                {isActive && (
-                  <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-100" style={{ width: `${percent}%`, background: color }} />
-                )}
-                {!isActive && (
-                  <div className="absolute inset-0 rounded-full" style={{ background: color, opacity: 0.6 }} />
+        {/* Story title as rolling subtitle */}
+        <div className="flex-shrink-0 px-6 mb-2">
+          <div className="max-w-lg mx-auto text-center min-h-[40px] flex items-center justify-center">
+            <p key={currentIdx} className="text-sm text-white/80 font-medium leading-snug animate-[fadeUp_0.3s_ease-out]">
+              {loading ? headline : (currentItem?.topic || headline)}
+            </p>
+          </div>
+        </div>
+
+        {/* ═══ PLAYER ═══ */}
+        <div className="flex-shrink-0 px-4 pb-6 pt-2">
+          <div className="max-w-lg mx-auto rounded-3xl px-6 py-5 bg-black/30 backdrop-blur-md border border-white/[0.06]">
+            {/* Title + Source row */}
+            <div className="flex items-center gap-4 mb-4">
+              {/* Mini banner */}
+              {displayImage && (
+                <div className="w-14 h-10 rounded-lg bg-cover bg-center flex-shrink-0 border border-white/10 shadow-lg" style={{ backgroundImage: `url(${displayImage})` }} />
+              )}
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-bold text-white/90 truncate">{headline}</h2>
+                <div className="flex items-center gap-1.5">
+                  {faviconUrl && sourceDomain ? (
+                    <a href={currentItem?.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 group">
+                      <img src={faviconUrl} alt="" width={12} height={12} className="rounded-sm opacity-40 group-hover:opacity-70" />
+                      <span className="text-[10px] text-white/30 group-hover:text-white/50 uppercase tracking-wider">{sourceDomain}</span>
+                    </a>
+                  ) : <span className="text-[10px] text-white/20 italic">Elixpo Daily</span>}
+                </div>
+              </div>
+              {/* Story counter */}
+              <span className="text-[10px] text-white/30 font-mono">{currentIdx + 1}/{items.length}</span>
+            </div>
+
+            {/* 7 category tile seek bars */}
+            <div className="flex gap-1 mb-3">
+              {items.map((item, idx) => {
+                const isActive = idx === currentIdx;
+                const color = CATEGORY_COLORS[item.category] || "#666";
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => switchTrack(idx)}
+                    className="flex-1 h-1.5 rounded-full cursor-pointer transition-all duration-300 relative overflow-hidden"
+                    style={{ background: isActive ? "rgba(255,255,255,0.15)" : `${color}33` }}
+                    title={`${item.category}: ${item.topic?.slice(0, 50)}`}
+                  >
+                    {isActive ? (
+                      <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-100" style={{ width: `${pct}%`, background: color }} />
+                    ) : (
+                      <div className="absolute inset-0 rounded-full" style={{ background: color, opacity: 0.5 }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Main seek bar */}
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-[10px] text-white/30 font-mono w-9 text-right">{fmt(currentTime)}</span>
+              <div ref={seekBarRef} onClick={seekTo} className="flex-1 h-1 rounded-full cursor-pointer relative group hover:h-1.5 transition-all" style={{ background: "rgba(255,255,255,0.08)" }}>
+                <div className="absolute inset-y-0 left-0 rounded-full transition-all" style={{ width: `${pct}%`, background: categoryColor }} />
+                <div className="absolute w-3 h-3 rounded-full bg-white -top-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" style={{ left: `calc(${pct}% - 6px)` }} />
+              </div>
+              <span className="text-[10px] text-white/30 font-mono w-9">{fmt(duration)}</span>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-center gap-6">
+              <button onClick={() => switchTrack(currentIdx - 1)} disabled={currentIdx === 0} className="text-white/40 hover:text-white/70 active:scale-90 transition-all cursor-pointer p-2 rounded-full hover:bg-white/[0.06] disabled:opacity-20">
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="19 20 9 12 19 4 19 20" /><line x1="5" y1="19" x2="5" y2="5" /></svg>
+              </button>
+
+              <button onClick={togglePlay} className="w-14 h-14 rounded-full bg-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-lg shadow-white/10">
+                {isPlaying ? (
+                  <svg viewBox="0 0 32 32" className="w-6 h-6"><path d="M7.25 29C5.45507 29 4 27.5449 4 25.75V7.25C4 5.45507 5.45507 4 7.25 4H10.75C12.5449 4 14 5.45507 14 7.25V25.75C14 27.5449 12.5449 29 10.75 29H7.25ZM21.25 29C19.4551 29 18 27.5449 18 25.75V7.25C18 5.45507 19.4551 4 21.25 4H24.75C26.5449 4 28 5.45507 28 7.25V25.75C28 27.5449 26.5449 29 24.75 29H21.25Z" fill="#111" /></svg>
+                ) : (
+                  <svg viewBox="0 0 32 32" className="w-6 h-6 ml-0.5"><path d="M12.2246 27.5373C9.89137 28.8585 7 27.173 7 24.4917V7.50044C7 4.81864 9.89234 3.1332 12.2256 4.45537L27.2233 12.9542C29.5897 14.2951 29.5891 17.7047 27.2223 19.0449L12.2246 27.5373Z" fill="#111" /></svg>
                 )}
               </button>
-            );
-          })}
-        </div>
 
-        {/* Time + main seek */}
-        <div className="flex items-center gap-3 w-full max-w-md mb-4">
-          <span className="text-xs text-white/60 font-mono w-10 text-right">{formatTime(currentTime)}</span>
-          <div onClick={seekTo} className="flex-1 h-1.5 rounded-full cursor-pointer relative" style={{ background: "rgba(255,255,255,0.2)" }}>
-            <div className="absolute inset-y-0 left-0 rounded-full bg-white" style={{ width: `${percent}%` }} />
-            <div className="absolute w-3 h-3 rounded-full bg-white -top-[3px] shadow" style={{ left: `calc(${percent}% - 6px)` }} />
+              <button onClick={() => switchTrack(currentIdx + 1)} disabled={currentIdx === items.length - 1} className="text-white/40 hover:text-white/70 active:scale-90 transition-all cursor-pointer p-2 rounded-full hover:bg-white/[0.06] disabled:opacity-20">
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 4 15 12 5 20 5 4" /><line x1="19" y1="5" x2="19" y2="19" /></svg>
+              </button>
+            </div>
           </div>
-          <span className="text-xs text-white/60 font-mono w-10">{formatTime(duration)}</span>
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center gap-8">
-          <button onClick={() => switchTrack(currentIdx - 1)} className="text-white/70 hover:text-white transition-colors" disabled={currentIdx === 0}>
-            <svg viewBox="0 0 24 24" className="w-6 h-6"><path d="M2.99998 19.247C2.99998 20.6548 4.57779 21.4864 5.73913 20.6906L16.2376 13.4972C17.2478 12.8051 17.253 11.3161 16.2476 10.6169L5.74918 3.31534C4.58885 2.50835 2.99998 3.33868 2.99998 4.75204V19.247ZM20.9999 20.25C20.9999 20.6642 20.6641 21 20.2499 21C19.8357 21 19.4999 20.6642 19.4999 20.25V3.75C19.4999 3.33579 19.8357 3 20.2499 3C20.6641 3 20.9999 3.33579 20.9999 3.75V20.25Z" fill="currentColor" /><title>Previous</title></svg>
-          </button>
-          <button onClick={togglePlay} className="w-14 h-14 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform">
-            {isPlaying ? (
-              <svg viewBox="0 0 32 32" className="w-6 h-6"><path d="M7.25 29C5.45507 29 4 27.5449 4 25.75V7.25C4 5.45507 5.45507 4 7.25 4H10.75C12.5449 4 14 5.45507 14 7.25V25.75C14 27.5449 12.5449 29 10.75 29H7.25ZM21.25 29C19.4551 29 18 27.5449 18 25.75V7.25C18 5.45507 19.4551 4 21.25 4H24.75C26.5449 4 28 5.45507 28 7.25V25.75C28 27.5449 26.5449 29 24.75 29H21.25Z" fill="#0a0a0a" /></svg>
-            ) : (
-              <svg viewBox="0 0 32 32" className="w-6 h-6 ml-1"><path d="M12.2246 27.5373C9.89137 28.8585 7 27.173 7 24.4917V7.50044C7 4.81864 9.89234 3.1332 12.2256 4.45537L27.2233 12.9542C29.5897 14.2951 29.5891 17.7047 27.2223 19.0449L12.2246 27.5373Z" fill="#0a0a0a" /></svg>
-            )}
-          </button>
-          <button onClick={() => switchTrack(currentIdx + 1)} className="text-white/70 hover:text-white transition-colors" disabled={currentIdx === items.length - 1}>
-            <svg viewBox="0 0 24 24" className="w-6 h-6"><path d="M2.99998 19.247C2.99998 20.6548 4.57779 21.4864 5.73913 20.6906L16.2376 13.4972C17.2478 12.8051 17.253 11.3161 16.2476 10.6169L5.74918 3.31534C4.58885 2.50835 2.99998 3.33868 2.99998 4.75204V19.247ZM20.9999 20.25C20.9999 20.6642 20.6641 21 20.2499 21C19.8357 21 19.4999 20.6642 19.4999 20.25V3.75C19.4999 3.33579 19.8357 3 20.2499 3C20.6641 3 20.9999 3.33579 20.9999 3.75V20.25Z" fill="currentColor" /><title>Next</title></svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Right: Live transcript */}
-      <div className="hidden lg:flex relative z-10 w-[40%] flex-col justify-center pr-12">
-        <h3 className="text-xs uppercase tracking-widest text-white/40 mb-4 font-semibold">Live Transcript</h3>
-        <div ref={transcriptRef} className="max-h-[60vh] overflow-y-auto pr-4 space-y-2" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.15) transparent" }}>
-          {segments.length > 0 ? segments.map((seg, i) => (
-            <p
-              key={i}
-              className="text-sm leading-relaxed transition-all duration-300 cursor-pointer"
-              style={{
-                color: i === activeSegmentIdx ? "#fff" : "rgba(255,255,255,0.35)",
-                transform: i === activeSegmentIdx ? "scale(1.02)" : "scale(1)",
-                fontWeight: i === activeSegmentIdx ? 600 : 400,
-              }}
-              onClick={() => {
-                const audio = audioRefs.current[currentIdx];
-                if (audio) audio.currentTime = seg.start;
-              }}
-            >
-              {seg.text}
-            </p>
-          )) : (
-            <p className="text-sm text-white/20 italic">
-              {loading ? "Loading..." : "Transcript will appear when audio plays"}
-            </p>
-          )}
         </div>
       </div>
     </section>

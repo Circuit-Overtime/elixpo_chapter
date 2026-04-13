@@ -119,8 +119,8 @@ export async function runNewsPipeline(db) {
         const scriptData = await safeRetry(() => generateNewsScript(info, prevTopic, nextTopic, index, totalItems));
         item.timestamp = new Date().toISOString();
         item.script = scriptData.script;
+        item.sections = scriptData.sections;
         item.source_link = scriptData.source_link || "";
-        item.voice = voice;
         item.status = "script_generated";
         item.error = null;
         items[index] = item;
@@ -168,17 +168,20 @@ export async function runNewsPipeline(db) {
       }
     }
 
-    // Step 3: Audio + Transcript
+    // Step 3: Audio (multi-voice) + Timeline
     if (item.status === "image_uploaded" || item.status?.includes("audio_failed")) {
       try {
-        console.log(`🎙️ Voice: ${voice} for topic ${index}`);
-        const { buffer: audioBuffer } = await safeRetry(() => generateVoiceover(item.script, index, voice));
+        console.log(`🎙️ Generating multi-voice audio for topic ${index}...`);
+        const { buffer: audioBuffer, timeline } = await safeRetry(() => generateVoiceover(item.sections || [{ type: "female", content: item.script }], index));
 
         fs.writeFileSync(path.join(itemDir, "audio.mp3"), audioBuffer);
 
         const audioUrl = await uploadBuffer(audioBuffer, `${CLOUDINARY_ROOT}/item_${index}`, "audio", "video");
+        const timelineUrl = await uploadBuffer(Buffer.from(JSON.stringify(timeline)), `${CLOUDINARY_ROOT}/item_${index}`, "timeline", "raw");
 
         item.audio_url = audioUrl;
+        item.timeline = timeline;
+        item.timeline_url = timelineUrl;
         item.status = "complete";
         item.error = null;
         items[index] = item;
@@ -189,10 +192,9 @@ export async function runNewsPipeline(db) {
           topic: item.topic,
           category: item.category,
           source_link: item.source_link,
-          voice: item.voice,
           timestamp: item.timestamp,
           audio_url: item.audio_url,
-
+          timeline,
           image_url: item.image_url,
         });
 
@@ -237,6 +239,7 @@ export async function runNewsPipeline(db) {
       image_url: it.image_url,
       source_link: it.source_link,
       gradient_color: it.gradient_color,
+      timeline: it.timeline,
     }));
 
     await db.prepare("INSERT OR REPLACE INTO news (id, items) VALUES (?, ?)").bind(overallId, JSON.stringify(dbItems)).run();

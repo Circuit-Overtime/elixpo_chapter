@@ -1,16 +1,18 @@
+export interface TimelineEntry {
+  type: "male" | "female";
+  content: string;
+  start: number;
+  end: number;
+}
+
 export interface NewsItem {
   audio_url: string;
-  transcript_url: string;
   topic: string;
   category: string;
   image_url: string;
   source_link: string;
-}
-
-export interface TranscriptSegment {
-  start: number;
-  end: number;
-  text: string;
+  gradient_color: string;
+  timeline: TimelineEntry[];
 }
 
 export interface News {
