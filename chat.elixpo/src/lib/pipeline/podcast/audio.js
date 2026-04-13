@@ -1,12 +1,18 @@
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import { generateAudio, transcribeAudio } from "../pollinations.js";
+import { generateAudio, chatCompletion } from "../pollinations.js";
 import { compressAudio } from "../compress.js";
-import { PODCAST_VOICE_FEMALE, PODCAST_VOICE_MALE } from "../config.js";
+import { PODCAST_VOICE_FEMALE, PODCAST_VOICE_MALE, MODELS } from "../config.js";
 import { PODCAST_TTS_PROMPT } from "../prompts.js";
 
 const TMP = path.resolve("tmp/podcast");
+
+const TRIGGER_WORDS = /\b(psychosis|suicide|suicidal|self-harm|kill|murder|assault|abuse|rape|violence|drug abuse|overdose|terrorist|terrorism|bomb|shoot|weapon|extremist)\b/gi;
+
+function sanitizeForParaphrase(text) {
+  return text.replace(TRIGGER_WORDS, "[topic]");
+}
 
 /**
  * Generate podcast speech from parsed sections.
@@ -30,11 +36,32 @@ export async function generatePodcastSpeech(sections) {
     const segPath = path.join(TMP, `segment_${i}.mp3`);
 
     console.log(`🎙️ [${i + 1}/${speechSections.length}] ${section.type} (${voice})...`);
-    const base64 = await generateAudio({
-      script: section.content,
-      voice,
-      developerPrompt: PODCAST_TTS_PROMPT,
-    });
+
+    let text = section.content;
+    let base64 = null;
+    const maxAttempts = 3;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        base64 = await generateAudio({ script: text, voice, developerPrompt: PODCAST_TTS_PROMPT });
+        break;
+      } catch (err) {
+        const isContentFilter = err.message?.includes("content management policy") || err.message?.includes("filtered");
+        if (!isContentFilter || attempt === maxAttempts - 1) throw err;
+
+        console.warn(`  ⚠️ Content filter hit on segment ${i + 1} [${section.type}], paraphrasing (attempt ${attempt + 2})...`);
+        console.warn(`  📄 Blocked text: "${text.slice(0, 150)}..."`);
+        const safeInput = sanitizeForParaphrase(text);
+        text = await chatCompletion({
+          model: MODELS.promptWriter,
+          messages: [
+            { role: "system", content: "Rewrite the following spoken dialogue to be friendly and safe for all audiences. Paraphrase with same semantic meaning and keep the same conversational tone, same length, same meaning. Output only the rewritten text, nothing else with no overhead" },
+            { role: "user", content: safeInput },
+          ],
+        });
+      }
+    }
+
     const rawBuffer = Buffer.from(base64, "base64");
     const compressed = compressAudio(rawBuffer, path.join(TMP, `segment_${i}`));
     fs.writeFileSync(segPath, compressed);
@@ -118,10 +145,5 @@ export async function generatePodcastSpeech(sections) {
   for (const p of segmentPaths) if (fs.existsSync(p)) fs.unlinkSync(p);
   if (fs.existsSync(listPath)) fs.unlinkSync(listPath);
 
-  // Transcribe
-  console.log("📝 Transcribing final audio...");
-  const transcript = await transcribeAudio(buffer, "podcast.mp3");
-  console.log(`✅ Transcript: ${transcript.segments?.length || 0} segments`);
-
-  return { buffer, transcript, timeline };
+  return { buffer, timeline };
 }

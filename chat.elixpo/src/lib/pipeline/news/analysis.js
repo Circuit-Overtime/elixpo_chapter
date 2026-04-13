@@ -38,7 +38,7 @@ export async function generateNewsScript(analysisContent, prevTopic, nextTopic, 
     "CRITICAL: Output ONLY the spoken words. NO music cues, NO sound effects, NO stage directions, NO parentheticals, NO bold text, NO asterisks, NO markdown. Just pure, clean spoken prose. " +
     "Write based ONLY on the provided analysis — don't invent facts. But tell the story with energy, clarity, and charm. " +
     "Use rhetorical questions, vivid descriptions, and natural transitions. Make the listener feel the weight or excitement of the news. " +
-    "Keep the script to exactly 1 minute of narration (140-160 words). Be concise but impactful — every word counts. " +
+    "STRICT WORD LIMIT: 80-90 words. The TTS speaks at ~88 words per minute with breathing and pauses, so 85 words = exactly 1 minute of audio. Do NOT exceed 90 words. Be concise but impactful — every word counts. " +
     'Return the script and the news source link as JSON: {"script": "...", "source_link": "..."}';
 
   const raw = await chatCompletion({

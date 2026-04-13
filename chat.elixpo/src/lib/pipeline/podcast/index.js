@@ -76,7 +76,7 @@ export async function runPodcastPipeline(db) {
   if (backup.status === "topic_stored") {
     console.log("📝 Generating script...");
     const info = await getLatestInfo(topicName);
-    const result = await generatePodcastScript(info, topicName);
+    const result = await generatePodcastScript(info, topicName, topicSource);
     sections = result.sections;
     backup.script = result.script;
     backup.sections = sections;
@@ -138,25 +138,22 @@ export async function runPodcastPipeline(db) {
     console.log(`✅ ${carouselUrls.length} carousel images done.`);
   }
 
-  // Step 4: Multi-voice speech + transcript + timeline
+  // Step 4: Multi-voice speech + timeline
   if (backup.status === "carousel_uploaded") {
     console.log("🔊 Generating multi-voice speech...");
-    const { buffer: speechBuffer, transcript, timeline } = await generatePodcastSpeech(sections);
+    const { buffer: speechBuffer, timeline } = await generatePodcastSpeech(sections);
 
     fs.writeFileSync(path.join(TMP_ROOT, "audio.mp3"), speechBuffer);
-    fs.writeFileSync(path.join(TMP_ROOT, "transcript.json"), JSON.stringify(transcript, null, 2));
     fs.writeFileSync(path.join(TMP_ROOT, "timeline.json"), JSON.stringify(timeline, null, 2));
 
     const audioUrl = await uploadBuffer(speechBuffer, CLOUDINARY_PODCAST_ROOT, "audio", "video");
-    const transcriptUrl = await uploadBuffer(Buffer.from(JSON.stringify(transcript)), CLOUDINARY_PODCAST_ROOT, "transcript", "raw");
     const timelineUrl = await uploadBuffer(Buffer.from(JSON.stringify(timeline)), CLOUDINARY_PODCAST_ROOT, "timeline", "raw");
 
     backup.audio_url = audioUrl;
-    backup.transcript_url = transcriptUrl;
     backup.timeline_url = timelineUrl;
     backup.status = "audio_uploaded";
     logBackup(backup);
-    console.log("✅ Speech + transcript + timeline uploaded.");
+    console.log("✅ Speech + timeline uploaded.");
   }
 
   // Step 5: Save to D1 + metadata
