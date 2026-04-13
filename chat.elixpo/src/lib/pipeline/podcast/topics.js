@@ -1,4 +1,5 @@
 import { chatCompletion } from "../pollinations.js";
+import { MODELS } from "../config.js";
 import { POLLINATIONS_API_KEY } from "../config.js";
 
 const FEEDS = [
@@ -72,10 +73,7 @@ export async function fetchPodcastTopics() {
 export async function pickPodcastTopic(topics) {
   console.log("🎯 Picking best podcast topic...");
   const raw = await chatCompletion({
-    model: "gemini-fast",
-    headers: { "Content-Type": "application/json" ,
-      "Authorization": `Bearer ${POLLINATIONS_API_KEY}`
-    },
+    model: MODELS.scriptWriter,
     messages: [
       {
         role: "system",

@@ -1,29 +1,20 @@
 import { chatCompletion } from "../pollinations.js";
-
+import { MODELS } from "../config.js";
 
 export async function generateNewsAnalysis(newsTitle) {
-  console.log(`🔬 Researching '${newsTitle}' via perplexity-fast...`);
+  console.log(`🔬 Researching '${newsTitle}'...`);
   const content = await chatCompletion({
-    model: "perplexity-fast",
+    model: MODELS.research,
     messages: [
       { role: "user", content: `Give me the latest detailed news for the topic: ${newsTitle}` },
     ],
   });
 
-  if (!content) throw new Error("perplexity-fast returned empty content");
+  if (!content) throw new Error("Research returned empty content");
   console.log("✅ Analysis received.");
   return content;
 }
 
-/**
- * Generate a news script from analysis content with awareness of surrounding stories.
- * @param {string} analysisContent - The researched content for this topic
- * @param {string|null} prevTopic - The previous news topic (for transition context)
- * @param {string|null} nextTopic - The next news topic (for teaser context)
- * @param {number} index - Index of this news item (0-based)
- * @param {number} total - Total number of news items
- * Returns { script, source_link }.
- */
 export async function generateNewsScript(analysisContent, prevTopic, nextTopic, index, total) {
   console.log("📝 Generating news script...");
 
@@ -51,7 +42,7 @@ export async function generateNewsScript(analysisContent, prevTopic, nextTopic, 
     'Return the script and the news source link as JSON: {"script": "...", "source_link": "..."}';
 
   const raw = await chatCompletion({
-    model: "gemini-fast",
+    model: MODELS.scriptWriter,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: `Create a news script based on this analysis: ${analysisContent}` },
