@@ -129,7 +129,7 @@ services:
       lixsearch-app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      test: ["CMD", "curl", "-f", "-H", "Host: internal", "http://127.0.0.1/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
