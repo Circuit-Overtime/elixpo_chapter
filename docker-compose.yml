@@ -219,6 +219,51 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  # ── Monitor — lightweight production monitoring ──────────────────────
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lixsearch-monitor
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - APP_MODE=monitor
+      - MONITOR_PORT=9520
+      - IPC_HOST=ipc-service
+      - IPC_PORT=9510
+      - IPC_AUTHKEY=${IPC_AUTHKEY:-changeme_ipc_secret}
+      - REDIS_HOST=redis
+      - REDIS_PORT=9530
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme_redis_secret}
+      - CHROMA_SERVER_HOST=chroma-server
+      - CHROMA_SERVER_PORT=9001
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - elixpo-network
+    expose:
+      - "9520"
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      ipc-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9520/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
 networks:
   elixpo-network:
     driver: bridge

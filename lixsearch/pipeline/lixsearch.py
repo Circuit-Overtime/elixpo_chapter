@@ -147,6 +147,8 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
     if not user_image and user_images:
         user_image = user_images[0]
 
+    import time as _time
+    _pipeline_start = _time.time()
     logger.info(f"[pipeline] session={session_id} model={MODEL} fallback={MODEL_FALLBACK} query='{user_query[:LOG_MESSAGE_QUERY_TRUNCATE]}...' images={len(user_images)}")
 
     if session_id and not is_ephemeral:
@@ -971,3 +973,20 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         conversation_cache.save_to_disk(session_id=session_id)
                 except Exception:
                     pass
+
+        # Publish latency metrics to Redis for the monitor service
+        try:
+            from pipeline.config import create_redis_client
+            _total_ms = round((_time.time() - _pipeline_start) * 1000, 1)
+            _metrics = json.dumps({
+                "request_id": event_id or "",
+                "session_id": session_id or "",
+                "total_ms": _total_ms,
+                "tool_calls": memoized_results.get("_tool_call_count", 0) if isinstance(memoized_results, dict) else 0,
+                "timestamp": _time.time(),
+            })
+            _rc = create_redis_client(db=0)
+            _rc.lpush("lixsearch:metrics:latency", _metrics)
+            _rc.ltrim("lixsearch:metrics:latency", 0, 999)
+        except Exception:
+            pass
