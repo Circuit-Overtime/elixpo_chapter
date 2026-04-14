@@ -4,7 +4,8 @@
  * Session IDs are stored in localStorage so they survive reloads.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Empty string = same origin. All /api/* calls go through Next.js rewrites proxy.
+const API_BASE = "";
 
 // --- User ID (anonymous, persisted in localStorage) ---
 
@@ -112,7 +113,7 @@ export function streamDetect(
 
   (async () => {
     try {
-      const resp = await fetch(`${API_BASE}/api/detect/stream`, {
+      const resp = await fetch(`/api/stream/detect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
@@ -235,6 +236,10 @@ export interface ParagraphProgress {
   original_score: number;
   current_score: number | null;
   status: string;
+  attempts?: number;
+  max_attempts?: number;
+  reduction?: number;
+  text_preview?: string;
 }
 
 export interface SessionState {
@@ -272,6 +277,22 @@ export function getReportUrl(sessionId: string): string {
   return `${API_BASE}/api/session/${sessionId}/report`;
 }
 
+export async function downloadDetectReport(text: string): Promise<void> {
+  const resp = await fetch(`${API_BASE}/api/detect/report`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!resp.ok) throw new Error("Report generation failed");
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "rewrite_detection_report.pdf";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // --- SSE streaming ---
 
 export function streamSession(
@@ -280,32 +301,70 @@ export function streamSession(
   onDone: (data: SessionState) => void,
   onError: (error: string) => void,
 ): () => void {
-  const url = `${API_BASE}/api/session/${sessionId}/stream`;
-  const es = new EventSource(url);
+  const controller = new AbortController();
 
-  es.addEventListener("progress", (e) => {
-    const data = JSON.parse((e as MessageEvent).data);
-    onProgress({ session_id: sessionId, ...data });
-  });
+  (async () => {
+    try {
+      // Retry connection up to 3 times (session may not be in Redis yet)
+      let resp: Response | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        resp = await fetch(`/api/stream/session/${sessionId}`, {
+          signal: controller.signal,
+        });
+        if (resp.ok && resp.body) break;
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 1000));
+      }
 
-  es.addEventListener("done", (e) => {
-    const data = JSON.parse((e as MessageEvent).data);
-    onDone({ session_id: sessionId, ...data });
-    es.close();
-  });
+      if (!resp || !resp.ok || !resp.body) {
+        onError("Failed to connect to session stream");
+        return;
+      }
 
-  es.addEventListener("error", (e) => {
-    if (e instanceof MessageEvent) {
-      const data = JSON.parse(e.data);
-      onError(data.error || "Stream error");
-    } else {
-      onError("Connection lost");
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
+
+        for (const part of parts) {
+          if (!part.trim() || part.startsWith(":")) continue;
+
+          let eventType = "message";
+          let data = "";
+          for (const line of part.split("\n")) {
+            if (line.startsWith("event: ")) eventType = line.slice(7);
+            else if (line.startsWith("data: ")) data = line.slice(6);
+          }
+          if (!data) continue;
+
+          const parsed = JSON.parse(data);
+          switch (eventType) {
+            case "progress":
+              onProgress({ session_id: sessionId, ...parsed });
+              break;
+            case "done":
+              onDone({ session_id: sessionId, ...parsed });
+              return;
+            case "error":
+              onError(parsed.error || "Stream error");
+              return;
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        onError(err.message || "Connection lost");
+      }
     }
-    es.close();
-  });
+  })();
 
-  // Return cleanup function
-  return () => es.close();
+  return () => controller.abort();
 }
 
 // --- Auth helpers ---

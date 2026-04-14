@@ -17,7 +17,7 @@ from app.api.schemas import (
 )
 from app.api.jobs import create_session, get_session, save_session, run_in_background
 from app.detection.ensemble import detect_heuristic_only
-from app.detection.segment import segment_by_paragraphs
+from app.detection.segment import segment_by_paragraphs, is_prose_paragraph
 from app.paraphrase.prompts import build_messages, build_detection_feedback
 from app.paraphrase.postprocess import postprocess, normalize_length, global_postprocess
 from app.core.llm import chat
@@ -58,8 +58,9 @@ def _run_paraphrase(session_id: str):
         original_scores = []
         para_progress = []
         for i, para in enumerate(paragraphs):
-            if len(para.strip()) < 30:
-                score_result = {"score": 0, "verdict": "Too short", "features": {}}
+            prose = is_prose_paragraph(para)
+            if not prose or len(para.strip()) < 30:
+                score_result = {"score": 0, "verdict": "Skipped", "features": {}}
             else:
                 score_result = detect_heuristic_only(para)
             original_scores.append(score_result)
@@ -67,7 +68,11 @@ def _run_paraphrase(session_id: str):
                 "index": i,
                 "original_score": round(score_result["score"], 1),
                 "current_score": None,
-                "status": "pending",
+                "status": "skipped" if not prose else "pending",
+                "attempts": 0,
+                "max_attempts": 0,
+                "reduction": 0,
+                "text_preview": para[:80],
             })
         rewritten_paragraphs = list(paragraphs)
 
@@ -81,6 +86,7 @@ def _run_paraphrase(session_id: str):
         (i, original_scores[i])
         for i in range(len(paragraphs))
         if original_scores[i]["score"] > threshold
+        and para_progress[i]["status"] != "skipped"
     ]
     total_steps = len(flagged)
 
@@ -105,6 +111,7 @@ def _run_paraphrase(session_id: str):
 
         # Mark as rewriting + persist
         para_progress[para_idx]["status"] = "rewriting"
+        para_progress[para_idx]["max_attempts"] = max_attempts
         completed_count = sum(1 for p in para_progress if p["status"] == "done")
         progress_pct = (completed_count / total_steps) * 100
         session["paragraphs"] = para_progress
@@ -124,6 +131,13 @@ def _run_paraphrase(session_id: str):
 
         for attempt in range(max_attempts):
             temp = temp_schedule[min(attempt, len(temp_schedule) - 1)]
+
+            # Update attempt count live
+            para_progress[para_idx]["attempts"] = attempt + 1
+            para_progress[para_idx]["current_score"] = round(best_score, 1)
+            para_progress[para_idx]["reduction"] = round(original_score - best_score, 1)
+            session["paragraphs"] = para_progress
+            save_session(session_id, session)
 
             try:
                 source = best_text if attempt > 0 else para_text
@@ -145,6 +159,12 @@ def _run_paraphrase(session_id: str):
                 if new_score < best_score:
                     best_text = rewritten
                     best_score = new_score
+
+                # Update live score after each attempt
+                para_progress[para_idx]["current_score"] = round(best_score, 1)
+                para_progress[para_idx]["reduction"] = round(original_score - best_score, 1)
+                session["paragraphs"] = para_progress
+                save_session(session_id, session)
 
                 if best_score <= threshold:
                     break

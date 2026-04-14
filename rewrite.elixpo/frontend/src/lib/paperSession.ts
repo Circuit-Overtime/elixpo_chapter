@@ -41,3 +41,22 @@ export function updatePaperSession(slug: string, updates: Partial<PaperSession>)
   if (!existing) return;
   sessionStorage.setItem(`paper:${slug}`, JSON.stringify({ ...existing, ...updates }));
 }
+
+export function getAllPaperSessions(): PaperSession[] {
+  if (typeof window === "undefined") return [];
+  const sessions: PaperSession[] = [];
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
+    if (key && key.startsWith("paper:")) {
+      try {
+        const data = JSON.parse(sessionStorage.getItem(key)!);
+        sessions.push(data);
+      } catch {}
+    }
+  }
+  return sessions.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export function deletePaperSession(slug: string) {
+  sessionStorage.removeItem(`paper:${slug}`);
+}
