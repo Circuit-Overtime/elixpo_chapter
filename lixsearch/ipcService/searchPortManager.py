@@ -627,11 +627,30 @@ class accessSearchAgents:
         pass
     
     def health_check(self):
+        mem = {}
+        try:
+            import psutil
+            proc = psutil.Process()
+            mem_info = proc.memory_info()
+            mem = {
+                "rss_mb": round(mem_info.rss / 1024 / 1024, 1),
+                "vms_mb": round(mem_info.vms / 1024 / 1024, 1),
+            }
+        except Exception:
+            pass
+
+        pool_status = {}
+        try:
+            pool_status = run_async_on_bg_loop(agent_pool.get_status())
+        except Exception:
+            pass
 
         return {
             "status": "healthy",
-            "agent_pool_initialized": agent_pool.initialized,
-            "background_loop_running": _event_loop is not None and _event_loop.is_running()
+            "agent_pool": pool_status,
+            "background_loop_running": _event_loop is not None and _event_loop.is_running(),
+            "memory": mem,
+            "port_manager": port_manager.get_status(),
         }
     
     async def _async_web_search(self, query):
