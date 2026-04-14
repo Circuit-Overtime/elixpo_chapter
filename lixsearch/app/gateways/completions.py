@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 from quart import request, jsonify, Response
 from pipeline.searchPipeline import run_elixposearch_pipeline
 from pipeline.config import (
-    X_REQ_ID_SLICE_SIZE,
     REQUEST_ID_HEX_SLICE_SIZE,
     LOG_MESSAGE_QUERY_TRUNCATE,
     RESPONSE_MODEL,
@@ -153,16 +152,6 @@ async def chat_completions(pipeline_initialized: bool):
 
         if stream:
             async def stream_generator():
-                # Send initial role chunk
-                role_chunk = {
-                    "id": request_id,
-                    "object": "chat.completion.chunk",
-                    "created": int(datetime.now(timezone.utc).timestamp()),
-                    "model": RESPONSE_MODEL,
-                    "choices": [{"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}],
-                }
-                yield f"data: {json.dumps(role_chunk)}\n\n"
-
                 async for chunk in run_elixposearch_pipeline(
                     user_query=user_query,
                     user_image=image_url,
@@ -174,30 +163,28 @@ async def chat_completions(pipeline_initialized: bool):
                 ):
                     chunk_str = chunk if isinstance(chunk, str) else chunk.decode("utf-8")
 
-                    # Parse pipeline SSE events
-                    lines = chunk_str.strip().split("\n")
-                    event_type = None
-                    event_data_lines = []
-                    for line in lines:
-                        if line.startswith("event:"):
-                            event_type = line.replace("event:", "").strip()
-                        elif line.startswith("data:"):
-                            # Strip exactly one leading space (SSE spec)
-                            raw = line[5:]
-                            if raw.startswith(" "):
-                                raw = raw[1:]
-                            event_data_lines.append(raw)
+                    try:
+                        lines = chunk_str.strip().split("\n")
+                        event_type = None
+                        event_data_lines = []
+                        for line in lines:
+                            if line.startswith("event:"):
+                                event_type = line.replace("event:", "").strip()
+                            elif line.startswith("data:"):
+                                raw = line[5:]
+                                if raw.startswith(" "):
+                                    raw = raw[1:]
+                                event_data_lines.append(raw)
 
-                    event_data = "\n".join(event_data_lines) if event_data_lines else None
-
-                    if event_type == "RESPONSE" and event_data:
-                        yield _format_chunk(request_id, event_data)
-                    elif event_type == "INFO" and event_data and "<TASK>DONE</TASK>" in event_data:
-                        yield _format_chunk(request_id, "", finish_reason="stop")
-                        yield "data: [DONE]\n\n"
-
-                # Safety: always send [DONE] if not already sent
-                # (pipeline may not yield DONE in all paths)
+                        event_data = "\n".join(event_data_lines) if event_data_lines else None
+                        if event_type and event_data is not None:
+                            yield _format_chunk(request_id, event_data, event_type=event_type,
+                                                finish_reason="stop" if event_type == "INFO" and "<TASK>DONE</TASK>" in event_data else None)
+                        else:
+                            yield chunk_str
+                    except Exception as e:
+                        logger.warning(f"[{request_id}] session={session_id} Failed to parse SSE: {e}")
+                        yield chunk_str
 
             return Response(
                 stream_generator(),
