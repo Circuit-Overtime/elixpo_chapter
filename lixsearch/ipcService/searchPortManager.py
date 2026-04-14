@@ -96,6 +96,9 @@ class SearchAgentPool:
         self.image_agent_tabs = []
         self.lock = asyncio.Lock()
         self.initialized = False
+        # Concurrency semaphores — limit concurrent browser operations
+        self.text_semaphore = asyncio.Semaphore(pool_size * 3)
+        self.image_semaphore = asyncio.Semaphore(pool_size * 2)
     
     async def initialize_pool(self):
         if self.initialized:
@@ -635,40 +638,44 @@ class accessSearchAgents:
         if not agent_pool.initialized:
             logger.info("[accessSearchAgents] Agent pool not initialized, initializing now...")
             await agent_pool.initialize_pool()
-        
-        agent, agent_idx = await agent_pool.get_text_agent()
-        results = await agent.search(query, max_links=MAX_LINKS_TO_TAKE, agent_idx=agent_idx)
-        return results
-    
+
+        async with agent_pool.text_semaphore:
+            agent, agent_idx = await agent_pool.get_text_agent()
+            results = await agent.search(query, max_links=MAX_LINKS_TO_TAKE, agent_idx=agent_idx)
+            return results
+
     async def _async_get_youtube_metadata(self, url):
         if not agent_pool.initialized:
             logger.info("[accessSearchAgents] Agent pool not initialized, initializing for YouTube metadata...")
             await agent_pool.initialize_pool()
-        
-        agent, agent_idx = await agent_pool.get_text_agent()
-        results = await agent.youtube_metadata(url, agent_idx=agent_idx)
-        return results
-    
+
+        async with agent_pool.text_semaphore:
+            agent, agent_idx = await agent_pool.get_text_agent()
+            results = await agent.youtube_metadata(url, agent_idx=agent_idx)
+            return results
+
     async def _async_get_youtube_transcript_url(self, url):
         if not agent_pool.initialized:
             logger.info("[accessSearchAgents] Agent pool not initialized, initializing for YouTube transcript...")
             await agent_pool.initialize_pool()
-        
-        agent, agent_idx = await agent_pool.get_text_agent()
-        results = await agent.youtube_transcript_url(url, agent_idx=agent_idx)
-        return results
-    
+
+        async with agent_pool.text_semaphore:
+            agent, agent_idx = await agent_pool.get_text_agent()
+            results = await agent.youtube_transcript_url(url, agent_idx=agent_idx)
+            return results
+
     async def _async_image_search(self, query, max_images=10):
         if not agent_pool.initialized:
             logger.info("[accessSearchAgents] Agent pool not initialized, initializing for image search...")
             await agent_pool.initialize_pool()
-        
-        agent, agent_idx = await agent_pool.get_image_agent()
-        results = await agent.search_images(query, max_images, agent_idx=agent_idx)
-        if results:
-            return json.dumps({f"yahoo_source_{i}": [url] for i, url in enumerate(results)})
-        else:
-            return json.dumps({})
+
+        async with agent_pool.image_semaphore:
+            agent, agent_idx = await agent_pool.get_image_agent()
+            results = await agent.search_images(query, max_images, agent_idx=agent_idx)
+            if results:
+                return json.dumps({f"yahoo_source_{i}": [url] for i, url in enumerate(results)})
+            else:
+                return json.dumps({})
     
     async def _async_get_agent_pool_status(self):
         return await agent_pool.get_status()
@@ -691,8 +698,9 @@ class accessSearchAgents:
     async def _async_browser_fetch(self, url):
         if not agent_pool.initialized:
             await agent_pool.initialize_pool()
-        agent, agent_idx = await agent_pool.get_text_agent()
-        return await agent.fetch_page_content(url, agent_idx=agent_idx)
+        async with agent_pool.text_semaphore:
+            agent, agent_idx = await agent_pool.get_text_agent()
+            return await agent.fetch_page_content(url, agent_idx=agent_idx)
 
     def browser_fetch(self, url):
         return run_async_on_bg_loop(self._async_browser_fetch(url))
