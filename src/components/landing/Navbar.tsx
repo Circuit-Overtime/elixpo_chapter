@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/components/AuthProvider";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Navbar() {
   const { user, loading, login, logout } = useAuth();
@@ -15,24 +16,27 @@ export default function Navbar() {
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 md:px-10 py-3 backdrop-blur-xl bg-white/80 border-b border-neutral-100"
+      className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 md:px-10 py-3 backdrop-blur-xl bg-white/80 dark:bg-neutral-950/80 border-b border-neutral-100 dark:border-neutral-800"
     >
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2.5">
         <Image src="/images/logo.png" alt="Elixpo" width={36} height={36} className="rounded-lg" />
-        <span className="font-[family-name:var(--font-parkinsans)] font-bold text-lg text-neutral-900">
+        <span className="font-[family-name:var(--font-parkinsans)] font-bold text-lg text-neutral-900 dark:text-white">
           Elixpo Chat
         </span>
       </Link>
 
       {/* Desktop nav — all right-aligned */}
       <div className="hidden md:flex items-center gap-1">
+        <NavLink href="/pricing">Pricing</NavLink>
         <NavLink href="/news">News</NavLink>
         <NavLink href="/podcast">Podcast</NavLink>
         <NavLink href="/discover">Discover</NavLink>
         <NavLink href="/chat/new">Chat</NavLink>
 
-        <div className="w-px h-5 bg-neutral-200 mx-3" />
+        <div className="w-px h-5 bg-neutral-200 dark:bg-neutral-800 mx-3" />
+        <ThemeToggle />
+        <div className="w-px h-5 bg-neutral-200 dark:bg-neutral-800 mx-3" />
 
         {loading ? (
           <div className="w-8 h-8 rounded-full bg-neutral-100 animate-pulse" />
@@ -49,15 +53,18 @@ export default function Navbar() {
       </div>
 
       {/* Mobile hamburger */}
-      <button
-        onClick={() => setMobileOpen(!mobileOpen)}
-        className="md:hidden flex flex-col gap-1.5 p-2"
-        aria-label="Toggle menu"
-      >
-        <span className={`w-5 h-0.5 bg-neutral-900 transition-all ${mobileOpen ? "rotate-45 translate-y-2" : ""}`} />
-        <span className={`w-5 h-0.5 bg-neutral-900 transition-all ${mobileOpen ? "opacity-0" : ""}`} />
-        <span className={`w-5 h-0.5 bg-neutral-900 transition-all ${mobileOpen ? "-rotate-45 -translate-y-2" : ""}`} />
-      </button>
+      <div className="flex items-center gap-3 md:hidden">
+        <ThemeToggle />
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="flex flex-col gap-1.5 p-2"
+          aria-label="Toggle menu"
+        >
+          <span className={`w-5 h-0.5 bg-neutral-900 dark:bg-neutral-100 transition-all ${mobileOpen ? "rotate-45 translate-y-2" : ""}`} />
+          <span className={`w-5 h-0.5 bg-neutral-900 dark:bg-neutral-100 transition-all ${mobileOpen ? "opacity-0" : ""}`} />
+          <span className={`w-5 h-0.5 bg-neutral-900 dark:bg-neutral-100 transition-all ${mobileOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+        </button>
+      </div>
 
       {/* Mobile menu */}
       <AnimatePresence>
@@ -66,9 +73,10 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 w-full bg-white border-b border-neutral-200 shadow-lg md:hidden"
+            className="absolute top-full left-0 w-full bg-white dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800 shadow-lg md:hidden"
           >
             <div className="flex flex-col p-6 gap-4">
+              <MobileLink href="/pricing" onClick={() => setMobileOpen(false)}>Pricing</MobileLink>
               <MobileLink href="/news" onClick={() => setMobileOpen(false)}>News</MobileLink>
               <MobileLink href="/podcast" onClick={() => setMobileOpen(false)}>Podcast</MobileLink>
               <MobileLink href="/discover" onClick={() => setMobileOpen(false)}>Discover</MobileLink>
@@ -100,7 +108,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
-      className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-all"
+      className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all"
     >
       {children}
     </Link>
@@ -109,7 +117,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 
 function MobileLink({ href, children, onClick }: { href: string; children: React.ReactNode; onClick: () => void }) {
   return (
-    <Link href={href} onClick={onClick} className="text-base font-medium text-neutral-700 hover:text-neutral-900">
+    <Link href={href} onClick={onClick} className="text-base font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white">
       {children}
     </Link>
   );
@@ -148,12 +156,13 @@ function UserMenu({ user, logout }: { user: { displayName: string; email: string
 
               {/* Upgrade */}
               <div className="px-3 py-2">
-                <button
+                <Link
+                  href="/pricing"
                   onClick={() => setOpen(false)}
-                  className="w-full px-3 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 transition-all cursor-pointer text-center"
+                  className="w-full block px-3 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 transition-all cursor-pointer text-center"
                 >
                   Upgrade Plan
-                </button>
+                </Link>
               </div>
 
               <div className="border-t border-neutral-100">
