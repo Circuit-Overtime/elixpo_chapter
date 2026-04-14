@@ -97,57 +97,65 @@ export default function PodcastPage() {
   const togglePlay = () => { if (!audioRef.current || audioError) return; audioRef.current.paused ? audioRef.current.play() : audioRef.current.pause(); };
   const cycleSpeed = () => { const n = speeds[(speeds.indexOf(speed) + 1) % speeds.length]; setSpeed(n); if (audioRef.current) audioRef.current.playbackRate = n; };
   const skip = (s: number) => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + s)); };
-  const seekTo = (e: React.MouseEvent<HTMLDivElement>) => { if (!seekBarRef.current || !audioRef.current) return; const r = seekBarRef.current.getBoundingClientRect(); audioRef.current.currentTime = (Math.max(0, Math.min(e.clientX - r.left, r.width)) / r.width) * duration; };
+  const seekFromX = (clientX: number) => {
+    if (!seekBarRef.current || !audioRef.current) return;
+    const r = seekBarRef.current.getBoundingClientRect();
+    audioRef.current.currentTime = (Math.max(0, Math.min(clientX - r.left, r.width)) / r.width) * duration;
+  };
+  const isDragging = useRef(false);
+  const onSeekDown = (e: React.MouseEvent | React.TouchEvent) => {
+    isDragging.current = true;
+    const x = "touches" in e ? e.touches[0].clientX : e.clientX;
+    seekFromX(x);
+  };
+  useEffect(() => {
+    const onMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDragging.current) return;
+      const x = "touches" in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+      seekFromX(x);
+    };
+    const onUp = () => { isDragging.current = false; };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove);
+    window.addEventListener("touchend", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onUp);
+    };
+  });
   const fmt = (s: number) => { s = Math.max(0, Math.floor(s)); return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`; };
   const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
   const faviconUrl = sourceDomain ? `https://www.google.com/s2/favicons?domain=${sourceDomain}&sz=64` : "";
 
-  // Build granular sentence-level subtitles from timeline (memoized)
+  // Dynamic subtitle — compute active chunk from currentTime on every tick
   interface SubLine { text: string; speaker: "male" | "female"; start: number; end: number; }
-  const subLines = useRef<SubLine[]>([]);
-
-  useEffect(() => {
-    const lines: SubLine[] = [];
-    for (const entry of timeline) {
-      if (entry.type !== "male" && entry.type !== "female") continue;
-      // Split into short chunks (~60 chars each) for smooth rolling
-      const words = entry.content.split(/\s+/);
-      const chunks: string[] = [];
-      let current = "";
-      for (const word of words) {
-        if (current.length + word.length + 1 > 60 && current.length > 0) {
-          chunks.push(current);
-          current = word;
-        } else {
-          current = current ? current + " " + word : word;
-        }
-      }
-      if (current) chunks.push(current);
-
-      const dur = entry.end - entry.start;
-      const totalChars = chunks.reduce((s, t) => s + t.length, 0);
-      let offset = entry.start;
-      for (const chunk of chunks) {
-        const chunkDur = totalChars > 0 ? (chunk.length / totalChars) * dur : dur / chunks.length;
-        lines.push({ text: chunk, speaker: entry.type as "male" | "female", start: offset, end: offset + chunkDur });
-        offset += chunkDur;
-      }
-    }
-    subLines.current = lines;
-  }, [timeline]);
-
-  // Find the active subtitle chunk
   const [activeSubLine, setActiveSubLine] = useState<SubLine | null>(null);
 
   useEffect(() => {
     const t = currentTime;
-    const found = subLines.current.find((s) => t >= s.start && t < s.end) || null;
-    // Only update if text actually changed
+    const entry = timeline.find((e) => (e.type === "male" || e.type === "female") && t >= e.start && t < e.end);
+    if (!entry) { setActiveSubLine((p) => p ? null : p); return; }
+
+    const words = entry.content.split(/\s+/);
+    const chunks: string[] = [];
+    let cur = "";
+    for (const w of words) {
+      if (cur.length + w.length + 1 > 50 && cur) { chunks.push(cur); cur = w; }
+      else cur = cur ? cur + " " + w : w;
+    }
+    if (cur) chunks.push(cur);
+
+    const progress = (t - entry.start) / (entry.end - entry.start);
+    const idx = Math.min(Math.floor(progress * chunks.length), chunks.length - 1);
+
     setActiveSubLine((prev) => {
-      if (found?.text === prev?.text) return prev;
-      return found;
+      if (prev?.text === chunks[idx]) return prev;
+      return { text: chunks[idx], speaker: entry.type as "male" | "female", start: entry.start, end: entry.end };
     });
-  }, [currentTime]);
+  }, [currentTime, timeline]);
 
   return (
     <section className="relative h-screen w-screen overflow-hidden bg-black">
@@ -250,7 +258,7 @@ export default function PodcastPage() {
             {/* Seek */}
             <div className="flex items-center gap-3 mb-4">
               <span className="text-[10px] text-white/30 font-mono w-9 text-right">{fmt(currentTime)}</span>
-              <div ref={seekBarRef} onClick={seekTo} className="flex-1 h-1 rounded-full cursor-pointer relative group hover:h-1.5 transition-all" style={{ background: "rgba(255,255,255,0.08)" }}>
+              <div ref={seekBarRef} onMouseDown={onSeekDown} onTouchStart={onSeekDown} className="flex-1 h-1 rounded-full cursor-pointer relative group hover:h-1.5 transition-all" style={{ background: "rgba(255,255,255,0.08)" }}>
                 <div className="absolute inset-y-0 left-0 rounded-full bg-white/80 transition-all" style={{ width: `${pct}%` }} />
                 <div className="absolute w-3 h-3 rounded-full bg-white -top-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" style={{ left: `calc(${pct}% - 6px)` }} />
               </div>
