@@ -53,7 +53,7 @@
     "@elixpo/lixsketch": "workspace:*",
     "framer-motion": "^12.35.2",
     "fuse.js": "^7.1.0",
-    "next": "^15.5.2",
+    "next": "^15.5.15",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "zustand": "^5.0.11"
