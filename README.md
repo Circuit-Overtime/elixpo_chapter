@@ -151,35 +151,38 @@ We are actively seeking sponsors to help us grow and sustain the project. If you
 
 Your support helps us cover infrastructure costs, accelerate development, and expand our open-source initiatives. Thank you for helping us build a more accessible and collaborative AI ecosystem!
 
-# Recent Releases
+# Recent Releases from Elixpo Project
 
-Here are some of our latest releases and live demos:
+Here are some of our latest releases:
 
-- **Elixpo Art Chrome Extension**  
-  [Available on Chrome Web Store](https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh?authuser=0&hl=en-GB&pli=1)  
-  Easily generate AI art from selected text in your browser.
+- **Elixpo Blogs**  
+  [Official Blogging Site of Elixpo](https://blogs.elixpo.com) - Easily write and upload technical blogs!
 
-- **Elixpo Art Platform**  
-  [elixpo.com](https://elixpo.com)  
-  The main platform for AI-powered art generation and sharing.
+- **Elixpo Accounts SEO**  
+  [Elixpo SEO](https://accounts.elixpo.com)  
+  The parent platform of Elixpo to orchestrate all the accounts in different platforms!
 
-- **Jackey Discord Bot**  
-  [jackey.elixpo.com](https://jackey.elixpo.com)  
-  A personalized Discord bot for image generation and more.
+- **Elixpo URL Shortener**  
+  [URL Shortener API Service](https://url.elixpo.com) - An active URL shortener project for Elixpo related works and other orchestrations!
 
-- **Fine-Tuned Llama Medicine Model**  
-  [ollama.com/Elixpo/LlamaMedicine](https://ollama.com/Elixpo/LlamaMedicine)  
-  Specialized Llama model fine-tuned for medicine-related tasks.
+- **Elixpo Sketch Platform**
+  [Elixpo Sketch Service](https://sketch.elixpo.com) - A WYSIWYG Canvas for collaborative short visual presentation maker.
 
-- **Emoji Translator**  
-  [huggingface.co/Elixpo/Emoji-Contextual-Translator](https://huggingface.co/Elixpo/Emoji-Contextual-Translator)  
-  Translate text to context-aware emojis using our custom model.
+- **Elixpo Chat Platform**
+  [Official AI Web Chat Platform](https://chat.elixpo.com) - An open web ui created powered by lixSearch service.
 
-  - **Elixpo Art Blog**  
-    [elixpo.com/blogs/elixpo_art](https://elixpo.com/blogs/elixpo_art)  
-    In-depth articles and updates about the Elixpo Art platform.
+- **Elixpo Search Model**
+  [3 Tier Caching Architecture](https://search.elixpo.com) - A search pipeline based on 3 Tier architecture for web searching and overall caching.
 
----
+- **Elixpo**
+  [Official Elixpo Platform](https://elixpo.com) - Official Elixpo Platform for all of our projects in the elixpo series 
+
+- **Elixpo Personal Portfolio**
+  [Personal Portfolio Service](https://me.elixpo.com) - A personal portfolio service for all elixpo developers!
+
+# Our extended releases flagship
+
+
 
 # Our Future
 
