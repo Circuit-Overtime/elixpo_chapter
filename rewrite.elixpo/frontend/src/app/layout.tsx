@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { AuthProvider } from "@/lib/AuthContext";
 import { Navbar } from "@/components/Navbar";
+import { ToastContainer } from "@/components/Toast";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -38,6 +39,7 @@ export default function RootLayout({
         <AuthProvider>
           <Navbar />
           {children}
+          <ToastContainer />
         </AuthProvider>
       </body>
     </html>

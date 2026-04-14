@@ -62,6 +62,8 @@ export function Navbar() {
           {!isWorkspace && (
             <div className="hidden sm:flex items-center gap-1 ml-2">
               <NavLink href="/" active={isActive("/")}>Home</NavLink>
+              <NavLink href="/about" active={isActive("/about")}>About</NavLink>
+              <NavLink href="/learn" active={isActive("/learn")}>Learn</NavLink>
               <NavLink href="/pricing" active={isActive("/pricing")}>Pricing</NavLink>
               {loggedIn && <NavLink href="/session" active={isActive("/session")}>Sessions</NavLink>}
             </div>

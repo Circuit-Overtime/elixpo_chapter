@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from app.api.jobs import get_session
 from app.detection.ensemble import detect_heuristic_only
-from app.detection.segment import segment_by_paragraphs
+from app.detection.segment import segment_by_paragraphs, is_prose_paragraph
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["sse"])
@@ -57,8 +57,8 @@ async def stream_detect(req: DetectStreamRequest):
         segments = []
         try:
             for i, para in enumerate(paragraphs):
-                if len(para.strip()) < 30:
-                    result = {"score": 0, "verdict": "Too short", "features": {}}
+                if not is_prose_paragraph(para) or len(para.strip()) < 30:
+                    result = {"score": 0, "verdict": "Skipped", "features": {}}
                 else:
                     # Run blocking detection in thread pool
                     result = await loop.run_in_executor(_executor, detect_heuristic_only, para)
