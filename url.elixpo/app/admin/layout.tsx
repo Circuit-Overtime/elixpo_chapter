@@ -12,7 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-gradient-page">
       <Sidebar user={user} />
-      <main className="pt-16 md:pt-0 md:ml-60 p-4 sm:p-8">{children}</main>
+      <main className="px-4 sm:px-8 pb-4 sm:pb-8 pt-20 sm:pt-24">{children}</main>
     </div>
   );
 }

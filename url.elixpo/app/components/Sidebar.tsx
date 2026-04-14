@@ -1,15 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { User } from '@/lib/types';
 
-// Build avatar URL from Elixpo Accounts
 function getAvatarUrl(user: User): string {
   if (user.avatar_url) return user.avatar_url;
-  // Elixpo Accounts serves profile pictures at this endpoint
   return `https://accounts.elixpo.com/api/avatar/${user.elixpo_id}`;
 }
 
@@ -72,14 +70,9 @@ const Icons = {
       <path d="M6 7h8M6 10h8M6 13h4" />
     </svg>
   ),
-  menu: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-5 h-5">
-      <path d="M3 5h14M3 10h14M3 15h14" />
-    </svg>
-  ),
-  close: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-5 h-5">
-      <path d="M5 5l10 10M15 5L5 15" />
+  chevron: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
+      <path d="M6 8l4 4 4-4" />
     </svg>
   ),
 };
@@ -104,7 +97,8 @@ const adminItems = [
 export default function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
   const avatarUrl = getAvatarUrl(user);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isActive = (href: string) => {
     if (href === '/dashboard' || href === '/profile' || href === '/admin') {
@@ -118,129 +112,136 @@ export default function Sidebar({ user }: { user: User }) {
     window.location.href = '/';
   };
 
-  const NavLink = ({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) => (
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setAccountOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const NavIcon = ({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) => (
     <Link
       href={href}
-      onClick={() => setMobileOpen(false)}
-      className={`flex items-center gap-3 px-5 py-2.5 text-sm transition-all duration-200 no-underline ${
+      className={`relative group flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 no-underline ${
         isActive(href)
-          ? 'text-lime-main border-r-2 border-lime-main'
+          ? 'text-lime-main bg-[rgba(163,230,53,0.12)]'
           : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
       }`}
-      style={isActive(href) ? { background: 'rgba(163, 230, 53, 0.06)' } : {}}
     >
-      <span className={`w-5 flex items-center justify-center ${isActive(href) ? 'opacity-100' : 'opacity-50'}`}>
+      <span className={isActive(href) ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}>
         {icon}
       </span>
-      {label}
+      {/* Tooltip */}
+      <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 text-xs font-medium rounded-md bg-[#1a2614] border border-border-light text-text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
+        {label}
+      </span>
     </Link>
   );
 
   return (
-    <>
-      {/* Mobile top bar */}
-      <div
-        className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border-light"
-        style={{ background: 'rgba(16, 24, 12, 0.85)', backdropFilter: 'blur(20px)' }}
-      >
-        <Link href="/dashboard" className="flex items-center gap-2.5 no-underline">
-          <Image src="/logo.png" alt="ElixpoURL" width={28} height={28} className="rounded-lg" />
-          <span className="text-lg font-display font-bold text-text-primary">
-            <span className="text-lime-main">Elixpo</span>URL
-          </span>
-        </Link>
+    <header
+      className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 sm:px-6 h-14 border-b border-border-light"
+      style={{ background: 'rgba(16, 24, 12, 0.92)', backdropFilter: 'blur(20px)' }}
+    >
+      {/* Left: Logo */}
+      <Link href="/dashboard" className="flex items-center gap-2 no-underline shrink-0">
+        <Image src="/logo.png" alt="ElixpoURL" width={26} height={26} className="rounded-lg" />
+        <span className="text-base font-display font-bold text-text-primary hidden sm:inline">
+          <span className="text-lime-main">Elixpo</span>URL
+        </span>
+      </Link>
+
+      {/* Right: Nav icons + Account dropdown */}
+      <div className="flex items-center gap-1 sm:gap-2">
+        {/* Main nav icons */}
+        {navItems.map((item) => (
+          <NavIcon key={item.href} {...item} />
+        ))}
+
+        {/* Admin icons */}
+        {user.role === 'admin' && (
+          <>
+            <div className="w-px h-6 bg-border-light mx-1 sm:mx-2" />
+            {adminItems.map((item) => (
+              <NavIcon key={item.href} {...item} />
+            ))}
+          </>
+        )}
+
+        {/* Divider before account */}
+        <div className="w-px h-6 bg-border-light ml-1 sm:ml-2" />
+
+        {/* Account dropdown */}
+        <div className="relative" ref={dropdownRef}>
         <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-lg text-text-secondary bg-transparent border-none cursor-pointer"
+          onClick={() => setAccountOpen(!accountOpen)}
+          className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-bg-glass transition-all duration-200 bg-transparent border-none cursor-pointer group"
         >
-          {mobileOpen ? Icons.close : Icons.menu}
-        </button>
-      </div>
-
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-20 bg-black/50"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={`w-60 fixed top-0 left-0 bottom-0 flex flex-col border-r border-border-light z-20 transition-transform duration-300 md:translate-x-0 ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-        style={{ background: 'rgba(16, 24, 12, 0.95)', backdropFilter: 'blur(20px)' }}
-      >
-        {/* Brand */}
-        <div className="px-5 pt-6 pb-8">
-          <Link href="/dashboard" className="flex items-center gap-2.5 no-underline" onClick={() => setMobileOpen(false)}>
-            <Image src="/logo.png" alt="ElixpoURL" width={28} height={28} className="rounded-lg" />
-            <span className="text-lg font-display font-bold text-text-primary">
-              <span className="text-lime-main">Elixpo</span>URL
-            </span>
-          </Link>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink key={item.href} {...item} />
-          ))}
-
-          <div className="px-5 pt-6 pb-2 text-[0.6rem] text-text-disabled uppercase tracking-widest font-medium">
-            Account
+          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-border-medium group-hover:border-lime-main/40 transition-colors">
+            <img
+              src={avatarUrl}
+              alt={user.display_name}
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
           </div>
-          {accountItems.map((item) => (
-            <NavLink key={item.href} {...item} />
-          ))}
-          {/* Sign out as a nav item */}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-5 py-2.5 text-sm text-text-secondary hover:text-[#f87171] hover:bg-bg-glass transition-all duration-200 cursor-pointer bg-transparent border-none text-left"
+          <span className="text-sm text-text-primary hidden sm:inline max-w-[120px] truncate">
+            {user.display_name}
+          </span>
+          <span className={`text-text-secondary transition-transform duration-200 ${accountOpen ? 'rotate-180' : ''}`}>
+            {Icons.chevron}
+          </span>
+        </button>
+
+        {/* Dropdown */}
+        {accountOpen && (
+          <div
+            className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border-light overflow-hidden shadow-xl z-50"
+            style={{ background: 'rgba(16, 24, 12, 0.97)', backdropFilter: 'blur(20px)' }}
           >
-            <span className="w-5 flex items-center justify-center opacity-50">
-              {Icons.logout}
-            </span>
-            Sign Out
-          </button>
+            {/* User info */}
+            <div className="px-4 py-3 border-b border-border-light">
+              <div className="text-sm font-medium text-text-primary truncate">{user.display_name}</div>
+              <div className="text-[0.65rem] text-text-secondary truncate">{user.email}</div>
+            </div>
 
-          {user.role === 'admin' && (
-            <>
-              <div className="px-5 pt-6 pb-2 text-[0.6rem] text-text-disabled uppercase tracking-widest font-medium">
-                Admin
-              </div>
-              {adminItems.map((item) => (
-                <NavLink key={item.href} {...item} />
+            {/* Account links */}
+            <div className="py-1.5">
+              {accountItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setAccountOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 no-underline ${
+                    isActive(item.href)
+                      ? 'text-lime-main bg-[rgba(163,230,53,0.06)]'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
+                  }`}
+                >
+                  <span className={isActive(item.href) ? 'opacity-100' : 'opacity-50'}>{item.icon}</span>
+                  {item.label}
+                </Link>
               ))}
-            </>
-          )}
-        </nav>
+            </div>
 
-        {/* User card */}
-        <div className="px-4 py-4 border-t border-border-light">
-          <Link href="/profile" className="flex items-center gap-3 no-underline group" onClick={() => setMobileOpen(false)}>
-            {/* Avatar from Elixpo Accounts */}
-            <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 transition-transform duration-200 group-hover:scale-105 border border-border-medium">
-              <img
-                src={avatarUrl}
-                alt={user.display_name}
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
+            {/* Sign out */}
+            <div className="border-t border-border-light py-1.5">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-[#f87171] hover:bg-bg-glass transition-all duration-150 cursor-pointer bg-transparent border-none text-left"
+              >
+                <span className="opacity-50">{Icons.logout}</span>
+                Sign Out
+              </button>
             </div>
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-text-primary truncate group-hover:text-lime-main transition-colors">
-                {user.display_name}
-              </div>
-              <div className="text-[0.65rem] text-text-secondary truncate">
-                {user.email}
-              </div>
-            </div>
-          </Link>
+          </div>
+        )}
         </div>
-      </aside>
-    </>
+      </div>
+    </header>
   );
 }
