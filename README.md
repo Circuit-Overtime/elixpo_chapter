@@ -1,6 +1,7 @@
 # Elixpo — A Developer-First Open Source Series
 ## Enhanced Learning and Intelligence Process Optimization ##
-![Elixpo Banner](https://github.com/user-attachments/assets/dcf4bafc-8a93-4a45-adcb-4b392197da35)
+
+<img width="1536" height="1024" alt="Elixpo Banner" src="https://github.com/user-attachments/assets/5b0f1c5a-0977-46a8-9f7c-5703a79673e0" />
 
 ### Welcome to Elixpo-Chapter, an Open Source Repository (OSS) begun in 2023 as a college initiative, this open-source series has grown into a collaborative ecosystem of open source projects and collaborative development. In just two years, we've built over 9 projects, engaged a global community, and participated in numerous hackathons and open-source programs.
 
