@@ -37,7 +37,7 @@ export default function RootLayout({
       <body className="antialiased min-h-screen" suppressHydrationWarning>
         <AuthProvider>
           <Navbar />
-          <main className="max-w-5xl mx-auto px-6 py-6">{children}</main>
+          {children}
         </AuthProvider>
       </body>
     </html>

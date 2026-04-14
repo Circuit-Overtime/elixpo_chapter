@@ -82,6 +82,103 @@ export async function detectText(text: string, segments = false): Promise<Detect
   return resp.json();
 }
 
+// --- Detection SSE stream ---
+
+export interface DetectParagraphEvent {
+  index: number;
+  text_preview: string;
+  score: number;
+  verdict: string;
+  progress: number;
+}
+
+export interface DetectDoneEvent {
+  overall_score: number;
+  overall_verdict: string;
+  features: Record<string, number>;
+  segments: Array<{ index: number; text_preview: string; score: number; verdict: string }>;
+}
+
+export function streamDetect(
+  text: string,
+  callbacks: {
+    onInit: (total: number) => void;
+    onParagraph: (data: DetectParagraphEvent) => void;
+    onDone: (data: DetectDoneEvent) => void;
+    onError: (error: string) => void;
+  },
+): () => void {
+  const controller = new AbortController();
+
+  (async () => {
+    try {
+      const resp = await fetch(`${API_BASE}/api/detect/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+        signal: controller.signal,
+      });
+
+      if (!resp.ok || !resp.body) {
+        const body = await resp.text();
+        callbacks.onError(body || "Detection failed");
+        return;
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse SSE events from buffer
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
+
+        for (const part of parts) {
+          if (!part.trim() || part.startsWith(":")) continue;
+
+          let eventType = "message";
+          let data = "";
+
+          for (const line of part.split("\n")) {
+            if (line.startsWith("event: ")) eventType = line.slice(7);
+            else if (line.startsWith("data: ")) data = line.slice(6);
+          }
+
+          if (!data) continue;
+          const parsed = JSON.parse(data);
+
+          switch (eventType) {
+            case "init":
+              callbacks.onInit(parsed.total_paragraphs);
+              break;
+            case "paragraph":
+              callbacks.onParagraph(parsed);
+              break;
+            case "done":
+              callbacks.onDone(parsed);
+              break;
+            case "error":
+              callbacks.onError(parsed.error || "Unknown error");
+              break;
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        callbacks.onError(err.message);
+      }
+    }
+  })();
+
+  return () => controller.abort();
+}
+
 export async function detectFile(file: File, segments = false): Promise<DetectResult> {
   const form = new FormData();
   form.append("file", file);

@@ -152,13 +152,16 @@ body {
   background: var(--color-editor-selection);
 }
 
-/* LaTeX syntax highlights (applied via spans in overlay) */
+/* LaTeX syntax highlights */
+.tex-text { color: #e8e8e6; }
 .tex-command { color: #a3e635; }
+.tex-section { color: #f9a8d4; font-weight: 600; }
+.tex-env { color: #86efac; }
 .tex-brace { color: #fbbf24; }
+.tex-bracket { color: #fbbf24; opacity: 0.7; }
+.tex-argument { color: #93c5fd; }
 .tex-comment { color: rgba(255,255,255,0.3); font-style: italic; }
 .tex-math { color: #c4b5fd; }
-.tex-env { color: #86efac; }
-.tex-section { color: #f9a8d4; font-weight: 600; }
 
 /* Score annotation markers in editor */
 .score-marker {
