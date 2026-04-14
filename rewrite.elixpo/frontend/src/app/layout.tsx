@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { DM_Sans, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { AuthProvider } from "@/lib/AuthContext";
 import { Navbar } from "@/components/Navbar";
+import { ToastContainer } from "@/components/Toast";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -34,8 +36,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dmSans.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body className="antialiased min-h-screen" suppressHydrationWarning>
-        <Navbar />
-        <main className="max-w-5xl mx-auto px-6 py-6">{children}</main>
+        <AuthProvider>
+          <Navbar />
+          {children}
+          <ToastContainer />
+        </AuthProvider>
       </body>
     </html>
   );

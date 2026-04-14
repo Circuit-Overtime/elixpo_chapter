@@ -28,6 +28,15 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
+    // Clear all localStorage except user preferences (theme, etc.)
+    const preserve = ['lixblogs_theme'];
+    const preserved = {};
+    preserve.forEach(key => {
+      const val = localStorage.getItem(key);
+      if (val !== null) preserved[key] = val;
+    });
+    localStorage.clear();
+    Object.entries(preserved).forEach(([key, val]) => localStorage.setItem(key, val));
     setUser(null);
     window.location.href = '/';
   }

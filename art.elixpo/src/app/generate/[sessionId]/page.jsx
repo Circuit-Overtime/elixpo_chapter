@@ -6,6 +6,8 @@ import Navbar from '../../components/Navbar/Navbar';
 import { saveToLibrary } from '../../lib/library';
 import { isSignedIn, getUser } from '../../lib/auth';
 import { useModels } from '../../lib/useModels';
+import { generateVideo } from '../../lib/videoGen';
+import { generateVideoPrompt } from '../../lib/autoPrompt';
 import styles from './Session.module.css';
 
 const API_BASE = '/api';
@@ -35,6 +37,12 @@ export default function SessionPage({ params }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+
+  // Video state
+  const [previewTab, setPreviewTab] = useState('image');
+  const [videoSrc, setVideoSrc] = useState(null);
+  const [generatingVideo, setGeneratingVideo] = useState(false);
+  const [videoMaintenance, setVideoMaintenance] = useState(false);
   const hasGenerated = useRef(false);
   const moreMenuRef = useRef(null);
 
@@ -151,6 +159,7 @@ export default function SessionPage({ params }) {
     setDuration(p.duration);
     setImageUrl(p.imageUrl);
     if (p.seed) setSeed(p.seed);
+    if (p.videoData) setVideoSrc(p.videoData);
     if (p.resultSrc) {
       setResultSrc(p.resultSrc);
       setGenerationTime(p.generationTime);
@@ -331,13 +340,40 @@ export default function SessionPage({ params }) {
     navigator.clipboard.writeText(prompt);
   };
 
-  const handleCreateVideo = () => {
-    if (!resultSrc) return;
-    const id = crypto.randomUUID();
-    sessionStorage.setItem(`gen_${id}`, JSON.stringify({
-      prompt, model: 'grok-video', width, height, mode: 'video', duration: 5, imageUrl: resultSrc, timestamp: Date.now(),
-    }));
-    router.push(`/generate/${id}`);
+  const handleCreateVideo = async () => {
+    if (!resultSrc || generatingVideo) return;
+    setGeneratingVideo(true);
+    setPreviewTab('video');
+
+    try {
+      // Auto-generate a video prompt from the image if no custom prompt
+      let videoPrompt = prompt;
+      if (!videoPrompt || videoPrompt.length < 5) {
+        videoPrompt = await generateVideoPrompt(resultSrc);
+        console.log('[video] Auto-prompt:', videoPrompt);
+      }
+
+      const result = await generateVideo({
+        prompt: videoPrompt,
+        model: 'ltx-2',
+        width,
+        height,
+        duration: 5,
+        imageUrl: resultSrc,
+      });
+
+      if (result.success) {
+        setVideoSrc(result.videoData);
+        setPreviewTab('video');
+        saveSession({ videoData: result.videoData });
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGeneratingVideo(false);
+    }
   };
 
   const handleRemoveBackground = async () => {
@@ -546,6 +582,23 @@ export default function SessionPage({ params }) {
 
       <div className={styles.layout}>
         <div className={styles.content}>
+          {resultSrc && !loading && (videoSrc || generatingVideo) && (
+            <div className={styles.previewTabs}>
+              <button
+                className={`${styles.previewTab} ${previewTab === 'image' ? styles.previewTabActive : ''}`}
+                onClick={() => setPreviewTab('image')}
+              >
+                Image
+              </button>
+              <button
+                className={`${styles.previewTab} ${previewTab === 'video' ? styles.previewTabActive : ''}`}
+                onClick={() => setPreviewTab('video')}
+              >
+                Video
+                {generatingVideo && <span className={styles.tabSpinner} />}
+              </button>
+            </div>
+          )}
           <div className={styles.imageContainer}>
             <div className={styles.ambientBlob1} aria-hidden="true" />
             <div className={styles.ambientBlob2} aria-hidden="true" />
@@ -602,7 +655,22 @@ export default function SessionPage({ params }) {
               </div>
             )}
 
-            {resultSrc && !loading && (
+
+
+            {resultSrc && !loading && previewTab === 'video' && (
+              <div className={styles.imageWrap}>
+                {videoSrc ? (
+                  <video src={videoSrc} className={styles.generatedImage} controls autoPlay loop />
+                ) : generatingVideo ? (
+                  <div className={styles.videoLoading}>
+                    <div className={styles.bokehSpinner}><div /><div /><div /></div>
+                    <p>Generating video...</p>
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {resultSrc && !loading && previewTab === 'image' && (
               <div className={styles.imageWrap}>
                 {mode === 'video' ? (
                   <video src={resultSrc} className={styles.generatedImage} controls autoPlay loop />
@@ -631,7 +699,7 @@ export default function SessionPage({ params }) {
                     )}
                     {/* Edit button floating on preview */}
                     {!remixMode && (
-                      <button className={styles.editFloatBtn} onClick={startRemix} title="Edit image">
+                      <button className={styles.editFloatBtn} onClick={() => router.push(`/edit/${sessionId}`)} title="Edit with canvas">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M12 20h9" />
                           <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
@@ -850,95 +918,66 @@ export default function SessionPage({ params }) {
                 </div>
               )}
 
-              {/* Actions — popup */}
-              <div className={styles.actionsWrap}>
-                <button className={styles.actionsToggle} onClick={() => setActionsOpen(!actionsOpen)}>
+              {/* Actions — icon bar */}
+              <div className={styles.actionBar}>
+                <button className={styles.actionIcon} onClick={handleDownload} disabled={!resultSrc} title="Download image">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
-                  Actions
                 </button>
-                {actionsOpen && <div className={styles.actionsPopup}><div className={styles.actionList}>
-                  <button className={styles.actionBtn} onClick={handleRemoveBackground} disabled={!resultSrc || mode === 'video'}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <path d="M9 3v18" /><path d="M15 3v18" /><path d="M3 9h18" /><path d="M3 15h18" />
-                    </svg>
-                    Remove Background
-                  </button>
-                  <button className={styles.actionBtn} onClick={handleViewUnzoomed} disabled={!resultSrc}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" />
-                    </svg>
-                    View Unzoomed Image
-                  </button>
-                  <button className={styles.actionBtn} onClick={startRemix} disabled={!resultSrc || mode === 'video'}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-                    </svg>
-                    Edit with Canvas
-                  </button>
-                  <button className={styles.actionBtn} onClick={handleEditPose} disabled={!resultSrc || mode === 'video'}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="5" r="2" /><path d="M12 7v5" /><path d="M9 12l-3 5" /><path d="M15 12l3 5" /><path d="M10 12l-2-3" /><path d="M14 12l2-3" />
-                    </svg>
-                    Edit Character Pose
-                  </button>
-                  <button className={styles.actionBtn} onClick={handleCreateVideo} disabled={!resultSrc || mode === 'video'}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
-                    Create Video
-                  </button>
-
-                  <div className={styles.actionDivider} />
-
-                  <button className={styles.actionBtn} onClick={handleDownload} disabled={!resultSrc}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    Download Image
-                  </button>
-                  <button className={styles.actionBtn} onClick={handleCopyImage} disabled={!resultSrc}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" />
-                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                    </svg>
-                    Copy Image
-                  </button>
-                  <button className={styles.actionBtn} onClick={handleCopySeed} disabled={!seed}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="3" />
-                      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-                    </svg>
-                    Copy Seed
-                  </button>
-
-                  <div className={styles.actionDivider} />
-
-                  <button className={styles.actionBtn} onClick={() => router.push('/generate')}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    New Generation
-                  </button>
-                  <button className={`${styles.actionBtn} ${styles.actionBtnDanger}`} onClick={handleReportImage} disabled={!resultSrc}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                    Report Image
-                  </button>
-                </div></div>}
+                <button className={styles.actionIcon} onClick={handleCopyImage} disabled={!resultSrc} title="Copy image">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                  </svg>
+                </button>
+                <button className={styles.actionIcon} onClick={handleCopySeed} disabled={!seed} title="Copy seed">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                  </svg>
+                </button>
+                <div className={styles.actionBarDivider} />
+                <button className={styles.actionIcon} onClick={() => { if (resultSrc) router.push(`/edit/${sessionId}`); }} disabled={!resultSrc || mode === 'video'} title="Edit with canvas">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                </button>
+                <button className={styles.actionIcon} onClick={handleCreateVideo} disabled={!resultSrc || mode === 'video' || generatingVideo} title="Create video from this image">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                </button>
+                <div className={styles.actionBarDivider} />
+                <button className={styles.actionIcon} onClick={() => {/* TODO */}} disabled={!resultSrc} title="Use as reference">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
+                </button>
               </div>
             </div>
           )}
         </aside>
       </div>
+
+      {videoMaintenance && (
+        <div className={styles.maintenanceOverlay} onClick={() => setVideoMaintenance(false)}>
+          <div className={styles.maintenanceModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.maintenanceIcon}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5">
+                <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
+              </svg>
+            </div>
+            <h2 className={styles.maintenanceTitle}>Under Maintenance</h2>
+            <p className={styles.maintenanceDesc}>Video generation is currently undergoing maintenance and will be back soon.</p>
+            <button className={styles.maintenanceBtn} onClick={() => setVideoMaintenance(false)}>Got it</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -70,7 +70,7 @@ When you ask lixSearch a question, here's what happens behind the scenes:
 5. **We Synthesize** - An AI reads through everything and writes a clear, concise answer
 6. **You Get Results** - A beautifully formatted answer with clickable sources and relevant images
 
-<img src="./public/images/search_arch.png" alt="How Search Works" width="100%" />
+<img width="901" height="448" alt="image" src="https://github.com/user-attachments/assets/5b04bbd9-0424-479d-81ad-82e209bd0139" />
 
 ---
 

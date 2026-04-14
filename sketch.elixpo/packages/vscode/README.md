@@ -14,7 +14,6 @@
 
 ---
 
-<img width="1866" height="886" alt="LixSketch Canvas" src="https://raw.githubusercontent.com/elixpo/lixsketch/main/packages/vscode/media/vs-code-etension-hero.png" />
 
 ## What is LixSketch?
 
@@ -30,7 +29,6 @@ Whether you're sketching out an architecture before writing code, diagramming a 
 
 Or just create any file ending in `.lixsketch` and it opens right up.
 
-<img width="1858" height="884" alt="LixSketch Tools" src="https://raw.githubusercontent.com/elixpo/lixsketch/main/packages/vscode/media/vs-code-etension-template.png" />
 
 ## What You Get
 
@@ -80,7 +78,7 @@ This extension is powered by the same engine that runs [sketch.elixpo.com](https
 | 📦 | **NPM package** — [`@elixpo/lixsketch`](https://www.npmjs.com/package/@elixpo/lixsketch) — build your own whiteboard |
 | 🖥️ | **VS Code extension** — you're looking at it |
 
-<img width="1867" height="874" alt="LixSketch Features" src="https://raw.githubusercontent.com/elixpo/lixsketch/main/packages/vscode/media/vs-code-header.png" />
+
 
 ## Open Source
 

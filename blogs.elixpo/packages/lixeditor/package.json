@@ -1,0 +1,54 @@
+{
+  "name": "@elixpo/lixeditor",
+  "version": "2.5.8",
+  "description": "A rich WYSIWYG block editor and renderer built on BlockNote — equations, mermaid diagrams, code highlighting, and more.",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./styles": "./dist/styles/index.css"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@blocknote/core": ">=0.30.0",
+    "@blocknote/react": ">=0.30.0",
+    "@blocknote/mantine": ">=0.30.0"
+  },
+  "dependencies": {
+    "katex": "^0.16.0",
+    "mermaid": "^11.0.0",
+    "shiki": "^3.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  },
+  "keywords": [
+    "editor",
+    "wysiwyg",
+    "blocknote",
+    "rich-text",
+    "markdown",
+    "latex",
+    "mermaid",
+    "code-highlighting",
+    "react"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elixpo/lixblogs",
+    "directory": "packages/lixeditor"
+  }
+}

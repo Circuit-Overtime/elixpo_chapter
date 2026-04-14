@@ -32,7 +32,7 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
   useEffect(() => {
     if (!editor) return;
 
-    const interval = setInterval(() => {
+    function tryInject() {
       const toolbar = document.querySelector('.blog-editor-wrapper .bn-toolbar');
       if (!toolbar) {
         injectedRef.current = false;
@@ -238,9 +238,23 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
       toolbar.appendChild(highlightBtn);
       toolbar.appendChild(sep);
       toolbar.appendChild(btn);
-    }, 200);
+    }
 
-    return () => clearInterval(interval);
+    // Toolbar is a tippy popup created on text selection — inject buttons when it appears.
+    // Use selectionchange (fires when toolbar would appear) instead of MutationObserver+subtree
+    // which fires on every keystroke and causes high CPU/memory usage.
+    tryInject();
+    let rafId = null;
+    const onSelect = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        tryInject();
+      });
+    };
+    document.addEventListener('selectionchange', onSelect);
+
+    return () => { document.removeEventListener('selectionchange', onSelect); if (rafId) cancelAnimationFrame(rafId); };
   }, [editor]);
 
   // Focus prompt input when entering prompting mode
@@ -288,16 +302,6 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
   const unlockEditor = useCallback(() => {
     const wrapper = document.querySelector('.blog-editor-wrapper');
     if (wrapper) wrapper.classList.remove('ai-editor-locked');
-  }, []);
-
-  // Mark selected blocks with lavender highlight (pre-edit indicator)
-  const markSelectedLavender = useCallback((ids) => {
-    const wrapper = document.querySelector('.blog-editor-wrapper');
-    if (!wrapper) return;
-    for (const id of ids) {
-      const el = wrapper.querySelector(`[data-id="${id}"]`);
-      if (el) el.classList.add('ai-edit-selected-block');
-    }
   }, []);
 
   const clearSelectedLavender = useCallback(() => {

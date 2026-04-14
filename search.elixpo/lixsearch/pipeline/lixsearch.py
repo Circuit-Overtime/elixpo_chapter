@@ -147,7 +147,9 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
     if not user_image and user_images:
         user_image = user_images[0]
 
-    logger.info(f"[pipeline] session={session_id} query='{user_query[:LOG_MESSAGE_QUERY_TRUNCATE]}...' images={len(user_images)}")
+    import time as _time
+    _pipeline_start = _time.time()
+    logger.info(f"[pipeline] session={session_id} model={MODEL} fallback={MODEL_FALLBACK} query='{user_query[:LOG_MESSAGE_QUERY_TRUNCATE]}...' images={len(user_images)}")
 
     if session_id and not is_ephemeral:
         try:
@@ -407,6 +409,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             force_synthesis = True
 
         # ==================== TOOL LOOP ====================
+        _streamed_content = ""
         while current_iteration < max_iterations:
             current_iteration += 1
 
@@ -424,8 +427,27 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     _history_msgs = _history_msgs[-8:]
                 messages = _system + _history_msgs + _tool_msgs
 
-            payload = {"model": MODEL, "messages": messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
-            if not force_synthesis:
+            # When force_synthesis is set, strip tool_calls from assistant messages
+            # and remove tool-role messages to avoid API errors (no tools in payload).
+            if force_synthesis:
+                _synth_messages = []
+                for m in messages:
+                    if m.get("role") == "tool":
+                        # Convert tool results to system context so the LLM still sees them
+                        _tool_content = m.get("content", "")
+                        if _tool_content and _tool_content != "No result":
+                            _synth_messages.append({
+                                "role": "user",
+                                "content": f"[Search result from {m.get('name', 'tool')}]: {_tool_content}"
+                            })
+                        continue
+                    _mc = dict(m)
+                    if _mc.get("role") == "assistant":
+                        _mc.pop("tool_calls", None)
+                    _synth_messages.append(_mc)
+                payload = {"model": MODEL, "messages": _synth_messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
+            else:
+                payload = {"model": MODEL, "messages": messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
                 payload["tools"] = tools
                 payload["tool_choice"] = "auto"
 
@@ -525,6 +547,24 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                                    "function": {"name": leaked_fn, "arguments": json.dumps(leaked_args)}}]
                     assistant_message["content"] = f"Calling {leaked_fn}..."
                     assistant_message["tool_calls"] = tool_calls
+
+                # Recovery: detect PDF content dumped as plain text
+                # If the user asked for a PDF and the LLM output markdown instead of calling the tool
+                if not tool_calls and not memoized_results.get("generated_pdfs"):
+                    _pdf_keywords = ("pdf", "export", "save as", "download", "document")
+                    _query_wants_pdf = any(kw in original_user_query.lower() for kw in _pdf_keywords)
+                    _content_long_enough = len(raw_content) > 200
+                    if _query_wants_pdf and _content_long_enough and not raw_content.strip().startswith("I "):
+                        import uuid as _uuid
+                        logger.info(f"[RECOVERY] LLM dumped PDF content as text ({len(raw_content)} chars), converting to export_to_pdf call")
+                        _pdf_args = {"content": raw_content}
+                        _title_match = re.search(r'^#+\s+(.+)', raw_content, re.MULTILINE)
+                        if _title_match:
+                            _pdf_args["title"] = _title_match.group(1).strip()
+                        tool_calls = [{"id": f"recovered-pdf-{_uuid.uuid4().hex[:8]}", "type": "function",
+                                       "function": {"name": "export_to_pdf", "arguments": json.dumps(_pdf_args)}}]
+                        assistant_message["content"] = "Generating PDF..."
+                        assistant_message["tool_calls"] = tool_calls
 
                 if not tool_calls:
                     is_reasoning_leak = _looks_like_internal_reasoning(raw_content)
@@ -774,15 +814,75 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     yield format_sse("INFO", "<TASK>DONE</TASK>")
                 return
 
-            # Standard synthesis
-            final_message_content = await run_standard_synthesis(
-                messages, user_query, active_max_tokens, headers, is_detailed_mode,
-                image_context_provided, collected_images_from_web, collected_similar_images,
-                event_id=event_id, format_sse_fn=format_sse,
-            )
+            # Standard synthesis — use streaming to keep connection alive
+            _has_images = image_context_provided or bool(collected_images_from_web) or bool(collected_similar_images)
+            _pdf_done = bool(memoized_results.get("generated_pdfs"))
 
-            if not final_message_content:
-                final_message_content = build_synthesis_fallback(messages, user_query, rag_context, collected_sources)
+            # Clean messages for synthesis (strip tool_calls/tool-role messages)
+            _synth_msgs = []
+            for m in messages:
+                if m.get("role") == "tool":
+                    _tool_content = m.get("content", "")
+                    if _tool_content and _tool_content != "No result":
+                        _synth_msgs.append({
+                            "role": "user",
+                            "content": f"[Search result from {m.get('name', 'tool')}]: {_tool_content}"
+                        })
+                    continue
+                _mc = dict(m)
+                if _mc.get("role") == "assistant":
+                    _mc.pop("tool_calls", None)
+                _synth_msgs.append(_mc)
+
+            _synth_msgs.append({
+                "role": "user",
+                "content": synthesis_instruction(user_query, image_context=_has_images, is_detailed=is_detailed_mode, pdf_already_generated=_pdf_done)
+            })
+
+            _synth_payload = {
+                "model": MODEL, "messages": _synth_msgs,
+                "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens,
+            }
+
+            if event_id:
+                # Stream synthesis to keep connection alive and deliver content progressively
+                _synth_streamed = ""
+                _synth_ok = False
+                for _synth_model in (MODEL, MODEL_FALLBACK):
+                    try:
+                        _sp = {**_synth_payload, "model": _synth_model}
+                        _synth_streamed = ""
+                        async for _stype, _sdata in _stream_llm_call(_sp, headers):
+                            if _stype == "keepalive":
+                                _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
+                                if _ke:
+                                    yield _ke
+                                status_tracker.touch()
+                            elif _stype == "content":
+                                _synth_streamed += _sdata
+                                yield format_sse("RESPONSE", _sdata)
+                                status_tracker.touch()
+                            elif _stype == "done":
+                                pass
+                        if _synth_streamed.strip():
+                            final_message_content = _scrub_tool_names(_synth_streamed.strip())
+                            _streamed_content = final_message_content
+                            _synth_ok = True
+                            break
+                        logger.warning(f"[FORCED SYNTHESIS] model={_synth_model} returned empty, trying fallback")
+                    except Exception as e:
+                        logger.warning(f"[FORCED SYNTHESIS] Streaming error with model={_synth_model}: {e}")
+                        continue
+
+                if not _synth_ok:
+                    final_message_content = build_synthesis_fallback(messages, user_query, rag_context, collected_sources)
+            else:
+                final_message_content = await run_standard_synthesis(
+                    messages, user_query, active_max_tokens, headers, is_detailed_mode,
+                    image_context_provided, collected_images_from_web, collected_similar_images,
+                )
+                if not final_message_content:
+                    final_message_content = build_synthesis_fallback(messages, user_query, rag_context, collected_sources)
 
         # ==================== FINAL RESPONSE FORMATTING ====================
         # If PDF was generated but LLM gave a placeholder/empty response, construct one
@@ -891,3 +991,20 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         conversation_cache.save_to_disk(session_id=session_id)
                 except Exception:
                     pass
+
+        # Publish latency metrics to Redis for the monitor service
+        try:
+            from pipeline.config import create_redis_client
+            _total_ms = round((_time.time() - _pipeline_start) * 1000, 1)
+            _metrics = json.dumps({
+                "request_id": event_id or "",
+                "session_id": session_id or "",
+                "total_ms": _total_ms,
+                "tool_calls": memoized_results.get("_tool_call_count", 0) if isinstance(memoized_results, dict) else 0,
+                "timestamp": _time.time(),
+            })
+            _rc = create_redis_client(db=0)
+            _rc.lpush("lixsearch:metrics:latency", _metrics)
+            _rc.ltrim("lixsearch:metrics:latency", 0, 999)
+        except Exception:
+            pass

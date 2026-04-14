@@ -52,8 +52,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return False, limit - count - 1
 
     async def dispatch(self, request: Request, call_next):
-        client_ip = self._get_client_ip(request)
         path = request.url.path
+
+        # Skip rate limiting for SSE streams — BaseHTTPMiddleware buffers
+        # response bodies which breaks streaming. Let these pass through.
+        if "/stream" in path:
+            return await call_next(request)
+
+        client_ip = self._get_client_ip(request)
 
         # Choose limit based on endpoint
         if "/paraphrase" in path:

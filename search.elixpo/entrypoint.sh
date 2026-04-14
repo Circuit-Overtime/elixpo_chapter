@@ -24,6 +24,10 @@ if [ "$APP_MODE" = "load_balancer" ]; then
 elif [ "$APP_MODE" = "ipc" ]; then
     echo "Starting IPC Service on port $IPC_PORT..."
     exec python lixsearch/ipcService/main.py
+elif [ "$APP_MODE" = "monitor" ]; then
+    MONITOR_PORT=${MONITOR_PORT:-9520}
+    echo "Starting Monitor Service on port $MONITOR_PORT..."
+    exec python lixsearch/monitorService/main.py
 elif [ "$APP_MODE" = "worker" ]; then
     echo "Starting Worker $WORKER_ID on port $WORKER_PORT..."
     exec python lixsearch/app/main.py

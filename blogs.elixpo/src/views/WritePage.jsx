@@ -2,12 +2,14 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import '../styles/editor/editor.css';
+import '../styles/katex-fonts.css';
 import { compressCoverImage } from '../utils/compressImage';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
 import { useCollaboration } from '../hooks/useCollaboration';
@@ -78,7 +80,15 @@ function loadDraft(slugid) {
 
 function saveDraft(slugid, data) {
   try {
-    localStorage.setItem(getDraftKey(slugid), JSON.stringify({
+    // Clear any other draft keys to keep only one draft in localStorage
+    const currentKey = getDraftKey(slugid);
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(STORAGE_KEY_PREFIX) && key !== currentKey) {
+        localStorage.removeItem(key);
+      }
+    }
+    localStorage.setItem(currentKey, JSON.stringify({
       ...data,
       savedAt: Date.now(),
     }));
@@ -99,16 +109,40 @@ function truncateSlug(s, max = 18) {
 
 // ── Confirm Modal ──
 function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', cancelLabel = 'Cancel', onConfirm, onCancel, destructive = false }) {
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onCancel(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onCancel]);
+
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="w-full max-w-sm rounded-2xl p-6 animate-in" style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-lg)' }}>
-        <h3 className="text-[16px] font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{title}</h3>
-        <p className="text-[13px] leading-relaxed mb-5" style={{ color: 'var(--text-muted)' }}>{description}</p>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4 editor-confirm-overlay" onClick={onCancel}>
+      <div
+        className="w-full max-w-sm rounded-2xl p-6 editor-confirm-dialog"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 mb-3">
+          {destructive ? (
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(239,68,68,0.12)' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(155,123,247,0.12)' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9b7bf7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+            </div>
+          )}
+          <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        </div>
+        <p className="text-[13px] leading-relaxed mb-5" style={{ color: 'var(--text-muted)', paddingLeft: '44px' }}>{description}</p>
         <div className="flex items-center gap-3 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
-            style={{ color: 'var(--text-body)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+            className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors editor-confirm-cancel"
           >
             {cancelLabel}
           </button>
@@ -184,7 +218,7 @@ function HeaderProfileDropdown({ user, logout }) {
 }
 
 // ── Hamburger Menu ──
-function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTopics, onRevisionHistory, onMoreSettings }) {
+function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTopics, onRevisionHistory, onMoreSettings, onImport, onInvite }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -197,6 +231,8 @@ function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTop
   }, [open]);
 
   const items = [
+    { label: 'Import markdown', action: onImport, icon: 'folder-open-outline' },
+    { label: 'Invite collaborators', action: onInvite, icon: 'people-outline' },
     { label: 'Copy publishable link', action: onShareDraft, icon: 'link-outline' },
     { label: 'Change featured image', action: onChangeCover, icon: 'image-outline' },
     { label: 'Change display title', action: onChangeTitle, icon: 'text-outline' },
@@ -257,14 +293,22 @@ function EditorOutline({ editorContent }) {
   }, [editorContent]);
 
   const headings = useMemo(() => {
-    return blocks
-      .filter((b) => b.type === 'heading' && b.content?.length > 0)
-      .map((h) => {
-        const level = parseInt(h.props?.level || '1', 10);
-        const text = h.content.map((c) => c.text || '').join('');
-        return { id: h.id, level, text: text.trim() };
-      })
-      .filter((h) => h.text);
+    const result = [];
+    for (const b of blocks) {
+      if (b.type === 'heading' && b.content?.length > 0) {
+        const level = parseInt(b.props?.level || '1', 10);
+        const text = b.content.map((c) => c.text || '').join('');
+        if (text.trim()) result.push({ id: b.id, level, text: text.trim() });
+      }
+      if (b.type === 'tabsBlock') {
+        let tabs = [];
+        try { tabs = JSON.parse(b.props?.tabs || '[]'); } catch {}
+        tabs.forEach(t => {
+          if (t.title) result.push({ id: b.id, level: 2, text: t.title, isSubpage: true });
+        });
+      }
+    }
+    return result;
   }, [blocks]);
 
   // Scroll spy — track which heading is in view
@@ -284,7 +328,7 @@ function EditorOutline({ editorContent }) {
     return () => window.removeEventListener('scroll', onScroll);
   }, [headings]);
 
-  // Update slider position
+  // Update slider position and auto-scroll TOC to keep active item visible
   useEffect(() => {
     if (!activeId || !listRef.current) return;
     const item = itemRefs.current[activeId];
@@ -292,6 +336,7 @@ function EditorOutline({ editorContent }) {
     const listRect = listRef.current.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
     setSliderStyle({ top: itemRect.top - listRect.top, height: itemRect.height });
+    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [activeId]);
 
   if (headings.length === 0) return null;
@@ -325,8 +370,17 @@ function EditorOutline({ editorContent }) {
                 style={{
                   color: h.id === activeId ? 'var(--text-primary)' : undefined,
                   fontWeight: h.id === activeId ? '600' : undefined,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
                 }}
               >
+                {h.isSubpage && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                )}
                 {h.text}
               </span>
             </li>
@@ -340,6 +394,7 @@ function EditorOutline({ editorContent }) {
 // ── Main WritePage ──
 export default function WritePage({ slugid }) {
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const editorRef = useRef(null);
   const autoSaveTimer = useRef(null);
   const [mode, setMode] = useState('edit');
@@ -373,6 +428,7 @@ export default function WritePage({ slugid }) {
   const [lastKnownUpdatedAt, setLastKnownUpdatedAt] = useState(null);
   const [userOrgs, setUserOrgs] = useState([]);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+  const hadUserGestureRef = useRef(false);
   const isPublished = blogVersion?.isPublished;
   const [coverZoom, setCoverZoom] = useState(1);
   const [coverPos, setCoverPos] = useState({ x: 50, y: 50 });
@@ -425,11 +481,43 @@ export default function WritePage({ slugid }) {
       .catch(() => {});
   }, [slugid, hasCollaborators]);
 
+  // Track user gesture so beforeunload dialog only fires after interaction
+  useEffect(() => {
+    const mark = () => { hadUserGestureRef.current = true; };
+    window.addEventListener('keydown', mark, { once: true });
+    window.addEventListener('pointerdown', mark, { once: true });
+    return () => { window.removeEventListener('keydown', mark); window.removeEventListener('pointerdown', mark); };
+  }, []);
+
   // Refs to always hold latest draft data (avoids stale closures in intervals/beforeunload)
   const draftDataRef = useRef({ title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji });
   useEffect(() => {
     draftDataRef.current = { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji };
   }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji]);
+
+  // Sync any buffered subpage drafts from localStorage to cloud
+  const syncSubpageDrafts = useCallback(async () => {
+    try {
+      const prefix = 'lixblogs_subpage_';
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith(prefix)) continue;
+        const subpageId = key.slice(prefix.length);
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const draft = JSON.parse(raw);
+        if (!draft.editorContent && !draft.title) continue;
+        const payload = { id: subpageId };
+        if (draft.title) payload.title = draft.title;
+        if (draft.editorContent) payload.content = draft.editorContent;
+        fetch('/api/subpages', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).catch(() => {});
+      }
+    } catch {}
+  }, []);
 
   // Cloud sync function — saves localStorage then pushes to cloud
   const syncToCloud = useCallback(async ({ showToast = false, silent = false } = {}) => {
@@ -441,6 +529,9 @@ export default function WritePage({ slugid }) {
     setLastSaved(Date.now());
 
     if (!silent) setSyncStatus('syncing');
+
+    // Also sync any buffered subpage drafts
+    syncSubpageDrafts();
 
     try {
       const res = await fetch('/api/blogs/draft', {
@@ -470,9 +561,9 @@ export default function WritePage({ slugid }) {
         setTimeout(() => setSyncStatus('idle'), 5000);
       }
     }
-  }, [slugid]);
+  }, [slugid, syncSubpageDrafts]);
 
-  // Ctrl+S → save + sync, Ctrl+O → import markdown
+  // Ctrl+S → save + sync, Ctrl+O → import markdown, Ctrl+D → insert date
   useEffect(() => {
     function handleKeyDown(e) {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -482,6 +573,19 @@ export default function WritePage({ slugid }) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
         e.preventDefault();
         mdUploadRef.current?.click();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'i' || e.key === 'I')) {
+        e.preventDefault();
+        setShowCollabPanel(true);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        const editor = editorRef.current?.getEditor?.();
+        if (editor) {
+          try {
+            editor.insertInlineContent([{ type: 'dateInline', props: { date: new Date().toISOString().split('T')[0] } }]);
+          } catch {}
+        }
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -500,11 +604,20 @@ export default function WritePage({ slugid }) {
     }
   }, [draftLoading, syncToCloud]);
 
-  // Sync before page unload + warn about unsaved edits
+  // Intercept in-app link clicks to show custom unsaved changes modal
+  const handleNavigation = useCallback((url) => {
+    if (hasUnsavedEdits) {
+      setPendingLeaveUrl(url);
+      setShowLeaveConfirm(true);
+      return false; // blocked
+    }
+    return true; // allowed
+  }, [hasUnsavedEdits]);
+
+  // Sync before page unload + save draft (fallback for hard browser close)
   useEffect(() => {
     function handleBeforeUnload(e) {
       const data = draftDataRef.current;
-      // Always save to localStorage so nothing is lost
       if (data.title || data.editorContent) {
         saveDraft(slugid, data);
         try {
@@ -512,15 +625,34 @@ export default function WritePage({ slugid }) {
           navigator.sendBeacon('/api/blogs/draft', blob);
         } catch {}
       }
-      // Warn user if there are unsaved edits
-      if (hasUnsavedEdits) {
+      // Also flush any buffered subpage drafts on unload
+      try { syncSubpageDrafts(); } catch {}
+      if (hasUnsavedEdits && hadUserGestureRef.current) {
         e.preventDefault();
         e.returnValue = '';
       }
     }
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [slugid, hasUnsavedEdits]);
+  }, [slugid, hasUnsavedEdits, syncSubpageDrafts]);
+
+  // Intercept clicks on <a> tags within the editor page to show custom modal
+  useEffect(() => {
+    function handleClick(e) {
+      if (!hasUnsavedEdits) return;
+      const anchor = e.target.closest('a[href]');
+      if (!anchor) return;
+      const href = anchor.getAttribute('href');
+      // Only intercept internal navigation links, not external or hash links
+      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('http')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setPendingLeaveUrl(href);
+      setShowLeaveConfirm(true);
+    }
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
+  }, [hasUnsavedEdits]);
 
   useEffect(() => {
     // Try local draft first, then fetch from server
@@ -762,11 +894,70 @@ export default function WritePage({ slugid }) {
       const editor = editorRef.current?.getEditor?.();
       if (editor) {
         try {
-          const blocks = await editor.tryParseMarkdownToBlocks(mdContent);
+          // Pre-process: extract mermaid fenced blocks
+          // Use placeholder format without double underscores (markdown interprets __ as bold)
+          const mermaidBlocks = [];
+          let processed = mdContent.replace(/```mermaid\n([\s\S]*?)```/g, (_, diagram) => {
+            const ph = `MERMAIDPLACEHOLDER${mermaidBlocks.length}END`;
+            mermaidBlocks.push(diagram.trim());
+            return ph;
+          });
+
+          // Pre-process: extract block LaTeX \[...\]
+          const blockLatex = [];
+          processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, (_, latex) => {
+            const ph = `LATEXBLOCKPLACEHOLDER${blockLatex.length}END`;
+            blockLatex.push(latex.trim());
+            return ph;
+          });
+
+          // Pre-process: extract inline LaTeX \(...\)
+          // Markdown parsers strip backslash escapes, so \( becomes ( — extract before parsing
+          const inlineLatex = [];
+          processed = processed.replace(/\\\((.+?)\\\)/g, (_, latex) => {
+            const ph = `LATEXINLINEPLACEHOLDER${inlineLatex.length}END`;
+            inlineLatex.push(latex.trim());
+            return ph;
+          });
+
+          let blocks = await editor.tryParseMarkdownToBlocks(processed);
+
+          // Post-process: replace placeholders with custom blocks + inline LaTeX
+          blocks = blocks.flatMap(block => {
+            if (!block.content || !Array.isArray(block.content)) return [block];
+            const txt = block.content.map(c => c.text || '').join('');
+
+            // Mermaid placeholder → mermaidBlock
+            const mm = txt.match(/^MERMAIDPLACEHOLDER(\d+)END$/);
+            if (mm) return [{ type: 'mermaidBlock', props: { diagram: mermaidBlocks[parseInt(mm[1])] || '' }, children: [] }];
+
+            // Block LaTeX placeholder → blockEquation
+            const bl = txt.match(/^LATEXBLOCKPLACEHOLDER(\d+)END$/);
+            if (bl) return [{ type: 'blockEquation', props: { latex: blockLatex[parseInt(bl[1])] || '' }, children: [] }];
+
+            // Inline LaTeX placeholders → inlineEquation
+            if (/LATEXINLINEPLACEHOLDER\d+END/.test(txt)) {
+              const parts = [];
+              const regex = /LATEXINLINEPLACEHOLDER(\d+)END/g;
+              let lastIdx = 0;
+              let m;
+              while ((m = regex.exec(txt)) !== null) {
+                if (m.index > lastIdx) parts.push({ type: 'text', text: txt.slice(lastIdx, m.index) });
+                parts.push({ type: 'inlineEquation', props: { latex: inlineLatex[parseInt(m[1])] || '' } });
+                lastIdx = m.index + m[0].length;
+              }
+              if (lastIdx < txt.length) parts.push({ type: 'text', text: txt.slice(lastIdx) });
+              if (parts.length > 0) return [{ ...block, content: parts }];
+            }
+
+            return [block];
+          });
+
           if (blocks?.length > 0) {
             editor.replaceBlocks(editor.document, blocks);
           }
-        } catch {
+        } catch (err) {
+          console.error('Markdown parse failed:', err);
           editor.replaceBlocks(editor.document, [{
             type: 'paragraph',
             content: [{ type: 'text', text: mdContent }],
@@ -886,9 +1077,16 @@ export default function WritePage({ slugid }) {
           <span className="text-[var(--text-muted)] text-[13px] truncate">
             @{username}/{truncateSlug(slug || slugid)}
           </span>
-          {lastSaved && (
-            <span className="text-[var(--text-muted)] text-[11px] hidden md:block">{formatSavedTime(lastSaved)}</span>
-          )}
+          <span className="text-[var(--text-muted)] text-[11px] hidden md:flex items-center gap-1.5">
+            {isPublished ? (
+              <span className="px-1.5 py-0.5 rounded border text-[10px] font-medium" style={{ backgroundColor: '#4ade8014', color: '#4ade80', borderColor: '#4ade8030' }}>
+                {blogVersion?.isDraftAhead ? 'Edited' : 'Published'}
+              </span>
+            ) : (
+              <span className="text-[var(--text-faint)] px-1.5 py-0.5 rounded border border-[var(--border-default)] bg-[var(--bg-surface)] text-[10px] font-medium">Draft</span>
+            )}
+            {lastSaved && <span>{formatSavedTime(lastSaved)}</span>}
+          </span>
           {/* Sync status dot */}
           {syncStatus !== 'idle' && (
             <span
@@ -908,29 +1106,8 @@ export default function WritePage({ slugid }) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2.5">
-          {/* Status badge */}
-          <span
-            className="text-[11px] px-2 py-0.5 rounded-md border"
-            style={{
-              backgroundColor: isPublished ? '#4ade8014' : 'var(--bg-surface)',
-              color: isPublished ? '#4ade80' : 'var(--text-muted)',
-              borderColor: isPublished ? '#4ade8030' : 'var(--border-default)',
-            }}
-          >
-            {isPublished ? (blogVersion?.isDraftAhead ? 'Edited' : 'Published') : 'Draft'}
-          </span>
-
-          {/* Upload .md */}
+          {/* Hidden file input for markdown import (triggered from menu) */}
           <input ref={mdUploadRef} type="file" accept=".md,.markdown,.txt" className="hidden" onChange={handleMdUpload} />
-          <button
-            onClick={() => mdUploadRef.current?.click()}
-            className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-[12px] font-medium transition-colors"
-            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-muted)' }}
-            title="Import markdown file"
-          >
-            <ion-icon name="folder-open-outline" style={{ fontSize: '14px' }} />
-            <span className="hidden sm:inline">Import</span>
-          </button>
 
           {/* Publish / Update split button */}
           <div className="relative group/publish">
@@ -1010,15 +1187,14 @@ export default function WritePage({ slugid }) {
             })()}
           </div>
 
-          {/* Invite collaborators */}
+          {/* Theme toggle */}
           <button
-            onClick={() => setShowCollabPanel(true)}
-            className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-[12px] font-medium transition-colors"
-            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-muted)' }}
-            title="Invite collaborators"
+            onClick={toggleTheme}
+            className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors"
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-faint)' }}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            <ion-icon name="people-outline" style={{ fontSize: '14px' }} />
-            <span className="hidden sm:inline">Invite</span>
+            <ion-icon name={isDark ? 'sunny-outline' : 'moon-outline'} style={{ fontSize: '16px' }} />
           </button>
 
           {/* Shortcuts help */}
@@ -1045,6 +1221,8 @@ export default function WritePage({ slugid }) {
 
           {/* Hamburger menu */}
           <HamburgerMenu
+            onImport={() => mdUploadRef.current?.click()}
+            onInvite={() => setShowCollabPanel(true)}
             onShareDraft={() => {
               const url = `${window.location.origin}/${username}/${slug || slugid}`;
               navigator.clipboard.writeText(url).catch(() => {});

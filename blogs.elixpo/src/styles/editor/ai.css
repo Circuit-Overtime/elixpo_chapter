@@ -14,20 +14,8 @@
   background: transparent !important;
 }
 
-.ai-writing-active [contenteditable="true"],
-.ai-writing-active [contenteditable="true"] *,
-.ai-writing-active .bn-inline-content,
-.ai-writing-active .bn-inline-content *,
-.ai-writing-active p,
-.ai-writing-active span,
-.ai-writing-active strong,
-.ai-writing-active em,
-.ai-writing-active code,
-.ai-writing-active a,
-.ai-writing-active li,
-.ai-writing-active h1,
-.ai-writing-active h2,
-.ai-writing-active h3 {
+.ai-writing-active *,
+.ai-writing-active [contenteditable="true"] {
   color: #c4b5fd !important;
   caret-color: #c4b5fd !important;
   -webkit-text-fill-color: #c4b5fd !important;
@@ -50,29 +38,9 @@
   background: transparent !important;
 }
 
-.ai-generated-highlight [contenteditable="true"],
-.ai-generated-highlight [contenteditable="true"] * {
+.ai-generated-highlight * {
   color: #c4b5fd !important;
   caret-color: #c4b5fd !important;
-  -webkit-text-fill-color: #c4b5fd !important;
-  font-family: 'Caveat', cursive !important;
-  font-size: 1.35em !important;
-  font-weight: 500 !important;
-  line-height: 1.6 !important;
-}
-
-.ai-generated-highlight .bn-inline-content,
-.ai-generated-highlight p,
-.ai-generated-highlight span,
-.ai-generated-highlight strong,
-.ai-generated-highlight em,
-.ai-generated-highlight code,
-.ai-generated-highlight a,
-.ai-generated-highlight li,
-.ai-generated-highlight h1,
-.ai-generated-highlight h2,
-.ai-generated-highlight h3 {
-  color: #c4b5fd !important;
   -webkit-text-fill-color: #c4b5fd !important;
   font-family: 'Caveat', cursive !important;
   font-size: 1.35em !important;
@@ -123,17 +91,7 @@
   pointer-events: none;
 }
 
-.ai-edit-original-block [contenteditable="true"],
-.ai-edit-original-block [contenteditable="true"] *,
-.ai-edit-original-block .bn-inline-content,
-.ai-edit-original-block .bn-inline-content *,
-.ai-edit-original-block p,
-.ai-edit-original-block span,
-.ai-edit-original-block strong,
-.ai-edit-original-block em,
-.ai-edit-original-block code,
-.ai-edit-original-block a,
-.ai-edit-original-block li {
+.ai-edit-original-block * {
   text-decoration: line-through !important;
   text-decoration-color: rgba(196, 181, 253, 0.6) !important;
   color: rgba(196, 181, 253, 0.35) !important;
@@ -165,21 +123,7 @@
 }
 
 .ai-edit-new-block,
-.ai-edit-new-block *,
-.ai-edit-new-block [contenteditable="true"],
-.ai-edit-new-block [contenteditable="true"] *,
-.ai-edit-new-block .bn-inline-content,
-.ai-edit-new-block .bn-inline-content *,
-.ai-edit-new-block p,
-.ai-edit-new-block span,
-.ai-edit-new-block strong,
-.ai-edit-new-block em,
-.ai-edit-new-block code,
-.ai-edit-new-block a,
-.ai-edit-new-block li,
-.ai-edit-new-block h1,
-.ai-edit-new-block h2,
-.ai-edit-new-block h3 {
+.ai-edit-new-block * {
   color: #c4b5fd !important;
   -webkit-text-fill-color: #c4b5fd !important;
   caret-color: #c4b5fd !important;
@@ -542,15 +486,7 @@
 }
 
 /* Collapse all BlockNote inner elements to zero */
-.ai-edit-selected-block *,
-.ai-edit-selected-block .bn-block,
-.ai-edit-selected-block .bn-block-content,
-.ai-edit-selected-block .bn-inline-content,
-.ai-edit-selected-block [contenteditable],
-.ai-edit-selected-block p,
-.ai-edit-selected-block span,
-.ai-edit-selected-block .bn-side-menu,
-.ai-edit-selected-block .bn-drag-handle-menu {
+.ai-edit-selected-block * {
   display: none !important;
   height: 0 !important;
   min-height: 0 !important;
