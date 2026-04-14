@@ -548,6 +548,24 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     assistant_message["content"] = f"Calling {leaked_fn}..."
                     assistant_message["tool_calls"] = tool_calls
 
+                # Recovery: detect PDF content dumped as plain text
+                # If the user asked for a PDF and the LLM output markdown instead of calling the tool
+                if not tool_calls and not memoized_results.get("generated_pdfs"):
+                    _pdf_keywords = ("pdf", "export", "save as", "download", "document")
+                    _query_wants_pdf = any(kw in original_user_query.lower() for kw in _pdf_keywords)
+                    _content_long_enough = len(raw_content) > 200
+                    if _query_wants_pdf and _content_long_enough and not raw_content.strip().startswith("I "):
+                        import uuid as _uuid
+                        logger.info(f"[RECOVERY] LLM dumped PDF content as text ({len(raw_content)} chars), converting to export_to_pdf call")
+                        _pdf_args = {"content": raw_content}
+                        _title_match = re.search(r'^#+\s+(.+)', raw_content, re.MULTILINE)
+                        if _title_match:
+                            _pdf_args["title"] = _title_match.group(1).strip()
+                        tool_calls = [{"id": f"recovered-pdf-{_uuid.uuid4().hex[:8]}", "type": "function",
+                                       "function": {"name": "export_to_pdf", "arguments": json.dumps(_pdf_args)}}]
+                        assistant_message["content"] = "Generating PDF..."
+                        assistant_message["tool_calls"] = tool_calls
+
                 if not tool_calls:
                     is_reasoning_leak = _looks_like_internal_reasoning(raw_content)
                     is_placeholder = raw_content.strip() in ("Processing your request...", "I'll help you with that.", "")
