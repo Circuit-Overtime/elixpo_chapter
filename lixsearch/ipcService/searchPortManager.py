@@ -396,18 +396,75 @@ class YahooSearchAgentText:
         
         return meta_title
 
+    async def fetch_page_content(self, url, timeout_ms=15000, agent_idx=None):
+        """Fetch page content using the browser — handles JS-rendered pages and bot detection."""
+        page = None
+        try:
+            page = await self.context.new_page()
+            self.tab_count += 1
+
+            await page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
+            # Brief wait for JS to render content
+            await page.wait_for_timeout(2000)
+
+            # Extract text from the page using the browser DOM
+            text = await page.evaluate("""() => {
+                // Remove non-content elements
+                for (const sel of ['script','style','nav','footer','header','aside','form','noscript','iframe','svg']) {
+                    document.querySelectorAll(sel).forEach(el => el.remove());
+                }
+                // Try semantic containers first
+                const main = document.querySelector('article') || document.querySelector('main') ||
+                             document.querySelector('[role="main"]') || document.body;
+                if (!main) return '';
+                const blocks = main.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, td');
+                const seen = new Set();
+                const parts = [];
+                let wordCount = 0;
+                const limit = 3000;
+                for (const el of blocks) {
+                    if (wordCount >= limit) break;
+                    const t = el.innerText.replace(/\\s+/g, ' ').trim();
+                    if (!t || t.length < 20 || seen.has(t)) continue;
+                    seen.add(t);
+                    const words = t.split(/\\s+/);
+                    const take = words.slice(0, limit - wordCount);
+                    parts.push(take.join(' '));
+                    wordCount += take.length;
+                }
+                return parts.join('\\n\\n');
+            }""")
+
+            logger.info(f"[BROWSER-FETCH] Extracted {len(text)} chars from {url}")
+
+            if agent_idx is not None:
+                from ipcService.searchPortManager import agent_pool
+                agent_pool.increment_tab_count("text", agent_idx)
+
+            return text.strip()
+
+        except Exception as e:
+            logger.warning(f"[BROWSER-FETCH] Failed for {url}: {e}")
+            return ""
+        finally:
+            if page:
+                try:
+                    await page.close()
+                except Exception:
+                    pass
+
     async def close(self):
         try:
             if self.context:
                 await self.context.close()
             if self.playwright:
                 await self.playwright.stop()
-            
+
             try:
                 shutil.rmtree(f"/tmp/chrome-user-data-{self.custom_port}", ignore_errors=True)
             except Exception as e:
                 logger.warning(f"[TEXT-AGENT] Failed to clean up user data for port {self.custom_port}: {e}")
-            
+
             logger.info(f"[TEXT-AGENT] YahooSearchAgentText on port {self.custom_port} closed after {self.tab_count} tabs.")
         except Exception as e:
             logger.error(f"[TEXT-AGENT] Error closing YahooSearchAgentText on port {self.custom_port}: {e}")
@@ -622,6 +679,15 @@ class accessSearchAgents:
     
     def get_agent_pool_status(self):
         return run_async_on_bg_loop(self._async_get_agent_pool_status())
+
+    async def _async_browser_fetch(self, url):
+        if not agent_pool.initialized:
+            await agent_pool.initialize_pool()
+        agent, agent_idx = await agent_pool.get_text_agent()
+        return await agent.fetch_page_content(url, agent_idx=agent_idx)
+
+    def browser_fetch(self, url):
+        return run_async_on_bg_loop(self._async_browser_fetch(url))
 
 
 def get_port_status():
