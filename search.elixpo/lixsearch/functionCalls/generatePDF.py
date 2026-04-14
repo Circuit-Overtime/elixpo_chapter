@@ -269,4 +269,4 @@ async def create_pdf_from_content(content: str, title: str = None) -> str:
     content_id = f"{slug}-{uuid.uuid4().hex[:8]}"
     store_content(content_id, pdf_bytes, ".pdf")
 
-    return f"{_BASE_URL}/api/content/{content_id}"
+    return f"{_BASE_URL}/api/content/{content_id}.pdf"

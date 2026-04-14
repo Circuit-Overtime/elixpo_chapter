@@ -48,7 +48,9 @@ class CoreEmbeddingService:
         )
         
         self._gpu_lock = threading.Lock()
-        
+        self._embedding_queue_depth = 0
+        self._embedding_requests_total = 0
+
         self.executor = ThreadPoolExecutor(max_workers=2)
         
         self._persist_thread = threading.Thread(
@@ -162,23 +164,39 @@ class CoreEmbeddingService:
         return self.semantic_cache.get_stats()
     
     def embed_batch(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
+        self._embedding_queue_depth += 1
         try:
             with self._gpu_lock:
+                self._embedding_requests_total += 1
                 embeddings = self.embedding_service.embed(texts, batch_size=batch_size)
                 return embeddings.tolist()
         except Exception as e:
             logger.error(f"[CORE] Batch embedding failed: {e}")
             raise
-    
+        finally:
+            self._embedding_queue_depth -= 1
+
     def embed_single_text(self, text: str) -> List[float]:
+        self._embedding_queue_depth += 1
         try:
             with self._gpu_lock:
+                self._embedding_requests_total += 1
                 embedding = self.embedding_service.embed_single(text)
                 return embedding.tolist()
         except Exception as e:
             logger.error(f"[CORE] Single embedding failed: {e}")
             raise
-    
+        finally:
+            self._embedding_queue_depth -= 1
+
+    def get_health(self) -> dict:
+        return {
+            "embedding_queue_depth": self._embedding_queue_depth,
+            "embedding_requests_total": self._embedding_requests_total,
+            "device": self.device,
+            "vector_store": self.get_vector_store_stats(),
+        }
+
     def _persist_worker(self) -> None:
         while True:
             try:

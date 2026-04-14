@@ -147,6 +147,8 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
     if not user_image and user_images:
         user_image = user_images[0]
 
+    import time as _time
+    _pipeline_start = _time.time()
     logger.info(f"[pipeline] session={session_id} model={MODEL} fallback={MODEL_FALLBACK} query='{user_query[:LOG_MESSAGE_QUERY_TRUNCATE]}...' images={len(user_images)}")
 
     if session_id and not is_ephemeral:
@@ -545,6 +547,24 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                                    "function": {"name": leaked_fn, "arguments": json.dumps(leaked_args)}}]
                     assistant_message["content"] = f"Calling {leaked_fn}..."
                     assistant_message["tool_calls"] = tool_calls
+
+                # Recovery: detect PDF content dumped as plain text
+                # If the user asked for a PDF and the LLM output markdown instead of calling the tool
+                if not tool_calls and not memoized_results.get("generated_pdfs"):
+                    _pdf_keywords = ("pdf", "export", "save as", "download", "document")
+                    _query_wants_pdf = any(kw in original_user_query.lower() for kw in _pdf_keywords)
+                    _content_long_enough = len(raw_content) > 200
+                    if _query_wants_pdf and _content_long_enough and not raw_content.strip().startswith("I "):
+                        import uuid as _uuid
+                        logger.info(f"[RECOVERY] LLM dumped PDF content as text ({len(raw_content)} chars), converting to export_to_pdf call")
+                        _pdf_args = {"content": raw_content}
+                        _title_match = re.search(r'^#+\s+(.+)', raw_content, re.MULTILINE)
+                        if _title_match:
+                            _pdf_args["title"] = _title_match.group(1).strip()
+                        tool_calls = [{"id": f"recovered-pdf-{_uuid.uuid4().hex[:8]}", "type": "function",
+                                       "function": {"name": "export_to_pdf", "arguments": json.dumps(_pdf_args)}}]
+                        assistant_message["content"] = "Generating PDF..."
+                        assistant_message["tool_calls"] = tool_calls
 
                 if not tool_calls:
                     is_reasoning_leak = _looks_like_internal_reasoning(raw_content)
@@ -971,3 +991,20 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         conversation_cache.save_to_disk(session_id=session_id)
                 except Exception:
                     pass
+
+        # Publish latency metrics to Redis for the monitor service
+        try:
+            from pipeline.config import create_redis_client
+            _total_ms = round((_time.time() - _pipeline_start) * 1000, 1)
+            _metrics = json.dumps({
+                "request_id": event_id or "",
+                "session_id": session_id or "",
+                "total_ms": _total_ms,
+                "tool_calls": memoized_results.get("_tool_call_count", 0) if isinstance(memoized_results, dict) else 0,
+                "timestamp": _time.time(),
+            })
+            _rc = create_redis_client(db=0)
+            _rc.lpush("lixsearch:metrics:latency", _metrics)
+            _rc.ltrim("lixsearch:metrics:latency", 0, 999)
+        except Exception:
+            pass

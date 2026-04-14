@@ -96,6 +96,9 @@ class SearchAgentPool:
         self.image_agent_tabs = []
         self.lock = asyncio.Lock()
         self.initialized = False
+        # Concurrency semaphores — limit concurrent browser operations
+        self.text_semaphore = asyncio.Semaphore(pool_size * 3)
+        self.image_semaphore = asyncio.Semaphore(pool_size * 2)
     
     async def initialize_pool(self):
         if self.initialized:
@@ -396,18 +399,75 @@ class YahooSearchAgentText:
         
         return meta_title
 
+    async def fetch_page_content(self, url, timeout_ms=15000, agent_idx=None):
+        """Fetch page content using the browser — handles JS-rendered pages and bot detection."""
+        page = None
+        try:
+            page = await self.context.new_page()
+            self.tab_count += 1
+
+            await page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
+            # Brief wait for JS to render content
+            await page.wait_for_timeout(2000)
+
+            # Extract text from the page using the browser DOM
+            text = await page.evaluate("""() => {
+                // Remove non-content elements
+                for (const sel of ['script','style','nav','footer','header','aside','form','noscript','iframe','svg']) {
+                    document.querySelectorAll(sel).forEach(el => el.remove());
+                }
+                // Try semantic containers first
+                const main = document.querySelector('article') || document.querySelector('main') ||
+                             document.querySelector('[role="main"]') || document.body;
+                if (!main) return '';
+                const blocks = main.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, td');
+                const seen = new Set();
+                const parts = [];
+                let wordCount = 0;
+                const limit = 3000;
+                for (const el of blocks) {
+                    if (wordCount >= limit) break;
+                    const t = el.innerText.replace(/\\s+/g, ' ').trim();
+                    if (!t || t.length < 20 || seen.has(t)) continue;
+                    seen.add(t);
+                    const words = t.split(/\\s+/);
+                    const take = words.slice(0, limit - wordCount);
+                    parts.push(take.join(' '));
+                    wordCount += take.length;
+                }
+                return parts.join('\\n\\n');
+            }""")
+
+            logger.info(f"[BROWSER-FETCH] Extracted {len(text)} chars from {url}")
+
+            if agent_idx is not None:
+                from ipcService.searchPortManager import agent_pool
+                agent_pool.increment_tab_count("text", agent_idx)
+
+            return text.strip()
+
+        except Exception as e:
+            logger.warning(f"[BROWSER-FETCH] Failed for {url}: {e}")
+            return ""
+        finally:
+            if page:
+                try:
+                    await page.close()
+                except Exception:
+                    pass
+
     async def close(self):
         try:
             if self.context:
                 await self.context.close()
             if self.playwright:
                 await self.playwright.stop()
-            
+
             try:
                 shutil.rmtree(f"/tmp/chrome-user-data-{self.custom_port}", ignore_errors=True)
             except Exception as e:
                 logger.warning(f"[TEXT-AGENT] Failed to clean up user data for port {self.custom_port}: {e}")
-            
+
             logger.info(f"[TEXT-AGENT] YahooSearchAgentText on port {self.custom_port} closed after {self.tab_count} tabs.")
         except Exception as e:
             logger.error(f"[TEXT-AGENT] Error closing YahooSearchAgentText on port {self.custom_port}: {e}")
@@ -484,51 +544,59 @@ class YahooSearchAgentImage:
             # Simulate human behavior
             await page.mouse.move(random.randint(100, 500), random.randint(100, 500))
             await page.wait_for_timeout(random.randint(1000, 2000))
-            await page.wait_for_selector("img[src*='s.yimg.com']", timeout=55000)
-            
-            # Get all thumbnail images
-            image_elements = await page.query_selector_all("li[data-bns='API']")
-            print(f"[IMAGE SEARCH] Found {len(image_elements)} thumbnails")
-            
-            for idx, img in enumerate(image_elements):
+            # Wait for the image results list, then find all tile items
+            await page.wait_for_selector("ul.image-results__list li.tile", timeout=55000)
+            tiles = await page.query_selector_all("ul.image-results__list li.tile")
+            logger.info(f"[IMAGE-SEARCH] Found {len(tiles)} tiles")
+
+            for idx, tile in enumerate(tiles):
                 if len(results) >= max_images:
                     break
                 try:
-                    captured_image_url = None
-                    print(f"[IMAGE] Processing thumbnail {idx + 1}")
-                    
-                    async def handle_response(response):
-                        nonlocal captured_image_url
-                        try:
-                            content_type = response.headers.get("content-type", "")
-                            if ("image/jpeg" in content_type or "image/jpg" in content_type or response.url.endswith(".jpg") or response.url.endswith(".jpeg")):
-                                url = response.url
-                                if "maxresdefault" not in url and not url.startswith("https://s.yimg.com"):
-                                    captured_image_url = url
-                                    print(f"[IMAGE] Captured JPEG from network: {url}")
-                        except Exception as e:
-                            pass
+                    logger.debug(f"[IMAGE-SEARCH] Processing tile {idx + 1}")
 
-                    page.on("response", handle_response)
-                    await img.click()
-                    wait_start = time.perf_counter()
-                    while captured_image_url is None and (time.perf_counter() - wait_start) < 3:
-                        await page.wait_for_timeout(100)
-                    page.remove_listener("response", handle_response)
-                    
-                    if captured_image_url:
-                        results.append(captured_image_url)
-                        print(f"[IMAGE] Added: {captured_image_url} (Count: {len(results)}/{max_images})")
-                    else:
-                        print(f"[WARN] No JPEG URL captured for thumbnail {idx + 1}")
-                    await page.go_back()
-                    await page.wait_for_timeout(500)
-                    if len(results) >= max_images:
-                        break
+                    # Click the anchor inside the tile to open the viewer
+                    anchor = await tile.query_selector("a")
+                    if not anchor:
+                        continue
+                    await anchor.click()
+
+                    # Wait for the viewer to appear with a full-res image
+                    try:
+                        viewer_img = await page.wait_for_selector(
+                            "ul.image-results__list .viewer img",
+                            timeout=5000
+                        )
+                    except Exception:
+                        # Fallback: try data-origurl from the anchor
+                        origurl = await anchor.get_attribute("data-origurl")
+                        if origurl and origurl.startswith("http"):
+                            results.append(origurl)
+                            logger.debug(f"[IMAGE-SEARCH] Fallback data-origurl: {origurl}")
+                        continue
+
+                    if viewer_img:
+                        src = await viewer_img.get_attribute("src")
+                        if src and src.startswith("http") and "s.yimg.com" not in src:
+                            results.append(src)
+                            logger.debug(f"[IMAGE-SEARCH] Captured: {src} ({len(results)}/{max_images})")
+                        else:
+                            origurl = await anchor.get_attribute("data-origurl")
+                            if origurl and origurl.startswith("http"):
+                                results.append(origurl)
+
+                    # Close the viewer
+                    await page.keyboard.press("Escape")
+                    await page.wait_for_timeout(300)
+
                 except Exception as e:
-                    print(f"[WARN] Failed to extract image URL at index {idx}: {e}")
-            
-            print(f"[IMAGE SEARCH] Found {len(results)} images")
+                    logger.warning(f"[IMAGE-SEARCH] Failed tile {idx + 1}: {e}")
+                    try:
+                        await page.keyboard.press("Escape")
+                    except Exception:
+                        pass
+
+            logger.info(f"[IMAGE-SEARCH] Found {len(results)} images")
             return results
         except Exception as e:
             logger.error(f"❌ Image search failed on tab #{self.tab_count}, port {self.custom_port}: {e}")
@@ -559,51 +627,74 @@ class accessSearchAgents:
         pass
     
     def health_check(self):
+        mem = {}
+        try:
+            import psutil
+            proc = psutil.Process()
+            mem_info = proc.memory_info()
+            mem = {
+                "rss_mb": round(mem_info.rss / 1024 / 1024, 1),
+                "vms_mb": round(mem_info.vms / 1024 / 1024, 1),
+            }
+        except Exception:
+            pass
+
+        pool_status = {}
+        try:
+            pool_status = run_async_on_bg_loop(agent_pool.get_status())
+        except Exception:
+            pass
 
         return {
             "status": "healthy",
-            "agent_pool_initialized": agent_pool.initialized,
-            "background_loop_running": _event_loop is not None and _event_loop.is_running()
+            "agent_pool": pool_status,
+            "background_loop_running": _event_loop is not None and _event_loop.is_running(),
+            "memory": mem,
+            "port_manager": port_manager.get_status(),
         }
     
     async def _async_web_search(self, query):
         if not agent_pool.initialized:
             logger.info("[accessSearchAgents] Agent pool not initialized, initializing now...")
             await agent_pool.initialize_pool()
-        
-        agent, agent_idx = await agent_pool.get_text_agent()
-        results = await agent.search(query, max_links=MAX_LINKS_TO_TAKE, agent_idx=agent_idx)
-        return results
-    
+
+        async with agent_pool.text_semaphore:
+            agent, agent_idx = await agent_pool.get_text_agent()
+            results = await agent.search(query, max_links=MAX_LINKS_TO_TAKE, agent_idx=agent_idx)
+            return results
+
     async def _async_get_youtube_metadata(self, url):
         if not agent_pool.initialized:
             logger.info("[accessSearchAgents] Agent pool not initialized, initializing for YouTube metadata...")
             await agent_pool.initialize_pool()
-        
-        agent, agent_idx = await agent_pool.get_text_agent()
-        results = await agent.youtube_metadata(url, agent_idx=agent_idx)
-        return results
-    
+
+        async with agent_pool.text_semaphore:
+            agent, agent_idx = await agent_pool.get_text_agent()
+            results = await agent.youtube_metadata(url, agent_idx=agent_idx)
+            return results
+
     async def _async_get_youtube_transcript_url(self, url):
         if not agent_pool.initialized:
             logger.info("[accessSearchAgents] Agent pool not initialized, initializing for YouTube transcript...")
             await agent_pool.initialize_pool()
-        
-        agent, agent_idx = await agent_pool.get_text_agent()
-        results = await agent.youtube_transcript_url(url, agent_idx=agent_idx)
-        return results
-    
+
+        async with agent_pool.text_semaphore:
+            agent, agent_idx = await agent_pool.get_text_agent()
+            results = await agent.youtube_transcript_url(url, agent_idx=agent_idx)
+            return results
+
     async def _async_image_search(self, query, max_images=10):
         if not agent_pool.initialized:
             logger.info("[accessSearchAgents] Agent pool not initialized, initializing for image search...")
             await agent_pool.initialize_pool()
-        
-        agent, agent_idx = await agent_pool.get_image_agent()
-        results = await agent.search_images(query, max_images, agent_idx=agent_idx)
-        if results:
-            return json.dumps({f"yahoo_source_{i}": [url] for i, url in enumerate(results)})
-        else:
-            return json.dumps({})
+
+        async with agent_pool.image_semaphore:
+            agent, agent_idx = await agent_pool.get_image_agent()
+            results = await agent.search_images(query, max_images, agent_idx=agent_idx)
+            if results:
+                return json.dumps({f"yahoo_source_{i}": [url] for i, url in enumerate(results)})
+            else:
+                return json.dumps({})
     
     async def _async_get_agent_pool_status(self):
         return await agent_pool.get_status()
@@ -622,6 +713,16 @@ class accessSearchAgents:
     
     def get_agent_pool_status(self):
         return run_async_on_bg_loop(self._async_get_agent_pool_status())
+
+    async def _async_browser_fetch(self, url):
+        if not agent_pool.initialized:
+            await agent_pool.initialize_pool()
+        async with agent_pool.text_semaphore:
+            agent, agent_idx = await agent_pool.get_text_agent()
+            return await agent.fetch_page_content(url, agent_idx=agent_idx)
+
+    def browser_fetch(self, url):
+        return run_async_on_bg_loop(self._async_browser_fetch(url))
 
 
 def get_port_status():

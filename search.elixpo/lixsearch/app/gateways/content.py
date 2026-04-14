@@ -60,6 +60,9 @@ def _cleanup_expired_content() -> None:
 
 async def serve_content(content_id: str):
 
+    # Strip extension from ID if present (e.g. "my-doc-abc123.pdf" → "my-doc-abc123")
+    content_id = os.path.splitext(content_id)[0]
+
     _cleanup_expired_content()
 
     for fname in os.listdir(CONTENT_DIR):
