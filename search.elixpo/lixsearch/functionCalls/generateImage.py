@@ -42,7 +42,7 @@ async def _try_generate(prompt: str, model: str, seed: int, headers: dict, timeo
 async def create_image_from_prompt(prompt: str) -> str:
     seed = random.randint(0, 10000)
     image_id = str(uuid.uuid4())
-    url = f"{_BASE_URL}/api/image/{image_id}"
+    url = f"{_BASE_URL}/api/image/{image_id}.png"
     headers = {"Authorization": f"Bearer {os.getenv('TOKEN')}"}
 
     t0 = time.perf_counter()

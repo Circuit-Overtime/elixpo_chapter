@@ -373,8 +373,26 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
                     asyncio.to_thread(fetch_url_content_parallel, queries, [url]),
                     timeout=10.0
                 )
-                fetch_elapsed = time.time() - fetch_start
                 content_len = len(parallel_results) if parallel_results else 0
+
+                # Browser fallback: if plain HTTP got <120 chars, try Playwright
+                if content_len < FETCH_MIN_USEFUL_CHARS:
+                    logger.info(f"[fetch_full_text] Plain fetch too short ({content_len} chars), trying browser fallback for {url[:60]}")
+                    try:
+                        from ipcService.coreServiceManager import CoreServiceManager
+                        search_agents = CoreServiceManager.get_instance().get_search_agents()
+                        browser_text = await asyncio.wait_for(
+                            asyncio.to_thread(search_agents.browser_fetch, url),
+                            timeout=18.0
+                        )
+                        if browser_text and len(browser_text) > content_len:
+                            parallel_results = f"URL: {url}\n{browser_text}"
+                            content_len = len(parallel_results)
+                            logger.info(f"[fetch_full_text] Browser fallback got {content_len} chars from {url[:50]}")
+                    except Exception as e:
+                        logger.warning(f"[fetch_full_text] Browser fallback failed for {url[:50]}: {e}")
+
+                fetch_elapsed = time.time() - fetch_start
                 logger.info(f"[fetch_full_text] Fetched {content_len} chars from {url[:50]} in {fetch_elapsed:.1f}s")
 
                 yield parallel_results if parallel_results else "[No content fetched from URL]"
