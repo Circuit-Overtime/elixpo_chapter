@@ -88,7 +88,7 @@ export default function ChatInput({ onSend, onStop, isLoading, disabled, model, 
         )}
 
         {/* Main input */}
-        <div className="rounded-2xl bg-neutral-50 border border-neutral-200 focus-within:border-neutral-400 transition-colors">
+        <div className="rounded-2xl bg-white border border-neutral-200 focus-within:border-neutral-400 shadow-sm transition-colors">
           <div className="px-4 pt-3 pb-2">
             <textarea
               ref={textareaRef}
@@ -96,7 +96,7 @@ export default function ChatInput({ onSend, onStop, isLoading, disabled, model, 
               onChange={(e) => { setText(e.target.value); autoResize(); }}
               onKeyDown={handleKeyDown}
               placeholder="Message Elixpo..."
-              disabled={disabled}
+              disabled={disabled || isLoading}
               rows={1}
               className="w-full bg-transparent outline-none text-sm text-neutral-900 placeholder:text-neutral-400 resize-none max-h-[200px]"
             />

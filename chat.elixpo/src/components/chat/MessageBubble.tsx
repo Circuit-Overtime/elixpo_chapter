@@ -1,39 +1,79 @@
 "use client";
 
 import { marked } from "marked";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import TaskGroup from "./TaskBlock";
 import type { DisplayMessage } from "@/lib/chat/use-chat";
 
 marked.setOptions({ breaks: true, gfm: true });
 
-/** Extract source URLs from markdown content and create pills */
-function extractSources(text: string): { domain: string; url: string; title: string }[] {
-  const sources: { domain: string; url: string; title: string }[] = [];
-  const seen = new Set<string>();
+const IMG_EXT = /\.(?:png|jpe?g|gif|webp|svg|avif|bmp|tiff?)(?:[?#].*)?$/i;
+const ELIXPO_IMG = /search\.elixpo\.com\/api\/image\//;
+
+function isImageUrl(url: string): boolean {
+  return IMG_EXT.test(url) || ELIXPO_IMG.test(url);
+}
+
+/** Extract source URLs, related images, and strip all references from content */
+function extractContent(text: string): {
+  sources: { domain: string; url: string }[];
+  images: string[];
+  cleanText: string;
+} {
+  const sources: { domain: string; url: string }[] = [];
+  const images: string[] = [];
+  const seenDomains = new Set<string>();
+  const seenImages = new Set<string>();
+
+  // Extract all URLs from the original text
   const urlRegex = /\[([^\]]*)\]\((https?:\/\/[^)]+)\)|(?<!\()https?:\/\/[^\s)]+/g;
   let match;
   while ((match = urlRegex.exec(text)) !== null) {
     const url = match[2] || match[0];
     try {
       const u = new URL(url);
-      const domain = u.hostname.replace(/^www\./, "");
-      if (!seen.has(domain)) {
-        seen.add(domain);
-        sources.push({ domain, url, title: match[1] || domain });
+      if (isImageUrl(url)) {
+        if (!seenImages.has(url)) {
+          seenImages.add(url);
+          // Proxy elixpo images, keep others as-is
+          if (ELIXPO_IMG.test(url)) {
+            const id = url.match(/\/api\/image\/([a-f0-9-]+)/i)?.[1];
+            if (id) images.push(`/api/image?id=${id}`);
+          } else {
+            images.push(url);
+          }
+        }
+      } else {
+        if (/search\.elixpo\.com/.test(url)) continue;
+        const domain = u.hostname.replace(/^www\./, "");
+        if (!seenDomains.has(domain)) {
+          seenDomains.add(domain);
+          sources.push({ domain, url });
+        }
       }
     } catch { /* */ }
   }
-  return sources;
+
+  // Strip "Sources:" / "Related Images:" blocks (---\n**heading**\n... to end)
+  let cleanText = text.replace(/\n*-{3,}\n\*{0,2}(?:Sources?|Related\s+Images?)\*{0,2}:?.*(?:\n.*)*$/i, "");
+  // Fallback: strip these headings without --- separator (heading + numbered list to end)
+  cleanText = cleanText.replace(/\n*\*{0,2}(?:Sources?|Related\s+Images?)\*{0,2}:?\s*\n(?:\s*\d+\.\s*\[.*?\]\(.*?\)\s*\n?)+/gi, "");
+  // Catch any remaining standalone heading lines for these sections
+  cleanText = cleanText.replace(/^\s*\*{0,2}(?:Sources?|Related\s+Images?)\*{0,2}:?\s*$/gim, "");
+  // Remove all markdown image links ![text](url)
+  cleanText = cleanText.replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g, "");
+  // Remove all markdown links [text](url)
+  cleanText = cleanText.replace(/\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g, "");
+  // Remove any remaining bare URLs
+  cleanText = cleanText.replace(/https?:\/\/[^\s)]+/g, "");
+  // Clean up excess blank lines
+  cleanText = cleanText.replace(/\n{3,}/g, "\n\n").trim();
+
+  return { sources, images, cleanText };
 }
 
 function renderMarkdown(text: string): string {
-  // Auto-embed standalone image URLs
-  const withImages = text.replace(
-    /(?<![(\[!])\bhttps?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp|svg)(?:\?\S*)?/gi,
-    (url) => `![](${url})`
-  );
-  return marked.parse(withImages) as string;
+  return marked.parse(text) as string;
 }
 
 interface MessageBubbleProps {
@@ -41,12 +81,58 @@ interface MessageBubbleProps {
   onRetry?: () => void;
 }
 
+interface SourceMeta {
+  domain: string;
+  url: string;
+  title: string;
+  description: string;
+  loading: boolean;
+}
+
 export default function MessageBubble({ message, onRetry }: MessageBubbleProps) {
   const isUser = message.role === "user";
-  const html = useMemo(() => (isUser ? null : renderMarkdown(message.content)), [message.content, isUser]);
-  const sources = useMemo(() => (isUser ? [] : extractSources(message.content)), [message.content, isUser]);
+  const { sources, images: relatedImages, cleanText } = useMemo(() => {
+    if (isUser) return { sources: [], images: [], cleanText: message.content };
+    return extractContent(message.content);
+  }, [message.content, isUser]);
+  const html = useMemo(() => (isUser ? null : renderMarkdown(cleanText)), [cleanText, isUser]);
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"like" | "dislike" | null>(null);
+  const [metas, setMetas] = useState<SourceMeta[]>([]);
+
+  // Fetch meta for each source once streaming is done
+  useEffect(() => {
+    if (isUser || message.isStreaming || sources.length === 0) return;
+
+    // Init with loading state
+    setMetas(sources.slice(0, 8).map((s) => ({ ...s, title: "", description: "", loading: true })));
+
+    sources.slice(0, 8).forEach((s, i) => {
+      fetch(`/api/meta?url=${encodeURIComponent(s.url)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          setMetas((prev) => {
+            const updated = [...prev];
+            if (updated[i]) {
+              const denied = /access\s*denied|forbidden|blocked/i;
+              const title = denied.test(data.title) ? "" : data.title;
+              const desc = denied.test(data.description) ? "" : data.description;
+              updated[i] = { ...updated[i], title: title || s.domain, description: desc, loading: false };
+            }
+            return updated;
+          });
+        })
+        .catch(() => {
+          setMetas((prev) => {
+            const updated = [...prev];
+            if (updated[i]) {
+              updated[i] = { ...updated[i], title: s.domain, description: "", loading: false };
+            }
+            return updated;
+          });
+        });
+    });
+  }, [isUser, message.isStreaming, sources]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -62,7 +148,7 @@ export default function MessageBubble({ message, onRetry }: MessageBubbleProps) 
           {message.images?.map((img, i) => (
             <img key={i} src={img} alt="" className="rounded-xl mb-2 max-w-full max-h-48 object-cover ml-auto" />
           ))}
-          <div className="bg-neutral-100 text-neutral-800 rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed">
+          <div className="bg-neutral-800 text-white rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed shadow-sm">
             <p className="whitespace-pre-wrap">{message.content}</p>
           </div>
         </div>
@@ -81,18 +167,18 @@ export default function MessageBubble({ message, onRetry }: MessageBubbleProps) 
       {/* Main content */}
       {message.content ? (
         <div
-          className="prose prose-neutral prose-sm max-w-none text-neutral-800 leading-relaxed
+          className="prose prose-neutral prose-sm max-w-none text-neutral-800 leading-relaxed select-text
             [&_img]:rounded-xl [&_img]:my-3 [&_img]:max-h-80
             [&_a]:text-blue-600 [&_a]:no-underline [&_a:hover]:underline
             [&_code]:bg-neutral-100 [&_code]:text-neutral-800 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[13px]
-            [&_pre]:bg-neutral-900 [&_pre]:text-neutral-100 [&_pre]:rounded-xl [&_pre]:p-4
-            [&_pre_code]:bg-transparent [&_pre_code]:text-neutral-100 [&_pre_code]:p-0
+            [&_pre]:bg-neutral-100 [&_pre]:text-neutral-800 [&_pre]:rounded-xl [&_pre]:p-4 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words
+            [&_pre_code]:bg-transparent [&_pre_code]:text-neutral-800 [&_pre_code]:p-0 [&_pre_code]:whitespace-pre-wrap [&_pre_code]:break-words
             [&_blockquote]:border-l-neutral-300 [&_blockquote]:text-neutral-600
             [&_table]:text-sm [&_th]:bg-neutral-50 [&_td]:border-neutral-200
             [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm [&_h1]:font-bold [&_h2]:font-bold [&_h3]:font-semibold"
           dangerouslySetInnerHTML={{ __html: html || "" }}
         />
-      ) : message.isStreaming ? (
+      ) : message.isStreaming && !(message.taskBlocks && message.taskBlocks.length > 0) ? (
         <div className="flex gap-1.5 py-2">
           <span className="w-2 h-2 rounded-full bg-neutral-300 animate-bounce" style={{ animationDelay: "0ms" }} />
           <span className="w-2 h-2 rounded-full bg-neutral-300 animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -105,20 +191,56 @@ export default function MessageBubble({ message, onRetry }: MessageBubbleProps) 
         <span className="inline-block w-0.5 h-4 bg-neutral-500 animate-pulse rounded-full align-text-bottom" />
       )}
 
-      {/* Source pills */}
-      {!message.isStreaming && sources.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-3">
-          {sources.slice(0, 6).map((s, i) => (
+      {/* Artifact cards */}
+      {!message.isStreaming && metas.length > 0 && (
+        <div className="flex flex-wrap gap-2.5 mt-4">
+          {metas.map((s, i) => (
             <a
               key={i}
               href={s.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors text-xs"
+              className="flex items-start gap-2.5 w-60 px-3 py-2.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 transition-colors"
             >
-              <img src={`https://www.google.com/s2/favicons?domain=${s.domain}&sz=32`} alt="" width={14} height={14} className="rounded-sm" />
-              <span className="text-neutral-700 font-medium truncate max-w-[120px]">{s.title}</span>
-              <span className="text-neutral-400">{s.domain}</span>
+              <img
+                src={`https://www.google.com/s2/favicons?domain=${s.domain}&sz=32`}
+                alt=""
+                width={16}
+                height={16}
+                className="rounded-sm mt-0.5 shrink-0"
+              />
+              {s.loading ? (
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="h-3 w-20 bg-neutral-100 rounded animate-pulse" />
+                  <div className="h-3 w-full bg-neutral-100 rounded animate-pulse" />
+                </div>
+              ) : (
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-neutral-400 truncate">{s.domain}</p>
+                  <p className="text-[13px] text-neutral-700 leading-snug line-clamp-2">
+                    {s.description || s.title}
+                  </p>
+                </div>
+              )}
+            </a>
+          ))}
+        </div>
+      )}
+
+      {/* Related images */}
+      {!message.isStreaming && relatedImages.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
+          {relatedImages.map((src, i) => (
+            <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="relative block">
+              <div className="w-full h-36 rounded-xl bg-neutral-100 animate-pulse absolute inset-0" />
+              <img
+                src={src}
+                alt=""
+                loading="lazy"
+                className="relative w-full h-36 object-cover rounded-xl border border-neutral-200 hover:border-neutral-300 transition-colors bg-neutral-50"
+                onLoad={(e) => { (e.target as HTMLImageElement).previousElementSibling?.remove(); }}
+                onError={(e) => { const el = e.target as HTMLImageElement; el.previousElementSibling?.remove(); el.style.display = "none"; }}
+              />
             </a>
           ))}
         </div>

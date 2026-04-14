@@ -156,3 +156,22 @@ body {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Chat message entrance animations */
+@keyframes msgSlideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes msgFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-msg-user {
+  animation: msgSlideInRight 0.3s ease-out both;
+}
+
+.animate-msg-assistant {
+  animation: msgFadeUp 0.35s ease-out both;
+}
