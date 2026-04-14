@@ -97,10 +97,11 @@ export async function refreshTokens(refreshToken: string) {
 /** Cookie helpers */
 const COOKIE_NAME = "elixpo_session";
 
-export function setSessionCookie(accessToken: string, refreshToken: string, expiresIn: number) {
+const FIFTEEN_DAYS = 15 * 24 * 60 * 60; // 1,296,000 seconds
+
+export function setSessionCookie(accessToken: string, refreshToken: string, _expiresIn?: number) {
   const value = JSON.stringify({ accessToken, refreshToken });
-  // HttpOnly, Secure in production, SameSite=Lax for OAuth redirects
-  return `${COOKIE_NAME}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${expiresIn}`;
+  return `${COOKIE_NAME}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${FIFTEEN_DAYS}`;
 }
 
 export function parseSessionCookie(cookieHeader: string | null): { accessToken: string; refreshToken: string } | null {
