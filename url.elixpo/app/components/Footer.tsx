@@ -6,13 +6,11 @@ import Link from 'next/link';
 const productLinks = [
   { label: 'Home', href: '/dashboard' },
   { label: 'Pricing', href: '/pricing' },
-  { label: 'API Docs', href: '/docs' },
-  { label: 'Status', href: 'https://status.elixpo.com' },
+  { label: 'API Docs', href: '/docs' }
 ];
 const companyLinks = [
-  { label: 'About Elixpo', href: 'https://elixpo.com' },
-  { label: 'Blog', href: 'https://blog.elixpo.com' },
-  { label: 'Careers', href: 'https://elixpo.com/careers' },
+  { label: 'About Elixpo', href: 'https://elixpo.com/about' },
+  { label: 'Blog', href: 'https://blogs.elixpo.com' },
   { label: 'Contact', href: 'mailto:support@elixpo.com' },
 ];
 
