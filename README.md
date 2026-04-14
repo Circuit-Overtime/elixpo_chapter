@@ -210,13 +210,7 @@ At Elixpo_Chapter, we are dedicated to shaping a future where projects are:
 
 Our mission is to advance AI for the benefit of all—respecting ethical standards, fostering responsible innovation, and building a collaborative community. Join us in making AI open, ethical, and impactful for everyone.
 
-# Stargazers
 
-<p align="left">
-  <a href="https://reporoster.com/stars/dark/Circuit-Overtime/elixpo_chapter">
-    <img src="https://reporoster.com/stars/dark/Circuit-Overtime/elixpo_chapter" alt="Stargazers" />
-  </a>
-</p>
 
 <p align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=99:ffc,100:302b63&height=100&section=footer"/>
