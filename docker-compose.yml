@@ -78,6 +78,8 @@ services:
       - IPC_HOST=0.0.0.0
       - IPC_PORT=9510
       - IPC_AUTHKEY=${IPC_AUTHKEY:-changeme_ipc_secret}
+      - SEARCH_AGENT_POOL_SIZE=${SEARCH_AGENT_POOL_SIZE:-2}
+      - SEARCH_AGENT_MAX_TABS=${SEARCH_AGENT_MAX_TABS:-15}
     volumes:
       - ./data/models:/app/models:ro
       - ./data/embeddings:/app/data/embeddings
