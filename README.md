@@ -2,7 +2,7 @@
 ## Enhanced Learning and Intelligence Process Optimization ##
 ![Elixpo Banner](https://github.com/user-attachments/assets/dcf4bafc-8a93-4a45-adcb-4b392197da35)
 
-### Welcome to Elixpo-Chapter, an Open Source Repository (OSR) begun in 2023 as a college initiative, this open-source series has grown into a collaborative ecosystem of open source projects and collaborative development. In just two years, we've built over 17 projects, engaged a global community, and participated in numerous hackathons and open-source programs.
+### Welcome to Elixpo-Chapter, an Open Source Repository (OSS) begun in 2023 as a college initiative, this open-source series has grown into a collaborative ecosystem of open source projects and collaborative development. In just two years, we've built over 9 projects, engaged a global community, and participated in numerous hackathons and open-source programs.
 
 ### **💖 If you believe in open and accessible projects, please leave a ⭐ on the repository!**
 
@@ -80,7 +80,7 @@ Let's build something amazing together!
 
 ## 👑 Key Achievements
 
-- **`10+` Open Source Projects** successfully built and deployed.
+- **`9` Open Source Projects** successfully built and deployed.
 - **`35+` Global Contributors** have shaped the Elixpo ecosystem.
 - **`20+` Hackathons** participated in, fostering innovation and rapid development.
 - **Featured in Major Programs** like **GSSOC**, **Pollinations.AI**, and **OSCI**.
@@ -187,6 +187,9 @@ Here are some of our latest releases:
 
 - **Elixpo Personal Portfolio**
   [Personal Portfolio Service](https://me.elixpo.com) - A personal portfolio service for all elixpo developers!
+
+- **Tommy Discord Orchestrator**
+  [Discord-GitHub Orchestrator](https://github.com/elixpo/tommy) - A Discord to GitHub Orchestrator that allows users to fully orchestrate GitHub Issues, PRs, Projects directly from Discord.
 
 # Our extended releases flagship
 
