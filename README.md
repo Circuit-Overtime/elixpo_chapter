@@ -102,40 +102,48 @@ Let's build something amazing together!
 The Elixpo ecosystem is designed as a series of interconnected platforms that leverage a central API binding layer. This layer communicates with external AI/ML models and infrastructure providers to deliver powerful features across our applications.
 
 ```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1a1a2e', 'primaryTextColor': '#ffffff', 'lineColor': '#888888', 'secondaryColor': '#16213e', 'tertiaryColor': '#0f3460'}}}%%
 graph TD
     subgraph User-Facing Platforms
         A[Elixpo Art]:::service
         B[Elix Blogs]:::service
-        C[Elixpo Search]:::service
+        C[Elixpo Search]:::search
         F[Elixpo Chat]:::service
         D[Elixpo Sketch]:::service
         G[Elixpo Verse]:::service
+        H[Elixpo Accounts]:::standalone
+        I[Elixpo URL]:::standalone
+        J[Elixpo Portfolio]:::service
     end
 
-    subgraph API & Core Logic
-        P[Pollinations API Provider]:::api
+    subgraph AI Service
+        P[Pollinations AI]:::api
     end
 
-    subgraph Backend & Infrastructure
-        X[AI/ML Models - Scaleway, RPi, GCP]:::ai
-        Y[Cloud Infra - AWS, Azure, GPU VMs]:::infra
+    subgraph Storage & Infrastructure
+        CF[Cloudflare D1 / KV]:::storage
+        DO[DigitalOcean VPS]:::storage
     end
 
-    %% Connections
-    A & B & C & F & D & G --> P
-    P --> X
-    P --> Y
+    %% AI connections - all except Accounts and URL
+    A & B & F & D & G & J --> P
+    C --> P
+
+    %% Storage connections
+    A & B & F & D & G & H & I & J --> CF
+    C --> DO
 
     %% Styling
-    classDef service fill:#e6f3ff,stroke:#333,stroke-width:2px;
-    classDef api fill:#e6ffe6,stroke:#333,stroke-width:2px;
-    classDef ai fill:#fff0e6,stroke:#333,stroke-width:2px;
-    classDef infra fill:#f9e6ff,stroke:#333,stroke-width:2px;
+    classDef service fill:#1a1a2e,stroke:#4fc3f7,stroke-width:2px,color:#ffffff;
+    classDef search fill:#1a1a2e,stroke:#ff8a65,stroke-width:2px,color:#ffffff;
+    classDef standalone fill:#1a1a2e,stroke:#ce93d8,stroke-width:2px,color:#ffffff;
+    classDef api fill:#0f3460,stroke:#66bb6a,stroke-width:2px,color:#ffffff;
+    classDef storage fill:#16213e,stroke:#ffd54f,stroke-width:2px,color:#ffffff;
 ```
 
 ## Development Note
 
-Elixpo is a parallel development initiative with multiple sub-projects evolving simultaneously within this monorepo. We actively welcome external open-source projects—if you’d like your project featured here, submit a proposal! Accepted projects will be listed as contributors and included under the GNU GPL license.
+Elixpo is a parallel development initiative with multiple sub-projects evolving simultaneously within this monorepo. We actively welcome external open-source projects, if you’d like your project featured here, submit a proposal! Accepted projects will be listed as contributors and included under the GNU GPL license.
 
 > Each project follows its own dedicated development track and process, covering diverse fields across computer science. This structure encourages collaboration, innovation, and cross-disciplinary growth within the Elixpo ecosystem.
 
@@ -145,7 +153,7 @@ We are excited to collaborate with various developers and artists in the open-so
 
 ## Funding
 
-This project is funded through a mix of personal investment, community contributions, and generous infrastructure support. Our cloud compute and VPS resources are provided by [Pollinations AI](https://pollinations.ai) — special thanks to Thomas Haferlach and the Pollinations team for enabling our large-scale AI workloads.
+This project is funded through a mix of personal investment, community contributions, and generous infrastructure support. Our cloud compute and VPS resources are provided by [Pollinations AI](https://pollinations.ai),  special thanks to [Thomas Haferlach](https://github.com/voodoohop) and the Pollinations team for enabling our large-scale AI workloads.
 
 We are actively seeking sponsors to help us grow and sustain the project. If you or your organization would like to support Elixpo, please visit our [GitHub Sponsors page](https://github.com/sponsors/Circuit-Overtime) or reach out to discuss partnership opportunities.
 
