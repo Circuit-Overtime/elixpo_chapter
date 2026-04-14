@@ -21,7 +21,6 @@ export default function NewsPage() {
 
   // Subtitle state
   interface SubLine { text: string; speaker: "male" | "female"; start: number; end: number; }
-  const subLines = useRef<SubLine[]>([]);
   const [activeSubLine, setActiveSubLine] = useState<SubLine | null>(null);
 
   const audioRefs = useRef<HTMLAudioElement[]>([]);
@@ -35,6 +34,7 @@ export default function NewsPage() {
       const newsItems: NewsItem[] = Array.isArray(data.items) ? data.items : Object.values(data.items);
       setItems(newsItems);
       audioRefs.current = newsItems.map((item) => {
+        if (!item.audio_url) return null as unknown as HTMLAudioElement;
         const audio = new Audio(item.audio_url);
         audio.preload = "auto";
         return audio;
@@ -66,11 +66,34 @@ export default function NewsPage() {
     if (!audio) return;
 
     const onTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
+      const t = audio.currentTime;
+      setCurrentTime(t);
       setDuration(audio.duration || 0);
-      // Update active subtitle
-      const found = subLines.current.find((s) => audio.currentTime >= s.start && audio.currentTime < s.end) || null;
-      setActiveSubLine((prev) => found?.text === prev?.text ? prev : found);
+
+      // Find active timeline entry, then compute which chunk within it
+      const tl: TimelineEntry[] = items[currentIdx]?.timeline || [];
+      const entry = tl.find((e) => t >= e.start && t < e.end);
+      if (!entry) { setActiveSubLine(null); return; }
+
+      // Split entry into ~50 char chunks
+      const words = entry.content.split(/\s+/);
+      const chunks: string[] = [];
+      let cur = "";
+      for (const w of words) {
+        if (cur.length + w.length + 1 > 50 && cur) { chunks.push(cur); cur = w; }
+        else cur = cur ? cur + " " + w : w;
+      }
+      if (cur) chunks.push(cur);
+
+      // Pick chunk based on time position within the entry
+      const progress = (t - entry.start) / (entry.end - entry.start);
+      const chunkIdx = Math.min(Math.floor(progress * chunks.length), chunks.length - 1);
+
+      setActiveSubLine((prev) => {
+        const text = chunks[chunkIdx];
+        if (prev?.text === text) return prev;
+        return { text, speaker: entry.type as "male" | "female", start: entry.start, end: entry.end };
+      });
     };
     const onEnded = () => {
       if (currentIdx < items.length - 1) {
@@ -90,28 +113,6 @@ export default function NewsPage() {
 
     updateGradient(items[currentIdx]);
 
-    // Build subtitle chunks from timeline
-    const tl: TimelineEntry[] = items[currentIdx]?.timeline || [];
-    const lines: SubLine[] = [];
-    for (const entry of tl) {
-      const words = entry.content.split(/\s+/);
-      const chunks: string[] = [];
-      let cur = "";
-      for (const w of words) {
-        if (cur.length + w.length + 1 > 60 && cur) { chunks.push(cur); cur = w; }
-        else cur = cur ? cur + " " + w : w;
-      }
-      if (cur) chunks.push(cur);
-      const dur = entry.end - entry.start;
-      const totalChars = chunks.reduce((s, t) => s + t.length, 0);
-      let offset = entry.start;
-      for (const chunk of chunks) {
-        const chunkDur = totalChars > 0 ? (chunk.length / totalChars) * dur : dur / chunks.length;
-        lines.push({ text: chunk, speaker: entry.type as "male" | "female", start: offset, end: offset + chunkDur });
-        offset += chunkDur;
-      }
-    }
-    subLines.current = lines;
     setActiveSubLine(null);
 
     return () => {
@@ -122,27 +123,52 @@ export default function NewsPage() {
     };
   }, [currentIdx, items, updateGradient]);
 
-  const togglePlay = () => { const a = audioRefs.current[currentIdx]; if (a) a.paused ? a.play() : a.pause(); };
+  const togglePlay = () => { const a = audioRefs.current[currentIdx]; if (a?.src) a.paused ? a.play() : a.pause(); };
   const switchTrack = (idx: number) => {
     if (idx < 0 || idx >= items.length || idx === currentIdx) return;
-    audioRefs.current[currentIdx].pause();
+    audioRefs.current[currentIdx]?.pause();
     if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
     setCurrentIdx(idx);
-    audioRefs.current[idx].currentTime = 0;
-    playTimeoutRef.current = setTimeout(() => audioRefs.current[idx].play(), 600);
+    const next = audioRefs.current[idx];
+    if (next?.src) { next.currentTime = 0; playTimeoutRef.current = setTimeout(() => next.play(), 600); }
   };
-  const seekTo = (e: React.MouseEvent<HTMLDivElement>) => {
+  const seekFromX = (clientX: number) => {
     if (!seekBarRef.current) return;
     const r = seekBarRef.current.getBoundingClientRect();
     const a = audioRefs.current[currentIdx];
-    if (a?.duration) a.currentTime = (Math.max(0, Math.min(e.clientX - r.left, r.width)) / r.width) * a.duration;
+    if (a?.duration) a.currentTime = (Math.max(0, Math.min(clientX - r.left, r.width)) / r.width) * a.duration;
   };
+  const isDragging = useRef(false);
+  const onSeekDown = (e: React.MouseEvent | React.TouchEvent) => {
+    isDragging.current = true;
+    const x = "touches" in e ? e.touches[0].clientX : e.clientX;
+    seekFromX(x);
+  };
+  useEffect(() => {
+    const onMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDragging.current) return;
+      const x = "touches" in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+      seekFromX(x);
+    };
+    const onUp = () => { isDragging.current = false; };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove);
+    window.addEventListener("touchend", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onUp);
+    };
+  });
   const fmt = (s: number) => { s = Math.max(0, Math.floor(s)); return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`; };
 
   const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
   const currentItem = items[currentIdx];
   const categoryColor = CATEGORY_COLORS[currentItem?.category] || "#f59e0b";
-  const displayImage = currentItem?.image_url || "";
+  const bannerImage = currentItem?.image_url || "";
+  const thumbnailImage = currentItem?.thumbnail_url || "";
   const sourceDomain = (() => { try { return new URL(currentItem?.source_link || "").hostname.replace(/^www\./, ""); } catch { return ""; } })();
   const faviconUrl = sourceDomain ? `https://www.google.com/s2/favicons?domain=${sourceDomain}&sz=64` : "";
 
@@ -153,9 +179,9 @@ export default function NewsPage() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
       </Link>
 
-      {/* ═══ FULL-SCREEN BACKGROUND IMAGE ═══ */}
-      {displayImage && (
-        <div className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: `url(${displayImage})` }} />
+      {/* ═══ FULL-SCREEN BACKGROUND — banner image ═══ */}
+      {bannerImage && (
+        <div className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: `url(${bannerImage})` }} />
       )}
       {/* Gradient overlay */}
       <div className="absolute inset-0 z-[1]" style={{
@@ -178,26 +204,39 @@ export default function NewsPage() {
           </div>
         )}
 
-        {/* Story title as rolling subtitle */}
-        <div className="flex-shrink-0 px-6 mb-2">
-          <div className="max-w-lg mx-auto text-center min-h-[40px] flex items-center justify-center">
-            <p key={currentIdx} className="text-sm text-white/80 font-medium leading-snug animate-[fadeUp_0.3s_ease-out]">
-              {loading ? headline : (currentItem?.topic || headline)}
-            </p>
+        {/* Rolling CC subtitle */}
+        {showCaptions && (
+          <div className="flex-shrink-0 px-6 mb-2">
+            <div className="max-w-lg mx-auto text-center min-h-[52px] flex flex-col items-center justify-end">
+              {activeSubLine ? (
+                <>
+                  <span className={`text-[9px] uppercase tracking-widest font-bold mb-1 ${activeSubLine.speaker === "female" ? "text-pink-400/70" : "text-blue-400/70"}`}>
+                    {activeSubLine.speaker === "female" ? "Liza" : "Lix"}
+                  </span>
+                  <p key={`${activeSubLine.start}-${activeSubLine.text.slice(0,20)}`} className="text-sm text-white/85 font-medium leading-snug animate-[fadeUp_0.25s_ease-out]">
+                    {activeSubLine.text}
+                  </p>
+                </>
+              ) : (
+                <p key={currentIdx} className="text-sm text-white/60 font-medium leading-snug animate-[fadeUp_0.3s_ease-out]">
+                  {loading ? headline : (currentItem?.topic || headline)}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ═══ PLAYER ═══ */}
         <div className="flex-shrink-0 px-4 pb-6 pt-2">
           <div className="max-w-lg mx-auto rounded-3xl px-6 py-5 bg-black/30 backdrop-blur-md border border-white/[0.06]">
             {/* Title + Source row */}
             <div className="flex items-center gap-4 mb-4">
-              {/* Mini banner */}
-              {displayImage && (
-                <div className="w-14 h-10 rounded-lg bg-cover bg-center flex-shrink-0 border border-white/10 shadow-lg" style={{ backgroundImage: `url(${displayImage})` }} />
+              {/* Mini thumbnail */}
+              {(thumbnailImage || bannerImage) && (
+                <div className="w-12 h-12 rounded-xl bg-cover bg-center flex-shrink-0 border border-white/10 shadow-lg" style={{ backgroundImage: `url(${thumbnailImage || bannerImage})` }} />
               )}
               <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-bold text-white/90 truncate">{headline}</h2>
+                <h2 className="text-sm font-bold text-white/90 truncate">{currentItem?.topic || headline}</h2>
                 <div className="flex items-center gap-1.5">
                   {faviconUrl && sourceDomain ? (
                     <a href={currentItem?.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 group">
@@ -207,7 +246,13 @@ export default function NewsPage() {
                   ) : <span className="text-[10px] text-white/20 italic">Elixpo Daily</span>}
                 </div>
               </div>
-              {/* Story counter */}
+              {/* CC + counter */}
+              <button
+                onClick={() => setShowCaptions(!showCaptions)}
+                className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+                  showCaptions ? "bg-white/15 border-white/20 text-white/80" : "bg-transparent border-white/8 text-white/25 hover:text-white/45"
+                }`}
+              >CC</button>
               <span className="text-[10px] text-white/30 font-mono">{currentIdx + 1}/{items.length}</span>
             </div>
 
@@ -237,7 +282,7 @@ export default function NewsPage() {
             {/* Main seek bar */}
             <div className="flex items-center gap-3 mb-4">
               <span className="text-[10px] text-white/30 font-mono w-9 text-right">{fmt(currentTime)}</span>
-              <div ref={seekBarRef} onClick={seekTo} className="flex-1 h-1 rounded-full cursor-pointer relative group hover:h-1.5 transition-all" style={{ background: "rgba(255,255,255,0.08)" }}>
+              <div ref={seekBarRef} onMouseDown={onSeekDown} onTouchStart={onSeekDown} className="flex-1 h-1 rounded-full cursor-pointer relative group hover:h-1.5 transition-all" style={{ background: "rgba(255,255,255,0.08)" }}>
                 <div className="absolute inset-y-0 left-0 rounded-full transition-all" style={{ width: `${pct}%`, background: categoryColor }} />
                 <div className="absolute w-3 h-3 rounded-full bg-white -top-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" style={{ left: `calc(${pct}% - 6px)` }} />
               </div>

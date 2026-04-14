@@ -10,6 +10,7 @@ export interface NewsItem {
   topic: string;
   category: string;
   image_url: string;
+  thumbnail_url: string;
   source_link: string;
   gradient_color: string;
   timeline: TimelineEntry[];
