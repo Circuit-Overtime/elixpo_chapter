@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .env
 .env.local
+.dev.vars
 nltk_data/
 wrangler.toml
 .next/
@@ -11,3 +12,4 @@ dist/
 build/
 *.egg-info/
 node_modules/
+.wrangler/

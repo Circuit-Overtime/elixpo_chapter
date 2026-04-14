@@ -1,0 +1,37 @@
+{
+  "name": "rewrite-api",
+  "main": "worker/src/index.ts",
+  "compatibility_date": "2024-12-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Plain-text vars
+  "vars": {
+    "BACKEND_URL": "http://localhost:7001"
+  },
+
+  // Secrets: loaded from .dev.vars locally, `wrangler secret put` in prod
+  // REWRITE_API_KEY, ELIXPO_CLIENT_SECRET
+
+  // D1 Database
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rewrite",
+      "database_id": "81748c80-f0e2-45e1-a42a-a49970de8b3d",
+      "migrations_dir": "worker/migrations"
+    }
+  ],
+
+  // KV Namespace
+  "kv_namespaces": [
+    {
+      "binding": "SESSIONS",
+      "id": "809c83385d084df0aa5bd2d1a7c7dd4d"
+    }
+  ],
+
+  // Limits
+  "limits": {
+    "cpu_ms": 50000
+  }
+}
