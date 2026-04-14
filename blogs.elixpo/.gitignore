@@ -12,3 +12,6 @@ wrangler.toml
 .vercel
 output/
 build/
+*.vsix
+.claude/
+*.lixeditor

@@ -29,17 +29,28 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const tokenBody = {
+      grant_type: "authorization_code",
+      code,
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      redirect_uri: REDIRECT_URI,
+    };
+
+    // Debug: log what we're sending (redact secret)
+    console.log("Token exchange request:", {
+      url: `${ELIXPO_BASE}/api/auth/token`,
+      client_id: CLIENT_ID ? `${CLIENT_ID.slice(0, 10)}...` : "MISSING",
+      client_secret: CLIENT_SECRET ? `${CLIENT_SECRET.slice(0, 12)}...` : "MISSING",
+      redirect_uri: REDIRECT_URI,
+      code: code ? `${code.slice(0, 10)}...` : "MISSING",
+    });
+
     // Exchange code for tokens
     const tokenResp = await fetch(`${ELIXPO_BASE}/api/auth/token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        grant_type: "authorization_code",
-        code,
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        redirect_uri: REDIRECT_URI,
-      }),
+      body: JSON.stringify(tokenBody),
     });
 
     if (!tokenResp.ok) {

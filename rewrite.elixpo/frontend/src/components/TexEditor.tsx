@@ -1,16 +1,30 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { useRef, useCallback, useMemo } from "react";
+
+export interface DiffChunk {
+  paraIndex: number;
+  originalText: string;
+  rewrittenText: string;
+  startLine: number;
+  endLine: number;
+}
 
 interface TexEditorProps {
   value: string;
   onChange: (value: string) => void;
   readOnly?: boolean;
-  /** Per-paragraph AI scores shown as gutter annotations */
   paragraphScores?: Array<{ startLine: number; score: number }>;
-  /** Currently processing paragraph index */
   activeParagraph?: number;
+  /** When provided, editor switches to diff view */
+  diffs?: DiffChunk[];
+  /** Original text before rewrite — needed for diff rendering */
+  originalValue?: string;
+  lockMessage?: string;
 }
+
+const LINE_HEIGHT = 22;
+const GUTTER_WIDTH = 48;
 
 export function TexEditor({
   value,
@@ -18,25 +32,22 @@ export function TexEditor({
   readOnly = false,
   paragraphScores,
   activeParagraph,
+  diffs,
+  originalValue,
+  lockMessage,
 }: TexEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const highlightRef = useRef<HTMLDivElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
-  const [scrollTop, setScrollTop] = useState(0);
 
   const lines = useMemo(() => value.split("\n"), [value]);
-  const lineCount = lines.length;
+  const showDiff = diffs && diffs.length > 0 && originalValue;
 
-  // Sync scroll between textarea and highlight overlay
   const handleScroll = useCallback(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    setScrollTop(ta.scrollTop);
-    if (highlightRef.current) highlightRef.current.scrollTop = ta.scrollTop;
-    if (gutterRef.current) gutterRef.current.scrollTop = ta.scrollTop;
+    if (textareaRef.current && gutterRef.current) {
+      gutterRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
   }, []);
 
-  // Handle tab key in editor
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Tab") {
@@ -54,20 +65,31 @@ export function TexEditor({
     [value, onChange]
   );
 
-  // Build score annotations map: line number -> score
   const lineScores = useMemo(() => {
     const map = new Map<number, number>();
     if (!paragraphScores) return map;
-    for (const ps of paragraphScores) {
-      map.set(ps.startLine, ps.score);
-    }
+    for (const ps of paragraphScores) map.set(ps.startLine, ps.score);
     return map;
   }, [paragraphScores]);
 
   return (
-    <div className="editor-container relative">
+    <div className="editor-container flex flex-col relative h-full">
+      {/* Lock overlay — blur + shimmer + bottom pill */}
+      {lockMessage && (
+        <>
+          <div className="absolute inset-0 z-10 backdrop-blur-[1.5px] pointer-events-none" />
+          <div className="absolute inset-0 z-10 pointer-events-none editor-shimmer" />
+          <div className="absolute inset-x-0 bottom-4 z-20 flex justify-center pointer-events-none">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-editor-bg border border-lime-border text-lime text-xs font-medium shadow-lg">
+              <span className="w-3 h-3 rounded-full border-2 border-lime border-t-transparent animate-spin" />
+              {lockMessage}
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Toolbar */}
-      <div className="editor-toolbar">
+      <div className="editor-toolbar shrink-0">
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
           <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
@@ -75,126 +97,243 @@ export function TexEditor({
         </div>
         <span className="text-text-subtle text-xs font-mono ml-2">document.tex</span>
         <div className="flex-1" />
-        <span className="text-text-subtle text-xs">
-          {lineCount} lines · {value.length.toLocaleString()} chars
-        </span>
+        {showDiff && (
+          <span className="text-lime text-[10px] font-mono mr-2">
+            {diffs.length} changed
+          </span>
+        )}
+        <span className="text-text-subtle text-xs">{lines.length} lines</span>
       </div>
 
-      <div className="flex relative" style={{ minHeight: 400, maxHeight: 600 }}>
-        {/* Line numbers gutter */}
-        <div
-          ref={gutterRef}
-          className="editor-gutter overflow-hidden shrink-0"
-          style={{ marginTop: -scrollTop % 1 }}
-        >
-          {lines.map((_, i) => {
-            const score = lineScores.get(i);
-            const isActive = activeParagraph !== undefined && activeParagraph === i;
-            return (
-              <span
-                key={i}
-                className={`block px-2.5 ${isActive ? "bg-lime-dim text-lime" : ""}`}
-              >
-                {score !== undefined ? (
-                  <span
-                    className={`text-[10px] font-bold ${
-                      score >= 60 ? "text-error" : score >= 20 ? "text-warning" : "text-success"
-                    }`}
-                  >
-                    {score.toFixed(0)}%
-                  </span>
-                ) : (
-                  i + 1
-                )}
-              </span>
-            );
-          })}
-        </div>
+      {/* Editor body — fills remaining height, scrolls inside */}
+      <div className="flex flex-1 min-h-0 relative overflow-hidden">
+        {showDiff ? (
+          /* ---- Diff view ---- */
+          <DiffView originalValue={originalValue} newValue={value} diffs={diffs} />
+        ) : (
+          /* ---- Normal editor ---- */
+          <>
+            {/* Gutter */}
+            <div
+              ref={gutterRef}
+              className="shrink-0 overflow-hidden select-none bg-editor-gutter text-text-subtle"
+              style={{ width: GUTTER_WIDTH }}
+            >
+              <div className="py-3">
+                {lines.map((_, i) => {
+                  const score = lineScores.get(i);
+                  const isActive = activeParagraph !== undefined && activeParagraph === i;
+                  return (
+                    <div
+                      key={i}
+                      className={`px-2 text-right text-xs ${isActive ? "bg-lime-dim text-lime" : ""}`}
+                      style={{ lineHeight: `${LINE_HEIGHT}px`, minHeight: LINE_HEIGHT }}
+                    >
+                      {score !== undefined ? (
+                        <span className={`text-[10px] font-bold ${
+                          score >= 60 ? "text-error" : score >= 20 ? "text-warning" : "text-success"
+                        }`}>
+                          {score.toFixed(0)}%
+                        </span>
+                      ) : (
+                        i + 1
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
-        {/* Syntax highlight overlay */}
-        <div
-          ref={highlightRef}
-          className="absolute inset-0 pointer-events-none overflow-hidden"
-          style={{ left: 44, paddingTop: 12, paddingLeft: 16, paddingRight: 16 }}
-          aria-hidden
-        >
-          <pre
-            className="text-[13px] leading-[1.7] font-mono whitespace-pre-wrap break-words"
-            style={{ marginTop: -scrollTop }}
-          >
-            {highlightTex(value)}
-          </pre>
-        </div>
-
-        {/* Actual textarea (transparent text, captures input) */}
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onScroll={handleScroll}
-          onKeyDown={handleKeyDown}
-          readOnly={readOnly}
-          spellCheck={false}
-          className="editor-content flex-1 overflow-auto caret-lime text-transparent"
-          placeholder={`% Paste your LaTeX document here...\n\\documentclass{article}\n\\begin{document}\n\nYour text goes here.\n\n\\end{document}`}
-        />
+            {/* Textarea */}
+            <textarea
+              ref={textareaRef}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onScroll={handleScroll}
+              onKeyDown={handleKeyDown}
+              readOnly={readOnly || !!lockMessage}
+              spellCheck={false}
+              className="flex-1 bg-transparent text-text-primary font-mono text-[13px] py-3 px-4 resize-none outline-none overflow-auto caret-lime"
+              style={{
+                lineHeight: `${LINE_HEIGHT}px`,
+                tabSize: 2,
+                whiteSpace: "pre-wrap",
+                wordWrap: "break-word",
+                overflowWrap: "break-word",
+              }}
+              placeholder={"% Paste your LaTeX document here...\n\\documentclass{article}\n\\begin{document}\n\nYour text goes here.\n\n\\end{document}"}
+            />
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-/** Simple LaTeX syntax highlighter — returns JSX spans */
-function highlightTex(source: string): React.ReactNode[] {
-  const nodes: React.ReactNode[] = [];
-  const lines = source.split("\n");
+// ====================================================================
+// Inline diff view — shows removed (red) and added (green) lines
+// ====================================================================
 
-  for (let i = 0; i < lines.length; i++) {
-    if (i > 0) nodes.push("\n");
-    const line = lines[i];
+interface DiffLine {
+  type: "same" | "removed" | "added";
+  text: string;
+  lineNo: number | null; // original line number for same/removed, new for added
+}
 
-    if (line.trimStart().startsWith("%")) {
-      nodes.push(<span key={`c${i}`} className="tex-comment">{line}</span>);
-      continue;
-    }
+function computeDiffLines(original: string, rewritten: string): DiffLine[] {
+  const origLines = original.split("\n");
+  const newLines = rewritten.split("\n");
+  const result: DiffLine[] = [];
 
-    // Tokenize: commands, braces, math delimiters
-    let pos = 0;
-    const parts: React.ReactNode[] = [];
-    const re = /(\\(?:begin|end)\{[^}]*\})|(\\(?:section|subsection|title|author|date|chapter|paragraph)\b)|(\\[a-zA-Z@]+)|([\{\}])|\$([^$]*)\$/g;
-    let m: RegExpExecArray | null;
+  let oi = 0;
+  let ni = 0;
 
-    while ((m = re.exec(line)) !== null) {
-      // Text before match
-      if (m.index > pos) {
-        parts.push(line.slice(pos, m.index));
+  while (oi < origLines.length || ni < newLines.length) {
+    if (oi >= origLines.length) {
+      // Remaining new lines are additions
+      result.push({ type: "added", text: newLines[ni], lineNo: ni + 1 });
+      ni++;
+    } else if (ni >= newLines.length) {
+      // Remaining old lines are deletions
+      result.push({ type: "removed", text: origLines[oi], lineNo: oi + 1 });
+      oi++;
+    } else if (origLines[oi] === newLines[ni]) {
+      // Same
+      result.push({ type: "same", text: origLines[oi], lineNo: oi + 1 });
+      oi++;
+      ni++;
+    } else {
+      // Find how many lines differ in this block
+      // Look ahead to find next matching line
+      let matchOffset = -1;
+      for (let look = 1; look < 20 && ni + look < newLines.length; look++) {
+        if (origLines[oi] === newLines[ni + look]) {
+          matchOffset = look;
+          break;
+        }
       }
 
-      if (m[1]) {
-        // \begin{...} or \end{...}
-        parts.push(<span key={`e${i}-${m.index}`} className="tex-env">{m[1]}</span>);
-      } else if (m[2]) {
-        // Section commands
-        parts.push(<span key={`s${i}-${m.index}`} className="tex-section">{m[2]}</span>);
-      } else if (m[3]) {
-        // Other commands
-        parts.push(<span key={`cmd${i}-${m.index}`} className="tex-command">{m[3]}</span>);
-      } else if (m[4]) {
-        // Braces
-        parts.push(<span key={`b${i}-${m.index}`} className="tex-brace">{m[4]}</span>);
-      } else if (m[5] !== undefined) {
-        // Inline math $...$
-        parts.push(<span key={`m${i}-${m.index}`} className="tex-math">${m[5]}$</span>);
+      let origMatchOffset = -1;
+      for (let look = 1; look < 20 && oi + look < origLines.length; look++) {
+        if (origLines[oi + look] === newLines[ni]) {
+          origMatchOffset = look;
+          break;
+        }
       }
 
-      pos = m.index + m[0].length;
+      if (origMatchOffset >= 0 && (matchOffset < 0 || origMatchOffset <= matchOffset)) {
+        // Original lines were removed, then we re-sync
+        for (let k = 0; k < origMatchOffset; k++) {
+          result.push({ type: "removed", text: origLines[oi], lineNo: oi + 1 });
+          oi++;
+        }
+      } else if (matchOffset >= 0) {
+        // New lines were added, then we re-sync
+        for (let k = 0; k < matchOffset; k++) {
+          result.push({ type: "added", text: newLines[ni], lineNo: ni + 1 });
+          ni++;
+        }
+      } else {
+        // No re-sync found — treat as remove old + add new
+        result.push({ type: "removed", text: origLines[oi], lineNo: oi + 1 });
+        oi++;
+        result.push({ type: "added", text: newLines[ni], lineNo: ni + 1 });
+        ni++;
+      }
     }
-
-    if (pos < line.length) {
-      parts.push(line.slice(pos));
-    }
-
-    nodes.push(...parts);
   }
 
-  return nodes;
+  return result;
+}
+
+function DiffView({ originalValue, newValue, diffs }: {
+  originalValue: string;
+  newValue: string;
+  diffs: DiffChunk[];
+}) {
+  const diffLines = useMemo(
+    () => computeDiffLines(originalValue, newValue),
+    [originalValue, newValue]
+  );
+
+  const stats = useMemo(() => {
+    let added = 0, removed = 0;
+    for (const l of diffLines) {
+      if (l.type === "added") added++;
+      else if (l.type === "removed") removed++;
+    }
+    return { added, removed };
+  }, [diffLines]);
+
+  return (
+    <div className="flex-1 overflow-auto font-mono text-[13px]" style={{ lineHeight: `${LINE_HEIGHT}px` }}>
+      {/* Diff stats header */}
+      <div className="sticky top-0 z-10 flex items-center gap-3 px-4 py-1.5 bg-editor-gutter border-b border-border-light text-[11px]">
+        <span className="text-success font-mono">+{stats.added} added</span>
+        <span className="text-error font-mono">-{stats.removed} removed</span>
+      </div>
+
+      {/* Diff lines */}
+      <div className="py-1">
+        {diffLines.map((line, i) => (
+          <div
+            key={i}
+            className={`flex ${
+              line.type === "removed"
+                ? "bg-[rgba(239,68,68,0.08)]"
+                : line.type === "added"
+                ? "bg-[rgba(163,230,53,0.08)]"
+                : ""
+            }`}
+          >
+            {/* Gutter */}
+            <div
+              className="shrink-0 text-right select-none px-1.5"
+              style={{ width: GUTTER_WIDTH, minHeight: LINE_HEIGHT }}
+            >
+              <span className={`text-xs ${
+                line.type === "removed" ? "text-error" :
+                line.type === "added" ? "text-lime" :
+                "text-text-subtle"
+              }`}>
+                {line.type === "removed" ? "-" : line.type === "added" ? "+" : line.lineNo}
+              </span>
+            </div>
+
+            {/* Sign */}
+            <div
+              className={`shrink-0 w-5 text-center select-none ${
+                line.type === "removed" ? "text-error" :
+                line.type === "added" ? "text-lime" :
+                "text-transparent"
+              }`}
+              style={{ minHeight: LINE_HEIGHT }}
+            >
+              {line.type === "removed" ? "−" : line.type === "added" ? "+" : " "}
+            </div>
+
+            {/* Content */}
+            <div
+              className={`flex-1 px-2 ${
+                line.type === "removed"
+                  ? "text-error/70 line-through"
+                  : line.type === "added"
+                  ? "text-lime"
+                  : "text-text-primary"
+              }`}
+              style={{
+                minHeight: LINE_HEIGHT,
+                whiteSpace: "pre-wrap",
+                wordWrap: "break-word",
+                overflowWrap: "break-word",
+                tabSize: 2,
+              }}
+            >
+              {line.text}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

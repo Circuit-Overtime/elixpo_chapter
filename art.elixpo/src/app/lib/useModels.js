@@ -8,13 +8,17 @@ const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 const FALLBACK = {
   imageModels: [
-    { id: 'flux', label: 'Flux Schnell', desc: 'Fast high-quality image generation' },
-    { id: 'gptimage', label: 'GPT Image 1 Mini', desc: "OpenAI's image generation model" },
-    { id: 'klein', label: 'FLUX.2 Klein 4B', desc: 'Fast image generation and editing' },
-    { id: 'zimage', label: 'Z-Image Turbo', desc: 'Fast 6B Flux with 2x upscaling' },
+    { id: 'flux', label: 'Flux Schnell', desc: 'Fast high-quality image generation', canEdit: false },
+    { id: 'gptimage', label: 'GPT Image 1 Mini', desc: "OpenAI's image generation model", canEdit: true },
+    { id: 'klein', label: 'FLUX.2 Klein 4B', desc: 'Fast image generation and editing', canEdit: true },
+    { id: 'zimage', label: 'Z-Image Turbo', desc: 'Fast 6B Flux with 2x upscaling', canEdit: false },
   ],
   videoModels: [
-    { id: 'ltx-2', label: 'LTX-2.3', desc: 'Fast text-to-video generation with upscaler' },
+    { id: 'ltx-2', label: 'LTX-2.3', desc: 'Fast text-to-video generation with upscaler', canEdit: false },
+  ],
+  editModels: [
+    { id: 'gptimage', label: 'GPT Image 1 Mini', desc: "OpenAI's image generation model", canEdit: true },
+    { id: 'klein', label: 'FLUX.2 Klein 4B', desc: 'Fast image generation and editing', canEdit: true },
   ],
 };
 
@@ -23,14 +27,17 @@ FALLBACK.all = [...FALLBACK.imageModels, ...FALLBACK.videoModels];
 function parseModels(raw) {
   const imageModels = [];
   const videoModels = [];
+  const editModels = [];
 
   for (const m of raw) {
     if (m.paid_only) continue;
 
+    const canEdit = m.input_modalities?.includes('text') && m.input_modalities?.includes('image');
     const entry = {
       id: m.name,
       label: m.description?.split(' - ')[0] || m.name,
       desc: m.description?.split(' - ')[1] || '',
+      canEdit,
     };
 
     if (m.output_modalities?.includes('video')) {
@@ -38,9 +45,14 @@ function parseModels(raw) {
     } else {
       imageModels.push(entry);
     }
+
+    // Models that accept both text + image input can be used for editing
+    if (canEdit && !m.output_modalities?.includes('video')) {
+      editModels.push(entry);
+    }
   }
 
-  return { imageModels, videoModels, all: [...imageModels, ...videoModels] };
+  return { imageModels, videoModels, editModels, all: [...imageModels, ...videoModels] };
 }
 
 export function useModels() {

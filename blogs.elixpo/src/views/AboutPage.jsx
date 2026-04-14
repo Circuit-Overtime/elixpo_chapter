@@ -172,7 +172,7 @@ export default function AboutPage() {
             LixBlogs is open source. Explore the codebase, report issues, or contribute on GitHub.
           </p>
           <a
-            href="https://github.com/Circuit-Overtime/elixpo_blogs"
+            href="https://github.com/elixpo/lixblogs"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full text-[14px] font-medium transition-colors"

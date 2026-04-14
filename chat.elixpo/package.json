@@ -1,24 +1,39 @@
 {
-    "name": "vanilla-nextjs-style",
-    "version": "1.0.0",
-    "type": "module",
-    "main": "server.js",
-    "scripts": {
-        "start": "node server.js",
-        "dev": "concurrently \"nodemon server.js --ignore public/**/*.*\" \"browser-sync start --proxy http://localhost:40012 --files public/**/*.* --no-open --no-ui --port 3001\"",
-        "prod": "NODE_ENV=production node server.js"
-    },
-    "dependencies": {
-        "dotenv": "^17.2.3",
-        "express": "^4.18.2",
-        "firebase": "^11.9.1",
-        "jimp": "^1.6.0",
-        "node-fetch": "^3.3.2",
-        "express-rate-limit": "^8.1.0"
-    },
-    "devDependencies": {
-        "browser-sync": "^3.0.4",
-        "concurrently": "^9.1.2",
-        "nodemon": "^3.1.10"
-    }
+  "name": "elixpo-chat",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "preview": "npx @opennextjs/cloudflare build && npx wrangler dev",
+    "deploy": "npx @opennextjs/cloudflare build && npx wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply elixpochat --local",
+    "db:migrate:prod": "wrangler d1 migrations apply elixpochat --remote",
+    "generate": "node src/lib/pipeline/run.js",
+    "generate:news": "node src/lib/pipeline/run.js --news",
+    "generate:podcast": "node src/lib/pipeline/run.js --podcast"
+  },
+  "dependencies": {
+    "cloudinary": "^2.6.0",
+    "dotenv": "^16.4.0",
+    "framer-motion": "^12.38.0",
+    "gsap": "^3.14.2",
+    "marked": "^15.0.0",
+    "next": "^15.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250327.0",
+    "@opennextjs/cloudflare": "^1.0.0",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.8.0",
+    "wrangler": "^4.14.0"
+  }
 }

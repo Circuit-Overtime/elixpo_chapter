@@ -50,9 +50,58 @@ _TOOL_CALL_TOKEN_RE = re.compile(
 _TOOL_NAME_TOKEN_RE = re.compile(r"<\|tool_call_name:(\w+)\|>")
 
 
+_PLAIN_TOOL_CALL_RE = re.compile(
+    r"^\s*(web_search|fetch_full_text|export_to_pdf|image_search|create_image|"
+    r"get_local_time|deep_research|transcribe_audio|youtubeMetadata|"
+    r"get_session_conversation_history|generate_prompt_from_image|replyFromImage)"
+    r"\s*\n\s*\{",
+    re.MULTILINE,
+)
+
+
 def extract_leaked_tool_call(content: str) -> tuple:
 
-    if not content or "<|tool_call" not in content:
+    if not content:
+        return None, None
+
+    # Detect plain text tool calls: "export_to_pdf\n{ ... }"
+    plain_match = _PLAIN_TOOL_CALL_RE.search(content)
+    if plain_match:
+        function_name = plain_match.group(1)
+        json_start = content.find("{", plain_match.start())
+        if json_start >= 0:
+            json_str = content[json_start:]
+            # Find matching closing brace
+            depth, last_valid, in_string, escape_next = 0, -1, False, False
+            for i, ch in enumerate(json_str):
+                if escape_next:
+                    escape_next = False
+                    continue
+                if ch == '\\' and in_string:
+                    escape_next = True
+                    continue
+                if ch == '"' and not escape_next:
+                    in_string = not in_string
+                    continue
+                if in_string:
+                    continue
+                if ch == '{':
+                    depth += 1
+                elif ch == '}':
+                    depth -= 1
+                    if depth == 0:
+                        last_valid = i
+                        break
+            if last_valid > 0:
+                try:
+                    args = json.loads(json_str[:last_valid + 1])
+                    if isinstance(args, dict):
+                        logger.info(f"[RECOVERY] Extracted plain-text tool call: {function_name}({list(args.keys())})")
+                        return function_name, args
+                except json.JSONDecodeError:
+                    pass
+
+    if "<|tool_call" not in content:
         return None, None
 
     try:

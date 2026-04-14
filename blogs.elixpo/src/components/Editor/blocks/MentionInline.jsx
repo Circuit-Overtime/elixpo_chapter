@@ -43,10 +43,15 @@ function MentionChip({ username, displayName, avatarUrl }) {
         ref={chipRef}
         href={`/${username}`}
         className="mention-chip"
+        data-mention-type="user"
+        data-username={username}
+        data-display-name={displayName}
+        data-avatar-url={avatarUrl || ''}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={(e) => { e.stopPropagation(); }}
         style={{ textDecoration: 'none' }}
+        spellCheck={false}
       >
         {avatarUrl ? (
           <img src={avatarUrl} alt="" className="mention-chip-avatar" />
@@ -125,6 +130,16 @@ export const MentionInline = createReactInlineContentSpec(
     render: ({ inlineContent }) => {
       const { username, displayName, avatarUrl } = inlineContent.props;
       return <MentionChip username={username} displayName={displayName} avatarUrl={avatarUrl} />;
+    },
+    parse: (el) => {
+      if (el.getAttribute('data-mention-type') === 'user') {
+        return {
+          username: el.getAttribute('data-username') || '',
+          displayName: el.getAttribute('data-display-name') || '',
+          avatarUrl: el.getAttribute('data-avatar-url') || '',
+        };
+      }
+      return undefined;
     },
   }
 );
