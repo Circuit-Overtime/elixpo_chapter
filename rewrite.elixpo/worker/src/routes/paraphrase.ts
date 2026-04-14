@@ -1,8 +1,9 @@
 /**
  * Paraphrase routes — session-based with D1/KV state management.
+ * All document text is gzip-compressed before D1 storage.
  *
  * Flow:
- * 1. Frontend POSTs text -> Worker creates session in D1, stores in KV, proxies to Python
+ * 1. Frontend POSTs text -> Worker creates session in D1, compresses & stores text, proxies to Python
  * 2. Python backend runs the job, writes progress to its Redis
  * 3. Worker polls Python backend on session reads and mirrors state to KV
  * 4. Frontend polls Worker's KV for fast progress reads
@@ -15,9 +16,11 @@ import {
 	getOrCreateUser,
 	createSession,
 	getSessionFromDB,
+	getSessionText,
+	storeSessionText,
 	updateSessionInDB,
 	saveProgressToKV,
-	getProgressFromKV,
+	storeDocument,
 } from "../db";
 
 export async function handleParaphrase(request: Request, env: Env): Promise<Response> {
@@ -34,23 +37,21 @@ export async function handleParaphrase(request: Request, env: Env): Promise<Resp
 		return json({ error: "Text must be under 100,000 characters" }, 422);
 	}
 
-	// Get or create user from header
 	const userIdHeader = request.headers.get("X-User-ID") || undefined;
 	const userId = await getOrCreateUser(env, userIdHeader);
 
-	// Create session in D1
 	const sessionId = await createSession(env, userId, {
 		domain: body.domain || "general",
 		intensity: body.intensity || "aggressive",
 	});
 
-	// Store original text in D1
-	await updateSessionInDB(env, sessionId, {
-		original_text: body.text.slice(0, 100_000),
-		status: "pending",
-	} as any);
+	// Compress and store original text in session + documents table
+	await storeSessionText(env, sessionId, body.text);
+	await storeDocument(env, userId, sessionId, body.text, null, "text/plain");
 
-	// Proxy to Python backend — it creates its own Redis session with the same ID
+	await updateSessionInDB(env, sessionId, { status: "pending" });
+
+	// Proxy to Python backend
 	const backendResp = await fetch(`${env.BACKEND_URL}/api/paraphrase`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -63,18 +64,17 @@ export async function handleParaphrase(request: Request, env: Env): Promise<Resp
 
 	if (!backendResp.ok) {
 		const err = await backendResp.text();
-		await updateSessionInDB(env, sessionId, { status: "failed", error: err } as any);
+		await updateSessionInDB(env, sessionId, { status: "failed", error: err });
 		return json({ error: "Backend error", detail: err }, backendResp.status);
 	}
 
 	const backendData = await backendResp.json() as { job_id: string };
 
-	// Store the backend job_id mapping in KV for fast lookup
 	await env.SESSIONS.put(`backend:${sessionId}`, backendData.job_id, {
 		expirationTtl: 86400,
 	});
 
-	await updateSessionInDB(env, sessionId, { status: "running" } as any);
+	await updateSessionInDB(env, sessionId, { status: "running" });
 
 	return json({
 		session_id: sessionId,
@@ -103,6 +103,11 @@ export async function handleParaphraseFile(request: Request, env: Env): Promise<
 		filename: file.name,
 	});
 
+	// Read file content for compressed storage
+	const fileContent = await file.text();
+	await storeSessionText(env, sessionId, fileContent);
+	await storeDocument(env, userId, sessionId, fileContent, file.name, file.type || "text/plain");
+
 	// Forward file to Python backend
 	const proxyForm = new FormData();
 	proxyForm.append("file", file);
@@ -116,7 +121,7 @@ export async function handleParaphraseFile(request: Request, env: Env): Promise<
 
 	if (!backendResp.ok) {
 		const err = await backendResp.text();
-		await updateSessionInDB(env, sessionId, { status: "failed", error: err } as any);
+		await updateSessionInDB(env, sessionId, { status: "failed", error: err });
 		return json({ error: "Backend error", detail: err }, backendResp.status);
 	}
 
@@ -124,7 +129,7 @@ export async function handleParaphraseFile(request: Request, env: Env): Promise<
 	await env.SESSIONS.put(`backend:${sessionId}`, backendData.job_id, {
 		expirationTtl: 86400,
 	});
-	await updateSessionInDB(env, sessionId, { status: "running" } as any);
+	await updateSessionInDB(env, sessionId, { status: "running" });
 
 	return json({
 		session_id: sessionId,
@@ -144,7 +149,6 @@ export async function handleResume(sessionId: string, env: Env): Promise<Respons
 	}
 
 	if (session.status === "running") {
-		// Check if backend job is actually still running
 		const backendJobId = await env.SESSIONS.get(`backend:${sessionId}`);
 		if (backendJobId) {
 			const checkResp = await fetch(`${env.BACKEND_URL}/api/session/${backendJobId}`);
@@ -157,8 +161,9 @@ export async function handleResume(sessionId: string, env: Env): Promise<Respons
 		}
 	}
 
-	// Re-send to Python backend for resume
-	if (!session.original_text) {
+	// Decompress original text for re-submission
+	const originalText = await getSessionText(env, sessionId);
+	if (!originalText) {
 		return json({ error: "Session has no text to resume" }, 422);
 	}
 
@@ -166,7 +171,7 @@ export async function handleResume(sessionId: string, env: Env): Promise<Respons
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
-			text: session.original_text,
+			text: originalText,
 			intensity: session.intensity,
 			domain: session.domain,
 		}),
@@ -180,7 +185,7 @@ export async function handleResume(sessionId: string, env: Env): Promise<Respons
 	await env.SESSIONS.put(`backend:${sessionId}`, backendData.job_id, {
 		expirationTtl: 86400,
 	});
-	await updateSessionInDB(env, sessionId, { status: "running", error: null } as any);
+	await updateSessionInDB(env, sessionId, { status: "running", error: null });
 
 	return json({ message: "Resumed", session_id: sessionId });
 }

@@ -2,27 +2,31 @@
  * ReWrite Cloudflare Worker — API gateway
  *
  * Responsibilities:
+ * - API key auth for all requests (frontend sends REWRITE_API_KEY)
+ * - User management (anonymous guests + Elixpo OAuth)
  * - Session management via D1 (persistent SQL) + KV (fast progress reads)
- * - User management (anonymous + OAuth)
- * - Proxies compute-heavy requests to Python backend on VPS
- * - Crash-safe: all state in D1/KV, frontend resumes by session_id
+ * - Document storage with gzip compression in D1
+ * - Proxies compute-heavy requests to dockerized Python backend
  */
 
 import { handleDetect, handleDetectFile } from "./routes/detect";
 import { handleParaphrase, handleParaphraseFile, handleResume } from "./routes/paraphrase";
 import { handleSession, handleSessionReport } from "./routes/sessions";
 import { handleUserMe, handleUserHistory } from "./routes/users";
+import { handleAuthCallback, handleAuthMe, handleAuthLogout } from "./routes/auth";
+import { handleDocumentStore, handleDocumentGet, handleDocumentList } from "./routes/documents";
 import { corsHeaders, handleOptions } from "./cors";
 
 export interface Env {
 	DB: D1Database;
 	SESSIONS: KVNamespace;
 	BACKEND_URL: string;
+	REWRITE_API_KEY: string;
+	ELIXPO_CLIENT_SECRET: string;
 }
 
 export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
-		// Handle CORS preflight
 		if (request.method === "OPTIONS") {
 			return handleOptions();
 		}
@@ -30,8 +34,29 @@ export default {
 		const url = new URL(request.url);
 		const path = url.pathname;
 
+		// --- API key validation (all routes except health & OPTIONS) ---
+		if (path !== "/api/health") {
+			const apiKey =
+				request.headers.get("X-API-Key") ||
+				url.searchParams.get("api_key");
+			if (!env.REWRITE_API_KEY || apiKey !== env.REWRITE_API_KEY) {
+				return withCors(json({ error: "Unauthorized — invalid API key" }, 401));
+			}
+		}
+
 		try {
-			// --- Detection (proxied to Python) ---
+			// --- Auth (Elixpo OAuth) ---
+			if (path === "/api/auth/callback" && request.method === "POST") {
+				return withCors(await handleAuthCallback(request, env));
+			}
+			if (path === "/api/auth/me" && request.method === "GET") {
+				return withCors(await handleAuthMe(request, env));
+			}
+			if (path === "/api/auth/logout" && request.method === "POST") {
+				return withCors(await handleAuthLogout(request, env));
+			}
+
+			// --- Detection (proxied to Python backend) ---
 			if (path === "/api/detect" && request.method === "POST") {
 				return withCors(await handleDetect(request, env));
 			}
@@ -63,6 +88,18 @@ export default {
 			const reportMatch = path.match(/^\/api\/session\/([a-f0-9]+)\/report$/);
 			if (reportMatch && request.method === "GET") {
 				return withCors(await handleSessionReport(reportMatch[1], env));
+			}
+
+			// --- Documents (compressed storage) ---
+			if (path === "/api/documents" && request.method === "POST") {
+				return withCors(await handleDocumentStore(request, env));
+			}
+			if (path === "/api/documents" && request.method === "GET") {
+				return withCors(await handleDocumentList(request, env));
+			}
+			const docMatch = path.match(/^\/api\/documents\/([a-f0-9-]+)$/);
+			if (docMatch && request.method === "GET") {
+				return withCors(await handleDocumentGet(docMatch[1], env));
 			}
 
 			// --- User endpoints ---
