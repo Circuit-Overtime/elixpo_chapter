@@ -541,51 +541,59 @@ class YahooSearchAgentImage:
             # Simulate human behavior
             await page.mouse.move(random.randint(100, 500), random.randint(100, 500))
             await page.wait_for_timeout(random.randint(1000, 2000))
-            await page.wait_for_selector("img[src*='s.yimg.com']", timeout=55000)
-            
-            # Get all thumbnail images
-            image_elements = await page.query_selector_all("li[data-bns='API']")
-            print(f"[IMAGE SEARCH] Found {len(image_elements)} thumbnails")
-            
-            for idx, img in enumerate(image_elements):
+            # Wait for the image results list, then find all tile items
+            await page.wait_for_selector("ul.image-results__list li.tile", timeout=55000)
+            tiles = await page.query_selector_all("ul.image-results__list li.tile")
+            logger.info(f"[IMAGE-SEARCH] Found {len(tiles)} tiles")
+
+            for idx, tile in enumerate(tiles):
                 if len(results) >= max_images:
                     break
                 try:
-                    captured_image_url = None
-                    print(f"[IMAGE] Processing thumbnail {idx + 1}")
-                    
-                    async def handle_response(response):
-                        nonlocal captured_image_url
-                        try:
-                            content_type = response.headers.get("content-type", "")
-                            if ("image/jpeg" in content_type or "image/jpg" in content_type or response.url.endswith(".jpg") or response.url.endswith(".jpeg")):
-                                url = response.url
-                                if "maxresdefault" not in url and not url.startswith("https://s.yimg.com"):
-                                    captured_image_url = url
-                                    print(f"[IMAGE] Captured JPEG from network: {url}")
-                        except Exception as e:
-                            pass
+                    logger.debug(f"[IMAGE-SEARCH] Processing tile {idx + 1}")
 
-                    page.on("response", handle_response)
-                    await img.click()
-                    wait_start = time.perf_counter()
-                    while captured_image_url is None and (time.perf_counter() - wait_start) < 3:
-                        await page.wait_for_timeout(100)
-                    page.remove_listener("response", handle_response)
-                    
-                    if captured_image_url:
-                        results.append(captured_image_url)
-                        print(f"[IMAGE] Added: {captured_image_url} (Count: {len(results)}/{max_images})")
-                    else:
-                        print(f"[WARN] No JPEG URL captured for thumbnail {idx + 1}")
-                    await page.go_back()
-                    await page.wait_for_timeout(500)
-                    if len(results) >= max_images:
-                        break
+                    # Click the anchor inside the tile to open the viewer
+                    anchor = await tile.query_selector("a")
+                    if not anchor:
+                        continue
+                    await anchor.click()
+
+                    # Wait for the viewer to appear with a full-res image
+                    try:
+                        viewer_img = await page.wait_for_selector(
+                            "ul.image-results__list .viewer img",
+                            timeout=5000
+                        )
+                    except Exception:
+                        # Fallback: try data-origurl from the anchor
+                        origurl = await anchor.get_attribute("data-origurl")
+                        if origurl and origurl.startswith("http"):
+                            results.append(origurl)
+                            logger.debug(f"[IMAGE-SEARCH] Fallback data-origurl: {origurl}")
+                        continue
+
+                    if viewer_img:
+                        src = await viewer_img.get_attribute("src")
+                        if src and src.startswith("http") and "s.yimg.com" not in src:
+                            results.append(src)
+                            logger.debug(f"[IMAGE-SEARCH] Captured: {src} ({len(results)}/{max_images})")
+                        else:
+                            origurl = await anchor.get_attribute("data-origurl")
+                            if origurl and origurl.startswith("http"):
+                                results.append(origurl)
+
+                    # Close the viewer
+                    await page.keyboard.press("Escape")
+                    await page.wait_for_timeout(300)
+
                 except Exception as e:
-                    print(f"[WARN] Failed to extract image URL at index {idx}: {e}")
-            
-            print(f"[IMAGE SEARCH] Found {len(results)} images")
+                    logger.warning(f"[IMAGE-SEARCH] Failed tile {idx + 1}: {e}")
+                    try:
+                        await page.keyboard.press("Escape")
+                    except Exception:
+                        pass
+
+            logger.info(f"[IMAGE-SEARCH] Found {len(results)} images")
             return results
         except Exception as e:
             logger.error(f"❌ Image search failed on tab #{self.tab_count}, port {self.custom_port}: {e}")
