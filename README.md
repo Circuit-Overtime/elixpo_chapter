@@ -182,7 +182,19 @@ Here are some of our latest releases:
 
 # Our extended releases flagship
 
+These are our releases and packages from the projects of Elixpo series:
 
+- **LixSketch, a NPM Package for Open Canvas Interface**
+  [NPM Package for LixSketch](https://www.npmjs.com/package/@elixpo/lixsketch) - Open-source SVG whiteboard engine with a hand-drawn aesthetic. The core drawing engine behind [LixSketch](https://github.com/elixpo/lixsketch).
+
+- **LixEditor, a NPM Package for Open WYSIWYG Editor**
+  [NPM Package for LixEditor](https://www.npmjs.com/package/@elixpo/lixeditor) - A rich WYSIWYG block editor and renderer built on BlockNote — with LaTeX equations, Mermaid diagrams, syntax-highlighted code blocks, and more. The core editor engine behind [LixBlogs](https://github.com/elixpo/elixpoblogs).
+
+- **LixSketch VS Code Extension**
+  [VS Code Offline Extension for Canvas](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch) - Open-source whiteboard diagrams inside VS Code — draw, sketch, and save .lixsketch files
+
+- **LixEditor VS Code Extension**
+  [VS Code Offline Extension for WYSIWYG Editor](https://marketplace.visualstudio.com/items?itemName=elixpo.lixeditor) - A rich block editor for .lixeditor files — LaTeX equations, Mermaid diagrams, syntax-highlighted code, and more.
 
 # Our Future
 
