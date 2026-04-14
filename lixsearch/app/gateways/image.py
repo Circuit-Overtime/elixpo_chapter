@@ -73,6 +73,9 @@ async def serve_image(image_id: str):
 
     import asyncio
 
+    # Strip extension from ID if present (e.g. "abc123.png" → "abc123")
+    image_id = os.path.splitext(image_id)[0]
+
     _cleanup_expired_images()
 
     # Try to find the file, with back-off for in-progress generation

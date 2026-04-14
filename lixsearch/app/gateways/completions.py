@@ -33,7 +33,7 @@ def _b64_data_url_to_hosted(data_url: str) -> str:
         image_bytes = base64.b64decode(payload)
         image_id = uuid.uuid4().hex[:16]
         store_image(image_id, image_bytes, ct)
-        return f"{_PUBLIC_BASE_URL}/api/image/{image_id}"
+        return f"{_PUBLIC_BASE_URL}/api/image/{image_id}.png"
     except Exception as e:
         logger.warning(f"[completions] Failed to host base64 image: {e}")
         return data_url  # fallback: pass through as-is
