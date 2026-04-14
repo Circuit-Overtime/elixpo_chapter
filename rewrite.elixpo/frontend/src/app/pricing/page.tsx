@@ -33,7 +33,7 @@ const plans = [
       { text: "5 AI checks per day", included: true },
       { text: "3 rewrites per day", included: true },
       { text: "1,000 word limit", included: true },
-      { text: "File upload (DOCX, .tex)", included: true },
+      { text: "File upload (.tex)", included: true },
       { text: "Full PDF detection report", included: true },
       { text: "Session history & resume", included: true },
       { text: "API access", included: false },
@@ -82,7 +82,7 @@ export default function PricingPage() {
   const proSavings = yearly ? "Save 20%" : null;
 
   return (
-    <div className="space-y-12 pt-6 pb-16">
+    <div className="max-w-5xl mx-auto px-6 space-y-12 pt-6 pb-16">
       {/* Header */}
       <div className="text-center space-y-3">
         <h1 className="text-3xl font-bold font-display text-gradient">

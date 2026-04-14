@@ -35,7 +35,7 @@ export default function SessionPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
       <h1 className="text-2xl font-bold font-display text-text-primary">Session</h1>
 
       {!sessionId && (

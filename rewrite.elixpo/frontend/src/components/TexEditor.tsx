@@ -1,16 +1,21 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { useRef, useCallback, useMemo, useEffect, useState } from "react";
 
 interface TexEditorProps {
   value: string;
   onChange: (value: string) => void;
   readOnly?: boolean;
-  /** Per-paragraph AI scores shown as gutter annotations */
   paragraphScores?: Array<{ startLine: number; score: number }>;
-  /** Currently processing paragraph index */
   activeParagraph?: number;
 }
+
+const LINE_HEIGHT = 22;
+const FONT_SIZE = 13;
+const PAD_TOP = 12;
+const PAD_LEFT = 16;
+const PAD_RIGHT = 16;
+const GUTTER_WIDTH = 48;
 
 export function TexEditor({
   value,
@@ -20,23 +25,27 @@ export function TexEditor({
   activeParagraph,
 }: TexEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const highlightRef = useRef<HTMLDivElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
+  const highlightRef = useRef<HTMLPreElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   const lines = useMemo(() => value.split("\n"), [value]);
-  const lineCount = lines.length;
 
-  // Sync scroll between textarea and highlight overlay
   const handleScroll = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
-    setScrollTop(ta.scrollTop);
-    if (highlightRef.current) highlightRef.current.scrollTop = ta.scrollTop;
-    if (gutterRef.current) gutterRef.current.scrollTop = ta.scrollTop;
+    const top = ta.scrollTop;
+    const left = ta.scrollLeft;
+    setScrollTop(top);
+    setScrollLeft(left);
+    if (gutterRef.current) gutterRef.current.scrollTop = top;
+    if (highlightRef.current) {
+      highlightRef.current.scrollTop = top;
+      highlightRef.current.scrollLeft = left;
+    }
   }, []);
 
-  // Handle tab key in editor
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Tab") {
@@ -54,20 +63,32 @@ export function TexEditor({
     [value, onChange]
   );
 
-  // Build score annotations map: line number -> score
   const lineScores = useMemo(() => {
     const map = new Map<number, number>();
     if (!paragraphScores) return map;
-    for (const ps of paragraphScores) {
-      map.set(ps.startLine, ps.score);
-    }
+    for (const ps of paragraphScores) map.set(ps.startLine, ps.score);
     return map;
   }, [paragraphScores]);
 
+  // Shared text style — must be identical on textarea and highlight pre
+  const textStyle: React.CSSProperties = {
+    fontFamily: "var(--font-mono)",
+    fontSize: FONT_SIZE,
+    lineHeight: `${LINE_HEIGHT}px`,
+    tabSize: 2,
+    whiteSpace: "pre",
+    wordWrap: "normal",
+    overflowWrap: "normal",
+    padding: `${PAD_TOP}px ${PAD_RIGHT}px ${PAD_TOP}px ${PAD_LEFT}px`,
+    margin: 0,
+    border: "none",
+    outline: "none",
+  };
+
   return (
-    <div className="editor-container relative">
+    <div className="editor-container flex flex-col">
       {/* Toolbar */}
-      <div className="editor-toolbar">
+      <div className="editor-toolbar shrink-0">
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
           <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
@@ -76,57 +97,62 @@ export function TexEditor({
         <span className="text-text-subtle text-xs font-mono ml-2">document.tex</span>
         <div className="flex-1" />
         <span className="text-text-subtle text-xs">
-          {lineCount} lines · {value.length.toLocaleString()} chars
+          {lines.length} lines
         </span>
       </div>
 
-      <div className="flex relative" style={{ minHeight: 400, maxHeight: 600 }}>
-        {/* Line numbers gutter */}
+      {/* Editor body */}
+      <div className="flex flex-1 min-h-[400px] max-h-[600px] relative">
+        {/* Gutter */}
         <div
           ref={gutterRef}
-          className="editor-gutter overflow-hidden shrink-0"
-          style={{ marginTop: -scrollTop % 1 }}
+          className="shrink-0 overflow-hidden select-none bg-editor-gutter text-text-subtle"
+          style={{ width: GUTTER_WIDTH }}
         >
-          {lines.map((_, i) => {
-            const score = lineScores.get(i);
-            const isActive = activeParagraph !== undefined && activeParagraph === i;
-            return (
-              <span
-                key={i}
-                className={`block px-2.5 ${isActive ? "bg-lime-dim text-lime" : ""}`}
-              >
-                {score !== undefined ? (
-                  <span
-                    className={`text-[10px] font-bold ${
+          <div style={{ paddingTop: PAD_TOP }}>
+            {lines.map((_, i) => {
+              const score = lineScores.get(i);
+              const isActive = activeParagraph !== undefined && activeParagraph === i;
+              return (
+                <div
+                  key={i}
+                  className={`px-2 text-right text-xs ${isActive ? "bg-lime-dim text-lime" : ""}`}
+                  style={{ height: LINE_HEIGHT, lineHeight: `${LINE_HEIGHT}px` }}
+                >
+                  {score !== undefined ? (
+                    <span className={`text-[10px] font-bold ${
                       score >= 60 ? "text-error" : score >= 20 ? "text-warning" : "text-success"
-                    }`}
-                  >
-                    {score.toFixed(0)}%
-                  </span>
-                ) : (
-                  i + 1
-                )}
-              </span>
-            );
-          })}
+                    }`}>
+                      {score.toFixed(0)}%
+                    </span>
+                  ) : (
+                    i + 1
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Syntax highlight overlay */}
-        <div
+        {/* Highlight layer — rendered pre with colored spans, scroll-synced */}
+        <pre
           ref={highlightRef}
-          className="absolute inset-0 pointer-events-none overflow-hidden"
-          style={{ left: 44, paddingTop: 12, paddingLeft: 16, paddingRight: 16 }}
-          aria-hidden
+          className="absolute inset-0 overflow-hidden pointer-events-none"
+          style={{
+            ...textStyle,
+            left: GUTTER_WIDTH,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            color: "transparent", // fallback
+            background: "transparent",
+          }}
+          aria-hidden="true"
         >
-          <pre
-            className="text-[13px] leading-[1.7] font-mono whitespace-pre-wrap break-words"
-            style={{ marginTop: -scrollTop }}
-          >
-            {highlightTex(value)}
-          </pre>
-        </div>
+          {highlightTex(value)}
+        </pre>
 
-        {/* Actual textarea (transparent text, captures input) */}
+        {/* Textarea — transparent text, visible caret */}
         <textarea
           ref={textareaRef}
           value={value}
@@ -135,66 +161,212 @@ export function TexEditor({
           onKeyDown={handleKeyDown}
           readOnly={readOnly}
           spellCheck={false}
-          className="editor-content flex-1 overflow-auto caret-lime text-transparent"
-          placeholder={`% Paste your LaTeX document here...\n\\documentclass{article}\n\\begin{document}\n\nYour text goes here.\n\n\\end{document}`}
+          className="flex-1 bg-transparent resize-none caret-lime"
+          style={{
+            ...textStyle,
+            color: "transparent",
+            caretColor: "var(--color-lime)",
+            WebkitTextFillColor: "transparent",
+            overflow: "auto",
+          }}
+          placeholder={"% Paste your LaTeX document here...\n\\documentclass{article}\n\\begin{document}\n\nYour text goes here.\n\n\\end{document}"}
         />
       </div>
     </div>
   );
 }
 
-/** Simple LaTeX syntax highlighter — returns JSX spans */
-function highlightTex(source: string): React.ReactNode[] {
-  const nodes: React.ReactNode[] = [];
-  const lines = source.split("\n");
+// ====================================================================
+// LaTeX syntax highlighter — full tokenizer
+// ====================================================================
 
-  for (let i = 0; i < lines.length; i++) {
-    if (i > 0) nodes.push("\n");
-    const line = lines[i];
+type TokenType =
+  | "comment"
+  | "command"
+  | "section"
+  | "env"
+  | "math-delim"
+  | "math-body"
+  | "brace"
+  | "bracket"
+  | "argument"
+  | "text";
 
-    if (line.trimStart().startsWith("%")) {
-      nodes.push(<span key={`c${i}`} className="tex-comment">{line}</span>);
+interface Token {
+  type: TokenType;
+  value: string;
+}
+
+const SECTION_COMMANDS = new Set([
+  "documentclass", "usepackage", "title", "author", "date",
+  "chapter", "section", "subsection", "subsubsection",
+  "paragraph", "subparagraph", "part",
+  "tableofcontents", "maketitle",
+]);
+
+const ENV_COMMANDS = new Set(["begin", "end"]);
+
+function tokenizeLine(line: string): Token[] {
+  const tokens: Token[] = [];
+  let i = 0;
+
+  while (i < line.length) {
+    // Comment — rest of line
+    if (line[i] === "%" && (i === 0 || line[i - 1] !== "\\")) {
+      tokens.push({ type: "comment", value: line.slice(i) });
+      break;
+    }
+
+    // Math mode — $$...$$ or $...$
+    if (line[i] === "$") {
+      const double = line[i + 1] === "$";
+      const delim = double ? "$$" : "$";
+      const start = i;
+      i += delim.length;
+      tokens.push({ type: "math-delim", value: delim });
+
+      // Find closing delimiter
+      let body = "";
+      while (i < line.length) {
+        if (line[i] === "$") {
+          if (double && line[i + 1] === "$") {
+            break;
+          } else if (!double) {
+            break;
+          }
+        }
+        body += line[i];
+        i++;
+      }
+      if (body) tokens.push({ type: "math-body", value: body });
+      if (i < line.length) {
+        tokens.push({ type: "math-delim", value: delim });
+        i += delim.length;
+      }
       continue;
     }
 
-    // Tokenize: commands, braces, math delimiters
-    let pos = 0;
-    const parts: React.ReactNode[] = [];
-    const re = /(\\(?:begin|end)\{[^}]*\})|(\\(?:section|subsection|title|author|date|chapter|paragraph)\b)|(\\[a-zA-Z@]+)|([\{\}])|\$([^$]*)\$/g;
-    let m: RegExpExecArray | null;
+    // Command — \something
+    if (line[i] === "\\") {
+      const start = i;
+      i++;
 
-    while ((m = re.exec(line)) !== null) {
-      // Text before match
-      if (m.index > pos) {
-        parts.push(line.slice(pos, m.index));
+      // Single special char commands: \\ \{ \} \$ \% \& \# \_ \~ \^
+      if (i < line.length && /[\\{}$%&#_~^,;!| ]/.test(line[i])) {
+        tokens.push({ type: "command", value: line.slice(start, i + 1) });
+        i++;
+        continue;
       }
 
-      if (m[1]) {
-        // \begin{...} or \end{...}
-        parts.push(<span key={`e${i}-${m.index}`} className="tex-env">{m[1]}</span>);
-      } else if (m[2]) {
-        // Section commands
-        parts.push(<span key={`s${i}-${m.index}`} className="tex-section">{m[2]}</span>);
-      } else if (m[3]) {
-        // Other commands
-        parts.push(<span key={`cmd${i}-${m.index}`} className="tex-command">{m[3]}</span>);
-      } else if (m[4]) {
-        // Braces
-        parts.push(<span key={`b${i}-${m.index}`} className="tex-brace">{m[4]}</span>);
-      } else if (m[5] !== undefined) {
-        // Inline math $...$
-        parts.push(<span key={`m${i}-${m.index}`} className="tex-math">${m[5]}$</span>);
+      // Named command
+      let name = "";
+      while (i < line.length && /[a-zA-Z@*]/.test(line[i])) {
+        name += line[i];
+        i++;
       }
 
-      pos = m.index + m[0].length;
+      if (!name) {
+        tokens.push({ type: "text", value: "\\" });
+        continue;
+      }
+
+      const fullCmd = "\\" + name;
+
+      if (ENV_COMMANDS.has(name)) {
+        // \begin{env} or \end{env} — capture the brace group
+        tokens.push({ type: "env", value: fullCmd });
+        if (i < line.length && line[i] === "{") {
+          const braceStart = i;
+          let depth = 0;
+          while (i < line.length) {
+            if (line[i] === "{") depth++;
+            else if (line[i] === "}") { depth--; if (depth === 0) { i++; break; } }
+            i++;
+          }
+          tokens.push({ type: "env", value: line.slice(braceStart, i) });
+        }
+      } else if (SECTION_COMMANDS.has(name)) {
+        tokens.push({ type: "section", value: fullCmd });
+      } else {
+        tokens.push({ type: "command", value: fullCmd });
+      }
+
+      // Capture optional argument [...]
+      if (i < line.length && line[i] === "[") {
+        const bracketStart = i;
+        let depth = 0;
+        while (i < line.length) {
+          if (line[i] === "[") depth++;
+          else if (line[i] === "]") { depth--; if (depth === 0) { i++; break; } }
+          i++;
+        }
+        tokens.push({ type: "bracket", value: line.slice(bracketStart, i) });
+      }
+
+      // Capture required argument {...}
+      if (i < line.length && line[i] === "{") {
+        const braceStart = i;
+        let depth = 0;
+        while (i < line.length) {
+          if (line[i] === "{") depth++;
+          else if (line[i] === "}") { depth--; if (depth === 0) { i++; break; } }
+          i++;
+        }
+        tokens.push({ type: "argument", value: line.slice(braceStart, i) });
+      }
+
+      continue;
     }
 
-    if (pos < line.length) {
-      parts.push(line.slice(pos));
+    // Standalone braces
+    if (line[i] === "{" || line[i] === "}") {
+      tokens.push({ type: "brace", value: line[i] });
+      i++;
+      continue;
     }
 
-    nodes.push(...parts);
+    // Plain text — collect until next special char
+    let text = "";
+    while (i < line.length && !["\\", "$", "%", "{", "}"].includes(line[i])) {
+      text += line[i];
+      i++;
+    }
+    if (text) tokens.push({ type: "text", value: text });
   }
 
-  return nodes;
+  return tokens;
+}
+
+const TOKEN_CLASSES: Record<TokenType, string> = {
+  comment:      "tex-comment",
+  command:      "tex-command",
+  section:      "tex-section",
+  env:          "tex-env",
+  "math-delim": "tex-math",
+  "math-body":  "tex-math",
+  brace:        "tex-brace",
+  bracket:      "tex-bracket",
+  argument:     "tex-argument",
+  text:         "tex-text",
+};
+
+function highlightTex(source: string): React.ReactNode[] {
+  const result: React.ReactNode[] = [];
+  const lines = source.split("\n");
+
+  for (let li = 0; li < lines.length; li++) {
+    if (li > 0) result.push("\n");
+    const tokens = tokenizeLine(lines[li]);
+    for (let ti = 0; ti < tokens.length; ti++) {
+      const t = tokens[ti];
+      const cls = TOKEN_CLASSES[t.type];
+      if (t.type === "text") {
+        result.push(<span key={`${li}-${ti}`} className={cls}>{t.value}</span>);
+      } else {
+        result.push(<span key={`${li}-${ti}`} className={cls}>{t.value}</span>);
+      }
+    }
+  }
+
+  return result;
 }
