@@ -27,6 +27,7 @@ export default function ChatPage() {
   const { user, loading: authLoading, login } = useAuth();
   const { messages, isLoading, isLoadingHistory, sessionId, chatTitle, setChatTitle, sendMessage, stopStreaming, loadSession, retryLast } = useChat(id === "new" ? undefined : id);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [model, setModel] = useState("lixsearch");
   const [sharecopied, setShareCopied] = useState(false);
@@ -37,7 +38,21 @@ export default function ChatPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages]);
+  // Smooth auto-scroll that follows streaming
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Auto-focus the input when response finishes
+  const prevLoading = useRef(false);
+  useEffect(() => {
+    if (prevLoading.current && !isLoading) {
+      // Response just finished — focus the textarea
+      const textarea = document.querySelector<HTMLTextAreaElement>("textarea");
+      textarea?.focus();
+    }
+    prevLoading.current = isLoading;
+  }, [isLoading]);
 
   const handleShare = () => {
     const url = `${window.location.origin}/chat/${sessionId}`;
@@ -62,20 +77,20 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen bg-[#fafafa]">
       <ChatSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header with chat title + share */}
-        <header className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-100 flex-shrink-0">
+        {/* Header */}
+        <header className="flex items-center justify-between px-5 py-3 bg-white/80 backdrop-blur-sm border-b border-neutral-100 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <img src="/images/logo.png" alt="" width={24} height={24} className="rounded-md flex-shrink-0 opacity-50" />
+            <img src="/images/logo.png" alt="" width={22} height={22} className="rounded-md flex-shrink-0 opacity-40" />
             <input
               type="text"
               value={chatTitle || ""}
               onChange={(e) => setChatTitle(e.target.value)}
               placeholder="New chat"
-              className="text-sm font-medium text-neutral-700 bg-transparent outline-none border-none truncate min-w-0 hover:bg-neutral-50 focus:bg-neutral-50 rounded px-1.5 py-0.5 -ml-1.5 transition-colors"
+              className="text-sm font-semibold text-neutral-700 bg-transparent outline-none border-none truncate min-w-0 hover:bg-neutral-50 focus:bg-neutral-50 rounded px-1.5 py-0.5 -ml-1.5 transition-colors"
             />
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -104,22 +119,27 @@ export default function ChatPage() {
         </header>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6" style={{ scrollbarWidth: "thin" }}>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-8" style={{ scrollbarWidth: "thin" }}>
           {isLoadingHistory ? (
             <SkeletonMessages />
           ) : (
-            <div className="max-w-3xl mx-auto space-y-6">
+            <div className="max-w-3xl mx-auto space-y-7">
               {messages.length === 0 && !isLoadingHistory && (
-                <div className="flex flex-col items-center justify-center pt-[20vh]">
-                  <img src="/images/logo.png" alt="" width={40} height={40} className="rounded-xl mb-4 opacity-30" />
-                  <h2 className="text-lg font-bold text-neutral-900 mb-1">Hey {user.displayName}!</h2>
+                <div className="flex flex-col items-center justify-center pt-[22vh]">
+                  <img src="/images/logo.png" alt="" width={44} height={44} className="rounded-xl mb-5 opacity-25" />
+                  <h2 className="text-xl font-bold text-neutral-800 mb-1.5">Hey {user.displayName}!</h2>
                   <p className="text-sm text-neutral-400">What would you like to know?</p>
                 </div>
               )}
               {messages.map((msg, i) => {
                 const isLastAssistant = msg.role === "assistant" && !msg.isStreaming && i === messages.length - 1;
-                return <MessageBubble key={msg.id} message={msg} onRetry={isLastAssistant ? retryLast : undefined} />;
+                return (
+                  <div key={msg.id} className={msg.role === "user" ? "animate-msg-user" : "animate-msg-assistant"}>
+                    <MessageBubble message={msg} onRetry={isLastAssistant ? retryLast : undefined} />
+                  </div>
+                );
               })}
+              <div ref={bottomRef} />
             </div>
           )}
         </div>
