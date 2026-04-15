@@ -1,7 +1,8 @@
 # Tommy CI — PR Review
 # Config lives in .github/tommy.yml — edit that file, not this workflow.
+# Enable/disable in config.json → pipelines.pr_review.enabled
 
-name: Tommy
+name: Tommy Review
 
 on:
   issue_comment:
@@ -15,8 +16,6 @@ on:
 
 jobs:
   tommy:
-    # NOTE: trigger phrase is duplicated here because `if:` runs before steps.
-    # Keep it in sync with bot.trigger_phrase in .github/tommy.yml.
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'tommy')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, 'tommy')) ||
@@ -40,24 +39,31 @@ jobs:
       - name: Load Config
         id: cfg
         run: |
-          # CI config from .github/tommy.yml
+          ENABLED=$(jq -r '.pipelines.pr_review.enabled // true' config.json)
+          echo "enabled=$ENABLED" >> "$GITHUB_OUTPUT"
+          if [ "$ENABLED" != "true" ]; then
+            echo "PR Review is disabled in config.json"
+            exit 0
+          fi
+          echo "prompt_suffix=$(jq -r '.pipelines.pr_review.prompt_suffix // ""' config.json)" >> "$GITHUB_OUTPUT"
           echo "trigger=$(yq '.bot.trigger_phrase' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "system_prompt=$(yq -r '.bot.system_prompt' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "secret_app_id=$(yq -r '.github.secrets.app_id' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "secret_private_key=$(yq -r '.github.secrets.private_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "secret_ai_token=$(yq -r '.github.secrets.ai_token' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "anthropic_api_key=$(yq -r '.ai.router.anthropic_api_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
-          # Runtime config from config.json (single source of truth for identity & admin users)
           echo "bot_name=$(jq -r '.bot.name' config.json)" >> "$GITHUB_OUTPUT"
           echo "whitelist=$(jq -r '.github.admin_users | join(",")' config.json)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/create-github-app-token@v1
+        if: steps.cfg.outputs.enabled == 'true'
         id: token
         with:
           app-id: ${{ secrets[steps.cfg.outputs.secret_app_id] }}
           private-key: ${{ secrets[steps.cfg.outputs.secret_private_key] }}
 
       - name: Check Whitelist
+        if: steps.cfg.outputs.enabled == 'true'
         id: whitelist
         uses: actions/github-script@v7
         with:
@@ -102,7 +108,6 @@ jobs:
         if: steps.whitelist.outputs.authorized == 'true'
         id: setup
         run: |
-          # Add eyes reaction
           if [ "${{ github.event_name }}" = "issue_comment" ]; then
             gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
           elif [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
@@ -153,6 +158,6 @@ jobs:
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: ${{ steps.cfg.outputs.trigger }}
           claude_args: |
-            --system-prompt "${{ steps.cfg.outputs.system_prompt }}"
+            --system-prompt "${{ steps.cfg.outputs.system_prompt }} ${{ steps.cfg.outputs.prompt_suffix }}"
           additional_permissions: |
             actions: read

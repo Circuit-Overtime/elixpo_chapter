@@ -33,11 +33,18 @@ jobs:
       - name: Load Config
         id: cfg
         run: |
+          # Pipeline toggle from config.json
+          ENABLED=$(jq -r '.pipelines.autofix.enabled // true' config.json)
+          echo "enabled=$ENABLED" >> "$GITHUB_OUTPUT"
+          if [ "$ENABLED" != "true" ]; then
+            echo "Autofix is disabled in config.json"
+            exit 0
+          fi
+          echo "prompt_suffix=$(jq -r '.pipelines.autofix.prompt_suffix // ""' config.json)" >> "$GITHUB_OUTPUT"
           echo "secret_app_id=$(yq -r '.github.secrets.app_id' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "secret_private_key=$(yq -r '.github.secrets.private_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "secret_ai_token=$(yq -r '.github.secrets.ai_token' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "anthropic_api_key=$(yq -r '.ai.router.anthropic_api_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
-          echo "autofix_enabled=$(yq -r '.autofix.enabled' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "bot_name=$(jq -r '.bot.name' config.json)" >> "$GITHUB_OUTPUT"
 
           # Read multiline system prompt safely
@@ -46,25 +53,15 @@ jobs:
           echo "$PROMPT" >> "$GITHUB_OUTPUT"
           echo "PROMPT_EOF" >> "$GITHUB_OUTPUT"
 
-      - name: Check if enabled
-        id: guard
-        run: |
-          if [ "${{ steps.cfg.outputs.autofix_enabled }}" != "true" ]; then
-            echo "Autofix is disabled in .github/tommy.yml"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - uses: actions/create-github-app-token@v1
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.cfg.outputs.enabled == 'true'
         id: token
         with:
           app-id: ${{ secrets[steps.cfg.outputs.secret_app_id] }}
           private-key: ${{ secrets[steps.cfg.outputs.secret_private_key] }}
 
       - name: React to issue
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.cfg.outputs.enabled == 'true'
         run: |
           gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
           gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments \
@@ -73,13 +70,13 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
 
       - name: Setup Bun
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.cfg.outputs.enabled == 'true'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
       - name: Setup Router
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.cfg.outputs.enabled == 'true'
         id: setup
         run: |
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
@@ -102,13 +99,13 @@ jobs:
 
       # Full checkout for code access
       - uses: actions/checkout@v4
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.cfg.outputs.enabled == 'true'
         with:
           fetch-depth: 0
           token: ${{ steps.token.outputs.token }}
 
       - uses: anthropics/claude-code-action@v1
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.cfg.outputs.enabled == 'true'
         env:
           ANTHROPIC_BASE_URL: http://localhost:3456
           GIT_AUTHOR_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
@@ -133,6 +130,6 @@ jobs:
             2. Commit your changes with a clear message referencing the issue
             3. Open a pull request that links to issue #${{ github.event.issue.number }} using "Fixes #${{ github.event.issue.number }}" in the PR body
           claude_args: |
-            --system-prompt "${{ steps.cfg.outputs.autofix_prompt }}"
+            --system-prompt "${{ steps.cfg.outputs.autofix_prompt }} ${{ steps.cfg.outputs.prompt_suffix }}"
           additional_permissions: |
             actions: read

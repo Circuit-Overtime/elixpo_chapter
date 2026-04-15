@@ -1,0 +1,72 @@
+# Tommy CI — PR Merge Report
+# On PR merge: generates an AI summary + image and posts to Discord.
+# Enable/disable in config.json → pipelines.pr_merge_report.enabled
+# Requires: discord_webhook_url set in config.json → pipelines.pr_merge_report
+
+name: PR Merge Report
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  report:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+      issues: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load Config
+        id: cfg
+        run: |
+          ENABLED=$(jq -r '.pipelines.pr_merge_report.enabled // false' config.json)
+          echo "enabled=$ENABLED" >> "$GITHUB_OUTPUT"
+          if [ "$ENABLED" != "true" ]; then
+            echo "PR Merge Report is disabled in config.json"
+            exit 0
+          fi
+          WEBHOOK=$(jq -r '.pipelines.pr_merge_report.discord_webhook_url // ""' config.json)
+          if [ -z "$WEBHOOK" ]; then
+            echo "No discord_webhook_url configured — skipping"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "discord_webhook=$WEBHOOK" >> "$GITHUB_OUTPUT"
+          echo "prompt_suffix=$(jq -r '.pipelines.pr_merge_report.prompt_suffix // ""' config.json)" >> "$GITHUB_OUTPUT"
+          echo "secret_app_id=$(yq -r '.github.secrets.app_id' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "secret_private_key=$(yq -r '.github.secrets.private_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+          echo "secret_ai_token=$(yq -r '.github.secrets.ai_token' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/create-github-app-token@v1
+        if: steps.cfg.outputs.enabled == 'true'
+        id: token
+        with:
+          app-id: ${{ secrets[steps.cfg.outputs.secret_app_id] }}
+          private-key: ${{ secrets[steps.cfg.outputs.secret_private_key] }}
+
+      - name: Set up Python
+        if: steps.cfg.outputs.enabled == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        if: steps.cfg.outputs.enabled == 'true'
+        run: pip install requests pyyaml
+
+      - name: Generate and publish report
+        if: steps.cfg.outputs.enabled == 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets[steps.cfg.outputs.secret_ai_token] }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          DISCORD_REALTIME_WEBHOOK_URL: ${{ steps.cfg.outputs.discord_webhook }}
+        run: |
+          cd .github/scripts
+          python generate_realtime.py
+          python publish_realtime.py
