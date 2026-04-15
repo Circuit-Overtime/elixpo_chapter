@@ -1,4 +1,4 @@
-"""Session store — Redis with in-memory fallback."""
+"""Session store — Cloudflare KV backed with in-memory fallback."""
 
 import hashlib
 import json
@@ -6,55 +6,44 @@ import logging
 import time
 from typing import Optional
 
-from app.core.config import REDIS_URL, SESSION_TTL
+from app.core.config import SESSION_TTL
 
 logger = logging.getLogger(__name__)
 
-_redis_client = None
-_redis_available = None
+_kv_available: bool | None = None
 _memory_store: dict[str, dict] = {}
 
 
-def _get_redis():
-    """Lazy-connect to Redis. Returns client or None if unavailable."""
-    global _redis_client, _redis_available
-
-    if _redis_available is False:
-        return None
-
-    if _redis_client is not None:
-        return _redis_client
-
+def _kv():
+    """Lazy-check if Cloudflare KV is reachable."""
+    global _kv_available
+    if _kv_available is not None:
+        return _kv_available
     try:
-        import redis
-        client = redis.from_url(REDIS_URL, decode_responses=True)
-        client.ping()
-        _redis_client = client
-        _redis_available = True
-        logger.info("Connected to Redis at %s", REDIS_URL)
-        return client
+        from app.core.cloudflare import kv_get
+        # Quick test — a miss is fine, we just need no exception
+        kv_get("__ping__")
+        _kv_available = True
+        logger.info("Connected to Cloudflare KV")
     except Exception as e:
-        _redis_available = False
-        logger.warning("Redis unavailable (%s) — using in-memory fallback", e)
-        return None
+        _kv_available = False
+        logger.warning("Cloudflare KV unavailable (%s) — using in-memory fallback", e)
+    return _kv_available
 
 
 def _text_hash(text: str) -> str:
-    """Generate a hash key for text content."""
     return hashlib.sha256(text.encode()).hexdigest()[:16]
 
 
 def cache_get(key: str) -> Optional[dict]:
     """Get a cached value by key."""
-    r = _get_redis()
-    if r:
+    if _kv():
         try:
-            data = r.get(f"rewrite:{key}")
-            return json.loads(data) if data else None
+            from app.core.cloudflare import kv_get_json
+            return kv_get_json(f"rewrite:{key}")
         except Exception:
             pass
 
-    # In-memory fallback
     entry = _memory_store.get(key)
     if entry and entry.get("_expires", 0) > time.time():
         return entry.get("data")
@@ -65,15 +54,14 @@ def cache_get(key: str) -> Optional[dict]:
 
 def cache_set(key: str, data: dict, ttl: int = SESSION_TTL):
     """Store a value with TTL."""
-    r = _get_redis()
-    if r:
+    if _kv():
         try:
-            r.setex(f"rewrite:{key}", ttl, json.dumps(data))
+            from app.core.cloudflare import kv_put_json
+            kv_put_json(f"rewrite:{key}", data, expiration_ttl=ttl)
             return
         except Exception:
             pass
 
-    # In-memory fallback
     _memory_store[key] = {
         "data": data,
         "_expires": time.time() + ttl,
@@ -93,7 +81,7 @@ def get_cached_detection(text: str) -> Optional[dict]:
 
 
 def store_session(session_id: str, data: dict, ttl: int = SESSION_TTL):
-    """Store session data (document state, scores, rewrite history)."""
+    """Store session data."""
     cache_set(f"session:{session_id}", data, ttl)
 
 
@@ -104,16 +92,16 @@ def get_session(session_id: str) -> Optional[dict]:
 
 def delete_session(session_id: str):
     """Delete a session."""
-    r = _get_redis()
-    if r:
+    if _kv():
         try:
-            r.delete(f"rewrite:session:{session_id}")
+            from app.core.cloudflare import kv_delete
+            kv_delete(f"rewrite:session:{session_id}")
             return
         except Exception:
             pass
     _memory_store.pop(f"session:{session_id}", None)
 
 
-def is_redis_available() -> bool:
-    """Check if Redis is connected."""
-    return _get_redis() is not None
+def is_kv_available() -> bool:
+    """Check if Cloudflare KV is connected."""
+    return _kv() is True
