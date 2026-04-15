@@ -20,8 +20,13 @@ LLM_TIMEOUT = 60
 LLM_MAX_RETRIES = 3
 LLM_RETRY_BASE_DELAY = 1.0  # seconds, exponential backoff
 
-# --- Redis ---
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+# --- Cloudflare (D1 + KV) ---
+CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "")
+CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "")
+CLOUDFLARE_D1_DATABASE_ID = os.getenv("CLOUDFLARE_D1_DATABASE_ID", "")
+CLOUDFLARE_KV_NAMESPACE_ID = os.getenv("CLOUDFLARE_KV_NAMESPACE_ID", "")
+
+# --- Session ---
 SESSION_TTL = 3600  # 1 hour
 
 # --- Embeddings ---
