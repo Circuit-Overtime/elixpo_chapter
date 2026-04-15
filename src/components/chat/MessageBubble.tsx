@@ -1,7 +1,7 @@
 "use client";
 
 import { marked } from "marked";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, memo } from "react";
 import TaskGroup from "./TaskBlock";
 import type { DisplayMessage } from "@/lib/chat/use-chat";
 
@@ -89,7 +89,7 @@ interface SourceMeta {
   loading: boolean;
 }
 
-export default function MessageBubble({ message, onRetry }: MessageBubbleProps) {
+const MessageBubble = memo(function MessageBubble({ message, onRetry }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const { sources, images: relatedImages, cleanText } = useMemo(() => {
     if (isUser) return { sources: [], images: [], cleanText: message.content };
@@ -294,4 +294,6 @@ export default function MessageBubble({ message, onRetry }: MessageBubbleProps) 
       )}
     </div>
   );
-}
+});
+
+export default MessageBubble;
