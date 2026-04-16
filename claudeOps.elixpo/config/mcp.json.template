@@ -1,0 +1,61 @@
+{
+  "_comment": "Add these to ~/.claude.json under mcpServers (via 'claude mcp add' or manual edit)",
+  "mcpServers": {
+    "jcodemunch": {
+      "_comment": "Lightweight code indexing — 95%+ token reduction, 50-150MB RAM. Install: pip install jcodemunch-mcp",
+      "type": "stdio",
+      "command": "jcodemunch-mcp",
+      "args": []
+    },
+    "context-mode": {
+      "_comment": "Tool output sandboxing — 98% reduction. Install: npm install -g context-mode",
+      "type": "stdio",
+      "command": "context-mode",
+      "args": []
+    },
+    "21st-dev-magic": {
+      "_comment": "UI component generation. Get free API key at https://21st.dev",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@21st-dev/magic@latest"],
+      "env": { "API_KEY": "REPLACE_WITH_YOUR_21STDEV_API_KEY" }
+    },
+    "shadcn": {
+      "_comment": "Official shadcn/ui component registry",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://www.shadcn.io/api/mcp"]
+    },
+    "magicui": {
+      "_comment": "60+ animated components (beams, particles, meteors)",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "magicui-mcp"]
+    },
+    "animotion": {
+      "_comment": "745 CSS animations + 9000 SVG icons",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "animotion-mcp"]
+    },
+    "aceternity": {
+      "_comment": "200+ cinematic, 3D, parallax components",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "aceternityui-mcp@latest"]
+    },
+    "dembrandt": {
+      "_comment": "Extract design tokens from any website",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "dembrandt-mcp"]
+    },
+    "glance": {
+      "_comment": "Browser screenshots — Claude sees what it built. Set headless to avoid blank tab on startup",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "glance-mcp"],
+      "env": { "BROWSER_HEADLESS": "true", "BROWSER_LAZY": "true" }
+    }
+  }
+}
