@@ -1,0 +1,46 @@
+name: Issue Triage
+
+on:
+  workflow_call:
+    inputs:
+      issue_number:
+        description: "The issue number to triage"
+        required: true
+        type: number
+    secrets:
+      POLLINATIONS_KEY:
+        description: "Pollinations AI API key"
+        required: true
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout calling repo
+        uses: actions/checkout@v4
+        with:
+          path: repo
+
+      - name: Checkout agent.elixpo
+        uses: actions/checkout@v4
+        with:
+          repository: elixpo/agent.elixpo
+          path: agent
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run issue triage
+        run: |
+          python agent/scripts/triage_issue.py \
+            --repo "${{ github.repository }}" \
+            --issue-number "${{ inputs.issue_number }}" \
+            --token "${{ github.token }}" \
+            --pollinations-key "${{ secrets.POLLINATIONS_KEY }}" \
+            --repo-checkout repo
