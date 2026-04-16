@@ -1,3 +1,5 @@
 node_modules/
 .next
 *.env
+# SOPS: unencrypted local env
+.env.local
