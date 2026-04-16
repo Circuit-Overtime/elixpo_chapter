@@ -1,0 +1,48 @@
+{
+  "name": "@elixpo/claudeops",
+  "version": "1.0.2",
+  "description": "Drop-in optimization toolkit for Claude Code — 15 agents, token savings, safety hooks, UI pipeline",
+  "bin": {
+    "claudeops": "./cli.js"
+  },
+  "files": [
+    "cli.js",
+    "lib/",
+    "agents/",
+    "hooks/",
+    "config/",
+    "scripts/"
+  ],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "claude-agents",
+    "claude-mcp",
+    "claude-hooks",
+    "ai-agents",
+    "ai-coding",
+    "ai-tools",
+    "mcp-server",
+    "mcp",
+    "optimization",
+    "token-savings",
+    "code-review",
+    "devtools",
+    "developer-tools",
+    "cli",
+    "automation",
+    "llm",
+    "agentic",
+    "vibe-coding"
+  ],
+  "author": "Ayushman Bhattacharya <ayushman@myceli.ai>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elixpo/claudeOps.elixpo.git"
+  },
+  "homepage": "https://github.com/elixpo/claudeOps.elixpo",
+  "engines": {
+    "node": ">=20"
+  }
+}
