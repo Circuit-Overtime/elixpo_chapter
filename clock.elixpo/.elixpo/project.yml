@@ -1,0 +1,18 @@
+project:
+  name: clock.elixpo
+  description: "Animated Clock"
+  stack: static
+
+ci:
+  lint_cmd: ""
+  test_cmd: ""
+  build_cmd: ""
+
+maintainers:
+  - github: Circuit-Overtime
+    skills: [frontend, nextjs, ui, cloudflare]
+    lead: true
+
+gist:
+  id: ""
+  account: elixpoo
