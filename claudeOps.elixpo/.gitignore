@@ -6,3 +6,6 @@ dist/
 .DS_Store
 Thumbs.db
 .claude/
+
+# SOPS: unencrypted local env
+.env.local
