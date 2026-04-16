@@ -11,3 +11,5 @@ wrangler.toml
 .next
 .wrangler
 .vercel
+# SOPS: unencrypted local env
+.env.local
