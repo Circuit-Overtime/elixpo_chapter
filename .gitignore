@@ -11,3 +11,5 @@ plans/
 .next.vercel
 *.vsix
 *.lixsketch
+# SOPS: unencrypted local env
+.env.local
