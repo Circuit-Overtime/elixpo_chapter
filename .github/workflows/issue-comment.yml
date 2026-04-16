@@ -1,0 +1,31 @@
+# Respond to @elixpo mentions in issue comments
+name: Issue Comment
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  respond:
+    if: >-
+      !github.event.issue.pull_request &&
+      contains(github.event.comment.body, '@elixpo')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Respond to comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_AUTHOR: ${{ github.event.comment.user.login }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+          REPO: ${{ github.repository }}
+        run: python .github/scripts/issue_comment.py
