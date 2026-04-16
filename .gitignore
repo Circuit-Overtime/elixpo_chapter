@@ -18,8 +18,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-.*env
 .vercel
 *.tsbuildinfo
 create-admin.mjs
 wrangler.toml
+# SOPS: unencrypted local env
+.env.local
