@@ -44,6 +44,7 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold text-sm mb-5 uppercase tracking-wider">Resources</h4>
             <ul className="flex flex-col gap-3">
+              <FooterLink href="/privacy">Privacy Policy</FooterLink>
               <FooterLink href="https://github.com/Circuit-Overtime/elixpochat" external>GitHub</FooterLink>
               <FooterLink href="https://pollinations.ai" external>Pollinations AI</FooterLink>
               <FooterLink href="https://developers.cloudflare.com/d1/" external>Cloudflare D1</FooterLink>

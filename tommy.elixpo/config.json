@@ -34,5 +34,31 @@
     "embeddings_repo": "",
     "doc_embeddings_enabled": false,
     "doc_sites": []
+  },
+  "pipelines": {
+    "pr_assistant": {
+      "enabled": true,
+      "prompt_suffix": ""
+    },
+    "pr_review": {
+      "enabled": true,
+      "prompt_suffix": ""
+    },
+    "autofix": {
+      "enabled": true,
+      "prompt_suffix": ""
+    },
+    "pr_assign_author": {
+      "enabled": true
+    },
+    "project_manager": {
+      "enabled": false,
+      "prompt_suffix": ""
+    },
+    "pr_merge_report": {
+      "enabled": false,
+      "discord_webhook_url": "",
+      "prompt_suffix": ""
+    }
   }
 }

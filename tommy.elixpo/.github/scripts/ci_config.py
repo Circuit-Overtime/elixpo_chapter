@@ -186,11 +186,23 @@ def project_number() -> int:
 def pr_review_cfg() -> Dict:
     return _deep_get(cfg, "pr_review", default={})
 
-def autofix_enabled() -> bool:
-    return _deep_get(cfg, "autofix", "enabled", default=True)
-
 def autofix_label() -> str:
     return _deep_get(cfg, "autofix", "label", default="tommy")
 
 def autofix_system_prompt() -> str:
     return _deep_get(cfg, "autofix", "system_prompt", default="")
+
+
+# ── Pipeline toggles (from config.json → pipelines) ────────────────
+
+def pipeline_enabled(name: str) -> bool:
+    """Check if a pipeline is enabled. Reads config.json → pipelines.{name}.enabled."""
+    return _deep_get(runtime_cfg, "pipelines", name, "enabled", default=True)
+
+def pipeline_prompt_suffix(name: str) -> str:
+    """Get the user's custom prompt suffix for a pipeline."""
+    return _deep_get(runtime_cfg, "pipelines", name, "prompt_suffix", default="")
+
+def pipeline_discord_webhook(name: str) -> str:
+    """Get a pipeline-specific Discord webhook URL."""
+    return _deep_get(runtime_cfg, "pipelines", name, "discord_webhook_url", default="")

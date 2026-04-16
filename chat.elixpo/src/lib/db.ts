@@ -1,9 +1,10 @@
 import type { News, NewsDetails, Podcast, PodcastDetails } from "./types";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import type { D1Database } from "@cloudflare/workers-types";
 
 async function getDB(): Promise<D1Database> {
   const { env } = await getCloudflareContext();
-  return env.DB;
+  return (env as any).DB;
 }
 
 export async function getTodaysNews(): Promise<News | null> {

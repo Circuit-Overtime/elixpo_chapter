@@ -1,5 +1,5 @@
 # Tommy CI — Project Manager
-# Config lives in .github/tommy.yml — edit that file, not this workflow.
+# Enable/disable in config.json → pipelines.project_manager.enabled
 
 name: Project Manager
 
@@ -27,6 +27,12 @@ jobs:
       - name: Load Config
         id: cfg
         run: |
+          ENABLED=$(jq -r '.pipelines.project_manager.enabled // false' config.json)
+          echo "enabled=$ENABLED" >> "$GITHUB_OUTPUT"
+          if [ "$ENABLED" != "true" ]; then
+            echo "Project Manager is disabled in config.json"
+            exit 0
+          fi
           echo "secret_app_id=$(yq -r '.github.secrets.app_id' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "secret_private_key=$(yq -r '.github.secrets.private_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "secret_ai_token=$(yq -r '.github.secrets.ai_token' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
@@ -38,6 +44,7 @@ jobs:
           fi
 
       - name: Generate App Token
+        if: steps.cfg.outputs.enabled == 'true'
         id: app-token
         uses: actions/create-github-app-token@v1
         with:
@@ -46,14 +53,17 @@ jobs:
           owner: ${{ steps.cfg.outputs.app_token_owner || github.repository_owner }}
 
       - name: Set up Python
+        if: steps.cfg.outputs.enabled == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install dependencies
+        if: steps.cfg.outputs.enabled == 'true'
         run: pip install requests pyyaml
 
       - name: Organize issue or PR
+        if: steps.cfg.outputs.enabled == 'true'
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GITHUB_EVENT: ${{ toJSON(github.event) }}

@@ -40,7 +40,7 @@ const DISCOVER_SNIPPET = `import { ElixpoWeather } from "@elixpo/components";
 
 export default function LandingPage() {
   return (
-    <main className="bg-white text-neutral-900 overflow-x-hidden">
+    <main className="bg-transparent overflow-x-hidden">
       <Navbar />
       <Hero />
       <FeatureCards />

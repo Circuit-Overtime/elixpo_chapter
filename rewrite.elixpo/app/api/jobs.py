@@ -1,7 +1,7 @@
-"""Redis-persisted job runner with resumable sessions.
+"""Cloudflare KV-persisted job runner with resumable sessions.
 
 Every job is tied to a session_id. All state (paragraphs, progress,
-intermediate rewrites) is persisted to Redis on every update so that:
+intermediate rewrites) is persisted to Cloudflare KV on every update so that:
   1. Frontend can poll by session_id and survive reloads
   2. If the server crashes mid-job, the job resumes from the last completed paragraph
   3. Completed results stay available until TTL expires
@@ -14,36 +14,33 @@ import time
 import uuid
 
 from app.api.schemas import JobStatus
-from app.core.config import REDIS_URL
 
 logger = logging.getLogger(__name__)
 
 # Job TTL: keep completed jobs for 24 hours
 JOB_TTL = 86400
 
-# --- Redis connection (lazy, with in-memory fallback) ---
-
-_redis_client = None
-_redis_checked = False
+# --- In-memory fallback (used if KV is unavailable) ---
 _memory_store: dict[str, str] = {}
 _lock = threading.Lock()
+_kv_checked = False
+_kv_ok = False
 
 
-def _redis():
-    global _redis_client, _redis_checked
-    if _redis_checked:
-        return _redis_client
-    _redis_checked = True
+def _check_kv() -> bool:
+    global _kv_checked, _kv_ok
+    if _kv_checked:
+        return _kv_ok
+    _kv_checked = True
     try:
-        import redis
-        client = redis.from_url(REDIS_URL, decode_responses=True)
-        client.ping()
-        _redis_client = client
-        logger.info("Job store connected to Redis")
+        from app.core.cloudflare import kv_get
+        kv_get("__ping__")
+        _kv_ok = True
+        logger.info("Job store connected to Cloudflare KV")
     except Exception as e:
-        logger.warning("Redis unavailable (%s) — jobs use in-memory store (not crash-safe)", e)
-        _redis_client = None
-    return _redis_client
+        _kv_ok = False
+        logger.warning("KV unavailable (%s) — jobs use in-memory store (not crash-safe)", e)
+    return _kv_ok
 
 
 def _key(session_id: str) -> str:
@@ -53,10 +50,10 @@ def _key(session_id: str) -> str:
 def _save(session_id: str, data: dict):
     """Persist full job state."""
     payload = json.dumps(data, default=str)
-    r = _redis()
-    if r:
+    if _check_kv():
         try:
-            r.setex(_key(session_id), JOB_TTL, payload)
+            from app.core.cloudflare import kv_put
+            kv_put(_key(session_id), payload, expiration_ttl=JOB_TTL)
             return
         except Exception:
             pass
@@ -66,10 +63,10 @@ def _save(session_id: str, data: dict):
 
 def _load(session_id: str) -> dict | None:
     """Load full job state."""
-    r = _redis()
-    if r:
+    if _check_kv():
         try:
-            raw = r.get(_key(session_id))
+            from app.core.cloudflare import kv_get
+            raw = kv_get(_key(session_id))
             return json.loads(raw) if raw else None
         except Exception:
             pass
@@ -106,7 +103,6 @@ def get_session(session_id: str) -> dict | None:
     data = _load(session_id)
     if data is None:
         return None
-    # Check TTL
     if data.get("status") in (JobStatus.completed.value, JobStatus.failed.value):
         age = time.time() - data.get("created_at", 0)
         if age > JOB_TTL:

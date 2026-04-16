@@ -14,8 +14,8 @@ reportlab>=4.0.0
 sentence-transformers>=2.2.0
 torch>=2.1.0
 
-# Session management
-redis>=5.0.0
+# Cloudflare D1/KV REST client
+httpx>=0.27.0
 
 # API (Phase 6)
 fastapi>=0.104.0

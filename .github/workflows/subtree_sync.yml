@@ -2,7 +2,7 @@ name: Subtree Sync
 
 on:
   schedule:
-    - cron: "0 0,4,8,12,16 * * *"
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -26,12 +26,20 @@ jobs:
       - name: Sync subtrees
         run: |
           repos=(
+<<<<<<< HEAD
             "agent.elixpo https://github.com/elixpo/agent.elixpo.git"
+=======
+            "agent.elixpo https://github.com/elixpo/elixpoagent.git"
+            "tommy.elixpo https://github.com/elixpo/tommy.git"
+            "rewrite.elixpo https://github.com/elixpo/rewrite.git"
+            "verse.elixpo https://github.com/elixpo/elixpoverse.git"
+>>>>>>> d5ca5a602fcee46e0ba3eac48d022fbd55ef19e6
             "elixpo https://github.com/elixpo/elixpo.git"
             "art.elixpo https://github.com/elixpo/art.elixpo.git"
             "jackey.elixpo https://github.com/elixpo/jackey.elixpo.git"
             "chat.elixpo https://github.com/elixpo/chat.elixpo.git"
             "blogs.elixpo https://github.com/elixpo/blogs.elixpo.git"
+<<<<<<< HEAD
             "clock.elixpo https://github.com/elixpo/clock.elixpo.git"
             "sketch.elixpo https://github.com/elixpo/sketch.elixpo.git"
             "me.elixpo https://github.com/elixpo/me.elixpo.git"
@@ -40,6 +48,13 @@ jobs:
             "url.elixpo https://github.com/elixpo/url.elixpo.git"
             "tommy.elixpo https://github.com/elixpo/tommy.elixpo.git"
             "rewrite.elixpo https://github.com/elixpo/rewrite.elixpo.git"
+=======
+            "sketch.elixpo https://github.com/elixpo/sketch.elixpo.git"
+            "me.elixpo https://github.com/elixpo/me.elixpogit"
+            "accounts.elixpo https://github.com/elixpo/accounts.elixpo.git"
+            "url.elixpo https://github.com/elixpo/url.elixpo.git"
+            "search.elixpo https://github.com/pollinations/search.elixpo.git"
+>>>>>>> d5ca5a602fcee46e0ba3eac48d022fbd55ef19e6
           )
 
           COAUTHOR=$'\n\nCo-authored-by: Circuit-Overtime <ayushbhatt633@gmail.com>'
