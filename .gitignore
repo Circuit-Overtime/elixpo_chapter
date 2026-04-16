@@ -3,7 +3,6 @@ all_icons/
 .vercel
 .next/
 out/
-.env
 wrangler.toml
 plans/
 .wrangler
