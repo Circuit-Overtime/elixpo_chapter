@@ -41,6 +41,7 @@ jobs:
             "tommy.elixpo https://github.com/elixpo/tommy.elixpo.git"
             "rewrite.elixpo https://github.com/elixpo/rewrite.elixpo.git"
             "wish.elixpo https://github.com/elixpo/wish.elixpo.git"
+            "claudeOps.elixpo https://github.com/elixpo/claudeOps.elixpo.git"
           )
 
           COAUTHOR=$'\n\nCo-authored-by: Circuit-Overtime <ayushbhatt633@gmail.com>'
