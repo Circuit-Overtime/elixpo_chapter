@@ -58,7 +58,7 @@ jobs:
     with:
       issue_number: ${{ github.event.issue.number }}
     secrets:
-      POLLINATIONS_KEY: ${{ secrets.POLLINATIONS_KEY }}
+      POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
 
   merge-gist:
     if: >-
@@ -68,8 +68,8 @@ jobs:
     with:
       pr_number: ${{ github.event.pull_request.number }}
     secrets:
-      POLLINATIONS_KEY: ${{ secrets.POLLINATIONS_KEY }}
-      GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+      POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
+      GIST_TOKEN: ${{ secrets.CI_GIST_TOKEN }}
 
   # ── Agentic (full agent engine) — COMING SOON ───────
   #
