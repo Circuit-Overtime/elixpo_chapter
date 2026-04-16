@@ -1,0 +1,18 @@
+# Biome lint + format check on push and PRs
+name: Biome
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: biomejs/setup-biome@v2
+      - run: biome ci .
