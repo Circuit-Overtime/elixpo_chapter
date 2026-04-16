@@ -1,10 +1,11 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import type { KVNamespace } from "@cloudflare/workers-types";
 
 const CACHE_TTL = 600; // 10 minutes in seconds
 
 async function getKV(): Promise<KVNamespace> {
   const { env } = await getCloudflareContext();
-  return env.KV;
+  return (env as any).KV;
 }
 
 export async function getCached<T>(key: string): Promise<T | null> {

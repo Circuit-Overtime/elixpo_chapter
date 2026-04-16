@@ -55,10 +55,10 @@ ai:
         api_base_url: "https://gen.pollinations.ai/v1/chat/completions"
         # api_key is injected at runtime from secrets.ai_token
         models:
-          - "claude-large"
-          - "perplexity-reasoning"
+          - "claude-fast"
+          - "perplexity-fast"
     default_route: "pollinations,glm"
-    websearch_route: "pollinations,perplexity-reasoning"
+    websearch_route: "pollinations,perplexity-fast"
     anthropic_api_key: "ccr-pollinations"   # passed to claude-code-action
 
 # ── PR Review ───────────────────────────────────────────────────────

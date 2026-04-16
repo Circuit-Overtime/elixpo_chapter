@@ -18,7 +18,7 @@ This guide walks you through setup from scratch. No prior experience with bots r
 ## Step 1 — Clone Tommy
 
 ```bash
-git clone https://github.com/your-org/tommy.git
+git clone https://github.com/elixpo/tommy.git
 cd tommy
 python -m venv venv
 source venv/bin/activate    # on Windows: venv\Scripts\activate
@@ -163,13 +163,57 @@ Mention the bot in Discord (`@Tommy help`) to verify it's working.
 
 ---
 
-## Step 8 — Set Up CI Pipelines (Optional)
+## Step 8 — Choose Which Pipelines to Enable
 
-Tommy comes with GitHub Actions workflows that respond to mentions in issues/PRs, auto-assign PR authors, auto-fix issues, and manage project boards.
+Tommy ships with 6 CI pipelines. **All of them are controlled from `config.json`** — you pick what you want, and the rest stays off.
+
+Open `config.json` and look at the `pipelines` section:
+
+```jsonc
+"pipelines": {
+  "pr_assistant": {
+    "enabled": true,                 // Mention tommy in issues/PRs → AI responds
+    "prompt_suffix": ""              // Extra instructions appended to the AI prompt
+  },
+  "pr_review": {
+    "enabled": true,                 // AI code reviews on PRs
+    "prompt_suffix": ""
+  },
+  "autofix": {
+    "enabled": true,                 // Label an issue "tommy" → AI fixes it and opens a PR
+    "prompt_suffix": ""
+  },
+  "pr_assign_author": {
+    "enabled": true                  // Auto-assign PR author on open
+  },
+  "project_manager": {
+    "enabled": false,                // Auto-categorize and label new issues/PRs
+    "prompt_suffix": ""
+  },
+  "pr_merge_report": {
+    "enabled": false,                // Post PR summary + image to Discord on merge
+    "discord_webhook_url": "",       // Discord webhook URL (required if enabled)
+    "prompt_suffix": ""
+  }
+}
+```
+
+Set `"enabled": true` for the ones you want, `false` for the rest. That's it — no workflow files to edit.
+
+### Customizing AI behavior with `prompt_suffix`
+
+Each pipeline has a `prompt_suffix` field. Whatever you write here gets appended to the AI's system prompt for that pipeline. Use it to add project-specific instructions:
+
+```jsonc
+"pr_review": {
+  "enabled": true,
+  "prompt_suffix": "Always check for SQL injection. Our ORM is SQLAlchemy."
+}
+```
 
 ### Add GitHub Secrets
 
-Go to your repo → **Settings → Secrets and Variables → Actions** and add:
+For the CI pipelines to work, go to your repo → **Settings → Secrets and Variables → Actions** and add:
 
 | Secret Name | Value |
 |---|---|
@@ -179,16 +223,14 @@ Go to your repo → **Settings → Secrets and Variables → Actions** and add:
 
 > The secret names are configurable in `.github/tommy.yml` → `github.secrets`.
 
-### Configure the CI
+### Advanced CI settings
 
-Open `.github/tommy.yml` and review the settings. The key ones:
+Open `.github/tommy.yml` for advanced settings that most users won't need to touch:
 
-- `bot.trigger_phrase` — the word that activates the bot in GitHub issues/PRs (default: `tommy`)
-- `github.secrets` — must match the secret names you just added
-- `ai.models` — which AI models the CI workflows use
-- `autofix.label` — label an issue with this (default: `tommy`) and the AI will auto-fix it and open a PR
-
-The workflows will now respond when someone writes "tommy" in an issue or PR comment, and auto-fix issues when labeled.
+- `bot.trigger_phrase` — the keyword that activates the bot in GitHub (default: `tommy`)
+- `ai.models` — which AI models the CI pipelines use
+- `autofix.label` — which GitHub label triggers the autofix pipeline (default: `tommy`)
+- `pr_review.auto_review` / `review_on_sync` — auto-trigger reviews without being asked
 
 ---
 

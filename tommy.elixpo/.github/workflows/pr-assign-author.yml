@@ -1,5 +1,5 @@
 # Tommy CI — Auto-assign PR author
-# Config lives in .github/tommy.yml — edit that file, not this workflow.
+# Enable/disable in config.json → pipelines.pr_assign_author.enabled
 
 name: PR Assign Author
 
@@ -24,10 +24,17 @@ jobs:
       - name: Load Config
         id: cfg
         run: |
+          ENABLED=$(jq -r '.pipelines.pr_assign_author.enabled // true' config.json)
+          echo "enabled=$ENABLED" >> "$GITHUB_OUTPUT"
+          if [ "$ENABLED" != "true" ]; then
+            echo "PR Assign Author is disabled in config.json"
+            exit 0
+          fi
           echo "secret_app_id=$(yq -r '.github.secrets.app_id' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "secret_private_key=$(yq -r '.github.secrets.private_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
 
       - name: Generate App Token
+        if: steps.cfg.outputs.enabled == 'true'
         id: app-token
         uses: actions/create-github-app-token@v1
         with:
@@ -35,6 +42,7 @@ jobs:
           private-key: ${{ secrets[steps.cfg.outputs.secret_private_key] }}
 
       - name: Assign author
+        if: steps.cfg.outputs.enabled == 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ steps.app-token.outputs.token }}
@@ -50,6 +58,5 @@ jobs:
               });
               console.log(`Assigned @${author} to PR #${context.issue.number}`);
             } catch (error) {
-              // External contributors can't be assigned
               console.log(`Could not assign @${author}: ${error.message}`);
             }

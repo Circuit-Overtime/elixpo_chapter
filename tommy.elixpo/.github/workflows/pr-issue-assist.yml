@@ -1,5 +1,6 @@
 # Tommy CI — Issue & PR Assistant
 # Config lives in .github/tommy.yml — edit that file, not this workflow.
+# Enable/disable in config.json → pipelines.pr_assistant.enabled
 
 name: Tommy
 
@@ -40,6 +41,15 @@ jobs:
       - name: Load Config
         id: cfg
         run: |
+          # Pipeline toggle from config.json
+          ENABLED=$(jq -r '.pipelines.pr_assistant.enabled // true' config.json)
+          echo "enabled=$ENABLED" >> "$GITHUB_OUTPUT"
+          if [ "$ENABLED" != "true" ]; then
+            echo "PR Assistant is disabled in config.json"
+            exit 0
+          fi
+          PROMPT_SUFFIX=$(jq -r '.pipelines.pr_assistant.prompt_suffix // ""' config.json)
+          echo "prompt_suffix=$PROMPT_SUFFIX" >> "$GITHUB_OUTPUT"
           # CI config from .github/tommy.yml
           echo "trigger=$(yq '.bot.trigger_phrase' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "system_prompt=$(yq -r '.bot.system_prompt' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
@@ -47,17 +57,19 @@ jobs:
           echo "secret_private_key=$(yq -r '.github.secrets.private_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "secret_ai_token=$(yq -r '.github.secrets.ai_token' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
           echo "anthropic_api_key=$(yq -r '.ai.router.anthropic_api_key' .github/tommy.yml)" >> "$GITHUB_OUTPUT"
-          # Runtime config from config.json (single source of truth for identity & admin users)
+          # Runtime config from config.json
           echo "bot_name=$(jq -r '.bot.name' config.json)" >> "$GITHUB_OUTPUT"
           echo "whitelist=$(jq -r '.github.admin_users | join(",")' config.json)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/create-github-app-token@v1
+        if: steps.cfg.outputs.enabled == 'true'
         id: token
         with:
           app-id: ${{ secrets[steps.cfg.outputs.secret_app_id] }}
           private-key: ${{ secrets[steps.cfg.outputs.secret_private_key] }}
 
       - name: Check Whitelist
+        if: steps.cfg.outputs.enabled == 'true'
         id: whitelist
         uses: actions/github-script@v7
         with:
@@ -115,11 +127,9 @@ jobs:
             gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/reactions -f content=eyes || true
           fi
 
-          # Get bot user ID
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
 
-          # Build router config from tommy.yml
           pip install pyyaml -q
           mkdir -p $HOME/.claude-code-router
           python3 -c "
@@ -129,7 +139,6 @@ jobs:
           print(router_config_json(os.environ['POLLINATIONS_TOKEN']))
           " > $HOME/.claude-code-router/config.json
 
-          # Start router
           bunx @musistudio/claude-code-router start &
           until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
         env:
@@ -158,6 +167,6 @@ jobs:
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: ${{ steps.cfg.outputs.trigger }}
           claude_args: |
-            --system-prompt "${{ steps.cfg.outputs.system_prompt }}"
+            --system-prompt "${{ steps.cfg.outputs.system_prompt }} ${{ steps.cfg.outputs.prompt_suffix }}"
           additional_permissions: |
             actions: read
