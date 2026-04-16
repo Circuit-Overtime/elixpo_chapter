@@ -12,7 +12,7 @@ from commons.searching_based import fetch_url_content_parallel, webSearch, image
 from commons.minimal import cleanQuery
 from functionCalls.getYoutubeDetails import transcribe_audio, youtubeMetadata
 from pipeline.utils import get_model_server, cached_web_search_key
-from pipeline.config import MAX_IMAGES_TO_INCLUDE, LOG_MESSAGE_QUERY_TRUNCATE, LOG_MESSAGE_PREVIEW_TRUNCATE, ERROR_MESSAGE_TRUNCATE, REQUEST_ID_HEX_SLICE_SIZE
+from pipeline.config import MAX_IMAGES_TO_INCLUDE, LOG_MESSAGE_QUERY_TRUNCATE, LOG_MESSAGE_PREVIEW_TRUNCATE, ERROR_MESSAGE_TRUNCATE, REQUEST_ID_HEX_SLICE_SIZE, FETCH_MIN_USEFUL_CHARS
 from pipeline.queryDecomposition import QueryAnalyzer, DecompositionEvaluator
 from pipeline.formalOptimization import ConstrainedOptimizer
 from commons.robustnessFramework import ToolOutputSanitizer, SanitizationPolicy
