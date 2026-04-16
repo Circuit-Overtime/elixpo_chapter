@@ -5,9 +5,7 @@ package-lock.json
 /.open-next
 /.wrangler
 .dev.vars
-.env
 .env.local
-.env.production
 *.wav
 *.mp3
 *.tldr
