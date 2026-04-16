@@ -1,7 +1,6 @@
 *.csv
 node_modules/
 .venv/
-.env
 .next/
 pollinations_docs
 wrangler.toml
@@ -9,3 +8,5 @@ wrangler.toml
 out/
 output/
 plans/
+# SOPS: unencrypted local env
+.env.local
