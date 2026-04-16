@@ -41,10 +41,13 @@ jobs:
             echo "::error::Manifest not found at $MANIFEST"
             exit 1
           fi
-          # Extract project name (top-level 'name:' key)
-          PROJECT_NAME=$(grep -m1 '^name:' "$MANIFEST" | sed 's/^name:\s*//' | tr -d "\"'" | xargs)
+          # Install yq and extract project.name
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          PROJECT_NAME=$(yq '.project.name // ""' "$MANIFEST")
           if [ -z "$PROJECT_NAME" ]; then
-            echo "::error::Could not read project name from manifest"
+            echo "::error::Could not read project.name from manifest"
             exit 1
           fi
           echo "project_name=$PROJECT_NAME" >> "$GITHUB_OUTPUT"
