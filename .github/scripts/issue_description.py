@@ -2,7 +2,7 @@
 issue_description.py — Auto-generate a structured description for issues
 opened with no body (or a very thin body).
 
-Env vars: AGENT_TOKEN, POLLINATIONS_KEY, ISSUE_NUMBER, REPO
+Env vars: AGENT_TOKEN, POLLINATIONS_KEY, ISSUE_NUMBER, ISSUE_AUTHOR, REPO
 Optional: CONTEXT_PATH (path to downloaded repo-context artifact's context.md)
 """
 
@@ -94,19 +94,20 @@ def load_context():
         return ""
 
 
-def fallback_body(title):
+def fallback_body(title, author="reporter"):
     """Basic template used when the LLM response is malformed."""
     return (
         "## Problem Statement\n"
         f"{title}\n\n"
-        "## Questions for Reporter\n"
+        f"## Questions for @{author}\n"
         "- What is the exact scope of this change?\n"
         "- Which files or components should be affected?\n"
         "- What is the expected behavior after the change?\n\n"
+        f"> @{author} — please reply in this issue and tag **@elixpoo** in your response so I can pick it up.\n\n"
         "## Todo's\n"
-        "- Scope to be defined once reporter answers questions above.\n\n"
+        f"- Scope to be defined once @{author} answers questions above.\n\n"
         "## Checklist\n"
-        "- [ ] Reporter's questions answered\n"
+        f"- [ ] @{author}'s questions answered\n"
         "- [ ] Implementation complete\n"
         "- [ ] Tests pass\n"
         "- [ ] Documentation updated if behavior changes\n"
@@ -119,7 +120,7 @@ def looks_valid(body):
         return False
     required = [
         "## Problem Statement",
-        "## Questions for Reporter",
+        "## Questions for",  # allows "Questions for @username"
         "## Todo's",
         "## Checklist",
     ]
@@ -129,8 +130,9 @@ def looks_valid(body):
 def main():
     repo = os.environ.get("REPO", REPO)
     issue_number = os.environ["ISSUE_NUMBER"]
+    author = os.environ.get("ISSUE_AUTHOR", "").strip() or "reporter"
 
-    print(f"Checking issue #{issue_number} in {repo}")
+    print(f"Checking issue #{issue_number} in {repo} (author: @{author})")
 
     # 1. Fetch the issue
     issue = github_api(f"/repos/{repo}/issues/{issue_number}")
@@ -155,8 +157,8 @@ def main():
     # 5. Call the LLM
     system_prompt = (
         f"You are structuring a GitHub issue for {PROJECT_NAME} ({PROJECT_DESCRIPTION}).\n"
-        "The reporter left only a title. Your job is to produce a structured skeleton — "
-        "NOT to invent requirements.\n\n"
+        f"The reporter (@{author}) left only a title. Your job is to produce a structured "
+        "skeleton — NOT to invent requirements.\n\n"
         "STRICT RULES:\n"
         "1. ONLY reference files, directories, functions, or components that appear VERBATIM "
         "in the 'Repo context' section below. Never invent file paths. If you cannot find a "
@@ -165,25 +167,26 @@ def main():
         "2. Do NOT assume scope, fix approach, or implementation details the reporter did not state. "
         "If the title is ambiguous, ASK the reporter — do not guess.\n"
         "3. Be factual and concise. No hedging, no filler, no marketing language.\n"
-        "4. Use the 'Questions for Reporter' section whenever the title leaves something unclear. "
+        f"4. Use the 'Questions for @{author}' section whenever the title leaves something unclear. "
         "This is the PRIMARY mechanism for moving the issue forward when you don't have enough info.\n\n"
         "Output EXACTLY this markdown (no preamble, no closing text):\n\n"
         "## Problem Statement\n"
-        "<1-3 sentences restating what the title conveys. If the title is vague, say so plainly "
-        "(e.g., 'The reporter asks for X, but the specific scope is not stated.'). Do not pad.>\n\n"
-        "## Questions for Reporter\n"
-        "- <concrete question the reporter must answer before work starts>\n"
+        f"<1-3 sentences restating what the title conveys. If the title is vague, say so plainly "
+        f"(e.g., '@{author} asks for X, but the specific scope is not stated.'). Do not pad.>\n\n"
+        f"## Questions for @{author}\n"
+        "- <concrete question that must be answered before work starts>\n"
         "- <2-5 questions if needed; if the title is fully self-explanatory, write 'None — title is clear.'>\n\n"
+        f"> @{author} — please reply in this issue and tag **@elixpoo** in your response so I can pick it up.\n\n"
         "## Todo's\n"
         "- <only list tasks that are OBVIOUSLY required given the title + context. Reference real files "
         "from the context when they are unambiguously relevant. Otherwise use generic language.>\n"
-        "- <If the scope is unclear, write a single bullet: '- Scope to be defined once reporter answers questions above.'>\n\n"
+        f"- <If the scope is unclear, write a single bullet: '- Scope to be defined once @{author} answers questions above.'>\n\n"
         "## Checklist\n"
-        "- [ ] Reporter's questions answered\n"
+        f"- [ ] @{author}'s questions answered\n"
         "- [ ] <other verification items that are objectively required, e.g., 'Change reviewed', 'Tests pass', 'Docs updated if behavior changes'. Keep to 3-5 items.>"
     )
 
-    user_message = f"Issue title: {title}\n\nRepo context:\n{context}"
+    user_message = f"Issue title: {title}\nReporter: @{author}\n\nRepo context:\n{context}"
 
     generated = ""
     try:
@@ -195,7 +198,7 @@ def main():
     # 6. Validate; fall back if malformed
     if not looks_valid(generated):
         print("LLM response malformed or missing; using fallback template.")
-        generated = fallback_body(title)
+        generated = fallback_body(title, author)
 
     # 7. Update the issue body
     try:
