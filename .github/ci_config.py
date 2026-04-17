@@ -7,46 +7,88 @@ Single source of truth for all CI workflows and scripts.
 LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
 LLM_MODEL = "claude-fast"
 
-# ── GitHub Project V2 ───────────────────────────────
-PROJECT_ID = "PVT_kwDOCZpXlc4BU1AU"
-PROJECT_NUMBER = 1
-PROJECT_OWNER = "elixpo"
-
-# Field IDs
-FIELD_STATUS = "PVTSSF_lADOCZpXlc4BU1AUzhEYBII"
-FIELD_CATEGORY = "PVTSSF_lADOCZpXlc4BU1AUzhEYH1Q"
-FIELD_PRIORITY = "PVTSSF_lADOCZpXlc4BU1AUzhEYT5Q"
-
-# Category option IDs
-CATEGORY_OPTIONS = {
-    "Feature": "2019bfe6",
-    "Bugs": "354f220a",
-    "Support": "331710e9",
-    "Dev": "d6a6c846",
-}
-
-# Priority option IDs
-PRIORITY_OPTIONS = {
-    "Urgent": "162b52af",
-    "High": "dd3e0bff",
-    "Medium": "2e367379",
-    "Low": "f18a510c",
-}
-
-# Status option IDs
-STATUS_OPTIONS = {
-    "Todo": "f75ad846",
-    "In Progress": "47fc9ee4",
-    "Done": "98236657",
-}
-
-# ── Organization ────────────────────────────────────
-ORG_MEMBERS = ["Circuit-Overtime", "anwe-ch", "elixpoo", "ez-vivek"]
-
 # ── Repository ──────────────────────────────────────
 REPO = "elixpo/accounts.elixpo"
 PROJECT_NAME = "accounts.elixpo"
 PROJECT_DESCRIPTION = "Elixpo OAuth SSO Provider"
+
+# ── GitHub Projects V2 ──────────────────────────────
+# One project per category. Each project has its own Priority field.
+PROJECT_OWNER = "elixpo"
+
+PROJECTS = {
+    "Feature": {
+        "id": "PVT_kwDOCZpXlc4BU5G2",
+        "number": 2,
+        "url": "https://github.com/orgs/elixpo/projects/2",
+        "priority_field_id": "PVTSSF_lADOCZpXlc4BU5G2zhI73CA",
+        "priority_options": {
+            "Urgent": "b23fe0c8",
+            "High": "d7eb7128",
+            "Medium": "5f4dffcc",
+            "Low": "69fbb73e",
+        },
+    },
+    "Bugs": {
+        "id": "PVT_kwDOCZpXlc4BU5G4",
+        "number": 3,
+        "url": "https://github.com/orgs/elixpo/projects/3",
+        "priority_field_id": "PVTSSF_lADOCZpXlc4BU5G4zhI74wo",
+        "priority_options": {
+            "Urgent": "941c406a",
+            "High": "bf1e8234",
+            "Medium": "26edf47b",
+            "Low": "a8b967d7",
+        },
+    },
+    "Support": {
+        "id": "PVT_kwDOCZpXlc4BU5G6",
+        "number": 4,
+        "url": "https://github.com/orgs/elixpo/projects/4",
+        "priority_field_id": "PVTSSF_lADOCZpXlc4BU5G6zhI76r8",
+        "priority_options": {
+            "Urgent": "31ddaa82",
+            "High": "6bedb306",
+            "Medium": "843e5a46",
+            "Low": "f57a96cd",
+        },
+    },
+    "Dev": {
+        "id": "PVT_kwDOCZpXlc4BU5G7",
+        "number": 5,
+        "url": "https://github.com/orgs/elixpo/projects/5",
+        "priority_field_id": "PVTSSF_lADOCZpXlc4BU5G7zhI78bE",
+        "priority_options": {
+            "Urgent": "0442c856",
+            "High": "fe20675f",
+            "Medium": "508c18fa",
+            "Low": "987b0728",
+        },
+    },
+}
+
+# Valid categories and priorities (for LLM prompts + validation)
+CATEGORIES = list(PROJECTS.keys())
+PRIORITIES = ["Urgent", "High", "Medium", "Low"]
+
+# ── Organization ────────────────────────────────────
+ORG_MEMBERS = ["Circuit-Overtime", "anwe-ch", "elixpoo", "ez-vivek"]
+
+# Maintainer skill map — used for LLM-driven PR reviewer assignment
+MAINTAINERS = {
+    "Circuit-Overtime": {
+        "skills": ["agent", "agentic", "breaking", "urgent", "backend", "python", "ci", "devops", "llm", "core"],
+        "role": "Lead — handles agentic work, breaking fixes, and urgent issues",
+    },
+    "ez-vivek": {
+        "skills": ["frontend", "ui", "ux", "nextjs", "react", "css", "components", "styling", "design"],
+        "role": "Frontend maintainer",
+    },
+    "anwe-ch": {
+        "skills": ["docs", "documentation", "readme", "guide", "tutorial", "api-docs", "examples"],
+        "role": "Documentation maintainer",
+    },
+}
 
 # ── Gist ────────────────────────────────────────────
 GIST_ACCOUNT = "elixpoo"

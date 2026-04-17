@@ -24,3 +24,5 @@ create-admin.mjs
 wrangler.toml
 # SOPS: unencrypted local env
 .env.local
+__pycache__/
+*.pyc
