@@ -1,7 +1,7 @@
 """
 pr_review.py — Handle @elixpo mentions on GitHub pull requests.
 
-Env vars: GITHUB_TOKEN, POLLINATIONS_KEY, PR_NUMBER, COMMENT_BODY,
+Env vars: AGENT_TOKEN, POLLINATIONS_KEY, PR_NUMBER, COMMENT_BODY,
           COMMENT_AUTHOR, REPO
 """
 
@@ -19,7 +19,7 @@ def github_api(endpoint, method="GET", data=None, headers=None, raw=False):
     """Make a GitHub API request. If raw=True, return the response body as text."""
     url = f"https://api.github.com{endpoint}"
     hdrs = {
-        "Authorization": f"token {os.environ['GITHUB_TOKEN']}",
+        "Authorization": f"Bearer {os.environ['AGENT_TOKEN']}",
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "elixpo-ci",
     }

@@ -3,6 +3,9 @@
 merge_gist.py — Runs on PR merge.
   1. Creates/updates a Gist changelog entry (via Pollinations LLM).
   2. Closes issues linked to the merged PR.
+
+Env vars: AGENT_TOKEN (@elixpoo PAT with repo + gist scope),
+          POLLINATIONS_KEY, PR_NUMBER, REPO
 """
 
 import json
@@ -18,8 +21,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ci_config import *  # noqa: F401, F403
 
 # ── Environment ────────────────────────────────────────
-GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
-GIST_TOKEN = os.environ["GIST_TOKEN"]
+# AGENT_TOKEN is a PAT for @elixpoo with both repo and gist scopes — used for
+# PR/issue ops AND gist ops so every action appears as the @elixpoo user.
+AGENT_TOKEN = os.environ["AGENT_TOKEN"]
 POLLINATIONS_KEY = os.environ["POLLINATIONS_KEY"]
 PR_NUMBER = os.environ["PR_NUMBER"]
 REPO = os.environ.get("REPO", globals().get("REPO", ""))
@@ -28,7 +32,7 @@ GITHUB_API = "https://api.github.com"
 
 
 # ── Helpers ────────────────────────────────────────────
-def api_request(url, method="GET", data=None, token=GITHUB_TOKEN, accept="application/vnd.github+json"):
+def api_request(url, method="GET", data=None, token=AGENT_TOKEN, accept="application/vnd.github+json"):
     """Make a GitHub/Gist API request via urllib."""
     headers = {
         "Authorization": f"Bearer {token}",
@@ -127,14 +131,13 @@ def run_gist_digest():
 
     if gist_id:
         # Update existing gist — prepend new entry
-        gist_data = api_request(f"{GITHUB_API}/gists/{gist_id}", token=GIST_TOKEN)
+        gist_data = api_request(f"{GITHUB_API}/gists/{gist_id}")
         existing = gist_data["files"].get(gist_filename, {}).get("content", "")
         new_content = entry + existing
         api_request(
             f"{GITHUB_API}/gists/{gist_id}",
             method="PATCH",
             data={"files": {gist_filename: {"content": new_content}}},
-            token=GIST_TOKEN,
         )
         gist_url = gist_data["html_url"]
         print(f"Gist updated: {gist_url}")
@@ -149,7 +152,6 @@ def run_gist_digest():
             f"{GITHUB_API}/gists",
             method="POST",
             data=gist_payload,
-            token=GIST_TOKEN,
         )
         gist_url = created["html_url"]
         new_gist_id = created["id"]

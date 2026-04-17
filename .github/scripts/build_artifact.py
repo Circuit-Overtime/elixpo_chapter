@@ -8,7 +8,7 @@ Runs on a GitHub Actions runner after a PR is merged. Produces
 and key docs) that downstream AI CI steps attach to LLM prompts for
 grounding.
 
-Inputs (env): GITHUB_TOKEN, REPO
+Inputs (env): AGENT_TOKEN, REPO
 Output: .elixpo-context/context.md  (prints absolute path on success)
 """
 
@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ci_config import *  # noqa: F401, F403
 
 # ── Environment ────────────────────────────────────────
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+AGENT_TOKEN = os.environ.get("AGENT_TOKEN", "")
 REPO = os.environ.get("REPO") or globals().get("REPO", "")
 
 GITHUB_API = "https://api.github.com"
@@ -63,7 +63,7 @@ def is_skipped(name):
     return False
 
 
-def api_request(path, token=GITHUB_TOKEN):
+def api_request(path, token=AGENT_TOKEN):
     """GET a GitHub API path. Returns decoded JSON, or None on failure."""
     url = path if path.startswith("http") else f"{GITHUB_API}{path}"
     headers = {

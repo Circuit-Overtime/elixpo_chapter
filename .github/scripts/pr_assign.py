@@ -5,7 +5,7 @@ Always assigns the PR author. For external contributors (not in ORG_MEMBERS),
 uses the LLM to pick the best maintainer as a reviewer based on changed files,
 title, and body. The chosen maintainer is also added as an assignee.
 
-Env vars: GITHUB_TOKEN, POLLINATIONS_KEY, PR_NUMBER, PR_TITLE, PR_BODY,
+Env vars: AGENT_TOKEN, POLLINATIONS_KEY, PR_NUMBER, PR_TITLE, PR_BODY,
           PR_AUTHOR, REPO
 """
 
@@ -26,7 +26,7 @@ def github_api(endpoint, method="GET", data=None, headers=None):
     """Make a GitHub API request. Returns parsed JSON or None on 204."""
     url = f"https://api.github.com{endpoint}"
     hdrs = {
-        "Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+        "Authorization": f"Bearer {os.environ['AGENT_TOKEN']}",
         "Accept": "application/vnd.github+json",
         "User-Agent": "elixpo-ci",
     }

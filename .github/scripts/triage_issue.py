@@ -21,11 +21,9 @@ from ci_config import *  # noqa: F401,F403
 # Note: ISSUE_TITLE and ISSUE_BODY are intentionally NOT read from env vars.
 # The event payload is stale if issue_description.py has already rewritten
 # the body in an earlier step. We fetch them fresh from the GitHub API below.
-GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
-# PROJECT_TOKEN is a PAT with 'project' scope — required for writing to
-# org-level Project V2 boards. Falls back to GITHUB_TOKEN if unset (which
-# will fail on project writes, but lets the rest of the script run).
-PROJECT_TOKEN = os.environ.get("PROJECT_TOKEN") or GITHUB_TOKEN
+# AGENT_TOKEN is a PAT for the @elixpoo account with full project write scope,
+# used for both REST and GraphQL (Project V2) calls.
+AGENT_TOKEN = os.environ["AGENT_TOKEN"]
 POLLINATIONS_KEY = os.environ.get("POLLINATIONS_KEY", "")
 ISSUE_NUMBER = os.environ["ISSUE_NUMBER"]
 ISSUE_AUTHOR = os.environ["ISSUE_AUTHOR"]
@@ -55,7 +53,7 @@ def github_rest(method: str, path: str, body: dict | None = None) -> dict:
     url = f"https://api.github.com{path}"
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, method=method)
-    req.add_header("Authorization", f"Bearer {GITHUB_TOKEN}")
+    req.add_header("Authorization", f"Bearer {AGENT_TOKEN}")
     req.add_header("Accept", "application/vnd.github+json")
     req.add_header("X-GitHub-Api-Version", "2022-11-28")
     if data is not None:
@@ -68,15 +66,15 @@ def github_rest(method: str, path: str, body: dict | None = None) -> dict:
 
 
 def github_graphql(query: str) -> dict:
-    """Make an authenticated GitHub GraphQL call using the PROJECT_TOKEN.
+    """Make an authenticated GitHub GraphQL call using AGENT_TOKEN.
 
-    Uses PROJECT_TOKEN (a PAT with `project` scope) rather than the default
-    GITHUB_TOKEN, because GITHUB_TOKEN cannot write to org-level Project V2.
+    AGENT_TOKEN is a PAT for @elixpoo with `project` scope, required for
+    writing to org-level Project V2 boards.
     """
     url = "https://api.github.com/graphql"
     data = json.dumps({"query": query}).encode()
     req = urllib.request.Request(url, data=data, method="POST")
-    req.add_header("Authorization", f"Bearer {PROJECT_TOKEN}")
+    req.add_header("Authorization", f"Bearer {AGENT_TOKEN}")
     req.add_header("Content-Type", "application/json")
     with urllib.request.urlopen(req) as resp:
         result = json.loads(resp.read().decode())

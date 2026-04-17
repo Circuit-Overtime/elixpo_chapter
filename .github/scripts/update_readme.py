@@ -22,7 +22,7 @@ from ci_config import (
 )
 
 # ── Environment variables ──────────────────────────────────────────────────
-GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
+AGENT_TOKEN = os.environ["AGENT_TOKEN"]
 POLLINATIONS_KEY = os.environ.get("POLLINATIONS_KEY", "")
 PR_NUMBER = os.environ["PR_NUMBER"]
 REPO = os.environ["REPO"]
@@ -42,7 +42,7 @@ def github_rest(method: str, path: str, body: dict | None = None) -> dict:
     url = f"https://api.github.com{path}"
     data = json.dumps(body).encode() if body else None
     req = urllib.request.Request(url, data=data, method=method)
-    req.add_header("Authorization", f"Bearer {GITHUB_TOKEN}")
+    req.add_header("Authorization", f"Bearer {AGENT_TOKEN}")
     req.add_header("Accept", "application/vnd.github+json")
     req.add_header("X-GitHub-Api-Version", "2022-11-28")
     if data:

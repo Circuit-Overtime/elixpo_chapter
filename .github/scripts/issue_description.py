@@ -2,7 +2,7 @@
 issue_description.py — Auto-generate a structured description for issues
 opened with no body (or a very thin body).
 
-Env vars: GITHUB_TOKEN, POLLINATIONS_KEY, ISSUE_NUMBER, REPO
+Env vars: AGENT_TOKEN, POLLINATIONS_KEY, ISSUE_NUMBER, REPO
 Optional: CONTEXT_PATH (path to downloaded repo-context artifact's context.md)
 """
 
@@ -24,7 +24,7 @@ def github_api(endpoint, method="GET", data=None, headers=None):
     """Make a GitHub API request."""
     url = f"https://api.github.com{endpoint}"
     hdrs = {
-        "Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+        "Authorization": f"Bearer {os.environ['AGENT_TOKEN']}",
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "elixpo-ci",
     }
