@@ -1,0 +1,41 @@
+# Auto-generate structured issue body if opened without description.
+# Downloads the latest repo-context artifact for AI context.
+
+name: Issue Description
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download latest repo-context artifact
+        id: download
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          name: repo-context
+          workflow: artifact-update.yml
+          path: .elixpo-context
+          if_no_artifact_found: warn
+
+      - name: Generate description
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          CONTEXT_PATH: .elixpo-context/context.md
+        run: python .github/scripts/issue_description.py
