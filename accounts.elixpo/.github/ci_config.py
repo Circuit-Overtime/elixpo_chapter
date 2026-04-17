@@ -13,7 +13,9 @@ PROJECT_NAME = "accounts.elixpo"
 PROJECT_DESCRIPTION = "Elixpo OAuth SSO Provider"
 
 # ── GitHub Projects V2 ──────────────────────────────
-# One project per category. Each project has its own Priority field.
+# Shared org-wide projects (linked to all elixpo repos).
+# One project per category — Repository column shows which repo each issue came from.
+# Each project has its own Priority field with Urgent/High/Medium/Low.
 PROJECT_OWNER = "elixpo"
 
 PROJECTS = {

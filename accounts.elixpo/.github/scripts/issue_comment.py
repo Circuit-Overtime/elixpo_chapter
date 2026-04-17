@@ -1,7 +1,7 @@
 """
 issue_comment.py — Handle @elixpo mentions in GitHub issue comments.
 
-Env vars: GITHUB_TOKEN, POLLINATIONS_KEY, ISSUE_NUMBER, COMMENT_BODY,
+Env vars: AGENT_TOKEN, POLLINATIONS_KEY, ISSUE_NUMBER, COMMENT_BODY,
           COMMENT_AUTHOR, REPO
 """
 
@@ -19,7 +19,7 @@ def github_api(endpoint, method="GET", data=None, headers=None):
     """Make a GitHub API request."""
     url = f"https://api.github.com{endpoint}"
     hdrs = {
-        "Authorization": f"token {os.environ['GITHUB_TOKEN']}",
+        "Authorization": f"Bearer {os.environ['AGENT_TOKEN']}",
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "elixpo-ci",
     }
@@ -43,7 +43,8 @@ def call_llm(system_prompt, user_message):
     }
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {os.environ['POLLINATIONS_KEY']}",
+        "Authorization": f"Bearer {os.environ['POLLINATIONS_KEY'].strip()}",
+        "User-Agent": "elixpo-ci/1.0",
     }
     req = urllib.request.Request(
         LLM_API_URL,

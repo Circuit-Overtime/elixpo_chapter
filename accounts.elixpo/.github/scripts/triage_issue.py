@@ -18,11 +18,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ci_config import *  # noqa: F401,F403
 
 # ── Environment variables ──────────────────────────────────────────────────
-GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
+# Note: ISSUE_TITLE and ISSUE_BODY are intentionally NOT read from env vars.
+# The event payload is stale if issue_description.py has already rewritten
+# the body in an earlier step. We fetch them fresh from the GitHub API below.
+# AGENT_TOKEN is a PAT for the @elixpoo account with full project write scope,
+# used for both REST and GraphQL (Project V2) calls.
+AGENT_TOKEN = os.environ["AGENT_TOKEN"]
 POLLINATIONS_KEY = os.environ.get("POLLINATIONS_KEY", "")
 ISSUE_NUMBER = os.environ["ISSUE_NUMBER"]
-ISSUE_TITLE = os.environ["ISSUE_TITLE"]
-ISSUE_BODY = os.environ.get("ISSUE_BODY", "")
 ISSUE_AUTHOR = os.environ["ISSUE_AUTHOR"]
 REPO = os.environ["REPO"]
 
@@ -50,7 +53,7 @@ def github_rest(method: str, path: str, body: dict | None = None) -> dict:
     url = f"https://api.github.com{path}"
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, method=method)
-    req.add_header("Authorization", f"Bearer {GITHUB_TOKEN}")
+    req.add_header("Authorization", f"Bearer {AGENT_TOKEN}")
     req.add_header("Accept", "application/vnd.github+json")
     req.add_header("X-GitHub-Api-Version", "2022-11-28")
     if data is not None:
@@ -63,11 +66,15 @@ def github_rest(method: str, path: str, body: dict | None = None) -> dict:
 
 
 def github_graphql(query: str) -> dict:
-    """Make an authenticated GitHub GraphQL call."""
+    """Make an authenticated GitHub GraphQL call using AGENT_TOKEN.
+
+    AGENT_TOKEN is a PAT for @elixpoo with `project` scope, required for
+    writing to org-level Project V2 boards.
+    """
     url = "https://api.github.com/graphql"
     data = json.dumps({"query": query}).encode()
     req = urllib.request.Request(url, data=data, method="POST")
-    req.add_header("Authorization", f"Bearer {GITHUB_TOKEN}")
+    req.add_header("Authorization", f"Bearer {AGENT_TOKEN}")
     req.add_header("Content-Type", "application/json")
     with urllib.request.urlopen(req) as resp:
         result = json.loads(resp.read().decode())
@@ -119,9 +126,9 @@ def call_llm(title: str, body: str, include_category: bool) -> dict:
         "response_format": {"type": "json_object"},
     }
 
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "User-Agent": "elixpo-ci/1.0"}
     if POLLINATIONS_KEY:
-        headers["Authorization"] = f"Bearer {POLLINATIONS_KEY}"
+        headers["Authorization"] = f"Bearer {POLLINATIONS_KEY.strip()}"
 
     data = json.dumps(payload).encode()
     req = urllib.request.Request(LLM_API_URL, data=data, method="POST")
@@ -167,10 +174,13 @@ def add_labels(issue_number: str, labels: list[str]) -> None:
 
 
 # ── Issue / Project V2 helpers ─────────────────────────────────────────────
-def get_issue_node_id(issue_number: str) -> str:
-    """Fetch the GraphQL node ID for a given issue number."""
-    data = github_rest("GET", f"/repos/{REPO}/issues/{issue_number}")
-    return data["node_id"]
+def fetch_issue(issue_number: str) -> dict:
+    """Fetch the full issue payload (node_id, title, body) from the REST API.
+
+    This is the freshest source of truth — we use it instead of the event
+    payload because an earlier pipeline step may have rewritten the body.
+    """
+    return github_rest("GET", f"/repos/{REPO}/issues/{issue_number}")
 
 
 def assign_issue(issue_number: str, assignee: str) -> None:
@@ -221,36 +231,21 @@ def set_single_select_field(
     github_graphql(mutation)
 
 
-# ── Comment helper ─────────────────────────────────────────────────────────
-def post_comment(
-    issue_number: str,
-    category: str,
-    priority: str,
-    summary: str,
-    project_url: str,
-    assigned_to: str | None,
-) -> None:
-    """Post the triage result as a comment on the issue."""
-    lines = [
-        f"**Triage**: {category} | **Priority**: {priority}",
-        f"Project: {project_url}",
-        summary,
-    ]
-    if assigned_to:
-        lines.append(f"Assigned to @{assigned_to}")
-    body = "\n".join(lines)
-    github_rest(
-        "POST",
-        f"/repos/{REPO}/issues/{issue_number}/comments",
-        {"body": body},
-    )
-
-
 # ── Main ───────────────────────────────────────────────────────────────────
 def main() -> None:
     print(f"=== Issue Triage: #{ISSUE_NUMBER} ===")
-    print(f"Title:  {ISSUE_TITLE}")
+
+    # ── Step 0: Fetch fresh issue data from the API ───────────────────────
+    # The event payload may be stale (an earlier step can rewrite the body),
+    # so we treat the REST API as the source of truth for title/body.
+    print("Fetching fresh issue data from API...")
+    issue_data = fetch_issue(ISSUE_NUMBER)
+    issue_node_id = issue_data["node_id"]
+    issue_title = issue_data.get("title") or ""
+    issue_body = issue_data.get("body") or ""
+    print(f"Title:  {issue_title}")
     print(f"Author: {ISSUE_AUTHOR}")
+    print(f"Node ID: {issue_node_id}")
 
     is_org_member = ISSUE_AUTHOR in ORG_MEMBERS
     if is_org_member:
@@ -268,7 +263,7 @@ def main() -> None:
     try:
         print("Calling LLM for triage...")
         llm_result = call_llm(
-            ISSUE_TITLE, ISSUE_BODY, include_category=not is_org_member
+            issue_title, issue_body, include_category=not is_org_member
         )
         print(f"LLM response: {json.dumps(llm_result)}")
 
@@ -313,7 +308,6 @@ def main() -> None:
         category = "Support"
         project = PROJECTS["Support"]
 
-    project_url = project.get("url", "")
     priority_option_id = project["priority_options"].get(priority)
     if priority_option_id is None:
         print(
@@ -323,12 +317,7 @@ def main() -> None:
         priority = DEFAULT_PRIORITY
         priority_option_id = project["priority_options"].get(priority)
 
-    # ── Step 3: Get issue node ID ─────────────────────────────────────────
-    print("Fetching issue node ID...")
-    issue_node_id = get_issue_node_id(ISSUE_NUMBER)
-    print(f"Node ID: {issue_node_id}")
-
-    # ── Step 4: Add to project ────────────────────────────────────────────
+    # ── Step 3: Add to project ────────────────────────────────────────────
     print(f"Adding issue to '{category}' project ({project['id']})...")
     try:
         item_id = add_to_project(project["id"], issue_node_id)
@@ -337,7 +326,7 @@ def main() -> None:
         print(f"[error] Failed to add to project: {exc}")
         item_id = None
 
-    # ── Step 5: Set priority field ────────────────────────────────────────
+    # ── Step 4: Set priority field ────────────────────────────────────────
     if item_id and priority_option_id:
         print(f"Setting Priority field to '{priority}'...")
         try:
@@ -349,7 +338,7 @@ def main() -> None:
     elif not priority_option_id:
         print(f"[warn] No option ID for priority '{priority}', skipping field update")
 
-    # ── Step 6: Apply labels ──────────────────────────────────────────────
+    # ── Step 5: Apply labels ──────────────────────────────────────────────
     cat_label = category.lower()
     pri_label = priority.lower()
     print(f"Applying labels: [{cat_label}, {pri_label}]")
@@ -364,20 +353,6 @@ def main() -> None:
         add_labels(ISSUE_NUMBER, [cat_label, pri_label])
     except Exception as exc:
         print(f"[warn] Label application failed: {exc}")
-
-    # ── Step 7: Post triage comment ───────────────────────────────────────
-    print("Posting triage comment...")
-    try:
-        post_comment(
-            ISSUE_NUMBER,
-            category,
-            priority,
-            summary,
-            project_url,
-            ISSUE_AUTHOR if is_org_member else None,
-        )
-    except Exception as exc:
-        print(f"[warn] Comment post failed: {exc}")
 
     print("=== Triage complete ===")
 
