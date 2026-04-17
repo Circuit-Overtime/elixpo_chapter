@@ -83,6 +83,20 @@ jobs:
         with:
           bun-version: latest
 
+      # Checkout early so we can read .github/ci_config.py for the model config
+      - name: Checkout for config read
+        if: steps.whitelist.outputs.authorized == 'true'
+        uses: actions/checkout@v4
+        with:
+          path: config-src
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        if: steps.whitelist.outputs.authorized == 'true'
+        with:
+          python-version: "3.11"
+
       - name: Setup router + eyes reaction
         if: steps.whitelist.outputs.authorized == 'true'
         id: setup
@@ -98,7 +112,16 @@ jobs:
             gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/reactions -f content=eyes || true
           fi
 
-          # Router config: claude-fast via Pollinations
+          # Pull models from ci_config.py — single source of truth
+          cd config-src
+          CODE_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_CODE; print(LLM_MODEL_CODE)")
+          CHAT_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_CHAT; print(LLM_MODEL_CHAT)")
+          THINK_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_THINKING; print(LLM_MODEL_THINKING)")
+          SEARCH_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_SEARCH; print(LLM_MODEL_SEARCH)")
+          cd ..
+
+          echo "Router models: default=$CODE_MODEL, background=$CHAT_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
+
           mkdir -p $HOME/.claude-code-router
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
@@ -110,12 +133,14 @@ jobs:
                 "name": "pollinations",
                 "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
                 "api_key": "${POLLINATIONS_TOKEN}",
-                "models": ["claude-fast", "perplexity-fast"]
+                "models": ["${CODE_MODEL}", "${CHAT_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"]
               }
             ],
             "Router": {
-              "default": "pollinations,claude-fast",
-              "webSearch": "pollinations,perplexity-fast"
+              "default": "pollinations,${CODE_MODEL}",
+              "background": "pollinations,${CHAT_MODEL}",
+              "thinking": "pollinations,${THINK_MODEL}",
+              "webSearch": "pollinations,${SEARCH_MODEL}"
             }
           }
           EOF
