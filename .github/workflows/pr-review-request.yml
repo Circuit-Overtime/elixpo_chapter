@@ -1,5 +1,5 @@
 # Elixpo Pull Request Review — AI assistant via Pollinations (claude-fast)
-# Trigger: mention "@elixpo" in an issue or PR comment
+# Trigger: mention "@elixpoo" in an issue or PR comment
 # Whitelist: Elixpo org members (Circuit-Overtime, anwe-ch, elixpoo, ez-vivek)
 #
 # The bot acts as @elixpoo (via CI_AGENT_TOKEN — a PAT on that account).
@@ -20,10 +20,10 @@ on:
 jobs:
   elixpo:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@elixpo')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@elixpo')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@elixpo')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@elixpo') || contains(github.event.issue.title, '@elixpo')))
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@elixpoo')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@elixpoo')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@elixpoo')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@elixpoo') || contains(github.event.issue.title, '@elixpoo')))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -52,8 +52,8 @@ jobs:
             }
 
             // Strict check: lowercase '@elixpo' must be present
-            if (!body.includes('@elixpo')) {
-              console.log('Strict check failed: "@elixpo" must be lowercase.');
+            if (!body.includes('@elixpoo')) {
+              console.log('Strict check failed: "@elixpoo" must be lowercase.');
               core.setOutput('authorized', 'false');
               return;
             }
@@ -66,7 +66,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue?.number || context.payload.pull_request?.number,
-                body: `Sorry @${actor}, only Elixpo org members can invoke @elixpo.`
+                body: `Sorry @${actor}, only Elixpo org members can invoke @elixpoo.`
               });
               core.setOutput('authorized', 'false');
             } else {
@@ -142,7 +142,7 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
-          trigger_phrase: "@elixpo"
+          trigger_phrase: "@elixpoo"
           claude_args: |
             --system-prompt "You are elixpo, a developer on the Elixpo team. Never mention Claude, Claude Code, AI, or LLMs — you are just a team member. Be casual, concise, and human. Use bullet points. No verbose explanations. When commenting on issues or reviewing PRs, write like a friendly dev — short, direct, helpful. Focus on security, correctness, edge cases, and project conventions."
           additional_permissions: |
