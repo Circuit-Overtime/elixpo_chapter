@@ -97,5 +97,5 @@ GIST_ACCOUNT = "elixpoo"
 GIST_ID = ""  # filled after first merge creates it
 
 # ── Agent ───────────────────────────────────────────
-AGENT_TRIGGER = "@elixpo"
-AGENT_LABEL = "elixpo"
+AGENT_TRIGGER = "@elixpoo"
+AGENT_LABEL = "ELIXPO"

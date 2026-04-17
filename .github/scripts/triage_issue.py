@@ -340,8 +340,8 @@ def main() -> None:
         print(f"[warn] No option ID for priority '{priority}', skipping field update")
 
     # ── Step 5: Apply labels ──────────────────────────────────────────────
-    cat_label = category.lower()
-    pri_label = priority.lower()
+    cat_label = category.upper()
+    pri_label = priority.upper()
     print(f"Applying labels: [{cat_label}, {pri_label}]")
 
     try:

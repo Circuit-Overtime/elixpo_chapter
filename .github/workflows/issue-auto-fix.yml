@@ -1,5 +1,5 @@
-# Elixpo Auto Code — Auto-fix issues labeled "elixpo"
-# Trigger: Add the "elixpo" label to an issue
+# Elixpo Auto Code — Auto-fix issues labeled "ELIXPO"
+# Trigger: Add the "ELIXPO" label to an issue
 # Whitelist: Elixpo org members (Circuit-Overtime, anwe-ch, elixpoo, ez-vivek)
 #            + elixpoo user token triggering from triage
 #
@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   auto-code:
-    if: github.event.label.name == 'elixpo'
+    if: github.event.label.name == 'ELIXPO'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -48,13 +48,13 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                name: 'elixpo'
+                name: 'ELIXPO'
               });
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: `Sorry @${labeledBy}, only Elixpo org members can trigger Elixpo Auto Code by adding the \`elixpo\` label.`
+                body: `Sorry @${labeledBy}, only Elixpo org members can trigger Elixpo Auto Code by adding the \`ELIXPO\` label.`
               });
               core.setOutput('authorized', 'false');
             } else {
