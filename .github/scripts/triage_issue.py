@@ -18,11 +18,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ci_config import *  # noqa: F401,F403
 
 # ── Environment variables ──────────────────────────────────────────────────
+# Note: ISSUE_TITLE and ISSUE_BODY are intentionally NOT read from env vars.
+# The event payload is stale if issue_description.py has already rewritten
+# the body in an earlier step. We fetch them fresh from the GitHub API below.
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
 POLLINATIONS_KEY = os.environ.get("POLLINATIONS_KEY", "")
 ISSUE_NUMBER = os.environ["ISSUE_NUMBER"]
-ISSUE_TITLE = os.environ["ISSUE_TITLE"]
-ISSUE_BODY = os.environ.get("ISSUE_BODY", "")
 ISSUE_AUTHOR = os.environ["ISSUE_AUTHOR"]
 REPO = os.environ["REPO"]
 
@@ -167,10 +168,13 @@ def add_labels(issue_number: str, labels: list[str]) -> None:
 
 
 # ── Issue / Project V2 helpers ─────────────────────────────────────────────
-def get_issue_node_id(issue_number: str) -> str:
-    """Fetch the GraphQL node ID for a given issue number."""
-    data = github_rest("GET", f"/repos/{REPO}/issues/{issue_number}")
-    return data["node_id"]
+def fetch_issue(issue_number: str) -> dict:
+    """Fetch the full issue payload (node_id, title, body) from the REST API.
+
+    This is the freshest source of truth — we use it instead of the event
+    payload because an earlier pipeline step may have rewritten the body.
+    """
+    return github_rest("GET", f"/repos/{REPO}/issues/{issue_number}")
 
 
 def assign_issue(issue_number: str, assignee: str) -> None:
@@ -249,8 +253,18 @@ def post_comment(
 # ── Main ───────────────────────────────────────────────────────────────────
 def main() -> None:
     print(f"=== Issue Triage: #{ISSUE_NUMBER} ===")
-    print(f"Title:  {ISSUE_TITLE}")
+
+    # ── Step 0: Fetch fresh issue data from the API ───────────────────────
+    # The event payload may be stale (an earlier step can rewrite the body),
+    # so we treat the REST API as the source of truth for title/body.
+    print("Fetching fresh issue data from API...")
+    issue_data = fetch_issue(ISSUE_NUMBER)
+    issue_node_id = issue_data["node_id"]
+    issue_title = issue_data.get("title") or ""
+    issue_body = issue_data.get("body") or ""
+    print(f"Title:  {issue_title}")
     print(f"Author: {ISSUE_AUTHOR}")
+    print(f"Node ID: {issue_node_id}")
 
     is_org_member = ISSUE_AUTHOR in ORG_MEMBERS
     if is_org_member:
@@ -268,7 +282,7 @@ def main() -> None:
     try:
         print("Calling LLM for triage...")
         llm_result = call_llm(
-            ISSUE_TITLE, ISSUE_BODY, include_category=not is_org_member
+            issue_title, issue_body, include_category=not is_org_member
         )
         print(f"LLM response: {json.dumps(llm_result)}")
 
@@ -323,12 +337,7 @@ def main() -> None:
         priority = DEFAULT_PRIORITY
         priority_option_id = project["priority_options"].get(priority)
 
-    # ── Step 3: Get issue node ID ─────────────────────────────────────────
-    print("Fetching issue node ID...")
-    issue_node_id = get_issue_node_id(ISSUE_NUMBER)
-    print(f"Node ID: {issue_node_id}")
-
-    # ── Step 4: Add to project ────────────────────────────────────────────
+    # ── Step 3: Add to project ────────────────────────────────────────────
     print(f"Adding issue to '{category}' project ({project['id']})...")
     try:
         item_id = add_to_project(project["id"], issue_node_id)
@@ -337,7 +346,7 @@ def main() -> None:
         print(f"[error] Failed to add to project: {exc}")
         item_id = None
 
-    # ── Step 5: Set priority field ────────────────────────────────────────
+    # ── Step 4: Set priority field ────────────────────────────────────────
     if item_id and priority_option_id:
         print(f"Setting Priority field to '{priority}'...")
         try:
@@ -349,7 +358,7 @@ def main() -> None:
     elif not priority_option_id:
         print(f"[warn] No option ID for priority '{priority}', skipping field update")
 
-    # ── Step 6: Apply labels ──────────────────────────────────────────────
+    # ── Step 5: Apply labels ──────────────────────────────────────────────
     cat_label = category.lower()
     pri_label = priority.lower()
     print(f"Applying labels: [{cat_label}, {pri_label}]")
@@ -365,7 +374,7 @@ def main() -> None:
     except Exception as exc:
         print(f"[warn] Label application failed: {exc}")
 
-    # ── Step 7: Post triage comment ───────────────────────────────────────
+    # ── Step 6: Post triage comment ───────────────────────────────────────
     print("Posting triage comment...")
     try:
         post_comment(
