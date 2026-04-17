@@ -216,19 +216,64 @@ jobs:
             - refiner → tighten the final PR description
 
             ### FIRST ACTION — rewrite the tracking comment
-            The runtime posts a default "Claude Code is working..." comment. That
-            phrasing is wrong for this repo. Your VERY FIRST step is to edit
-            that comment to something on-brand.
+            The runtime posts a default "Claude Code is working..." comment and on
+            completion appends a "Claude finished ... [Create PR ➔]" footer with
+            "Generated with Claude Code". All of that must be stripped.
 
-            1. Find the most recent comment by @elixpoo on this issue that
-               contains "Claude Code is working" or "analyze this and get back".
-                 gh issue view ${{ github.event.issue.number }} --json comments -q \
-                   '.comments | map(select(.author.login=="elixpoo" and (.body|contains("Claude Code is working")))) | last | .id'
-            2. Edit that comment with:
-                 gh api -X PATCH /repos/${{ github.repository }}/issues/comments/<id> \
+            1. Find the tracking comment:
+                 COMMENT_ID=$(gh issue view ${{ github.event.issue.number }} --json comments -q \
+                   '.comments | map(select(.author.login=="elixpoo" and ((.body|contains("Claude Code is working")) or (.body|contains("Claude finished"))))) | last | .id')
+            2. Edit it with a short on-brand message:
+                 gh api -X PATCH /repos/${{ github.repository }}/issues/comments/$COMMENT_ID \
                    -f body="On it — picking this up now. Job run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            3. Keep editing THIS SAME comment with concise progress updates as
-               you go (one sentence each). Do NOT post new comments for each step.
+            3. Keep editing THIS SAME comment with stage-by-stage progress updates.
+               Do NOT post new comments. At each checkpoint below, replace the
+               body with this exact layout:
+
+                ### 🔄 Working
+                **Current step:** <what you're doing right now>
+
+                **Progress:**
+                - [x] <completed step>
+                - [ ] <current step>
+                - [ ] <upcoming step>
+
+                _Job run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}_
+
+               Required checkpoints (edit at EACH):
+                 1. Reading the issue + repo context
+                 2. Scoping the change — plan: <1-line plan>
+                 3. Asking clarifying questions (Path A) OR making changes (Path B)
+                 4. Making changes to <file paths>
+                 5. Running biome check
+                 6. Biome clean. Committing + pushing to <branch>
+                 7. Opening PR
+                 8. PR #<N> opened. Posting summary (→ FINAL ACTION)
+
+            ### FINAL ACTION — rich completion summary
+            Before returning, replace the tracking comment with this exact format:
+
+                ### ✅ Done
+                <1-2 sentence summary in plain English>
+
+                ### 📝 Changes
+                - <file path>: <what changed and why>
+                - <up to 6 bullets; omit section if no code changes were made>
+
+                ### 🔗 Links
+                - Pull request: #<PR number>
+                - Branch: `<branch name>`
+                - Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+                ### 🧪 Verification
+                - <how you validated, e.g. 'biome ci clean', 'tests pass locally'>
+                - <or: 'not verified — please review before merging'>
+
+            Update via:
+              gh api -X PATCH /repos/${{ github.repository }}/issues/comments/$COMMENT_ID \
+                -f body="$FINAL_BODY"
+
+            If the runtime re-appends "Claude finished ... Generated with Claude Code" after your edit, re-fetch the comment, strip any line containing "Claude" or "Generated with", and PATCH again. The final visible comment must contain ZERO mentions of Claude, Claude Code, AI, LLM, or "Generated with".
 
             Never say "Claude", "Claude Code", "AI", "LLM", "analyzing", "analysis".
             Speak as a teammate: "looking into this", "pushed a fix", "opened #N".
