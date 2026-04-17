@@ -6,11 +6,16 @@ Single source of truth for all CI workflows and scripts.
 # ── LLM ─────────────────────────────────────────────
 LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
 
-# Task-specific model routing. Code work gets the dedicated coder model;
-# everything else uses a cheap-but-capable general model.
-LLM_MODEL_CODE = "qwen-coder"     # code gen, code review (claude-code-action default)
-LLM_MODEL_CHAT = "gemini-fast"    # triage, summaries, descriptions, comments
-LLM_MODEL_THINKING = "gemini-fast"  # reasoning-heavy steps in the router
+# Task-specific model routing.
+#
+# IMPORTANT: the main conversation / orchestration thread needs a model that
+# FOLLOWS nested prompt instructions — editing tracking comments mid-task,
+# running tools in sequence, etc. Code-specialized models (qwen-coder) skip
+# orchestration and jump straight to "write code", breaking the stage-by-stage
+# progress updates. Keep qwen-coder for pure code work delegated via subagents.
+LLM_MODEL_CODE = "qwen-coder"       # delegated code work (subagent / background)
+LLM_MODEL_CHAT = "gemini-fast"      # main orchestration — instruction-follower
+LLM_MODEL_THINKING = "gemini-fast"  # reasoning-heavy steps
 LLM_MODEL_SEARCH = "gemini-search"  # web search (only when needed)
 
 # Back-compat alias — scripts that haven't been migrated still import LLM_MODEL.

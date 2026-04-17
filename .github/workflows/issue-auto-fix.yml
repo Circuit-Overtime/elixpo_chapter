@@ -97,7 +97,9 @@ jobs:
           SEARCH_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_SEARCH; print(LLM_MODEL_SEARCH)")
           cd ..
 
-          echo "Router models: default=$CODE_MODEL, background=$CHAT_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
+          # NOTE: default → CHAT_MODEL (follows orchestration instructions).
+          # background → CODE_MODEL (handles delegated code-heavy subagent work).
+          echo "Router models: default=$CHAT_MODEL, background=$CODE_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
 
           mkdir -p $HOME/.claude-code-router
           cat > $HOME/.claude-code-router/config.json <<EOF
@@ -110,12 +112,12 @@ jobs:
                 "name": "pollinations",
                 "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
                 "api_key": "${POLLINATIONS_TOKEN}",
-                "models": ["${CODE_MODEL}", "${CHAT_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"]
+                "models": ["${CHAT_MODEL}", "${CODE_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"]
               }
             ],
             "Router": {
-              "default": "pollinations,${CODE_MODEL}",
-              "background": "pollinations,${CHAT_MODEL}",
+              "default": "pollinations,${CHAT_MODEL}",
+              "background": "pollinations,${CODE_MODEL}",
               "thinking": "pollinations,${THINK_MODEL}",
               "webSearch": "pollinations,${SEARCH_MODEL}"
             }
