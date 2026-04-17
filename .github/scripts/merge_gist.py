@@ -75,8 +75,8 @@ def llm_summarize(title, body, files):
     }
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {POLLINATIONS_KEY}",
-        "User-Agent": "elixpo-ci",
+        "Authorization": f"Bearer {POLLINATIONS_KEY.strip()}",
+        "User-Agent": "elixpo-ci/1.0",
     }
     req = urllib.request.Request(
         LLM_API_URL,

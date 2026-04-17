@@ -38,9 +38,6 @@ def github_api(endpoint, method="GET", data=None, headers=None):
 
 def call_llm(system_prompt, user_message):
     """Call the Pollinations LLM endpoint."""
-    pk = os.environ.get("POLLINATIONS_KEY", "")
-    # Debug: print key metadata without exposing the full value
-    print(f"[debug] POLLINATIONS_KEY length={len(pk)} prefix={pk[:4]!r} stripped_len={len(pk.strip())}")
     payload = {
         "model": LLM_MODEL,
         "messages": [
@@ -51,7 +48,8 @@ def call_llm(system_prompt, user_message):
     }
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {pk.strip()}",
+        "Authorization": f"Bearer {os.environ['POLLINATIONS_KEY'].strip()}",
+        "User-Agent": "elixpo-ci/1.0",
     }
     req = urllib.request.Request(
         LLM_API_URL,
@@ -59,13 +57,8 @@ def call_llm(system_prompt, user_message):
         headers=headers,
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            result = json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
-        body = e.read().decode(errors="replace")[:500]
-        print(f"[debug] LLM HTTP {e.code}: {body}")
-        raise
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        result = json.loads(resp.read().decode())
     return result["choices"][0]["message"]["content"]
 
 

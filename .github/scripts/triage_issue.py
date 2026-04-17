@@ -126,9 +126,9 @@ def call_llm(title: str, body: str, include_category: bool) -> dict:
         "response_format": {"type": "json_object"},
     }
 
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "User-Agent": "elixpo-ci/1.0"}
     if POLLINATIONS_KEY:
-        headers["Authorization"] = f"Bearer {POLLINATIONS_KEY}"
+        headers["Authorization"] = f"Bearer {POLLINATIONS_KEY.strip()}"
 
     data = json.dumps(payload).encode()
     req = urllib.request.Request(LLM_API_URL, data=data, method="POST")

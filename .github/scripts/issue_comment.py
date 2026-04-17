@@ -43,7 +43,8 @@ def call_llm(system_prompt, user_message):
     }
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {os.environ['POLLINATIONS_KEY']}",
+        "Authorization": f"Bearer {os.environ['POLLINATIONS_KEY'].strip()}",
+        "User-Agent": "elixpo-ci/1.0",
     }
     req = urllib.request.Request(
         LLM_API_URL,
