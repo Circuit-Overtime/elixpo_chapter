@@ -122,6 +122,7 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
+          branch_prefix: "elixpo"
           prompt: |
             Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
             Reporter: @${{ github.event.issue.user.login }}
@@ -129,6 +130,24 @@ jobs:
             You are elixpo, a developer on the Elixpo team. Never mention Claude,
             Claude Code, AI, or LLMs — you are just a team member. Be casual,
             concise, and human.
+
+            ### FIRST ACTION — rewrite the tracking comment
+            The runtime posts a default "Claude Code is working..." comment. That
+            phrasing is wrong for this repo. Your VERY FIRST step is to edit
+            that comment to something on-brand.
+
+            1. Find the most recent comment by @elixpoo on this issue that
+               contains "Claude Code is working" or "analyze this and get back".
+                 gh issue view ${{ github.event.issue.number }} --json comments -q \
+                   '.comments | map(select(.author.login=="elixpoo" and (.body|contains("Claude Code is working")))) | last | .id'
+            2. Edit that comment with:
+                 gh api -X PATCH /repos/${{ github.repository }}/issues/comments/<id> \
+                   -f body="On it — picking this up now. Job run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            3. Keep editing THIS SAME comment with concise progress updates as
+               you go (one sentence each). Do NOT post new comments for each step.
+
+            Never say "Claude", "Claude Code", "AI", "LLM", "analyzing", "analysis".
+            Speak as a teammate: "looking into this", "pushed a fix", "opened #N".
 
             ### Step 0 — Read everything
             Read the issue body + comments, and the repo layout:
@@ -185,14 +204,34 @@ jobs:
 
             ### Step 4 — Open a ready (NOT draft) PR
             Open a PR that is ready for review, linked to the issue so it
-            appears in the issue's Development tab:
+            appears in the issue's Development tab. Use EXACTLY this body format:
 
-                 gh pr create \\
-                   --title "[ELIXPO] ${{ github.event.issue.title }}" \\
-                   --body $'Fixes #${{ github.event.issue.number }}\\n\\n### Summary\\n<2-3 sentences describing what you changed and why>\\n\\n### Changes\\n- <file/path>: <one-line description>\\n- <file/path>: <one-line description>\\n\\n### Verification\\n- <how you checked this works, or what the reviewer should run>' \\
-                   --head "$BRANCH" --base main
+                BODY="Fixes #${{ github.event.issue.number }}
 
-                 PR_NUM=$(gh pr view --json number -q .number)
+                ## Changes Made
+                - <bullet point describing change 1>
+                - <bullet point describing change 2>
+                - <keep these concrete and reference real files>
+
+                ## Checklist
+                - [ ] Code reviewed
+                - [ ] Build passes
+                - [ ] Tests pass (if applicable)
+                - [ ] Docs updated (if behavior changed)
+
+                ---
+                cc @${{ github.event.issue.user.login }} — opened by @elixpoo in response to issue #${{ github.event.issue.number }}."
+
+                gh pr create \\
+                  --title "[ELIXPO] ${{ github.event.issue.title }}" \\
+                  --body "\$BODY" \\
+                  --head "\$BRANCH" --base main
+
+                PR_NUM=\$(gh pr view --json number -q .number)
+
+            If you need to tag additional org members (e.g., someone with
+            relevant expertise), add more 'cc @user' lines at the bottom or
+            mention them in 'Changes Made' bullets.
 
             ### Step 5 — Finalize
             1. Post a closing comment on the ISSUE pointing to the PR:
@@ -210,3 +249,66 @@ jobs:
               went wrong and stop.
           additional_permissions: |
             actions: read
+
+      # ─────────────────────────────────────────────────────────────────
+      # Post-guard: ensure a PR exists for the branch the bot created,
+      # linked to the issue via "Fixes #N" so it appears in the
+      # Development tab.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Ensure PR exists for any new elixpo/* branch
+        if: steps.whitelist.outputs.authorized == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          set -e
+
+          BRANCH=$(gh api "repos/$REPO/branches?per_page=100" --paginate \
+            --jq ".[] | select(.name | startswith(\"elixpo/\") and contains(\"issue-$ISSUE_NUMBER\")) | .name" \
+            | head -1)
+
+          if [ -z "$BRANCH" ]; then
+            echo "No elixpo/issue-$ISSUE_NUMBER-* branch found — nothing to do."
+            exit 0
+          fi
+          echo "Found branch: $BRANCH"
+
+          PR_EXISTS=$(gh pr list --repo "$REPO" --head "$BRANCH" --state all --json number --jq 'length')
+          if [ "$PR_EXISTS" -gt 0 ]; then
+            echo "PR already exists for $BRANCH, nothing to do."
+            exit 0
+          fi
+
+          CHANGES=$(gh api "repos/$REPO/compare/main...$BRANCH" \
+            --jq '.commits | map("- " + (.commit.message | split("\n")[0])) | join("\n")')
+
+          ISSUE_AUTHOR=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json author --jq '.author.login')
+
+          PR_BODY=$(cat <<EOF
+          Fixes #$ISSUE_NUMBER
+
+          ## Changes Made
+          $CHANGES
+
+          ## Checklist
+          - [ ] Code reviewed
+          - [ ] Build passes
+          - [ ] Tests pass (if applicable)
+          - [ ] Docs updated (if behavior changed)
+
+          ---
+          cc @$ISSUE_AUTHOR — opened by @elixpoo in response to issue #$ISSUE_NUMBER.
+          EOF
+          )
+
+          PR_URL=$(gh pr create --repo "$REPO" \
+            --head "$BRANCH" --base main \
+            --title "[ELIXPO] $ISSUE_TITLE" \
+            --body "$PR_BODY")
+          echo "Opened PR: $PR_URL"
+
+          PR_NUM=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
+            --body "Opened #$PR_NUM with the changes."

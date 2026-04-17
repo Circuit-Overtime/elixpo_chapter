@@ -103,7 +103,7 @@ def fallback_body(title, author="reporter"):
         "- What is the exact scope of this change?\n"
         "- Which files or components should be affected?\n"
         "- What is the expected behavior after the change?\n\n"
-        f"> @{author} — please reply in this issue and tag **@elixpoo** in your response so I can pick it up.\n\n"
+        f"> @{author} — please reply in this issue and tag **&#64;elixpoo** in your response so I can pick it up.\n\n"
         "## Todo's\n"
         f"- Scope to be defined once @{author} answers questions above.\n\n"
         "## Checklist\n"
@@ -112,7 +112,7 @@ def fallback_body(title, author="reporter"):
         "- [ ] Tests pass\n"
         "- [ ] Documentation updated if behavior changes\n\n"
         "---\n"
-        "> If you want @elixpoo to handle this issue, attach the **`ELIXPO`** label to the issue.\n"
+        "> If you want elixpoo to handle this issue, attach the **`ELIXPO`** label to the issue.\n"
     )
 
 
@@ -178,7 +178,7 @@ def main():
         f"## Questions for @{author}\n"
         "- <concrete question that must be answered before work starts>\n"
         "- <2-5 questions if needed; if the title is fully self-explanatory, write 'None — title is clear.'>\n\n"
-        f"> @{author} — please reply in this issue and tag **@elixpoo** in your response so I can pick it up.\n\n"
+        f"> @{author} — please reply in this issue and tag **&#64;elixpoo** in your response so I can pick it up.\n\n"
         "## Todo's\n"
         "- <only list tasks that are OBVIOUSLY required given the title + context. Reference real files "
         "from the context when they are unambiguously relevant. Otherwise use generic language.>\n"
@@ -187,7 +187,7 @@ def main():
         f"- [ ] @{author}'s questions answered\n"
         "- [ ] <other verification items that are objectively required, e.g., 'Change reviewed', 'Tests pass', 'Docs updated if behavior changes'. Keep to 3-5 items.>\n\n"
         "---\n"
-        "> If you want @elixpoo to handle this issue, attach the **`ELIXPO`** label to the issue."
+        "> If you want elixpoo to handle this issue, attach the **`ELIXPO`** label to the issue."
     )
 
     user_message = f"Issue title: {title}\nReporter: @{author}\n\nRepo context:\n{context}"
