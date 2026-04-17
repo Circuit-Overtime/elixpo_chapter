@@ -129,55 +129,58 @@ jobs:
             Claude Code, AI, or LLMs — you are just a team member. Be casual,
             concise, and human.
 
+            Your ONLY job in this workflow is to scaffold a draft PR tied to the
+            issue. You do NOT write the fix here. Actual code iteration happens
+            later — either by a maintainer or by the reporter tagging @elixpoo
+            on the PR.
+
             ### Step 0 — Read the issue
             Read the issue body and comments:
               gh issue view ${{ github.event.issue.number }} --comments
 
             ### Step 1 — Decide
-            - If this is a question, discussion, or clearly doesn't need code changes:
-              post a reply with `gh issue comment ${{ github.event.issue.number }}` and STOP.
-              Do not open a PR for pure discussion.
-            - Otherwise, treat this as real development work and continue to Step 2.
+            - If this is clearly a question, discussion, or doesn't need any code
+              changes: post a reply with
+              `gh issue comment ${{ github.event.issue.number }}` and STOP.
+              Do not open a PR.
+            - Otherwise continue to Step 2.
 
-            ### Step 2 — Create a draft PR FIRST (before any work)
-            This is the PR-first flow. Create the PR immediately so the issue's
-            "Development" section shows the linked PR, then do all work inside it.
+            ### Step 2 — Set up the PR scaffold (no code changes yet)
+            Create the branch, open a draft PR linked to the issue via "Fixes #N"
+            so it appears in the issue's Development tab, and then stop.
 
             1. Create the branch:
                  BRANCH="elixpo/issue-${{ github.event.issue.number }}"
                  git checkout -b "$BRANCH"
-            2. Make an initial empty commit so there's something to push:
-                 git commit --allow-empty -m "elixpo: begin work on #${{ github.event.issue.number }}"
+
+            2. Make a single empty commit so the branch has something to push:
+                 git commit --allow-empty \
+                   -m "elixpo: scaffold PR for #${{ github.event.issue.number }}"
                  git push -u origin "$BRANCH"
+
             3. Open a draft PR linked to the issue:
                  gh pr create --draft \
                    --title "[ELIXPO] ${{ github.event.issue.title }}" \
-                   --body $'Fixes #${{ github.event.issue.number }}\n\n### Plan\n- [ ] Understand the problem\n- [ ] Implement changes\n- [ ] Verify build / tests\n\n### Progress\n_I will update this PR as I make progress._' \
+                   --body $'Fixes #${{ github.event.issue.number }}\n\n### Status\nDraft scaffold. No code changes yet.\n\n### How to continue\n- Tag **@elixpoo** in a comment on this PR to have me make changes.\n- Or push commits directly to the `elixpo/issue-${{ github.event.issue.number }}` branch.\n\n### Plan\n- [ ] Understand the problem\n- [ ] Implement changes\n- [ ] Verify build / tests' \
                    --head "$BRANCH" --base main
+
             4. Capture the PR number:
                  PR_NUM=$(gh pr view --json number -q .number)
-            5. Post a short acknowledgement on the ISSUE pointing to the PR:
-                 gh issue comment ${{ github.event.issue.number }} --body "On it. Development is happening in #${PR_NUM}."
 
-            ### Step 3 — Do all the work inside the PR
-            From now on, every update goes on the PR, not the issue.
-              - Make code changes on the branch.
-              - Commit with clear messages.
-              - Push after each meaningful change.
-              - Post progress notes with `gh pr comment ${PR_NUM} --body "..."` — e.g. "Investigated X, found Y", "Applied fix to file Z", "CI passed locally".
-              - Update the PR description as the plan evolves (`gh pr edit ${PR_NUM} --body "..."`).
+            5. Post ONE acknowledgement comment on the ISSUE pointing to the PR:
+                 gh issue comment ${{ github.event.issue.number }} --body "Opened #${PR_NUM} for this. Tag @elixpoo on the PR to iterate, or push commits to the branch directly."
 
-            ### Step 4 — Finish
-            When the work is complete and you're confident the change is correct:
-              - Mark the PR ready for review: `gh pr ready ${PR_NUM}`
-              - Post a final PR comment summarizing what changed.
-            Do NOT merge the PR yourself — leave that to the maintainers.
+            ### Stop here
+            Do NOT write any code, make any commits beyond the empty scaffold
+            commit, mark the PR ready, or do any further work on the issue or PR
+            in this run. Keep the PR open as a draft so a human can drive
+            iteration.
 
             ### Rules
-            - Stay within the scope of the issue. If you discover a separate problem,
-              note it in a PR comment but do not fix it in this PR.
-            - Do not push directly to main. All work goes through the PR branch.
-            - If you hit a blocker you cannot resolve, post a comment on the PR
-              explaining what's blocking you and stop — do not force a bad fix.
+            - Do not push directly to main.
+            - Do not make real code changes in this workflow.
+            - Do not close the PR or the issue.
+            - If any step above fails, post a single comment on the issue
+              explaining what went wrong and stop.
           additional_permissions: |
             actions: read
