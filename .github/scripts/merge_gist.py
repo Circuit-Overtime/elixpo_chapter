@@ -60,7 +60,7 @@ def llm_summarize(title, body, files):
         f"Changed files:\n{chr(10).join(files)}"
     )
     payload = {
-        "model": LLM_MODEL,
+        "model": LLM_MODEL_CHAT,
         "messages": [
             {
                 "role": "system",

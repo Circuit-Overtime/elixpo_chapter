@@ -5,7 +5,16 @@ Single source of truth for all CI workflows and scripts.
 
 # ── LLM ─────────────────────────────────────────────
 LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
-LLM_MODEL = "claude-fast"
+
+# Task-specific model routing. Code work gets the dedicated coder model;
+# everything else uses a cheap-but-capable general model.
+LLM_MODEL_CODE = "qwen-coder"     # code gen, code review (claude-code-action default)
+LLM_MODEL_CHAT = "gemini-fast"    # triage, summaries, descriptions, comments
+LLM_MODEL_THINKING = "gemini-fast"  # reasoning-heavy steps in the router
+LLM_MODEL_SEARCH = "gemini-search"  # web search (only when needed)
+
+# Back-compat alias — scripts that haven't been migrated still import LLM_MODEL.
+LLM_MODEL = LLM_MODEL_CHAT
 
 # ── Repository ──────────────────────────────────────
 REPO = "elixpo/accounts.elixpo"

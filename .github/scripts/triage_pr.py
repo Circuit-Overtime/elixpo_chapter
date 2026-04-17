@@ -93,7 +93,7 @@ def call_llm(title: str, body: str, files: list[str]) -> dict:
     )
 
     payload = {
-        "model": LLM_MODEL,
+        "model": LLM_MODEL_CHAT,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},

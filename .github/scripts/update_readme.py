@@ -16,7 +16,7 @@ import urllib.request
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ci_config import (
     LLM_API_URL,
-    LLM_MODEL,
+    LLM_MODEL_CHAT,
     PROJECT_DESCRIPTION,
     PROJECT_NAME,
 )
@@ -156,7 +156,7 @@ def call_llm(pr_title: str, pr_body: str, changed_files: list[str], readme: str)
     )
 
     payload = {
-        "model": LLM_MODEL,
+        "model": LLM_MODEL_CHAT,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},

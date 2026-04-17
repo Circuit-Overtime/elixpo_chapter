@@ -60,7 +60,7 @@ def safe_api(endpoint, method="GET", data=None, headers=None, description=""):
 def call_llm(system_prompt, user_message):
     """Call the Pollinations LLM endpoint with JSON response format."""
     payload = {
-        "model": LLM_MODEL,
+        "model": LLM_MODEL_CHAT,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},

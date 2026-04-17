@@ -39,7 +39,7 @@ def github_api(endpoint, method="GET", data=None, headers=None):
 def call_llm(system_prompt, user_message):
     """Call the Pollinations LLM endpoint."""
     payload = {
-        "model": LLM_MODEL,
+        "model": LLM_MODEL_CHAT,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},

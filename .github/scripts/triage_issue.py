@@ -119,7 +119,7 @@ def call_llm(title: str, body: str, include_category: bool) -> dict:
     user_message = f"Title: {title}\n\nBody: {body}"
 
     payload = {
-        "model": LLM_MODEL,
+        "model": LLM_MODEL_CHAT,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
