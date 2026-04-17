@@ -147,7 +147,7 @@ jobs:
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           trigger_phrase: "@elixpoo"
-          branch_prefix: "elixpo"
+          branch_prefix: "elixpo/"
           claude_args: |
             --system-prompt "You are elixpo, a developer on the Elixpo team. Never mention Claude, Claude Code, AI, or LLMs — you are just a team member. Be casual, concise, and human. Use bullet points. No verbose explanations. Focus on security, correctness, edge cases, and project conventions.
 
@@ -269,3 +269,52 @@ jobs:
             - Follow existing project conventions (biome config, tsconfig, neighbouring code style)."
           additional_permissions: |
             actions: read
+
+      # ─────────────────────────────────────────────────────────────────
+      # Post-guard: if the bot committed to a branch but didn't open a PR,
+      # open one here. This ensures the PR always ends up in the issue's
+      # Development tab (via "Fixes #N" in the body) regardless of whether
+      # the model remembered to run `gh pr create`.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Ensure PR exists for any new elixpo/* branch
+        if: steps.whitelist.outputs.authorized == 'true' && github.event_name == 'issue_comment' && !github.event.issue.pull_request
+        env:
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          set -e
+
+          # Find the most recent elixpo/* branch for this issue
+          BRANCH=$(gh api "repos/$REPO/branches?per_page=100" --paginate \
+            --jq ".[] | select(.name | startswith(\"elixpo/\") and contains(\"issue-$ISSUE_NUMBER\")) | .name" \
+            | head -1)
+
+          if [ -z "$BRANCH" ]; then
+            echo "No elixpo/issue-$ISSUE_NUMBER-* branch found — nothing to do."
+            exit 0
+          fi
+          echo "Found branch: $BRANCH"
+
+          # Skip if a PR already exists for that branch
+          PR_EXISTS=$(gh pr list --repo "$REPO" --head "$BRANCH" --state all --json number --jq 'length')
+          if [ "$PR_EXISTS" -gt 0 ]; then
+            echo "PR already exists for $BRANCH, nothing to do."
+            exit 0
+          fi
+
+          # Build PR body with Fixes #N so it attaches to the issue's Dev tab
+          COMMITS=$(gh api "repos/$REPO/compare/main...$BRANCH" --jq '.commits | map("- " + .commit.message | split("\n")[0]) | join("\n")')
+          PR_BODY="Fixes #$ISSUE_NUMBER"$'\n\n'"### Summary"$'\n'"Opened by @elixpoo in response to [issue #$ISSUE_NUMBER](../issues/$ISSUE_NUMBER)."$'\n\n'"### Commits"$'\n'"$COMMITS"
+
+          PR_URL=$(gh pr create --repo "$REPO" \
+            --head "$BRANCH" --base main \
+            --title "[ELIXPO] $ISSUE_TITLE" \
+            --body "$PR_BODY")
+          echo "Opened PR: $PR_URL"
+
+          # Post a comment on the issue pointing to the new PR
+          PR_NUM=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
+            --body "Opened #$PR_NUM with the changes."

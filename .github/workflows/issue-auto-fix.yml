@@ -229,3 +229,47 @@ jobs:
               went wrong and stop.
           additional_permissions: |
             actions: read
+
+      # ─────────────────────────────────────────────────────────────────
+      # Post-guard: ensure a PR exists for the branch the bot created,
+      # linked to the issue via "Fixes #N" so it appears in the
+      # Development tab.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Ensure PR exists for any new elixpo/* branch
+        if: steps.whitelist.outputs.authorized == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          set -e
+
+          BRANCH=$(gh api "repos/$REPO/branches?per_page=100" --paginate \
+            --jq ".[] | select(.name | startswith(\"elixpo/\") and contains(\"issue-$ISSUE_NUMBER\")) | .name" \
+            | head -1)
+
+          if [ -z "$BRANCH" ]; then
+            echo "No elixpo/issue-$ISSUE_NUMBER-* branch found — nothing to do."
+            exit 0
+          fi
+          echo "Found branch: $BRANCH"
+
+          PR_EXISTS=$(gh pr list --repo "$REPO" --head "$BRANCH" --state all --json number --jq 'length')
+          if [ "$PR_EXISTS" -gt 0 ]; then
+            echo "PR already exists for $BRANCH, nothing to do."
+            exit 0
+          fi
+
+          COMMITS=$(gh api "repos/$REPO/compare/main...$BRANCH" --jq '.commits | map("- " + .commit.message | split("\n")[0]) | join("\n")')
+          PR_BODY="Fixes #$ISSUE_NUMBER"$'\n\n'"### Summary"$'\n'"Opened by @elixpoo in response to [issue #$ISSUE_NUMBER](../issues/$ISSUE_NUMBER)."$'\n\n'"### Commits"$'\n'"$COMMITS"
+
+          PR_URL=$(gh pr create --repo "$REPO" \
+            --head "$BRANCH" --base main \
+            --title "[ELIXPO] $ISSUE_TITLE" \
+            --body "$PR_BODY")
+          echo "Opened PR: $PR_URL"
+
+          PR_NUM=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
+            --body "Opened #$PR_NUM with the changes."
