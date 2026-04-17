@@ -337,6 +337,9 @@ jobs:
                 # Verify you are NOT on main:
                 test \"\$(git rev-parse --abbrev-ref HEAD)\" != \"main\" || exit 1
 
+              Step 1b: attach the ELIXPO label to the issue so the board reflects that the bot is working on it:
+                gh issue edit <n> --add-label ELIXPO
+
               Step 2: post a short plan comment on the issue.
               Step 3: make the code changes.
               Step 4: run biome and fix any lint/format issues BEFORE committing:
@@ -507,6 +510,9 @@ jobs:
           PR_NUM=$(echo "$PR_URL" | grep -oE '[0-9]+$')
           gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
             --body "Opened #$PR_NUM with the changes."
+
+          # Attach the ELIXPO label so the board reflects bot involvement.
+          gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label ELIXPO || true
 
       # ─────────────────────────────────────────────────────────────────
       # Failure fallback: if claude-code-action or any preceding step
