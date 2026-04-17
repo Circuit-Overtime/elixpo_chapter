@@ -19,11 +19,15 @@ on:
 
 jobs:
   elixpo:
+    # Skip if the triggering actor is elixpoo itself — the bot must never
+    # respond to its own mentions (loop prevention).
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@elixpoo')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@elixpoo')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@elixpoo')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@elixpoo') || contains(github.event.issue.title, '@elixpoo')))
+      github.actor != 'elixpoo' && (
+        (github.event_name == 'issue_comment' && github.event.comment.user.login != 'elixpoo' && contains(github.event.comment.body, '@elixpoo')) ||
+        (github.event_name == 'pull_request_review_comment' && github.event.comment.user.login != 'elixpoo' && contains(github.event.comment.body, '@elixpoo')) ||
+        (github.event_name == 'pull_request_review' && github.event.review.user.login != 'elixpoo' && contains(github.event.review.body, '@elixpoo')) ||
+        (github.event_name == 'issues' && github.event.issue.user.login != 'elixpoo' && (contains(github.event.issue.body, '@elixpoo') || contains(github.event.issue.title, '@elixpoo')))
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -173,7 +177,27 @@ jobs:
             3. Every code change must go through a pull request. If you are on 'main', STOP and create a branch.
             4. Verify the branch before pushing: 'git rev-parse --abbrev-ref HEAD' must NOT print 'main'.
 
-            You have full permission to edit issue/PR bodies, titles, and push commits to NON-main branches. All GitHub side-effects happen as @elixpoo.
+            ═══════════════════════════════════════════════════════════════
+            EDITING RIGHTS — use them liberally
+            ═══════════════════════════════════════════════════════════════
+            You have full write access to issues and PRs. As the conversation progresses, KEEP THE ISSUE/PR IN SYNC:
+
+            - Edit the ISSUE body: 'gh issue edit <n> --body \"<new>\"'
+                * Check off '- [ ]' checklist items as they are satisfied
+                * Strike through answered questions using ~~tildes~~ (keep text visible for history)
+                * Refine the Problem Statement when scope clarifies
+            - Edit the ISSUE title: 'gh issue edit <n> --title \"<new>\"'
+                * If the original title was vague and you now know what it's really about, rename it
+            - Edit the PR body: 'gh pr edit <n> --body \"<new>\"'
+                * Update the summary as changes are made
+                * Check off items in the plan section
+                * Add verification notes
+            - Edit the PR title: 'gh pr edit <n> --title \"<new>\"'
+                * Keep it accurate as scope evolves (prefixes: [ELIXPO], [fix], [feat], etc.)
+
+            Always fetch the current body/title first before editing ('gh issue view <n> --json title,body' or 'gh pr view <n> --json title,body') and apply surgical edits — don't erase prior content, refine it.
+
+            All GitHub side-effects happen as @elixpoo. You CAN push commits (to NON-main branches only).
 
             Identify which of these three modes you are in and follow the matching rules:
 

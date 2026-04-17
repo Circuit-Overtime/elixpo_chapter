@@ -22,11 +22,14 @@ on:
 
 jobs:
   ack:
+    # Skip if elixpoo itself is the actor — bot never acks its own content.
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@elixpoo') && !contains(github.event.comment.body, '> @elixpoo')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@elixpoo')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@elixpoo')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@elixpoo') || contains(github.event.issue.title, '@elixpoo')))
+      github.actor != 'elixpoo' && (
+        (github.event_name == 'issue_comment' && github.event.comment.user.login != 'elixpoo' && contains(github.event.comment.body, '@elixpoo')) ||
+        (github.event_name == 'pull_request_review_comment' && github.event.comment.user.login != 'elixpoo' && contains(github.event.comment.body, '@elixpoo')) ||
+        (github.event_name == 'pull_request_review' && github.event.review.user.login != 'elixpoo' && contains(github.event.review.body, '@elixpoo')) ||
+        (github.event_name == 'issues' && github.event.issue.user.login != 'elixpoo' && (contains(github.event.issue.body, '@elixpoo') || contains(github.event.issue.title, '@elixpoo')))
+      )
     runs-on: ubuntu-latest
     permissions:
       issues: write
