@@ -19,7 +19,9 @@ on:
 
 jobs:
   triage:
+    if: github.event.pull_request.user.login != 'elixpoo'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       pull-requests: write
       issues: write

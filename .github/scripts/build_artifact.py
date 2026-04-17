@@ -15,7 +15,6 @@ Output: .elixpo-context/context.md  (prints absolute path on success)
 import os
 import sys
 import time
-import urllib.error
 from datetime import datetime, timezone
 
 # ── Config import ──────────────────────────────────────

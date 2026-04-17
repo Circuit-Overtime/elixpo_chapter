@@ -26,6 +26,7 @@ jobs:
       github.event.comment.user.login != 'elixpoo' &&
       contains(github.event.comment.body, '@elixpoo')
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     permissions:
       issues: write
       pull-requests: write
@@ -39,6 +40,13 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -e
+
+          # Word-boundary check: contains() at the job level matches substrings
+          # like '@elixpoooo', so re-verify with a proper regex here.
+          if ! echo "$COMMENT_BODY" | grep -qE '(^|[^A-Za-z0-9_.+-])@elixpoo([^A-Za-z0-9_.+-]|$)'; then
+            echo "False positive (@elixpoo is a substring of another token), skipping."
+            exit 0
+          fi
 
           # Idempotency marker — prevents double-append on re-run
           MARKER="<!-- elixpoo-ack -->"

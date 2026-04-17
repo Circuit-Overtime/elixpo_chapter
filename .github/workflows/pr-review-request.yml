@@ -35,6 +35,7 @@ jobs:
         (github.event_name == 'issues' && github.event.issue.user.login != 'elixpoo' && (contains(github.event.issue.body, '@elixpoo') || contains(github.event.issue.title, '@elixpoo')))
       )
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: write
       pull-requests: write
@@ -64,6 +65,14 @@ jobs:
             // Strict check: lowercase '@elixpo' must be present
             if (!body.includes('@elixpoo')) {
               console.log('Strict check failed: "@elixpoo" must be lowercase.');
+              core.setOutput('authorized', 'false');
+              return;
+            }
+
+            // Word-boundary check: reject cases where @elixpoo is a substring
+            // of a longer token (e.g. @elixpoooo, @elixpoo-bot).
+            if (!/(^|[^A-Za-z0-9_.+-])@elixpoo([^A-Za-z0-9_.+-]|$)/.test(body)) {
+              console.log('@elixpoo substring only, not a real mention — skipping.');
               core.setOutput('authorized', 'false');
               return;
             }
