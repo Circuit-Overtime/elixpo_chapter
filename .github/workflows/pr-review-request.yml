@@ -182,6 +182,42 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ secrets.CI_AGENT_TOKEN }}
 
+      # ─────────────────────────────────────────────────────────────────
+      # Pull shared Claude assets (agents + hooks + config) from
+      # elixpo/claudeOps.elixpo so every repo's bot has the same skills.
+      # Update once there → applies to all 15 repos on next run.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Pull claudeops skills
+        if: steps.whitelist.outputs.authorized == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: elixpo/claudeOps.elixpo
+          ref: main
+          token: ${{ secrets.CI_AGENT_TOKEN }}
+          path: .claudeops-src
+          sparse-checkout: |
+            agents
+            hooks
+            config
+          sparse-checkout-cone-mode: false
+
+      - name: Wire claudeops skills into .claude/
+        if: steps.whitelist.outputs.authorized == 'true'
+        run: |
+          mkdir -p .claude
+          if [ -d .claudeops-src/agents ]; then
+            cp -r .claudeops-src/agents .claude/agents
+            echo "Wired $(ls .claude/agents | wc -l) agents from claudeops"
+          fi
+          if [ -d .claudeops-src/hooks ]; then
+            cp -r .claudeops-src/hooks .claude/hooks
+            echo "Wired $(ls .claude/hooks | wc -l) hooks from claudeops"
+          fi
+          if [ -f .claudeops-src/config/hooks.json ] && [ ! -f .claude/hooks.json ]; then
+            cp .claudeops-src/config/hooks.json .claude/hooks.json
+            echo "Wired hooks.json from claudeops"
+          fi
+
       - uses: anthropics/claude-code-action@v1
         if: steps.whitelist.outputs.authorized == 'true'
         env:
@@ -224,6 +260,35 @@ jobs:
                If you are editing an existing PR, check out that PR's branch first — never main.
             3. Every code change must go through a pull request. If you are on 'main', STOP and create a branch.
             4. Verify the branch before pushing: 'git rev-parse --abbrev-ref HEAD' must NOT print 'main'.
+
+            ═══════════════════════════════════════════════════════════════
+            EDITING RIGHTS — use them liberally
+            ═══════════════════════════════════════════════════════════════
+            ═══════════════════════════════════════════════════════════════
+            AVAILABLE SUBAGENTS (from .claude/agents/)
+            ═══════════════════════════════════════════════════════════════
+            These specialized agents are pulled from elixpo/claudeOps.elixpo at runtime and are callable via the Task tool:
+
+            - architect — system design, cross-cutting impact analysis
+            - brancher — git branching / rebase strategy
+            - breaker — adversarial edge-case probing
+            - design-critic — UX / API shape review
+            - fuzzer — input fuzzing / boundary analysis
+            - judge — final go/no-go with tradeoff summary
+            - prism — parallel-perspective analysis
+            - questioner — produce clarifying questions for vague asks
+            - red-team — security-focused adversarial review
+            - refiner — tighten prose / PR descriptions / comments
+            - researcher — deep investigation of a topic
+            - specwriter — produce a spec from requirements
+            - test-auditor — review test coverage + quality
+            - ui-architect — UI structure and component breakdown
+            - wirer — connect components / APIs
+
+            Use them liberally for specialized tasks instead of doing everything yourself. Example:
+            - @elixpoo asks 'review security on this PR' → delegate to red-team
+            - Issue description vague → delegate to questioner
+            - Writing PR description → delegate to refiner
 
             ═══════════════════════════════════════════════════════════════
             EDITING RIGHTS — use them liberally

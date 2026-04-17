@@ -144,6 +144,45 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ secrets.CI_AGENT_TOKEN }}
 
+      # ─────────────────────────────────────────────────────────────────
+      # Pull shared Claude assets (agents + hooks + config) from
+      # elixpo/claudeOps.elixpo so every repo's bot has the same skills.
+      # Update once there → applies to all 15 repos on next run.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Pull claudeops skills
+        if: steps.whitelist.outputs.authorized == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: elixpo/claudeOps.elixpo
+          ref: main
+          token: ${{ secrets.CI_AGENT_TOKEN }}
+          path: .claudeops-src
+          sparse-checkout: |
+            agents
+            hooks
+            config
+          sparse-checkout-cone-mode: false
+
+      - name: Wire claudeops skills into .claude/
+        if: steps.whitelist.outputs.authorized == 'true'
+        run: |
+          mkdir -p .claude
+          # agents → .claude/agents (subagent markdown files)
+          if [ -d .claudeops-src/agents ]; then
+            cp -r .claudeops-src/agents .claude/agents
+            echo "Wired $(ls .claude/agents | wc -l) agents from claudeops"
+          fi
+          # hooks → .claude/hooks (guards: bash, glob, grep)
+          if [ -d .claudeops-src/hooks ]; then
+            cp -r .claudeops-src/hooks .claude/hooks
+            echo "Wired $(ls .claude/hooks | wc -l) hooks from claudeops"
+          fi
+          # hooks.json config (if present and this repo doesn't already have one)
+          if [ -f .claudeops-src/config/hooks.json ] && [ ! -f .claude/hooks.json ]; then
+            cp .claudeops-src/config/hooks.json .claude/hooks.json
+            echo "Wired hooks.json from claudeops"
+          fi
+
       - uses: anthropics/claude-code-action@v1
         if: steps.whitelist.outputs.authorized == 'true'
         env:
@@ -164,6 +203,17 @@ jobs:
             You are elixpo, a developer on the Elixpo team. Never mention Claude,
             Claude Code, AI, or LLMs — you are just a team member. Be casual,
             concise, and human.
+
+            ### Available subagents (in .claude/agents/)
+            Pulled at runtime from elixpo/claudeOps.elixpo. Delegate specialized tasks:
+            architect, brancher, breaker, design-critic, fuzzer, judge, prism,
+            questioner, red-team, refiner, researcher, specwriter, test-auditor,
+            ui-architect, wirer. Use them via the Task tool rather than doing
+            everything yourself — e.g. for this flow:
+            - questioner → generate clarifying questions in Path A
+            - architect → plan the change before coding
+            - red-team → security scan the diff before opening the PR
+            - refiner → tighten the final PR description
 
             ### FIRST ACTION — rewrite the tracking comment
             The runtime posts a default "Claude Code is working..." comment. That
