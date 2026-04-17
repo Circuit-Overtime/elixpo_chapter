@@ -22,6 +22,10 @@ from ci_config import *  # noqa: F401,F403
 # The event payload is stale if issue_description.py has already rewritten
 # the body in an earlier step. We fetch them fresh from the GitHub API below.
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
+# PROJECT_TOKEN is a PAT with 'project' scope — required for writing to
+# org-level Project V2 boards. Falls back to GITHUB_TOKEN if unset (which
+# will fail on project writes, but lets the rest of the script run).
+PROJECT_TOKEN = os.environ.get("PROJECT_TOKEN") or GITHUB_TOKEN
 POLLINATIONS_KEY = os.environ.get("POLLINATIONS_KEY", "")
 ISSUE_NUMBER = os.environ["ISSUE_NUMBER"]
 ISSUE_AUTHOR = os.environ["ISSUE_AUTHOR"]
@@ -64,11 +68,15 @@ def github_rest(method: str, path: str, body: dict | None = None) -> dict:
 
 
 def github_graphql(query: str) -> dict:
-    """Make an authenticated GitHub GraphQL call."""
+    """Make an authenticated GitHub GraphQL call using the PROJECT_TOKEN.
+
+    Uses PROJECT_TOKEN (a PAT with `project` scope) rather than the default
+    GITHUB_TOKEN, because GITHUB_TOKEN cannot write to org-level Project V2.
+    """
     url = "https://api.github.com/graphql"
     data = json.dumps({"query": query}).encode()
     req = urllib.request.Request(url, data=data, method="POST")
-    req.add_header("Authorization", f"Bearer {GITHUB_TOKEN}")
+    req.add_header("Authorization", f"Bearer {PROJECT_TOKEN}")
     req.add_header("Content-Type", "application/json")
     with urllib.request.urlopen(req) as resp:
         result = json.loads(resp.read().decode())
@@ -225,31 +233,6 @@ def set_single_select_field(
     github_graphql(mutation)
 
 
-# ── Comment helper ─────────────────────────────────────────────────────────
-def post_comment(
-    issue_number: str,
-    category: str,
-    priority: str,
-    summary: str,
-    project_url: str,
-    assigned_to: str | None,
-) -> None:
-    """Post the triage result as a comment on the issue."""
-    lines = [
-        f"**Triage**: {category} | **Priority**: {priority}",
-        f"Project: {project_url}",
-        summary,
-    ]
-    if assigned_to:
-        lines.append(f"Assigned to @{assigned_to}")
-    body = "\n".join(lines)
-    github_rest(
-        "POST",
-        f"/repos/{REPO}/issues/{issue_number}/comments",
-        {"body": body},
-    )
-
-
 # ── Main ───────────────────────────────────────────────────────────────────
 def main() -> None:
     print(f"=== Issue Triage: #{ISSUE_NUMBER} ===")
@@ -327,7 +310,6 @@ def main() -> None:
         category = "Support"
         project = PROJECTS["Support"]
 
-    project_url = project.get("url", "")
     priority_option_id = project["priority_options"].get(priority)
     if priority_option_id is None:
         print(
@@ -373,20 +355,6 @@ def main() -> None:
         add_labels(ISSUE_NUMBER, [cat_label, pri_label])
     except Exception as exc:
         print(f"[warn] Label application failed: {exc}")
-
-    # ── Step 6: Post triage comment ───────────────────────────────────────
-    print("Posting triage comment...")
-    try:
-        post_comment(
-            ISSUE_NUMBER,
-            category,
-            priority,
-            summary,
-            project_url,
-            ISSUE_AUTHOR if is_org_member else None,
-        )
-    except Exception as exc:
-        print(f"[warn] Comment post failed: {exc}")
 
     print("=== Triage complete ===")
 

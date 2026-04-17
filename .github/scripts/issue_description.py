@@ -97,21 +97,16 @@ def fallback_body(title):
     """Basic template used when the LLM response is malformed."""
     return (
         "## Problem Statement\n"
-        f"An issue was opened titled \"{title}\" without a detailed description. "
-        "The reporter likely wants this addressed, but the specifics need to be "
-        "clarified by the issue author or a maintainer before work can begin.\n\n"
+        f"{title}\n\n"
         "## Todo's\n"
-        "- Clarify the intended behavior or scope with the issue author\n"
-        "- Identify the affected files or components in the codebase\n"
-        "- Draft an implementation or fix plan\n"
-        "- Implement the change\n"
-        "- Add or update tests as appropriate\n\n"
+        "- Scope the change\n"
+        "- Identify affected files\n"
+        "- Implement\n"
+        "- Add tests\n\n"
         "## Checklist\n"
-        "- [ ] Problem scope confirmed with the reporter\n"
-        "- [ ] Affected files identified\n"
-        "- [ ] Implementation reviewed\n"
-        "- [ ] Tests pass locally and in CI\n"
-        "- [ ] Documentation updated if behavior changed\n"
+        "- [ ] Implementation complete\n"
+        "- [ ] Tests pass\n"
+        "- [ ] Documentation updated\n"
     )
 
 
@@ -151,22 +146,20 @@ def main():
 
     # 5. Call the LLM
     system_prompt = (
-        f"You are an issue description writer for {PROJECT_NAME} ({PROJECT_DESCRIPTION}).\n"
-        "Someone opened an issue with only a title and no body. Generate a structured\n"
-        "issue description based on the title and the repo context provided.\n\n"
-        "Output must follow this exact markdown structure:\n\n"
+        f"You are writing an issue description for {PROJECT_NAME} ({PROJECT_DESCRIPTION}).\n"
+        "The reporter left only a title. Infer the concrete problem and write a decisive, "
+        "technical description — no hedging, no filler, no phrases like 'likely wants' or "
+        "'needs to be clarified'. State the problem as a fact. Reference real files, "
+        "components, or paths from the repo context when possible.\n\n"
+        "Output EXACTLY this markdown structure (no preamble, no closing text):\n\n"
         "## Problem Statement\n"
-        "{2-4 sentences describing what the user likely wants based on the title}\n\n"
+        "<2-3 sentences stating the concrete problem or goal. Direct, technical, factual.>\n\n"
         "## Todo's\n"
-        "- {specific actionable task 1}\n"
-        "- {specific actionable task 2}\n"
-        "- {3-5 tasks total, reference real files/components from the repo context if possible}\n\n"
+        "- <specific actionable task referencing real files/components>\n"
+        "- <3-5 tasks total, concrete and decisive>\n\n"
         "## Checklist\n"
-        "- [ ] {verification item 1}\n"
-        "- [ ] {verification item 2}\n"
-        "- [ ] {3-5 items total — things that should be tested/verified before closing}\n\n"
-        "Be specific and reference real parts of the codebase when the context provides them.\n"
-        "Do not add any preamble or closing text. Output ONLY the markdown structure above."
+        "- [ ] <verification item>\n"
+        "- [ ] <3-5 items — what must be true before closing>"
     )
 
     user_message = f"Issue title: {title}\n\nRepo context:\n{context}"
@@ -193,21 +186,6 @@ def main():
         print(f"Updated body of issue #{issue_number}")
     except Exception as e:
         print(f"Failed to update issue body: {e}")
-        return
-
-    # 8. Post a notice comment
-    try:
-        github_api(
-            f"/repos/{repo}/issues/{issue_number}/comments",
-            method="POST",
-            data={
-                "body": "I've drafted a structured description based on the title. "
-                        "Feel free to edit it as needed."
-            },
-        )
-        print(f"Posted notice comment on issue #{issue_number}")
-    except Exception as e:
-        print(f"Failed to post comment: {e}")
 
 
 if __name__ == "__main__":
