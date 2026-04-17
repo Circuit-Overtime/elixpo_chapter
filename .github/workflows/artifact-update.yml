@@ -6,6 +6,11 @@
 
 name: Update Repo Context Artifact
 
+# Only keep the latest run — older pushes don't need their artifacts rebuilt.
+concurrency:
+  group: artifact-update
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
@@ -14,6 +19,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:

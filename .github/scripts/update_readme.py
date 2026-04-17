@@ -10,16 +10,17 @@ import os
 import re
 import sys
 import urllib.error
-import urllib.request
 
 # ── Config import ──────────────────────────────────────────────────────────
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ci_config import (
-    LLM_API_URL,
+    CORE_PATHS,
     LLM_MODEL_CHAT,
     PROJECT_DESCRIPTION,
     PROJECT_NAME,
 )
+from _common import github_rest, call_llm, parse_llm_json
 
 # ── Environment variables ──────────────────────────────────────────────────
 AGENT_TOKEN = os.environ["AGENT_TOKEN"]
@@ -32,23 +33,9 @@ MAJOR_KEYWORDS = re.compile(
     r"\b(breaking|major|redesign|migration)\b", re.IGNORECASE
 )
 
-# ── Paths that are considered core auth/OAuth ──────────────────────────────
-CORE_AUTH_PREFIXES = ("src/app/api/auth/", "src/lib/auth/")
-
-
-# ── HTTP helpers ───────────────────────────────────────────────────────────
-def github_rest(method: str, path: str, body: dict | None = None) -> dict:
-    """Make an authenticated GitHub REST API call."""
-    url = f"https://api.github.com{path}"
-    data = json.dumps(body).encode() if body else None
-    req = urllib.request.Request(url, data=data, method=method)
-    req.add_header("Authorization", f"Bearer {AGENT_TOKEN}")
-    req.add_header("Accept", "application/vnd.github+json")
-    req.add_header("X-GitHub-Api-Version", "2022-11-28")
-    if data:
-        req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read().decode())
+# ── Core paths (per-repo, from ci_config.CORE_PATHS) ──────────────────────
+# Changes touching these prefixes increase the major-change score.
+CORE_AUTH_PREFIXES = tuple(CORE_PATHS)
 
 
 # ── PR data ────────────────────────────────────────────────────────────────
@@ -130,7 +117,7 @@ def fetch_readme() -> str:
 
 
 # ── LLM call ──────────────────────────────────────────────────────────────
-def call_llm(pr_title: str, pr_body: str, changed_files: list[str], readme: str) -> dict:
+def analyze_readme(pr_title: str, pr_body: str, changed_files: list[str], readme: str) -> dict:
     """Ask the LLM whether the README needs updating. Returns parsed JSON."""
     system_prompt = (
         f"You are a technical writer. A major change was merged into "
@@ -155,29 +142,8 @@ def call_llm(pr_title: str, pr_body: str, changed_files: list[str], readme: str)
         + f"\n\n### Current README.md:\n```\n{readme[:4000]}\n```"
     )
 
-    payload = {
-        "model": LLM_MODEL_CHAT,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ],
-        "response_format": {"type": "json_object"},
-    }
-
-    headers = {"Content-Type": "application/json", "User-Agent": "elixpo-ci/1.0"}
-    if POLLINATIONS_KEY:
-        headers["Authorization"] = f"Bearer {POLLINATIONS_KEY.strip()}"
-
-    data = json.dumps(payload).encode()
-    req = urllib.request.Request(LLM_API_URL, data=data, method="POST")
-    for k, v in headers.items():
-        req.add_header(k, v)
-
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        result = json.loads(resp.read().decode())
-
-    content = result["choices"][0]["message"]["content"]
-    return json.loads(content)
+    content = call_llm(LLM_MODEL_CHAT, system_prompt, user_message, json_mode=True)
+    return parse_llm_json(content)
 
 
 # ── Actions ────────────────────────────────────────────────────────────────
@@ -252,7 +218,7 @@ def main() -> None:
 
     print("Calling LLM for README analysis...")
     try:
-        llm_result = call_llm(pr_title, pr_body, changed_files, readme)
+        llm_result = analyze_readme(pr_title, pr_body, changed_files, readme)
         print(f"LLM response: {json.dumps(llm_result)}")
     except Exception as exc:
         print(f"[error] LLM call failed: {exc}")

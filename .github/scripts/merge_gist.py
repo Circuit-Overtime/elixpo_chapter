@@ -8,17 +8,16 @@ Env vars: AGENT_TOKEN (@elixpoo PAT with repo + gist scope),
           POLLINATIONS_KEY, PR_NUMBER, REPO
 """
 
-import json
 import os
 import re
 import sys
-import urllib.error
-import urllib.request
 from datetime import datetime, timezone
 
 # ── Config import ──────────────────────────────────────
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ci_config import *  # noqa: F401, F403
+from _common import github_rest, call_llm
 
 # ── Environment ────────────────────────────────────────
 # AGENT_TOKEN is a PAT for @elixpoo with both repo and gist scopes — used for
@@ -28,30 +27,8 @@ POLLINATIONS_KEY = os.environ["POLLINATIONS_KEY"]
 PR_NUMBER = os.environ["PR_NUMBER"]
 REPO = os.environ.get("REPO", globals().get("REPO", ""))
 
-GITHUB_API = "https://api.github.com"
-
 
 # ── Helpers ────────────────────────────────────────────
-def api_request(url, method="GET", data=None, token=AGENT_TOKEN, accept="application/vnd.github+json"):
-    """Make a GitHub/Gist API request via urllib."""
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": accept,
-        "User-Agent": "elixpo-ci",
-    }
-    if data is not None:
-        headers["Content-Type"] = "application/json"
-    body = json.dumps(data).encode() if data is not None else None
-    req = urllib.request.Request(url, data=body, headers=headers, method=method)
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            return json.loads(resp.read().decode())
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode() if exc.fp else ""
-        print(f"[ERROR] {method} {url} -> {exc.code}: {detail}", file=sys.stderr)
-        raise
-
-
 def llm_summarize(title, body, files):
     """Call Pollinations LLM for a changelog summary. Returns plain text."""
     user_content = (
@@ -59,35 +36,13 @@ def llm_summarize(title, body, files):
         f"PR Body:\n{body or '(no description)'}\n\n"
         f"Changed files:\n{chr(10).join(files)}"
     )
-    payload = {
-        "model": LLM_MODEL_CHAT,
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are a changelog writer. Write a 2-3 sentence summary "
-                    "of this PR for a public changelog. Be concise and factual. "
-                    "No markdown formatting."
-                ),
-            },
-            {"role": "user", "content": user_content},
-        ],
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {POLLINATIONS_KEY.strip()}",
-        "User-Agent": "elixpo-ci/1.0",
-    }
-    req = urllib.request.Request(
-        LLM_API_URL,
-        data=json.dumps(payload).encode(),
-        headers=headers,
-        method="POST",
+    system_prompt = (
+        "You are a changelog writer. Write a 2-3 sentence summary "
+        "of this PR for a public changelog. Be concise and factual. "
+        "No markdown formatting."
     )
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            result = json.loads(resp.read().decode())
-        return result["choices"][0]["message"]["content"].strip()
+        return call_llm(LLM_MODEL_CHAT, system_prompt, user_content).strip()
     except Exception as exc:
         print(f"[WARN] LLM call failed ({exc}), falling back to PR title", file=sys.stderr)
         return title
@@ -96,16 +51,16 @@ def llm_summarize(title, body, files):
 # ── Part 1: Gist Digest ──────────────────────────────
 def run_gist_digest():
     """Fetch PR data, generate summary, create/update gist, comment on PR."""
-    pr_url = f"{GITHUB_API}/repos/{REPO}/pulls/{PR_NUMBER}"
-    pr = api_request(pr_url)
+    pr = github_rest("GET", f"/repos/{REPO}/pulls/{PR_NUMBER}")
 
     title = pr["title"]
     body = pr.get("body") or ""
     merged_by = pr.get("merged_by", {}).get("login", "unknown")
 
     # Fetch changed files
-    files_url = f"{pr_url}/files?per_page=100"
-    files_data = api_request(files_url)
+    files_data = github_rest(
+        "GET", f"/repos/{REPO}/pulls/{PR_NUMBER}/files?per_page=100"
+    )
     filenames = [f["filename"] for f in files_data]
 
     # LLM summary
@@ -125,19 +80,21 @@ def run_gist_digest():
         f"\n---\n\n"
     )
 
-    gist_id = globals().get("GIST_ID", "")
+    # Prefer GIST_ID from env (populated from repo variable CI_GIST_ID by the
+    # workflow) so it persists across runs. Fall back to ci_config.py value.
+    gist_id = os.environ.get("GIST_ID", "").strip() or globals().get("GIST_ID", "")
     gist_filename = f"{PROJECT_NAME}-changelog.md"
     gist_url = ""
 
     if gist_id:
         # Update existing gist — prepend new entry
-        gist_data = api_request(f"{GITHUB_API}/gists/{gist_id}")
+        gist_data = github_rest("GET", f"/gists/{gist_id}")
         existing = gist_data["files"].get(gist_filename, {}).get("content", "")
         new_content = entry + existing
-        api_request(
-            f"{GITHUB_API}/gists/{gist_id}",
-            method="PATCH",
-            data={"files": {gist_filename: {"content": new_content}}},
+        github_rest(
+            "PATCH",
+            f"/gists/{gist_id}",
+            {"files": {gist_filename: {"content": new_content}}},
         )
         gist_url = gist_data["html_url"]
         print(f"Gist updated: {gist_url}")
@@ -148,22 +105,17 @@ def run_gist_digest():
             "public": True,
             "files": {gist_filename: {"content": entry}},
         }
-        created = api_request(
-            f"{GITHUB_API}/gists",
-            method="POST",
-            data=gist_payload,
-        )
+        created = github_rest("POST", "/gists", gist_payload)
         gist_url = created["html_url"]
         new_gist_id = created["id"]
         print(f"GIST_ID={new_gist_id}")
         print(f"Gist created: {gist_url}")
 
     # Comment on the merged PR
-    comment_url = f"{GITHUB_API}/repos/{REPO}/issues/{PR_NUMBER}/comments"
-    api_request(
-        comment_url,
-        method="POST",
-        data={"body": f"\U0001f4cb Changelog updated: {gist_url}"},
+    github_rest(
+        "POST",
+        f"/repos/{REPO}/issues/{PR_NUMBER}/comments",
+        {"body": f"\U0001f4cb Changelog updated: {gist_url}"},
     )
     print(f"Commented on PR #{PR_NUMBER}")
 
@@ -171,8 +123,7 @@ def run_gist_digest():
 # ── Part 2: Close Linked Issues ──────────────────────
 def find_linked_issues():
     """Scan PR title, body, branch, and commits for linked issue numbers."""
-    pr_url = f"{GITHUB_API}/repos/{REPO}/pulls/{PR_NUMBER}"
-    pr = api_request(pr_url)
+    pr = github_rest("GET", f"/repos/{REPO}/pulls/{PR_NUMBER}")
 
     sources = [
         pr.get("title") or "",
@@ -181,9 +132,10 @@ def find_linked_issues():
     ]
 
     # Fetch commit messages
-    commits_url = f"{pr_url}/commits?per_page=100"
     try:
-        commits = api_request(commits_url)
+        commits = github_rest(
+            "GET", f"/repos/{REPO}/pulls/{PR_NUMBER}/commits?per_page=100"
+        )
         for c in commits:
             msg = c.get("commit", {}).get("message", "")
             sources.append(msg)
@@ -215,9 +167,9 @@ def close_linked_issues():
         return
 
     for num in sorted(issue_numbers):
-        issue_url = f"{GITHUB_API}/repos/{REPO}/issues/{num}"
+        issue_path = f"/repos/{REPO}/issues/{num}"
         try:
-            issue = api_request(issue_url)
+            issue = github_rest("GET", issue_path)
         except Exception as exc:
             print(f"[WARN] Could not fetch issue #{num}: {exc}", file=sys.stderr)
             continue
@@ -232,10 +184,10 @@ def close_linked_issues():
 
         # Close the issue
         try:
-            api_request(
-                issue_url,
-                method="PATCH",
-                data={"state": "closed", "state_reason": "completed"},
+            github_rest(
+                "PATCH",
+                issue_path,
+                {"state": "closed", "state_reason": "completed"},
             )
             print(f"Closed issue #{num}")
         except Exception as exc:
@@ -244,10 +196,10 @@ def close_linked_issues():
 
         # Post comment
         try:
-            api_request(
-                f"{issue_url}/comments",
-                method="POST",
-                data={"body": f"Closed by PR #{PR_NUMBER}"},
+            github_rest(
+                "POST",
+                f"{issue_path}/comments",
+                {"body": f"Closed by PR #{PR_NUMBER}"},
             )
         except Exception as exc:
             print(f"[WARN] Failed to comment on issue #{num}: {exc}", file=sys.stderr)

@@ -1,6 +1,11 @@
 # Biome lint + format check on PRs to main
 name: Biome
 
+# Rapid force-pushes shouldn't queue up a backlog of lints.
+concurrency:
+  group: biome-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     branches: [main]

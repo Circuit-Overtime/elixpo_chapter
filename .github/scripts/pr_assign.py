@@ -11,77 +11,23 @@ Env vars: AGENT_TOKEN, POLLINATIONS_KEY, PR_NUMBER, PR_TITLE, PR_BODY,
 
 import os
 import sys
-import json
-import urllib.request
-import urllib.error
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ci_config import *
+from _common import github_rest, call_llm, parse_llm_json
 
 
 DEFAULT_REVIEWER = "Circuit-Overtime"
 
 
-def github_api(endpoint, method="GET", data=None, headers=None):
-    """Make a GitHub API request. Returns parsed JSON or None on 204."""
-    url = f"https://api.github.com{endpoint}"
-    hdrs = {
-        "Authorization": f"Bearer {os.environ['AGENT_TOKEN']}",
-        "Accept": "application/vnd.github+json",
-        "User-Agent": "elixpo-ci",
-    }
-    if headers:
-        hdrs.update(headers)
-    body = json.dumps(data).encode() if data is not None else None
-    req = urllib.request.Request(url, data=body, headers=hdrs, method=method)
-    with urllib.request.urlopen(req) as resp:
-        content = resp.read().decode()
-        if resp.status == 204 or not content:
-            return None
-        return json.loads(content)
-
-
-def safe_api(endpoint, method="GET", data=None, headers=None, description=""):
-    """Call github_api and swallow errors (print + continue)."""
+def safe_api(method, path, data=None, description=""):
+    """Call github_rest and swallow errors (print + continue)."""
     try:
-        return github_api(endpoint, method=method, data=data, headers=headers)
-    except urllib.error.HTTPError as e:
-        err_body = ""
-        try:
-            err_body = e.read().decode()
-        except Exception:
-            pass
-        print(f"API error ({description or endpoint}): {e.code} {e.reason} — {err_body}")
+        return github_rest(method, path, data)
     except Exception as e:
-        print(f"API error ({description or endpoint}): {e}")
+        print(f"API error ({description or path}): {e}")
     return None
-
-
-def call_llm(system_prompt, user_message):
-    """Call the Pollinations LLM endpoint with JSON response format."""
-    payload = {
-        "model": LLM_MODEL_CHAT,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ],
-        "temperature": 0.2,
-        "response_format": {"type": "json_object"},
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {os.environ['POLLINATIONS_KEY'].strip()}",
-        "User-Agent": "elixpo-ci/1.0",
-    }
-    req = urllib.request.Request(
-        LLM_API_URL,
-        data=json.dumps(payload).encode(),
-        headers=headers,
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=90) as resp:
-        result = json.loads(resp.read().decode())
-    return result["choices"][0]["message"]["content"]
 
 
 def pick_reviewer(pr_title, pr_body, changed_files):
@@ -112,8 +58,8 @@ def pick_reviewer(pr_title, pr_body, changed_files):
     )
 
     try:
-        raw = call_llm(system_prompt, user_message)
-        parsed = json.loads(raw)
+        raw = call_llm(LLM_MODEL_CHAT, system_prompt, user_message, temperature=0.2, json_mode=True)
+        parsed = parse_llm_json(raw)
         reviewer = parsed.get("reviewer", "").strip()
         reason = parsed.get("reason", "").strip() or "selected by router"
         if reviewer not in MAINTAINERS:
@@ -138,9 +84,9 @@ def main():
 
     # 1. Always assign the PR author.
     safe_api(
+        "POST",
         f"/repos/{repo}/issues/{pr_number}/assignees",
-        method="POST",
-        data={"assignees": [pr_author]},
+        {"assignees": [pr_author]},
         description="assign PR author",
     )
     print(f"Assigned PR #{pr_number} to author @{pr_author}")
@@ -149,15 +95,16 @@ def main():
     if pr_author in ORG_MEMBERS:
         print("Org member opened PR, only assigning author")
         safe_api(
+            "POST",
             f"/repos/{repo}/issues/{pr_number}/comments",
-            method="POST",
-            data={"body": f"PR assigned to @{pr_author}"},
+            {"body": f"PR assigned to @{pr_author}"},
             description="author-only comment",
         )
         return
 
     # 3. External contributor — fetch changed files and pick a reviewer.
     files_data = safe_api(
+        "GET",
         f"/repos/{repo}/pulls/{pr_number}/files?per_page=100",
         description="list changed files",
     ) or []
@@ -170,9 +117,9 @@ def main():
     # 4. Request review (PR author cannot review their own PR).
     if chosen != pr_author:
         safe_api(
+            "POST",
             f"/repos/{repo}/pulls/{pr_number}/requested_reviewers",
-            method="POST",
-            data={"reviewers": [chosen]},
+            {"reviewers": [chosen]},
             description="request reviewer",
         )
         print(f"Requested review from @{chosen}")
@@ -181,9 +128,9 @@ def main():
 
     # 5. Add the chosen maintainer as an assignee too.
     safe_api(
+        "POST",
         f"/repos/{repo}/issues/{pr_number}/assignees",
-        method="POST",
-        data={"assignees": [chosen]},
+        {"assignees": [chosen]},
         description="assign maintainer",
     )
     print(f"Added @{chosen} as assignee")
@@ -194,9 +141,9 @@ def main():
         f"Review requested from @{chosen}: {reason}"
     )
     safe_api(
+        "POST",
         f"/repos/{repo}/issues/{pr_number}/comments",
-        method="POST",
-        data={"body": comment_body},
+        {"body": comment_body},
         description="summary comment",
     )
     print("Posted summary comment")

@@ -123,7 +123,16 @@ jobs:
 
           # Start router
           bunx @musistudio/claude-code-router start &
-          until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
+          # Wait up to 60s for the router to be ready — fail fast if bunx
+          # couldn't install or exited.
+          for i in $(seq 1 120); do
+            curl -s http://localhost:3456 >/dev/null && break
+            sleep 0.5
+            if [ "$i" = "120" ]; then
+              echo "::error::claude-code-router did not come up within 60s"
+              exit 1
+            fi
+          done
         env:
           GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
 
@@ -146,7 +155,7 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
-          branch_prefix: "elixpo"
+          branch_prefix: "elixpo/"
           prompt: |
             Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
             Reporter: @${{ github.event.issue.user.login }}
@@ -335,6 +344,9 @@ jobs:
           cc @$ISSUE_AUTHOR — opened by @elixpoo in response to issue #$ISSUE_NUMBER.
           EOF
           )
+          # Strip YAML heredoc indent — otherwise body renders as a code block
+          # and "Fixes #N" won't auto-link / close the issue.
+          PR_BODY=$(printf '%s\n' "$PR_BODY" | sed 's/^          //')
 
           PR_URL=$(gh pr create --repo "$REPO" \
             --head "$BRANCH" --base main \

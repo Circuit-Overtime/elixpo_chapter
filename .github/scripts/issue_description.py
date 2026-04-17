@@ -8,58 +8,15 @@ Optional: CONTEXT_PATH (path to downloaded repo-context artifact's context.md)
 
 import os
 import sys
-import json
-import urllib.request
-import urllib.error
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ci_config import *
+from _common import github_rest, call_llm
 
 
 MIN_BODY_CHARS = 30
 CONTEXT_MAX_CHARS = 6000
-
-
-def github_api(endpoint, method="GET", data=None, headers=None):
-    """Make a GitHub API request."""
-    url = f"https://api.github.com{endpoint}"
-    hdrs = {
-        "Authorization": f"Bearer {os.environ['AGENT_TOKEN']}",
-        "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "elixpo-ci",
-    }
-    if headers:
-        hdrs.update(headers)
-    body = json.dumps(data).encode() if data else None
-    req = urllib.request.Request(url, data=body, headers=hdrs, method=method)
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read().decode()) if resp.status != 204 else None
-
-
-def call_llm(system_prompt, user_message):
-    """Call the Pollinations LLM endpoint."""
-    payload = {
-        "model": LLM_MODEL_CHAT,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ],
-        "temperature": 0.3,
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {os.environ['POLLINATIONS_KEY'].strip()}",
-        "User-Agent": "elixpo-ci/1.0",
-    }
-    req = urllib.request.Request(
-        LLM_API_URL,
-        data=json.dumps(payload).encode(),
-        headers=headers,
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        result = json.loads(resp.read().decode())
-    return result["choices"][0]["message"]["content"]
 
 
 def needs_generating(body):
@@ -137,7 +94,7 @@ def main():
     print(f"Checking issue #{issue_number} in {repo} (author: @{author})")
 
     # 1. Fetch the issue
-    issue = github_api(f"/repos/{repo}/issues/{issue_number}")
+    issue = github_rest("GET", f"/repos/{repo}/issues/{issue_number}")
     title = issue.get("title", "") or ""
     body = issue.get("body", "") or ""
 
@@ -194,7 +151,7 @@ def main():
 
     generated = ""
     try:
-        generated = call_llm(system_prompt, user_message)
+        generated = call_llm(LLM_MODEL_CHAT, system_prompt, user_message, temperature=0.3)
         print(f"LLM returned {len(generated)} chars")
     except Exception as e:
         print(f"LLM call failed: {e}")
@@ -206,10 +163,10 @@ def main():
 
     # 7. Update the issue body
     try:
-        github_api(
+        github_rest(
+            "PATCH",
             f"/repos/{repo}/issues/{issue_number}",
-            method="PATCH",
-            data={"body": generated},
+            {"body": generated},
         )
         print(f"Updated body of issue #{issue_number}")
     except Exception as e:

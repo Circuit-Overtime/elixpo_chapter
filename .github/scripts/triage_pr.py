@@ -15,15 +15,20 @@ Env vars: AGENT_TOKEN, POLLINATIONS_KEY, PR_NUMBER, PR_AUTHOR, REPO
 
 import json
 import os
-import re
 import sys
-import urllib.error
-import urllib.parse
-import urllib.request
 
 # ── Config import ──────────────────────────────────────────────────────────
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ci_config import *  # noqa: F401,F403
+from _common import (
+    github_rest,
+    github_graphql,
+    call_llm,
+    parse_llm_json,
+    ensure_label,
+    add_labels,
+)
 
 # ── Environment ────────────────────────────────────────────────────────────
 AGENT_TOKEN = os.environ["AGENT_TOKEN"]
@@ -44,36 +49,8 @@ LABEL_COLORS = {
 }
 
 
-# ── HTTP helpers ───────────────────────────────────────────────────────────
-def github_rest(method: str, path: str, body: dict | None = None) -> dict:
-    url = f"https://api.github.com{path}"
-    data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(url, data=data, method=method)
-    req.add_header("Authorization", f"Bearer {AGENT_TOKEN}")
-    req.add_header("Accept", "application/vnd.github+json")
-    req.add_header("X-GitHub-Api-Version", "2022-11-28")
-    if data is not None:
-        req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req) as resp:
-        raw = resp.read().decode()
-    return json.loads(raw) if raw else {}
-
-
-def github_graphql(query: str) -> dict:
-    url = "https://api.github.com/graphql"
-    data = json.dumps({"query": query}).encode()
-    req = urllib.request.Request(url, data=data, method="POST")
-    req.add_header("Authorization", f"Bearer {AGENT_TOKEN}")
-    req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req) as resp:
-        result = json.loads(resp.read().decode())
-    if "errors" in result:
-        print(f"[warn] GraphQL errors: {result['errors']}")
-    return result
-
-
 # ── LLM call ───────────────────────────────────────────────────────────────
-def call_llm(title: str, body: str, files: list[str]) -> dict:
+def triage_llm(title: str, body: str, files: list[str]) -> dict:
     system_prompt = (
         f"You are a pull request triage bot for {PROJECT_NAME} ({PROJECT_DESCRIPTION}).\n"
         "Categorize this PR based on its title, body, and changed files.\n\n"
@@ -92,34 +69,8 @@ def call_llm(title: str, body: str, files: list[str]) -> dict:
         f"Changed files:\n{files_preview}"
     )
 
-    payload = {
-        "model": LLM_MODEL_CHAT,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ],
-        "response_format": {"type": "json_object"},
-    }
-
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "elixpo-ci/1.0",
-    }
-    if POLLINATIONS_KEY:
-        headers["Authorization"] = f"Bearer {POLLINATIONS_KEY.strip()}"
-
-    req = urllib.request.Request(LLM_API_URL, data=json.dumps(payload).encode(), method="POST")
-    for k, v in headers.items():
-        req.add_header(k, v)
-
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        result = json.loads(resp.read().decode())
-
-    content = result["choices"][0]["message"]["content"].strip()
-    fence = re.match(r"^```(?:json)?\s*(.*?)\s*```$", content, re.DOTALL)
-    if fence:
-        content = fence.group(1)
-    return json.loads(content)
+    content = call_llm(LLM_MODEL_CHAT, system_prompt, user_message, json_mode=True)
+    return parse_llm_json(content)
 
 
 # ── PR / Project V2 helpers ───────────────────────────────────────────────
@@ -140,43 +91,20 @@ def fetch_pr_files(pr_number: str, limit: int = 100) -> list[str]:
 
 
 def add_to_project(project_id: str, pr_node_id: str) -> str | None:
-    mutation = f"""
-    mutation {{
-      addProjectV2ItemById(input: {{projectId: "{project_id}", contentId: "{pr_node_id}"}}) {{
-        item {{ id }}
-      }}
-    }}
+    mutation = """
+    mutation($projectId: ID!, $contentId: ID!) {
+      addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+        item { id }
+      }
+    }
     """
-    result = github_graphql(mutation)
+    result = github_graphql(
+        mutation, {"projectId": project_id, "contentId": pr_node_id}
+    )
     try:
         return result["data"]["addProjectV2ItemById"]["item"]["id"]
     except (KeyError, TypeError):
         return None
-
-
-# ── Label helpers ──────────────────────────────────────────────────────────
-def ensure_label(name: str, color: str, description: str = "") -> None:
-    try:
-        github_rest("GET", f"/repos/{REPO}/labels/{urllib.parse.quote(name, safe='')}")
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
-            print(f"  Creating label '{name}'")
-            github_rest(
-                "POST",
-                f"/repos/{REPO}/labels",
-                {"name": name, "color": color, "description": description},
-            )
-        else:
-            raise
-
-
-def add_labels(pr_number: str, labels: list[str]) -> None:
-    # PRs share the issues endpoint for labels
-    github_rest(
-        "POST",
-        f"/repos/{REPO}/issues/{pr_number}/labels",
-        {"labels": labels},
-    )
 
 
 # ── Main ───────────────────────────────────────────────────────────────────
@@ -200,7 +128,7 @@ def main() -> None:
         try:
             files = fetch_pr_files(PR_NUMBER)
             print(f"Changed files: {len(files)}")
-            llm_result = call_llm(pr_title, pr_body, files)
+            llm_result = triage_llm(pr_title, pr_body, files)
             print(f"LLM response: {json.dumps(llm_result)}")
             raw_category = llm_result.get("category", DEFAULT_CATEGORY)
             if raw_category in CATEGORIES:
@@ -228,8 +156,8 @@ def main() -> None:
     cat_label = category.upper()
     print(f"Applying label: [{cat_label}]")
     try:
-        ensure_label(cat_label, LABEL_COLORS.get(cat_label, "ededed"), f"Category: {category}")
-        add_labels(PR_NUMBER, [cat_label])
+        ensure_label(REPO, cat_label, LABEL_COLORS.get(cat_label, "ededed"), f"Category: {category}")
+        add_labels(REPO, PR_NUMBER, [cat_label])
     except Exception as exc:
         print(f"[warn] Label application failed: {exc}")
 

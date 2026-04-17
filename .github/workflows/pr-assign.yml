@@ -1,13 +1,20 @@
+# Assign PR author + LLM-pick a reviewer for external contributors.
 name: PR Assign
+
+# Share concurrency group with pr-triage so they serialize on the same PR.
+concurrency:
+  group: pr-open-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, reopened, ready_for_review]
     branches: [main]
 
 jobs:
   assign:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       pull-requests: write
       issues: write

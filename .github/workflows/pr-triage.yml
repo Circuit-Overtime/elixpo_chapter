@@ -6,9 +6,15 @@
 
 name: PR Triage
 
+# Share concurrency group with pr-assign so they run sequentially on the
+# same PR and don't race on label creation / assignees.
+concurrency:
+  group: pr-open-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 on:
   pull_request:
-    types: [opened]
+    types: [opened, reopened, ready_for_review]
     branches: [main]
 
 jobs:

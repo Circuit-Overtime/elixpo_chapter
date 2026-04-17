@@ -125,3 +125,12 @@ GIST_ID = ""  # filled after first merge creates it
 # ── Agent ───────────────────────────────────────────
 AGENT_TRIGGER = "@elixpoo"
 AGENT_LABEL = "ELIXPO"
+
+# ── README update heuristics ────────────────────────
+# Path prefixes that count as "core" for this repo — changes touching these
+# are more likely to warrant a README update. Override per-repo.
+CORE_PATHS = (
+    "app/api/auth/",
+    "src/lib/",
+    "app/dashboard/",
+)

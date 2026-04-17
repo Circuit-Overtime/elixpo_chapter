@@ -7,15 +7,21 @@ into the matching per-category GitHub Project V2 with labels and a comment.
 
 import json
 import os
-import re
 import sys
 import urllib.error
-import urllib.parse
-import urllib.request
 
 # ── Config import ──────────────────────────────────────────────────────────
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ci_config import *  # noqa: F401,F403
+from _common import (
+    github_rest,
+    github_graphql,
+    call_llm,
+    parse_llm_json,
+    ensure_label,
+    add_labels,
+)
 
 # ── Environment variables ──────────────────────────────────────────────────
 # Note: ISSUE_TITLE and ISSUE_BODY are intentionally NOT read from env vars.
@@ -48,44 +54,8 @@ LABEL_COLORS = {
 }
 
 
-# ── HTTP helpers ───────────────────────────────────────────────────────────
-def github_rest(method: str, path: str, body: dict | None = None) -> dict:
-    """Make an authenticated GitHub REST API call."""
-    url = f"https://api.github.com{path}"
-    data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(url, data=data, method=method)
-    req.add_header("Authorization", f"Bearer {AGENT_TOKEN}")
-    req.add_header("Accept", "application/vnd.github+json")
-    req.add_header("X-GitHub-Api-Version", "2022-11-28")
-    if data is not None:
-        req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req) as resp:
-        raw = resp.read().decode()
-    if not raw:
-        return {}
-    return json.loads(raw)
-
-
-def github_graphql(query: str) -> dict:
-    """Make an authenticated GitHub GraphQL call using AGENT_TOKEN.
-
-    AGENT_TOKEN is a PAT for @elixpoo with `project` scope, required for
-    writing to org-level Project V2 boards.
-    """
-    url = "https://api.github.com/graphql"
-    data = json.dumps({"query": query}).encode()
-    req = urllib.request.Request(url, data=data, method="POST")
-    req.add_header("Authorization", f"Bearer {AGENT_TOKEN}")
-    req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req) as resp:
-        result = json.loads(resp.read().decode())
-    if "errors" in result:
-        print(f"[warn] GraphQL errors: {result['errors']}")
-    return result
-
-
 # ── LLM call ───────────────────────────────────────────────────────────────
-def call_llm(title: str, body: str, include_category: bool) -> dict:
+def triage_llm(title: str, body: str, include_category: bool) -> dict:
     """Ask the Pollinations LLM to triage the issue. Returns parsed JSON."""
     if include_category:
         system_prompt = (
@@ -117,61 +87,8 @@ def call_llm(title: str, body: str, include_category: bool) -> dict:
         )
 
     user_message = f"Title: {title}\n\nBody: {body}"
-
-    payload = {
-        "model": LLM_MODEL_CHAT,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ],
-        "response_format": {"type": "json_object"},
-    }
-
-    headers = {"Content-Type": "application/json", "User-Agent": "elixpo-ci/1.0"}
-    if POLLINATIONS_KEY:
-        headers["Authorization"] = f"Bearer {POLLINATIONS_KEY.strip()}"
-
-    data = json.dumps(payload).encode()
-    req = urllib.request.Request(LLM_API_URL, data=data, method="POST")
-    for k, v in headers.items():
-        req.add_header(k, v)
-
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        result = json.loads(resp.read().decode())
-
-    content = result["choices"][0]["message"]["content"]
-    # Tolerate responses wrapped in code fences
-    content = content.strip()
-    fence = re.match(r"^```(?:json)?\s*(.*?)\s*```$", content, re.DOTALL)
-    if fence:
-        content = fence.group(1)
-    return json.loads(content)
-
-
-# ── Label helpers ──────────────────────────────────────────────────────────
-def ensure_label(name: str, color: str, description: str = "") -> None:
-    """Create a label if it doesn't already exist."""
-    try:
-        github_rest("GET", f"/repos/{REPO}/labels/{urllib.parse.quote(name, safe='')}")
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
-            print(f"  Creating label '{name}'")
-            github_rest(
-                "POST",
-                f"/repos/{REPO}/labels",
-                {"name": name, "color": color, "description": description},
-            )
-        else:
-            raise
-
-
-def add_labels(issue_number: str, labels: list[str]) -> None:
-    """Add labels to an issue."""
-    github_rest(
-        "POST",
-        f"/repos/{REPO}/issues/{issue_number}/labels",
-        {"labels": labels},
-    )
+    content = call_llm(LLM_MODEL_CHAT, system_prompt, user_message, json_mode=True)
+    return parse_llm_json(content)
 
 
 # ── Issue / Project V2 helpers ─────────────────────────────────────────────
@@ -199,14 +116,16 @@ def assign_issue(issue_number: str, assignee: str) -> None:
 
 def add_to_project(project_id: str, issue_node_id: str) -> str:
     """Add an issue to a Project V2 board. Returns the project item ID."""
-    mutation = f"""
-    mutation {{
-      addProjectV2ItemById(input: {{projectId: "{project_id}", contentId: "{issue_node_id}"}}) {{
-        item {{ id }}
-      }}
-    }}
+    mutation = """
+    mutation($projectId: ID!, $contentId: ID!) {
+      addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+        item { id }
+      }
+    }
     """
-    result = github_graphql(mutation)
+    result = github_graphql(
+        mutation, {"projectId": project_id, "contentId": issue_node_id}
+    )
     try:
         return result["data"]["addProjectV2ItemById"]["item"]["id"]
     except (KeyError, TypeError) as exc:
@@ -217,34 +136,44 @@ def set_single_select_field(
     project_id: str, item_id: str, field_id: str, option_id: str
 ) -> None:
     """Set a single-select field value on a project item."""
-    mutation = f"""
-    mutation {{
-      updateProjectV2ItemFieldValue(input: {{
-        projectId: "{project_id}",
-        itemId: "{item_id}",
-        fieldId: "{field_id}",
-        value: {{singleSelectOptionId: "{option_id}"}}
-      }}) {{
-        projectV2Item {{ id }}
-      }}
-    }}
+    mutation = """
+    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+      updateProjectV2ItemFieldValue(input: {
+        projectId: $projectId,
+        itemId: $itemId,
+        fieldId: $fieldId,
+        value: {singleSelectOptionId: $optionId}
+      }) {
+        projectV2Item { id }
+      }
+    }
     """
-    github_graphql(mutation)
+    github_graphql(
+        mutation,
+        {
+            "projectId": project_id,
+            "itemId": item_id,
+            "fieldId": field_id,
+            "optionId": option_id,
+        },
+    )
 
 
 def set_issue_type(issue_node_id: str, issue_type_id: str) -> None:
     """Set the GitHub Issue Type (sidebar 'Type' field) via GraphQL."""
-    mutation = f"""
-    mutation {{
-      updateIssueIssueType(input: {{
-        issueId: "{issue_node_id}",
-        issueTypeId: "{issue_type_id}"
-      }}) {{
-        issue {{ id }}
-      }}
-    }}
+    mutation = """
+    mutation($issueId: ID!, $issueTypeId: ID!) {
+      updateIssueIssueType(input: {
+        issueId: $issueId,
+        issueTypeId: $issueTypeId
+      }) {
+        issue { id }
+      }
+    }
     """
-    github_graphql(mutation)
+    github_graphql(
+        mutation, {"issueId": issue_node_id, "issueTypeId": issue_type_id}
+    )
 
 
 # ── Main ───────────────────────────────────────────────────────────────────
@@ -278,7 +207,7 @@ def main() -> None:
 
     try:
         print("Calling LLM for triage...")
-        llm_result = call_llm(
+        llm_result = triage_llm(
             issue_title, issue_body, include_category=not is_org_member
         )
         print(f"LLM response: {json.dumps(llm_result)}")
@@ -373,12 +302,12 @@ def main() -> None:
 
     try:
         ensure_label(
-            cat_label, LABEL_COLORS.get(cat_label, "ededed"), f"Category: {category}"
+            REPO, cat_label, LABEL_COLORS.get(cat_label, "ededed"), f"Category: {category}"
         )
         ensure_label(
-            pri_label, LABEL_COLORS.get(pri_label, "ededed"), f"Priority: {priority}"
+            REPO, pri_label, LABEL_COLORS.get(pri_label, "ededed"), f"Priority: {priority}"
         )
-        add_labels(ISSUE_NUMBER, [cat_label, pri_label])
+        add_labels(REPO, ISSUE_NUMBER, [cat_label, pri_label])
     except Exception as exc:
         print(f"[warn] Label application failed: {exc}")
 
