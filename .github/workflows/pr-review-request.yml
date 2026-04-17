@@ -274,6 +274,35 @@ jobs:
               4. Update the PR description if the scope changed: 'gh pr edit <n> --body \"...\"'.
               5. Post a single summary comment on the PR describing what you changed.
 
+            Sub-mode B4 — User asks to fix a failing CI check / Action:
+              You have 'actions: read' permission and can pull logs from any workflow run. Use this to diagnose and fix failures.
+
+              1. Find the failing run. Options:
+                 - User referenced a run URL or run ID explicitly → use that.
+                 - User just says 'fix the failing biome check' / 'fix CI' → list recent runs on this PR:
+                     gh run list --branch \"\$(gh pr view --json headRefName -q .headRefName)\" --limit 20
+                     # Or filter by workflow name:
+                     gh run list --workflow biome.yml --branch \"\$BRANCH\" --limit 5
+
+              2. Read the logs of the failing run:
+                     gh run view <run_id> --log-failed     # Only failed step output
+                     gh run view <run_id> --log            # Full log
+                     gh api repos/<owner>/<repo>/actions/runs/<run_id>/logs    # raw download if needed
+
+              3. Parse the failure. Typical patterns:
+                 - Biome: 'Found N errors' with file paths and rule names → run 'npx biome check <files>' locally to reproduce if needed.
+                 - TypeScript: 'Type error: ...' with file:line — read the file around that line.
+                 - Tests: stack traces pointing to spec files.
+                 - Build: look for 'Error:' or the first non-zero exit.
+
+              4. Fix the root cause on the PR branch. Prefer the minimal change that makes the check pass. Do NOT disable rules or add ignore comments unless the user explicitly asks.
+
+              5. Commit and push to the PR branch. CI will re-run on push.
+
+              6. Comment on the PR: 'Pushed fix for the <check> failure — <1-line explanation>. Re-running CI.' Reference the run you fixed: 'Related run: <url>'.
+
+              If the failure is environmental (flaky test, runner issue, network) and not a code problem, say so and ask if the user wants you to rerun the job instead of patching code.
+
             ═══════════════════════════════════════════════════════════════
             Common rules
             ═══════════════════════════════════════════════════════════════
