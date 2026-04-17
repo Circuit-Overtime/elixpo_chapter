@@ -34,16 +34,17 @@ DEFAULT_CATEGORY = "Support"
 DEFAULT_PRIORITY = "Medium"
 DEFAULT_SUMMARY = "Awaiting manual triage"
 
-# ── Label colors (hex, no #) ──────────────────────────────────────────────
+# ── Label colors (hex, no #) — all labels are UPPERCASE ──────────────────
 LABEL_COLORS = {
-    "feature": "a2eeef",
-    "bugs": "d73a4a",
-    "support": "cfd3d7",
-    "dev": "7057ff",
-    "urgent": "b60205",
-    "high": "d93f0b",
-    "medium": "fbca04",
-    "low": "0e8a16",
+    "FEATURE": "a2eeef",
+    "BUGS": "d73a4a",
+    "SUPPORT": "cfd3d7",
+    "DEV": "7057ff",
+    "URGENT": "b60205",
+    "HIGH": "d93f0b",
+    "MEDIUM": "fbca04",
+    "LOW": "0e8a16",
+    "ELIXPO": "0e8a16",
 }
 
 
