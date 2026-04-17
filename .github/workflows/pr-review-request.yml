@@ -129,15 +129,15 @@ jobs:
 
           # Pull models from ci_config.py — single source of truth
           cd config-src
+          AGENT_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_AGENT; print(LLM_MODEL_AGENT)")
           CODE_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_CODE; print(LLM_MODEL_CODE)")
-          CHAT_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_CHAT; print(LLM_MODEL_CHAT)")
           THINK_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_THINKING; print(LLM_MODEL_THINKING)")
           SEARCH_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_SEARCH; print(LLM_MODEL_SEARCH)")
           cd ..
 
-          # NOTE: default → CHAT_MODEL (follows orchestration instructions).
-          # background → CODE_MODEL (handles delegated code-heavy subagent work).
-          echo "Router models: default=$CHAT_MODEL, background=$CODE_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
+          # NOTE: default → AGENT_MODEL (claude-fast — proven agentic follower).
+          # background → CODE_MODEL (qwen-coder for delegated code-heavy subagents).
+          echo "Router models: default=$AGENT_MODEL, background=$CODE_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
 
           mkdir -p $HOME/.claude-code-router
           cat > $HOME/.claude-code-router/config.json <<EOF
@@ -150,11 +150,11 @@ jobs:
                 "name": "pollinations",
                 "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
                 "api_key": "${POLLINATIONS_TOKEN}",
-                "models": ["${CHAT_MODEL}", "${CODE_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"]
+                "models": ["${AGENT_MODEL}", "${CODE_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"]
               }
             ],
             "Router": {
-              "default": "pollinations,${CHAT_MODEL}",
+              "default": "pollinations,${AGENT_MODEL}",
               "background": "pollinations,${CODE_MODEL}",
               "thinking": "pollinations,${THINK_MODEL}",
               "webSearch": "pollinations,${SEARCH_MODEL}"

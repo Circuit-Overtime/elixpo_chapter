@@ -8,14 +8,20 @@ LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
 
 # Task-specific model routing.
 #
-# IMPORTANT: the main conversation / orchestration thread needs a model that
-# FOLLOWS nested prompt instructions — editing tracking comments mid-task,
-# running tools in sequence, etc. Code-specialized models (qwen-coder) skip
-# orchestration and jump straight to "write code", breaking the stage-by-stage
-# progress updates. Keep qwen-coder for pure code work delegated via subagents.
-LLM_MODEL_CODE = "qwen-coder"       # delegated code work (subagent / background)
-LLM_MODEL_CHAT = "gemini-fast"      # main orchestration — instruction-follower
-LLM_MODEL_THINKING = "gemini-fast"  # reasoning-heavy steps
+# HARD-WON LESSON: claude-code-router does NOT reliably remap arbitrary model
+# names. claude-code-action internally calls 'claude-sonnet-4-6' / 'claude-haiku-4-5'
+# — if the router's default is a non-Claude model, the rename usually fails and
+# the request passes through to Pollinations using Sonnet (expensive + slow,
+# and the model doesn't reliably follow our stage-by-stage prompt).
+#
+# Rule: the agentic workflows (pr-review-request, issue-auto-fix) MUST use a
+# Claude-family model as default — claude-fast is the cheapest that still follows
+# the nested orchestration prompt. Python scripts talk directly to Pollinations
+# (no router), so they can use anything cheap.
+LLM_MODEL_AGENT = "claude-fast"     # router default — agentic workflows (proven)
+LLM_MODEL_CODE = "qwen-coder"       # background subagent route for code-heavy work
+LLM_MODEL_CHAT = "gemini-fast"      # Python scripts: triage, descriptions, summaries
+LLM_MODEL_THINKING = "claude-fast"  # router "thinking" route
 LLM_MODEL_SEARCH = "gemini-search"  # web search (only when needed)
 
 # Back-compat alias — scripts that haven't been migrated still import LLM_MODEL.
