@@ -1,17 +1,18 @@
-# Updates the repo-context artifact on every PR merge to main.
-# This artifact is used by AI-powered CI (issue description, PR review, etc.)
-# to give the LLM full context of what the repo is and what's changed recently.
+# Creates/updates the repo-context artifact used by AI-powered CI.
+# Triggers:
+#   - push to main      → updates after every commit (and PR merge)
+#   - workflow_dispatch → manual trigger for initial seed
+# The artifact is fetched by issue-triage, pr-review, etc. for LLM context.
 
 name: Update Repo Context Artifact
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       contents: read
