@@ -26,3 +26,6 @@ wrangler.toml
 .env.local
 __pycache__/
 *.pyc
+
+# Repo-context artifact (generated in CI, uploaded as GH Actions artifact)
+.elixpo-context/

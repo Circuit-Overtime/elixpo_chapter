@@ -38,3 +38,4 @@ jobs:
           path: .elixpo-context/
           retention-days: 90
           overwrite: true
+          include-hidden-files: true

@@ -1,9 +1,7 @@
-# Biome lint + format check on push and PRs
+# Biome lint + format check on PRs to main
 name: Biome
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 

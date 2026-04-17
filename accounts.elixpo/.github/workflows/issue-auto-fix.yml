@@ -1,0 +1,212 @@
+# Elixpo Auto Code — Auto-fix issues labeled "ELIXPO"
+# Trigger: Add the "ELIXPO" label to an issue
+# Whitelist: Elixpo org members (Circuit-Overtime, anwe-ch, elixpoo, ez-vivek)
+#            + elixpoo user token triggering from triage
+#
+# The bot clones the repo, analyzes the issue, and either:
+#   - Opens a PR with the fix (if code changes needed), or
+#   - Comments on the issue (if it's a question/discussion)
+
+name: Elixpo Auto Code
+
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: elixpo-auto-code-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  auto-code:
+    if: github.event.label.name == 'ELIXPO'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    env:
+      POLLINATIONS_TOKEN: ${{ secrets.CI_POLLINATIONS_KEY }}
+      AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+    steps:
+      - name: Check Authorization
+        id: whitelist
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.CI_AGENT_TOKEN }}
+          script: |
+            // Whitelist: Elixpo org members (plus elixpoo itself for bot-triggered labels)
+            const whitelist = ['Circuit-Overtime', 'anwe-ch', 'elixpoo', 'ez-vivek'];
+            const labeledBy = context.payload.sender.login;
+
+            const isAuthorized = whitelist.includes(labeledBy);
+
+            if (!isAuthorized) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'ELIXPO'
+              });
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `Sorry @${labeledBy}, only Elixpo org members can trigger Elixpo Auto Code by adding the \`ELIXPO\` label.`
+              });
+              core.setOutput('authorized', 'false');
+            } else {
+              core.setOutput('authorized', 'true');
+            }
+
+      - name: Setup Bun
+        if: steps.whitelist.outputs.authorized == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup router + eyes reaction
+        if: steps.whitelist.outputs.authorized == 'true'
+        id: setup
+        run: |
+          # Add eyes reaction to the issue
+          gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
+
+          # Router config: claude-fast via Pollinations, with thinking + web search routes
+          mkdir -p $HOME/.claude-code-router
+          cat > $HOME/.claude-code-router/config.json <<EOF
+          {
+            "LOG": false,
+            "NON_INTERACTIVE_MODE": true,
+            "API_TIMEOUT_MS": 600000,
+            "Providers": [
+              {
+                "name": "pollinations",
+                "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
+                "api_key": "${POLLINATIONS_TOKEN}",
+                "models": ["claude-fast", "perplexity-fast", "kimi"]
+              }
+            ],
+            "Router": {
+              "default": "pollinations,claude-fast",
+              "thinking": "pollinations,kimi",
+              "webSearch": "pollinations,perplexity-fast"
+            }
+          }
+          EOF
+
+          # Start router
+          bunx @musistudio/claude-code-router start &
+          until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
+        env:
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+
+      - uses: actions/checkout@v4
+        if: steps.whitelist.outputs.authorized == 'true'
+        with:
+          fetch-depth: 0
+          repository: ${{ github.repository }}
+          token: ${{ secrets.CI_AGENT_TOKEN }}
+
+      - uses: anthropics/claude-code-action@v1
+        if: steps.whitelist.outputs.authorized == 'true'
+        env:
+          ANTHROPIC_BASE_URL: http://localhost:3456
+          GIT_AUTHOR_NAME: "elixpoo"
+          GIT_AUTHOR_EMAIL: "269200728+elixpoo@users.noreply.github.com"
+          GIT_COMMITTER_NAME: "elixpoo"
+          GIT_COMMITTER_EMAIL: "269200728+elixpoo@users.noreply.github.com"
+        with:
+          anthropic_api_key: "ccr-pollinations"
+          show_full_output: true
+          github_token: ${{ secrets.CI_AGENT_TOKEN }}
+          prompt: |
+            Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+            Reporter: @${{ github.event.issue.user.login }}
+
+            You are elixpo, a developer on the Elixpo team. Never mention Claude,
+            Claude Code, AI, or LLMs — you are just a team member. Be casual,
+            concise, and human.
+
+            ### Step 0 — Read everything
+            Read the issue body + comments, and the repo layout:
+              gh issue view ${{ github.event.issue.number }} --comments
+              ls -la
+
+            ### Step 1 — Decide: is the issue clear enough to act on?
+            Judge whether the issue description + comments give you enough
+            concrete information to implement a change. Look for:
+              - A specific problem or goal stated
+              - Enough context to identify which files/behavior to change
+              - No ambiguity about intent
+
+            **Path A — UNCLEAR** (title is vague, scope missing, questions
+            unanswered):
+              1. Post a single comment on the issue tagging the reporter with
+                 the questions you need answered:
+                   gh issue comment ${{ github.event.issue.number }} \\
+                     --body "@${{ github.event.issue.user.login }} a few things
+                     to clarify before I start:
+                     - <question 1>
+                     - <question 2>
+                     Reply here and tag @elixpoo so I pick it up."
+              2. STOP. Do not open a PR. The user will re-engage by tagging
+                 @elixpoo with answers.
+
+            **Path B — CLEAR** (enough info to implement):
+              Continue to Step 2.
+
+            ### Step 2 — Post the plan on the issue
+            Before touching any code, post a plan comment on the issue so the
+            reporter sees what you intend to do:
+              gh issue comment ${{ github.event.issue.number }} --body "### Plan
+              <short 2-5 bullet breakdown of what you will change>
+              Working on this now — PR will be opened shortly."
+
+            ### Step 3 — Create the branch and do the actual work
+            1. Generate a 4-digit hex suffix for uniqueness:
+                 HEX=$(openssl rand -hex 2)
+                 BRANCH="elixpo/issue-${{ github.event.issue.number }}-${HEX}"
+                 git checkout -b "$BRANCH"
+
+            2. Make the real code changes:
+                 - Edit the files needed to implement the plan.
+                 - Keep the change minimal and focused on the issue's scope.
+                 - Follow existing project conventions (check biome config,
+                   tsconfig, neighbouring code style).
+                 - Do NOT add unrelated cleanups or refactors.
+
+            3. Commit with a clear message and push:
+                 git add -A
+                 git commit -m "<concrete summary of the change> (#${{ github.event.issue.number }})"
+                 git push -u origin "$BRANCH"
+
+            ### Step 4 — Open a ready (NOT draft) PR
+            Open a PR that is ready for review, linked to the issue so it
+            appears in the issue's Development tab:
+
+                 gh pr create \\
+                   --title "[ELIXPO] ${{ github.event.issue.title }}" \\
+                   --body $'Fixes #${{ github.event.issue.number }}\\n\\n### Summary\\n<2-3 sentences describing what you changed and why>\\n\\n### Changes\\n- <file/path>: <one-line description>\\n- <file/path>: <one-line description>\\n\\n### Verification\\n- <how you checked this works, or what the reviewer should run>' \\
+                   --head "$BRANCH" --base main
+
+                 PR_NUM=$(gh pr view --json number -q .number)
+
+            ### Step 5 — Finalize
+            1. Post a closing comment on the ISSUE pointing to the PR:
+                 gh issue comment ${{ github.event.issue.number }} --body "Opened #${PR_NUM} with the fix. Review when you get a chance."
+
+            2. STOP. Do not merge the PR — leave that to a maintainer.
+
+            ### Rules
+            - PR is READY, not draft. It must contain real, reviewable changes.
+            - Always include "Fixes #${{ github.event.issue.number }}" at the
+              top of the PR body so GitHub auto-links and auto-closes on merge.
+            - Stay within the issue's scope.
+            - Do not push to main.
+            - If any step fails, post a comment on the issue explaining what
+              went wrong and stop.
+          additional_permissions: |
+            actions: read

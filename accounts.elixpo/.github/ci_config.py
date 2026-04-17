@@ -73,6 +73,23 @@ PROJECTS = {
 CATEGORIES = list(PROJECTS.keys())
 PRIORITIES = ["Urgent", "High", "Medium", "Low"]
 
+# ── GitHub Issue Types (sidebar "Type") ─────────────
+# Org-wide issue types — fetched once with the GraphQL API.
+# We map our Project categories → these native GitHub issue types.
+ISSUE_TYPES = {
+    "Task": "IT_kwDOCZpXlc4BRtJ8",
+    "Bug": "IT_kwDOCZpXlc4BRtJ-",
+    "Feature": "IT_kwDOCZpXlc4BRtJ_",
+}
+
+# Category → Issue Type mapping
+CATEGORY_TO_TYPE = {
+    "Feature": "Feature",
+    "Bugs": "Bug",
+    "Support": "Task",
+    "Dev": "Task",
+}
+
 # ── Organization ────────────────────────────────────
 ORG_MEMBERS = ["Circuit-Overtime", "anwe-ch", "elixpoo", "ez-vivek"]
 
@@ -97,5 +114,5 @@ GIST_ACCOUNT = "elixpoo"
 GIST_ID = ""  # filled after first merge creates it
 
 # ── Agent ───────────────────────────────────────────
-AGENT_TRIGGER = "@elixpo"
-AGENT_LABEL = "elixpo"
+AGENT_TRIGGER = "@elixpoo"
+AGENT_LABEL = "ELIXPO"

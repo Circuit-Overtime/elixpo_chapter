@@ -34,16 +34,17 @@ DEFAULT_CATEGORY = "Support"
 DEFAULT_PRIORITY = "Medium"
 DEFAULT_SUMMARY = "Awaiting manual triage"
 
-# ── Label colors (hex, no #) ──────────────────────────────────────────────
+# ── Label colors (hex, no #) — all labels are UPPERCASE ──────────────────
 LABEL_COLORS = {
-    "feature": "a2eeef",
-    "bugs": "d73a4a",
-    "support": "cfd3d7",
-    "dev": "7057ff",
-    "urgent": "b60205",
-    "high": "d93f0b",
-    "medium": "fbca04",
-    "low": "0e8a16",
+    "FEATURE": "a2eeef",
+    "BUGS": "d73a4a",
+    "SUPPORT": "cfd3d7",
+    "DEV": "7057ff",
+    "URGENT": "b60205",
+    "HIGH": "d93f0b",
+    "MEDIUM": "fbca04",
+    "LOW": "0e8a16",
+    "ELIXPO": "0e8a16",
 }
 
 
@@ -231,6 +232,21 @@ def set_single_select_field(
     github_graphql(mutation)
 
 
+def set_issue_type(issue_node_id: str, issue_type_id: str) -> None:
+    """Set the GitHub Issue Type (sidebar 'Type' field) via GraphQL."""
+    mutation = f"""
+    mutation {{
+      updateIssueIssueType(input: {{
+        issueId: "{issue_node_id}",
+        issueTypeId: "{issue_type_id}"
+      }}) {{
+        issue {{ id }}
+      }}
+    }}
+    """
+    github_graphql(mutation)
+
+
 # ── Main ───────────────────────────────────────────────────────────────────
 def main() -> None:
     print(f"=== Issue Triage: #{ISSUE_NUMBER} ===")
@@ -308,6 +324,18 @@ def main() -> None:
         category = "Support"
         project = PROJECTS["Support"]
 
+    # ── Step 2a: Set native GitHub Issue Type (sidebar "Type") ────────────
+    type_name = CATEGORY_TO_TYPE.get(category, "Task")
+    type_id = ISSUE_TYPES.get(type_name)
+    if type_id:
+        print(f"Setting issue type to '{type_name}'...")
+        try:
+            set_issue_type(issue_node_id, type_id)
+        except Exception as exc:
+            print(f"[warn] Failed to set issue type: {exc}")
+    else:
+        print(f"[warn] No issue type ID for '{type_name}', skipping")
+
     priority_option_id = project["priority_options"].get(priority)
     if priority_option_id is None:
         print(
@@ -339,8 +367,8 @@ def main() -> None:
         print(f"[warn] No option ID for priority '{priority}', skipping field update")
 
     # ── Step 5: Apply labels ──────────────────────────────────────────────
-    cat_label = category.lower()
-    pri_label = priority.lower()
+    cat_label = category.upper()
+    pri_label = priority.upper()
     print(f"Applying labels: [{cat_label}, {pri_label}]")
 
     try:
