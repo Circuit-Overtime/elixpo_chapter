@@ -382,3 +382,27 @@ jobs:
           PR_NUM=$(echo "$PR_URL" | grep -oE '[0-9]+$')
           gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
             --body "Opened #$PR_NUM with the changes."
+
+      # ─────────────────────────────────────────────────────────────────
+      # Failure fallback: if claude-code-action or any preceding step
+      # errored, post a blockquote pointing to the failing run so the
+      # user knows what happened.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Post failure notice
+        if: failure() && steps.whitelist.outputs.authorized == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set +e
+
+          MSG="> Something went wrong on my end. Check the run: $RUN_URL"
+
+          if [[ "${{ github.event_name }}" == "issue_comment" ]] || [[ "${{ github.event_name }}" == "issues" ]]; then
+            gh issue comment "${{ github.event.issue.number }}" --repo "$REPO" --body "$MSG"
+          elif [[ "${{ github.event_name }}" == "pull_request_review_comment" ]]; then
+            gh pr comment "${{ github.event.pull_request.number }}" --repo "$REPO" --body "$MSG"
+          elif [[ "${{ github.event_name }}" == "pull_request_review" ]]; then
+            gh pr comment "${{ github.event.pull_request.number }}" --repo "$REPO" --body "$MSG"
+          fi
