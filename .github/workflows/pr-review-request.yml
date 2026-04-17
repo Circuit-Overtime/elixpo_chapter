@@ -230,12 +230,27 @@ jobs:
                 git add -A
                 git commit -m \"<summary> (#<n>)\"
                 git push -u origin \"\$BRANCH\"
-              Step 5: open a READY (not draft) PR linked to the issue:
-                gh pr create --title \"[ELIXPO] <title>\" \\
-                  --body 'Fixes #<n>\\n\\n### Summary\\n...\\n\\n### Changes\\n...' \\
-                  --head \"\$BRANCH\" --base main
+              Step 5: open a READY (not draft) PR linked to the issue. Use EXACTLY this body format:
+                BODY=\"Fixes #<n>
+
+                ## Changes Made
+                - <concrete bullet about change 1>
+                - <concrete bullet about change 2>
+                - <reference real file paths when relevant>
+
+                ## Checklist
+                - [ ] Code reviewed
+                - [ ] Build passes
+                - [ ] Tests pass (if applicable)
+                - [ ] Docs updated (if behavior changed)
+
+                ---
+                cc @<issue-author> — opened by @elixpoo in response to issue #<n>.\"
+
+                gh pr create --title \"[ELIXPO] <title>\" --body \"\$BODY\" --head \"\$BRANCH\" --base main
               Step 6: comment on the issue pointing to the new PR.
 
+              Tag additional org members in 'cc' lines if their expertise is needed (frontend → @ez-vivek, docs → @anwe-ch).
               NEVER skip Step 1. NEVER commit to main, even if the change is 'just one line'.
 
             Sub-mode A3 — User is asking a question about the repo/issue:
@@ -305,8 +320,29 @@ jobs:
           fi
 
           # Build PR body with Fixes #N so it attaches to the issue's Dev tab
-          COMMITS=$(gh api "repos/$REPO/compare/main...$BRANCH" --jq '.commits | map("- " + .commit.message | split("\n")[0]) | join("\n")')
-          PR_BODY="Fixes #$ISSUE_NUMBER"$'\n\n'"### Summary"$'\n'"Opened by @elixpoo in response to [issue #$ISSUE_NUMBER](../issues/$ISSUE_NUMBER)."$'\n\n'"### Commits"$'\n'"$COMMITS"
+          # Build bullet list from commit messages (first line of each)
+          CHANGES=$(gh api "repos/$REPO/compare/main...$BRANCH" \
+            --jq '.commits | map("- " + (.commit.message | split("\n")[0])) | join("\n")')
+
+          # Get issue author for cc
+          ISSUE_AUTHOR=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json author --jq '.author.login')
+
+          PR_BODY=$(cat <<EOF
+          Fixes #$ISSUE_NUMBER
+
+          ## Changes Made
+          $CHANGES
+
+          ## Checklist
+          - [ ] Code reviewed
+          - [ ] Build passes
+          - [ ] Tests pass (if applicable)
+          - [ ] Docs updated (if behavior changed)
+
+          ---
+          cc @$ISSUE_AUTHOR — opened by @elixpoo in response to issue #$ISSUE_NUMBER.
+          EOF
+          )
 
           PR_URL=$(gh pr create --repo "$REPO" \
             --head "$BRANCH" --base main \
@@ -314,7 +350,6 @@ jobs:
             --body "$PR_BODY")
           echo "Opened PR: $PR_URL"
 
-          # Post a comment on the issue pointing to the new PR
           PR_NUM=$(echo "$PR_URL" | grep -oE '[0-9]+$')
           gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
             --body "Opened #$PR_NUM with the changes."
