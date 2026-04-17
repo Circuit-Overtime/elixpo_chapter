@@ -1,0 +1,59 @@
+{
+    "formatter": {
+        "indentStyle": "space",
+        "indentWidth": 4
+    },
+    "javascript": {
+        "formatter": {
+            "quoteProperties": "preserve",
+            "quoteStyle": "double"
+        }
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "complexity": {
+                "useLiteralKeys": "off",
+                "noBannedTypes": "off"
+            },
+            "security": {
+                "noDangerouslySetInnerHtml": "off"
+            }
+        }
+    },
+    "files": {
+        "includes": [
+            "**",
+            // exclude dependencies
+            ".github/**",
+            "!**/node_modules/**",
+            "!**/dist/**",
+            "!**/build/**",
+            "!**/.next/**",
+            "!**/.cache/**",
+            "!**/out/**",
+            "!**/worker-configuration.d.ts",
+            "!**/worker-runtime.d.ts",
+            "!**/worker-bindins.d.ts",
+            "!**/better-auth.ts",
+            "!**/routeTree.gen.ts",
+            "!**/*.css"
+        ]
+    },
+    "css": {
+        "formatter": {
+            "enabled": false
+        },
+        "linter": {
+            "enabled": false
+        }
+    },
+    "json": {
+        "formatter": {
+            "enabled": false
+        },
+        "linter": {
+            "enabled": false
+        }
+    }
+}
