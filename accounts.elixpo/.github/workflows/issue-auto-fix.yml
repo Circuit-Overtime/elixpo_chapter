@@ -21,6 +21,7 @@ jobs:
   auto-code:
     if: github.event.label.name == 'ELIXPO'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: write
       pull-requests: write
@@ -67,6 +68,20 @@ jobs:
         with:
           bun-version: latest
 
+      # Checkout early so we can read .github/ci_config.py for the model config
+      - name: Checkout for config read
+        if: steps.whitelist.outputs.authorized == 'true'
+        uses: actions/checkout@v4
+        with:
+          path: config-src
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        if: steps.whitelist.outputs.authorized == 'true'
+        with:
+          python-version: "3.11"
+
       - name: Setup router + eyes reaction
         if: steps.whitelist.outputs.authorized == 'true'
         id: setup
@@ -74,7 +89,16 @@ jobs:
           # Add eyes reaction to the issue
           gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
 
-          # Router config: claude-fast via Pollinations, with thinking + web search routes
+          # Pull models from ci_config.py — single source of truth
+          cd config-src
+          CODE_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_CODE; print(LLM_MODEL_CODE)")
+          CHAT_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_CHAT; print(LLM_MODEL_CHAT)")
+          THINK_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_THINKING; print(LLM_MODEL_THINKING)")
+          SEARCH_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_SEARCH; print(LLM_MODEL_SEARCH)")
+          cd ..
+
+          echo "Router models: default=$CODE_MODEL, background=$CHAT_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
+
           mkdir -p $HOME/.claude-code-router
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
@@ -86,20 +110,30 @@ jobs:
                 "name": "pollinations",
                 "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
                 "api_key": "${POLLINATIONS_TOKEN}",
-                "models": ["claude-fast", "perplexity-fast", "kimi"]
+                "models": ["${CODE_MODEL}", "${CHAT_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"]
               }
             ],
             "Router": {
-              "default": "pollinations,claude-fast",
-              "thinking": "pollinations,kimi",
-              "webSearch": "pollinations,perplexity-fast"
+              "default": "pollinations,${CODE_MODEL}",
+              "background": "pollinations,${CHAT_MODEL}",
+              "thinking": "pollinations,${THINK_MODEL}",
+              "webSearch": "pollinations,${SEARCH_MODEL}"
             }
           }
           EOF
 
           # Start router
           bunx @musistudio/claude-code-router start &
-          until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
+          # Wait up to 60s for the router to be ready — fail fast if bunx
+          # couldn't install or exited.
+          for i in $(seq 1 120); do
+            curl -s http://localhost:3456 >/dev/null && break
+            sleep 0.5
+            if [ "$i" = "120" ]; then
+              echo "::error::claude-code-router did not come up within 60s"
+              exit 1
+            fi
+          done
         env:
           GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
 
@@ -109,6 +143,45 @@ jobs:
           fetch-depth: 0
           repository: ${{ github.repository }}
           token: ${{ secrets.CI_AGENT_TOKEN }}
+
+      # ─────────────────────────────────────────────────────────────────
+      # Pull shared Claude assets (agents + hooks + config) from
+      # elixpo/claudeOps.elixpo so every repo's bot has the same skills.
+      # Update once there → applies to all 15 repos on next run.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Pull claudeops skills
+        if: steps.whitelist.outputs.authorized == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: elixpo/claudeOps.elixpo
+          ref: main
+          token: ${{ secrets.CI_AGENT_TOKEN }}
+          path: .claudeops-src
+          sparse-checkout: |
+            agents
+            hooks
+            config
+          sparse-checkout-cone-mode: false
+
+      - name: Wire claudeops skills into .claude/
+        if: steps.whitelist.outputs.authorized == 'true'
+        run: |
+          mkdir -p .claude
+          # agents → .claude/agents (subagent markdown files)
+          if [ -d .claudeops-src/agents ]; then
+            cp -r .claudeops-src/agents .claude/agents
+            echo "Wired $(ls .claude/agents | wc -l) agents from claudeops"
+          fi
+          # hooks → .claude/hooks (guards: bash, glob, grep)
+          if [ -d .claudeops-src/hooks ]; then
+            cp -r .claudeops-src/hooks .claude/hooks
+            echo "Wired $(ls .claude/hooks | wc -l) hooks from claudeops"
+          fi
+          # hooks.json config (if present and this repo doesn't already have one)
+          if [ -f .claudeops-src/config/hooks.json ] && [ ! -f .claude/hooks.json ]; then
+            cp .claudeops-src/config/hooks.json .claude/hooks.json
+            echo "Wired hooks.json from claudeops"
+          fi
 
       - uses: anthropics/claude-code-action@v1
         if: steps.whitelist.outputs.authorized == 'true'
@@ -122,7 +195,7 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
-          branch_prefix: "elixpo"
+          branch_prefix: "elixpo/"
           prompt: |
             Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
             Reporter: @${{ github.event.issue.user.login }}
@@ -131,20 +204,76 @@ jobs:
             Claude Code, AI, or LLMs — you are just a team member. Be casual,
             concise, and human.
 
-            ### FIRST ACTION — rewrite the tracking comment
-            The runtime posts a default "Claude Code is working..." comment. That
-            phrasing is wrong for this repo. Your VERY FIRST step is to edit
-            that comment to something on-brand.
+            ### Available subagents (in .claude/agents/)
+            Pulled at runtime from elixpo/claudeOps.elixpo. Delegate specialized tasks:
+            architect, brancher, breaker, design-critic, fuzzer, judge, prism,
+            questioner, red-team, refiner, researcher, specwriter, test-auditor,
+            ui-architect, wirer. Use them via the Task tool rather than doing
+            everything yourself — e.g. for this flow:
+            - questioner → generate clarifying questions in Path A
+            - architect → plan the change before coding
+            - red-team → security scan the diff before opening the PR
+            - refiner → tighten the final PR description
 
-            1. Find the most recent comment by @elixpoo on this issue that
-               contains "Claude Code is working" or "analyze this and get back".
-                 gh issue view ${{ github.event.issue.number }} --json comments -q \
-                   '.comments | map(select(.author.login=="elixpoo" and (.body|contains("Claude Code is working")))) | last | .id'
-            2. Edit that comment with:
-                 gh api -X PATCH /repos/${{ github.repository }}/issues/comments/<id> \
+            ### FIRST ACTION — rewrite the tracking comment
+            The runtime posts a default "Claude Code is working..." comment and on
+            completion appends a "Claude finished ... [Create PR ➔]" footer with
+            "Generated with Claude Code". All of that must be stripped.
+
+            1. Find the tracking comment:
+                 COMMENT_ID=$(gh issue view ${{ github.event.issue.number }} --json comments -q \
+                   '.comments | map(select(.author.login=="elixpoo" and ((.body|contains("Claude Code is working")) or (.body|contains("Claude finished"))))) | last | .id')
+            2. Edit it with a short on-brand message:
+                 gh api -X PATCH /repos/${{ github.repository }}/issues/comments/$COMMENT_ID \
                    -f body="On it — picking this up now. Job run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            3. Keep editing THIS SAME comment with concise progress updates as
-               you go (one sentence each). Do NOT post new comments for each step.
+            3. Keep editing THIS SAME comment with stage-by-stage progress updates.
+               Do NOT post new comments. At each checkpoint below, replace the
+               body with this exact layout:
+
+                ### 🔄 Working
+                **Current step:** <what you're doing right now>
+
+                **Progress:**
+                - [x] <completed step>
+                - [ ] <current step>
+                - [ ] <upcoming step>
+
+                _Job run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}_
+
+               Required checkpoints (edit at EACH):
+                 1. Reading the issue + repo context
+                 2. Scoping the change — plan: <1-line plan>
+                 3. Asking clarifying questions (Path A) OR making changes (Path B)
+                 4. Making changes to <file paths>
+                 5. Running biome check
+                 6. Biome clean. Committing + pushing to <branch>
+                 7. Opening PR
+                 8. PR #<N> opened. Posting summary (→ FINAL ACTION)
+
+            ### FINAL ACTION — rich completion summary
+            Before returning, replace the tracking comment with this exact format:
+
+                ### ✅ Done
+                <1-2 sentence summary in plain English>
+
+                ### 📝 Changes
+                - <file path>: <what changed and why>
+                - <up to 6 bullets; omit section if no code changes were made>
+
+                ### 🔗 Links
+                - Pull request: #<PR number>
+                - Branch: `<branch name>`
+                - Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+                ### 🧪 Verification
+                - <how you validated, e.g. 'biome ci clean', 'tests pass locally'>
+                - <or: 'not verified — please review before merging'>
+
+            Update via:
+              gh api -X PATCH /repos/${{ github.repository }}/issues/comments/$COMMENT_ID \
+                -f body="$FINAL_BODY"
+
+            If the runtime re-appends "Claude finished ... Generated with Claude Code" after your edit, re-fetch the comment, strip any line containing "Claude" or "Generated with", and PATCH again. The final visible comment must contain ZERO mentions of Claude, Claude Code, AI, LLM, or "Generated with".
 
             Never say "Claude", "Claude Code", "AI", "LLM", "analyzing", "analysis".
             Speak as a teammate: "looking into this", "pushed a fix", "opened #N".
@@ -197,12 +326,21 @@ jobs:
                    tsconfig, neighbouring code style).
                  - Do NOT add unrelated cleanups or refactors.
 
-            3. Commit with a clear message and push:
+            3. Run biome and fix any lint/format issues BEFORE committing:
+                 npx @biomejs/biome check . --write 2>&1 | tee /tmp/biome.out
+                 # If biome still reports errors after --write, it means there
+                 # are rule violations it can't auto-fix. Read the output, fix
+                 # them by hand, then re-run:
+                 npx @biomejs/biome ci .
+                 # This MUST exit 0 before you commit. If it keeps failing,
+                 # fix the remaining issues in the source files.
+
+            4. Commit with a clear message and push:
                  git add -A
                  git commit -m "<concrete summary of the change> (#${{ github.event.issue.number }})"
                  git push -u origin "$BRANCH"
 
-            ### Step 4 — Open a ready (NOT draft) PR
+            ### Step 5 — Open a ready (NOT draft) PR
             Open a PR that is ready for review, linked to the issue so it
             appears in the issue's Development tab. Use EXACTLY this body format:
 
@@ -233,7 +371,7 @@ jobs:
             relevant expertise), add more 'cc @user' lines at the bottom or
             mention them in 'Changes Made' bullets.
 
-            ### Step 5 — Finalize
+            ### Step 6 — Finalize
             1. Post a closing comment on the ISSUE pointing to the PR:
                  gh issue comment ${{ github.event.issue.number }} --body "Opened #${PR_NUM} with the fix. Review when you get a chance."
 
@@ -302,6 +440,9 @@ jobs:
           cc @$ISSUE_AUTHOR — opened by @elixpoo in response to issue #$ISSUE_NUMBER.
           EOF
           )
+          # Strip YAML heredoc indent — otherwise body renders as a code block
+          # and "Fixes #N" won't auto-link / close the issue.
+          PR_BODY=$(printf '%s\n' "$PR_BODY" | sed 's/^          //')
 
           PR_URL=$(gh pr create --repo "$REPO" \
             --head "$BRANCH" --base main \
