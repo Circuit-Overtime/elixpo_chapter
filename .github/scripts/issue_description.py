@@ -110,7 +110,9 @@ def fallback_body(title, author="reporter"):
         f"- [ ] @{author}'s questions answered\n"
         "- [ ] Implementation complete\n"
         "- [ ] Tests pass\n"
-        "- [ ] Documentation updated if behavior changes\n"
+        "- [ ] Documentation updated if behavior changes\n\n"
+        "---\n"
+        "> If you want @elixpoo to handle this issue, attach the **`ELIXPO`** label to the issue.\n"
     )
 
 
@@ -183,7 +185,9 @@ def main():
         f"- <If the scope is unclear, write a single bullet: '- Scope to be defined once @{author} answers questions above.'>\n\n"
         "## Checklist\n"
         f"- [ ] @{author}'s questions answered\n"
-        "- [ ] <other verification items that are objectively required, e.g., 'Change reviewed', 'Tests pass', 'Docs updated if behavior changes'. Keep to 3-5 items.>"
+        "- [ ] <other verification items that are objectively required, e.g., 'Change reviewed', 'Tests pass', 'Docs updated if behavior changes'. Keep to 3-5 items.>\n\n"
+        "---\n"
+        "> If you want @elixpoo to handle this issue, attach the **`ELIXPO`** label to the issue."
     )
 
     user_message = f"Issue title: {title}\nReporter: @{author}\n\nRepo context:\n{context}"
