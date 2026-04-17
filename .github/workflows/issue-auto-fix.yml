@@ -1,0 +1,146 @@
+# Elixpo Auto Code — Auto-fix issues labeled "elixpo"
+# Trigger: Add the "elixpo" label to an issue
+# Whitelist: Elixpo org members (Circuit-Overtime, anwe-ch, elixpoo, ez-vivek)
+#            + elixpoo user token triggering from triage
+#
+# The bot clones the repo, analyzes the issue, and either:
+#   - Opens a PR with the fix (if code changes needed), or
+#   - Comments on the issue (if it's a question/discussion)
+
+name: Elixpo Auto Code
+
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: elixpo-auto-code-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  auto-code:
+    if: github.event.label.name == 'elixpo'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    env:
+      POLLINATIONS_TOKEN: ${{ secrets.CI_POLLINATIONS_KEY }}
+      AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+    steps:
+      - name: Check Authorization
+        id: whitelist
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.CI_AGENT_TOKEN }}
+          script: |
+            // Whitelist: Elixpo org members (plus elixpoo itself for bot-triggered labels)
+            const whitelist = ['Circuit-Overtime', 'anwe-ch', 'elixpoo', 'ez-vivek'];
+            const labeledBy = context.payload.sender.login;
+
+            const isAuthorized = whitelist.includes(labeledBy);
+
+            if (!isAuthorized) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'elixpo'
+              });
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `Sorry @${labeledBy}, only Elixpo org members can trigger Elixpo Auto Code by adding the \`elixpo\` label.`
+              });
+              core.setOutput('authorized', 'false');
+            } else {
+              core.setOutput('authorized', 'true');
+            }
+
+      - name: Setup Bun
+        if: steps.whitelist.outputs.authorized == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup router + eyes reaction
+        if: steps.whitelist.outputs.authorized == 'true'
+        id: setup
+        run: |
+          # Add eyes reaction to the issue
+          gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
+
+          # Router config: claude-fast via Pollinations, with thinking + web search routes
+          mkdir -p $HOME/.claude-code-router
+          cat > $HOME/.claude-code-router/config.json <<EOF
+          {
+            "LOG": false,
+            "NON_INTERACTIVE_MODE": true,
+            "API_TIMEOUT_MS": 600000,
+            "Providers": [
+              {
+                "name": "pollinations",
+                "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
+                "api_key": "${POLLINATIONS_TOKEN}",
+                "models": ["claude-fast", "perplexity-fast", "kimi"]
+              }
+            ],
+            "Router": {
+              "default": "pollinations,claude-fast",
+              "thinking": "pollinations,kimi",
+              "webSearch": "pollinations,perplexity-fast"
+            }
+          }
+          EOF
+
+          # Start router
+          bunx @musistudio/claude-code-router start &
+          until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
+        env:
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+
+      - uses: actions/checkout@v4
+        if: steps.whitelist.outputs.authorized == 'true'
+        with:
+          fetch-depth: 0
+          repository: ${{ github.repository }}
+          token: ${{ secrets.CI_AGENT_TOKEN }}
+
+      - uses: anthropics/claude-code-action@v1
+        if: steps.whitelist.outputs.authorized == 'true'
+        env:
+          ANTHROPIC_BASE_URL: http://localhost:3456
+          GIT_AUTHOR_NAME: "elixpoo"
+          GIT_AUTHOR_EMAIL: "269200728+elixpoo@users.noreply.github.com"
+          GIT_COMMITTER_NAME: "elixpoo"
+          GIT_COMMITTER_EMAIL: "269200728+elixpoo@users.noreply.github.com"
+        with:
+          anthropic_api_key: "ccr-pollinations"
+          show_full_output: true
+          github_token: ${{ secrets.CI_AGENT_TOKEN }}
+          prompt: |
+            Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+
+            Read the issue body from the GitHub API to get the full details.
+
+            You are elixpo, a developer on the Elixpo team. Never mention Claude,
+            Claude Code, AI, or LLMs — you are just a team member. Be casual,
+            concise, and human.
+
+            Decide the appropriate action:
+            1. If the issue requires code changes: fix the code, create a branch
+               named `elixpo/issue-${{ github.event.issue.number }}`, commit,
+               push, and open a PR with "Fixes #${{ github.event.issue.number }}"
+               in the description.
+            2. If the issue is a question, discussion, or doesn't need code
+               changes: comment on the issue with a helpful response using
+               `gh issue comment ${{ github.event.issue.number }}`.
+
+            Use your judgment — not every issue needs a PR. When in doubt, ask
+            the reporter for clarification via a comment first.
+          additional_permissions: |
+            actions: read
