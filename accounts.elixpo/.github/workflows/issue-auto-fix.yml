@@ -312,3 +312,19 @@ jobs:
           PR_NUM=$(echo "$PR_URL" | grep -oE '[0-9]+$')
           gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
             --body "Opened #$PR_NUM with the changes."
+
+      # ─────────────────────────────────────────────────────────────────
+      # Failure fallback: post a blockquote on the issue if anything in
+      # this workflow errored (claude-code-action, PR scaffold, etc.)
+      # ─────────────────────────────────────────────────────────────────
+      - name: Post failure notice
+        if: failure() && steps.whitelist.outputs.authorized == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set +e
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
+            --body "> Something went wrong on my end. Check the run: $RUN_URL"
