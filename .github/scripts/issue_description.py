@@ -99,15 +99,17 @@ def fallback_body(title):
     return (
         "## Problem Statement\n"
         f"{title}\n\n"
+        "## Questions for Reporter\n"
+        "- What is the exact scope of this change?\n"
+        "- Which files or components should be affected?\n"
+        "- What is the expected behavior after the change?\n\n"
         "## Todo's\n"
-        "- Scope the change\n"
-        "- Identify affected files\n"
-        "- Implement\n"
-        "- Add tests\n\n"
+        "- Scope to be defined once reporter answers questions above.\n\n"
         "## Checklist\n"
+        "- [ ] Reporter's questions answered\n"
         "- [ ] Implementation complete\n"
         "- [ ] Tests pass\n"
-        "- [ ] Documentation updated\n"
+        "- [ ] Documentation updated if behavior changes\n"
     )
 
 
@@ -115,7 +117,12 @@ def looks_valid(body):
     """Check that the generated body contains the expected section headers."""
     if not body:
         return False
-    required = ["## Problem Statement", "## Todo's", "## Checklist"]
+    required = [
+        "## Problem Statement",
+        "## Questions for Reporter",
+        "## Todo's",
+        "## Checklist",
+    ]
     return all(marker in body for marker in required)
 
 
@@ -147,20 +154,33 @@ def main():
 
     # 5. Call the LLM
     system_prompt = (
-        f"You are writing an issue description for {PROJECT_NAME} ({PROJECT_DESCRIPTION}).\n"
-        "The reporter left only a title. Infer the concrete problem and write a decisive, "
-        "technical description — no hedging, no filler, no phrases like 'likely wants' or "
-        "'needs to be clarified'. State the problem as a fact. Reference real files, "
-        "components, or paths from the repo context when possible.\n\n"
-        "Output EXACTLY this markdown structure (no preamble, no closing text):\n\n"
+        f"You are structuring a GitHub issue for {PROJECT_NAME} ({PROJECT_DESCRIPTION}).\n"
+        "The reporter left only a title. Your job is to produce a structured skeleton — "
+        "NOT to invent requirements.\n\n"
+        "STRICT RULES:\n"
+        "1. ONLY reference files, directories, functions, or components that appear VERBATIM "
+        "in the 'Repo context' section below. Never invent file paths. If you cannot find a "
+        "relevant file in the context, describe the component generically (e.g., 'the auth module') "
+        "without a path.\n"
+        "2. Do NOT assume scope, fix approach, or implementation details the reporter did not state. "
+        "If the title is ambiguous, ASK the reporter — do not guess.\n"
+        "3. Be factual and concise. No hedging, no filler, no marketing language.\n"
+        "4. Use the 'Questions for Reporter' section whenever the title leaves something unclear. "
+        "This is the PRIMARY mechanism for moving the issue forward when you don't have enough info.\n\n"
+        "Output EXACTLY this markdown (no preamble, no closing text):\n\n"
         "## Problem Statement\n"
-        "<2-3 sentences stating the concrete problem or goal. Direct, technical, factual.>\n\n"
+        "<1-3 sentences restating what the title conveys. If the title is vague, say so plainly "
+        "(e.g., 'The reporter asks for X, but the specific scope is not stated.'). Do not pad.>\n\n"
+        "## Questions for Reporter\n"
+        "- <concrete question the reporter must answer before work starts>\n"
+        "- <2-5 questions if needed; if the title is fully self-explanatory, write 'None — title is clear.'>\n\n"
         "## Todo's\n"
-        "- <specific actionable task referencing real files/components>\n"
-        "- <3-5 tasks total, concrete and decisive>\n\n"
+        "- <only list tasks that are OBVIOUSLY required given the title + context. Reference real files "
+        "from the context when they are unambiguously relevant. Otherwise use generic language.>\n"
+        "- <If the scope is unclear, write a single bullet: '- Scope to be defined once reporter answers questions above.'>\n\n"
         "## Checklist\n"
-        "- [ ] <verification item>\n"
-        "- [ ] <3-5 items — what must be true before closing>"
+        "- [ ] Reporter's questions answered\n"
+        "- [ ] <other verification items that are objectively required, e.g., 'Change reviewed', 'Tests pass', 'Docs updated if behavior changes'. Keep to 3-5 items.>"
     )
 
     user_message = f"Issue title: {title}\n\nRepo context:\n{context}"

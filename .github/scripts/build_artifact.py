@@ -58,7 +58,7 @@ def is_skipped(name):
     """True for hidden entries and common build/vendor dirs."""
     if name in SKIP_DIRS:
         return True
-    if name.startswith(".") and name not in {".github", ".elixpo"}:
+    if name.startswith(".") and name not in {".github"}:
         return True
     return False
 
