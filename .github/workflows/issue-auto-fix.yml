@@ -149,8 +149,11 @@ jobs:
             Create the branch, open a draft PR linked to the issue via "Fixes #N"
             so it appears in the issue's Development tab, and then stop.
 
-            1. Create the branch:
-                 BRANCH="elixpo/issue-${{ github.event.issue.number }}"
+            1. Generate a 4-digit hex suffix so the branch name is unique
+               (in case this issue gets scaffolded again later), then create
+               the branch:
+                 HEX=$(openssl rand -hex 2)
+                 BRANCH="elixpo/issue-${{ github.event.issue.number }}-${HEX}"
                  git checkout -b "$BRANCH"
 
             2. Make a single empty commit so the branch has something to push:
@@ -161,14 +164,14 @@ jobs:
             3. Open a draft PR linked to the issue:
                  gh pr create --draft \
                    --title "[ELIXPO] ${{ github.event.issue.title }}" \
-                   --body $'Fixes #${{ github.event.issue.number }}\n\n### Status\nDraft scaffold. No code changes yet.\n\n### How to continue\n- Tag **@elixpoo** in a comment on this PR to have me make changes.\n- Or push commits directly to the `elixpo/issue-${{ github.event.issue.number }}` branch.\n\n### Plan\n- [ ] Understand the problem\n- [ ] Implement changes\n- [ ] Verify build / tests' \
+                   --body $'Fixes #${{ github.event.issue.number }}\n\n### Status\nDraft scaffold. No code changes yet.\n\n### Plan\n- [ ] Understand the problem\n- [ ] Implement changes\n- [ ] Verify build / tests' \
                    --head "$BRANCH" --base main
 
             4. Capture the PR number:
                  PR_NUM=$(gh pr view --json number -q .number)
 
-            5. Post ONE acknowledgement comment on the ISSUE pointing to the PR:
-                 gh issue comment ${{ github.event.issue.number }} --body "Opened #${PR_NUM} for this. Tag @elixpoo on the PR to iterate, or push commits to the branch directly."
+            5. Post ONE short acknowledgement comment on the ISSUE pointing to the PR:
+                 gh issue comment ${{ github.event.issue.number }} --body "Opened #${PR_NUM} for this."
 
             ### Stop here
             Do NOT write any code, make any commits beyond the empty scaffold
