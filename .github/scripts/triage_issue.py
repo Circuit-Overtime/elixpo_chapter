@@ -232,6 +232,21 @@ def set_single_select_field(
     github_graphql(mutation)
 
 
+def set_issue_type(issue_node_id: str, issue_type_id: str) -> None:
+    """Set the GitHub Issue Type (sidebar 'Type' field) via GraphQL."""
+    mutation = f"""
+    mutation {{
+      updateIssueIssueType(input: {{
+        issueId: "{issue_node_id}",
+        issueTypeId: "{issue_type_id}"
+      }}) {{
+        issue {{ id }}
+      }}
+    }}
+    """
+    github_graphql(mutation)
+
+
 # ── Main ───────────────────────────────────────────────────────────────────
 def main() -> None:
     print(f"=== Issue Triage: #{ISSUE_NUMBER} ===")
@@ -308,6 +323,18 @@ def main() -> None:
         )
         category = "Support"
         project = PROJECTS["Support"]
+
+    # ── Step 2a: Set native GitHub Issue Type (sidebar "Type") ────────────
+    type_name = CATEGORY_TO_TYPE.get(category, "Task")
+    type_id = ISSUE_TYPES.get(type_name)
+    if type_id:
+        print(f"Setting issue type to '{type_name}'...")
+        try:
+            set_issue_type(issue_node_id, type_id)
+        except Exception as exc:
+            print(f"[warn] Failed to set issue type: {exc}")
+    else:
+        print(f"[warn] No issue type ID for '{type_name}', skipping")
 
     priority_option_id = project["priority_options"].get(priority)
     if priority_option_id is None:
