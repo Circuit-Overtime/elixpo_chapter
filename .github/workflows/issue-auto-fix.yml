@@ -221,12 +221,21 @@ jobs:
                    tsconfig, neighbouring code style).
                  - Do NOT add unrelated cleanups or refactors.
 
-            3. Commit with a clear message and push:
+            3. Run biome and fix any lint/format issues BEFORE committing:
+                 npx @biomejs/biome check . --write 2>&1 | tee /tmp/biome.out
+                 # If biome still reports errors after --write, it means there
+                 # are rule violations it can't auto-fix. Read the output, fix
+                 # them by hand, then re-run:
+                 npx @biomejs/biome ci .
+                 # This MUST exit 0 before you commit. If it keeps failing,
+                 # fix the remaining issues in the source files.
+
+            4. Commit with a clear message and push:
                  git add -A
                  git commit -m "<concrete summary of the change> (#${{ github.event.issue.number }})"
                  git push -u origin "$BRANCH"
 
-            ### Step 4 — Open a ready (NOT draft) PR
+            ### Step 5 — Open a ready (NOT draft) PR
             Open a PR that is ready for review, linked to the issue so it
             appears in the issue's Development tab. Use EXACTLY this body format:
 
@@ -257,7 +266,7 @@ jobs:
             relevant expertise), add more 'cc @user' lines at the bottom or
             mention them in 'Changes Made' bullets.
 
-            ### Step 5 — Finalize
+            ### Step 6 — Finalize
             1. Post a closing comment on the ISSUE pointing to the PR:
                  gh issue comment ${{ github.event.issue.number }} --body "Opened #${PR_NUM} with the fix. Review when you get a chance."
 

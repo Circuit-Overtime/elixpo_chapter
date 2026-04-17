@@ -251,11 +251,15 @@ jobs:
 
               Step 2: post a short plan comment on the issue.
               Step 3: make the code changes.
-              Step 4: commit and push to the branch:
+              Step 4: run biome and fix any lint/format issues BEFORE committing:
+                npx @biomejs/biome check . --write
+                # If errors remain after --write, fix them by hand.
+                npx @biomejs/biome ci .   # MUST exit 0 before commit.
+              Step 5: commit and push to the branch:
                 git add -A
                 git commit -m \"<summary> (#<n>)\"
                 git push -u origin \"\$BRANCH\"
-              Step 5: open a READY (not draft) PR linked to the issue. Use EXACTLY this body format:
+              Step 6: open a READY (not draft) PR linked to the issue. Use EXACTLY this body format:
                 BODY=\"Fixes #<n>
 
                 ## Changes Made
@@ -273,7 +277,7 @@ jobs:
                 cc @<issue-author> — opened by @elixpoo in response to issue #<n>.\"
 
                 gh pr create --title \"[ELIXPO] <title>\" --body \"\$BODY\" --head \"\$BRANCH\" --base main
-              Step 6: comment on the issue pointing to the new PR.
+              Step 7: comment on the issue pointing to the new PR.
 
               Tag additional org members in 'cc' lines if their expertise is needed (frontend → @ez-vivek, docs → @anwe-ch).
               NEVER skip Step 1. NEVER commit to main, even if the change is 'just one line'.
@@ -295,9 +299,12 @@ jobs:
             Sub-mode B3 — User asks for changes or a new feature on this PR:
               1. Check out the PR's branch (you are already on it via the workflow checkout).
               2. Make the requested changes.
-              3. Commit with a clear message and push to the same branch.
-              4. Update the PR description if the scope changed: 'gh pr edit <n> --body \"...\"'.
-              5. Post a single summary comment on the PR describing what you changed.
+              3. Run biome and fix lint/format issues BEFORE committing:
+                   npx @biomejs/biome check . --write
+                   npx @biomejs/biome ci .   # MUST exit 0.
+              4. Commit with a clear message and push to the same branch.
+              5. Update the PR description if the scope changed: 'gh pr edit <n> --body \"...\"'.
+              6. Post a single summary comment on the PR describing what you changed.
 
             Sub-mode B4 — User asks to fix a failing CI check / Action:
               You have 'actions: read' permission and can pull logs from any workflow run. Use this to diagnose and fix failures.
@@ -334,6 +341,7 @@ jobs:
             - PRs you create are READY for review, never draft.
             - Always include 'Fixes #<issue>' in PRs that address an issue — this is how GitHub shows the PR in the issue's Development tab and closes the issue on merge.
             - Do NOT push to main. Do NOT merge PRs.
+            - **Biome gate — ALWAYS run before every commit**: 'npx @biomejs/biome check . --write && npx @biomejs/biome ci .' must both exit 0. Fix remaining errors by hand if --write can't. This is non-negotiable.
             - Stay within the scope of what was asked. If you notice unrelated issues, mention them briefly but do not fix them.
             - Follow existing project conventions (biome config, tsconfig, neighbouring code style)."
           additional_permissions: |
