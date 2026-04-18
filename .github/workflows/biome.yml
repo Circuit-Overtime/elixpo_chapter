@@ -21,4 +21,4 @@ jobs:
       # Use the repo's ./biome wrapper — keeps one source of truth for
       # biome options (diagnostic-level, config path, etc.) between local
       # developer runs and CI.
-      - run: ./biome ci
+      - run: ./biome.sh ci
