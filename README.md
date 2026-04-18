@@ -26,3 +26,8 @@ For developers looking to contribute, this project is built on a modern, fast, a
 
 ---
 *Maintained by the Elixpo Open Source Team.*
+
+## 🌟 Stargazers
+
+[![Stargazers repo roster for elixpo/accounts.elixpo](https://reporoster.com/stars/elixpo/accounts.elixpo)](https://github.com/elixpo/accounts.elixpo/stargazers)
+
