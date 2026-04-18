@@ -105,6 +105,8 @@ jobs:
           echo "Router models: default=$AGENT_MODEL, background=$CODE_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
 
           mkdir -p $HOME/.claude-code-router
+          # maxtoken transformer caps outgoing max_tokens to 9000 — nova-fast
+          # (Bedrock Nova Micro) hard-rejects >10000 output tokens.
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
             "LOG": false,
@@ -115,7 +117,10 @@ jobs:
                 "name": "pollinations",
                 "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
                 "api_key": "${POLLINATIONS_TOKEN}",
-                "models": ["${AGENT_MODEL}", "${CODE_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"]
+                "models": ["${AGENT_MODEL}", "${CODE_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"],
+                "transformer": {
+                  "use": [["maxtoken", {"max_tokens": 9000}]]
+                }
               }
             ],
             "Router": {
@@ -201,9 +206,11 @@ jobs:
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           branch_prefix: "elixpo/"
-          # Explicit tool allowlist — default safety layer rejects chained bash
-          # commands and npx. We trust the bot in this CI sandbox.
-          allowed_tools: "Bash,Read,Edit,Write,Glob,Grep,Task,TodoWrite"
+          # claude_args sets the allowed-tools flag via the Claude Code CLI.
+          # `allowed_tools` is NOT a valid action input for v1 — must go through
+          # claude_args. Broad Bash access is fine in this ephemeral CI sandbox.
+          claude_args: |
+            --allowedTools Bash Read Edit Write Glob Grep Task TodoWrite WebFetch
           prompt: |
             Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
             Reporter: @${{ github.event.issue.user.login }}

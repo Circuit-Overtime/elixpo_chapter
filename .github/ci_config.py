@@ -8,13 +8,16 @@ LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
 
 # Task-specific model routing.
 #
-# MODEL NOTES (what we tested, what worked):
-#   - nova-fast:      WINNER — follows stage-by-stage orchestration prompt.
-#                     Amazon Nova Micro. ~$0.04/$0.15 per M (28x cheaper than claude-fast).
-#   - claude-fast:    proven baseline. ~$1.11/$5.50 per M. Fallback if nova-fast breaks.
-#   - gemini-fast:    skipped stage-by-stage updates, rushed to completion. Rejected.
-#   - qwen-coder:     coder bias — ignored orchestration, jumped to code. Rejected for agent role.
-LLM_MODEL_AGENT = "nova-fast"       # main agentic thread — stage updates + tool use
+# MODEL NOTES (what we tested):
+#   - gemini-fast:    current choice — single model across agent/thinking/chat for
+#                     consistency. ~$0.30/$1.20 per M. Output token limit is high
+#                     enough to avoid the Bedrock 10k cap that nova-fast hit.
+#   - nova-fast:      follows stage-by-stage but Bedrock Nova Micro rejects
+#                     requests >10000 output tokens — risky with long prompts.
+#   - claude-fast:    proven baseline. ~$1.11/$5.50 per M. Fallback if gemini-fast breaks.
+#   - qwen-coder:     coder bias — skipped orchestration when used as agent.
+#                     Fine for code-specific background delegations.
+LLM_MODEL_AGENT = "gemini-fast"     # main agentic thread (router default)
 LLM_MODEL_CODE = "qwen-coder"       # background subagent route for code-heavy work
 LLM_MODEL_CHAT = "gemini-fast"      # Python scripts: triage, descriptions, summaries
 LLM_MODEL_THINKING = "gemini-fast"  # router "thinking" route
