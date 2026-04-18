@@ -153,14 +153,21 @@ jobs:
           # key (CI_POLLINATIONS_KEY). Splits cost/usage reporting too.
           #
           # Transformers applied in order:
-          #   gemini-adapter → disable Gemini thinking (avoids thought_signature 400)
+          #   gemini-adapter → flatten prior tool_use/tool_result in history to
+          #                    plain text (Vertex demands thought_signature on
+          #                    replayed tool_use; Pollinations can't disable it)
           #   openai         → Anthropic→OpenAI content-shape conversion
           #   maxtoken       → cap output at 9000 (defends against Bedrock limits)
+          # Custom transformers MUST be registered at top-level "transformers"
+          # (CCR resolves strings in "use" as registered names, not file paths).
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
             "LOG": false,
             "NON_INTERACTIVE_MODE": true,
             "API_TIMEOUT_MS": 600000,
+            "transformers": [
+              {"path": "${GEMINI_ADAPTER}"}
+            ],
             "Providers": [
               {
                 "name": "pollinations-main",
@@ -168,7 +175,7 @@ jobs:
                 "api_key": "${POLLINATIONS_TOKEN}",
                 "models": ["${AGENT_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"],
                 "transformer": {
-                  "use": ["${GEMINI_ADAPTER}", "openai", ["maxtoken", {"max_tokens": 9000}]]
+                  "use": ["gemini-adapter", "openai", ["maxtoken", {"max_tokens": 9000}]]
                 }
               },
               {

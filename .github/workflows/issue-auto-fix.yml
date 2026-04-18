@@ -112,11 +112,19 @@ jobs:
           GEMINI_ADAPTER="$HOME/.claude-code-router/gemini-adapter.js"
           # Two providers — main (cheap key) + coder (separate key for qwen-coder).
           # Transformer order: gemini-adapter → openai → maxtoken.
+          # gemini-adapter flattens prior tool_use/tool_result in history to
+          # plain text (Vertex demands thought_signature on replayed tool_use;
+          # Pollinations exposes no knob to disable Gemini thinking).
+          # Custom transformers MUST be registered at top-level "transformers"
+          # — CCR resolves strings in "use" as registered names, not paths.
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
             "LOG": false,
             "NON_INTERACTIVE_MODE": true,
             "API_TIMEOUT_MS": 600000,
+            "transformers": [
+              {"path": "${GEMINI_ADAPTER}"}
+            ],
             "Providers": [
               {
                 "name": "pollinations-main",
@@ -124,7 +132,7 @@ jobs:
                 "api_key": "${POLLINATIONS_TOKEN}",
                 "models": ["${AGENT_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"],
                 "transformer": {
-                  "use": ["${GEMINI_ADAPTER}", "openai", ["maxtoken", {"max_tokens": 9000}]]
+                  "use": ["gemini-adapter", "openai", ["maxtoken", {"max_tokens": 9000}]]
                 }
               },
               {

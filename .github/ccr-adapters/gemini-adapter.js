@@ -1,69 +1,96 @@
+#!/usr/bin/env node
+"use strict";
+
 /**
- * gemini-adapter.js — claude-code-router transformer for Gemini models.
+ * gemini-adapter.js — CCR transformer for Pollinations → Vertex Gemini 3.
  *
- * PROBLEM:
- *   Vertex AI's Gemini 3 requires every function_call content block in a
- *   continuing conversation to carry a `thought_signature`. claude-code-router
- *   doesn't track signatures across turns, so multi-step tool use 400s with:
+ * Vertex demands a `thought_signature` on every replayed assistant tool_use
+ * block. CCR doesn't track signatures across turns, and Pollinations'
+ * OpenAI-compat proxy strips them on return and exposes no `thinking_budget`
+ * / `extra_body.thinkingConfig` pass-through — so we cannot disable thinking
+ * server-side. Instead we flatten every historical tool_use / tool_result
+ * into plain text before the request leaves CCR. Vertex sees no structured
+ * tool_use in history and never demands signatures. The current turn's
+ * response is untouched, so the agent loop still issues real tool calls.
  *
- *     vertex-ai error: function call ... is missing a `thought_signature`
+ * CCR contract: loaded by `registerTransformerFromConfig` which calls
+ * `new Ctor(options)`. The instance must expose `name` and at least one
+ * transform hook. Register at the top level and reference by name:
  *
- * FIX:
- *   Disable Gemini's "thinking" mode on every outgoing request. When thinking
- *   is off, Vertex doesn't require thought_signature echoes. We try several
- *   fields (thinking_budget, thinking, extra_body.thinkingConfig) because
- *   different proxies surface this differently — harmless if some are ignored.
- *
- * INSTALL:
- *   Referenced in the router config via:
- *     "transformer": {
- *       "use": [
- *         "/home/runner/.../gemini-adapter.js",
- *         "openai",
- *         ["maxtoken", {"max_tokens": 9000}]
- *       ]
- *     }
+ *   {
+ *     "transformers": [{"path": "/abs/path/gemini-adapter.js"}],
+ *     "Providers": [{
+ *       "transformer": { "use": ["gemini-adapter", "openai", ...] }
+ *     }]
+ *   }
  */
 
 const GEMINI_RE = /^gemini/i;
 
-module.exports = {
-    name: "gemini-adapter",
+function asString(x) {
+    if (x == null) return "";
+    if (typeof x === "string") return x;
+    try { return JSON.stringify(x); } catch { return String(x); }
+}
 
-    transformRequestIn: async (request) => {
-        const body = request?.body ?? request;
-        const model = body?.model;
+function flattenAnthropicMessage(m) {
+    if (!Array.isArray(m.content)) return m;
+    const parts = [];
+    for (const b of m.content) {
+        if (!b || typeof b !== "object") continue;
+        if (b.type === "text" && b.text) parts.push(b.text);
+        else if (b.type === "tool_use") parts.push(`[called ${b.name} with ${asString(b.input)}]`);
+        else if (b.type === "tool_result") parts.push(`[tool result]: ${asString(b.content)}`);
+    }
+    const role = m.role === "tool" ? "user" : m.role;
+    return { role, content: parts.join("\n") };
+}
 
-        if (typeof model !== "string" || !GEMINI_RE.test(model)) {
-            return request;
+function flattenOpenAIMessage(m) {
+    if (m.role === "assistant" && Array.isArray(m.tool_calls) && m.tool_calls.length > 0) {
+        const parts = [];
+        if (m.content) parts.push(asString(m.content));
+        for (const tc of m.tool_calls) {
+            const fn = tc.function || {};
+            parts.push(`[called ${fn.name || "?"} with ${fn.arguments || "{}"}]`);
         }
+        return { role: "assistant", content: parts.join("\n") };
+    }
+    if (m.role === "tool") {
+        return { role: "user", content: `[tool result]: ${asString(m.content)}` };
+    }
+    return m;
+}
 
-        // Disable thinking via every field name we've seen accepted in the wild.
-        // Vertex / Pollinations / Gemini API have slightly different shapes.
-        body.thinking_budget = 0;
-        body.thinking = { type: "disabled" };
+class GeminiFlattenAdapter {
+    constructor(options) {
+        this.name = "gemini-adapter";
+        this.options = options || {};
+    }
 
-        body.extra_body = body.extra_body || {};
-        body.extra_body.thinkingConfig = {
-            thinkingBudget: 0,
-            includeThoughts: false,
-        };
+    async transformRequestIn(request)  { return this._flatten(request); }
+    async transformRequestOut(request) { return this._flatten(request); }
 
-        // Strip any incoming thought_signature / thoughts blocks. They'd be stale
-        // relative to the new (non-thinking) call anyway.
-        if (Array.isArray(body.messages)) {
-            for (const msg of body.messages) {
-                if (Array.isArray(msg.content)) {
-                    for (const block of msg.content) {
-                        if (block && typeof block === "object") {
-                            delete block.thought_signature;
-                            delete block.thoughts;
-                        }
-                    }
-                }
+    _flatten(request) {
+        const body = request && request.body ? request.body : request;
+        if (!body || typeof body !== "object") return request;
+        if (typeof body.model !== "string" || !GEMINI_RE.test(body.model)) return request;
+        if (!Array.isArray(body.messages)) return request;
+
+        body.messages = body.messages.map(m => {
+            if (!m || typeof m !== "object") return m;
+            if (Array.isArray(m.content)) return flattenAnthropicMessage(m);
+            return flattenOpenAIMessage(m);
+        });
+
+        for (const m of body.messages) {
+            if (m && typeof m === "object") {
+                delete m.tool_calls;
+                delete m.tool_call_id;
             }
         }
-
         return request;
-    },
-};
+    }
+}
+
+module.exports = GeminiFlattenAdapter;
