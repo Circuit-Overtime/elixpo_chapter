@@ -26,6 +26,7 @@
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
     "@simplewebauthn/server": "^13.0.0",
+    "biome": "^0.3.3",
     "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
     "fs": "^0.0.1-security",
