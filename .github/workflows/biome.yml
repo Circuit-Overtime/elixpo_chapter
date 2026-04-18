@@ -18,5 +18,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: biomejs/setup-biome@v2
-      - run: biome ci .
+      # Use the repo's ./biome wrapper — keeps one source of truth for
+      # biome options (diagnostic-level, config path, etc.) between local
+      # developer runs and CI.
+      - run: ./biome ci

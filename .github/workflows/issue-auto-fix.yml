@@ -359,14 +359,11 @@ jobs:
                    tsconfig, neighbouring code style).
                  - Do NOT add unrelated cleanups or refactors.
 
-            3. Run biome and fix any lint/format issues BEFORE committing:
-                 npx @biomejs/biome check . --write 2>&1 | tee /tmp/biome.out
-                 # If biome still reports errors after --write, it means there
-                 # are rule violations it can't auto-fix. Read the output, fix
-                 # them by hand, then re-run:
-                 npx @biomejs/biome ci .
-                 # This MUST exit 0 before you commit. If it keeps failing,
-                 # fix the remaining issues in the source files.
+            3. Run the ./biome wrapper to auto-fix lint/format issues:
+                 ./biome             # safe + unsafe fixes, then ci check
+                 # If ci still fails, read the output, fix remaining issues
+                 # by hand, then:
+                 ./biome ci          # MUST exit 0 before commit.
 
             4. Commit with a clear message and push:
                  git add -A
