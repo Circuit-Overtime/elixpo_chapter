@@ -28,39 +28,42 @@
 const GEMINI_RE = /^gemini/i;
 
 module.exports = {
-  name: "gemini-adapter",
+    name: "gemini-adapter",
 
-  transformRequestIn: async (request) => {
-    const body = request?.body ?? request;
-    const model = body?.model;
+    transformRequestIn: async (request) => {
+        const body = request?.body ?? request;
+        const model = body?.model;
 
-    if (typeof model !== "string" || !GEMINI_RE.test(model)) {
-      return request;
-    }
-
-    // Disable thinking via every field name we've seen accepted in the wild.
-    // Vertex / Pollinations / Gemini API have slightly different shapes.
-    body.thinking_budget = 0;
-    body.thinking = { type: "disabled" };
-
-    body.extra_body = body.extra_body || {};
-    body.extra_body.thinkingConfig = { thinkingBudget: 0, includeThoughts: false };
-
-    // Strip any incoming thought_signature / thoughts blocks. They'd be stale
-    // relative to the new (non-thinking) call anyway.
-    if (Array.isArray(body.messages)) {
-      for (const msg of body.messages) {
-        if (Array.isArray(msg.content)) {
-          for (const block of msg.content) {
-            if (block && typeof block === "object") {
-              delete block.thought_signature;
-              delete block.thoughts;
-            }
-          }
+        if (typeof model !== "string" || !GEMINI_RE.test(model)) {
+            return request;
         }
-      }
-    }
 
-    return request;
-  },
+        // Disable thinking via every field name we've seen accepted in the wild.
+        // Vertex / Pollinations / Gemini API have slightly different shapes.
+        body.thinking_budget = 0;
+        body.thinking = { type: "disabled" };
+
+        body.extra_body = body.extra_body || {};
+        body.extra_body.thinkingConfig = {
+            thinkingBudget: 0,
+            includeThoughts: false,
+        };
+
+        // Strip any incoming thought_signature / thoughts blocks. They'd be stale
+        // relative to the new (non-thinking) call anyway.
+        if (Array.isArray(body.messages)) {
+            for (const msg of body.messages) {
+                if (Array.isArray(msg.content)) {
+                    for (const block of msg.content) {
+                        if (block && typeof block === "object") {
+                            delete block.thought_signature;
+                            delete block.thoughts;
+                        }
+                    }
+                }
+            }
+        }
+
+        return request;
+    },
 };
