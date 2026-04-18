@@ -18,7 +18,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      # Use the repo's ./biome wrapper — keeps one source of truth for
+      # Use the repo's ./biome.sh wrapper — keeps one source of truth for
       # biome options (diagnostic-level, config path, etc.) between local
       # developer runs and CI.
       - run: ./biome.sh ci

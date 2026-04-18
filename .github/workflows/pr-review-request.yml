@@ -445,9 +445,9 @@ jobs:
               Step 2: post a short plan comment on the issue.
               Step 3: make the code changes.
               Step 4: run biome and fix any lint/format issues BEFORE committing:
-                ./biome           # wrapper: safe+unsafe fixes, then ci check
+                ./biome.sh        # wrapper: safe+unsafe fixes, then ci check
                 # If ci still fails, fix remaining errors by hand, then:
-                ./biome ci        # MUST exit 0 before commit.
+                ./biome.sh ci     # MUST exit 0 before commit.
               Step 5: commit and push to the branch:
                 git add -A
                 git commit -m \"<summary> (#<n>)\"
@@ -501,9 +501,9 @@ jobs:
             Sub-mode B3 — User asks for changes or a new feature on this PR:
               1. Check out the PR's branch (you are already on it via the workflow checkout).
               2. Make the requested changes.
-              3. Run the ./biome wrapper before committing:
-                   ./biome           # auto-fix (safe + unsafe) + ci check
-                   ./biome ci        # MUST exit 0 before commit.
+              3. Run the ./biome.sh wrapper before committing:
+                   ./biome.sh        # auto-fix (safe + unsafe) + ci check
+                   ./biome.sh ci     # MUST exit 0 before commit.
               4. Commit with a clear message and push to the same branch.
               5. Update the PR description if the scope changed: 'gh pr edit <n> --body \"...\"'.
               6. Post a single summary comment on the PR describing what you changed.
@@ -543,7 +543,7 @@ jobs:
             - PRs you create are READY for review, never draft.
             - Always include 'Fixes #<issue>' in PRs that address an issue — this is how GitHub shows the PR in the issue's Development tab and closes the issue on merge.
             - Do NOT push to main. Do NOT merge PRs.
-            - **Biome gate — ALWAYS run before every commit**: './biome' wrapper (auto-fix + ci check) must exit 0. Fix remaining errors by hand if the fixes can't. This is non-negotiable.
+            - **Biome gate — ALWAYS run before every commit**: './biome.sh' wrapper (auto-fix + ci check) must exit 0. Fix remaining errors by hand if the fixes can't. This is non-negotiable.
             - Stay within the scope of what was asked. If you notice unrelated issues, mention them briefly but do not fix them.
             - Follow existing project conventions (biome config, tsconfig, neighbouring code style)."
           additional_permissions: |
