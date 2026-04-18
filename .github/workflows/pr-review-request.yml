@@ -145,12 +145,17 @@ jobs:
           echo "Router models: default=$AGENT_MODEL, background=$CODE_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
 
           mkdir -p $HOME/.claude-code-router
+          # Copy custom CCR adapters so the router can load them by absolute path.
+          cp config-src/.github/ccr-adapters/*.js $HOME/.claude-code-router/ 2>/dev/null || true
+          GEMINI_ADAPTER="$HOME/.claude-code-router/gemini-adapter.js"
           # Two separate providers so the code model uses a dedicated key
           # (CI_POLLINATIONS_KEY_CODER), while every other route uses the main
           # key (CI_POLLINATIONS_KEY). Splits cost/usage reporting too.
           #
-          # maxtoken transformer caps outgoing max_tokens to 9000 — safe
-          # default that avoids the Bedrock 10k limit some models hit.
+          # Transformers applied in order:
+          #   gemini-adapter → disable Gemini thinking (avoids thought_signature 400)
+          #   openai         → Anthropic→OpenAI content-shape conversion
+          #   maxtoken       → cap output at 9000 (defends against Bedrock limits)
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
             "LOG": false,
@@ -163,7 +168,7 @@ jobs:
                 "api_key": "${POLLINATIONS_TOKEN}",
                 "models": ["${AGENT_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"],
                 "transformer": {
-                  "use": ["openai", ["maxtoken", {"max_tokens": 9000}]]
+                  "use": ["${GEMINI_ADAPTER}", "openai", ["maxtoken", {"max_tokens": 9000}]]
                 }
               },
               {

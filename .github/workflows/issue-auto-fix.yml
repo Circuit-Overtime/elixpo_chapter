@@ -106,9 +106,12 @@ jobs:
           echo "Router models: default=$AGENT_MODEL, background=$CODE_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
 
           mkdir -p $HOME/.claude-code-router
-          # Two providers so the code model has a dedicated key
-          # (CI_POLLINATIONS_KEY_CODER) while everything else uses the main
-          # CI_POLLINATIONS_KEY. maxtoken cap 9000 is a safe universal limit.
+          # Copy custom CCR adapters (gemini thinking-disable, etc.) so the
+          # router can load them by absolute path.
+          cp config-src/.github/ccr-adapters/*.js $HOME/.claude-code-router/ 2>/dev/null || true
+          GEMINI_ADAPTER="$HOME/.claude-code-router/gemini-adapter.js"
+          # Two providers — main (cheap key) + coder (separate key for qwen-coder).
+          # Transformer order: gemini-adapter → openai → maxtoken.
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
             "LOG": false,
@@ -121,7 +124,7 @@ jobs:
                 "api_key": "${POLLINATIONS_TOKEN}",
                 "models": ["${AGENT_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"],
                 "transformer": {
-                  "use": ["openai", ["maxtoken", {"max_tokens": 9000}]]
+                  "use": ["${GEMINI_ADAPTER}", "openai", ["maxtoken", {"max_tokens": 9000}]]
                 }
               },
               {
