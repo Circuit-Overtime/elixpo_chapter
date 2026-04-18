@@ -17,10 +17,10 @@ LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
 #   - claude-fast:    proven baseline. ~$1.11/$5.50 per M. Fallback if gemini-fast breaks.
 #   - qwen-coder:     coder bias — skipped orchestration when used as agent.
 #                     Fine for code-specific background delegations.
-LLM_MODEL_AGENT = "gemini-fast"     # main agentic thread (router default)
+LLM_MODEL_AGENT = "kimi"     # main agentic thread (router default)
 LLM_MODEL_CODE = "qwen-coder"       # background subagent route for code-heavy work
-LLM_MODEL_CHAT = "gemini-fast"      # Python scripts: triage, descriptions, summaries
-LLM_MODEL_THINKING = "gemini-fast"  # router "thinking" route
+LLM_MODEL_CHAT = "gemini"      # Python scripts: triage, descriptions, summaries
+LLM_MODEL_THINKING = "perplexity-reasoning"  # router "thinking" route
 LLM_MODEL_SEARCH = "gemini-search"  # web search (only when needed)
 
 # Back-compat alias — scripts that haven't been migrated still import LLM_MODEL.
