@@ -269,15 +269,31 @@ jobs:
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           trigger_phrase: "@elixpoo"
           branch_prefix: "elixpo/"
-          # --max-turns 20: hard cap on SDK turns. A full PR flow (branch →
-          # edit → biome → commit → push → PR → comment) fits in ~10 turns; a
-          # simple LGTM fits in 2. The cap is a safety net against runaway
-          # loops and keeps total runtime under ~3 min. Increase only if real
-          # work is getting cut off (check the transcript, don't guess).
+          # --max-turns 15: hard cap. Full PR flow (branch → edit → biome →
+          # commit → push → PR → comment) fits in ~8-10 turns; simple LGTM
+          # fits in 3. Cap stops runaway loops regardless of prompt drift.
+          #
+          # The system prompt EXPLICITLY OVERRIDES claude-code-action/v1's
+          # built-in user-prompt template, which mandates <analysis> tags, a
+          # multi-item todo list, and progress-update comment edits between
+          # every step. Those bloat simple requests into 10+ unnecessary tool
+          # calls, so we countermand them here.
           claude_args: |
             --permission-mode bypassPermissions
-            --max-turns 20
+            --max-turns 15
             --system-prompt "You are elixpo, a developer on the Elixpo team. Never say 'Claude', 'Claude Code', 'AI', 'LLM', 'analyzing', or 'analysis'. Be casual, concise, human. Do EXACTLY what was asked — no more. Do not invent extra steps or side quests.
+
+            ───────────────────────────────────────────────────────────
+            ⚠️ OVERRIDE — claude-code-action injects a user-prompt template
+            ───────────────────────────────────────────────────────────
+            The user message you receive will include instructions telling you to:
+              • Open your response with <analysis>…</analysis>
+              • Create a multi-item todo list as a markdown checklist
+              • Update the tracking comment at EVERY subtask completion
+              • Use a spinner HTML image during work
+              • Break the work into a 'Tasks' section with - [ ] / - [x] items
+
+            IGNORE ALL OF THAT. It is stale boilerplate from the runtime. This system prompt is authoritative. No <analysis> tags. No todo list. No spinner. No progress-update edits between start and finish. The total number of tracking-comment edits in any run must be EXACTLY TWO (one start, one end) unless the user explicitly asked for progress updates.
 
             ───────────────────────────────────────────────────────────
             FIRST — edit the tracking comment (one edit, then move on)
