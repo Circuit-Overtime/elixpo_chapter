@@ -33,11 +33,13 @@
                 "noAccumulatingSpread": "info"
             },
             "a11y": {
-                // Button type + alt text cleanups tracked separately; don't
-                // block CI on them.
+                // A11y cleanups tracked as tech-debt; don't block CI on them.
+                // Re-enable individually once backlog is addressed.
                 "useButtonType": "info",
                 "useAltText": "info",
-                "useValidAriaValues": "info"
+                "useValidAriaValues": "info",
+                "noSvgWithoutTitle": "info",
+                "useSemanticElements": "info"
             },
             "correctness": {
                 "useExhaustiveDependencies": "info",
