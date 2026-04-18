@@ -21,7 +21,7 @@ LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
 LLM_MODEL_AGENT = "claude-fast"     # router default — agentic workflows (proven)
 LLM_MODEL_CODE = "qwen-coder"       # background subagent route for code-heavy work
 LLM_MODEL_CHAT = "gemini-fast"      # Python scripts: triage, descriptions, summaries
-LLM_MODEL_THINKING = "claude-fast"  # router "thinking" route
+LLM_MODEL_THINKING = "gemini-fast"  # router "thinking" route
 LLM_MODEL_SEARCH = "gemini-search"  # web search (only when needed)
 
 # Back-compat alias — scripts that haven't been migrated still import LLM_MODEL.

@@ -97,8 +97,11 @@ jobs:
           SEARCH_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_SEARCH; print(LLM_MODEL_SEARCH)")
           cd ..
 
-          # NOTE: default → AGENT_MODEL (claude-fast — proven agentic follower).
-          # background → CODE_MODEL (qwen-coder for delegated code-heavy subagents).
+          # Router wiring (models come from ci_config.py, NOT hardcoded here):
+          #   default    → AGENT_MODEL  — main agentic thread
+          #   background → CODE_MODEL   — delegated code-heavy subagent work
+          #   thinking   → THINK_MODEL  — reasoning-heavy steps
+          #   webSearch  → SEARCH_MODEL — when explicit web lookup is needed
           echo "Router models: default=$AGENT_MODEL, background=$CODE_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
 
           mkdir -p $HOME/.claude-code-router
