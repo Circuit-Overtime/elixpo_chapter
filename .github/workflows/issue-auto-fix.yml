@@ -30,6 +30,7 @@ jobs:
       actions: read
     env:
       POLLINATIONS_TOKEN: ${{ secrets.CI_POLLINATIONS_KEY }}
+      POLLINATIONS_TOKEN_CODER: ${{ secrets.CI_POLLINATIONS_KEY_CODER }}
       AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
     steps:
       - name: Check Authorization
@@ -105,8 +106,9 @@ jobs:
           echo "Router models: default=$AGENT_MODEL, background=$CODE_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
 
           mkdir -p $HOME/.claude-code-router
-          # maxtoken transformer caps outgoing max_tokens to 9000 — nova-fast
-          # (Bedrock Nova Micro) hard-rejects >10000 output tokens.
+          # Two providers so the code model has a dedicated key
+          # (CI_POLLINATIONS_KEY_CODER) while everything else uses the main
+          # CI_POLLINATIONS_KEY. maxtoken cap 9000 is a safe universal limit.
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
             "LOG": false,
@@ -114,20 +116,29 @@ jobs:
             "API_TIMEOUT_MS": 600000,
             "Providers": [
               {
-                "name": "pollinations",
+                "name": "pollinations-main",
                 "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
                 "api_key": "${POLLINATIONS_TOKEN}",
-                "models": ["${AGENT_MODEL}", "${CODE_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"],
+                "models": ["${AGENT_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"],
+                "transformer": {
+                  "use": [["maxtoken", {"max_tokens": 9000}]]
+                }
+              },
+              {
+                "name": "pollinations-coder",
+                "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
+                "api_key": "${POLLINATIONS_TOKEN_CODER}",
+                "models": ["${CODE_MODEL}"],
                 "transformer": {
                   "use": [["maxtoken", {"max_tokens": 9000}]]
                 }
               }
             ],
             "Router": {
-              "default": "pollinations,${AGENT_MODEL}",
-              "background": "pollinations,${CODE_MODEL}",
-              "thinking": "pollinations,${THINK_MODEL}",
-              "webSearch": "pollinations,${SEARCH_MODEL}"
+              "default": "pollinations-main,${AGENT_MODEL}",
+              "background": "pollinations-coder,${CODE_MODEL}",
+              "thinking": "pollinations-main,${THINK_MODEL}",
+              "webSearch": "pollinations-main,${SEARCH_MODEL}"
             }
           }
           EOF
