@@ -206,11 +206,13 @@ jobs:
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           branch_prefix: "elixpo/"
-          # claude_args sets the allowed-tools flag via the Claude Code CLI.
-          # `allowed_tools` is NOT a valid action input for v1 — must go through
-          # claude_args. Broad Bash access is fine in this ephemeral CI sandbox.
+          # claude-code-action injects its own restrictive ALLOWED_TOOLS list
+          # for PR-creation flows (no Edit/Write, no Bash(gh/npx)). The only
+          # reliable escape hatch is --permission-mode bypassPermissions.
+          # Safe here because we run in an ephemeral sandbox, every change goes
+          # through a PR, and main is branch-protected.
           claude_args: |
-            --allowedTools Bash Read Edit Write Glob Grep Task TodoWrite WebFetch
+            --permission-mode bypassPermissions
           prompt: |
             Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
             Reporter: @${{ github.event.issue.user.login }}
@@ -297,6 +299,16 @@ jobs:
             Read the issue body + comments, and the repo layout:
               gh issue view ${{ github.event.issue.number }} --comments
               ls -la
+
+            Also check for PRs previously linked to this issue:
+              gh pr list --search "linked:issue-${{ github.event.issue.number }}" --state all \
+                --json number,state,headRefName,title
+
+            If an OPEN PR exists → push further changes onto that PR's branch instead of
+            making a new one; update its description; don't open a duplicate.
+            If a CLOSED/MERGED PR exists → read its diff for context
+              ('gh pr diff <old-pr>'), then create a FRESH branch + PR. In the new
+              PR body add 'Supersedes #<old-pr>.' so reviewers see the history.
 
             ### Step 1 — Decide: is the issue clear enough to act on?
             Judge whether the issue description + comments give you enough
@@ -418,21 +430,26 @@ jobs:
         run: |
           set -e
 
-          BRANCH=$(gh api "repos/$REPO/branches?per_page=100" --paginate \
-            --jq ".[] | select(.name | startswith(\"elixpo/\") and contains(\"issue-$ISSUE_NUMBER\")) | .name" \
-            | head -1)
+          # Pick the first elixpo/* branch for this issue that has no OPEN PR.
+          # Closed/merged PRs don't count — those represent previous attempts,
+          # so we create a fresh PR for the new branch.
+          BRANCHES=$(gh api "repos/$REPO/branches?per_page=100" --paginate \
+            --jq ".[] | select(.name | startswith(\"elixpo/\") and contains(\"issue-$ISSUE_NUMBER\")) | .name")
+
+          BRANCH=""
+          for b in $BRANCHES; do
+            OPEN_PR=$(gh pr list --repo "$REPO" --head "$b" --state open --json number --jq 'length')
+            if [ "$OPEN_PR" = "0" ]; then
+              BRANCH="$b"
+              break
+            fi
+          done
 
           if [ -z "$BRANCH" ]; then
-            echo "No elixpo/issue-$ISSUE_NUMBER-* branch found — nothing to do."
+            echo "No elixpo/issue-$ISSUE_NUMBER-* branch without an open PR — nothing to do."
             exit 0
           fi
-          echo "Found branch: $BRANCH"
-
-          PR_EXISTS=$(gh pr list --repo "$REPO" --head "$BRANCH" --state all --json number --jq 'length')
-          if [ "$PR_EXISTS" -gt 0 ]; then
-            echo "PR already exists for $BRANCH, nothing to do."
-            exit 0
-          fi
+          echo "Found branch: $BRANCH (no open PR)"
 
           CHANGES=$(gh api "repos/$REPO/compare/main...$BRANCH" \
             --jq '.commits | map("- " + (.commit.message | split("\n")[0])) | join("\n")')

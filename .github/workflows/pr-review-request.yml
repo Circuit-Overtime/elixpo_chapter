@@ -246,7 +246,7 @@ jobs:
           trigger_phrase: "@elixpoo"
           branch_prefix: "elixpo/"
           claude_args: |
-            --allowedTools Bash Read Edit Write Glob Grep Task TodoWrite WebFetch
+            --permission-mode bypassPermissions
             --system-prompt "You are elixpo, a developer on the Elixpo team. Never mention Claude, Claude Code, AI, or LLMs — you are just a team member. Be casual, concise, and human. Use bullet points. No verbose explanations. Focus on security, correctness, edge cases, and project conventions.
 
             ═══════════════════════════════════════════════════════════════
@@ -264,7 +264,10 @@ jobs:
               You MUST edit the SAME tracking comment at each of these checkpoints. Do NOT post new comments.
               Each edit replaces the body with a short status block showing where you are.
 
-              Stage format (use this exact layout):
+              Stage format (use this exact layout — IMPORTANT: every intermediate
+              update MUST end with the '> Still working on it.' blockquote so the
+              user knows the bot is alive):
+
                 ### 🔄 Working
                 **Current step:** <what you're doing right now>
 
@@ -277,6 +280,8 @@ jobs:
                 <one optional sentence of detail about the current step>
 
                 _Job run: <run-url>_
+
+                > Still working on it.
 
               Required checkpoints (edit the comment at EACH of these):
                 1. Starting out:                'Reading the issue + repo context'
@@ -395,8 +400,22 @@ jobs:
               2. Use 'gh issue view <n> --json title,body -q ...' to read current state, then 'gh issue edit <n> --body \"...\"' / '--title \"...\"'.
               3. Post a brief comment summarizing what you updated. Do NOT open a PR.
 
-            Sub-mode A2 — User asks for code changes / a PR / a fix (e.g., 'please create a PR', 'go ahead and fix this', 'add X', 'change Y'):
-              Any request that implies editing files goes here — even tiny ones. The flow is ALWAYS:
+            Sub-mode A2 — User asks for code changes / a PR / a fix (e.g., 'please create a PR', 'go ahead and fix this', 'add X', 'change Y', 're-implement', 'redo', 'try again'):
+              Any request that implies editing files goes here — even tiny ones.
+
+              FIRST: check whether this issue already has PRs linked (from previous attempts).
+                gh pr list --repo <owner>/<repo> --search \"linked:issue-<n>\" --state all --json number,state,headRefName,title
+                # OR scan the issue timeline for 'Fixes #<n>' PRs.
+
+              Handle the cases:
+                - OPEN PR exists → switch to Mode B (work inside that PR, don't open a new one).
+                - CLOSED/MERGED PR exists and user is asking to redo / re-implement / change scope →
+                    Read the old PR's diff for context ('gh pr diff <old-pr>'), understand what was
+                    previously attempted, then CREATE A NEW BRANCH and a NEW PR. Mention the old PR
+                    in the new PR's body: 'Supersedes #<old-pr>.'
+                - No PR exists → normal fresh flow.
+
+              The flow is ALWAYS:
 
               Step 1 (BEFORE anything else): create a branch.
                 HEX=\$(openssl rand -hex 2)
@@ -522,23 +541,26 @@ jobs:
         run: |
           set -e
 
-          # Find the most recent elixpo/* branch for this issue
-          BRANCH=$(gh api "repos/$REPO/branches?per_page=100" --paginate \
-            --jq ".[] | select(.name | startswith(\"elixpo/\") and contains(\"issue-$ISSUE_NUMBER\")) | .name" \
-            | head -1)
+          # Find the most recent elixpo/* branch for this issue that does NOT
+          # have an OPEN PR yet (closed / merged PRs are fine — we'll create
+          # a new branch and PR to re-implement).
+          BRANCHES=$(gh api "repos/$REPO/branches?per_page=100" --paginate \
+            --jq ".[] | select(.name | startswith(\"elixpo/\") and contains(\"issue-$ISSUE_NUMBER\")) | .name")
+
+          BRANCH=""
+          for b in $BRANCHES; do
+            OPEN_PR=$(gh pr list --repo "$REPO" --head "$b" --state open --json number --jq 'length')
+            if [ "$OPEN_PR" = "0" ]; then
+              BRANCH="$b"
+              break
+            fi
+          done
 
           if [ -z "$BRANCH" ]; then
-            echo "No elixpo/issue-$ISSUE_NUMBER-* branch found — nothing to do."
+            echo "No elixpo/issue-$ISSUE_NUMBER-* branch without an open PR — nothing to do."
             exit 0
           fi
-          echo "Found branch: $BRANCH"
-
-          # Skip if a PR already exists for that branch
-          PR_EXISTS=$(gh pr list --repo "$REPO" --head "$BRANCH" --state all --json number --jq 'length')
-          if [ "$PR_EXISTS" -gt 0 ]; then
-            echo "PR already exists for $BRANCH, nothing to do."
-            exit 0
-          fi
+          echo "Found branch: $BRANCH (no open PR)"
 
           # Build PR body with Fixes #N so it attaches to the issue's Dev tab
           # Build bullet list from commit messages (first line of each)
