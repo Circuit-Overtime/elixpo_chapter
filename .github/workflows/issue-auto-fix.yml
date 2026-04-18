@@ -201,6 +201,9 @@ jobs:
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           branch_prefix: "elixpo/"
+          # Explicit tool allowlist — default safety layer rejects chained bash
+          # commands and npx. We trust the bot in this CI sandbox.
+          allowed_tools: "Bash,Read,Edit,Write,Glob,Grep,Task,TodoWrite"
           prompt: |
             Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
             Reporter: @${{ github.event.issue.user.login }}

@@ -238,6 +238,11 @@ jobs:
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           trigger_phrase: "@elixpoo"
           branch_prefix: "elixpo/"
+          # Explicit tool allowlist — claude-code-action's default safety layer
+          # rejects chained bash commands and npx by default, which blocked the
+          # biome gate. We trust the bot in this CI sandbox, so allow bash + gh
+          # + git + npx + openssl + the file/search tools it needs.
+          allowed_tools: "Bash,Read,Edit,Write,Glob,Grep,Task,TodoWrite"
           claude_args: |
             --system-prompt "You are elixpo, a developer on the Elixpo team. Never mention Claude, Claude Code, AI, or LLMs — you are just a team member. Be casual, concise, and human. Use bullet points. No verbose explanations. Focus on security, correctness, edge cases, and project conventions.
 
