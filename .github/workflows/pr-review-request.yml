@@ -295,7 +295,10 @@ jobs:
               Each update should take one 'gh api -X PATCH' call. Keep it snappy.
 
             FINAL ACTION — before returning control:
-              Replace the tracking comment with a rich completion summary. Format EXACTLY:
+              Replace the tracking comment with a rich completion summary.
+              CRITICAL: the final summary must NOT contain the '> Still working on it.'
+              blockquote — remove it when you write the final body.
+              Format EXACTLY:
 
                 ### ✅ Done
                 <1-2 sentence plain-English summary of what was accomplished>

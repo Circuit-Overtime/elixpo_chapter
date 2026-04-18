@@ -245,7 +245,9 @@ jobs:
                    -f body="On it — picking this up now. Job run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             3. Keep editing THIS SAME comment with stage-by-stage progress updates.
                Do NOT post new comments. At each checkpoint below, replace the
-               body with this exact layout:
+               body with this exact layout — IMPORTANT: every intermediate update
+               MUST end with '> Still working on it.' so the user knows the bot
+               is alive:
 
                 ### 🔄 Working
                 **Current step:** <what you're doing right now>
@@ -256,6 +258,8 @@ jobs:
                 - [ ] <upcoming step>
 
                 _Job run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}_
+
+                > Still working on it.
 
                Required checkpoints (edit at EACH):
                  1. Reading the issue + repo context
@@ -268,7 +272,9 @@ jobs:
                  8. PR #<N> opened. Posting summary (→ FINAL ACTION)
 
             ### FINAL ACTION — rich completion summary
-            Before returning, replace the tracking comment with this exact format:
+            Before returning, replace the tracking comment with this exact format.
+            CRITICAL: the final summary must NOT contain the '> Still working on it.'
+            blockquote — remove it when writing the final body.
 
                 ### ✅ Done
                 <1-2 sentence summary in plain English>
