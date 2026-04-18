@@ -5,27 +5,11 @@ Single source of truth for all CI workflows and scripts.
 
 # ── LLM ─────────────────────────────────────────────
 LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
-
-# Task-specific model routing.
-#
-# MODEL NOTES (what we tested):
-#   - gemini-fast:    current choice — single model across agent/thinking/chat for
-#                     consistency. ~$0.30/$1.20 per M. Output token limit is high
-#                     enough to avoid the Bedrock 10k cap that nova-fast hit.
-#   - nova-fast:      follows stage-by-stage but Bedrock Nova Micro rejects
-#                     requests >10000 output tokens — risky with long prompts.
-#   - claude-fast:    proven baseline. ~$1.11/$5.50 per M. Fallback if gemini-fast breaks.
-#   - qwen-coder:     coder bias — skipped orchestration when used as agent.
-#                     Fine for code-specific background delegations.
-# NOTE: use `gemini-fast` (Gemini 2.5 Flash Lite), NOT `gemini` (Gemini 3 Flash).
-# Gemini 3 requires a `thought_signature` field on every function-call message
-# block, which claude-code-router doesn't attach → every tool call 400s.
-# 2.5 Flash Lite doesn't have that requirement and is cheaper anyway.
-LLM_MODEL_AGENT = "gemini"        # main agentic thread (router default)
-LLM_MODEL_CODE = "qwen-coder"          # background subagent route
-LLM_MODEL_CHAT = "gemini"         # Python scripts: triage, descriptions
-LLM_MODEL_THINKING = "perplexity-reasoning"  # router "thinking" route
-LLM_MODEL_SEARCH = "gemini-search"     # web search (only when needed)
+LLM_MODEL_AGENT = "gemini"       
+LLM_MODEL_CODE = "qwen-coder"        
+LLM_MODEL_CHAT = "gemini"        
+LLM_MODEL_THINKING = "perplexity-reasoning"  
+LLM_MODEL_SEARCH = "gemini-search"    
 
 # Back-compat alias — scripts that haven't been migrated still import LLM_MODEL.
 LLM_MODEL = LLM_MODEL_CHAT
