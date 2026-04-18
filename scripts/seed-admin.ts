@@ -13,7 +13,7 @@
  */
 
 import "dotenv/config";
-import { createHash, pbkdf2Sync, randomBytes } from "crypto";
+import { pbkdf2Sync, randomBytes } from "crypto";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "ayushman@elixpo.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;

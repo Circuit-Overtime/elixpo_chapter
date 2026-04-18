@@ -122,7 +122,7 @@ export default function UsersPage() {
     };
 
     const handleInviteAdmin = async () => {
-        if (!inviteEmail || !inviteEmail.includes("@")) {
+        if (!inviteEmail?.includes("@")) {
             setToast({
                 open: true,
                 message: "Please enter a valid email",

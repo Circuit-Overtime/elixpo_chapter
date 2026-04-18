@@ -20,7 +20,7 @@ import {
     Typography,
 } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const cardSx = {
     background: "rgba(255,255,255,0.03)",

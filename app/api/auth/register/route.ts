@@ -173,6 +173,7 @@ export async function POST(request: NextRequest) {
                     const expiryMinutes = parseInt(
                         process.env.EMAIL_VERIFICATION_OTP_EXPIRY_MINUTES ||
                             "10",
+                        10,
                     );
                     const expiresAt = new Date(
                         Date.now() + expiryMinutes * 60 * 1000,
@@ -281,6 +282,7 @@ export async function POST(request: NextRequest) {
                     Date.now() +
                         parseInt(
                             process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30",
+                            10,
                         ) *
                             24 *
                             60 *
@@ -304,7 +306,8 @@ export async function POST(request: NextRequest) {
                 access_token: accessToken,
                 refresh_token: refreshTokenJWT,
                 expires_in:
-                    parseInt(process.env.JWT_EXPIRATION_MINUTES || "15") * 60,
+                    parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10) *
+                    60,
                 token_type: "Bearer",
             },
             // Signal frontend to show display name setup for email/password signups
@@ -313,7 +316,7 @@ export async function POST(request: NextRequest) {
 
         // Set secure cookies
         const maxAge =
-            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15") * 60;
+            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10) * 60;
         response.cookies.set("access_token", accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
@@ -327,7 +330,10 @@ export async function POST(request: NextRequest) {
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             maxAge:
-                parseInt(process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30") *
+                parseInt(
+                    process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30",
+                    10,
+                ) *
                 24 *
                 60 *
                 60,

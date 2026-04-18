@@ -11,7 +11,7 @@ export const runtime = "edge";
 import { type NextRequest, NextResponse } from "next/server";
 import { getMetricsText } from "../../../src/lib/prometheus-metrics";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
     try {
         const metrics = await getMetricsText();
 

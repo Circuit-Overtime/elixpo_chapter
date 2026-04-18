@@ -4,7 +4,7 @@
  */
 
 import { type NextRequest, NextResponse } from "next/server";
-import { type ApiKeyScopes, hasScope, validateApiKey } from "./api-key-service";
+import { type ApiKeyScopes, validateApiKey } from "./api-key-service";
 import {
     checkApiKeyRateLimit as checkRateLimit,
     logApiKeyUsage,

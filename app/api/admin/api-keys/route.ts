@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         }
 
         const decoded = await verifyJWT(token);
-        if (!decoded || !decoded.sub) {
+        if (!decoded?.sub) {
             return NextResponse.json(
                 { error: "Invalid token" },
                 { status: 401 },
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         }
 
         const decoded = await verifyJWT(token);
-        if (!decoded || !decoded.sub) {
+        if (!decoded?.sub) {
             return NextResponse.json(
                 { error: "Invalid token" },
                 { status: 401 },
@@ -91,8 +91,8 @@ export async function POST(request: NextRequest) {
         // Calculate expiration date
         let expiresAt: Date | undefined;
         if (expiresIn) {
-            const days = parseInt(expiresIn);
-            if (isNaN(days) || days < 1) {
+            const days = parseInt(expiresIn, 10);
+            if (Number.isNaN(days) || days < 1) {
                 return NextResponse.json(
                     { error: "expiresIn must be a number of days (minimum 1)" },
                     { status: 400 },
@@ -144,7 +144,7 @@ export async function PATCH(request: NextRequest) {
         }
 
         const decoded = await verifyJWT(token);
-        if (!decoded || !decoded.sub) {
+        if (!decoded?.sub) {
             return NextResponse.json(
                 { error: "Invalid token" },
                 { status: 401 },
@@ -211,7 +211,7 @@ export async function DELETE(request: NextRequest) {
         }
 
         const decoded = await verifyJWT(token);
-        if (!decoded || !decoded.sub) {
+        if (!decoded?.sub) {
             return NextResponse.json(
                 { error: "Invalid token" },
                 { status: 401 },

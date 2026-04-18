@@ -6,7 +6,6 @@ import {
     Box,
     Button,
     Checkbox,
-    Divider,
     FormControlLabel,
     IconButton,
     InputAdornment,

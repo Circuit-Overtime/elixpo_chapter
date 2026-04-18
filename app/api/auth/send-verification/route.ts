@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
         const verificationToken = generateUUID();
         const expiryMinutes = parseInt(
             process.env.EMAIL_VERIFICATION_OTP_EXPIRY_MINUTES || "10",
+            10,
         );
         const expiresAt = new Date(
             Date.now() + expiryMinutes * 60 * 1000,

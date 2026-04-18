@@ -96,7 +96,7 @@ class SmtpConnection {
 
     async send(mail: MailMessage): Promise<void> {
         const fromEmail = mail.from.includes("<")
-            ? mail.from.match(/<(.+)>/)![1]
+            ? mail.from.match(/<(.+)>/)?.[1]
             : mail.from;
 
         const mailFrom = await this.command(`MAIL FROM:<${fromEmail}>`);
@@ -150,9 +150,9 @@ class SmtpConnection {
         );
 
         const body = lines
-            .map((line) => (line.startsWith(".") ? "." + line : line))
+            .map((line) => (line.startsWith(".") ? `.${line}` : line))
             .join("\r\n");
-        const result = await this.command(body + "\r\n.");
+        const result = await this.command(`${body}\r\n.`);
         if (result.code !== 250)
             throw new Error(`SMTP message send failed: ${result.text}`);
     }
@@ -178,7 +178,7 @@ class SmtpConnection {
     private async command(
         data: string,
     ): Promise<{ code: number; text: string }> {
-        await this.writer.write(this.encoder.encode(data + "\r\n"));
+        await this.writer.write(this.encoder.encode(`${data}\r\n`));
         return this.readResponse();
     }
 
@@ -188,11 +188,10 @@ class SmtpConnection {
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
                 if (line.length >= 3 && /^\d{3} /.test(line)) {
-                    const consumed =
-                        lines.slice(0, i + 1).join("\r\n") + "\r\n";
+                    const consumed = `${lines.slice(0, i + 1).join("\r\n")}\r\n`;
                     this.buffer = this.buffer.substring(consumed.length);
                     return {
-                        code: parseInt(line.substring(0, 3)),
+                        code: parseInt(line.substring(0, 3), 10),
                         text: lines.slice(0, i + 1).join("\n"),
                     };
                 }
@@ -201,10 +200,9 @@ class SmtpConnection {
                     /^\d{3}$/.test(line) &&
                     i < lines.length - 1
                 ) {
-                    const consumed =
-                        lines.slice(0, i + 1).join("\r\n") + "\r\n";
+                    const consumed = `${lines.slice(0, i + 1).join("\r\n")}\r\n`;
                     this.buffer = this.buffer.substring(consumed.length);
-                    return { code: parseInt(line), text: line };
+                    return { code: parseInt(line, 10), text: line };
                 }
             }
             const { value, done } = await this.reader.read();

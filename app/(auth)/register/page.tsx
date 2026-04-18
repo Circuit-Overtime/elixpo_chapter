@@ -5,7 +5,6 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import {
     Box,
     Button,
-    Divider,
     IconButton,
     InputAdornment,
     TextField,

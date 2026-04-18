@@ -332,7 +332,7 @@ async function buildSuccessResponse(
         user.id,
         email,
         provider.toLowerCase() as "google" | "github",
-        parseInt(process.env.JWT_EXPIRATION_MINUTES || "15"),
+        parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
         !!user.is_admin,
     );
 
@@ -351,6 +351,7 @@ async function buildSuccessResponse(
                 Date.now() +
                     parseInt(
                         process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30",
+                        10,
                     ) *
                         24 *
                         60 *
@@ -380,9 +381,10 @@ async function buildSuccessResponse(
         oauthNext || (user.is_admin ? "/admin" : "/dashboard/oauth-apps");
     const response = NextResponse.redirect(new URL(redirectDest, request.url));
 
-    const maxAge = parseInt(process.env.JWT_EXPIRATION_MINUTES || "15") * 60;
+    const maxAge =
+        parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10) * 60;
     const refreshMaxAge =
-        parseInt(process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30") *
+        parseInt(process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30", 10) *
         24 *
         60 *
         60;

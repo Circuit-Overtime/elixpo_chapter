@@ -29,7 +29,7 @@ async function getUserIdentity(db: D1Database, userId: string) {
  * Auto-refresh: verify the refresh token, issue new access + refresh tokens,
  * set cookies, and return the user profile in one round-trip.
  */
-async function tryAutoRefresh(request: NextRequest, refreshToken: string) {
+async function tryAutoRefresh(_request: NextRequest, refreshToken: string) {
     try {
         const payload = await verifyJWT(refreshToken);
         if (!payload || payload.type !== "refresh") {
@@ -59,7 +59,7 @@ async function tryAutoRefresh(request: NextRequest, refreshToken: string) {
 
         const isAdmin = !!user.is_admin;
         const accessMaxAge =
-            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15") * 60;
+            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10) * 60;
 
         // Determine remaining session duration from the refresh token's own expiry
         const refreshRemainingSeconds = Math.max(
@@ -76,7 +76,7 @@ async function tryAutoRefresh(request: NextRequest, refreshToken: string) {
             payload.sub,
             user.email,
             payload.provider,
-            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15"),
+            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
             isAdmin,
         );
         const newRefreshToken = await createRefreshToken(

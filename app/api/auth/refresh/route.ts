@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
                     Date.now() +
                         parseInt(
                             process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30",
+                            10,
                         ) *
                             24 *
                             60 *
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
             refresh_token: newRefreshToken,
             token_type: "Bearer",
             expires_in:
-                parseInt(process.env.JWT_EXPIRATION_MINUTES || "15") * 60,
+                parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10) * 60,
         });
 
         // Update both access and refresh token cookies
@@ -105,7 +106,8 @@ export async function POST(request: NextRequest) {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
-            maxAge: parseInt(process.env.JWT_EXPIRATION_MINUTES || "15") * 60,
+            maxAge:
+                parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10) * 60,
             path: "/",
         });
 
@@ -114,7 +116,10 @@ export async function POST(request: NextRequest) {
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             maxAge:
-                parseInt(process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30") *
+                parseInt(
+                    process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30",
+                    10,
+                ) *
                 24 *
                 60 *
                 60,

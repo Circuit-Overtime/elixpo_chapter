@@ -10,7 +10,7 @@ interface EmailOptions {
 function getSmtpConfig() {
     return {
         host: process.env.SMTP_HOST || "smtp.gmail.com",
-        port: parseInt(process.env.SMTP_PORT || "465"),
+        port: parseInt(process.env.SMTP_PORT || "465", 10),
         user: process.env.SMTP_FROM_EMAIL || "noreply@elixpo.com",
         pass: process.env.SMTP_PASS || "",
         fromName: process.env.SMTP_FROM_NAME || "Elixpo (noreply)",
@@ -27,8 +27,7 @@ async function sendViaNodemailer(options: EmailOptions): Promise<void> {
 
     // Use absolute path so Node.js can resolve it from .next/server/ output dir.
     // The dynamic expression also hides it from esbuild static analysis (Cloudflare build).
-    const nodemailerPath =
-        process.cwd() + "/node_modules/nodemailer/lib/nodemailer.js";
+    const nodemailerPath = `${process.cwd()}/node_modules/nodemailer/lib/nodemailer.js`;
     const nodemailer = (await import(nodemailerPath)).default;
 
     const transporter = nodemailer.createTransport({
@@ -689,7 +688,7 @@ export async function sendOTPEmail(
     const t = emailTemplates.otp(
         recipientName,
         otpCode,
-        parseInt(process.env.EMAIL_VERIFICATION_OTP_EXPIRY_MINUTES || "10"),
+        parseInt(process.env.EMAIL_VERIFICATION_OTP_EXPIRY_MINUTES || "10", 10),
         verifyLink,
     );
     await sendEmail({
@@ -708,7 +707,7 @@ export async function sendPasswordResetEmail(
     const t = emailTemplates.passwordReset(
         recipientName,
         resetLink,
-        parseInt(process.env.EMAIL_VERIFICATION_LINK_EXPIRY_HOURS || "24"),
+        parseInt(process.env.EMAIL_VERIFICATION_LINK_EXPIRY_HOURS || "24", 10),
     );
     await sendEmail({
         to: email,

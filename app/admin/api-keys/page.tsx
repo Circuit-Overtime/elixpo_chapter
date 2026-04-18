@@ -12,17 +12,13 @@ import {
     Alert,
     Box,
     Button,
-    Card,
-    CardContent,
     Chip,
     CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
-    Divider,
     FormControlLabel,
-    Grid,
     IconButton,
     Paper,
     Switch,
@@ -98,7 +94,7 @@ export default function ApiKeysPage() {
     // Fetch API keys
     useEffect(() => {
         fetchApiKeys();
-    }, []);
+    }, [fetchApiKeys]);
 
     const fetchApiKeys = async () => {
         try {

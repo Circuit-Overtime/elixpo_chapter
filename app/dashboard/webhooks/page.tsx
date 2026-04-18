@@ -30,7 +30,7 @@ import {
     Typography,
 } from "@mui/material";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const AVAILABLE_EVENTS = [
     { value: "user.created", label: "User Created" },
@@ -102,7 +102,7 @@ export default function WebhooksPage() {
 
     useEffect(() => {
         fetchWebhooks();
-    }, []);
+    }, [fetchWebhooks]);
 
     const fetchWebhooks = async () => {
         try {

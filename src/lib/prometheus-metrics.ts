@@ -103,7 +103,7 @@ class EdgeHistogram {
         for (const { labels, value } of this.observations) {
             const key = JSON.stringify(labels);
             if (!grouped.has(key)) grouped.set(key, []);
-            grouped.get(key)!.push(value);
+            grouped.get(key)?.push(value);
         }
         for (const [key, values] of grouped) {
             const labels = JSON.parse(key) as Labels;
@@ -243,7 +243,7 @@ export const webhookFailures = register(
 
 // --- Helper functions ---
 export async function getMetricsText(): Promise<string> {
-    return metrics.map((m) => m.text()).join("\n\n") + "\n";
+    return `${metrics.map((m) => m.text()).join("\n\n")}\n`;
 }
 
 export function recordHttpRequest(

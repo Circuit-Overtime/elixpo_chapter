@@ -51,7 +51,7 @@ export function generatePixelAvatar(seed: string, size: number = 64): string {
         grid[row] = [];
         for (let col = 0; col < 3; col++) {
             // Use different bits of the hash + row/col to decide on/off
-            const bit = hashCode(seed + row + "," + col) % 3; // ~66% fill
+            const bit = hashCode(`${seed + row},${col}`) % 3; // ~66% fill
             grid[row][col] = bit !== 0;
         }
         // Mirror: col 3 = col 1, col 4 = col 0

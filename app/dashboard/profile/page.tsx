@@ -20,7 +20,6 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    FormControlLabel,
     FormGroup,
     Switch,
     TextField,
@@ -104,7 +103,7 @@ const sectionSubtitleSx = {
     mb: 3,
 };
 
-const dividerSx = {
+const _dividerSx = {
     borderColor: "rgba(255,255,255,0.08)",
     my: 2.5,
 };
@@ -228,7 +227,7 @@ const ProfilePage = () => {
         fetchProfile();
         fetchNotifPrefs();
         fetchConnectedServices();
-    }, []);
+    }, [fetchProfile, fetchNotifPrefs, fetchConnectedServices]);
 
     const fetchProfile = async () => {
         try {

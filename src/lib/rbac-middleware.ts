@@ -33,7 +33,7 @@ export async function getAuthContext(
     }
 
     const decoded = await verifyJWT(token);
-    if (!decoded || !decoded.sub) {
+    if (!decoded?.sub) {
         return null;
     }
 

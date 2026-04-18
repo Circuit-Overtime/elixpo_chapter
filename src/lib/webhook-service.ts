@@ -271,7 +271,7 @@ export async function triggerWebhookEvent(
     payload: Record<string, any>,
     userId?: string,
 ): Promise<void> {
-    const db = await getDatabase();
+    const _db = await getDatabase();
 
     try {
         // Get webhooks for this event

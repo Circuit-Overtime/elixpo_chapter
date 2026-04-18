@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     try {
         const { email } = (await request.json()) as { email?: string };
 
-        if (!email || !email.includes("@")) {
+        if (!email?.includes("@")) {
             return NextResponse.json(
                 { error: "A valid email address is required" },
                 { status: 400 },
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
             .bind(email)
             .first()) as any;
 
-        if (!user || !user.password_hash) {
+        if (!user?.password_hash) {
             // Don't reveal whether the email exists
             return NextResponse.json({
                 message:

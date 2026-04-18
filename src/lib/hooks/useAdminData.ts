@@ -99,7 +99,7 @@ export function useUsers(page: number = 1, search: string = "") {
     const [data, setData] = useState<UsersResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [refreshKey, setRefreshKey] = useState(0);
+    const [_refreshKey, setRefreshKey] = useState(0);
 
     const refetch = () => setRefreshKey((k) => k + 1);
 
@@ -128,7 +128,7 @@ export function useUsers(page: number = 1, search: string = "") {
         };
 
         fetchUsers();
-    }, [page, search, refreshKey]);
+    }, [page, search]);
 
     return { data, loading, error, refetch };
 }
@@ -159,7 +159,7 @@ export function useApps(page: number = 1, search: string = "") {
     const [data, setData] = useState<AppsResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [refreshKey, setRefreshKey] = useState(0);
+    const [_refreshKey, setRefreshKey] = useState(0);
 
     const refetch = () => setRefreshKey((k) => k + 1);
 
@@ -188,7 +188,7 @@ export function useApps(page: number = 1, search: string = "") {
         };
 
         fetchApps();
-    }, [page, search, refreshKey]);
+    }, [page, search]);
 
     return { data, loading, error, refetch };
 }

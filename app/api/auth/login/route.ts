@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
             user.id,
             email,
             provider as any,
-            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15"),
+            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
             isAdminUser,
         );
         const refreshTokenJWT = await createRefreshToken(
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
         }
 
         const accessMaxAge =
-            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15") * 60;
+            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10) * 60;
         const refreshMaxAge = refreshDays * 24 * 60 * 60;
 
         const response = NextResponse.json({

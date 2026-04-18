@@ -76,7 +76,7 @@ const ServicesPage = () => {
 
     useEffect(() => {
         fetchServices();
-    }, []);
+    }, [fetchServices]);
 
     const fetchServices = async () => {
         try {

@@ -10,7 +10,6 @@
 
 import dotenv from "dotenv";
 import {
-    emailTemplates,
     sendOTPEmail,
     sendPasswordResetEmail,
     sendSigninConfirmationEmail,
@@ -94,7 +93,7 @@ async function runTests() {
         await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
-    console.log("\n" + "=".repeat(60));
+    console.log(`\n${"=".repeat(60)}`);
     console.log(`📊 Test Results: ${passed} passed, ${failed} failed`);
     console.log("=".repeat(60));
 

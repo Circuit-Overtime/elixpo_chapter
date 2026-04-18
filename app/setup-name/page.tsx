@@ -40,7 +40,7 @@ const SetupNameContent = () => {
 
     useEffect(() => {
         fetchCurrentName();
-    }, []);
+    }, [fetchCurrentName]);
 
     const fetchCurrentName = async () => {
         try {

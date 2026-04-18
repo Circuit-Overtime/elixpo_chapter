@@ -108,7 +108,7 @@ function ForgotPasswordContent() {
         e.preventDefault();
         setError("");
 
-        if (!email || !email.includes("@")) {
+        if (!email?.includes("@")) {
             setError("Please enter a valid email address");
             return;
         }

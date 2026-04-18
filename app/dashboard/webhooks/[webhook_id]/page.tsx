@@ -9,7 +9,6 @@ import {
     Box,
     Button,
     Checkbox,
-    Chip,
     CircularProgress,
     Divider,
     FormControlLabel,
@@ -18,7 +17,7 @@ import {
     Typography,
 } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const AVAILABLE_EVENTS = [
     "user.created",
@@ -54,7 +53,7 @@ export default function WebhookDetailPage() {
     const router = useRouter();
     const webhookId = params.webhook_id as string;
 
-    const [webhook, setWebhook] = useState<any>(null);
+    const [_webhook, setWebhook] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [testing, setTesting] = useState(false);

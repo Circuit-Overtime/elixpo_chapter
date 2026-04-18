@@ -169,7 +169,7 @@ function createLocalD1Client(
  * WARNING: Data is not persisted between server restarts
  */
 function createInMemoryMockDb(): D1Database {
-    const data = new Map<string, any[]>();
+    const _data = new Map<string, any[]>();
 
     const makeMockStatement = (sql: string): any => ({
         bind: (..._args: any[]) => makeMockStatement(sql),

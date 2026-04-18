@@ -14,7 +14,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Settings {
     rateLimitMaxRequests: number;
@@ -210,7 +210,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                     handleSettingChange(
                                         "rateLimitMaxRequests",
-                                        parseInt(e.target.value),
+                                        parseInt(e.target.value, 10),
                                     )
                                 }
                                 fullWidth
@@ -226,7 +226,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                     handleSettingChange(
                                         "rateLimitWindowMs",
-                                        parseInt(e.target.value),
+                                        parseInt(e.target.value, 10),
                                     )
                                 }
                                 fullWidth
@@ -263,7 +263,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                     handleSettingChange(
                                         "jwtExpirationMinutes",
-                                        parseInt(e.target.value),
+                                        parseInt(e.target.value, 10),
                                     )
                                 }
                                 fullWidth
@@ -279,7 +279,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                     handleSettingChange(
                                         "refreshTokenExpirationDays",
-                                        parseInt(e.target.value),
+                                        parseInt(e.target.value, 10),
                                     )
                                 }
                                 fullWidth
@@ -316,7 +316,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                     handleSettingChange(
                                         "emailVerificationOtpLength",
-                                        parseInt(e.target.value),
+                                        parseInt(e.target.value, 10),
                                     )
                                 }
                                 fullWidth
@@ -334,7 +334,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                     handleSettingChange(
                                         "emailVerificationOtpExpiryMinutes",
-                                        parseInt(e.target.value),
+                                        parseInt(e.target.value, 10),
                                     )
                                 }
                                 fullWidth
@@ -370,7 +370,7 @@ export default function SettingsPage() {
                             onChange={(e) =>
                                 handleSettingChange(
                                     "bcryptRounds",
-                                    parseInt(e.target.value),
+                                    parseInt(e.target.value, 10),
                                 )
                             }
                             fullWidth

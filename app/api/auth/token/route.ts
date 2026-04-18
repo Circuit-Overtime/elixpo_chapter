@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
                     userId,
                     user.email,
                     "email",
-                    parseInt(process.env.JWT_EXPIRATION_MINUTES || "15"),
+                    parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
                     !!user.is_admin,
                 );
                 const refreshTokenJWT = await createRefreshToken(
@@ -189,6 +189,7 @@ export async function POST(request: NextRequest) {
                             parseInt(
                                 process.env.REFRESH_TOKEN_EXPIRATION_DAYS ||
                                     "30",
+                                10,
                             ) *
                                 24 *
                                 60 *
@@ -204,6 +205,7 @@ export async function POST(request: NextRequest) {
                         expires_in:
                             parseInt(
                                 process.env.JWT_EXPIRATION_MINUTES || "15",
+                                10,
                             ) * 60,
                         refresh_token: refreshTokenJWT,
                         scope: scopes.join(" "),
@@ -288,7 +290,7 @@ export async function POST(request: NextRequest) {
                     payload.sub,
                     email,
                     payload.provider,
-                    parseInt(process.env.JWT_EXPIRATION_MINUTES || "15"),
+                    parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
                     isAdmin,
                 );
 
@@ -310,6 +312,7 @@ export async function POST(request: NextRequest) {
                                 parseInt(
                                     process.env.REFRESH_TOKEN_EXPIRATION_DAYS ||
                                         "30",
+                                    10,
                                 ) *
                                     24 *
                                     60 *
@@ -332,6 +335,7 @@ export async function POST(request: NextRequest) {
                         expires_in:
                             parseInt(
                                 process.env.JWT_EXPIRATION_MINUTES || "15",
+                                10,
                             ) * 60,
                     },
                     { status: 200 },
