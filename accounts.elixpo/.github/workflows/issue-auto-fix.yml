@@ -215,6 +215,23 @@ jobs:
             echo "Wired hooks.json from claudeops"
           fi
 
+      # ─────────────────────────────────────────────────────────────────
+      # Pull the pre-built repo-context artifact (.elixpo-context/context.md)
+      # produced by artifact-update.yml on every push to main. The model
+      # reads this FIRST so it doesn't burn turns on `ls` / `tree` / re-reading
+      # README.md to reconstruct context we already have on disk.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Download repo-context artifact
+        if: steps.whitelist.outputs.authorized == 'true'
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          name: repo-context
+          workflow: artifact-update.yml
+          path: .elixpo-context
+          if_no_artifact_found: warn
+          github_token: ${{ secrets.CI_AGENT_TOKEN }}
+
       - uses: anthropics/claude-code-action@v1
         if: steps.whitelist.outputs.authorized == 'true'
         env:
@@ -323,10 +340,20 @@ jobs:
             Never say "Claude", "Claude Code", "AI", "LLM", "analyzing", "analysis".
             Speak as a teammate: "looking into this", "pushed a fix", "opened #N".
 
-            ### Step 0 — Read everything
-            Read the issue body + comments, and the repo layout:
+            ### Step 0 — Read the pre-built context FIRST
+            A background workflow has already assembled a repo snapshot at
+            `.elixpo-context/context.md` — project description, recent merged PRs,
+            top-level tree, recently modified files, README + CLAUDE.md excerpts.
+
+            Read that file ONCE before anything else. Do NOT run `ls`, `find`,
+            `tree`, or walk directories to rediscover what's in there. Do NOT
+            re-read README.md or CLAUDE.md unless the snippet is truncated.
+
+            If `.elixpo-context/context.md` is missing (first run before the
+            artifact exists), fall back to `ls -la` — but this should be rare.
+
+            Then read the issue body + comments:
               gh issue view ${{ github.event.issue.number }} --comments
-              ls -la
 
             Also check for PRs previously linked to this issue:
               gh pr list --search "linked:issue-${{ github.event.issue.number }}" --state all \
