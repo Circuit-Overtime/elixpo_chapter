@@ -8,17 +8,15 @@ LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
 
 # Task-specific model routing.
 #
-# HARD-WON LESSON: claude-code-router does NOT reliably remap arbitrary model
-# names. claude-code-action internally calls 'claude-sonnet-4-6' / 'claude-haiku-4-5'
-# — if the router's default is a non-Claude model, the rename usually fails and
-# the request passes through to Pollinations using Sonnet (expensive + slow,
-# and the model doesn't reliably follow our stage-by-stage prompt).
-#
-# Rule: the agentic workflows (pr-review-request, issue-auto-fix) MUST use a
-# Claude-family model as default — claude-fast is the cheapest that still follows
-# the nested orchestration prompt. Python scripts talk directly to Pollinations
-# (no router), so they can use anything cheap.
-LLM_MODEL_AGENT = "claude-fast"     # router default — agentic workflows (proven)
+# MODEL NOTES (what we tested, what worked):
+#   - claude-fast:    proven for agentic orchestration. Baseline. ~$1.11/$5.50 per M.
+#   - gemini-fast:    skipped stage-by-stage updates, rushed to completion. Failed.
+#   - qwen-coder:     coder bias — ignored orchestration, jumped to code. Failed.
+#   - openai-fast:    CURRENTLY TESTING — OpenAI Nano class has strong instruction
+#                     following. ~$0.05/$0.40 per M (22x / 14x cheaper than claude-fast).
+#                     If stage updates appear + the bot actually works, this is the winner.
+#                     If it silently completes like gemini-fast did, revert to claude-fast.
+LLM_MODEL_AGENT = "openai-fast"     # TESTING — cheap instruction-follower
 LLM_MODEL_CODE = "qwen-coder"       # background subagent route for code-heavy work
 LLM_MODEL_CHAT = "gemini-fast"      # Python scripts: triage, descriptions, summaries
 LLM_MODEL_THINKING = "gemini-fast"  # router "thinking" route
