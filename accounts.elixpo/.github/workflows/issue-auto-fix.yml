@@ -466,8 +466,18 @@ jobs:
           GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
           REPO: ${{ github.repository }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RUN_ID: ${{ github.run_id }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set +e
-          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
-            --body "> Something went wrong on my end. Check the run: $RUN_URL"
+          BODY=$(cat <<EOF
+          > ⚠️ Something went wrong on my end while handling this issue.
+
+          **What you can do:**
+
+          <kbd>🔄 [**Re-run this workflow**]($RUN_URL)</kbd> &nbsp;·&nbsp; [View logs]($RUN_URL) &nbsp;·&nbsp; Or comment \`@elixpoo retry\` once the cause is fixed
+
+          <sub>Run ID: \`$RUN_ID\`</sub>
+          EOF
+          )
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$BODY"
