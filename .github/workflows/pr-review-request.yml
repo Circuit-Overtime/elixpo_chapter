@@ -237,6 +237,23 @@ jobs:
             echo "Wired hooks.json from claudeops"
           fi
 
+      # ─────────────────────────────────────────────────────────────────
+      # Pull the pre-built repo-context artifact (.elixpo-context/context.md)
+      # produced by artifact-update.yml on every push to main. The model
+      # reads this FIRST so it doesn't burn turns on `ls` / `gh issue view`
+      # / tree-walking to reconstruct context we already have on disk.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Download repo-context artifact
+        if: steps.whitelist.outputs.authorized == 'true'
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          name: repo-context
+          workflow: artifact-update.yml
+          path: .elixpo-context
+          if_no_artifact_found: warn
+          github_token: ${{ secrets.CI_AGENT_TOKEN }}
+
       - uses: anthropics/claude-code-action@v1
         if: steps.whitelist.outputs.authorized == 'true'
         env:
@@ -267,8 +284,21 @@ jobs:
             Repo: ${{ github.repository }}
             Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-            ### Step 0 — Read the trigger and classify
-            Read the triggering comment / review / issue body to find what the user actually asked.
+            ### Step 0 — Read the pre-built context (DO THIS FIRST, ALWAYS)
+            A background workflow has already assembled a repo snapshot at
+            `.elixpo-context/context.md` — project description, recent merged PRs,
+            top-level tree, recently modified files, README + CLAUDE.md excerpts.
+
+            Read that file ONCE. Do NOT run `ls`, `find`, `tree`, or walk directories
+            to rediscover what's in there. Do NOT re-read README.md or CLAUDE.md
+            unless the context snippet is truncated and you need more.
+
+            If `.elixpo-context/context.md` is missing (first run before artifact
+            exists), fall back to `ls -la` + reading CLAUDE.md — but this should
+            be rare.
+
+            ### Step 1 — Read the trigger and classify
+            Read the triggering comment / review / issue body to find what the user asked.
 
             Pick ONE path and do ONLY that path. Default to REVIEW if unsure — never invent extra work.
 
@@ -277,11 +307,10 @@ jobs:
             - **CHANGE** — user explicitly asked for a code change (fix X, add Y, update Z, rename, refactor, etc.).
               Go to Step 2.
 
-            ### Step 1 — Quick context (ONE read, no loops)
             If this is a PR event (pull_request_review_comment, pull_request_review, or issue_comment on a PR):
               PR_NUM=$(gh pr view --json number -q .number 2>/dev/null || echo "${{ github.event.pull_request.number }}")
               gh pr view $PR_NUM --comments
-              gh pr diff $PR_NUM    # only if you actually need the diff
+              gh pr diff $PR_NUM    # only if you need the diff for CHANGE path
             If this is an issue event:
               gh issue view ${{ github.event.issue.number }} --comments
 
