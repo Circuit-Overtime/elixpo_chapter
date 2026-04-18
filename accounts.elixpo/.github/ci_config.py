@@ -8,17 +8,16 @@ LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
 
 # Task-specific model routing.
 #
-# HARD-WON LESSON: claude-code-router does NOT reliably remap arbitrary model
-# names. claude-code-action internally calls 'claude-sonnet-4-6' / 'claude-haiku-4-5'
-# — if the router's default is a non-Claude model, the rename usually fails and
-# the request passes through to Pollinations using Sonnet (expensive + slow,
-# and the model doesn't reliably follow our stage-by-stage prompt).
-#
-# Rule: the agentic workflows (pr-review-request, issue-auto-fix) MUST use a
-# Claude-family model as default — claude-fast is the cheapest that still follows
-# the nested orchestration prompt. Python scripts talk directly to Pollinations
-# (no router), so they can use anything cheap.
-LLM_MODEL_AGENT = "claude-fast"     # router default — agentic workflows (proven)
+# MODEL NOTES (what we tested):
+#   - gemini-fast:    current choice — single model across agent/thinking/chat for
+#                     consistency. ~$0.30/$1.20 per M. Output token limit is high
+#                     enough to avoid the Bedrock 10k cap that nova-fast hit.
+#   - nova-fast:      follows stage-by-stage but Bedrock Nova Micro rejects
+#                     requests >10000 output tokens — risky with long prompts.
+#   - claude-fast:    proven baseline. ~$1.11/$5.50 per M. Fallback if gemini-fast breaks.
+#   - qwen-coder:     coder bias — skipped orchestration when used as agent.
+#                     Fine for code-specific background delegations.
+LLM_MODEL_AGENT = "gemini-fast"     # main agentic thread (router default)
 LLM_MODEL_CODE = "qwen-coder"       # background subagent route for code-heavy work
 LLM_MODEL_CHAT = "gemini-fast"      # Python scripts: triage, descriptions, summaries
 LLM_MODEL_THINKING = "gemini-fast"  # router "thinking" route

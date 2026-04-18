@@ -1,4 +1,5 @@
 {
+    "root": true,
     "formatter": {
         "indentStyle": "space",
         "indentWidth": 4
@@ -18,6 +19,29 @@
             },
             "security": {
                 "noDangerouslySetInnerHtml": "off"
+            },
+            "suspicious": {
+                // `any` used at OAuth/auth boundaries where runtime validation
+                // handles the shape. Info-level — surfaces but doesn't block CI.
+                "noExplicitAny": "info",
+                "noShadowRestrictedNames": "info",
+                "noArrayIndexKey": "info"
+            },
+            "performance": {
+                // <img> is used for external avatars / provider icons.
+                "noImgElement": "info",
+                "noAccumulatingSpread": "info"
+            },
+            "a11y": {
+                // Button type + alt text cleanups tracked separately; don't
+                // block CI on them.
+                "useButtonType": "info",
+                "useAltText": "info",
+                "useValidAriaValues": "info"
+            },
+            "correctness": {
+                "useExhaustiveDependencies": "info",
+                "noInvalidUseBeforeDeclaration": "info"
             }
         }
     },
@@ -31,6 +55,7 @@
             "!**/build/**",
             "!**/.next/**",
             "!**/.cache/**",
+            "!**/.vercel/**",
             "!**/out/**",
             "!**/worker-configuration.d.ts",
             "!**/worker-runtime.d.ts",

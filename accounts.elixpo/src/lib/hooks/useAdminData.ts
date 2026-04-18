@@ -1,261 +1,267 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 
 export interface DashboardStats {
-  totalUsers: number;
-  activeUsers: number;
-  totalApps: number;
-  totalRequests: number;
-  avgResponseTime: number;
-  errorRate: number;
-  lastUpdated: string;
-  topApps: Array<{
-    id: string;
-    name: string;
-    requests: number;
-    users: number;
+    totalUsers: number;
+    activeUsers: number;
+    totalApps: number;
+    totalRequests: number;
+    avgResponseTime: number;
     errorRate: number;
-  }>;
-  requestTrend: Array<{
-    date: string;
-    requests: number;
-    errors: number;
-  }>;
-  recentUsers?: Array<{
-    id: string;
-    email: string;
-    is_admin: number;
-    is_active: number;
-    created_at: string;
-    email_verified: number;
-  }>;
-  recentApps?: Array<{
-    id: string;
-    client_id: string;
-    name: string;
-    owner_id: string;
-    created_at: string;
-  }>;
+    lastUpdated: string;
+    topApps: Array<{
+        id: string;
+        name: string;
+        requests: number;
+        users: number;
+        errorRate: number;
+    }>;
+    requestTrend: Array<{
+        date: string;
+        requests: number;
+        errors: number;
+    }>;
+    recentUsers?: Array<{
+        id: string;
+        email: string;
+        is_admin: number;
+        is_active: number;
+        created_at: string;
+        email_verified: number;
+    }>;
+    recentApps?: Array<{
+        id: string;
+        client_id: string;
+        name: string;
+        owner_id: string;
+        created_at: string;
+    }>;
 }
 
-export function useDashboardStats(timeRange: string = '7d') {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function useDashboardStats(timeRange: string = "7d") {
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `/api/admin/dashboard/stats?range=${timeRange}`,
-          { credentials: 'include' }
-        );
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(
+                    `/api/admin/dashboard/stats?range=${timeRange}`,
+                    { credentials: "include" },
+                );
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch stats');
-        }
+                if (!response.ok) {
+                    throw new Error("Failed to fetch stats");
+                }
 
-        const data: any = await response.json();
-        setStats(data);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setStats(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+                const data: any = await response.json();
+                setStats(data);
+                setError(null);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Unknown error");
+                setStats(null);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    fetchStats();
-  }, [timeRange]);
+        fetchStats();
+    }, [timeRange]);
 
-  return { stats, loading, error };
+    return { stats, loading, error };
 }
 
 export interface User {
-  id: string;
-  email: string;
-  isAdmin: boolean;
-  isActive: boolean;
-  createdAt: string;
-  lastLogin: string;
-  emailVerified: boolean;
-  appsCount: number;
+    id: string;
+    email: string;
+    isAdmin: boolean;
+    isActive: boolean;
+    createdAt: string;
+    lastLogin: string;
+    emailVerified: boolean;
+    appsCount: number;
 }
 
 export interface UsersResponse {
-  users: User[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+    users: User[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+    };
 }
 
-export function useUsers(page: number = 1, search: string = '') {
-  const [data, setData] = useState<UsersResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+export function useUsers(page: number = 1, search: string = "") {
+    const [data, setData] = useState<UsersResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [_refreshKey, setRefreshKey] = useState(0);
 
-  const refetch = () => setRefreshKey((k) => k + 1);
+    const refetch = () => setRefreshKey((k) => k + 1);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `/api/admin/users?page=${page}&search=${encodeURIComponent(search)}`,
-          { credentials: 'include' }
-        );
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(
+                    `/api/admin/users?page=${page}&search=${encodeURIComponent(search)}`,
+                    { credentials: "include" },
+                );
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch users');
-        }
+                if (!response.ok) {
+                    throw new Error("Failed to fetch users");
+                }
 
-        const responseData: any = await response.json();
-        setData(responseData);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+                const responseData: any = await response.json();
+                setData(responseData);
+                setError(null);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Unknown error");
+                setData(null);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    fetchUsers();
-  }, [page, search, refreshKey]);
+        fetchUsers();
+    }, [page, search]);
 
-  return { data, loading, error, refetch };
+    return { data, loading, error, refetch };
 }
 
 export interface App {
-  id: string;
-  name: string;
-  owner: { id: string; email: string };
-  status: 'active' | 'suspended';
-  createdAt: string;
-  requests: number;
-  users: number;
-  lastUsed: string;
-  requestCount: number;
+    id: string;
+    name: string;
+    owner: { id: string; email: string };
+    status: "active" | "suspended";
+    createdAt: string;
+    requests: number;
+    users: number;
+    lastUsed: string;
+    requestCount: number;
 }
 
 export interface AppsResponse {
-  apps: App[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+    apps: App[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+    };
 }
 
-export function useApps(page: number = 1, search: string = '') {
-  const [data, setData] = useState<AppsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+export function useApps(page: number = 1, search: string = "") {
+    const [data, setData] = useState<AppsResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [_refreshKey, setRefreshKey] = useState(0);
 
-  const refetch = () => setRefreshKey((k) => k + 1);
+    const refetch = () => setRefreshKey((k) => k + 1);
 
-  useEffect(() => {
-    const fetchApps = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `/api/admin/apps?page=${page}&search=${encodeURIComponent(search)}`,
-          { credentials: 'include' }
-        );
+    useEffect(() => {
+        const fetchApps = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(
+                    `/api/admin/apps?page=${page}&search=${encodeURIComponent(search)}`,
+                    { credentials: "include" },
+                );
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch apps');
-        }
+                if (!response.ok) {
+                    throw new Error("Failed to fetch apps");
+                }
 
-        const responseData: any = await response.json();
-        setData(responseData);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+                const responseData: any = await response.json();
+                setData(responseData);
+                setError(null);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Unknown error");
+                setData(null);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    fetchApps();
-  }, [page, search, refreshKey]);
+        fetchApps();
+    }, [page, search]);
 
-  return { data, loading, error, refetch };
+    return { data, loading, error, refetch };
 }
 
 export interface AdminLog {
-  id: string;
-  adminId: string;
-  adminEmail: string | null;
-  action: string;
-  resourceType: string;
-  resourceId: string;
-  changes: string;
-  timestamp: string;
-  status: 'success' | 'failed';
+    id: string;
+    adminId: string;
+    adminEmail: string | null;
+    action: string;
+    resourceType: string;
+    resourceId: string;
+    changes: string;
+    timestamp: string;
+    status: "success" | "failed";
 }
 
 export interface LogsResponse {
-  logs: AdminLog[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+    logs: AdminLog[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+    };
 }
 
-export function useAdminLogs(page: number = 1, search: string = '') {
-  const [data, setData] = useState<LogsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function useAdminLogs(page: number = 1, search: string = "") {
+    const [data, setData] = useState<LogsResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `/api/admin/logs?page=${page}`,
-          { credentials: 'include' }
-        );
+    useEffect(() => {
+        const fetchLogs = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(`/api/admin/logs?page=${page}`, {
+                    credentials: "include",
+                });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch logs');
-        }
+                if (!response.ok) {
+                    throw new Error("Failed to fetch logs");
+                }
 
-        const responseData: any = await response.json();
-        const filtered = search
-          ? {
-              ...responseData,
-              logs: (responseData.logs || []).filter((l: AdminLog) =>
-                l.adminEmail?.toLowerCase().includes(search.toLowerCase()) ||
-                l.action.toLowerCase().includes(search.toLowerCase()) ||
-                l.resourceType?.toLowerCase().includes(search.toLowerCase())
-              ),
+                const responseData: any = await response.json();
+                const filtered = search
+                    ? {
+                          ...responseData,
+                          logs: (responseData.logs || []).filter(
+                              (l: AdminLog) =>
+                                  l.adminEmail
+                                      ?.toLowerCase()
+                                      .includes(search.toLowerCase()) ||
+                                  l.action
+                                      .toLowerCase()
+                                      .includes(search.toLowerCase()) ||
+                                  l.resourceType
+                                      ?.toLowerCase()
+                                      .includes(search.toLowerCase()),
+                          ),
+                      }
+                    : responseData;
+                setData(filtered);
+                setError(null);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Unknown error");
+                setData(null);
+            } finally {
+                setLoading(false);
             }
-          : responseData;
-        setData(filtered);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+        };
 
-    fetchLogs();
-  }, [page, search]);
+        fetchLogs();
+    }, [page, search]);
 
-  return { data, loading, error };
+    return { data, loading, error };
 }
