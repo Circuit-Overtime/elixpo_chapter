@@ -121,7 +121,7 @@ jobs:
                 "api_key": "${POLLINATIONS_TOKEN}",
                 "models": ["${AGENT_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"],
                 "transformer": {
-                  "use": [["maxtoken", {"max_tokens": 9000}]]
+                  "use": ["openai", ["maxtoken", {"max_tokens": 9000}]]
                 }
               },
               {
@@ -130,7 +130,7 @@ jobs:
                 "api_key": "${POLLINATIONS_TOKEN_CODER}",
                 "models": ["${CODE_MODEL}"],
                 "transformer": {
-                  "use": [["maxtoken", {"max_tokens": 9000}]]
+                  "use": ["openai", ["maxtoken", {"max_tokens": 9000}]]
                 }
               }
             ],
