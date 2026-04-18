@@ -26,8 +26,7 @@ on:
 
 jobs:
   elixpo:
-    # Skip if the triggering actor is elixpoo itself — the bot must never
-    # respond to its own mentions (loop prevention).
+    # Skip if the triggering actor is elixpoo itself — loop prevention.
     if: |
       github.actor != 'elixpoo' && (
         (github.event_name == 'issue_comment' && github.event.comment.user.login != 'elixpoo' && contains(github.event.comment.body, '@elixpoo')) ||
@@ -54,7 +53,6 @@ jobs:
         with:
           github-token: ${{ secrets.CI_AGENT_TOKEN }}
           script: |
-            // Extract the triggering body text
             let body = '';
             if (context.eventName === 'issue_comment' || context.eventName === 'pull_request_review_comment') {
               body = context.payload.comment?.body || '';
@@ -64,22 +62,19 @@ jobs:
               body = context.payload.review?.body || '';
             }
 
-            // Strict check: lowercase '@elixpo' must be present
             if (!body.includes('@elixpoo')) {
               console.log('Strict check failed: "@elixpoo" must be lowercase.');
               core.setOutput('authorized', 'false');
               return;
             }
 
-            // Word-boundary check: reject cases where @elixpoo is a substring
-            // of a longer token (e.g. @elixpoooo, @elixpoo-bot).
+            // Reject substring-only matches (e.g. @elixpoooo, @elixpoo-bot).
             if (!/(^|[^A-Za-z0-9_.+-])@elixpoo([^A-Za-z0-9_.+-]|$)/.test(body)) {
               console.log('@elixpoo substring only, not a real mention — skipping.');
               core.setOutput('authorized', 'false');
               return;
             }
 
-            // Whitelist: Elixpo org members
             const whitelist = ['Circuit-Overtime', 'anwe-ch', 'elixpoo', 'ez-vivek'];
             const actor = context.actor;
             if (!whitelist.includes(actor)) {
@@ -100,7 +95,6 @@ jobs:
         with:
           bun-version: latest
 
-      # Checkout early so we can read .github/ci_config.py for the model config
       - name: Checkout for config read
         if: steps.whitelist.outputs.authorized == 'true'
         uses: actions/checkout@v4
@@ -118,7 +112,7 @@ jobs:
         if: steps.whitelist.outputs.authorized == 'true'
         id: setup
         run: |
-          # Add eyes reaction to the triggering comment / review / issue
+          # Eyes reaction on the triggering comment / review / issue
           if [ "${{ github.event_name }}" = "issue_comment" ]; then
             gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
           elif [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
@@ -129,7 +123,6 @@ jobs:
             gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/reactions -f content=eyes || true
           fi
 
-          # Pull models from ci_config.py — single source of truth
           cd config-src
           AGENT_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_AGENT; print(LLM_MODEL_AGENT)")
           CODE_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_CODE; print(LLM_MODEL_CODE)")
@@ -137,29 +130,11 @@ jobs:
           SEARCH_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_SEARCH; print(LLM_MODEL_SEARCH)")
           cd ..
 
-          # Router wiring (models come from ci_config.py, NOT hardcoded here):
-          #   default    → AGENT_MODEL  — main agentic thread
-          #   background → CODE_MODEL   — delegated code-heavy subagent work
-          #   thinking   → THINK_MODEL  — reasoning-heavy steps
-          #   webSearch  → SEARCH_MODEL — when explicit web lookup is needed
           echo "Router models: default=$AGENT_MODEL, background=$CODE_MODEL, thinking=$THINK_MODEL, webSearch=$SEARCH_MODEL"
 
           mkdir -p $HOME/.claude-code-router
-          # Copy custom CCR adapters so the router can load them by absolute path.
           cp config-src/.github/ccr-adapters/*.js $HOME/.claude-code-router/ 2>/dev/null || true
           GEMINI_ADAPTER="$HOME/.claude-code-router/gemini-adapter.js"
-          # Two separate providers so the code model uses a dedicated key
-          # (CI_POLLINATIONS_KEY_CODER), while every other route uses the main
-          # key (CI_POLLINATIONS_KEY). Splits cost/usage reporting too.
-          #
-          # Transformers applied in order:
-          #   gemini-adapter → flatten prior tool_use/tool_result in history to
-          #                    plain text (Vertex demands thought_signature on
-          #                    replayed tool_use; Pollinations can't disable it)
-          #   openai         → Anthropic→OpenAI content-shape conversion
-          #   maxtoken       → cap output at 9000 (defends against Bedrock limits)
-          # Custom transformers MUST be registered at top-level "transformers"
-          # (CCR resolves strings in "use" as registered names, not file paths).
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
             "LOG": false,
@@ -197,9 +172,7 @@ jobs:
           }
           EOF
 
-          # Start router
           bunx @musistudio/claude-code-router start &
-          # Wait up to 60s for router — fail fast if bunx install failed.
           for i in $(seq 1 120); do
             curl -s http://localhost:3456 >/dev/null && break
             sleep 0.5
@@ -222,7 +195,6 @@ jobs:
       # ─────────────────────────────────────────────────────────────────
       # Pull shared Claude assets (agents + hooks + config) from
       # elixpo/claudeOps.elixpo so every repo's bot has the same skills.
-      # Update once there → applies to all 15 repos on next run.
       # ─────────────────────────────────────────────────────────────────
       - name: Pull claudeops skills
         if: steps.whitelist.outputs.authorized == 'true'
@@ -269,91 +241,129 @@ jobs:
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           trigger_phrase: "@elixpoo"
           branch_prefix: "elixpo/"
-          # --max-turns 15: hard cap. Full PR flow (branch → edit → biome →
-          # commit → push → PR → comment) fits in ~8-10 turns; simple LGTM
-          # fits in 3. Cap stops runaway loops regardless of prompt drift.
-          #
-          # The system prompt EXPLICITLY OVERRIDES claude-code-action/v1's
-          # built-in user-prompt template, which mandates <analysis> tags, a
-          # multi-item todo list, and progress-update comment edits between
-          # every step. Those bloat simple requests into 10+ unnecessary tool
-          # calls, so we countermand them here.
+          # --max-turns 15 is a safety cap, not the primary control. The prompt
+          # below is designed to finish review flows in 2-4 turns and code
+          # flows in 6-9 turns. Non-Anthropic models (gemini, qwen-coder) behave
+          # better with a direct `prompt:` than with `--system-prompt` overrides
+          # that fight the runtime's injected user template.
           claude_args: |
             --permission-mode bypassPermissions
             --max-turns 15
-            --system-prompt "You are elixpo, a developer on the Elixpo team. Never say 'Claude', 'Claude Code', 'AI', 'LLM', 'analyzing', or 'analysis'. Be casual, concise, human. Do EXACTLY what was asked — no more. Do not invent extra steps or side quests.
+          prompt: |
+            You are elixpo, a developer on the Elixpo team. Be casual, concise, human.
 
-            ───────────────────────────────────────────────────────────
-            ⚠️ OVERRIDE — claude-code-action injects a user-prompt template
-            ───────────────────────────────────────────────────────────
-            The user message you receive will include instructions telling you to:
-              • Open your response with <analysis>…</analysis>
-              • Create a multi-item todo list as a markdown checklist
-              • Update the tracking comment at EVERY subtask completion
-              • Use a spinner HTML image during work
-              • Break the work into a 'Tasks' section with - [ ] / - [x] items
+            Event: ${{ github.event_name }}
+            Actor: @${{ github.actor }}
+            Repo: ${{ github.repository }}
+            Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-            IGNORE ALL OF THAT. It is stale boilerplate from the runtime. This system prompt is authoritative. No <analysis> tags. No todo list. No spinner. No progress-update edits between start and finish. The total number of tracking-comment edits in any run must be EXACTLY TWO (one start, one end) unless the user explicitly asked for progress updates.
+            ### Step 0 — Read the trigger and classify
+            Read the triggering comment / review / issue body to find what the user actually asked.
 
-            ───────────────────────────────────────────────────────────
-            FIRST — edit the tracking comment (one edit, then move on)
-            ───────────────────────────────────────────────────────────
-            The runtime posts a 'Claude Code is working…' tracking comment. Find it and strip the Claude phrasing:
-              COMMENT_ID=\$(gh issue view <n> --json comments -q '.comments | map(select(.author.login==\"elixpoo\" and ((.body|contains(\"Claude Code is working\")) or (.body|contains(\"Claude finished\"))))) | last | .id')
-              gh api -X PATCH /repos/<owner>/<repo>/issues/comments/\$COMMENT_ID -f body='On it — looking into this. Job run: <run-url>'
+            Pick ONE path and do ONLY that path. Default to REVIEW if unsure — never invent extra work.
 
-            Do NOT post progress updates between start and finish. One start edit, do the work, one final edit.
+            - **REVIEW** — user asked a question, wants LGTM / code review, wants an explanation, or is just chatting.
+              No code changes. Jump to Step 3.
+            - **CHANGE** — user explicitly asked for a code change (fix X, add Y, update Z, rename, refactor, etc.).
+              Go to Step 2.
 
-            ───────────────────────────────────────────────────────────
-            LAST — edit the same tracking comment with your answer
-            ───────────────────────────────────────────────────────────
-            Single edit. Keep it short, match the request:
-              • Question / LGTM / review → verdict + up to 4 bullets.
-              • Code change → 'Pushed <branch>. PR: #<N>.' + 1-sentence summary.
-            Zero mentions of Claude / AI / 'Generated with'. If the runtime appends a 'Claude finished …' footer after your edit, re-fetch and PATCH again to strip it.
+            ### Step 1 — Quick context (ONE read, no loops)
+            If this is a PR event (pull_request_review_comment, pull_request_review, or issue_comment on a PR):
+              PR_NUM=$(gh pr view --json number -q .number 2>/dev/null || echo "${{ github.event.pull_request.number }}")
+              gh pr view $PR_NUM --comments
+              gh pr diff $PR_NUM    # only if you actually need the diff
+            If this is an issue event:
+              gh issue view ${{ github.event.issue.number }} --comments
 
-            ───────────────────────────────────────────────────────────
-            HARD RULES
-            ───────────────────────────────────────────────────────────
-            1. NEVER commit to 'main'. Before any commit, create a branch:
-                 HEX=\$(openssl rand -hex 2); BRANCH=\"elixpo/issue-<n>-\${HEX}\"; git checkout -b \"\$BRANCH\"
-               Verify: 'git rev-parse --abbrev-ref HEAD' must NOT print 'main'.
-            2. All code changes go through a PR.
-            3. Run './biome.sh' before every commit — must exit 0.
-            4. Stay strictly in scope. Don't refactor unrelated code.
+            Read ONCE. Don't re-read the same thing between turns.
 
-            ───────────────────────────────────────────────────────────
-            MODE DISPATCH — pick one, do the minimum
-            ───────────────────────────────────────────────────────────
-            Mode A (issue, no PR):
-              A1 — user answering prior questions: update issue body (check off items, strike through resolved questions with ~~tildes~~). No PR.
-              A2 — user asks for a code change: check for existing open PR first ('gh pr list --repo <r> --search \"linked:issue-<n>\" --state all'). If OPEN PR → switch to Mode B. Else branch, edit, biome, commit, push, 'gh pr create' with 'Fixes #<n>'.
-              A3 — user asks a question: answer in the FINAL edit. Nothing else.
+            ### Step 2 — CHANGE path
+            1. If the event is on a PR, you're already on the PR's branch — commit directly to it.
+               If the event is on an issue (no PR yet), create a branch:
+                 HEX=$(openssl rand -hex 2)
+                 BRANCH="elixpo/issue-${{ github.event.issue.number }}-$HEX"
+                 git checkout -b "$BRANCH"
+               NEVER commit to main. Verify with `git rev-parse --abbrev-ref HEAD`.
 
-            Mode B (PR):
-              B1 — question about the PR: answer in the FINAL edit.
-              B2 — review / LGTM: short verdict + Security / Logic / Quality bullets. No code changes.
-              B3 — change request: work on the PR's branch, edit, biome, commit, push to same branch.
-              B4 — fix failing CI: 'gh run view <id> --log-failed' → patch root cause on PR branch → commit → push.
+            2. Make minimal, scoped edits. Follow existing conventions. Don't refactor unrelated code.
 
-            For A2 / B3, PR body (keep it short):
-              ## 🎯 What this does — 1-2 sentences
-              ## 🛠️ Changes — 3-6 bullets
-              ## 🧪 Verified — biome ci clean / tests pass / 'not verified'
-              Fixes #<n>
+            3. Run `./biome.sh` — must exit 0 before commit.
 
-            ───────────────────────────────────────────────────────────
-            SUBAGENTS — only when the task is genuinely hard
-            ───────────────────────────────────────────────────────────
-            .claude/agents/ has architect, red-team, questioner, judge, etc. Use ONLY for: deep security review → red-team; ambiguous spec → questioner; complex cross-cutting design → architect. NEVER for LGTMs, simple questions, or small fixes."
+            4. Commit and push:
+                 git add -A
+                 git commit -m "<concrete summary> (#<n>)"
+                 git push -u origin HEAD
+
+            5. If you created a NEW branch (not working on an existing PR), open a PR:
+                 gh pr create --base main --head "$BRANCH" \
+                   --title "[ELIXPO] <title>" \
+                   --body "$(printf '## 🎯 What this does\n<1-2 sentences>\n\n## 🛠️ Changes\n- <file>: <change>\n\n## 🧪 Verified\n- biome ci clean\n\nFixes #${{ github.event.issue.number }}\n')"
+
+            ### Step 3 — ONE final tracking-comment edit
+            The runtime posts a tracking comment authored by @elixpoo. Find it and replace its body.
+            Do this EXACTLY ONCE at the end. No progress updates between start and finish.
+
+              ISSUE_OR_PR=${{ github.event.issue.number || github.event.pull_request.number }}
+              COMMENT_ID=$(gh api "repos/${{ github.repository }}/issues/$ISSUE_OR_PR/comments" --paginate \
+                --jq '[.[] | select(.user.login=="elixpoo" and ((.body|contains("Claude Code is working")) or (.body|contains("Claude finished"))))] | last | .id')
+              gh api -X PATCH "/repos/${{ github.repository }}/issues/comments/$COMMENT_ID" -f body="$FINAL_BODY"
+
+            Body content by path:
+              - REVIEW: 1-2 sentence answer + up to 4 bullets (Security / Logic / Quality / Nit). Nothing else.
+              - CHANGE: "Pushed `<branch>`. PR: #<N>." + 1-2 sentence summary of the change.
+
+            ### Hard rules
+            - NEVER commit to main.
+            - All code changes go through a PR.
+            - `./biome.sh` must exit 0 before every commit.
+            - Stay strictly in scope. No side quests.
+            - Do NOT post new comments. One start comment already exists; edit it ONCE at the end.
+
+            ### Subagents (.claude/agents/)
+            Use ONLY when the task is genuinely hard: red-team for deep security review, architect for
+            complex cross-cutting design, questioner for ambiguous specs. NEVER for LGTMs, simple
+            questions, or small fixes — they add turns and cost.
           additional_permissions: |
             actions: read
 
       # ─────────────────────────────────────────────────────────────────
+      # Post-strip the "Claude finished …" / "Generated with Claude Code"
+      # footer the runtime appends. Cheaper to do here in bash than to
+      # make the model re-fetch + PATCH mid-flow (that was 2-3 wasted turns).
+      # ─────────────────────────────────────────────────────────────────
+      - name: Strip Claude branding from tracking comment
+        if: always() && steps.whitelist.outputs.authorized == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set +e
+          ISSUE_OR_PR="${{ github.event.issue.number || github.event.pull_request.number }}"
+          [ -z "$ISSUE_OR_PR" ] && exit 0
+
+          # Most recent elixpoo comment that still has Claude branding.
+          COMMENT_ID=$(gh api "repos/$REPO/issues/$ISSUE_OR_PR/comments" --paginate \
+            --jq '[.[] | select(.user.login=="elixpoo" and ((.body|contains("Claude finished")) or (.body|contains("Claude Code")) or (.body|contains("Generated with Claude"))))] | last | .id')
+          if [ -z "$COMMENT_ID" ] || [ "$COMMENT_ID" = "null" ]; then
+            echo "No Claude-branded comment found — nothing to strip."
+            exit 0
+          fi
+
+          BODY=$(gh api "repos/$REPO/issues/comments/$COMMENT_ID" --jq .body)
+          CLEANED=$(printf '%s' "$BODY" \
+            | sed -E '/Claude finished/d; /Generated with Claude/d; /Claude Code is working/d; /\[Create .* PR .*\]/d; /^---[[:space:]]*$/d' \
+            | sed -e 's/[[:space:]]*$//')
+
+          if [ "$BODY" != "$CLEANED" ]; then
+            gh api -X PATCH "/repos/$REPO/issues/comments/$COMMENT_ID" -f body="$CLEANED" >/dev/null
+            echo "Stripped Claude branding from comment $COMMENT_ID"
+          else
+            echo "Comment $COMMENT_ID already clean."
+          fi
+
+      # ─────────────────────────────────────────────────────────────────
       # Post-guard: if the bot committed to a branch but didn't open a PR,
-      # open one here. This ensures the PR always ends up in the issue's
-      # Development tab (via "Fixes #N" in the body) regardless of whether
-      # the model remembered to run `gh pr create`.
+      # open one here so the issue's Development tab is always populated.
       # ─────────────────────────────────────────────────────────────────
       - name: Ensure PR exists for any new elixpo/* branch
         if: steps.whitelist.outputs.authorized == 'true' && github.event_name == 'issue_comment' && !github.event.issue.pull_request
@@ -365,9 +375,6 @@ jobs:
         run: |
           set -e
 
-          # Find the most recent elixpo/* branch for this issue that does NOT
-          # have an OPEN PR yet (closed / merged PRs are fine — we'll create
-          # a new branch and PR to re-implement).
           BRANCHES=$(gh api "repos/$REPO/branches?per_page=100" --paginate \
             --jq ".[] | select(.name | startswith(\"elixpo/\") and contains(\"issue-$ISSUE_NUMBER\")) | .name")
 
@@ -386,16 +393,11 @@ jobs:
           fi
           echo "Found branch: $BRANCH (no open PR)"
 
-          # Build PR body with Fixes #N so it attaches to the issue's Dev tab
-          # Build bullet list from commit messages (first line of each)
           CHANGES=$(gh api "repos/$REPO/compare/main...$BRANCH" \
             --jq '.commits | map("- " + (.commit.message | split("\n")[0])) | join("\n")')
 
-          # Get issue author for cc
           ISSUE_AUTHOR=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json author --jq '.author.login')
 
-          # Fallback body (used when the model forgot to open the PR itself).
-          # Less rich than the LLM-written version — just enough to link + close.
           PR_BODY=$(cat <<EOF
           Hey @$ISSUE_AUTHOR, opened this PR automatically from the branch I pushed.
 
@@ -410,7 +412,6 @@ jobs:
           @$ISSUE_AUTHOR Fixes #$ISSUE_NUMBER
           EOF
           )
-          # Strip the leading 10-space indent introduced by the YAML heredoc.
           PR_BODY=$(printf '%s\n' "$PR_BODY" | sed 's/^          //')
 
           PR_URL=$(gh pr create --repo "$REPO" \
@@ -423,13 +424,10 @@ jobs:
           gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
             --body "Opened #$PR_NUM with the changes."
 
-          # Attach the ELIXPO label so the board reflects bot involvement.
           gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label ELIXPO || true
 
       # ─────────────────────────────────────────────────────────────────
-      # Failure fallback: if claude-code-action or any preceding step
-      # errored, post a blockquote pointing to the failing run so the
-      # user knows what happened.
+      # Failure fallback: if anything errored, point to the failing run.
       # ─────────────────────────────────────────────────────────────────
       - name: Post failure notice
         if: failure() && steps.whitelist.outputs.authorized == 'true'
