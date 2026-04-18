@@ -1,45 +1,41 @@
 #!/usr/bin/env bash
-# biome — one-shot lint + format + fix helper.
+# biome.sh — one-shot script to fix Biome linting issues.
+#
+# Default behavior: applies safe AND unsafe fixes across the repo. This is
+# the go-to script the bot + developers run before committing.
 #
 # Usage:
-#   ./biome         # auto-fix everything biome can (safe + unsafe), then ci
-#   ./biome check   # just report issues, no writes
-#   ./biome fix     # apply safe fixes only
-#   ./biome all     # safe + unsafe fixes, then ci (same as default)
-#   ./biome ci      # strict check — what the workflow runs
-#
-# The bot should prefer `./biome` over raw `npx @biomejs/biome ...` calls.
-# --diagnostic-level=error is used in ci mode so infos/warnings print for
-# visibility but don't block the build.
+#   ./biome.sh         # fix everything (safe + unsafe writes). Exit 0.
+#   ./biome.sh ci      # strict check, errors-only. What biome.yml runs.
+#                      # Exit non-zero only on actual errors.
+#   ./biome.sh check   # report every diagnostic (info/warn/error), no writes.
 
 set -e
 
-MODE="${1:-all}"
+MODE="${1:-fix}"
 BIOME="npx --yes @biomejs/biome"
 
 case "$MODE" in
+  fix|"")
+    echo "▶ safe fixes…"
+    $BIOME check . --write --max-diagnostics=200 || true
+    echo ""
+    echo "▶ unsafe fixes…"
+    $BIOME check . --write --unsafe --max-diagnostics=200 || true
+    echo ""
+    echo "✓ done — run './biome.sh ci' to verify CI will pass."
+    ;;
+  ci)
+    # --diagnostic-level=error: infos + warnings still print but don't fail.
+    # Downgraded rules in biome.jsonc keep stylistic issues from blocking CI.
+    $BIOME ci . --diagnostic-level=error
+    ;;
   check)
     $BIOME check . --max-diagnostics=200
     ;;
-  fix)
-    $BIOME check . --write --max-diagnostics=200
-    ;;
-  all|"")
-    echo "▶ applying safe fixes…"
-    $BIOME check . --write --max-diagnostics=200 || true
-    echo ""
-    echo "▶ applying unsafe fixes…"
-    $BIOME check . --write --unsafe --max-diagnostics=200 || true
-    echo ""
-    echo "▶ running CI check (errors-only)…"
-    $BIOME ci . --diagnostic-level=error
-    ;;
-  ci)
-    $BIOME ci . --diagnostic-level=error
-    ;;
   *)
     echo "Unknown mode: $MODE"
-    echo "Usage: ./biome [check|fix|all|ci]"
+    echo "Usage: ./biome.sh [fix|ci|check]"
     exit 2
     ;;
 esac
