@@ -135,13 +135,23 @@ jobs:
           mkdir -p $HOME/.claude-code-router
           cp config-src/.github/ccr-adapters/*.js $HOME/.claude-code-router/ 2>/dev/null || true
           GEMINI_ADAPTER="$HOME/.claude-code-router/gemini-adapter.js"
+          TOOL_PATCHER="$HOME/.claude-code-router/tool-schema-patcher.js"
+          # Two providers — main (cheap key, gemini) + coder (separate key for
+          # qwen-coder). Background subagent work (code-heavy) goes to coder
+          # to keep costs split from the main agentic thread.
+          #
+          # Transformer order for coder: openai → tool-schema-patcher → maxtoken.
+          # tool-schema-patcher backfills `parameters: {type:"object",...}` on any
+          # tool missing it — qwen-coder rejects tool lists without it with a 400,
+          # and WebSearch / some MCP tools ship without a parameters schema.
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
             "LOG": false,
             "NON_INTERACTIVE_MODE": true,
             "API_TIMEOUT_MS": 600000,
             "transformers": [
-              {"path": "${GEMINI_ADAPTER}"}
+              {"path": "${GEMINI_ADAPTER}"},
+              {"path": "${TOOL_PATCHER}"}
             ],
             "Providers": [
               {
@@ -159,7 +169,7 @@ jobs:
                 "api_key": "${POLLINATIONS_TOKEN_CODER}",
                 "models": ["${CODE_MODEL}"],
                 "transformer": {
-                  "use": ["openai", ["maxtoken", {"max_tokens": 9000}]]
+                  "use": ["openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": 9000}]]
                 }
               }
             ],
@@ -439,8 +449,33 @@ jobs:
         run: |
           set +e
 
+          # Pull the tail of any failing-step logs so the comment actually says
+          # what broke (e.g. "qwen-coder 400 missing parameters") instead of a
+          # generic "something went wrong". gh run view --log-failed works
+          # mid-run for steps that have already errored.
+          ERROR_TAIL=$(gh run view "$RUN_ID" --repo "$REPO" --log-failed 2>/dev/null \
+            | sed -E 's/\x1b\[[0-9;]*m//g' \
+            | grep -iE "error|fail|400|401|403|404|429|500|502|503|bad_request|timeout|unauthorized" \
+            | grep -vE "^\s*$" \
+            | tail -8)
+          if [ -z "$ERROR_TAIL" ]; then
+            ERROR_TAIL="(no structured error captured — open the run logs)"
+          fi
+          # Strip any accidental token leakage and keep it under GitHub's
+          # comment size sanity limit.
+          ERROR_TAIL=$(printf '%s' "$ERROR_TAIL" | head -c 2000)
+
           MSG=$(cat <<EOF
           > ⚠️ Something went wrong on my end while handling this.
+
+          <details>
+          <summary><b>Error tail from the failing step</b></summary>
+
+          <pre>
+          $ERROR_TAIL
+          </pre>
+
+          </details>
 
           **What you can do:**
 
