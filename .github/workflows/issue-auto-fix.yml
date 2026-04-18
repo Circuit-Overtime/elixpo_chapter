@@ -375,23 +375,39 @@ jobs:
 
             ### Step 5 — Open a ready (NOT draft) PR
             Open a PR that is ready for review, linked to the issue so it
-            appears in the issue's Development tab. Use EXACTLY this body format:
+            appears in the issue's Development tab. Write a RICH, substantive
+            body — not just a bullet list. Use this structure:
 
-                BODY="Fixes #${{ github.event.issue.number }}
+                BODY="Hey @${{ github.event.issue.user.login }}, here's the PR for your request.
 
-                ## Changes Made
-                - <bullet point describing change 1>
-                - <bullet point describing change 2>
-                - <keep these concrete and reference real files>
+                ## 🎯 What this does
+                <2-4 sentence plain-English summary of the outcome. Explain the
+                user-visible change or the internal capability it adds. Avoid
+                filler — be specific.>
 
-                ## Checklist
-                - [ ] Code reviewed
-                - [ ] Build passes
-                - [ ] Tests pass (if applicable)
-                - [ ] Docs updated (if behavior changed)
+                ## 💡 Why
+                <1-2 sentence context: what problem this solves, referencing the
+                issue's motivation. If the issue was vague, say what interpretation
+                you went with.>
+
+                ## 🛠️ Changes
+                - \`<file/path>\`: <what changed and why — reference the function
+                  or section when relevant>
+                - \`<file/path>\`: <same pattern>
+                - <3-6 bullets total; concrete, not vague>
+
+                ## 🧪 How I tested it
+                - <biome ci clean, OR tests pass locally, OR ran dev server and
+                  verified X, OR 'not manually verified — please review'>
+                - <any specific assertion about behavior>
+
+                ## 👀 Notes for review
+                <1-2 sentences flagging anything the reviewer should look at
+                closely: edge cases handled, tradeoffs taken, follow-ups deferred.
+                If nothing notable, omit this section.>
 
                 ---
-                cc @${{ github.event.issue.user.login }} — opened by @elixpoo in response to issue #${{ github.event.issue.number }}."
+                @${{ github.event.issue.user.login }} Fixes #${{ github.event.issue.number }}"
 
                 gh pr create \\
                   --title "[ELIXPO] ${{ github.event.issue.title }}" \\
@@ -400,9 +416,9 @@ jobs:
 
                 PR_NUM=\$(gh pr view --json number -q .number)
 
-            If you need to tag additional org members (e.g., someone with
-            relevant expertise), add more 'cc @user' lines at the bottom or
-            mention them in 'Changes Made' bullets.
+            Tag additional org members inline in any relevant section if their
+            expertise is needed (frontend → @ez-vivek, docs → @anwe-ch) — don't
+            use a 'cc' label, just reference them naturally in the text.
 
             ### Step 6 — Finalize
             1. Post a closing comment on the ISSUE pointing to the PR:
@@ -462,24 +478,21 @@ jobs:
 
           ISSUE_AUTHOR=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json author --jq '.author.login')
 
+          # Fallback body (when the model forgot to open the PR itself).
           PR_BODY=$(cat <<EOF
-          Fixes #$ISSUE_NUMBER
+          Hey @$ISSUE_AUTHOR, opened this PR automatically from the branch I pushed.
 
-          ## Changes Made
+          ## 🛠️ Changes
           $CHANGES
 
-          ## Checklist
-          - [ ] Code reviewed
-          - [ ] Build passes
-          - [ ] Tests pass (if applicable)
-          - [ ] Docs updated (if behavior changed)
+          ## 🧪 How to verify
+          - Pull the branch and run \\\`npm run build\\\` / biome check.
+          - Review the diff against the issue's expected behavior.
 
           ---
-          cc @$ISSUE_AUTHOR — opened by @elixpoo in response to issue #$ISSUE_NUMBER.
+          @$ISSUE_AUTHOR Fixes #$ISSUE_NUMBER
           EOF
           )
-          # Strip YAML heredoc indent — otherwise body renders as a code block
-          # and "Fixes #N" won't auto-link / close the issue.
           PR_BODY=$(printf '%s\n' "$PR_BODY" | sed 's/^          //')
 
           PR_URL=$(gh pr create --repo "$REPO" \

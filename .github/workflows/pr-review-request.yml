@@ -440,27 +440,36 @@ jobs:
                 git add -A
                 git commit -m \"<summary> (#<n>)\"
                 git push -u origin \"\$BRANCH\"
-              Step 6: open a READY (not draft) PR linked to the issue. Use EXACTLY this body format:
-                BODY=\"Fixes #<n>
+              Step 6: open a READY (not draft) PR linked to the issue. Write a
+              RICH body, NOT just a bullet list. Use this structure:
 
-                ## Changes Made
-                - <concrete bullet about change 1>
-                - <concrete bullet about change 2>
-                - <reference real file paths when relevant>
+                BODY=\"Hey @<issue-author>, here's the PR for your request.
 
-                ## Checklist
-                - [ ] Code reviewed
-                - [ ] Build passes
-                - [ ] Tests pass (if applicable)
-                - [ ] Docs updated (if behavior changed)
+                ## 🎯 What this does
+                <2-4 sentence plain-English summary of the outcome>
+
+                ## 💡 Why
+                <1-2 sentence context referencing the issue's motivation>
+
+                ## 🛠️ Changes
+                - \\\`<file/path>\\\`: <what changed and why>
+                - \\\`<file/path>\\\`: <same pattern, 3-6 bullets total>
+
+                ## 🧪 How I tested it
+                - <biome ci clean, tests pass, manual verification, or 'not verified'>
+
+                ## 👀 Notes for review
+                <1-2 sentences; omit if nothing notable>
 
                 ---
-                cc @<issue-author> — opened by @elixpoo in response to issue #<n>.\"
+                @<issue-author> Fixes #<n>\"
 
                 gh pr create --title \"[ELIXPO] <title>\" --body \"\$BODY\" --head \"\$BRANCH\" --base main
               Step 7: comment on the issue pointing to the new PR.
 
-              Tag additional org members in 'cc' lines if their expertise is needed (frontend → @ez-vivek, docs → @anwe-ch).
+              Tag additional org members inline where relevant (e.g. in 'Notes for
+              review') — don't use a 'cc' label. Examples: frontend → @ez-vivek,
+              docs → @anwe-ch.
               NEVER skip Step 1. NEVER commit to main, even if the change is 'just one line'.
 
             Sub-mode A3 — User is asking a question about the repo/issue:
@@ -573,25 +582,23 @@ jobs:
           # Get issue author for cc
           ISSUE_AUTHOR=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json author --jq '.author.login')
 
+          # Fallback body (used when the model forgot to open the PR itself).
+          # Less rich than the LLM-written version — just enough to link + close.
           PR_BODY=$(cat <<EOF
-          Fixes #$ISSUE_NUMBER
+          Hey @$ISSUE_AUTHOR, opened this PR automatically from the branch I pushed.
 
-          ## Changes Made
+          ## 🛠️ Changes
           $CHANGES
 
-          ## Checklist
-          - [ ] Code reviewed
-          - [ ] Build passes
-          - [ ] Tests pass (if applicable)
-          - [ ] Docs updated (if behavior changed)
+          ## 🧪 How to verify
+          - Pull the branch and run \\\`npm run build\\\` / biome check.
+          - Review the diff against the issue's expected behavior.
 
           ---
-          cc @$ISSUE_AUTHOR — opened by @elixpoo in response to issue #$ISSUE_NUMBER.
+          @$ISSUE_AUTHOR Fixes #$ISSUE_NUMBER
           EOF
           )
           # Strip the leading 10-space indent introduced by the YAML heredoc.
-          # Without this, every line starts with spaces and GitHub renders the
-          # body as a code block, breaking "Fixes #N" auto-link.
           PR_BODY=$(printf '%s\n' "$PR_BODY" | sed 's/^          //')
 
           PR_URL=$(gh pr create --repo "$REPO" \
