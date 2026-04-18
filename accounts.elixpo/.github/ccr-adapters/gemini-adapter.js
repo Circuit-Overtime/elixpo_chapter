@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-"use strict";
 
 /**
  * gemini-adapter.js — CCR transformer for Pollinations → Vertex Gemini 3.
@@ -42,7 +41,11 @@ const GEMINI_RE = /^gemini/i;
 function asString(x) {
     if (x == null) return "";
     if (typeof x === "string") return x;
-    try { return JSON.stringify(x); } catch { return String(x); }
+    try {
+        return JSON.stringify(x);
+    } catch {
+        return String(x);
+    }
 }
 
 function buildToolUseIndex(messages) {
@@ -59,7 +62,10 @@ function buildToolUseIndex(messages) {
             for (const tc of m.tool_calls) {
                 if (tc?.id) {
                     const fn = tc.function || {};
-                    index.set(tc.id, { name: fn.name, input: fn.arguments || "{}" });
+                    index.set(tc.id, {
+                        name: fn.name,
+                        input: fn.arguments || "{}",
+                    });
                 }
             }
         }
@@ -88,12 +94,18 @@ function flattenMessages(messages) {
             for (const b of m.content) {
                 if (b?.type === "text" && b.text) texts.push(b.text);
             }
-            if (texts.length > 0) out.push({ role: "assistant", content: texts.join("\n") });
+            if (texts.length > 0)
+                out.push({ role: "assistant", content: texts.join("\n") });
             continue;
         }
 
-        if (role === "assistant" && Array.isArray(m.tool_calls) && m.tool_calls.length > 0) {
-            const c = typeof m.content === "string" ? m.content : asString(m.content);
+        if (
+            role === "assistant" &&
+            Array.isArray(m.tool_calls) &&
+            m.tool_calls.length > 0
+        ) {
+            const c =
+                typeof m.content === "string" ? m.content : asString(m.content);
             if (c) out.push({ role: "assistant", content: c });
             continue;
         }
@@ -109,17 +121,28 @@ function flattenMessages(messages) {
             for (const b of m.content) {
                 if (b?.type === "text" && b.text) parts.push(b.text);
                 else if (b?.type === "tool_result") {
-                    parts.push(toolResultNarrative(toolUseIndex, b.tool_use_id, b.content));
+                    parts.push(
+                        toolResultNarrative(
+                            toolUseIndex,
+                            b.tool_use_id,
+                            b.content,
+                        ),
+                    );
                 }
             }
-            if (parts.length > 0) out.push({ role: "user", content: parts.join("\n") });
+            if (parts.length > 0)
+                out.push({ role: "user", content: parts.join("\n") });
             continue;
         }
 
         if (role === "tool") {
             out.push({
                 role: "user",
-                content: toolResultNarrative(toolUseIndex, m.tool_call_id, m.content),
+                content: toolResultNarrative(
+                    toolUseIndex,
+                    m.tool_call_id,
+                    m.content,
+                ),
             });
             continue;
         }
@@ -152,13 +175,18 @@ class GeminiFlattenAdapter {
         this.options = options || {};
     }
 
-    async transformRequestIn(request)  { return this._flatten(request); }
-    async transformRequestOut(request) { return this._flatten(request); }
+    async transformRequestIn(request) {
+        return this._flatten(request);
+    }
+    async transformRequestOut(request) {
+        return this._flatten(request);
+    }
 
     _flatten(request) {
-        const body = request && request.body ? request.body : request;
+        const body = request?.body ? request.body : request;
         if (!body || typeof body !== "object") return request;
-        if (typeof body.model !== "string" || !GEMINI_RE.test(body.model)) return request;
+        if (typeof body.model !== "string" || !GEMINI_RE.test(body.model))
+            return request;
         if (!Array.isArray(body.messages)) return request;
 
         body.messages = flattenMessages(body.messages);
