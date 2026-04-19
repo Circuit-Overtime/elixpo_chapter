@@ -1,0 +1,4 @@
+node_modules/
+.next
+# SOPS: unencrypted local env
+.env.local

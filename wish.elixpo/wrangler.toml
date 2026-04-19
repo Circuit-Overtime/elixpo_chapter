@@ -1,0 +1,35 @@
+name = "lixwish"
+main = "src/index.ts"
+site = {
+  bucket = "public"
+}
+env = {
+  production = {
+    database_binding = "DB"
+    routes = [
+      { pattern = "*", zone_name = "example.com" }
+    ]
+  }
+  development = {
+    database_binding = "DB"
+  }
+}
+
+[env.production.database_binding]
+binding = "DB"
+database_id = "YOUR_DATABASE_ID"
+
+[env.development.database_binding]
+binding = "DB"
+database_id = "YOUR_DATABASE_ID"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lixwish"
+database_id = "YOUR_DATABASE_ID"
+
+[build]
+command = "npm run build"
+
+[build.upload]
+format = "service-worker"
