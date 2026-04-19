@@ -57,7 +57,8 @@ jobs:
           STATE_DIR=.github/.sync-state
           mkdir -p "$STATE_DIR"
 
-          COAUTHOR_TRAILER="Co-authored-by: Circuit-Overtime <ayushbhatt633@gmail.com>"
+          COAUTHOR_TRAILER="Co-authored-by: Circuit-Overtime <ayushbhatt633@gmail.com>
+          Co-authored-by: anwe-ch <misschakraborty2004@gmail.com>"
 
           # Label applied to every sync PR so they're filterable in the PR list.
           # Ensure it exists (idempotent — create fails quietly if already there).
