@@ -186,8 +186,11 @@ async function installMcpServers() {
 
   // Optional tool installs
   console.log('');
+
+  // RTK — special-cased because it needs platform-aware install + `rtk init -g` to wire the hook
+  await installRtk();
+
   const tools = [
-    { name: 'RTK', check: 'rtk', q: 'Install RTK? (CLI output compression, 60-90% savings)', install: 'cargo install --git https://github.com/rtk-ai/rtk' },
     { name: 'Context Mode', check: 'context-mode', q: 'Install Context Mode? (tool output sandboxing)', install: 'npm install -g context-mode' },
     { name: 'jCodeMunch', check: null, q: 'Install jCodeMunch? (code indexing, 95%+ savings)', install: 'pip install jcodemunch-mcp' },
     { name: 'Serena', check: 'serena', q: 'Install Serena? (LSP code navigation)', install: 'uv tool install -p 3.13 serena-agent@latest --prerelease=allow' },
@@ -208,6 +211,76 @@ async function installMcpServers() {
         warn(`Could not install ${tool.name} — install manually: ${tool.install}`);
       }
     }
+  }
+}
+
+async function installRtk() {
+  if (hasCmd('rtk')) {
+    try {
+      const ver = execSync('rtk --version 2>&1', { encoding: 'utf8' }).trim();
+      success(`RTK already installed (${ver})`);
+    } catch {
+      success('RTK already installed');
+    }
+    wireRtkHook();
+    return;
+  }
+
+  const yes = await ask('Install RTK by rtk-ai? (CLI output compression, 60-90% token savings — https://github.com/rtk-ai/rtk)');
+  if (!yes) return;
+
+  const plat = process.platform;
+  let installed = false;
+
+  if (plat === 'darwin' && hasCmd('brew')) {
+    installed = tryInstall('RTK (Homebrew)', 'brew install rtk');
+  }
+
+  if (!installed && (plat === 'linux' || plat === 'darwin')) {
+    installed = tryInstall(
+      'RTK (official installer)',
+      'curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh',
+    );
+    if (installed) {
+      // RTK installs to ~/.local/bin; make sure this process can see it for `rtk init -g`
+      const localBin = path.join(process.env.HOME || '', '.local', 'bin');
+      if (!process.env.PATH.split(path.delimiter).includes(localBin)) {
+        process.env.PATH = `${localBin}${path.delimiter}${process.env.PATH}`;
+      }
+    }
+  }
+
+  if (!installed && hasCmd('cargo')) {
+    installed = tryInstall('RTK (cargo)', 'cargo install --git https://github.com/rtk-ai/rtk');
+  }
+
+  if (!installed) {
+    warn('Could not install RTK automatically. See https://github.com/rtk-ai/rtk#installation');
+    return;
+  }
+
+  wireRtkHook();
+}
+
+function tryInstall(label, cmd) {
+  try {
+    info(`Installing ${label}...`);
+    execSync(cmd, { stdio: 'pipe' });
+    success(`${label} installed`);
+    return true;
+  } catch {
+    warn(`${label} failed`);
+    return false;
+  }
+}
+
+function wireRtkHook() {
+  if (!hasCmd('rtk')) return;
+  try {
+    execSync('rtk init -g --auto-patch', { stdio: 'pipe' });
+    success('RTK hook wired into Claude Code (rtk init -g)');
+  } catch {
+    warn('RTK installed but `rtk init -g` failed — run it manually to wire the hook');
   }
 }
 
