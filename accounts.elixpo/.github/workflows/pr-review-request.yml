@@ -23,6 +23,10 @@ on:
     types: [opened, assigned]
   pull_request_review:
     types: [submitted]
+  # When a whitelisted maintainer assigns @elixpoo as a reviewer from the
+  # review panel, that counts as "please review this PR" — same downstream flow.
+  pull_request:
+    types: [review_requested]
 
 jobs:
   elixpo:
@@ -32,7 +36,8 @@ jobs:
         (github.event_name == 'issue_comment' && github.event.comment.user.login != 'elixpoo' && contains(github.event.comment.body, '@elixpoo')) ||
         (github.event_name == 'pull_request_review_comment' && github.event.comment.user.login != 'elixpoo' && contains(github.event.comment.body, '@elixpoo')) ||
         (github.event_name == 'pull_request_review' && github.event.review.user.login != 'elixpoo' && contains(github.event.review.body, '@elixpoo')) ||
-        (github.event_name == 'issues' && github.event.issue.user.login != 'elixpoo' && (contains(github.event.issue.body, '@elixpoo') || contains(github.event.issue.title, '@elixpoo')))
+        (github.event_name == 'issues' && github.event.issue.user.login != 'elixpoo' && (contains(github.event.issue.body, '@elixpoo') || contains(github.event.issue.title, '@elixpoo'))) ||
+        (github.event_name == 'pull_request' && github.event.requested_reviewer.login == 'elixpoo')
       )
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -53,26 +58,31 @@ jobs:
         with:
           github-token: ${{ secrets.CI_AGENT_TOKEN }}
           script: |
-            let body = '';
-            if (context.eventName === 'issue_comment' || context.eventName === 'pull_request_review_comment') {
-              body = context.payload.comment?.body || '';
-            } else if (context.eventName === 'issues') {
-              body = (context.payload.issue?.body || '') + (context.payload.issue?.title || '');
-            } else if (context.eventName === 'pull_request_review') {
-              body = context.payload.review?.body || '';
-            }
+            // review_requested is a structured action (no free-text mention) —
+            // the job-level `if` already checked the requested reviewer is
+            // elixpoo. Skip the mention-regex check for this event.
+            if (context.eventName !== 'pull_request') {
+              let body = '';
+              if (context.eventName === 'issue_comment' || context.eventName === 'pull_request_review_comment') {
+                body = context.payload.comment?.body || '';
+              } else if (context.eventName === 'issues') {
+                body = (context.payload.issue?.body || '') + (context.payload.issue?.title || '');
+              } else if (context.eventName === 'pull_request_review') {
+                body = context.payload.review?.body || '';
+              }
 
-            if (!body.includes('@elixpoo')) {
-              console.log('Strict check failed: "@elixpoo" must be lowercase.');
-              core.setOutput('authorized', 'false');
-              return;
-            }
+              if (!body.includes('@elixpoo')) {
+                console.log('Strict check failed: "@elixpoo" must be lowercase.');
+                core.setOutput('authorized', 'false');
+                return;
+              }
 
-            // Reject substring-only matches (e.g. @elixpoooo, @elixpoo-bot).
-            if (!/(^|[^A-Za-z0-9_.+-])@elixpoo([^A-Za-z0-9_.+-]|$)/.test(body)) {
-              console.log('@elixpoo substring only, not a real mention — skipping.');
-              core.setOutput('authorized', 'false');
-              return;
+              // Reject substring-only matches (e.g. @elixpoooo, @elixpoo-bot).
+              if (!/(^|[^A-Za-z0-9_.+-])@elixpoo([^A-Za-z0-9_.+-]|$)/.test(body)) {
+                console.log('@elixpoo substring only, not a real mention — skipping.');
+                core.setOutput('authorized', 'false');
+                return;
+              }
             }
 
             const whitelist = ['Circuit-Overtime', 'anwe-ch', 'elixpoo', 'ez-vivek'];
@@ -112,7 +122,7 @@ jobs:
         if: steps.whitelist.outputs.authorized == 'true'
         id: setup
         run: |
-          # rocket reaction on the triggering comment / review / issue
+          # rocket reaction on the triggering comment / review / issue / PR
           if [ "${{ github.event_name }}" = "issue_comment" ]; then
             gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions -f content=rocket || true
           elif [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
@@ -120,6 +130,8 @@ jobs:
           elif [ "${{ github.event_name }}" = "issues" ]; then
             gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=rocket || true
           elif [ "${{ github.event_name }}" = "pull_request_review" ]; then
+            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/reactions -f content=rocket || true
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
             gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/reactions -f content=rocket || true
           fi
 
@@ -202,40 +214,41 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ secrets.CI_AGENT_TOKEN }}
 
-      # ─────────────────────────────────────────────────────────────────
-      # Pull shared Claude assets (agents + hooks + config) from
-      # elixpo/claudeOps.elixpo so every repo's bot has the same skills.
-      # ─────────────────────────────────────────────────────────────────
-      - name: Pull claudeops skills
+      # When the checkout ref is refs/pull/N/head, `origin/main` may not be
+      # resolvable locally — `git diff origin/main...HEAD` then fails with
+      # "no merge base". Fetch main explicitly so the three-dot diff works.
+      - name: Fetch main for diffs
         if: steps.whitelist.outputs.authorized == 'true'
-        uses: actions/checkout@v4
-        with:
-          repository: elixpo/claudeOps.elixpo
-          ref: main
-          token: ${{ secrets.CI_AGENT_TOKEN }}
-          path: .claudeops-src
-          sparse-checkout: |
-            agents
-            hooks
-            config
-          sparse-checkout-cone-mode: false
+        run: git fetch origin main --depth=50 || true
 
-      - name: Wire claudeops skills into .claude/
+      # ─────────────────────────────────────────────────────────────────
+      # Wire claudeops agents/hooks into .claude/ from the published npm
+      # package (@elixpo/claudeops). Faster than cloning the git repo and
+      # lets us bring in ONLY the agents we actually reference.
+      # The repo ships its own .claude/commands/ (committed) — those take
+      # priority and are not touched here.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Wire claudeops agents + hooks into .claude/
         if: steps.whitelist.outputs.authorized == 'true'
         run: |
-          mkdir -p .claude
-          if [ -d .claudeops-src/agents ]; then
-            cp -r .claudeops-src/agents .claude/agents
-            echo "Wired $(ls .claude/agents | wc -l) agents from claudeops"
+          set -e
+          mkdir -p .claude/agents .claude/hooks
+          # Install only the claudeops package into a scratch prefix.
+          npm install --no-save --no-audit --no-fund --prefix /tmp/claudeops @elixpo/claudeops >/dev/null
+          SRC=/tmp/claudeops/node_modules/@elixpo/claudeops
+          # Copy only the agents we actually reference from the system prompt.
+          # Add to this list when the prompt references more.
+          for a in architect red-team refiner breaker wirer; do
+            if [ -f "$SRC/agents/$a.md" ]; then
+              cp "$SRC/agents/$a.md" ".claude/agents/$a.md"
+            fi
+          done
+          # Hooks are small — copy the lot.
+          cp -r "$SRC/hooks/." .claude/hooks/ 2>/dev/null || true
+          if [ -f "$SRC/config/hooks.json" ] && [ ! -f .claude/hooks.json ]; then
+            cp "$SRC/config/hooks.json" .claude/hooks.json
           fi
-          if [ -d .claudeops-src/hooks ]; then
-            cp -r .claudeops-src/hooks .claude/hooks
-            echo "Wired $(ls .claude/hooks | wc -l) hooks from claudeops"
-          fi
-          if [ -f .claudeops-src/config/hooks.json ] && [ ! -f .claude/hooks.json ]; then
-            cp .claudeops-src/config/hooks.json .claude/hooks.json
-            echo "Wired hooks.json from claudeops"
-          fi
+          echo "Wired $(ls .claude/agents | wc -l) agents + $(ls .claude/hooks 2>/dev/null | wc -l) hooks from @elixpo/claudeops"
 
       # ─────────────────────────────────────────────────────────────────
       # Pull the pre-built repo-context artifact (.elixpo-context/context.md)
@@ -254,6 +267,30 @@ jobs:
           if_no_artifact_found: warn
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
 
+      # Build a prompt that injects the pre-built repo context inline so
+      # the model doesn't need to go read it (which it ignores anyway).
+      - name: Build prompt body
+        if: steps.whitelist.outputs.authorized == 'true'
+        id: build_prompt
+        run: |
+          CTX="(context artifact missing)"
+          if [ -f .elixpo-context/context.md ]; then
+            CTX=$(head -c 6000 .elixpo-context/context.md)
+          fi
+          {
+            echo 'prompt<<PROMPT_EOF'
+            echo "Event: ${{ github.event_name }}"
+            echo "Actor: @${{ github.actor }}"
+            echo "Repo: ${{ github.repository }}"
+            echo "Issue/PR: ${{ github.event.issue.number || github.event.pull_request.number }}"
+            echo ""
+            echo "## Repo context (pre-built snapshot)"
+            echo "$CTX"
+            echo ""
+            echo "Proceed. Read the trigger once, act via tools, do not output plan/analysis as text."
+            echo 'PROMPT_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - uses: anthropics/claude-code-action@v1
         if: steps.whitelist.outputs.authorized == 'true'
         env:
@@ -264,13 +301,14 @@ jobs:
           GIT_COMMITTER_EMAIL: "269200728+elixpoo@users.noreply.github.com"
         with:
           anthropic_api_key: "ccr-pollinations"
-          show_full_output: true
+          show_full_output: false
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           trigger_phrase: "@elixpoo"
           branch_prefix: "elixpo/"
+          prompt: ${{ steps.build_prompt.outputs.prompt }}
           claude_args: |
             --permission-mode bypassPermissions
-            --system-prompt "You are elixpo, a developer on the Elixpo team. Never say 'Claude', 'Claude Code', 'AI', 'LLM', 'analyzing', 'analysis' — speak as a teammate ('looking into this', 'pushed a fix', 'opened #N'). Be casual, concise, human. Read .elixpo-context/context.md ONCE at the start for repo context — don't ls/find/tree or re-read README/CLAUDE.md. Read the trigger comment/PR/issue ONCE — don't repeat gh pr view variants. Stay strictly in scope, no side quests into other repos. For code changes: never commit to main; if on an issue, create branch elixpo/issue-<n>-<hex>; run ./biome.sh until ci passes before commit; push and open a ready PR with title '[ELIXPO] <title>' and body fixing #<n>. Specialized subagents live in .claude/agents/ — use them only for genuinely hard work (red-team, architect, refiner), skip for LGTMs and small fixes."
+            --system-prompt "You are elixpo, a developer on the Elixpo team. Never say 'Claude', 'Claude Code', 'AI', 'LLM', 'analyzing', 'analysis' — speak as a teammate. The operating manual is AGENTS.md (plain markdown at repo root — read it with the Read tool if you need conventions; do not prefix the path with @). Runbooks: .claude/commands/commit-push-pr.md for commit/push/PR ceremony, .claude/commands/review.md for review output, .claude/commands/respond-to-issue.md for issue triage. Act via tools directly — do NOT output planning or analysis as visible text before tool calls. Do NOT ls/find/tree/ls -R: the repo context is injected into the prompt. Read the trigger ONCE via a single gh pr view / gh issue view. Stay strictly in scope, no side quests into other repos or URLs. Subagents in .claude/agents/ (architect, red-team, refiner, breaker, wirer) are for genuinely hard work only — skip for LGTMs and small fixes."
           additional_permissions: |
             actions: read
 
