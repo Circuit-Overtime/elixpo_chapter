@@ -119,7 +119,7 @@ jobs:
           cd config-src
           AGENT_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_AGENT; print(LLM_MODEL_AGENT)")
           CODE_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_CODE; print(LLM_MODEL_CODE)")
-          THINK_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_rocket; print(LLM_MODEL_rocket)")
+          THINK_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_THINKING; print(LLM_MODEL_THINKING)")
           SEARCH_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_SEARCH; print(LLM_MODEL_SEARCH)")
           cd ..
 
@@ -134,12 +134,14 @@ jobs:
           # Copy custom CCR adapters (gemini rocket-disable, etc.) so the
           # router can load them by absolute path.
           cp config-src/.github/ccr-adapters/*.js $HOME/.claude-code-router/ 2>/dev/null || true
-          GEMINI_ADAPTER="$HOME/.claude-code-router/gemini-adapter.js"
+          NORMALIZE_ADAPTER="$HOME/.claude-code-router/openai-normalize.js"
           # Two providers — main (cheap key) + coder (separate key for qwen-coder).
-          # Transformer order: gemini-adapter → openai → maxtoken.
-          # gemini-adapter flattens prior tool_use/tool_result in history to
-          # plain text (Vertex demands thought_signature on replayed tool_use;
-          # Pollinations exposes no knob to disable Gemini rocket).
+          # Transformer order: openai-normalize → openai → maxtoken.
+          # openai-normalize flattens Anthropic-style structured content
+          # (multi-block text arrays, cache_control, tool_use/tool_result) to
+          # the plain OpenAI shape that Pollinations' non-Anthropic models
+          # (kimi, qwen-coder, perplexity-*, gemini, glm) require. Anthropic-
+          # native models pass through unchanged.
           # Custom transformers MUST be registered at top-level "transformers"
           # — CCR resolves strings in "use" as registered names, not paths.
           cat > $HOME/.claude-code-router/config.json <<EOF
@@ -148,7 +150,7 @@ jobs:
             "NON_INTERACTIVE_MODE": true,
             "API_TIMEOUT_MS": 600000,
             "transformers": [
-              {"path": "${GEMINI_ADAPTER}"}
+              {"path": "${NORMALIZE_ADAPTER}"}
             ],
             "Providers": [
               {
@@ -157,7 +159,7 @@ jobs:
                 "api_key": "${POLLINATIONS_TOKEN}",
                 "models": ["${AGENT_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"],
                 "transformer": {
-                  "use": ["gemini-adapter", "openai", ["maxtoken", {"max_tokens": 9000}]]
+                  "use": ["openai-normalize", "openai", ["maxtoken", {"max_tokens": 9000}]]
                 }
               },
               {
@@ -202,50 +204,11 @@ jobs:
           token: ${{ secrets.CI_AGENT_TOKEN }}
 
       # ─────────────────────────────────────────────────────────────────
-      # Pull shared Claude assets (agents + hooks + config) from
-      # elixpo/claudeOps.elixpo so every repo's bot has the same skills.
-      # Update once there → applies to all 15 repos on next run.
-      # ─────────────────────────────────────────────────────────────────
-      - name: Pull claudeops skills
-        if: steps.whitelist.outputs.authorized == 'true'
-        uses: actions/checkout@v4
-        with:
-          repository: elixpo/claudeOps.elixpo
-          ref: main
-          token: ${{ secrets.CI_AGENT_TOKEN }}
-          path: .claudeops-src
-          sparse-checkout: |
-            agents
-            hooks
-            config
-          sparse-checkout-cone-mode: false
-
-      - name: Wire claudeops skills into .claude/
-        if: steps.whitelist.outputs.authorized == 'true'
-        run: |
-          mkdir -p .claude
-          # agents → .claude/agents (subagent markdown files)
-          if [ -d .claudeops-src/agents ]; then
-            cp -r .claudeops-src/agents .claude/agents
-            echo "Wired $(ls .claude/agents | wc -l) agents from claudeops"
-          fi
-          # hooks → .claude/hooks (guards: bash, glob, grep)
-          if [ -d .claudeops-src/hooks ]; then
-            cp -r .claudeops-src/hooks .claude/hooks
-            echo "Wired $(ls .claude/hooks | wc -l) hooks from claudeops"
-          fi
-          # hooks.json config (if present and this repo doesn't already have one)
-          if [ -f .claudeops-src/config/hooks.json ] && [ ! -f .claude/hooks.json ]; then
-            cp .claudeops-src/config/hooks.json .claude/hooks.json
-            echo "Wired hooks.json from claudeops"
-          fi
-
-      # ─────────────────────────────────────────────────────────────────
       # Pull the pre-built repo-context artifact (.elixpo-context/context.md)
-      # produced by artifact-update.yml on every push to main. The model
-      # reads this FIRST so it doesn't burn turns on `ls` / `tree` / re-reading
-      # README.md to reconstruct context we already have on disk.
-      # ─────────────────────────────────────────────────────────────────
+      # produced by artifact-update.yml on every push to main. Injected
+      # inline into the agent's prompt below so the model never has to
+      # ls/tree/Glob-to-discover — it already has the cold repo context
+      # the way a human using ccr in their terminal does.
       - name: Download repo-context artifact
         if: steps.whitelist.outputs.authorized == 'true'
         continue-on-error: true
@@ -256,6 +219,48 @@ jobs:
           path: .elixpo-context
           if_no_artifact_found: warn
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
+
+      # Build the prompt by inlining the repo context snapshot.
+      - name: Build prompt body
+        if: steps.whitelist.outputs.authorized == 'true'
+        id: build_prompt
+        run: |
+          CTX="(context artifact missing — fall back to Glob/Grep discovery)"
+          if [ -f .elixpo-context/context.md ]; then
+            CTX=$(cat .elixpo-context/context.md)
+          fi
+          {
+            echo 'prompt<<PROMPT_EOF'
+            echo "Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}"
+            echo ""
+            echo "## Cold repo context (pre-built snapshot)"
+            echo "$CTX"
+            echo ""
+            echo "## Your task"
+            echo ""
+            echo "Fetch the full issue body + comments once:"
+            echo "  gh issue view ${{ github.event.issue.number }} --comments"
+            echo ""
+            echo "Then pick ONE of four paths:"
+            echo ""
+            echo "1. **IMPLEMENT (simple → medium)** — up to ~15 files, mechanical or surgical, no ambiguous design choices."
+            echo "   - Bulk find/replace / renames / theme swaps → python .github/scripts/apply_refactor.py with a JSON plan on stdin (one call, deterministic)."
+            echo "   - 1-3 file surgical edits → Read + Edit/MultiEdit."
+            echo "   - Branch: elixpo/issue-${{ github.event.issue.number }}-<hex>. Commit, push, open PR '[ELIXPO] <title>' with body ending 'Fixes #${{ github.event.issue.number }}'."
+            echo "   - Do NOT run ./biome.sh — the CI biome workflow checks the PR separately. Skipping that step saves 2-3 turns."
+            echo ""
+            echo "2. **DECLINE (too big / needs human judgement)** — new features spanning many modules, security-sensitive changes, DB-migration-heavy work, anything needing architectural decisions."
+            echo "   - Post ONE 'gh issue comment ${{ github.event.issue.number }}' politely saying the scope needs manual implementation, with a 1-2 sentence reason, and stop."
+            echo ""
+            echo "3. **ANSWER (question / LGTM / discussion)** — no code changes."
+            echo "   - Post ONE 'gh issue comment ${{ github.event.issue.number }}' and stop."
+            echo ""
+            echo "4. **CLARIFY (ambiguous)** — you cannot tell what the user wants."
+            echo "   - Post ONE 'gh issue comment' with the specific questions needed to proceed, and stop."
+            echo ""
+            echo "Never commit to main. Never lie about test results. The repo context above is cold but current."
+            echo 'PROMPT_EOF'
+          } >> "$GITHUB_OUTPUT"
 
       - uses: anthropics/claude-code-action@v1
         if: steps.whitelist.outputs.authorized == 'true'
@@ -270,12 +275,12 @@ jobs:
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           branch_prefix: "elixpo/"
-          # claude-code-action injects its own restrictive ALLOWED_TOOLS list
-          # for PR-creation flows. --permission-mode bypassPermissions is the
-          # only reliable escape. Safe: ephemeral sandbox, branch-protected main.
-          claude_args: |
-            --permission-mode bypassPermissions
-            --system-prompt "You are elixpo, a developer on the Elixpo team. Never say 'Claude', 'Claude Code', 'AI', 'LLM', 'analyzing', 'analysis' — speak as a teammate ('looking into this', 'pushed a fix', 'opened #N'). Be casual, concise, human. Read .elixpo-context/context.md ONCE at the start for repo context — don't ls/find/tree or re-read README/CLAUDE.md. Read the issue ONCE via 'gh issue view <n> --comments' — don't repeat variants. Decide: QUESTION/DISCUSSION → answer in one 'gh issue comment' and stop. IMPLEMENTATION → first run 'gh pr list --search \"linked:issue-<n>\" --state open --json number,headRefName'; if an OPEN PR exists, check out that branch and commit there (do NOT open a duplicate PR); else create branch elixpo/issue-<n>-<hex>, make minimal scoped edits, run ./biome.sh until ci passes, commit, push, and open a ready PR titled '[ELIXPO] <title>' with body ending in 'Fixes #<n>'. Never commit to main. Stay strictly in scope — no unrelated refactors, no side quests. Specialized subagents live in .claude/agents/ — use them only for genuinely hard work (architect, red-team, refiner), skip for trivial fixes."
+          # No allowed_tools cap — every Claude Code tool is available
+          # (Read / Edit / Write / MultiEdit / Glob / Grep / Bash / BashOutput /
+          # TodoWrite / Task / WebFetch / WebSearch / NotebookEdit / Skill / ...).
+          # Task routes to CCR 'background' = qwen-coder, so code-heavy
+          # multi-file work can be delegated to the coder-tuned model.
+          prompt: ${{ steps.build_prompt.outputs.prompt }}
           additional_permissions: |
             actions: read
 

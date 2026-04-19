@@ -1,17 +1,19 @@
 #!/usr/bin/env node
 
 /**
- * gemini-adapter.js — CCR transformer for Pollinations → Vertex Gemini 3.
+ * openai-normalize.js — CCR transformer for any non-Anthropic provider.
  *
- * Vertex demands a `thought_signature` on every replayed assistant tool_use
- * block. CCR doesn't track signatures across turns and Pollinations' OpenAI
- * proxy strips them on return. Pollinations exposes no `thinking_budget` /
- * `thinkingConfig` pass-through, so thinking can't be disabled server-side.
+ * Originally written for Vertex Gemini's `thought_signature` requirement, the
+ * same flatten-and-strip pass is needed for every non-Anthropic model served
+ * through an OpenAI-style proxy (Pollinations: kimi, qwen-coder, perplexity-*,
+ * glm, gemini, gemini-search, and friends). Each validates OpenAI schema
+ * strictly and rejects:
+ *   - `content: [{type: 'text', text: '...'}, ...]` structured arrays,
+ *   - `cache_control: {type: 'ephemeral'}` markers on text blocks,
+ *   - Anthropic-style `tool_use` / `tool_result` blocks in history.
  *
- * Workaround: rewrite conversation history so no tool_use blocks ever reach
- * Vertex AND the model sees no special-syntax artifacts in prior assistant
- * turns to mimic (earlier iterations had Gemini copying our flattened strings
- * like `[called X]` or placeholder `(continuing)` as plain-text replies).
+ * The fix: before the request hits the proxy, collapse every message's
+ * content into a plain string and drop cache_control by virtue of the join.
  *
  * Rules:
  *   1. Tool exchanges (tool_use → tool_result) become user-role narrative
@@ -21,22 +23,29 @@
  *   3. Assistant messages with real text keep that text only; any tool_use
  *      blocks inside are discarded (their context moves to the next user
  *      note).
- *   4. Consecutive user messages are merged so Vertex sees a clean alternation.
+ *   4. System and user messages with array content are joined to a single
+ *      string; cache_control on individual text blocks is dropped in the join.
+ *   5. Consecutive user messages are merged so the proxy sees clean alternation.
  *
  * The current turn's response is untouched; real tool calls still flow.
+ *
+ * The filter: SKIP flattening only for models that accept Anthropic-native
+ * structured content (real Claude). Everything else gets the flatten pass.
  *
  * CCR contract: `registerTransformerFromConfig` calls `new Ctor(options)`.
  * Register at top-level and reference by name:
  *
  *   {
- *     "transformers": [{"path": "/abs/path/gemini-adapter.js"}],
+ *     "transformers": [{"path": "/abs/path/openai-normalize.js"}],
  *     "Providers": [{
- *       "transformer": { "use": ["gemini-adapter", "openai", ...] }
+ *       "transformer": { "use": ["openai-normalize", "openai", ...] }
  *     }]
  *   }
  */
 
-const GEMINI_RE = /^gemini/i;
+// Only SKIP flattening for models we know accept Anthropic-native structured
+// content. Everything else needs the flatten pass.
+const ANTHROPIC_NATIVE_RE = /^claude(-|$)/i;
 
 function asString(x) {
     if (x == null) return "";
@@ -81,6 +90,20 @@ function toolResultNarrative(toolUseIndex, toolUseId, resultContent) {
         : `Earlier tool output: ${result}`;
 }
 
+function flattenTextBlocks(content) {
+    // Join `[{type:'text',text:'...'}, ...]` into a single string, dropping
+    // any cache_control markers and non-text blocks (images, documents, etc.).
+    if (typeof content === "string") return content;
+    if (!Array.isArray(content)) return asString(content);
+    const parts = [];
+    for (const b of content) {
+        if (b && b.type === "text" && typeof b.text === "string") {
+            parts.push(b.text);
+        }
+    }
+    return parts.join("\n");
+}
+
 function flattenMessages(messages) {
     const toolUseIndex = buildToolUseIndex(messages);
     const out = [];
@@ -88,6 +111,13 @@ function flattenMessages(messages) {
     for (const m of messages) {
         if (!m || typeof m !== "object") continue;
         const role = m.role;
+
+        // System messages: flatten content array, drop cache_control.
+        if (role === "system") {
+            const content = flattenTextBlocks(m.content);
+            if (content) out.push({ role: "system", content });
+            continue;
+        }
 
         if (role === "assistant" && Array.isArray(m.content)) {
             const texts = [];
@@ -169,9 +199,9 @@ function flattenMessages(messages) {
     return merged;
 }
 
-class GeminiFlattenAdapter {
+class OpenAINormalizeAdapter {
     constructor(options) {
-        this.name = "gemini-adapter";
+        this.name = "openai-normalize";
         this.options = options || {};
     }
 
@@ -185,13 +215,19 @@ class GeminiFlattenAdapter {
     _flatten(request) {
         const body = request?.body ? request.body : request;
         if (!body || typeof body !== "object") return request;
-        if (typeof body.model !== "string" || !GEMINI_RE.test(body.model))
-            return request;
         if (!Array.isArray(body.messages)) return request;
+        // Only pass through unchanged for real Claude models; everything else
+        // (kimi, qwen, perplexity, glm, gemini, ...) gets flattened.
+        if (
+            typeof body.model === "string" &&
+            ANTHROPIC_NATIVE_RE.test(body.model)
+        ) {
+            return request;
+        }
 
         body.messages = flattenMessages(body.messages);
         return request;
     }
 }
 
-module.exports = GeminiFlattenAdapter;
+module.exports = OpenAINormalizeAdapter;
