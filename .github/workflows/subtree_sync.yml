@@ -7,11 +7,11 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout monorepo
         uses: actions/checkout@v4
@@ -19,13 +19,22 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.CI_AGENT_TOKEN }}
 
-      - name: Configure git
+      - name: Configure git as elixpoo
         run: |
           git config user.name "elixpoo"
           git config user.email "elixpoo@gmail.com"
 
-      - name: Sync subtrees
+      # Each subtree gets its own branch + PR + squash-merge. Sync state for
+      # each repo is persisted at .github/.sync-state/<name> so the next run
+      # can tell what upstream commits were pulled in (we can't rely on git
+      # merge parents after squash-merging eats them).
+      - name: Sync each subtree via PR + auto-squash-merge
+        env:
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          REPO_FULL: ${{ github.repository }}
         run: |
+          set -u
+
           repos=(
             "agent.elixpo https://github.com/elixpo/agent.elixpo.git"
             "elixpo https://github.com/elixpo/elixpo.git"
@@ -45,45 +54,156 @@ jobs:
             "claudeOps.elixpo https://github.com/elixpo/claudeOps.elixpo.git"
           )
 
-          COAUTHOR=$'\n\nCo-authored-by: Circuit-Overtime <ayushbhatt633@gmail.com>'
+          STATE_DIR=.github/.sync-state
+          mkdir -p "$STATE_DIR"
 
-          sync_subtree() {
-            local name=$1
-            local url=$2
+          COAUTHOR_TRAILER="Co-authored-by: Circuit-Overtime <ayushbhatt633@gmail.com>"
 
-            echo "==> Processing $name"
+          sync_one() {
+            local name="$1" url="$2"
+            echo "==> $name"
 
-            if git remote get-url "$name" >/dev/null 2>&1; then
-              echo "    remote already exists"
-            else
+            # Always start from a clean main before each subtree so state
+            # from a previous subtree's failure doesn't leak forward.
+            git checkout main
+            git reset --hard origin/main
+
+            # Add/refresh remote.
+            if ! git remote get-url "$name" >/dev/null 2>&1; then
               git remote add "$name" "$url"
             fi
+            if ! git fetch --quiet "$name"; then
+              echo "    fetch failed — skipping"
+              return 0
+            fi
 
-            git fetch "$name"
+            local remote_tip
+            remote_tip=$(git rev-parse "${name}/main" 2>/dev/null || echo "")
+            if [ -z "$remote_tip" ]; then
+              echo "    remote has no main branch — skipping"
+              return 0
+            fi
 
-            if [ -d "$name" ] || git ls-tree --name-only HEAD | grep -qx "$name"; then
-              echo "    pulling subtree updates..."
-              if git subtree pull --prefix="$name" "$name" main -m "Sync $name$COAUTHOR"; then
+            local prev_tip=""
+            [ -f "$STATE_DIR/${name}" ] && prev_tip=$(cat "$STATE_DIR/${name}")
+
+            if [ "$prev_tip" = "$remote_tip" ]; then
+              echo "    up to date ($remote_tip)"
+              return 0
+            fi
+
+            # New sync branch per run so concurrent runs don't collide.
+            local ts branch
+            ts=$(date +%Y%m%d-%H%M%S)
+            branch="sync/${name}-${ts}"
+            git checkout -b "$branch"
+
+            # First-time add vs. subsequent pull.
+            local op_label
+            if [ -d "$name" ] && git ls-tree --name-only HEAD | grep -qx "$name"; then
+              op_label="pull"
+              if ! git subtree pull --prefix="$name" "$name" main -m "Sync ${name} from upstream"; then
+                echo "    subtree pull failed (likely force-push upstream) — re-adding"
+                git merge --abort 2>/dev/null || git reset --merge 2>/dev/null || true
+                git rm -rf "$name/" 2>/dev/null || true
+                git commit -m "Reset ${name} subtree for re-sync" || true
+                git subtree add --prefix="$name" "$name" main -m "Re-add ${name} subtree" || {
+                  echo "    re-add also failed — aborting this subtree"
+                  git checkout main
+                  git branch -D "$branch" 2>/dev/null || true
+                  return 0
+                }
+                op_label="re-add"
+              fi
+            else
+              op_label="add"
+              if ! git subtree add --prefix="$name" "$name" main -m "Add ${name} subtree"; then
+                echo "    subtree add failed — skipping"
+                git checkout main
+                git branch -D "$branch" 2>/dev/null || true
                 return 0
               fi
-              echo "    pull failed (remote likely force-pushed) — aborting merge and re-adding..."
-              git merge --abort 2>/dev/null || git reset --merge 2>/dev/null || true
-              git rm -rf "$name/" 2>/dev/null || true
-              git commit -m "Remove $name for re-sync$COAUTHOR"
-              git subtree add --prefix="$name" "$name" main -m "Re-add $name$COAUTHOR"
-            else
-              echo "    adding subtree for the first time..."
-              git subtree add --prefix="$name" "$name" main -m "Add $name$COAUTHOR"
             fi
+
+            # Did the pull/add actually change anything vs main?
+            if git diff --quiet main -- "$name"; then
+              echo "    no diff vs main — nothing to PR"
+              git checkout main
+              git branch -D "$branch" 2>/dev/null || true
+              return 0
+            fi
+
+            # Upstream commit log (since the last recorded sync tip, or the
+            # latest 20 if this is the first sync with state).
+            local upstream_log
+            if [ -n "$prev_tip" ] && git rev-parse --quiet --verify "$prev_tip" >/dev/null; then
+              upstream_log=$(git log "${prev_tip}..${remote_tip}" --format='- %s (%h) — %an' 2>/dev/null | head -40)
+            else
+              upstream_log=$(git log "${remote_tip}" --format='- %s (%h) — %an' -20 2>/dev/null)
+            fi
+            [ -z "$upstream_log" ] && upstream_log="_(no upstream commit log available)_"
+
+            local files_changed n_commits
+            files_changed=$(git diff --shortstat main..HEAD -- "$name" | sed 's/^[[:space:]]*//')
+            n_commits=$(printf '%s\n' "$upstream_log" | grep -c '^- ' || true)
+            [ -z "$n_commits" ] && n_commits=0
+
+            # Record state so the next run can diff from here.
+            echo "$remote_tip" > "$STATE_DIR/${name}"
+            git add "$STATE_DIR/${name}"
+            git commit -m "chore: record sync state for ${name}" || true
+
+            git push -u origin "$branch"
+
+            local title body pr_url short_tip
+            short_tip="${remote_tip:0:12}"
+            title="Sync ${name}: ${n_commits} upstream commit(s) (${op_label})"
+
+            body=$(printf '%s\n' \
+              "Automated subtree sync for \`${name}\`." \
+              "" \
+              "- **Source:** ${url}" \
+              "- **Upstream tip:** \`${short_tip}\`" \
+              "- **Operation:** ${op_label}" \
+              "- **Diff:** ${files_changed:-no diff stats}" \
+              "" \
+              "## Upstream commits included" \
+              "${upstream_log}" \
+              "" \
+              "---" \
+              "_Opened and auto-merged by the hourly subtree sync workflow._" \
+              "" \
+              "${COAUTHOR_TRAILER}")
+
+            if ! pr_url=$(gh pr create --title "$title" --body "$body" --head "$branch" --base main); then
+              echo "    PR create failed — cleaning branch"
+              git push origin --delete "$branch" 2>/dev/null || true
+              git checkout main
+              git branch -D "$branch" 2>/dev/null || true
+              return 0
+            fi
+            echo "    opened $pr_url"
+
+            # Squash-merge with the same title/body so the single squash commit
+            # on main carries 'Sync <name>' in its subject (useful for later
+            # forensics even though we rely on the state file for diffs).
+            if ! gh pr merge "$pr_url" --squash --delete-branch --subject "$title" --body "$body"; then
+              echo "    squash-merge failed — leaving PR open for manual intervention"
+              git checkout main
+              return 0
+            fi
+            echo "    squash-merged and branch deleted"
+
+            # Pull the squash commit into local main so the next subtree
+            # branches off the latest state (including the state file).
+            git checkout main
+            git pull --ff-only origin main
           }
 
           for entry in "${repos[@]}"; do
             name=${entry%% *}
             url=${entry#* }
-            sync_subtree "$name" "$url"
+            if ! sync_one "$name" "$url"; then
+              echo "!! unhandled error syncing $name — continuing to next"
+            fi
           done
-
-      - name: Push updates
-        env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
-        run: git push origin main
