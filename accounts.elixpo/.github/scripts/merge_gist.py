@@ -115,7 +115,7 @@ def run_gist_digest():
     github_rest(
         "POST",
         f"/repos/{REPO}/issues/{PR_NUMBER}/comments",
-        {"body": f"\U0001f4cb Changelog updated: {gist_url}"},
+        {"body": f"**[CHANGE LOG]** \U0001f4cb Changelog updated for PR #{PR_NUMBER}. [View changelog]({gist_url})"},
     )
     print(f"Commented on PR #{PR_NUMBER}")
 

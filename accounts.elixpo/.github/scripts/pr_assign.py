@@ -91,15 +91,9 @@ def main():
     )
     print(f"Assigned PR #{pr_number} to author @{pr_author}")
 
-    # 2. Org member? Just comment and exit.
+    # 2. Org member? Nothing more to do — assignee is visible in the sidebar.
     if pr_author in ORG_MEMBERS:
-        print("Org member opened PR, only assigning author")
-        safe_api(
-            "POST",
-            f"/repos/{repo}/issues/{pr_number}/comments",
-            {"body": f"PR assigned to @{pr_author}"},
-            description="author-only comment",
-        )
+        print("Org member opened PR; assignee set, no further action")
         return
 
     # 3. External contributor — fetch changed files and pick a reviewer.
@@ -134,19 +128,9 @@ def main():
         description="assign maintainer",
     )
     print(f"Added @{chosen} as assignee")
-
-    # 6. Post a summary comment.
-    comment_body = (
-        f"PR opened by @{pr_author}\n"
-        f"Review requested from @{chosen}: {reason}"
-    )
-    safe_api(
-        "POST",
-        f"/repos/{repo}/issues/{pr_number}/comments",
-        {"body": comment_body},
-        description="summary comment",
-    )
-    print("Posted summary comment")
+    # No summary comment — the assignee + review-request are already visible
+    # in the PR sidebar. (LLM's reasoning stays in the job log.)
+    print(f"Reviewer reasoning (log-only): {reason}")
 
 
 if __name__ == "__main__":
