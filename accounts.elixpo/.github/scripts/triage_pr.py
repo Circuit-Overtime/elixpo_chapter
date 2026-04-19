@@ -107,6 +107,70 @@ def add_to_project(project_id: str, pr_node_id: str) -> str | None:
         return None
 
 
+def find_status_todo(project_id: str) -> tuple[str | None, str | None]:
+    """Return (status_field_id, todo_option_id) for the project's Status field.
+    Returns (None, None) if the field or Todo option isn't found — caller
+    should log and skip rather than fail the whole triage.
+    """
+    query = """
+    query($projectId: ID!) {
+      node(id: $projectId) {
+        ... on ProjectV2 {
+          fields(first: 30) {
+            nodes {
+              ... on ProjectV2SingleSelectField {
+                id
+                name
+                options { id name }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    result = github_graphql(query, {"projectId": project_id})
+    try:
+        fields = result["data"]["node"]["fields"]["nodes"]
+    except (KeyError, TypeError):
+        return None, None
+    for f in fields:
+        if not f or f.get("name") != "Status":
+            continue
+        field_id = f.get("id")
+        for opt in f.get("options") or []:
+            if (opt.get("name") or "").strip().lower() == "todo":
+                return field_id, opt.get("id")
+    return None, None
+
+
+def set_status_todo(project_id: str, item_id: str) -> bool:
+    """Set the project item's Status field to 'Todo'. Idempotent on re-runs."""
+    field_id, option_id = find_status_todo(project_id)
+    if not field_id or not option_id:
+        print("[warn] Status field or 'Todo' option not found on project — skipping status set")
+        return False
+    mutation = """
+    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+      updateProjectV2ItemFieldValue(input: {
+        projectId: $projectId,
+        itemId: $itemId,
+        fieldId: $fieldId,
+        value: { singleSelectOptionId: $optionId }
+      }) {
+        projectV2Item { id }
+      }
+    }
+    """
+    github_graphql(mutation, {
+        "projectId": project_id,
+        "itemId": item_id,
+        "fieldId": field_id,
+        "optionId": option_id,
+    })
+    return True
+
+
 # ── Main ───────────────────────────────────────────────────────────────────
 def main() -> None:
     print(f"=== PR Triage: #{PR_NUMBER} ===")
@@ -144,13 +208,22 @@ def main() -> None:
     # Resolve project
     project = PROJECTS.get(category) or PROJECTS[DEFAULT_CATEGORY]
 
-    # Add to project board
+    # Add to project board + set Status=Todo so we don't rely on
+    # github-project-automation[bot] for the initial status.
     print(f"Adding PR to '{category}' project ({project['id']})...")
+    item_id = None
     try:
         item_id = add_to_project(project["id"], pr_node_id)
         print(f"Project item ID: {item_id}")
     except Exception as exc:
         print(f"[error] Failed to add to project: {exc}")
+
+    if item_id:
+        try:
+            if set_status_todo(project["id"], item_id):
+                print("Status set to 'Todo'")
+        except Exception as exc:
+            print(f"[warn] Failed to set Status=Todo: {exc}")
 
     # Apply category label (UPPERCASE)
     cat_label = category.upper()
