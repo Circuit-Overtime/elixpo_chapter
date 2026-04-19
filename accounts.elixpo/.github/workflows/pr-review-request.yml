@@ -108,19 +108,19 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Setup router + eyes reaction
+      - name: Setup router + rocket reaction
         if: steps.whitelist.outputs.authorized == 'true'
         id: setup
         run: |
-          # Eyes reaction on the triggering comment / review / issue
+          # rocket reaction on the triggering comment / review / issue
           if [ "${{ github.event_name }}" = "issue_comment" ]; then
-            gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
+            gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions -f content=rocket || true
           elif [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
-            gh api repos/${{ github.repository }}/pulls/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
+            gh api repos/${{ github.repository }}/pulls/comments/${{ github.event.comment.id }}/reactions -f content=rocket || true
           elif [ "${{ github.event_name }}" = "issues" ]; then
-            gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
+            gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=rocket || true
           elif [ "${{ github.event_name }}" = "pull_request_review" ]; then
-            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/reactions -f content=eyes || true
+            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/reactions -f content=rocket || true
           fi
 
           cd config-src
