@@ -52,35 +52,45 @@ def load_context():
 
 
 def fallback_body(title, author="reporter"):
-    """Basic template used when the LLM response is malformed."""
+    """Basic template used when the LLM response is malformed.
+
+    New format per product direction:
+      - Description + Tasks + Checklist come first (self-contained issue body).
+      - Questions, if any, appear LAST as a small `### Questions from @elixpoo`
+        subsection with a short note tagging **@elixpoo** (the bot) — never
+        tagging the reporter — asking them to answer or label `ELIXPO`.
+    """
     return (
         "## Problem Statement\n"
         f"{title}\n\n"
-        f"## Questions for @{author}\n"
-        "- What is the exact scope of this change?\n"
-        "- Which files or components should be affected?\n"
-        "- What is the expected behavior after the change?\n\n"
-        f"> @{author} — please reply in this issue and tag **&#64;elixpoo** in your response so I can pick it up.\n\n"
-        "## Todo's\n"
-        f"- Scope to be defined once @{author} answers questions above.\n\n"
+        "## Tasks\n"
+        "- Scope to be defined once the questions below are answered.\n\n"
         "## Checklist\n"
-        f"- [ ] @{author}'s questions answered\n"
         "- [ ] Implementation complete\n"
         "- [ ] Tests pass\n"
         "- [ ] Documentation updated if behavior changes\n\n"
-        "---\n"
-        "> If you want elixpoo to handle this issue, attach the **`ELIXPO`** label to the issue.\n"
+        "---\n\n"
+        "### Questions from @elixpoo\n"
+        "- What is the exact scope of this change?\n"
+        "- Which files or components should be affected?\n"
+        "- What is the expected behavior after the change?\n\n"
+        "Answering these will make the description richer — tag **@elixpoo** "
+        "and ask me to update the issue description, or label the issue with "
+        "**`ELIXPO`** to let me solve it.\n"
     )
 
 
 def looks_valid(body):
-    """Check that the generated body contains the expected section headers."""
+    """Check that the generated body has the new structure.
+
+    Required: Problem Statement + Tasks + Checklist. Questions section is
+    optional (the model may write 'None — title is clear.' and omit the block).
+    """
     if not body:
         return False
     required = [
         "## Problem Statement",
-        "## Questions for",  # allows "Questions for @username"
-        "## Todo's",
+        "## Tasks",
         "## Checklist",
     ]
     return all(marker in body for marker in required)
@@ -114,40 +124,50 @@ def main():
     context = load_context()
 
     # 5. Call the LLM
+    # Format rules:
+    #   - The description block (Problem Statement + Tasks + Checklist)
+    #     must stand alone and NEVER @-tag the reporter. It's a description
+    #     of the issue, not a conversation with them.
+    #   - Any clarifying questions go LAST, under a small `### Questions
+    #     from @elixpoo` subsection with a short footer tagging @elixpoo
+    #     (the bot) — never the reporter — asking to answer or label ELIXPO.
     system_prompt = (
         f"You are structuring a GitHub issue for {PROJECT_NAME} ({PROJECT_DESCRIPTION}).\n"
-        f"The reporter (@{author}) left only a title. Your job is to produce a structured "
-        "skeleton — NOT to invent requirements.\n\n"
+        "The reporter left only a title. Your job is to produce a structured "
+        "skeleton — NOT to invent requirements. The issue body describes the "
+        "issue; it is NOT a message addressed to the reporter.\n\n"
         "STRICT RULES:\n"
         "1. ONLY reference files, directories, functions, or components that appear VERBATIM "
         "in the 'Repo context' section below. Never invent file paths. If you cannot find a "
         "relevant file in the context, describe the component generically (e.g., 'the auth module') "
         "without a path.\n"
-        "2. Do NOT assume scope, fix approach, or implementation details the reporter did not state. "
-        "If the title is ambiguous, ASK the reporter — do not guess.\n"
+        "2. Do NOT assume scope, fix approach, or implementation details the reporter did not state.\n"
         "3. Be factual and concise. No hedging, no filler, no marketing language.\n"
-        f"4. Use the 'Questions for @{author}' section whenever the title leaves something unclear. "
-        "This is the PRIMARY mechanism for moving the issue forward when you don't have enough info.\n\n"
+        "4. Do NOT @-tag the reporter anywhere in the body. The description is about the issue, "
+        "not a direct message to anyone.\n"
+        "5. If the title leaves things unclear, put concise questions in the final "
+        "`### Questions from @elixpoo` block — this is the primary way to move the issue forward.\n\n"
         "Output EXACTLY this markdown (no preamble, no closing text):\n\n"
         "## Problem Statement\n"
-        f"<1-3 sentences restating what the title conveys. If the title is vague, say so plainly "
-        f"(e.g., '@{author} asks for X, but the specific scope is not stated.'). Do not pad.>\n\n"
-        f"## Questions for @{author}\n"
-        "- <concrete question that must be answered before work starts>\n"
-        "- <2-5 questions if needed; if the title is fully self-explanatory, write 'None — title is clear.'>\n\n"
-        f"> @{author} — please reply in this issue and tag **&#64;elixpoo** in your response so I can pick it up.\n\n"
-        "## Todo's\n"
-        "- <only list tasks that are OBVIOUSLY required given the title + context. Reference real files "
-        "from the context when they are unambiguously relevant. Otherwise use generic language.>\n"
-        f"- <If the scope is unclear, write a single bullet: '- Scope to be defined once @{author} answers questions above.'>\n\n"
+        "<1-3 sentences restating what the title conveys. If the title is vague, say so plainly "
+        "(e.g., 'The reporter asks for X, but the specific scope is not stated.'). Do not pad.>\n\n"
+        "## Tasks\n"
+        "- <only list tasks that are OBVIOUSLY required given the title + context. Reference real "
+        "files from the context when they are unambiguously relevant. Otherwise use generic language.>\n"
+        "- <If the scope is unclear, write a single bullet: 'Scope to be defined once the questions below are answered.'>\n\n"
         "## Checklist\n"
-        f"- [ ] @{author}'s questions answered\n"
-        "- [ ] <other verification items that are objectively required, e.g., 'Change reviewed', 'Tests pass', 'Docs updated if behavior changes'. Keep to 3-5 items.>\n\n"
-        "---\n"
-        "> If you want elixpoo to handle this issue, attach the **`ELIXPO`** label to the issue."
+        "- [ ] <verification items that are objectively required, e.g., 'Change reviewed', 'Tests pass', "
+        "'Docs updated if behavior changes'. Keep to 3-5 items. Do not include 'questions answered' here — "
+        "that belongs in the Questions block below.>\n\n"
+        "---\n\n"
+        "### Questions from @elixpoo\n"
+        "- <concrete question needed before work starts>\n"
+        "- <2-5 questions total; if the title is fully self-explanatory, OMIT this entire `---` + `### Questions from @elixpoo` section (do not write 'None — title is clear.' — just leave it out).>\n\n"
+        "Answering these will make the description richer — tag **@elixpoo** and ask me to update the "
+        "issue description, or label the issue with **`ELIXPO`** to let me solve it."
     )
 
-    user_message = f"Issue title: {title}\nReporter: @{author}\n\nRepo context:\n{context}"
+    user_message = f"Issue title: {title}\n\nRepo context:\n{context}"
 
     generated = ""
     try:
