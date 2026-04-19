@@ -3,7 +3,6 @@ dist/
 .DS_Store
 *.pem
 .env*.local
-.env
 wrangler.toml
 .dev.vars
 *.tsbuildinfo
@@ -11,3 +10,5 @@ wrangler.toml
 .next
 .wrangler
 .vercel
+# SOPS: unencrypted local env
+.env.local

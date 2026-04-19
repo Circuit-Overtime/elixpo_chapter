@@ -1,0 +1,19 @@
+project:
+  name: jackey.elixpo
+  description: "Discord Image Bot"
+  stack: nextjs
+  node_version: "20"
+
+ci:
+  lint_cmd: ""
+  test_cmd: ""
+  build_cmd: ""
+
+maintainers:
+  - github: Circuit-Overtime
+    skills: [nodejs, discord, bot]
+    lead: true
+
+gist:
+  id: ""
+  account: elixpoo

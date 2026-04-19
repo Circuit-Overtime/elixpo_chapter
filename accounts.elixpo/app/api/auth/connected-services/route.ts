@@ -1,17 +1,17 @@
-export const runtime = 'edge';
+export const runtime = "edge";
 
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyJWT } from '@/lib/jwt';
-import { getDatabase } from '@/lib/d1-client';
+import { type NextRequest, NextResponse } from "next/server";
+import { getDatabase } from "@/lib/d1-client";
+import { verifyJWT } from "@/lib/jwt";
 
 async function getAuth(request: NextRequest) {
-  const token =
-    request.cookies.get('access_token')?.value ||
-    request.headers.get('authorization')?.replace('Bearer ', '');
-  if (!token) return null;
-  const payload = await verifyJWT(token);
-  if (!payload || payload.type !== 'access') return null;
-  return payload;
+    const token =
+        request.cookies.get("access_token")?.value ||
+        request.headers.get("authorization")?.replace("Bearer ", "");
+    if (!token) return null;
+    const payload = await verifyJWT(token);
+    if (!payload || payload.type !== "access") return null;
+    return payload;
 }
 
 /**
@@ -19,15 +19,16 @@ async function getAuth(request: NextRequest) {
  * Returns list of OAuth apps the current user has authorized (has active refresh tokens for).
  */
 export async function GET(request: NextRequest) {
-  const auth = await getAuth(request);
-  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await getAuth(request);
+    if (!auth)
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  try {
-    const db = await getDatabase();
+    try {
+        const db = await getDatabase();
 
-    const result = await db
-      .prepare(
-        `SELECT DISTINCT
+        const result = await db
+            .prepare(
+                `SELECT DISTINCT
            oc.client_id,
            oc.name,
            oc.description,
@@ -39,18 +40,21 @@ export async function GET(request: NextRequest) {
          JOIN oauth_clients oc ON rt.client_id = oc.client_id
          WHERE rt.user_id = ? AND rt.revoked = 0 AND oc.is_active = 1
          GROUP BY oc.client_id
-         ORDER BY last_authorized DESC`
-      )
-      .bind(auth.sub)
-      .all();
+         ORDER BY last_authorized DESC`,
+            )
+            .bind(auth.sub)
+            .all();
 
-    return NextResponse.json({
-      services: result.results || [],
-    });
-  } catch (err) {
-    console.error('[Connected Services] Error:', err);
-    return NextResponse.json({ error: 'Failed to fetch connected services' }, { status: 500 });
-  }
+        return NextResponse.json({
+            services: result.results || [],
+        });
+    } catch (err) {
+        console.error("[Connected Services] Error:", err);
+        return NextResponse.json(
+            { error: "Failed to fetch connected services" },
+            { status: 500 },
+        );
+    }
 }
 
 /**
@@ -58,27 +62,34 @@ export async function GET(request: NextRequest) {
  * Revokes all refresh tokens for a specific OAuth app, effectively disconnecting it.
  */
 export async function DELETE(request: NextRequest) {
-  const auth = await getAuth(request);
-  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await getAuth(request);
+    if (!auth)
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const clientId = request.nextUrl.searchParams.get('client_id');
-  if (!clientId) {
-    return NextResponse.json({ error: 'client_id is required' }, { status: 400 });
-  }
+    const clientId = request.nextUrl.searchParams.get("client_id");
+    if (!clientId) {
+        return NextResponse.json(
+            { error: "client_id is required" },
+            { status: 400 },
+        );
+    }
 
-  try {
-    const db = await getDatabase();
-    await db
-      .prepare(
-        `UPDATE refresh_tokens SET revoked = 1, revoked_at = CURRENT_TIMESTAMP
-         WHERE user_id = ? AND client_id = ?`
-      )
-      .bind(auth.sub, clientId)
-      .run();
+    try {
+        const db = await getDatabase();
+        await db
+            .prepare(
+                `UPDATE refresh_tokens SET revoked = 1, revoked_at = CURRENT_TIMESTAMP
+         WHERE user_id = ? AND client_id = ?`,
+            )
+            .bind(auth.sub, clientId)
+            .run();
 
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error('[Connected Services] Revoke error:', err);
-    return NextResponse.json({ error: 'Failed to revoke access' }, { status: 500 });
-  }
+        return NextResponse.json({ success: true });
+    } catch (err) {
+        console.error("[Connected Services] Revoke error:", err);
+        return NextResponse.json(
+            { error: "Failed to revoke access" },
+            { status: 500 },
+        );
+    }
 }

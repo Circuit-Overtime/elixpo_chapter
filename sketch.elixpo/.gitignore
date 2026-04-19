@@ -3,7 +3,6 @@ all_icons/
 .vercel
 .next/
 out/
-.env
 wrangler.toml
 plans/
 .wrangler
@@ -11,3 +10,5 @@ plans/
 .next.vercel
 *.vsix
 *.lixsketch
+# SOPS: unencrypted local env
+.env.local

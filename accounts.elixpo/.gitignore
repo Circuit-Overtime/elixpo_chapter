@@ -18,8 +18,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-.*env
 .vercel
 *.tsbuildinfo
 create-admin.mjs
 wrangler.toml
+# SOPS: unencrypted local env
+.env.local
+__pycache__/
+*.pyc
+
+# Repo-context artifact (generated in CI, uploaded as GH Actions artifact)
+.elixpo-context/
