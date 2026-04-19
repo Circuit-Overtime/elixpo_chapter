@@ -4,15 +4,39 @@ set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; NC='\033[0m'; BOLD='\033[1m'
 
-# ── Load .env ─────────────────────────────────────────────
-if [ -f .env ]; then
-  set -a
-  source .env
-  set +a
-else
-  echo -e "${RED}[-]${NC} .env file not found. Create one with NPM_TOKEN=your_token"
+# ── Load .env (SOPS-encrypted preferred, .env.local plaintext fallback) ──
+load_env() {
+  # SOPS-encrypted .env
+  if [ -f .env ] && grep -q '^sops_' .env 2>/dev/null; then
+    if ! command -v sops >/dev/null 2>&1; then
+      echo -e "${RED}[-]${NC} .env is SOPS-encrypted but sops is not installed"
+      echo -e "    Install: https://github.com/getsops/sops/releases"
+      exit 1
+    fi
+    local decrypted
+    decrypted=$(sops -d .env 2>/dev/null) || {
+      echo -e "${RED}[-]${NC} Failed to decrypt .env. Check SOPS_AGE_KEY_FILE / ~/.config/sops/age/keys.txt"
+      exit 1
+    }
+    set -a
+    eval "$decrypted"
+    set +a
+    return
+  fi
+  # Plaintext .env
+  if [ -f .env ]; then
+    set -a; source .env; set +a
+    return
+  fi
+  # Local override
+  if [ -f .env.local ]; then
+    set -a; source .env.local; set +a
+    return
+  fi
+  echo -e "${RED}[-]${NC} No .env or .env.local found. Create one with NPM_TOKEN=your_token"
   exit 1
-fi
+}
+load_env
 
 if [ -z "${NPM_TOKEN:-}" ]; then
   echo -e "${RED}[-]${NC} NPM_TOKEN not set in .env"

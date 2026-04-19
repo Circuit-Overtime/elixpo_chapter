@@ -1,6 +1,6 @@
 {
   "name": "@elixpo/claudeops",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Drop-in optimization toolkit for Claude Code — 15 agents, token savings, safety hooks, UI pipeline",
   "bin": {
     "claudeops": "./cli.js"
