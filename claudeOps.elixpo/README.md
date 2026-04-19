@@ -97,7 +97,7 @@ These tools run automatically after setup — they intercept Claude's input and 
 
 | Tool | What it does | Savings |
 |------|-------------|---------|
-| [RTK](https://github.com/rtk-ai/rtk) | Compresses bash command output | 60-90% |
+| [RTK](https://github.com/rtk-ai/rtk) by [rtk-ai](https://github.com/rtk-ai) | Compresses bash command output, auto-rewrites `git`, `ls`, `cat`, test runners, and 100+ more | 60-90% |
 | [jCodeMunch](https://github.com/jgravelle/jcodemunch-mcp) | Lightweight code indexing via tree-sitter | 95%+ |
 | [Context Mode](https://github.com/mksglu/context-mode) | Sandboxes tool outputs in SQLite instead of dumping them into context | 98% |
 | [MCP Compressor](https://github.com/atlassian-labs/mcp-compressor) | Compresses MCP server responses | 70-95% |
@@ -163,6 +163,14 @@ npx @elixpo/claudeops remove
 Interactively removes agents, hooks, MCP servers, and plugins. Your non-ClaudeOps configuration is preserved.
 
 ---
+
+## Credits
+
+ClaudeOps bundles and configures tools built by the wider Claude Code community. Full credit to their authors — ClaudeOps just wires them into a single install flow.
+
+- **[RTK](https://github.com/rtk-ai/rtk)** by [rtk-ai](https://github.com/rtk-ai) — the CLI output compression layer that powers 60-90% of the bash token savings. Installed via the official installer (or Homebrew / cargo) and wired into Claude Code's PreToolUse hook via `rtk init -g` during `claudeops init`.
+- [jCodeMunch](https://github.com/jgravelle/jcodemunch-mcp), [Context Mode](https://github.com/mksglu/context-mode), [MCP Compressor](https://github.com/atlassian-labs/mcp-compressor), [Cozempic](https://github.com/Ruya-AI/cozempic), [Headroom](https://github.com/chopratejas/headroom), [Serena](https://github.com/oraios/serena), [Docfork](https://github.com/docfork/docfork) — token-saving MCPs and tools integrated into the install pipeline.
+- UI registries: [21st.dev](https://21st.dev), [shadcn/ui](https://ui.shadcn.com), [Magic UI](https://magicui.design), [Animotion](https://animotion-mcp.github.io/), [Aceternity UI](https://github.com/rudra016/aceternityui-mcp), [Glance](https://github.com/DebugBase/glance).
 
 ## Contributing
 
