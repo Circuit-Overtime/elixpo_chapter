@@ -17,11 +17,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.CI_AGENT_TOKEN }}
 
       - name: Configure git
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "elixpoo"
+          git config user.email "elixpoo@gmail.com"
 
       - name: Sync subtrees
         run: |
@@ -83,4 +84,6 @@ jobs:
           done
 
       - name: Push updates
+        env:
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
         run: git push origin main
