@@ -134,12 +134,14 @@ jobs:
           # Copy custom CCR adapters (gemini rocket-disable, etc.) so the
           # router can load them by absolute path.
           cp config-src/.github/ccr-adapters/*.js $HOME/.claude-code-router/ 2>/dev/null || true
-          GEMINI_ADAPTER="$HOME/.claude-code-router/gemini-adapter.js"
+          NORMALIZE_ADAPTER="$HOME/.claude-code-router/openai-normalize.js"
           # Two providers — main (cheap key) + coder (separate key for qwen-coder).
-          # Transformer order: gemini-adapter → openai → maxtoken.
-          # gemini-adapter flattens prior tool_use/tool_result in history to
-          # plain text (Vertex demands thought_signature on replayed tool_use;
-          # Pollinations exposes no knob to disable Gemini rocket).
+          # Transformer order: openai-normalize → openai → maxtoken.
+          # openai-normalize flattens Anthropic-style structured content
+          # (multi-block text arrays, cache_control, tool_use/tool_result) to
+          # the plain OpenAI shape that Pollinations' non-Anthropic models
+          # (kimi, qwen-coder, perplexity-*, gemini, glm) require. Anthropic-
+          # native models pass through unchanged.
           # Custom transformers MUST be registered at top-level "transformers"
           # — CCR resolves strings in "use" as registered names, not paths.
           cat > $HOME/.claude-code-router/config.json <<EOF
@@ -148,7 +150,7 @@ jobs:
             "NON_INTERACTIVE_MODE": true,
             "API_TIMEOUT_MS": 600000,
             "transformers": [
-              {"path": "${GEMINI_ADAPTER}"}
+              {"path": "${NORMALIZE_ADAPTER}"}
             ],
             "Providers": [
               {
@@ -157,7 +159,7 @@ jobs:
                 "api_key": "${POLLINATIONS_TOKEN}",
                 "models": ["${AGENT_MODEL}", "${THINK_MODEL}", "${SEARCH_MODEL}"],
                 "transformer": {
-                  "use": ["gemini-adapter", "openai", ["maxtoken", {"max_tokens": 9000}]]
+                  "use": ["openai-normalize", "openai", ["maxtoken", {"max_tokens": 9000}]]
                 }
               },
               {
@@ -201,44 +203,35 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ secrets.CI_AGENT_TOKEN }}
 
-      # ─────────────────────────────────────────────────────────────────
-      # Pull shared Claude assets (agents + hooks + config) from
-      # elixpo/claudeOps.elixpo so every repo's bot has the same skills.
-      # Update once there → applies to all 15 repos on next run.
-      # ─────────────────────────────────────────────────────────────────
-      - name: Pull claudeops skills
+      # Ensure origin/main is a local ref so `git diff origin/main...HEAD` works
+      # on flows where the ref is checked out indirectly.
+      - name: Fetch main for diffs
         if: steps.whitelist.outputs.authorized == 'true'
-        uses: actions/checkout@v4
-        with:
-          repository: elixpo/claudeOps.elixpo
-          ref: main
-          token: ${{ secrets.CI_AGENT_TOKEN }}
-          path: .claudeops-src
-          sparse-checkout: |
-            agents
-            hooks
-            config
-          sparse-checkout-cone-mode: false
+        run: git fetch origin main --depth=50 || true
 
-      - name: Wire claudeops skills into .claude/
+      # ─────────────────────────────────────────────────────────────────
+      # Wire claudeops agents + hooks into .claude/ from the published npm
+      # package (@elixpo/claudeops). Only pulls the agents we reference.
+      # Commands in .claude/commands/ are committed in this repo and take
+      # priority — not touched by this step.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Wire claudeops agents + hooks into .claude/
         if: steps.whitelist.outputs.authorized == 'true'
         run: |
-          mkdir -p .claude
-          # agents → .claude/agents (subagent markdown files)
-          if [ -d .claudeops-src/agents ]; then
-            cp -r .claudeops-src/agents .claude/agents
-            echo "Wired $(ls .claude/agents | wc -l) agents from claudeops"
+          set -e
+          mkdir -p .claude/agents .claude/hooks
+          npm install --no-save --no-audit --no-fund --prefix /tmp/claudeops @elixpo/claudeops >/dev/null
+          SRC=/tmp/claudeops/node_modules/@elixpo/claudeops
+          for a in architect red-team refiner breaker wirer; do
+            if [ -f "$SRC/agents/$a.md" ]; then
+              cp "$SRC/agents/$a.md" ".claude/agents/$a.md"
+            fi
+          done
+          cp -r "$SRC/hooks/." .claude/hooks/ 2>/dev/null || true
+          if [ -f "$SRC/config/hooks.json" ] && [ ! -f .claude/hooks.json ]; then
+            cp "$SRC/config/hooks.json" .claude/hooks.json
           fi
-          # hooks → .claude/hooks (guards: bash, glob, grep)
-          if [ -d .claudeops-src/hooks ]; then
-            cp -r .claudeops-src/hooks .claude/hooks
-            echo "Wired $(ls .claude/hooks | wc -l) hooks from claudeops"
-          fi
-          # hooks.json config (if present and this repo doesn't already have one)
-          if [ -f .claudeops-src/config/hooks.json ] && [ ! -f .claude/hooks.json ]; then
-            cp .claudeops-src/config/hooks.json .claude/hooks.json
-            echo "Wired hooks.json from claudeops"
-          fi
+          echo "Wired $(ls .claude/agents | wc -l) agents + $(ls .claude/hooks 2>/dev/null | wc -l) hooks from @elixpo/claudeops"
 
       # ─────────────────────────────────────────────────────────────────
       # Pull the pre-built repo-context artifact (.elixpo-context/context.md)
@@ -270,12 +263,16 @@ jobs:
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           branch_prefix: "elixpo/"
-          # claude-code-action injects its own restrictive ALLOWED_TOOLS list
-          # for PR-creation flows. --permission-mode bypassPermissions is the
-          # only reliable escape. Safe: ephemeral sandbox, branch-protected main.
-          claude_args: |
-            --permission-mode bypassPermissions
-            --system-prompt "You are elixpo, a developer on the Elixpo team. Never say 'Claude', 'Claude Code', 'AI', 'LLM', 'analyzing', 'analysis' — speak as a teammate ('looking into this', 'pushed a fix', 'opened #N'). Be casual, concise, human. Read .elixpo-context/context.md ONCE at the start for repo context — don't ls/find/tree or re-read README/CLAUDE.md. Read the issue ONCE via 'gh issue view <n> --comments' — don't repeat variants. Decide: QUESTION/DISCUSSION → answer in one 'gh issue comment' and stop. IMPLEMENTATION → first run 'gh pr list --search \"linked:issue-<n>\" --state open --json number,headRefName'; if an OPEN PR exists, check out that branch and commit there (do NOT open a duplicate PR); else create branch elixpo/issue-<n>-<hex>, make minimal scoped edits, run ./biome.sh until ci passes, commit, push, and open a ready PR titled '[ELIXPO] <title>' with body ending in 'Fixes #<n>'. Never commit to main. Stay strictly in scope — no unrelated refactors, no side quests. Specialized subagents live in .claude/agents/ — use them only for genuinely hard work (architect, red-team, refiner), skip for trivial fixes."
+          prompt: |
+            Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+
+            Read the issue body from the GitHub API to get the full details.
+
+            Decide the appropriate action:
+            1. If the issue requires code changes: create a branch `elixpo/issue-${{ github.event.issue.number }}-<hex>`, make the fix, run `./biome.sh` until ci passes, commit, push, and open a PR titled `[ELIXPO] <title>` with body ending in "Fixes #${{ github.event.issue.number }}".
+            2. If the issue is a question, discussion, or doesn't need code changes: just comment on the issue with a helpful response using `gh issue comment ${{ github.event.issue.number }}`.
+
+            Use your judgment — not every issue needs a PR. Never commit to main.
           additional_permissions: |
             actions: read
 
