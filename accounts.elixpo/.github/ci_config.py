@@ -5,7 +5,7 @@ Single source of truth for all CI workflows and scripts.
 
 # ── LLM ─────────────────────────────────────────────
 LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
-LLM_MODEL_AGENT = "kimi"       
+LLM_MODEL_AGENT = "glm"       
 LLM_MODEL_CODE = "qwen-coder"        
 LLM_MODEL_CHAT = "perplexity-fast"        
 LLM_MODEL_THINKING = "perplexity-reasoning"  

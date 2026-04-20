@@ -119,7 +119,7 @@ jobs:
           cd config-src
           AGENT_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_AGENT; print(LLM_MODEL_AGENT)")
           CODE_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_CODE; print(LLM_MODEL_CODE)")
-          THINK_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_rocket; print(LLM_MODEL_rocket)")
+          THINK_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_THINKING; print(LLM_MODEL_THINKING)")
           SEARCH_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_SEARCH; print(LLM_MODEL_SEARCH)")
           cd ..
 
@@ -203,42 +203,12 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ secrets.CI_AGENT_TOKEN }}
 
-      # Ensure origin/main is a local ref so `git diff origin/main...HEAD` works
-      # on flows where the ref is checked out indirectly.
-      - name: Fetch main for diffs
-        if: steps.whitelist.outputs.authorized == 'true'
-        run: git fetch origin main --depth=50 || true
-
-      # ─────────────────────────────────────────────────────────────────
-      # Wire claudeops agents + hooks into .claude/ from the published npm
-      # package (@elixpo/claudeops). Only pulls the agents we reference.
-      # Commands in .claude/commands/ are committed in this repo and take
-      # priority — not touched by this step.
-      # ─────────────────────────────────────────────────────────────────
-      - name: Wire claudeops agents + hooks into .claude/
-        if: steps.whitelist.outputs.authorized == 'true'
-        run: |
-          set -e
-          mkdir -p .claude/agents .claude/hooks
-          npm install --no-save --no-audit --no-fund --prefix /tmp/claudeops @elixpo/claudeops >/dev/null
-          SRC=/tmp/claudeops/node_modules/@elixpo/claudeops
-          for a in architect red-team refiner breaker wirer; do
-            if [ -f "$SRC/agents/$a.md" ]; then
-              cp "$SRC/agents/$a.md" ".claude/agents/$a.md"
-            fi
-          done
-          cp -r "$SRC/hooks/." .claude/hooks/ 2>/dev/null || true
-          if [ -f "$SRC/config/hooks.json" ] && [ ! -f .claude/hooks.json ]; then
-            cp "$SRC/config/hooks.json" .claude/hooks.json
-          fi
-          echo "Wired $(ls .claude/agents | wc -l) agents + $(ls .claude/hooks 2>/dev/null | wc -l) hooks from @elixpo/claudeops"
-
       # ─────────────────────────────────────────────────────────────────
       # Pull the pre-built repo-context artifact (.elixpo-context/context.md)
-      # produced by artifact-update.yml on every push to main. The model
-      # reads this FIRST so it doesn't burn turns on `ls` / `tree` / re-reading
-      # README.md to reconstruct context we already have on disk.
-      # ─────────────────────────────────────────────────────────────────
+      # produced by artifact-update.yml on every push to main. Injected
+      # inline into the agent's prompt below so the model never has to
+      # ls/tree/Glob-to-discover — it already has the cold repo context
+      # the way a human using ccr in their terminal does.
       - name: Download repo-context artifact
         if: steps.whitelist.outputs.authorized == 'true'
         continue-on-error: true
@@ -250,28 +220,48 @@ jobs:
           if_no_artifact_found: warn
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
 
-      # Build a prompt with repo context injected inline — avoids the model
-      # running ls -R / tree to rediscover what's on disk.
+      # Build the prompt by inlining the repo context snapshot.
       - name: Build prompt body
         if: steps.whitelist.outputs.authorized == 'true'
         id: build_prompt
         run: |
-          CTX="(context artifact missing)"
+          CTX="(context artifact missing — fall back to Glob/Grep discovery)"
           if [ -f .elixpo-context/context.md ]; then
-            CTX=$(head -c 6000 .elixpo-context/context.md)
+            CTX=$(cat .elixpo-context/context.md)
           fi
           {
             echo 'prompt<<PROMPT_EOF'
-            echo "Event: ${{ github.event_name }}"
-            echo "Actor: @${{ github.actor }}"
-            echo "Repo: ${{ github.repository }}"
-            echo "Issue: #${{ github.event.issue.number }}"
-            echo "Issue title: ${{ github.event.issue.title }}"
+            echo "Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}"
             echo ""
-            echo "## Repo context (pre-built snapshot)"
+            echo "## Cold repo context (pre-built snapshot)"
             echo "$CTX"
             echo ""
-            echo "Proceed per .claude/commands/respond-to-issue.md. Act via tools, do not output plan/analysis as text."
+            echo "## Your task"
+            echo ""
+            echo "Fetch the full issue body + comments once:"
+            echo "  gh issue view ${{ github.event.issue.number }} --comments"
+            echo ""
+            echo "Then pick ONE of four paths. Aim to finish in under 3 minutes — pick the tool that minimises CCR roundtrips."
+            echo ""
+            echo "1. **IMPLEMENT (small PR)** — only if the ask is small and clear: up to ~10 files, mechanical or surgical, no ambiguous design choices."
+            echo "   - Bulk find/replace / renames / theme swaps → python .github/scripts/apply_refactor.py with a JSON plan on stdin (one call, deterministic, no per-file roundtrip)."
+            echo "   - 1-3 file surgical edits → Read + Edit/MultiEdit."
+            echo "   - Branch: elixpo/issue-${{ github.event.issue.number }}-<hex>. Commit, push, open PR titled '[ELIXPO] <title>' with body ending 'Fixes #${{ github.event.issue.number }}'."
+            echo "   - Do NOT run ./biome.sh — the CI biome workflow checks the PR separately."
+            echo ""
+            echo "2. **DECLINE (too big / needs judgement)** — multi-module features, architectural changes, security-sensitive logic, DB-migration-heavy work. Anything you can't confidently ship in <3 min."
+            echo "   - Post ONE 'gh issue comment ${{ github.event.issue.number }}' politely saying the scope needs manual implementation, with a 1-2 sentence reason. Stop."
+            echo ""
+            echo "3. **CONVERSE** — the ask is a question, discussion, clarification, or a request to improve the issue itself."
+            echo "   - For a question / LGTM / explanation → post ONE 'gh issue comment ${{ github.event.issue.number }}' with a helpful reply."
+            echo "   - To improve the ISSUE DESCRIPTION (the reporter asks you to rewrite, tighten, or enrich it) → use 'gh issue edit ${{ github.event.issue.number }} --body \"<new body>\"'. Preserve anything the reporter explicitly wrote; do NOT tag the reporter inside the body. End the body with: '### Questions from @elixpoo' (only if any), then tag '@elixpoo' (not the reporter) and say 'answering these will make the description richer, or label the issue with ELIXPO to let elixpoo solve it.'"
+            echo "   - To add supplementary information → post ONE 'gh issue comment' with the extra info."
+            echo "   - After the single action, STOP."
+            echo ""
+            echo "4. **CLARIFY (ambiguous ask)** — you cannot tell what the user wants."
+            echo "   - Post ONE 'gh issue comment' with the specific questions needed to proceed. Stop."
+            echo ""
+            echo "Never commit to main. Never fabricate test results. The repo context above is cold but current — prefer it over re-exploring the tree."
             echo 'PROMPT_EOF'
           } >> "$GITHUB_OUTPUT"
 
@@ -285,19 +275,15 @@ jobs:
           GIT_COMMITTER_EMAIL: "269200728+elixpoo@users.noreply.github.com"
         with:
           anthropic_api_key: "ccr-pollinations"
-          # Keep full output ON — without it the action's tracking comment
-          # and final summary aren't posted, so the bot looks silent even
-          # when it ran multiple turns successfully.
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           branch_prefix: "elixpo/"
+          # No allowed_tools cap — every Claude Code tool is available
+          # (Read / Edit / Write / MultiEdit / Glob / Grep / Bash / BashOutput /
+          # TodoWrite / Task / WebFetch / WebSearch / NotebookEdit / Skill / ...).
+          # Task routes to CCR 'background' = qwen-coder, so code-heavy
+          # multi-file work can be delegated to the coder-tuned model.
           prompt: ${{ steps.build_prompt.outputs.prompt }}
-          # claude-code-action injects its own restrictive ALLOWED_TOOLS list
-          # for PR-creation flows. --permission-mode bypassPermissions is the
-          # only reliable escape. Safe: ephemeral sandbox, branch-protected main.
-          claude_args: |
-            --permission-mode bypassPermissions
-            --system-prompt "You are elixpo, a developer on the Elixpo team. Never say 'Claude', 'Claude Code', 'AI', 'LLM', 'analyzing', 'analysis' — speak as a teammate. Operating manual: AGENTS.md (plain markdown at repo root; read with Read tool if you need conventions — never prefix paths with @). For THIS flow follow .claude/commands/respond-to-issue.md exactly (question vs implement vs existing-PR decision tree). For commit/push/PR follow .claude/commands/commit-push-pr.md. Skip internal planning chatter before tool calls — but DO produce a final visible outcome: answer path = one 'gh issue comment <n> --body \"...\"'; implement path = a commit + push + PR. Never end a run without either a comment or a PR. Do NOT ls/find/tree/ls -R: repo context is already in the prompt. Read the issue ONCE. Stay strictly in scope. Subagents in .claude/agents/ (architect, red-team, refiner, breaker, wirer) for genuinely hard work only."
           additional_permissions: |
             actions: read
 
