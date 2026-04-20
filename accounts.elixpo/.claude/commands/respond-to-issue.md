@@ -25,13 +25,13 @@ Post ONE comment on the issue. That's it. No branch, no PR.
 gh issue comment <n> --body "<your answer>"
 ```
 
+**Within this invocation, stop after one successful comment.** The command returns empty/short stdout on success — that IS success. Do NOT retry, do NOT post a second comment "to add more", do NOT follow up with another `gh` call. If the user wants more, they'll ping `@elixpoo` again — each new trigger is a fresh invocation.
+
 Answer rules:
 - Bullets over paragraphs. <150 words.
 - Link specific files/lines (`src/lib/jwt.ts:42`) instead of describing.
 - No "I think" / "maybe". Either it's true or it's not.
 - If the question has a definitive answer in AGENTS.md or the code, quote/link it.
-
-Stop after the comment.
 
 ## Step 4 — Implement path
 

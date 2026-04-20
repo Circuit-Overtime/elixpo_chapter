@@ -15,28 +15,30 @@ concurrency:
   cancel-in-progress: false
 
 on:
-  issue_comment:
+  # PR-side only. Issue events (including @elixpoo mentions in issue bodies
+  # or comments) are owned by issue-auto-fix.yml + issue-triage.yml — this
+  # workflow must never fire on a plain issue, or we get dual-fire.
+  issue_comment:                # only PR comments, filtered by the if: block
     types: [created]
   pull_request_review_comment:
     types: [created]
-  issues:
-    types: [opened, assigned]
   pull_request_review:
     types: [submitted]
-  # When a whitelisted maintainer assigns @elixpoo as a reviewer from the
-  # review panel, that counts as "please review this PR" — same downstream flow.
-  pull_request:
+  pull_request:                 # review_requested = @elixpoo assigned as reviewer
     types: [review_requested]
 
 jobs:
   elixpo:
     # Skip if the triggering actor is elixpoo itself — loop prevention.
+    # PR-side work only. Issue comments go to issue-auto-fix.yml via the
+    # `!github.event.issue.pull_request` guard there; we use the inverse
+    # (`github.event.issue.pull_request` truthy) so the two workflows are
+    # disjoint and a single `@elixpoo` mention never fires both.
     if: |
       github.actor != 'elixpoo' && (
-        (github.event_name == 'issue_comment' && github.event.comment.user.login != 'elixpoo' && contains(github.event.comment.body, '@elixpoo')) ||
+        (github.event_name == 'issue_comment' && github.event.issue.pull_request && github.event.comment.user.login != 'elixpoo' && contains(github.event.comment.body, '@elixpoo')) ||
         (github.event_name == 'pull_request_review_comment' && github.event.comment.user.login != 'elixpoo' && contains(github.event.comment.body, '@elixpoo')) ||
         (github.event_name == 'pull_request_review' && github.event.review.user.login != 'elixpoo' && contains(github.event.review.body, '@elixpoo')) ||
-        (github.event_name == 'issues' && github.event.issue.user.login != 'elixpoo' && (contains(github.event.issue.body, '@elixpoo') || contains(github.event.issue.title, '@elixpoo'))) ||
         (github.event_name == 'pull_request' && github.event.requested_reviewer.login == 'elixpoo')
       )
     runs-on: ubuntu-latest
@@ -221,34 +223,10 @@ jobs:
         if: steps.whitelist.outputs.authorized == 'true'
         run: git fetch origin main --depth=50 || true
 
-      # ─────────────────────────────────────────────────────────────────
-      # Wire claudeops agents/hooks into .claude/ from the published npm
-      # package (@elixpo/claudeops). Faster than cloning the git repo and
-      # lets us bring in ONLY the agents we actually reference.
-      # The repo ships its own .claude/commands/ (committed) — those take
-      # priority and are not touched here.
-      # ─────────────────────────────────────────────────────────────────
-      - name: Wire claudeops agents + hooks into .claude/
-        if: steps.whitelist.outputs.authorized == 'true'
-        run: |
-          set -e
-          mkdir -p .claude/agents .claude/hooks
-          # Install only the claudeops package into a scratch prefix.
-          npm install --no-save --no-audit --no-fund --prefix /tmp/claudeops @elixpo/claudeops >/dev/null
-          SRC=/tmp/claudeops/node_modules/@elixpo/claudeops
-          # Copy only the agents we actually reference from the system prompt.
-          # Add to this list when the prompt references more.
-          for a in architect red-team refiner breaker wirer; do
-            if [ -f "$SRC/agents/$a.md" ]; then
-              cp "$SRC/agents/$a.md" ".claude/agents/$a.md"
-            fi
-          done
-          # Hooks are small — copy the lot.
-          cp -r "$SRC/hooks/." .claude/hooks/ 2>/dev/null || true
-          if [ -f "$SRC/config/hooks.json" ] && [ ! -f .claude/hooks.json ]; then
-            cp "$SRC/config/hooks.json" .claude/hooks.json
-          fi
-          echo "Wired $(ls .claude/agents | wc -l) agents + $(ls .claude/hooks 2>/dev/null | wc -l) hooks from @elixpo/claudeops"
+      # Polly-style: no claudeops agents wired in. Each subagent .md adds
+      # ~2KB to the Task tool schema per turn but we rarely invoke them
+      # (Task routes to qwen-coder via CCR anyway). Hooks were marginal.
+      # Keeps the flow lean and matches issue-auto-fix's shape.
 
       # ─────────────────────────────────────────────────────────────────
       # Pull the pre-built repo-context artifact (.elixpo-context/context.md)
@@ -267,27 +245,51 @@ jobs:
           if_no_artifact_found: warn
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
 
-      # Build a prompt that injects the pre-built repo context inline so
-      # the model doesn't need to go read it (which it ignores anyway).
+      # Build the prompt by inlining the repo context snapshot. The model
+      # gets the cold repo context up front — same advantage a human using
+      # ccr in their terminal has — so it doesn't waste turns on discovery.
       - name: Build prompt body
         if: steps.whitelist.outputs.authorized == 'true'
         id: build_prompt
         run: |
-          CTX="(context artifact missing)"
+          CTX="(context artifact missing — fall back to Glob/Grep discovery)"
           if [ -f .elixpo-context/context.md ]; then
-            CTX=$(head -c 6000 .elixpo-context/context.md)
+            CTX=$(cat .elixpo-context/context.md)
           fi
           {
             echo 'prompt<<PROMPT_EOF'
             echo "Event: ${{ github.event_name }}"
             echo "Actor: @${{ github.actor }}"
             echo "Repo: ${{ github.repository }}"
-            echo "Issue/PR: ${{ github.event.issue.number || github.event.pull_request.number }}"
+            echo "Issue/PR: #${{ github.event.issue.number || github.event.pull_request.number }}"
             echo ""
-            echo "## Repo context (pre-built snapshot)"
+            echo "## Cold repo context (pre-built snapshot)"
             echo "$CTX"
             echo ""
-            echo "Proceed. Read the trigger once, act via tools, do not output plan/analysis as text."
+            echo "## Your task"
+            echo ""
+            echo "This is a PR-side event. Read the trigger ONCE (gh pr view --comments) and pick ONE of four paths. Aim to finish in under 3 minutes — pick the tool that minimises CCR roundtrips."
+            echo ""
+            echo "1. **REVIEW** — user asked for a review, approval, LGTM, or 'look at this'."
+            echo "   - Submit ONE 'gh pr review --approve' or 'gh pr review --request-changes' with a short bullet body ending in 'Merge-readiness: READY' or 'Merge-readiness: NEEDS CHANGES'. Stop."
+            echo ""
+            echo "2. **SMALL CODE FIX (1-3 files, ~3 min)** — a targeted fix. Covers: user reports something broken, review spotted an issue, a small tweak requested in the thread, a nit to apply. Up to ~3 files, medium-easy."
+            echo "   - 1-3 file surgical edits → Read + Edit/MultiEdit."
+            echo "   - Bulk find/replace across several spots → python .github/scripts/apply_refactor.py with a JSON plan on stdin (one call, deterministic)."
+            echo "   - You are ALREADY on the PR's head branch — commit + push there directly, do NOT open a new PR."
+            echo "   - Do NOT run ./biome.sh — the CI biome workflow checks the PR separately."
+            echo "   - End with ONE 'gh pr comment' summarising the fix (what you changed, which files). Stop."
+            echo ""
+            echo "3. **DECLINE (too big / architectural)** — large feature work, cross-module refactor, security-sensitive logic, DB migration-heavy, anything you can't confidently ship in <3 min."
+            echo "   - Post ONE 'gh pr comment' politely saying the scope is beyond an auto-fix, with a 1-2 sentence reason suggesting how the author could split it. Stop."
+            echo ""
+            echo "4. **CONVERSE / CLARIFY** — the ask is a question, discussion, or requires editing the PR description itself."
+            echo "   - For a question / explanation → post ONE 'gh pr comment' with a helpful reply."
+            echo "   - To improve the PR DESCRIPTION (author asks you to rewrite, tighten, or enrich the PR body) → use 'gh pr edit ${{ github.event.issue.number || github.event.pull_request.number }} --body \"<new body>\"'. Preserve any intent the author explicitly expressed. Do NOT @-tag the author inside the body."
+            echo "   - For an ambiguous ask → post ONE 'gh pr comment' with the specific clarifying questions needed."
+            echo "   - After the single action, STOP."
+            echo ""
+            echo "Identity: you are elixpoo, a teammate — never mention Claude, Claude Code, AI, or LLMs. Bullets, not verbose prose. Never commit to main. The repo context above is cold but current — prefer it over re-exploring the tree."
             echo 'PROMPT_EOF'
           } >> "$GITHUB_OUTPUT"
 
@@ -301,17 +303,13 @@ jobs:
           GIT_COMMITTER_EMAIL: "269200728+elixpoo@users.noreply.github.com"
         with:
           anthropic_api_key: "ccr-pollinations"
-          # Keep full output ON — without it the action's tracking comment
-          # and final summary aren't posted, so the bot looks silent even
-          # when it ran 13 turns successfully. Post-guard strips branding.
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           trigger_phrase: "@elixpoo"
           branch_prefix: "elixpo/"
+          # No allowed_tools cap — every Claude Code tool is available.
+          # Task routes to CCR 'background' = qwen-coder for code-heavy work.
           prompt: ${{ steps.build_prompt.outputs.prompt }}
-          claude_args: |
-            --permission-mode bypassPermissions
-            --system-prompt "You are elixpo, a developer on the Elixpo team. Never say 'Claude', 'Claude Code', 'AI', 'LLM', 'analyzing', 'analysis' — speak as a teammate. The operating manual is AGENTS.md (plain markdown at repo root — read it with the Read tool if you need conventions; do not prefix the path with @). Runbooks: .claude/commands/commit-push-pr.md for commit/push/PR ceremony, .claude/commands/review.md for review output, .claude/commands/respond-to-issue.md for issue triage. Skip internal planning chatter before tool calls — but DO produce a final response on GitHub: for LGTM / question / review, that means calling 'gh pr comment <n> --body \"...\"' or 'gh pr review <n> --body \"...\" --approve|--request-changes|--comment' before ending. Never end a run without either pushing a commit or posting a visible response. Do NOT ls/find/tree/ls -R: repo context is injected into the prompt. Read the trigger ONCE via a single gh pr view. Stay strictly in scope. Subagents in .claude/agents/ (architect, red-team, refiner, breaker, wirer) are for genuinely hard work only — skip for LGTMs and small fixes."
           additional_permissions: |
             actions: read
 
