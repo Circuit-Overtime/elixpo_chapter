@@ -215,12 +215,19 @@ jobs:
             # Squash-merge with the same title/body so the single squash commit
             # on main carries 'Sync <name>' in its subject (useful for later
             # forensics even though we rely on the state file for diffs).
-            if ! gh pr merge "$pr_url" --squash --delete-branch --subject "$title" --body "$body"; then
-              echo "    squash-merge failed — leaving PR open for manual intervention"
-              git checkout main
-              return 0
+            # --auto queues GitHub's auto-merge: if the PR is immediately
+            # mergeable it merges now, otherwise it merges as soon as required
+            # status checks pass. Falls back to a direct squash-merge when the
+            # repo has no auto-merge policy enabled.
+            if ! gh pr merge "$pr_url" --auto --squash --delete-branch --subject "$title" --body "$body"; then
+              echo "    --auto squash-merge refused (likely auto-merge disabled on repo) — trying direct squash-merge"
+              if ! gh pr merge "$pr_url" --squash --delete-branch --subject "$title" --body "$body"; then
+                echo "    direct squash-merge failed — leaving PR open for manual intervention"
+                git checkout main
+                return 0
+              fi
             fi
-            echo "    squash-merged and branch deleted"
+            echo "    squash-merged (or queued for auto-merge) and branch scheduled for deletion"
 
             # Pull the squash commit into local main so the next subtree
             # branches off the latest state (including the state file).
