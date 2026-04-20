@@ -24,11 +24,11 @@ jobs:
           git config user.name "elixpoo"
           git config user.email "elixpoo@gmail.com"
 
-      # Each subtree gets its own branch + PR + squash-merge. Sync state for
-      # each repo is persisted at .github/.sync-state/<name> so the next run
-      # can tell what upstream commits were pulled in (we can't rely on git
-      # merge parents after squash-merging eats them).
-      - name: Sync each subtree via PR + auto-squash-merge
+      # Each subtree gets its own branch + PR + merge-commit (squash is
+      # disabled on this repo, so we use a regular merge). Sync state is
+      # persisted at .github/.sync-state/<name> so the next run can tell
+      # what upstream commits were pulled in without relying on merge parents.
+      - name: Sync each subtree via PR + auto-merge
         env:
           GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
           REPO_FULL: ${{ github.repository }}
@@ -222,7 +222,7 @@ jobs:
             fi
             echo "    merged (or queued for auto-merge) and branch scheduled for deletion"
 
-            # Pull the squash commit into local main so the next subtree
+            # Pull the merge commit into local main so the next subtree
             # branches off the latest state (including the state file).
             git checkout main
             git pull --ff-only origin main
