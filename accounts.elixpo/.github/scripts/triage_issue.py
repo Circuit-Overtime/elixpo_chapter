@@ -132,6 +132,40 @@ def add_to_project(project_id: str, issue_node_id: str) -> str:
         raise RuntimeError(f"Failed to add issue to project: {result}") from exc
 
 
+def find_status_todo(project_id: str) -> tuple[str | None, str | None]:
+    """Return (status_field_id, todo_option_id) or (None, None) if absent."""
+    query = """
+    query($projectId: ID!) {
+      node(id: $projectId) {
+        ... on ProjectV2 {
+          fields(first: 30) {
+            nodes {
+              ... on ProjectV2SingleSelectField {
+                id
+                name
+                options { id name }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    result = github_graphql(query, {"projectId": project_id})
+    try:
+        fields = result["data"]["node"]["fields"]["nodes"]
+    except (KeyError, TypeError):
+        return None, None
+    for f in fields:
+        if not f or f.get("name") != "Status":
+            continue
+        field_id = f.get("id")
+        for opt in f.get("options") or []:
+            if (opt.get("name") or "").strip().lower() == "todo":
+                return field_id, opt.get("id")
+    return None, None
+
+
 def set_single_select_field(
     project_id: str, item_id: str, field_id: str, option_id: str
 ) -> None:
@@ -294,6 +328,20 @@ def main() -> None:
             print(f"[warn] Failed to set priority: {exc}")
     elif not priority_option_id:
         print(f"[warn] No option ID for priority '{priority}', skipping field update")
+
+    # ── Step 4b: Set Status=Todo (replaces github-project-automation[bot]) ─
+    if item_id:
+        status_field_id, todo_option_id = find_status_todo(project["id"])
+        if status_field_id and todo_option_id:
+            try:
+                set_single_select_field(
+                    project["id"], item_id, status_field_id, todo_option_id
+                )
+                print("Status set to 'Todo'")
+            except Exception as exc:
+                print(f"[warn] Failed to set Status=Todo: {exc}")
+        else:
+            print("[warn] Status field or 'Todo' option not found on project — skipping status set")
 
     # ── Step 5: Apply labels ──────────────────────────────────────────────
     cat_label = category.upper()
