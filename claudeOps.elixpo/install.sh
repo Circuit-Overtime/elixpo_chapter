@@ -246,18 +246,34 @@ else
   add_mcp "docfork" "npx" '["-y","docfork@latest"]'
 fi
 
-# RTK
+# RTK (by rtk-ai — https://github.com/rtk-ai/rtk)
 if has_cmd rtk; then
   success "RTK already installed ($(rtk --version 2>&1))"
+  rtk init -g --auto-patch 2>/dev/null || true
 else
-  if ask "Install RTK? (CLI output compression, 60-90% savings)"; then
-    if has_cmd cargo; then
+  if ask "Install RTK by rtk-ai? (CLI output compression, 60-90% savings)"; then
+    rtk_installed=0
+    # 1) Homebrew on macOS
+    if [[ "$OSTYPE" == "darwin"* ]] && has_cmd brew; then
+      info "Installing RTK via Homebrew..."
+      brew install rtk 2>&1 | tail -3 && rtk_installed=1
+    fi
+    # 2) Official installer (fast, no Rust toolchain needed)
+    if [ $rtk_installed -eq 0 ] && { [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "darwin"* ]]; }; then
+      info "Installing RTK via official installer..."
+      curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh 2>&1 | tail -3 && rtk_installed=1
+      export PATH="$HOME/.local/bin:$PATH"
+    fi
+    # 3) Cargo fallback
+    if [ $rtk_installed -eq 0 ] && has_cmd cargo; then
       info "Installing RTK via cargo (may take 2-3 min)..."
-      cargo install --git https://github.com/rtk-ai/rtk 2>&1 | tail -3
-      rtk init -g 2>/dev/null || true
-      success "RTK installed"
+      cargo install --git https://github.com/rtk-ai/rtk 2>&1 | tail -3 && rtk_installed=1
+    fi
+    if [ $rtk_installed -eq 1 ] && has_cmd rtk; then
+      rtk init -g --auto-patch 2>/dev/null || true
+      success "RTK installed and hook wired"
     else
-      warn "Cargo not found. Install Rust first or download from https://github.com/rtk-ai/rtk/releases"
+      warn "Could not install RTK. See https://github.com/rtk-ai/rtk#installation"
     fi
   fi
 fi
