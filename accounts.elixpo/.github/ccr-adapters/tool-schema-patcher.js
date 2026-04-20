@@ -44,14 +44,21 @@ class ToolSchemaPatcher {
             const fn = tool.function;
             if (!fn || typeof fn !== "object") continue;
 
-            if (fn.parameters == null || typeof fn.parameters !== "object" || Array.isArray(fn.parameters)) {
+            if (
+                fn.parameters == null ||
+                typeof fn.parameters !== "object" ||
+                Array.isArray(fn.parameters)
+            ) {
                 fn.parameters = { type: "object", properties: {} };
                 continue;
             }
             // Tool shipped a parameters object but it's missing required fields
             // — qwen-coder also rejects `{}` with no `type`.
             if (!fn.parameters.type) fn.parameters.type = "object";
-            if (fn.parameters.type === "object" && fn.parameters.properties == null) {
+            if (
+                fn.parameters.type === "object" &&
+                fn.parameters.properties == null
+            ) {
                 fn.parameters.properties = {};
             }
         }
