@@ -198,16 +198,24 @@ def main():
         log(f"section_recent_files failed: {e}")
         recent_files = "_(error scanning recent files)_"
 
-    docs_parts = []
-    for fname, title in [("README.md", "README.md"), ("CLAUDE.md", "CLAUDE.md")]:
-        try:
-            part = section_doc(os.path.join(REPO_ROOT, fname), title, max_lines=80)
-        except Exception as e:
-            log(f"section_doc {fname} failed: {e}")
-            part = None
-        if part:
-            docs_parts.append(part)
-    docs = "\n".join(docs_parts) if docs_parts else "_No README.md or CLAUDE.md found._"
+    # AGENTS.md holds the real operating manual (architecture, edge-runtime
+    # constraints, migrations, common mistakes). We embed it here because it's
+    # NOT auto-loaded by claude-code — CLAUDE.md is. CLAUDE.md on this repo
+    # just points to AGENTS.md, so duplicating it would be pointless; and
+    # README.md is on disk if the agent needs it.
+    #
+    # Embedding AGENTS.md lets the model see conventions on session-start
+    # without an extra Read roundtrip.
+    agents_snippet = None
+    try:
+        agents_snippet = section_doc(
+            os.path.join(REPO_ROOT, "AGENTS.md"),
+            "AGENTS.md (operating manual excerpt)",
+            max_lines=120,
+        )
+    except Exception as e:
+        log(f"section_doc AGENTS.md failed: {e}")
+    agents_block = agents_snippet or "_No AGENTS.md found._"
 
     md = (
         f"# {project_name} — Repo Context\n"
@@ -225,8 +233,8 @@ def main():
         f"## Recently Modified Files (Last 30 Days)\n"
         f"{recent_files}\n"
         f"\n"
-        f"## Key Documentation\n"
-        f"{docs}\n"
+        f"## Operating Manual\n"
+        f"{agents_block}\n"
     )
 
     os.makedirs(OUT_DIR, exist_ok=True)
