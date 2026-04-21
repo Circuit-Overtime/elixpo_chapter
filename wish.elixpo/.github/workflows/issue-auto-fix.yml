@@ -284,6 +284,12 @@ jobs:
           # Task routes to CCR 'background' = qwen-coder, so code-heavy
           # multi-file work can be delegated to the coder-tuned model.
           prompt: ${{ steps.build_prompt.outputs.prompt }}
+          # Required for CI — without this, claude-code's default permission
+          # mode prompts for approval on Bash/Edit/Write and the agent stalls
+          # with `"This command requires approval"`. Safe here: ephemeral
+          # sandbox, branch-protected main, every change lands through a PR.
+          claude_args: |
+            --permission-mode bypassPermissions
           additional_permissions: |
             actions: read
 
