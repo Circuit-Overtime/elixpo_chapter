@@ -216,83 +216,12 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ secrets.CI_AGENT_TOKEN }}
 
-      # When the checkout ref is refs/pull/N/head, `origin/main` may not be
-      # resolvable locally — `git diff origin/main...HEAD` then fails with
-      # "no merge base". Fetch main explicitly so the three-dot diff works.
-      - name: Fetch main for diffs
-        if: steps.whitelist.outputs.authorized == 'true'
-        run: git fetch origin main --depth=50 || true
-
-      # Polly-style: no claudeops agents wired in. Each subagent .md adds
-      # ~2KB to the Task tool schema per turn but we rarely invoke them
-      # (Task routes to qwen-coder via CCR anyway). Hooks were marginal.
-      # Keeps the flow lean and matches issue-auto-fix's shape.
-
-      # ─────────────────────────────────────────────────────────────────
-      # Pull the pre-built repo-context artifact (.elixpo-context/context.md)
-      # produced by artifact-update.yml on every push to main. The model
-      # reads this FIRST so it doesn't burn turns on `ls` / `gh issue view`
-      # / tree-walking to reconstruct context we already have on disk.
-      # ─────────────────────────────────────────────────────────────────
-      - name: Download repo-context artifact
-        if: steps.whitelist.outputs.authorized == 'true'
-        continue-on-error: true
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: repo-context
-          workflow: artifact-update.yml
-          path: .elixpo-context
-          if_no_artifact_found: warn
-          github_token: ${{ secrets.CI_AGENT_TOKEN }}
-
-      # Build the prompt by inlining the repo context snapshot. The model
-      # gets the cold repo context up front — same advantage a human using
-      # ccr in their terminal has — so it doesn't waste turns on discovery.
-      - name: Build prompt body
-        if: steps.whitelist.outputs.authorized == 'true'
-        id: build_prompt
-        run: |
-          CTX="(context artifact missing — fall back to Glob/Grep discovery)"
-          if [ -f .elixpo-context/context.md ]; then
-            CTX=$(cat .elixpo-context/context.md)
-          fi
-          {
-            echo 'prompt<<PROMPT_EOF'
-            echo "Event: ${{ github.event_name }}"
-            echo "Actor: @${{ github.actor }}"
-            echo "Repo: ${{ github.repository }}"
-            echo "Issue/PR: #${{ github.event.issue.number || github.event.pull_request.number }}"
-            echo ""
-            echo "## Cold repo context (pre-built snapshot)"
-            echo "$CTX"
-            echo ""
-            echo "## Your task"
-            echo ""
-            echo "This is a PR-side event. Read the trigger ONCE (gh pr view --comments) and pick ONE of four paths. Aim to finish in under 3 minutes — pick the tool that minimises CCR roundtrips."
-            echo ""
-            echo "1. **REVIEW** — user asked for a review, approval, LGTM, or 'look at this'."
-            echo "   - Submit ONE 'gh pr review --approve' or 'gh pr review --request-changes' with a short bullet body ending in 'Merge-readiness: READY' or 'Merge-readiness: NEEDS CHANGES'. Stop."
-            echo ""
-            echo "2. **SMALL CODE FIX (1-3 files, ~3 min)** — a targeted fix. Covers: user reports something broken, review spotted an issue, a small tweak requested in the thread, a nit to apply. Up to ~3 files, medium-easy."
-            echo "   - 1-3 file surgical edits → Read + Edit/MultiEdit."
-            echo "   - Bulk find/replace across several spots → python .github/scripts/apply_refactor.py with a JSON plan on stdin (one call, deterministic)."
-            echo "   - You are ALREADY on the PR's head branch — commit + push there directly, do NOT open a new PR."
-            echo "   - Do NOT run ./biome.sh — the CI biome workflow checks the PR separately."
-            echo "   - End with ONE 'gh pr comment' summarising the fix (what you changed, which files). Stop."
-            echo ""
-            echo "3. **DECLINE (too big / architectural)** — large feature work, cross-module refactor, security-sensitive logic, DB migration-heavy, anything you can't confidently ship in <3 min."
-            echo "   - Post ONE 'gh pr comment' politely saying the scope is beyond an auto-fix, with a 1-2 sentence reason suggesting how the author could split it. Stop."
-            echo ""
-            echo "4. **CONVERSE / CLARIFY** — the ask is a question, discussion, or requires editing the PR description itself."
-            echo "   - For a question / explanation → post ONE 'gh pr comment' with a helpful reply."
-            echo "   - To improve the PR DESCRIPTION (author asks you to rewrite, tighten, or enrich the PR body) → use 'gh pr edit ${{ github.event.issue.number || github.event.pull_request.number }} --body \"<new body>\"'. Preserve any intent the author explicitly expressed. Do NOT @-tag the author inside the body."
-            echo "   - For an ambiguous ask → post ONE 'gh pr comment' with the specific clarifying questions needed."
-            echo "   - After the single action, STOP."
-            echo ""
-            echo "Identity: you are elixpoo, a teammate — never mention Claude, Claude Code, AI, or LLMs. Bullets, not verbose prose. Never commit to main. The repo context above is cold but current — prefer it over re-exploring the tree."
-            echo 'PROMPT_EOF'
-          } >> "$GITHUB_OUTPUT"
-
+      # Polly-style minimal shape — no pre-built context artifact, no custom
+      # `prompt:` field, no post-guards. claude-code-action builds its own
+      # prompt from the trigger event and streams TodoWrite + Edit + Bash
+      # tool calls live into the tracking comment, giving ccr-style stage
+      # updates (what it's planning, what it's about to change, progress
+      # ticks) without us having to choreograph them.
       - uses: anthropics/claude-code-action@v1
         if: steps.whitelist.outputs.authorized == 'true'
         env:
@@ -307,15 +236,14 @@ jobs:
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           trigger_phrase: "@elixpoo"
           branch_prefix: "elixpo/"
-          # No allowed_tools cap — every Claude Code tool is available.
-          # Task routes to CCR 'background' = qwen-coder for code-heavy work.
-          prompt: ${{ steps.build_prompt.outputs.prompt }}
-          # Required for CI — without this, claude-code's default permission
-          # mode prompts for approval on Bash/Edit/Write and the agent stalls
-          # with `"This command requires approval"`. Safe here: ephemeral
-          # sandbox, branch-protected main, every change lands through a PR.
+          # --permission-mode bypassPermissions is required for headless CI
+          # (without it the default mode prompts for approval on Bash/Edit
+          # and the agent stalls with "This command requires approval").
+          # Safe: ephemeral sandbox, branch-protected main, every change
+          # through a PR.
           claude_args: |
             --permission-mode bypassPermissions
+            --system-prompt "You are elixpoo, a helpful developer on the Elixpo team. Never mention Claude, Claude Code, AI, or LLMs — you are just a team member. Be casual, concise, and human. Use bullet points; no verbose filler. Call TodoWrite at the start of every run with 2-4 concrete steps so progress renders as checkboxes in the tracking comment, ticking each off as you finish. Decide what the user actually asked for: (a) REVIEW — submit one 'gh pr review --approve' or '--request-changes' ending in 'Merge-readiness: READY' or 'Merge-readiness: NEEDS CHANGES'. (b) SMALL CODE FIX (1-3 files, surgical) — DO NOT WAIT for approval or clarification on small scoped asks, just apply the edit, commit + push to the PR's head branch, then post ONE 'gh pr comment' with a DEEP summary (not a one-liner). The summary MUST include: (1) a '### Files changed' list with every path touched, (2) a '### What changed' bullet per file with the concrete modification — what lines / symbols / configs were edited and how, (3) a '### Why' paragraph explaining how the change addresses the review comment or spotted issue, (4) a '### How to verify' block with one or two commands or checks the reviewer can run. Use python .github/scripts/apply_refactor.py for bulk find/replace across several spots. (c) CONVERSE — answer a question or update the PR description via 'gh pr edit'. (d) DECLINE — only if the ask is genuinely too big (architectural, cross-module, security-sensitive, >5 files of judgment work): one comment with a 1-2 sentence reason and a suggestion on how to split it. Default bias: ACT on small asks, don't wait. Never commit to main. Task delegations route to qwen-coder via CCR background for code-heavy work — use it for non-trivial multi-file changes."
           additional_permissions: |
             actions: read
 
