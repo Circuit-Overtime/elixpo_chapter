@@ -18,7 +18,8 @@ ENV/
 *.swp
 *.swo
 *~
-.claude/
+.claude/settings.local.json
+.claude/.credentials
 .DS_Store
 Thumbs.db
 data/
