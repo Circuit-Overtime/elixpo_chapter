@@ -1,12 +1,23 @@
-# Elixpo — A Developer-First Open Source Series
-## Enhanced Learning and Intelligence Process Optimization ##
+<div align="center">
+    <img src="https://github.com/user-attachments/assets/fd8a7ab9-8734-454c-be6b-350770593e3e" height=70 width=70 /> 
+  </div>
+<h2 align="center"> Enhanced Learning and Intelligence Process Optimization </h2>
+
+> <div align="center"> An Open Source Project Series 💖 Computer Science - Maintained by @Circuit-Overtime and our mascot @elixpoo </div>
 
 <img width="1536" height="1024" alt="Elixpo Banner" src="https://github.com/user-attachments/assets/5b0f1c5a-0977-46a8-9f7c-5703a79673e0" />
 
+<div align="center">
+  
 ### Welcome to Elixpo-Chapter, an Open Source Repository (OSS) begun in 2023 as a college initiative, this open-source series has grown into a collaborative ecosystem of open source projects and collaborative development. In just two years, we've built over 9 projects, engaged a global community, and participated in numerous hackathons and open-source programs.
 
 ### **💖 If you believe in open and accessible projects, please leave a ⭐ on the repository!**
 
+</div>
+
+
+<div align="center">
+  
 ![Built with Pollinations](https://img.shields.io/badge/Built_With-Pollinations-8a2be2?style=for-the-badge&logo=data:image/svg+xml,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%20124%20124%22%3E%3Ccircle%20cx%3D%2262%22%20cy%3D%2262%22%20r%3D%2262%22%20fill%3D%22%23ffffff%22/%3E%3C/svg%3E&logoColor=white&labelColor=6a0dad)
 ![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ed?style=for-the-badge&logo=docker&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-Deploy-000000?style=for-the-badge&logo=vercel&logoColor=white)
@@ -17,27 +28,31 @@
 ![Chrome Extension](https://img.shields.io/badge/Chrome-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)
 ![Hacktoberfest](https://img.shields.io/badge/Hacktoberfest-OSS-0f172a?style=for-the-badge&logo=hacktoberfest&logoColor=#ff6f61)
 
+</div>
+
 ---
+
 ## 🌟 GitHub Stars Program — Your Support Matters!
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/465db80e-83a8-4607-840d-d7f2239e15cf" alt="GitHub Stars Nomination" width="400"/>
-</p>
-
-<h3 align="center">🌟 Nominate Me for the GitHub Stars Program! 🌟</h3>
 
 <p align="center">
-  If Elixpo, my Hacktoberfest work, or Google Developer Groups activities have helped you on your open-source or CS journey, I’d be honored by your nomination.<br>
-  <strong>Your support inspires me and helps grow our community!</strong>
+  <img width="1672" height="941" alt="image" src="https://github.com/user-attachments/assets/33816dc8-8bc7-4fa0-837f-db6ce571a7b2" />
 </p>
 
+<div align="center"> <h3 align="center">🌟 Nominate Me for the GitHub Stars Program! 🌟</h3> </div>
 
 
-#### **How to Nominate (Takes < 20 seconds):**
+> Your support towards the nomination would mean a lot to me! If you are happy contributing to <strong> [Elixpo Chapter](https://github.com/elixpo) </strong> or you have known me from my tenure of being a <strong> Google Developer Groups on Campus Organiser (2025-2026) and you are genuinely happy, please do leave a nomination for me. </strong>
 
-1. 👉 Visit [stars.github.com/nominate](https://stars.github.com/nominate/)
-2. 🔑 Sign in with your GitHub account
-3. ✍️ **Enter my GitHub username: <code>Circuit-Overtime</code>**
-4. 💬 Add a short, honest note about how I’ve supported you.
+
+<h2 align="center"> How to Nominate (Takes < 20 seconds) </h2>
+
+<img width="2172" height="724" alt="image" src="https://github.com/user-attachments/assets/2b6f7d6b-f428-413a-9574-7507ea84018a" />
+<br>
+<div align="center">  
+Visit <strong><a href="https://stars.github.com/nominate/">GitHub Stars Program</a></strong> •  Sign in with your GitHub account • Provide my GitHub username: <code>Circuit-Overtime</code> • Add a short, honest note about how I’ve supported you. 
+</div>
+
+
 
 ---
 
