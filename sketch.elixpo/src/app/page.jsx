@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import LandingNav from '@/components/landing/LandingNav'
@@ -349,7 +349,10 @@ export default function LandingPage() {
   const heroBlur = useTransform(scrollYProgress, [0, 0.15], [0, 8])
   const heroY = useTransform(scrollYProgress, [0, 0.15], [0, -40])
 
-  const newSessionId = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+  const [newSessionId, setNewSessionId] = useState('')
+  useEffect(() => {
+    setNewSessionId(`lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`)
+  }, [])
 
   return (
     <div className="min-h-screen bg-[#13171C] text-white font-[lixFont] overflow-x-hidden">
@@ -421,8 +424,8 @@ export default function LandingPage() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link
-              href={`/c/${newSessionId}`}
-              className="px-8 py-3.5 bg-accent-blue hover:bg-accent-blue-hover text-white rounded-xl text-base transition-all duration-200 hover:shadow-xl hover:shadow-accent-blue/25 flex items-center gap-2"
+              href={newSessionId ? `/c/${newSessionId}` : '#'}
+              className={`px-8 py-3.5 bg-accent-blue hover:bg-accent-blue-hover text-white rounded-xl text-base transition-all duration-200 hover:shadow-xl hover:shadow-accent-blue/25 flex items-center gap-2 ${!newSessionId ? 'opacity-50 pointer-events-none' : ''}`}
             >
               <i className="bx bx-palette text-xl" />
               Start Drawing
@@ -712,8 +715,8 @@ export default function LandingPage() {
             No sign-up. No paywall. Just open the canvas and start creating.
           </p>
           <Link
-            href={`/c/${newSessionId}`}
-            className="inline-flex items-center gap-2 px-10 py-4 bg-accent-blue hover:bg-accent-blue-hover text-white rounded-xl text-lg transition-all duration-200 hover:shadow-xl hover:shadow-accent-blue/25"
+            href={newSessionId ? `/c/${newSessionId}` : '#'}
+            className={`inline-flex items-center gap-2 px-10 py-4 bg-accent-blue hover:bg-accent-blue-hover text-white rounded-xl text-lg transition-all duration-200 hover:shadow-xl hover:shadow-accent-blue/25 ${!newSessionId ? 'opacity-50 pointer-events-none' : ''}`}
           >
             <i className="bx bx-palette text-2xl" />
             Launch Canvas

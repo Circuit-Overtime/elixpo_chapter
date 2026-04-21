@@ -596,9 +596,9 @@ function cloneStrokeData(stroke) {
 }
 
 // Event listeners
-// svg.addEventListener('mousedown', handleMouseDown);
-// svg.addEventListener('mousemove', handleMouseMove);
-// svg.addEventListener('mouseup', handleMouseUp);
+// svg.addEventListener('pointerdown', handleMouseDown);
+// svg.addEventListener('pointermove', handleMouseMove);
+// svg.addEventListener('pointerup', handleMouseUp);
 
 // Bridge freehand tool settings to React sidebar
 window.freehandToolSettings = {
@@ -634,7 +634,7 @@ window.updateSelectedFreehandStyle = function(changes) {
 
 // Safety net: if mouseup fires outside the SVG canvas (e.g. on toolbar/overlay),
 // ensure we stop drawing so the stroke doesn't continue when pointer re-enters.
-window.addEventListener('mouseup', () => {
+window.addEventListener('pointerup', () => {
     if (isDrawingStroke) {
         isDrawingStroke = false;
         lastPoint = null;

@@ -508,7 +508,7 @@ class MultiSelection {
             const cursors = ['nw-resize', 'ne-resize', 'sw-resize', 'se-resize', 'n-resize', 's-resize', 'w-resize', 'e-resize'];
             anchor.style.cursor = cursors[pos.index];
 
-            anchor.addEventListener('mousedown', (e) => this.startResize(e, pos.index));
+            anchor.addEventListener('pointerdown', (e) => this.startResize(e, pos.index));
 
             this.group.appendChild(anchor);
             this.anchors.push(anchor);
@@ -530,7 +530,7 @@ class MultiSelection {
         this.rotationAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
         this.rotationAnchor.setAttribute('style', 'pointer-events: all; cursor: grab;');
 
-        this.rotationAnchor.addEventListener('mousedown', (e) => this.startRotation(e));
+        this.rotationAnchor.addEventListener('pointerdown', (e) => this.startRotation(e));
 
         this.rotationLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         this.rotationLine.setAttribute('x1', rotationAnchorPos.x);
@@ -620,15 +620,15 @@ class MultiSelection {
             this._pushUndoForAll();
 
             if (typeof svg !== 'undefined') {
-                svg.removeEventListener('mousemove', onMouseMove);
-                svg.removeEventListener('mouseup', onMouseUp);
+                svg.removeEventListener('pointermove', onMouseMove);
+                svg.removeEventListener('pointerup', onMouseUp);
                 svg.style.cursor = 'default';
             }
         };
 
         if (typeof svg !== 'undefined') {
-            svg.addEventListener('mousemove', onMouseMove);
-            svg.addEventListener('mouseup', onMouseUp);
+            svg.addEventListener('pointermove', onMouseMove);
+            svg.addEventListener('pointerup', onMouseUp);
             svg.style.cursor = 'grabbing';
         }
     }
@@ -1102,15 +1102,15 @@ createRotatedControls(angleDiff = 0) {
             this._pushUndoForAll();
 
             if (typeof svg !== 'undefined') {
-                svg.removeEventListener('mousemove', onMouseMove);
-                svg.removeEventListener('mouseup', onMouseUp);
+                svg.removeEventListener('pointermove', onMouseMove);
+                svg.removeEventListener('pointerup', onMouseUp);
                 svg.style.cursor = 'default';
             }
         };
 
         if (typeof svg !== 'undefined') {
-            svg.addEventListener('mousemove', onMouseMove);
-            svg.addEventListener('mouseup', onMouseUp);
+            svg.addEventListener('pointermove', onMouseMove);
+            svg.addEventListener('pointerup', onMouseUp);
         }
     }
 
@@ -1746,7 +1746,7 @@ function handleMultiSelectionMouseUp(e) {
 
 
 // Safety net: clean up selection rect if mouse is released outside the SVG
-window.addEventListener('mouseup', () => {
+window.addEventListener('pointerup', () => {
     if (isMultiSelecting) {
         removeMultiSelectionRect();
         isMultiSelecting = false;

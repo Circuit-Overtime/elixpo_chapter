@@ -19,6 +19,9 @@ class SketchEngine {
         }
 
         this.svg = svgElement;
+        // Prevent default touch scrolling/gestures on the canvas to allow for custom pointer events
+        this.svg.style.touchAction = 'none';
+
         this.options = {
             initialZoom: 1,
             minZoom: 0.4,

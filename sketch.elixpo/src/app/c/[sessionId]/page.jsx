@@ -49,9 +49,6 @@ export default function CanvasPage() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black">
-      <Script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js" strategy="beforeInteractive" />
-      <Script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" strategy="beforeInteractive" />
-
       <Header />
       <Toolbar />
 

@@ -386,9 +386,9 @@ svg.style.cursor = 'default';
 };
 
 // Remove old event listeners and add new ones
-svg.removeEventListener('mousedown', handleMouseDown);
-svg.removeEventListener('mousemove', handleMouseMove);
-svg.removeEventListener('mouseup', handleMouseUp);
+svg.removeEventListener('pointerdown', handleMouseDown);
+svg.removeEventListener('pointermove', handleMouseMove);
+svg.removeEventListener('pointerup', handleMouseUp);
 
 
 // Updated style handlers with undo/redo support

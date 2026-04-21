@@ -45,10 +45,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
     }
 
-    const apiKey = process.env.POLLINATIONS_IMAGE_API
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Image API not configured' }, { status: 500 })
-    }
+    const apiKey = process.env.POLLINATIONS_IMAGE_API || 'anonymous'
+    // if (!apiKey) {
+    //   return NextResponse.json({ error: 'Image API not configured' }, { status: 500 })
+    // }
 
     // --- Quota check (skip if DB unavailable in local dev) ---
     const DB = tryGetDB()
