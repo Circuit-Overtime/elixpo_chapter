@@ -12,12 +12,17 @@ function isLocalhost() {
     return process.env.NODE_ENV !== 'production'
   }
   const host = window.location.hostname
-  return host === 'localhost' || host === '127.0.0.1' || host === '::1'
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.startsWith('192.168.') || host.startsWith('10.') || /^172\.(1[6-9]|2\d|3[01])\./.test(host)
 }
 
 export function getWorkerURL() {
   if (process.env.NEXT_PUBLIC_WORKER_URL) {
     return process.env.NEXT_PUBLIC_WORKER_URL
+  }
+  if (typeof window !== 'undefined') {
+    if (!window.location.hostname.includes('sketch.elixpo.com')) {
+      return window.location.origin
+    }
   }
   return isLocalhost() ? 'http://localhost:3000' : PROD_ORIGIN
 }

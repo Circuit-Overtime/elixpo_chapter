@@ -80,7 +80,7 @@ function _onDocumentDragMove(e) {
     const rect = svg.getBoundingClientRect();
     const clampedX = Math.max(rect.left, Math.min(rect.right, e.clientX));
     const clampedY = Math.max(rect.top, Math.min(rect.bottom, e.clientY));
-    const clampedEvent = new MouseEvent(e.type, {
+    const clampedEvent = new PointerEvent(e.type, {
         clientX: clampedX,
         clientY: clampedY,
         buttons: e.buttons,
@@ -95,8 +95,8 @@ function _onDocumentDragMove(e) {
 
 function _onDocumentDragUp(e) {
     _stopAutoScroll();
-    document.removeEventListener('mousemove', _onDocumentDragMove);
-    document.removeEventListener('mouseup', _onDocumentDragUp);
+    document.removeEventListener('pointermove', _onDocumentDragMove);
+    document.removeEventListener('pointerup', _onDocumentDragUp);
     _documentDragActive = false;
     // Finalize the operation
     handleMainMouseUp(e);
@@ -425,8 +425,8 @@ const handleMainMouseLeave = (e) => {
         // Listen on document to continue receiving move events outside the SVG
         if (!_documentDragActive) {
             _documentDragActive = true;
-            document.addEventListener('mousemove', _onDocumentDragMove);
-            document.addEventListener('mouseup', _onDocumentDragUp);
+            document.addEventListener('pointermove', _onDocumentDragMove);
+            document.addEventListener('pointerup', _onDocumentDragUp);
         }
         return;
     }
@@ -459,8 +459,8 @@ let _boundSvg = null;
 function _onMouseEnter(e) {
     // Cursor re-entered the SVG — stop document-level tracking, SVG handles events again
     if (_documentDragActive) {
-        document.removeEventListener('mousemove', _onDocumentDragMove);
-        document.removeEventListener('mouseup', _onDocumentDragUp);
+        document.removeEventListener('pointermove', _onDocumentDragMove);
+        document.removeEventListener('pointerup', _onDocumentDragUp);
         _documentDragActive = false;
     }
 }
@@ -478,11 +478,11 @@ const handleMainDblClick = (e) => {
 function initEventDispatcher(svgEl) {
     if (_boundSvg) cleanupEventDispatcher();
     const target = svgEl || svg;
-    target.addEventListener('mousedown', handleMainMouseDown);
-    target.addEventListener('mousemove', handleMainMouseMove);
-    target.addEventListener('mouseup', handleMainMouseUp);
-    target.addEventListener('mouseleave', handleMainMouseLeave);
-    target.addEventListener('mouseenter', _onMouseEnter);
+    target.addEventListener('pointerdown', handleMainMouseDown);
+    target.addEventListener('pointermove', handleMainMouseMove);
+    target.addEventListener('pointerup', handleMainMouseUp);
+    target.addEventListener('pointerleave', handleMainMouseLeave);
+    target.addEventListener('pointerenter', _onMouseEnter);
     target.addEventListener('dblclick', handleMainDblClick);
     _boundSvg = target;
 }
@@ -490,16 +490,16 @@ function initEventDispatcher(svgEl) {
 function cleanupEventDispatcher() {
     _stopAutoScroll();
     if (_documentDragActive) {
-        document.removeEventListener('mousemove', _onDocumentDragMove);
-        document.removeEventListener('mouseup', _onDocumentDragUp);
+        document.removeEventListener('pointermove', _onDocumentDragMove);
+        document.removeEventListener('pointerup', _onDocumentDragUp);
         _documentDragActive = false;
     }
     if (_boundSvg) {
-        _boundSvg.removeEventListener('mousedown', handleMainMouseDown);
-        _boundSvg.removeEventListener('mousemove', handleMainMouseMove);
-        _boundSvg.removeEventListener('mouseup', handleMainMouseUp);
-        _boundSvg.removeEventListener('mouseleave', handleMainMouseLeave);
-        _boundSvg.removeEventListener('mouseenter', _onMouseEnter);
+        _boundSvg.removeEventListener('pointerdown', handleMainMouseDown);
+        _boundSvg.removeEventListener('pointermove', handleMainMouseMove);
+        _boundSvg.removeEventListener('pointerup', handleMainMouseUp);
+        _boundSvg.removeEventListener('pointerleave', handleMainMouseLeave);
+        _boundSvg.removeEventListener('pointerenter', _onMouseEnter);
         _boundSvg.removeEventListener('dblclick', handleMainDblClick);
         _boundSvg = null;
     }

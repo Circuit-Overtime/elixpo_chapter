@@ -384,10 +384,10 @@ function makeCodeEditable(codeElement, groupElement, clickEvent = null) {
         if (!editorContainer.contains(event.target)) {
             input.clearHighlightTimeout();
             renderCodeFromEditor(input, codeElement, true);
-            document.removeEventListener('mousedown', handleClickOutside, true);
+            document.removeEventListener('pointerdown', handleClickOutside, true);
         }
     };
-    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('pointerdown', handleClickOutside, true);
     input.handleClickOutside = handleClickOutside;
 
     groupElement.style.display = "none";
@@ -591,7 +591,7 @@ function renderCodeFromEditor(input, codeElement, deleteIfEmpty = false) {
 
     // Clean up event listeners
     if (input.handleClickOutside) {
-        document.removeEventListener('mousedown', input.handleClickOutside, true);
+        document.removeEventListener('pointerdown', input.handleClickOutside, true);
     }
 
     // Clear any pending highlighting timeouts
@@ -809,7 +809,7 @@ function renderCode(input, codeElement, deleteIfEmpty = false) {
     const gElement = input.codeGroup;
 
     if (input.handleClickOutside) {
-        document.removeEventListener('mousedown', input.handleClickOutside, true);
+        document.removeEventListener('pointerdown', input.handleClickOutside, true);
     }
 
     document.body.removeChild(input);
@@ -1044,7 +1044,7 @@ function createCodeSelectionFeedback(groupElement) {
         groupElement.appendChild(handleRect);
         codeResizeHandles[handle.name] = handleRect;
 
-        handleRect.addEventListener('mousedown', (e) => {
+        handleRect.addEventListener('pointerdown', (e) => {
             if (window.isSelectionToolActive) {
                 e.stopPropagation();
                 startCodeResize(e, handle.name);
@@ -1069,7 +1069,7 @@ function createCodeSelectionFeedback(groupElement) {
 
     codeResizeHandles.rotate = rotationAnchor;
 
-    rotationAnchor.addEventListener('mousedown', (e) => {
+    rotationAnchor.addEventListener('pointerdown', (e) => {
         if (window.isSelectionToolActive) {
             e.stopPropagation();
             startCodeRotation(e);
@@ -1190,8 +1190,8 @@ function startCodeRotation(event) {
 
     svg.style.cursor = 'grabbing';
 
-    window.addEventListener('mousemove', handleCodeMouseMove); // Fix: use window instead of svg
-    window.addEventListener('mouseup', handleCodeMouseUp);
+    window.addEventListener('pointermove', handleCodeMouseMove); // Fix: use window instead of svg
+    window.addEventListener('pointerup', handleCodeMouseUp);
 }
 
 
@@ -1244,8 +1244,8 @@ function deselectCodeBlock() {
         codeRotationStartAngle = 0;
         codeRotationStartTransform = null;
         svg.style.cursor = 'default';
-        window.removeEventListener('mousemove', handleCodeMouseMove);
-        window.removeEventListener('mouseup', handleCodeMouseUp);
+        window.removeEventListener('pointermove', handleCodeMouseMove);
+        window.removeEventListener('pointerup', handleCodeMouseUp);
     }
 }
 
@@ -1288,8 +1288,8 @@ function startCodeDrag(event) {
 
     svg.style.cursor = 'grabbing';
 
-    window.addEventListener('mousemove', handleCodeMouseMove); // Fix: use window
-    window.addEventListener('mouseup', handleCodeMouseUp);   // Fix: use window
+    window.addEventListener('pointermove', handleCodeMouseMove); // Fix: use window
+    window.addEventListener('pointerup', handleCodeMouseUp);   // Fix: use window
 }
 
 function startCodeResize(event, anchor) {
@@ -1332,8 +1332,8 @@ function startCodeResize(event, anchor) {
 
     svg.style.cursor = codeResizeHandles[anchor]?.style.cursor || 'default';
 
-    window.addEventListener('mousemove', handleCodeMouseMove); 
-    window.addEventListener('mouseup', handleCodeMouseUp);   
+    window.addEventListener('pointermove', handleCodeMouseMove); 
+    window.addEventListener('pointerup', handleCodeMouseUp);   
 }
 
 
@@ -1745,8 +1745,8 @@ const handleCodeMouseUp = (event) => {
 
     svg.style.cursor = 'default';
 
-    svg.removeEventListener('mousemove', handleCodeMouseMove);
-    svg.removeEventListener('mouseup', handleCodeMouseUp);
+    svg.removeEventListener('pointermove', handleCodeMouseMove);
+    svg.removeEventListener('pointerup', handleCodeMouseUp);
 };
 
 

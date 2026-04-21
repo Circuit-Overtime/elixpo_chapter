@@ -537,9 +537,9 @@ function selectImage(event) {
     originalHeight = parseFloat(selectedImage.getAttribute('height'));
 
      // Add drag event listeners to the selected image
-     selectedImage.addEventListener('mousedown', startDrag);
-     selectedImage.addEventListener('mouseup', stopDrag);
-     selectedImage.addEventListener('mouseleave', stopDrag);
+     selectedImage.addEventListener('pointerdown', startDrag);
+     selectedImage.addEventListener('pointerup', stopDrag);
+     selectedImage.addEventListener('pointerleave', stopDrag);
 
     // Set currentShape for sidebar + layer controls
     const imageShape = (typeof shapes !== 'undefined' && Array.isArray(shapes))
@@ -611,9 +611,9 @@ function removeSelectionOutline() {
 
     // Remove drag event listeners
     if (selectedImage) {
-        selectedImage.removeEventListener('mousedown', startDrag);
-        selectedImage.removeEventListener('mouseup', stopDrag);
-        selectedImage.removeEventListener('mouseleave', stopDrag);
+        selectedImage.removeEventListener('pointerdown', startDrag);
+        selectedImage.removeEventListener('pointerup', stopDrag);
+        selectedImage.removeEventListener('pointerleave', stopDrag);
     }
 }
 
@@ -647,8 +647,8 @@ function addResizeAnchors(x, y, width, height, centerX, centerY) {
         svg.appendChild(anchor);
 
         // Add event listeners for resizing
-        anchor.addEventListener('mousedown', startResize);
-        anchor.addEventListener('mouseup', stopResize);
+        anchor.addEventListener('pointerdown', startResize);
+        anchor.addEventListener('pointerup', stopResize);
     });
 }
 
@@ -672,8 +672,8 @@ function addRotationAnchor(x, y, width, height, centerX, centerY) {
     svg.appendChild(rotationAnchor);
 
     // Add event listeners for rotation
-    rotationAnchor.addEventListener('mousedown', startRotation);
-    rotationAnchor.addEventListener('mouseup', stopRotation);
+    rotationAnchor.addEventListener('pointerdown', startRotation);
+    rotationAnchor.addEventListener('pointerup', stopRotation);
     
     rotationAnchor.addEventListener('mouseover', function () {
         if (!isRotatingImage && !isDragging) {
@@ -708,8 +708,8 @@ function addAnchor(x, y, cursor) {
     svg.appendChild(anchor);
 
     // Add event listeners for dragging
-    anchor.addEventListener('mousedown', startResize);
-    anchor.addEventListener('mouseup', stopResize);
+    anchor.addEventListener('pointerdown', startResize);
+    anchor.addEventListener('pointerup', stopResize);
 
 }
 
@@ -739,13 +739,13 @@ function startResize(event) {
         }
     }
     
-    svg.addEventListener('mousemove', resizeImage);
-    document.addEventListener('mouseup', stopResize);
+    svg.addEventListener('pointermove', resizeImage);
+    document.addEventListener('pointerup', stopResize);
 }
 
 function stopResize(event) {
     stopInteracting(); // Call the combined stop function
-    document.removeEventListener('mouseup', stopResize); // Remove the global mouseup listener
+    document.removeEventListener('pointerup', stopResize); // Remove the global mouseup listener
 }
 
 function resizeImage(event) {
@@ -893,8 +893,8 @@ function stopRotation(event) {
     isRotatingImage = false;
     startRotationMouseAngle = null;
     startImageRotation = null;
-    svg.removeEventListener('mousemove', rotateImage);
-    document.removeEventListener('mouseup', stopRotation);
+    svg.removeEventListener('pointermove', rotateImage);
+    document.removeEventListener('pointerup', stopRotation);
     svg.style.cursor = 'default';
 }
 
@@ -941,8 +941,8 @@ function startDrag(event) {
     dragOffsetX = x - parseFloat(selectedImage.getAttribute('x'));
     dragOffsetY = y - parseFloat(selectedImage.getAttribute('y'));
 
-    svg.addEventListener('mousemove', dragImage);
-    document.addEventListener('mouseup', stopDrag);
+    svg.addEventListener('pointermove', dragImage);
+    document.addEventListener('pointerup', stopDrag);
 }
 
 function dragImage(event) {
@@ -982,7 +982,7 @@ function dragImage(event) {
 
 function stopDrag(event) {
     stopInteracting(); // Call the combined stop function
-    document.removeEventListener('mouseup', stopDrag); // Remove the global mouseup listener
+    document.removeEventListener('pointerup', stopDrag); // Remove the global mouseup listener
 }
 
 function startRotation(event) {
@@ -1008,8 +1008,8 @@ function startRotation(event) {
     startRotationMouseAngle = Math.atan2(mouseY - centerY, mouseX - centerX) * 180 / Math.PI;
     startImageRotation = imageRotation;
 
-    svg.addEventListener('mousemove', rotateImage);
-    document.addEventListener('mouseup', stopRotation);
+    svg.addEventListener('pointermove', rotateImage);
+    document.addEventListener('pointerup', stopRotation);
     
     svg.style.cursor = 'grabbing';
 }
@@ -1168,9 +1168,9 @@ function stopInteracting() {
 
     isDragging = false;
     isRotatingImage = false;
-    svg.removeEventListener('mousemove', dragImage);
-    svg.removeEventListener('mousemove', resizeImage);
-    svg.removeEventListener('mousemove', rotateImage);
+    svg.removeEventListener('pointermove', dragImage);
+    svg.removeEventListener('pointermove', resizeImage);
+    svg.removeEventListener('pointermove', rotateImage);
     currentAnchor = null;
     startRotationMouseAngle = null;
     startImageRotation = null;

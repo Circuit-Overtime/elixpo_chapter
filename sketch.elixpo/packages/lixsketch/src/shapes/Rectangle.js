@@ -362,9 +362,9 @@ class Rectangle {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); input.blur(); }
             if (e.key === 'Escape') { input.textContent = this.label; input.blur(); }
         });
-        input.addEventListener('mousedown', (e) => e.stopPropagation());
-        input.addEventListener('mousemove', (e) => e.stopPropagation());
-        input.addEventListener('mouseup', (e) => e.stopPropagation());
+        input.addEventListener('pointerdown', (e) => e.stopPropagation());
+        input.addEventListener('pointermove', (e) => e.stopPropagation());
+        input.addEventListener('pointerup', (e) => e.stopPropagation());
     }
 
     setLabel(text, color, fontSize) {

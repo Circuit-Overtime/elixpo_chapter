@@ -590,9 +590,9 @@ startLabelEdit(labelElement) {
     });
     
     // Prevent the input from interfering with other interactions
-    input.addEventListener('mousedown', (e) => e.stopPropagation());
-    input.addEventListener('mousemove', (e) => e.stopPropagation());
-    input.addEventListener('mouseup', (e) => e.stopPropagation());
+    input.addEventListener('pointerdown', (e) => e.stopPropagation());
+    input.addEventListener('pointermove', (e) => e.stopPropagation());
+    input.addEventListener('pointerup', (e) => e.stopPropagation());
 }
     selectFrame() {
         this.isSelected = true;
@@ -626,7 +626,7 @@ startLabelEdit(labelElement) {
             newInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') newInput.blur();
             });
-            newInput.addEventListener('mousedown', (e) => e.stopPropagation());
+            newInput.addEventListener('pointerdown', (e) => e.stopPropagation());
         }
 
         if (resizeBtn) {
@@ -790,7 +790,7 @@ startLabelEdit(labelElement) {
         }
 
         anchor.style.cursor = position.cursor;
-        anchor.addEventListener('mousedown', (e) => this.startAnchorDrag(e, index));
+        anchor.addEventListener('pointerdown', (e) => this.startAnchorDrag(e, index));
         
         this.anchors.push(anchor);
         this.group.appendChild(anchor);

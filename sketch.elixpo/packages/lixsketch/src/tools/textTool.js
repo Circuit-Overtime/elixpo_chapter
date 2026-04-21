@@ -302,10 +302,10 @@ function makeTextEditable(textElement, groupElement) {
     const handleClickOutside = (event) => {
         if (!input.contains(event.target)) {
             renderText(input, textElement, true);
-            document.removeEventListener('mousedown', handleClickOutside, true);
+            document.removeEventListener('pointerdown', handleClickOutside, true);
         }
     };
-    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('pointerdown', handleClickOutside, true);
     input.handleClickOutside = handleClickOutside;
 
     // Set text cursor on the element during edit mode
@@ -324,7 +324,7 @@ function renderText(input, textElement, deleteIfEmpty = false) {
     const gElement = input.textGroup;
 
     if (input.handleClickOutside) {
-        document.removeEventListener('mousedown', input.handleClickOutside, true);
+        document.removeEventListener('pointerdown', input.handleClickOutside, true);
     }
 
     document.body.removeChild(input);
@@ -474,7 +474,7 @@ function createSelectionFeedback(groupElement) {
         groupElement.appendChild(handleRect);
         resizeHandles[handle.name] = handleRect;
 
-        handleRect.addEventListener('mousedown', (e) => {
+        handleRect.addEventListener('pointerdown', (e) => {
             if (window.isSelectionToolActive) {
                 e.stopPropagation();
                 startResize(e, handle.name);
@@ -498,7 +498,7 @@ function createSelectionFeedback(groupElement) {
 
     resizeHandles.rotate = rotationAnchor;
 
-    rotationAnchor.addEventListener('mousedown', (e) => {
+    rotationAnchor.addEventListener('pointerdown', (e) => {
         if (window.isSelectionToolActive) {
             e.stopPropagation();
             startRotation(e);
@@ -612,8 +612,8 @@ function startRotation(event) {
 
     svg.style.cursor = 'grabbing';
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('pointermove', handleMouseMove);
+    window.addEventListener('pointerup', handleMouseUp);
 }
 
 function removeSelectionFeedback(element) {
@@ -687,8 +687,8 @@ function deselectElement() {
         rotationStartTransform = null;
         svg.style.cursor = 'default';
 
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
+        window.removeEventListener('pointermove', handleMouseMove);
+        window.removeEventListener('pointerup', handleMouseUp);
     }
 }
 
@@ -730,8 +730,8 @@ function startDrag(event) {
 
     svg.style.cursor = 'grabbing';
 
-    svg.addEventListener('mousemove', handleMouseMove);
-    svg.addEventListener('mouseup', handleMouseUp);
+    svg.addEventListener('pointermove', handleMouseMove);
+    svg.addEventListener('pointerup', handleMouseUp);
 }
 
 function startResize(event, anchor) {
@@ -777,8 +777,8 @@ function startResize(event, anchor) {
 
   svg.style.cursor = resizeHandles[anchor]?.style.cursor || 'default';
 
-  svg.addEventListener('mousemove', handleMouseMove);
-  svg.addEventListener('mouseup', handleMouseUp);
+  svg.addEventListener('pointermove', handleMouseMove);
+  svg.addEventListener('pointerup', handleMouseUp);
 }
 
 
@@ -1153,10 +1153,10 @@ const handleMouseUp = (event) => {
         setTimeout(updateSelectionFeedback, 0);
     }
 
-    svg.removeEventListener('mousemove', handleMouseMove);
-    svg.removeEventListener('mouseup', handleMouseUp);
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleMouseUp);
+    svg.removeEventListener('pointermove', handleMouseMove);
+    svg.removeEventListener('pointerup', handleMouseUp);
+    window.removeEventListener('pointermove', handleMouseMove);
+    window.removeEventListener('pointerup', handleMouseUp);
 };
 
 function extractRotationFromTransform(element) {

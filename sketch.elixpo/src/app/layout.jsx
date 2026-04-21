@@ -1,5 +1,6 @@
 import './globals.css'
-
+import 'highlight.js/styles/github-dark-dimmed.css'
+import InitHljs from '@/components/InitHljs'
 const SITE_URL = 'https://sketch.elixpo.com'
 const SITE_NAME = 'LixSketch'
 const SITE_DESCRIPTION =
@@ -135,14 +136,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="dark">
       <head>
-        <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css" />
+        <link rel="stylesheet" href="/boxicons/css/boxicons.min.css" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <InitHljs />
+        {children}
+      </body>
     </html>
   )
 }

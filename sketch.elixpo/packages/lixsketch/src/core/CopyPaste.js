@@ -644,7 +644,7 @@ function placeImageFromDataUrl(dataUrl) {
 // ============================================================
 function initCopyPaste() {
     document.addEventListener('keydown', handleCopyPasteKeydown);
-    document.addEventListener('mousemove', handleMouseMoveForPaste);
+    document.addEventListener('pointermove', handleMouseMoveForPaste);
     document.addEventListener('paste', handlePasteEvent);
 
     // Expose for context menu

@@ -48,9 +48,9 @@ function removeSelection() {
     removeRotationAnchor();
 
     if (selectedIcon) {
-        selectedIcon.removeEventListener('mousedown', startDrag);
-        selectedIcon.removeEventListener('mouseup', stopDrag);
-        selectedIcon.removeEventListener('mouseleave', stopDrag);
+        selectedIcon.removeEventListener('pointerdown', startDrag);
+        selectedIcon.removeEventListener('pointerup', stopDrag);
+        selectedIcon.removeEventListener('pointerleave', stopDrag);
     }
 }
 
@@ -220,24 +220,24 @@ const handleMouseDownIcon = async (e) => {
                     const deltaY = Math.abs(currentY - initialMouseY);
 
                     if (deltaX > dragThreshold || deltaY > dragThreshold) {
-                        document.removeEventListener('mousemove', checkDragStartWithThreshold);
-                        document.removeEventListener('mouseup', cancelDragPrep);
-                        window.removeEventListener('mouseup', cancelDragPrep);
+                        document.removeEventListener('pointermove', checkDragStartWithThreshold);
+                        document.removeEventListener('pointerup', cancelDragPrep);
+                        window.removeEventListener('pointerup', cancelDragPrep);
 
                         const svg = getSVGElement();
-                        if (svg) svg.removeEventListener('mouseup', cancelDragPrep);
+                        if (svg) svg.removeEventListener('pointerup', cancelDragPrep);
 
                         startDrag(moveEvent);
                     }
                 }
 
                 _pendingDragChecker = checkDragStartWithThreshold;
-                document.addEventListener('mousemove', checkDragStartWithThreshold);
-                document.addEventListener('mouseup', cancelDragPrep);
-                window.addEventListener('mouseup', cancelDragPrep);
+                document.addEventListener('pointermove', checkDragStartWithThreshold);
+                document.addEventListener('pointerup', cancelDragPrep);
+                window.addEventListener('pointerup', cancelDragPrep);
 
                 const svg = getSVGElement();
-                if (svg) svg.addEventListener('mouseup', cancelDragPrep);
+                if (svg) svg.addEventListener('pointerup', cancelDragPrep);
 
                 return;
             } else {
@@ -470,21 +470,21 @@ function addSelectionOutline() {
 }
 
 function checkDragStart(event) {
-    document.removeEventListener('mousemove', checkDragStart);
-    document.removeEventListener('mouseup', cancelDragPrep);
+    document.removeEventListener('pointermove', checkDragStart);
+    document.removeEventListener('pointerup', cancelDragPrep);
     startDrag(event);
 }
 function cancelDragPrep(event) {
     if (_pendingDragChecker) {
-        document.removeEventListener('mousemove', _pendingDragChecker);
+        document.removeEventListener('pointermove', _pendingDragChecker);
         _pendingDragChecker = null;
     }
-    document.removeEventListener('mouseup', cancelDragPrep);
-    window.removeEventListener('mouseup', cancelDragPrep);
+    document.removeEventListener('pointerup', cancelDragPrep);
+    window.removeEventListener('pointerup', cancelDragPrep);
 
     const svg = getSVGElement();
     if (svg) {
-        svg.removeEventListener('mouseup', cancelDragPrep);
+        svg.removeEventListener('pointerup', cancelDragPrep);
     }
 }
 
@@ -508,14 +508,14 @@ function startDrag(event) {
         }
     }
 
-    document.addEventListener('mousemove', dragIcon);
-    document.addEventListener('mouseup', stopDrag);
+    document.addEventListener('pointermove', dragIcon);
+    document.addEventListener('pointerup', stopDrag);
     
-    window.addEventListener('mouseup', stopDrag);
+    window.addEventListener('pointerup', stopDrag);
     
     const svg = getSVGElement();
     if (svg) {
-        svg.addEventListener('mouseup', stopDrag);
+        svg.addEventListener('pointerup', stopDrag);
     }
     
     document.addEventListener('dragstart', preventDefaultDrag);
@@ -614,8 +614,8 @@ function addResizeAnchors(x, y, width, height, centerX, centerY, iconWidth, rota
 
         svg.appendChild(anchor);
 
-        anchor.addEventListener('mousedown', startResize);
-        anchor.addEventListener('mouseup', stopResize);
+        anchor.addEventListener('pointerdown', startResize);
+        anchor.addEventListener('pointerup', stopResize);
     });
 }
 
@@ -643,8 +643,8 @@ function addRotationAnchor(x, y, width, height, centerX, centerY, iconWidth, rot
 
     svg.appendChild(rotationAnchor);
 
-    rotationAnchor.addEventListener('mousedown', startRotation);
-    rotationAnchor.addEventListener('mouseup', stopRotation);
+    rotationAnchor.addEventListener('pointerdown', startRotation);
+    rotationAnchor.addEventListener('pointerup', stopRotation);
 
     rotationAnchor.addEventListener('mouseover', function() {
         if (!isRotatingIcon && !isDragging) {
@@ -693,14 +693,14 @@ function startResize(event) {
 
     const svg = getSVGElement();
     if (svg) {
-        svg.addEventListener('mousemove', resizeIcon);
+        svg.addEventListener('pointermove', resizeIcon);
     }
-    document.addEventListener('mouseup', stopResize);
+    document.addEventListener('pointerup', stopResize);
 }
 
 function stopResize(event) {
     stopInteracting();
-    document.removeEventListener('mouseup', stopResize);
+    document.removeEventListener('pointerup', stopResize);
 }
 
 function resizeIcon(event) {
@@ -873,13 +873,13 @@ function stopDrag(event) {
     isDragging = false;
     if (window.__iconShapeState) window.__iconShapeState.isDragging = false;
 
-    document.removeEventListener('mousemove', dragIcon);
-    document.removeEventListener('mouseup', stopDrag);
-    window.removeEventListener('mouseup', stopDrag);
+    document.removeEventListener('pointermove', dragIcon);
+    document.removeEventListener('pointerup', stopDrag);
+    window.removeEventListener('pointerup', stopDrag);
     
     const svg = getSVGElement();
     if (svg) {
-        svg.removeEventListener('mouseup', stopDrag);
+        svg.removeEventListener('pointerup', stopDrag);
     }
     
     document.removeEventListener('dragstart', preventDefaultDrag);
@@ -912,10 +912,10 @@ function startRotation(event) {
 
     const svg = getSVGElement();
     if (svg) {
-        svg.addEventListener('mousemove', rotateIcon);
+        svg.addEventListener('pointermove', rotateIcon);
         svg.style.cursor = 'grabbing';
     }
-    document.addEventListener('mouseup', stopRotation);
+    document.addEventListener('pointerup', stopRotation);
 }
 
 function rotateIcon(event) {
@@ -963,10 +963,10 @@ function stopRotation(event) {
 
     const svg = getSVGElement();
     if (svg) {
-        svg.removeEventListener('mousemove', rotateIcon);
+        svg.removeEventListener('pointermove', rotateIcon);
         svg.style.cursor = 'default';
     }
-    document.removeEventListener('mouseup', stopRotation);
+    document.removeEventListener('pointerup', stopRotation);
 }
 
 function stopInteracting() {
@@ -1058,14 +1058,14 @@ function stopInteracting() {
 
     const svg = getSVGElement();
     if (svg) {
-        svg.removeEventListener('mousemove', dragIcon);
-        svg.removeEventListener('mousemove', resizeIcon);
-        svg.removeEventListener('mousemove', rotateIcon);
+        svg.removeEventListener('pointermove', dragIcon);
+        svg.removeEventListener('pointermove', resizeIcon);
+        svg.removeEventListener('pointermove', rotateIcon);
     }
     
-    document.removeEventListener('mousemove', dragIcon);
-    document.removeEventListener('mousemove', resizeIcon);
-    document.removeEventListener('mousemove', rotateIcon);
+    document.removeEventListener('pointermove', dragIcon);
+    document.removeEventListener('pointermove', resizeIcon);
+    document.removeEventListener('pointermove', rotateIcon);
     
     currentAnchor = null;
     startRotationMouseAngle = null;
