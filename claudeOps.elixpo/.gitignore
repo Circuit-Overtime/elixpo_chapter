@@ -4,7 +4,8 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
-.claude/
+.claude/settings.local.json
+.claude/.credentials
 
 # SOPS: unencrypted local env
 .env.local
