@@ -21,6 +21,16 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Missing userId or guestId' }, { status: 400 })
     }
 
+    if (!DB) {
+      console.warn('[api/ai/quota] D1 binding missing. Returning default local quota.')
+      return NextResponse.json({
+        used: 0,
+        limit: 10,
+        remaining: 10,
+        tier: 'free',
+      })
+    }
+
     let tier = 'guest'
     if (userId) {
       const user = await DB.prepare(

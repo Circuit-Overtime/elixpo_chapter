@@ -1,48 +1,8 @@
 "use client"
 
 import useUIStore from '@/store/useUIStore'
-
-const TOOL_SHORTCUTS = [
-  { keys: 'H', action: 'Pan' },
-  { keys: 'V / 1', action: 'Selection' },
-  { keys: 'R / 2', action: 'Rectangle' },
-  { keys: '3', action: 'Diamond' },
-  { keys: 'O / 4', action: 'Circle' },
-  { keys: 'A / 5', action: 'Arrow' },
-  { keys: 'L / 6', action: 'Line' },
-  { keys: 'P / 7', action: 'Freehand' },
-  { keys: 'T / 8', action: 'Text' },
-  { keys: '9', action: 'Image' },
-  { keys: 'E / 0', action: 'Eraser' },
-  { keys: 'F', action: 'Frame' },
-  { keys: 'K', action: 'Laser' },
-]
-
-const ACTION_SHORTCUTS = [
-  { keys: 'Ctrl+A', action: 'Select All' },
-  { keys: 'Ctrl+G', action: 'Group' },
-  { keys: 'Ctrl+Shift+G', action: 'Ungroup' },
-  { keys: 'Ctrl+D', action: 'Duplicate' },
-  { keys: 'Ctrl+S', action: 'Quick Save (local + cloud sync)' },
-  { keys: 'Ctrl+Shift+S', action: 'Save & Share' },
-  { keys: 'Ctrl+F', action: 'Find on Canvas' },
-  { keys: 'Ctrl+C', action: 'Copy' },
-  { keys: 'Ctrl+V', action: 'Paste' },
-  { keys: 'Ctrl+Z', action: 'Undo' },
-  { keys: 'Ctrl+Shift+Z', action: 'Redo' },
-  { keys: 'Esc', action: 'Deselect' },
-  { keys: 'Del', action: 'Delete' },
-  { keys: 'Space', action: 'Hold to Pan' },
-  { keys: 'Shift', action: 'Straight Draw' },
-]
-
-const VIEW_SHORTCUTS = [
-  { keys: 'Ctrl++', action: 'Zoom In' },
-  { keys: 'Ctrl+-', action: 'Zoom Out' },
-  { keys: 'Ctrl+0', action: 'Reset Zoom' },
-  { keys: "Ctrl+'", action: 'Toggle Grid' },
-  { keys: 'Ctrl+/', action: 'Shortcuts' },
-]
+import { useTranslation } from '@/hooks/useTranslation'
+import { useMemo } from 'react'
 
 function ShortcutRow({ keys, action }) {
   return (
@@ -74,8 +34,51 @@ function ShortcutSection({ title, shortcuts }) {
 }
 
 export default function ShortcutsModal() {
+  const { t } = useTranslation()
   const shortcutsModalOpen = useUIStore((s) => s.shortcutsModalOpen)
   const toggleShortcutsModal = useUIStore((s) => s.toggleShortcutsModal)
+
+  const TOOL_SHORTCUTS = useMemo(() => [
+    { keys: 'H', action: t('shortcuts.pan') },
+    { keys: 'V / 1', action: t('shortcuts.selection') },
+    { keys: 'R / 2', action: t('shortcuts.rectangle') },
+    { keys: '3', action: t('shortcuts.diamond') },
+    { keys: 'O / 4', action: t('shortcuts.circle') },
+    { keys: 'A / 5', action: t('shortcuts.arrow') },
+    { keys: 'L / 6', action: t('shortcuts.line') },
+    { keys: 'P / 7', action: t('shortcuts.freehand') },
+    { keys: 'T / 8', action: t('shortcuts.text') },
+    { keys: '9', action: t('shortcuts.image') },
+    { keys: 'E / 0', action: t('shortcuts.eraser') },
+    { keys: 'F', action: t('shortcuts.frame') },
+    { keys: 'K', action: t('shortcuts.laser') },
+  ], [t])
+
+  const ACTION_SHORTCUTS = useMemo(() => [
+    { keys: 'Ctrl+A', action: t('shortcuts.selectAll') },
+    { keys: 'Ctrl+G', action: t('shortcuts.group') },
+    { keys: 'Ctrl+Shift+G', action: t('shortcuts.ungroup') },
+    { keys: 'Ctrl+D', action: t('shortcuts.duplicate') },
+    { keys: 'Ctrl+S', action: t('shortcuts.quickSave') },
+    { keys: 'Ctrl+Shift+S', action: t('shortcuts.saveShare') },
+    { keys: 'Ctrl+F', action: t('shortcuts.findOnCanvas') },
+    { keys: 'Ctrl+C', action: t('shortcuts.copy') },
+    { keys: 'Ctrl+V', action: t('shortcuts.paste') },
+    { keys: 'Ctrl+Z', action: t('shortcuts.undo') },
+    { keys: 'Ctrl+Shift+Z', action: t('shortcuts.redo') },
+    { keys: 'Esc', action: t('shortcuts.deselect') },
+    { keys: 'Del', action: t('shortcuts.delete') },
+    { keys: 'Space', action: t('shortcuts.holdToPan') },
+    { keys: 'Shift', action: t('shortcuts.straightDraw') },
+  ], [t])
+
+  const VIEW_SHORTCUTS = useMemo(() => [
+    { keys: 'Ctrl++', action: t('shortcuts.zoomIn') },
+    { keys: 'Ctrl+-', action: t('shortcuts.zoomOut') },
+    { keys: 'Ctrl+0', action: t('shortcuts.resetZoom') },
+    { keys: "Ctrl+'", action: t('shortcuts.toggleGrid') },
+    { keys: 'Ctrl+/', action: t('shortcuts.shortcutsHelp') },
+  ], [t])
 
   if (!shortcutsModalOpen) return null
 
@@ -95,7 +98,7 @@ export default function ShortcutsModal() {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-text-primary text-base font-medium">
-            Keyboard Shortcuts
+            {t('shortcuts.title')}
           </h2>
           <button
             onClick={toggleShortcutsModal}
@@ -108,12 +111,12 @@ export default function ShortcutsModal() {
         {/* Two columns */}
         <div className="grid grid-cols-2 gap-6">
           {/* Left column - Tools */}
-          <ShortcutSection title="Tools" shortcuts={TOOL_SHORTCUTS} />
+          <ShortcutSection title={t('shortcuts.tools')} shortcuts={TOOL_SHORTCUTS} />
 
           {/* Right column - Actions + View */}
           <div className="flex flex-col gap-4">
-            <ShortcutSection title="Actions" shortcuts={ACTION_SHORTCUTS} />
-            <ShortcutSection title="View" shortcuts={VIEW_SHORTCUTS} />
+            <ShortcutSection title={t('shortcuts.actions')} shortcuts={ACTION_SHORTCUTS} />
+            <ShortcutSection title={t('shortcuts.view')} shortcuts={VIEW_SHORTCUTS} />
           </div>
         </div>
       </div>

@@ -3,16 +3,17 @@
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSidebar'
 import { useState, useCallback } from 'react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 const BG_COLORS = ['transparent', '#f0f0f0', '#ffcccb', '#90ee90', '#add8e6', '#FFE4B5', '#DDA0DD', '#2d2d2d']
 
 const FILLS = [
-  { value: 'hachure', label: 'Hachure' },
-  { value: 'solid', label: 'Solid' },
-  { value: 'dots', label: 'Dots' },
-  { value: 'cross-hatch', label: 'Cross' },
-  { value: 'transparent', label: 'None' },
+  { value: 'hachure', label: 'sidebar.fill.hachure' },
+  { value: 'solid', label: 'sidebar.fill.solid' },
+  { value: 'dots', label: 'sidebar.fill.dots' },
+  { value: 'cross-hatch', label: 'sidebar.fill.cross' },
+  { value: 'transparent', label: 'sidebar.fill.none' },
 ]
 
 function ColorGrid({ colors, selected, onSelect }) {
@@ -42,6 +43,7 @@ function ColorGrid({ colors, selected, onSelect }) {
 }
 
 export default function RectangleSidebar() {
+  const { t } = useTranslation()
   const activeTool = useSketchStore((s) => s.activeTool)
   const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const [strokeColor, setStrokeColor] = useState('#fff')
@@ -65,10 +67,10 @@ export default function RectangleSidebar() {
     <ShapeSidebar visible={activeTool === TOOLS.RECTANGLE || selectedShapeSidebar === 'rectangle'}>
       {/* Stroke color */}
       <ToolbarButton
-        tooltip="Stroke color"
+        tooltip={t('sidebar.strokeColor')}
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Stroke</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.stroke')}</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
@@ -76,7 +78,7 @@ export default function RectangleSidebar() {
 
       {/* Background */}
       <ToolbarButton
-        tooltip="Fill color"
+        tooltip={t('sidebar.fillColor')}
         preview={
           <span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: bgColor === 'transparent' ? 'transparent' : bgColor }}>
             {bgColor === 'transparent' && (
@@ -85,15 +87,15 @@ export default function RectangleSidebar() {
           </span>
         }
       >
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Background</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.background')}</p>
         <ColorGrid colors={BG_COLORS} selected={bgColor} onSelect={updateBg} />
       </ToolbarButton>
 
       <Divider />
 
       {/* Thickness */}
-      <ToolbarButton icon="bxs-edit-alt" tooltip="Stroke width">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Width</p>
+      <ToolbarButton icon="bxs-edit-alt" tooltip={t('sidebar.strokeWidth')}>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.width')}</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button
@@ -113,7 +115,7 @@ export default function RectangleSidebar() {
 
       {/* Stroke style */}
       <ToolbarButton icon="bxs-minus-circle" tooltip="Stroke style">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Style</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.style')}</p>
         <div className="flex items-center gap-1">
           {[
             { v: 'solid', d: '' },
@@ -139,7 +141,7 @@ export default function RectangleSidebar() {
 
       {/* Fill pattern */}
       <ToolbarButton icon="bxs-brush" tooltip="Fill style">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Fill</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.fill')}</p>
         <div className="flex flex-col gap-0.5">
           {FILLS.map((f) => (
             <button
@@ -150,7 +152,7 @@ export default function RectangleSidebar() {
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-current" />
-              {f.label}
+              {t(f.label)}
             </button>
           ))}
         </div>

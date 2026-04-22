@@ -3,6 +3,7 @@
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSidebar'
 import { useState, useCallback, useEffect } from 'react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const TEXT_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 
@@ -22,6 +23,7 @@ const LANGUAGES = [
 ]
 
 export default function TextSidebar() {
+  const { t } = useTranslation()
   const activeTool = useSketchStore((s) => s.activeTool)
   const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const [textColor, setTextColor] = useState('#fff')
@@ -78,10 +80,10 @@ export default function TextSidebar() {
     <>
     <ShapeSidebar visible={visible}>
       {/* Color */}
-      <ToolbarButton tooltip="Text color"
+      <ToolbarButton tooltip={t('sidebar.textColor')}
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: textColor }} />}
       >
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Color</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.color')}</p>
         <div className="grid grid-cols-4 gap-1.5">
           {TEXT_COLORS.map((c) => (
             <button key={c} onClick={() => updateColor(c)}
@@ -97,8 +99,8 @@ export default function TextSidebar() {
           <Divider />
 
           {/* Font */}
-          <ToolbarButton icon="bxs-font-family" tooltip="Font">
-            <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Font</p>
+          <ToolbarButton icon="bxs-font-family" tooltip={t('sidebar.font')}>
+            <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.font')}</p>
             <div className="flex flex-col gap-0.5">
               {FONTS.map((f) => (
                 <button key={f.value} onClick={() => updateFont(f.value)}
@@ -116,8 +118,8 @@ export default function TextSidebar() {
       <Divider />
 
       {/* Size */}
-      <ToolbarButton icon="bxs-chevrons-up" tooltip="Size">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Size</p>
+      <ToolbarButton icon="bxs-chevrons-up" tooltip={t('sidebar.size')}>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.size')}</p>
         <div className="flex items-center gap-1">
           {['S', 'M', 'L', 'XL'].map((s) => (
             <button key={s} onClick={() => updateSize(s)}
@@ -130,8 +132,8 @@ export default function TextSidebar() {
       <Divider />
 
       {/* Code mode */}
-      <ToolbarButton icon="bxs-terminal" tooltip="Code mode">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Code</p>
+      <ToolbarButton icon="bxs-terminal" tooltip={t('sidebar.codeMode')}>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.code')}</p>
         <div className="flex flex-col gap-2">
           <button onClick={toggleCodeMode}
             className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${codeMode ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
@@ -139,7 +141,7 @@ export default function TextSidebar() {
             <div className={`w-6 h-3 rounded-full transition-all duration-150 relative ${codeMode ? 'bg-white/30' : 'bg-white/10'}`}>
               <div className={`absolute top-0.5 w-2 h-2 rounded-full bg-white transition-all duration-150 ${codeMode ? 'left-3.5' : 'left-0.5'}`} />
             </div>
-            {codeMode ? 'On' : 'Off'}
+            {codeMode ? t('sidebar.on') : t('sidebar.off')}
           </button>
           {codeMode && (
             <div className="flex flex-wrap gap-1 max-w-[180px]">
@@ -163,8 +165,8 @@ export default function TextSidebar() {
       }`}
     >
       <p className="text-[10px] text-white/30 leading-relaxed text-center whitespace-nowrap">
-        <span className="text-white/50">Ctrl+Enter</span> / <span className="text-white/50">Enter</span> — render text &nbsp;&nbsp;
-        <span className="text-white/50">Shift+Enter</span> — new line
+        <span className="text-white/50">Ctrl+Enter</span> / <span className="text-white/50">Enter</span> — {t('sidebar.renderText')} &nbsp;&nbsp;
+        <span className="text-white/50">Shift+Enter</span> — {t('sidebar.newLine')}
       </p>
     </div>
     </>

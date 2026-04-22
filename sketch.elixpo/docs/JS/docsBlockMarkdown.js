@@ -122,7 +122,7 @@ function handleBlockFormatting(lineEl) {
       
       // --- FIX: Make code element editable ---
       code.contentEditable = true;
-      code.setAttribute('data-placeholder', 'Enter your code here...');
+      code.setAttribute('data-placeholder', window.t ? window.t('docs.enterCodeHere') : 'Enter your code here...');
 
       copyButton.addEventListener('click', (e) => {
         e.stopPropagation();

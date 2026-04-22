@@ -4,8 +4,10 @@ import useSketchStore from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
 import ShapeSidebar, { Divider, LayerControls } from './ShapeSidebar'
 import { useCallback } from 'react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export default function ImageSidebar() {
+  const { t } = useTranslation()
   const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const toggleImageGenerateModal = useUIStore((s) => s.toggleImageGenerateModal)
 

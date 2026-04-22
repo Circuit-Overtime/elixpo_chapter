@@ -1265,14 +1265,14 @@ const handleTextMouseMove = function (e) {
 
     // Handle cursor changes for text tool
     if (isTextToolActive) {
-        const targetGroup = e.target.closest('g[data-type="text-group"]');
+        const targetGroup = e.target?.closest?.('g[data-type="text-group"]');
         if (targetGroup) {
             svg.style.cursor = 'pointer';
         } else {
             svg.style.cursor = 'crosshair';
         }
     } else if (isSelectionToolActive) {
-        const targetGroup = e.target.closest('g[data-type="text-group"]');
+        const targetGroup = e.target?.closest?.('g[data-type="text-group"]');
         if (targetGroup) {
             svg.style.cursor = 'default';
         }
