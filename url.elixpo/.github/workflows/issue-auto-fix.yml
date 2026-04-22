@@ -1,15 +1,15 @@
-# Elixpo Auto Code — handle issue work
+# Elixpo Issue Assistant — handle issue work (converse OR implement)
 # Triggers:
-#   - ELIXPO label added (from triage or manually)
+#   - ELIXPO label added (from triage or manually) — strong signal to implement
 #   - @elixpoo mentioned in a comment on an issue (NOT a PR — pr-review-request.yml owns that)
 # Whitelist: Elixpo org members (Circuit-Overtime, anwe-ch, elixpoo, ez-vivek)
 #
-# The bot reads the issue, then either:
-#   - Answers in a comment (question / discussion / LGTM), or
-#   - Commits to the existing linked PR's branch if one is open, or
-#   - Creates a new branch + PR (if no PR exists yet)
+# An @elixpoo mention does NOT automatically mean "code this". The agent's
+# default is to converse — answer questions, enrich descriptions, clarify
+# scope. It only writes code when the user explicitly asks for it OR the
+# ELIXPO label is present.
 
-name: Elixpo Auto Code
+name: Elixpo Issue Assistant
 
 on:
   issues:
@@ -241,26 +241,37 @@ jobs:
             echo "Fetch the full issue body + comments once:"
             echo "  gh issue view ${{ github.event.issue.number }} --comments"
             echo ""
-            echo "Then pick ONE of four paths. Aim to finish in under 3 minutes — pick the tool that minimises CCR roundtrips."
+            echo "**Use the TodoWrite tool at the start** to break your work into 2-4 concrete steps so progress renders as checkboxes in the tracking comment, ticking off each one as you complete it. This is how the model shows stage-by-stage progress like ccr in a terminal."
             echo ""
-            echo "1. **IMPLEMENT (small PR)** — only if the ask is small and clear: up to ~10 files, mechanical or surgical, no ambiguous design choices."
-            echo "   - Bulk find/replace / renames / theme swaps → python .github/scripts/apply_refactor.py with a JSON plan on stdin (one call, deterministic, no per-file roundtrip)."
-            echo "   - 1-3 file surgical edits → Read + Edit/MultiEdit."
-            echo "   - Branch: elixpo/issue-${{ github.event.issue.number }}-<hex>. Commit, push, open PR titled '[ELIXPO] <title>' with body ending 'Fixes #${{ github.event.issue.number }}'."
-            echo "   - Do NOT run ./biome.sh — the CI biome workflow checks the PR separately."
+            echo "An \`@elixpoo\` mention does NOT automatically mean 'code this'. Read the comment carefully and pick ONE of four paths. Aim for <3 minutes."
             echo ""
-            echo "2. **DECLINE (too big / needs judgement)** — multi-module features, architectural changes, security-sensitive logic, DB-migration-heavy work. Anything you can't confidently ship in <3 min."
-            echo "   - Post ONE 'gh issue comment ${{ github.event.issue.number }}' politely saying the scope needs manual implementation, with a 1-2 sentence reason. Stop."
+            echo "1. **CONVERSE (default)** — most @elixpoo mentions land here. Pick a sub-mode:"
             echo ""
-            echo "3. **CONVERSE** — the ask is a question, discussion, clarification, or a request to improve the issue itself."
-            echo "   - For a question / LGTM / explanation → post ONE 'gh issue comment ${{ github.event.issue.number }}' with a helpful reply."
-            echo "   - To improve the ISSUE DESCRIPTION (the reporter asks you to rewrite, tighten, or enrich it) → use 'gh issue edit ${{ github.event.issue.number }} --body \"<new body>\"'. Preserve anything the reporter explicitly wrote; do NOT tag the reporter inside the body. End the body with: '### Questions from @elixpoo' (only if any), then tag '@elixpoo' (not the reporter) and say 'answering these will make the description richer, or label the issue with ELIXPO to let elixpoo solve it.'"
-            echo "   - To add supplementary information → post ONE 'gh issue comment' with the extra info."
-            echo "   - After the single action, STOP."
+            echo "   a. **Improve / enrich the issue description** — triggered by phrases like 'make the description richer', 'improve the description', 'enrich this', 'rewrite this'. Use \`gh issue edit ${{ github.event.issue.number }} --body \"<new body>\"\`. Drawing on the cold repo context above:"
+            echo "      - Identify which EXISTING files the work would likely touch; reference them by path."
+            echo "      - Identify whether NEW files should exist (e.g., \`src/lib/i18n.ts\`, \`src/locales/en.json\`) and list them with a one-line purpose each."
+            echo "      - Break the work into concrete tasks."
+            echo "      - Preserve anything the reporter explicitly wrote (quote them verbatim at the top as the original ask)."
+            echo "      - Do NOT @-tag the reporter in the body — this is a description, not a message."
+            echo "      - Body shape: \`## Original request\` (blockquoted reporter text) → \`## Problem Statement\` → \`## Suggested Tasks\` → \`## Files likely affected\` (existing + new) → \`## Checklist\` → \`---\` → \`### Questions from @elixpoo\` (only if any). Footer line: 'Answering these will make the description richer — tag @elixpoo to refine again, or label the issue with ELIXPO to have me implement it.'"
             echo ""
-            echo "4. **CLARIFY (ambiguous ask)** — you cannot tell what the user wants."
-            echo "   - Post ONE 'gh issue comment' with the specific questions needed to proceed. Stop."
+            echo "   b. **Answer a question / explain / LGTM** — post ONE \`gh issue comment ${{ github.event.issue.number }}\` with a bullet-point reply. Link specific files. Stop."
             echo ""
+            echo "   c. **Add supplementary info** — post ONE \`gh issue comment\` with the extra info. Stop."
+            echo ""
+            echo "2. **IMPLEMENT (code + PR)** — ONLY when the user has explicitly asked to implement (trigger phrases: 'implement this', 'fix this', 'write the code', 'ship it', 'please code', 'do it') OR the ELIXPO label is already on the issue. AND the scope fits ~10 files / mechanical or surgical change."
+            echo "   - Bulk find/replace / renames → python .github/scripts/apply_refactor.py with a JSON plan on stdin (one deterministic call)."
+            echo "   - 1-3 file surgical edits → Read + Edit / MultiEdit."
+            echo "   - Branch: \`elixpo/issue-${{ github.event.issue.number }}-<hex>\`. Commit, push, open PR titled \`[ELIXPO] <title>\` with body ending \`Fixes #${{ github.event.issue.number }}\`."
+            echo "   - Do NOT run ./biome.sh — CI biome workflow checks the PR separately."
+            echo ""
+            echo "3. **DECLINE** — ONLY when implementation was explicitly requested (or ELIXPO is labelled) but the scope is too big: multi-module features, architectural/design decisions, security-sensitive logic, DB-migration-heavy work. Do NOT decline when the user only asked to enrich the description — that's always path 1a."
+            echo "   - Post ONE \`gh issue comment\` politely saying the scope needs manual implementation, with a 1-2 sentence reason and a suggestion on how to split it. Stop."
+            echo ""
+            echo "4. **CLARIFY** — you genuinely can't tell what the user wants."
+            echo "   - Post ONE \`gh issue comment\` with specific questions. Stop."
+            echo ""
+            echo "Default to CONVERSE when unsure — enriching the description is always safer than shipping code the user didn't ask for."
             echo "Never commit to main. Never fabricate test results. The repo context above is cold but current — prefer it over re-exploring the tree."
             echo 'PROMPT_EOF'
           } >> "$GITHUB_OUTPUT"
