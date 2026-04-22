@@ -2,6 +2,7 @@
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const iconResultCache = new Map()
 
@@ -66,6 +67,7 @@ function IconCell({ icon, onClick }) {
 }
 
 export default function IconSidebar() {
+  const { t } = useTranslation()
   const activeTool = useSketchStore((s) => s.activeTool)
   const setActiveTool = useSketchStore((s) => s.setActiveTool)
   const visible = activeTool === TOOLS.ICON

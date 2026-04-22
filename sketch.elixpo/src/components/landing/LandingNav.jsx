@@ -34,10 +34,63 @@ const resourceLinks = [
   { href: '/docs', label: 'Docs', icon: 'bx bx-book-open' },
 ]
 
+// Compact star-count formatter: 999 → "999", 1200 → "1.2k", 12345 → "12.3k".
+function formatStars(n) {
+  if (typeof n !== 'number' || n < 0) return null
+  if (n < 1000) return String(n)
+  const k = n / 1000
+  return `${k.toFixed(k < 10 ? 1 : 0).replace(/\.0$/, '')}k`
+}
+
+const GH_REPO = 'elixpo/lixsketch'
+const STARS_CACHE_KEY = `gh-stars:${GH_REPO}`
+const STARS_TTL_MS = 10 * 60 * 1000 // 10 minutes — unauth GitHub API is 60 req/hr
+
+function useGitHubStars(repo) {
+  const [stars, setStars] = useState(null)
+  useEffect(() => {
+    // Serve from localStorage cache if fresh.
+    try {
+      const cached = localStorage.getItem(STARS_CACHE_KEY)
+      if (cached) {
+        const { count, at } = JSON.parse(cached)
+        if (Date.now() - at < STARS_TTL_MS && typeof count === 'number') {
+          setStars(count)
+          return
+        }
+      }
+    } catch {
+      // localStorage unavailable (SSR, private mode) — fall through to fetch.
+    }
+
+    let cancelled = false
+    fetch(`https://api.github.com/repos/${repo}`, { headers: { Accept: 'application/vnd.github+json' } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data || typeof data.stargazers_count !== 'number') return
+        setStars(data.stargazers_count)
+        try {
+          localStorage.setItem(STARS_CACHE_KEY, JSON.stringify({ count: data.stargazers_count, at: Date.now() }))
+        } catch {
+          // Storage quota / private mode — ignore; memory state still updates.
+        }
+      })
+      .catch(() => {
+        // Network / rate limit — silently leave stars=null; pill renders without the count.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [repo])
+  return stars
+}
+
 export default function LandingNav() {
   const [resourcesOpen, setResourcesOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const stars = useGitHubStars(GH_REPO)
+  const starsLabel = formatStars(stars)
 
   useEffect(() => {
     function handleClick(e) {
@@ -123,13 +176,16 @@ export default function LandingNav() {
         {/* Right side */}
         <div className="flex items-center gap-3">
           <a
-            href="https://github.com/elixpo/lixsketch"
+            href={`https://github.com/${GH_REPO}`}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={starsLabel ? `GitHub · ${starsLabel} stars` : 'GitHub'}
+            title={starsLabel ? `${stars.toLocaleString()} stars on GitHub` : 'GitHub'}
             className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-muted hover:text-text-primary border border-border-light hover:border-white/20 rounded-lg transition-all duration-200"
           >
             <i className="bx bxl-github text-lg" />
             <i className="bx bx-star text-sm" />
+            {starsLabel && <span className="tabular-nums text-xs font-medium">{starsLabel}</span>}
             <span className="hidden lg:inline">GitHub</span>
           </a>
 

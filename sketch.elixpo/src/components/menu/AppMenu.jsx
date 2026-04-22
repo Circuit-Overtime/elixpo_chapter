@@ -5,33 +5,36 @@ import useUIStore from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
 import useAuthStore from '@/store/useAuthStore'
 import { triggerCloudSync } from '@/hooks/useAutoSave'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const CANVAS_BACKGROUNDS = [
-  { color: '#000', label: 'Black' },
-  { color: '#161718', label: 'Dark Gray' },
-  { color: '#13171C', label: 'Blue Black' },
-  { color: '#181605', label: 'Dark Yellow' },
-  { color: '#1B1615', label: 'Dark Brown' },
-]
-
-const LINKS = [
-  { label: 'Documentation', icon: 'bx-book-open', href: '/docs' },
-  { label: 'GitHub', icon: 'bxl-github', href: 'https://github.com/elixpo/lixsketch' },
-  { label: 'Report An Issue', icon: 'bx-bug', href: 'https://github.com/elixpo/lixsketch/issues' },
-]
-
-const PREFERENCE_ITEMS = [
-  { label: 'Tool lock', shortcut: 'Q', id: 'toolLock' },
-  { label: 'Snap to objects', shortcut: 'Alt+S', id: 'snapObjects' },
-  { label: 'Toggle grid', shortcut: "Ctrl+'", id: 'toggleGrid' },
-  { label: 'Zen mode', shortcut: 'Alt+Z', id: 'zenMode' },
-  { label: 'View mode', shortcut: 'Alt+R', id: 'viewMode' },
-  { label: 'Canvas & Shape properties', shortcut: 'Alt+/', id: 'properties' },
-  { label: 'Arrow binding', id: 'arrowBinding', toggle: true },
-  { label: 'Snap to midpoints', id: 'snapMidpoints', toggle: true },
+  { color: '#000', label: 'menu.canvasBg.black' },
+  { color: '#161718', label: 'menu.canvasBg.darkGray' },
+  { color: '#13171C', label: 'menu.canvasBg.blueBlack' },
+  { color: '#181605', label: 'menu.canvasBg.darkYellow' },
+  { color: '#1B1615', label: 'menu.canvasBg.darkBrown' },
 ]
 
 export default function AppMenu() {
+  const { t, language } = useTranslation()
+
+  const LINKS = [
+    { label: t('links.documentation'), icon: 'bx-book-open', href: '/docs' },
+    { label: t('links.github'), icon: 'bxl-github', href: 'https://github.com/elixpo/lixsketch' },
+    { label: t('links.reportIssue'), icon: 'bx-bug', href: 'https://github.com/elixpo/lixsketch/issues' },
+  ]
+
+  const PREFERENCE_ITEMS = [
+    { label: t('prefs.toolLock'), shortcut: 'Q', id: 'toolLock' },
+    { label: t('prefs.snapObjects'), shortcut: 'Alt+S', id: 'snapObjects' },
+    { label: t('prefs.toggleGrid'), shortcut: "Ctrl+'", id: 'toggleGrid' },
+    { label: t('prefs.zenMode'), shortcut: 'Alt+Z', id: 'zenMode' },
+    { label: t('prefs.viewMode'), shortcut: 'Alt+R', id: 'viewMode' },
+    { label: t('prefs.canvasShapeProps'), shortcut: 'Alt+/', id: 'properties' },
+    { label: t('prefs.arrowBinding'), id: 'arrowBinding', toggle: true },
+    { label: t('prefs.snapMidpoints'), id: 'snapMidpoints', toggle: true },
+  ]
+
   const menuOpen = useUIStore((s) => s.menuOpen)
   const closeMenu = useUIStore((s) => s.closeMenu)
   const toggleSaveModal = useUIStore((s) => s.toggleSaveModal)
@@ -40,6 +43,7 @@ export default function AppMenu() {
   const toggleExportImageModal = useUIStore((s) => s.toggleExportImageModal)
   const theme = useUIStore((s) => s.theme)
   const setTheme = useUIStore((s) => s.setTheme)
+  const persistUIPrefs = useUIStore((s) => s.persistUIPrefs)
   const canvasBackground = useSketchStore((s) => s.canvasBackground)
   const setCanvasBackground = useSketchStore((s) => s.setCanvasBackground)
   const clearShapes = useSketchStore((s) => s.clearShapes)
@@ -100,7 +104,7 @@ export default function AppMenu() {
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-folder-open text-sm" />
-            Open
+            {t('menu.open')}
           </span>
           <span className="text-text-dim text-xs">Ctrl+O</span>
         </button>
@@ -124,7 +128,7 @@ export default function AppMenu() {
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-check-circle text-sm" />
-            Quick Save
+            {t('menu.quickSave')}
           </span>
           <span className="text-text-dim text-xs">Ctrl+S</span>
         </button>
@@ -136,7 +140,7 @@ export default function AppMenu() {
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-save text-sm" />
-            Save &amp; Share
+            {t('menu.saveShare')}
           </span>
           <span className="text-text-dim text-xs">Ctrl+Shift+S</span>
         </button>
@@ -148,7 +152,7 @@ export default function AppMenu() {
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-image text-sm" />
-            Export Image
+            {t('menu.exportImage')}
           </span>
           <span className="text-text-dim text-xs">Ctrl+Shift+E</span>
         </button>
@@ -162,7 +166,7 @@ export default function AppMenu() {
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-command text-sm" />
-            Commands
+            {t('menu.commands')}
           </span>
           <span className="text-text-dim text-xs">Ctrl+/</span>
         </button>
@@ -174,7 +178,7 @@ export default function AppMenu() {
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-search text-sm" />
-            Find Text
+            {t('menu.findText')}
           </span>
           <span className="text-text-dim text-xs">Ctrl+F</span>
         </button>
@@ -186,7 +190,7 @@ export default function AppMenu() {
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-info-circle text-sm" />
-            Canvas Properties
+            {t('menu.canvasProperties')}
           </span>
         </button>
 
@@ -197,7 +201,7 @@ export default function AppMenu() {
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-help-circle text-sm" />
-            Help
+            {t('menu.help')}
           </span>
         </button>
 
@@ -210,13 +214,29 @@ export default function AppMenu() {
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-cog text-sm" />
-            Preferences
+            {t('menu.preferences')}
           </span>
           <i className={`bx bx-chevron-down text-sm text-text-dim transition-transform duration-150 ${prefsOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {prefsOpen && (
           <div className="ml-2 border-l border-border-light pl-1">
+            {/* Language Switcher */}
+            <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] transition-all duration-200">
+              <span className="flex items-center gap-2">
+                {t('prefs.language')}
+              </span>
+              <select 
+                className="bg-surface-hover text-text-primary text-[10px] rounded px-1 outline-none border border-border-light"
+                value={language}
+                onChange={(e) => persistUIPrefs({ language: e.target.value })}
+              >
+                <option value="en">English</option>
+                <option value="bg">Български</option>
+                <option value="de">Deutsch</option>
+              </select>
+            </div>
+            
             {PREFERENCE_ITEMS.map((item) => {
               const isActive =
                 (item.id === 'toolLock' && toolLock) ||
@@ -262,7 +282,7 @@ export default function AppMenu() {
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-grid-alt text-sm" />
-            Show Grid
+            {t('menu.showGrid')}
           </span>
           <div className={`w-7 h-4 rounded-full transition-all duration-150 relative ${gridEnabled ? 'bg-accent-blue' : 'bg-white/10'}`}>
             <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all duration-150 ${gridEnabled ? 'left-3.5' : 'left-0.5'}`} />
@@ -280,7 +300,7 @@ export default function AppMenu() {
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-reset text-sm" />
-            Reset Canvas
+            {t('menu.resetCanvas')}
           </span>
         </button>
 
@@ -322,7 +342,7 @@ export default function AppMenu() {
             >
               <span className="flex items-center gap-2">
                 <i className="bx bx-log-out text-sm" />
-                Sign Out
+                {t('menu.signOut')}
               </span>
             </button>
           </>
@@ -333,7 +353,7 @@ export default function AppMenu() {
           >
             <span className="flex items-center gap-2">
               <i className="bx bx-log-in text-sm" />
-              Sign In
+              {t('menu.signIn')}
             </span>
             <span className="text-text-dim text-[10px] px-1.5 py-0.5 rounded bg-accent-blue/15 text-accent-blue">Elixpo</span>
           </button>
@@ -344,7 +364,7 @@ export default function AppMenu() {
         {/* Theme toggle */}
         <div className="px-3 py-2">
           <p className="text-text-dim text-xs uppercase tracking-wider mb-2">
-            Theme
+            {t('menu.theme')}
           </p>
           <div className="flex items-center gap-1">
             {[
@@ -370,14 +390,14 @@ export default function AppMenu() {
         {/* Canvas background */}
         <div className="px-3 py-2">
           <p className="text-text-dim text-xs uppercase tracking-wider mb-2">
-            Canvas Background
+            {t('menu.canvasBackground')}
           </p>
           <div className="flex items-center gap-1.5">
             {CANVAS_BACKGROUNDS.map((bg) => (
               <button
                 key={bg.color}
                 onClick={() => setCanvasBackground(bg.color)}
-                title={bg.label}
+                title={t(bg.label)}
                 className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-all duration-200 ${
                   canvasBackground === bg.color
                     ? 'border-accent scale-110'

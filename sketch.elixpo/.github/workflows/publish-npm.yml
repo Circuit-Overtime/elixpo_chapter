@@ -1,0 +1,40 @@
+name: Publish @elixpo/lixsketch to NPM
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/lixsketch/**'
+
+jobs:
+  publish:
+    name: Publish to NPM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check version is not already published
+        working-directory: packages/lixsketch
+        run: |
+          LOCAL=$(node -p "require('./package.json').version")
+          REMOTE=$(npm view @elixpo/lixsketch version 2>/dev/null || echo "0.0.0")
+          echo "Local version: $LOCAL"
+          echo "Published version: $REMOTE"
+          if [ "$LOCAL" = "$REMOTE" ]; then
+            echo "Version $LOCAL already published. Bump the version first."
+            exit 1
+          fi
+
+      - name: Publish to NPM
+        run: npm publish -w packages/lixsketch --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_LIXSKETCH_PUBLISH_TOKEN }}

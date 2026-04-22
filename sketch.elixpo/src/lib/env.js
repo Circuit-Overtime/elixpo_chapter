@@ -6,7 +6,7 @@
 const PROD_ORIGIN = 'https://sketch.elixpo.com'
 const PROD_COLLAB = 'wss://sketch.elixpo.com'
 
-function isLocalhost() {
+export function isLocalhost() {
   if (typeof window === 'undefined') {
     // Server-side: check NODE_ENV
     return process.env.NODE_ENV !== 'production'

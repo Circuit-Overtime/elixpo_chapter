@@ -24,7 +24,7 @@ languages = [
 ];
 
 document.getElementById("languageSelection").innerHTML = languages.map(lang => `
-    <div class="language" data-language="${lang.value}">${lang.name}</div>
+    <div class="language" data-language="${lang.value}" ${lang.value === 'auto' ? 'data-i18n="docs.autoDetect"' : ''}>${lang.name}</div>
 `).join("");
 
 // Add event listeners for language selection

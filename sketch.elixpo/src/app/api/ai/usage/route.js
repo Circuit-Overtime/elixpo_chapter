@@ -19,6 +19,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing userId or guestId' }, { status: 400 })
     }
 
+    if (!DB) {
+      console.warn('[api/ai/usage] D1 binding missing. Skipping DB insert and assuming local dev quota.')
+      return NextResponse.json({
+        used: 1,
+        limit: 10,
+        remaining: 9,
+      })
+    }
+
     let tier = 'guest'
     if (body.userId) {
       const user = await DB.prepare(

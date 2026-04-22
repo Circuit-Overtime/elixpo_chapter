@@ -12,7 +12,7 @@
  * only people with the link (which includes the key) can read it.
  */
 
-const isLocalhost = () => typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+import { isLocalhost } from '@/lib/env';
 
 /**
  * Generate a new AES-GCM 256-bit encryption key.
@@ -85,6 +85,11 @@ export async function encrypt(plaintext, keyBase64url) {
  */
 export async function decrypt(ciphertextBase64url, keyBase64url) {
   if (typeof crypto === 'undefined' || !crypto.subtle) {
+    if (!isLocalhost()) {
+      console.error("SECURITY WARNING: Web Crypto API not available in this context. Decryption is bypassed. This should only happen in local dev!");
+    } else {
+      console.warn("Web Crypto API not available. Skipping decryption for local dev.");
+    }
     const combined = base64urlToBuf(ciphertextBase64url)
     const ciphertext = combined.slice(12)
     return new TextDecoder().decode(ciphertext)

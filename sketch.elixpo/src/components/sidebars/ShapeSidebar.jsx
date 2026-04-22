@@ -83,7 +83,10 @@ export default function ShapeSidebar({ visible, children }) {
 /**
  * Layer ordering controls - add to any shape sidebar
  */
+import { useTranslation } from '@/hooks/useTranslation'
+
 function LayerControls() {
+  const { t } = useTranslation()
   const doLayer = (method) => {
     const shape = window.currentShape
     if (!shape || !window.__layerOrder) return
@@ -94,28 +97,28 @@ function LayerControls() {
     <div className="flex items-center gap-0.5">
       <button
         onClick={() => doLayer('sendToBack')}
-        title="Send to back"
+        title={t('sidebar.sendToBack', { defaultValue: 'Send to back' })}
         className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
       >
         <i className="bx bx-chevrons-down text-base" />
       </button>
       <button
         onClick={() => doLayer('sendBackward')}
-        title="Send backward"
+        title={t('sidebar.sendBackward')}
         className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
       >
         <i className="bx bx-chevron-down text-base" />
       </button>
       <button
         onClick={() => doLayer('bringForward')}
-        title="Bring forward"
+        title={t('sidebar.bringForward')}
         className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
       >
         <i className="bx bx-chevron-up text-base" />
       </button>
       <button
         onClick={() => doLayer('bringToFront')}
-        title="Bring to front"
+        title={t('sidebar.bringToFront', { defaultValue: 'Bring to front' })}
         className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
       >
         <i className="bx bx-chevrons-up text-base" />

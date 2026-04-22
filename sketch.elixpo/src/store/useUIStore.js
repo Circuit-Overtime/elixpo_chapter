@@ -192,6 +192,29 @@ const useUIStore = create((set, get) => ({
     applyTheme(newTheme)
     set({ theme: newTheme })
   },
+
+  // --- Language / i18n ---
+  language: 'en',
+  setLanguage: (lang) => {
+    set({ language: lang })
+  },
+  persistUIPrefs: (prefs) => {
+    if (typeof window !== 'undefined') {
+      const existing = localStorage.getItem('lix_ui_prefs')
+      let parsed = {}
+      try {
+        if (existing) parsed = JSON.parse(existing)
+      } catch (e) {}
+      
+      const updated = { ...parsed, ...prefs }
+      localStorage.setItem('lix_ui_prefs', JSON.stringify(updated))
+      
+      if (prefs.language) {
+        set({ language: prefs.language })
+        window.dispatchEvent(new CustomEvent('lix-language-changed', { detail: { language: prefs.language } }))
+      }
+    }
+  }
 }))
 
 export default useUIStore

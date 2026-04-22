@@ -40,8 +40,8 @@ export default function SVGCanvas() {
       }
     }
 
-    svg.addEventListener('mousedown', handleCanvasClick)
-    return () => svg.removeEventListener('mousedown', handleCanvasClick)
+    svg.addEventListener('pointerdown', handleCanvasClick)
+    return () => svg.removeEventListener('pointerdown', handleCanvasClick)
   }, [svgReady])
 
   // Initialize the imperative sketch engine on this SVG element
