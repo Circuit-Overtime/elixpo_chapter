@@ -71,7 +71,7 @@ LEAKED_XML_TAG_RE = re.compile(
     re.IGNORECASE,
 )
 
-LLM_MODEL = os.getenv("LLM_MODEL", "glm")
+LLM_MODEL = os.getenv("LLM_MODEL", "kimi")
 LLM_MODEL_FALLBACK = os.getenv("LLM_MODEL_FALLBACK", "gemini-fast")
 IMAGE_MODEL1 = os.getenv("IMAGE_MODEL1", "gptimage")
 IMAGE_MODEL2 = os.getenv("IMAGE_MODEL2", "qwen-image")

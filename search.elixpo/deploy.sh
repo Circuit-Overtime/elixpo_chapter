@@ -162,6 +162,32 @@ show_logs() {
     esac
 }
 
+check_compose_health() {
+    local service="$1"
+    local label="$2"
+    local cid
+    cid=$(docker compose -f "$COMPOSE_FILE" ps -q "$service" 2>/dev/null)
+    if [ -z "$cid" ]; then
+        error "$label: NOT RUNNING"
+        return
+    fi
+    local status
+    status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$cid" 2>/dev/null)
+    case "$status" in
+        healthy)   success "$label: HEALTHY" ;;
+        starting)  warning "$label: STARTING" ;;
+        unhealthy) error   "$label: UNHEALTHY" ;;
+        no-healthcheck)
+            if [ "$(docker inspect --format '{{.State.Running}}' "$cid" 2>/dev/null)" = "true" ]; then
+                success "$label: RUNNING (no healthcheck)"
+            else
+                error "$label: STOPPED"
+            fi
+            ;;
+        *) error "$label: UNKNOWN ($status)" ;;
+    esac
+}
+
 check_health() {
     check_docker
     echo ""
@@ -177,17 +203,8 @@ check_health() {
         error "Nginx & API: UNREACHABLE"
     fi
 
-    if docker compose -f "$COMPOSE_FILE" exec redis redis-cli ping > /dev/null 2>&1; then
-        success "Redis: HEALTHY"
-    else
-        error "Redis: UNREACHABLE"
-    fi
-
-    if docker compose -f "$COMPOSE_FILE" exec chroma-server curl -s http://localhost:8000/api/version > /dev/null 2>&1; then
-        success "Chroma: HEALTHY"
-    else
-        error "Chroma: UNREACHABLE"
-    fi
+    check_compose_health redis "Redis"
+    check_compose_health chroma-server "Chroma"
 
     echo ""
 }

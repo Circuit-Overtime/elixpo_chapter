@@ -1,125 +1,97 @@
-# Security Policy
+## 📢 Security Policy for search.elixpo
 
-## Reporting a Vulnerability
-
-**Do not open public GitHub issues for security vulnerabilities.**
-
-Email **security@elixpo.ai** with:
-
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Affected component (backend, frontend, cache library, Docker image)
-
-We will acknowledge receipt within 24 hours and provide updates every 48 hours.
-
-## Supported Versions
-
-| Package | Version | Supported |
-|---------|---------|-----------|
-| lixSearch (backend) | 2.x | Active |
-| lix-open-cache (PyPI) | 2.x | Active |
-| lix-open-search (PyPI) | 2.x | Deprecated — removed from PyPI |
-| LixSearch (Docker) | latest | Active |
-
-Always run the latest version for security patches.
-
-## Architecture Security
-
-### Network Isolation
-
-All internal services communicate over a private Docker network. No internal ports are published to the host.
-
-| Service | Port | Exposed to host? |
-|---------|------|-----------------|
-| nginx | 80, 443, 10001 | Yes (only entry point) |
-| App workers | 9002 | No |
-| IPC service | 9510 | No |
-| ChromaDB | 9001 | No |
-| Redis | 9530 | No |
-
-### Authentication
-
-- **nginx (port 10001)**: API key required via `X-API-Key` header or `?key=` query param
-- **nginx (port 80)**: Internal/dev access, no API key
-- **App-level**: `INTERNAL_API_KEY` env var for service-to-service calls
-- **IPC service**: Shared authkey (`IPC_AUTHKEY` env var)
-- **Redis**: Password-protected (`REDIS_PASSWORD` env var)
-
-### Rate Limiting
-
-nginx enforces per-IP rate limits:
-
-| Endpoint | Limit |
-|----------|-------|
-| `/api/search`, `/v1/*` | 50 req/s, burst 10 |
-| `/api/chat` | 30 req/s, burst 5 |
-| `/api/session*` | 100 req/s, burst 20 |
-| General | 100 req/s |
-
-### Data Storage
-
-- **Redis**: In-memory with AOF persistence. Stores session data (30-min hot window), semantic cache (5-min TTL), URL embeddings (24h TTL)
-- **Disk archives**: Huffman-compressed `.huff` files with 30-day TTL, auto-cleaned on startup
-- **ChromaDB**: Vector embeddings stored on persistent volume
-
-No user credentials or PII are stored by the search engine itself.
-
-## Deployment Checklist
-
-- [ ] Change all default passwords in `.env` (`REDIS_PASSWORD`, `IPC_AUTHKEY`, `API_KEY`)
-- [ ] Use TLS via reverse proxy (nginx, Cloudflare) for all external traffic
-- [ ] Restrict firewall to only expose nginx ports (80, 443, 10001)
-- [ ] Set Docker resource limits (CPU, memory) on app containers
-- [ ] Enable access logging and monitor for anomalies
-- [ ] Run `pip-audit` periodically against `requirements.txt`
-- [ ] Keep base images updated (`python:3.11-slim`, `redis:7-alpine`, `chromadb/chroma`)
-- [ ] Never commit `.env` files or credentials to version control
-
-## Hidden File Protection
-
-nginx blocks access to dotfiles (`.git`, `.env`, `.htaccess`, etc.):
-
-```nginx
-location ~ /\. {
-    deny all;
-    access_log off;
-    log_not_found off;
-    return 404;
-}
-```
-
-## Vulnerability Disclosure Timeline
-
-| Day | Action |
-|-----|--------|
-| 0 | Report received and acknowledged |
-| 1-2 | Investigation and verification |
-| 3-7 | Fix development |
-| 7-14 | Patch released |
-| 14-21 | Advisory published |
-
-## Scope
-
-**In scope:**
-- Authentication and authorization bypasses
-- Injection vulnerabilities (SQL, command, SSRF)
-- Unauthorized data access or leakage
-- Code execution flaws
-- Denial of service via application logic
-- Cryptographic weaknesses
-
-**Out of scope:**
-- Social engineering
-- Third-party dependency vulnerabilities (report upstream)
-- User configuration errors
-- Physical or infrastructure-level attacks
-
-## Contact
-
-- Security issues: security@elixpo.ai
-- General issues: [GitHub Issues](https://github.com/pollinations/lixSearch/issues)
+Hi there! Thanks for caring about the safety and stability of search.elixpo — the intelligent search service that powers [search.elixpo.com](https://search.elixpo.com). We really appreciate folks who help us keep the platform trustworthy for everyone who searches, browses, and builds on top of it.
 
 ---
 
-**Last reviewed**: March 2026
+## 🛡️ Reporting Security Vulnerabilities
+
+If you've found a security issue in our code, APIs, or infrastructure, please help us protect the community:
+
+1. **Reach out privately.**
+   Please **don't** open a public GitHub issue, discussion, or PR describing the vulnerability. Instead:
+   - Email us at [ayushman@myceli.ai](mailto:ayushman@myceli.ai)
+   - Use GitHub's [private vulnerability reporting](https://github.com/pollinations/search.elixpo/security/advisories/new) on the repo
+
+2. **What to include.**
+   The more detail, the faster we can fix it:
+   - A clear description of what you found
+   - Steps to reproduce or a proof-of-concept (curl command, short script, screenshots)
+   - The affected component (backend pipeline, nginx gateway, frontend, IPC service, Redis/Chroma, etc.)
+   - Why it matters and what an attacker could do
+   - Any ideas for mitigation — always welcome
+
+3. **How we respond.**
+   We aim to acknowledge reports within **72 hours** and keep you updated as we triage and patch. Once the fix ships, we'll publish an advisory and — with your consent — credit you for the find.
+
+4. **Recognition.**
+   Security-minded contributors keep search.elixpo strong. If you'd like credit, we'll name you in the advisory and release notes; if you'd rather stay anonymous, just say so.
+
+---
+
+## 📋 Scope of This Policy
+
+This policy covers the [`pollinations/search.elixpo`](https://github.com/pollinations/search.elixpo) repository, including:
+
+- The search.elixpo backend (Quart API, pipeline, tool execution, RAG service)
+- The IPC embedding + search-agent service and its Playwright browsers
+- The nginx gateway and its authenticated/unauthenticated routes on port 10001
+- Shared infrastructure used by the service: Redis (semantic cache + session store), Chroma (vector DB), and on-disk conversation archives
+- The `search.elixpo` Cloudflare Pages frontend and its edge routes
+- Deployment scripts, Docker Compose configuration, and CI in this repo
+
+_If you find something in a third-party dependency, please report it to that project's maintainers unless the issue arises specifically from our integration._
+
+---
+
+## 🏷️ What Counts as a Vulnerability?
+
+We'd especially like to hear about:
+
+- Remote code execution, privilege escalation, or command injection in any service
+- Authentication or authorization bypasses — including nginx API-key checks, internal service-to-service auth, and SSO (Elixpo Accounts) flows
+- Cross-session or cross-user data leaks — conversation history, bookmarks, cached embeddings, or user profile data surfacing in the wrong session
+- Prompt injection or tool-call abuse that causes the pipeline to fetch unauthorized resources, exfiltrate server state, or produce privileged output
+- Leaks of sensitive data in logs, error messages, SSE streams, or API responses (tokens, internal URLs, raw prompts, HF/Pollinations credentials)
+- Abuse of search / image / chat endpoints that bypasses guest rate limits, burns API credits, or enables denial of service
+- SSRF or open-proxy behavior in the `fetch_full_text`, `web_search`, or `surf` tools
+- Misconfigurations: debug endpoints left open, secrets in the built image, unauthenticated admin routes, permissive CORS/CSP
+- Supply-chain attacks via dependencies, Docker base images, or GitHub Actions
+
+---
+
+## ⛔ What's Not in Scope
+
+While we appreciate the feedback, these are **not** considered security vulnerabilities:
+
+- Self-XSS (attacks that require you to paste hostile input into your own browser)
+- Volumetric denial of service that only works by exceeding documented rate limits, without a new exploit
+- Bugs in unrelated projects vendored for reference
+- Social engineering targeting our team or community
+- Feature requests or disagreements with how the LLM responds to a prompt
+- Missing security headers on routes that don't serve sensitive content
+- Reports generated by automated scanners without a working proof-of-concept
+
+---
+
+## 📣 A Note on Conduct
+
+search.elixpo is built on open collaboration and mutual respect. Please be kind when you report issues, and please don't test against production in ways that could affect other users (large-scale fuzzing, account takeover attempts on real accounts, etc.). If you're unsure whether a test is safe, ask us first.
+
+For general questions, open a GitHub Discussion — but **never** share sensitive security details in public spaces.
+
+---
+
+## 🙏 Thanks
+
+Every report, every patch, every heads-up makes search.elixpo safer for everyone who uses it. Thank you for taking the time.
+
+— the search.elixpo maintainers
+
+---
+
+**For urgent or sensitive issues:** always use private contact ([ayushman@myceli.ai](mailto:ayushman@myceli.ai) or GitHub's private vulnerability reporting). Public posts may be missed.
+
+---
+
+_(Last updated: 2026-04-24)_
