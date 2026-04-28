@@ -7,7 +7,7 @@
     "build": "next build",
     "pages:build": "npx @cloudflare/next-on-pages",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "./biome.sh check",
     "db:create": "wrangler d1 create elixpo_auth",
     "db:list": "wrangler d1 list",
     "db:info": "wrangler d1 info elixpo_auth",
@@ -44,8 +44,6 @@
     "@types/nodemailer": "^6.4.14",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^10.0.1",
-    "eslint-config-next": "^0.2.4",
     "tailwindcss": "^4",
     "typescript": "^5",
     "wrangler": "^4.67.0"

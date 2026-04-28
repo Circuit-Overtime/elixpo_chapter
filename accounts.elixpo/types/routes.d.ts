@@ -22,11 +22,11 @@ interface LayoutSlotMap {
 
 export type {
     AppRoutes,
-    PageRoutes,
     LayoutRoutes,
+    PageRoutes,
+    ParamMap,
     RedirectRoutes,
     RewriteRoutes,
-    ParamMap,
 };
 
 declare global {
