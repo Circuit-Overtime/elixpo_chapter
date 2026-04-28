@@ -2,7 +2,9 @@
 
 import { marked } from "marked";
 import { useMemo, useState, useEffect, memo } from "react";
+import { toast } from "sonner";
 import TaskGroup from "./TaskBlock";
+import { BookmarkButton } from "./BookmarkButton";
 import type { DisplayMessage } from "@/lib/chat/use-chat";
 
 marked.setOptions({ breaks: true, gfm: true });
@@ -79,6 +81,8 @@ function renderMarkdown(text: string): string {
 interface MessageBubbleProps {
   message: DisplayMessage;
   onRetry?: () => void;
+  isBookmarked?: boolean;
+  onToggleBookmark?: () => void;
 }
 
 interface SourceMeta {
@@ -89,14 +93,13 @@ interface SourceMeta {
   loading: boolean;
 }
 
-const MessageBubble = memo(function MessageBubble({ message, onRetry }: MessageBubbleProps) {
+const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmarked = false, onToggleBookmark }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const { sources, images: relatedImages, cleanText } = useMemo(() => {
     if (isUser) return { sources: [], images: [], cleanText: message.content };
     return extractContent(message.content);
   }, [message.content, isUser]);
   const html = useMemo(() => (isUser ? null : renderMarkdown(cleanText)), [cleanText, isUser]);
-  const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"like" | "dislike" | null>(null);
   const [metas, setMetas] = useState<SourceMeta[]>([]);
 
@@ -134,10 +137,19 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry }: MessageB
     });
   }, [isUser, message.isStreaming, sources]);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(message.content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      toast.success("Copied to clipboard", {
+        duration: 2000,
+        description: "Response text copied successfully",
+      });
+    } catch (error) {
+      toast.error("Failed to copy", {
+        duration: 2000,
+        description: "Could not copy response text",
+      });
+    }
   };
 
   // User message — right aligned, dark bubble
@@ -253,14 +265,18 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry }: MessageB
           <button
             onClick={handleCopy}
             className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
-            title="Copy"
+            title="Copy response"
           >
-            {copied ? (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round"><path d="M20 6L9 17l-5-5" /></svg>
-            ) : (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
-            )}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
           </button>
+
+          {/* Bookmark */}
+          {onToggleBookmark && (
+            <BookmarkButton
+              isBookmarked={isBookmarked}
+              onToggle={onToggleBookmark}
+            />
+          )}
 
           {/* Like */}
           <button

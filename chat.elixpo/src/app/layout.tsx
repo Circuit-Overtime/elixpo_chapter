@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import MobileBottomNav from "@/components/MobileBottomNav";
+import KeyboardShortcutsPanel from "@/components/KeyboardShortcutsPanel";
+import { RootLayoutClient } from "@/components/RootLayoutClient";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -62,7 +66,12 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-white text-neutral-900 dark:bg-[#141A2B] dark:text-neutral-100 transition-colors">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <RootLayoutClient>{children}</RootLayoutClient>
+            <MobileBottomNav />
+            <KeyboardShortcutsPanel />
+          </AuthProvider>
+          <Toaster position="bottom-right" richColors />
         </ThemeProvider>
       </body>
     </html>
