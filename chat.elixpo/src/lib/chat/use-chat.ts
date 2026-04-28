@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import { chatStream, getSession, type ChatMessage } from "./search-client";
 
 export interface DisplayMessage {
@@ -195,11 +196,32 @@ export function useChat(initialSessionId?: string) {
           setIsLoading(false);
         },
         onError: (err) => {
+          // Detect rate limit errors
+          const isRateLimit = err.message?.includes("429") || err.message?.toLowerCase().includes("too many") || err.message?.toLowerCase().includes("rate");
+          
+          if (isRateLimit) {
+            toast.error("Rate limit reached", {
+              duration: 5000,
+              description: "Too many requests. Please wait a moment before trying again.",
+            });
+          } else {
+            toast.error("Error", {
+              duration: 3000,
+              description: err.message || "Failed to send message",
+            });
+          }
+
           setMessages((prev) => {
             const updated = [...prev];
             const last = updated[updated.length - 1];
             if (last.role === "assistant") {
-              updated[updated.length - 1] = { ...last, content: `Error: ${err.message}`, isStreaming: false };
+              updated[updated.length - 1] = { 
+                ...last, 
+                content: isRateLimit 
+                  ? "Rate limit reached. Please wait a moment before sending another message."
+                  : `Error: ${err.message}`, 
+                isStreaming: false 
+              };
             }
             return updated;
           });

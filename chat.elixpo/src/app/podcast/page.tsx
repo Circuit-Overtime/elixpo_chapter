@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
+import PodcastSkeleton from "@/components/skeletons/PodcastSkeleton";
 
 interface TimelineEntry {
   type: "male" | "female" | "image";
@@ -156,6 +157,10 @@ export default function PodcastPage() {
       return { text: chunks[idx], speaker: entry.type as "male" | "female", start: entry.start, end: entry.end };
     });
   }, [currentTime, timeline]);
+
+  if (!loaded) {
+    return <PodcastSkeleton />;
+  }
 
   return (
     <section className="relative h-screen w-screen overflow-hidden bg-black">
