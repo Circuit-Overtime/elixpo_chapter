@@ -19,7 +19,9 @@ on:
 
 jobs:
   triage:
-    if: github.event.pull_request.user.login != 'elixpoo'
+    if: >
+      github.event.pull_request.user.login != 'elixpoo' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

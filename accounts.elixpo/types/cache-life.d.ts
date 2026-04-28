@@ -1,11 +1,11 @@
 declare module "next/cache" {
-    export { unstable_cache } from "next/dist/server/web/spec-extension/unstable-cache";
     export {
-        updateTag,
-        revalidateTag,
-        revalidatePath,
         refresh,
+        revalidatePath,
+        revalidateTag,
+        updateTag,
     } from "next/dist/server/web/spec-extension/revalidate";
+    export { unstable_cache } from "next/dist/server/web/spec-extension/unstable-cache";
     export { unstable_noStore } from "next/dist/server/web/spec-extension/unstable-no-store";
 
     /**
@@ -134,6 +134,7 @@ declare module "next/cache" {
     }): void;
 
     import { cacheTag } from "next/dist/server/use-cache/cache-tag";
+
     export { cacheTag };
 
     export const unstable_cacheTag: typeof cacheTag;
