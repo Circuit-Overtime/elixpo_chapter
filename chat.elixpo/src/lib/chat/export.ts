@@ -37,7 +37,7 @@ export async function exportChatAsPDF(messages: DisplayMessage[], fileName: stri
   messages.forEach((msg, index) => {
     const isUser = msg.role === "user";
     const role = isUser ? "You" : "Assistant";
-    const bgColor = isUser ? [230, 230, 230] : [240, 240, 240];
+    const bgColor: [number, number, number] = isUser ? [230, 230, 230] : [240, 240, 240];
 
     // Check if we need a new page
     if (yPosition > pageHeight - margin) {
@@ -50,12 +50,12 @@ export async function exportChatAsPDF(messages: DisplayMessage[], fileName: stri
     doc.rect(margin, yPosition, maxWidth, headerHeight, "F");
     doc.setFontSize(10);
     doc.setTextColor(0);
-    doc.setFont(undefined, "bold");
+    doc.setFont("helvetica", "bold");
     doc.text(`${role}: `, margin + 2, yPosition + 2.5);
     yPosition += headerHeight + 2;
 
     // Message content (wrapped text)
-    doc.setFont(undefined, "normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     const lines = doc.splitTextToSize(msg.content, maxWidth - 4);
     
