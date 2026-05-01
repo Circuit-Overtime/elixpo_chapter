@@ -79,7 +79,7 @@ chat.elixpo/
 
 Before installing and running this project, ensure you have the following installed:
 
-- **Node.js** (v14 or higher)
+- **Node.js** (v18 or higher)
 - **npm** (comes with Node.js)
 - **Python** (v3.8 or higher) for backend services
 - **Firebase** account for database services
@@ -89,7 +89,7 @@ Before installing and running this project, ensure you have the following instal
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/elixpo/chat.elixpo.git
 cd chat.elixpo
 ```
 
@@ -169,10 +169,8 @@ Use the provided deployment script:
 
 ## License
 
-[Add your license information here]
+This project is licensed under the MIT License.
 
 ## Contributing
 
-[Add contributing guidelines here]
-
-
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for details on how to contribute to this project.
