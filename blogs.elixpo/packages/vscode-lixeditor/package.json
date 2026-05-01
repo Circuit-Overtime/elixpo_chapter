@@ -22,8 +22,6 @@
     "blocknote"
   ],
   "activationEvents": [
-    "onCustomEditor:lixeditor.editor",
-    "onCommand:lixeditor.newDocument",
     "onLanguage:lixeditor"
   ],
   "extensionKind": [
