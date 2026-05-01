@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import useSketchStore, { TOOLS, SHORTCUT_MAP } from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
 import { triggerCloudSync } from '@/hooks/useAutoSave'
+import { triggerDocCloudSync } from '@/hooks/useDocAutoSave'
 
 export default function useKeyboardShortcuts() {
   useEffect(() => {
@@ -34,8 +35,12 @@ export default function useKeyboardShortcuts() {
               }))
               useUIStore.getState().setSaveStatus('local')
             } catch {}
-            // Trigger cloud sync immediately
-            triggerCloudSync()
+            // Trigger cloud sync immediately — both scene and doc together.
+            // Doc sync is a no-op if there's no buffered content.
+            Promise.all([
+              triggerCloudSync(),
+              triggerDocCloudSync(),
+            ]).catch(() => {})
             // Show brief visual feedback
             const el = document.getElementById('save-toast')
             if (el) {

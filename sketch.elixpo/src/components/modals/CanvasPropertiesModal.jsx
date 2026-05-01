@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import useUIStore from '@/store/useUIStore'
+import useSketchStore from '@/store/useSketchStore'
 import useAuthStore from '@/store/useAuthStore'
 import useCollabStore from '@/store/useCollabStore'
 import { useProfileStore } from '@/hooks/useGuestProfile'
 import { getSessionID } from '@/hooks/useSessionID'
+import { triggerDocCloudSync, persistLayoutMode } from '@/hooks/useDocAutoSave'
 
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return '0 B'
@@ -42,6 +44,14 @@ export default function CanvasPropertiesModal() {
   const adminUserId = useCollabStore((s) => s.adminUserId)
   const ws = useCollabStore((s) => s.ws)
 
+  const layoutMode = useSketchStore((s) => s.layoutMode)
+  const setLayoutMode = useSketchStore((s) => s.setLayoutMode)
+  const handleSetLayout = (mode) => {
+    if (mode === layoutMode) return
+    setLayoutMode(mode)
+    persistLayoutMode(mode)
+  }
+
   // Determine if current user is admin
   const myUserId = isAuthenticated ? authUser?.id : guestProfile?.id
   const isAdmin = myUserId && adminUserId && myUserId === adminUserId
@@ -67,9 +77,32 @@ export default function CanvasPropertiesModal() {
     const zoom = window.currentZoom || 1
     const sessionId = getSessionID() || ''
 
-    // Estimate data size from localStorage
-    const saved = localStorage.getItem('lixsketch-autosave')
-    const dataSize = saved ? new Blob([saved]).size : 0
+    // Estimate canvas data size from localStorage (per-session key, fall
+    // back to the legacy single-key entry).
+    const sceneSavedKey = sessionId ? `lixsketch-autosave-${sessionId}` : 'lixsketch-autosave'
+    const sceneSaved = localStorage.getItem(sceneSavedKey) || localStorage.getItem('lixsketch-autosave')
+    const dataSize = sceneSaved ? new Blob([sceneSaved]).size : 0
+
+    // Doc stats: pulled from the doc-autosave localStorage buffer.
+    const docKey = sessionId ? `lixsketch-doc-autosave-${sessionId}` : 'lixsketch-doc-autosave'
+    const docMetaKey = sessionId ? `lixsketch-doc-autosave-meta-${sessionId}` : 'lixsketch-doc-autosave-meta'
+    const docSaved = localStorage.getItem(docKey)
+    let docBlockCount = 0
+    let docSize = 0
+    let docSavedAt = null
+    if (docSaved) {
+      docSize = new Blob([docSaved]).size
+      try {
+        const parsed = JSON.parse(docSaved)
+        if (Array.isArray(parsed?.blocks)) docBlockCount = parsed.blocks.length
+        if (parsed?.savedAt) docSavedAt = parsed.savedAt
+      } catch {}
+    }
+    let docCloudUpdatedAt = null
+    try {
+      const meta = JSON.parse(localStorage.getItem(docMetaKey) || '{}')
+      docCloudUpdatedAt = meta?.lastSeenUpdatedAt || null
+    } catch {}
 
     // Count shape types
     const typeCounts = {}
@@ -85,6 +118,10 @@ export default function CanvasPropertiesModal() {
       dataSize: formatBytes(dataSize),
       sessionId,
       typeCounts,
+      docBlockCount,
+      docSize: formatBytes(docSize),
+      docSavedAt,
+      docCloudUpdatedAt,
     })
   }, [isOpen])
 
@@ -172,6 +209,67 @@ export default function CanvasPropertiesModal() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Document */}
+          <div className="p-3 rounded-xl border border-border-light bg-surface/50">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-text-dim text-[10px] uppercase tracking-wider">Document</p>
+              <button
+                onClick={() => triggerDocCloudSync()}
+                title="Force sync the doc to cloud"
+                className="text-[10px] text-accent-blue hover:text-accent-blue-hover px-1.5 py-0.5 rounded hover:bg-accent-blue/10 cursor-pointer transition-all duration-200"
+              >
+                Sync now
+              </button>
+            </div>
+
+            {/* Layout mode pill toggle */}
+            <div className="flex items-center gap-1 bg-surface/60 border border-border-light rounded-lg p-0.5 mb-2">
+              {[
+                { key: 'canvas', icon: 'bx-pen', label: 'Canvas' },
+                { key: 'split', icon: 'bx-layout', label: 'Split' },
+                { key: 'docs', icon: 'bxs-notepad', label: 'Docs' },
+              ].map((m) => {
+                const active = layoutMode === m.key
+                return (
+                  <button
+                    key={m.key}
+                    onClick={() => handleSetLayout(m.key)}
+                    className={`flex-1 flex items-center justify-center gap-1 h-6 rounded-md text-[10.5px] transition-all duration-150 ${
+                      active
+                        ? 'bg-accent-blue text-text-primary'
+                        : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
+                    }`}
+                  >
+                    <i className={`bx ${m.icon} text-[11px]`} />
+                    {m.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            <InfoRow label="Blocks" value={stats.docBlockCount || 0} icon="bx-list-ul" color="text-purple-400" />
+            <InfoRow label="Local size" value={stats.docSize || '0 B'} icon="bx-data" />
+            <InfoRow
+              label="Last local save"
+              value={
+                stats.docSavedAt
+                  ? new Date(stats.docSavedAt).toLocaleTimeString()
+                  : '—'
+              }
+              icon="bx-time"
+            />
+            <InfoRow
+              label="Last cloud sync"
+              value={
+                stats.docCloudUpdatedAt
+                  ? new Date(stats.docCloudUpdatedAt).toLocaleString()
+                  : '—'
+              }
+              icon="bx-cloud"
+              color={stats.docCloudUpdatedAt ? 'text-green-400' : 'text-text-muted'}
+            />
           </div>
 
           {/* Save & Sync Status */}

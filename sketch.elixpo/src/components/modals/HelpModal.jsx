@@ -24,7 +24,7 @@ const ACTION_SHORTCUTS = [
   { keys: 'Ctrl+G', action: 'Group' },
   { keys: 'Ctrl+Shift+G', action: 'Ungroup' },
   { keys: 'Ctrl+D', action: 'Duplicate' },
-  { keys: 'Ctrl+S', action: 'Quick Save (local + cloud sync)' },
+  { keys: 'Ctrl+S', action: 'Quick Save (canvas + doc)' },
   { keys: 'Ctrl+C', action: 'Copy' },
   { keys: 'Ctrl+V', action: 'Paste' },
   { keys: 'Ctrl+Z', action: 'Undo' },
@@ -43,9 +43,36 @@ const VIEW_SHORTCUTS = [
   { keys: 'Ctrl+/', action: 'Command Palette' },
 ]
 
+// ── Doc editor shortcuts ──────────────────────────────────────────
+// Markdown shortcuts auto-convert when typed at the start of a line.
+const DOC_BLOCK_SHORTCUTS = [
+  { keys: '# Space', action: 'Heading 1' },
+  { keys: '## Space', action: 'Heading 2' },
+  { keys: '### Space', action: 'Heading 3' },
+  { keys: '> Space', action: 'Quote' },
+  { keys: '- Space', action: 'Bulleted list' },
+  { keys: '1. Space', action: 'Numbered list' },
+  { keys: '[] Space', action: 'Checklist' },
+  { keys: '``` Space', action: 'Code block' },
+  { keys: '--- Enter', action: 'Divider' },
+  { keys: '/', action: 'Block menu' },
+]
+
+const DOC_INLINE_SHORTCUTS = [
+  { keys: 'Ctrl+B', action: 'Bold' },
+  { keys: 'Ctrl+I', action: 'Italic' },
+  { keys: 'Ctrl+U', action: 'Underline' },
+  { keys: 'Ctrl+Shift+S', action: 'Strikethrough' },
+  { keys: 'Ctrl+E', action: 'Inline code' },
+  { keys: 'Tab', action: 'Indent block' },
+  { keys: 'Shift+Tab', action: 'Outdent block' },
+  { keys: 'Ctrl+Z', action: 'Undo' },
+  { keys: 'Ctrl+Shift+Z', action: 'Redo' },
+]
+
 const TABS = [
-  { id: 'shortcuts', label: 'Shortcuts' },
-  { id: 'about', label: 'About' },
+  { id: 'canvas', label: 'Canvas', icon: 'bx-pen' },
+  { id: 'docs', label: 'Document', icon: 'bxs-notepad' },
 ]
 
 function ShortcutRow({ keys, action }) {
@@ -80,7 +107,7 @@ function ShortcutSection({ title, shortcuts }) {
 export default function HelpModal() {
   const open = useUIStore((s) => s.helpModalOpen)
   const toggleHelpModal = useUIStore((s) => s.toggleHelpModal)
-  const [activeTab, setActiveTab] = useState('shortcuts')
+  const [activeTab, setActiveTab] = useState('canvas')
 
   if (!open) return null
 
@@ -97,7 +124,7 @@ export default function HelpModal() {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
-          <h2 className="text-text-primary text-base font-medium">Help</h2>
+          <h2 className="text-text-primary text-base font-medium">Shortcuts</h2>
           <button
             onClick={toggleHelpModal}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
@@ -112,12 +139,13 @@ export default function HelpModal() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs transition-all duration-200 ${
+              className={`px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all duration-200 ${
                 activeTab === tab.id
                   ? 'bg-surface-hover text-text-primary'
                   : 'text-text-muted hover:text-text-secondary hover:bg-surface-hover/50'
               }`}
             >
+              <i className={`bx ${tab.icon} text-sm`} />
               {tab.label}
             </button>
           ))}
@@ -127,12 +155,9 @@ export default function HelpModal() {
 
         {/* Content - scrollable */}
         <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-4">
-          {activeTab === 'shortcuts' && (
+          {activeTab === 'canvas' && (
             <div className="grid grid-cols-2 gap-6">
-              {/* Left column - Tools */}
               <ShortcutSection title="Tools" shortcuts={TOOL_SHORTCUTS} />
-
-              {/* Right column - Actions + View */}
               <div className="flex flex-col gap-4">
                 <ShortcutSection title="Actions" shortcuts={ACTION_SHORTCUTS} />
                 <ShortcutSection title="View" shortcuts={VIEW_SHORTCUTS} />
@@ -140,17 +165,10 @@ export default function HelpModal() {
             </div>
           )}
 
-          {activeTab === 'about' && (
-            <div className="flex flex-col gap-4 text-text-secondary text-xs leading-relaxed">
-              <p>
-                <span className="text-text-primary font-medium">LixSketch</span> is an
-                open-source alternative to app.eraser.io, combining an infinite canvas
-                drawing tool with a docs editor.
-              </p>
-              <p>
-                Built with vanilla JS, SVG, RoughJS and Perfect-Freehand for a hand-drawn
-                aesthetic. Fully open source.
-              </p>
+          {activeTab === 'docs' && (
+            <div className="grid grid-cols-2 gap-6">
+              <ShortcutSection title="Block markdown" shortcuts={DOC_BLOCK_SHORTCUTS} />
+              <ShortcutSection title="Formatting" shortcuts={DOC_INLINE_SHORTCUTS} />
             </div>
           )}
         </div>

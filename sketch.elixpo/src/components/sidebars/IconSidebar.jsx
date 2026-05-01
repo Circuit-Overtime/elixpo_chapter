@@ -179,7 +179,7 @@ export default function IconSidebar() {
 
   return (
     <div
-      className={`fixed top-[60px] right-2 bottom-[56px] w-[300px] bg-[#18181c] border border-white/[0.06] rounded-2xl z-[999] font-[lixFont] flex flex-col transition-transform duration-200 ${
+      className={`absolute top-[60px] right-2 bottom-[56px] w-[300px] bg-[#18181c] border border-white/[0.06] rounded-2xl z-[999] font-[lixFont] flex flex-col transition-transform duration-200 ${
         visible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
