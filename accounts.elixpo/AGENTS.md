@@ -80,13 +80,14 @@ Biome is the single linter/formatter (eslint-config-next is vestigial). The wrap
 
 ## Testing
 
-- **No test runner is wired yet.** Verification is manual: `npm run dev` + curl or browser. When adding tests, use `vitest` + `@cloudflare/vitest-pool-workers` (matches the Workers pool pattern in pollinations/enter).
-- For API changes, the verification loop is:
-  1. `npm run dev` (runs Next in dev mode, not on CF pages)
-  2. `curl -X POST http://localhost:3000/api/...` with a seeded test user
-  3. Check `wrangler d1 execute elixpo_auth --local --command "SELECT ..."` for DB state
-- For edge-runtime-specific code (anything using Web Crypto / cf bindings), run `npm run pages:build` — this is the only way to catch edge incompat before prod.
-- Never add a test that depends on `node-*` packages (they won't run under the Workers pool).
+- Vitest is the test runner. `npm test` runs once; `npm run test:watch` for watch mode. CI runs `npm test` on every PR via `.github/workflows/vitest.yml`.
+- Test files live in `src/**/__tests__/*.test.ts`. Current coverage is pure-logic only (`webcrypto.ts`). Tests run under Node (vitest default) — Web Crypto is available on Node 20+, which is what CI uses.
+- For tests that need Cloudflare bindings (D1, KV) later, switch to `@cloudflare/vitest-pool-workers` (already installed) and add a `wrangler.toml` + pool config. Don't introduce that until a test actually needs it.
+- For API/edge changes not covered by tests, the manual loop is still:
+  1. `npm run dev`, then `curl -X POST http://localhost:3000/api/...`
+  2. Check DB state via `wrangler d1 execute elixpo_auth --local --command "SELECT ..."`
+  3. `npm run pages:build` to catch edge-runtime incompatibilities (Web Crypto / cf bindings).
+- Never add tests that import Node-only packages — they must remain compatible with edge runtime.
 
 ## Git & PR Workflow
 

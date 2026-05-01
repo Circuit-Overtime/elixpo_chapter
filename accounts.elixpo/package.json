@@ -2,6 +2,9 @@
   "name": "elixpo-accounts",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -16,7 +19,9 @@
     "db:query": "wrangler d1 execute elixpo_auth",
     "db:query:remote": "wrangler d1 execute elixpo_auth --remote",
     "db:tables": "wrangler d1 execute elixpo_auth \"SELECT name FROM sqlite_master WHERE type='table';\" --remote",
-    "seed:admin": "npx tsx scripts/seed-admin.ts"
+    "seed:admin": "npx tsx scripts/seed-admin.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20240905.0",
@@ -39,6 +44,7 @@
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
+    "@cloudflare/vitest-pool-workers": "^0.15.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.14",
@@ -46,6 +52,7 @@
     "@types/react-dom": "^19",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vitest": "^4.1.5",
     "wrangler": "^4.67.0"
   }
 }

@@ -1,50 +1,5 @@
 #!/usr/bin/env node
 
-/**
- * openai-normalize.js — CCR transformer for any non-Anthropic provider.
- *
- * Originally written for Vertex Gemini's `thought_signature` requirement, the
- * same flatten-and-strip pass is needed for every non-Anthropic model served
- * through an OpenAI-style proxy (Pollinations: kimi, qwen-coder, perplexity-*,
- * glm, gemini, gemini-search, and friends). Each validates OpenAI schema
- * strictly and rejects:
- *   - `content: [{type: 'text', text: '...'}, ...]` structured arrays,
- *   - `cache_control: {type: 'ephemeral'}` markers on text blocks,
- *   - Anthropic-style `tool_use` / `tool_result` blocks in history.
- *
- * The fix: before the request hits the proxy, collapse every message's
- * content into a plain string and drop cache_control by virtue of the join.
- *
- * Rules:
- *   1. Tool exchanges (tool_use → tool_result) become user-role narrative
- *      notes like "Earlier I ran X(args). It returned: Y".
- *   2. Assistant messages that contained ONLY tool_use (no real text) are
- *      dropped entirely — no placeholders to copy.
- *   3. Assistant messages with real text keep that text only; any tool_use
- *      blocks inside are discarded (their context moves to the next user
- *      note).
- *   4. System and user messages with array content are joined to a single
- *      string; cache_control on individual text blocks is dropped in the join.
- *   5. Consecutive user messages are merged so the proxy sees clean alternation.
- *
- * The current turn's response is untouched; real tool calls still flow.
- *
- * The filter: SKIP flattening only for models that accept Anthropic-native
- * structured content (real Claude). Everything else gets the flatten pass.
- *
- * CCR contract: `registerTransformerFromConfig` calls `new Ctor(options)`.
- * Register at top-level and reference by name:
- *
- *   {
- *     "transformers": [{"path": "/abs/path/openai-normalize.js"}],
- *     "Providers": [{
- *       "transformer": { "use": ["openai-normalize", "openai", ...] }
- *     }]
- *   }
- */
-
-// Only SKIP flattening for models we know accept Anthropic-native structured
-// content. Everything else needs the flatten pass.
 const ANTHROPIC_NATIVE_RE = /^claude(-|$)/i;
 
 function asString(x) {
@@ -226,6 +181,11 @@ class OpenAINormalizeAdapter {
         }
 
         body.messages = flattenMessages(body.messages);
+        // Force SSE streaming so claude-code-action's tracking comment can
+        // update as tool calls and text deltas arrive. Pollinations only
+        // streams when stream=true is explicit; CCR's openai transformer
+        // doesn't always preserve it across the Anthropic→OpenAI conversion.
+        body.stream = true;
         return request;
     }
 }
