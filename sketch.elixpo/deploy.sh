@@ -88,9 +88,9 @@ secrets() {
     [[ "$key" =~ ^(CLOUDFLARE_ACCOUNT|D1_DATABASE_ID|KV_NAMESPACE_ID)$ ]] && continue
 
     echo "  -> $key (worker)"
-    printf '%s\n' "$value" | sudo npx wrangler versions secret put "$key" --name lixsketch-collab || echo "    [warn] worker secret failed for $key"
+    printf '%s\n' "$value" | npx wrangler versions secret put "$key" --name lixsketch-collab || echo "    [warn] worker secret failed for $key"
     echo "  -> $key (pages)"
-    printf '%s\n' "$value" | sudo npx wrangler pages secret put "$key" --project-name "$PAGES_PROJECT" || echo "    [warn] pages secret failed for $key"
+    printf '%s\n' "$value" | npx wrangler pages secret put "$key" --project-name "$PAGES_PROJECT" || echo "    [warn] pages secret failed for $key"
   done < "$ENV_FILE"
 
   echo "==> Secrets uploaded to Worker + Pages."
@@ -98,8 +98,8 @@ secrets() {
 
 build() {
   echo "==> Building for Cloudflare Pages..."
-  sudo npm version patch --no-git-tag-version
-  sudo npx @cloudflare/next-on-pages
+  npm version patch --no-git-tag-version
+  npx @cloudflare/next-on-pages
   echo "==> Build complete (.vercel/output/static)"
 }
 
@@ -110,27 +110,27 @@ deploy() {
   fi
 
   echo "==> Deploying to Cloudflare Pages ($PAGES_PROJECT)..."
-  sudo npx wrangler pages deploy .vercel/output/static \
+  npx wrangler pages deploy .vercel/output/static \
     --project-name "$PAGES_PROJECT" \
     --branch "$PAGES_BRANCH"
 
   echo "==> Pages deploy complete."
 
   VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "unknown")
-  sudo git add -A
-  if sudo git diff --cached --quiet; then
+  git add -A
+  if git diff --cached --quiet; then
     echo "==> No changes to commit."
   else
-    sudo git commit -m "deploy: v${VERSION}"
+    git commit -m "deploy: v${VERSION}"
     load_env
-    sudo git push "$(auth_remote)" main
+    git push "$(auth_remote)" main
     echo "==> Pushed v${VERSION} to origin/main."
   fi
 }
 
 worker() {
   echo "==> Deploying Worker (lixsketch-collab)..."
-  sudo npx wrangler deploy
+  npx wrangler deploy
   echo "==> Worker deploy complete."
 }
 

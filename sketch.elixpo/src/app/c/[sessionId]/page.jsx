@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect } from 'react'
-import Script from 'next/script'
 import Header from '@/components/header/Header'
 import Toolbar from '@/components/toolbar/Toolbar'
 import Footer from '@/components/footer/Footer'
@@ -34,10 +33,23 @@ import useAutoSave from '@/hooks/useAutoSave'
 import CanvasLoadingOverlay from '@/components/canvas/CanvasLoadingOverlay'
 import ContextMenu from '@/components/canvas/ContextMenu'
 import FindBar from '@/components/canvas/FindBar'
+import SplitLayout from '@/components/docs/SplitLayout'
+import dynamic from 'next/dynamic'
+import useSketchStore from '@/store/useSketchStore'
+
+// Lazy: only pulls BlockNote/Mantine/Mermaid into the bundle when the
+// docs panel is actually mounted (i.e. layoutMode is 'split' or 'docs').
+const DocsPanel = dynamic(() => import('@/components/docs/DocsPanel'), {
+  ssr: false,
+  loading: () => null,
+})
 
 export default function CanvasPage() {
   useEffect(() => {
     document.body.classList.add('canvas-mode')
+    // Restore the user's last-used layout mode (canvas / split / docs)
+    // before the editor or split layout decides to render.
+    useSketchStore.getState().hydrateLayoutMode?.()
     return () => document.body.classList.remove('canvas-mode')
   }, [])
 
@@ -47,25 +59,39 @@ export default function CanvasPage() {
   useGuestProfile()
   useAutoSave()
 
+  const layoutMode = useSketchStore((s) => s.layoutMode)
+  const canvasVisible = layoutMode !== 'docs'
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black">
       <Header />
-      <Toolbar />
 
-      <RectangleSidebar />
-      <CircleSidebar />
-      <LineSidebar />
-      <ArrowSidebar />
-      <PaintbrushSidebar />
-      <TextSidebar />
-      <FrameSidebar />
-      <IconSidebar />
-      <ImageSidebar />
-
-      <SVGCanvas />
-
-      <MultiSelectActions />
-      <Footer />
+      <SplitLayout
+        canvas={
+          <>
+            <SVGCanvas />
+            {/* All canvas chrome lives inside the canvas wrapper so it
+                can't visually overflow into the docs panel during split. */}
+            {canvasVisible && (
+              <>
+                <Toolbar />
+                <RectangleSidebar />
+                <CircleSidebar />
+                <LineSidebar />
+                <ArrowSidebar />
+                <PaintbrushSidebar />
+                <TextSidebar />
+                <FrameSidebar />
+                <IconSidebar />
+                <ImageSidebar />
+                <MultiSelectActions />
+                <Footer />
+              </>
+            )}
+          </>
+        }
+        docs={<DocsPanel />}
+      />
       <AppMenu />
       <ShortcutsModal />
       <SaveModal />
@@ -80,7 +106,6 @@ export default function CanvasPage() {
       <FindBar />
       <CanvasLoadingOverlay />
 
-      {/* Quick-save toast — shown only on explicit Ctrl+S save */}
       <div
         id="save-toast"
         className="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-9999 px-4 py-2 rounded-xl bg-surface/80 backdrop-blur-md border border-border-light text-text-secondary text-xs font-[lixFont] pointer-events-none animate-fade-in"

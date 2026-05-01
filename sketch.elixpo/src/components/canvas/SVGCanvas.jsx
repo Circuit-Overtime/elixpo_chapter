@@ -17,14 +17,74 @@ export default function SVGCanvas() {
   const [viewBox, setViewBox] = useState('0 0 1920 1080')
 
   useEffect(() => {
-    setViewBox(`0 0 ${window.innerWidth} ${window.innerHeight}`)
+    // Track the SVG element's *actual rendered size* and keep both the
+    // viewBox attribute AND the engine's `window.currentViewBox` in sync
+    // with it. This is what makes split mode work:
+    //
+    //  - With `preserveAspectRatio` defaults, a viewBox whose aspect
+    //    doesn't match the element's gets letterboxed inside the element.
+    //    The package's pointer math (`mouseX / rect.width * viewBox.width`)
+    //    does NOT compensate for the letterbox — clicks map to wrong SVG
+    //    coords. Matching viewBox to rect avoids the letterbox entirely.
+    //
+    //  - The engine's freehand tool (and others) read `currentViewBox`
+    //    directly. If we change the viewBox attribute without updating
+    //    that global, freehand's pointer math drifts.
+    //
+    //  - `preserveAspectRatio="none"` is a belt-and-suspenders against
+    //    any future viewBox/element aspect mismatch (e.g. mid-zoom).
+    const applyImperative = (w, h) => {
+      // Preserve zoom: viewBox width/height represent canvas-units that
+      // span the element. At zoom=1 they equal element pixels; at zoom=2
+      // they're half (smaller viewBox = magnified content).
+      const zoom = window.currentZoom || 1
+      const cv = window.currentViewBox || { x: 0, y: 0 }
+      const vbW = w / zoom
+      const vbH = h / zoom
+      const x = cv.x || 0
+      const y = cv.y || 0
+
+      window.currentViewBox = { x, y, width: vbW, height: vbH }
+
+      // Imperatively write the SVG attr so we don't fight the engine's
+      // own setAttribute calls on subsequent zoom/pan operations.
+      const el = svgRef.current
+      if (el) el.setAttribute('viewBox', `${x} ${y} ${vbW} ${vbH}`)
+    }
+
+    const sync = () => {
+      const el = svgRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const w = Math.max(1, Math.round(rect.width))
+      const h = Math.max(1, Math.round(rect.height))
+      applyImperative(w, h)
+    }
+
+    // Initial React-state value (used only for the very first render
+    // before we take over imperatively).
+    {
+      const rect = svgRef.current?.getBoundingClientRect()
+      const w = Math.max(1, Math.round(rect?.width || window.innerWidth))
+      const h = Math.max(1, Math.round(rect?.height || window.innerHeight))
+      setViewBox(`0 0 ${w} ${h}`)
+    }
+
+    sync()
     setSvgReady(true)
 
-    const onResize = () => {
-      setViewBox(`0 0 ${window.innerWidth} ${window.innerHeight}`)
+    window.addEventListener('resize', sync)
+
+    let ro
+    if (typeof ResizeObserver !== 'undefined' && svgRef.current) {
+      ro = new ResizeObserver(sync)
+      ro.observe(svgRef.current)
     }
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+
+    return () => {
+      window.removeEventListener('resize', sync)
+      if (ro) ro.disconnect()
+    }
   }, [])
 
   // Close icon sidebar when clicking on canvas without an icon ready to place
@@ -65,6 +125,7 @@ export default function SVGCanvas() {
         touchAction: 'none',
       }}
       viewBox={viewBox}
+      preserveAspectRatio="none"
       suppressHydrationWarning
     >
       {gridEnabled && (

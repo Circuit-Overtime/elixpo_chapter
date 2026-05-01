@@ -25,7 +25,7 @@ export default function MultiSelectActions() {
   }
 
   return (
-    <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[1000] font-[lixFont]">
+    <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] font-[lixFont]">
       <div className="flex items-center gap-2 bg-surface/90 backdrop-blur-lg border border-border-light rounded-xl px-3 py-1.5 shadow-lg">
         <span className="text-text-muted text-xs">
           {count} selected

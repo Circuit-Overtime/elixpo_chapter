@@ -23,7 +23,9 @@ const TOOL_ITEMS = [
   { tool: TOOLS.FRAME, icon: 'bx-crop', title: 'Frame (F)', key: 'F' },
   { tool: TOOLS.LASER, icon: 'bxs-magic-wand', title: 'Laser (K)', key: 'K' },
   { tool: TOOLS.ERASER, icon: 'bxs-eraser', title: 'Eraser (E)', key: 'E' },
-  { tool: 'ai', icon: null, title: 'AI', isAI: true },
+  // AI tool entry removed while the assistant is coming-soon.
+  // Restore `{ tool: 'ai', icon: null, title: 'AI', isAI: true }` here
+  // when the modal becomes a real feature again.
 ]
 
 export default function Toolbar() {
@@ -38,7 +40,7 @@ export default function Toolbar() {
 
   return (
     <>
-    <div className={`fixed left-2.5 top-1/2 -translate-y-1/2 w-[46px] rounded-xl bg-surface z-[1000] flex flex-col items-center py-1.5 gap-0.5 font-[lixFont] max-h-[calc(100vh-120px)] overflow-y-auto no-scrollbar`}>
+    <div className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-[46px] rounded-xl bg-surface z-[1000] flex flex-col items-center py-1.5 gap-0.5 font-[lixFont] max-h-[calc(100vh-120px)] overflow-y-auto no-scrollbar`}>
       {/* Tool lock button at the top */}
       {!viewMode && (
         <>

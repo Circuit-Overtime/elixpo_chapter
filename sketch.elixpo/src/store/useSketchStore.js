@@ -199,6 +199,28 @@ const useSketchStore = create((set, get) => ({
     }
   },
   toggleZenMode: () => set((s) => ({ zenMode: !s.zenMode, viewMode: false })),
+
+  // --- Canvas/Docs split layout ---
+  // 'canvas' = sketch only, 'split' = side-by-side, 'docs' = doc only
+  // Hydrated from localStorage on first store consumption (see
+  // hydrateLayoutMode below). Persisted on every change.
+  layoutMode: 'canvas',
+  setLayoutMode: (mode) => {
+    if (!['canvas', 'split', 'docs'].includes(mode)) return
+    set({ layoutMode: mode })
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('lixsketch-layout-mode', mode) } catch {}
+    }
+  },
+  hydrateLayoutMode: () => {
+    if (typeof window === 'undefined') return
+    try {
+      const saved = localStorage.getItem('lixsketch-layout-mode')
+      if (saved && ['canvas', 'split', 'docs'].includes(saved)) {
+        set({ layoutMode: saved })
+      }
+    } catch {}
+  },
   toggleToolLock: () => set((s) => ({ toolLock: !s.toolLock })),
   toggleSnapToObjects: () => set((s) => ({ snapToObjects: !s.snapToObjects })),
 

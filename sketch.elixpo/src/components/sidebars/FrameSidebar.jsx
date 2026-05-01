@@ -249,28 +249,8 @@ export default function FrameSidebar() {
         </button>
       </ToolbarButton>
 
-      <Divider />
-
-      {/* AI Edit / Graph Edit */}
-      <button
-        onClick={handleAIEdit}
-        title={isGraph ? 'Edit Graph' : 'AI Edit'}
-        className={`h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted transition-all duration-100 ${
-          isGraph
-            ? 'hover:text-[#4A90D9] hover:bg-[#4A90D9]/10'
-            : 'hover:text-[#FFD700] hover:bg-white/[0.06]'
-        }`}
-      >
-        {isGraph ? (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-          </svg>
-        ) : (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-            <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" />
-          </svg>
-        )}
-      </button>
+      {/* AI Edit / Graph Edit removed while AI is coming-soon. Restore the
+          button + handleAIEdit wiring when the assistant ships. */}
       <Divider />
       <LayerControls />
     </ShapeSidebar>

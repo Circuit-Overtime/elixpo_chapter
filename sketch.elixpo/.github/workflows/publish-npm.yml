@@ -35,6 +35,38 @@ jobs:
           fi
 
       - name: Publish to NPM
-        run: npm publish -w packages/lixsketch --access public
+        run: npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken=${{ secrets.NPM_LIXSKETCH_PUBLISH_TOKEN }}
+        working-directory: packages/lixsketch
+
+      # ── Mirror the same version to GitHub Packages ────────────────────────
+      # GitHub Packages requires the package.json `repository.url` to match
+      # the repo running this workflow, so we rewrite it just-in-time and
+      # restore the original value after publish.
+      - name: Reconfigure Node for GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@elixpo'
+
+      - name: Publish to GitHub Packages
+        working-directory: packages/lixsketch
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_LIXSKETCH_PUBLISH_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ORIGINAL_REPO=$(node -p "JSON.stringify(require('./package.json').repository || null)")
+          node -e "
+            const fs = require('fs');
+            const pkg = require('./package.json');
+            pkg.repository = { type: 'git', url: 'git+https://github.com/${{ github.repository }}.git' };
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          npm publish --access public --registry https://npm.pkg.github.com
+          node -e "
+            const fs = require('fs');
+            const pkg = require('./package.json');
+            const orig = $ORIGINAL_REPO;
+            if (orig) pkg.repository = orig; else delete pkg.repository;
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+

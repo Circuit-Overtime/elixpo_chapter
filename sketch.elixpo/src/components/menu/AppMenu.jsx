@@ -5,6 +5,7 @@ import useUIStore from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
 import useAuthStore from '@/store/useAuthStore'
 import { triggerCloudSync } from '@/hooks/useAutoSave'
+import { triggerDocCloudSync, persistLayoutMode } from '@/hooks/useDocAutoSave'
 import { useTranslation } from '@/hooks/useTranslation'
 
 const CANVAS_BACKGROUNDS = [
@@ -60,6 +61,14 @@ export default function AppMenu() {
   const toggleToolLock = useSketchStore((s) => s.toggleToolLock)
   const toggleSnapToObjects = useSketchStore((s) => s.toggleSnapToObjects)
 
+  const layoutMode = useSketchStore((s) => s.layoutMode)
+  const setLayoutMode = useSketchStore((s) => s.setLayoutMode)
+  const handleSetLayout = (mode) => {
+    if (mode === layoutMode) return
+    setLayoutMode(mode)
+    persistLayoutMode(mode)
+  }
+
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const authUser = useAuthStore((s) => s.user)
   const login = useAuthStore((s) => s.login)
@@ -91,7 +100,7 @@ export default function AppMenu() {
         />
       )}
       <div
-        className={`absolute top-14 right-4 w-[220px] max-h-[calc(100vh-70px)] overflow-y-auto no-scrollbar bg-surface/75 backdrop-blur-lg rounded-2xl z-[1000] border border-border-light p-2 font-[lixFont] transition-all duration-200 ${
+        className={`absolute top-14 right-4 w-[230px] max-h-[calc(100vh-140px)] overflow-y-auto no-scrollbar bg-surface/75 backdrop-blur-lg rounded-2xl z-[1000] border border-border-light p-1.5 font-[lixFont] text-[13px] transition-all duration-200 ${
           menuOpen
             ? 'opacity-100 blur-0 pointer-events-auto'
             : 'opacity-0 blur-[20px] pointer-events-none'
@@ -100,7 +109,7 @@ export default function AppMenu() {
         {/* Open */}
         <button
           onClick={handleOpen}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-folder-open text-sm" />
@@ -124,7 +133,7 @@ export default function AppMenu() {
             }
             closeMenu()
           }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-check-circle text-sm" />
@@ -136,7 +145,7 @@ export default function AppMenu() {
         {/* Save & Share */}
         <button
           onClick={() => { toggleSaveModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-save text-sm" />
@@ -148,7 +157,7 @@ export default function AppMenu() {
         {/* Export Image */}
         <button
           onClick={() => { toggleExportImageModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-image text-sm" />
@@ -157,7 +166,7 @@ export default function AppMenu() {
           <span className="text-text-dim text-xs">Ctrl+Shift+E</span>
         </button>
 
-        <hr className="border-border-light my-1.5" />
+        <hr className="border-border-light my-1" />
 
         {/* Commands - highlighted */}
         <button
@@ -174,7 +183,7 @@ export default function AppMenu() {
         {/* Find Text */}
         <button
           onClick={() => { useUIStore.getState().toggleFindBar(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-search text-sm" />
@@ -186,7 +195,7 @@ export default function AppMenu() {
         {/* Canvas Properties */}
         <button
           onClick={() => { useUIStore.getState().toggleCanvasProperties(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-info-circle text-sm" />
@@ -197,7 +206,7 @@ export default function AppMenu() {
         {/* Help */}
         <button
           onClick={() => { toggleHelpModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-help-circle text-sm" />
@@ -205,12 +214,62 @@ export default function AppMenu() {
           </span>
         </button>
 
-        <hr className="border-border-light my-1.5" />
+        <hr className="border-border-light my-1" />
+
+        {/* Document layout */}
+        <div className="px-3 py-1.5">
+          <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <i className="bx bx-file-blank text-[11px]" />
+            Document
+          </p>
+          <div className="flex items-center gap-1 bg-surface/60 border border-border-light rounded-lg p-0.5">
+            {[
+              { key: 'canvas', icon: 'bx-pen', label: 'Canvas' },
+              { key: 'split', icon: 'bx-layout', label: 'Split' },
+              { key: 'docs', icon: 'bxs-notepad', label: 'Docs' },
+            ].map((m) => {
+              const active = layoutMode === m.key
+              return (
+                <button
+                  key={m.key}
+                  onClick={() => handleSetLayout(m.key)}
+                  title={m.label}
+                  className={`flex-1 flex items-center justify-center gap-1 h-6 rounded-md text-[10.5px] transition-all duration-150 ${
+                    active
+                      ? 'bg-accent-blue text-text-primary'
+                      : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
+                  }`}
+                >
+                  <i className={`bx ${m.icon} text-[11px]`} />
+                  {m.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Sync doc now (Ctrl+S triggers both, but explicit action is useful from menu) */}
+        <button
+          onClick={() => {
+            triggerCloudSync()
+            triggerDocCloudSync()
+            closeMenu()
+          }}
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
+        >
+          <span className="flex items-center gap-2">
+            <i className="bx bx-cloud-upload text-sm" />
+            Sync canvas + doc
+          </span>
+          <span className="text-text-dim text-xs">Ctrl+S</span>
+        </button>
+
+        <hr className="border-border-light my-1" />
 
         {/* Preferences - inline expandable */}
         <button
           onClick={() => setPrefsOpen((p) => !p)}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200 ${prefsOpen ? 'bg-surface-hover' : ''}`}
+          className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200 ${prefsOpen ? 'bg-surface-hover' : ''}`}
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-cog text-sm" />
@@ -278,7 +337,7 @@ export default function AppMenu() {
         {/* Grid toggle */}
         <button
           onClick={toggleGrid}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-grid-alt text-sm" />
@@ -304,7 +363,7 @@ export default function AppMenu() {
           </span>
         </button>
 
-        <hr className="border-border-light my-1.5" />
+        <hr className="border-border-light my-1" />
 
         {/* Links */}
         {LINKS.map((link) => {
@@ -315,7 +374,7 @@ export default function AppMenu() {
               href={link.href}
               {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               onClick={closeMenu}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
+              className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
             >
               <i className={`bx ${link.icon} text-sm`} />
               {link.label}
@@ -323,7 +382,7 @@ export default function AppMenu() {
           )
         })}
 
-        <hr className="border-border-light my-1.5" />
+        <hr className="border-border-light my-1" />
 
         {/* Sign In / Sign Out */}
         {isAuthenticated ? (
@@ -359,7 +418,7 @@ export default function AppMenu() {
           </button>
         )}
 
-        <hr className="border-border-light my-1.5" />
+        <hr className="border-border-light my-1" />
 
         {/* Theme toggle */}
         <div className="px-3 py-2">

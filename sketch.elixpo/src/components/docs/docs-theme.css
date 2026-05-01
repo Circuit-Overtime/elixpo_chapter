@@ -1,0 +1,174 @@
+/*
+ * Reskin BlockNote's dark theme to match sketch.elixpo's palette.
+ *
+ * BlockNote exposes a set of CSS custom properties (`--bn-colors-*`)
+ * that drive every surface, border, hover state, and accent. We
+ * override them under `.lix-sketch-theme` so the editor blends with
+ * the canvas chrome instead of using BlockNote's default greys.
+ *
+ * Token map → sketch globals.css:
+ *   --color-surface         #232329  (toolbar / floating panels)
+ *   --color-surface-dark    #1a1a20  (page background)
+ *   --color-surface-hover   #343448  (hover / selected blocks)
+ *   --color-surface-card    #1e1e28  (slash-menu items)
+ *   --color-accent-blue     #5B57D1  (selection / focused outline)
+ *   --color-text-primary    #ffffff
+ *   --color-text-secondary  #e8e8ee
+ *   --color-border-light    #3a3a50
+ */
+
+.lix-sketch-theme [data-color-scheme="dark"],
+.lix-sketch-theme.bn-container,
+.lix-sketch-theme .bn-container,
+.lix-sketch-theme [data-color-scheme] {
+  /* Editor surfaces */
+  --bn-colors-editor-background: #1a1a20;
+  --bn-colors-editor-text: #ffffff;
+  --bn-colors-menu-background: #232329;
+  --bn-colors-menu-text: #e8e8ee;
+  --bn-colors-tooltip-background: #1e1e28;
+  --bn-colors-tooltip-text: #ffffff;
+
+  /* Hover / selected */
+  --bn-colors-hovered-background: #343448;
+  --bn-colors-hovered-text: #ffffff;
+  --bn-colors-selected-background: #5B57D1;
+  --bn-colors-selected-text: #ffffff;
+
+  /* Disabled / placeholder text */
+  --bn-colors-disabled-background: #1a1a20;
+  --bn-colors-disabled-text: #6b6b80;
+
+  /* Side menu / chevron / drag handle */
+  --bn-colors-side-menu: #6b6b80;
+
+  /* Borders + shadows */
+  --bn-colors-border: #3a3a50;
+  --bn-colors-shadow: rgba(0, 0, 0, 0.4);
+
+  /* Highlight palette tweaks (optional — keep BlockNote defaults if these break) */
+  --bn-colors-highlights-blue-background: rgba(91, 87, 209, 0.18);
+  --bn-colors-highlights-blue-text: #aeacff;
+}
+
+/* The wrapper that BlockNote renders inside our flex column.
+   Use sketch's handwritten lixFont everywhere except code blocks,
+   inline code, and KaTeX math (which need their own typefaces). */
+.lix-sketch-theme .bn-container {
+  background: var(--bn-colors-editor-background);
+  color: var(--bn-colors-editor-text);
+  font-family: 'lixFont', system-ui, sans-serif;
+}
+
+.lix-sketch-theme .bn-editor,
+.lix-sketch-theme .bn-block-content,
+.lix-sketch-theme [contenteditable="true"] {
+  font-family: 'lixFont', system-ui, sans-serif;
+}
+
+/* Code, inline code, and math keep the package defaults. */
+.lix-sketch-theme pre,
+.lix-sketch-theme code,
+.lix-sketch-theme .bn-code-block,
+.lix-sketch-theme .bn-inline-content code,
+.lix-sketch-theme .shiki,
+.lix-sketch-theme .katex,
+.lix-sketch-theme .katex * {
+  font-family: revert !important;
+}
+
+/* The editable surface itself */
+.lix-sketch-theme .bn-editor {
+  background: transparent;
+  color: var(--bn-colors-editor-text);
+  caret-color: var(--bn-colors-selected-background);
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+/* Block hover background */
+.lix-sketch-theme .bn-block-outer:hover > .bn-block {
+  background: rgba(52, 52, 72, 0.35);
+  border-radius: 6px;
+}
+
+/* Slash / formatting menus */
+.lix-sketch-theme .mantine-Menu-dropdown,
+.lix-sketch-theme .mantine-Popover-dropdown,
+.lix-sketch-theme .bn-suggestion-menu {
+  background: #1e1e28 !important;
+  color: #ffffff !important;
+  border: 1px solid #3a3a50 !important;
+}
+
+/* Mantine dropdowns render in a portal at <body> level — they ignore the
+   editor wrapper's width. Cap the formatting/link toolbars (which are
+   horizontal) tightly, but give the slash suggestion menu room to lay
+   out its multi-line items (icon + title + subtitle + shortcut hint). */
+.mantine-Popover-dropdown,
+.bn-link-toolbar,
+.bn-formatting-toolbar {
+  max-width: min(360px, 90vw) !important;
+}
+
+.bn-suggestion-menu,
+.mantine-Menu-dropdown {
+  max-width: min(420px, 90vw) !important;
+  max-height: min(420px, 70vh) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+}
+
+/* Slash-menu items keep their native multi-row layout — only clamp the
+   subtitle to a single line so very long descriptions don't break the
+   menu. Title row stays untouched. */
+.bn-suggestion-menu-item .bn-suggestion-menu-item-subtitle,
+.mantine-Menu-item .bn-suggestion-menu-item-subtitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Floating toolbar buttons */
+.lix-sketch-theme .mantine-ActionIcon-root,
+.lix-sketch-theme .mantine-Button-root {
+  color: #e8e8ee;
+}
+.lix-sketch-theme .mantine-ActionIcon-root:hover,
+.lix-sketch-theme .mantine-Button-root:hover {
+  background: #343448;
+  color: #ffffff;
+}
+
+/* I-beam cursor on the editable surface. Sketch.elixpo's canvas-mode
+   doesn't set a body cursor, but the editor still inherits 'default'
+   from the page — force the text caret so typing feels right. Mirrors
+   the same rule shipped in @elixpo/lixeditor (post-republish this is
+   redundant but harmless). */
+.lix-sketch-theme,
+.lix-sketch-theme .bn-container,
+.lix-sketch-theme .bn-editor,
+.lix-sketch-theme [contenteditable="true"] {
+  cursor: text;
+}
+
+/* Drag handles, side menu, toolbar — keep pointer cursor */
+.lix-sketch-theme .bn-side-menu,
+.lix-sketch-theme .bn-side-menu *,
+.lix-sketch-theme .mantine-ActionIcon-root,
+.lix-sketch-theme .mantine-Button-root {
+  cursor: pointer;
+}
+
+/* Scrollbar — match canvas */
+.lix-editor-host::-webkit-scrollbar {
+  width: 8px;
+}
+.lix-editor-host::-webkit-scrollbar-thumb {
+  background: #3a3a50;
+  border-radius: 4px;
+}
+.lix-editor-host::-webkit-scrollbar-thumb:hover {
+  background: #5B57D1;
+}

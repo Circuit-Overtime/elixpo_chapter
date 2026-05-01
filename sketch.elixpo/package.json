@@ -1,6 +1,6 @@
 {
   "name": "lixsketch",
-  "version": "5.4.7",
+  "version": "5.4.9",
   "description": "Open-source infinite canvas sketching with a hand-drawn aesthetic and a Notion-like docs editor",
   "author": {
     "name": "Ayushman Bhattacharya",
@@ -38,23 +38,29 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "worker:dev": "wrangler dev",
     "worker:deploy": "wrangler deploy",
     "db:create": "wrangler d1 create lixsketch",
-    "db:migrate": "wrangler d1 execute lixsketch --file=./worker/migrations/0002_workspace_limits.sql",
-    "db:migrate:local": "wrangler d1 execute lixsketch --local --file=./worker/migrations/0002_workspace_limits.sql",
+    "db:migrate": "node scripts/db-migrate.mjs --remote",
+    "db:migrate:local": "node scripts/db-migrate.mjs --local",
     "kv:create": "wrangler kv namespace create lixsketch"
   },
   "dependencies": {
+    "@blocknote/core": "^0.47.1",
+    "@blocknote/mantine": "^0.47.1",
+    "@blocknote/react": "^0.47.1",
+    "@mantine/core": "^8.3.11",
+    "@mantine/hooks": "^8.3.11",
     "@cloudflare/next-on-pages": "^1.13.16",
+    "@elixpo/lixeditor": "^2.6.2",
     "@elixpo/lixsketch": "workspace:*",
     "framer-motion": "^12.35.2",
     "fuse.js": "^7.1.0",
     "highlight.js": "^11.11.1",
-    "next": "^15.5.2",
+    "next": "15.5.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "zustand": "^5.0.11"

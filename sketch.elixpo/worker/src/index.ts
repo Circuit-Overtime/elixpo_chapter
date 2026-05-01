@@ -74,6 +74,20 @@ export default {
       return handleSceneDelete(request, env);
     }
 
+    // --- Canvas doc routes (paired WYSIWYG document per session) ---
+
+    if (url.pathname === '/api/canvas-docs/save' && request.method === 'POST') {
+      return handleCanvasDocSave(request, env);
+    }
+
+    if (url.pathname === '/api/canvas-docs/load' && request.method === 'GET') {
+      return handleCanvasDocLoad(request, env);
+    }
+
+    if (url.pathname === '/api/canvas-docs/layout' && request.method === 'POST') {
+      return handleCanvasLayoutSave(request, env);
+    }
+
     // --- Workspace routes ---
 
     if (url.pathname === '/api/scenes/list' && request.method === 'GET') {
@@ -501,10 +515,12 @@ async function handleSceneDelete(request: Request, env: Env): Promise<Response> 
       return json({ error: 'Unauthorized — session mismatch' }, 403);
     }
 
-    // Delete the scene (cascade deletes scene_permissions)
-    await env.DB.prepare(
-      `DELETE FROM scenes WHERE id = ?`
-    ).bind(perm.scene_id).run();
+    // Delete the scene (cascade deletes scene_permissions). Also drop
+    // the paired canvas doc — there's no real FK so we cascade manually.
+    await env.DB.batch([
+      env.DB.prepare(`DELETE FROM canvas_docs WHERE session_id = ?`).bind(perm.session_id),
+      env.DB.prepare(`DELETE FROM scenes WHERE id = ?`).bind(perm.scene_id),
+    ]);
 
     return json({ success: true });
   } catch (err) {
@@ -906,6 +922,182 @@ async function handleQuotaSummary(request: Request, env: Env): Promise<Response>
     });
   } catch (err) {
     return json({ error: 'Failed to fetch quota summary' }, 500);
+  }
+}
+
+// =============================================================================
+// Canvas Doc Handlers
+// =============================================================================
+
+const DOC_SIZE_LIMIT_BYTES = 5_000_000; // 5 MB encrypted blob ceiling
+
+// In-memory rate limit (per-isolate). Best-effort — Workers spin up many
+// isolates so this is a soft cap, not a hard one. Pair with KV if/when
+// we need a global rate limit.
+const _docRateMap = new Map<string, number[]>();
+const DOC_RATE_LIMIT_WINDOW_MS = 60_000;
+const DOC_RATE_LIMIT_MAX = 6;
+
+function isDocRateLimited(key: string): boolean {
+  const now = Date.now();
+  const arr = _docRateMap.get(key) || [];
+  const recent = arr.filter((t) => now - t < DOC_RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= DOC_RATE_LIMIT_MAX) {
+    _docRateMap.set(key, recent);
+    return true;
+  }
+  recent.push(now);
+  _docRateMap.set(key, recent);
+  return false;
+}
+
+// Verify the caller owns this canvas. We mirror scenes' existing model:
+// the scene's `created_by` is the source of truth; first save claims it.
+async function authorizeCanvasOwner(
+  env: Env,
+  sessionId: string,
+  callerId: string | undefined,
+): Promise<{ ok: true; ownerType: 'user' | 'guest'; firstWrite: boolean } | { ok: false; status: number; error: string }> {
+  const scene = await env.DB.prepare(
+    `SELECT created_by, owner_type FROM scenes WHERE session_id = ?`
+  ).bind(sessionId).first<{ created_by: string | null; owner_type: string }>();
+
+  // If the scene doesn't exist yet, allow the doc save — first canvas
+  // save will land shortly and claim ownership. (The scene autosave
+  // creates the row very early.)
+  if (!scene) {
+    return { ok: true, ownerType: callerId && !callerId.startsWith('guest-') ? 'user' : 'guest', firstWrite: true };
+  }
+
+  // If the scene has an owner, the caller must match it.
+  if (scene.created_by) {
+    if (!callerId || callerId !== scene.created_by) {
+      return { ok: false, status: 403, error: 'Unauthorized — not the canvas owner' };
+    }
+  }
+  return { ok: true, ownerType: (scene.owner_type as 'user' | 'guest') || 'guest', firstWrite: false };
+}
+
+async function handleCanvasDocSave(request: Request, env: Env): Promise<Response> {
+  try {
+    const body = await request.json() as {
+      sessionId: string;
+      encryptedData: string;
+      createdBy?: string;
+      clientId?: string;
+      // Last-known server updated_at on the client. Used for optimistic
+      // concurrency: if the server has a newer save, reject.
+      lastSeenUpdatedAt?: string;
+    };
+
+    if (!body.sessionId || typeof body.encryptedData !== 'string') {
+      return json({ error: 'Missing sessionId or encryptedData' }, 400);
+    }
+
+    const sizeBytes = new Blob([body.encryptedData]).size;
+    if (sizeBytes > DOC_SIZE_LIMIT_BYTES) {
+      return json({ error: 'DOC_TOO_LARGE', limit: DOC_SIZE_LIMIT_BYTES, size: sizeBytes }, 413);
+    }
+
+    const auth = await authorizeCanvasOwner(env, body.sessionId, body.createdBy);
+    if (!auth.ok) return json({ error: auth.error }, auth.status);
+
+    if (isDocRateLimited(body.sessionId)) {
+      return json({ error: 'RATE_LIMITED', message: 'Too many doc saves; try again shortly.' }, 429);
+    }
+
+    // Optimistic concurrency: reject if a different client already wrote
+    // a newer version since the caller last loaded.
+    if (body.lastSeenUpdatedAt) {
+      const existing = await env.DB.prepare(
+        `SELECT updated_at, client_id FROM canvas_docs WHERE session_id = ?`
+      ).bind(body.sessionId).first<{ updated_at: string; client_id: string | null }>();
+      if (existing && existing.updated_at > body.lastSeenUpdatedAt && existing.client_id !== (body.clientId || null)) {
+        return json({
+          error: 'CONFLICT',
+          message: 'A newer version exists from another tab/device.',
+          serverUpdatedAt: existing.updated_at,
+        }, 409);
+      }
+    }
+
+    await env.DB.prepare(
+      `INSERT INTO canvas_docs (session_id, encrypted_data, created_by, client_id, size_bytes, updated_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(session_id) DO UPDATE SET
+         encrypted_data = excluded.encrypted_data,
+         client_id = excluded.client_id,
+         size_bytes = excluded.size_bytes,
+         updated_at = datetime('now')`
+    ).bind(body.sessionId, body.encryptedData, body.createdBy || null, body.clientId || null, sizeBytes).run();
+
+    // Read back the updated_at so the client can use it for next-write
+    // concurrency check.
+    const fresh = await env.DB.prepare(
+      `SELECT updated_at FROM canvas_docs WHERE session_id = ?`
+    ).bind(body.sessionId).first<{ updated_at: string }>();
+
+    return json({ ok: true, updatedAt: fresh?.updated_at });
+  } catch (err) {
+    return json({ error: 'Failed to save canvas doc' }, 500);
+  }
+}
+
+async function handleCanvasDocLoad(request: Request, env: Env): Promise<Response> {
+  try {
+    const url = new URL(request.url);
+    const sessionId = url.searchParams.get('sessionId');
+    const callerId = url.searchParams.get('callerId') || undefined;
+    if (!sessionId) return json({ error: 'Missing sessionId' }, 400);
+
+    const auth = await authorizeCanvasOwner(env, sessionId, callerId);
+    if (!auth.ok) return json({ error: auth.error }, auth.status);
+
+    const row = await env.DB.prepare(
+      `SELECT cd.encrypted_data, cd.updated_at, cd.client_id, s.layout_mode
+       FROM canvas_docs cd
+       LEFT JOIN scenes s ON s.session_id = cd.session_id
+       WHERE cd.session_id = ?`
+    ).bind(sessionId).first<{
+      encrypted_data: string;
+      updated_at: string;
+      client_id: string | null;
+      layout_mode: string | null;
+    }>();
+
+    if (!row) {
+      const scene = await env.DB.prepare(
+        `SELECT layout_mode FROM scenes WHERE session_id = ?`
+      ).bind(sessionId).first<{ layout_mode: string | null }>();
+      return json({ encryptedData: null, layoutMode: scene?.layout_mode || 'canvas' });
+    }
+
+    return json({
+      encryptedData: row.encrypted_data,
+      updatedAt: row.updated_at,
+      clientId: row.client_id,
+      layoutMode: row.layout_mode || 'canvas',
+    });
+  } catch (err) {
+    return json({ error: 'Failed to load canvas doc' }, 500);
+  }
+}
+
+async function handleCanvasLayoutSave(request: Request, env: Env): Promise<Response> {
+  try {
+    const body = await request.json() as { sessionId: string; layoutMode: string; createdBy?: string };
+    if (!body.sessionId || !['canvas', 'split', 'docs'].includes(body.layoutMode)) {
+      return json({ error: 'Invalid sessionId or layoutMode' }, 400);
+    }
+    const auth = await authorizeCanvasOwner(env, body.sessionId, body.createdBy);
+    if (!auth.ok) return json({ error: auth.error }, auth.status);
+
+    await env.DB.prepare(
+      `UPDATE scenes SET layout_mode = ? WHERE session_id = ?`
+    ).bind(body.layoutMode, body.sessionId).run();
+    return json({ ok: true });
+  } catch (err) {
+    return json({ error: 'Failed to save layout mode' }, 500);
   }
 }
 

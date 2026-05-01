@@ -46,8 +46,9 @@ const COMMANDS = [
   { label: 'Eraser', icon: 'bx-eraser', section: 'Tools', shortcut: 'E', action: 'tool:eraser' },
   { label: 'Laser pointer', icon: 'bxs-magic-wand', section: 'Tools', shortcut: 'K', action: 'tool:laser' },
   { label: 'Frame tool', icon: 'bx-border-all', section: 'Tools', shortcut: 'F', action: 'tool:frame' },
-  { label: 'Text to diagram...', icon: 'bx-brain', section: 'Tools', action: 'aiModal' },
-  { label: 'Mermaid to diagram...', icon: 'bx-code-block', section: 'Tools', action: 'aiModal' },
+  // AI entries removed — feature is hidden behind a coming-soon screen.
+  // Restore "Text to diagram..." / "Mermaid to diagram..." here when the
+  // assistant ships.
 
   // --- Links ---
   { label: 'GitHub', icon: 'bxl-github', section: 'Links', action: 'link:github' },
