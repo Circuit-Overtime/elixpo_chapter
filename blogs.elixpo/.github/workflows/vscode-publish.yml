@@ -1,0 +1,32 @@
+name: Publish VS Code Extension to Marketplace
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/vscode/**'
+
+jobs:
+  publish:
+    name: Publish to VS Code Marketplace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build extension
+        working-directory: packages/vscode
+        run: npm run build
+
+      - name: Publish to VS Code Marketplace
+        working-directory: packages/vscode
+        run: npx @vscode/vsce publish --no-dependencies
+        env:
+          VSCE_PAT: ${{ secrets.VSCODE_LIXSKETCH_EXT_PUBLISH_TOKEN }}
