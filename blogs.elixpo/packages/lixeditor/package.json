@@ -1,6 +1,6 @@
 {
   "name": "@elixpo/lixeditor",
-  "version": "2.5.8",
+  "version": "2.6.2",
   "description": "A rich WYSIWYG block editor and renderer built on BlockNote — equations, mermaid diagrams, code highlighting, and more.",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -9,8 +9,18 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./styles": "./dist/styles/index.css"
+    "./styles": {
+      "style": "./dist/styles/index.css",
+      "default": "./dist/styles/index.css"
+    },
+    "./styles/*.css": "./dist/styles/*.css",
+    "./styles/*": "./dist/styles/*.css",
+    "./package.json": "./package.json"
   },
+  "style": "dist/styles/index.css",
+  "sideEffects": [
+    "**/*.css"
+  ],
   "files": [
     "dist",
     "src"
@@ -22,9 +32,11 @@
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
-    "@blocknote/core": ">=0.30.0",
-    "@blocknote/react": ">=0.30.0",
-    "@blocknote/mantine": ">=0.30.0"
+    "@blocknote/core": ">=0.47.0",
+    "@blocknote/react": ">=0.47.0",
+    "@blocknote/mantine": ">=0.47.0",
+    "@mantine/core": ">=8.3.11",
+    "@mantine/hooks": ">=8.3.11"
   },
   "dependencies": {
     "katex": "^0.16.0",

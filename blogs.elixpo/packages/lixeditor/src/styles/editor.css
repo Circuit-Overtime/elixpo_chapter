@@ -35,6 +35,22 @@
   z-index: 1;
 }
 
+/* ===== Base cursor — editable surface should always show I-beam =====
+   The package ships its own wrapper class (.lix-editor-wrapper) around
+   BlockNote, so consumers get the expected text cursor for free without
+   needing to override it host-side. Any container's body cursor (canvas
+   tools, custom pointers, etc.) gets reset inside the editor. */
+.lix-editor-wrapper,
+.lix-editor-wrapper .bn-container,
+.lix-editor-wrapper .bn-editor,
+.lix-editor-wrapper [contenteditable="true"] {
+  cursor: text;
+}
+
+/* Inline children that aren't text (icons, drag handles, buttons) keep
+   their own cursor via more specific rules elsewhere — this base rule
+   only targets the editable surface. */
+
 /* ===== BlogEditor (BlockNote) Dark Theme ===== */
 
 .blog-editor-wrapper .bn-editor {

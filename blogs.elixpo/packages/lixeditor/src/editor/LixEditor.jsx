@@ -1,7 +1,15 @@
 'use client';
 
 import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs, createCodeBlockSpec } from '@blocknote/core';
-import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems, TableHandlesController } from '@blocknote/react';
+import {
+  useCreateBlockNote,
+  SuggestionMenuController,
+  getDefaultReactSlashMenuItems,
+  TableHandlesController,
+  FormattingToolbar,
+  FormattingToolbarController,
+  getFormattingToolbarItems,
+} from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef, useEffect } from 'react';
 import { useLixTheme } from '../hooks/useLixTheme';
@@ -322,7 +330,21 @@ const LixEditor = forwardRef(function LixEditor({
         onChange={handleChange}
         theme={isDark ? 'dark' : 'light'}
         slashMenu={false}
+        formattingToolbar={false}
       >
+        {/* Custom formatting toolbar — drop the "Create link" button.
+            Inline link insertion is intentionally disabled; users can still
+            paste URLs (auto-linked) and use the markdown shortcut [text](url). */}
+        <FormattingToolbarController
+          formattingToolbar={() => (
+            <FormattingToolbar>
+              {getFormattingToolbarItems().filter((item) => {
+                const key = item?.key ?? item?.props?.key;
+                return key !== 'createLink';
+              })}
+            </FormattingToolbar>
+          )}
+        />
         <SuggestionMenuController triggerCharacter="/" getItems={getItems} />
         <TableHandlesController />
         {children}
