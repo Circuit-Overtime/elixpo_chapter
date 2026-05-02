@@ -1540,6 +1540,21 @@ function handleMultiSelectionMouseDown(e) {
         // Clear multi-selection
         multiSelection.clearSelection();
 
+        // ── Group expansion ────────────────────────────────────────────
+        // If the clicked shape is part of a group, select ALL of its
+        // group-mates as a multi-selection instead of single-selecting.
+        // Subsequent drag/resize/rotate then operates on the whole group
+        // via the existing multi-selection plumbing.
+        if (clickedShape.groupId && typeof shapes !== 'undefined') {
+            const mates = shapes.filter(s => s.groupId === clickedShape.groupId);
+            if (mates.length > 1) {
+                for (const m of mates) multiSelection.addShape(m);
+                currentShape = null;
+                multiSelection.startDrag(e);
+                return true;
+            }
+        }
+
         // Set new current shape
         currentShape = clickedShape;
 

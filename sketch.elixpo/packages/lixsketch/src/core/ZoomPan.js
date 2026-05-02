@@ -99,26 +99,32 @@ freehandCanvas.addEventListener("wheel", function(e) {
   if (newZoom < minScale) newZoom = minScale;
   if (newZoom > maxScale) newZoom = maxScale;
 
-  // Get canvas bounding rect (in case canvas doesn't fill the window exactly)
+  // Get canvas bounding rect — this MUST be the SVG element's actual
+  // size, not the window's. In split mode the canvas pane is narrower
+  // than the viewport; using window.innerWidth here would produce a
+  // viewBox aspect that doesn't match the element, and (with
+  // preserveAspectRatio="none" on the host) the content gets stretched
+  // / squeezed on every zoom step.
   const rect = freehandCanvas.getBoundingClientRect();
-  
+
   // Calculate mouse position relative to the canvas in pixels
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
-  
+
   // Determine what fraction of the canvas the mouse is at
   const mouseFracX = mouseX / rect.width;
   const mouseFracY = mouseY / rect.height;
-  
+
   // Compute the current viewBox coordinate under the mouse.
   // currentViewBox.width and .height represent the current viewBox dimensions.
   const anchorViewBoxX = currentViewBox.x + mouseFracX * currentViewBox.width;
   const anchorViewBoxY = currentViewBox.y + mouseFracY * currentViewBox.height;
-  
-  // Now compute the new viewBox dimensions based on the new zoom level.
-  // We assume the canvas pixel size stays the same.
-  const newViewBoxWidth = window.innerWidth / newZoom;
-  const newViewBoxHeight = window.innerHeight / newZoom;
+
+  // New viewBox dimensions sized to the *element*, scaled by the new
+  // zoom. This keeps the viewBox aspect ratio matching the element so
+  // shapes stay undistorted.
+  const newViewBoxWidth = rect.width / newZoom;
+  const newViewBoxHeight = rect.height / newZoom;
   
   // Compute the new viewBox's x and y so that the anchor remains at the same screen fraction.
   // That means:

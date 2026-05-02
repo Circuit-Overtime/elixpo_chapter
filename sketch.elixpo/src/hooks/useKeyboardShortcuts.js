@@ -5,6 +5,7 @@ import useSketchStore, { TOOLS, SHORTCUT_MAP } from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
 import { triggerCloudSync } from '@/hooks/useAutoSave'
 import { triggerDocCloudSync } from '@/hooks/useDocAutoSave'
+import { showToast } from '@/utils/toast'
 
 export default function useKeyboardShortcuts() {
   useEffect(() => {
@@ -96,12 +97,53 @@ export default function useKeyboardShortcuts() {
         }
         if (key === 'g' && !e.shiftKey) {
           e.preventDefault()
-          // Group — handled by engine
+          // Group: assign a fresh groupId to every shape in the current
+          // selection. After this, clicking any group-mate selects them
+          // all (see Selection.js → group expansion).
+          //
+          // Targets: multiSelection if it has 2+ shapes, otherwise the
+          // single currentShape (no-op for 0 or 1 shape).
+          try {
+            const ms = window.multiSelection
+            const sel = ms?.selectedShapes
+            const targets = sel && sel.size > 1
+              ? Array.from(sel)
+              : (window.currentShape ? [window.currentShape] : [])
+            if (targets.length > 1) {
+              const newId = `g-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+              for (const s of targets) s.groupId = newId
+              // Trigger a re-render of the multi-selection bounds so
+              // the user sees the group is now committed.
+              if (typeof ms?.updateControls === 'function') ms.updateControls()
+              showToast(`Grouped ${targets.length} shapes`, { tone: 'success' })
+            }
+          } catch (err) {
+            console.warn('[Group] failed:', err)
+          }
           return
         }
         if (key === 'g' && e.shiftKey) {
           e.preventDefault()
-          // Ungroup — handled by engine
+          // Ungroup: clear groupId from all selected shapes (and any of
+          // their group-mates, so the whole group dissolves cleanly).
+          try {
+            const ms = window.multiSelection
+            const sel = ms?.selectedShapes
+            const targets = sel && sel.size > 0
+              ? Array.from(sel)
+              : (window.currentShape ? [window.currentShape] : [])
+            const groupIds = new Set(targets.map(s => s.groupId).filter(Boolean))
+            if (groupIds.size > 0 && Array.isArray(window.shapes)) {
+              let cleared = 0
+              for (const s of window.shapes) {
+                if (s.groupId && groupIds.has(s.groupId)) { s.groupId = null; cleared++ }
+              }
+              if (typeof ms?.updateControls === 'function') ms.updateControls()
+              showToast(`Ungrouped ${cleared} shapes`, { tone: 'success' })
+            }
+          } catch (err) {
+            console.warn('[Ungroup] failed:', err)
+          }
           return
         }
         if (key === 'd') {
