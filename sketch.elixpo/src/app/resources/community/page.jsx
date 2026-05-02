@@ -5,7 +5,7 @@ import Link from 'next/link'
 import MarkdownRenderer from '@/components/blog/MarkdownRenderer'
 import content from '@/content/pages/community.md'
 
-const GITHUB_URL = 'https://github.com/elixpo/lixsketch'
+const GITHUB_URL = 'https://github.com/elixpo/sketch.elixpo'
 
 // ── Dot grid background ───────────────────────────────────────────────────────
 function DotGrid({ className }) {
@@ -313,7 +313,7 @@ export default function CommunityPage() {
               <div className="flex items-center gap-4">
                 <i className="bx bxl-github text-3xl text-white" />
                 <div>
-                  <p className="text-white font-[lixFont] text-base">elixpo/lixsketch</p>
+                  <p className="text-white font-[lixFont] text-base">elixpo/sketch.elixpo</p>
                   <p className="text-[#b4b2ee] font-[lixFont] text-xs mt-0.5">Open-source WYSIWYG canvas for diagrams, wireframes, and docs</p>
                 </div>
               </div>

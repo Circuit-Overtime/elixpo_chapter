@@ -16,7 +16,7 @@ Email **security@elixpo.com** with:
 - Your assessment of impact (what an attacker could do).
 - Your name / handle if you'd like credit; we'll add you to the acknowledgements unless you prefer to stay anonymous.
 
-If email isn't an option, use GitHub's **[private vulnerability reporting](https://github.com/elixpo/lixsketch/security/advisories/new)** for this repo.
+If email isn't an option, use GitHub's **[private vulnerability reporting](https://github.com/elixpo/sketch.elixpo/security/advisories/new)** for this repo.
 
 Please **do not**:
 
@@ -101,7 +101,7 @@ Security-relevant fixes are released as patch versions of the npm package and as
 - npm: `@elixpo/lixsketch` follows semver; patch releases for security fixes.
 - App: deployed continuously from `main`. Critical fixes ship within hours; non-critical within the standard release cadence.
 
-Subscribe to the repo's [security advisories](https://github.com/elixpo/lixsketch/security/advisories) (Watch → Custom → Security alerts) to get notified.
+Subscribe to the repo's [security advisories](https://github.com/elixpo/sketch.elixpo/security/advisories) (Watch → Custom → Security alerts) to get notified.
 
 ## Questions
 

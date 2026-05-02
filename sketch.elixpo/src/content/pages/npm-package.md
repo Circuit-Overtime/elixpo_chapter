@@ -82,5 +82,5 @@ export default function Whiteboard() {
 ## Links
 
 - [NPM Registry](https://www.npmjs.com/package/@elixpo/lixsketch)
-- [GitHub](https://github.com/elixpo/lixsketch)
+- [GitHub](https://github.com/elixpo/sketch.elixpo)
 - [LixScript Docs](/docs)

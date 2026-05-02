@@ -1,6 +1,6 @@
 {
   "name": "lixsketch",
-  "version": "5.4.9",
+  "version": "5.4.13",
   "description": "Open-source infinite canvas sketching with a hand-drawn aesthetic and a Notion-like docs editor",
   "author": {
     "name": "Ayushman Bhattacharya",
@@ -52,11 +52,11 @@
     "@blocknote/core": "^0.47.1",
     "@blocknote/mantine": "^0.47.1",
     "@blocknote/react": "^0.47.1",
-    "@mantine/core": "^8.3.11",
-    "@mantine/hooks": "^8.3.11",
     "@cloudflare/next-on-pages": "^1.13.16",
     "@elixpo/lixeditor": "^2.6.6",
     "@elixpo/lixsketch": "workspace:*",
+    "@mantine/core": "^8.3.11",
+    "@mantine/hooks": "^8.3.11",
     "framer-motion": "^12.35.2",
     "fuse.js": "^7.1.0",
     "highlight.js": "^11.11.1",
@@ -69,6 +69,7 @@
     "@cloudflare/workers-types": "^4.20260310.1",
     "@tailwindcss/postcss": "^4.2.1",
     "postcss": "^8.5.8",
+    "raw-loader": "^4.0.2",
     "tailwindcss": "^4.2.1",
     "wrangler": "^4.72.0"
   }

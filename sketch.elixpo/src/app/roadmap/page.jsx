@@ -735,7 +735,7 @@ export default function RoadmapPage() {
           </p>
           <div className="flex items-center justify-center gap-3">
             <a
-              href="https://github.com/elixpo/lixsketch/issues/new?labels=enhancement"
+              href="https://github.com/elixpo/sketch.elixpo/issues/new?labels=enhancement"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2.5 rounded-lg border border-[#8B88E8]/30 text-[#8B88E8] text-sm font-[lixFont] hover:bg-[#8B88E8]/10 transition-all flex items-center gap-2"
@@ -744,7 +744,7 @@ export default function RoadmapPage() {
               Request Feature
             </a>
             <a
-              href="https://github.com/elixpo/lixsketch"
+              href="https://github.com/elixpo/sketch.elixpo"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2.5 rounded-lg bg-[#8B88E8] text-white text-sm font-[lixFont] hover:brightness-110 transition-all flex items-center gap-2"

@@ -21,8 +21,8 @@ export default function AppMenu() {
 
   const LINKS = [
     { label: t('links.documentation'), icon: 'bx-book-open', href: '/docs' },
-    { label: t('links.github'), icon: 'bxl-github', href: 'https://github.com/elixpo/lixsketch' },
-    { label: t('links.reportIssue'), icon: 'bx-bug', href: 'https://github.com/elixpo/lixsketch/issues' },
+    { label: t('links.github'), icon: 'bxl-github', href: 'https://github.com/elixpo/sketch.elixpo' },
+    { label: t('links.reportIssue'), icon: 'bx-bug', href: 'https://github.com/elixpo/sketch.elixpo/issues' },
   ]
 
   const PREFERENCE_ITEMS = [

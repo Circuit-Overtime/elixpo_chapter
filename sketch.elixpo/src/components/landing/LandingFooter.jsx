@@ -48,7 +48,7 @@ export default function LandingFooter() {
             <h4 className="text-text-secondary text-xs uppercase tracking-wider mb-4">Company</h4>
             <div className="flex flex-col gap-2.5">
               <a href="https://elixpo.com" target="_blank" rel="noopener noreferrer" className="text-text-dim text-sm hover:text-text-primary transition-colors">Elixpo</a>
-              <a href="https://github.com/elixpo/lixsketch" target="_blank" rel="noopener noreferrer" className="text-text-dim text-sm hover:text-text-primary transition-colors">GitHub</a>
+              <a href="https://github.com/elixpo/sketch.elixpo" target="_blank" rel="noopener noreferrer" className="text-text-dim text-sm hover:text-text-primary transition-colors">GitHub</a>
               <Link href="/docs/blog/engine-package-launch" className="text-text-dim text-sm hover:text-text-primary transition-colors">Engine Launch Blog</Link>
             </div>
           </div>
@@ -62,7 +62,7 @@ export default function LandingFooter() {
           </div>
 
           <div className="flex items-center gap-4">
-            <a href="https://github.com/elixpo/lixsketch" target="_blank" rel="noopener noreferrer" className="text-text-dim hover:text-text-primary transition-colors">
+            <a href="https://github.com/elixpo/sketch.elixpo" target="_blank" rel="noopener noreferrer" className="text-text-dim hover:text-text-primary transition-colors">
               <i className="bx bxl-github text-lg" />
             </a>
           </div>

@@ -12,6 +12,15 @@ const nextConfig = {
     '@blocknote/react',
     '@blocknote/mantine',
   ],
+
+  turbopack: {
+    rules: {
+      '*.md': {
+        loaders: [require_.resolve('raw-loader')],
+        as: '*.js',
+      },
+    },
+  },
   webpack: (config) => {
     config.module.rules.push({
       test: /\.md$/,
