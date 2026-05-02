@@ -104,6 +104,12 @@ function _onDocumentDragUp(e) {
 
 const handleMainMouseDown = (e) => {
     if (!e.target) return;
+    // Middle / right mouse buttons are reserved for panning and the
+    // browser context menu; they should NOT trigger tool actions or the
+    // multi-selection rectangle. Without this guard, middle-click-drag
+    // simultaneously pans (handled in ZoomPan) and starts a selection
+    // marquee.
+    if (e.button === 1 || e.button === 2) return;
     // Safety: remove any stray selection rectangle from a previous interrupted drag
     removeMultiSelectionRect();
 

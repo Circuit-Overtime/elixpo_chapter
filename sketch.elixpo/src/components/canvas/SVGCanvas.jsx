@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import useSketchEngine from '@/hooks/useSketchEngine'
 
@@ -14,40 +14,21 @@ export default function SVGCanvas() {
   const getCursor = useSketchStore((s) => s.getCursor)
   const cursor = getCursor()
 
-  const [viewBox, setViewBox] = useState('0 0 1920 1080')
-
+  // viewBox is owned imperatively by the lixsketch engine (zoom/pan call
+  // svg.setAttribute('viewBox', …) directly). React must NOT re-render
+  // the viewBox prop or it'll snap back over engine writes — which is
+  // what was causing zoom deformity and the pan-release jump in split
+  // mode. The initial value is set in the effect below; React never
+  // rewrites it after that.
   useEffect(() => {
-    // Track the SVG element's *actual rendered size* and keep both the
-    // viewBox attribute AND the engine's `window.currentViewBox` in sync
-    // with it. This is what makes split mode work:
-    //
-    //  - With `preserveAspectRatio` defaults, a viewBox whose aspect
-    //    doesn't match the element's gets letterboxed inside the element.
-    //    The package's pointer math (`mouseX / rect.width * viewBox.width`)
-    //    does NOT compensate for the letterbox — clicks map to wrong SVG
-    //    coords. Matching viewBox to rect avoids the letterbox entirely.
-    //
-    //  - The engine's freehand tool (and others) read `currentViewBox`
-    //    directly. If we change the viewBox attribute without updating
-    //    that global, freehand's pointer math drifts.
-    //
-    //  - `preserveAspectRatio="none"` is a belt-and-suspenders against
-    //    any future viewBox/element aspect mismatch (e.g. mid-zoom).
     const applyImperative = (w, h) => {
-      // Preserve zoom: viewBox width/height represent canvas-units that
-      // span the element. At zoom=1 they equal element pixels; at zoom=2
-      // they're half (smaller viewBox = magnified content).
       const zoom = window.currentZoom || 1
       const cv = window.currentViewBox || { x: 0, y: 0 }
       const vbW = w / zoom
       const vbH = h / zoom
       const x = cv.x || 0
       const y = cv.y || 0
-
       window.currentViewBox = { x, y, width: vbW, height: vbH }
-
-      // Imperatively write the SVG attr so we don't fight the engine's
-      // own setAttribute calls on subsequent zoom/pan operations.
       const el = svgRef.current
       if (el) el.setAttribute('viewBox', `${x} ${y} ${vbW} ${vbH}`)
     }
@@ -59,15 +40,6 @@ export default function SVGCanvas() {
       const w = Math.max(1, Math.round(rect.width))
       const h = Math.max(1, Math.round(rect.height))
       applyImperative(w, h)
-    }
-
-    // Initial React-state value (used only for the very first render
-    // before we take over imperatively).
-    {
-      const rect = svgRef.current?.getBoundingClientRect()
-      const w = Math.max(1, Math.round(rect?.width || window.innerWidth))
-      const h = Math.max(1, Math.round(rect?.height || window.innerHeight))
-      setViewBox(`0 0 ${w} ${h}`)
     }
 
     sync()
@@ -124,7 +96,6 @@ export default function SVGCanvas() {
         WebkitUserSelect: 'none',
         touchAction: 'none',
       }}
-      viewBox={viewBox}
       preserveAspectRatio="none"
       suppressHydrationWarning
     >

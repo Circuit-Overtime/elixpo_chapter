@@ -42,6 +42,10 @@ function serializeShape(shape) {
     const base = {
         shapeID: shape.shapeID,
         parentFrame: shape.parentFrame ? shape.parentFrame.shapeID : null,
+        // Group membership — null when the shape isn't part of a group.
+        // All shapes sharing a non-null groupId move/resize/rotate as a
+        // unit (see Selection.handleMultiSelectionMouseDown).
+        groupId: shape.groupId || null,
     };
 
     switch (shape.shapeName) {
@@ -377,6 +381,8 @@ export function loadScene(sceneData) {
     for (const data of frameData) {
         const shape = deserializeShape(data);
         if (shape) {
+            // Restore group membership if present.
+            if (data.groupId) shape.groupId = data.groupId;
             window.shapes.push(shape);
             if (data.shapeID) idMap.set(data.shapeID, shape);
         }
@@ -386,6 +392,7 @@ export function loadScene(sceneData) {
     for (const data of otherData) {
         const shape = deserializeShape(data);
         if (shape) {
+            if (data.groupId) shape.groupId = data.groupId;
             window.shapes.push(shape);
             if (data.shapeID) idMap.set(data.shapeID, shape);
         }

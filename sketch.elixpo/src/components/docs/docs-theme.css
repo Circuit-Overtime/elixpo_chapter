@@ -111,6 +111,10 @@
 .lix-sketch-theme [data-content-type="codeBlock"] .shiki * {
   background: transparent !important;
   color: #d8d8e8;
+  /* Bump up from the package's 0.9em — too small to read comfortably
+     in the split-pane editor. */
+  font-size: 14px !important;
+  line-height: 1.6 !important;
 }
 
 /* The editable surface itself */
@@ -120,6 +124,55 @@
   caret-color: var(--bn-colors-selected-background);
   padding-top: 1.25rem;
   padding-bottom: 1.25rem;
+}
+
+/* The host has overflow-y: auto which forces overflow-x to clip too.
+   BlockNote's side menu is positioned by Floating UI in JS at
+   `left = block.left - menu.width`, putting it in the block's
+   negative-x space — clipped by the host. Two-part fix:
+     (1) increase wrapper padding-left so block.left starts further
+         right, giving Floating UI room.
+     (2) constrain the side-menu container width via CSS so its
+         computed left edge stays inside the host. */
+.lix-sketch-theme .lix-editor-wrapper {
+  padding-left: 3.5rem;     /* > default side-menu width (~40px) */
+  padding-right: 1.5rem;
+}
+
+/* Stack the +/drag-handle vertically. Two things to fix vs the
+   package's own bn-side-menu rule:
+     1. The package sets `height: 28px; overflow: hidden` — built for a
+        single horizontal row. That clips the drag-handle when stacked
+        vertically. We unwind those caps.
+     2. Don't force fixed width/height on children — the drag-handle is
+        wrapped in a Mantine Menu.Root <div>, and collapsing it hides
+        the inner button. */
+.lix-sketch-theme .bn-side-menu {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  align-items: center;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  padding: 2px 0 !important;
+}
+
+/* Horizontal-rule (`---` markdown shortcut) — the package styles the
+   <hr> with `background: var(--border-default)` but never defines that
+   variable, so the line collapses to invisible and only the surrounding
+   margin/padding shows (looks like a big empty block). Force a color
+   here. Tighten the surrounding spacing too. */
+.lix-sketch-theme [data-content-type="divider"] {
+  margin: 8px 0 !important;
+  padding: 4px 0 !important;
+}
+.lix-sketch-theme [data-content-type="divider"] hr {
+  border: none !important;
+  height: 1px !important;
+  background: #3a3a50 !important;
+  width: 100%;
 }
 
 /* Block hover background */

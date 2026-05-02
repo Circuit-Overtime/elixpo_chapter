@@ -55,7 +55,7 @@
     "@mantine/core": "^8.3.11",
     "@mantine/hooks": "^8.3.11",
     "@cloudflare/next-on-pages": "^1.13.16",
-    "@elixpo/lixeditor": "^2.6.4",
+    "@elixpo/lixeditor": "^2.6.6",
     "@elixpo/lixsketch": "workspace:*",
     "framer-motion": "^12.35.2",
     "fuse.js": "^7.1.0",

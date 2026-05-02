@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import useSketchStore from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
+import { showToast } from '@/utils/toast'
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -297,6 +298,56 @@ export default function ContextMenu() {
     close()
   }
 
+  // ── Group / ungroup helpers ─────────────────────────────────
+  // Mirror the Ctrl+G / Ctrl+Shift+G behavior so the right-click menu
+  // is a discoverable alternative.
+  const handleGroup = () => {
+    const ms = window.multiSelection
+    const sel = ms?.selectedShapes
+    const targets = sel && sel.size > 1
+      ? Array.from(sel)
+      : (window.currentShape ? [window.currentShape] : [])
+    if (targets.length > 1) {
+      const newId = `g-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+      for (const s of targets) s.groupId = newId
+      if (typeof ms?.updateControls === 'function') ms.updateControls()
+      showToast(`Grouped ${targets.length} shapes`, { tone: 'success' })
+    }
+    close()
+  }
+
+  const handleUngroup = () => {
+    const ms = window.multiSelection
+    const sel = ms?.selectedShapes
+    const targets = sel && sel.size > 0
+      ? Array.from(sel)
+      : (window.currentShape ? [window.currentShape] : [])
+    const groupIds = new Set(targets.map(s => s.groupId).filter(Boolean))
+    if (groupIds.size > 0 && Array.isArray(window.shapes)) {
+      let cleared = 0
+      for (const s of window.shapes) {
+        if (s.groupId && groupIds.has(s.groupId)) { s.groupId = null; cleared++ }
+      }
+      if (typeof ms?.updateControls === 'function') ms.updateControls()
+      showToast(`Ungrouped ${cleared} shapes`, { tone: 'success' })
+    }
+    close()
+  }
+
+  // Compute selection state for the menu rendering below.
+  const selectionShapes = (() => {
+    const sel = window.multiSelection?.selectedShapes
+    if (sel && sel.size > 0) return Array.from(sel)
+    if (targetShape) return [targetShape]
+    return []
+  })()
+  const canGroup = selectionShapes.length > 1
+  const groupIdsInSelection = new Set(selectionShapes.map(s => s.groupId).filter(Boolean))
+  const canUngroup = groupIdsInSelection.size > 0
+  const fullyGrouped = selectionShapes.length > 1 &&
+    selectionShapes.every(s => s.groupId) &&
+    groupIdsInSelection.size === 1
+
   const handleCanvasProperties = () => {
     // Toggle shape sidebar / properties via Alt+/
     close()
@@ -321,7 +372,17 @@ export default function ContextMenu() {
           <MenuItem label="Paste" shortcut="Ctrl+V" onClick={handlePaste} />
 
           <Separator />
-          <MenuItem label="Wrap selection in frame" onClick={handleWrapInFrame} />
+          {/* Frame wrap doesn't make sense when the selection is already
+              grouped — the group itself is the implicit container. */}
+          {!fullyGrouped && (
+            <MenuItem label="Wrap selection in frame" onClick={handleWrapInFrame} />
+          )}
+          {canGroup && !fullyGrouped && (
+            <MenuItem label="Group" shortcut="Ctrl+G" onClick={handleGroup} />
+          )}
+          {canUngroup && (
+            <MenuItem label="Ungroup" shortcut="Ctrl+Shift+G" onClick={handleUngroup} />
+          )}
 
           <Separator />
           <MenuItem label="Copy to clipboard as PNG" shortcut="Shift+Alt+C" onClick={handleCopyPNG} />
