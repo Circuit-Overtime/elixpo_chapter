@@ -53,7 +53,7 @@
 
 /* ===== BlogEditor (BlockNote) Dark Theme ===== */
 
-.blog-editor-wrapper .bn-editor {
+.lix-editor-wrapper .bn-editor {
   background: transparent;
   color: var(--text-primary);
   font-family: 'Source Serif 4', Georgia, serif;
@@ -62,40 +62,40 @@
   padding-left: 0;
 }
 
-.blog-editor-wrapper .bn-container {
+.lix-editor-wrapper .bn-container {
   background: transparent;
   border: none;
   padding: 0;
 }
 
-.blog-editor-wrapper [class*="blockOuter"] {
+.lix-editor-wrapper [class*="blockOuter"] {
   padding-left: 0;
 }
 
-.blog-editor-wrapper .bn-block-content {
+.lix-editor-wrapper .bn-block-content {
   font-size: 1em;
 }
 
 /* Placeholder */
-.blog-editor-wrapper .bn-inline-content[data-placeholder]::before {
+.lix-editor-wrapper .bn-inline-content[data-placeholder]::before {
   color: var(--text-faint);
   font-style: normal;
 }
 
 /* Headings — override BlockNote's .bn-default-styles h1 { font-size: inherit } */
-.blog-editor-wrapper .bn-default-styles h1 {
+.lix-editor-wrapper .bn-default-styles h1 {
   font-size: 30px !important;
   font-family: 'Source Serif 4', Georgia, serif;
   font-weight: 700 !important;
   color: var(--text-primary);
 }
-.blog-editor-wrapper .bn-default-styles h2 {
+.lix-editor-wrapper .bn-default-styles h2 {
   font-size: 24px !important;
   font-family: 'Source Serif 4', Georgia, serif;
   font-weight: 650 !important;
   color: var(--text-primary);
 }
-.blog-editor-wrapper .bn-default-styles h3 {
+.lix-editor-wrapper .bn-default-styles h3 {
   font-size: 20px !important;
   font-family: 'Source Serif 4', Georgia, serif;
   font-weight: 600 !important;
@@ -104,7 +104,7 @@
 
 /* Inline code — purple accent, adapts to theme.
    Excludes code inside code blocks so Shiki syntax highlighting isn't overridden. */
-.blog-editor-wrapper code,
+.lix-editor-wrapper code,
 .blog-preview-content code {
   color: #7c3aed;
   background: rgba(124, 58, 237, 0.08);
@@ -123,22 +123,22 @@
 }
 
 /* Force hide spellcheck squiggles on all code elements */
-.blog-editor-wrapper code *,
-.blog-editor-wrapper [data-content-type="codeBlock"] * {
+.lix-editor-wrapper code *,
+.lix-editor-wrapper [data-content-type="codeBlock"] * {
   text-decoration: none !important;
   -webkit-text-decoration: none !important;
   -webkit-text-decorations-in-effect: none !important;
   text-decoration-line: none !important;
 }
 
-[data-theme="dark"] .blog-editor-wrapper code,
+[data-theme="dark"] .lix-editor-wrapper code,
 [data-theme="dark"] .blog-preview-content code {
   color: #c4b5fd;
   background: rgba(196, 181, 253, 0.1);
 }
 
 /* Reset inline code styles inside code blocks — let Shiki/theme handle these */
-.blog-editor-wrapper [data-content-type="codeBlock"] code,
+.lix-editor-wrapper [data-content-type="codeBlock"] code,
 .blog-preview-content pre code {
   color: var(--code-text);
   background: none;
@@ -147,64 +147,64 @@
 }
 
 /* Code blocks — lixCode font, no line highlights */
-.blog-editor-wrapper [data-content-type="codeBlock"] code,
-.blog-editor-wrapper [data-content-type="codeBlock"] pre,
-.blog-editor-wrapper [data-content-type="codeBlock"] [contenteditable] {
+.lix-editor-wrapper [data-content-type="codeBlock"] code,
+.lix-editor-wrapper [data-content-type="codeBlock"] pre,
+.lix-editor-wrapper [data-content-type="codeBlock"] [contenteditable] {
   font-family: 'lixCode', 'SF Mono', 'Fira Code', monospace !important;
   font-size: 0.9em;
 }
 
-.blog-editor-wrapper [data-content-type="codeBlock"] .hljs-ln-line,
-.blog-editor-wrapper [data-content-type="codeBlock"] .line-highlight,
-.blog-editor-wrapper [data-content-type="codeBlock"] .bn-line-number {
+.lix-editor-wrapper [data-content-type="codeBlock"] .hljs-ln-line,
+.lix-editor-wrapper [data-content-type="codeBlock"] .line-highlight,
+.lix-editor-wrapper [data-content-type="codeBlock"] .bn-line-number {
   background: none !important;
 }
 
 /* AI-generated blocks use named 'purple' — ensure readable text in both themes */
-.blog-editor-wrapper [data-text-color="purple"] { color: var(--text-secondary) !important; }
-.blog-editor-wrapper [data-background-color="purple"] { background-color: rgba(155, 123, 247, 0.06) !important; }
+.lix-editor-wrapper [data-text-color="purple"] { color: var(--text-secondary) !important; }
+.lix-editor-wrapper [data-background-color="purple"] { background-color: rgba(155, 123, 247, 0.06) !important; }
 
 /* Map BlockNote block-level text color (data-text-color on block containers) */
-.blog-editor-wrapper [data-text-color="#ffffff"] { color: #ffffff !important; }
-.blog-editor-wrapper [data-text-color="#9ca3af"] { color: var(--text-muted) !important; }
-.blog-editor-wrapper [data-text-color="#f87171"] { color: #f87171 !important; }
-.blog-editor-wrapper [data-text-color="#fb923c"] { color: #fb923c !important; }
-.blog-editor-wrapper [data-text-color="#fbbf24"] { color: #fbbf24 !important; }
-.blog-editor-wrapper [data-text-color="#4ade80"] { color: #4ade80 !important; }
-.blog-editor-wrapper [data-text-color="#60a5fa"] { color: #60a5fa !important; }
-.blog-editor-wrapper [data-text-color="#a78bfa"] { color: #a78bfa !important; }
-.blog-editor-wrapper [data-text-color="#f472b6"] { color: #f472b6 !important; }
+.lix-editor-wrapper [data-text-color="#ffffff"] { color: #ffffff !important; }
+.lix-editor-wrapper [data-text-color="#9ca3af"] { color: var(--text-muted) !important; }
+.lix-editor-wrapper [data-text-color="#f87171"] { color: #f87171 !important; }
+.lix-editor-wrapper [data-text-color="#fb923c"] { color: #fb923c !important; }
+.lix-editor-wrapper [data-text-color="#fbbf24"] { color: #fbbf24 !important; }
+.lix-editor-wrapper [data-text-color="#4ade80"] { color: #4ade80 !important; }
+.lix-editor-wrapper [data-text-color="#60a5fa"] { color: #60a5fa !important; }
+.lix-editor-wrapper [data-text-color="#a78bfa"] { color: #a78bfa !important; }
+.lix-editor-wrapper [data-text-color="#f472b6"] { color: #f472b6 !important; }
 
 /* Map BlockNote inline text color marks (data-style-type="textColor" with data-value) */
-.blog-editor-wrapper [data-style-type="textColor"][data-value="#ffffff"] { color: #ffffff !important; }
-.blog-editor-wrapper [data-style-type="textColor"][data-value="#9ca3af"] { color: var(--text-muted) !important; }
-.blog-editor-wrapper [data-style-type="textColor"][data-value="#f87171"] { color: #f87171 !important; }
-.blog-editor-wrapper [data-style-type="textColor"][data-value="#fb923c"] { color: #fb923c !important; }
-.blog-editor-wrapper [data-style-type="textColor"][data-value="#fbbf24"] { color: #fbbf24 !important; }
-.blog-editor-wrapper [data-style-type="textColor"][data-value="#4ade80"] { color: #4ade80 !important; }
-.blog-editor-wrapper [data-style-type="textColor"][data-value="#60a5fa"] { color: #60a5fa !important; }
-.blog-editor-wrapper [data-style-type="textColor"][data-value="#a78bfa"] { color: #a78bfa !important; }
-.blog-editor-wrapper [data-style-type="textColor"][data-value="#f472b6"] { color: #f472b6 !important; }
+.lix-editor-wrapper [data-style-type="textColor"][data-value="#ffffff"] { color: #ffffff !important; }
+.lix-editor-wrapper [data-style-type="textColor"][data-value="#9ca3af"] { color: var(--text-muted) !important; }
+.lix-editor-wrapper [data-style-type="textColor"][data-value="#f87171"] { color: #f87171 !important; }
+.lix-editor-wrapper [data-style-type="textColor"][data-value="#fb923c"] { color: #fb923c !important; }
+.lix-editor-wrapper [data-style-type="textColor"][data-value="#fbbf24"] { color: #fbbf24 !important; }
+.lix-editor-wrapper [data-style-type="textColor"][data-value="#4ade80"] { color: #4ade80 !important; }
+.lix-editor-wrapper [data-style-type="textColor"][data-value="#60a5fa"] { color: #60a5fa !important; }
+.lix-editor-wrapper [data-style-type="textColor"][data-value="#a78bfa"] { color: #a78bfa !important; }
+.lix-editor-wrapper [data-style-type="textColor"][data-value="#f472b6"] { color: #f472b6 !important; }
 
 /* Map BlockNote block-level background color */
-.blog-editor-wrapper [data-background-color="rgba(156,163,175,0.25)"] { background-color: rgba(156,163,175,1) !important; }
-.blog-editor-wrapper [data-background-color="rgba(248,113,113,0.25)"] { background-color: rgba(248,113,113,1) !important; }
-.blog-editor-wrapper [data-background-color="rgba(251,146,60,0.25)"] { background-color: rgba(251,146,60,1) !important; }
-.blog-editor-wrapper [data-background-color="rgba(251,191,36,0.25)"] { background-color: rgba(251,191,36,1) !important; }
-.blog-editor-wrapper [data-background-color="rgba(74,222,128,0.25)"] { background-color: rgba(74,222,128,1) !important; }
-.blog-editor-wrapper [data-background-color="rgba(96,165,250,0.25)"] { background-color: rgba(96,165,250,1) !important; }
-.blog-editor-wrapper [data-background-color="rgba(167,139,250,0.25)"] { background-color: rgba(167,139,250,1) !important; }
-.blog-editor-wrapper [data-background-color="rgba(244,114,182,0.25)"] { background-color: rgba(244,114,182,1) !important; }
+.lix-editor-wrapper [data-background-color="rgba(156,163,175,0.25)"] { background-color: rgba(156,163,175,1) !important; }
+.lix-editor-wrapper [data-background-color="rgba(248,113,113,0.25)"] { background-color: rgba(248,113,113,1) !important; }
+.lix-editor-wrapper [data-background-color="rgba(251,146,60,0.25)"] { background-color: rgba(251,146,60,1) !important; }
+.lix-editor-wrapper [data-background-color="rgba(251,191,36,0.25)"] { background-color: rgba(251,191,36,1) !important; }
+.lix-editor-wrapper [data-background-color="rgba(74,222,128,0.25)"] { background-color: rgba(74,222,128,1) !important; }
+.lix-editor-wrapper [data-background-color="rgba(96,165,250,0.25)"] { background-color: rgba(96,165,250,1) !important; }
+.lix-editor-wrapper [data-background-color="rgba(167,139,250,0.25)"] { background-color: rgba(167,139,250,1) !important; }
+.lix-editor-wrapper [data-background-color="rgba(244,114,182,0.25)"] { background-color: rgba(244,114,182,1) !important; }
 
 /* Map BlockNote inline background color marks */
-.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(156,163,175,0.25)"] { background-color: rgba(156,163,175,0.25) !important; }
-.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(248,113,113,0.25)"] { background-color: rgba(248,113,113,0.25) !important; }
-.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(251,146,60,0.25)"] { background-color: rgba(251,146,60,0.25) !important; }
-.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(251,191,36,0.25)"] { background-color: rgba(251,191,36,0.25) !important; }
-.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(74,222,128,0.25)"] { background-color: rgba(74,222,128,0.25) !important; }
-.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(96,165,250,0.25)"] { background-color: rgba(96,165,250,0.25) !important; }
-.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(167,139,250,0.25)"] { background-color: rgba(167,139,250,0.25) !important; }
-.blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(244,114,182,0.25)"] { background-color: rgba(244,114,182,0.25) !important; }
+.lix-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(156,163,175,0.25)"] { background-color: rgba(156,163,175,0.25) !important; }
+.lix-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(248,113,113,0.25)"] { background-color: rgba(248,113,113,0.25) !important; }
+.lix-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(251,146,60,0.25)"] { background-color: rgba(251,146,60,0.25) !important; }
+.lix-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(251,191,36,0.25)"] { background-color: rgba(251,191,36,0.25) !important; }
+.lix-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(74,222,128,0.25)"] { background-color: rgba(74,222,128,0.25) !important; }
+.lix-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(96,165,250,0.25)"] { background-color: rgba(96,165,250,0.25) !important; }
+.lix-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(167,139,250,0.25)"] { background-color: rgba(167,139,250,0.25) !important; }
+.lix-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(244,114,182,0.25)"] { background-color: rgba(244,114,182,0.25) !important; }
 
 /* Cover gradient blur placeholder */
 .cover-gradient-blur {
@@ -275,7 +275,7 @@
 }
 
 /* Side menu (+ / drag handle) — lavender glassmorphic */
-.blog-editor-wrapper .bn-side-menu {
+.lix-editor-wrapper .bn-side-menu {
   background: rgba(196, 181, 253, 0.06);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -291,36 +291,36 @@
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-.blog-editor-wrapper .bn-side-menu:hover {
+.lix-editor-wrapper .bn-side-menu:hover {
   background: rgba(196, 181, 253, 0.1);
   border-color: rgba(196, 181, 253, 0.25);
 }
 
-.blog-editor-wrapper .bn-side-menu button {
+.lix-editor-wrapper .bn-side-menu button {
   color: rgba(196, 181, 253, 0.5);
   transition: color 0.15s ease;
 }
 
-.blog-editor-wrapper .bn-side-menu button:hover {
+.lix-editor-wrapper .bn-side-menu button:hover {
   color: #c4b5fd;
 }
 
-.blog-editor-wrapper .bn-drag-handle {
+.lix-editor-wrapper .bn-drag-handle {
   color: rgba(196, 181, 253, 0.4);
 }
 
-.blog-editor-wrapper .bn-drag-handle:hover {
+.lix-editor-wrapper .bn-drag-handle:hover {
   color: #c4b5fd;
 }
 
 /* Selection highlight */
-.blog-editor-wrapper ::selection {
+.lix-editor-wrapper ::selection {
   background: rgba(123, 168, 240, 0.3);
 }
 
 /* ===== Editor links — distinct styling ===== */
-.blog-editor-wrapper .bn-editor a,
-.blog-editor-wrapper .bn-block-content a {
+.lix-editor-wrapper .bn-editor a,
+.lix-editor-wrapper .bn-block-content a {
   color: #7ba8f0 !important;
   text-decoration: none !important;
   border-bottom: 1px solid rgba(123, 168, 240, 0.3);
@@ -330,16 +330,16 @@
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
-.blog-editor-wrapper .bn-editor a:hover,
-.blog-editor-wrapper .bn-block-content a:hover {
+.lix-editor-wrapper .bn-editor a:hover,
+.lix-editor-wrapper .bn-block-content a:hover {
   color: #9dc0ff !important;
   border-bottom-color: rgba(157, 192, 255, 0.5);
   background: rgba(123, 168, 240, 0.06);
 }
 
 /* Ctrl/Cmd held — links become clickable, show pointer cursor */
-.blog-editor-wrapper.ctrl-held .bn-editor a,
-.blog-editor-wrapper.ctrl-held .bn-block-content a {
+.lix-editor-wrapper.ctrl-held .bn-editor a,
+.lix-editor-wrapper.ctrl-held .bn-block-content a {
   cursor: pointer;
   text-decoration: underline !important;
   border-bottom: none;

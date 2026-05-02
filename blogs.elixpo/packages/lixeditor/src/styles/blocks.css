@@ -1,30 +1,30 @@
 /* ===== No selection outline or drag handle for custom blocks ===== */
 
-.blog-editor-wrapper [data-content-type="codeBlock"],
-.blog-editor-wrapper [data-content-type="blockEquation"],
-.blog-editor-wrapper [data-content-type="mermaidBlock"] {
+.lix-editor-wrapper [data-content-type="codeBlock"],
+.lix-editor-wrapper [data-content-type="blockEquation"],
+.lix-editor-wrapper [data-content-type="mermaidBlock"] {
   outline: none !important;
   box-shadow: none !important;
   border-color: var(--border-default) !important;
 }
 
 /* Remove the blue selected ring BlockNote adds */
-.blog-editor-wrapper [data-content-type="codeBlock"] *::selection,
-.blog-editor-wrapper [data-content-type="blockEquation"] *::selection,
-.blog-editor-wrapper [data-content-type="mermaidBlock"] *::selection {
+.lix-editor-wrapper [data-content-type="codeBlock"] *::selection,
+.lix-editor-wrapper [data-content-type="blockEquation"] *::selection,
+.lix-editor-wrapper [data-content-type="mermaidBlock"] *::selection {
   background: transparent;
 }
 
-.blog-editor-wrapper .bn-block-outer[data-node-type="blockContainer"]:has([data-content-type="codeBlock"]) > .bn-block,
-.blog-editor-wrapper .bn-block-outer[data-node-type="blockContainer"]:has([data-content-type="blockEquation"]) > .bn-block,
-.blog-editor-wrapper .bn-block-outer[data-node-type="blockContainer"]:has([data-content-type="mermaidBlock"]) > .bn-block {
+.lix-editor-wrapper .bn-block-outer[data-node-type="blockContainer"]:has([data-content-type="codeBlock"]) > .bn-block,
+.lix-editor-wrapper .bn-block-outer[data-node-type="blockContainer"]:has([data-content-type="blockEquation"]) > .bn-block,
+.lix-editor-wrapper .bn-block-outer[data-node-type="blockContainer"]:has([data-content-type="mermaidBlock"]) > .bn-block {
   outline: none !important;
   box-shadow: none !important;
 }
 
 /* ===== Code blocks ===== */
 
-.blog-editor-wrapper [data-content-type="codeBlock"] {
+.lix-editor-wrapper [data-content-type="codeBlock"] {
   background: var(--code-bg);
   border: 1px solid var(--border-default);
   border-radius: 10px;
@@ -51,7 +51,7 @@
   --code-lang-text: #9ba8b9;
 }
 
-.blog-editor-wrapper [data-content-type="codeBlock"] code {
+.lix-editor-wrapper [data-content-type="codeBlock"] code {
   color: var(--code-text);
   font-size: 0.84em;
   font-family: inherit;
@@ -60,24 +60,24 @@
   line-height: 1.7;
 }
 
-.blog-editor-wrapper [data-content-type="codeBlock"] [contenteditable] {
+.lix-editor-wrapper [data-content-type="codeBlock"] [contenteditable] {
   padding: 8px 16px !important;
   -webkit-text-decorations-in-effect: none;
 }
 
 /* Kill spellcheck red squiggles inside code blocks */
-.blog-editor-wrapper [data-content-type="codeBlock"] [contenteditable] * {
+.lix-editor-wrapper [data-content-type="codeBlock"] [contenteditable] * {
   text-decoration: none !important;
   -webkit-text-decoration: none !important;
 }
 
 /* Shiki syntax highlighting — let inline styles override default color */
-.blog-editor-wrapper [data-content-type="codeBlock"] code span[style] {
+.lix-editor-wrapper [data-content-type="codeBlock"] code span[style] {
   background: none !important;
 }
 
 /* Language selector dropdown (BlockNote built-in) */
-.blog-editor-wrapper [data-content-type="codeBlock"] select {
+.lix-editor-wrapper [data-content-type="codeBlock"] select {
   background: var(--code-lang-bg);
   color: var(--code-lang-text);
   border: 1px solid var(--border-default);
@@ -90,7 +90,7 @@
   margin: 4px 8px;
 }
 
-.blog-editor-wrapper [data-content-type="codeBlock"] select:focus {
+.lix-editor-wrapper [data-content-type="codeBlock"] select:focus {
   border-color: #a78bfa;
 }
 
@@ -213,7 +213,7 @@
 
 /* ===== Divider / Horizontal Rule ===== */
 
-.blog-editor-wrapper [data-content-type="divider"] {
+.lix-editor-wrapper [data-content-type="divider"] {
   margin: 16px 0;
   padding: 8px 0;
   pointer-events: none;
@@ -221,7 +221,7 @@
   cursor: default;
 }
 
-.blog-editor-wrapper [data-content-type="divider"] hr {
+.lix-editor-wrapper [data-content-type="divider"] hr {
   border: none;
   height: 1px;
   background: var(--border-default);
@@ -229,12 +229,12 @@
 
 /* ===== Sub-Page Block ===== */
 
-.blog-editor-wrapper [data-content-type="tabsBlock"] {
+.lix-editor-wrapper [data-content-type="tabsBlock"] {
   user-select: none;
   width: 100%;
 }
 
-.blog-editor-wrapper [data-content-type="tabsBlock"] .bn-block-content {
+.lix-editor-wrapper [data-content-type="tabsBlock"] .bn-block-content {
   cursor: default;
   width: 100%;
 }
@@ -389,24 +389,24 @@
 
 /* ===== Lists ===== */
 
-.blog-editor-wrapper [data-content-type="bulletListItem"],
-.blog-editor-wrapper [data-content-type="numberedListItem"] {
+.lix-editor-wrapper [data-content-type="bulletListItem"],
+.lix-editor-wrapper [data-content-type="numberedListItem"] {
   color: var(--text-primary);
 }
 
-.blog-editor-wrapper [data-content-type="bulletListItem"]::before {
+.lix-editor-wrapper [data-content-type="bulletListItem"]::before {
   color: var(--text-muted);
 }
 
-.blog-editor-wrapper [data-content-type="numberedListItem"]::before {
+.lix-editor-wrapper [data-content-type="numberedListItem"]::before {
   color: var(--text-muted);
 }
 
 /* ===== Fancy Checkboxes ===== */
 
-.blog-editor-wrapper [data-content-type="checkListItem"] [data-checked-icon],
-.blog-editor-wrapper [data-content-type="checkListItem"] [data-unchecked-icon],
-.blog-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"] {
+.lix-editor-wrapper [data-content-type="checkListItem"] [data-checked-icon],
+.lix-editor-wrapper [data-content-type="checkListItem"] [data-unchecked-icon],
+.lix-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
   width: 18px;
@@ -420,18 +420,18 @@
   flex-shrink: 0;
 }
 
-.blog-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"]:hover {
+.lix-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"]:hover {
   border-color: #9b7bf7;
   box-shadow: 0 0 0 3px rgba(155, 123, 247, 0.12);
 }
 
-.blog-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"]:checked {
+.lix-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"]:checked {
   background: linear-gradient(135deg, #9b7bf7, #8b6ae6);
   border-color: #9b7bf7;
   box-shadow: 0 1px 4px rgba(155, 123, 247, 0.3);
 }
 
-.blog-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"]:checked::after {
+.lix-editor-wrapper [data-content-type="checkListItem"] input[type="checkbox"]:checked::after {
   content: '';
   position: absolute;
   top: 2px;
@@ -444,13 +444,13 @@
 }
 
 /* Checked item text gets muted + strikethrough */
-.blog-editor-wrapper [data-content-type="checkListItem"][data-checked="true"] .bn-inline-content {
+.lix-editor-wrapper [data-content-type="checkListItem"][data-checked="true"] .bn-inline-content {
   text-decoration: line-through;
   opacity: 0.5;
 }
 
 /* BlockNote's native checkbox SVG icons — style them too */
-.blog-editor-wrapper [data-content-type="checkListItem"] .bn-checkbox {
+.lix-editor-wrapper [data-content-type="checkListItem"] .bn-checkbox {
   width: 18px;
   height: 18px;
   border-radius: 6px;
@@ -463,58 +463,58 @@
   justify-content: center;
 }
 
-.blog-editor-wrapper [data-content-type="checkListItem"] .bn-checkbox:hover {
+.lix-editor-wrapper [data-content-type="checkListItem"] .bn-checkbox:hover {
   border-color: #9b7bf7;
   box-shadow: 0 0 0 3px rgba(155, 123, 247, 0.12);
 }
 
-.blog-editor-wrapper [data-content-type="checkListItem"][data-checked="true"] .bn-checkbox {
+.lix-editor-wrapper [data-content-type="checkListItem"][data-checked="true"] .bn-checkbox {
   background: linear-gradient(135deg, #9b7bf7, #8b6ae6);
   border-color: #9b7bf7;
   box-shadow: 0 1px 4px rgba(155, 123, 247, 0.3);
 }
 
-.blog-editor-wrapper [data-content-type="checkListItem"][data-checked="true"] .bn-checkbox svg {
+.lix-editor-wrapper [data-content-type="checkListItem"][data-checked="true"] .bn-checkbox svg {
   color: white;
 }
 
 /* ===== Image blocks ===== */
 
-.blog-editor-wrapper [data-content-type="image"] img {
+.lix-editor-wrapper [data-content-type="image"] img {
   border-radius: 10px;
   max-width: 100%;
 }
 
-.blog-editor-wrapper [data-content-type="image"] .bn-image-resize-handle {
+.lix-editor-wrapper [data-content-type="image"] .bn-image-resize-handle {
   background: #7ba8f0;
 }
 
 /* ===== Table ===== */
 
-.blog-editor-wrapper [data-content-type="table"] {
+.lix-editor-wrapper [data-content-type="table"] {
   border-color: var(--border-default);
 }
 
-.blog-editor-wrapper [data-content-type="table"] td,
-.blog-editor-wrapper [data-content-type="table"] th {
+.lix-editor-wrapper [data-content-type="table"] td,
+.lix-editor-wrapper [data-content-type="table"] th {
   border-color: var(--border-default);
   padding: 8px 12px;
 }
 
 /* Table handles dark theme */
-.blog-editor-wrapper .bn-table-handle {
+.lix-editor-wrapper .bn-table-handle {
   background: var(--border-default);
   border: 1px solid #333;
   color: var(--text-muted);
 }
 
-.blog-editor-wrapper .bn-table-handle:hover {
+.lix-editor-wrapper .bn-table-handle:hover {
   background: var(--border-hover);
   color: #c4b5fd;
 }
 
 /* Table handle dropdown menu */
-.blog-editor-wrapper .bn-table-handle-menu,
+.lix-editor-wrapper .bn-table-handle-menu,
 .bn-table-handle-menu {
   background: var(--bg-surface) !important;
   border: 1px solid var(--border-default) !important;
@@ -522,26 +522,26 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
 }
 
-.blog-editor-wrapper .bn-table-handle-menu button,
+.lix-editor-wrapper .bn-table-handle-menu button,
 .bn-table-handle-menu button {
   color: var(--text-primary) !important;
 }
 
-.blog-editor-wrapper .bn-table-handle-menu button:hover,
+.lix-editor-wrapper .bn-table-handle-menu button:hover,
 .bn-table-handle-menu button:hover {
   background: rgba(196, 181, 253, 0.1) !important;
   color: #c4b5fd !important;
 }
 
 /* Table extend (add row/col) button */
-.blog-editor-wrapper .bn-extend-button {
+.lix-editor-wrapper .bn-extend-button {
   background: rgba(196, 181, 253, 0.08);
   border: 1px dashed rgba(196, 181, 253, 0.2);
   color: var(--text-muted);
   transition: all 0.15s;
 }
 
-.blog-editor-wrapper .bn-extend-button:hover {
+.lix-editor-wrapper .bn-extend-button:hover {
   background: rgba(196, 181, 253, 0.15);
   border-color: rgba(196, 181, 253, 0.4);
   color: #c4b5fd;
@@ -549,23 +549,23 @@
 
 /* ===== KaTeX overrides ===== */
 
-.blog-editor-wrapper .katex {
+.lix-editor-wrapper .katex {
   color: var(--text-primary);
   font-size: 1.1em;
 }
 
-.blog-editor-wrapper .katex-display {
+.lix-editor-wrapper .katex-display {
   margin: 0;
 }
 
 /* ===== Custom block styles ===== */
 
-.blog-editor-wrapper .toc-block a {
+.lix-editor-wrapper .toc-block a {
   color: #9b7bf7;
   text-decoration: none;
 }
 
-.blog-editor-wrapper .toc-block a:hover {
+.lix-editor-wrapper .toc-block a:hover {
   color: #b69aff;
 }
 
@@ -720,8 +720,8 @@
 
 /* ===== Mermaid diagram blocks ===== */
 
-.blog-editor-wrapper [data-content-type="mermaidBlock"],
-.blog-editor-wrapper [data-content-type="blockEquation"] {
+.lix-editor-wrapper [data-content-type="mermaidBlock"],
+.lix-editor-wrapper [data-content-type="blockEquation"] {
   width: 100%;
 }
 

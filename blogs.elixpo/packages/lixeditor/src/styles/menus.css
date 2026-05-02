@@ -1,7 +1,7 @@
 /* ===== Slash menu / dropdown ===== */
 
-.blog-editor-wrapper .mantine-Menu-dropdown,
-.blog-editor-wrapper .bn-suggestion-menu {
+.lix-editor-wrapper .mantine-Menu-dropdown,
+.lix-editor-wrapper .bn-suggestion-menu {
   background: var(--bg-surface) !important;
   border: 1px solid var(--border-default) !important;
   border-radius: 12px !important;
@@ -10,82 +10,82 @@
   scrollbar-color: var(--bg-elevated) transparent;
 }
 
-.blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar {
+.lix-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar {
   width: 6px;
 }
 
-.blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar-track {
+.lix-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar-thumb {
+.lix-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar-thumb {
   background: var(--bg-elevated);
   border-radius: 3px;
 }
 
-.blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar-thumb:hover {
+.lix-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar-thumb:hover {
   background: var(--border-hover);
 }
 
 /* Slash menu group headers */
-.blog-editor-wrapper .bn-suggestion-menu [class*="group"] {
+.lix-editor-wrapper .bn-suggestion-menu [class*="group"] {
   color: var(--text-faint) !important;
   font-size: 11px !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
 }
 
-.blog-editor-wrapper .mantine-Menu-item {
+.lix-editor-wrapper .mantine-Menu-item {
   color: var(--text-primary) !important;
   border-radius: 8px !important;
 }
 
-.blog-editor-wrapper .mantine-Menu-item:hover,
-.blog-editor-wrapper .mantine-Menu-item[data-hovered] {
+.lix-editor-wrapper .mantine-Menu-item:hover,
+.lix-editor-wrapper .mantine-Menu-item[data-hovered] {
   background: var(--bg-active) !important;
 }
 
-.blog-editor-wrapper .mantine-Menu-itemLabel {
+.lix-editor-wrapper .mantine-Menu-itemLabel {
   color: var(--text-primary) !important;
 }
 
-.blog-editor-wrapper .mantine-Menu-itemSection {
+.lix-editor-wrapper .mantine-Menu-itemSection {
   color: var(--text-muted) !important;
 }
 
 /* Block type selector dropdown */
-.blog-editor-wrapper .bn-toolbar select,
-.blog-editor-wrapper .bn-toolbar [class*="select"],
-.blog-editor-wrapper .bn-toolbar [role="listbox"] {
+.lix-editor-wrapper .bn-toolbar select,
+.lix-editor-wrapper .bn-toolbar [class*="select"],
+.lix-editor-wrapper .bn-toolbar [role="listbox"] {
   background: var(--bg-surface) !important;
   color: var(--text-primary) !important;
   border-color: var(--border-default) !important;
 }
 
 /* Mantine Select / Combobox dropdowns (block type picker) */
-.blog-editor-wrapper .mantine-Combobox-dropdown,
-.blog-editor-wrapper .mantine-Select-dropdown {
+.lix-editor-wrapper .mantine-Combobox-dropdown,
+.lix-editor-wrapper .mantine-Select-dropdown {
   background: var(--bg-surface) !important;
   border: 1px solid var(--border-default) !important;
   border-radius: 10px !important;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3) !important;
 }
 
-.blog-editor-wrapper .mantine-Combobox-option {
+.lix-editor-wrapper .mantine-Combobox-option {
   color: var(--text-primary) !important;
   border-radius: 6px !important;
 }
 
-.blog-editor-wrapper .mantine-Combobox-option:hover,
-.blog-editor-wrapper .mantine-Combobox-option[data-combobox-selected] {
+.lix-editor-wrapper .mantine-Combobox-option:hover,
+.lix-editor-wrapper .mantine-Combobox-option[data-combobox-selected] {
   background: var(--bg-active) !important;
 }
 
-.blog-editor-wrapper .mantine-Combobox-option[data-combobox-active] {
+.lix-editor-wrapper .mantine-Combobox-option[data-combobox-active] {
   background: var(--bg-active) !important;
 }
 
-.blog-editor-wrapper .mantine-Input-input {
+.lix-editor-wrapper .mantine-Input-input {
   background: var(--bg-surface) !important;
   color: var(--text-primary) !important;
   border-color: var(--border-default) !important;
@@ -93,7 +93,7 @@
 
 /* ===== Formatting toolbar ===== */
 
-.blog-editor-wrapper .bn-toolbar {
+.lix-editor-wrapper .bn-toolbar {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: 10px;
@@ -102,38 +102,38 @@
 }
 
 /* When a link is selected, the link toolbar appears — hide AI + link + color from formatting toolbar */
-.blog-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) [data-test="createLink"],
-.blog-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .ai-star-btn,
-.blog-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .ai-toolbar-sep,
-.blog-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .toolbar-color-btn,
-.blog-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .toolbar-color-sep {
+.lix-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) [data-test="createLink"],
+.lix-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .ai-star-btn,
+.lix-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .ai-toolbar-sep,
+.lix-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .toolbar-color-btn,
+.lix-editor-wrapper:has(.bn-link-toolbar) .bn-toolbar:not(.bn-link-toolbar) .toolbar-color-sep {
   display: none !important;
 }
 
-.blog-editor-wrapper .bn-toolbar button {
+.lix-editor-wrapper .bn-toolbar button {
   color: var(--text-muted);
 }
 
 /* Link create button — highlight it */
-.blog-editor-wrapper .bn-toolbar [data-test="createLink"] {
+.lix-editor-wrapper .bn-toolbar [data-test="createLink"] {
   color: var(--text-muted);
 }
 
-.blog-editor-wrapper .bn-toolbar [data-test="createLink"]:hover {
+.lix-editor-wrapper .bn-toolbar [data-test="createLink"]:hover {
   color: #7ba8f0;
   background: rgba(123, 168, 240, 0.1);
 }
 
-.blog-editor-wrapper .bn-toolbar [data-test="createLink"][data-active="true"] {
+.lix-editor-wrapper .bn-toolbar [data-test="createLink"][data-active="true"] {
   color: #7ba8f0;
 }
 
-.blog-editor-wrapper .bn-toolbar button:hover {
+.lix-editor-wrapper .bn-toolbar button:hover {
   color: #7ba8f0;
   background: var(--border-default);
 }
 
-.blog-editor-wrapper .bn-toolbar button[data-active="true"] {
+.lix-editor-wrapper .bn-toolbar button[data-active="true"] {
   color: #7ba8f0;
 }
 
@@ -332,29 +332,29 @@
 
 /* ===== Slash menu group labels for Media / AI ===== */
 
-.blog-editor-wrapper .bn-suggestion-menu [data-group="Media"] .bn-suggestion-menu-group-label,
-.blog-editor-wrapper .bn-suggestion-menu [data-group="AI Generate"] .bn-suggestion-menu-group-label {
+.lix-editor-wrapper .bn-suggestion-menu [data-group="Media"] .bn-suggestion-menu-group-label,
+.lix-editor-wrapper .bn-suggestion-menu [data-group="AI Generate"] .bn-suggestion-menu-group-label {
   color: #9b7bf7 !important;
 }
 
 /* Link tooltip — only keep Edit link and Open link */
-.blog-editor-wrapper .bn-link-toolbar {
+.lix-editor-wrapper .bn-link-toolbar {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: 8px;
 }
 
 /* Hide the delete/unlink button (3rd child) */
-.blog-editor-wrapper .bn-link-toolbar > *:nth-child(3) {
+.lix-editor-wrapper .bn-link-toolbar > *:nth-child(3) {
   display: none !important;
 }
 /* Hide any further toolbar buttons that may appear (4th+) */
-.blog-editor-wrapper .bn-link-toolbar > *:nth-child(n+4):not([data-radix-popper-content-wrapper]) {
+.lix-editor-wrapper .bn-link-toolbar > *:nth-child(n+4):not([data-radix-popper-content-wrapper]) {
   display: none !important;
 }
 
 /* Style the edit link popover form */
-.blog-editor-wrapper .bn-form-popover {
+.lix-editor-wrapper .bn-form-popover {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: 10px;
@@ -363,12 +363,12 @@
   min-width: 280px;
 }
 
-[data-theme="dark"] .blog-editor-wrapper .bn-form-popover {
+[data-theme="dark"] .lix-editor-wrapper .bn-form-popover {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
-.blog-editor-wrapper .bn-form-popover .bn-text-input,
-.blog-editor-wrapper .bn-popover-content input {
+.lix-editor-wrapper .bn-form-popover .bn-text-input,
+.lix-editor-wrapper .bn-popover-content input {
   width: 100%;
   padding: 8px 10px;
   font-size: 13px;
@@ -380,18 +380,18 @@
   margin-bottom: 6px;
 }
 
-.blog-editor-wrapper .bn-form-popover .bn-text-input:focus,
-.blog-editor-wrapper .bn-popover-content input:focus {
+.lix-editor-wrapper .bn-form-popover .bn-text-input:focus,
+.lix-editor-wrapper .bn-popover-content input:focus {
   border-color: #9b7bf7;
 }
 
-.blog-editor-wrapper .bn-form-popover .bn-text-input::placeholder,
-.blog-editor-wrapper .bn-popover-content input::placeholder {
+.lix-editor-wrapper .bn-form-popover .bn-text-input::placeholder,
+.lix-editor-wrapper .bn-popover-content input::placeholder {
   color: var(--text-faint);
 }
 
 /* Style the create link popover */
-.blog-editor-wrapper .bn-popover-content {
+.lix-editor-wrapper .bn-popover-content {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: 10px;
@@ -400,7 +400,7 @@
   min-width: 280px;
 }
 
-[data-theme="dark"] .blog-editor-wrapper .bn-popover-content {
+[data-theme="dark"] .lix-editor-wrapper .bn-popover-content {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
