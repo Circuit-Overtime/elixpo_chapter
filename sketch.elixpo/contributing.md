@@ -8,7 +8,7 @@ This guide covers what you need to know to land a useful PR. Repo-specific archi
 
 ### 1. Find something to work on
 
-- Browse open issues: <https://github.com/elixpo/lixsketch/issues>
+- Browse open issues: <https://github.com/elixpo/sketch.elixpo/issues>
 - Look for `good first issue` or `help wanted` if you're new.
 - Triage labels (`FEATURE`, `BUG`, `DEV`, `DOCS`) tell you what kind of work each issue is.
 - If you want to propose something new, **open an issue first** and discuss the approach before writing code. The canvas engine has a lot of cross-shape state — design changes that look small often aren't.
@@ -57,7 +57,7 @@ We welcome PRs across the surface area:
 1. **Fork** the repo and clone your fork:
 
    ```bash
-   git clone https://github.com/<your-username>/lixsketch.git
+   git clone https://github.com/<your-username>/sketch.elixpo.git
    cd lixsketch
    ```
 
@@ -143,7 +143,7 @@ We welcome PRs across the surface area:
 
 - Anything touching auth, sessions, encryption keys, or worker endpoints must be reviewed by a maintainer.
 - Don't commit secrets, tokens, or production database dumps. The committed `wrangler.toml` only contains public binding ids — secrets are set via `wrangler secret put`.
-- Found a vulnerability? Don't open a public issue. See [SECURITY.md](SECURITY.md) — short version: email **security@elixpo.com** or use GitHub's [private vulnerability reporting](https://github.com/elixpo/lixsketch/security/advisories/new).
+- Found a vulnerability? Don't open a public issue. See [SECURITY.md](SECURITY.md) — short version: email **security@elixpo.com** or use GitHub's [private vulnerability reporting](https://github.com/elixpo/sketch.elixpo/security/advisories/new).
 
 ### Database changes
 
@@ -166,6 +166,6 @@ Be respectful. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for the full version
 
 - **Stuck on the build?** Re-read the edge-runtime constraints above and in [AGENTS.md](AGENTS.md). Most build failures trace back to a Node-only API leaking into an edge route.
 - **Stuck on the architecture?** Tag a maintainer in the issue. Don't guess and rewrite — ask first. The canvas engine globals make it especially easy to introduce regressions.
-- **Doc-editor issues?** They probably live in the [`@elixpo/lixeditor`](https://github.com/elixpo/lixblogs/tree/main/packages/lixeditor) package, not here. File the issue there.
+- **Doc-editor issues?** They probably live in the [`@elixpo/lixeditor`](https://github.com/elixpo/sketch.elixpo/tree/main/packages/lixeditor) package, not here. File the issue there.
 
 Thanks for contributing — every fix and feature makes LixSketch a little better.

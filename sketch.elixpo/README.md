@@ -12,10 +12,10 @@
 
 An open-source freemium platform for collaborative canvas — technical presentations, modelling, wireframes, and more.
 
-[![GitHub Stars](https://img.shields.io/github/stars/elixpo/lixsketch?style=for-the-badge&logo=github&color=5B57D1&labelColor=1a1a2e)](https://github.com/elixpo/lixsketch/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/elixpo/lixsketch?style=for-the-badge&logo=github&color=8B88E8&labelColor=1a1a2e)](https://github.com/elixpo/lixsketch/network/members)
-[![GitHub Issues](https://img.shields.io/github/issues/elixpo/lixsketch?style=for-the-badge&logo=github&color=c873e4&labelColor=1a1a2e)](https://github.com/elixpo/lixsketch/issues)
-[![License](https://img.shields.io/github/license/elixpo/lixsketch?style=for-the-badge&color=4A90D9&labelColor=1a1a2e)](./LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/elixpo/sketch.elixpo?style=for-the-badge&logo=github&color=5B57D1&labelColor=1a1a2e)](https://github.com/elixpo/sketch.elixpo/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/elixpo/sketch.elixpo?style=for-the-badge&logo=github&color=8B88E8&labelColor=1a1a2e)](https://github.com/elixpo/sketch.elixpo/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/elixpo/sketch.elixpo?style=for-the-badge&logo=github&color=c873e4&labelColor=1a1a2e)](https://github.com/elixpo/sketch.elixpo/issues)
+[![License](https://img.shields.io/github/license/elixpo/sketch.elixpo?style=for-the-badge&color=4A90D9&labelColor=1a1a2e)](./LICENSE)
 
 [![Website](https://img.shields.io/badge/Website-sketch.elixpo.com-5B57D1?style=flat-square&logo=googlechrome&logoColor=white)](https://sketch.elixpo.com)
 [![Docs](https://img.shields.io/badge/Docs-LixScript-8B88E8?style=flat-square&logo=bookstack&logoColor=white)](https://sketch.elixpo.com/docs)
@@ -110,7 +110,7 @@ We have a dedicated section for our [LixSketch Docs](https://sketch.elixpo.com/d
 
 ## Contributing
 
-This is an open source project! If you find bugs on the platform, please let us know from the [Issues Tab](https://github.com/elixpo/lixsketch/issues). We'd love to solve them for a smooth user experience.
+This is an open source project! If you find bugs on the platform, please let us know from the [Issues Tab](https://github.com/elixpo/sketch.elixpo/issues). We'd love to solve them for a smooth user experience.
 
 <img width="1866" height="877" alt="image" src="https://github.com/user-attachments/assets/a0c53df1-86bb-47f9-a062-1b8dee0999f6" />
 
@@ -119,11 +119,11 @@ This is an open source project! If you find bugs on the platform, please let us 
 
 <div align="center">
 
-<a href="https://star-history.com/#elixpo/lixsketch&Timeline">
+<a href="https://star-history.com/#elixpo/sketch.elixpo&Timeline">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=elixpo/lixsketch&type=Timeline&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=elixpo/lixsketch&type=Timeline" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=elixpo/lixsketch&type=Timeline&theme=dark" width="700" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=elixpo/sketch.elixpo&type=Timeline&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=elixpo/sketch.elixpo&type=Timeline" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=elixpo/sketch.elixpo&type=Timeline&theme=dark" width="700" />
   </picture>
 </a>
 
@@ -135,6 +135,6 @@ This is an open source project! If you find bugs on the platform, please let us 
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,14,20,24&height=120&section=footer&fontSize=0" width="100%" />
 
-### Made with ❤️ by [Elixpo](https://elixpo.com) | [GitHub](https://github.com/elixpo/lixsketch)
+### Made with ❤️ by [Elixpo](https://elixpo.com) | [GitHub](https://github.com/elixpo/sketch.elixpo)
 
 </div>

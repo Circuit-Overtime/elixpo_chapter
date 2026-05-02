@@ -409,11 +409,29 @@ export default function LandingPage() {
             animate="visible"
             variants={blurUp}
             transition={{ duration: 0.7, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="text-text-muted text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-light"
+            className="text-text-muted text-lg md:text-xl max-w-2xl mx-auto mb-6 leading-relaxed font-light"
           >
             An open-source WYSIWYG canvas for diagrams, wireframes, and docs.
             Hand-drawn aesthetic. Infinite canvas. Zero friction.
           </motion.p>
+
+          {/* Powered-by chip — credits the lixeditor package shipped on npm */}
+          <motion.a
+            href="https://www.npmjs.com/package/@elixpo/lixeditor"
+            target="_blank"
+            rel="noopener noreferrer"
+            initial="hidden"
+            animate="visible"
+            variants={blurUp}
+            transition={{ duration: 0.7, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 mb-10 rounded-full bg-surface-card/60 backdrop-blur-sm border border-border-light/70 text-text-muted hover:text-text-primary hover:border-accent-blue/40 transition-all duration-200 text-xs"
+          >
+            <i className="bx bx-package text-sm text-accent-blue" />
+            <span>Doc editor powered by</span>
+            <code className="text-accent-blue font-mono">@elixpo/lixeditor</code>
+            <span className="text-text-dim">on npm</span>
+            <i className="bx bx-link-external text-xs opacity-60" />
+          </motion.a>
 
           {/* Buttons — spring scale */}
           <motion.div

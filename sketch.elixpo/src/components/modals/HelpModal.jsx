@@ -184,7 +184,7 @@ export default function HelpModal() {
             Documentation
           </a>
           <a
-            href="https://github.com/elixpo/lixsketch"
+            href="https://github.com/elixpo/sketch.elixpo"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text-secondary text-xs transition-all duration-200"
@@ -193,7 +193,7 @@ export default function HelpModal() {
             View Repository
           </a>
           <a
-            href="https://github.com/elixpo/lixsketch/issues"
+            href="https://github.com/elixpo/sketch.elixpo/issues"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text-secondary text-xs transition-all duration-200"

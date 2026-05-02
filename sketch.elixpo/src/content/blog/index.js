@@ -6,6 +6,14 @@
 
 export const blogPosts = [
   {
+    slug: 'lixeditor-integration',
+    title: 'Integrating @elixpo/lixeditor: A Notion-Style WYSIWYG Editor',
+    description: 'How we dropped a full WYSIWYG editor into LixSketch using the @elixpo/lixeditor npm package — three CSS imports, one provider, one component, plus the bugs we hit along the way.',
+    icon: 'bx bx-text',
+    date: '2026-05-02',
+    tags: ['integration', 'editor', 'npm', 'blocknote'],
+  },
+  {
     slug: 'engine-package-launch',
     title: 'Introducing @elixpo/lixsketch: Build Your Own Whiteboard',
     description: 'We\'re open-sourcing the LixSketch engine as an npm package and launching a VS Code extension. Install it, mount on any SVG, and build your own whiteboard.',

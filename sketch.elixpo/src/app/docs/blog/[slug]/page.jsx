@@ -7,12 +7,17 @@ import { getBlogPost, blogPosts } from '@/content/blog'
 import MarkdownRenderer from '@/components/blog/MarkdownRenderer'
 
 // Raw markdown imports
+// NOTE: dynamic import by slug isn't possible because Turbopack /
+// webpack need static specifiers to bundle the content. Each new post
+// gets a static import line + a contentMap entry below — keep them in
+// sync with src/content/blog/index.js.
 import enginePackageLaunch from '@/content/blog/engine-package-launch.md'
 import e2eEncryption from '@/content/blog/e2e-encryption.md'
 import websocketCollaboration from '@/content/blog/websocket-collaboration.md'
 import lixscriptDsl from '@/content/blog/lixscript-dsl.md'
 import roughjsCanvas from '@/content/blog/roughjs-canvas.md'
 import imagePipeline from '@/content/blog/image-pipeline.md'
+import lixeditorIntegration from '@/content/blog/lixeditor-integration.md'
 
 const contentMap = {
   'engine-package-launch': enginePackageLaunch,
@@ -21,6 +26,7 @@ const contentMap = {
   'lixscript-dsl': lixscriptDsl,
   'roughjs-canvas': roughjsCanvas,
   'image-pipeline': imagePipeline,
+  'lixeditor-integration': lixeditorIntegration,
 }
 
 // ── Dot grid background (matches canvas feel) ────────────────────────────────

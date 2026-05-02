@@ -42,7 +42,7 @@ function formatStars(n) {
   return `${k.toFixed(k < 10 ? 1 : 0).replace(/\.0$/, '')}k`
 }
 
-const GH_REPO = 'elixpo/lixsketch'
+const GH_REPO = 'elixpo/sketch.elixpo'
 const STARS_CACHE_KEY = `gh-stars:${GH_REPO}`
 const STARS_TTL_MS = 10 * 60 * 1000 // 10 minutes — unauth GitHub API is 60 req/hr
 
@@ -248,7 +248,7 @@ export default function LandingNav() {
               })}
 
               <a
-                href="https://github.com/elixpo/lixsketch"
+                href="https://github.com/elixpo/sketch.elixpo"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 py-2.5 text-text-muted hover:text-text-primary transition-colors text-sm mt-2 border-t border-white/5 pt-3"

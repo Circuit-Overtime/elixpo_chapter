@@ -133,11 +133,11 @@ export default function CommandPalette() {
 
     // Links
     if (action === 'link:github') {
-      window.open('https://github.com/elixpo/lixsketch', '_blank')
+      window.open('https://github.com/elixpo/sketch.elixpo', '_blank')
       return
     }
     if (action === 'link:issues') {
-      window.open('https://github.com/elixpo/lixsketch/issues', '_blank')
+      window.open('https://github.com/elixpo/sketch.elixpo/issues', '_blank')
       return
     }
 

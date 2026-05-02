@@ -80,5 +80,5 @@ arrow a1 from login.right to dashboard.left {
 ## Links
 
 - [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch)
-- [GitHub](https://github.com/elixpo/lixsketch)
+- [GitHub](https://github.com/elixpo/sketch.elixpo)
 - [LixScript Docs](/docs)
