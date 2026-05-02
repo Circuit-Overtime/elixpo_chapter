@@ -77,6 +77,42 @@
   font-family: revert !important;
 }
 
+/* Inline code — give it a clearly visible chip so it's distinguishable
+   from prose. The package ships its own inline-code rule but it's
+   wrapped in dark/light vars that may not be set in this consumer. */
+.lix-sketch-theme .bn-inline-content code,
+.lix-sketch-theme p code,
+.lix-sketch-theme li code,
+.lix-sketch-theme h1 code,
+.lix-sketch-theme h2 code,
+.lix-sketch-theme h3 code,
+.lix-sketch-theme h4 code,
+.lix-sketch-theme h5 code {
+  background: rgba(196, 181, 253, 0.18) !important;
+  color: #d8c7ff !important;
+  border: 1px solid rgba(196, 181, 253, 0.28);
+  border-radius: 5px;
+  padding: 0.12em 0.45em;
+  font-size: 0.88em;
+}
+
+/* Code blocks — explicit dark surface with a visible boundary so they
+   read as a distinct block in the editor. Keeps Shiki tokens intact. */
+.lix-sketch-theme [data-content-type="codeBlock"] {
+  background: #0d1019 !important;
+  border: 1px solid #2a2f3e !important;
+  border-radius: 8px !important;
+  padding: 12px 14px !important;
+  margin: 8px 0 !important;
+}
+.lix-sketch-theme [data-content-type="codeBlock"] code,
+.lix-sketch-theme [data-content-type="codeBlock"] pre,
+.lix-sketch-theme [data-content-type="codeBlock"] .shiki,
+.lix-sketch-theme [data-content-type="codeBlock"] .shiki * {
+  background: transparent !important;
+  color: #d8d8e8;
+}
+
 /* The editable surface itself */
 .lix-sketch-theme .bn-editor {
   background: transparent;
