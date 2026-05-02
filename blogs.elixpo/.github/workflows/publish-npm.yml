@@ -71,9 +71,12 @@ jobs:
 
           if [ "$LOCAL" = "$REMOTE" ]; then
             echo "Versions match — auto-bumping ($BUMP)."
-            NEW=$(npm version "$BUMP" --no-git-tag-version)
-            # `npm version` prefixes with `v`; strip it.
-            NEW="${NEW#v}"
+            # `npm version` in a workspace emits "<pkg-name>\nv<x.y.z>"
+            # to stdout — capturing that produces a multi-line shell var
+            # that corrupts $GITHUB_OUTPUT. Bump silently and read the
+            # new version from package.json instead.
+            npm version "$BUMP" --no-git-tag-version > /dev/null
+            NEW=$(node -p "require('./package.json').version")
             echo "Bumped to $NEW"
             echo "version=$NEW" >> "$GITHUB_OUTPUT"
             echo "auto_bumped=true" >> "$GITHUB_OUTPUT"
