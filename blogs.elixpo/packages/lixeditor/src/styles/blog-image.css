@@ -2,7 +2,7 @@
 .bn-file-panel,
 [class*="mantine-Popover-dropdown"]:has([data-test="embed-input"]),
 [class*="mantine-Popover-dropdown"]:has([data-test="upload-input"]),
-.blog-editor-wrapper [class*="mantine-Popover-dropdown"] {
+.lix-editor-wrapper [class*="mantine-Popover-dropdown"] {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
