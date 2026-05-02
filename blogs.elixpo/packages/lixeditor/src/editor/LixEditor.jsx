@@ -1,6 +1,12 @@
 'use client';
 
-import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs, createCodeBlockSpec } from '@blocknote/core';
+import {
+  BlockNoteSchema,
+  defaultBlockSpecs,
+  defaultInlineContentSpecs,
+  createCodeBlockSpec,
+  filterSuggestionItems,
+} from '@blocknote/core';
 import {
   useCreateBlockNote,
   SuggestionMenuController,
@@ -9,7 +15,6 @@ import {
   FormattingToolbar,
   FormattingToolbarController,
   getFormattingToolbarItems,
-  filterSuggestionItems,
 } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef, useEffect } from 'react';

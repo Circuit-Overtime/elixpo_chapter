@@ -1,0 +1,118 @@
+name: Publish VS Code Extension to Marketplace
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/vscode-lixeditor/**'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump kind (patch / minor / major). Default: patch"
+        required: false
+        default: 'patch'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish to VS Code Marketplace
+    runs-on: ubuntu-latest
+    # Skip when the triggering commit is the bot's own bump (loop guard).
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      !contains(github.event.head_commit.message, 'chore(release): bump elixpo.lixeditor')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_AGENT_TOKEN }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure git as elixpoo bot
+        run: |
+          git config --global user.name "elixpoo"
+          git config --global user.email "269200728+elixpoo@users.noreply.github.com"
+
+      # ── Decide the next version ─────────────────────────────────────
+      # Compare local package.json version against what the VS Code
+      # Marketplace currently has. If equal, bump (patch by default).
+      - name: Compute next version
+        id: version
+        working-directory: packages/vscode-lixeditor
+        run: |
+          LOCAL=$(node -p "require('./package.json').version")
+          REMOTE=$(npx --yes @vscode/vsce show elixpo.lixeditor --json 2>/dev/null \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{try{const j=JSON.parse(s);console.log(j.versions?.[0]?.version||'0.0.0')}catch{console.log('0.0.0')}})" \
+            || echo "0.0.0")
+          BUMP="${{ github.event.inputs.bump || 'patch' }}"
+
+          echo "Local  version: $LOCAL"
+          echo "Remote version: $REMOTE"
+          echo "Bump kind: $BUMP"
+
+          if [ "$LOCAL" = "$REMOTE" ]; then
+            echo "Versions match — auto-bumping ($BUMP)."
+            NEW=$(npm version "$BUMP" --no-git-tag-version)
+            NEW="${NEW#v}"
+            echo "Bumped to $NEW"
+            echo "version=$NEW" >> "$GITHUB_OUTPUT"
+            echo "auto_bumped=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Local already ahead of remote — using $LOCAL."
+            echo "version=$LOCAL" >> "$GITHUB_OUTPUT"
+            echo "auto_bumped=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build extension
+        working-directory: packages/vscode-lixeditor
+        run: npm run build
+
+      - name: Publish to VS Code Marketplace
+        working-directory: packages/vscode-lixeditor
+        run: npx @vscode/vsce publish --no-dependencies
+        env:
+          # NOTE: this token name is a leftover from when the workflow was
+          # copied from sketch.elixpo. It works today because the same PAT
+          # has rights to publish both `elixpo.lixsketch` and
+          # `elixpo.lixeditor`. Cleaner long-term: add a dedicated
+          # `VSCODE_LIXEDITOR_EXT_PUBLISH_TOKEN` repo secret and switch
+          # this line to it.
+          VSCE_PAT: ${{ secrets.VSCODE_LIXSKETCH_EXT_PUBLISH_TOKEN }}
+
+      # ── Commit the auto-bumped version back to main ─────────────────
+      - name: Commit and push version bump
+        if: steps.version.outputs.auto_bumped == 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git add packages/vscode-lixeditor/package.json packages/vscode-lixeditor/package-lock.json 2>/dev/null || \
+            git add packages/vscode-lixeditor/package.json
+          git commit -m "chore(release): bump elixpo.lixeditor to v${VERSION}
+
+          Auto-bumped by the publish workflow after a change under
+          packages/vscode-lixeditor/** was merged without a manual version bump.
+
+          [skip ci]"
+          git push origin HEAD:main
+
+      - name: Tag the release
+        if: steps.version.outputs.auto_bumped == 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git tag -a "vscode-lixeditor-v${VERSION}" -m "elixpo.lixeditor v${VERSION}"
+          git push origin "vscode-lixeditor-v${VERSION}"
+
+      - name: Summary
+        run: |
+          echo "### Published elixpo.lixeditor@${{ steps.version.outputs.version }} 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Marketplace: https://marketplace.visualstudio.com/items?itemName=elixpo.lixeditor" >> $GITHUB_STEP_SUMMARY
+          echo "- Auto-bumped: \`${{ steps.version.outputs.auto_bumped }}\`" >> $GITHUB_STEP_SUMMARY

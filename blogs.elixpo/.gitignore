@@ -13,4 +13,5 @@ build/
 *.vsix
 .claude/settings.local.json
 .claude/.credentials
+*.tgz
 *.lixeditor
