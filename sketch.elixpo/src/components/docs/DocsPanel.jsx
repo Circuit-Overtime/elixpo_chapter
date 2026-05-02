@@ -4,6 +4,10 @@ import useSketchStore from '@/store/useSketchStore'
 import useDocAutoSave, { triggerDocSync } from '@/hooks/useDocAutoSave'
 import '@blocknote/core/fonts/inter.css'
 import '@blocknote/mantine/style.css'
+// KaTeX CSS — until @elixpo/lixeditor republishes with KaTeX bundled
+// inline, we have to import it consumer-side or block equations won't
+// render. Safe to leave even after package republish (idempotent).
+import 'katex/dist/katex.min.css'
 import '@elixpo/lixeditor/styles'
 import './docs-theme.css'
 import { LixEditor, LixThemeProvider } from '@elixpo/lixeditor'
