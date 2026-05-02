@@ -1,6 +1,6 @@
 {
   "name": "@elixpo/lixeditor",
-  "version": "2.6.5",
+  "version": "2.6.6",
   "description": "A rich WYSIWYG block editor and renderer built on BlockNote — equations, mermaid diagrams, code highlighting, and more.",
   "main": "dist/index.js",
   "module": "dist/index.js",

@@ -378,7 +378,23 @@ const LixEditor = forwardRef(function LixEditor({
     }
 
     const all = [...defaults, ...custom, ...extraSlashItems];
-    return filterSuggestionItems(all, query);
+    const filtered = filterSuggestionItems(all, query);
+
+    // BlockNote's slash-menu renderer emits a group label whenever the
+    // group string changes between consecutive items (it assumes items
+    // are pre-sorted by group). If groups interleave it produces
+    // duplicate <Label key={group}> children → React key collision and
+    // empty "Advanced Advanced" rows. Sort stably by group to keep all
+    // items in the same group contiguous.
+    const groupOrder = new Map();
+    for (const item of filtered) {
+      const g = item.group ?? '';
+      if (!groupOrder.has(g)) groupOrder.set(g, groupOrder.size);
+    }
+    return filtered
+      .map((item, i) => ({ item, i, gIdx: groupOrder.get(item.group ?? '') }))
+      .sort((a, b) => a.gIdx - b.gIdx || a.i - b.i)
+      .map((x) => x.item);
   }, [editor, f, extraSlashItems]);
 
   const handleChange = useCallback(() => {
