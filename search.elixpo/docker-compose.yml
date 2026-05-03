@@ -100,6 +100,11 @@ services:
       timeout: 10s
       retries: 5
       start_period: 90s
+    # Cap RAM so a future leak fails loudly (OOMKilled=true) instead of
+    # silently churning the process. One CoreEmbeddingService + Playwright
+    # pool of 2 fits comfortably in <2 GiB; 6 GiB is generous headroom.
+    mem_limit: 6g
+    memswap_limit: 6g
     logging:
       driver: "json-file"
       options:
