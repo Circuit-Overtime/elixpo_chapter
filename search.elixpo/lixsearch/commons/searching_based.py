@@ -14,23 +14,21 @@ async def webSearch(query: str):
         logger.warning("[Utility] IPC initialization failed - web search unavailable")
         return []
 
+    from ipcService.coreServiceManager import CoreServiceManager, RECONNECT_ERRORS
+    manager = CoreServiceManager.get_instance()
+
     try:
-        from ipcService.coreServiceManager import CoreServiceManager
-        manager = CoreServiceManager.get_instance()
-        search_agents = manager.get_search_agents()
-
-        if search_agents is None:
-            logger.error("[Utility] Search agents is None - IPC connection issue")
-            return []
-
-        logger.debug(f"[Utility] Calling web_search via IPC on {type(search_agents).__name__}")
         loop = asyncio.get_event_loop()
         urls = await loop.run_in_executor(
             None,
-            lambda: search_agents.web_search(query)
+            lambda: manager.call("agents", "web_search", query)
         )
         logger.debug(f"[Utility] Web search returned {len(urls) if urls else 0} results for: {query[:LOG_MESSAGE_QUERY_TRUNCATE]}")
         return urls if urls else []
+    except RECONNECT_ERRORS as e:
+        manager.invalidate(f"web_search: {type(e).__name__}")
+        logger.error(f"[Utility] Web search IPC dropped: {type(e).__name__}: {str(e)[:ERROR_CONTEXT_TRUNCATE]}")
+        return []
     except Exception as e:
         logger.error(f"[Utility] Web search failed: {type(e).__name__}: {str(e)[:ERROR_CONTEXT_TRUNCATE]}")
         return []
@@ -38,29 +36,26 @@ async def webSearch(query: str):
 
 async def imageSearch(query: str, max_images: int = 10) -> list:
     initialized = _init_ipc_manager()
-    
+
     if not initialized:
         logger.warning("[Utility] IPC initialization failed - image search unavailable")
         return []
-    
-    # Get search agents from IPC
+
+    from ipcService.coreServiceManager import CoreServiceManager, RECONNECT_ERRORS
+    manager = CoreServiceManager.get_instance()
+
     try:
-        from ipcService.coreServiceManager import CoreServiceManager
-        manager = CoreServiceManager.get_instance()
-        search_agents = manager.get_search_agents()
-        
-        if search_agents is None:
-            logger.error("[Utility] Search agents is None - IPC connection issue")
-            return []
-        
-        logger.debug(f"[Utility] Calling image_search via IPC")
         loop = asyncio.get_event_loop()
         urls = await loop.run_in_executor(
             None,
-            lambda: search_agents.image_search(query, max_images=max_images)
+            lambda: manager.call("agents", "image_search", query, max_images=max_images)
         )
         logger.debug(f"[Utility] Image search returned {len(urls) if urls else 0} results for: {query[:LOG_MESSAGE_QUERY_TRUNCATE]}")
         return urls if urls else []
+    except RECONNECT_ERRORS as e:
+        manager.invalidate(f"image_search: {type(e).__name__}")
+        logger.error(f"[Utility] Image search IPC dropped: {type(e).__name__}: {str(e)[:ERROR_CONTEXT_TRUNCATE]}")
+        return []
     except Exception as e:
         logger.error(f"[Utility] Image search failed: {type(e).__name__}: {str(e)[:ERROR_CONTEXT_TRUNCATE]}")
         return []

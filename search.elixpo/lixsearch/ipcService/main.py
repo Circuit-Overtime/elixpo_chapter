@@ -21,12 +21,9 @@ if __name__ == "__main__":
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.close()
-    
+
     class ModelManager(BaseManager):
         pass
-
-    ModelManager.register("CoreEmbeddingService", CoreEmbeddingService)
-    ModelManager.register("accessSearchAgents", accessSearchAgents)
 
     max_init_retries = 5
     core_service = None
@@ -44,6 +41,10 @@ if __name__ == "__main__":
                 raise
 
     search_agents = accessSearchAgents()
+
+    ModelManager.register("CoreEmbeddingService", callable=lambda: core_service)
+    ModelManager.register("accessSearchAgents", callable=lambda: search_agents)
+
     manager = ModelManager(address=(IPC_HOST, IPC_PORT), authkey=IPC_AUTHKEY)
     server = manager.get_server()
     logger.info(f"[MAIN] Core service started on {IPC_HOST}:{IPC_PORT}...")
