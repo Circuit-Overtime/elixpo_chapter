@@ -99,8 +99,16 @@ export default function KeyboardShortcutsModal({ onClose }) {
               <h3 className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#9b7bf7' }}>{group.title}</h3>
               <div className="space-y-1">
                 {group.shortcuts.map((s, i) => (
-                  <div key={i} className="flex items-center justify-between py-1.5">
-                    <span className="text-[13px]" style={{ color: 'var(--text-body)' }}>{s.desc}</span>
+                  <div key={i} className="flex items-center justify-between py-1.5 opacity-60">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px]" style={{ color: 'var(--text-body)' }}>{s.desc}</span>
+                      <span
+                        className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-md"
+                        style={{ color: '#9b7bf7', backgroundColor: 'rgba(155, 123, 247, 0.12)', border: '1px solid rgba(155, 123, 247, 0.3)' }}
+                      >
+                        Coming soon
+                      </span>
+                    </div>
                     <div className="flex items-center gap-1">
                       {s.keys.map((key, j) => (
                         <span key={j}>
