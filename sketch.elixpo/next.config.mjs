@@ -3,6 +3,13 @@ import { createRequire } from 'module'
 
 const require_ = createRequire(import.meta.url)
 
+// Origins allowed to iframe sketch.elixpo's /embed/* routes. Configurable via
+// LIXSKETCH_FRAME_ANCESTORS (space-separated). Defaults cover the production
+// blogs.elixpo host and local-dev ports for both apps.
+const FRAME_ANCESTORS = (process.env.LIXSKETCH_FRAME_ANCESTORS
+  || "'self' https://blogs.elixpo.com http://localhost:3000 http://localhost:3002")
+  .trim()
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
@@ -12,6 +19,21 @@ const nextConfig = {
     '@blocknote/react',
     '@blocknote/mantine',
   ],
+
+  // CSP for embed routes. `frame-ancestors` is the modern replacement for
+  // X-Frame-Options and is the only header browsers honor for cross-origin
+  // iframing. We scope it to /embed/* so the rest of the site can keep its
+  // own (stricter) CSP.
+  async headers() {
+    return [
+      {
+        source: '/embed/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: `frame-ancestors ${FRAME_ANCESTORS};` },
+        ],
+      },
+    ]
+  },
 
   turbopack: {
     rules: {
