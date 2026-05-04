@@ -2,6 +2,7 @@
 
 import { createReactBlockSpec } from '@blocknote/react';
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { IMAGE_ACCEPT_ATTR } from '../../../utils/allowedImageTypes';
 
 /**
  * Custom image block replacing BlockNote's default.
@@ -65,7 +66,12 @@ function BlogImageRenderer({ block, editor }) {
 
   // Upload helper
   const uploadFile = useCallback(async (file) => {
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file) return;
+    const { isAllowedImage } = await import('../../../utils/allowedImageTypes');
+    if (!isAllowedImage(file)) {
+      showFailToast('Unsupported file type. Allowed: AVIF, JPEG, PNG, BMP, SVG, WebP.');
+      return;
+    }
     setMode('uploading');
     setUploadStatus('Compressing...');
     try {
@@ -244,7 +250,7 @@ function BlogImageRenderer({ block, editor }) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept={IMAGE_ACCEPT_ATTR}
           onChange={(e) => { if (e.target.files?.[0]) uploadFile(e.target.files[0]); e.target.value = ''; }}
           style={{ display: 'none' }}
         />

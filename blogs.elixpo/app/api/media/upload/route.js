@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { getLimits } from '../../../../lib/tiers';
 import { uploadToCloudinary } from '../../../../lib/cloudinary';
+import { isAllowedMime, ALLOWED_IMAGE_MIME_TYPES } from '../../../../src/utils/allowedImageTypes';
 
 // Profile image types — these get overwritten (no history), no storage tracking
 const PROFILE_TYPES = ['avatar', 'banner', 'org_avatar', 'org_banner'];
@@ -24,7 +25,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    console.log(`[media/upload] type=${mediaType} size=${file.size} blogId=${blogId} user=${session.userId}`);
+    // Static-image allowlist enforcement. Anything outside the canonical
+    // mime list is rejected here regardless of caller — animated GIFs,
+    // HEIC, PDFs, video, audio, etc. cannot reach Cloudinary.
+    if (!isAllowedMime(file.type)) {
+      return NextResponse.json({
+        error: 'Unsupported file type',
+        allowed: ALLOWED_IMAGE_MIME_TYPES,
+        received: file.type || 'unknown',
+      }, { status: 415 });
+    }
+
+    console.log(`[media/upload] type=${mediaType} size=${file.size} mime=${file.type} blogId=${blogId} user=${session.userId}`);
 
     let db;
     try {

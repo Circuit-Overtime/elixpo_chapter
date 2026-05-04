@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../../utils/allowedImageTypes';
 
 const ASPECT_RATIO = 3; // 3:1
 const CANVAS_HEIGHT = 280;
@@ -39,6 +40,11 @@ export default function CoverUploadModal({ onSelect, onClose }) {
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!isAllowedImage(file)) {
+      setUrlError('Unsupported file type. Allowed: AVIF, JPEG, PNG, BMP, SVG, WebP.');
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => loadImage(ev.target.result);
     reader.readAsDataURL(file);
@@ -173,7 +179,7 @@ export default function CoverUploadModal({ onSelect, onClose }) {
               </svg>
               <p className="text-[var(--text-faint)] text-xs mt-2">Click to upload an image</p>
               <p className="text-[#333] text-[10px] mt-1">Recommended: 1200x400 (3:1)</p>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+              <input ref={fileInputRef} type="file" accept={IMAGE_ACCEPT_ATTR} className="hidden" onChange={handleFileUpload} />
             </div>
           )}
 

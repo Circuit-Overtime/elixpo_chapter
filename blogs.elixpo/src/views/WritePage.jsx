@@ -11,6 +11,7 @@ import '@blocknote/mantine/style.css';
 import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
 import { compressCoverImage } from '../utils/compressImage';
+import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../utils/allowedImageTypes';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
 import { useCollaboration } from '../hooks/useCollaboration';
 
@@ -1365,11 +1366,11 @@ export default function WritePage({ slugid }) {
                             </svg>
                             <input
                               type="file"
-                              accept="image/*"
+                              accept={IMAGE_ACCEPT_ATTR}
                               className="hidden"
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
-                                if (file) {
+                                if (file && isAllowedImage(file)) {
                                   compressCoverImage(file).then(({ blob, url }) => {
                                     setCoverPreview(url);
                                     setCoverZoom(1);
@@ -1411,11 +1412,11 @@ export default function WritePage({ slugid }) {
                             <span className="text-xs text-black/70 font-medium">From device</span>
                             <input
                               type="file"
-                              accept="image/*"
+                              accept={IMAGE_ACCEPT_ATTR}
                               className="hidden"
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
-                                if (file) {
+                                if (file && isAllowedImage(file)) {
                                   compressCoverImage(file).then(({ blob, url }) => {
                                     setCoverPreview(url);
                                     setShowCoverModal(false);
