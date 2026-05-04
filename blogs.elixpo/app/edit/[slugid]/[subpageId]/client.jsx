@@ -14,6 +14,7 @@ import '../../../../src/styles/katex-fonts.css';
 const BlockNoteEditor = dynamic(() => import('../../../../src/components/Editor/BlogEditor'), { ssr: false });
 const BlogPreview = dynamic(() => import('../../../../src/components/Editor/BlogPreview'), { ssr: false });
 const KeyboardShortcutsModal = dynamic(() => import('../../../../src/components/Editor/KeyboardShortcutsModal'), { ssr: false });
+const CanvasSubpage = dynamic(() => import('../../../../src/components/Editor/CanvasSubpage'), { ssr: false });
 
 const STORAGE_KEY_PREFIX = 'lixblogs_subpage_';
 
@@ -47,6 +48,8 @@ export default function SubpageClient({ params }) {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState(null);
+  const [kind, setKind] = useState('doc');
+  const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState('idle'); // idle | syncing | synced | local
   const [lastSaved, setLastSaved] = useState(null);
@@ -92,6 +95,20 @@ export default function SubpageClient({ params }) {
     fetch(`/api/subpages?id=${subpageId}`)
       .then(r => r.ok ? r.json() : r.json().then(d => { throw new Error(d.error); }))
       .then(data => {
+        const subpageKind = data.kind === 'canvas' ? 'canvas' : 'doc';
+        setKind(subpageKind);
+        setMetadata(data.metadata || null);
+
+        // Canvas subpages: store raw scene JSON on `content`, no localStorage
+        // shadow-draft because the iframe owns autosave.
+        if (subpageKind === 'canvas') {
+          setTitle(data.title || 'Untitled Canvas');
+          setContent(typeof data.content === 'string' && data.content
+            ? (() => { try { return JSON.parse(data.content); } catch { return null; } })()
+            : data.content || null);
+          return;
+        }
+
         let parsed;
         try { parsed = typeof data.content === 'string' ? JSON.parse(data.content) : data.content; } catch {}
 
@@ -290,6 +307,19 @@ export default function SubpageClient({ params }) {
       <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#9b7bf7] border-t-transparent rounded-full animate-spin" />
       </div>
+    );
+  }
+
+  // Canvas sub-pages render the iframe-based sketch editor instead of BlockNote.
+  if (kind === 'canvas') {
+    return (
+      <CanvasSubpage
+        slugid={slugid}
+        subpageId={subpageId}
+        initialTitle={title}
+        initialContent={content}
+        initialMetadata={metadata}
+      />
     );
   }
 
