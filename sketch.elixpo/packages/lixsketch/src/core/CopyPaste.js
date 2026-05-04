@@ -13,6 +13,8 @@ import { Frame } from '../shapes/Frame.js';
 import { TextShape } from '../shapes/TextShape.js';
 import { CodeShape } from '../shapes/CodeShape.js';
 import { ImageShape } from '../shapes/ImageShape.js';
+import { isAllowedImage, isAllowedImageDataUrl } from '../utils/allowedImageTypes.js';
+import { compressImage } from '../utils/imageCompressor.js';
 import { IconShape } from '../shapes/IconShape.js';
 
 // Clipboard storage
@@ -585,10 +587,27 @@ function handlePasteEvent(e) {
             const blob = item.getAsFile();
             if (!blob) return;
 
+            // Validate against the canonical allowlist — clipboard sources
+            // can include animated GIFs / HEIC / TIFF / arbitrary mime types.
+            if (!isAllowedImage(blob)) {
+                console.warn('[CopyPaste] Rejected pasted image type:', blob.type);
+                return;
+            }
+
             const reader = new FileReader();
-            reader.onload = (ev) => {
-                const dataUrl = ev.target.result;
-                placeImageFromDataUrl(dataUrl);
+            reader.onload = async (ev) => {
+                const rawDataUrl = ev.target.result;
+                const isSvg = (blob.type || '').toLowerCase() === 'image/svg+xml';
+                let placedDataUrl = rawDataUrl;
+                if (!isSvg) {
+                    try {
+                        const compressed = await compressImage(rawDataUrl);
+                        if (compressed?.dataUrl) placedDataUrl = compressed.dataUrl;
+                    } catch (err) {
+                        console.warn('[CopyPaste] Pre-placement compression failed, using raw:', err);
+                    }
+                }
+                placeImageFromDataUrl(placedDataUrl);
             };
             reader.readAsDataURL(blob);
             return; // only handle first image

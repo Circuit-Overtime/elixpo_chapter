@@ -6,6 +6,7 @@ import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSide
 import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from '@/hooks/useTranslation'
 import { compressImage } from '@/utils/imageCompressor'
+import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '@elixpo/lixsketch'
 
 const FILL_STYLES = [
   { id: 'transparent', label: 'None', icon: 'bx-x' },
@@ -167,10 +168,14 @@ export default function FrameSidebar() {
             onClick={() => {
               const input = document.createElement('input')
               input.type = 'file'
-              input.accept = 'image/*'
+              input.accept = IMAGE_ACCEPT_ATTR
               input.onchange = async (e) => {
                 const file = e.target.files?.[0]
                 if (!file) return
+                if (!isAllowedImage(file)) {
+                  console.warn('[FrameSidebar] Rejected file type:', file.type)
+                  return
+                }
                 const reader = new FileReader()
                 reader.onload = async (ev) => {
                   const shape = window.currentShape

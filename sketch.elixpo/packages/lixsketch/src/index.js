@@ -54,6 +54,17 @@ export { saveScene, loadScene } from './core/SceneSerializer.js';
 // shipping them across a postMessage boundary.
 export { compressImage } from './utils/imageCompressor.js';
 
+// Canonical image allowlist. The engine and any embedding host should
+// reject anything outside this set at every entry point (file picker,
+// drag-drop, paste, server boundary).
+export {
+    ALLOWED_IMAGE_MIME_TYPES,
+    ALLOWED_IMAGE_EXTENSIONS,
+    IMAGE_ACCEPT_ATTR,
+    isAllowedImage,
+    isAllowedImageDataUrl,
+} from './utils/allowedImageTypes.js';
+
 // Engine-local keyboard shortcuts (tool switching, delete, group/ungroup,
 // space-to-pan, escape-deselect). App-level shortcuts (cloud save, modal
 // toggles) are intentionally NOT included — those belong to the consumer.
