@@ -43,6 +43,22 @@ export function createSketchEngine(svgElement, options = {}) {
     return new SketchEngine(svgElement, options);
 }
 
+// Scene serialization helpers — for embedded consumers (e.g. blogs.elixpo) that
+// need to round-trip a scene through their own storage. saveScene reads from
+// window.shapes (populated by an active engine); loadScene rebuilds shapes onto
+// the active engine's SVG. Both must be called after engine.init() completes.
+export { saveScene, loadScene } from './core/SceneSerializer.js';
+
+// Adaptive image compressor — same one the engine uses internally for
+// uploads. Exported so embedded hosts can pre-compress images before
+// shipping them across a postMessage boundary.
+export { compressImage } from './utils/imageCompressor.js';
+
+// Engine-local keyboard shortcuts (tool switching, delete, group/ungroup,
+// space-to-pan, escape-deselect). App-level shortcuts (cloud save, modal
+// toggles) are intentionally NOT included — those belong to the consumer.
+export { installEngineShortcuts, SHORTCUT_MAP } from './EngineShortcuts.js';
+
 // Tool name constants
 export const TOOLS = {
     SELECT: 'select',

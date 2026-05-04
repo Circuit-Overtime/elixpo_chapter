@@ -461,8 +461,11 @@ const handleMouseDownImage = async (e) => {
         currentShape.isSelected = true;
         placedShape.selectShape();
 
-        // Fire async upload pipeline (compress + upload to Cloudinary)
-        uploadImageToCloudinary(imageShape).catch(err => {
+        // Fire async upload pipeline. We dispatch via window.uploadImageToCloudinary
+        // so embedded hosts (e.g. blogs.elixpo) can swap in a postMessage-based
+        // implementation that routes uploads through the host's media API.
+        const uploader = (typeof window !== 'undefined' && window.uploadImageToCloudinary) || uploadImageToCloudinary;
+        uploader(imageShape).catch(err => {
             console.warn('[ImageTool] Upload pipeline error:', err);
         });
 
