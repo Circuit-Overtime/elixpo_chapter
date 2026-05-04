@@ -59,8 +59,19 @@ export async function GET(request) {
     return NextResponse.redirect(new URL('/sign-in?error=user_info_failed', request.url));
   }
 
-  const userInfo = await userInfoRes.json();
-  const userId = userInfo.id || userInfo.userId || userInfo.sub;
+  const rawUserInfo = await userInfoRes.json();
+  // Accounts.elixpo.com returns snake_case (avatar_url, display_name, username);
+  // older shape used camelCase (avatar, displayName). Normalize so the rest of the
+  // file can use a single shape.
+  const userInfo = {
+    ...rawUserInfo,
+    email: rawUserInfo.email,
+    displayName: rawUserInfo.display_name || rawUserInfo.displayName || '',
+    avatar: rawUserInfo.avatar_url || rawUserInfo.avatar || '',
+    username: rawUserInfo.username || '',
+    isAdmin: rawUserInfo.isAdmin || false,
+  };
+  const userId = rawUserInfo.id || rawUserInfo.userId || rawUserInfo.sub;
   let isNewUser = false;
 
   // Try to upsert user into D1 (only works in Cloudflare edge runtime)
@@ -77,7 +88,7 @@ export async function GET(request) {
 
     if (!existingUser) {
       isNewUser = true;
-      const username = (userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, '');
+      const username = (userInfo.username || userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, '');
 
       // Mirror OAuth avatar to Cloudinary at deterministic path
       let avatarUrl = userInfo.avatar || '';
@@ -162,7 +173,7 @@ export async function GET(request) {
     profile: {
       id: userId,
       email: userInfo.email,
-      username: (userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, ''),
+      username: (userInfo.username || userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, ''),
       display_name: userInfo.displayName || '',
       avatar_url: userInfo.avatar || '',
       isAdmin: userInfo.isAdmin || false,

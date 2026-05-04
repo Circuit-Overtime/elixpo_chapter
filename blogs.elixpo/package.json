@@ -25,11 +25,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@elixpo/lixeditor": "file:./packages/lixeditor",
     "@blocknote/core": "^0.47.1",
     "@blocknote/mantine": "^0.47.1",
     "@blocknote/react": "^0.47.1",
     "@cloudflare/next-on-pages": "^1.13.0",
+    "@elixpo/lixeditor": "file:./packages/lixeditor",
     "cropperjs": "^2.1.0",
     "framer-motion": "^12.38.0",
     "katex": "^0.16.43",
@@ -42,6 +42,7 @@
     "yjs": "^13.6.30"
   },
   "devDependencies": {
+    "@types/node": "25.6.0",
     "autoprefixer": "^10.4.16",
     "dotenv": "^17.3.1",
     "nodemailer": "^8.0.4",
