@@ -53,6 +53,9 @@ export default function EmbedCanvasPage() {
         return
       }
       uninstall = installEngineShortcuts(engine, {
+        // Route tool changes through the sketch store so the toolbar UI
+        // re-renders alongside the engine state.
+        setActiveTool: (tool) => useSketchStore.getState().setActiveTool(tool),
         skipWhen: (e) => {
           // Defer to host overlays (e.g. command palette, find bar) by checking
           // for any focused element with a non-empty data-shortcut-skip attr.
@@ -68,19 +71,6 @@ export default function EmbedCanvasPage() {
       if (uninstall) uninstall()
       shortcutsInstalledRef.current = false
     }
-  }, [])
-
-  // Bridge engine tool changes back to the React store so the toolbar UI
-  // reflects the active tool when shortcuts switch it.
-  useEffect(() => {
-    function syncToolFromEngine() {
-      const tool = window.__sketchEngine?.activeTool
-      if (tool && useSketchStore.getState().activeTool !== tool) {
-        useSketchStore.setState({ activeTool: tool })
-      }
-    }
-    const interval = setInterval(syncToolFromEngine, 200)
-    return () => clearInterval(interval)
   }, [])
 
   useEmbedBridge()
