@@ -88,14 +88,14 @@ secrets() {
     [[ "$key" =~ ^(CLOUDFLARE_ACCOUNT|D1_DATABASE_ID|KV_NAMESPACE_ID)$ ]] && continue
 
     echo "  -> $key (collab worker)"
-    printf '%s\n' "$value" | sudo npx wrangler versions secret put "$key" --name elixpoblogs-collab || echo "    [warn] collab worker secret failed for $key"
+    printf '%s\n' "$value" |  npx wrangler versions secret put "$key" --name elixpoblogs-collab || echo "    [warn] collab worker secret failed for $key"
     echo "  -> $key (pages)"
-    printf '%s\n' "$value" | sudo npx wrangler pages secret put "$key" --project-name "$PAGES_PROJECT" || echo "    [warn] pages secret failed for $key"
+    printf '%s\n' "$value" |  npx wrangler pages secret put "$key" --project-name "$PAGES_PROJECT" || echo "    [warn] pages secret failed for $key"
 
     # Only push to cron worker if it's enabled
     if grep -q 'ENABLE_WEEKLY_DIGEST=true' "$ENV_FILE" 2>/dev/null; then
       echo "  -> $key (cron worker)"
-      printf '%s\n' "$value" | sudo npx wrangler versions secret put "$key" --name elixpoblogs-cron || echo "    [warn] cron worker secret failed for $key"
+      printf '%s\n' "$value" |  npx wrangler versions secret put "$key" --name elixpoblogs-cron || echo "    [warn] cron worker secret failed for $key"
     fi
   done < "$ENV_FILE"
 
@@ -104,8 +104,8 @@ secrets() {
 
 build() {
   echo "==> Building for Cloudflare Pages..."
-  sudo npm version patch --no-git-tag-version
-  sudo npm run pages:build
+   npm version patch --no-git-tag-version
+   npm run pages:build
   echo "==> Build complete (.vercel/output/static)"
 }
 
@@ -156,7 +156,7 @@ sync_d1() {
     return
   fi
 
-  sudo npx wrangler d1 execute elixpoblogs --remote --file="$DUMP_FILE" 2>&1 | tail -3
+   npx wrangler d1 execute elixpoblogs --remote --file="$DUMP_FILE" 2>&1 | tail -3
   rm -f "$DUMP_FILE"
   echo "==> D1 sync complete."
 }
@@ -168,7 +168,7 @@ deploy() {
   fi
 
   echo "==> Deploying to Cloudflare Pages ($PAGES_PROJECT)..."
-  sudo npx wrangler pages deploy .vercel/output/static \
+   npx wrangler pages deploy .vercel/output/static \
     --project-name "$PAGES_PROJECT" \
     --branch "$PAGES_BRANCH"
 
@@ -178,27 +178,27 @@ deploy() {
   sync_d1
 
   VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "unknown")
-  sudo git add -A
-  if sudo git diff --cached --quiet; then
+   git add -A
+  if  git diff --cached --quiet; then
     echo "==> No changes to commit."
   else
-    sudo git commit -m "deploy: v${VERSION}"
+     git commit -m "deploy: v${VERSION}"
     load_env
-    sudo git push "$(auth_remote)" main
+     git push "$(auth_remote)" main
     echo "==> Pushed v${VERSION} to origin/main."
   fi
 }
 
 worker() {
   echo "==> Deploying Worker (elixpoblogs-collab)..."
-  cd "$SCRIPT_DIR/worker/collab" && sudo npx wrangler deploy
+  cd "$SCRIPT_DIR/worker/collab" &&  npx wrangler deploy
   cd "$SCRIPT_DIR"
   echo "==> Collab worker deployed."
 
   # Cron worker — only deploy if digest is enabled
   if grep -q 'ENABLE_WEEKLY_DIGEST=true' "$ENV_FILE" 2>/dev/null; then
     echo "==> Deploying Worker (elixpoblogs-cron)..."
-    cd "$SCRIPT_DIR/worker/cron" && sudo npx wrangler deploy
+    cd "$SCRIPT_DIR/worker/cron" &&  npx wrangler deploy
     cd "$SCRIPT_DIR"
     echo "==> Cron worker deployed."
   else
@@ -301,10 +301,10 @@ do_release() {
   echo "==> Bumping versions ($BUMP)..."
 
   if $RELEASE_NPM || $RELEASE_GITHUB; then
-    dry_run "cd '$SCRIPT_DIR/packages/lixeditor' && sudo npm version $BUMP --no-git-tag-version && cd '$SCRIPT_DIR'"
+    dry_run "cd '$SCRIPT_DIR/packages/lixeditor' &&  npm version $BUMP --no-git-tag-version && cd '$SCRIPT_DIR'"
   fi
   if $RELEASE_WEB; then
-    dry_run "sudo npm version $BUMP --no-git-tag-version"
+    dry_run " npm version $BUMP --no-git-tag-version"
   fi
 
   if $RELEASE_NPM || $RELEASE_GITHUB; then
@@ -333,7 +333,7 @@ do_release() {
     echo ""
     echo "==> Publishing @elixpo/lixeditor to npm..."
     set +e
-    dry_run "cd '$SCRIPT_DIR/packages/lixeditor' && sudo npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken='$_NPM_TOKEN'"
+    dry_run "cd '$SCRIPT_DIR/packages/lixeditor' &&  npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken='$_NPM_TOKEN'"
     if [ $? -eq 0 ]; then echo "    ✓ npm publish complete"; else echo "    ✗ npm publish failed"; fi
     set -e
   fi
@@ -351,7 +351,7 @@ do_release() {
     fi
     printf "@elixpo:registry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=%s\n" "$_GH_TOKEN" > "$EDITOR_DIR/.npmrc"
 
-    dry_run "cd '$EDITOR_DIR' && sudo npm publish --access public"
+    dry_run "cd '$EDITOR_DIR' &&  npm publish --access public"
     if [ $? -eq 0 ]; then echo "    ✓ GitHub Packages publish complete"; else echo "    ✗ GitHub Packages publish failed"; fi
 
     # Restore or remove .npmrc
@@ -367,7 +367,7 @@ do_release() {
   if $RELEASE_VSCODE; then
     echo ""
     echo "==> [1/3] Bumping VS Code extension version ($BUMP)..."
-    dry_run "cd '$SCRIPT_DIR/packages/vscode-lixeditor' && sudo npm version $BUMP --no-git-tag-version && cd '$SCRIPT_DIR'"
+    dry_run "cd '$SCRIPT_DIR/packages/vscode-lixeditor' &&  npm version $BUMP --no-git-tag-version && cd '$SCRIPT_DIR'"
 
     local VSCODE_VERSION
     VSCODE_VERSION=$(node -p "require('./packages/vscode-lixeditor/package.json').version" 2>/dev/null || echo "0.0.0")
@@ -387,17 +387,17 @@ do_release() {
 
   if $RELEASE_WEB; then
     echo "==> Building & deploying website..."
-    dry_run "cd '$SCRIPT_DIR' && sudo npm run pages:build"
-    dry_run "cd '$SCRIPT_DIR' && sudo npx wrangler pages deploy .vercel/output/static --project-name lixblogs --branch main"
+    dry_run "cd '$SCRIPT_DIR' &&  npm run pages:build"
+    dry_run "cd '$SCRIPT_DIR' &&  npx wrangler pages deploy .vercel/output/static --project-name lixblogs --branch main"
     echo "==> Website deployed"
   fi
 
   # ── Git Tag & Push ──
   echo "==> Committing and tagging v${NEW_VERSION}..."
-  dry_run "sudo git add -A"
-  dry_run "sudo git commit -m 'release: v${NEW_VERSION}' || true"
-  dry_run "sudo git tag 'v${NEW_VERSION}'"
-  dry_run "sudo git push \"\$(auth_remote)\" main --tags"
+  dry_run " git add -A"
+  dry_run " git commit -m 'release: v${NEW_VERSION}' || true"
+  dry_run " git tag 'v${NEW_VERSION}'"
+  dry_run " git push \"\$(auth_remote)\" main --tags"
 
   # ── GitHub Release (skipped — using GitHub Packages instead) ──
 

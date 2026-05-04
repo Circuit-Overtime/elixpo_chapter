@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../utils/allowedImageTypes';
 
 const ASPECT_RATIO = 16 / 5; // ~3.2:1, wide banner
 const CANVAS_WIDTH = 1200;
@@ -45,6 +46,11 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!isAllowedImage(file)) {
+      setUrlError('Unsupported file type. Allowed: AVIF, JPEG, PNG, BMP, SVG, WebP.');
+      e.target.value = '';
+      return;
+    }
     if (file.size > 20 * 1024 * 1024) {
       setUrlError('File too large (max 20MB)');
       return;
@@ -57,7 +63,7 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file || !isAllowedImage(file)) return;
     const reader = new FileReader();
     reader.onload = (ev) => loadImage(ev.target.result);
     reader.readAsDataURL(file);
@@ -241,7 +247,7 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
               </svg>
               <p className="text-[var(--text-muted)] text-[13px]">Drop an image or click to browse</p>
               <p className="text-[var(--text-muted)] text-[11px] mt-1">Recommended: 1200x375 or wider. Max 20MB.</p>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+              <input ref={fileInputRef} type="file" accept={IMAGE_ACCEPT_ATTR} className="hidden" onChange={handleFileUpload} />
             </div>
           )}
 
