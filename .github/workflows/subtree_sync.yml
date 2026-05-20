@@ -52,6 +52,7 @@ jobs:
             "rewrite.elixpo https://github.com/elixpo/rewrite.elixpo.git"
             "wish.elixpo https://github.com/elixpo/wish.elixpo.git"
             "claudeOps.elixpo https://github.com/elixpo/claudeOps.elixpo.git"
+            "oreo https://github.com/elixpo/oreo"
           )
 
           STATE_DIR=.github/.sync-state
