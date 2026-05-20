@@ -1,0 +1,43 @@
+Valid-License-Identifier: Oreo-trademarks
+SPDX-Exception-Identifier: Oreo-trademarks
+SPDX-URL: (custom, not on SPDX list)
+SPDX-Licenses: MIT
+Usage-Guide:
+  This exception clarifies that while the source code is MIT-licensed,
+  the project's names ("Oreo Badge", "OreoOS", "Elixpo") and the panda
+  mascot are trademarks of the original authors and are not granted
+  under the MIT license.
+
+  To use this exception, add the following SPDX tag/value pair to the
+  existing SPDX-License-Identifier line:
+    SPDX-License-Identifier: MIT WITH Oreo-trademarks
+Exception-Text:
+
+The MIT License granted above covers the source code, hardware design
+files, prompts, and assets contained in this repository. It does NOT
+grant rights to the following trademarks:
+
+  - "Oreo Badge"
+  - "OreoOS"
+  - "Elixpo"
+  - The associated panda mascot character.
+
+These trademarks are reserved by Elixpo (Ayushman Bhattacharya) and the
+project's authors.
+
+You may:
+  - Use these names to identify the original project and to give credit
+    to its authors (e.g. "Powered by OreoOS", "based on the Oreo Badge").
+  - Reference them in articles, talks, tutorials, classroom material,
+    and documentation about the project.
+  - Show the panda mascot in screenshots and demos of unmodified builds.
+
+You may not, without prior written permission:
+  - Use these names to brand a fork, derivative work, or hardware
+    product.
+  - Imply endorsement of a derivative work by the original authors.
+  - Use the panda mascot as the primary branding of a derivative
+    product.
+
+For permission requests or trademark questions, contact:
+  hello@elixpo.com
