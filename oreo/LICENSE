@@ -1,0 +1,21 @@
+OreoOS is provided under:
+
+	SPDX-License-Identifier: MIT WITH Oreo-trademarks
+
+Being under the terms of the MIT License, according with:
+
+	LICENSES/preferred/MIT
+
+With an explicit trademark and naming exception, as stated at:
+
+	LICENSES/exceptions/Oreo-trademarks
+
+In addition, other licenses may also apply to upstream components
+incorporated into this project. Please see:
+
+	LICENSES/notices/notice-board
+	LICENSES/README.md
+
+for more details.
+
+All contributions to OreoOS are subject to this LICENSE file.

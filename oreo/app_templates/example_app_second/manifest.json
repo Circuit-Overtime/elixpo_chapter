@@ -1,0 +1,7 @@
+{
+  "name": "Example",
+  "type": "app",
+  "version": "0.1",
+  "icon": "example_icon.png",
+  "author": "your-github-handle"
+}

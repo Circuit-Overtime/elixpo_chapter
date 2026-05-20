@@ -1,0 +1,27 @@
+NOTICES
+=======
+
+This project incorporates and depends on third-party components, each
+distributed under its own license. Source code in this repository is
+licensed under MIT (see LICENSE and LICENSES/preferred/MIT). Trademark
+policy is described in LICENSES/exceptions/Oreo-trademarks.
+
+Upstream components
+-------------------
+
+MicroPython
+  Copyright (c) 2013-present Damien P. George and contributors.
+  Licensed under the MIT License.
+  https://github.com/micropython/micropython
+
+Espressif ESP-IDF
+  Copyright (c) Espressif Systems (Shanghai) Co. Ltd.
+  Licensed under the Apache License, Version 2.0.
+  See LICENSES/preferred/Apache-2.0 for the full license text.
+  https://github.com/espressif/esp-idf
+
+ESP32 toolchain (xtensa-esp32s3-elf, newlib, FreeRTOS components)
+  Licensed under their respective upstream licenses.
+
+If you believe an upstream component is missing from this list, please
+open an issue or email hello@elixpo.com.

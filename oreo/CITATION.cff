@@ -1,0 +1,48 @@
+# GitHub renders this file on the repo's right-hand sidebar as a
+# "Cite this repository" widget. Citation format: CFF v1.2.0.
+#
+# Update this file when:
+#   * a new author / maintainer joins                 -> add to authors
+#   * a new public version is released                -> bump `version` + `date-released`
+#   * the project's identity / URL changes            -> update `repository-code`
+#
+# Validate locally with: pip install cffconvert && cffconvert -i CITATION.cff -f bibtex
+
+cff-version: 1.2.0
+message: "If you use the Oreo Badge or OreoOS in research, classrooms, or talks, please cite it as below."
+title: "OreoOS — the Oreo Badge Operating System"
+type: software
+abstract: >
+  OreoOS is a MicroPython-based operating system for the Oreo Badge,
+  a wearable, programmable conference badge built around an ESP32-S3
+  microcontroller, a 320x240 IPS LCD, an MPU-6050 IMU, an IR
+  transmit/receive pair, and a capacitive touch pad. The OS ships a
+  themed launcher, an OTA update client, a power manager, and a
+  curated set of apps written against a three-method app SDK.
+authors:
+  - family-names: Bhattacharya
+    given-names: Ayushman
+    alias: Circuit-Overtime
+    affiliation: Elixpo
+    email: hello@elixpo.com
+keywords:
+  - conference-badge
+  - micropython
+  - esp32
+  - esp32-s3
+  - embedded
+  - ota
+  - hardware
+  - oreoos
+  - elixpo
+license: LicenseRef-Oreo-PCL-1.0
+repository-code: "https://github.com/elixpo/oreo"
+url: "https://elixpo.com"
+contact:
+  - email: hello@elixpo.com
+    name: Elixpo
+# `version` and `date-released` are auto-updated by tools/release.py
+# whenever a new release is cut. Don't hand-edit them unless you're
+# fixing a typo.
+version: "v1.2.55"
+date-released: "2026-05-15"
