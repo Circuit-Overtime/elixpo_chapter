@@ -5,12 +5,13 @@ import { Reveal, fadeUp, staggerContainer } from "@/components/MotionWrap";
 import MarkdownView from "@/components/MarkdownView";
 import {
   GitPullRequest, Bug, BookOpen, Code2, Heart, ExternalLink,
+  FolderTree,
 } from "lucide-react";
 
 const TRACKS = [
   { Icon: Code2,           title: "Write an app",
-    body: "manifest.json + main.py and you're in the drawer. Look at apps/snake/ or apps/badge/ for ~50-line templates.",
-    href: "https://github.com/elixpo/oreo/blob/main/CONTRIBUTING.md#building-an-app",
+    body: "manifest.json + a thin main.py shim + a src/ folder for modular code. apps/snake/ is the reference layout — see the App structure guide below for the full convention.",
+    href: "/docs/apps",
     tint: "text-primary"  as const },
   { Icon: Bug,             title: "Fix a bug",
     body: "Open issues are labelled by area (os / store / ota / wifi / bt). 'good first issue' tags exist; pair them with a serial log.",
@@ -89,6 +90,54 @@ export default function ContributePage() {
             </motion.a>
           ))}
         </div>
+
+        {/* App structure overview — short version of the /docs/apps
+            convention. Links into the dedicated docs page for the
+            full lifecycle reference + code samples. */}
+        <Reveal>
+          <div className="mt-20 rounded-lg border border-border bg-bg-raised/40 p-8 sm:p-10">
+            <div className="mb-3 flex items-center gap-3">
+              <FolderTree className="h-5 w-5 text-primary" />
+              <h2 className="font-display text-2xl tracking-tight">
+                App structure
+              </h2>
+            </div>
+            <p className="mb-6 max-w-3xl text-sm text-text-dim">
+              Every app on the badge lives in{" "}
+              <code className="text-text">apps/&lt;name&gt;/</code>. The launcher
+              loads <code className="text-text">main.py</code> and reads an{" "}
+              <code className="text-text">App</code> class off it &mdash; but{" "}
+              <code className="text-text">main.py</code> is now a thin
+              re-export shim. Real code lives under{" "}
+              <code className="text-text">src/</code> so logic, rendering,
+              and persistence each get their own file. Easier to read,
+              easier to test on a laptop.
+            </p>
+            <pre className="mb-6 overflow-x-auto rounded-md border border-border
+                             bg-bg p-4 text-xs leading-relaxed text-text-dim">
+{`apps/snake/
+├── manifest.json     name, author, icon, version
+├── main.py           thin shim: from .src.app import App
+├── __init__.py       (empty, makes it a package)
+└── src/
+    ├── __init__.py
+    ├── app.py        App class — lifecycle hooks only
+    ├── game.py       pure game logic + constants
+    ├── render.py     drawing functions
+    └── highscore.py  persistent best-score I/O`}
+            </pre>
+            <p className="text-sm text-text-dim">
+              See{" "}
+              <a href="/docs/apps"
+                 className="text-primary underline decoration-primary/40
+                            underline-offset-2 hover:decoration-primary">
+                the full app guide
+              </a>{" "}
+              for lifecycle hooks, manifest fields, drawing APIs, and a
+              walkthrough of the snake reference app.
+            </p>
+          </div>
+        </Reveal>
 
         {/* CONTRIBUTING.md — fetched from /public at runtime and rendered
             through a tiny inline markdown formatter. The file is also a

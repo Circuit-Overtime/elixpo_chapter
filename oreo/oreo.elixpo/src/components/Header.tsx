@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Github, Star, GitFork, Home, Rocket, Cpu, LayoutGrid,
-  Wrench, GitPullRequest,
+  Wrench, GitPullRequest, BookOpen,
 } from "lucide-react";
 import { useGithubStats } from "@/lib/useGithubStats";
 
@@ -14,6 +14,7 @@ const NAV = [
   { href: "/get-started/",label: "Get Started", Icon: Rocket },
   { href: "/badge/",      label: "Badge",       Icon: Cpu },
   { href: "/apps/",       label: "Apps",        Icon: LayoutGrid },
+  { href: "/docs/apps/",  label: "Docs",        Icon: BookOpen },
   { href: "/hacks/",      label: "Hacks",       Icon: Wrench },
   { href: "/contribute/", label: "Contribute",  Icon: GitPullRequest },
 ];

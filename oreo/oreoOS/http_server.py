@@ -111,6 +111,37 @@ _sessions = {}
 # bytes are flowing in. None when no upload is in flight.
 _progress = None
 
+# Bumped to ticks_ms() each time an upload completes successfully.
+# The WiFi/Transfer UI polls this to drive the bottom "Received" toast
+# without needing a callback hook into the app layer.
+_last_upload_ts   = 0
+_last_upload_name = ""
+
+
+def last_upload():
+    """Return (ticks_ms_at_completion, filename) of the most recent
+    completed upload, or (0, '') if nothing has landed yet. UI calls
+    this every tick to decide whether to show the 'Received' toast."""
+    return _last_upload_ts, _last_upload_name
+
+
+def free_bytes():
+    """Best-effort free bytes on the badge's filesystem. Used by the
+    upload page's pre-flight check so the browser can reject an
+    oversized file before any bytes leave the phone. Returns 0 on
+    error so the client treats the badge as full and prompts the
+    user to free space."""
+    if _os is None:
+        return 0
+    try:
+        # MicroPython: statvfs returns (bsize, frsize, blocks, bfree,
+        # bavail, files, ffree, favail, flag, namemax). Use bfree (free
+        # blocks for unprivileged users) * fragment size.
+        s = _os.statvfs("/")
+        return int(s[0]) * int(s[3])
+    except Exception:
+        return 0
+
 
 
 # ── routing tables ──────────────────────────────────────────────────────
@@ -819,6 +850,14 @@ _UPLOAD_FORM = (
     # the DOM rather than running an auth handshake.
     b"const did=$('did').textContent.trim();"
     b"let approved=false,beaconTimer=null,picked=null,activeXhr=null;"
+    # Tracked from every beacon response so file-picker can do a
+    # pre-flight space check without an extra round-trip. 0 = unknown
+    # (treat the badge as full and warn) until the first beacon lands.
+    b"let freeBytes=0;"
+    # Headroom we leave on flash even when we 'fit' — the upload writes
+    # the on-disk file PLUS a few small allocations (notification entry,
+    # gc churn), so we refuse uploads that would land within this margin.
+    b"const FREE_HEADROOM=64*1024;"
     b"function fmtKB(n){return (n/1024)<1024?(Math.round(n/1024)+' KB'):"
     b"((n/1024/1024).toFixed(2)+' MB');}"
     b"function setWaitStatus(cls,msg){const s=$('wstat');s.className='status '+cls;$('wmsg').textContent=msg;}"
@@ -853,6 +892,7 @@ _UPLOAD_FORM = (
     b"<button class='btn ghost' onclick='location.reload()'>Try again</button>\";"
     b"        return;}"
     b"      const j=await r.json();"
+    b"      if(typeof j.free==='number')freeBytes=j.free;"
     b"      if(j.state==='approved'){approved=true;clearInterval(beaconTimer);"
     b"        $('wait').classList.add('hide');$('form').classList.remove('hide');}"
     b"      else if(j.state==='denied'){clearInterval(beaconTimer);"
@@ -867,11 +907,25 @@ _UPLOAD_FORM = (
     b""
     # ── file picker / preview / upload (unchanged from previous version) ──
     b"function onFile(file){"
-    b"  if(!file)return;picked=file;"
+    b"  if(!file)return;"
+    # Estimate the on-disk size: images convert to RGB565 (240x240 max
+    # = ~115KB cap), everything else writes the raw file bytes. We
+    # compare to freeBytes (most recent beacon reading) before letting
+    # the user hit Send — this turns 'out of space' into a clean UX
+    # error instead of a half-written file + 500 from the badge.
+    b"  const isImg=file.type.startsWith('image/');"
+    b"  const estDiskBytes=isImg?(240*240*2+6):file.size;"
+    b"  if(freeBytes>0&&estDiskBytes+FREE_HEADROOM>freeBytes){"
+    b"    showModal('Not enough space',"
+    b"      'This badge only has '+fmtKB(freeBytes)+' free, which is not enough for a '+"
+    b"      fmtKB(estDiskBytes)+' file. Delete a photo or document on the badge first.',"
+    b"      'err',false);"
+    b"    return;}"
+    b"  picked=file;"
     b"  $('preview').style.display='flex';$('drop').style.display='none';"
     b"  $('pname').textContent=file.name;$('psize').textContent=fmtKB(file.size);"
     b"  const th=$('thumb');th.innerHTML='';"
-    b"  if(file.type.startsWith('image/')){"
+    b"  if(isImg){"
     b"    const im=document.createElement('img');im.src=URL.createObjectURL(file);th.appendChild(im);}"
     b"  else{th.textContent=file.name.split('.').pop().toUpperCase();}"
     b"  $('go').disabled=false;}"
@@ -1214,7 +1268,13 @@ def _handle_beacon(sock, qs, peer_addr):
         pass
     if peer_addr:
         s["addr"] = peer_addr
-    body = ('{"device_id":"%s","state":"%s"}' % (sid, s["state"])).encode()
+    # Surface the badge's current free space on every beacon — the
+    # upload page uses it for a pre-flight size check the moment the
+    # user picks a file (cheap, no extra round-trip). statvfs is fast
+    # enough to call per beacon (~ms on ESP32-S3 flash).
+    fb = free_bytes()
+    body = ('{"device_id":"%s","state":"%s","free":%d}'
+            % (sid, s["state"], fb)).encode()
     _send_status(sock, 200, "OK", body, content_type="application/json")
 
 
@@ -1430,6 +1490,30 @@ def _handle_upload(sock, headers, body_prefix, qs):
     # files from session ABCD12" instead of just "approved".
     if token in _sessions:
         _sessions[token]["uploads"] = _sessions[token].get("uploads", 0) + 1
+
+    # Bump the last-upload timestamp + filename so the WiFi UI can
+    # show the bottom "Received" toast for a couple of seconds. We
+    # don't push directly into the app layer — keeps http_server
+    # decoupled from any specific screen.
+    global _last_upload_ts, _last_upload_name
+    try:
+        import time as _t
+        _last_upload_ts = _t.ticks_ms()
+    except Exception:
+        _last_upload_ts = 0
+    _last_upload_name = fname
+
+    # Reclaim the multipart-stream buffers before any subsequent tick
+    # tries to do anything else on a small heap. Upload paths allocate
+    # several KB of bytes objects that the previous version left for
+    # the next implicit GC — long enough that the next frame's paint
+    # could OOM-trigger an MP allocation stall (which presents as a
+    # full-screen freeze, not a reset). Explicit collect here keeps
+    # the post-upload UI responsive.
+    try:
+        gc.collect()
+    except Exception:
+        pass
 
     # Surface the new file in the notification panel so the user knows
     # where it landed without having to open the Gallery or Reader.
