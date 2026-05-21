@@ -32,6 +32,19 @@
 
 <img src="docs/images/banner.png" alt="OreoOS — the Oreo Badge" width="100%">
 
+---
+
+<div align="center">
+
+## 🎨 Assets by pollinations.ai
+
+[![Built with Pollinations](https://img.shields.io/badge/Built%20with-Pollinations-8a2be2?style=for-the-badge&logoColor=white&labelColor=6a0dad)](https://pollinations.ai)
+
+> Every sprite, banner, and mascot of the  project &dash; Oreo, the
+> badges, the in-app artwork, the website hero &dash; was generated with
+> [**Pollinations.ai**](https://pollinations.ai).
+
+</div>
 
 ---
 
@@ -431,16 +444,11 @@ We love new contributors. The bar is low; the welcome is warm.
 
 ---
 
-## 📫 Made by
-
 
 <div align="center">
 
 
-OreoOS, the mascot, the apps, and pretty much everything in this repo
-is the work of [**Ayushman Bhattacharya**](https://github.com/Circuit-Overtime).
-The Oreo Badge ships as a project under the
-[**Elixpo**](https://elixpo.com) umbrella.
+With 💖 by [**Ayushman Bhattacharya**](https://github.com/Circuit-Overtime).
 
 Want to help, ship an app, sponsor a build, or just say hi - ✉️ **hello@elixpo.com**
 

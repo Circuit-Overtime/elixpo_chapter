@@ -29,11 +29,19 @@ test is always on hardware. If you don't have a badge, ping
 
 ## Writing an app
 
+> The full reference lives on the website:
+> [**oreo.elixpo.com/docs/apps**](https://oreo.elixpo.com/docs/apps/). This
+> section is the quick start; the docs page goes deep on every
+> lifecycle hook, manifest field, and drawing primitive.
+
 The fastest path to a working app:
 
 ```bash
-cp -r templates/example_app apps/my_app
-# edit apps/my_app/main.py — three methods is the whole API
+cp -r app_templates apps/my_app       # minimal counter app, ready to run
+# OR start from snake — fully-split reference layout:
+#   cp -r apps/snake apps/my_app
+# edit apps/my_app/manifest.json — name, author, icon
+# edit apps/my_app/src/app.py    — your App class lives here
 python tools/deploy.py /dev/ttyACM0
 ```
 
@@ -45,19 +53,48 @@ how the app reaches the user:
 | `apps/<name>/` | **Default-installed.** Tile appears in the drawer on every fresh deploy. Use for core OS tools + apps every badge owner should have |
 | `apps_market/<name>/` | **Opt-in.** Ships in the catalogue but isn't in the drawer until the user installs from the on-device **App Market** tile. Use for games, sketches, hackathon entries, themed extras |
 
-The two trees have **identical shape** — `main.py + manifest.json +
-__init__.py + assets/`. `tools/deploy.py` walks both and ships them to
-the matching path on the device. The Market app calls into
+Both trees have **identical shape** — the new modular layout below.
+`tools/deploy.py` walks both and ships them to the matching path on
+the device. The Market app calls into
 [`oreoOS.store`](oreoOS/store.py) which `cp -r`s a folder between the
 two trees on install / uninstall.
 
 When in doubt, ship to `apps_market/` — flash and drawer real estate
 are precious, and the install flow is one tap away.
 
+**The layout (since v1.x — see the migration note at the bottom).**
+
+```
+apps/my_app/
+├── __init__.py            empty marker
+├── main.py                3-line shim → re-exports App from src/
+├── manifest.json          name + version + icon + author
+├── assets/                optional
+│   ├── raw/               source images you commit
+│   └── optimized/         baked RGB565 .py modules
+└── src/                   your code, modular
+    ├── __init__.py
+    ├── app.py             the App class — lifecycle hooks
+    ├── game.py            (example) pure logic + constants
+    ├── render.py          (example) drawing functions
+    └── highscore.py       (example) persistent I/O
+```
+
+`main.py` is now a thin re-export shim — the launcher still loads it
+and reads `App` off it, but real code belongs under `src/`. The split
+inside `src/` is your call. A tiny utility might be a single
+`src/app.py`; a complex game can have a dozen modules. The deploy
+script pushes every `.py` under `src/` recursively, so adding a new
+module needs no tooling change.
+
 **The contract.** Your app subclasses `oreoOS.App` and implements three
 lifecycle methods:
 
 ```python
+# apps/my_app/src/app.py
+import oreoOS
+from oreoOS import api, theme, widgets
+
 class App(oreoOS.App):
     name = "My App"
 
@@ -71,6 +108,14 @@ class App(oreoOS.App):
         # per-frame render. d is the framebuffer. don't call d.present().
 ```
 
+And the shim:
+
+```python
+# apps/my_app/main.py
+from .src.app import App
+__all__ = ["App"]
+```
+
 Optional hooks: `on_exit`, `on_button_press(btn)`,
 `on_button_release(btn)`, `on_home_press()` (returns True to suppress
 the default HOME-to-drawer behaviour).
@@ -82,24 +127,19 @@ the default HOME-to-drawer behaviour).
 - `BLOCK_IDLE`      — `True` for apps that should keep the screen on
                        even without button presses (games, IR scanner)
 
-**Where things live:**
-
-```
-apps/my_app/
-├── __init__.py            empty marker
-├── main.py                your App class
-├── manifest.json          name + version + icon + author
-└── assets/
-    ├── raw/               source images you commit
-    └── optimized/         baked RGB565 .py modules
-```
-
 To bake assets: drop a PNG/JPG into `assets/raw/`, run
 `python tools/optimize_assets.py --app my_app`, commit the result.
 
 The `theme` module is the source of truth for colours. If you find
 yourself reaching for `api.rgb(...)` directly, ask whether there's a
 themed constant that fits.
+
+> **Migrating an older app.** Before the `src/` convention, every app
+> kept its `App` class directly in `main.py`. Every app in this repo
+> has since been migrated; if you're working from an old fork: move
+> the contents of `main.py` to `src/app.py`, create an empty
+> `src/__init__.py`, and replace `main.py` with the 3-line shim
+> above. No other change is required — absolute imports keep working.
 
 ---
 

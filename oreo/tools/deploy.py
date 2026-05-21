@@ -159,6 +159,10 @@ DEPLOY = [
     ("oreoOS/notif_panel.py",   "oreoOS/notif_panel.py"),
     ("oreoOS/pair_prompt.py",   "oreoOS/pair_prompt.py"),
     ("oreoOS/http_server.py",   "oreoOS/http_server.py"),
+    # Mascot image served at /mascot.png by the on-badge upload page.
+    # Without this in the deploy manifest the file never makes it to
+    # flash, so the local upload page renders a broken-image icon.
+    ("oreoOS/mascot.png",       "oreoOS/mascot.png"),
     ("oreoOS/gestures.py",      "oreoOS/gestures.py"),
 
     # Hardware drivers
@@ -200,6 +204,25 @@ for _root in _app_roots:
             ("%s/main.py" % rel,          "%s/main.py" % rel),
             ("%s/manifest.json" % rel,    "%s/manifest.json" % rel),
         ]
+
+        # Optional src/ subtree for the modular-app convention:
+        # apps/<name>/main.py is a thin shim that imports from
+        # apps/<name>/src/. Anything .py under src/ gets pushed
+        # recursively so contributors can drop helper modules in
+        # without touching the deploy script. We deliberately skip
+        # __pycache__, .pyc, hidden files, and any subdirectory
+        # named `tests/` (host-only — they pull in pytest etc).
+        src_dir = app_dir / "src"
+        if src_dir.is_dir():
+            for sp in sorted(src_dir.rglob("*.py")):
+                # Filter out everything we don't want on flash.
+                parts = sp.relative_to(app_dir).parts
+                if any(p == "__pycache__" or p.startswith(".") or
+                       p == "tests" for p in parts):
+                    continue
+                rel_path = "/".join(parts)         # src/foo/bar.py
+                DEPLOY.append((str(sp),
+                               "%s/%s" % (rel, rel_path)))
         # Reader bundles plain .md / .txt files under assets/ (no optimize
         # step — they're already device-readable). README.md is a host-only
         # workflow doc and is excluded from the push.

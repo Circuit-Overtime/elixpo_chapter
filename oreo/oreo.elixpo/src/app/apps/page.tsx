@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
+import { BookOpen, ArrowRight } from "lucide-react";
 import { Reveal, staggerContainer, fadeUp } from "@/components/MotionWrap";
 import AppCard from "@/components/AppCard";
 import { PRELOADED, ALL_APPS, STORE } from "@/data/apps";
@@ -44,6 +46,24 @@ export default function AppsPage() {
             pulls fresh apps from GitHub at runtime — no laptop, no
             recompile, no developer mode toggle.
           </motion.p>
+
+          {/* Docs CTA — every catalogue tile is just an example; if
+              someone's reading this page they probably want to write
+              their own. Send them straight to /docs/apps. */}
+          <motion.div variants={fadeUp} className="mt-8 flex justify-center">
+            <Link
+              href="/docs/apps/"
+              className="inline-flex items-center gap-2 rounded-md
+                         border border-primary/40 bg-primary/10 px-4 py-2.5
+                         text-sm font-medium text-primary
+                         transition-colors hover:border-primary
+                         hover:bg-primary/15"
+            >
+              <BookOpen className="h-4 w-4" />
+              Read the app-building docs
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </motion.div>
         </motion.div>
 
         {/* Preloaded — centred */}
