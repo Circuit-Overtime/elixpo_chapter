@@ -1,0 +1,28 @@
+{
+  "heading": "Writing",
+  "description": "Notes on open-source maintenance, DevOps, and building developer communities. Full posts live on blogs.elixpo.com.",
+  "home": "https://blogs.elixpo.com",
+  "posts": [
+    {
+      "title": "Building a Contributor Pipeline That Actually Retains People",
+      "date": "2026-04-18",
+      "excerpt": "What I learned wiring up payouts, triage bots, and app-submission workflows at Pollinations.ai — and why most onboarding funnels leak.",
+      "url": "https://blogs.elixpo.com/contributor-pipeline",
+      "tags": ["Open Source", "Maintainership"]
+    },
+    {
+      "title": "Deploying a LangChain Search Agent to the Edge",
+      "date": "2026-02-09",
+      "excerpt": "From notebook to production: containerizing a retrieval service, wiring CI/CD, and shipping it on cloud infra.",
+      "url": "https://blogs.elixpo.com/langchain-search-deploy",
+      "tags": ["DevOps", "MLOps"]
+    },
+    {
+      "title": "Running a 290-Person Hacktoberfest Meetup",
+      "date": "2025-11-02",
+      "excerpt": "The logistics, the sponsors, and the contributor-first format behind Kolkata's biggest Hacktoberfest.",
+      "url": "https://blogs.elixpo.com/kolkata-hacktoberfest",
+      "tags": ["Community"]
+    }
+  ]
+}

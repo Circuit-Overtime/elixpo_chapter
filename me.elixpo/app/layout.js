@@ -8,7 +8,7 @@ export const metadata = {
   },
   description: "Personalized portfolio showcase for Elixpo organization members",
   icons: {
-    icon: "https://cdn.discordapp.com/app-icons/1214916249222643752/f60abd68fff5f65f72076a5aaac5afb8.png?size=512",
+    icon: "/icon.png",
   },
   openGraph: {
     type: "website",

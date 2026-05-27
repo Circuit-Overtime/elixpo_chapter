@@ -4,42 +4,6 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-function FloatingPaperPiece({ delay, x, y, size, rotation }) {
-  return (
-    <motion.div
-      className="absolute rounded-sm bg-[#E2D9C8] opacity-[0.04]"
-      style={{ width: size, height: size, left: `${x}%`, top: `${y}%` }}
-      initial={{ opacity: 0, rotate: 0, scale: 0.5 }}
-      animate={{
-        opacity: [0, 0.06, 0.03, 0.06, 0],
-        rotate: [rotation, rotation + 20, rotation - 10, rotation + 15],
-        scale: [0.5, 1, 0.8, 1],
-        y: [0, -30, 10, -20],
-      }}
-      transition={{
-        duration: 12,
-        delay,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-    />
-  );
-}
-
-function InkSplatter({ delay, x, y }) {
-  return (
-    <motion.div
-      className="absolute rounded-full bg-[#E2D9C8]"
-      style={{ left: `${x}%`, top: `${y}%` }}
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: [0, 0.08, 0.04], scale: [0, 1.5, 1] }}
-      transition={{ duration: 3, delay, repeat: Infinity, repeatDelay: 8 }}
-    >
-      <div className="w-3 h-3 rounded-full" />
-    </motion.div>
-  );
-}
-
 function EmailCopy({ email }) {
   const [copied, setCopied] = useState(false);
 
@@ -61,7 +25,7 @@ function EmailCopy({ email }) {
   return (
     <button
       onClick={handleCopy}
-      className="mt-2 flex items-center gap-2 px-2 py-1 rounded-md bg-[#1B1B19]/10 hover:bg-[#1B1B19] hover:text-[#E2D9C8] transition-all duration-300 text-[#777] text-[0.7em] tracking-[1px] cursor-pointer"
+      className="flex items-center gap-2 px-2 py-1 rounded-md bg-[#1B1B19]/10 hover:bg-[#1B1B19] hover:text-[#E2D9C8] transition-all duration-300 text-[#777] text-[0.7em] tracking-[1px] cursor-pointer"
       style={{ fontFamily: "'Pathway Gothic One', sans-serif" }}
     >
       <span>{copied ? "Copied!" : email}</span>
@@ -73,168 +37,144 @@ function EmailCopy({ email }) {
   );
 }
 
-const paperPieces = [
-  { delay: 0, x: 10, y: 15, size: 60, rotation: 15 },
-  { delay: 2, x: 80, y: 10, size: 40, rotation: -25 },
-  { delay: 4, x: 25, y: 70, size: 50, rotation: 45 },
-  { delay: 1, x: 70, y: 65, size: 35, rotation: -10 },
-  { delay: 3, x: 50, y: 30, size: 45, rotation: 30 },
-  { delay: 5, x: 90, y: 80, size: 55, rotation: -40 },
-  { delay: 1.5, x: 5, y: 50, size: 30, rotation: 20 },
-  { delay: 3.5, x: 60, y: 85, size: 40, rotation: -15 },
-];
-
-const inkSplatters = [
-  { delay: 1, x: 15, y: 25 },
-  { delay: 4, x: 85, y: 45 },
-  { delay: 7, x: 45, y: 75 },
-  { delay: 2, x: 75, y: 15 },
-  { delay: 5, x: 30, y: 55 },
-];
+const ACCENT = "#B63B12";
 
 export default function LandingClient({ profiles }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const year = new Date().getFullYear();
+
   return (
-    <div className="relative h-[100dvh] bg-[#1B1B19] flex flex-col items-center justify-center overflow-hidden">
-      {/* Paper texture background */}
-      <div className="absolute inset-0 opacity-[0.07] bg-[url(/assets/ayushman/paperTexture.webp)] bg-repeat bg-contain pointer-events-none" />
+    <div className="relative min-h-[100dvh] bg-[#1B1B19] flex flex-col overflow-x-hidden">
+      {/* Paper grain */}
+      <div className="absolute inset-0 opacity-[0.06] bg-[url(/assets/ayushman/paperTexture.webp)] bg-repeat bg-contain pointer-events-none" />
 
-      {/* Floating paper pieces */}
-      {mounted &&
-        paperPieces.map((p, i) => <FloatingPaperPiece key={i} {...p} />)}
-
-      {/* Ink splatters */}
-      {mounted && inkSplatters.map((s, i) => <InkSplatter key={i} {...s} />)}
-
-      {/* Decorative horizontal lines */}
+      {/* ===== Masthead dateline bar ===== */}
       <motion.div
-        className="absolute top-[20%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#444] to-transparent"
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 2, delay: 0.5 }}
-      />
-      <motion.div
-        className="absolute bottom-[20%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#444] to-transparent"
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 2, delay: 0.8 }}
-      />
-
-      {/* Corner ornaments */}
-      <motion.div
-        className="absolute top-8 left-8 w-16 h-16 border-t-2 border-l-2 border-[#444] rounded-tl-sm"
+        className="relative z-10 flex items-center justify-between px-5 sm:px-10 pt-5 sm:pt-7 text-[#8c856f] text-[0.6rem] sm:text-xs uppercase tracking-[3px]"
+        style={{ fontFamily: "'Pathway Gothic One', sans-serif" }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 1.5 }}
-      />
-      <motion.div
-        className="absolute top-8 right-8 w-16 h-16 border-t-2 border-r-2 border-[#444] rounded-tr-sm"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 1.5 }}
-      />
-      <motion.div
-        className="absolute bottom-8 left-8 w-16 h-16 border-b-2 border-l-2 border-[#444] rounded-bl-sm"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 1.5 }}
-      />
-      <motion.div
-        className="absolute bottom-8 right-8 w-16 h-16 border-b-2 border-r-2 border-[#444] rounded-br-sm"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 1.5 }}
-      />
-
-      {/* Header */}
-      <motion.div
-        className="relative z-10 text-center mb-[2vh] sm:mb-[3vh]"
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.2, ease: "easeOut" }}
+        transition={{ duration: 1, delay: 0.2 }}
       >
+        <span>The Elixpo Organisation</span>
+        <span>Est. 2023</span>
+        <span className="hidden sm:inline">Portfolio Series</span>
+      </motion.div>
+      <div className="relative z-10 mx-5 sm:mx-10 mt-3 h-0.5 bg-[#3a382f]" />
+
+      {/* ===== Cover masthead ===== */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 py-8 sm:py-10">
         <motion.h1
-          className="text-[#E2D9C8] text-[clamp(2rem,8vw,10rem)] leading-none select-none"
+          className="text-[#E2D9C8] text-[clamp(3rem,13vw,13rem)] leading-[0.85] text-center select-none"
           style={{ fontFamily: "Canopee, serif" }}
-          initial={{ letterSpacing: "0.5em", opacity: 0 }}
-          animate={{ letterSpacing: "0.15em", opacity: 1 }}
-          transition={{ duration: 2, ease: "easeOut" }}
+          initial={{ letterSpacing: "0.4em", opacity: 0 }}
+          animate={{ letterSpacing: "0.12em", opacity: 1 }}
+          transition={{ duration: 1.6, ease: "easeOut" }}
         >
           ELIXPO
         </motion.h1>
 
-        {/* Decorative line under title */}
         <motion.div
-          className="mx-auto mt-2 h-[2px] bg-gradient-to-r from-transparent via-[#ffc300] to-transparent"
-          initial={{ width: 0 }}
-          animate={{ width: "80%" }}
-          transition={{ duration: 1.5, delay: 0.8 }}
-        />
+          className="flex items-center gap-3 sm:gap-4 mt-4 sm:mt-6"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.6 }}
+        >
+          <span className="h-0.5 w-10 sm:w-20" style={{ background: ACCENT }} />
+          <span
+            className="uppercase tracking-[4px] text-[0.65rem] sm:text-sm"
+            style={{ color: ACCENT, fontFamily: "'Pathway Gothic One', sans-serif" }}
+          >
+            Vol. 04 · Portfolio Series
+          </span>
+          <span className="h-0.5 w-10 sm:w-20" style={{ background: ACCENT }} />
+        </motion.div>
 
         <motion.p
-          className="text-[#999] text-xs sm:text-sm md:text-base mt-2 tracking-[3px] sm:tracking-[5px] max-w-[700px] mx-auto px-4"
+          className="text-[#999] text-sm sm:text-base md:text-lg mt-5 sm:mt-7 tracking-[1px] max-w-[640px] text-center leading-relaxed px-4"
           style={{ fontFamily: "'Pathway Gothic One', sans-serif" }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 1.2 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.9 }}
         >
-          Personalized Portfolio of Members of the Elixpo Organisation
+          Personalized portfolios of the people building the Elixpo ecosystem.
         </motion.p>
-      </motion.div>
+      </div>
 
-      {/* Person Cards — horizontal scroll when many */}
-      <div className="relative z-10 flex flex-row gap-3 sm:gap-8 md:gap-12 px-2 sm:px-8 overflow-x-auto overflow-y-hidden max-w-full scrollbar-hide">
-        {profiles.map((profile, index) => (
-          <motion.div
-            key={profile.slug}
-            className="flex-shrink-0"
-            initial={{ opacity: 0, y: 60, rotateY: -10 }}
-            animate={{ opacity: 1, y: 0, rotateY: 0 }}
-            transition={{ duration: 0.8, delay: 1.5 + index * 0.3, ease: "easeOut" }}
+      {/* ===== Contents / member index ===== */}
+      <div className="relative z-10 px-5 sm:px-10 pb-8 sm:pb-12">
+        <motion.div
+          className="flex items-center gap-3 mb-5 sm:mb-7"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 1.1 }}
+        >
+          <span
+            className="uppercase tracking-[4px] text-[0.65rem] sm:text-sm text-[#8c856f]"
+            style={{ fontFamily: "'Pathway Gothic One', sans-serif" }}
           >
-            <Link
-              href={`/${profile.slug}`}
-              className="group relative flex flex-col h-[clamp(260px,55vh,420px)] aspect-[3/4] border-2 border-[#444] rounded-[20px] bg-[#E2D9C8] p-4 sm:p-5 transition-all duration-500 hover:scale-105 hover:border-[#ffc300] hover:shadow-[0_0_60px_rgba(255,195,0,0.12)]"
+            Contents — {profiles.length} Members
+          </span>
+          <span className="flex-1 h-0.5 bg-[#3a382f]" />
+        </motion.div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7 max-w-[1200px] mx-auto w-full">
+          {profiles.map((profile, index) => (
+            <motion.div
+              key={profile.slug}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 1.2 + index * 0.15, ease: "easeOut" }}
             >
-              {/* Paper grain overlay on card */}
-              <div className="absolute inset-0 rounded-[20px] opacity-30 bg-[url(/assets/ayushman/paperTexture.webp)] bg-repeat bg-cover pointer-events-none mix-blend-multiply" />
+              <Link
+                href={`/${profile.slug}`}
+                className="group relative flex flex-col h-full border-2 border-[#444] rounded-[18px] bg-[#E2D9C8] p-4 sm:p-5 transition-all duration-500 hover:border-[#B63B12] hover:-translate-y-1"
+              >
+                {/* Paper grain on card */}
+                <div className="absolute inset-0 rounded-[18px] opacity-25 bg-[url(/assets/ayushman/paperTexture.webp)] bg-repeat bg-cover pointer-events-none mix-blend-multiply" />
 
-              {/* Portrait */}
-              <div
-                className="relative w-full flex-1 rounded-[12px] bg-cover bg-center border-2 border-[#222] sepia-[40%] saturate-[180%] group-hover:sepia-0 group-hover:saturate-100 transition-all duration-500"
-                style={{
-                  backgroundImage: `url(/assets/${profile.slug}/about/ptr-11.webp)`,
-                }}
-              />
-
-              {/* Name */}
-              <div className="relative mt-3">
-                <h2
-                  className="text-[#1B1B19] text-2xl sm:text-3xl md:text-4xl tracking-wide"
-                  style={{ fontFamily: "Canopee, serif" }}
+                {/* Issue number */}
+                <span
+                  className="relative text-[#B63B12] text-sm sm:text-base tracking-[2px] mb-2"
+                  style={{ fontFamily: "'Bitcount Grid Double', system-ui" }}
                 >
-                  {profile.siteName}
-                </h2>
-                <p className="text-[#888] text-[0.65rem] sm:text-xs mt-1 sm:mt-2 tracking-[1px] line-clamp-2">
-                  {profile.siteDescription}
-                </p>
-                <EmailCopy email={profile.email} />
-              </div>
-
-              {/* Arrow circle */}
-              <div className="absolute bottom-4 right-4 w-[36px] h-[36px] sm:w-[44px] sm:h-[44px] border-2 border-dashed border-[#222] rounded-full flex items-center justify-center group-hover:bg-[#1B1B19] group-hover:border-solid group-hover:rotate-[360deg] transition-all duration-700">
-                <span className="text-[#222] text-lg sm:text-xl group-hover:text-[#E2D9C8] transition-colors duration-300">
-                  &rarr;
+                  {String(index + 1).padStart(2, "0")}
                 </span>
-              </div>
 
-              {/* Stamp decoration */}
-              <div className="absolute top-4 right-4 w-[28px] h-[28px] sm:w-[36px] sm:h-[36px] rounded-full border border-dashed border-[#999] opacity-40 group-hover:opacity-70 transition-opacity duration-300" />
-            </Link>
-          </motion.div>
-        ))}
+                {/* Portrait */}
+                <div
+                  className="relative w-full aspect-[4/5] rounded-[12px] bg-cover bg-center border-2 border-[#222] sepia-[40%] saturate-[160%] group-hover:sepia-0 group-hover:saturate-100 transition-all duration-500"
+                  style={{ backgroundImage: `url(/assets/${profile.slug}/about/ptr-11.webp)` }}
+                />
+
+                {/* Name + role */}
+                <div className="relative mt-3 flex flex-col">
+                  <h2
+                    className="text-[#1B1B19] text-2xl sm:text-3xl tracking-wide leading-none truncate uppercase"
+                    style={{ fontFamily: "Canopee, serif" }}
+                  >
+                    {profile.siteName}
+                  </h2>
+                  <p className="text-[#888] text-[0.7rem] sm:text-xs mt-1 tracking-[1px] line-clamp-2 min-h-[2.4em]">
+                    {profile.siteDescription}
+                  </p>
+
+                  {/* Bottom row */}
+                  <div className="mt-2 flex items-end justify-between gap-2">
+                    <EmailCopy email={profile.email} />
+                    <div className="shrink-0 w-9 h-9 sm:w-11 sm:h-11 border-2 border-dashed border-[#222] rounded-full flex items-center justify-center group-hover:bg-[#B63B12] group-hover:border-[#B63B12] group-hover:border-solid transition-all duration-500">
+                      <span className="text-[#222] text-lg sm:text-xl group-hover:text-[#E2D9C8] group-hover:translate-x-0.5 transition-all duration-300">
+                        &rarr;
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </div>
   );

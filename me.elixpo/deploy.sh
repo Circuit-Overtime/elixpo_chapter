@@ -29,7 +29,7 @@ optimize_assets() {
   # Install cwebp if not available
   if ! command -v cwebp &>/dev/null; then
     echo ">> Installing webp tools..."
-    sudo apt-get update -qq && sudo apt-get install -y -qq webp
+     apt-get update -qq &&  apt-get install -y -qq webp
   fi
 
   # Convert png, jpg, jpeg to webp (skip files already having a .webp counterpart)
@@ -75,7 +75,7 @@ for cmd in "$@"; do
     build)
       optimize_assets
       echo ">> Building Next.js static export..."
-      sudo npx next build
+       npx next build
       echo ">> Build complete. Output in out/"
       ;;
     deploy)
@@ -84,7 +84,7 @@ for cmd in "$@"; do
         exit 1
       fi
       echo ">> Deploying to Cloudflare Pages..."
-      sudo npx wrangler pages deploy out
+       npx wrangler pages deploy out
       echo ">> Deploy complete."
       ;;
     *)
