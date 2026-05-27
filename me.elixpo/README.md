@@ -90,8 +90,8 @@ No CMS. No database. Just clean, static content that deploys to the edge.
   <img src="https://github.com/Circuit-Overtime.png" width="80" style="border-radius:50%" alt="Ayushman" />
 </a>
 &nbsp;&nbsp;&nbsp;
-<a href="https://github.com/CSE-Anwesha">
-  <img src="https://github.com/CSE-Anwesha.png" width="80" style="border-radius:50%" alt="Anwesha" />
+<a href="https://github.com/anwe-ch">
+  <img src="https://github.com/anwe-ch.png" width="80" style="border-radius:50%" alt="Anwesha" />
 </a>
 &nbsp;&nbsp;&nbsp;
 <a href="https://github.com/ez-vivek">

@@ -1,26 +1,32 @@
 [
   {
-    "title": "Elixpo Art",
-    "date": "2025-07-06",
-    "description": "A vanilla project, which integartes generative AI and art. It is a simple project that allows users to generate art using AI models. Basically an advanced TEXT2IMAGE Generator, available across all platforms",
-    "image": "/assets/common/spotlight/elixpo-art.webp"
+    "title": "GitHub Maintainer Advisory",
+    "date": "2026-03-01",
+    "description": "Invited to GitHub's Maintainer Advisory program for Pollinations.ai — a 4.5k+ star open-source Gen-AI platform. I build the contributor pipeline: payouts, triage automation, app-submission workflows, and AI-assisted PR review.",
+    "image": "/assets/ayushman/spotlight/maintainer-advisory.webp"
   },
   {
-    "title": "Elixpo Hackathon",
-    "date": "2025-02-06",
-    "description": "Hexafalls Hackathon was organized by JIS University, where I was a core-member of the organizing committee. The event was a great success, with over 300 participants and 60+ projects submitted. It was a great experience to be a part of such a large event.",
-    "image": "/assets/common/spotlight/elixpo-hackathon.webp"
+    "title": "Speaking at GitHub",
+    "date": "2026-05-31",
+    "description": "Speaking at GitHub Maintainer Month 2026 and GitHub Open Source Friday on building sustainable contributor pipelines at Pollinations.ai — lessons on turning first-time contributors into long-term maintainers.",
+    "image": "/assets/ayushman/spotlight/speaking-github.webp"
   },
   {
-    "title": "Langchain Based Search",
+    "title": "OWASP JIS University",
+    "date": "2026-02-01",
+    "description": "Community Strategist for the OWASP JIS University 2026-27 chapter — driving security-focused outreach, partnerships, and event programming for the campus community.",
+    "image": "/assets/ayushman/spotlight/owasp-jisu.webp"
+  },
+  {
+    "title": "Kolkata Hacktoberfest",
+    "date": "2025-10-27",
+    "description": "Co-hosted Kolkata's flagship Hacktoberfest meetup with 290+ participants — students through senior maintainers gathered for contribution sprints, lightning talks, and community networking.",
+    "image": "/assets/ayushman/spotlight/kolkata-hacktoberfest.webp"
+  },
+  {
+    "title": "LixSearch",
     "date": "2025-04-06",
-    "description": "Built on the part of Pollinations to leverage the searching algorithm for the LLMs. It can search the web dynamically using different techniques of searching and indexing, and parsing the request through an LLM for NLP.",
-    "image": "/assets/common/spotlight/elixpoSearchPicture.webp"
-  },
-  {
-    "title": "ASCII Terminal Art",
-    "date": "2025-04-06",
-    "description": "This is a fun project built to display media on the terminal using ASCII art. It uses a simple algorithm to convert images into ASCII art and display them on the terminal. It is a fun project to showcase the power of ASCII art and how it can be used to display media in a different way.",
-    "image": "/assets/common/spotlight/asciiArt.webp"
+    "description": "A LangChain-based semantic search agent built and deployed on Digital Ocean for Pollinations.ai — searches the web dynamically, indexes results, and routes requests through an LLM for natural-language understanding.",
+    "image": "/assets/ayushman/spotlight/elixpo-search.webp"
   }
 ]

@@ -44,7 +44,7 @@ export default async function PersonLayout({ children, params }) {
       {/* Navbar */}
       <div className="navBar static h-[35px] sm:h-[80px] flex items-center justify-between border-b-2 border-[#888] px-4 sm:px-8 md:px-[50px] box-border mb-[5px]">
         <p className="location text-sm sm:text-lg md:text-[1.5em] z-10">{profile.location}</p>
-        <a href={`/${person}`} className="name text-xl sm:text-2xl md:text-[3em] cursor-pointer z-10">
+        <a href={`/${person}`} className="name uppercase text-xl sm:text-2xl md:text-[3em] cursor-pointer z-10">
           {profile.siteName}
         </a>
         <ion-icon

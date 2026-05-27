@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Amarante&family=Bitcount+Grid+Double:wght@100..900&family=Changa+One:ital@0;1&family=Pathway+Gothic+One&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bitcount+Grid+Double:wght@100..900&family=Pathway+Gothic+One&display=swap");
 
 @import "tailwindcss";
 @source not "../ayushman";
@@ -65,6 +65,12 @@ body {
   font-weight: 400;
   font-style: normal;
 }
+
+/* Reusable navbar-grid font (CTAs, accents) */
+.fontNav {
+  font-family: "Bitcount Grid Double", system-ui;
+  font-optical-sizing: auto;
+}
 .location {
   font-family: "Bitcount Grid Double", system-ui;
   font-optical-sizing: auto;
@@ -87,38 +93,35 @@ body {
 
 /* ===== MENU OVERLAY ===== */
 .menuItem {
-  text-align: center;
-  letter-spacing: -0.05em;
   text-transform: uppercase;
-  margin-top: 0;
-  margin-bottom: 0;
   font-family: Canopee, sans-serif;
-  font-size: 2rem;
   font-weight: 400;
+  line-height: 1.1;
+}
+.menuWord {
+  font-size: 1.9rem;
+  letter-spacing: -0.04em;
 }
 @media (min-width: 640px) {
-  .menuItem {
-    font-size: 2.5rem;
+  .menuWord {
+    font-size: 2.6rem;
   }
 }
 @media (min-width: 768px) {
-  .menuItem {
-    font-size: 3rem;
+  .menuWord {
+    font-size: 3.1rem;
   }
 }
 @media (min-width: 1024px) {
-  .menuItem {
-    font-size: 4rem;
+  .menuWord {
+    font-size: 3.6rem;
   }
 }
-@media (min-width: 1280px) {
-  .menuItem {
-    font-size: 5rem;
-  }
+.menuItem.selected .menuWord {
+  color: #b63b12;
 }
-.menuItem.selected {
-  color: #96b59f;
-  text-decoration: underline;
+.menuItem.selected .menuIndex {
+  opacity: 1;
 }
 
 /* ===== CANVAS (curtain effect) ===== */
@@ -208,11 +211,11 @@ body {
   font-family: "Pathway Gothic One", sans-serif;
 }
 .featureName {
-  font-family: "Amarante";
+  font-family: "Canopee";
   font-optical-sizing: auto;
 }
 .newTag {
-  font-family: monospace;
+  font-family: "Pathway Gothic One", sans-serif;
   font-weight: 700;
 }
 .featuredTileSpecialText {

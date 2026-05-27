@@ -1,4 +1,20 @@
 {
+  "hero": {
+    "focusTags": ["MLOps", "DevOps", "Open Source"],
+    "name": "AYUSHMAN",
+    "headline": "Open-Source Maintainer & Platform Engineer",
+    "subhead": "GitHub Maintainer Advisory for Pollinations.ai · Product Engineer @ Myceli AI",
+    "intro": "I build the automation, release engineering, and developer tooling that keep large open-source projects running, contributor pipelines, CI/CD, and deployment infrastructure.",
+    "credentials": [
+      { "label": "GitHub Maintainer Advisory", "org": "Pollinations.ai" },
+      { "label": "Product Engineer", "org": "Myceli AI" }
+    ],
+    "ctas": [
+      { "label": "View Work", "href": "projects" },
+      { "label": "Connect", "href": "connect" }
+    ],
+    "portrait": "/assets/ayushman/punchlineSection/vr-pic1.webp"
+  },
   "intro": {
     "heroName": "AYUSHMAN",
     "tagline": "Full Stack",
@@ -30,31 +46,15 @@
     "heading": "THE TECHY SYNAPSE",
     "subheading": "DEV-S",
     "description": "As a solo developer for a consistent period of time, I had the pleasure of exploring a lot of strategic moves in development, which made me explore different sections rather than just focusing on one! I believe that for building a complete project, one must start from the pen and paper, and work upto scalability and deployment. In the mid way also keeping the working ecosystem clean for better user-experience. With my 7+ years in development and being with a number of notable individuals and organizations, I have been able to explore a lot of technologies and frameworks, which I am really happy about.",
-    "skills": [
-      { "type": "icon", "src": "https://img.icons8.com/fluency/144/javascript.png", "alt": "JavaScript" },
-      { "type": "icon", "src": "https://img.icons8.com/fluency/144/node-js.png", "alt": "Node.js" },
-      { "type": "icon", "src": "https://img.icons8.com/ios/100/express-js.png", "alt": "Express.js" },
-      { "type": "text", "label": "KUBERNETES" },
-      { "type": "icon", "src": "https://img.icons8.com/ios-filled/150/postgreesql.png", "alt": "PostgreSQL" },
-      { "type": "icon", "src": "https://img.icons8.com/color/144/mongodb.png", "alt": "MongoDB" },
-      { "type": "icon", "src": "https://img.icons8.com/color/144/mysql-logo.png", "alt": "MySQL" },
-      { "type": "icon", "src": "https://img.icons8.com/color/144/tensorflow.png", "alt": "TensorFlow" },
-      { "type": "icon", "src": "https://img.icons8.com/fluency/144/pytorch.png", "alt": "PyTorch" },
-      { "type": "text", "label": "GIT + GIT-OPS" },
-      { "type": "icon", "src": "https://img.icons8.com/ios/50/kubernetes.png", "alt": "Kubernetes" },
-      { "type": "icon", "src": "https://img.icons8.com/color/144/docker.png", "alt": "Docker" },
-      { "type": "text", "label": "NLP + ML-OPS" },
-      { "type": "icon", "src": "https://img.icons8.com/ios-filled/100/artificial-intelligence.png", "alt": "AI" },
-      { "type": "text", "label": "System Design" },
-      { "type": "icon", "src": "https://img.icons8.com/color/144/redis.png", "alt": "Redis" },
-      { "type": "icon", "src": "https://img.icons8.com/color/144/elasticsearch.png", "alt": "Elasticsearch" },
-      { "type": "text", "label": "GCP + AWS" },
-      { "type": "icon", "src": "https://img.icons8.com/color/144/google-cloud.png", "alt": "Google Cloud" },
-      { "type": "icon", "src": "https://img.icons8.com/color/144/amazon-web-services.png", "alt": "AWS" },
-      { "type": "text", "label": "CP --" },
-      { "type": "icon", "src": "https://img.icons8.com/color/144/c-plus-plus-logo.png", "alt": "C++" },
-      { "type": "icon", "src": "https://img.icons8.com/color/144/c-programming.png", "alt": "C" },
-      { "type": "icon", "src": "https://img.icons8.com/color/144/python.png", "alt": "Python" }
+    "reading": [
+      { "title": "Designing Data-Intensive Applications", "author": "Martin Kleppmann", "status": "Reading", "note": "The systems bible — storage, replication, consistency." },
+      { "title": "The Pragmatic Programmer", "author": "Hunt & Thomas", "status": "Reading", "note": "Craft, habits, and thinking like an engineer." },
+      { "title": "Site Reliability Engineering", "author": "Google SRE Team", "status": "Next up", "note": "How Google runs production systems." }
+    ],
+    "explore": [
+      { "label": "Talks", "caption": "Speaking & sessions", "href": "talks" },
+      { "label": "Writing", "caption": "Notes & blog posts", "href": "blogs" },
+      { "label": "Papers", "caption": "Research & publications", "href": "publications" }
     ],
     "images": {
       "wand": "/assets/ayushman/techTracks/wand-1.webp",

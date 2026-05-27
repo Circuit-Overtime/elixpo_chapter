@@ -251,27 +251,32 @@ export default function MenuOverlay({ person, menuItems, currentPath }) {
       <div
         ref={menuRef}
         id="menuSection"
-        className="menuSection bg-[#1D1D1B] h-full w-full fixed top-0 left-0 z-50 flex flex-col items-center justify-center gap-0 sm:gap-3 text-[#E2D9C8] text-lg sm:text-xl md:text-[2em] font-extrabold tracking-widest"
+        className="menuSection bg-[#1D1D1B] h-full w-full fixed top-0 left-0 z-50 flex flex-col items-center justify-center gap-2 sm:gap-3 md:gap-4 text-[#E2D9C8]"
         style={{ display: "none", opacity: 0, pointerEvents: "none" }}
       >
         <div className="navBar absolute top-0 h-[80px] w-full flex items-center justify-between px-4 sm:px-8 md:px-[50px] box-border mb-[13px]">
           <ion-icon
             name="close"
             id="scrollOutMenu"
-            class="absolute right-[20px] sm:right-[30px] cursor-pointer hover:text-[#ffc300] transition-[0.25s] text-xl sm:text-2xl md:text-[1.5em]"
+            class="absolute right-[20px] sm:right-[30px] cursor-pointer text-[#E2D9C8] hover:text-[#B63B12] transition-[0.25s] text-3xl sm:text-4xl"
             onClick={closeMenu}
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", fontSize: "2rem" }}
           />
         </div>
-        {menuItems.map((item) => (
+        {menuItems.map((item, idx) => (
           <div
             key={item}
-            className={`menuItem cursor-pointer opacity-0 font-extrabold text-7xl sm:text-7xl md:text-8xl lg:text-[5em] leading-[1.1] sm:leading-[110px] md:leading-[130px] hover:scale-105 hover:tracking-[0.03em] transition-all duration-300 text-center uppercase mt-0 mb-0 tracking-[-0.05em] font-[Canopee,sans-serif] ${
+            className={`menuItem group cursor-pointer opacity-0 flex items-center gap-3 sm:gap-5 transition-all duration-300 ${
               activeMenu === item ? "selected" : ""
             }`}
             onClick={() => handleMenuClick(item)}
           >
-            {item}
+            <span className="menuIndex fontNav text-[#B63B12] text-xs sm:text-sm md:text-base w-[2.5ch] text-right opacity-40 group-hover:opacity-100 transition-opacity duration-300">
+              {String(idx + 1).padStart(2, "0")}
+            </span>
+            <span className="menuWord text-[#E2D9C8] group-hover:text-[#B63B12] group-hover:tracking-[0.01em] transition-all duration-300">
+              {item}
+            </span>
           </div>
         ))}
       </div>
