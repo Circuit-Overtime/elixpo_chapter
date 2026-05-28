@@ -406,6 +406,7 @@ export default function App() {
         <div className="flex-1 min-w-0" style={{ borderRight: '1px solid var(--divider)' }}>
           {/* Search + Topic Tabs — sticky header */}
           <div className="sticky top-14 z-40 backdrop-blur-md" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-app) 92%, transparent)', borderBottom: '1px solid var(--divider)' }}>
+            <div className="max-w-[680px] mx-auto">
             {/* Search bar */}
             <div className="px-6 pt-3 pb-2">
               <SearchBar />
@@ -427,10 +428,11 @@ export default function App() {
                 </button>
               ))}
             </div>
+            </div>
           </div>
 
           {/* Feed */}
-          <div className="px-6 pt-4">
+          <div className="px-6 pt-4 max-w-[680px] mx-auto">
             {loading ? (
               <FeedSkeleton />
             ) : posts.length > 0 ? (
