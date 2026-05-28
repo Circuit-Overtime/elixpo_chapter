@@ -1,11 +1,16 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
+import { requestTooLarge, byteLength, MAX_BLOG_CONTENT_BYTES, MAX_TITLE_LEN, MAX_SUBTITLE_LEN } from '../../../../lib/limits';
 
 export async function POST(request) {
   const session = await getSession();
   if (!session?.userId) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  if (requestTooLarge(request)) {
+    return NextResponse.json({ error: 'Request too large' }, { status: 413 });
   }
 
   const body = await request.json();
@@ -19,6 +24,13 @@ export async function POST(request) {
 
   if (!slugid || !title?.trim()) {
     return NextResponse.json({ error: 'Missing slugid or title' }, { status: 400 });
+  }
+
+  if ((title?.length || 0) > MAX_TITLE_LEN || (subtitle?.length || 0) > MAX_SUBTITLE_LEN) {
+    return NextResponse.json({ error: 'Title or subtitle too long' }, { status: 400 });
+  }
+  if (byteLength(editorContent) > MAX_BLOG_CONTENT_BYTES) {
+    return NextResponse.json({ error: 'Content too large' }, { status: 413 });
   }
 
   try {
@@ -36,16 +48,10 @@ export async function POST(request) {
     const existing = await db.prepare('SELECT id, author_id, status, published_as FROM blogs WHERE id = ?').bind(slugid).first();
 
     if (existing) {
-      // Permission check: author or org member with write+
-      let canEdit = existing.author_id === session.userId;
-      if (!canEdit && existing.published_as?.startsWith('org:')) {
-        const orgId = existing.published_as.replace('org:', '');
-        const member = await db.prepare(
-          "SELECT role FROM org_members WHERE org_id = ? AND user_id = ? AND role IN ('admin','maintain','write')"
-        ).bind(orgId, session.userId).first();
-        canEdit = !!member;
-      }
-      if (!canEdit) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+      // Permission: author, org write+, or accepted co-author.
+      const { canEditBlog } = await import('../../../../lib/permissions');
+      const perm = await canEditBlog(db, slugid, session.userId);
+      if (!perm.ok) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
 
       // Race condition check: ensure upstream hasn't changed since we loaded
       if (lastKnownUpdatedAt) {

@@ -1,6 +1,7 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../lib/auth';
+import { requestTooLarge, byteLength, MAX_SUBPAGE_CONTENT_BYTES } from '../../../lib/limits';
 
 // POST — create a new subpage
 export async function POST(request) {
@@ -106,9 +107,14 @@ export async function PUT(request) {
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
+  if (requestTooLarge(request)) return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+
   const body = await request.json();
   const { id, title, content, metadata } = body;
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+  if (byteLength(content) > MAX_SUBPAGE_CONTENT_BYTES) {
+    return NextResponse.json({ error: 'Content too large' }, { status: 413 });
+  }
 
   try {
     const { getDB } = await import('../../../lib/cloudflare');

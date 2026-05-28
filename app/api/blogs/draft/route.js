@@ -1,6 +1,7 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
+import { requestTooLarge, byteLength, MAX_BLOG_CONTENT_BYTES } from '../../../../lib/limits';
 
 // GET — fetch blog data for editing
 export async function GET(request) {
@@ -22,17 +23,10 @@ export async function GET(request) {
 
     if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
 
-    // Check edit permission: author or org member with write+
-    let canEdit = blog.author_id === session.userId;
-    if (!canEdit && blog.published_as?.startsWith('org:')) {
-      const orgId = blog.published_as.replace('org:', '');
-      const member = await db.prepare(
-        "SELECT role FROM org_members WHERE org_id = ? AND user_id = ? AND role IN ('admin','maintain','write')"
-      ).bind(orgId, session.userId).first();
-      canEdit = !!member;
-    }
-
-    if (!canEdit) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+    // Edit permission: author, org write+, or accepted co-author.
+    const { canEditBlog } = await import('../../../../lib/permissions');
+    const perm = await canEditBlog(db, slugid, session.userId);
+    if (!perm.ok) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
 
     // Decompress content
     let content = blog.content;
@@ -67,11 +61,18 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
+  if (requestTooLarge(request)) {
+    return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+  }
+
   const body = await request.json();
   const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverPreview } = body;
 
   if (!slugid) {
     return NextResponse.json({ error: 'Missing slugid' }, { status: 400 });
+  }
+  if (byteLength(editorContent) > MAX_BLOG_CONTENT_BYTES) {
+    return NextResponse.json({ error: 'Content too large' }, { status: 413 });
   }
 
   try {
@@ -87,19 +88,10 @@ export async function POST(request) {
     const existing = await db.prepare('SELECT id, author_id FROM blogs WHERE id = ?').bind(slugid).first();
 
     if (existing) {
-      // Check edit permission: author or org member with write+
-      let canEdit = existing.author_id === session.userId;
-      if (!canEdit) {
-        const blog = await db.prepare('SELECT published_as FROM blogs WHERE id = ?').bind(slugid).first();
-        if (blog?.published_as?.startsWith('org:')) {
-          const orgId = blog.published_as.replace('org:', '');
-          const member = await db.prepare(
-            "SELECT role FROM org_members WHERE org_id = ? AND user_id = ? AND role IN ('admin','maintain','write')"
-          ).bind(orgId, session.userId).first();
-          canEdit = !!member;
-        }
-      }
-      if (!canEdit) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+      // Edit permission: author, org write+, or accepted co-author.
+      const { canEditBlog } = await import('../../../../lib/permissions');
+      const perm = await canEditBlog(db, slugid, session.userId);
+      if (!perm.ok) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
       await db.prepare(`
         UPDATE blogs SET title = ?, subtitle = ?, content = ?, published_as = ?,
           page_emoji = ?, cover_image_r2_key = ?, updated_at = ?
