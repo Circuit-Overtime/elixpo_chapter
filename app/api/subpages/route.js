@@ -64,6 +64,17 @@ export async function GET(request) {
     if (subpageId) {
       const subpage = await db.prepare('SELECT * FROM subpages WHERE id = ?').bind(subpageId).first();
       if (!subpage) return NextResponse.json({ error: 'Subpage not found' }, { status: 404 });
+
+      // Access control: published parent → any signed-in user may read;
+      // draft/archived → only users who can edit the parent blog.
+      const parent = await db.prepare('SELECT status FROM blogs WHERE id = ?').bind(subpage.blog_id).first();
+      const isPublic = parent && (parent.status === 'published' || parent.status === 'unlisted');
+      if (!isPublic) {
+        const { canEditBlog } = await import('../../../lib/permissions');
+        const perm = await canEditBlog(db, subpage.blog_id, session.userId);
+        if (!perm.ok) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
       // Canvas scenes are stored as plain JSON strings (no gzip), docs are gzip-compressed.
       if (subpage.kind === 'canvas') {
         try { subpage.content = subpage.content ? JSON.parse(subpage.content) : null; } catch {}
