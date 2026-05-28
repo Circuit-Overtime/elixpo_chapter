@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS blogs (
   slug TEXT NOT NULL,
   title TEXT,
   subtitle TEXT,
+  page_emoji TEXT,
   content TEXT,
   cover_image_r2_key TEXT,
   author_id TEXT NOT NULL REFERENCES users(id),
