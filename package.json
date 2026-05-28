@@ -53,10 +53,12 @@
   },
   "scripts": {
     "dev": "next dev -p 3000",
+    "dev:turbo": "next dev --turbopack -p 3000",
     "build": "next build",
     "pages:build": "npx @cloudflare/next-on-pages",
     "preview": "npx wrangler pages dev .vercel/output/static --compatibility-flags=nodejs_compat",
     "deploy": "npm run pages:build && npx wrangler pages deploy .vercel/output/static",
-    "db:migrate": "wrangler d1 execute elixpoblogs --remote --file=migrations/0006_blog_collab_roles.sql"
+    "db:migrate": "wrangler d1 migrations apply lixblogs --remote",
+    "db:migrate:local": "wrangler d1 migrations apply lixblogs --local"
   }
 }
