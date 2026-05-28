@@ -401,9 +401,9 @@ export default function App() {
 
   return (
     <AppShell>
-      <div className="flex">
+      <div className="flex justify-center">
         {/* Center Feed */}
-        <div className="flex-1 min-w-0" style={{ borderRight: '1px solid var(--divider)' }}>
+        <div className="w-full max-w-[740px] min-w-0" style={{ borderRight: '1px solid var(--divider)' }}>
           {/* Search + Topic Tabs — sticky header */}
           <div className="sticky top-14 z-40 backdrop-blur-md" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-app) 92%, transparent)', borderBottom: '1px solid var(--divider)' }}>
             <div className="max-w-[680px] mx-auto">
@@ -438,10 +438,12 @@ export default function App() {
             ) : posts.length > 0 ? (
               posts.map(post => <FeedCard key={post.id} post={post} />)
             ) : topics[activeTopic]?.filter === 'following' ? (
-              <div className="text-center py-20">
-                <ion-icon name="people-outline" style={{ fontSize: '44px', color: 'var(--text-faint)' }} />
-                <p className="text-[17px] font-semibold mt-4" style={{ color: 'var(--text-primary)' }}>Your following feed is empty</p>
-                <p className="text-[14px] mt-2 max-w-sm mx-auto" style={{ color: 'var(--text-muted)' }}>
+              <div className="my-8 rounded-2xl border border-dashed flex flex-col items-center text-center px-6 py-14" style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-surface)' }}>
+                <div className="h-14 w-14 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--bg-elevated)' }}>
+                  <ion-icon name="people-outline" style={{ fontSize: '26px', color: 'var(--text-faint)' }} />
+                </div>
+                <p className="text-[16px] font-semibold" style={{ color: 'var(--text-primary)' }}>Your following feed is empty</p>
+                <p className="text-[13px] mt-1.5 max-w-xs" style={{ color: 'var(--text-muted)' }}>
                   Follow writers and organizations to see their latest posts here.
                 </p>
                 <button
@@ -453,14 +455,17 @@ export default function App() {
                 </button>
               </div>
             ) : (
-              <div className="text-center py-20">
-                <ion-icon name="document-text-outline" style={{ fontSize: '40px', color: 'var(--text-faint)' }} />
-                <p className="text-[15px] mt-4" style={{ color: 'var(--text-muted)' }}>No posts yet</p>
-                <p className="text-[13px] mt-1" style={{ color: 'var(--text-faint)' }}>
+              <div className="my-8 rounded-2xl border border-dashed flex flex-col items-center text-center px-6 py-14" style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-surface)' }}>
+                <div className="h-14 w-14 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--bg-elevated)' }}>
+                  <ion-icon name="document-text-outline" style={{ fontSize: '24px', color: 'var(--text-faint)' }} />
+                </div>
+                <p className="text-[16px] font-semibold" style={{ color: 'var(--text-primary)' }}>No posts yet</p>
+                <p className="text-[13px] mt-1.5 max-w-xs" style={{ color: 'var(--text-muted)' }}>
                   {user ? 'Follow writers or pick topics you like to fill your feed.' : 'Be the first to publish something.'}
                 </p>
                 {user && (
-                  <Link href="/new-blog" className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] rounded-full transition-colors">
+                  <Link href="/new-blog" className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] rounded-full transition-colors">
+                    <ion-icon name="create-outline" style={{ fontSize: '16px' }} />
                     Start writing
                   </Link>
                 )}
