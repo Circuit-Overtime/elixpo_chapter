@@ -365,12 +365,24 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [activeTopic, setActiveTopic] = useState(0);
 
-  // Build topic tabs
+  // Build topic tabs. Tag tabs are derived algorithmically — the user's own
+  // interests first (personalized), then platform-popular tags — deduped and
+  // capped. FIXED_TAGS is only a fallback when there's no data at all.
   const fixedTabs = [
     { label: 'For You', icon: 'sparkles', filter: null },
     { label: 'Following', icon: null, filter: 'following' },
   ];
-  const tagTabs = FIXED_TAGS.map(tag => ({ label: tag, icon: null, tag }));
+  const dynamicTags = (() => {
+    const seen = new Set();
+    const out = [];
+    for (const t of [...userInterests, ...popularTags]) {
+      const key = (t || '').toLowerCase();
+      if (t && !seen.has(key)) { seen.add(key); out.push(t); }
+      if (out.length >= 5) break;
+    }
+    return out.length > 0 ? out : FIXED_TAGS;
+  })();
+  const tagTabs = dynamicTags.map(tag => ({ label: tag, icon: null, tag }));
   const topics = [...fixedTabs, ...tagTabs];
 
   // Fetch feed
