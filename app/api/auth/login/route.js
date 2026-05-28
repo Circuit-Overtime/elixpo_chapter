@@ -6,7 +6,12 @@ import { NextResponse } from 'next/server';
 // Elixpo Accounts authorize endpoint. The callback verifies the cookie.
 export async function GET(request) {
   const state = crypto.randomUUID();
-  const origin = new URL(request.url).origin;
+  const url = new URL(request.url);
+  const origin = url.origin;
+
+  // Post-login redirect target — only same-site relative paths allowed (no open redirect).
+  const next = url.searchParams.get('next') || '';
+  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '';
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -17,12 +22,8 @@ export async function GET(request) {
   });
 
   const res = NextResponse.redirect(`https://accounts.elixpo.com/oauth/authorize?${params}`);
-  res.cookies.set('oauth_state', state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 600,
-    path: '/',
-  });
+  const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 600, path: '/' };
+  res.cookies.set('oauth_state', state, cookieOpts);
+  if (safeNext) res.cookies.set('oauth_next', safeNext, cookieOpts);
   return res;
 }

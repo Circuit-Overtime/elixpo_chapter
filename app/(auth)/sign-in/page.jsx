@@ -12,7 +12,8 @@ function SignInContent() {
 
   function handleLogin() {
     // Server route generates the CSRF state + sets an httpOnly cookie, then redirects.
-    window.location.href = '/api/auth/login';
+    const next = searchParams.get('next');
+    window.location.href = next ? `/api/auth/login?next=${encodeURIComponent(next)}` : '/api/auth/login';
   }
 
   const errorMessages = {

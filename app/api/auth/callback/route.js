@@ -181,7 +181,9 @@ export async function GET(request) {
     },
   });
 
-  const redirectTo = '/';
+  // Honor a post-login redirect set by /api/auth/login (same-site relative paths only).
+  const nextCookie = request.cookies.get('oauth_next')?.value || '';
+  const redirectTo = nextCookie.startsWith('/') && !nextCookie.startsWith('//') ? nextCookie : '/';
   const response = NextResponse.redirect(new URL(redirectTo, request.url));
   response.cookies.set('lixblogs_session', session, {
     httpOnly: true,
@@ -191,5 +193,6 @@ export async function GET(request) {
     path: '/',
   });
   response.cookies.delete('oauth_state');
+  response.cookies.delete('oauth_next');
   return response;
 }
