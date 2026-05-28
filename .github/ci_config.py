@@ -75,14 +75,17 @@ PROJECTS = {
         },
     },
     # Moderation = blog reports (issues opened by @elixpoo with the REPORT label).
-    # TODO: create a "Moderation" Project V2 board and fill these IDs. Until an
-    # id is set, report issues are still labeled + triaged, just not board-added.
     "Moderation": {
-        "id": "",
-        "number": None,
-        "url": "",
-        "priority_field_id": "",
-        "priority_options": {},
+        "id": "PVT_kwDOCZpXlc4BZB6p",
+        "number": 6,
+        "url": "https://github.com/orgs/elixpo/projects/6",
+        "priority_field_id": "PVTSSF_lADOCZpXlc4BZB6pzhUDgmg",
+        "priority_options": {
+            "Urgent": "77879a01",
+            "High": "a18435ad",
+            "Medium": "40e8adee",
+            "Low": "6902e37d",
+        },
     },
 }
 

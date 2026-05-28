@@ -8,6 +8,7 @@ dist/
 .wrangler/
 wrangler.toml
 .vercel
+__pycache__
 output/
 build/
 *.vsix
