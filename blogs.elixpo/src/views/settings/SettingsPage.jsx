@@ -680,7 +680,12 @@ function CreateOrgModal({ onClose, onCreated }) {
                     .replace(/\*(.+?)\*/g, '<em>$1</em>')
                     .replace(/~~(.+?)~~/g, '<del>$1</del>')
                     .replace(/`(.+?)`/g, '<code style="background:#232d3f;padding:1px 4px;border-radius:3px;font-size:12px;color:#c4b5fd">$1</code>')
-                    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:#60a5fa;text-decoration:none">$1</a>')
+                    .replace(/\[(.+?)\]\((.+?)\)/g, (_m, text, url) => {
+                      const u = (url || '').trim();
+                      // Allow only http(s)/mailto/relative; block javascript:, data:, etc.
+                      const safe = /^(https?:\/\/|mailto:|\/)/i.test(u) ? u.replace(/"/g, '%22') : '#';
+                      return `<a href="${safe}" style="color:#60a5fa;text-decoration:none">${text}</a>`;
+                    })
                     .replace(/^- (.+)$/gm, '<li style="margin-left:16px">$1</li>')
                     .replace(/^&gt; (.+)$/gm, '<blockquote style="border-left:3px solid #9b7bf740;padding-left:12px;color:#9ca3af;margin:8px 0">$1</blockquote>')
                     .replace(/\n/g, '<br>')

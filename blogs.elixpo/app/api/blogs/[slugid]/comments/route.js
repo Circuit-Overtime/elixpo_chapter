@@ -92,13 +92,15 @@ export async function POST(request, { params }) {
     const id = crypto.randomUUID();
     const now = Math.floor(Date.now() / 1000);
 
-    await db.prepare(`
-      INSERT INTO comments (id, blog_id, user_id, parent_id, content, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(id, slugid, session.userId, parentId || null, content.trim(), now, now).run();
-
-    // Increment denormalized count + invalidate cache
-    await db.prepare('UPDATE blogs SET comment_count = comment_count + 1 WHERE id = ?').bind(slugid).run();
+    // Insert + counter increment atomically (D1 batch = transaction).
+    await db.batch([
+      db.prepare(`
+        INSERT INTO comments (id, blog_id, user_id, parent_id, content, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(id, slugid, session.userId, parentId || null, content.trim(), now, now),
+      db.prepare('UPDATE blogs SET comment_count = comment_count + 1 WHERE id = ?').bind(slugid),
+    ]);
+    // Invalidate cache
     try { const { kvInvalidate } = await import('../../../../../lib/cache'); await kvInvalidate(`v1:interactions:${slugid}`); } catch {}
 
     // Notify blog author (if not self)

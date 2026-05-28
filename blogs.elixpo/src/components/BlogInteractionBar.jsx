@@ -121,6 +121,40 @@ export default function BlogInteractionBar({ blogId }) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [shareOpen]);
 
+  // ── Report ──
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reported, setReported] = useState(false);
+  const reportRef = useRef(null);
+  useEffect(() => {
+    if (!reportOpen) return;
+    const h = (e) => { if (reportRef.current && !reportRef.current.contains(e.target)) setReportOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [reportOpen]);
+  const REPORT_REASONS = [
+    ['spam', 'Spam'],
+    ['harassment', 'Harassment or hate'],
+    ['nsfw', 'Adult / NSFW'],
+    ['copyright', 'Copyright violation'],
+    ['misinfo', 'Misinformation'],
+    ['other', 'Something else'],
+  ];
+  const submitReport = async (reason) => {
+    setReportOpen(false);
+    if (!user) {
+      window.location.href = `/sign-in?next=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+    try {
+      const res = await fetch(`/api/blogs/${blogId}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+      if (res.ok) setReported(true);
+    } catch {}
+  };
+
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href).catch(() => {});
     setShareOpen(false);
@@ -241,6 +275,30 @@ export default function BlogInteractionBar({ blogId }) {
                 <ion-icon name="document-text-outline" style={{ fontSize: '16px', color: 'var(--text-faint)' }} />
                 Copy Markdown
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* Report dropdown */}
+        <div className="relative" ref={reportRef}>
+          <button
+            onClick={() => !reported && setReportOpen(!reportOpen)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full transition-all"
+            style={{ color: reported ? '#f87171' : 'var(--text-muted)' }}
+            title={reported ? 'Reported' : 'Report this post'}
+          >
+            <ion-icon name={reported ? 'flag' : 'flag-outline'} style={{ fontSize: '17px' }} />
+          </button>
+          {reportOpen && !reported && (
+            <div className="absolute bottom-full mb-2 right-0 w-[210px] rounded-xl shadow-xl z-50 overflow-hidden py-1" style={{ backgroundColor: 'var(--dropdown-bg)', border: '1px solid var(--dropdown-border)' }}>
+              <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>Report for…</div>
+              {REPORT_REASONS.map(([value, label]) => (
+                <button key={value} onClick={() => submitReport(value)} className="w-full flex items-center px-4 py-2 text-[13px] transition-colors text-left" style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  {label}
+                </button>
+              ))}
             </div>
           )}
         </div>

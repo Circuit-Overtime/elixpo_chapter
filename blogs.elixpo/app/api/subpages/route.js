@@ -1,6 +1,7 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../lib/auth';
+import { requestTooLarge, byteLength, MAX_SUBPAGE_CONTENT_BYTES, MAX_SUBPAGES_PER_BLOG, MAX_CANVAS_PER_BLOG } from '../../../lib/limits';
 
 // POST — create a new subpage
 export async function POST(request) {
@@ -22,14 +23,16 @@ export async function POST(request) {
     if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
     if (blog.author_id !== session.userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-    // Cap canvas sub-pages at 2 per blog
-    if (subpageKind === 'canvas') {
-      const canvasCount = await db.prepare(
-        "SELECT COUNT(*) as n FROM subpages WHERE blog_id = ? AND kind = 'canvas'"
-      ).bind(blogId).first();
-      if ((canvasCount?.n ?? 0) >= 2) {
-        return NextResponse.json({ error: 'Canvas limit reached (max 2 per blog)' }, { status: 409 });
-      }
+    // Cap sub-pages per kind: max 2 doc sub-pages and max 2 canvas sub-pages per blog.
+    // (Nesting is structurally impossible — a sub-page's id is never a blogs row,
+    //  so creating a sub-page "under" a sub-page 404s on the ownership check above.)
+    const kindCap = subpageKind === 'canvas' ? MAX_CANVAS_PER_BLOG : MAX_SUBPAGES_PER_BLOG;
+    const kindCount = await db.prepare(
+      'SELECT COUNT(*) as n FROM subpages WHERE blog_id = ? AND kind = ?'
+    ).bind(blogId, subpageKind).first();
+    if ((kindCount?.n ?? 0) >= kindCap) {
+      const label = subpageKind === 'canvas' ? 'Canvas' : 'Sub-page';
+      return NextResponse.json({ error: `${label} limit reached (max ${kindCap} per blog)` }, { status: 409 });
     }
 
     const id = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
@@ -64,6 +67,17 @@ export async function GET(request) {
     if (subpageId) {
       const subpage = await db.prepare('SELECT * FROM subpages WHERE id = ?').bind(subpageId).first();
       if (!subpage) return NextResponse.json({ error: 'Subpage not found' }, { status: 404 });
+
+      // Access control: published parent → any signed-in user may read;
+      // draft/archived → only users who can edit the parent blog.
+      const parent = await db.prepare('SELECT status FROM blogs WHERE id = ?').bind(subpage.blog_id).first();
+      const isPublic = parent && (parent.status === 'published' || parent.status === 'unlisted');
+      if (!isPublic) {
+        const { canEditBlog } = await import('../../../lib/permissions');
+        const perm = await canEditBlog(db, subpage.blog_id, session.userId);
+        if (!perm.ok) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
       // Canvas scenes are stored as plain JSON strings (no gzip), docs are gzip-compressed.
       if (subpage.kind === 'canvas') {
         try { subpage.content = subpage.content ? JSON.parse(subpage.content) : null; } catch {}
@@ -95,9 +109,14 @@ export async function PUT(request) {
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
+  if (requestTooLarge(request)) return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+
   const body = await request.json();
   const { id, title, content, metadata } = body;
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+  if (byteLength(content) > MAX_SUBPAGE_CONTENT_BYTES) {
+    return NextResponse.json({ error: 'Content too large' }, { status: 413 });
+  }
 
   try {
     const { getDB } = await import('../../../lib/cloudflare');

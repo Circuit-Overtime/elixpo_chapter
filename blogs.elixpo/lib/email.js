@@ -9,6 +9,7 @@ import { notification } from '../email/templates/notification';
 import { loginAlert } from '../email/templates/login-alert';
 import { accountDisabled, accountDeleted } from '../email/templates/account-action';
 import { weeklyDigest } from '../email/templates/weekly-digest';
+import { blogRemoved } from '../email/templates/blog-removed';
 
 const FROM_EMAIL = 'noreply@elixpo.com';
 const FROM_NAME = 'LixBlogs';
@@ -62,4 +63,8 @@ export async function sendAccountDeleted(to, data) {
 
 export async function sendWeeklyDigest(to, data) {
   return send(to, weeklyDigest(data));
+}
+
+export async function sendBlogRemoved(to, data) {
+  return send(to, blogRemoved(data));
 }

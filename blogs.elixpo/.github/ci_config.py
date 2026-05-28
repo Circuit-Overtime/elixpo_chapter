@@ -74,6 +74,19 @@ PROJECTS = {
             "Low": "987b0728",
         },
     },
+    # Moderation = blog reports (issues opened by @elixpoo with the REPORT label).
+    "Moderation": {
+        "id": "PVT_kwDOCZpXlc4BZB6p",
+        "number": 6,
+        "url": "https://github.com/orgs/elixpo/projects/6",
+        "priority_field_id": "PVTSSF_lADOCZpXlc4BZB6pzhUDgmg",
+        "priority_options": {
+            "Urgent": "77879a01",
+            "High": "a18435ad",
+            "Medium": "40e8adee",
+            "Low": "6902e37d",
+        },
+    },
 }
 
 # Valid categories and priorities (for LLM prompts + validation)
@@ -95,6 +108,7 @@ CATEGORY_TO_TYPE = {
     "Bugs": "Bug",
     "Support": "Task",
     "Dev": "Task",
+    "Moderation": "Task",
 }
 
 # ── Organization ────────────────────────────────────

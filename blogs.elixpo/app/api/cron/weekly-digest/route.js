@@ -13,10 +13,11 @@ export async function GET(request) {
     return NextResponse.json({ ok: false, reason: 'Weekly digest is disabled (ENABLE_WEEKLY_DIGEST != true)' });
   }
 
-  // Verify cron secret (prevents public access)
+  // Verify cron secret (prevents public access). Fail closed: if the secret is
+  // not configured, reject — never run unauthenticated.
   const authHeader = request.headers.get('Authorization') || '';
   const cronSecret = process.env.CRON_SECRET || '';
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

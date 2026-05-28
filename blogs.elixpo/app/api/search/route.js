@@ -40,8 +40,9 @@ export async function GET(request) {
 
     if (scope === 'all' || scope === 'blogs') {
       const blogs = await db.prepare(`
-        SELECT id as slugid, slug, title
-        FROM blogs WHERE (LOWER(title) LIKE ? OR LOWER(slug) LIKE ?) AND status IN ('published', 'unlisted')
+        SELECT b.id as slugid, b.slug, b.title, u.username AS author_username
+        FROM blogs b JOIN users u ON u.id = b.author_id
+        WHERE (LOWER(b.title) LIKE ? OR LOWER(b.slug) LIKE ?) AND b.status IN ('published', 'unlisted')
         LIMIT 5
       `).bind(pattern, pattern).all();
       results.blogs = blogs?.results || [];
