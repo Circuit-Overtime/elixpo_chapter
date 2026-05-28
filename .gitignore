@@ -15,3 +15,4 @@ build/
 .claude/.credentials
 *.tgz
 *.lixeditor
+.dev.vars
