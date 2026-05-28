@@ -217,7 +217,7 @@ async function enrichPosts(db, posts, userId) {
 
   let orgMemberSet = new Set();
   if (userId && orgIds.length > 0) {
-    const memberRows = await batchQuery(db, "SELECT org_id || ':' || user_id as key FROM org_members WHERE role IN ('admin','maintain','write') AND user_id = '" + userId + "' AND org_id IN", orgIds);
+    const memberRows = await batchQuery(db, "SELECT org_id || ':' || user_id as key FROM org_members WHERE role IN ('admin','maintain','write') AND user_id = ? AND org_id IN", orgIds, [userId]);
     orgMemberSet = new Set(memberRows.map(r => r.key));
   }
 
@@ -239,9 +239,9 @@ async function enrichPosts(db, posts, userId) {
 }
 
 // ─── Batch query helper ──────────────────────────────────────────────
-async function batchQuery(db, queryPrefix, ids) {
+async function batchQuery(db, queryPrefix, ids, extraBinds = []) {
   if (ids.length === 0) return [];
   const placeholders = ids.map(() => '?').join(',');
-  const result = await db.prepare(`${queryPrefix} (${placeholders})`).bind(...ids).all();
+  const result = await db.prepare(`${queryPrefix} (${placeholders})`).bind(...extraBinds, ...ids).all();
   return result?.results || [];
 }

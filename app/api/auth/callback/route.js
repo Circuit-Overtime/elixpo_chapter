@@ -1,6 +1,6 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
-import { getOAuthConfig } from '../../../../lib/auth';
+import { getOAuthConfig, signSession } from '../../../../lib/auth';
 
 const SESSION_MAX_AGE = 60 * 60 * 24 * 15; // 15 days
 
@@ -163,8 +163,9 @@ export async function GET(request) {
     } catch {}
   }
 
-  // Build session with user profile from OAuth provider
-  const session = JSON.stringify({
+  // Build session with user profile from OAuth provider, then HMAC-sign it
+  // so the cookie cannot be forged/tampered (see lib/auth.js).
+  const session = await signSession({
     accessToken: tokenData.access_token,
     refreshToken: tokenData.refresh_token,
     expiresAt: Date.now() + tokenData.expires_in * 1000,
