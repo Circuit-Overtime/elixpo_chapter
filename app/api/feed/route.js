@@ -41,6 +41,15 @@ export async function GET(request) {
         let posts = filterTag
           ? await queryByTag(db, filterTag, now, limit, offset)
           : await queryTrending(db, now, limit, offset);
+        // Recency fallback so the public feed isn't empty when posts are older than the trending window.
+        if (!filterTag && posts.length < limit) {
+          const recent = await queryRecent(db, limit, offset);
+          const have = new Set(posts.map(p => p.id));
+          for (const post of recent) {
+            if (posts.length >= limit) break;
+            if (!have.has(post.id)) { have.add(post.id); posts.push(post); }
+          }
+        }
         posts = await enrichPosts(db, posts, null);
         return { posts, page, hasMore: posts.length === limit };
       });
@@ -142,6 +151,18 @@ async function queryByTag(db, tag, now, limit, offset) {
   return result?.results || [];
 }
 
+// ─── Recency fallback: most recent published posts (no tight time cutoff) ──
+async function queryRecent(db, limit, offset = 0) {
+  const result = await db.prepare(`
+    SELECT ${BLOG_FIELDS}
+    FROM blogs b
+    WHERE b.status = 'published'
+    ORDER BY b.published_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(limit, offset).all();
+  return result?.results || [];
+}
+
 // ─── Blended feed (3 buckets merged in JS) ───────────────────────────
 async function queryBlended(db, userId, now, limit) {
   const [following, interests, trending] = await Promise.all([
@@ -171,9 +192,19 @@ async function queryBlended(db, userId, now, limit) {
 
   // Sort by score descending
   all.sort((a, b) => b._score - a._score);
+  const ranked = all.slice(0, limit).map(({ _score, ...rest }) => rest);
 
-  // Clean up internal score field
-  return all.slice(0, limit).map(({ _score, ...rest }) => rest);
+  // Recency fallback — personalization stays on top, but never show an empty/
+  // short feed when published content exists (older posts, no follows/interests).
+  if (ranked.length < limit) {
+    const recent = await queryRecent(db, limit, 0);
+    const have = new Set(ranked.map(p => p.id));
+    for (const post of recent) {
+      if (ranked.length >= limit) break;
+      if (!have.has(post.id)) { have.add(post.id); ranked.push(post); }
+    }
+  }
+  return ranked;
 }
 
 // ─── Enrich posts with author, tags, permissions ────────────────────

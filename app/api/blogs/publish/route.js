@@ -32,6 +32,10 @@ export async function POST(request) {
   if (byteLength(editorContent) > MAX_BLOG_CONTENT_BYTES) {
     return NextResponse.json({ error: 'Content too large' }, { status: 413 });
   }
+  // Require real content before going public (drafts may be short/empty).
+  if (targetStatus !== 'draft' && countWords(editorContent) < 20) {
+    return NextResponse.json({ error: 'A post needs at least 20 words before publishing.' }, { status: 400 });
+  }
 
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
