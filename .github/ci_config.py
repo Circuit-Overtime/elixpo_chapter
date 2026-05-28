@@ -74,6 +74,16 @@ PROJECTS = {
             "Low": "987b0728",
         },
     },
+    # Moderation = blog reports (issues opened by @elixpoo with the REPORT label).
+    # TODO: create a "Moderation" Project V2 board and fill these IDs. Until an
+    # id is set, report issues are still labeled + triaged, just not board-added.
+    "Moderation": {
+        "id": "",
+        "number": None,
+        "url": "",
+        "priority_field_id": "",
+        "priority_options": {},
+    },
 }
 
 # Valid categories and priorities (for LLM prompts + validation)
@@ -95,6 +105,7 @@ CATEGORY_TO_TYPE = {
     "Bugs": "Bug",
     "Support": "Task",
     "Dev": "Task",
+    "Moderation": "Task",
 }
 
 # ── Organization ────────────────────────────────────
