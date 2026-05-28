@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS org_members (
 -- Blogs
 CREATE TABLE IF NOT EXISTS blogs (
   id TEXT PRIMARY KEY,
+  slugid TEXT,
   slug TEXT NOT NULL,
   title TEXT,
   subtitle TEXT,
