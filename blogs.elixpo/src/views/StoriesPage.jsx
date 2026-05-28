@@ -97,6 +97,20 @@ export default function StoriesPage() {
   const published = blogs.filter(b => b.status === 'published' || b.status === 'unlisted');
   const stories = activeTab === 0 ? drafts : published;
 
+  const [confirmTarget, setConfirmTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = async () => {
+    if (!confirmTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/blogs/${confirmTarget.id}`, { method: 'DELETE' });
+      if (res.ok) setBlogs(prev => prev.filter(b => b.id !== confirmTarget.id));
+    } catch {}
+    setDeleting(false);
+    setConfirmTarget(null);
+  };
+
   if (loading) {
     return (
       <AppShell>
@@ -150,7 +164,7 @@ export default function StoriesPage() {
         ) : stories.length > 0 ? (
           <div>
             {stories.map((story) => (
-              <StoryCard key={story.id} story={story} />
+              <StoryCard key={story.id} story={story} onDelete={setConfirmTarget} />
             ))}
           </div>
         ) : (
@@ -174,6 +188,43 @@ export default function StoriesPage() {
           </div>
         )}
       </div>
+
+      {confirmTarget && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4"
+          onClick={() => !deleting && setConfirmTarget(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl p-6"
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-[17px] font-bold text-[var(--text-primary)] mb-1">
+              Delete {confirmTarget.status === 'draft' ? 'draft' : 'story'}?
+            </h3>
+            <p className="text-[13px] text-[var(--text-muted)] mb-5 leading-relaxed">
+              “{confirmTarget.title || 'Untitled'}” will be permanently deleted. This can’t be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmTarget(null)}
+                disabled={deleting}
+                className="px-4 py-2 text-[13px] rounded-full disabled:opacity-60"
+                style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="px-4 py-2 text-[13px] font-semibold rounded-full text-white bg-red-500 hover:bg-red-600 disabled:opacity-60"
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
