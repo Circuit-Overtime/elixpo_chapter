@@ -282,7 +282,7 @@ export default function HandlePage({ path }) {
                   </h1>
                   <p className="text-[var(--text-muted)] text-[15px] mt-0.5 font-medium">@{u.username}</p>
                 </div>
-                {isOwnProfile && (
+                {isOwnProfile ? (
                   <Link
                     href="/settings"
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-full text-[13px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[#9b7bf7]/50 hover:bg-[#9b7bf7]/10 transition-all shrink-0"
@@ -290,6 +290,8 @@ export default function HandlePage({ path }) {
                     <ion-icon name="create-outline" style={{ fontSize: '14px' }} />
                     Edit
                   </Link>
+                ) : (
+                  <FollowButton username={u.username} />
                 )}
               </div>
             </div>
