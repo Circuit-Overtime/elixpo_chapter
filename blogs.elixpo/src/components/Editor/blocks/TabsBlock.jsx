@@ -2,6 +2,7 @@
 
 import { createReactBlockSpec } from '@blocknote/react';
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { confirmSubpageDelete } from '../../../utils/subpageDelete';
 
 export const TabsBlock = createReactBlockSpec(
   {
@@ -80,6 +81,8 @@ export const TabsBlock = createReactBlockSpec(
       const removePage = useCallback(async (idx) => {
         const tab = tabs[idx];
         if (tab?.subpageId) {
+          const ok = await confirmSubpageDelete(tab.subpageId, { fallbackKind: tab.kind || 'doc' });
+          if (!ok) return;
           try { await fetch(`/api/subpages?id=${tab.subpageId}`, { method: 'DELETE' }); } catch {}
         }
         const updated = tabs.filter((_, i) => i !== idx);

@@ -8,6 +8,7 @@ dist/
 .wrangler/
 wrangler.toml
 .vercel
+__pycache__
 output/
 build/
 *.vsix
@@ -15,3 +16,4 @@ build/
 .claude/.credentials
 *.tgz
 *.lixeditor
+.dev.vars

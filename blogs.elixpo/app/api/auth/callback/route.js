@@ -1,6 +1,6 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
-import { getOAuthConfig } from '../../../../lib/auth';
+import { getOAuthConfig, signSession } from '../../../../lib/auth';
 
 const SESSION_MAX_AGE = 60 * 60 * 24 * 15; // 15 days
 
@@ -163,24 +163,35 @@ export async function GET(request) {
     } catch {}
   }
 
-  // Build session with user profile from OAuth provider
-  const session = JSON.stringify({
-    accessToken: tokenData.access_token,
-    refreshToken: tokenData.refresh_token,
-    expiresAt: Date.now() + tokenData.expires_in * 1000,
-    userId,
-    // Cache user profile in cookie so /api/auth/me works without D1
-    profile: {
-      id: userId,
-      email: userInfo.email,
-      username: (userInfo.username || userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, ''),
-      display_name: userInfo.displayName || '',
-      avatar_url: userInfo.avatar || '',
-      isAdmin: userInfo.isAdmin || false,
-    },
-  });
+  // Build session with user profile from OAuth provider, then HMAC-sign it
+  // so the cookie cannot be forged/tampered (see lib/auth.js).
+  // If SESSION_SECRET is missing in this environment, fail gracefully to the
+  // sign-in page instead of a hard 500.
+  let session;
+  try {
+    session = await signSession({
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      expiresAt: Date.now() + tokenData.expires_in * 1000,
+      userId,
+      // Cache user profile in cookie so /api/auth/me works without D1
+      profile: {
+        id: userId,
+        email: userInfo.email,
+        username: (userInfo.username || userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, ''),
+        display_name: userInfo.displayName || '',
+        avatar_url: userInfo.avatar || '',
+        isAdmin: userInfo.isAdmin || false,
+      },
+    });
+  } catch (e) {
+    console.error('Session signing failed — is SESSION_SECRET set in this environment?', e?.message || e);
+    return NextResponse.redirect(new URL('/sign-in?error=server', request.url));
+  }
 
-  const redirectTo = '/';
+  // Honor a post-login redirect set by /api/auth/login (same-site relative paths only).
+  const nextCookie = request.cookies.get('oauth_next')?.value || '';
+  const redirectTo = nextCookie.startsWith('/') && !nextCookie.startsWith('//') ? nextCookie : '/';
   const response = NextResponse.redirect(new URL(redirectTo, request.url));
   response.cookies.set('lixblogs_session', session, {
     httpOnly: true,
@@ -190,5 +201,6 @@ export async function GET(request) {
     path: '/',
   });
   response.cookies.delete('oauth_state');
+  response.cookies.delete('oauth_next');
   return response;
 }

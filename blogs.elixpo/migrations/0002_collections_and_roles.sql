@@ -17,4 +17,4 @@ CREATE TABLE IF NOT EXISTS collections (
 
 CREATE INDEX IF NOT EXISTS idx_blogs_slugid ON blogs(slugid);
 CREATE INDEX IF NOT EXISTS idx_collections_org ON collections(org_id);
-CREATE INDEX IF NOT EXISTS idx_blogs_collection ON blogs(collection_id);
+-- idx_blogs_collection is created in 0013 (after collection_id column is added).

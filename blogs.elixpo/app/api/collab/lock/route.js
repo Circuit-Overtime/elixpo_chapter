@@ -24,6 +24,11 @@ export async function POST(request) {
 
     if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
 
+    // Only users who can edit the blog may acquire/force its editing lock.
+    const { canEditBlog } = await import('../../../../lib/permissions');
+    const perm = await canEditBlog(db, blogId, session.userId);
+    if (!perm.ok) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
     // Check if there's an active lock by someone else
     if (blog.editing_by && blog.editing_by !== session.userId) {
       const lockAge = now - (blog.editing_since || 0);

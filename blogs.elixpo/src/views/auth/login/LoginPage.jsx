@@ -10,20 +10,8 @@ export default function LoginPage() {
 
   const handleLogin = () => {
     setLoading(true);
-
-    // Generate CSRF state token
-    const state = crypto.randomUUID();
-    document.cookie = `oauth_state=${state}; path=/; max-age=600; samesite=lax`;
-
-    const params = new URLSearchParams({
-      response_type: 'code',
-      client_id: process.env.NEXT_PUBLIC_ELIXPO_CLIENT_ID,
-      redirect_uri: window.location.origin + '/api/auth/callback',
-      state,
-      scope: 'openid profile email',
-    });
-
-    window.location.href = `https://accounts.elixpo.com/oauth/authorize?${params}`;
+    // Server route generates the CSRF state + sets an httpOnly cookie, then redirects.
+    window.location.href = '/api/auth/login';
   };
 
   const errorMessages = {

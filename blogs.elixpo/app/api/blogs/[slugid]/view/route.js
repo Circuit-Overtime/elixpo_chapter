@@ -23,14 +23,14 @@ export async function POST(request, { params }) {
     ).bind(slugid, ipHash, dayAgo).first();
 
     if (!existing) {
-      await db.prepare(
-        'INSERT INTO blog_views (blog_id, user_id, ip_hash, created_at) VALUES (?, ?, ?, ?)'
-      ).bind(slugid, session?.userId || null, ipHash, now).run();
+      // Insert + counter increment atomically in one round-trip (D1 batch = transaction).
+      await db.batch([
+        db.prepare('INSERT INTO blog_views (blog_id, user_id, ip_hash, created_at) VALUES (?, ?, ?, ?)')
+          .bind(slugid, session?.userId || null, ipHash, now),
+        db.prepare('UPDATE blogs SET view_count = view_count + 1 WHERE id = ?').bind(slugid),
+      ]);
 
-      // Increment denormalized count
-      await db.prepare('UPDATE blogs SET view_count = view_count + 1 WHERE id = ?').bind(slugid).run();
-
-      // Record taste signal
+      // Record taste signal (best-effort, off the critical path)
       try { const { recordSignal } = await import('../../../../../lib/taste'); if (session?.userId) await recordSignal(db, session.userId, 'read', { blogId: slugid }); } catch {}
     }
 

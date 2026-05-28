@@ -20,6 +20,7 @@ import { BlockEquation } from './blocks/BlockEquation';
 import { ButtonBlock } from './blocks/ButtonBlock';
 import { Breadcrumbs } from './blocks/Breadcrumbs';
 import { TabsBlock } from './blocks/TabsBlock';
+import { CanvasBlock } from './blocks/CanvasBlock';
 import { AIBlock } from './blocks/AIBlock';
 import { BlogImageBlock } from './blocks/BlogImageBlock';
 import { MermaidBlock } from './blocks/MermaidBlock';
@@ -91,6 +92,7 @@ const schema = BlockNoteSchema.create({
     buttonBlock: ButtonBlock({}),
     breadcrumbs: Breadcrumbs({}),
     tabsBlock: TabsBlock({}),
+    canvasBlock: CanvasBlock({}),
     aiBlock: AIBlock({}),
     mermaidBlock: MermaidBlock({}),
     pdfEmbed: PDFEmbedBlock({}),
@@ -219,8 +221,8 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
           const data = await res.json();
           editor.insertBlocks([
             {
-              type: 'tabsBlock',
-              props: { tabs: JSON.stringify([{ title: 'Untitled Canvas', subpageId: data.id, kind: 'canvas' }]) },
+              type: 'canvasBlock',
+              props: { subpageId: data.id, title: 'Untitled Canvas' },
             },
           ], editor.getTextCursorPosition().block, 'after');
         } catch (e) {
@@ -346,7 +348,7 @@ const KNOWN_BLOCK_TYPES = new Set([
   'paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'image',
   'table', 'codeBlock', 'checkListItem', 'file', 'video', 'audio', 'divider',
   'tableOfContents', 'blockEquation', 'buttonBlock', 'breadcrumbs',
-  'tabsBlock', 'aiBlock', 'mermaidBlock', 'pdfEmbed',
+  'tabsBlock', 'canvasBlock', 'aiBlock', 'mermaidBlock', 'pdfEmbed',
 ]);
 
 function sanitizeInitialContent(blocks) {
@@ -849,7 +851,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     if (!editorEl) return;
 
     // Content-none block types that should be deletable with Backspace
-    const customBlockTypes = new Set(['mermaidBlock', 'blockEquation', 'aiBlock', 'tabsBlock', 'buttonBlock', 'breadcrumbs', 'tableOfContents', 'pdfEmbed']);
+    const customBlockTypes = new Set(['mermaidBlock', 'blockEquation', 'aiBlock', 'tabsBlock', 'canvasBlock', 'buttonBlock', 'breadcrumbs', 'tableOfContents', 'pdfEmbed']);
 
     function isBlockEmpty(block) {
       if (!block) return false;
@@ -929,7 +931,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       }
 
       if (e.key === 'Backspace') {
-        if (!block) { e.stopPropagation(); return; }
+        if (!block) return; // let BlockNote / browser handle when no block context
 
         // Convert empty heading to paragraph
         if (block.type === 'heading' && isBlockEmpty(block)) {
@@ -947,7 +949,28 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           return;
         }
 
-        e.stopPropagation();
+        // Empty paragraphs: explicitly delete the block and merge with the
+        // previous one. Default browser contenteditable behavior on an empty
+        // <p> inserts a <br> instead of removing the line, which surfaces as
+        // "backspace creates a new line".
+        if (block.type === 'paragraph' && isBlockEmpty(block)) {
+          const doc = editor.document;
+          const idx = doc.findIndex((b) => b.id === block.id);
+          if (idx > 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            const prev = doc[idx - 1];
+            try {
+              editor.removeBlocks([block.id]);
+              if (prev?.id) editor.setTextCursorPosition(prev.id, 'end');
+            } catch {}
+            return;
+          }
+        }
+
+        // Otherwise: hand off to BlockNote's normal backspace logic. We
+        // intentionally do NOT stopPropagation here — that was masking
+        // BlockNote's join-with-previous behavior and producing stray <br>s.
       }
     }
 
@@ -956,42 +979,65 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     return () => editorEl.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, [editor]);
 
-  // Inject delete button on table blocks
+  // Inject side delete buttons on all custom blocks. Each entry is keyed by
+  // BlockNote's data-content-type. tabsBlock / canvasBlock manage their own
+  // delete UX inside their React renderers (with sub-page confirmation), so
+  // they're intentionally not in this list.
   useEffect(() => {
     const wrapper = wrapperRef.current;
     if (!wrapper || !editor) return;
 
-    function injectTableDeleteButtons() {
-      const tables = wrapper.querySelectorAll('[data-content-type="table"]');
-      tables.forEach(tableEl => {
-        if (tableEl.querySelector('.table-delete-btn')) return;
-        const blockEl = tableEl.closest('[data-id]');
-        if (!blockEl) return;
-        const blockId = blockEl.getAttribute('data-id');
+    const DELETABLE = {
+      table: 'Delete table',
+      mermaidBlock: 'Delete diagram',
+      blockEquation: 'Delete equation',
+      aiBlock: 'Delete AI block',
+      pdfEmbed: 'Delete PDF',
+      buttonBlock: 'Delete button',
+      breadcrumbs: 'Delete breadcrumbs',
+      tableOfContents: 'Delete table of contents',
+      codeBlock: 'Delete code block',
+    };
 
-        const btn = document.createElement('button');
-        btn.className = 'table-delete-btn';
-        btn.title = 'Delete table';
-        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
-        btn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
-        btn.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          try { editor.removeBlocks([blockId]); } catch {}
-        };
-        // Position relative to the table container
-        const container = blockEl.querySelector('.bn-block-content') || tableEl;
-        container.style.position = 'relative';
-        container.appendChild(btn);
+    const TRASH_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
+
+    function injectDeleteButtons() {
+      Object.entries(DELETABLE).forEach(([type, label]) => {
+        const els = wrapper.querySelectorAll(`[data-content-type="${type}"]`);
+        els.forEach((blockTypeEl) => {
+          if (blockTypeEl.querySelector(':scope > .block-side-delete-btn')) return;
+          const blockEl = blockTypeEl.closest('[data-id]');
+          if (!blockEl) return;
+          const blockId = blockEl.getAttribute('data-id');
+
+          const btn = document.createElement('button');
+          btn.className = 'block-side-delete-btn';
+          btn.title = label;
+          btn.setAttribute('aria-label', label);
+          btn.innerHTML = TRASH_SVG;
+          btn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
+          btn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            try { editor.removeBlocks([blockId]); } catch {}
+          };
+
+          const container = blockEl.querySelector('.bn-block-content') || blockTypeEl;
+          // Some blocks (table, codeBlock) keep a static `.table-delete-btn`
+          // that's already positioned in their CSS — tables, since the new
+          // class is `.block-side-delete-btn`, get the unified treatment.
+          if (getComputedStyle(container).position === 'static') {
+            container.style.position = 'relative';
+          }
+          container.appendChild(btn);
+        });
       });
     }
 
-    injectTableDeleteButtons();
-    // Only watch for new blocks being added (childList on the editor root),
-    // NOT subtree which fires on every keystroke inside any block
+    injectDeleteButtons();
     const editorRoot = wrapper.querySelector('.bn-editor');
     if (!editorRoot) return;
-    const observer = new MutationObserver(injectTableDeleteButtons);
+    const observer = new MutationObserver(injectDeleteButtons);
     observer.observe(editorRoot, { childList: true });
     return () => observer.disconnect();
   }, [editor]);
@@ -1299,7 +1345,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   }, []);
 
   // Hide BlockNote's formatting toolbar when a custom block (code, equation, mermaid, etc.) is focused
-  const noToolbarTypes = useMemo(() => new Set(['codeBlock', 'blockEquation', 'mermaidBlock', 'image', 'tabsBlock', 'aiBlock', 'pdfEmbed', 'tableOfContents', 'buttonBlock', 'breadcrumbs']), []);
+  const noToolbarTypes = useMemo(() => new Set(['codeBlock', 'blockEquation', 'mermaidBlock', 'image', 'tabsBlock', 'canvasBlock', 'aiBlock', 'pdfEmbed', 'tableOfContents', 'buttonBlock', 'breadcrumbs']), []);
 
   useEffect(() => {
     let rafId = null;

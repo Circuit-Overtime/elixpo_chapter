@@ -2,6 +2,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { getLimits } from '../../../../lib/tiers';
+import { MAX_MEDIA_PER_BLOG, MAX_BLOG_IMAGE_BYTES } from '../../../../lib/limits';
 import { uploadToCloudinary } from '../../../../lib/cloudinary';
 import { isAllowedMime, ALLOWED_IMAGE_MIME_TYPES } from '../../../../src/utils/allowedImageTypes';
 
@@ -87,15 +88,22 @@ export async function POST(request) {
 
           if (blogId) {
             const blogUsage = await db.prepare(
-              'SELECT COALESCE(SUM(size_bytes), 0) as total FROM media_uploads WHERE blog_id = ?'
+              'SELECT COALESCE(SUM(size_bytes), 0) as total, COUNT(*) as n FROM media_uploads WHERE blog_id = ?'
             ).bind(blogId).first();
 
-            if (blogUsage.total + fileBytes > limits.imagePerBlogBytes) {
+            if (blogUsage.total + fileBytes > MAX_BLOG_IMAGE_BYTES) {
               return NextResponse.json({
-                error: 'Per-blog image limit exceeded',
+                error: 'Per-blog image limit exceeded (max 10 MB of images per blog)',
                 used: blogUsage.total,
-                limit: limits.imagePerBlogBytes,
-                tier: user.tier,
+                limit: MAX_BLOG_IMAGE_BYTES,
+              }, { status: 413 });
+            }
+
+            if ((blogUsage.n || 0) >= MAX_MEDIA_PER_BLOG) {
+              return NextResponse.json({
+                error: 'Image count limit reached for this blog',
+                count: blogUsage.n,
+                limit: MAX_MEDIA_PER_BLOG,
               }, { status: 413 });
             }
           }
