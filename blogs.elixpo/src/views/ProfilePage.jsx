@@ -33,6 +33,9 @@ export default function ProfilePage() {
   const [localBanner, setLocalBanner] = useState(null);
   const [usage, setUsage] = useState(null);
   const [usageLoading, setUsageLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(0);
+  const [blogs, setBlogs] = useState([]);
+  const [blogsLoading, setBlogsLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
@@ -41,6 +44,15 @@ export default function ProfilePage() {
       .then(data => { if (data) setUsage(data); })
       .catch(() => {})
       .finally(() => setUsageLoading(false));
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch('/api/blogs/list')
+      .then(r => r.ok ? r.json() : { blogs: [] })
+      .then(d => setBlogs(d.blogs || []))
+      .catch(() => {})
+      .finally(() => setBlogsLoading(false));
   }, [user]);
 
   if (loading) {
@@ -236,22 +248,62 @@ export default function ProfilePage() {
 
         <div className="h-px bg-[var(--bg-elevated)] mb-8" />
 
-        <TabBar
-          tabs={[
-            { label: 'Published', icon: 'globe-outline' },
-            { label: 'Drafts', icon: 'document-outline' },
-          ]}
-          active={0}
-          onChange={() => {}}
-        />
+        {(() => {
+          const published = blogs.filter(b => b.status === 'published' || b.status === 'unlisted');
+          const drafts = blogs.filter(b => b.status === 'draft');
+          const list = activeTab === 0 ? published : drafts;
+          const fmt = (ts) => ts ? new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          return (
+            <>
+              <TabBar
+                tabs={[
+                  { label: 'Published', icon: 'globe-outline', count: published.length },
+                  { label: 'Drafts', icon: 'document-outline', count: drafts.length },
+                ]}
+                active={activeTab}
+                onChange={setActiveTab}
+              />
 
-        {/* Empty state */}
-        <div className="text-[var(--text-secondary)]enter py-16">
-          <p className="text-[var(--text-muted)] text-sm">No published blogs yet.</p>
-          <Link href="/new-blog" className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-[var(--text-primary)] bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
-            Write your first blog
-          </Link>
-        </div>
+              {blogsLoading ? (
+                <div className="space-y-4 mt-2">
+                  {[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-[var(--bg-elevated)] animate-pulse rounded" />)}
+                </div>
+              ) : list.length > 0 ? (
+                <div>
+                  {list.map((b) => {
+                    const href = activeTab === 0 ? `/${user.username}/${b.slug}` : `/edit/${b.id}`;
+                    return (
+                      <article key={b.id} className="flex gap-4 py-5 border-b border-[var(--border-default)] last:border-b-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            {b.status === 'draft' && <span className="text-[11px] font-medium text-[#e8a840] bg-[#e8a84014] px-2 py-0.5 rounded-full">Draft</span>}
+                            {b.status === 'unlisted' && <span className="text-[11px] font-medium text-[#60a5fa] bg-[#60a5fa14] px-2 py-0.5 rounded-full">Beta</span>}
+                            <span className="text-[12px] text-[var(--text-muted)]">
+                              {b.status === 'draft' ? (b.updated_at ? `Edited ${fmt(b.updated_at)}` : '') : fmt(b.published_at || b.updated_at)}
+                            </span>
+                          </div>
+                          <Link href={href}>
+                            <h3 className="text-[17px] font-bold leading-[1.35] mb-1 font-serif hover:opacity-75 transition-opacity" style={{ color: 'var(--text-primary)' }}>
+                              {b.page_emoji ? `${b.page_emoji} ` : ''}{b.title || 'Untitled'}
+                            </h3>
+                          </Link>
+                          {b.subtitle && <p className="text-[14px] text-[var(--text-muted)] line-clamp-2">{b.subtitle}</p>}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <p className="text-[var(--text-muted)] text-sm">{activeTab === 0 ? 'No published blogs yet.' : 'No drafts yet.'}</p>
+                  <Link href="/new-blog" className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-[var(--text-primary)] bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
+                    Write your first blog
+                  </Link>
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       {/* Banner Upload Modal */}
