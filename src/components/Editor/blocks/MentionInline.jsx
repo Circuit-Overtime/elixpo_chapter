@@ -60,7 +60,7 @@ function MentionChip({ username, displayName, avatarUrl }) {
             {(displayName || username || '?')[0].toUpperCase()}
           </span>
         )}
-        @{displayName || username}
+        {displayName || username}
       </a>
 
       {showCard && (

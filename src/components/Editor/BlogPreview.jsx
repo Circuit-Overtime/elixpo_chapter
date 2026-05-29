@@ -111,7 +111,7 @@ function renderBlocksToHTML(blocks) {
         const avatar = c.props.avatarUrl
           ? `<img src="${c.props.avatarUrl}" alt="" class="mention-chip-avatar">`
           : `<span class="mention-chip-initial">${(name || '?')[0].toUpperCase()}</span>`;
-        return `<a href="/@${c.props.username}" class="mention-chip" data-username="${c.props.username}" data-avatar="${c.props.avatarUrl || ''}" data-displayname="${name}">${avatar}@${name}</a>`;
+        return `<a href="/@${c.props.username}" class="mention-chip" data-username="${c.props.username}" data-avatar="${c.props.avatarUrl || ''}" data-displayname="${name}">${avatar}${name}</a>`;
       }
       if (c.type === 'blogMention' && c.props?.slugid) {
         return `<a href="/${c.props.slugid}" class="mention-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>${c.props.title || 'Untitled blog'}</a>`;
