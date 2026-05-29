@@ -52,20 +52,42 @@ export async function POST(request) {
 
     const existing = await db.prepare('SELECT id, author_id, status, published_as, slug FROM blogs WHERE id = ?').bind(slugid).first();
 
+    // Is the requester the OWNER? (personal author, or org admin/owner.) Only the
+    // owner may change a slug — collaborators (editors) cannot.
+    let isOwner = false;
+    if (existing) {
+      isOwner = existing.author_id === session.userId;
+      if (!isOwner && existing.published_as?.startsWith('org:')) {
+        const orgId = existing.published_as.slice(4);
+        const adminRow = await db
+          .prepare("SELECT 1 FROM org_members WHERE org_id = ? AND user_id = ? AND role = 'admin'")
+          .bind(orgId, session.userId).first();
+        const ownerRow = adminRow || await db
+          .prepare('SELECT 1 FROM orgs WHERE id = ? AND owner_id = ?')
+          .bind(orgId, session.userId).first();
+        isOwner = !!ownerRow;
+      }
+    }
+
+    // Slugs are unique per owner (the URL is /owner/slug), not globally.
+    const slugScope = {
+      authorId: session.userId,
+      publishAs: existing?.published_as || publishAs || 'personal',
+    };
+    const wantsSlugChange = !!(requestedSlug && requestedSlug.trim());
+
     // Slug rules:
-    //  - Already-published blogs keep their slug (changing it would break the live URL).
-    //  - Otherwise honour a user-provided slug if given, else derive from the title;
-    //    ensureUniqueBlogSlug accepts it as-is when available or de-dupes it.
+    //  - Published blog: keep the slug unless the OWNER explicitly changes it
+    //    (destructive — old /owner/slug links break). Non-owners can't change it.
+    //  - Draft / first publish: honour a custom slug, else derive from the title.
     let slug;
     if (existing && existing.status !== 'draft' && existing.slug) {
-      slug = existing.slug;
+      slug = (wantsSlugChange && isOwner)
+        ? await ensureUniqueBlogSlug(db, generateSlug(requestedSlug), slugid, slugScope)
+        : existing.slug;
     } else {
-      const base = generateSlug((requestedSlug && requestedSlug.trim()) || title);
-      // Slugs are unique per owner (the URL is /owner/slug), not globally.
-      slug = await ensureUniqueBlogSlug(db, base, slugid, {
-        authorId: session.userId,
-        publishAs: publishAs || 'personal',
-      });
+      const base = generateSlug(wantsSlugChange ? requestedSlug : title);
+      slug = await ensureUniqueBlogSlug(db, base, slugid, slugScope);
     }
 
     if (existing) {

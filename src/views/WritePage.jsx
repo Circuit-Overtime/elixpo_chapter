@@ -447,6 +447,7 @@ export default function WritePage({ slugid }) {
   const [slug, setSlug] = useState('');
   const [slugManual, setSlugManual] = useState(false); // user typed a custom slug → stop auto-deriving from title
   const [slugAvail, setSlugAvail] = useState({ state: 'idle' }); // idle | checking | available | taken
+  const [isOwner, setIsOwner] = useState(true); // owner (author / org admin) — only owners may change a published slug
   const [publishing, setPublishing] = useState(false);
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
   const [inviteUsername, setInviteUsername] = useState('');
@@ -694,6 +695,7 @@ export default function WritePage({ slugid }) {
             if (blog) {
               if (blog.title) setTitle(blog.title);
               if (blog.slug) { setSlug(blog.slug); setSlugManual(true); }
+              setIsOwner(blog.is_owner !== false);
               if (blog.subtitle) setSubtitle(blog.subtitle);
               if (blog.tags?.length) setTags(blog.tags);
               if (blog.published_as) setPublishAs(blog.published_as);
@@ -836,7 +838,8 @@ export default function WritePage({ slugid }) {
   // Live slug-availability check, scoped to the chosen owner. Skipped for
   // already-published blogs (their slug is locked).
   useEffect(() => {
-    if (isPublished || !slug) { setSlugAvail({ state: 'idle' }); return; }
+    // Drafts always check; published blogs only when the owner is changing the slug.
+    if ((isPublished && !isOwner) || !slug) { setSlugAvail({ state: 'idle' }); return; }
     setSlugAvail({ state: 'checking' });
     const t = setTimeout(async () => {
       try {
@@ -847,7 +850,7 @@ export default function WritePage({ slugid }) {
       } catch { setSlugAvail({ state: 'idle' }); }
     }, 400);
     return () => clearTimeout(t);
-  }, [slug, publishAs, isPublished, slugid]);
+  }, [slug, publishAs, isPublished, isOwner, slugid]);
 
   // Load collaborators
   useEffect(() => {
@@ -1910,44 +1913,52 @@ export default function WritePage({ slugid }) {
             )}
           </div>
 
-          {/* URL slug — editable before publish, locked after */}
+          {/* URL slug — editable before publish; after publish only the owner can
+              change it (destructive — old links break). Non-owners see it locked. */}
+          {(() => {
+            const slugLocked = isPublished && !isOwner;
+            return (
           <div>
             <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
               URL slug
-              {isPublished && <span className="ml-1.5 text-[10px] font-normal" style={{ color: 'var(--text-faint)' }}>(locked)</span>}
+              {slugLocked && <span className="ml-1.5 text-[10px] font-normal" style={{ color: 'var(--text-faint)' }}>(locked)</span>}
             </label>
-            <div className="flex items-center gap-1 rounded-lg px-3 py-2.5 text-[13px]" style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', opacity: isPublished ? 0.7 : 1 }}>
+            <div className="flex items-center gap-1 rounded-lg px-3 py-2.5 text-[13px]" style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', opacity: slugLocked ? 0.7 : 1 }}>
               <span className="shrink-0" style={{ color: 'var(--text-faint)' }}>
                 /{publishAs === 'personal' ? username : (userOrgs.find(o => `org:${o.id}` === publishAs)?.slug || '')}/
               </span>
               <input
                 type="text"
                 value={slug}
-                disabled={isPublished}
+                disabled={slugLocked}
                 onChange={(e) => { setSlugManual(true); setSlug(e.target.value.toLowerCase().replace(/[^\w-]+/g, '-').replace(/-+/g, '-').slice(0, 60)); }}
                 className="flex-1 min-w-0 bg-transparent outline-none disabled:cursor-not-allowed"
                 style={{ color: 'var(--text-primary)' }}
                 placeholder="my-post"
               />
-              {isPublished && <ion-icon name="lock-closed" style={{ fontSize: '12px', color: 'var(--text-faint)' }} />}
+              {slugLocked && <ion-icon name="lock-closed" style={{ fontSize: '12px', color: 'var(--text-faint)' }} />}
             </div>
-            {!isPublished && (
+            {!slugLocked && (
               <p
                 className="text-[11px] mt-1"
                 style={{
                   color:
                     slugAvail.state === 'available' ? '#4ade80'
                     : slugAvail.state === 'taken' ? '#f87171'
+                    : isPublished ? '#e8a840'
                     : 'var(--text-faint)',
                 }}
               >
                 {slugAvail.state === 'checking' ? 'Checking…'
                   : slugAvail.state === 'available' ? '✓ Available in this space'
                   : slugAvail.state === 'taken' ? `✗ ${slugAvail.reason || 'Taken'} — a number will be appended`
+                  : isPublished ? '⚠ Changing the slug breaks existing links to this post.'
                   : 'Unique within your account or the selected org.'}
               </p>
             )}
           </div>
+            );
+          })()}
 
           {/* Tags */}
           <div>

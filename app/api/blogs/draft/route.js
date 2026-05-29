@@ -41,11 +41,25 @@ export async function GET(request) {
     const { getBlogVersionInfo } = await import('../../../../lib/blog-version');
     const version = await getBlogVersionInfo(db, slugid);
 
+    // Owner = personal author or org admin/owner. Only the owner may change the slug.
+    let isOwner = blog.author_id === session.userId;
+    if (!isOwner && blog.published_as?.startsWith('org:')) {
+      const orgId = blog.published_as.slice(4);
+      const adminRow = await db
+        .prepare("SELECT 1 FROM org_members WHERE org_id = ? AND user_id = ? AND role = 'admin'")
+        .bind(orgId, session.userId).first();
+      const ownerRow = adminRow || await db
+        .prepare('SELECT 1 FROM orgs WHERE id = ? AND owner_id = ?')
+        .bind(orgId, session.userId).first();
+      isOwner = !!ownerRow;
+    }
+
     return NextResponse.json({
       blog: {
         ...blog,
         content,
         tags: (tags?.results || []).map(t => t.tag),
+        is_owner: isOwner,
       },
       version,
     });
