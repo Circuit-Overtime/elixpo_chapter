@@ -431,6 +431,7 @@ export default function WritePage({ slugid }) {
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
   const hadUserGestureRef = useRef(false);
   const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
+  const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
   const isPublished = blogVersion?.isPublished;
   const [coverZoom, setCoverZoom] = useState(1);
   const [coverPos, setCoverPos] = useState({ x: 50, y: 50 });
@@ -543,6 +544,7 @@ export default function WritePage({ slugid }) {
       });
 
       if (res.ok) {
+        dirtyRef.current = false;
         if (!silent) {
           setSyncStatus('synced');
           if (showToast) {
