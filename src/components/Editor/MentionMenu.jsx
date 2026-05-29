@@ -82,7 +82,7 @@ export default function MentionMenu({ editor, query, onClose }) {
           } else if (item._type === 'org') {
             mentionNode = { type: 'orgMention', props: { name: item.name || item.slug, slug: item.slug } };
           } else {
-            mentionNode = { type: 'blogMention', props: { title: item.title, slugid: item.slugid } };
+            mentionNode = { type: 'blogMention', props: { title: item.title, slugid: item.slugid, author: item.author_username || '', slug: item.slug || '' } };
           }
 
           // Rebuild content: everything before the @ node, the text before @ in that node, mention, space, text after @query, rest
@@ -126,7 +126,7 @@ export default function MentionMenu({ editor, query, onClose }) {
       } else if (item._type === 'org') {
         content = [{ type: 'orgMention', props: { name: item.name || item.slug, slug: item.slug } }, ' '];
       } else {
-        content = [{ type: 'blogMention', props: { title: item.title, slugid: item.slugid } }, ' '];
+        content = [{ type: 'blogMention', props: { title: item.title, slugid: item.slugid, author: item.author_username || '', slug: item.slug || '' } }, ' '];
       }
       editor.insertInlineContent(content);
     }
