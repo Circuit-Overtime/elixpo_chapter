@@ -95,10 +95,15 @@ async function queryFollowing(db, userId, now, limit, offset) {
         OR b.published_as IN (
           SELECT 'org:' || following_id FROM follows WHERE follower_id = ? AND following_type = 'org'
         )
+        OR b.id IN (
+          SELECT blog_id FROM blog_co_authors
+          WHERE status = 'accepted'
+            AND user_id IN (SELECT following_id FROM follows WHERE follower_id = ? AND following_type = 'user')
+        )
       )
     ORDER BY b.published_at DESC
     LIMIT ? OFFSET ?
-  `).bind(cutoff, userId, userId, limit, offset).all();
+  `).bind(cutoff, userId, userId, userId, limit, offset).all();
   return result?.results || [];
 }
 
