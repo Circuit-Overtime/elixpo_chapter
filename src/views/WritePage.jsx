@@ -670,52 +670,69 @@ export default function WritePage({ slugid }) {
   }, [hasUnsavedEdits]);
 
   useEffect(() => {
-    // Try local draft first, then fetch from server
     const timer = setTimeout(async () => {
-      const draft = loadDraft(slugid);
-      if (draft && draft.editorContent) {
-        if (draft.title) setTitle(draft.title);
-        if (draft.subtitle) setSubtitle(draft.subtitle);
-        if (draft.tags) setTags(draft.tags);
-        if (draft.publishAs) setPublishAs(draft.publishAs);
-        if (draft.coverPreview) setCoverPreview(draft.coverPreview);
-        if (draft.coverPos) setCoverPos(draft.coverPos);
-        if (Number.isFinite(draft.coverZoom)) setCoverZoom(draft.coverZoom);
-        if (draft.editorContent) setEditorContent(draft.editorContent);
-        if (draft.pageEmoji) setPageEmoji(draft.pageEmoji);
-        if (draft.savedAt) setLastSaved(draft.savedAt);
-        setDraftLoading(false);
-      } else {
-        // No local draft — try loading from server (for editing published blogs)
-        try {
-          const res = await fetch(`/api/blogs/draft?slugid=${slugid}`);
-          if (res.ok) {
-            const data = await res.json();
-            const blog = data.blog;
-            if (blog) {
-              if (blog.title) setTitle(blog.title);
-              if (blog.slug) { setSlug(blog.slug); setSlugManual(true); }
-              setIsOwner(blog.is_owner !== false);
-              if (blog.subtitle) setSubtitle(blog.subtitle);
-              if (blog.tags?.length) setTags(blog.tags);
-              if (blog.published_as) setPublishAs(blog.published_as);
-              if (blog.cover_image_r2_key) setCoverPreview(blog.cover_image_r2_key);
-              if (Number.isFinite(blog.cover_pos_x) && Number.isFinite(blog.cover_pos_y)) setCoverPos({ x: blog.cover_pos_x, y: blog.cover_pos_y });
-              if (Number.isFinite(blog.cover_zoom)) setCoverZoom(blog.cover_zoom);
-              if (blog.page_emoji) setPageEmoji(blog.page_emoji);
-              if (blog.content) {
-                const contentStr = typeof blog.content === 'string' ? blog.content : JSON.stringify(blog.content);
-                setEditorContent(contentStr);
-              }
-            }
-            if (data.version) {
-              setBlogVersion(data.version);
-              setLastKnownUpdatedAt(data.version.updatedAt);
-            }
-          }
-        } catch { /* no server data, start fresh */ }
-        setDraftLoading(false);
+      const local = loadDraft(slugid);
+
+      // Always consult the server so version / ownership / published state and the
+      // authoritative content are correct. (Previously a stale localStorage draft
+      // short-circuited this, leaving published posts shown as drafts and dropping
+      // restored content like mentions.)
+      let cloud = null, version = null;
+      try {
+        const res = await fetch(`/api/blogs/draft?slugid=${slugid}`);
+        if (res.ok) {
+          const data = await res.json();
+          cloud = data.blog || null;
+          version = data.version || null;
+        }
+      } catch { /* offline or brand-new blog */ }
+
+      if (cloud) {
+        // Metadata + version always from the server (authoritative).
+        if (cloud.title) setTitle(cloud.title);
+        if (cloud.slug) { setSlug(cloud.slug); setSlugManual(true); }
+        setIsOwner(cloud.is_owner !== false);
+        if (cloud.subtitle) setSubtitle(cloud.subtitle);
+        if (cloud.tags?.length) setTags(cloud.tags);
+        if (cloud.published_as) setPublishAs(cloud.published_as);
+        if (cloud.cover_image_r2_key) setCoverPreview(cloud.cover_image_r2_key);
+        if (Number.isFinite(cloud.cover_pos_x) && Number.isFinite(cloud.cover_pos_y)) setCoverPos({ x: cloud.cover_pos_x, y: cloud.cover_pos_y });
+        if (Number.isFinite(cloud.cover_zoom)) setCoverZoom(cloud.cover_zoom);
+        if (cloud.page_emoji) setPageEmoji(cloud.page_emoji);
+        if (version) { setBlogVersion(version); setLastKnownUpdatedAt(version.updatedAt); }
+
+        // Content: use the server copy unless localStorage holds strictly newer
+        // unsaved edits (saved after the last cloud sync). This restores published
+        // posts (incl. mentions) reliably while still preserving local work.
+        const cloudUpdatedMs = (version?.updatedAt || 0) * 1000;
+        const localNewer = local?.editorContent && (local.savedAt || 0) > cloudUpdatedMs + 1500;
+        if (localNewer) {
+          if (local.title) setTitle(local.title);
+          if (local.subtitle) setSubtitle(local.subtitle);
+          if (local.tags) setTags(local.tags);
+          if (local.coverPreview) setCoverPreview(local.coverPreview);
+          if (local.coverPos) setCoverPos(local.coverPos);
+          if (Number.isFinite(local.coverZoom)) setCoverZoom(local.coverZoom);
+          if (local.pageEmoji) setPageEmoji(local.pageEmoji);
+          if (local.savedAt) setLastSaved(local.savedAt);
+          setEditorContent(local.editorContent);
+        } else if (cloud.content) {
+          setEditorContent(typeof cloud.content === 'string' ? cloud.content : JSON.stringify(cloud.content));
+        }
+      } else if (local?.editorContent) {
+        // Brand-new blog not yet on the server — use the local buffer.
+        if (local.title) setTitle(local.title);
+        if (local.subtitle) setSubtitle(local.subtitle);
+        if (local.tags) setTags(local.tags);
+        if (local.publishAs) setPublishAs(local.publishAs);
+        if (local.coverPreview) setCoverPreview(local.coverPreview);
+        if (local.coverPos) setCoverPos(local.coverPos);
+        if (Number.isFinite(local.coverZoom)) setCoverZoom(local.coverZoom);
+        if (local.pageEmoji) setPageEmoji(local.pageEmoji);
+        if (local.savedAt) setLastSaved(local.savedAt);
+        setEditorContent(local.editorContent);
       }
+      setDraftLoading(false);
     }, 80);
     return () => clearTimeout(timer);
   }, [slugid]);
@@ -1984,29 +2001,25 @@ export default function WritePage({ slugid }) {
             )}
           </div>
 
-          {/* URL Slug — with warning for published blogs */}
+          {/* Collaborators — invite co-authors (cross-posts to their profile) */}
           <div>
-            <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>URL Slug</label>
-            <div className="flex items-center rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--input-bg)', border: '1px solid var(--input-border)' }}>
-              <span className="text-[13px] px-3 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>@{username}/</span>
-              <input
-                type="text"
-                value={slug}
-                onChange={(e) => {
-                  const newSlug = e.target.value.toLowerCase().replace(/[^\w-]/g, '-').replace(/-+/g, '-');
-                  setSlug(newSlug);
-                }}
-                placeholder={slugid}
-                className="flex-1 bg-transparent py-2 pr-3 outline-none text-[13px]"
-                style={{ color: 'var(--text-primary)' }}
-              />
-            </div>
-            {isPublished && slug !== (blogVersion?._originalSlug || slug) && (
-              <p className="text-[11px] mt-1.5 flex items-center gap-1" style={{ color: '#f87171' }}>
-                <ion-icon name="warning-outline" style={{ fontSize: '13px' }} />
-                Changing the slug will permanently break the old URL. This cannot be undone.
-              </p>
-            )}
+            <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>Collaborators</label>
+            <button
+              onClick={() => setShowCollabPanel(true)}
+              className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-[13px] transition-colors hover:border-[var(--border-hover)]"
+              style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)' }}
+            >
+              <span className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <ion-icon name="people-outline" style={{ fontSize: '16px', color: 'var(--text-muted)' }} />
+                {collaborators.length > 0
+                  ? `${collaborators.length} collaborator${collaborators.length === 1 ? '' : 's'}`
+                  : 'Invite collaborators'}
+              </span>
+              <ion-icon name="chevron-forward-outline" style={{ fontSize: '14px', color: 'var(--text-faint)' }} />
+            </button>
+            <p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>
+              Co-authors can view, edit, or admin — the post cross-posts to their profile.
+            </p>
           </div>
         </div>
 

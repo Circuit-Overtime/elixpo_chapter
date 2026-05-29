@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
 import TabBar from '../components/TabBar';
 import BannerUploadModal from '../components/BannerUploadModal';
+import FollowListModal from '../components/FollowListModal';
 import Link from 'next/link';
 
 function UsageBar({ label, used, limit, unit, color = '#9b7bf7' }) {
@@ -37,6 +38,7 @@ export default function ProfilePage() {
   const [blogs, setBlogs] = useState([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
   const [counts, setCounts] = useState({ followers: 0, following: 0 });
+  const [followModal, setFollowModal] = useState(null); // 'followers' | 'following'
 
   useEffect(() => {
     if (!user?.username) return;
@@ -172,9 +174,16 @@ export default function ProfilePage() {
         )}
 
         <div className="flex items-center gap-6 text-[14px] text-[var(--text-muted)] mb-8">
-          <span><strong className="text-[var(--text-primary)]">{counts.followers}</strong> Followers</span>
-          <span><strong className="text-[var(--text-primary)]">{counts.following}</strong> Following</span>
+          <button onClick={() => user?.username && setFollowModal('followers')} className="hover:text-[var(--text-primary)] transition-colors">
+            <strong className="text-[var(--text-primary)]">{counts.followers}</strong> Followers
+          </button>
+          <button onClick={() => user?.username && setFollowModal('following')} className="hover:text-[var(--text-primary)] transition-colors">
+            <strong className="text-[var(--text-primary)]">{counts.following}</strong> Following
+          </button>
         </div>
+        {followModal && (
+          <FollowListModal username={user.username} type={followModal} onClose={() => setFollowModal(null)} />
+        )}
 
         <div className="h-px bg-[var(--bg-elevated)] mb-8" />
 

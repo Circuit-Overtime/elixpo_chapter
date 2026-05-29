@@ -18,8 +18,6 @@ export async function GET(request) {
   const hasCover = /^https?:\/\//.test(cover);
   const hasAvatar = /^https?:\/\//.test(avatar);
   const type = searchParams.get('type') || 'blog';
-  const origin = new URL(request.url).origin;
-  const logoUrl = `${origin}/base-logo.png`;
 
   // ── Profile card: real logo + big avatar + a hue derived from the handle ──
   if (type === 'profile') {
@@ -33,9 +31,10 @@ export async function GET(request) {
     return new ImageResponse(
       (
         <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(135deg, #0f1117 0%, ${accentDeep} 100%)`, fontFamily: 'sans-serif', position: 'relative' }}>
-          {/* Brand row, top-left */}
+          {/* Brand row, top-left. Drawn inline — same-origin static assets don't
+              reliably render inside the edge OG runtime, so we don't <img> the logo. */}
           <div style={{ position: 'absolute', top: 48, left: 56, display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img src={logoUrl} width={36} height={36} style={{ borderRadius: '9px' }} />
+            <div style={{ display: 'flex', width: '40px', height: '40px', borderRadius: '11px', background: 'linear-gradient(135deg, #9b7bf7, #6d4fd1)', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '24px', fontWeight: 800 }}>L</div>
             <span style={{ color: '#e8e8ee', fontSize: '26px', fontWeight: 700 }}>LixBlogs</span>
           </div>
 
@@ -97,7 +96,7 @@ export async function GET(request) {
               {author ? <span style={{ color: '#c4c8d2', fontSize: '28px', fontWeight: 600 }}>{author}</span> : null}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img src={logoUrl} width={34} height={34} style={{ borderRadius: '9px' }} />
+              <div style={{ display: 'flex', width: '34px', height: '34px', borderRadius: '9px', background: 'linear-gradient(135deg, #9b7bf7, #6d4fd1)', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '20px', fontWeight: 800 }}>L</div>
               <span style={{ color: '#9aa0ad', fontSize: '24px', fontWeight: 600 }}>LixBlogs</span>
             </div>
           </div>

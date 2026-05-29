@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import BlogInteractionBar from '../components/BlogInteractionBar';
 import BlogComments from '../components/BlogComments';
 import AuthorAttribution from '../components/AuthorAttribution';
+import FollowListModal from '../components/FollowListModal';
 import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
 
@@ -67,6 +68,7 @@ export default function HandlePage({ path }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [followModal, setFollowModal] = useState(null); // 'followers' | 'following'
 
   // Parse: path[0] = name, path[1] = slug or collection, path[2] = slug (if collection)
   const name = (path?.[0] || '').toLowerCase();
@@ -356,9 +358,16 @@ export default function HandlePage({ path }) {
 
           {/* ── Followers / Following ── */}
           <div className="flex items-center gap-5 text-[14px] text-[var(--text-muted)] mt-4 mb-6">
-            <span><strong className="text-[var(--text-primary)]">{u.followers}</strong> Followers</span>
-            <span><strong className="text-[var(--text-primary)]">{u.following}</strong> Following</span>
+            <button onClick={() => setFollowModal('followers')} className="hover:text-[var(--text-primary)] transition-colors">
+              <strong className="text-[var(--text-primary)]">{u.followers}</strong> Followers
+            </button>
+            <button onClick={() => setFollowModal('following')} className="hover:text-[var(--text-primary)] transition-colors">
+              <strong className="text-[var(--text-primary)]">{u.following}</strong> Following
+            </button>
           </div>
+          {followModal && (
+            <FollowListModal username={u.username} type={followModal} onClose={() => setFollowModal(null)} />
+          )}
 
           <div className="h-px bg-[var(--border-default)] mb-6" />
 
