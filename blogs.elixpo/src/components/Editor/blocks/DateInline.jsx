@@ -19,14 +19,20 @@ function MiniCalendar({ selectedDate, onSelect, onClose, anchorEl }) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [onClose]);
 
-  // Position below the anchor, clamped to viewport
+  // Position relative to the anchor, clamped to the viewport. Flip above when
+  // there isn't room below. Computed ONCE from the anchor rect (never from the
+  // pointer/hover), so it can't oscillate up/down in a loop.
   useEffect(() => {
     if (!anchorEl) return;
     const rect = anchorEl.getBoundingClientRect();
-    const calWidth = 240;
-    let left = rect.left;
-    left = Math.max(8, Math.min(left, window.innerWidth - calWidth - 8));
-    setPos({ top: rect.bottom + 4, left });
+    const CAL_WIDTH = 240;
+    const CAL_HEIGHT = 310; // header + labels + 6 week rows + padding
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - CAL_WIDTH - 8));
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const top = spaceBelow >= CAL_HEIGHT + 8
+      ? rect.bottom + 4
+      : Math.max(8, rect.top - CAL_HEIGHT - 4); // flip above
+    setPos({ top, left });
   }, [anchorEl]);
 
   const { year, month } = viewDate;

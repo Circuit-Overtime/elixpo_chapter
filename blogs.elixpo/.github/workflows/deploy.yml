@@ -1,0 +1,53 @@
+# Auto-release: deploy the site to Cloudflare Pages on every merge to main.
+# (Manual / full releases — npm + VS Code + version bump — stay in deploy.sh.)
+#
+# Required repo secrets:
+#   CLOUDFLARE_API_TOKEN   — token with "Cloudflare Pages: Edit" permission
+#   CLOUDFLARE_ACCOUNT_ID  — your Cloudflare account id
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # manual re-deploy of current main
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true   # a newer merge supersedes an in-flight deploy
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # Skip the deploy.sh bump-commit re-trigger (mirrors deploy.sh's commit msg).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !contains(github.event.head_commit.message, '[skip deploy]')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for Cloudflare Pages
+        run: npm run pages:build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy .vercel/output/static --project-name lixblogs --branch main
+
+  # Note: D1 migrations are NOT auto-applied here — schema changes stay manual
+  # via `npm run db:migrate` to avoid an unexpected prod migration on every push.
