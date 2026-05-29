@@ -882,10 +882,42 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       });
     };
 
+    // Typing the closing backtick of `inline code` makes ProseMirror's markdown
+    // input rule apply the `code` mark and clear ALL stored marks — so the next
+    // word loses bold/italic. We re-apply the carried (non-code) marks afterward.
+    const handleBacktick = (e) => {
+      if (e.key !== '`') return;
+      const t = editor?._tiptapEditor;
+      if (!t) return;
+      const { state } = t;
+      const { $from, empty } = state.selection;
+      if (!empty) return;
+      const codeType = state.schema.marks.code;
+      if (!codeType) return;
+      // Only when this backtick closes a span (an opening one exists earlier in the block).
+      const before = $from.parent.textBetween(0, $from.parentOffset, '\n', '￼');
+      if (!before.includes('`')) return;
+      const carry = (state.storedMarks || $from.marks() || []).filter((m) => m.type !== codeType);
+      requestAnimationFrame(() => {
+        try {
+          const tt = editor._tiptapEditor;
+          if (tt.state.selection.empty) {
+            tt.view.dispatch(tt.state.tr.setStoredMarks(carry));
+          }
+        } catch {}
+      });
+    };
+
     const dom = tiptap.view?.dom;
     if (!dom) return;
     dom.addEventListener('keydown', handleCtrlK);
-    return () => { try { dom.removeEventListener('keydown', handleCtrlK); } catch {} };
+    dom.addEventListener('keydown', handleBacktick);
+    return () => {
+      try {
+        dom.removeEventListener('keydown', handleCtrlK);
+        dom.removeEventListener('keydown', handleBacktick);
+      } catch {}
+    };
   }, [editor]);
 
   // Open the custom link editor for an already-resolved full-link selection.
