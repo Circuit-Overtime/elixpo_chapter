@@ -36,6 +36,18 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState(0);
   const [blogs, setBlogs] = useState([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
+  const [counts, setCounts] = useState({ followers: 0, following: 0 });
+
+  useEffect(() => {
+    if (!user?.username) return;
+    // Real follower/following counts come from the profile resolver.
+    fetch(`/api/resolve?name=${encodeURIComponent(user.username)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.user) setCounts({ followers: d.user.followers || 0, following: d.user.following || 0 });
+      })
+      .catch(() => {});
+  }, [user?.username]);
 
   useEffect(() => {
     if (!user) return;
@@ -160,8 +172,8 @@ export default function ProfilePage() {
         )}
 
         <div className="flex items-center gap-6 text-[14px] text-[var(--text-muted)] mb-8">
-          <span><strong className="text-[var(--text-primary)]">0</strong> Followers</span>
-          <span><strong className="text-[var(--text-primary)]">0</strong> Following</span>
+          <span><strong className="text-[var(--text-primary)]">{counts.followers}</strong> Followers</span>
+          <span><strong className="text-[var(--text-primary)]">{counts.following}</strong> Following</span>
         </div>
 
         <div className="h-px bg-[var(--bg-elevated)] mb-8" />

@@ -12,8 +12,44 @@ export async function generateMetadata({ params }) {
   const slug = len === 2 ? (path[1] || '').toLowerCase() : len === 3 ? (path[2] || '').toLowerCase() : '';
   const collection = len === 3 ? (path[1] || '').toLowerCase() : '';
 
-  // Only blogs (2- or 3-segment paths) get rich cards; profiles fall back to defaults.
-  if (!name || !slug) return {};
+  if (!name) return {};
+
+  // Profile cards (1-segment paths) — a user or org gets an avatar + name + bio card.
+  if (!slug) {
+    try {
+      const h = await headers();
+      const origin = `${h.get('x-forwarded-proto') || 'https'}://${h.get('host')}`;
+      const httpImg = (u) => (typeof u === 'string' && /^https?:\/\//.test(u) ? u : '');
+      const res = await fetch(`${origin}/api/resolve?name=${encodeURIComponent(name)}`, { headers: { 'user-agent': 'lixblogs-ssr' } });
+      if (!res.ok) return {};
+      const data = await res.json();
+      const url = `${origin}/${name}`;
+      let dn, description, avatar, handle;
+      if (data.type === 'user' && data.user) {
+        dn = data.user.display_name || data.user.username || name;
+        description = (data.user.bio || `@${data.user.username || name} on LixBlogs`).slice(0, 200);
+        avatar = httpImg(data.user.avatar_url);
+        handle = `@${data.user.username || name}`;
+      } else if (data.type === 'org' && data.org) {
+        dn = data.org.name || name;
+        description = (data.org.description || data.org.bio || `${dn} on LixBlogs`).slice(0, 200);
+        avatar = httpImg(data.org.logo_url || data.org.logo_r2_key);
+        handle = `@${data.org.slug || name}`;
+      } else {
+        return {};
+      }
+      const og = `${origin}/api/og?${new URLSearchParams({ title: dn, subtitle: description, author: handle, avatar })}`;
+      return {
+        title: dn,
+        description,
+        alternates: { canonical: url },
+        openGraph: { type: 'profile', title: dn, description, url, siteName: 'LixBlogs', images: [{ url: og, secureUrl: og, type: 'image/png', width: 1200, height: 630, alt: dn }] },
+        twitter: { card: 'summary_large_image', title: dn, description, images: [og] },
+      };
+    } catch {
+      return {};
+    }
+  }
 
   try {
     const h = await headers();
