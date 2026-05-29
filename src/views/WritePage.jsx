@@ -445,6 +445,7 @@ export default function WritePage({ slugid }) {
   const [showColorPanel, setShowColorPanel] = useState(false);
   const [pageColor, setPageColor] = useState(null);
   const [slug, setSlug] = useState('');
+  const [slugManual, setSlugManual] = useState(false); // user typed a custom slug → stop auto-deriving from title
   const [publishing, setPublishing] = useState(false);
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
   const [inviteUsername, setInviteUsername] = useState('');
@@ -618,10 +619,11 @@ export default function WritePage({ slugid }) {
     return true; // allowed
   }, [hasUnsavedEdits]);
 
-  // Sync before page unload + save draft (fallback for hard browser close)
+  // Silently flush the draft to localStorage + cloud on unload. We deliberately
+  // do NOT call preventDefault/returnValue — the native "Leave site?" dialog is
+  // replaced by our own in-app confirm modal (handleNavigation / link intercept).
   useEffect(() => {
-    function handleBeforeUnload(e) {
-      if (bypassUnloadRef.current) return; // publishing → navigating to the published post, no prompt
+    function handleBeforeUnload() {
       const data = draftDataRef.current;
       if (data.title || data.editorContent) {
         saveDraft(slugid, data);
@@ -632,14 +634,10 @@ export default function WritePage({ slugid }) {
       }
       // Also flush any buffered subpage drafts on unload
       try { syncSubpageDrafts(); } catch {}
-      if (hasUnsavedEdits && hadUserGestureRef.current) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
     }
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [slugid, hasUnsavedEdits, syncSubpageDrafts]);
+  }, [slugid, syncSubpageDrafts]);
 
   // Intercept clicks on <a> tags within the editor page to show custom modal
   useEffect(() => {
@@ -684,6 +682,7 @@ export default function WritePage({ slugid }) {
             const blog = data.blog;
             if (blog) {
               if (blog.title) setTitle(blog.title);
+              if (blog.slug) { setSlug(blog.slug); setSlugManual(true); }
               if (blog.subtitle) setSubtitle(blog.subtitle);
               if (blog.tags?.length) setTags(blog.tags);
               if (blog.published_as) setPublishAs(blog.published_as);
@@ -808,8 +807,10 @@ export default function WritePage({ slugid }) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [switchMode, mode]);
 
-  // Auto-generate slug from title
+  // Auto-generate slug from title — unless the user set a custom one, or the blog
+  // is already published (its slug is locked and can't change).
   useEffect(() => {
+    if (slugManual || isPublished) return;
     if (!title.trim()) { setSlug(''); return; }
     const generated = title
       .toLowerCase()
@@ -819,7 +820,7 @@ export default function WritePage({ slugid }) {
       .slice(0, 60)
       .replace(/^-|-$/g, '');
     setSlug(generated || slugid);
-  }, [title, slugid]);
+  }, [title, slugid, slugManual, isPublished]);
 
   // Load collaborators
   useEffect(() => {
@@ -1001,7 +1002,7 @@ export default function WritePage({ slugid }) {
       const res = await fetch('/api/blogs/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl: coverPreview, coverPos, coverZoom, status: targetStatus, lastKnownUpdatedAt }),
+        body: JSON.stringify({ slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl: coverPreview, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt }),
       });
 
       if (res.status === 409) {
@@ -1041,7 +1042,7 @@ export default function WritePage({ slugid }) {
       await fetch('/api/blogs/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, status: 'unlisted', lastKnownUpdatedAt }),
+        body: JSON.stringify({ slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, slug, status: 'unlisted', lastKnownUpdatedAt }),
       });
       setShowPublishPanel(false);
     } catch { /* silent */ }
@@ -1874,6 +1875,32 @@ export default function WritePage({ slugid }) {
                   </div>
                 )}
               </div>
+            )}
+          </div>
+
+          {/* URL slug — editable before publish, locked after */}
+          <div>
+            <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
+              URL slug
+              {isPublished && <span className="ml-1.5 text-[10px] font-normal" style={{ color: 'var(--text-faint)' }}>(locked)</span>}
+            </label>
+            <div className="flex items-center gap-1 rounded-lg px-3 py-2.5 text-[13px]" style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', opacity: isPublished ? 0.7 : 1 }}>
+              <span className="shrink-0" style={{ color: 'var(--text-faint)' }}>
+                /{publishAs === 'personal' ? username : (userOrgs.find(o => `org:${o.id}` === publishAs)?.slug || '')}/
+              </span>
+              <input
+                type="text"
+                value={slug}
+                disabled={isPublished}
+                onChange={(e) => { setSlugManual(true); setSlug(e.target.value.toLowerCase().replace(/[^\w-]+/g, '-').replace(/-+/g, '-').slice(0, 60)); }}
+                className="flex-1 min-w-0 bg-transparent outline-none disabled:cursor-not-allowed"
+                style={{ color: 'var(--text-primary)' }}
+                placeholder="my-post"
+              />
+              {isPublished && <ion-icon name="lock-closed" style={{ fontSize: '12px', color: 'var(--text-faint)' }} />}
+            </div>
+            {!isPublished && (
+              <p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>Used as-is if available, otherwise a number is appended.</p>
             )}
           </div>
 

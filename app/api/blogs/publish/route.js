@@ -14,7 +14,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, coverPos, coverZoom, status, lastKnownUpdatedAt } = body;
+  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, coverPos, coverZoom, status, lastKnownUpdatedAt, slug: requestedSlug } = body;
   const posX = Number.isFinite(coverPos?.x) ? coverPos.x : 50;
   const posY = Number.isFinite(coverPos?.y) ? coverPos.y : 50;
   const zoom = Number.isFinite(coverZoom) ? coverZoom : 1;
@@ -47,12 +47,22 @@ export async function POST(request) {
     const { checkPublishSafety } = await import('../../../../lib/blog-version');
     const db = getDB();
     const now = Math.floor(Date.now() / 1000);
-    const baseSlug = generateSlug(title);
-    const slug = await ensureUniqueBlogSlug(db, baseSlug, slugid);
     const readTime = Math.max(1, Math.ceil(countWords(editorContent) / 250));
     const compressedContent = editorContent ? compressBlogContent(editorContent) : '';
 
-    const existing = await db.prepare('SELECT id, author_id, status, published_as FROM blogs WHERE id = ?').bind(slugid).first();
+    const existing = await db.prepare('SELECT id, author_id, status, published_as, slug FROM blogs WHERE id = ?').bind(slugid).first();
+
+    // Slug rules:
+    //  - Already-published blogs keep their slug (changing it would break the live URL).
+    //  - Otherwise honour a user-provided slug if given, else derive from the title;
+    //    ensureUniqueBlogSlug accepts it as-is when available or de-dupes it.
+    let slug;
+    if (existing && existing.status !== 'draft' && existing.slug) {
+      slug = existing.slug;
+    } else {
+      const base = generateSlug((requestedSlug && requestedSlug.trim()) || title);
+      slug = await ensureUniqueBlogSlug(db, base, slugid);
+    }
 
     if (existing) {
       // Permission: author, org write+, or accepted co-author.
