@@ -108,6 +108,14 @@ export default function MentionMenu({ editor, query, onClose }) {
           for (let i = atNodeIdx + 1; i < contentArr.length; i++) newContent.push(contentArr[i]);
 
           editor.updateBlock(block, { content: newContent });
+          // Place the caret right after the chip + trailing space (same line),
+          // otherwise it jumps to the next line / disappears after the rebuild.
+          setTimeout(() => {
+            try {
+              editor.focus();
+              editor.setTextCursorPosition(block.id, 'end');
+            } catch {}
+          }, 0);
         }
       }
     } catch {
