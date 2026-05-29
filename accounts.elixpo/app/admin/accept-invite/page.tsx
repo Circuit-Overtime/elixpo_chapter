@@ -66,13 +66,13 @@ function AcceptInviteContent() {
     };
 
     const btnSx = {
-        color: "#a3e635",
-        border: "1px solid rgba(163, 230, 53, 0.3)",
+        color: "#9b7bf7",
+        border: "1px solid rgba(155, 123, 247, 0.3)",
         textTransform: "none",
         fontWeight: 600,
         px: 4,
         py: 1.2,
-        "&:hover": { background: "rgba(163, 230, 53, 0.1)" },
+        "&:hover": { background: "rgba(155, 123, 247, 0.1)" },
     };
 
     return (
@@ -83,7 +83,7 @@ function AcceptInviteContent() {
                 alignItems: "center",
                 justifyContent: "center",
                 background:
-                    "linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)",
+                    "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                 p: 2,
             }}
         >
@@ -102,7 +102,7 @@ function AcceptInviteContent() {
             >
                 {status === "loading" && (
                     <>
-                        <CircularProgress sx={{ color: "#a3e635", mb: 2 }} />
+                        <CircularProgress sx={{ color: "#9b7bf7", mb: 2 }} />
                         <Typography sx={{ color: "#f5f5f4" }}>
                             Validating invitation...
                         </Typography>
@@ -125,7 +125,7 @@ function AcceptInviteContent() {
                         </Typography>
                         <Typography
                             sx={{
-                                color: "#a3e635",
+                                color: "#9b7bf7",
                                 fontSize: "0.95rem",
                                 mb: 3,
                             }}
@@ -140,7 +140,7 @@ function AcceptInviteContent() {
 
                 {status === "accepting" && (
                     <>
-                        <CircularProgress sx={{ color: "#a3e635", mb: 2 }} />
+                        <CircularProgress sx={{ color: "#9b7bf7", mb: 2 }} />
                         <Typography sx={{ color: "#f5f5f4" }}>
                             Accepting invitation...
                         </Typography>
@@ -152,7 +152,7 @@ function AcceptInviteContent() {
                         <Box sx={{ fontSize: "3rem", mb: 1 }}>&#10003;</Box>
                         <Typography
                             variant="h5"
-                            sx={{ fontWeight: 700, color: "#a3e635", mb: 1 }}
+                            sx={{ fontWeight: 700, color: "#9b7bf7", mb: 1 }}
                         >
                             Welcome, Admin!
                         </Typography>
@@ -203,10 +203,10 @@ export default function AcceptInvitePage() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        bgcolor: "#141a16",
+                        bgcolor: "#0f1117",
                     }}
                 >
-                    <CircularProgress sx={{ color: "#a3e635" }} />
+                    <CircularProgress sx={{ color: "#9b7bf7" }} />
                 </Box>
             }
         >

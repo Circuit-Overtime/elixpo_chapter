@@ -6,10 +6,13 @@ import { getDatabase } from "@/lib/d1-client";
 import {
     getRefreshTokenByHash,
     getUserById,
+    isUsernameTaken,
     revokeRefreshToken,
     createRefreshToken as storeRefreshToken,
 } from "@/lib/db";
 import { createAccessToken, createRefreshToken, verifyJWT } from "@/lib/jwt";
+import { cacheDel, cacheSet } from "@/lib/kv-cache";
+import { validateUsername } from "@/lib/username";
 import { generateUUID, hashString } from "@/lib/webcrypto";
 
 async function getUserIdentity(db: D1Database, userId: string) {
@@ -204,6 +207,7 @@ export async function GET(request: NextRequest) {
                 id: payload.sub,
                 userId: payload.sub,
                 email: payload.email,
+                username: (dbUser as any).username || null,
                 displayName: (dbUser as any).display_name || null,
                 isAdmin: !!(dbUser as any).is_admin,
                 provider:
@@ -268,16 +272,30 @@ export async function PATCH(request: NextRequest) {
         }
 
         const body: any = await request.json();
-        const { locale, timezone, display_name, bio, country, city, location } =
-            body as {
-                locale?: string;
-                timezone?: string;
-                display_name?: string;
-                bio?: string;
-                country?: string;
-                city?: string;
-                location?: string;
-            };
+        const {
+            locale,
+            timezone,
+            display_name,
+            bio,
+            country,
+            city,
+            location,
+            username,
+            confirm,
+        } = body as {
+            locale?: string;
+            timezone?: string;
+            display_name?: string;
+            bio?: string;
+            country?: string;
+            city?: string;
+            location?: string;
+            username?: string;
+            confirm?: boolean;
+        };
+
+        // Track username change for KV cache updates after a successful write.
+        let usernameChange: { old: string | null; next: string } | null = null;
 
         const setClauses: string[] = ["updated_at = CURRENT_TIMESTAMP"];
         const values: (string | number | null)[] = [];
@@ -362,6 +380,78 @@ export async function PATCH(request: NextRequest) {
             values.push(effectiveCount + 1);
         }
 
+        if (username !== undefined) {
+            const v = validateUsername(username);
+            if (!v.ok) {
+                return NextResponse.json({ error: v.reason }, { status: 400 });
+            }
+
+            const currentUser = (await getUserById(db, payload.sub)) as any;
+            if (!currentUser) {
+                return NextResponse.json(
+                    { error: "User not found" },
+                    { status: 404 },
+                );
+            }
+            const current: string | null = currentUser.username || null;
+
+            // Only act when the handle actually changes.
+            if (current !== v.value) {
+                const isFirstSet = !current;
+
+                if (!isFirstSet) {
+                    // Changing an existing handle is destructive (old @links break)
+                    // — require explicit confirmation and rate-limit it.
+                    if (!confirm) {
+                        return NextResponse.json(
+                            {
+                                error: "Changing your username breaks links pointing to your old handle. Confirm to proceed.",
+                                requiresConfirm: true,
+                            },
+                            { status: 400 },
+                        );
+                    }
+                    const changeCount =
+                        currentUser.username_change_count || 0;
+                    const lastChanged = currentUser.username_changed_at
+                        ? new Date(currentUser.username_changed_at).getTime()
+                        : 0;
+                    const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
+                    const windowExpired =
+                        Date.now() - lastChanged > twoWeeksMs;
+                    const effectiveCount = windowExpired ? 0 : changeCount;
+                    if (effectiveCount >= 2) {
+                        const resetDate = new Date(lastChanged + twoWeeksMs);
+                        return NextResponse.json(
+                            {
+                                error: `You can only change your username 2 times every 2 weeks. Try again after ${resetDate.toLocaleDateString()}.`,
+                            },
+                            { status: 429 },
+                        );
+                    }
+                    setClauses.push("username_change_count = ?");
+                    values.push(effectiveCount + 1);
+                } else {
+                    // First-time set: keep the change counter at 0 so the user
+                    // still gets their full allowance of later changes.
+                    setClauses.push("username_change_count = 0");
+                }
+
+                // Friendly pre-check; the UNIQUE index is the real guard.
+                if (await isUsernameTaken(db, v.value)) {
+                    return NextResponse.json(
+                        { error: "That username is taken." },
+                        { status: 409 },
+                    );
+                }
+
+                setClauses.push("username = ?");
+                values.push(v.value);
+                setClauses.push("username_changed_at = CURRENT_TIMESTAMP");
+                usernameChange = { old: current, next: v.value };
+            }
+        }
+
         if (values.length === 0) {
             return NextResponse.json(
                 { error: "No updatable fields provided" },
@@ -387,10 +477,24 @@ export async function PATCH(request: NextRequest) {
                 );
             }
 
+            // Refresh the availability cache so the new handle reads as taken
+            // and the freed one (if any) can be reclaimed.
+            if (usernameChange) {
+                await cacheSet(
+                    `username:taken:${usernameChange.next}`,
+                    { taken: true },
+                    86400,
+                );
+                if (usernameChange.old) {
+                    await cacheDel(`username:taken:${usernameChange.old}`);
+                }
+            }
+
             return NextResponse.json({
                 id: payload.sub,
                 userId: payload.sub,
                 email: payload.email,
+                username: (dbUser as any).username || null,
                 displayName: (dbUser as any).display_name || null,
                 locale: (dbUser as any).locale ?? null,
                 timezone: (dbUser as any).timezone ?? null,

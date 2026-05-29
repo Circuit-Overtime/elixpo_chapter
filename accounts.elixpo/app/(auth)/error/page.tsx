@@ -34,7 +34,7 @@ const ErrorContent = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 background:
-                    "linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)",
+                    "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                 p: 2,
             }}
         >
@@ -76,16 +76,16 @@ const ErrorContent = () => {
                             fullWidth
                             variant="contained"
                             sx={{
-                                background: "rgba(163, 230, 53, 0.15)",
-                                color: "#a3e635",
-                                border: "1px solid rgba(163, 230, 53, 0.3)",
+                                background: "rgba(155, 123, 247, 0.15)",
+                                color: "#9b7bf7",
+                                border: "1px solid rgba(155, 123, 247, 0.3)",
                                 fontWeight: 600,
                                 py: 1.5,
                                 textTransform: "none",
                                 fontSize: "1rem",
                                 "&:hover": {
-                                    background: "rgba(163, 230, 53, 0.25)",
-                                    borderColor: "rgba(163, 230, 53, 0.5)",
+                                    background: "rgba(155, 123, 247, 0.25)",
+                                    borderColor: "rgba(155, 123, 247, 0.5)",
                                 },
                             }}
                         >

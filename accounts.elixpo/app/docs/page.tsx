@@ -289,12 +289,12 @@ const cardSx = {
 
 const codeSx = {
     background: "rgba(0,0,0,0.4)",
-    border: "1px solid rgba(163,230,53,0.15)",
+    border: "1px solid rgba(155, 123, 247,0.15)",
     borderRadius: "8px",
     p: 2,
     fontFamily: "monospace",
     fontSize: "0.82rem",
-    color: "#a3e635",
+    color: "#9b7bf7",
     overflowX: "auto" as const,
     whiteSpace: "pre" as const,
     mb: 2,
@@ -323,7 +323,7 @@ export default function DocsPage() {
             sx={{
                 minHeight: "100vh",
                 background:
-                    "linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)",
+                    "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                 p: 3,
             }}
         >
@@ -372,13 +372,13 @@ export default function DocsPage() {
                         startIcon={<ContentCopyIcon />}
                         onClick={copyLLMSpec}
                         sx={{
-                            color: "#a3e635",
-                            borderColor: "rgba(163,230,53,0.3)",
+                            color: "#9b7bf7",
+                            borderColor: "rgba(155, 123, 247,0.3)",
                             textTransform: "none",
                             fontWeight: 600,
                             "&:hover": {
-                                borderColor: "#a3e635",
-                                bgcolor: "rgba(163,230,53,0.1)",
+                                borderColor: "#9b7bf7",
+                                bgcolor: "rgba(155, 123, 247,0.1)",
                             },
                         }}
                     >
@@ -391,9 +391,9 @@ export default function DocsPage() {
                     <Chip
                         label="Base URL: https://accounts.elixpo.com"
                         sx={{
-                            bgcolor: "rgba(163,230,53,0.1)",
-                            color: "#a3e635",
-                            border: "1px solid rgba(163,230,53,0.2)",
+                            bgcolor: "rgba(155, 123, 247,0.1)",
+                            color: "#9b7bf7",
+                            border: "1px solid rgba(155, 123, 247,0.2)",
                             fontFamily: "monospace",
                             fontSize: "0.85rem",
                         }}
@@ -420,7 +420,7 @@ export default function DocsPage() {
                                 component="a"
                                 href={`#${s.id}`}
                                 sx={{
-                                    color: "#a3e635",
+                                    color: "#9b7bf7",
                                     fontSize: "0.9rem",
                                     textDecoration: "none",
                                     "&:hover": { textDecoration: "underline" },
@@ -437,7 +437,7 @@ export default function DocsPage() {
                     <Box key={section.id} id={section.id} sx={cardSx}>
                         <Typography
                             variant="h6"
-                            sx={{ color: "#a3e635", fontWeight: 700, mb: 2 }}
+                            sx={{ color: "#9b7bf7", fontWeight: 700, mb: 2 }}
                         >
                             {section.title}
                         </Typography>
@@ -479,8 +479,8 @@ export default function DocsPage() {
                                     lineHeight: 1.7,
                                     "& strong": { color: "#f5f5f4" },
                                     "& code": {
-                                        background: "rgba(163,230,53,0.1)",
-                                        color: "#a3e635",
+                                        background: "rgba(155, 123, 247,0.1)",
+                                        color: "#9b7bf7",
                                         padding: "2px 6px",
                                         borderRadius: "4px",
                                         fontSize: "0.82rem",
@@ -488,13 +488,13 @@ export default function DocsPage() {
                                     },
                                     "& pre": {
                                         background: "rgba(0,0,0,0.4)",
-                                        border: "1px solid rgba(163,230,53,0.15)",
+                                        border: "1px solid rgba(155, 123, 247,0.15)",
                                         borderRadius: "8px",
                                         padding: "12px 16px",
                                         overflowX: "auto",
                                         fontFamily: "monospace",
                                         fontSize: "0.82rem",
-                                        color: "#a3e635",
+                                        color: "#9b7bf7",
                                         my: 2,
                                     },
                                     "& table": {
@@ -510,7 +510,7 @@ export default function DocsPage() {
                                         fontSize: "0.82rem",
                                     },
                                     "& th": {
-                                        color: "#a3e635",
+                                        color: "#9b7bf7",
                                         fontWeight: 600,
                                     },
                                     "& td": { color: "rgba(255,255,255,0.7)" },
@@ -534,7 +534,7 @@ export default function DocsPage() {
                         Need help? Contact{" "}
                         <a
                             href="mailto:accounts@elixpo.com"
-                            style={{ color: "#a3e635", textDecoration: "none" }}
+                            style={{ color: "#9b7bf7", textDecoration: "none" }}
                         >
                             accounts@elixpo.com
                         </a>

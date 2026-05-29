@@ -33,7 +33,7 @@ class SmtpConnection {
     private encoder = new TextEncoder();
 
     async connect(config: SmtpConfig): Promise<void> {
-        // @ts-expect-error — cloudflare:sockets is a Cloudflare Workers built-in module
+        // @ts-ignore — cloudflare:sockets is a Cloudflare Workers built-in module
         const { connect } = await import(
             /* webpackIgnore: true */ "cloudflare:sockets"
         );
@@ -60,7 +60,7 @@ class SmtpConnection {
             const starttls = await this.command("STARTTLS");
             if (starttls.code !== 220)
                 throw new Error(`SMTP STARTTLS failed: ${starttls.text}`);
-            // @ts-expect-error
+            // @ts-ignore
             this.socket = this.socket.startTls();
             this.reader = this.socket.readable.getReader();
             this.writer = this.socket.writable.getWriter();

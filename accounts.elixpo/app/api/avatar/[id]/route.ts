@@ -40,7 +40,7 @@ export async function GET(
 
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
   <rect width="128" height="128" rx="64" fill="#1a2e0a"/>
-  <text x="64" y="64" dy=".35em" text-anchor="middle" font-family="system-ui,sans-serif" font-size="56" font-weight="700" fill="#a3e635">${initial}</text>
+  <text x="64" y="64" dy=".35em" text-anchor="middle" font-family="system-ui,sans-serif" font-size="56" font-weight="700" fill="#9b7bf7">${initial}</text>
 </svg>`;
 
         return new NextResponse(svg, {

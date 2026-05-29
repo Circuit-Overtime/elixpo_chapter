@@ -134,8 +134,19 @@ export async function GET(
         }
 
         const db = await getDatabase();
-        const email =
-            userInfo.email || `${provider}_${userInfo.sub}@elixpo.local`;
+
+        // A real email is mandatory — no account is created without one. GitHub
+        // (and rarely Google) can omit it; fetchUserInfoFromProvider already tries
+        // the provider's email endpoint. If still missing, stop here.
+        if (!userInfo.email) {
+            return NextResponse.redirect(
+                new URL(
+                    "/error?error=email_required&description=Your+account+has+no+verified+email.+Make+an+email+public+with+this+provider+or+sign+up+with+email.",
+                    request.url,
+                ),
+            );
+        }
+        const email = userInfo.email;
 
         // --- Core logic: check identity and cross-provider conflicts ---
 
@@ -377,8 +388,14 @@ async function buildSuccessResponse(
 
     // If there's a pending ?next= redirect (e.g. from OAuth authorize flow), use it
     const oauthNext = request.cookies.get("oauth_next")?.value;
-    const redirectDest =
+    const intendedDest =
         oauthNext || (user.is_admin ? "/admin" : "/dashboard/oauth-apps");
+    // A username (handle) is mandatory. Until one is set, force /setup-name and
+    // preserve the intended destination so the SSO flow resumes afterward.
+    const needsUsername = !(user as { username?: string }).username;
+    const redirectDest = needsUsername
+        ? `/setup-name?next=${encodeURIComponent(intendedDest)}`
+        : intendedDest;
     const response = NextResponse.redirect(new URL(redirectDest, request.url));
 
     const maxAge =
@@ -484,6 +501,7 @@ async function fetchUserInfoFromProvider(
     email?: string;
     name?: string;
     picture?: string;
+    login?: string;
 } | null> {
     try {
         const response = await fetch(endpoint, {
@@ -510,13 +528,41 @@ async function fetchUserInfoFromProvider(
                 };
 
             case "github": {
-                // GitHub may not return email in the user endpoint — handle null
-                const githubEmail = data.email || null;
+                // The /user endpoint omits the email unless it's public. When it's
+                // missing, fetch /user/emails and take the primary verified address.
+                let githubEmail: string | null = data.email || null;
+                if (!githubEmail) {
+                    try {
+                        const emailsRes = await fetch(
+                            "https://api.github.com/user/emails",
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${accessToken}`,
+                                    Accept: "application/vnd.github+json",
+                                    "User-Agent": "accounts.elixpo",
+                                },
+                            },
+                        );
+                        if (emailsRes.ok) {
+                            const emails: any[] = await emailsRes.json();
+                            const primary = emails.find(
+                                (e) => e.primary && e.verified,
+                            );
+                            const anyVerified = emails.find((e) => e.verified);
+                            githubEmail =
+                                primary?.email || anyVerified?.email || null;
+                        }
+                    } catch {
+                        /* fall through — email stays null, caller blocks signup */
+                    }
+                }
                 return {
                     sub: String(data.id),
-                    email: githubEmail,
-                    name: data.name,
+                    email: githubEmail || undefined,
+                    // GitHub `name` can be null — fall back to the login handle.
+                    name: data.name || data.login,
                     picture: data.avatar_url,
+                    login: data.login,
                 };
             }
 

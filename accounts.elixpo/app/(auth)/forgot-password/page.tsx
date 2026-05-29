@@ -17,7 +17,7 @@ const textFieldSx = {
         background: "transparent",
         "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
         "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
-        "&.Mui-focused fieldset": { borderColor: "#a3e635" },
+        "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
         "& input:-webkit-autofill": {
             WebkitBoxShadow: "0 0 0 1000px transparent inset !important",
             WebkitTextFillColor: "#f5f5f4 !important",
@@ -34,21 +34,21 @@ const textFieldSx = {
     },
     "& .MuiInputBase-input::placeholder": { color: "transparent", opacity: 0 },
     "& .MuiInputLabel-root": { color: "rgba(255, 255, 255, 0.7)" },
-    "& .MuiInputLabel-root.Mui-focused": { color: "#a3e635" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "#9b7bf7" },
 };
 
 const btnSx = {
     my: 2,
-    background: "rgba(163, 230, 53, 0.15)",
-    color: "#a3e635",
-    border: "1px solid rgba(163, 230, 53, 0.3)",
+    background: "rgba(155, 123, 247, 0.15)",
+    color: "#9b7bf7",
+    border: "1px solid rgba(155, 123, 247, 0.3)",
     fontWeight: 600,
     py: 1.2,
     textTransform: "none",
     fontSize: "1rem",
     "&:hover": {
-        background: "rgba(163, 230, 53, 0.25)",
-        borderColor: "rgba(163, 230, 53, 0.5)",
+        background: "rgba(155, 123, 247, 0.25)",
+        borderColor: "rgba(155, 123, 247, 0.5)",
     },
     "&:disabled": {
         color: "rgba(255, 255, 255, 0.4)",
@@ -222,10 +222,10 @@ function ForgotPasswordContent() {
                     alignItems: "center",
                     justifyContent: "center",
                     background:
-                        "linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)",
+                        "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                 }}
             >
-                <CircularProgress sx={{ color: "#a3e635" }} />
+                <CircularProgress sx={{ color: "#9b7bf7" }} />
             </Box>
         );
     }
@@ -238,7 +238,7 @@ function ForgotPasswordContent() {
                 alignItems: "center",
                 justifyContent: "center",
                 background:
-                    "linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)",
+                    "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                 p: 2,
             }}
         >
@@ -361,7 +361,7 @@ function ForgotPasswordContent() {
                                 onClick={handleResendOtp}
                                 sx={{
                                     textTransform: "none",
-                                    color: "#a3e635",
+                                    color: "#9b7bf7",
                                     "&:hover": { background: "transparent" },
                                     "&:disabled": {
                                         color: "rgba(255, 255, 255, 0.3)",
@@ -416,7 +416,7 @@ function ForgotPasswordContent() {
                     <Box sx={{ textAlign: "center", py: 2 }}>
                         <Typography
                             sx={{
-                                color: "#a3e635",
+                                color: "#9b7bf7",
                                 fontSize: "1.1rem",
                                 fontWeight: 600,
                                 mb: 2,
@@ -461,7 +461,7 @@ function ForgotPasswordContent() {
                         <Link
                             href="/login"
                             style={{
-                                color: "#a3e635",
+                                color: "#9b7bf7",
                                 textDecoration: "none",
                                 fontWeight: 600,
                             }}
@@ -486,10 +486,10 @@ export default function ForgotPasswordPage() {
                         alignItems: "center",
                         justifyContent: "center",
                         background:
-                            "linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)",
+                            "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                     }}
                 >
-                    <CircularProgress sx={{ color: "#a3e635" }} />
+                    <CircularProgress sx={{ color: "#9b7bf7" }} />
                 </Box>
             }
         >
