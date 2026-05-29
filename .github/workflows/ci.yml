@@ -1,0 +1,36 @@
+# Branch / PR build gate — fork-safe (needs no secrets), so external
+# contributors' pull requests get checked too. This is the status check that
+# branch protection requires before a PR can merge to main.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches-ignore: [main]   # main is built + shipped by deploy.yml
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `next build` type-checks and compiles the whole app — the real gate.
+      # (The Cloudflare adapter build runs in deploy.yml, on main only.)
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
