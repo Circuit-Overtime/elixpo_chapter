@@ -2,12 +2,12 @@
 
 import { isAllowedImage } from '../../utils/allowedImageTypes';
 import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs, createCodeBlockSpec } from '@blocknote/core';
-import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems, TableHandlesController } from '@blocknote/react';
+import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems, TableHandlesController, FormattingToolbarController, FormattingToolbar, getFormattingToolbarItems, CreateLinkButton, useBlockNoteEditor, useEditorSelectionChange } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import '../../styles/katex-fonts.css';
-import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef, useEffect } from 'react';
+import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef, useEffect, useReducer } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import AICommandMenu from './AICommandMenu';
 import AISelectionToolbar from './AISelectionToolbar';
@@ -146,6 +146,53 @@ function Icon({ d, d2, color }) {
       {d2 && <path d={d2} />}
     </svg>
   );
+}
+
+// Classify the current selection's relationship to link marks:
+//  'none'    — no link in the selection (offer "Create link")
+//  'partial' — selection touches a link but isn't exactly one whole link
+//              (a substring of a URL, or link + surrounding text) → no link button
+//  'full'    — the selection is exactly one whole link → offer "Edit link"
+function analyzeLinkSelection(editor) {
+  try {
+    const tiptap = editor?._tiptapEditor;
+    if (!tiptap) return { kind: 'none' };
+    const { state } = tiptap;
+    const { from, to, empty } = state.selection;
+    if (empty) return { kind: 'none' };
+
+    let href = null;
+    let linkChars = 0;
+    state.doc.nodesBetween(from, to, (node, pos) => {
+      if (node.isText) {
+        const lm = node.marks.find((m) => m.type.name === 'link');
+        if (lm) {
+          href = lm.attrs.href;
+          const s = Math.max(pos, from);
+          const e = Math.min(pos + node.nodeSize, to);
+          linkChars += Math.max(0, e - s);
+        }
+      }
+    });
+
+    if (linkChars === 0) return { kind: 'none', from, to };
+
+    // Expand the link range around the selection and check it matches exactly.
+    let lf = from, lt = to;
+    state.doc.nodesBetween(Math.max(0, from - 2000), Math.min(state.doc.content.size, to + 2000), (node, pos) => {
+      if (node.isText && node.marks.some((m) => m.type.name === 'link' && m.attrs.href === href)) {
+        if (pos < lf) lf = pos;
+        if (pos + node.nodeSize > lt) lt = pos + node.nodeSize;
+      }
+    });
+
+    if (lf === from && lt === to) {
+      return { kind: 'full', href, text: state.doc.textBetween(lf, lt), from: lf, to: lt };
+    }
+    return { kind: 'partial' };
+  } catch {
+    return { kind: 'none' };
+  }
 }
 
 // ── Slash menu items ──
@@ -824,6 +871,59 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     dom.addEventListener('keydown', handleCtrlK);
     return () => { try { dom.removeEventListener('keydown', handleCtrlK); } catch {} };
   }, [editor]);
+
+  // Open the custom link editor for an already-resolved full-link selection.
+  const openLinkEditorForSelection = useCallback((ed, link) => {
+    try {
+      const view = ed?._tiptapEditor?.view;
+      const coords = view?.coordsAtPos(link.from) || { bottom: 120, left: 120 };
+      setLinkEditor({
+        anchorText: link.text || link.href || '',
+        url: link.href || 'https://',
+        from: link.from, to: link.to,
+        top: coords.bottom + 6,
+        left: Math.max(8, Math.min(coords.left, window.innerWidth - 340)),
+      });
+    } catch {}
+  }, []);
+
+  // Custom formatting toolbar: swaps the link control based on the selection.
+  // Plain text → "Create link"; a full link → "Edit link"; a partial/substring
+  // link selection → no link control at all (and Ctrl+K is blocked too).
+  const LinkAwareFormattingToolbar = useMemo(
+    () =>
+      function LinkAwareFormattingToolbar() {
+        const ed = useBlockNoteEditor();
+        const [, force] = useReducer((x) => x + 1, 0);
+        useEditorSelectionChange(() => force(), ed);
+        const link = analyzeLinkSelection(ed);
+        const items = getFormattingToolbarItems().filter((el) => el.type !== CreateLinkButton);
+        return (
+          <FormattingToolbar>
+            {items}
+            {link.kind === 'none' && <CreateLinkButton key="createLink" />}
+            {link.kind === 'full' && (
+              <button
+                key="editLink"
+                type="button"
+                className="bn-button bn-link-edit-btn"
+                title="Edit link"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => openLinkEditorForSelection(ed, link)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 8px', height: 28, fontSize: 13, fontWeight: 500 }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                </svg>
+                Edit link
+              </button>
+            )}
+          </FormattingToolbar>
+        );
+      },
+    [openLinkEditorForSelection]
+  );
 
   // Seed Yjs doc from existing content when collab starts on a blog that already has content
   useEffect(() => {
@@ -2336,11 +2436,13 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         theme={isDark ? "dark" : "light"}
         slashMenu={false}
         filePanel={false}
+        formattingToolbar={false}
       >
         <SuggestionMenuController
           triggerCharacter="/"
           getItems={getItems}
         />
+        <FormattingToolbarController formattingToolbar={LinkAwareFormattingToolbar} />
         <TableHandlesController />
       </BlockNoteView>
 
