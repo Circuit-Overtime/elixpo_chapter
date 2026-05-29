@@ -711,6 +711,7 @@ export default function WritePage({ slugid }) {
   useEffect(() => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     setHasUnsavedEdits(true);
+    dirtyRef.current = true;
     autoSaveTimer.current = setTimeout(() => {
       if (title || editorContent) {
         saveDraft(slugid, { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
@@ -719,6 +720,17 @@ export default function WritePage({ slugid }) {
     }, 2000);
     return () => clearTimeout(autoSaveTimer.current);
   }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, slugid]);
+
+  // Background cloud flush — localStorage is the instant buffer, but beforeunload/
+  // sendBeacon is unreliable, so flush unsynced edits to the cloud every 20s.
+  // This protects against tab crashes and makes drafts available cross-device.
+  useEffect(() => {
+    if (draftLoading) return;
+    const id = setInterval(() => {
+      if (dirtyRef.current) syncToCloud({ silent: true });
+    }, 20000);
+    return () => clearInterval(id);
+  }, [draftLoading, syncToCloud]);
 
   const handleCoverSelect = (dataUrl) => {
     setCoverPreview(dataUrl);
@@ -1405,8 +1417,8 @@ export default function WritePage({ slugid }) {
                             </svg>
                           </button>
                         </div>
-                        {/* Drag hint */}
-                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-[var(--text-primary)]/50 bg-black/30 backdrop-blur rounded-full px-3 py-1 pointer-events-none select-none">
+                        {/* Drag hint — pill is always dark, so keep the text light in any theme */}
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-white/80 bg-black/40 backdrop-blur rounded-full px-3 py-1 pointer-events-none select-none">
                           Drag to reposition
                         </div>
                       </div>
