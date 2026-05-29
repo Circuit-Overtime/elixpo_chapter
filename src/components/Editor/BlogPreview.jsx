@@ -176,7 +176,12 @@ function renderBlocksToHTML(blocks) {
         const level = block.props?.level || 1;
         const text = (block.content || []).map(c => c.text || '').join('');
         const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
-        return `<h${level} id="${id}">${content}</h${level}>${childrenHTML}`;
+        // Headings always render in the default color — ignore stray inline text
+        // colors (e.g. a pasted #e06c75) so headings stay visually consistent.
+        const headingContent = inlineToHTML(
+          (block.content || []).map(c => (c.styles ? { ...c, styles: { ...c.styles, textColor: undefined, backgroundColor: undefined } } : c))
+        );
+        return `<h${level} id="${id}">${headingContent}</h${level}>${childrenHTML}`;
       }
       case 'bulletListItem':
         return `<li class="preview-bullet">${content}${childrenHTML}</li>`;

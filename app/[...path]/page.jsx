@@ -35,12 +35,23 @@ export async function generateMetadata({ params }) {
     const description = (b.subtitle || '').slice(0, 200) || `By ${authorName} on LixBlogs`;
     const url = `${origin}/${path.join('/')}`;
 
-    const ogImage = b.cover_image_r2_key
-      || `${origin}/api/og?${new URLSearchParams({ title, author: authorName, emoji: b.page_emoji || '' })}`;
+    // Always render the composed card (banner + author avatar + title + tagline)
+    // so every platform (WhatsApp, Twitter, Slack) shows the same generic preview.
+    // Only forward http(s) media — a data:/blob: cover would bloat the URL and break crawlers.
+    const httpOnly = (u) => (typeof u === 'string' && /^https?:\/\//.test(u) ? u : '');
+    const ogImage = `${origin}/api/og?${new URLSearchParams({
+      title,
+      subtitle: b.subtitle || '',
+      author: authorName,
+      avatar: httpOnly(b.author_avatar),
+      cover: httpOnly(b.cover_image_r2_key),
+      emoji: b.page_emoji || '',
+    })}`;
 
     return {
       title,
       description,
+      alternates: { canonical: url },
       openGraph: {
         type: 'article',
         title,
@@ -49,7 +60,7 @@ export async function generateMetadata({ params }) {
         siteName: 'LixBlogs',
         publishedTime: b.published_at ? new Date(b.published_at * 1000).toISOString() : undefined,
         authors: authorName ? [authorName] : undefined,
-        images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+        images: [{ url: ogImage, secureUrl: ogImage, type: 'image/png', width: 1200, height: 630, alt: title }],
       },
       twitter: {
         card: 'summary_large_image',

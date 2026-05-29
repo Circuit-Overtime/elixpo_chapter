@@ -442,6 +442,18 @@ function doSanitize(blocks) {
     if (block.children && block.children.length > 0) {
       block = { ...block, children: doSanitize(block.children) };
     }
+    // Headings render in the default color — drop stray inline text colors
+    // (e.g. a pasted #e06c75) so they stay consistent and re-saving normalizes them.
+    if (block.type === 'heading' && Array.isArray(block.content)) {
+      block = {
+        ...block,
+        content: block.content.map((c) =>
+          c.styles && (c.styles.textColor || c.styles.backgroundColor)
+            ? { ...c, styles: { ...c.styles, textColor: undefined, backgroundColor: undefined } }
+            : c
+        ),
+      };
+    }
     // Code block containing LaTeX \[...\] expressions → extract as blockEquations
     if (block.type === 'codeBlock') {
       const codeText = getText(block);
