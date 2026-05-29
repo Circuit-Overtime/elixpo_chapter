@@ -32,6 +32,10 @@ import { MentionInline } from './blocks/MentionInline';
 import { BlogMentionInline } from './blocks/BlogMentionInline';
 import { OrgMentionInline } from './blocks/OrgMentionInline';
 
+// AI features (space-to-AI menu, AI block, AI selection toolbar, AI image gen)
+// are temporarily disabled and surfaced as "Coming soon". Flip to re-enable.
+const AI_ENABLED = false;
+
 // ── Schema ──
 
 // Supported languages for code blocks
@@ -299,12 +303,12 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
     // content. The pdfEmbed block spec stays mounted for backward compat
     // with already-saved blogs but is no longer insertable from the menu.
     {
-      title: 'AI Block',
-      subtext: 'Generate content with AI',
+      title: AI_ENABLED ? 'AI Block' : 'AI Block (Coming soon)',
+      subtext: AI_ENABLED ? 'Generate content with AI' : 'AI writing is coming soon',
       group: 'AI',
       aliases: ['ai', 'generate', 'gpt', 'assistant', 'write for me'],
       icon: <Icon d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" color="#9b7bf7" />,
-      onItemClick: () => editor.insertBlocks([{ type: 'aiBlock' }], editor.getTextCursorPosition().block, 'after'),
+      onItemClick: () => { if (AI_ENABLED) editor.insertBlocks([{ type: 'aiBlock' }], editor.getTextCursorPosition().block, 'after'); },
     },
   ];
 
@@ -712,7 +716,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       editor: { class: 'blog-editor' },
     },
     placeholders: {
-      default: "Press 'Space' for AI, type '/' for commands",
+      default: AI_ENABLED ? "Press 'Space' for AI, type '/' for commands" : "Type '/' for commands",
     },
   });
 
@@ -1602,6 +1606,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
   // Space trigger for AI menu on empty blocks
   useEffect(() => {
+    if (!AI_ENABLED) return; // AI is disabled — space types normally
     function handleKeyDown(e) {
       if (e.key === ' ' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (isCurrentBlockEmpty(editor)) {
@@ -2472,7 +2477,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         </div>
       )}
 
-      {showAIMenu && (
+      {AI_ENABLED && showAIMenu && (
         <AICommandMenu
           position={aiMenuPos}
           onSubmit={handleAISubmit}
@@ -2590,8 +2595,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         </div>
       )}
 
-      {/* AI selection toolbar — appears on text selection */}
-      <AISelectionToolbar editor={editor} onTitleChange={onTitleChange} blogId={blogId} />
+      {/* AI selection toolbar — appears on text selection (disabled while AI is off) */}
+      {AI_ENABLED && <AISelectionToolbar editor={editor} onTitleChange={onTitleChange} blogId={blogId} />}
 
       {/* AI error toast */}
       {aiErrorToast && (
