@@ -134,7 +134,7 @@ export default function MentionMenu({ editor, query, onClose }) {
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setActiveIndex((i) => (i - 1 + allItems.length) % allItems.length);
-      } else if (e.key === 'Enter') {
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
         if (allItems[activeIndex]) insertMention(allItems[activeIndex]);
       } else if (e.key === 'Escape') {

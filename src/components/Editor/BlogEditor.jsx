@@ -153,10 +153,20 @@ function Icon({ d, d2, color }) {
 function getCustomSlashMenuItems(editor, callbacks = {}) {
   const defaults = getDefaultReactSlashMenuItems(editor).filter((item) => {
     const t = item.title.toLowerCase();
-    return t !== 'video' && t !== 'audio' && t !== 'file';
+    // Drop the default image item too — it opens BlockNote's built-in file panel.
+    // We insert our own image block (custom Upload/Embed UI) instead.
+    return t !== 'video' && t !== 'audio' && t !== 'file' && t !== 'image';
   });
 
   const customBlocks = [
+    {
+      title: 'Image',
+      subtext: 'Upload or embed an image',
+      group: 'Media',
+      aliases: ['image', 'img', 'picture', 'photo', 'upload'],
+      icon: <Icon d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" d2="M3 3h18v18H3z M8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3z M21 15l-5-5L5 21" />,
+      onItemClick: () => editor.insertBlocks([{ type: 'image', props: { url: '' } }], editor.getTextCursorPosition().block, 'after'),
+    },
     {
       title: 'Table of Contents',
       subtext: 'Auto-generated page outline',
@@ -773,27 +783,40 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
     const handleCtrlK = (e) => {
       if (!((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K'))) return;
-      e.preventDefault();
 
       const { state, view } = tiptap;
       const { from, to, empty } = state.selection;
-      if (empty) return; // no selection
+      if (empty) return; // no selection → let the browser handle it
+
+      // Disable Ctrl+K when the selection already overlaps a link. Creating a
+      // second link over existing link text produces broken nested marks — the
+      // user should use the link toolbar's Edit button instead.
+      let overlapsLink = false;
+      state.doc.nodesBetween(from, to, (node) => {
+        if (node.isText && node.marks.some((m) => m.type.name === 'link')) overlapsLink = true;
+      });
+      if (overlapsLink) { e.preventDefault(); return; }
+
+      e.preventDefault();
 
       const selectedText = state.doc.textBetween(from, to);
       const isUrl = /^https?:\/\/\S+$/.test(selectedText.trim());
 
-      if (isUrl) {
-        // Selected text IS a URL — make it both the href and anchor text
-        const linkMark = state.schema.marks.link.create({ href: selectedText.trim() });
-        view.dispatch(state.tr.addMark(from, to, linkMark));
-      } else {
-        // Selected text is regular text — prompt for URL
-        const url = prompt('Enter URL:', 'https://');
-        if (url && url.trim() && url.trim() !== 'https://') {
-          const linkMark = state.schema.marks.link.create({ href: url.trim() });
-          view.dispatch(state.tr.addMark(from, to, linkMark));
-        }
-      }
+      // Open the custom link editor (prefilled) rather than a native prompt(),
+      // so the user can edit both the text and the URL before applying.
+      let rect;
+      try {
+        const start = view.coordsAtPos(from);
+        rect = { bottom: start.bottom, left: start.left };
+      } catch { rect = { bottom: 120, left: 120 }; }
+
+      setLinkEditor({
+        anchorText: selectedText,
+        url: isUrl ? selectedText.trim() : 'https://',
+        from, to,
+        top: rect.bottom + 6,
+        left: Math.max(8, Math.min(rect.left, window.innerWidth - 340)),
+      });
     };
 
     const dom = tiptap.view?.dom;
@@ -2312,6 +2335,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         onChange={handleChange}
         theme={isDark ? "dark" : "light"}
         slashMenu={false}
+        filePanel={false}
       >
         <SuggestionMenuController
           triggerCharacter="/"
