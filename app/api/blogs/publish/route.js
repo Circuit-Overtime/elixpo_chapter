@@ -61,7 +61,11 @@ export async function POST(request) {
       slug = existing.slug;
     } else {
       const base = generateSlug((requestedSlug && requestedSlug.trim()) || title);
-      slug = await ensureUniqueBlogSlug(db, base, slugid);
+      // Slugs are unique per owner (the URL is /owner/slug), not globally.
+      slug = await ensureUniqueBlogSlug(db, base, slugid, {
+        authorId: session.userId,
+        publishAs: publishAs || 'personal',
+      });
     }
 
     if (existing) {
