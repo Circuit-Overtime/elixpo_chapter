@@ -275,7 +275,7 @@ function FeedCard({ post }) {
         {post.can_edit && (
           <div className="mt-3 pt-3 flex items-center gap-2" style={{ borderTop: '1px solid var(--divider)' }}>
             <Link
-              href={`/edit/${post.id}`}
+              href={`/edit/${post.slug || post.id}`}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
               style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
               onClick={e => e.stopPropagation()}
@@ -284,7 +284,7 @@ function FeedCard({ post }) {
               Edit
             </Link>
             <Link
-              href={`/edit/${post.id}?panel=settings`}
+              href={`/edit/${post.slug || post.id}?panel=settings`}
               className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
               style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
               onClick={e => e.stopPropagation()}

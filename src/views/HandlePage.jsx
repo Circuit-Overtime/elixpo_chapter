@@ -144,7 +144,7 @@ export default function HandlePage({ path }) {
           {canEdit && (
             <div className="flex items-center justify-end mb-4">
               <Link
-                href={`/edit/${blog.id}`}
+                href={`/edit/${blog.slug || blog.id}`}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors"
                 style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent)30' }}
               >

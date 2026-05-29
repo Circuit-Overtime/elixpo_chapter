@@ -265,8 +265,8 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
       aliases: ['canvas', 'sketch', 'draw', 'whiteboard', 'lixsketch', 'diagram canvas'],
       icon: <Icon d="M3 3h18v18H3zM3 9h18M9 21V9" color="#9b7bf7" />,
       onItemClick: async () => {
-        const blogIdMatch = window.location.pathname.match(/\/edit\/([^/]+)/);
-        const parentBlogId = blogIdMatch?.[1];
+        // Use the resolved blog id (the URL may now carry the human slug).
+        const parentBlogId = callbacks.blogId || window.location.pathname.match(/\/edit\/([^/]+)/)?.[1];
         if (!parentBlogId) return;
         try {
           const res = await fetch('/api/subpages', {
@@ -1600,8 +1600,9 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const getItems = useMemo(
     () => async (query) => filterItems(getCustomSlashMenuItems(editor, {
       onInlineLatex: () => { setInlineLatexValue(''); setShowInlineLatex(true); },
+      blogId,
     }), query),
-    [editor]
+    [editor, blogId]
   );
 
   // Space trigger for AI menu on empty blocks

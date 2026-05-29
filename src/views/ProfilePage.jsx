@@ -292,7 +292,7 @@ export default function ProfilePage() {
               ) : list.length > 0 ? (
                 <div>
                   {list.map((b) => {
-                    const href = activeTab === 0 ? `/${user.username}/${b.slug}` : `/edit/${b.id}`;
+                    const href = activeTab === 0 ? `/${user.username}/${b.slug}` : `/edit/${b.slug || b.id}`;
                     return (
                       <article key={b.id} className="flex gap-4 py-5 border-b border-[var(--border-default)] last:border-b-0">
                         <div className="flex-1 min-w-0">
