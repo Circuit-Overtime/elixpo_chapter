@@ -9,23 +9,37 @@
 
 /**
  * Compress a JSON-serializable object to a compact string.
+ *
+ * The LZW pass runs over the UTF-8 *byte* stream (alphabet 0–255) rather than
+ * raw JS chars. Compressing chars directly is unsafe: a single non-ASCII char
+ * (em-dash, curly quote, emoji) has a code ≥256, which collides with the LZW
+ * dictionary code space and makes the output undecodable. Byte literals are
+ * always <256, so literals and dictionary codes never overlap.
+ *
  * @param {any} data - The data to compress (usually editor blocks array)
- * @returns {string} - Compressed string prefixed with "lz:"
+ * @returns {string} - Compressed string prefixed with "lz1:"
  */
 export function compressBlogContent(data) {
   const json = typeof data === 'string' ? data : JSON.stringify(data);
-  const compressed = lzCompress(json);
-  return 'lz:' + compressed;
+  const compressed = lzCompress(utf8ToBinaryString(json));
+  return 'lz1:' + compressed;
 }
 
 /**
- * Decompress blog content. Handles both compressed ("lz:" prefix) and raw JSON.
+ * Decompress blog content. Handles the unicode-safe "lz1:" format, the legacy
+ * char-based "lz:" format (ASCII-only — non-ASCII legacy content is corrupt and
+ * must be re-saved), and raw JSON.
  * @param {string} stored - The stored content string
  * @returns {any} - Parsed JSON data
  */
 export function decompressBlogContent(stored) {
   if (!stored) return null;
   if (typeof stored !== 'string') return stored;
+
+  if (stored.startsWith('lz1:')) {
+    const binary = lzDecompress(stored.slice(4));
+    return JSON.parse(binaryStringToUtf8(binary));
+  }
 
   if (stored.startsWith('lz:')) {
     const decompressed = lzDecompress(stored.slice(3));
@@ -45,6 +59,24 @@ export function decompressBlogContent(stored) {
  */
 export function isCompressed(stored) {
   return typeof stored === 'string' && stored.startsWith('lz:');
+}
+
+// ── UTF-8 <-> binary-string (each char = one byte, 0–255) ──
+
+function utf8ToBinaryString(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return binary;
+}
+
+function binaryStringToUtf8(binary) {
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i) & 0xFF;
+  return new TextDecoder().decode(bytes);
 }
 
 // ── LZ77-style compression (works in edge runtime, no dependencies) ──

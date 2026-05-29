@@ -430,6 +430,8 @@ export default function WritePage({ slugid }) {
   const [userOrgs, setUserOrgs] = useState([]);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
   const hadUserGestureRef = useRef(false);
+  const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
+  const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
   const isPublished = blogVersion?.isPublished;
   const [coverZoom, setCoverZoom] = useState(1);
   const [coverPos, setCoverPos] = useState({ x: 50, y: 50 });
@@ -491,10 +493,10 @@ export default function WritePage({ slugid }) {
   }, []);
 
   // Refs to always hold latest draft data (avoids stale closures in intervals/beforeunload)
-  const draftDataRef = useRef({ title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji });
+  const draftDataRef = useRef({ title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
   useEffect(() => {
-    draftDataRef.current = { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji };
-  }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji]);
+    draftDataRef.current = { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom };
+  }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom]);
 
   // Sync any buffered subpage drafts from localStorage to cloud
   const syncSubpageDrafts = useCallback(async () => {
@@ -542,6 +544,7 @@ export default function WritePage({ slugid }) {
       });
 
       if (res.ok) {
+        dirtyRef.current = false;
         if (!silent) {
           setSyncStatus('synced');
           if (showToast) {
@@ -618,6 +621,7 @@ export default function WritePage({ slugid }) {
   // Sync before page unload + save draft (fallback for hard browser close)
   useEffect(() => {
     function handleBeforeUnload(e) {
+      if (bypassUnloadRef.current) return; // publishing → navigating to the published post, no prompt
       const data = draftDataRef.current;
       if (data.title || data.editorContent) {
         saveDraft(slugid, data);
@@ -665,6 +669,8 @@ export default function WritePage({ slugid }) {
         if (draft.tags) setTags(draft.tags);
         if (draft.publishAs) setPublishAs(draft.publishAs);
         if (draft.coverPreview) setCoverPreview(draft.coverPreview);
+        if (draft.coverPos) setCoverPos(draft.coverPos);
+        if (Number.isFinite(draft.coverZoom)) setCoverZoom(draft.coverZoom);
         if (draft.editorContent) setEditorContent(draft.editorContent);
         if (draft.pageEmoji) setPageEmoji(draft.pageEmoji);
         if (draft.savedAt) setLastSaved(draft.savedAt);
@@ -682,6 +688,8 @@ export default function WritePage({ slugid }) {
               if (blog.tags?.length) setTags(blog.tags);
               if (blog.published_as) setPublishAs(blog.published_as);
               if (blog.cover_image_r2_key) setCoverPreview(blog.cover_image_r2_key);
+              if (Number.isFinite(blog.cover_pos_x) && Number.isFinite(blog.cover_pos_y)) setCoverPos({ x: blog.cover_pos_x, y: blog.cover_pos_y });
+              if (Number.isFinite(blog.cover_zoom)) setCoverZoom(blog.cover_zoom);
               if (blog.page_emoji) setPageEmoji(blog.page_emoji);
               if (blog.content) {
                 const contentStr = typeof blog.content === 'string' ? blog.content : JSON.stringify(blog.content);
@@ -703,14 +711,26 @@ export default function WritePage({ slugid }) {
   useEffect(() => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     setHasUnsavedEdits(true);
+    dirtyRef.current = true;
     autoSaveTimer.current = setTimeout(() => {
       if (title || editorContent) {
-        saveDraft(slugid, { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji });
+        saveDraft(slugid, { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
         setLastSaved(Date.now());
       }
     }, 2000);
     return () => clearTimeout(autoSaveTimer.current);
-  }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, slugid]);
+  }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, slugid]);
+
+  // Background cloud flush — localStorage is the instant buffer, but beforeunload/
+  // sendBeacon is unreliable, so flush unsynced edits to the cloud every 20s.
+  // This protects against tab crashes and makes drafts available cross-device.
+  useEffect(() => {
+    if (draftLoading) return;
+    const id = setInterval(() => {
+      if (dirtyRef.current) syncToCloud({ silent: true });
+    }, 20000);
+    return () => clearInterval(id);
+  }, [draftLoading, syncToCloud]);
 
   const handleCoverSelect = (dataUrl) => {
     setCoverPreview(dataUrl);
@@ -849,7 +869,7 @@ export default function WritePage({ slugid }) {
   }, [slugid]);
 
   const handleSaveDraft = async () => {
-    saveDraft(slugid, { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji });
+    saveDraft(slugid, { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
     setLastSaved(Date.now());
     setShowPublishMenu(false);
     syncToCloud({ showToast: true });
@@ -975,11 +995,13 @@ export default function WritePage({ slugid }) {
     if (!title.trim() || publishing) return;
     setPublishing(true);
     setShowPublishMenu(false);
+    // Flush any buffered subpage drafts so they ship with the post.
+    try { await syncSubpageDrafts(); } catch {}
     try {
       const res = await fetch('/api/blogs/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl: coverPreview, status: targetStatus, lastKnownUpdatedAt }),
+        body: JSON.stringify({ slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl: coverPreview, coverPos, coverZoom, status: targetStatus, lastKnownUpdatedAt }),
       });
 
       if (res.status === 409) {
@@ -996,8 +1018,11 @@ export default function WritePage({ slugid }) {
         setBlogVersion(v => v ? { ...v, isPublished: true, updatedAt: data.updatedAt, publishedAt: data.updatedAt, isDraftAhead: false } : v);
         setHasUnsavedEdits(false);
         setShowPublishPanel(false);
-        // Redirect to published blog
+        // Redirect to published blog. Suppress the beforeunload leave-prompt —
+        // state updates above haven't flushed yet, so the handler would still
+        // see hasUnsavedEdits=true and prompt. Keep the overlay up through nav.
         if (data.url) {
+          bypassUnloadRef.current = true;
           window.location.href = data.url;
           return;
         }
@@ -1392,8 +1417,8 @@ export default function WritePage({ slugid }) {
                             </svg>
                           </button>
                         </div>
-                        {/* Drag hint */}
-                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-[var(--text-primary)]/50 bg-black/30 backdrop-blur rounded-full px-3 py-1 pointer-events-none select-none">
+                        {/* Drag hint — pill is always dark, so keep the text light in any theme */}
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-white/80 bg-black/40 backdrop-blur rounded-full px-3 py-1 pointer-events-none select-none">
                           Drag to reposition
                         </div>
                       </div>
@@ -2045,6 +2070,17 @@ export default function WritePage({ slugid }) {
           }}
           onCancel={() => { setShowLeaveConfirm(false); setPendingLeaveUrl(null); }}
         />
+      )}
+
+      {/* Publishing progress overlay — kept up through the redirect to the post */}
+      {publishing && (
+        <div className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-10 h-10 border-[3px] border-[#9b7bf7] border-t-transparent rounded-full animate-spin mb-5" />
+          <p className="text-[15px] font-semibold text-white">
+            {isPublished ? 'Updating your post…' : 'Publishing your post…'}
+          </p>
+          <p className="text-[13px] text-white/60 mt-1">Syncing to the cloud, this only takes a moment.</p>
+        </div>
       )}
     </div>
   );

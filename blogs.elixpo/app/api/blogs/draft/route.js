@@ -18,7 +18,7 @@ export async function GET(request) {
     const db = getDB();
 
     const blog = await db.prepare(
-      'SELECT id, slug, title, subtitle, content, cover_image_r2_key, author_id, published_as, status, page_emoji, collection_id FROM blogs WHERE id = ?'
+      'SELECT id, slug, title, subtitle, content, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, author_id, published_as, status, page_emoji, collection_id FROM blogs WHERE id = ?'
     ).bind(slugid).first();
 
     if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
@@ -66,7 +66,10 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverPreview } = body;
+  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverPreview, coverPos, coverZoom } = body;
+  const posX = Number.isFinite(coverPos?.x) ? coverPos.x : 50;
+  const posY = Number.isFinite(coverPos?.y) ? coverPos.y : 50;
+  const zoom = Number.isFinite(coverZoom) ? coverZoom : 1;
 
   if (!slugid) {
     return NextResponse.json({ error: 'Missing slugid' }, { status: 400 });
@@ -94,22 +97,22 @@ export async function POST(request) {
       if (!perm.ok) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
       await db.prepare(`
         UPDATE blogs SET title = ?, subtitle = ?, content = ?, published_as = ?,
-          page_emoji = ?, cover_image_r2_key = ?, updated_at = ?
+          page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?, updated_at = ?
         WHERE id = ?
       `).bind(
         title || '', subtitle || '', compressedContent, publishAs || 'personal',
-        pageEmoji || '', coverPreview || '', now, slugid
+        pageEmoji || '', coverPreview || '', posX, posY, zoom, now, slugid
       ).run();
     } else {
       const { ensureUniqueBlogSlug } = await import('../../../../lib/namespace');
       const baseSlug = generateSlug(title);
       const slug = await ensureUniqueBlogSlug(db, baseSlug, slugid);
       await db.prepare(`
-        INSERT INTO blogs (id, slug, title, subtitle, content, author_id, published_as, status, page_emoji, cover_image_r2_key, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)
+        INSERT INTO blogs (id, slug, title, subtitle, content, author_id, published_as, status, page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         slugid, slug, title || '', subtitle || '', compressedContent,
-        session.userId, publishAs || 'personal', pageEmoji || '', coverPreview || '', now, now
+        session.userId, publishAs || 'personal', pageEmoji || '', coverPreview || '', posX, posY, zoom, now, now
       ).run();
     }
 

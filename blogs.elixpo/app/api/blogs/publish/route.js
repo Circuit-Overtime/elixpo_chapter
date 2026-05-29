@@ -14,7 +14,10 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, status, lastKnownUpdatedAt } = body;
+  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, coverPos, coverZoom, status, lastKnownUpdatedAt } = body;
+  const posX = Number.isFinite(coverPos?.x) ? coverPos.x : 50;
+  const posY = Number.isFinite(coverPos?.y) ? coverPos.y : 50;
+  const zoom = Number.isFinite(coverZoom) ? coverZoom : 1;
 
   // status: 'published' (feed), 'unlisted' (beta/public but no feed), 'draft'
   const targetStatus = status || 'published';
@@ -75,10 +78,11 @@ export async function POST(request) {
 
       let query = `
         UPDATE blogs SET title = ?, subtitle = ?, slug = ?, content = ?, published_as = ?,
-          status = ?, page_emoji = ?, cover_image_r2_key = ?, read_time_minutes = ?, updated_at = ?
+          status = ?, page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?,
+          read_time_minutes = ?, updated_at = ?
       `;
       const params = [title, subtitle || '', slug, compressedContent, publishAs || 'personal',
-        targetStatus, pageEmoji || '', coverUrl || '', readTime, now];
+        targetStatus, pageEmoji || '', coverUrl || '', posX, posY, zoom, readTime, now];
 
       if (publishedAt) {
         query += ', published_at = ?';
@@ -92,12 +96,12 @@ export async function POST(request) {
       // Create and publish in one step
       await db.prepare(`
         INSERT INTO blogs (id, slug, title, subtitle, content, author_id, published_as, status,
-          page_emoji, cover_image_r2_key, read_time_minutes, created_at, updated_at, published_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, read_time_minutes, created_at, updated_at, published_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         slugid, slug, title, subtitle || '', compressedContent,
         session.userId, publishAs || 'personal', targetStatus,
-        pageEmoji || '', coverUrl || '', readTime, now, now,
+        pageEmoji || '', coverUrl || '', posX, posY, zoom, readTime, now, now,
         (targetStatus === 'published' || targetStatus === 'unlisted') ? now : null
       ).run();
     }
