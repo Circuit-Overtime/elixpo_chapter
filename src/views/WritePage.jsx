@@ -446,6 +446,7 @@ export default function WritePage({ slugid }) {
   const [pageColor, setPageColor] = useState(null);
   const [slug, setSlug] = useState('');
   const [slugManual, setSlugManual] = useState(false); // user typed a custom slug → stop auto-deriving from title
+  const [slugAvail, setSlugAvail] = useState({ state: 'idle' }); // idle | checking | available | taken
   const [publishing, setPublishing] = useState(false);
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
   const [inviteUsername, setInviteUsername] = useState('');
@@ -821,6 +822,22 @@ export default function WritePage({ slugid }) {
       .replace(/^-|-$/g, '');
     setSlug(generated || slugid);
   }, [title, slugid, slugManual, isPublished]);
+
+  // Live slug-availability check, scoped to the chosen owner. Skipped for
+  // already-published blogs (their slug is locked).
+  useEffect(() => {
+    if (isPublished || !slug) { setSlugAvail({ state: 'idle' }); return; }
+    setSlugAvail({ state: 'checking' });
+    const t = setTimeout(async () => {
+      try {
+        const qs = new URLSearchParams({ slug, publishAs, excludeId: slugid });
+        const res = await fetch(`/api/blogs/slug-check?${qs}`);
+        const d = await res.json();
+        setSlugAvail(d.available ? { state: 'available' } : { state: 'taken', reason: d.reason });
+      } catch { setSlugAvail({ state: 'idle' }); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [slug, publishAs, isPublished, slugid]);
 
   // Load collaborators
   useEffect(() => {
@@ -1900,7 +1917,20 @@ export default function WritePage({ slugid }) {
               {isPublished && <ion-icon name="lock-closed" style={{ fontSize: '12px', color: 'var(--text-faint)' }} />}
             </div>
             {!isPublished && (
-              <p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>Used as-is if available, otherwise a number is appended.</p>
+              <p
+                className="text-[11px] mt-1"
+                style={{
+                  color:
+                    slugAvail.state === 'available' ? '#4ade80'
+                    : slugAvail.state === 'taken' ? '#f87171'
+                    : 'var(--text-faint)',
+                }}
+              >
+                {slugAvail.state === 'checking' ? 'Checking…'
+                  : slugAvail.state === 'available' ? '✓ Available in this space'
+                  : slugAvail.state === 'taken' ? `✗ ${slugAvail.reason || 'Taken'} — a number will be appended`
+                  : 'Unique within your account or the selected org.'}
+              </p>
             )}
           </div>
 

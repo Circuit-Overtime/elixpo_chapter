@@ -164,6 +164,7 @@ export default function HandlePage({ path }) {
             user={{ username: blog.author_username, display_name: blog.author_name, avatar_url: blog.author_avatar }}
             org={data.owner?.type === 'org' ? { name: data.owner.name, slug: data.owner.slug, logo_url: data.owner.logo_url || data.owner.logo_r2_key } : null}
             coAuthorCount={blog.co_author_count || 0}
+            coAuthors={blog.co_authors || []}
             wordCount={wc}
           />
 
@@ -369,7 +370,7 @@ export default function HandlePage({ path }) {
           {(data.blogs || []).length > 0 ? (
             <div className="space-y-2.5">
               {data.blogs.map(b => (
-                <Link key={b.id} href={`/${u.username}/${b.slug}`}
+                <Link key={b.id} href={`/${b.author_username || u.username}/${b.slug}`}
                   className="block p-4 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl hover:border-[var(--border-default)] transition-colors group">
                   <div className="flex items-start gap-3">
                     {b.cover_image_r2_key && (

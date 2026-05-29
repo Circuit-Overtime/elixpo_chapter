@@ -62,6 +62,32 @@ export default function NotificationsPage() {
   const [filter, setFilter] = useState('all');
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [resolvedInvites, setResolvedInvites] = useState({}); // notifId -> 'accepted' | 'declined'
+
+  // A blog_invite notification carries the blog id in target_id (or /edit/<id>).
+  const inviteSlugid = (n) => n.target_id || (n.target_url || '').split('/edit/')[1] || '';
+
+  const respondInvite = async (n, accept) => {
+    const slugid = inviteSlugid(n);
+    if (!slugid) return;
+    setResolvedInvites(prev => ({ ...prev, [n.id]: accept ? 'accepted' : 'declined' }));
+    try {
+      if (accept) {
+        await fetch('/api/blogs/invite', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slugid, accept: true }),
+        });
+      } else {
+        await fetch('/api/blogs/invite', {
+          method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slugid }),
+        });
+      }
+      if (!n.read) markRead(n.id);
+    } catch {
+      setResolvedInvites(prev => { const c = { ...prev }; delete c[n.id]; return c; });
+    }
+  };
 
   const fetchNotifications = useCallback(async (reset = false) => {
     const newOffset = reset ? 0 : offset;
@@ -255,6 +281,31 @@ export default function NotificationsPage() {
                             )}
                           </p>
                           <p className="text-[12px] mt-1.5" style={{ color: 'var(--text-faint)' }}>{timeAgo(n.created_at)}</p>
+
+                          {n.type === 'blog_invite' && (
+                            resolvedInvites[n.id] ? (
+                              <p className="text-[12px] mt-2 font-medium" style={{ color: resolvedInvites[n.id] === 'accepted' ? '#4ade80' : 'var(--text-faint)' }}>
+                                {resolvedInvites[n.id] === 'accepted' ? 'Joined as collaborator' : 'Declined'}
+                              </p>
+                            ) : (
+                              <div className="flex gap-2 mt-2.5">
+                                <button
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); respondInvite(n, true); }}
+                                  className="px-3 py-1 text-[12px] font-semibold rounded-full text-white"
+                                  style={{ backgroundColor: '#9b7bf7' }}
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); respondInvite(n, false); }}
+                                  className="px-3 py-1 text-[12px] font-medium rounded-full"
+                                  style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}
+                                >
+                                  Decline
+                                </button>
+                              </div>
+                            )
+                          )}
                         </div>
 
                         {/* Unread indicator */}

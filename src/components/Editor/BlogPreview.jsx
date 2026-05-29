@@ -319,7 +319,7 @@ function renderBlocksToHTML(blocks) {
   return html;
 }
 
-export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, wordCount }) {
+export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount }) {
   const { isDark } = useTheme();
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -698,36 +698,50 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
         <p className="text-xl mb-3" style={{ color: 'var(--text-muted)', fontFamily: "'Source Serif 4', Georgia, serif" }}>{subtitle}</p>
       )}
 
-      {/* Author bar — under title */}
-      {user && (
-        <div className="flex items-center gap-3 mt-1 mb-2">
-          <div className="flex -space-x-2">
-            {user.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[var(--bg-app)]" />
-            ) : (
-              <div className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] border-2 border-[var(--bg-app)] flex items-center justify-center text-[11px] font-bold text-[var(--text-muted)]">
-                {(user.display_name || user.username || '?')[0].toUpperCase()}
-              </div>
-            )}
+      {/* Author bar — under title. Primary author + accepted co-authors, with
+          stacked avatars and top-3 names (+ "N more"). */}
+      {user && (() => {
+        const authors = [
+          { name: user.display_name || user.username || 'Author', avatar_url: user.avatar_url, username: user.username },
+          ...coAuthors,
+        ];
+        const shownAvatars = authors.slice(0, 5);
+        const shownNames = authors.slice(0, 3);
+        const moreNames = authors.length - shownNames.length;
+        return (
+          <div className="flex items-center gap-3 mt-1 mb-2">
+            <div className="flex -space-x-2">
+              {shownAvatars.map((a, i) => (
+                a.avatar_url ? (
+                  <img key={i} src={a.avatar_url} alt="" title={a.name} className="w-7 h-7 rounded-full object-cover border-2 border-[var(--bg-app)]" />
+                ) : (
+                  <div key={i} title={a.name} className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] border-2 border-[var(--bg-app)] flex items-center justify-center text-[11px] font-bold text-[var(--text-muted)]">
+                    {(a.name || '?')[0].toUpperCase()}
+                  </div>
+                )
+              ))}
+            </div>
+            <div className="flex items-center gap-2 text-[13px] text-[var(--text-faint)] flex-wrap">
+              {org && (
+                <>
+                  <span className="text-[var(--text-secondary)] font-medium">{org.name}</span>
+                  <span className="text-[var(--text-faint)]">·</span>
+                </>
+              )}
+              <span className="text-[var(--text-muted)] font-medium">
+                {shownNames.map((a) => a.name).join(', ')}
+              </span>
+              {moreNames > 0 && (
+                <span className="text-[var(--text-faint)]">+ {moreNames} more</span>
+              )}
+              <span className="text-[var(--text-faint)]">·</span>
+              <span>{Math.max(1, Math.ceil((wordCount || 0) / 200))} min read</span>
+              <span className="text-[var(--text-faint)]">·</span>
+              <span>{wordCount || 0} {(wordCount || 0) === 1 ? 'word' : 'words'}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-[13px] text-[var(--text-faint)] flex-wrap">
-            {org && (
-              <>
-                <span className="text-[var(--text-secondary)] font-medium">{org.name}</span>
-                <span className="text-[var(--text-faint)]">·</span>
-              </>
-            )}
-            <span className="text-[var(--text-muted)] font-medium">{user.display_name || user.username || 'Author'}</span>
-            {coAuthorCount > 0 && (
-              <span className="text-[var(--text-faint)]">+ {coAuthorCount} {coAuthorCount === 1 ? 'other' : 'others'}</span>
-            )}
-            <span className="text-[var(--text-faint)]">·</span>
-            <span>{Math.max(1, Math.ceil((wordCount || 0) / 200))} min read</span>
-            <span className="text-[var(--text-faint)]">·</span>
-            <span>{wordCount || 0} {(wordCount || 0) === 1 ? 'word' : 'words'}</span>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Tags — under author bar */}
       {tags.length > 0 && (

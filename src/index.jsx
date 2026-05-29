@@ -206,28 +206,43 @@ function FeedCard({ post }) {
 
       <div className="relative p-5">
         <Link href={`/${author.username || 'unknown'}/${post.slug}`} className="block cursor-pointer">
-          <div className="flex items-center gap-2 mb-3">
-            {author.avatar_url ? (
-              <img src={author.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover ring-1 ring-[var(--border-default)]" />
-            ) : (
-              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
-                {(author.display_name || author.username || '?')[0].toUpperCase()}
+          {(() => {
+            const allAuthors = [
+              { display_name: author.display_name, username: author.username, avatar_url: author.avatar_url },
+              ...(post.co_authors || []),
+            ];
+            const shownAvatars = allAuthors.slice(0, 5);
+            const shownNames = allAuthors.slice(0, 3);
+            const moreNames = allAuthors.length - shownNames.length;
+            return (
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex -space-x-2">
+                  {shownAvatars.map((a, i) => (
+                    a.avatar_url ? (
+                      <img key={i} src={a.avatar_url} alt="" title={a.display_name || a.username} className="h-6 w-6 rounded-full object-cover ring-2 ring-[var(--bg-surface)]" />
+                    ) : (
+                      <div key={i} title={a.display_name || a.username} className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-[var(--bg-surface)]" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
+                        {(a.display_name || a.username || '?')[0].toUpperCase()}
+                      </div>
+                    )
+                  ))}
+                </div>
+                <span className="text-[13px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {post.is_staff && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
+                  )}
+                  {post.org && (
+                    <><span style={{ color: 'var(--text-secondary)' }}>in {post.org.name}</span><span className="mx-0.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
+                  )}
+                  <span style={{ color: 'var(--text-secondary)' }}>{shownNames.map((a) => a.display_name || a.username).join(', ')}</span>
+                  {moreNames > 0 && (
+                    <span style={{ color: 'var(--text-faint)' }}>+ {moreNames} more</span>
+                  )}
+                </span>
+                <span className="ml-auto text-[11px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(post.published_at)}</span>
               </div>
-            )}
-            <span className="text-[13px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-              {post.is_staff && (
-                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
-              )}
-              {post.org && (
-                <><span style={{ color: 'var(--text-secondary)' }}>in {post.org.name}</span><span className="mx-0.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
-              )}
-              <span style={{ color: 'var(--text-secondary)' }}>{author.display_name || author.username}</span>
-              {post.co_author_count > 0 && (
-                <span style={{ color: 'var(--text-faint)' }}>+ {post.co_author_count} {post.co_author_count === 1 ? 'other' : 'others'}</span>
-              )}
-            </span>
-            <span className="ml-auto text-[11px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(post.published_at)}</span>
-          </div>
+            );
+          })()}
           <div className="flex-1 min-w-0">
             <h2 className="text-[18px] font-bold leading-[1.3] mb-1 group-hover:opacity-75 transition-opacity font-serif tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
               {post.title || 'Untitled'}

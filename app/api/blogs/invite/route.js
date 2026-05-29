@@ -80,6 +80,16 @@ export async function POST(request) {
     if (!invitee) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     if (invitee.id === blog.author_id) return NextResponse.json({ error: 'Cannot invite the blog author' }, { status: 400 });
 
+    // Cap collaborators at 10 (excluding the author). Re-inviting an existing
+    // collaborator just updates their role, so only block genuinely new ones.
+    const existing = await db.prepare('SELECT 1 FROM blog_co_authors WHERE blog_id = ? AND user_id = ?').bind(slugid, invitee.id).first();
+    if (!existing) {
+      const countRow = await db.prepare('SELECT COUNT(*) AS c FROM blog_co_authors WHERE blog_id = ?').bind(slugid).first();
+      if ((countRow?.c || 0) >= 10) {
+        return NextResponse.json({ error: 'A blog can have at most 10 collaborators.' }, { status: 400 });
+      }
+    }
+
     await db.prepare(`
       INSERT INTO blog_co_authors (blog_id, user_id, role, status, added_at)
       VALUES (?, ?, ?, 'pending', unixepoch())

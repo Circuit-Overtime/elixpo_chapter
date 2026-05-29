@@ -106,7 +106,10 @@ export async function POST(request) {
     } else {
       const { ensureUniqueBlogSlug } = await import('../../../../lib/namespace');
       const baseSlug = generateSlug(title);
-      const slug = await ensureUniqueBlogSlug(db, baseSlug, slugid);
+      const slug = await ensureUniqueBlogSlug(db, baseSlug, slugid, {
+        authorId: session.userId,
+        publishAs: publishAs || 'personal',
+      });
       await db.prepare(`
         INSERT INTO blogs (id, slug, title, subtitle, content, author_id, published_as, status, page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?)

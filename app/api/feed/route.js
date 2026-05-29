@@ -219,15 +219,25 @@ async function enrichPosts(db, posts, userId) {
     batchQuery(db, 'SELECT blog_id, tag FROM blog_tags WHERE blog_id IN', blogIds),
   ]);
 
-  // Fetch co-author counts
-  const coAuthorCountMap = {};
+  // Fetch accepted co-authors (with display info) for multi-author bylines.
+  const coAuthorsMap = {};
   if (blogIds.length > 0) {
     const placeholders = blogIds.map(() => '?').join(',');
     const caResult = await db.prepare(
-      `SELECT blog_id, COUNT(*) as count FROM blog_co_authors WHERE blog_id IN (${placeholders}) GROUP BY blog_id`
+      `SELECT bc.blog_id, u.username, u.display_name, u.avatar_url
+       FROM blog_co_authors bc JOIN users u ON u.id = bc.user_id
+       WHERE bc.blog_id IN (${placeholders}) AND bc.status = 'accepted'
+       ORDER BY bc.added_at`
     ).bind(...blogIds).all();
     for (const row of (caResult?.results || [])) {
-      coAuthorCountMap[row.blog_id] = row.count;
+      if (!coAuthorsMap[row.blog_id]) coAuthorsMap[row.blog_id] = [];
+      if (coAuthorsMap[row.blog_id].length < 10) {
+        coAuthorsMap[row.blog_id].push({
+          username: row.username,
+          display_name: row.display_name,
+          avatar_url: row.avatar_url,
+        });
+      }
     }
   }
 
@@ -261,7 +271,8 @@ async function enrichPosts(db, posts, userId) {
       ...p,
       author: authorMap[p.author_id] || { username: 'unknown', display_name: 'Unknown' },
       org: org ? { id: org.id, slug: org.slug, name: org.name, logo_url: org.logo_r2_key } : null,
-      co_author_count: coAuthorCountMap[p.id] || 0,
+      co_authors: coAuthorsMap[p.id] || [],
+      co_author_count: (coAuthorsMap[p.id] || []).length,
       tags: tagMap[p.id] || [],
       is_staff: p.published_as === `org:${STAFF_ORG_ID}`,
       can_edit: !!(isAuthor || isOrgMember),
