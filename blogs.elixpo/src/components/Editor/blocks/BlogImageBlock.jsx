@@ -291,11 +291,11 @@ function BlogImageRenderer({ block, editor }) {
                 </svg>
                 Embed URL
               </button>
-              <button className="blog-img-action blog-img-action-ai" onClick={() => setMode('generate')}>
+              <button className="blog-img-action blog-img-action-ai" disabled title="AI image generation is coming soon" style={{ opacity: 0.55, cursor: 'not-allowed' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/>
                 </svg>
-                Generate
+                Coming Soon
               </button>
             </div>
             <p className="blog-img-hint">or drag & drop / paste an image</p>

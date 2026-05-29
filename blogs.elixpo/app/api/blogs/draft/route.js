@@ -17,15 +17,33 @@ export async function GET(request) {
     const { decompressBlogContent } = await import('../../../../lib/compress');
     const db = getDB();
 
-    const blog = await db.prepare(
-      'SELECT id, slug, title, subtitle, content, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, author_id, published_as, status, page_emoji, collection_id FROM blogs WHERE id = ?'
-    ).bind(slugid).first();
+    const COLS = 'id, slug, title, subtitle, content, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, author_id, published_as, status, page_emoji, collection_id';
+
+    // The param may be the canonical id (new blogs) or the human slug (edit links).
+    // Resolve by id first; otherwise by slug scoped to a blog THIS user can edit
+    // (slugs are unique per owner, so the user disambiguates it).
+    let blog = await db.prepare(`SELECT ${COLS} FROM blogs WHERE id = ?`).bind(slugid).first();
+    if (!blog) {
+      blog = await db.prepare(`
+        SELECT ${COLS} FROM blogs b
+        WHERE LOWER(b.slug) = LOWER(?)
+          AND (
+            b.author_id = ?
+            OR b.id IN (SELECT blog_id FROM blog_co_authors WHERE user_id = ? AND status = 'accepted')
+            OR (b.published_as LIKE 'org:%' AND substr(b.published_as, 5) IN (
+                  SELECT org_id FROM org_members WHERE user_id = ? AND role IN ('admin','maintain','write')))
+          )
+        ORDER BY b.updated_at DESC LIMIT 1
+      `).bind(slugid, session.userId, session.userId, session.userId).first();
+    }
 
     if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
 
+    const blogId = blog.id;
+
     // Edit permission: author, org write+, or accepted co-author.
     const { canEditBlog } = await import('../../../../lib/permissions');
-    const perm = await canEditBlog(db, slugid, session.userId);
+    const perm = await canEditBlog(db, blogId, session.userId);
     if (!perm.ok) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
 
     // Decompress content
@@ -35,17 +53,31 @@ export async function GET(request) {
     }
 
     // Get tags
-    const tags = await db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(slugid).all();
+    const tags = await db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blogId).all();
 
     // Get version info
     const { getBlogVersionInfo } = await import('../../../../lib/blog-version');
-    const version = await getBlogVersionInfo(db, slugid);
+    const version = await getBlogVersionInfo(db, blogId);
+
+    // Owner = personal author or org admin/owner. Only the owner may change the slug.
+    let isOwner = blog.author_id === session.userId;
+    if (!isOwner && blog.published_as?.startsWith('org:')) {
+      const orgId = blog.published_as.slice(4);
+      const adminRow = await db
+        .prepare("SELECT 1 FROM org_members WHERE org_id = ? AND user_id = ? AND role = 'admin'")
+        .bind(orgId, session.userId).first();
+      const ownerRow = adminRow || await db
+        .prepare('SELECT 1 FROM orgs WHERE id = ? AND owner_id = ?')
+        .bind(orgId, session.userId).first();
+      isOwner = !!ownerRow;
+    }
 
     return NextResponse.json({
       blog: {
         ...blog,
         content,
         tags: (tags?.results || []).map(t => t.tag),
+        is_owner: isOwner,
       },
       version,
     });
@@ -106,7 +138,10 @@ export async function POST(request) {
     } else {
       const { ensureUniqueBlogSlug } = await import('../../../../lib/namespace');
       const baseSlug = generateSlug(title);
-      const slug = await ensureUniqueBlogSlug(db, baseSlug, slugid);
+      const slug = await ensureUniqueBlogSlug(db, baseSlug, slugid, {
+        authorId: session.userId,
+        publishAs: publishAs || 'personal',
+      });
       await db.prepare(`
         INSERT INTO blogs (id, slug, title, subtitle, content, author_id, published_as, status, page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?)
@@ -125,7 +160,9 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({ ok: true, slugid });
+    // Return the new updated_at so the client can keep lastKnownUpdatedAt in
+    // sync — otherwise the author's own background sync looks like a conflict.
+    return NextResponse.json({ ok: true, slugid, updatedAt: now });
   } catch (e) {
     console.error('Draft save error:', e);
     return NextResponse.json({ error: 'Failed to save draft' }, { status: 500 });

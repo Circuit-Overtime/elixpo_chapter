@@ -3,6 +3,22 @@ import { NextResponse } from 'next/server';
 import { decompressBlogContent } from '../../../lib/compress';
 import { STAFF_ORG_ID } from '../../../lib/staff';
 
+// Accepted co-authors (max 10) with display info for multi-author bylines.
+async function fetchCoAuthors(db, blogId) {
+  const res = await db.prepare(`
+    SELECT u.username, u.display_name, u.avatar_url, bc.role
+    FROM blog_co_authors bc JOIN users u ON u.id = bc.user_id
+    WHERE bc.blog_id = ? AND bc.status = 'accepted'
+    ORDER BY bc.added_at LIMIT 10
+  `).bind(blogId).all();
+  return (res?.results || []).map((c) => ({
+    username: c.username,
+    display_name: c.display_name,
+    avatar_url: c.avatar_url,
+    role: c.role,
+  }));
+}
+
 function decompressBlog(blog) {
   if (!blog) return blog;
   try {
@@ -65,23 +81,32 @@ export async function GET(request) {
         // Fetch tags + co-author count
         const [tags, coAuthorRow] = await Promise.all([
           db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all(),
-          db.prepare('SELECT COUNT(*) as c FROM blog_co_authors WHERE blog_id = ?').bind(blog.id).first(),
+          fetchCoAuthors(db, blog.id),
         ]);
 
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'user', ...user },
-          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_author_count: coAuthorRow?.c || 0 },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length },
         });
       }
 
-      // Profile only — also fetch published blogs
+      // Profile blogs = own posts + blogs they're an accepted co-author on
+      // (cross-posted). The author_username/slug come from the *primary* author
+      // so the blog still links to its canonical /owner/slug URL.
       const blogs = await db.prepare(`
-        SELECT id, slug, title, subtitle, cover_image_r2_key, page_emoji,
-          read_time_minutes, published_at, status
-        FROM blogs WHERE author_id = ? AND status IN ('published', 'unlisted')
-        ORDER BY published_at DESC LIMIT 20
-      `).bind(ns.owner_id).all();
+        SELECT b.id, b.slug, b.title, b.subtitle, b.cover_image_r2_key, b.page_emoji,
+          b.read_time_minutes, b.published_at, b.status, b.author_id,
+          au.username AS author_username,
+          (b.author_id = ?) AS is_owner
+        FROM blogs b
+        JOIN users au ON au.id = b.author_id
+        WHERE (b.author_id = ? OR b.id IN (
+                 SELECT blog_id FROM blog_co_authors WHERE user_id = ? AND status = 'accepted'
+               ))
+          AND b.status IN ('published', 'unlisted')
+        ORDER BY b.published_at DESC LIMIT 20
+      `).bind(ns.owner_id, ns.owner_id, ns.owner_id).all();
 
       const followerCount = await db.prepare(
         "SELECT COUNT(*) as c FROM follows WHERE following_id = ? AND following_type = 'user'"
@@ -124,13 +149,13 @@ export async function GET(request) {
 
         const [tags, coAuthorRow] = await Promise.all([
           db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all(),
-          db.prepare('SELECT COUNT(*) as c FROM blog_co_authors WHERE blog_id = ?').bind(blog.id).first(),
+          fetchCoAuthors(db, blog.id),
         ]);
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'org', ...org },
           collection: { id: col.id, slug: collection },
-          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_author_count: coAuthorRow?.c || 0 },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length },
         });
       }
 
@@ -187,12 +212,12 @@ export async function GET(request) {
 
         const [tags, coAuthorRow] = await Promise.all([
           db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all(),
-          db.prepare('SELECT COUNT(*) as c FROM blog_co_authors WHERE blog_id = ?').bind(blog.id).first(),
+          fetchCoAuthors(db, blog.id),
         ]);
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'org', ...org },
-          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_author_count: coAuthorRow?.c || 0 },
+          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length },
         });
       }
 

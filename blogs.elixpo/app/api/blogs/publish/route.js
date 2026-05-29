@@ -14,7 +14,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, coverPos, coverZoom, status, lastKnownUpdatedAt } = body;
+  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, coverPos, coverZoom, status, lastKnownUpdatedAt, slug: requestedSlug } = body;
   const posX = Number.isFinite(coverPos?.x) ? coverPos.x : 50;
   const posY = Number.isFinite(coverPos?.y) ? coverPos.y : 50;
   const zoom = Number.isFinite(coverZoom) ? coverZoom : 1;
@@ -47,12 +47,48 @@ export async function POST(request) {
     const { checkPublishSafety } = await import('../../../../lib/blog-version');
     const db = getDB();
     const now = Math.floor(Date.now() / 1000);
-    const baseSlug = generateSlug(title);
-    const slug = await ensureUniqueBlogSlug(db, baseSlug, slugid);
     const readTime = Math.max(1, Math.ceil(countWords(editorContent) / 250));
     const compressedContent = editorContent ? compressBlogContent(editorContent) : '';
 
-    const existing = await db.prepare('SELECT id, author_id, status, published_as FROM blogs WHERE id = ?').bind(slugid).first();
+    const existing = await db.prepare('SELECT id, author_id, status, published_as, slug FROM blogs WHERE id = ?').bind(slugid).first();
+
+    // Is the requester the OWNER? (personal author, or org admin/owner.) Only the
+    // owner may change a slug — collaborators (editors) cannot.
+    let isOwner = false;
+    if (existing) {
+      isOwner = existing.author_id === session.userId;
+      if (!isOwner && existing.published_as?.startsWith('org:')) {
+        const orgId = existing.published_as.slice(4);
+        const adminRow = await db
+          .prepare("SELECT 1 FROM org_members WHERE org_id = ? AND user_id = ? AND role = 'admin'")
+          .bind(orgId, session.userId).first();
+        const ownerRow = adminRow || await db
+          .prepare('SELECT 1 FROM orgs WHERE id = ? AND owner_id = ?')
+          .bind(orgId, session.userId).first();
+        isOwner = !!ownerRow;
+      }
+    }
+
+    // Slugs are unique per owner (the URL is /owner/slug), not globally.
+    const slugScope = {
+      authorId: session.userId,
+      publishAs: existing?.published_as || publishAs || 'personal',
+    };
+    const wantsSlugChange = !!(requestedSlug && requestedSlug.trim());
+
+    // Slug rules:
+    //  - Published blog: keep the slug unless the OWNER explicitly changes it
+    //    (destructive — old /owner/slug links break). Non-owners can't change it.
+    //  - Draft / first publish: honour a custom slug, else derive from the title.
+    let slug;
+    if (existing && existing.status !== 'draft' && existing.slug) {
+      slug = (wantsSlugChange && isOwner)
+        ? await ensureUniqueBlogSlug(db, generateSlug(requestedSlug), slugid, slugScope)
+        : existing.slug;
+    } else {
+      const base = generateSlug(wantsSlugChange ? requestedSlug : title);
+      slug = await ensureUniqueBlogSlug(db, base, slugid, slugScope);
+    }
 
     if (existing) {
       // Permission: author, org write+, or accepted co-author.

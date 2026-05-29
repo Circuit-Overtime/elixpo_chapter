@@ -70,45 +70,55 @@ export default function BlogInteractionBar({ blogId }) {
 
   const [likeAnim, setLikeAnim] = useState(false);
 
-  const toggleLike = async () => {
+  // Interactions are optimistic: update the UI instantly, write to the DB in the
+  // background, reconcile with the server's authoritative count, and revert on failure.
+  const toggleLike = () => {
     if (!user) return;
     setLikeAnim(true);
     setTimeout(() => setLikeAnim(false), 400);
-    const res = await fetch(`/api/blogs/${blogId}/like`, { method: 'POST' });
-    if (res.ok) {
-      const data = await res.json();
-      setInteractions(prev => prev ? { ...prev, liked: data.liked, likeCount: data.count } : prev);
-    }
+    setInteractions(prev => {
+      if (!prev) return prev;
+      const liked = !prev.liked;
+      return { ...prev, liked, likeCount: Math.max(0, (prev.likeCount || 0) + (liked ? 1 : -1)) };
+    });
+    fetch(`/api/blogs/${blogId}/like`, { method: 'POST' })
+      .then(r => (r.ok ? r.json() : Promise.reject()))
+      .then(data => setInteractions(prev => prev ? { ...prev, liked: data.liked, likeCount: data.count } : prev))
+      .catch(() => setInteractions(prev => {
+        if (!prev) return prev;
+        const liked = !prev.liked; // undo the optimistic toggle
+        return { ...prev, liked, likeCount: Math.max(0, (prev.likeCount || 0) + (liked ? 1 : -1)) };
+      }));
   };
 
-  const addClap = async () => {
+  const addClap = () => {
     if (!user) return;
     setClapAnim(true);
     setTimeout(() => setClapAnim(false), 300);
-    const res = await fetch(`/api/blogs/${blogId}/clap`, {
+    setInteractions(prev => prev ? { ...prev, userClaps: (prev.userClaps || 0) + 1, totalClaps: (prev.totalClaps || 0) + 1 } : prev);
+    fetch(`/api/blogs/${blogId}/clap`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ count: 1 }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setInteractions(prev => prev ? { ...prev, userClaps: data.userClaps, totalClaps: data.totalClaps } : prev);
-    }
+    })
+      .then(r => (r.ok ? r.json() : Promise.reject()))
+      .then(data => setInteractions(prev => prev ? { ...prev, userClaps: data.userClaps, totalClaps: data.totalClaps } : prev))
+      .catch(() => setInteractions(prev => prev ? { ...prev, userClaps: Math.max(0, (prev.userClaps || 0) - 1), totalClaps: Math.max(0, (prev.totalClaps || 0) - 1) } : prev));
   };
 
-  const toggleBookmark = async () => {
+  const toggleBookmark = () => {
     if (!user) return;
-    if (interactions?.bookmarked) {
-      await fetch(`/api/library/bookmarks/${blogId}`, { method: 'DELETE' });
-      setInteractions(prev => prev ? { ...prev, bookmarked: false } : prev);
-    } else {
-      await fetch('/api/library/bookmarks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blogId }),
-      });
-      setInteractions(prev => prev ? { ...prev, bookmarked: true } : prev);
-    }
+    const wasBookmarked = !!interactions?.bookmarked;
+    setInteractions(prev => prev ? { ...prev, bookmarked: !wasBookmarked } : prev);
+    const req = wasBookmarked
+      ? fetch(`/api/library/bookmarks/${blogId}`, { method: 'DELETE' })
+      : fetch('/api/library/bookmarks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blogId }),
+        });
+    req.then(r => { if (!r.ok) throw new Error(); })
+      .catch(() => setInteractions(prev => prev ? { ...prev, bookmarked: wasBookmarked } : prev));
   };
 
   const [shareOpen, setShareOpen] = useState(false);

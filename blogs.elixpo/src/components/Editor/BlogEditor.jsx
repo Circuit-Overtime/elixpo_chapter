@@ -2,12 +2,12 @@
 
 import { isAllowedImage } from '../../utils/allowedImageTypes';
 import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs, createCodeBlockSpec } from '@blocknote/core';
-import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems, TableHandlesController } from '@blocknote/react';
+import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems, TableHandlesController, FormattingToolbarController, FormattingToolbar, getFormattingToolbarItems, CreateLinkButton, useBlockNoteEditor, useEditorSelectionChange } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import '../../styles/katex-fonts.css';
-import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef, useEffect } from 'react';
+import { useCallback, useMemo, forwardRef, useImperativeHandle, useState, useRef, useEffect, useReducer } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import AICommandMenu from './AICommandMenu';
 import AISelectionToolbar from './AISelectionToolbar';
@@ -31,6 +31,10 @@ import { DateInline } from './blocks/DateInline';
 import { MentionInline } from './blocks/MentionInline';
 import { BlogMentionInline } from './blocks/BlogMentionInline';
 import { OrgMentionInline } from './blocks/OrgMentionInline';
+
+// AI features (space-to-AI menu, AI block, AI selection toolbar, AI image gen)
+// are temporarily disabled and surfaced as "Coming soon". Flip to re-enable.
+const AI_ENABLED = false;
 
 // ── Schema ──
 
@@ -148,15 +152,72 @@ function Icon({ d, d2, color }) {
   );
 }
 
+// Classify the current selection's relationship to link marks:
+//  'none'    — no link in the selection (offer "Create link")
+//  'partial' — selection touches a link but isn't exactly one whole link
+//              (a substring of a URL, or link + surrounding text) → no link button
+//  'full'    — the selection is exactly one whole link → offer "Edit link"
+function analyzeLinkSelection(editor) {
+  try {
+    const tiptap = editor?._tiptapEditor;
+    if (!tiptap) return { kind: 'none' };
+    const { state } = tiptap;
+    const { from, to, empty } = state.selection;
+    if (empty) return { kind: 'none' };
+
+    let href = null;
+    let linkChars = 0;
+    state.doc.nodesBetween(from, to, (node, pos) => {
+      if (node.isText) {
+        const lm = node.marks.find((m) => m.type.name === 'link');
+        if (lm) {
+          href = lm.attrs.href;
+          const s = Math.max(pos, from);
+          const e = Math.min(pos + node.nodeSize, to);
+          linkChars += Math.max(0, e - s);
+        }
+      }
+    });
+
+    if (linkChars === 0) return { kind: 'none', from, to };
+
+    // Expand the link range around the selection and check it matches exactly.
+    let lf = from, lt = to;
+    state.doc.nodesBetween(Math.max(0, from - 2000), Math.min(state.doc.content.size, to + 2000), (node, pos) => {
+      if (node.isText && node.marks.some((m) => m.type.name === 'link' && m.attrs.href === href)) {
+        if (pos < lf) lf = pos;
+        if (pos + node.nodeSize > lt) lt = pos + node.nodeSize;
+      }
+    });
+
+    if (lf === from && lt === to) {
+      return { kind: 'full', href, text: state.doc.textBetween(lf, lt), from: lf, to: lt };
+    }
+    return { kind: 'partial' };
+  } catch {
+    return { kind: 'none' };
+  }
+}
+
 // ── Slash menu items ──
 
 function getCustomSlashMenuItems(editor, callbacks = {}) {
   const defaults = getDefaultReactSlashMenuItems(editor).filter((item) => {
     const t = item.title.toLowerCase();
-    return t !== 'video' && t !== 'audio' && t !== 'file';
+    // Drop the default image item too — it opens BlockNote's built-in file panel.
+    // We insert our own image block (custom Upload/Embed UI) instead.
+    return t !== 'video' && t !== 'audio' && t !== 'file' && t !== 'image';
   });
 
   const customBlocks = [
+    {
+      title: 'Image',
+      subtext: 'Upload or embed an image',
+      group: 'Media',
+      aliases: ['image', 'img', 'picture', 'photo', 'upload'],
+      icon: <Icon d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" d2="M3 3h18v18H3z M8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3z M21 15l-5-5L5 21" />,
+      onItemClick: () => editor.insertBlocks([{ type: 'image', props: { url: '' } }], editor.getTextCursorPosition().block, 'after'),
+    },
     {
       title: 'Table of Contents',
       subtext: 'Auto-generated page outline',
@@ -204,8 +265,8 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
       aliases: ['canvas', 'sketch', 'draw', 'whiteboard', 'lixsketch', 'diagram canvas'],
       icon: <Icon d="M3 3h18v18H3zM3 9h18M9 21V9" color="#9b7bf7" />,
       onItemClick: async () => {
-        const blogIdMatch = window.location.pathname.match(/\/edit\/([^/]+)/);
-        const parentBlogId = blogIdMatch?.[1];
+        // Use the resolved blog id (the URL may now carry the human slug).
+        const parentBlogId = callbacks.blogId || window.location.pathname.match(/\/edit\/([^/]+)/)?.[1];
         if (!parentBlogId) return;
         try {
           const res = await fetch('/api/subpages', {
@@ -242,12 +303,12 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
     // content. The pdfEmbed block spec stays mounted for backward compat
     // with already-saved blogs but is no longer insertable from the menu.
     {
-      title: 'AI Block',
-      subtext: 'Generate content with AI',
+      title: AI_ENABLED ? 'AI Block' : 'AI Block (Coming soon)',
+      subtext: AI_ENABLED ? 'Generate content with AI' : 'AI writing is coming soon',
       group: 'AI',
       aliases: ['ai', 'generate', 'gpt', 'assistant', 'write for me'],
       icon: <Icon d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" color="#9b7bf7" />,
-      onItemClick: () => editor.insertBlocks([{ type: 'aiBlock' }], editor.getTextCursorPosition().block, 'after'),
+      onItemClick: () => { if (AI_ENABLED) editor.insertBlocks([{ type: 'aiBlock' }], editor.getTextCursorPosition().block, 'after'); },
     },
   ];
 
@@ -384,6 +445,18 @@ function doSanitize(blocks) {
     // Recursively sanitize children
     if (block.children && block.children.length > 0) {
       block = { ...block, children: doSanitize(block.children) };
+    }
+    // Headings render in the default color — drop stray inline text colors
+    // (e.g. a pasted #e06c75) so they stay consistent and re-saving normalizes them.
+    if (block.type === 'heading' && Array.isArray(block.content)) {
+      block = {
+        ...block,
+        content: block.content.map((c) =>
+          c.styles && (c.styles.textColor || c.styles.backgroundColor)
+            ? { ...c, styles: { ...c.styles, textColor: undefined, backgroundColor: undefined } }
+            : c
+        ),
+      };
     }
     // Code block containing LaTeX \[...\] expressions → extract as blockEquations
     if (block.type === 'codeBlock') {
@@ -643,7 +716,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       editor: { class: 'blog-editor' },
     },
     placeholders: {
-      default: "Press 'Space' for AI, type '/' for commands",
+      default: AI_ENABLED ? "Press 'Space' for AI, type '/' for commands" : "Type '/' for commands",
     },
   });
 
@@ -773,27 +846,40 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
     const handleCtrlK = (e) => {
       if (!((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K'))) return;
-      e.preventDefault();
 
       const { state, view } = tiptap;
       const { from, to, empty } = state.selection;
-      if (empty) return; // no selection
+      if (empty) return; // no selection → let the browser handle it
+
+      // Disable Ctrl+K when the selection already overlaps a link. Creating a
+      // second link over existing link text produces broken nested marks — the
+      // user should use the link toolbar's Edit button instead.
+      let overlapsLink = false;
+      state.doc.nodesBetween(from, to, (node) => {
+        if (node.isText && node.marks.some((m) => m.type.name === 'link')) overlapsLink = true;
+      });
+      if (overlapsLink) { e.preventDefault(); return; }
+
+      e.preventDefault();
 
       const selectedText = state.doc.textBetween(from, to);
       const isUrl = /^https?:\/\/\S+$/.test(selectedText.trim());
 
-      if (isUrl) {
-        // Selected text IS a URL — make it both the href and anchor text
-        const linkMark = state.schema.marks.link.create({ href: selectedText.trim() });
-        view.dispatch(state.tr.addMark(from, to, linkMark));
-      } else {
-        // Selected text is regular text — prompt for URL
-        const url = prompt('Enter URL:', 'https://');
-        if (url && url.trim() && url.trim() !== 'https://') {
-          const linkMark = state.schema.marks.link.create({ href: url.trim() });
-          view.dispatch(state.tr.addMark(from, to, linkMark));
-        }
-      }
+      // Open the custom link editor (prefilled) rather than a native prompt(),
+      // so the user can edit both the text and the URL before applying.
+      let rect;
+      try {
+        const start = view.coordsAtPos(from);
+        rect = { bottom: start.bottom, left: start.left };
+      } catch { rect = { bottom: 120, left: 120 }; }
+
+      setLinkEditor({
+        anchorText: selectedText,
+        url: isUrl ? selectedText.trim() : 'https://',
+        from, to,
+        top: rect.bottom + 6,
+        left: Math.max(8, Math.min(rect.left, window.innerWidth - 340)),
+      });
     };
 
     const dom = tiptap.view?.dom;
@@ -801,6 +887,59 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     dom.addEventListener('keydown', handleCtrlK);
     return () => { try { dom.removeEventListener('keydown', handleCtrlK); } catch {} };
   }, [editor]);
+
+  // Open the custom link editor for an already-resolved full-link selection.
+  const openLinkEditorForSelection = useCallback((ed, link) => {
+    try {
+      const view = ed?._tiptapEditor?.view;
+      const coords = view?.coordsAtPos(link.from) || { bottom: 120, left: 120 };
+      setLinkEditor({
+        anchorText: link.text || link.href || '',
+        url: link.href || 'https://',
+        from: link.from, to: link.to,
+        top: coords.bottom + 6,
+        left: Math.max(8, Math.min(coords.left, window.innerWidth - 340)),
+      });
+    } catch {}
+  }, []);
+
+  // Custom formatting toolbar: swaps the link control based on the selection.
+  // Plain text → "Create link"; a full link → "Edit link"; a partial/substring
+  // link selection → no link control at all (and Ctrl+K is blocked too).
+  const LinkAwareFormattingToolbar = useMemo(
+    () =>
+      function LinkAwareFormattingToolbar() {
+        const ed = useBlockNoteEditor();
+        const [, force] = useReducer((x) => x + 1, 0);
+        useEditorSelectionChange(() => force(), ed);
+        const link = analyzeLinkSelection(ed);
+        const items = getFormattingToolbarItems().filter((el) => el.type !== CreateLinkButton);
+        return (
+          <FormattingToolbar>
+            {items}
+            {link.kind === 'none' && <CreateLinkButton key="createLink" />}
+            {link.kind === 'full' && (
+              <button
+                key="editLink"
+                type="button"
+                className="bn-button bn-link-edit-btn"
+                title="Edit link"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => openLinkEditorForSelection(ed, link)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 8px', height: 28, fontSize: 13, fontWeight: 500 }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                </svg>
+                Edit link
+              </button>
+            )}
+          </FormattingToolbar>
+        );
+      },
+    [openLinkEditorForSelection]
+  );
 
   // Seed Yjs doc from existing content when collab starts on a blog that already has content
   useEffect(() => {
@@ -1461,12 +1600,14 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const getItems = useMemo(
     () => async (query) => filterItems(getCustomSlashMenuItems(editor, {
       onInlineLatex: () => { setInlineLatexValue(''); setShowInlineLatex(true); },
+      blogId,
     }), query),
-    [editor]
+    [editor, blogId]
   );
 
   // Space trigger for AI menu on empty blocks
   useEffect(() => {
+    if (!AI_ENABLED) return; // AI is disabled — space types normally
     function handleKeyDown(e) {
       if (e.key === ' ' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (isCurrentBlockEmpty(editor)) {
@@ -2312,11 +2453,14 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         onChange={handleChange}
         theme={isDark ? "dark" : "light"}
         slashMenu={false}
+        filePanel={false}
+        formattingToolbar={false}
       >
         <SuggestionMenuController
           triggerCharacter="/"
           getItems={getItems}
         />
+        <FormattingToolbarController formattingToolbar={LinkAwareFormattingToolbar} />
         <TableHandlesController />
       </BlockNoteView>
 
@@ -2334,7 +2478,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         </div>
       )}
 
-      {showAIMenu && (
+      {AI_ENABLED && showAIMenu && (
         <AICommandMenu
           position={aiMenuPos}
           onSubmit={handleAISubmit}
@@ -2452,8 +2596,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         </div>
       )}
 
-      {/* AI selection toolbar — appears on text selection */}
-      <AISelectionToolbar editor={editor} onTitleChange={onTitleChange} blogId={blogId} />
+      {/* AI selection toolbar — appears on text selection (disabled while AI is off) */}
+      {AI_ENABLED && <AISelectionToolbar editor={editor} onTitleChange={onTitleChange} blogId={blogId} />}
 
       {/* AI error toast */}
       {aiErrorToast && (
