@@ -38,7 +38,7 @@ export async function generateMetadata({ params }) {
       } else {
         return {};
       }
-      const og = `${origin}/api/og?${new URLSearchParams({ title: dn, subtitle: description, author: handle, avatar })}`;
+      const og = `${origin}/api/og?${new URLSearchParams({ type: 'profile', title: dn, subtitle: description, author: handle, avatar })}`;
       return {
         title: dn,
         description,

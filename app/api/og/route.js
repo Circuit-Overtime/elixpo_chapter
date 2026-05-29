@@ -17,6 +17,48 @@ export async function GET(request) {
 
   const hasCover = /^https?:\/\//.test(cover);
   const hasAvatar = /^https?:\/\//.test(avatar);
+  const type = searchParams.get('type') || 'blog';
+  const origin = new URL(request.url).origin;
+  const logoUrl = `${origin}/base-logo.png`;
+
+  // ── Profile card: real logo + big avatar + a hue derived from the handle ──
+  if (type === 'profile') {
+    // Deterministic hue from the handle so the tint feels matched to the user.
+    let h = 0;
+    for (let i = 0; i < author.length; i++) h = (h * 31 + author.charCodeAt(i)) % 360;
+    const accent = `hsl(${h}, 62%, 58%)`;
+    const accentDeep = `hsl(${h}, 55%, 28%)`;
+    const initial = (title || author || 'L').replace('@', '').charAt(0).toUpperCase();
+
+    return new ImageResponse(
+      (
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(135deg, #0f1117 0%, ${accentDeep} 100%)`, fontFamily: 'sans-serif', position: 'relative' }}>
+          {/* Brand row, top-left */}
+          <div style={{ position: 'absolute', top: 48, left: 56, display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img src={logoUrl} width={36} height={36} style={{ borderRadius: '9px' }} />
+            <span style={{ color: '#e8e8ee', fontSize: '26px', fontWeight: 700 }}>LixBlogs</span>
+          </div>
+
+          {/* Avatar */}
+          {hasAvatar ? (
+            <img src={avatar} width={180} height={180} style={{ width: '180px', height: '180px', borderRadius: '50%', objectFit: 'cover', border: `6px solid ${accent}` }} />
+          ) : (
+            <div style={{ display: 'flex', width: '180px', height: '180px', borderRadius: '50%', alignItems: 'center', justifyContent: 'center', background: accent, color: '#fff', fontSize: '84px', fontWeight: 800, border: '6px solid rgba(255,255,255,0.15)' }}>
+              {initial}
+            </div>
+          )}
+
+          {/* Name + handle + bio */}
+          <div style={{ display: 'flex', color: '#f4f4f6', fontSize: '54px', fontWeight: 800, marginTop: '28px' }}>{title}</div>
+          {author ? <div style={{ display: 'flex', color: accent, fontSize: '28px', fontWeight: 600, marginTop: '6px' }}>{author}</div> : null}
+          {subtitle ? (
+            <div style={{ display: 'flex', color: '#aab0bd', fontSize: '26px', marginTop: '16px', maxWidth: '820px', textAlign: 'center', lineHeight: 1.3 }}>{subtitle}</div>
+          ) : null}
+        </div>
+      ),
+      { width: 1200, height: 630 },
+    );
+  }
 
   return new ImageResponse(
     (
@@ -55,7 +97,7 @@ export async function GET(request) {
               {author ? <span style={{ color: '#c4c8d2', fontSize: '28px', fontWeight: 600 }}>{author}</span> : null}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ display: 'flex', width: '34px', height: '34px', borderRadius: '9px', background: '#9b7bf7', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '20px', fontWeight: 800 }}>L</div>
+              <img src={logoUrl} width={34} height={34} style={{ borderRadius: '9px' }} />
               <span style={{ color: '#9aa0ad', fontSize: '24px', fontWeight: 600 }}>LixBlogs</span>
             </div>
           </div>
