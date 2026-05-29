@@ -123,14 +123,15 @@ span.mention-chip,
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(155, 123, 247, 0.1);
+  background: rgba(155, 123, 247, 0.16);
+  border: 1px solid rgba(155, 123, 247, 0.28);
   border-radius: 999px;
   padding: 2px 8px 2px 2px;
-  color: #c4b5fd !important;
-  font-weight: 500;
+  color: #7c5fe0 !important;
+  font-weight: 600;
   font-size: 0.9em;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
   vertical-align: middle;
   margin: 0 2px;
   text-decoration: none !important;
@@ -140,8 +141,9 @@ span.mention-chip,
 a.mention-chip:hover,
 span.mention-chip:hover,
 .mention-chip:hover {
-  background: rgba(155, 123, 247, 0.18);
-  color: #ddd6fe !important;
+  background: rgba(155, 123, 247, 0.26);
+  border-color: rgba(155, 123, 247, 0.45);
+  color: #6d4fd1 !important;
   text-decoration: none !important;
 }
 
