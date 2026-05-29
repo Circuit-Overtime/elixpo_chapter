@@ -128,7 +128,9 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({ ok: true, slugid });
+    // Return the new updated_at so the client can keep lastKnownUpdatedAt in
+    // sync — otherwise the author's own background sync looks like a conflict.
+    return NextResponse.json({ ok: true, slugid, updatedAt: now });
   } catch (e) {
     console.error('Draft save error:', e);
     return NextResponse.json({ error: 'Failed to save draft' }, { status: 500 });

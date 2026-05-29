@@ -547,6 +547,15 @@ export default function WritePage({ slugid }) {
 
       if (res.ok) {
         dirtyRef.current = false;
+        // Keep our known version current so our own saves aren't seen as a
+        // conflict when we later publish.
+        try {
+          const d = await res.json();
+          if (d?.updatedAt) {
+            setLastKnownUpdatedAt(d.updatedAt);
+            setBlogVersion(v => v ? { ...v, updatedAt: d.updatedAt } : v);
+          }
+        } catch {}
         if (!silent) {
           setSyncStatus('synced');
           if (showToast) {
