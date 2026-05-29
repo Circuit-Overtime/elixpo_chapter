@@ -111,13 +111,13 @@ function renderBlocksToHTML(blocks) {
         const avatar = c.props.avatarUrl
           ? `<img src="${c.props.avatarUrl}" alt="" class="mention-chip-avatar">`
           : `<span class="mention-chip-initial">${(name || '?')[0].toUpperCase()}</span>`;
-        return `<a href="/@${c.props.username}" class="mention-chip" data-username="${c.props.username}" data-avatar="${c.props.avatarUrl || ''}" data-displayname="${name}">${avatar}@${name}</a>`;
+        return `<a href="/${c.props.username}" class="mention-chip" data-username="${c.props.username}" data-avatar="${c.props.avatarUrl || ''}" data-displayname="${name}">${avatar}@${c.props.username}</a>`;
       }
       if (c.type === 'blogMention' && c.props?.slugid) {
         return `<a href="/${c.props.slugid}" class="mention-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>${c.props.title || 'Untitled blog'}</a>`;
       }
       if (c.type === 'orgMention' && c.props?.slug) {
-        return `<a href="/@${c.props.slug}" class="mention-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>@${c.props.name || c.props.slug}</a>`;
+        return `<a href="/${c.props.slug}" class="mention-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>@${c.props.slug}</a>`;
       }
       // Links wrap child content — recurse into c.content for the link text
       if (c.type === 'link' && c.href) {
@@ -176,7 +176,12 @@ function renderBlocksToHTML(blocks) {
         const level = block.props?.level || 1;
         const text = (block.content || []).map(c => c.text || '').join('');
         const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
-        return `<h${level} id="${id}">${content}</h${level}>${childrenHTML}`;
+        // Headings always render in the default color — ignore stray inline text
+        // colors (e.g. a pasted #e06c75) so headings stay visually consistent.
+        const headingContent = inlineToHTML(
+          (block.content || []).map(c => (c.styles ? { ...c, styles: { ...c.styles, textColor: undefined, backgroundColor: undefined } } : c))
+        );
+        return `<h${level} id="${id}">${headingContent}</h${level}>${childrenHTML}`;
       }
       case 'bulletListItem':
         return `<li class="preview-bullet">${content}${childrenHTML}</li>`;
@@ -314,7 +319,7 @@ function renderBlocksToHTML(blocks) {
   return html;
 }
 
-export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, wordCount }) {
+export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount }) {
   const { isDark } = useTheme();
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -693,36 +698,50 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
         <p className="text-xl mb-3" style={{ color: 'var(--text-muted)', fontFamily: "'Source Serif 4', Georgia, serif" }}>{subtitle}</p>
       )}
 
-      {/* Author bar — under title */}
-      {user && (
-        <div className="flex items-center gap-3 mt-1 mb-2">
-          <div className="flex -space-x-2">
-            {user.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[var(--bg-app)]" />
-            ) : (
-              <div className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] border-2 border-[var(--bg-app)] flex items-center justify-center text-[11px] font-bold text-[var(--text-muted)]">
-                {(user.display_name || user.username || '?')[0].toUpperCase()}
-              </div>
-            )}
+      {/* Author bar — under title. Primary author + accepted co-authors, with
+          stacked avatars and top-3 names (+ "N more"). */}
+      {user && (() => {
+        const authors = [
+          { name: user.display_name || user.username || 'Author', avatar_url: user.avatar_url, username: user.username },
+          ...coAuthors,
+        ];
+        const shownAvatars = authors.slice(0, 5);
+        const shownNames = authors.slice(0, 3);
+        const moreNames = authors.length - shownNames.length;
+        return (
+          <div className="flex items-center gap-3 mt-1 mb-2">
+            <div className="flex -space-x-2">
+              {shownAvatars.map((a, i) => (
+                a.avatar_url ? (
+                  <img key={i} src={a.avatar_url} alt="" title={a.name} className="w-7 h-7 rounded-full object-cover border-2 border-[var(--bg-app)]" />
+                ) : (
+                  <div key={i} title={a.name} className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] border-2 border-[var(--bg-app)] flex items-center justify-center text-[11px] font-bold text-[var(--text-muted)]">
+                    {(a.name || '?')[0].toUpperCase()}
+                  </div>
+                )
+              ))}
+            </div>
+            <div className="flex items-center gap-2 text-[13px] text-[var(--text-faint)] flex-wrap">
+              {org && (
+                <>
+                  <span className="text-[var(--text-secondary)] font-medium">{org.name}</span>
+                  <span className="text-[var(--text-faint)]">·</span>
+                </>
+              )}
+              <span className="text-[var(--text-muted)] font-medium">
+                {shownNames.map((a) => a.name).join(', ')}
+              </span>
+              {moreNames > 0 && (
+                <span className="text-[var(--text-faint)]">+ {moreNames} more</span>
+              )}
+              <span className="text-[var(--text-faint)]">·</span>
+              <span>{Math.max(1, Math.ceil((wordCount || 0) / 200))} min read</span>
+              <span className="text-[var(--text-faint)]">·</span>
+              <span>{wordCount || 0} {(wordCount || 0) === 1 ? 'word' : 'words'}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-[13px] text-[var(--text-faint)] flex-wrap">
-            {org && (
-              <>
-                <span className="text-[var(--text-secondary)] font-medium">{org.name}</span>
-                <span className="text-[var(--text-faint)]">·</span>
-              </>
-            )}
-            <span className="text-[var(--text-muted)] font-medium">{user.display_name || user.username || 'Author'}</span>
-            {coAuthorCount > 0 && (
-              <span className="text-[var(--text-faint)]">+ {coAuthorCount} {coAuthorCount === 1 ? 'other' : 'others'}</span>
-            )}
-            <span className="text-[var(--text-faint)]">·</span>
-            <span>{Math.max(1, Math.ceil((wordCount || 0) / 200))} min read</span>
-            <span className="text-[var(--text-faint)]">·</span>
-            <span>{wordCount || 0} {(wordCount || 0) === 1 ? 'word' : 'words'}</span>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Tags — under author bar */}
       {tags.length > 0 && (
@@ -779,7 +798,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
               <div className="mention-hover-card-username">@{mentionCard.username}</div>
             </div>
           </div>
-          <a href={`/@${mentionCard.username}`} className="mention-hover-card-link">
+          <a href={`/${mentionCard.username}`} className="mention-hover-card-link">
             View profile
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
           </a>

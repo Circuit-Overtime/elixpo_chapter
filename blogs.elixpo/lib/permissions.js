@@ -24,8 +24,10 @@ export async function canEditBlog(db, blogId, userId) {
     if (member) return { ok: true };
   }
 
+  // Accepted co-authors can edit only with an editor/admin role.
+  // 'viewer' is a cross-post/display-only role (no edit).
   const coAuthor = await db
-    .prepare("SELECT 1 FROM blog_co_authors WHERE blog_id = ? AND user_id = ? AND status = 'accepted'")
+    .prepare("SELECT 1 FROM blog_co_authors WHERE blog_id = ? AND user_id = ? AND status = 'accepted' AND role IN ('editor','admin')")
     .bind(blogId, userId)
     .first();
   if (coAuthor) return { ok: true };

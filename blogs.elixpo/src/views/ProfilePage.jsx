@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
 import TabBar from '../components/TabBar';
 import BannerUploadModal from '../components/BannerUploadModal';
+import FollowListModal from '../components/FollowListModal';
 import Link from 'next/link';
 
 function UsageBar({ label, used, limit, unit, color = '#9b7bf7' }) {
@@ -36,6 +37,19 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState(0);
   const [blogs, setBlogs] = useState([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
+  const [counts, setCounts] = useState({ followers: 0, following: 0 });
+  const [followModal, setFollowModal] = useState(null); // 'followers' | 'following'
+
+  useEffect(() => {
+    if (!user?.username) return;
+    // Real follower/following counts come from the profile resolver.
+    fetch(`/api/resolve?name=${encodeURIComponent(user.username)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.user) setCounts({ followers: d.user.followers || 0, following: d.user.following || 0 });
+      })
+      .catch(() => {});
+  }, [user?.username]);
 
   useEffect(() => {
     if (!user) return;
@@ -160,9 +174,16 @@ export default function ProfilePage() {
         )}
 
         <div className="flex items-center gap-6 text-[14px] text-[var(--text-muted)] mb-8">
-          <span><strong className="text-[var(--text-primary)]">0</strong> Followers</span>
-          <span><strong className="text-[var(--text-primary)]">0</strong> Following</span>
+          <button onClick={() => user?.username && setFollowModal('followers')} className="hover:text-[var(--text-primary)] transition-colors">
+            <strong className="text-[var(--text-primary)]">{counts.followers}</strong> Followers
+          </button>
+          <button onClick={() => user?.username && setFollowModal('following')} className="hover:text-[var(--text-primary)] transition-colors">
+            <strong className="text-[var(--text-primary)]">{counts.following}</strong> Following
+          </button>
         </div>
+        {followModal && (
+          <FollowListModal username={user.username} type={followModal} onClose={() => setFollowModal(null)} />
+        )}
 
         <div className="h-px bg-[var(--bg-elevated)] mb-8" />
 
@@ -271,7 +292,7 @@ export default function ProfilePage() {
               ) : list.length > 0 ? (
                 <div>
                   {list.map((b) => {
-                    const href = activeTab === 0 ? `/${user.username}/${b.slug}` : `/edit/${b.id}`;
+                    const href = activeTab === 0 ? `/${user.username}/${b.slug}` : `/edit/${b.slug || b.id}`;
                     return (
                       <article key={b.id} className="flex gap-4 py-5 border-b border-[var(--border-default)] last:border-b-0">
                         <div className="flex-1 min-w-0">

@@ -89,9 +89,12 @@ export default function MentionMenu({ editor, query, onClose }) {
           const atNodeText = contentArr[atNodeIdx].text;
           const atNodeStyles = contentArr[atNodeIdx].styles || {};
           const textBefore = atNodeText.slice(0, atPosInNode);
-          // Only remove the @query portion — preserve any text after it
-          const queryLen = (query || '').length;
-          const textAfter = atNodeText.slice(atPosInNode + 1 + queryLen);
+          // Remove the whole typed @token (up to the next whitespace), not just the
+          // live `query`. The menu's query can lag the typed text, which left a
+          // broken remainder (e.g. "@Anwesha" → mention chip + stray "nwesha").
+          const afterAt = atNodeText.slice(atPosInNode + 1);
+          const wsIdx = afterAt.search(/\s/);
+          const textAfter = wsIdx === -1 ? '' : afterAt.slice(wsIdx).replace(/^\s+/, '');
 
           const newContent = [];
           // Keep all nodes before the @ node
@@ -134,7 +137,7 @@ export default function MentionMenu({ editor, query, onClose }) {
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setActiveIndex((i) => (i - 1 + allItems.length) % allItems.length);
-      } else if (e.key === 'Enter') {
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
         if (allItems[activeIndex]) insertMention(allItems[activeIndex]);
       } else if (e.key === 'Escape') {

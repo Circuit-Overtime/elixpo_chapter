@@ -120,30 +120,46 @@ export async function releaseName(db, name) {
 /**
  * Check if a blog slug is available globally (case-insensitive).
  */
-export async function checkBlogSlugAvailable(db, slug, excludeBlogId) {
+// Slugs are unique *per owner* — the public URL is /owner/slug, so the same
+// slug may exist under different users/orgs (like GitHub repo names).
+// scope: { authorId, publishAs } — personal scopes to (author_id, 'personal');
+// an org ('org:<id>') scopes to that published_as. Omit scope = global (legacy).
+export async function checkBlogSlugAvailable(db, slug, excludeBlogId, scope) {
   const clean = slug.toLowerCase().trim();
-  const query = excludeBlogId
-    ? 'SELECT id FROM blogs WHERE LOWER(slug) = ? AND id != ?'
-    : 'SELECT id FROM blogs WHERE LOWER(slug) = ?';
-  const params = excludeBlogId ? [clean, excludeBlogId] : [clean];
-  const row = await db.prepare(query).bind(...params).first();
+  const where = ['LOWER(slug) = ?'];
+  const params = [clean];
+  if (scope?.publishAs === 'personal') {
+    where.push('published_as = ?', 'author_id = ?');
+    params.push('personal', scope.authorId);
+  } else if (scope?.publishAs) {
+    where.push('published_as = ?');
+    params.push(scope.publishAs);
+  }
+  if (excludeBlogId) {
+    where.push('id != ?');
+    params.push(excludeBlogId);
+  }
+  const row = await db
+    .prepare(`SELECT id FROM blogs WHERE ${where.join(' AND ')}`)
+    .bind(...params)
+    .first();
   return { available: !row };
 }
 
 /**
- * Generate a unique blog slug. Appends a short suffix if taken.
+ * Generate a unique blog slug within the owner's scope. Appends a short suffix if taken.
  */
-export async function ensureUniqueBlogSlug(db, baseSlug, excludeBlogId) {
+export async function ensureUniqueBlogSlug(db, baseSlug, excludeBlogId, scope) {
   const clean = baseSlug.toLowerCase().trim();
   if (!clean) return `post-${Date.now().toString(36)}`;
 
-  const { available } = await checkBlogSlugAvailable(db, clean, excludeBlogId);
+  const { available } = await checkBlogSlugAvailable(db, clean, excludeBlogId, scope);
   if (available) return clean;
 
   for (let i = 0; i < 10; i++) {
     const suffix = Math.random().toString(36).slice(2, 6);
     const candidate = `${clean}-${suffix}`;
-    const check = await checkBlogSlugAvailable(db, candidate, excludeBlogId);
+    const check = await checkBlogSlugAvailable(db, candidate, excludeBlogId, scope);
     if (check.available) return candidate;
   }
 

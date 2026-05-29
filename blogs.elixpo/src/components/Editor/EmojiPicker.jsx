@@ -147,13 +147,13 @@ export default function EmojiPicker({ onSelect, onRemove, onClose }) {
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="relative z-50 mb-4 w-[352px] bg-[#10141E] border border-[#1D202A] rounded-xl shadow-2xl overflow-hidden">
+      <div className="relative z-50 mb-4 w-[352px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-3 pt-2.5 pb-0">
-          <span className="text-xs font-medium text-[var(--text-primary)] border-b-2 border-[#7ba8f0] pb-1.5">Emoji</span>
+          <span className="text-xs font-medium text-[var(--text-primary)] border-b-2 border-[var(--accent)] pb-1.5">Emoji</span>
           <button
             onClick={onRemove}
-            className="text-xs text-[#888] hover:text-red-400 transition-colors"
+            className="text-xs text-[var(--text-muted)] hover:text-red-400 transition-colors"
           >
             Remove
           </button>
@@ -161,7 +161,7 @@ export default function EmojiPicker({ onSelect, onRemove, onClose }) {
 
         {/* Search */}
         <div className="px-3 py-2">
-          <div className="flex items-center gap-2 bg-[#1D202A] rounded-lg px-2.5 py-1.5 border border-[var(--border-hover)] focus-within:border-[#7ba8f0] transition-colors">
+          <div className="flex items-center gap-2 bg-[var(--bg-elevated)] rounded-lg px-2.5 py-1.5 border border-[var(--border-hover)] focus-within:border-[var(--accent)] transition-colors">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -175,7 +175,7 @@ export default function EmojiPicker({ onSelect, onRemove, onClose }) {
             />
             {!filter && (
               <div className="flex items-center gap-1">
-                <span className="text-[10px] text-[var(--text-faint)] bg-[#10141E] px-1 rounded">⌘</span>
+                <span className="text-[10px] text-[var(--text-faint)] bg-[var(--bg-elevated)] px-1 rounded">⌘</span>
                 <span className="text-lg select-none">{CATEGORIES[activeCategory]?.icon}</span>
               </div>
             )}
@@ -196,7 +196,7 @@ export default function EmojiPicker({ onSelect, onRemove, onClose }) {
               <button
                 key={emoji + i}
                 onClick={() => onSelect(emoji)}
-                className="text-[22px] h-9 w-9 flex items-center justify-center rounded-md hover:bg-[#1D202A] transition-colors"
+                className="text-[22px] h-9 w-9 flex items-center justify-center rounded-md hover:bg-[var(--bg-elevated)] transition-colors"
               >
                 {emoji}
               </button>
@@ -205,15 +205,15 @@ export default function EmojiPicker({ onSelect, onRemove, onClose }) {
         </div>
 
         {/* Bottom category bar */}
-        <div className="flex items-center justify-between px-2 py-1.5 border-t border-[#1D202A] bg-[#0c1018]">
+        <div className="flex items-center justify-between px-2 py-1.5 border-t border-[var(--border-default)] bg-[var(--bg-elevated)]">
           {CATEGORY_NAMES.map((cat) => (
             <button
               key={cat}
               onClick={() => { setActiveCategory(cat); setFilter(''); }}
               className={`text-lg h-7 w-7 flex items-center justify-center rounded-md transition-colors ${
                 activeCategory === cat && !filter
-                  ? 'bg-[#1D202A]'
-                  : 'hover:bg-[#1D202A]/50 opacity-60 hover:opacity-100'
+                  ? 'bg-[var(--bg-elevated)]'
+                  : 'hover:bg-[var(--bg-elevated)]/50 opacity-60 hover:opacity-100'
               }`}
               title={cat}
             >
