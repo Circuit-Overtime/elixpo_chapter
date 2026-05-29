@@ -83,6 +83,11 @@ export default async function BlogsPage({ params }) {
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4">
               <h2 className="blogTitle font-[Canopee,serif] text-[#1B1B19] text-2xl sm:text-3xl md:text-[2.2em] leading-tight tracking-[0.5px] group-hover:text-[#B63B12] transition-colors duration-300">
                 {post.title}
+                {post.source && (
+                  <span className="fontNav align-middle ml-2 text-[#888] text-xs sm:text-sm tracking-[1px] whitespace-nowrap">
+                    &#8599; {post.source}
+                  </span>
+                )}
               </h2>
               <span className="blogDate fontNav shrink-0 text-[#888] text-sm sm:text-base tracking-[1px]">
                 {formatDate(post.date)}
@@ -105,7 +110,7 @@ export default async function BlogsPage({ params }) {
                 ))}
               </div>
               <span className="blogArrow text-[#B63B12] text-lg sm:text-xl group-hover:translate-x-1 transition-transform duration-300">
-                Read on LixBlogs &rarr;
+                {post.source ? `Read on ${post.source} ↗` : "Read on LixBlogs →"}
               </span>
             </div>
           </a>

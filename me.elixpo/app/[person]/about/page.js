@@ -3,6 +3,14 @@ import ContactBanner from "@/components/ContactBanner";
 import ComingSoon from "@/components/ComingSoon";
 import DragScrollContainer from "@/components/DragScrollContainer";
 
+function safeGet(person, file) {
+  try {
+    return getPersonContent(person, file);
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }) {
   const { person } = await params;
   const profile = getPersonContent(person, "profile");
@@ -18,10 +26,19 @@ export async function generateMetadata({ params }) {
 
 export default async function AboutPage({ params }) {
   const { person } = await params;
-  const about = getPersonContent(person, "about");
-  const work = getPersonContent(person, "work");
-  const spotlight = getPersonContent(person, "spotlight");
-  const profile = getPersonContent(person, "profile");
+  const about = safeGet(person, "about");
+  const work = safeGet(person, "work") || [];
+  const spotlight = safeGet(person, "spotlight") || [];
+  const profile = safeGet(person, "profile") || {};
+
+  if (!about || !about.intro) {
+    return (
+      <>
+        <ComingSoon title="About Coming Soon" />
+        <ContactBanner person={person} />
+      </>
+    );
+  }
 
   return (
     <>

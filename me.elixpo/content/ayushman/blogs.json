@@ -1,28 +1,36 @@
 {
   "heading": "Writing",
-  "description": "Notes on open-source maintenance, DevOps, and building developer communities. Full posts live on blogs.elixpo.com.",
+  "description": "Notes on building developer communities, open-source maintenance, and DevOps. Community posts live on blogs.elixpo.com; deeper Pollinations engineering write-ups on Substack.",
   "home": "https://blogs.elixpo.com",
   "posts": [
+    {
+      "title": "Running a 290-Person Hacktoberfest Meetup",
+      "date": "2025-11-02",
+      "excerpt": "The logistics, the sponsors, and the contributor-first format behind Kolkata's biggest Hacktoberfest — and what we'd do differently next time.",
+      "url": "https://blogs.elixpo.com/REPLACE-hacktoberfest",
+      "tags": ["Community", "Events"]
+    },
+    {
+      "title": "A First-Timer's Guide to Landing Your First Open-Source Contribution",
+      "date": "2026-01-20",
+      "excerpt": "What we teach students at GDG on Campus before their first PR — finding good-first-issues, reading a codebase, and writing a contribution maintainers actually merge.",
+      "url": "https://blogs.elixpo.com/REPLACE-first-contribution",
+      "tags": ["Open Source", "Teaching"]
+    },
+    {
+      "title": "Building a Campus Developer Community From Zero",
+      "date": "2026-03-10",
+      "excerpt": "Two years of running GDG on Campus at JIS University — how we went from empty rooms to a recurring contributor pipeline.",
+      "url": "https://blogs.elixpo.com/REPLACE-campus-community",
+      "tags": ["Community", "Leadership"]
+    },
     {
       "title": "Building a Contributor Pipeline That Actually Retains People",
       "date": "2026-04-18",
       "excerpt": "What I learned wiring up payouts, triage bots, and app-submission workflows at Pollinations.ai — and why most onboarding funnels leak.",
-      "url": "https://blogs.elixpo.com/contributor-pipeline",
+      "url": "https://REPLACE.substack.com/p/contributor-pipeline",
+      "source": "Substack",
       "tags": ["Open Source", "Maintainership"]
-    },
-    {
-      "title": "Deploying a LangChain Search Agent to the Edge",
-      "date": "2026-02-09",
-      "excerpt": "From notebook to production: containerizing a retrieval service, wiring CI/CD, and shipping it on cloud infra.",
-      "url": "https://blogs.elixpo.com/langchain-search-deploy",
-      "tags": ["DevOps", "MLOps"]
-    },
-    {
-      "title": "Running a 290-Person Hacktoberfest Meetup",
-      "date": "2025-11-02",
-      "excerpt": "The logistics, the sponsors, and the contributor-first format behind Kolkata's biggest Hacktoberfest.",
-      "url": "https://blogs.elixpo.com/kolkata-hacktoberfest",
-      "tags": ["Community"]
     }
   ]
 }

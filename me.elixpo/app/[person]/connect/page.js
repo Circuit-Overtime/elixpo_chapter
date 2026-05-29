@@ -1,5 +1,14 @@
 import { getPersonContent } from "@/lib/content";
 import CopyEmail from "@/components/CopyEmail";
+import ComingSoon from "@/components/ComingSoon";
+
+function safeGet(person, file) {
+  try {
+    return getPersonContent(person, file);
+  } catch {
+    return null;
+  }
+}
 
 export async function generateMetadata({ params }) {
   const { person } = await params;
@@ -16,7 +25,11 @@ export async function generateMetadata({ params }) {
 
 export default async function ConnectPage({ params }) {
   const { person } = await params;
-  const connectData = getPersonContent(person, "connect");
+  const connectData = safeGet(person, "connect");
+
+  if (!connectData || (!connectData.emails?.length && !connectData.socialLinks?.length)) {
+    return <ComingSoon title="Connect Coming Soon" />;
+  }
 
   return (
     <>
