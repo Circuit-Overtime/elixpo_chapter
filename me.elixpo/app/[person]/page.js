@@ -3,12 +3,30 @@ import ContactBanner from "@/components/ContactBanner";
 import { SpotlightScroller } from "@/components/Animations";
 import Masthead from "@/components/Masthead";
 import DragScrollContainer from "@/components/DragScrollContainer";
+import ComingSoon from "@/components/ComingSoon";
+
+function safeGet(person, file) {
+  try {
+    return getPersonContent(person, file);
+  } catch {
+    return null;
+  }
+}
 
 export default async function HomePage({ params }) {
   const { person } = await params;
-  const home = getPersonContent(person, "home");
-  const spotlight = getPersonContent(person, "spotlight");
-  const recommendations = getPersonContent(person, "recommendations");
+  const home = safeGet(person, "home");
+  const spotlight = safeGet(person, "spotlight") || [];
+  const recommendations = safeGet(person, "recommendations") || [];
+
+  if (!home) {
+    return (
+      <>
+        <ComingSoon title="Coming Soon" />
+        <ContactBanner person={person} />
+      </>
+    );
+  }
 
   return (
     <>
