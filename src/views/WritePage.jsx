@@ -457,6 +457,7 @@ export default function WritePage({ slugid }) {
   const [collabLock, setCollabLock] = useState(null);
   const [collabLockDismissed, setCollabLockDismissed] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [conflict, setConflict] = useState(null); // { message, currentVersion, status }
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [pendingLeaveUrl, setPendingLeaveUrl] = useState(null);
   const [showMdReplaceConfirm, setShowMdReplaceConfirm] = useState(false);
@@ -1032,9 +1033,14 @@ export default function WritePage({ slugid }) {
       });
 
       if (res.status === 409) {
-        // Conflict — someone else updated
+        // Conflict — upstream changed since we loaded. Show a custom modal with
+        // a Sync option (adopt the latest version, then this publish wins).
         const data = await res.json();
-        alert(data.message || 'This blog was updated by someone else. Please reload and try again.');
+        setConflict({
+          message: data.message || 'This blog was updated since you last synced.',
+          currentVersion: data.currentVersion,
+          status: targetStatus,
+        });
         setPublishing(false);
         return;
       }
@@ -2136,6 +2142,41 @@ export default function WritePage({ slugid }) {
           }}
           onCancel={() => { setShowLeaveConfirm(false); setPendingLeaveUrl(null); }}
         />
+      )}
+
+      {/* Publish conflict — upstream changed. Offer Sync (adopt latest + retry). */}
+      {conflict && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4" onClick={() => setConflict(null)}>
+          <div
+            className="w-full max-w-sm rounded-2xl p-6"
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-[17px] font-bold text-[var(--text-primary)] mb-1">Out of sync</h3>
+            <p className="text-[13px] text-[var(--text-muted)] mb-5 leading-relaxed">{conflict.message}</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConflict(null)}
+                className="px-4 py-2 text-[13px] rounded-full"
+                style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}
+              >
+                Keep editing
+              </button>
+              <button
+                onClick={() => {
+                  const status = conflict.status;
+                  if (conflict.currentVersion) setLastKnownUpdatedAt(conflict.currentVersion);
+                  setConflict(null);
+                  doPublish(status);
+                }}
+                className="px-4 py-2 text-[13px] font-semibold rounded-full text-white"
+                style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #8b6ae6 100%)' }}
+              >
+                Sync &amp; publish
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Publishing progress overlay — kept up through the redirect to the post */}
