@@ -11,12 +11,24 @@ export async function GET(request) {
   const title = (searchParams.get('title') || 'Untitled').slice(0, 120);
   const subtitle = (searchParams.get('subtitle') || '').slice(0, 160);
   const author = (searchParams.get('author') || '').slice(0, 60);
-  const avatar = searchParams.get('avatar') || '';
-  const cover = searchParams.get('cover') || '';
   const emoji = (searchParams.get('emoji') || '').slice(0, 8);
 
-  const hasCover = /^https?:\/\//.test(cover);
-  const hasAvatar = /^https?:\/\//.test(avatar);
+  // satori (next/og) cannot decode WebP — our Cloudinary URLs default to f_webp.
+  // Force a PNG/JPEG delivery so avatars and covers actually render.
+  const ogSafeImage = (url) => {
+    if (!url || !/^https?:\/\//.test(url)) return '';
+    if (url.includes('res.cloudinary.com')) {
+      let u = url.replace(/f_webp/g, 'f_jpg').replace(/f_auto/g, 'f_jpg');
+      if (!/f_(jpg|png)/.test(u)) u = u.replace('/upload/', '/upload/f_jpg/');
+      return u;
+    }
+    return url;
+  };
+
+  const avatar = ogSafeImage(searchParams.get('avatar') || '');
+  const cover = ogSafeImage(searchParams.get('cover') || '');
+  const hasCover = !!cover;
+  const hasAvatar = !!avatar;
   const type = searchParams.get('type') || 'blog';
 
   // ── Profile card: real logo + big avatar + a hue derived from the handle ──
