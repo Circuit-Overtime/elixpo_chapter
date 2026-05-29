@@ -1,6 +1,6 @@
 export const colors = {
     bg: {
-        deep: "#141a16",
+        deep: "#0f1117",
         card: "rgba(16, 24, 12, 0.8)",
         cardGlass: "rgba(255,255,255,0.05)",
         cardGlassHover: "rgba(255,255,255,0.08)",
@@ -8,11 +8,11 @@ export const colors = {
         overlayLight: "rgba(20, 26, 22, 0.8)",
     },
     lime: {
-        main: "#a3e635",
-        light: "#bef264",
-        dim: "rgba(163, 230, 53, 0.15)",
-        border: "rgba(163, 230, 53, 0.3)",
-        glow: "rgba(163, 230, 53, 0.6)",
+        main: "#9b7bf7",
+        light: "#b69aff",
+        dim: "rgba(155, 123, 247, 0.15)",
+        border: "rgba(155, 123, 247, 0.3)",
+        glow: "rgba(155, 123, 247, 0.6)",
     },
     sage: {
         main: "#86efac",
@@ -77,9 +77,9 @@ export const colors = {
             border: "rgba(251, 191, 36, 0.3)",
         },
         Infrastructure: {
-            bg: "rgba(163, 230, 53, 0.1)",
-            text: "#a3e635",
-            border: "rgba(163, 230, 53, 0.3)",
+            bg: "rgba(155, 123, 247, 0.1)",
+            text: "#9b7bf7",
+            border: "rgba(155, 123, 247, 0.3)",
         },
         "Game Development": {
             bg: "rgba(168, 85, 247, 0.1)",
@@ -120,18 +120,18 @@ export const colors = {
 };
 
 export const gradients = {
-    cardAccent: "linear-gradient(90deg, #a3e635, #86efac, #fbbf24)",
+    cardAccent: "linear-gradient(90deg, #9b7bf7, #86efac, #fbbf24)",
     textHeading: "linear-gradient(to bottom right, #f5f5f4, #a1a1aa)",
     textHero:
-        "linear-gradient(135deg, #f5f5f4 0%, #a3e635 30%, #86efac 60%, #fbbf24 100%)",
+        "linear-gradient(135deg, #f5f5f4 0%, #9b7bf7 30%, #86efac 60%, #fbbf24 100%)",
     textAccent:
-        "linear-gradient(135deg, #a3e635 0%, #86efac 50%, #fbbf24 100%)",
-    bgPage: "linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)",
+        "linear-gradient(135deg, #9b7bf7 0%, #86efac 50%, #fbbf24 100%)",
+    bgPage: "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
     bgCard: "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
     bgOverlay:
         "linear-gradient(135deg, rgba(20, 26, 22, 0.95) 0%, rgba(20, 26, 22, 0.8) 100%)",
     glowLime:
-        "radial-gradient(circle, rgba(163, 230, 53, 0.08) 0%, rgba(0,0,0,0) 70%)",
+        "radial-gradient(circle, rgba(155, 123, 247, 0.08) 0%, rgba(0,0,0,0) 70%)",
     glowWhite:
         "radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%)",
 };
@@ -140,7 +140,7 @@ export const shadows = {
     card: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
     cardHover: "0 20px 40px -10px rgba(0,0,0,0.4)",
     cardLarge: "0 25px 50px -10px rgba(0,0,0,0.5)",
-    glowLime: "0 0 20px rgba(163, 230, 53, 0.6)",
+    glowLime: "0 0 20px rgba(155, 123, 247, 0.6)",
     glowWhite: "0 0 20px rgba(255,255,255,0.6)",
     button: "0 8px 25px rgba(0,0,0,0.3)",
 };
@@ -200,8 +200,8 @@ export const sx = {
         fontWeight: 600,
         border: `1px solid ${colors.lime.border}`,
         "&:hover": {
-            bgcolor: "rgba(163, 230, 53, 0.25)",
-            borderColor: "rgba(163, 230, 53, 0.5)",
+            bgcolor: "rgba(155, 123, 247, 0.25)",
+            borderColor: "rgba(155, 123, 247, 0.5)",
         },
     },
     chipTech: {

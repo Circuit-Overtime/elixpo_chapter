@@ -229,7 +229,7 @@ function AuthorizeContent() {
                     alignItems: "center",
                     justifyContent: "center",
                     background:
-                        "linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)",
+                        "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                     padding: 16,
                 }}
             >
@@ -309,7 +309,7 @@ function AuthorizeContent() {
                     alignItems: "center",
                     justifyContent: "center",
                     background:
-                        "linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)",
+                        "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                 }}
             >
                 <div style={{ textAlign: "center" }}>
@@ -317,8 +317,8 @@ function AuthorizeContent() {
                         style={{
                             width: 36,
                             height: 36,
-                            border: "3px solid rgba(163,230,53,0.2)",
-                            borderTopColor: "#a3e635",
+                            border: "3px solid rgba(155, 123, 247,0.2)",
+                            borderTopColor: "#9b7bf7",
                             borderRadius: "50%",
                             animation: "spin 0.8s linear infinite",
                             margin: "0 auto 16px",
@@ -342,7 +342,7 @@ function AuthorizeContent() {
                 alignItems: "center",
                 justifyContent: "center",
                 background:
-                    "linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)",
+                    "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                 padding: 16,
             }}
         >
@@ -373,7 +373,7 @@ function AuthorizeContent() {
                                 borderRadius: 12,
                                 overflow: "hidden",
                                 flexShrink: 0,
-                                border: "2px solid rgba(163,230,53,0.25)",
+                                border: "2px solid rgba(155, 123, 247,0.25)",
                             }}
                         >
                             <img
@@ -399,7 +399,7 @@ function AuthorizeContent() {
                                     width: 6,
                                     height: 6,
                                     borderRadius: "50%",
-                                    background: "#a3e635",
+                                    background: "#9b7bf7",
                                     opacity: 0.6,
                                 }}
                             />
@@ -408,7 +408,7 @@ function AuthorizeContent() {
                                     width: 24,
                                     height: 2,
                                     background:
-                                        "linear-gradient(90deg, rgba(163,230,53,0.5), rgba(163,230,53,0.15))",
+                                        "linear-gradient(90deg, rgba(155, 123, 247,0.5), rgba(155, 123, 247,0.15))",
                                 }}
                             />
                             <div
@@ -416,7 +416,7 @@ function AuthorizeContent() {
                                     width: 6,
                                     height: 6,
                                     borderRadius: "50%",
-                                    background: "#a3e635",
+                                    background: "#9b7bf7",
                                     opacity: 0.6,
                                 }}
                             />
@@ -482,8 +482,8 @@ function AuthorizeContent() {
                         <div
                             style={{
                                 gridColumn: "1 / -1",
-                                background: "rgba(163,230,53,0.04)",
-                                border: "1px solid rgba(163,230,53,0.1)",
+                                background: "rgba(155, 123, 247,0.04)",
+                                border: "1px solid rgba(155, 123, 247,0.1)",
                                 borderRadius: 12,
                                 padding: 16,
                             }}
@@ -525,7 +525,7 @@ function AuthorizeContent() {
                                                 width="14"
                                                 height="14"
                                                 viewBox="0 0 20 20"
-                                                fill="#a3e635"
+                                                fill="#9b7bf7"
                                                 style={{ flexShrink: 0 }}
                                             >
                                                 <path
@@ -614,7 +614,7 @@ function AuthorizeContent() {
                                     color:
                                         timeRemaining < 60
                                             ? "#ef4444"
-                                            : "#a3e635",
+                                            : "#9b7bf7",
                                     margin: 0,
                                 }}
                             >
@@ -659,9 +659,9 @@ function AuthorizeContent() {
                                 flex: 1,
                                 padding: "12px 16px",
                                 borderRadius: 10,
-                                border: "1px solid rgba(163,230,53,0.3)",
-                                background: "rgba(163,230,53,0.12)",
-                                color: "#a3e635",
+                                border: "1px solid rgba(155, 123, 247,0.3)",
+                                background: "rgba(155, 123, 247,0.12)",
+                                color: "#9b7bf7",
                                 fontSize: 14,
                                 fontWeight: 700,
                                 cursor:
@@ -681,8 +681,8 @@ function AuthorizeContent() {
                                         style={{
                                             width: 16,
                                             height: 16,
-                                            border: "2px solid rgba(163,230,53,0.3)",
-                                            borderTopColor: "#a3e635",
+                                            border: "2px solid rgba(155, 123, 247,0.3)",
+                                            borderTopColor: "#9b7bf7",
                                             borderRadius: "50%",
                                             animation:
                                                 "spin 0.8s linear infinite",
@@ -726,7 +726,7 @@ function AuthorizeContent() {
                     <button
                         onClick={() => router.push("/login")}
                         style={{
-                            color: "#a3e635",
+                            color: "#9b7bf7",
                             background: "none",
                             border: "none",
                             cursor: "pointer",

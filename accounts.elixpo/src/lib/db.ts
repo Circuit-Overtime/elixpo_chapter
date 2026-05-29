@@ -32,6 +32,47 @@ export async function getUserById(db: D1Database, userId: string) {
     return await stmt.bind(userId).first();
 }
 
+// ── Username (handle) helpers ──
+// Usernames are stored lowercase (canonical) so uniqueness is case-insensitive.
+
+export async function getUserByUsername(db: D1Database, username: string) {
+    const stmt = db.prepare(
+        "SELECT * FROM users WHERE username = ? AND is_active = 1",
+    );
+    return await stmt.bind(username.toLowerCase()).first();
+}
+
+export async function isUsernameTaken(
+    db: D1Database,
+    username: string,
+): Promise<boolean> {
+    const row = await db
+        .prepare("SELECT 1 FROM users WHERE username = ? LIMIT 1")
+        .bind(username.toLowerCase())
+        .first();
+    return !!row;
+}
+
+// Sets the handle, bumps the change counter, and stamps the change time.
+// The user `id` is never touched — only the handle changes.
+export async function setUsername(
+    db: D1Database,
+    userId: string,
+    username: string,
+) {
+    return await db
+        .prepare(
+            `UPDATE users
+             SET username = ?,
+                 username_changed_at = CURRENT_TIMESTAMP,
+                 username_change_count = COALESCE(username_change_count, 0) + 1,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+        )
+        .bind(username.toLowerCase(), userId)
+        .run();
+}
+
 export async function getUserByEmail(db: D1Database, email: string) {
     const stmt = db.prepare(
         "SELECT * FROM users WHERE email = ? AND is_active = 1",

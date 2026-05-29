@@ -79,7 +79,7 @@ function VerifyContent() {
                 alignItems: "center",
                 justifyContent: "center",
                 background:
-                    "linear-gradient(135deg, #141a16 0%, #1c2420 50%, #141a16 100%)",
+                    "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                 p: 2,
             }}
         >
@@ -98,7 +98,7 @@ function VerifyContent() {
             >
                 {status === "loading" && (
                     <>
-                        <CircularProgress sx={{ color: "#a3e635", mb: 2 }} />
+                        <CircularProgress sx={{ color: "#9b7bf7", mb: 2 }} />
                         <Typography
                             sx={{ color: "#f5f5f4", fontSize: "1.1rem" }}
                         >
@@ -112,7 +112,7 @@ function VerifyContent() {
                         <Box sx={{ fontSize: "3rem", mb: 1 }}>&#10003;</Box>
                         <Typography
                             variant="h5"
-                            sx={{ fontWeight: 700, color: "#a3e635", mb: 1 }}
+                            sx={{ fontWeight: 700, color: "#9b7bf7", mb: 1 }}
                         >
                             Verified
                         </Typography>
@@ -134,12 +134,12 @@ function VerifyContent() {
                         <Button
                             href="/dashboard/oauth-apps"
                             sx={{
-                                color: "#a3e635",
-                                border: "1px solid rgba(163, 230, 53, 0.3)",
+                                color: "#9b7bf7",
+                                border: "1px solid rgba(155, 123, 247, 0.3)",
                                 textTransform: "none",
                                 fontWeight: 600,
                                 "&:hover": {
-                                    background: "rgba(163, 230, 53, 0.1)",
+                                    background: "rgba(155, 123, 247, 0.1)",
                                 },
                             }}
                         >
@@ -167,12 +167,12 @@ function VerifyContent() {
                         <Button
                             href="/login"
                             sx={{
-                                color: "#a3e635",
-                                border: "1px solid rgba(163, 230, 53, 0.3)",
+                                color: "#9b7bf7",
+                                border: "1px solid rgba(155, 123, 247, 0.3)",
                                 textTransform: "none",
                                 fontWeight: 600,
                                 "&:hover": {
-                                    background: "rgba(163, 230, 53, 0.1)",
+                                    background: "rgba(155, 123, 247, 0.1)",
                                 },
                             }}
                         >
@@ -195,10 +195,10 @@ export default function VerifyPage() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        bgcolor: "#141a16",
+                        bgcolor: "#0f1117",
                     }}
                 >
-                    <CircularProgress sx={{ color: "#a3e635" }} />
+                    <CircularProgress sx={{ color: "#9b7bf7" }} />
                 </Box>
             }
         >

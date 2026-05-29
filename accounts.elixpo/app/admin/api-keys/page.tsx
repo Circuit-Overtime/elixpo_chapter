@@ -91,10 +91,11 @@ export default function ApiKeysPage() {
         setFormData((prev) => ({ ...prev, scopes: defaultScopes }));
     }, []);
 
-    // Fetch API keys
+    // Fetch API keys on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchApiKeys();
-    }, [fetchApiKeys]);
+    }, []);
 
     const fetchApiKeys = async () => {
         try {
@@ -115,6 +116,8 @@ export default function ApiKeysPage() {
             setLoading(false);
         }
     };
+
+    
 
     const handleCreateApiKey = async () => {
         if (!formData.name.trim()) {

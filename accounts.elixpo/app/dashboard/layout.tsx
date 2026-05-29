@@ -30,6 +30,8 @@ import { useEffect, useState } from "react";
 const darkTheme = createTheme({
     palette: {
         mode: "dark",
+        primary: { main: "#9b7bf7" },
+        background: { default: "#0f1117", paper: "#1a1d29" },
     },
 });
 
@@ -61,10 +63,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 return null;
             })
             .then((data: any) => {
-                if (data?.email) setUserEmail(data.email);
-                if (data?.displayName) setDisplayName(data.displayName);
-                if (data?.avatar) setUserAvatar(data.avatar);
-                if (data) setAuthChecked(true);
+                if (!data) return;
+                // Handle is mandatory — bounce to setup if it's not set yet.
+                if (!data.username) {
+                    router.replace("/setup-name");
+                    return;
+                }
+                if (data.email) setUserEmail(data.email);
+                if (data.displayName) setDisplayName(data.displayName);
+                if (data.avatar) setUserAvatar(data.avatar);
+                setAuthChecked(true);
             })
             .catch(() => {
                 router.push("/login");
@@ -94,17 +102,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    bgcolor: "#141a16",
+                    bgcolor: "#0f1117",
                 }}
             >
-                <CircularProgress sx={{ color: "#a3e635" }} />
+                <CircularProgress sx={{ color: "#9b7bf7" }} />
             </Box>
         );
     }
 
     return (
         <ThemeProvider theme={darkTheme}>
-            <Box sx={{ minHeight: "100vh", bgcolor: "#141a16" }}>
+            <Box sx={{ minHeight: "100vh", bgcolor: "#0f1117" }}>
                 {/* Top Navbar */}
                 <AppBar
                     position="sticky"
@@ -179,10 +187,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                     title={item.label}
                                     sx={{
                                         color: isActive(item.href)
-                                            ? "#a3e635"
+                                            ? "#9b7bf7"
                                             : "rgba(255, 255, 255, 0.45)",
                                         bgcolor: isActive(item.href)
-                                            ? "rgba(163, 230, 53, 0.1)"
+                                            ? "rgba(155, 123, 247, 0.1)"
                                             : "transparent",
                                         borderRadius: "8px",
                                         width: 38,
@@ -190,10 +198,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                         transition: "all 0.2s ease",
                                         "&:hover": {
                                             bgcolor: isActive(item.href)
-                                                ? "rgba(163, 230, 53, 0.15)"
+                                                ? "rgba(155, 123, 247, 0.15)"
                                                 : "rgba(255, 255, 255, 0.06)",
                                             color: isActive(item.href)
-                                                ? "#a3e635"
+                                                ? "#9b7bf7"
                                                 : "rgba(255, 255, 255, 0.8)",
                                         },
                                     }}
@@ -238,7 +246,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                         width: 34,
                                         height: 34,
                                         borderRadius: "50%",
-                                        border: "2px solid rgba(163, 230, 53, 0.3)",
+                                        border: "2px solid rgba(155, 123, 247, 0.3)",
                                     }}
                                 />
                             ) : (
@@ -248,7 +256,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                         height: 34,
                                         borderRadius: "50%",
                                         background:
-                                            "linear-gradient(135deg, #a3e635 0%, #65a30d 100%)",
+                                            "linear-gradient(135deg, #9b7bf7 0%, #65a30d 100%)",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
