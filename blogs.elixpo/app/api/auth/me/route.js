@@ -9,11 +9,13 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
+  let dbReached = false;
   try {
     const { kvCache } = await import('../../../../lib/cache');
     const user = await kvCache(`v1:user:${session.userId}`, 300, async () => {
       const { getDB } = await import('../../../../lib/cloudflare');
       const db = getDB();
+      dbReached = true;
       return db.prepare(`
         SELECT id, email, username, display_name, bio, avatar_url, avatar_r2_key, banner_r2_key, locale,
                tier, storage_used_bytes, ai_usage_today, ai_usage_date,
@@ -24,8 +26,17 @@ export async function GET() {
     });
 
     if (user) return NextResponse.json(user);
+
+    // DB was reachable and returned no row → the account was purged
+    // (e.g. revoked on accounts.elixpo). Don't trust the stale cookie profile;
+    // clear the session so the client treats the user as signed out.
+    if (dbReached) {
+      const { clearSession } = await import('../../../../lib/auth');
+      await clearSession();
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
   } catch {
-    // D1/KV not available — fall through
+    // D1/KV not available — fall through to the cached profile (local dev).
   }
 
   if (session.profile) return NextResponse.json(session.profile);

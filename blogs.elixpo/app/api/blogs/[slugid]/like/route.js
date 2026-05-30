@@ -54,11 +54,12 @@ export async function POST(request, { params }) {
         const user = await db.prepare('SELECT username, display_name, avatar_url FROM users WHERE id = ?').bind(session.userId).first();
         if (blog && blog.author_id !== session.userId) {
           const { notify } = await import('../../../../../lib/notify');
+          const { getBlogCanonicalPath } = await import('../../../../../lib/blogUrl');
           await notify(db, {
             userId: blog.author_id, type: 'like',
             actorId: session.userId, actorName: user?.display_name || user?.username,
             actorAvatar: user?.avatar_url, targetId: slugid,
-            targetTitle: blog.title, targetUrl: `/${user?.username}/${blog.title}`,
+            targetTitle: blog.title, targetUrl: await getBlogCanonicalPath(db, slugid),
           });
         }
       } catch {}

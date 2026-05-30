@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const { user, loading } = useAuth();
   const [showBannerModal, setShowBannerModal] = useState(false);
   const [localBanner, setLocalBanner] = useState(null);
+  const [bannerError, setBannerError] = useState(null);
   const [usage, setUsage] = useState(null);
   const [usageLoading, setUsageLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
@@ -105,9 +106,27 @@ export default function ProfilePage() {
       return;
     }
 
+    // Optimistic preview while we upload.
     const previewUrl = URL.createObjectURL(blob);
     setLocalBanner(previewUrl);
     setShowBannerModal(false);
+    setBannerError(null);
+
+    try {
+      const form = new FormData();
+      form.append('file', blob, 'banner.webp');
+      form.append('type', 'banner');
+      const res = await fetch('/api/media/upload', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Upload failed');
+      // Persisted — swap the blob preview for the stored URL so it survives reloads.
+      if (data.url) setLocalBanner(data.url);
+    } catch (e) {
+      setBannerError(e?.message || 'Failed to update banner');
+      setLocalBanner(null); // revert optimistic preview
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+    }
   }
 
   const tierLabel = usage?.tier === 'member' ? 'Member' : 'Free';
@@ -135,6 +154,11 @@ export default function ProfilePage() {
               </span>
             </button>
           </div>
+          {bannerError && (
+            <div className="absolute top-2 right-2 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-red-500/15 text-red-400 border border-red-500/25">
+              {bannerError}
+            </div>
+          )}
           <div className="absolute -bottom-12 left-6">
             {user.avatar_url ? (
               <img src={user.avatar_url} alt="" className="h-24 w-24 rounded-full border-4 border-[var(--bg-app)] object-cover" />

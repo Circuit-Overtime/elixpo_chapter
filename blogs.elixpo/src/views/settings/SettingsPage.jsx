@@ -792,12 +792,16 @@ function DangerZone() {
     setShowDisable(false);
   };
 
-  const handleDelete = async () => {
-    try {
-      await fetch('/api/users/me', { method: 'DELETE' });
-      logout();
-    } catch {}
+  // Account deletion/revocation is owned by Elixpo Accounts (the identity
+  // source of truth). We never delete the identity here — we send the user to
+  // accounts.elixpo to revoke the app; accounts then signals us (webhook) to
+  // purge their blogs data and bounces them back to /api/auth/revoked, which
+  // clears the session. See GitHub issue #8.
+  const handleDelete = () => {
     setShowDelete(false);
+    const returnTo = `${window.location.origin}/api/auth/revoked`;
+    window.location.href =
+      `https://accounts.elixpo.com/dashboard/services?revoke=blogs&return_to=${encodeURIComponent(returnTo)}`;
   };
 
   return (
@@ -820,7 +824,7 @@ function DangerZone() {
         <div className="flex items-center justify-between px-4 py-3">
           <div>
             <p className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>Delete Account</p>
-            <p className="text-[11px]" style={{ color: 'var(--text-faint)' }}>Permanently delete your account, blogs, and all data.</p>
+            <p className="text-[11px]" style={{ color: 'var(--text-faint)' }}>Revoke on Elixpo Accounts — permanently deletes your blogs, data, and all mentions.</p>
           </div>
           <button
             onClick={() => setShowDelete(true)}
@@ -845,8 +849,8 @@ function DangerZone() {
       {showDelete && (
         <ConfirmModal
           title="Delete Account"
-          description="This will permanently delete your account, all your blogs, comments, likes, and data. This action cannot be undone."
-          confirmLabel="Delete Account"
+          description="You'll be taken to Elixpo Accounts to revoke access. Once you confirm there, your LixBlogs account, all your blogs, comments, likes, and mentions are permanently deleted and you'll be signed out. This cannot be undone."
+          confirmLabel="Continue to Elixpo Accounts"
           onConfirm={handleDelete}
           onCancel={() => setShowDelete(false)}
           destructive

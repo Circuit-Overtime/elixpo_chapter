@@ -13,6 +13,27 @@ export async function PUT(request) {
     display_name, bio, location, timezone, pronouns, website, company, links,
   } = await request.json();
 
+  // Content + website validation (https-only, no NSFW).
+  const { findProfanity, normalizeHttpsUrl } = await import('../../../../lib/validate');
+  if (findProfanity(display_name) || findProfanity(bio) || findProfanity(company) || findProfanity(location) || findProfanity(pronouns)) {
+    return NextResponse.json({ error: 'Contains language that is not allowed' }, { status: 400 });
+  }
+  let normWebsite = website;
+  if (website != null && website !== '') {
+    normWebsite = normalizeHttpsUrl(website);
+    if (normWebsite == null) return NextResponse.json({ error: 'Website must be a valid https:// URL' }, { status: 400 });
+  }
+  let normLinks = links;
+  if (Array.isArray(links)) {
+    normLinks = [];
+    for (const l of links) {
+      if (!l?.url?.trim()) continue;
+      const u = normalizeHttpsUrl(l.url);
+      if (u == null) return NextResponse.json({ error: 'Links must be valid https:// URLs' }, { status: 400 });
+      normLinks.push({ ...l, url: u });
+    }
+  }
+
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
@@ -32,8 +53,8 @@ export async function PUT(request) {
       WHERE id = ?
     `).bind(
       display_name || null, bio || null, location || null, timezone || null,
-      pronouns || null, website || null, company || null,
-      links ? JSON.stringify(links) : null, now, session.userId,
+      pronouns || null, normWebsite ?? null, company || null,
+      normLinks ? JSON.stringify(normLinks) : null, now, session.userId,
     ).run();
 
     // Invalidate user cache
