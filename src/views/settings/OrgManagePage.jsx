@@ -143,6 +143,29 @@ export default function OrgManagePage({ slug }) {
     setSaving(false);
   };
 
+  const handleLogoFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file
+    if (!file || !org) return;
+    setLogoError('');
+    setLogoUploading(true);
+    try {
+      const { blob } = await compressImage(file, { maxWidth: 400, maxHeight: 400 });
+      const form = new FormData();
+      form.append('file', blob, 'logo.webp');
+      form.append('type', 'org_avatar');
+      form.append('orgId', org.id);
+      const res = await fetch('/api/media/upload', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Upload failed');
+      if (data.url) setOrg(prev => ({ ...prev, logo_url: data.url }));
+    } catch (err) {
+      setLogoError(err?.message || 'Failed to update logo');
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
   // Link management
   const addLink = (preset) => {
     setLinks([...links, { type: preset.key, label: preset.label, url: '' }]);
@@ -310,7 +333,21 @@ export default function OrgManagePage({ slug }) {
           <Link href="/settings" className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors p-1">
             <ion-icon name="arrow-back" style={{ fontSize: '18px' }} />
           </Link>
-          <img src={org.logo_url || generatePixelAvatar(org.slug)} alt="" className="h-10 w-10 rounded-xl" />
+          <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoFile} />
+          <button
+            type="button"
+            onClick={() => logoInputRef.current?.click()}
+            disabled={logoUploading}
+            className="relative group h-10 w-10 rounded-xl overflow-hidden flex-shrink-0"
+            title="Change organization logo"
+          >
+            <img src={org.logo_url || generatePixelAvatar(org.slug)} alt="" className="h-10 w-10 rounded-xl object-cover" />
+            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/50 transition-colors">
+              {logoUploading
+                ? <ion-icon name="hourglass-outline" style={{ fontSize: '16px', color: '#fff' }} />
+                : <ion-icon name="camera-outline" style={{ fontSize: '16px', color: '#fff' }} className="opacity-0 group-hover:opacity-100 transition-opacity" />}
+            </span>
+          </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-[var(--text-primary)] leading-tight">{org.name}</h1>
             <p className="text-[12px] text-[var(--text-faint)]">@{org.slug}</p>
@@ -323,6 +360,10 @@ export default function OrgManagePage({ slug }) {
             View Profile
           </Link>
         </div>
+
+        {logoError && (
+          <p className="text-[12px] text-red-400 mb-3 -mt-3">{logoError}</p>
+        )}
 
         <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} keyField="key" />
 
