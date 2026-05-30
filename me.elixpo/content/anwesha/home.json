@@ -1,4 +1,20 @@
 {
+  "hero": {
+    "focusTags": ["System Design", "ML", "Open Source"],
+    "name": "ANWESHA",
+    "headline": "System Design Engineer & ML Developer",
+    "subhead": "Co-developer @ Elixpo · Content Team Lead, GDG JIS University · GSSoC '25 Contributor",
+    "intro": "Final-year CSE undergraduate turning complex patterns into scalable systems — building ML pipelines with TensorFlow and PyTorch, designing architecture, and contributing to open source across communities like GSSoC, GDG, and Elixpo.",
+    "credentials": [
+      { "label": "Content Team Lead", "org": "GDG JIS University" },
+      { "label": "Co-developer", "org": "Elixpo" }
+    ],
+    "ctas": [
+      { "label": "View Work", "href": "projects" },
+      { "label": "Connect", "href": "connect" }
+    ],
+    "portrait": "/assets/anwesha/punchlineSection/vr-pic1.webp"
+  },
   "intro": {
     "heroName": "ANWESHA",
     "tagline": "System Design",
@@ -57,6 +73,11 @@
       { "type": "icon", "src": "https://img.icons8.com/color/144/c-plus-plus-logo.png", "alt": "C++" },
       { "type": "icon", "src": "https://img.icons8.com/color/144/c-programming.png", "alt": "C" },
       { "type": "icon", "src": "https://img.icons8.com/color/144/python.png", "alt": "Python" }
+    ],
+    "explore": [
+      { "label": "Talks", "caption": "Speaking & sessions", "href": "talks" },
+      { "label": "Writing", "caption": "Notes & blog posts", "href": "blogs" },
+      { "label": "Papers", "caption": "Research & publications", "href": "publications" }
     ],
     "images": {
       "wand": "/assets/anwesha/techTracks/wand-1.webp",

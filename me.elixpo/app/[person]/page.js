@@ -291,6 +291,21 @@ export default async function HomePage({ params }) {
               </div>
             )}
           </div>
+          {home.hero && !home.techSection.reading && (
+            <div className="readingList flex flex-col w-full gap-1 mt-12">
+              <p className="readingLabel text-[#1B1B19] font-extrabold uppercase tracking-[3px] text-xs sm:text-sm mb-3 sm:mb-5">
+                Currently Reading
+              </p>
+              <div className="readingItem flex flex-col items-center justify-center border-t-2 border-b-2 border-[#222] py-10 sm:py-14 gap-2">
+                <span className="fontNav text-[#1B1B19] text-3xl sm:text-5xl md:text-[3.4em] leading-none tracking-[1px] opacity-20 select-none">
+                  Coming Soon
+                </span>
+                <p className="text-[#888] text-xs sm:text-sm tracking-[3px] uppercase">
+                  This section is being worked on
+                </p>
+              </div>
+            </div>
+          )}
           {home.techSection.explore ? (
             <div className="exploreSection w-full flex flex-col gap-6 mt-12">
               <div className="exploreGrid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
