@@ -107,13 +107,15 @@ export async function POST(request, { params }) {
     try {
       const user = await db.prepare('SELECT username, display_name, avatar_url FROM users WHERE id = ?').bind(session.userId).first();
       const { notify } = await import('../../../../../lib/notify');
+      const { getBlogCanonicalPath } = await import('../../../../../lib/blogUrl');
+      const blogUrl = await getBlogCanonicalPath(db, slugid);
 
       if (blog.author_id !== session.userId) {
         await notify(db, {
           userId: blog.author_id, type: 'comment',
           actorId: session.userId, actorName: user?.display_name || user?.username,
           actorAvatar: user?.avatar_url, targetId: slugid,
-          targetTitle: blog.title, targetUrl: `/${user?.username}/${blog.slug || slugid}`,
+          targetTitle: blog.title, targetUrl: blogUrl,
         });
       }
 
@@ -125,7 +127,7 @@ export async function POST(request, { params }) {
             userId: parent.user_id, type: 'mention',
             actorId: session.userId, actorName: user?.display_name || user?.username,
             actorAvatar: user?.avatar_url, targetId: slugid,
-            targetTitle: blog.title, targetUrl: `/${user?.username}/${blog.slug || slugid}`,
+            targetTitle: blog.title, targetUrl: blogUrl,
           });
         }
       }

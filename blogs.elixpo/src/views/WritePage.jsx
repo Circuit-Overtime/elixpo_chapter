@@ -424,6 +424,10 @@ export default function WritePage({ slugid }) {
   const [lastSaved, setLastSaved] = useState(null);
   const [draftLoading, setDraftLoading] = useState(true);
   const [editorReady, setEditorReady] = useState(false);
+  // Co-author invite gate — set when the user lands on /edit/<id> for a blog
+  // they were invited to but haven't accepted (or can only view).
+  const [inviteGate, setInviteGate] = useState(null);
+  const [inviteBusy, setInviteBusy] = useState(false);
   const [aiTitleKey, setAiTitleKey] = useState(0);
   const [blogVersion, setBlogVersion] = useState(null);
   const [lastKnownUpdatedAt, setLastKnownUpdatedAt] = useState(null);
@@ -685,6 +689,15 @@ export default function WritePage({ slugid }) {
           const data = await res.json();
           cloud = data.blog || null;
           version = data.version || null;
+        } else if (res.status === 403) {
+          // Invited but not yet accepted (or view-only) — show the invite gate
+          // instead of a blank editor.
+          const data = await res.json().catch(() => ({}));
+          if (data?.invite) {
+            setInviteGate(data.invite);
+            setDraftLoading(false);
+            return;
+          }
         }
       } catch { /* offline or brand-new blog */ }
 
@@ -1146,6 +1159,102 @@ export default function WritePage({ slugid }) {
     if (diff < 3600) return `Saved ${Math.floor(diff / 60)}m ago`;
     return `Saved ${Math.floor(diff / 3600)}h ago`;
   };
+
+  async function acceptInvite() {
+    if (!inviteGate || inviteBusy) return;
+    setInviteBusy(true);
+    try {
+      const res = await fetch('/api/blogs/invite', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slugid: inviteGate.blogId, accept: true }),
+      });
+      if (!res.ok) throw new Error();
+      // Viewers can't edit — once accepted the blog is cross-posted to their
+      // profile, so send them to the published reader view.
+      if (inviteGate.role === 'viewer') {
+        window.location.href = `/${inviteGate.slug || inviteGate.blogId}`;
+        return;
+      }
+      // Editor/admin: access is now granted — reload into the editor.
+      window.location.reload();
+    } catch {
+      setInviteBusy(false);
+    }
+  }
+
+  async function declineInvite() {
+    if (!inviteGate || inviteBusy) return;
+    setInviteBusy(true);
+    try {
+      await fetch('/api/blogs/invite', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slugid: inviteGate.blogId, userId: user?.id }),
+      });
+    } catch { /* best effort */ }
+    window.location.href = '/';
+  }
+
+  // ── Co-author invite gate ──
+  if (inviteGate) {
+    const isPending = inviteGate.status !== 'accepted';
+    const roleLabel = inviteGate.role === 'admin' ? 'Admin' : inviteGate.role === 'editor' ? 'Editor' : 'Viewer';
+    return (
+      <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] flex items-center justify-center px-6">
+        <div className="w-full max-w-md bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-8 text-center">
+          <div className="w-12 h-12 mx-auto mb-5 rounded-full flex items-center justify-center" style={{ background: '#9b7bf718', border: '1px solid #9b7bf733' }}>
+            <ion-icon name="people-outline" style={{ fontSize: '24px', color: '#9b7bf7' }} />
+          </div>
+          {isPending ? (
+            <>
+              <h1 className="text-xl font-bold mb-2">Collaboration invite</h1>
+              <p className="text-[var(--text-muted)] text-[14px] mb-1">
+                You've been invited to collaborate on
+              </p>
+              <p className="text-[var(--text-primary)] font-semibold text-[15px] mb-3">
+                “{inviteGate.title || 'Untitled blog'}”
+              </p>
+              <p className="text-[var(--text-faint)] text-[13px] mb-6">
+                Role: <span className="text-[#9b7bf7] font-medium">{roleLabel}</span>
+              </p>
+              <div className="flex items-center gap-3 justify-center">
+                <button
+                  onClick={declineInvite}
+                  disabled={inviteBusy}
+                  className="px-5 py-2 rounded-full text-[13px] font-medium border border-[var(--border-default)] text-[var(--text-body)] hover:border-[var(--border-hover)] transition-colors disabled:opacity-50"
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={acceptInvite}
+                  disabled={inviteBusy}
+                  className="px-5 py-2 rounded-full text-[13px] font-semibold text-white transition-opacity disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #8b6ae6 100%)' }}
+                >
+                  {inviteBusy ? 'Accepting…' : 'Accept invite'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-xl font-bold mb-2">View-only access</h1>
+              <p className="text-[var(--text-muted)] text-[14px] mb-6">
+                You have viewer access to “{inviteGate.title || 'this blog'}” and can't edit it.
+              </p>
+              <a
+                href={`/${inviteGate.slug || inviteGate.blogId}`}
+                className="inline-block px-5 py-2 rounded-full text-[13px] font-semibold text-white"
+                style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #8b6ae6 100%)' }}
+              >
+                Open blog
+              </a>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] edit-page">

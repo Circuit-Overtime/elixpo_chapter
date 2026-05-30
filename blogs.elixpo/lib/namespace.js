@@ -6,6 +6,8 @@
  * Fallback: checks `users.username` and `orgs.slug` directly.
  */
 
+import { containsProfanity } from './validate';
+
 // Reserved names that can't be used as usernames or org slugs
 const RESERVED_NAMES = new Set([
   'admin', 'api', 'app', 'auth', 'blog', 'blogs', 'callback', 'cdn',
@@ -32,6 +34,7 @@ export function validateNameFormat(name) {
   }
   if (/--/.test(clean)) return { valid: false, error: 'Cannot contain consecutive hyphens' };
   if (RESERVED_NAMES.has(clean)) return { valid: false, error: 'This name is reserved' };
+  if (containsProfanity(clean)) return { valid: false, error: 'This name is not allowed' };
   return { valid: true };
 }
 

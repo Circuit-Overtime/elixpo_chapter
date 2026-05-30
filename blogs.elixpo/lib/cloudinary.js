@@ -114,10 +114,16 @@ export function orgAvatarPublicId(slug) {
   return `lixblogs/avatars/orgs/${slug}`;
 }
 
-/** Get the full Cloudinary URL for a user avatar at the deterministic path */
-export function userAvatarCdnUrl(username) {
+/**
+ * Get the full Cloudinary URL for a user avatar at the deterministic path.
+ * Pass the Cloudinary upload `version` to bust caches — the public_id is stable,
+ * so without a version segment the CDN/browser keeps serving the old image even
+ * after a re-upload (this is why avatars appeared not to sync).
+ */
+export function userAvatarCdnUrl(username, version) {
   const config = getConfig();
-  return `https://res.cloudinary.com/${config.cloudName}/image/upload/${AVATAR_TRANSFORMS}/${userAvatarPublicId(username)}`;
+  const v = version ? `v${version}/` : '';
+  return `https://res.cloudinary.com/${config.cloudName}/image/upload/${AVATAR_TRANSFORMS}/${v}${userAvatarPublicId(username)}`;
 }
 
 /** Get the full Cloudinary URL for an org avatar at the deterministic path */

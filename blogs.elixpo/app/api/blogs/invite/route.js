@@ -96,16 +96,21 @@ export async function POST(request) {
       ON CONFLICT(blog_id, user_id) DO UPDATE SET role = excluded.role
     `).bind(slugid, invitee.id, role).run();
 
-    // Notify the invitee
+    // Notify the invitee. Link to the canonical reader URL (slug-based) with an
+    // ?invite=<blogId> param so the reader page can show an accept/decline modal
+    // over a blurred backdrop. target_id stays the blog id for the accept API.
     try {
       const inviter = await db.prepare('SELECT username, display_name, avatar_url FROM users WHERE id = ?').bind(session.userId).first();
       const blogInfo = await db.prepare('SELECT title FROM blogs WHERE id = ?').bind(slugid).first();
       const { notify } = await import('../../../../lib/notify');
+      const { getBlogCanonicalPath } = await import('../../../../lib/blogUrl');
+      const path = await getBlogCanonicalPath(db, slugid);
+      const targetUrl = `${path}${path.includes('?') ? '&' : '?'}invite=${encodeURIComponent(slugid)}`;
       await notify(db, {
         userId: invitee.id, type: 'blog_invite',
         actorId: session.userId, actorName: inviter?.display_name || inviter?.username,
         actorAvatar: inviter?.avatar_url, targetId: slugid,
-        targetTitle: blogInfo?.title, targetUrl: `/edit/${slugid}`,
+        targetTitle: blogInfo?.title, targetUrl,
       });
     } catch {}
 

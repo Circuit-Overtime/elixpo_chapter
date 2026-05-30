@@ -44,7 +44,26 @@ export async function GET(request) {
     // Edit permission: author, org write+, or accepted co-author.
     const { canEditBlog } = await import('../../../../lib/permissions');
     const perm = await canEditBlog(db, blogId, session.userId);
-    if (!perm.ok) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+    if (!perm.ok) {
+      // If the user has a co-author invite on this blog, surface it so the
+      // client can render an accept/decline gate instead of a blank editor.
+      const invite = await db.prepare(
+        'SELECT role, status FROM blog_co_authors WHERE blog_id = ? AND user_id = ?'
+      ).bind(blogId, session.userId).first();
+      if (invite) {
+        return NextResponse.json({
+          error: 'Not authorized',
+          invite: {
+            blogId,
+            slug: blog.slug,
+            title: blog.title,
+            role: invite.role,
+            status: invite.status,
+          },
+        }, { status: 403 });
+      }
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+    }
 
     // Decompress content
     let content = blog.content;

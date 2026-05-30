@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import AppShell from '../../components/AppShell';
 import TabBar from '../../components/TabBar';
 import Link from 'next/link';
 import { generatePixelAvatar } from '../../utils/pixelAvatar';
+import { compressImage } from '../../utils/compressImage';
+import { isHttpsUrl } from '../../../lib/validate';
 
 const ROLE_LABELS = { admin: 'Admin', maintain: 'Maintain', write: 'Write', read: 'Read' };
 
@@ -26,6 +28,23 @@ const LINK_PRESETS = [
   { key: 'youtube', label: 'YouTube', icon: 'logo-youtube', placeholder: 'https://youtube.com/@org' },
   { key: 'custom', label: 'Custom Link', icon: 'link-outline', placeholder: 'https://...' },
 ];
+
+// Defined at module scope (NOT inside the component) so its identity is stable
+// across renders — a component defined during render remounts every keystroke,
+// which steals focus and resets the cursor to the end of the field.
+function Input({ label, sublabel, value, onChange, placeholder, type = 'text', ...props }) {
+  return (
+    <div>
+      <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">{label}</label>
+      {sublabel && <p className="text-[11px] text-[var(--text-faint)] mb-2">{sublabel}</p>}
+      <input
+        type={type} value={value} onChange={onChange} placeholder={placeholder}
+        className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors placeholder-[var(--text-faint)]"
+        {...props}
+      />
+    </div>
+  );
+}
 
 export default function OrgManagePage({ slug }) {
   const { user } = useAuth();
@@ -48,6 +67,10 @@ export default function OrgManagePage({ slug }) {
   const [links, setLinks] = useState([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const logoInputRef = useRef(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState('');
 
   // Invite state
   const [inviteRole, setInviteRole] = useState('write');
@@ -105,21 +128,60 @@ export default function OrgManagePage({ slug }) {
 
   const handleSave = async () => {
     if (!org || saving) return;
+    setSaveError('');
+    // Websites must be https (server enforces this too).
+    const activeLinks = links.filter(l => l.url?.trim());
+    if (website?.trim() && !isHttpsUrl(website.trim())) {
+      setSaveError('Website must be a valid https:// URL'); return;
+    }
+    const badLink = activeLinks.find(l => !isHttpsUrl(l.url.trim()));
+    if (badLink) { setSaveError(`Link "${badLink.label || badLink.type}" must be a valid https:// URL`); return; }
+
     setSaving(true);
     try {
-      await fetch('/api/orgs', {
+      const res = await fetch('/api/orgs', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orgId: org.id, name, description, bio, website, visibility,
           timezone, location, contact_email: contactEmail,
-          links: links.filter(l => l.url?.trim()),
+          links: activeLinks,
         }),
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch {}
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSaveError(data?.error || 'Failed to save');
+      } else {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } catch {
+      setSaveError('Failed to save');
+    }
     setSaving(false);
+  };
+
+  const handleLogoFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file
+    if (!file || !org) return;
+    setLogoError('');
+    setLogoUploading(true);
+    try {
+      const { blob } = await compressImage(file, { maxWidth: 400, maxHeight: 400 });
+      const form = new FormData();
+      form.append('file', blob, 'logo.webp');
+      form.append('type', 'org_avatar');
+      form.append('orgId', org.id);
+      const res = await fetch('/api/media/upload', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Upload failed');
+      if (data.url) setOrg(prev => ({ ...prev, logo_url: data.url }));
+    } catch (err) {
+      setLogoError(err?.message || 'Failed to update logo');
+    } finally {
+      setLogoUploading(false);
+    }
   };
 
   // Link management
@@ -270,19 +332,6 @@ export default function OrgManagePage({ slug }) {
     );
   }
 
-  // Helper: styled input
-  const Input = ({ label, sublabel, value, onChange, placeholder, type = 'text', ...props }) => (
-    <div>
-      <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">{label}</label>
-      {sublabel && <p className="text-[11px] text-[var(--text-faint)] mb-2">{sublabel}</p>}
-      <input
-        type={type} value={value} onChange={onChange} placeholder={placeholder}
-        className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors placeholder-[var(--text-faint)]"
-        {...props}
-      />
-    </div>
-  );
-
   const TABS = [
     { key: 'general', label: 'Profile', icon: 'person-outline' },
     { key: 'links', label: 'Links', icon: 'link-outline', count: links.length || undefined },
@@ -302,7 +351,21 @@ export default function OrgManagePage({ slug }) {
           <Link href="/settings" className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors p-1">
             <ion-icon name="arrow-back" style={{ fontSize: '18px' }} />
           </Link>
-          <img src={org.logo_url || generatePixelAvatar(org.slug)} alt="" className="h-10 w-10 rounded-xl" />
+          <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoFile} />
+          <button
+            type="button"
+            onClick={() => logoInputRef.current?.click()}
+            disabled={logoUploading}
+            className="relative group h-10 w-10 rounded-xl overflow-hidden flex-shrink-0"
+            title="Change organization logo"
+          >
+            <img src={org.logo_url || generatePixelAvatar(org.slug)} alt="" className="h-10 w-10 rounded-xl object-cover" />
+            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/50 transition-colors">
+              {logoUploading
+                ? <ion-icon name="hourglass-outline" style={{ fontSize: '16px', color: '#fff' }} />
+                : <ion-icon name="camera-outline" style={{ fontSize: '16px', color: '#fff' }} className="opacity-0 group-hover:opacity-100 transition-opacity" />}
+            </span>
+          </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-[var(--text-primary)] leading-tight">{org.name}</h1>
             <p className="text-[12px] text-[var(--text-faint)]">@{org.slug}</p>
@@ -315,6 +378,10 @@ export default function OrgManagePage({ slug }) {
             View Profile
           </Link>
         </div>
+
+        {logoError && (
+          <p className="text-[12px] text-red-400 mb-3 -mt-3">{logoError}</p>
+        )}
 
         <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} keyField="key" />
 
@@ -428,6 +495,7 @@ export default function OrgManagePage({ slug }) {
                 {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
               </button>
               {saved && <span className="text-[12px] text-[#4ade80] flex items-center gap-1"><ion-icon name="checkmark-circle" style={{ fontSize: '14px' }} /> Changes saved</span>}
+              {saveError && <span className="text-[12px] text-red-400 flex items-center gap-1"><ion-icon name="alert-circle" style={{ fontSize: '14px' }} /> {saveError}</span>}
             </div>
           </div>
         )}

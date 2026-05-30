@@ -10,6 +10,7 @@ import BlogInteractionBar from '../components/BlogInteractionBar';
 import BlogComments from '../components/BlogComments';
 import AuthorAttribution from '../components/AuthorAttribution';
 import FollowListModal from '../components/FollowListModal';
+import BlogInviteOverlay from '../components/BlogInviteOverlay';
 import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
 
@@ -63,7 +64,18 @@ function FollowButton({ username }) {
   );
 }
 
-export default function HandlePage({ path }) {
+export default function HandlePage(props) {
+  // The invite overlay sits above the reader (mounted behind it, blurred) when
+  // the URL carries ?invite=<blogId> from a collaboration invite notification.
+  return (
+    <>
+      <HandlePageInner {...props} />
+      <BlogInviteOverlay />
+    </>
+  );
+}
+
+function HandlePageInner({ path }) {
   const { user: currentUser } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -128,8 +140,8 @@ export default function HandlePage({ path }) {
     try { blocks = typeof blog.content === 'string' ? JSON.parse(blog.content) : blog.content || []; } catch { blocks = []; }
 
     // Count words from blocks
-    const countBlockWords = (b) => (b || []).reduce((sum, block) => {
-      const text = (block.content || []).map(c => c.text || '').join(' ');
+    const countBlockWords = (b) => (Array.isArray(b) ? b : []).reduce((sum, block) => {
+      const text = (Array.isArray(block.content) ? block.content : []).map(c => c.text || '').join(' ');
       return sum + text.split(/\s+/).filter(Boolean).length + countBlockWords(block.children);
     }, 0);
     const wc = countBlockWords(blocks);
