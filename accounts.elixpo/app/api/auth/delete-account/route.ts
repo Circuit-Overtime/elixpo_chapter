@@ -27,6 +27,19 @@ export async function POST(request: NextRequest) {
         const userId = payload.sub;
         const db = await getDatabase();
 
+        // Capture which apps the user authorized BEFORE deleting tokens, so we
+        // can notify each to purge the user's data (first-party apps only).
+        let connectedClientIds: string[] = [];
+        try {
+            const conn = await db
+                .prepare(
+                    "SELECT DISTINCT client_id FROM refresh_tokens WHERE user_id = ? AND client_id IS NOT NULL",
+                )
+                .bind(userId)
+                .all();
+            connectedClientIds = (conn.results || []).map((r: any) => r.client_id);
+        } catch {}
+
         // Delete in order: dependent tables first, then user
         await db
             .prepare("DELETE FROM refresh_tokens WHERE user_id = ?")
@@ -55,6 +68,12 @@ export async function POST(request: NextRequest) {
         await db.prepare("DELETE FROM users WHERE id = ?").bind(userId).run();
 
         console.log(`[Account] Deleted user: ${userId}`);
+
+        // Notify connected first-party apps to hard-purge the user's data.
+        try {
+            const { fireRevocationToAll } = await import("@/lib/revocation-webhook");
+            await fireRevocationToAll(connectedClientIds, userId, "user.deleted");
+        } catch {}
 
         // Clear auth cookies
         const response = NextResponse.json({

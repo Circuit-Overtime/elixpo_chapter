@@ -69,10 +69,74 @@ function ServiceIcon({
     );
 }
 
+// Only allow post-revoke redirects back to first-party elixpo.com hosts.
+function isSafeReturn(url: string): boolean {
+    try {
+        const u = new URL(url);
+        return (
+            u.protocol === "https:" &&
+            (u.hostname === "elixpo.com" || u.hostname.endsWith(".elixpo.com"))
+        );
+    } catch {
+        return false;
+    }
+}
+
 const ServicesPage = () => {
     const [services, setServices] = useState<ConnectedService[]>([]);
     const [loading, setLoading] = useState(true);
     const [revoking, setRevoking] = useState<string | null>(null);
+    const [paramHandled, setParamHandled] = useState(false);
+
+    // Deep-link revoke: blogs.elixpo (and other first-party apps) send the user
+    // here with ?revoke=<app>&return_to=<url>. Auto-trigger the revoke for the
+    // matching connected app, then bounce them back so they're signed out there.
+    useEffect(() => {
+        if (loading || paramHandled || typeof window === "undefined") return;
+        const sp = new URLSearchParams(window.location.search);
+        const revoke = sp.get("revoke");
+        const returnTo = sp.get("return_to");
+        if (!revoke) return;
+        setParamHandled(true);
+
+        const needle = revoke.toLowerCase();
+        const target = services.find(
+            (s) =>
+                s.name?.toLowerCase() === needle ||
+                s.name?.toLowerCase().includes(needle) ||
+                (s.homepage_url || "").toLowerCase().includes(needle),
+        );
+        if (!target) {
+            // Not connected (or already revoked) — just send them back.
+            if (returnTo && isSafeReturn(returnTo)) window.location.href = returnTo;
+            return;
+        }
+        (async () => {
+            const ok = confirm(
+                `Revoke access for ${target.name}? This permanently deletes your ${target.name} account and all its data. This cannot be undone.`,
+            );
+            if (!ok) return;
+            setRevoking(target.client_id);
+            try {
+                const res = await fetch(
+                    `/api/auth/connected-services?client_id=${target.client_id}`,
+                    { method: "DELETE", credentials: "include" },
+                );
+                if (res.ok) {
+                    setServices((prev) =>
+                        prev.filter((s) => s.client_id !== target.client_id),
+                    );
+                    if (returnTo && isSafeReturn(returnTo)) {
+                        window.location.href = returnTo;
+                        return;
+                    }
+                }
+            } finally {
+                setRevoking(null);
+            }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading, services, paramHandled]);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {

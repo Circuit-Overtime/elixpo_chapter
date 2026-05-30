@@ -84,6 +84,10 @@ export async function DELETE(request: NextRequest) {
             .bind(auth.sub, clientId)
             .run();
 
+        // Notify the app to purge the user's data (first-party apps only).
+        const { fireRevocationWebhook } = await import("@/lib/revocation-webhook");
+        await fireRevocationWebhook(clientId, auth.sub, "app.revoked");
+
         return NextResponse.json({ success: true });
     } catch (err) {
         console.error("[Connected Services] Revoke error:", err);
