@@ -49,6 +49,16 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Name and slug are required' }, { status: 400 });
   }
 
+  // Content + website validation (https-only, no NSFW).
+  const { findProfanity, normalizeHttpsUrl } = await import('../../../lib/validate');
+  const badWord = findProfanity(name) || findProfanity(description) || findProfanity(bio) || findProfanity(slug);
+  if (badWord) return NextResponse.json({ error: 'Contains language that is not allowed' }, { status: 400 });
+  let normWebsite = website || '';
+  if (website) {
+    normWebsite = normalizeHttpsUrl(website);
+    if (normWebsite == null) return NextResponse.json({ error: 'Website must be a valid https:// URL' }, { status: 400 });
+  }
+
   // Validate slug format
   const cleanSlug = slug.toLowerCase().replace(/[^\w-]/g, '').slice(0, 40);
   if (!cleanSlug) {
@@ -81,7 +91,7 @@ export async function POST(request) {
     await db.prepare(`
       INSERT INTO orgs (id, slug, name, description, bio, website, visibility, owner_id, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(orgId, cleanSlug, name.trim(), description || '', bio || '', website || '', visibility || 'public', session.userId, now, now).run();
+    `).bind(orgId, cleanSlug, name.trim(), description || '', bio || '', normWebsite || '', visibility || 'public', session.userId, now, now).run();
 
     // Owner is also a member with admin role
     await db.prepare(`
@@ -105,6 +115,26 @@ export async function PUT(request) {
   const { orgId, name, description, bio, website, links, visibility, featured_blog_ids, timezone, location, contact_email } = await request.json();
   if (!orgId) {
     return NextResponse.json({ error: 'Missing orgId' }, { status: 400 });
+  }
+
+  // Content + website validation (https-only, no NSFW).
+  const { findProfanity, normalizeHttpsUrl } = await import('../../../lib/validate');
+  const badWord = findProfanity(name) || findProfanity(description) || findProfanity(bio) || findProfanity(location);
+  if (badWord) return NextResponse.json({ error: 'Contains language that is not allowed' }, { status: 400 });
+  let normWebsite = website;
+  if (website != null && website !== '') {
+    normWebsite = normalizeHttpsUrl(website);
+    if (normWebsite == null) return NextResponse.json({ error: 'Website must be a valid https:// URL' }, { status: 400 });
+  }
+  let normLinks = links;
+  if (Array.isArray(links)) {
+    normLinks = [];
+    for (const l of links) {
+      if (!l?.url?.trim()) continue;
+      const u = normalizeHttpsUrl(l.url);
+      if (u == null) return NextResponse.json({ error: `Link "${l.label || l.type}" must be a valid https:// URL` }, { status: 400 });
+      normLinks.push({ ...l, url: u });
+    }
   }
 
   try {
@@ -133,8 +163,8 @@ export async function PUT(request) {
         contact_email = COALESCE(?, contact_email), updated_at = ?
       WHERE id = ?
     `).bind(
-      name || null, description || null, bio || null, website || null,
-      links ? JSON.stringify(links) : null, visibility || null,
+      name || null, description || null, bio || null, normWebsite ?? null,
+      normLinks ? JSON.stringify(normLinks) : null, visibility || null,
       featured_blog_ids ? JSON.stringify(featured_blog_ids) : null,
       timezone || null, location || null, contact_email || null, now, orgId
     ).run();
