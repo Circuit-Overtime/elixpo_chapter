@@ -7,6 +7,7 @@ import TabBar from '../../components/TabBar';
 import Link from 'next/link';
 import { generatePixelAvatar } from '../../utils/pixelAvatar';
 import { compressImage } from '../../utils/compressImage';
+import { isHttpsUrl } from '../../../lib/validate';
 
 const ROLE_LABELS = { admin: 'Admin', maintain: 'Maintain', write: 'Write', read: 'Read' };
 
@@ -66,6 +67,7 @@ export default function OrgManagePage({ slug }) {
   const [links, setLinks] = useState([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const logoInputRef = useRef(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState('');
@@ -126,20 +128,36 @@ export default function OrgManagePage({ slug }) {
 
   const handleSave = async () => {
     if (!org || saving) return;
+    setSaveError('');
+    // Websites must be https (server enforces this too).
+    const activeLinks = links.filter(l => l.url?.trim());
+    if (website?.trim() && !isHttpsUrl(website.trim())) {
+      setSaveError('Website must be a valid https:// URL'); return;
+    }
+    const badLink = activeLinks.find(l => !isHttpsUrl(l.url.trim()));
+    if (badLink) { setSaveError(`Link "${badLink.label || badLink.type}" must be a valid https:// URL`); return; }
+
     setSaving(true);
     try {
-      await fetch('/api/orgs', {
+      const res = await fetch('/api/orgs', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orgId: org.id, name, description, bio, website, visibility,
           timezone, location, contact_email: contactEmail,
-          links: links.filter(l => l.url?.trim()),
+          links: activeLinks,
         }),
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch {}
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSaveError(data?.error || 'Failed to save');
+      } else {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } catch {
+      setSaveError('Failed to save');
+    }
     setSaving(false);
   };
 
@@ -477,6 +495,7 @@ export default function OrgManagePage({ slug }) {
                 {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
               </button>
               {saved && <span className="text-[12px] text-[#4ade80] flex items-center gap-1"><ion-icon name="checkmark-circle" style={{ fontSize: '14px' }} /> Changes saved</span>}
+              {saveError && <span className="text-[12px] text-red-400 flex items-center gap-1"><ion-icon name="alert-circle" style={{ fontSize: '14px' }} /> {saveError}</span>}
             </div>
           </div>
         )}

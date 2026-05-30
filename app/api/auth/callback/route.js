@@ -90,13 +90,14 @@ export async function GET(request) {
       isNewUser = true;
       const username = (userInfo.username || userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, '');
 
-      // Mirror OAuth avatar to Cloudinary at deterministic path
+      // Mirror OAuth avatar to Cloudinary at deterministic path. Use the
+      // returned version so the URL changes on each re-upload (cache-bust).
       let avatarUrl = userInfo.avatar || '';
       try {
         if (avatarUrl) {
           const { uploadRemoteAvatar, userAvatarPublicId, userAvatarCdnUrl } = await import('../../../../lib/cloudinary');
-          await uploadRemoteAvatar(avatarUrl, userAvatarPublicId(username));
-          avatarUrl = userAvatarCdnUrl(username);
+          const result = await uploadRemoteAvatar(avatarUrl, userAvatarPublicId(username));
+          avatarUrl = userAvatarCdnUrl(username, result?.version);
         }
       } catch (e) { console.warn('Avatar mirror failed:', e.message); }
 
@@ -124,25 +125,32 @@ export async function GET(request) {
       const existingData = await db.prepare('SELECT username FROM users WHERE id = ?').bind(userId).first();
       const username = existingData?.username || userId;
 
+      // Re-sync the avatar from accounts.elixpo on every login. Versioned URL
+      // busts caches so a changed accounts photo shows immediately.
       let avatarUrl = userInfo.avatar || '';
+      let avatarSynced = false;
       try {
         if (avatarUrl) {
           const { uploadRemoteAvatar, userAvatarPublicId, userAvatarCdnUrl } = await import('../../../../lib/cloudinary');
-          await uploadRemoteAvatar(avatarUrl, userAvatarPublicId(username));
-          avatarUrl = userAvatarCdnUrl(username);
+          const result = await uploadRemoteAvatar(avatarUrl, userAvatarPublicId(username));
+          avatarUrl = userAvatarCdnUrl(username, result?.version);
+          avatarSynced = true;
         }
       } catch (e) { console.warn('Avatar mirror failed:', e.message); }
 
-      await db.prepare(`
-        UPDATE users SET email = ?, display_name = ?, avatar_url = ?, account_status = 'active', updated_at = ?
-        WHERE id = ?
-      `).bind(
-        userInfo.email,
-        userInfo.displayName || '',
-        avatarUrl,
-        now,
-        userId
-      ).run();
+      // Only overwrite avatar_url when accounts actually has one — otherwise
+      // keep whatever the user already has rather than wiping it to empty.
+      if (avatarSynced) {
+        await db.prepare(`
+          UPDATE users SET email = ?, display_name = ?, avatar_url = ?, account_status = 'active', updated_at = ?
+          WHERE id = ?
+        `).bind(userInfo.email, userInfo.displayName || '', avatarUrl, now, userId).run();
+      } else {
+        await db.prepare(`
+          UPDATE users SET email = ?, display_name = ?, account_status = 'active', updated_at = ?
+          WHERE id = ?
+        `).bind(userInfo.email, userInfo.displayName || '', now, userId).run();
+      }
     }
   } catch (e) {
     // D1 not available (local dev) — user data lives in session cookie only
