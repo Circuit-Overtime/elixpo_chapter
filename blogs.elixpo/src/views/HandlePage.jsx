@@ -146,9 +146,14 @@ function HandlePageInner({ path }) {
     }, 0);
     const wc = countBlockWords(blocks);
 
-    // Check if current user can edit
+    // Check if current user can edit. Author always can; accepted co-authors
+    // with an editor/admin role can edit the cross-posted copy too (viewers
+    // get the cross-post on their profile but no edit access).
     const isAuthor = currentUser && blog.author_id === currentUser.id;
-    const canEdit = isAuthor; // org membership check would need an extra API call — author check is sufficient for now
+    const myCoRole = currentUser
+      ? (blog.co_authors || []).find(c => c.username === currentUser.username)?.role
+      : null;
+    const canEdit = isAuthor || myCoRole === 'editor' || myCoRole === 'admin';
 
     return (
       <AppShell>

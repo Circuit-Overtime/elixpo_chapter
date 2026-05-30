@@ -170,13 +170,24 @@ export async function POST(request) {
       );
     } catch {}
 
+    // Canonical, scope-aware reader URL (personal / org / collection) keyed off
+    // the PRIMARY author + org — not the publisher, so co-authors and org
+    // publishers land on the right published URL, not their own profile.
+    let url;
+    try {
+      const { getBlogCanonicalPath } = await import('../../../../lib/blogUrl');
+      url = await getBlogCanonicalPath(db, slugid);
+    } catch {
+      url = `/${session.profile?.username || 'user'}/${slug}`;
+    }
+
     return NextResponse.json({
       ok: true,
       slugid,
       slug,
       status: targetStatus,
       updatedAt: now,
-      url: `/${session.profile?.username || 'user'}/${slug}`,
+      url,
     });
   } catch (e) {
     console.error('Publish error:', e);

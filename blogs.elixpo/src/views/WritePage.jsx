@@ -484,6 +484,27 @@ export default function WritePage({ slugid }) {
     enabled: hasCollaborators,
   });
 
+  // When another collaborator publishes, follow them to the published view
+  // (out of edit) — keeps everyone in the session in sync with the live post.
+  useEffect(() => {
+    const provider = collabConfig?.provider;
+    if (!provider?.awareness) return;
+    const myId = provider.awareness.clientID;
+    const mountedAt = Date.now();
+    const onChange = () => {
+      provider.awareness.getStates().forEach((state, clientId) => {
+        if (clientId === myId) return;
+        const pub = state?.lixPublished;
+        if (pub?.url && pub.at >= mountedAt) {
+          bypassUnloadRef.current = true;
+          window.location.href = pub.url;
+        }
+      });
+    };
+    provider.awareness.on('change', onChange);
+    return () => provider.awareness.off('change', onChange);
+  }, [collabConfig]);
+
   // Check collab status / lock on mount when collaborators exist
   useEffect(() => {
     if (!blogId || !hasCollaborators) return;
@@ -1093,6 +1114,11 @@ export default function WritePage({ slugid }) {
         // state updates above haven't flushed yet, so the handler would still
         // see hasUnsavedEdits=true and prompt. Keep the overlay up through nav.
         if (data.url) {
+          // In a collab session: signal the other editors that the blog just
+          // published so they're synced and taken to the published view too.
+          try {
+            collabConfig?.provider?.awareness?.setLocalStateField('lixPublished', { url: data.url, at: Date.now() });
+          } catch {}
           bypassUnloadRef.current = true;
           window.location.href = data.url;
           return;
