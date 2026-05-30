@@ -144,7 +144,7 @@ function renderBlocksToHTML(blocks) {
   function collectHeadings(blockList) {
     for (const block of blockList) {
       if (block.type === 'heading') {
-        const text = (block.content || []).map(c => c.text || '').join('');
+        const text = (Array.isArray(block.content) ? block.content : []).map(c => c.text || '').join('');
         if (text.trim()) {
           const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
           headings.push({ id, text: text.trim(), level: block.props?.level || 1 });
@@ -175,12 +175,12 @@ function renderBlocksToHTML(blocks) {
         return '__TOC_PLACEHOLDER__';
       case 'heading': {
         const level = block.props?.level || 1;
-        const text = (block.content || []).map(c => c.text || '').join('');
+        const text = (Array.isArray(block.content) ? block.content : []).map(c => c.text || '').join('');
         const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
         // Headings always render in the default color — ignore stray inline text
         // colors (e.g. a pasted #e06c75) so headings stay visually consistent.
         const headingContent = inlineToHTML(
-          (block.content || []).map(c => (c.styles ? { ...c, styles: { ...c.styles, textColor: undefined, backgroundColor: undefined } } : c))
+          (Array.isArray(block.content) ? block.content : []).map(c => (c.styles ? { ...c, styles: { ...c.styles, textColor: undefined, backgroundColor: undefined } } : c))
         );
         return `<h${level} id="${id}">${headingContent}</h${level}>${childrenHTML}`;
       }
@@ -214,11 +214,13 @@ function renderBlocksToHTML(blocks) {
         }).join('');
         return `<div class="subpage-block">${tabItems}</div>${childrenHTML}`;
       }
+      case 'quote':
+        return `<blockquote>${content}</blockquote>${childrenHTML}`;
       case 'divider':
         return `<hr class="preview-divider" />${childrenHTML}`;
       case 'codeBlock': {
         const lang = block.props?.language || '';
-        const code = (block.content || []).map((c) => c.text || '').join('');
+        const code = (Array.isArray(block.content) ? block.content : []).map((c) => c.text || '').join('');
         return `<pre><code class="language-${lang}">${code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>${childrenHTML}`;
       }
       case 'image':
@@ -337,13 +339,14 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
   }, []);
 
   // Determine which HTML to use — prefer blocks-based rendering
-  const renderedHTML = blocks && blocks.length > 0 ? renderBlocksToHTML(blocks) : html;
+  const safeBlocks = Array.isArray(blocks) ? blocks : [];
+  const renderedHTML = safeBlocks.length > 0 ? renderBlocksToHTML(safeBlocks) : html;
 
   // Extract headings + subpages for floating TOC
   const headings = (() => {
     const result = [];
-    for (const b of (blocks || [])) {
-      if (b.type === 'heading' && b.content?.length > 0) {
+    for (const b of safeBlocks) {
+      if (b.type === 'heading' && Array.isArray(b.content) && b.content.length > 0) {
         const text = b.content.map(c => c.text || '').join('');
         if (text.trim()) {
           result.push({ id: `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`, text: text.trim(), level: b.props?.level || 1 });

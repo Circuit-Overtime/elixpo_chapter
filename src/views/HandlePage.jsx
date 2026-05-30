@@ -128,8 +128,8 @@ export default function HandlePage({ path }) {
     try { blocks = typeof blog.content === 'string' ? JSON.parse(blog.content) : blog.content || []; } catch { blocks = []; }
 
     // Count words from blocks
-    const countBlockWords = (b) => (b || []).reduce((sum, block) => {
-      const text = (block.content || []).map(c => c.text || '').join(' ');
+    const countBlockWords = (b) => (Array.isArray(b) ? b : []).reduce((sum, block) => {
+      const text = (Array.isArray(block.content) ? block.content : []).map(c => c.text || '').join(' ');
       return sum + text.split(/\s+/).filter(Boolean).length + countBlockWords(block.children);
     }, 0);
     const wc = countBlockWords(blocks);

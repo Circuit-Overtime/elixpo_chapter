@@ -220,12 +220,8 @@ export function parseMarkdownToBlocks(text) {
       const quoteText = quoteLines.join('\n').trim();
       if (quoteText) {
         blocks.push({
-          type: 'paragraph',
-          props: { textColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.08)' },
-          content: [
-            { type: 'text', text: '  ', styles: {} },
-            ...parseInlineContent(quoteText),
-          ],
+          type: 'quote',
+          content: parseInlineContent(quoteText),
         });
       }
       continue;

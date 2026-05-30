@@ -406,7 +406,7 @@ function isCurrentBlockEmpty(editor) {
 // Sanitize saved content — convert raw LaTeX/code paragraphs back into proper block types
 // Block types known to the schema — used to filter out stale/removed block types
 const KNOWN_BLOCK_TYPES = new Set([
-  'paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'image',
+  'paragraph', 'heading', 'quote', 'bulletListItem', 'numberedListItem', 'image',
   'table', 'codeBlock', 'checkListItem', 'file', 'video', 'audio', 'divider',
   'tableOfContents', 'blockEquation', 'buttonBlock', 'breadcrumbs',
   'tabsBlock', 'canvasBlock', 'aiBlock', 'mermaidBlock', 'pdfEmbed',
