@@ -192,6 +192,14 @@ export async function POST(request) {
             await db.prepare('UPDATE orgs SET banner_r2_key = ?, banner_url = ? WHERE id = ?')
               .bind(result.public_id, result.secure_url, orgId).run();
           }
+          // Bust the cached profile so the new avatar/banner shows on refresh
+          // (without this, /api/auth/me serves the stale user for up to 5 min).
+          if (mediaType === 'avatar' || mediaType === 'banner') {
+            try {
+              const { kvInvalidate } = await import('../../../../lib/cache');
+              await kvInvalidate(`v1:user:${session.userId}`);
+            } catch {}
+          }
         } catch (e) {
           console.warn('[media/upload] DB profile update failed:', e.message);
         }
