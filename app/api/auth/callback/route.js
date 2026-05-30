@@ -152,6 +152,11 @@ export async function GET(request) {
         `).bind(userInfo.email, userInfo.displayName || '', now, userId).run();
       }
     }
+    // Bust the cached profile so the freshly-synced avatar/name shows at once.
+    try {
+      const { kvInvalidate } = await import('../../../../lib/cache');
+      await kvInvalidate(`v1:user:${userId}`);
+    } catch {}
   } catch (e) {
     // D1 not available (local dev) — user data lives in session cookie only
     console.warn('D1 not available, skipping user upsert:', e.message);
