@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import AppShell from '../../components/AppShell';
 import TabBar from '../../components/TabBar';
 import Link from 'next/link';
 import { generatePixelAvatar } from '../../utils/pixelAvatar';
+import { compressImage } from '../../utils/compressImage';
 
 const ROLE_LABELS = { admin: 'Admin', maintain: 'Maintain', write: 'Write', read: 'Read' };
 
@@ -26,6 +27,23 @@ const LINK_PRESETS = [
   { key: 'youtube', label: 'YouTube', icon: 'logo-youtube', placeholder: 'https://youtube.com/@org' },
   { key: 'custom', label: 'Custom Link', icon: 'link-outline', placeholder: 'https://...' },
 ];
+
+// Defined at module scope (NOT inside the component) so its identity is stable
+// across renders — a component defined during render remounts every keystroke,
+// which steals focus and resets the cursor to the end of the field.
+function Input({ label, sublabel, value, onChange, placeholder, type = 'text', ...props }) {
+  return (
+    <div>
+      <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">{label}</label>
+      {sublabel && <p className="text-[11px] text-[var(--text-faint)] mb-2">{sublabel}</p>}
+      <input
+        type={type} value={value} onChange={onChange} placeholder={placeholder}
+        className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors placeholder-[var(--text-faint)]"
+        {...props}
+      />
+    </div>
+  );
+}
 
 export default function OrgManagePage({ slug }) {
   const { user } = useAuth();
@@ -48,6 +66,9 @@ export default function OrgManagePage({ slug }) {
   const [links, setLinks] = useState([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const logoInputRef = useRef(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState('');
 
   // Invite state
   const [inviteRole, setInviteRole] = useState('write');
@@ -269,19 +290,6 @@ export default function OrgManagePage({ slug }) {
       </AppShell>
     );
   }
-
-  // Helper: styled input
-  const Input = ({ label, sublabel, value, onChange, placeholder, type = 'text', ...props }) => (
-    <div>
-      <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">{label}</label>
-      {sublabel && <p className="text-[11px] text-[var(--text-faint)] mb-2">{sublabel}</p>}
-      <input
-        type={type} value={value} onChange={onChange} placeholder={placeholder}
-        className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors placeholder-[var(--text-faint)]"
-        {...props}
-      />
-    </div>
-  );
 
   const TABS = [
     { key: 'general', label: 'Profile', icon: 'person-outline' },
