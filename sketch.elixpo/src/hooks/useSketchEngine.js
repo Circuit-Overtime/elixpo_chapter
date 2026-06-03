@@ -29,7 +29,13 @@ export default function useSketchEngine(svgRef, ready = true) {
           getState: () => useSketchStore.getState(),
         }
 
-        const { SketchEngine } = await import('@elixpo/lixsketch')
+        // Import SketchEngine from its own subpath rather than via the
+        // package root. The root re-exports saveScene/loadScene from
+        // SceneSerializer, which statically imports every shape module —
+        // those reference bare `rough`/`svg` globals that only exist
+        // after engine.init() runs, so going through the root produces
+        // "rough is not defined" at module evaluation time.
+        const { SketchEngine } = await import('@elixpo/lixsketch/src/SketchEngine.js')
         if (cancelled) return
 
         const engine = new SketchEngine(svgRef.current)

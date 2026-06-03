@@ -21,7 +21,9 @@ import ShortcutsModal from '@/components/modals/ShortcutsModal'
 import CommandPalette from '@/components/modals/CommandPalette'
 import ExportImageModal from '@/components/modals/ExportImageModal'
 import CanvasPropertiesModal from '@/components/modals/CanvasPropertiesModal'
-import { installEngineShortcuts } from '@elixpo/lixsketch'
+// Subpath — going through the package root re-exports SceneSerializer
+// which crashes with "rough is not defined" at module evaluation.
+import { installEngineShortcuts } from '@elixpo/lixsketch/src/EngineShortcuts.js'
 import useEmbedBridge, { postExitToHost } from '@/hooks/useEmbedBridge'
 import useSketchStore from '@/store/useSketchStore'
 

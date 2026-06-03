@@ -6,6 +6,7 @@ out/
 wrangler.toml
 plans/
 .wrangler
+dist/
 .vscode 
 .next.vercel
 *.vsix
