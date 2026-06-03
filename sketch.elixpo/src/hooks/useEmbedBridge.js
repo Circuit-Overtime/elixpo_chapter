@@ -2,7 +2,10 @@
 
 import { useEffect, useRef } from 'react'
 import useUIStore from '@/store/useUIStore'
-import { compressImage, installEngineShortcuts } from '@elixpo/lixsketch'
+// Subpath imports — see useSketchEngine.js for why the package root is
+// off-limits at module evaluation time ("rough is not defined").
+import { compressImage } from '@elixpo/lixsketch/src/utils/imageCompressor.js'
+import { installEngineShortcuts } from '@elixpo/lixsketch/src/EngineShortcuts.js'
 
 // Forward declarations resolved at module bottom.
 let _installImageUpload = null

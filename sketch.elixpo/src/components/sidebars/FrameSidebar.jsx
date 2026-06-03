@@ -6,7 +6,13 @@ import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSide
 import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from '@/hooks/useTranslation'
 import { compressImage } from '@/utils/imageCompressor'
-import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '@elixpo/lixsketch'
+// Imported from the package's utility subpath rather than the package
+// root. The root re-exports saveScene/loadScene from SceneSerializer,
+// which statically imports every shape module — those reference bare
+// `rough` / `svg` globals that only exist after engine.init() runs.
+// Pulling the constants from the root crashes the page with
+// "rough is not defined" at module evaluation time.
+import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '@elixpo/lixsketch/src/utils/allowedImageTypes.js'
 
 const FILL_STYLES = [
   { id: 'transparent', label: 'None', icon: 'bx-x' },

@@ -23,9 +23,10 @@ const TOOL_ITEMS = [
   { tool: TOOLS.FRAME, icon: 'bx-crop', title: 'Frame (F)', key: 'F' },
   { tool: TOOLS.LASER, icon: 'bxs-magic-wand', title: 'Laser (K)', key: 'K' },
   { tool: TOOLS.ERASER, icon: 'bxs-eraser', title: 'Eraser (E)', key: 'E' },
-  // AI tool entry removed while the assistant is coming-soon.
-  // Restore `{ tool: 'ai', icon: null, title: 'AI', isAI: true }` here
-  // when the modal becomes a real feature again.
+  'spacer',
+  // Violet star → opens the DSL Studio modal (LixScript / Mermaid / Graph).
+  // No AI inference; each tab dispatches to the engine's direct parser.
+  { tool: 'dsl', icon: null, title: 'DSL Studio (LixScript / Mermaid / Graph)', isAI: true },
 ]
 
 export default function Toolbar() {
@@ -78,7 +79,8 @@ export default function Toolbar() {
               key="ai"
               title={item.title}
               onClick={toggleAIModal}
-              className="w-[33px] h-[31px] flex items-center justify-center rounded-lg text-text-muted hover:text-accent hover:bg-surface-hover transition-all duration-200"
+              className="w-[33px] h-[31px] flex items-center justify-center rounded-lg text-accent hover:bg-accent/15 transition-all duration-200"
+              style={{ color: '#9b7bf7' }}
             >
               <svg
                 width="20"

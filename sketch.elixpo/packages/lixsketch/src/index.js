@@ -47,7 +47,20 @@ export function createSketchEngine(svgElement, options = {}) {
 // need to round-trip a scene through their own storage. saveScene reads from
 // window.shapes (populated by an active engine); loadScene rebuilds shapes onto
 // the active engine's SVG. Both must be called after engine.init() completes.
-export { saveScene, loadScene } from './core/SceneSerializer.js';
+// Scene serializer is intentionally NOT re-exported here.
+//
+// SceneSerializer.js statically imports every shape module, and the shape
+// modules reference bare `rough` / `svg` globals that only exist after
+// engine.init() runs. Re-exporting `saveScene`/`loadScene` at this module
+// scope makes any `import { ... } from '@elixpo/lixsketch'` evaluate the
+// shape graph eagerly and crash with "rough is not defined".
+//
+// Hosts that need scene serialization should import the subpath directly,
+// AFTER mounting the engine:
+//   const { saveScene, loadScene } = await import(
+//     '@elixpo/lixsketch/src/core/SceneSerializer.js'
+//   );
+// or use window.__sceneSerializer which engine.init() exposes.
 
 // Adaptive image compressor — same one the engine uses internally for
 // uploads. Exported so embedded hosts can pre-compress images before
