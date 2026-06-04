@@ -2,8 +2,9 @@
 
 import { isAllowedImage } from '../../utils/allowedImageTypes';
 import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs, createCodeBlockSpec } from '@blocknote/core';
-import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems, TableHandlesController, FormattingToolbarController, FormattingToolbar, getFormattingToolbarItems, CreateLinkButton, useBlockNoteEditor, useEditorSelectionChange } from '@blocknote/react';
+import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems, TableHandlesController, FormattingToolbarController, FormattingToolbar, getFormattingToolbarItems, CreateLinkButton, ColorStyleButton, useBlockNoteEditor, useEditorSelectionChange } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
+import { createPortal } from 'react-dom';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import '../../styles/katex-fonts.css';
@@ -149,6 +150,119 @@ function Icon({ d, d2, color }) {
       <path d={d} />
       {d2 && <path d={d2} />}
     </svg>
+  );
+}
+
+// ── Text-color & highlight toolbar buttons (#14) ──
+// Two dedicated buttons on the selection toolbar (text color + a separate
+// highlight). Text colors are hex values mapped in base.css (so green is real
+// green, not BlockNote's named-color grey); highlights are translucent rgba so
+// they read like a marker, not a solid fill.
+const TEXT_COLORS = [
+  { label: 'Default', value: 'default' },
+  { label: 'White', value: '#ffffff' },
+  { label: 'Gray', value: '#9ca3af' },
+  { label: 'Red', value: '#f87171' },
+  { label: 'Orange', value: '#fb923c' },
+  { label: 'Yellow', value: '#fbbf24' },
+  { label: 'Green', value: '#4ade80' },
+  { label: 'Blue', value: '#60a5fa' },
+  { label: 'Purple', value: '#a78bfa' },
+  { label: 'Pink', value: '#f472b6' },
+];
+const HIGHLIGHT_COLORS = [
+  { label: 'None', value: 'default' },
+  { label: 'Gray', value: 'rgba(156,163,175,0.25)' },
+  { label: 'Red', value: 'rgba(248,113,113,0.25)' },
+  { label: 'Orange', value: 'rgba(251,146,60,0.25)' },
+  { label: 'Yellow', value: 'rgba(251,191,36,0.25)' },
+  { label: 'Green', value: 'rgba(74,222,128,0.25)' },
+  { label: 'Blue', value: 'rgba(96,165,250,0.25)' },
+  { label: 'Purple', value: 'rgba(167,139,250,0.25)' },
+  { label: 'Pink', value: 'rgba(244,114,182,0.25)' },
+];
+
+function ToolbarStyleButton({ editor, kind }) {
+  const isText = kind === 'text';
+  const palette = isText ? TEXT_COLORS : HIGHLIGHT_COLORS;
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => {
+      if (e.target.closest('.toolbar-color-popover')) return;
+      if (btnRef.current && btnRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  const toggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 6, left: r.left });
+    setOpen((o) => !o);
+  };
+
+  const apply = (e, value) => {
+    e.preventDefault();
+    try {
+      editor.focus();
+      const key = isText ? 'textColor' : 'backgroundColor';
+      if (value === 'default') editor.removeStyles({ [key]: '' });
+      else editor.addStyles({ [key]: value });
+      // Drop the selection so the applied color/highlight is visible.
+      setTimeout(() => window.getSelection()?.removeAllRanges(), 50);
+    } catch (err) { console.error('Failed to apply style:', err); }
+    setOpen(false);
+  };
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        className={`bn-button ${isText ? 'toolbar-color-btn' : 'toolbar-highlight-btn'}`}
+        title={isText ? 'Text color' : 'Highlight'}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={toggle}
+      >
+        {isText ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16" /><path d="M7 16l5-12 5 12" /><path d="M9.5 11h5" /></svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+        )}
+        <span className="toolbar-color-indicator" style={{ background: isText ? '#e0e0e0' : '#fbbf24' }} />
+      </button>
+      {open && createPortal(
+        <div
+          className="toolbar-color-popover"
+          style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 10001 }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <div className="toolbar-color-popover-label">{isText ? 'Text Color' : 'Highlight'}</div>
+          <div className="toolbar-color-grid">
+            {palette.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                className="toolbar-color-swatch"
+                title={c.label}
+                style={c.value === 'default'
+                  ? { background: 'transparent', border: '1.5px dashed #6b7a8d' }
+                  : { background: c.value }}
+                onMouseDown={(e) => apply(e, c.value)}
+              />
+            ))}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }
 
@@ -925,10 +1039,16 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         const [, force] = useReducer((x) => x + 1, 0);
         useEditorSelectionChange(() => force(), ed);
         const link = analyzeLinkSelection(ed);
-        const items = getFormattingToolbarItems().filter((el) => el.type !== CreateLinkButton);
+        // Drop the default combined color button — we provide separate text-color
+        // and highlight buttons (#14).
+        const items = getFormattingToolbarItems().filter(
+          (el) => el.type !== CreateLinkButton && el.type !== ColorStyleButton,
+        );
         return (
           <FormattingToolbar>
             {items}
+            <ToolbarStyleButton key="textColor" editor={ed} kind="text" />
+            <ToolbarStyleButton key="highlight" editor={ed} kind="highlight" />
             {link.kind === 'none' && <CreateLinkButton key="createLink" />}
             {link.kind === 'full' && (
               <button
