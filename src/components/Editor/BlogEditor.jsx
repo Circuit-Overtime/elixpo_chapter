@@ -358,28 +358,8 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
         if (title && slugid) editor.insertInlineContent([{ type: 'blogMention', props: { title, slugid } }]);
       },
     },
-    {
-      title: 'Text Color',
-      subtext: 'Change text color',
-      group: 'Styling',
-      aliases: ['color', 'text color', 'font color'],
-      icon: <Icon d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" color="#f87171" />,
-      onItemClick: () => {
-        const color = prompt('Color (e.g. red, #ff0000):');
-        if (color) editor.addStyles({ textColor: color });
-      },
-    },
-    {
-      title: 'Background Color',
-      subtext: 'Change text background color',
-      group: 'Styling',
-      aliases: ['highlight', 'bg color', 'background'],
-      icon: <Icon d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" color="#fbbf24" />,
-      onItemClick: () => {
-        const color = prompt('Background color (e.g. yellow, #ffff00):');
-        if (color) editor.addStyles({ backgroundColor: color });
-      },
-    },
+    // Text color / background are set from the selection (formatting) toolbar,
+    // not the slash menu (#14). The prompt()-based slash items were removed.
   ];
 
   return [...defaults, ...customBlocks, ...inlineItems];
