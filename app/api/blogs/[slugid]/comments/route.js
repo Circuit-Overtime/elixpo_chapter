@@ -119,16 +119,40 @@ export async function POST(request, { params }) {
         });
       }
 
+      const alreadyNotified = new Set([session.userId]);
+      if (blog.author_id !== session.userId) alreadyNotified.add(blog.author_id);
+
       // Notify parent comment author if reply (and not self)
       if (parentId) {
         const parent = await db.prepare('SELECT user_id FROM comments WHERE id = ?').bind(parentId).first();
         if (parent && parent.user_id !== session.userId && parent.user_id !== blog.author_id) {
+          alreadyNotified.add(parent.user_id);
           await notify(db, {
             userId: parent.user_id, type: 'mention',
             actorId: session.userId, actorName: user?.display_name || user?.username,
             actorAvatar: user?.avatar_url, targetId: slugid,
             targetTitle: blog.title, targetUrl: blogUrl,
           });
+        }
+      }
+
+      // @mentions in the comment body (#10): resolve real usernames, record
+      // them, and notify each mentioned user (skipping self / already-notified).
+      const unames = [...new Set([...content.matchAll(/(?:^|[^a-zA-Z0-9_])@([a-zA-Z0-9_-]+)/g)].map((m) => m[1].toLowerCase()))].slice(0, 20);
+      if (unames.length) {
+        const ph = unames.map(() => '?').join(',');
+        const found = await db.prepare(`SELECT id, username FROM users WHERE LOWER(username) IN (${ph})`).bind(...unames).all();
+        for (const u of (found?.results || [])) {
+          try { await db.prepare('INSERT OR IGNORE INTO comment_mentions (comment_id, user_id) VALUES (?, ?)').bind(id, u.id).run(); } catch {}
+          if (!alreadyNotified.has(u.id)) {
+            alreadyNotified.add(u.id);
+            await notify(db, {
+              userId: u.id, type: 'mention',
+              actorId: session.userId, actorName: user?.display_name || user?.username,
+              actorAvatar: user?.avatar_url, targetId: slugid,
+              targetTitle: blog.title, targetUrl: blogUrl,
+            });
+          }
         }
       }
     } catch {}
