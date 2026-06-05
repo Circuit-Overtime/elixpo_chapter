@@ -1064,7 +1064,42 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
             )}
             <ToolbarStyleButton key="textColor" editor={ed} kind="text" />
             <ToolbarStyleButton key="highlight" editor={ed} kind="highlight" />
-            {link.kind === 'none' && <CreateLinkButton key="createLink" />}
+            {/* Create link via the custom editor so the selected text is wrapped
+                as the link's label (#12) — same flow as the Ctrl+K shortcut. */}
+            {link.kind === 'none' && (
+              <button
+                key="createLink"
+                type="button"
+                className="bn-button bn-link-edit-btn"
+                title="Create link (Ctrl+K)"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  try {
+                    const t = ed._tiptapEditor;
+                    const { from, to } = link;
+                    if (from == null || to == null) return;
+                    const text = t.state.doc.textBetween(from, to);
+                    const isUrl = /^https?:\/\/\S+$/.test(text.trim());
+                    let coords;
+                    try { coords = t.view.coordsAtPos(from); } catch { coords = { bottom: 120, left: 120 }; }
+                    setLinkEditor({
+                      anchorText: text,
+                      url: isUrl ? text.trim() : 'https://',
+                      from, to,
+                      top: coords.bottom + 6,
+                      left: Math.max(8, Math.min(coords.left, window.innerWidth - 340)),
+                    });
+                  } catch {}
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 8px', height: 28, fontSize: 13, fontWeight: 500 }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                </svg>
+                Link
+              </button>
+            )}
             {link.kind === 'full' && (
               <button
                 key="editLink"
@@ -1154,8 +1189,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         const code = (block.content || []).map(c => c.text || '').join('');
         return !code.trim();
       }
-      // For paragraph/heading: empty text
-      if (type === 'paragraph' || type === 'heading') {
+      // Paragraph / heading / list items: empty when there's no text content.
+      if (type === 'paragraph' || type === 'heading' || type === 'bulletListItem' || type === 'numberedListItem' || type === 'checkListItem') {
         if (!block.content || block.content.length === 0) return true;
         if (block.content.length === 1 && block.content[0].type === 'text' && !block.content[0].text) return true;
         return false;
@@ -1218,6 +1253,21 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
       if (e.key === 'Backspace') {
         if (!block) return; // let BlockNote / browser handle when no block context
+
+        // Backspace on an empty NESTED list item → outdent one level (keep the
+        // bullet) instead of letting it collapse to a plain line (#13).
+        const LIST_TYPES = new Set(['bulletListItem', 'numberedListItem', 'checkListItem']);
+        if (LIST_TYPES.has(block.type) && isBlockEmpty(block)) {
+          try {
+            if (editor.canUnnestBlock?.()) {
+              e.preventDefault();
+              e.stopPropagation();
+              editor.unnestBlock();
+              return;
+            }
+          } catch {}
+          // Top-level empty list item → fall through to BlockNote's default.
+        }
 
         // Convert empty heading to paragraph
         if (block.type === 'heading' && isBlockEmpty(block)) {
