@@ -31,6 +31,7 @@ import { DateInline } from './blocks/DateInline';
 import { MentionInline } from './blocks/MentionInline';
 import { BlogMentionInline } from './blocks/BlogMentionInline';
 import { OrgMentionInline } from './blocks/OrgMentionInline';
+import { InlineButton } from './blocks/InlineButton';
 
 // AI features (space-to-AI menu, AI block, AI selection toolbar, AI image gen)
 // are temporarily disabled and surfaced as "Coming soon". Flip to re-enable.
@@ -108,6 +109,7 @@ const schema = BlockNoteSchema.create({
     mention: MentionInline,
     blogMention: BlogMentionInline,
     orgMention: OrgMentionInline,
+    inlineButton: InlineButton,
   },
 });
 
@@ -615,6 +617,7 @@ function doSanitize(blocks) {
 
 const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, collaboration, onCollabSeeded }, ref) {
   const { isDark } = useTheme();
+  const [pageMenu, setPageMenu] = useState(null); // {x,y} for the right-click page menu (#21)
   const [showMentionMenu, setShowMentionMenu] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionPos, setMentionPos] = useState({ top: 0, left: 0 });
@@ -949,6 +952,23 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         return (
           <FormattingToolbar>
             {items}
+            {/* Convert the selection into an inline button (#22). */}
+            {link.kind === 'none' && (
+              <button
+                key="makeButton"
+                type="button"
+                className="bn-button"
+                title="Make button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  const text = (ed.getSelectedText?.() || '').trim();
+                  ed.insertInlineContent([{ type: 'inlineButton', props: { label: text || 'Button', href: '' } }]);
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28 }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="18" height="8" rx="2" /><path d="M8 12h8" /></svg>
+              </button>
+            )}
             {link.kind === 'none' && <CreateLinkButton key="createLink" />}
             {link.kind === 'full' && (
               <button
@@ -2479,7 +2499,17 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   }, [editor, getAiBlockIds, highlightAiBlocks, getFullBlogContext, blogId, handleAIKeep, aiMenuPos, hideSparkle, onTitleChange, replaceImagePlaceholder]);
 
   return (
-    <div className={`blog-editor-wrapper${aiGenerating ? ' ai-editor-locked' : ''}`} ref={wrapperRef} style={{ position: 'relative' }}>
+    <div
+      className={`blog-editor-wrapper${aiGenerating ? ' ai-editor-locked' : ''}`}
+      ref={wrapperRef}
+      style={{ position: 'relative' }}
+      onContextMenu={(e) => {
+        // Keep native menus on links/inputs/toolbars; otherwise show ours (#21).
+        if (e.target.closest('a, input, textarea, button, .bn-link-toolbar, [data-content-type="codeBlock"]')) return;
+        e.preventDefault();
+        setPageMenu({ x: Math.min(e.clientX, window.innerWidth - 230), y: Math.min(e.clientY, window.innerHeight - 320) });
+      }}
+    >
       <BlockNoteView
         editor={editor}
         onChange={handleChange}
@@ -2495,6 +2525,41 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         <FormattingToolbarController formattingToolbar={LinkAwareFormattingToolbar} />
         <TableHandlesController />
       </BlockNoteView>
+
+      {/* Page context menu (#21) — quick block inserts on right-click */}
+      {pageMenu && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onMouseDown={() => setPageMenu(null)} onContextMenu={(e) => { e.preventDefault(); setPageMenu(null); }} />
+          <div className="page-context-menu" style={{ position: 'fixed', top: pageMenu.y, left: pageMenu.x, zIndex: 91 }}>
+            {[
+              { label: 'Heading', type: 'heading', props: { level: 2 }, d: 'M6 4v16M18 4v16M6 12h12' },
+              { label: 'Bullet list', type: 'bulletListItem', d: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01' },
+              { label: 'Image', type: 'image', props: { url: '' }, d: 'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M3 3h18v18H3z M21 15l-5-5L5 21' },
+              { label: 'Table', type: 'table', d: 'M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18' },
+              { label: 'Code block', type: 'codeBlock', d: 'M16 18l6-6-6-6M8 6l-6 6 6 6' },
+              { label: 'Quote', type: 'quote', d: 'M3 21c3 0 7-1 7-8V5H3v7h4M14 21c3 0 7-1 7-8V5h-7v7h4' },
+              { label: 'Divider', type: 'divider', d: 'M3 12h18' },
+            ].map((it) => (
+              <button
+                key={it.label}
+                type="button"
+                className="page-context-menu-item"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  try {
+                    const cur = editor.getTextCursorPosition().block;
+                    editor.insertBlocks([{ type: it.type, ...(it.props ? { props: it.props } : {}) }], cur, 'after');
+                  } catch {}
+                  setPageMenu(null);
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={it.d} /></svg>
+                {it.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* @ Mention menu */}
       {showMentionMenu && mentionQuery && (
