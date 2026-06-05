@@ -48,6 +48,28 @@ export async function GET(request, { params }) {
         c.replies = (replyMap[c.id] || []).slice(0, 100);
         c.reply_count = (replyMap[c.id] || []).length;
       }
+
+      // Attach @mention usernames per comment/reply so the client can linkify
+      // only the tokens that resolved to real users (#10).
+      const allIds = [];
+      for (const c of comments) { allIds.push(c.id); for (const r of c.replies) allIds.push(r.id); }
+      if (allIds.length) {
+        // Guard: degrade gracefully if comment_mentions isn't migrated yet.
+        try {
+          const mp = allIds.map(() => '?').join(',');
+          const mres = await db.prepare(`
+            SELECT cm.comment_id, u.username
+            FROM comment_mentions cm JOIN users u ON u.id = cm.user_id
+            WHERE cm.comment_id IN (${mp})
+          `).bind(...allIds).all();
+          const byComment = {};
+          for (const row of (mres?.results || [])) (byComment[row.comment_id] ||= []).push(row.username);
+          for (const c of comments) {
+            c.mentions = byComment[c.id] || [];
+            for (const r of c.replies) r.mentions = byComment[r.id] || [];
+          }
+        } catch { /* table not migrated yet — skip mention linkification */ }
+      }
     }
 
     const total = await db.prepare('SELECT COUNT(*) as c FROM comments WHERE blog_id = ? AND parent_id IS NULL').bind(slugid).first();
