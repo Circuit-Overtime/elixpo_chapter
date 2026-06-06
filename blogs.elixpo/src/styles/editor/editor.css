@@ -5,3 +5,17 @@
 @import './ai.css';
 @import './blog-image.css';
 @import './preview.css';
+
+/* "Hide highlights" — strip text colors and highlight backgrounds from the
+   rendered blog content (client-side toggle in the reader "..." menu). */
+.hide-highlights [style*="color"],
+.hide-highlights [data-text-color],
+.hide-highlights mark {
+  color: var(--text-body) !important;
+}
+.hide-highlights [style*="background"],
+.hide-highlights [data-background-color],
+.hide-highlights mark {
+  background-color: transparent !important;
+  background-image: none !important;
+}
