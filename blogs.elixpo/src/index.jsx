@@ -183,118 +183,77 @@ function SearchBar() {
 
 function FeedCard({ post }) {
   const author = post.author || {};
-  const bannerSrc = post.cover_image_r2_key || generateBlogBanner(post.id || post.slug);
+  const cover = post.cover_image_r2_key || generateBlogBanner(post.id || post.slug);
+  const href = `/${(post.org?.slug) || author.username || 'unknown'}/${post.slug}`;
+  const bylineName = post.org ? post.org.name : (author.display_name || author.username);
+  const allAuthors = [{ display_name: author.display_name, username: author.username, avatar_url: author.avatar_url }, ...(post.co_authors || [])];
   return (
-    <article
-      className="group rounded-xl mb-3 transition-all duration-200 hover:shadow-md overflow-hidden relative"
-      style={{
-        backgroundColor: 'var(--bg-surface)',
-        border: '1px solid var(--border-default)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-      }}
-    >
-      {/* Banner fading in from the right */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <img
-          src={bannerSrc}
-          alt=""
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          style={{ opacity: 0.18 }}
-        />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, var(--bg-surface) 30%, transparent 100%)' }} />
-      </div>
-
-      <div className="relative p-5">
-        <Link href={`/${author.username || 'unknown'}/${post.slug}`} className="block cursor-pointer">
-          {(() => {
-            const allAuthors = [
-              { display_name: author.display_name, username: author.username, avatar_url: author.avatar_url },
-              ...(post.co_authors || []),
-            ];
-            const shownAvatars = allAuthors.slice(0, 5);
-            const shownNames = allAuthors.slice(0, 3);
-            const moreNames = allAuthors.length - shownNames.length;
-            return (
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex -space-x-2">
-                  {shownAvatars.map((a, i) => (
-                    a.avatar_url ? (
-                      <img key={i} src={a.avatar_url} alt="" title={a.display_name || a.username} className="h-6 w-6 rounded-full object-cover ring-2 ring-[var(--bg-surface)]" />
-                    ) : (
-                      <div key={i} title={a.display_name || a.username} className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-[var(--bg-surface)]" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>
-                        {(a.display_name || a.username || '?')[0].toUpperCase()}
-                      </div>
-                    )
-                  ))}
-                </div>
-                <span className="text-[13px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {post.is_staff && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
-                  )}
-                  {post.org && (
-                    <><span style={{ color: 'var(--text-secondary)' }}>in {post.org.name}</span><span className="mx-0.5" style={{ color: 'var(--text-faint)' }}>&middot;</span></>
-                  )}
-                  <span style={{ color: 'var(--text-secondary)' }}>{shownNames.map((a) => a.display_name || a.username).join(', ')}</span>
-                  {moreNames > 0 && (
-                    <span style={{ color: 'var(--text-faint)' }}>+ {moreNames} more</span>
-                  )}
-                </span>
-                <span className="ml-auto text-[11px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(post.published_at)}</span>
-              </div>
-            );
-          })()}
-          <div className="flex-1 min-w-0">
-            <h2 className="text-[18px] font-bold leading-[1.3] mb-1 group-hover:opacity-75 transition-opacity font-serif tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
-              {post.title || 'Untitled'}
-            </h2>
-            {post.subtitle && (
-              <p className="text-[14px] leading-[1.55] line-clamp-2 mb-3" style={{ color: 'var(--text-muted)' }}>
-                {post.subtitle}
-              </p>
+    <article className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
+      <Link href={href} className="flex gap-5 cursor-pointer">
+        {/* Left: byline + title + subtitle + stats */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
+            {post.org?.logo_url ? (
+              <img src={post.org.logo_url} alt="" className="h-5 w-5 rounded object-cover" />
+            ) : author.avatar_url ? (
+              <img src={author.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover" />
+            ) : (
+              <div className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>{(bylineName || '?')[0].toUpperCase()}</div>
             )}
-            <div className="flex items-center gap-3 text-[12px] flex-wrap" style={{ color: 'var(--text-faint)' }}>
-              {(post.tags || []).slice(0, 2).map(tag => (
-                <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--accent-subtle)', color: 'var(--accent)' }}>{tag}</span>
-              ))}
-              {post.read_time_minutes > 0 && <span>{post.read_time_minutes} min read</span>}
-              {post.like_count > 0 && (
-                <span className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                  {post.like_count}
-                </span>
-              )}
-              {post.comment_count > 0 && (
-                <span className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                  {post.comment_count}
-                </span>
-              )}
-            </div>
+            <span className="truncate">
+              {post.org && <>In <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{post.org.name}</span> by </>}
+              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{author.display_name || author.username}</span>
+              {allAuthors.length > 1 && <span style={{ color: 'var(--text-faint)' }}> +{allAuthors.length - 1}</span>}
+            </span>
+            {post.is_staff && (
+              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
+            )}
           </div>
-        </Link>
-        {post.can_edit && (
-          <div className="mt-3 pt-3 flex items-center gap-2" style={{ borderTop: '1px solid var(--divider)' }}>
-            <Link
-              href={`/edit/${post.slug || post.id}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
-              style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
-              onClick={e => e.stopPropagation()}
-            >
-              <ion-icon name="create-outline" style={{ fontSize: '13px' }} />
-              Edit
-            </Link>
-            <Link
-              href={`/edit/${post.slug || post.id}?panel=settings`}
-              className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
-              style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
-              onClick={e => e.stopPropagation()}
-              title="Blog settings"
-            >
-              <ion-icon name="settings-outline" style={{ fontSize: '14px' }} />
-            </Link>
+
+          <h2 className="text-[20px] font-extrabold leading-[1.25] mb-1 group-hover:opacity-80 transition-opacity tracking-[-0.01em]" style={{ color: 'var(--text-primary)', fontFamily: "'Source Serif 4', Georgia, serif" }}>
+            {post.title || 'Untitled'}
+          </h2>
+          {post.subtitle && (
+            <p className="text-[15px] leading-[1.5] line-clamp-2 mb-3" style={{ color: 'var(--text-muted)' }}>{post.subtitle}</p>
+          )}
+
+          <div className="flex items-center gap-3 text-[12px] flex-wrap" style={{ color: 'var(--text-faint)' }}>
+            <span>{timeAgo(post.published_at)}</span>
+            {(post.tags || []).slice(0, 1).map(tag => (
+              <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-body)' }}>{tag}</span>
+            ))}
+            {post.read_time_minutes > 0 && <span>{post.read_time_minutes} min read</span>}
+            {(post.clap_total > 0 || post.like_count > 0) && (
+              <span className="flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 11v8m0 0H5a1 1 0 01-1-1v-6a1 1 0 011-1h2m3-4l-1 5h6l-1 5" /></svg>
+                {post.clap_total || post.like_count}
+              </span>
+            )}
+            {post.comment_count > 0 && (
+              <span className="flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                {post.comment_count}
+              </span>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+
+        {/* Right: square cover thumbnail */}
+        <div className="flex-shrink-0 self-center hidden sm:block">
+          <img src={cover} alt="" className="w-[112px] h-[112px] rounded-md object-cover" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+        </div>
+      </Link>
+
+      {post.can_edit && (
+        <div className="mt-3 flex items-center gap-2">
+          <Link href={`/edit/${post.slug || post.id}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors" style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}>
+            <ion-icon name="create-outline" style={{ fontSize: '13px' }} /> Edit
+          </Link>
+          <Link href={`/edit/${post.slug || post.id}?panel=settings`} className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors" style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }} title="Blog settings">
+            <ion-icon name="settings-outline" style={{ fontSize: '14px' }} />
+          </Link>
+        </div>
+      )}
     </article>
   );
 }
@@ -346,6 +305,45 @@ function TopPickCard({ post, index }) {
   );
 }
 
+function FollowSuggestion({ u }) {
+  const { user } = useAuth();
+  const [following, setFollowing] = useState(false);
+  const toggle = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (!user) { window.location.href = `/sign-in?next=/`; return; }
+    const was = following;
+    setFollowing(!was);
+    fetch(`/api/users/${encodeURIComponent(u.username)}/follow`, { method: was ? 'DELETE' : 'POST' })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(d => setFollowing(!!d.following))
+      .catch(() => setFollowing(was));
+  };
+  return (
+    <div className="flex items-center gap-2.5 mb-3.5">
+      <Link href={`/${u.username}`} className="flex-shrink-0">
+        {u.avatar_url ? (
+          <img src={u.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+        ) : (
+          <div className="h-9 w-9 rounded-full flex items-center justify-center text-[12px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>{(u.display_name || u.username || '?')[0].toUpperCase()}</div>
+        )}
+      </Link>
+      <Link href={`/${u.username}`} className="min-w-0 flex-1">
+        <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{u.display_name || u.username}</p>
+        <p className="text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>@{u.username}</p>
+      </Link>
+      <button
+        onClick={toggle}
+        className="text-[12px] font-medium px-3 py-1.5 rounded-full transition-colors flex-shrink-0"
+        style={following
+          ? { color: 'var(--text-muted)', border: '1px solid var(--border-default)' }
+          : { color: 'var(--text-primary)', border: '1px solid var(--text-primary)' }}
+      >
+        {following ? 'Following' : 'Follow'}
+      </button>
+    </div>
+  );
+}
+
 function FeedSkeleton() {
   return (
     <div className="space-y-6 py-6">
@@ -379,43 +377,42 @@ export default function App() {
   const [userInterests, setUserInterests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTopic, setActiveTopic] = useState(0);
+  const [tagFilter, setTagFilter] = useState(null); // active Recommended-topic pill
 
-  // Build topic tabs. Tag tabs are derived algorithmically — the user's own
-  // interests first (personalized), then platform-popular tags — deduped and
-  // capped. FIXED_TAGS is only a fallback when there's no data at all.
-  const fixedTabs = [
-    { label: 'For You', icon: 'sparkles', filter: null },
-    { label: 'Following', icon: null, filter: 'following' },
+  // Two tabs only: "For you" (personalized/blended) and "Featured" (editorial).
+  const topics = [
+    { label: 'For you', icon: 'sparkles', filter: null },
+    { label: 'Featured', icon: null, filter: 'featured' },
   ];
-  const dynamicTags = (() => {
+
+  // "Who to follow" — distinct authors from the current feed (not you).
+  const whoToFollow = (() => {
     const seen = new Set();
     const out = [];
-    for (const t of [...userInterests, ...popularTags]) {
-      const key = (t || '').toLowerCase();
-      if (t && !seen.has(key)) { seen.add(key); out.push(t); }
-      if (out.length >= 5) break;
+    for (const p of posts) {
+      const a = p.author;
+      if (a?.username && a.username !== user?.username && a.username !== 'selenium-cutlet' && !seen.has(a.username)) {
+        seen.add(a.username);
+        out.push(a);
+      }
+      if (out.length >= 4) break;
     }
-    return out.length > 0 ? out : FIXED_TAGS;
+    return out;
   })();
-  const tagTabs = dynamicTags.map(tag => ({ label: tag, icon: null, tag }));
-  const topics = [...fixedTabs, ...tagTabs];
 
-  // Fetch feed
+  // Fetch feed — a Recommended-topic pill (tagFilter) overrides the tab.
   useEffect(() => {
-    const topic = topics[activeTopic];
-    if (!topic) return;
-
     setLoading(true);
     let url = '/api/feed?limit=20';
-    if (topic.filter === 'following') url += '&filter=following';
-    else if (topic.tag) url += `&tag=${encodeURIComponent(topic.tag)}`;
+    if (tagFilter) url += `&tag=${encodeURIComponent(tagFilter)}`;
+    else if (topics[activeTopic]?.filter) url += `&filter=${topics[activeTopic].filter}`;
 
     fetch(url)
       .then(r => r.json())
       .then(data => setPosts(data.posts || []))
       .catch(() => setPosts([]))
       .finally(() => setLoading(false));
-  }, [activeTopic, user]);
+  }, [activeTopic, tagFilter, user]);
 
   // Fetch sidebar data once
   useEffect(() => {
@@ -443,11 +440,11 @@ export default function App() {
               {topics.map((topic, i) => (
                 <button
                   key={topic.label}
-                  onClick={() => setActiveTopic(i)}
+                  onClick={() => { setTagFilter(null); setActiveTopic(i); }}
                   className="flex items-center gap-1.5 px-4 py-3 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors flex-shrink-0"
                   style={{
-                    color: i === activeTopic ? 'var(--text-primary)' : 'var(--text-muted)',
-                    borderBottomColor: i === activeTopic ? 'var(--text-primary)' : 'transparent',
+                    color: !tagFilter && i === activeTopic ? 'var(--text-primary)' : 'var(--text-muted)',
+                    borderBottomColor: !tagFilter && i === activeTopic ? 'var(--text-primary)' : 'transparent',
                   }}
                 >
                   {topic.icon && <ion-icon name={topic.icon} style={{ fontSize: '14px' }} />}
@@ -460,27 +457,17 @@ export default function App() {
 
           {/* Feed */}
           <div className="px-6 pt-4 max-w-[680px] mx-auto">
+            {tagFilter && (
+              <div className="flex items-center gap-2 mb-1 py-2">
+                <span className="text-[13px]" style={{ color: 'var(--text-muted)' }}>Topic:</span>
+                <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--accent-subtle)', color: 'var(--accent)' }}>{tagFilter}</span>
+                <button onClick={() => setTagFilter(null)} className="text-[12px]" style={{ color: 'var(--text-faint)' }}>✕ clear</button>
+              </div>
+            )}
             {loading ? (
               <FeedSkeleton />
             ) : posts.length > 0 ? (
               posts.map(post => <FeedCard key={post.id} post={post} />)
-            ) : topics[activeTopic]?.filter === 'following' ? (
-              <div className="my-8 rounded-2xl border border-dashed flex flex-col items-center text-center px-6 py-14" style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-surface)' }}>
-                <div className="h-14 w-14 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--bg-elevated)' }}>
-                  <ion-icon name="people-outline" style={{ fontSize: '26px', color: 'var(--text-faint)' }} />
-                </div>
-                <p className="text-[16px] font-semibold" style={{ color: 'var(--text-primary)' }}>Your following feed is empty</p>
-                <p className="text-[13px] mt-1.5 max-w-xs" style={{ color: 'var(--text-muted)' }}>
-                  Follow writers and organizations to see their latest posts here.
-                </p>
-                <button
-                  onClick={() => setActiveTopic(0)}
-                  className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] rounded-full transition-colors"
-                >
-                  <ion-icon name="sparkles" style={{ fontSize: '16px' }} />
-                  Discover writers
-                </button>
-              </div>
             ) : (
               <div className="my-8 rounded-2xl border border-dashed flex flex-col items-center text-center px-6 py-14" style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-surface)' }}>
                 <div className="h-14 w-14 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--bg-elevated)' }}>
@@ -525,18 +512,25 @@ export default function App() {
               {(popularTags.length > 0 ? popularTags.slice(0, 8) : FIXED_TAGS).map(topic => (
                 <button
                   key={topic}
-                  onClick={() => {
-                    const idx = topics.findIndex(t => t.label === topic);
-                    if (idx >= 0) setActiveTopic(idx);
-                  }}
+                  onClick={() => setTagFilter(topic)}
                   className="px-3.5 py-1.5 rounded-full text-[13px] transition-colors"
-                  style={{ color: 'var(--text-body)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+                  style={tagFilter === topic
+                    ? { color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent)' }
+                    : { color: 'var(--text-body)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
                 >
                   {topic}
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Who to follow */}
+          {whoToFollow.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-[14px] font-bold mb-4 tracking-wide" style={{ color: 'var(--text-primary)' }}>Who to follow</h3>
+              {whoToFollow.map(u => <FollowSuggestion key={u.username} u={u} />)}
+            </div>
+          )}
 
           {/* Writing Prompt */}
           <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>

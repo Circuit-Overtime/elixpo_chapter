@@ -120,6 +120,13 @@ function renderBlocksToHTML(blocks) {
       if (c.type === 'orgMention' && c.props?.slug) {
         return `<a href="/${c.props.slug}" class="mention-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>@${c.props.slug}</a>`;
       }
+      if (c.type === 'inlineButton') {
+        const label = (c.props?.label || 'Button').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const href = c.props?.href || '';
+        return href
+          ? `<a href="${href}" class="inline-button-chip" target="_blank" rel="noopener noreferrer">${label}</a>`
+          : `<span class="inline-button-chip">${label}</span>`;
+      }
       // Links wrap child content — recurse into c.content for the link text
       if (c.type === 'link' && c.href) {
         const linkText = c.content ? inlineToHTML(c.content) : (c.text || c.href).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -322,7 +329,7 @@ function renderBlocksToHTML(blocks) {
   return html;
 }
 
-export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount }) {
+export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount, followSlot = null }) {
   const { isDark } = useTheme();
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -743,6 +750,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
               <span className="text-[var(--text-faint)]">·</span>
               <span>{wordCount || 0} {(wordCount || 0) === 1 ? 'word' : 'words'}</span>
             </div>
+            {followSlot && <div className="ml-auto flex items-center gap-2">{followSlot}</div>}
           </div>
         );
       })()}

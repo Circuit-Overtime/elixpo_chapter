@@ -7,6 +7,9 @@ const BLOG_FIELDS = `b.id, b.slug, b.title, b.subtitle, b.cover_image_r2_key, b.
   b.author_id, b.published_as, b.published_at, b.read_time_minutes,
   b.like_count, b.clap_total, b.comment_count, b.view_count`;
 
+// Keep the test author ("selenium-cutlet") out of every feed surface.
+const EXCLUDE_TEST = " AND b.author_id NOT IN (SELECT id FROM users WHERE LOWER(username) = 'selenium-cutlet')";
+
 /**
  * GET /api/feed — personalized feed
  *
@@ -32,6 +35,8 @@ export async function GET(request) {
       const { kvCache } = await import('../../../lib/cache');
       const cacheKey = filterTag
         ? `v1:feed:anon:tag:${filterTag}:p${page}`
+        : filterType === 'featured'
+        ? `v1:feed:anon:featured:p${page}`
         : `v1:feed:anon:trending:p${page}`;
 
       const cached = await kvCache(cacheKey, 180, async () => {
@@ -40,6 +45,8 @@ export async function GET(request) {
         const now = Math.floor(Date.now() / 1000);
         let posts = filterTag
           ? await queryByTag(db, filterTag, now, limit, offset)
+          : filterType === 'featured'
+          ? backfill(await queryFeatured(db, now, limit, offset), await queryTrending(db, now, limit, offset), limit)
           : await queryTrending(db, now, limit, offset);
         // Recency fallback so the public feed isn't empty when posts are older than the trending window.
         if (!filterTag && posts.length < limit) {
@@ -64,6 +71,9 @@ export async function GET(request) {
 
     if (filterType === 'following') {
       posts = await queryFollowing(db, userId, now, limit, offset);
+    } else if (filterType === 'featured') {
+      posts = await queryFeatured(db, now, limit, offset);
+      if (posts.length < limit) posts = backfill(posts, await queryTrending(db, now, limit, offset), limit);
     } else if (filterTag) {
       posts = await queryByTag(db, filterTag, now, limit, offset);
     } else {
@@ -89,7 +99,7 @@ async function queryFollowing(db, userId, now, limit, offset) {
   const result = await db.prepare(`
     SELECT ${BLOG_FIELDS}
     FROM blogs b
-    WHERE b.status = 'published' AND b.published_at > ?
+    WHERE b.status = 'published'${EXCLUDE_TEST} AND b.published_at > ?
       AND (
         b.author_id IN (SELECT following_id FROM follows WHERE follower_id = ? AND following_type = 'user')
         OR b.published_as IN (
@@ -114,7 +124,7 @@ async function queryInterests(db, userId, now, limit) {
   const result = await db.prepare(`
     SELECT ${BLOG_FIELDS}
     FROM blogs b
-    WHERE b.status = 'published' AND b.published_at > ?
+    WHERE b.status = 'published'${EXCLUDE_TEST} AND b.published_at > ?
       AND b.id IN (
         SELECT blog_id FROM blog_tags WHERE tag IN (
           SELECT tag FROM user_interests WHERE user_id = ?
@@ -135,11 +145,34 @@ async function queryTrending(db, now, limit, offset) {
   const result = await db.prepare(`
     SELECT ${BLOG_FIELDS}
     FROM blogs b
-    WHERE b.status = 'published' AND b.published_at > ?
+    WHERE b.status = 'published'${EXCLUDE_TEST} AND b.published_at > ?
     ORDER BY b.like_count DESC, b.view_count DESC, b.published_at DESC
     LIMIT ? OFFSET ?
   `).bind(cutoff, limit, offset).all();
   return result?.results || [];
+}
+
+// ─── Featured: editorial / staff-org picks (newest first) ────────────
+async function queryFeatured(db, now, limit, offset) {
+  const result = await db.prepare(`
+    SELECT ${BLOG_FIELDS}
+    FROM blogs b
+    WHERE b.status = 'published'${EXCLUDE_TEST}
+      AND b.published_as = ?
+    ORDER BY b.published_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(`org:${STAFF_ORG_ID}`, limit, offset).all();
+  return result?.results || [];
+}
+
+// Top up `base` with items from `extra` (deduped) until it reaches `limit`.
+function backfill(base, extra, limit) {
+  const have = new Set(base.map(p => p.id));
+  for (const p of extra) {
+    if (base.length >= limit) break;
+    if (!have.has(p.id)) { have.add(p.id); base.push(p); }
+  }
+  return base;
 }
 
 // ─── Tag-filtered ────────────────────────────────────────────────────
@@ -148,7 +181,7 @@ async function queryByTag(db, tag, now, limit, offset) {
   const result = await db.prepare(`
     SELECT ${BLOG_FIELDS}
     FROM blogs b
-    WHERE b.status = 'published' AND b.published_at > ?
+    WHERE b.status = 'published'${EXCLUDE_TEST} AND b.published_at > ?
       AND b.id IN (SELECT blog_id FROM blog_tags WHERE LOWER(tag) = LOWER(?))
     ORDER BY b.published_at DESC
     LIMIT ? OFFSET ?
@@ -161,7 +194,7 @@ async function queryRecent(db, limit, offset = 0) {
   const result = await db.prepare(`
     SELECT ${BLOG_FIELDS}
     FROM blogs b
-    WHERE b.status = 'published'
+    WHERE b.status = 'published'${EXCLUDE_TEST}
     ORDER BY b.published_at DESC
     LIMIT ? OFFSET ?
   `).bind(limit, offset).all();

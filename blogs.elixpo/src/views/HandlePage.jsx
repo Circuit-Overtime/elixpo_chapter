@@ -8,6 +8,8 @@ import { generatePixelAvatar, generateBlogBanner } from '../utils/pixelAvatar';
 import { useAuth } from '../context/AuthContext';
 import BlogInteractionBar from '../components/BlogInteractionBar';
 import BlogComments from '../components/BlogComments';
+import BlogFollowCard, { FollowToggle } from '../components/BlogFollowButtons';
+import BlogRecommendations from '../components/BlogRecommendations';
 import AuthorAttribution from '../components/AuthorAttribution';
 import FollowListModal from '../components/FollowListModal';
 import BlogInviteOverlay from '../components/BlogInviteOverlay';
@@ -184,6 +186,18 @@ function HandlePageInner({ path }) {
             coAuthorCount={blog.co_author_count || 0}
             coAuthors={blog.co_authors || []}
             wordCount={wc}
+            followSlot={!isAuthor ? (
+              <>
+                {data.owner?.type === 'org' && <FollowToggle kind="org" handle={data.owner.slug} compact />}
+                {blog.author_username && <FollowToggle kind="user" handle={blog.author_username} compact />}
+              </>
+            ) : null}
+          />
+
+          {/* End-of-blog follow card — author (+ org) */}
+          <BlogFollowCard
+            author={{ username: blog.author_username, display_name: blog.author_name, avatar_url: blog.author_avatar }}
+            org={data.owner?.type === 'org' ? { slug: data.owner.slug, name: data.owner.name, logo_url: data.owner.logo_url || data.owner.logo_r2_key } : null}
           />
 
           {/* Interaction bar — like, clap, bookmark, share, views */}
@@ -191,6 +205,9 @@ function HandlePageInner({ path }) {
 
           {/* Comments section — always expanded */}
           <BlogComments blogId={blog.id} blogAuthorId={blog.author_id} />
+
+          {/* More to read — related recommendations */}
+          <BlogRecommendations blogId={blog.id} />
         </div>
       </AppShell>
     );

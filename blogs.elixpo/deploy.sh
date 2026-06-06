@@ -51,10 +51,21 @@ load_env() {
     echo "Error: .env not found at $ENV_FILE"
     exit 1
   fi
+  # The committed .env is SOPS-encrypted — decrypt before exporting, else every
+  # value comes through as ENC[...] and API calls fail.
+  local _env_content
+  if grep -q 'ENC\[' "$ENV_FILE" 2>/dev/null || grep -q '^sops' "$ENV_FILE" 2>/dev/null; then
+    if [ -z "${SOPS_AGE_KEY:-}" ] && [ -f "$HOME/.sops/elixpo-age-key.txt" ]; then
+      export SOPS_AGE_KEY="$(grep 'AGE-SECRET-KEY' "$HOME/.sops/elixpo-age-key.txt" | head -1)"
+    fi
+    _env_content="$(sops -d "$ENV_FILE")" || { echo "Error: failed to decrypt $ENV_FILE (set SOPS_AGE_KEY or ~/.sops/elixpo-age-key.txt)"; exit 1; }
+  else
+    _env_content="$(cat "$ENV_FILE")"
+  fi
   while IFS= read -r line || [ -n "$line" ]; do
     [[ -z "$line" || "$line" =~ ^# ]] && continue
     export "$line" 2>/dev/null || true
-  done < "$ENV_FILE"
+  done <<< "$_env_content"
 }
 
 get_binding_ids() {

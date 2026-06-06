@@ -64,15 +64,22 @@ export class CollabDurableObject {
     }
   }
 
-  // Snapshot Yjs binary state to D1 blog_collab_state table
+  // Snapshot Yjs binary state to D1 — sub-page rooms persist to
+  // subpage_collab_state, main rooms to blog_collab_state (#11 D).
   async snapshotToD1() {
-    if (!this.blogId || !this.env.DB) return;
+    if (!this.env.DB) return;
     try {
       const state = Y.encodeStateAsUpdate(this.doc);
       const now = Math.floor(Date.now() / 1000);
-      await this.env.DB.prepare(
-        'INSERT OR REPLACE INTO blog_collab_state (blog_id, yjs_state, updated_at) VALUES (?, ?, ?)'
-      ).bind(this.blogId, state.buffer, now).run();
+      if (this.subpageId) {
+        await this.env.DB.prepare(
+          'INSERT OR REPLACE INTO subpage_collab_state (subpage_id, yjs_state, updated_at) VALUES (?, ?, ?)'
+        ).bind(this.subpageId, state.buffer, now).run();
+      } else if (this.blogId) {
+        await this.env.DB.prepare(
+          'INSERT OR REPLACE INTO blog_collab_state (blog_id, yjs_state, updated_at) VALUES (?, ?, ?)'
+        ).bind(this.blogId, state.buffer, now).run();
+      }
     } catch (err) {
       console.error('D1 snapshot failed:', err);
     }
@@ -83,11 +90,17 @@ export class CollabDurableObject {
 
     const url = new URL(request.url);
 
-    // Store blog ID from path
-    const pathBlogId = url.pathname.split('/').pop();
-    if (pathBlogId && pathBlogId !== 'websocket') {
-      this.blogId = pathBlogId;
-      await this.ctx.storage.put('blog_id', pathBlogId);
+    // blogId / subpageId come from query params set by the worker (the path can
+    // be /blog/<id> or /blog/<id>/sub/<subId>, so don't infer from the path).
+    const qpBlogId = url.searchParams.get('blogId');
+    if (qpBlogId) {
+      this.blogId = qpBlogId;
+      await this.ctx.storage.put('blog_id', qpBlogId);
+    }
+    const qpSubpageId = url.searchParams.get('subpageId');
+    if (qpSubpageId) {
+      this.subpageId = qpSubpageId;
+      await this.ctx.storage.put('subpage_id', qpSubpageId);
     }
 
     // Handle WebSocket upgrade
@@ -99,6 +112,21 @@ export class CollabDurableObject {
       const userId = url.searchParams.get('userId') || 'anonymous';
       const userName = url.searchParams.get('userName') || 'Anonymous';
       const userColor = url.searchParams.get('userColor') || '#9b7bf7';
+
+      // Cap live editing at 5 DISTINCT users per blog (#11). Reconnects / extra
+      // tabs of an already-present user don't consume a slot; a genuinely new
+      // 6th user is rejected so the client can fall back to read-only.
+      const MAX_ACTIVE_USERS = 5;
+      const activeUsers = new Set();
+      for (const s of this.ctx.getWebSockets()) {
+        try { const m = s.deserializeAttachment(); if (m?.userId) activeUsers.add(m.userId); } catch {}
+      }
+      if (!activeUsers.has(userId) && activeUsers.size >= MAX_ACTIVE_USERS) {
+        return new Response(JSON.stringify({ error: 'collab_full', max: MAX_ACTIVE_USERS }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
 
       // Accept with hibernation API
       this.ctx.acceptWebSocket(server, [userId]);
