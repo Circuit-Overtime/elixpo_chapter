@@ -57,6 +57,8 @@ export async function POST(request) {
     const now = Math.floor(Date.now() / 1000);
     const readTime = Math.max(1, Math.ceil(countWords(editorContent) / 250));
     const compressedContent = editorContent ? compressBlogContent(editorContent) : '';
+    const { excerptFromBlocks } = await import('../../../../lib/excerpt');
+    const excerpt = editorContent ? excerptFromBlocks(editorContent) : '';
 
     const existing = await db.prepare('SELECT id, author_id, status, published_as, slug FROM blogs WHERE id = ?').bind(slugid).first();
 
@@ -120,8 +122,6 @@ export async function POST(request) {
         ? (existing.status === 'draft' ? now : null)
         : null;
 
-      const { excerptFromBlocks } = await import('../../../../lib/excerpt');
-      const excerpt = editorContent ? excerptFromBlocks(editorContent) : '';
       let query = `
         UPDATE blogs SET title = ?, subtitle = ?, slug = ?, content = ?, excerpt = ?, published_as = ?,
           status = ?, page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?,
@@ -141,11 +141,11 @@ export async function POST(request) {
     } else {
       // Create and publish in one step
       await db.prepare(`
-        INSERT INTO blogs (id, slug, title, subtitle, content, author_id, published_as, status,
+        INSERT INTO blogs (id, slug, title, subtitle, content, excerpt, author_id, published_as, status,
           page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, read_time_minutes, created_at, updated_at, published_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        slugid, slug, title, subtitle || '', compressedContent,
+        slugid, slug, title, subtitle || '', compressedContent, excerpt,
         session.userId, publishAs || 'personal', targetStatus,
         pageEmoji || '', coverUrl || '', posX, posY, zoom, readTime, now, now,
         (targetStatus === 'published' || targetStatus === 'unlisted') ? now : null

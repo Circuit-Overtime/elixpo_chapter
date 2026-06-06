@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '../../../lib/auth';
 import { STAFF_ORG_ID } from '../../../lib/staff';
 
-const BLOG_FIELDS = `b.id, b.slug, b.title, b.subtitle, b.cover_image_r2_key, b.page_emoji,
+const BLOG_FIELDS = `b.id, b.slug, b.title, b.subtitle, b.excerpt, b.cover_image_r2_key, b.page_emoji,
   b.author_id, b.published_as, b.published_at, b.read_time_minutes,
   b.like_count, b.clap_total, b.comment_count, b.view_count`;
 
@@ -301,6 +301,14 @@ async function enrichPosts(db, posts, userId) {
     orgMemberSet = new Set(memberRows.map(r => r.key));
   }
 
+  // Reshare counts for these posts (batched).
+  const repostMap = {};
+  if (blogIds.length) {
+    const ph = blogIds.map(() => '?').join(',');
+    const rows = await db.prepare(`SELECT blog_id, COUNT(*) AS c FROM reposts WHERE blog_id IN (${ph}) GROUP BY blog_id`).bind(...blogIds).all();
+    for (const r of (rows?.results || [])) repostMap[r.blog_id] = r.c;
+  }
+
   // The viewer's like / bookmark / co-author state for these posts (batched).
   let likedSet = new Set(), bookmarkedSet = new Set(), coAuthoredSet = new Set();
   if (userId) {
@@ -331,6 +339,7 @@ async function enrichPosts(db, posts, userId) {
       can_edit: !!(isAuthor || isOrgMember),
       is_author: !!isAuthor,
       is_co_author: coAuthoredSet.has(p.id),
+      repost_count: repostMap[p.id] || 0,
       liked: likedSet.has(p.id),
       bookmarked: bookmarkedSet.has(p.id),
     };
