@@ -246,8 +246,10 @@ function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTop
       <button
         onClick={() => setOpen(!open)}
         className="h-8 w-8 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] flex items-center justify-center hover:border-[var(--border-hover)] transition-colors"
+        style={{ color: 'var(--text-primary)' }}
+        title="More options"
       >
-        <ion-icon name="ellipsis-horizontal" style={{ color: '#888', fontSize: '16px' }} />
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
       </button>
       {open && (
         <div className="absolute right-0 top-full mt-2 w-[260px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl z-50 overflow-hidden">
@@ -753,6 +755,14 @@ export default function WritePage({ slugid }) {
             setDraftLoading(false);
             return;
           }
+          // 403 with no invite → you can't edit this blog. Don't show a blank
+          // editor; send the reader to the home feed.
+          window.location.href = '/';
+          return;
+        } else if (res.status === 401) {
+          // Not signed in (middleware should catch this first) → sign-in, return here after.
+          window.location.href = `/sign-in?next=${encodeURIComponent('/edit/' + slugid)}`;
+          return;
         }
       } catch { /* offline or brand-new blog */ }
 
@@ -1119,12 +1129,17 @@ export default function WritePage({ slugid }) {
     }
   }, []);
 
-  // Grow the title textarea to fit its content (on load + whenever title changes),
-  // not just on keystroke — otherwise long titles get clipped to one row.
+  // Grow the title textarea to fit its content. Re-run when the editor becomes
+  // visible (draftLoading/editorReady) too — if it runs while hidden, scrollHeight
+  // is 0 and the title would otherwise stay clipped to height:0 (invisible).
   useEffect(() => {
     const el = titleTextareaRef.current;
-    if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
-  }, [title]);
+    if (!el) return;
+    el.style.height = 'auto';
+    const h = el.scrollHeight;
+    el.style.height = (h > 0 ? h : 0) + 'px';
+    el.style.minHeight = '1.2em';
+  }, [title, draftLoading, editorReady]);
 
   // Serialized publish-settings, used to detect "nothing changed" on Update.
   const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, pageEmoji, coverPreview, coverPos, coverZoom, slug });
@@ -1549,7 +1564,11 @@ export default function WritePage({ slugid }) {
             style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            <ion-icon name={isDark ? 'sunny-outline' : 'moon-outline'} style={{ fontSize: '16px' }} />
+            {isDark ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            )}
           </button>
 
           {/* Shortcuts help */}
@@ -1977,7 +1996,7 @@ export default function WritePage({ slugid }) {
                       }}
                       onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
                       placeholder="Blog title..."
-                      className={`w-full bg-transparent text-[2em] font-extrabold outline-none placeholder-[var(--text-faint)] mb-1 leading-tight resize-none overflow-hidden ${aiTitleKey > 0 ? 'text-transparent' : ''}`}
+                      className={`w-full bg-transparent text-[2em] font-extrabold outline-none placeholder-[var(--text-faint)] mb-1 leading-tight resize-none overflow-hidden min-h-[1.2em] ${aiTitleKey > 0 ? 'text-transparent' : ''}`}
                       rows={1}
                     />
                     {aiTitleKey > 0 && title && (
@@ -2074,7 +2093,13 @@ export default function WritePage({ slugid }) {
                       onChange={handleEditorChange}
                       initialContent={editorContent}
                       onReady={() => setEditorReady(true)}
-                      onTitleChange={(newTitle) => { setTitle(newTitle); setAiTitleKey(k => k + 1); }}
+                      onTitleChange={(newTitle) => {
+                        // Ignore until the initial load is done and ignore empties,
+                        // so a content-derived title can't wipe/hide the loaded title.
+                        if (!loadedRef.current || !newTitle) return;
+                        setTitle(newTitle);
+                        setAiTitleKey(k => k + 1);
+                      }}
                       blogId={blogId}
                       collaboration={collabConfig}
                       editable={!roomFull}

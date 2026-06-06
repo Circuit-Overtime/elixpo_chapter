@@ -391,14 +391,7 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
     // PDF embed removed: only static-image attachments are allowed in blog
     // content. The pdfEmbed block spec stays mounted for backward compat
     // with already-saved blogs but is no longer insertable from the menu.
-    {
-      title: AI_ENABLED ? 'AI Block' : 'AI Block (Coming soon)',
-      subtext: AI_ENABLED ? 'Generate content with AI' : 'AI writing is coming soon',
-      group: 'AI',
-      aliases: ['ai', 'generate', 'gpt', 'assistant', 'write for me'],
-      icon: <Icon d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" color="#9b7bf7" />,
-      onItemClick: () => { if (AI_ENABLED) editor.insertBlocks([{ type: 'aiBlock' }], editor.getTextCursorPosition().block, 'after'); },
-    },
+    // AI block removed entirely — AI features are not part of blogs.
   ];
 
   const inlineItems = [
