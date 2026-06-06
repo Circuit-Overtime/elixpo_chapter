@@ -230,7 +230,7 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
                 {t.label}
               </button>
             ))}
-          </div>
+          </div>g
         )}
 
         <div className="p-6">
