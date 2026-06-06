@@ -150,6 +150,11 @@ export async function POST(request) {
       ).run();
     }
 
+    // Record a version snapshot for every publish/update (#11 E).
+    if (compressedContent && targetStatus !== 'draft') {
+      try { const { snapshotVersion } = await import('../../../../lib/blogVersions'); await snapshotVersion(db, slugid, compressedContent, { label: 'published', userId: session.userId }); } catch {}
+    }
+
     // Sync tags
     if (tags && Array.isArray(tags)) {
       await db.prepare('DELETE FROM blog_tags WHERE blog_id = ?').bind(slugid).run();

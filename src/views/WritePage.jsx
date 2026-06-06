@@ -484,6 +484,32 @@ export default function WritePage({ slugid }) {
     enabled: hasCollaborators,
   });
 
+  // Version history (#11 E)
+  const [showHistory, setShowHistory] = useState(false);
+  const [versions, setVersions] = useState([]);
+  const openHistory = async () => {
+    setShowHistory(true);
+    try {
+      const r = await fetch(`/api/blogs/${blogId}/versions`);
+      if (r.ok) setVersions((await r.json()).versions || []);
+    } catch {}
+  };
+  const restoreVersion = async (versionId) => {
+    try {
+      const r = await fetch(`/api/blogs/${blogId}/versions`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ versionId }),
+      });
+      if (!r.ok) return;
+      const d = await r.json();
+      const ed = editorRef.current?.getEditor?.();
+      if (ed && Array.isArray(d.content)) {
+        try { ed.replaceBlocks(ed.document, d.content); } catch {}
+      }
+      setShowHistory(false);
+    } catch {}
+  };
+
   // When another collaborator publishes, follow them to the published view
   // (out of edit) — keeps everyone in the session in sync with the live post.
   useEffect(() => {
@@ -1356,6 +1382,42 @@ export default function WritePage({ slugid }) {
               )}
             </div>
           )}
+
+          {/* Version history (#11 E) */}
+          <div className="relative">
+            <button
+              onClick={() => (showHistory ? setShowHistory(false) : openHistory())}
+              className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-[12px] font-medium transition-colors"
+              style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-muted)' }}
+              title="Version history"
+            >
+              <ion-icon name="time-outline" style={{ fontSize: '15px' }} />
+              <span className="hidden md:inline">History</span>
+            </button>
+            {showHistory && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
+                <div className="absolute right-0 top-10 z-50 w-72 max-h-[60vh] overflow-y-auto rounded-xl p-1.5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', boxShadow: '0 16px 48px rgba(0,0,0,0.4)' }}>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1.5" style={{ color: 'var(--text-faint)' }}>Version history</p>
+                  {versions.length === 0 ? (
+                    <p className="text-[12px] px-2.5 py-3" style={{ color: 'var(--text-faint)' }}>No versions yet — they accrue as you edit and publish.</p>
+                  ) : versions.map((v) => (
+                    <div key={v.id} className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg hover:bg-[var(--bg-active)]">
+                      <div className="min-w-0">
+                        <p className="text-[12px] truncate" style={{ color: 'var(--text-primary)' }}>
+                          {v.label === 'published' ? '🚀 Published' : v.label === 'pre-restore' ? '↩ Pre-restore' : '💾 Autosave'}
+                        </p>
+                        <p className="text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>
+                          {new Date(v.created_at * 1000).toLocaleString()}{v.username ? ` · @${v.username}` : ''}
+                        </p>
+                      </div>
+                      <button onClick={() => restoreVersion(v.id)} className="text-[11px] font-medium px-2 py-1 rounded-md flex-shrink-0" style={{ color: '#9b7bf7', backgroundColor: 'rgba(155,123,247,0.1)' }}>Restore</button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Hidden file input for markdown import (triggered from menu) */}
           <input ref={mdUploadRef} type="file" accept=".md,.markdown,.txt" className="hidden" onChange={handleMdUpload} />
