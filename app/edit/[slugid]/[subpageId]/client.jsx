@@ -3,6 +3,7 @@
 import { use, useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { useTheme } from '../../../../src/context/ThemeContext';
+import { useCollaboration } from '../../../../src/hooks/useCollaboration';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -61,6 +62,20 @@ export default function SubpageClient({ params }) {
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+  const [parentBlogId, setParentBlogId] = useState(null); // canonical parent blog id
+  const [hasCollab, setHasCollab] = useState(false);
+
+  // Live collaboration on this sub-page (same 5-editor cap as the main blog),
+  // keyed by the canonical parent blog id + this sub-page id (#11 D).
+  const {
+    collaboration: collabConfig, isConnected: collabConnected, connectedUsers,
+    roomFull, needsSeed, clearSeed,
+  } = useCollaboration({
+    blogId: parentBlogId,
+    subpageId,
+    user,
+    enabled: kind === 'doc' && hasCollab && !!parentBlogId,
+  });
   const hadUserGestureRef = useRef(false);
   const draftTimerRef = useRef(null);
   const titleInputRef = useRef(null);
@@ -98,6 +113,7 @@ export default function SubpageClient({ params }) {
         const subpageKind = data.kind === 'canvas' ? 'canvas' : 'doc';
         setKind(subpageKind);
         setMetadata(data.metadata || null);
+        setParentBlogId(data.blog_id || slugid);
 
         // Canvas subpages: store raw scene JSON on `content`, no localStorage
         // shadow-draft because the iframe owns autosave.
@@ -132,6 +148,16 @@ export default function SubpageClient({ params }) {
       })
       .finally(() => setLoading(false));
   }, [subpageId]);
+
+  // Enable collab on this sub-page only when the parent blog has accepted
+  // co-authors (mirrors the main editor's condition).
+  useEffect(() => {
+    if (!parentBlogId) return;
+    fetch(`/api/blogs/invite?slugid=${encodeURIComponent(parentBlogId)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setHasCollab((d?.collaborators || []).some(c => c.status === 'accepted')))
+      .catch(() => {});
+  }, [parentBlogId]);
 
   // Cloud sync function — saves localStorage first then pushes to cloud
   const syncToCloud = useCallback(async ({ showToast = false, silent = false } = {}) => {
@@ -383,6 +409,20 @@ export default function SubpageClient({ params }) {
 
         {/* Right: actions */}
         <div className="flex items-center gap-2">
+          {/* Live collaborators on this sub-page (#11) */}
+          {collabConnected && connectedUsers.length > 1 && (
+            <div className="flex items-center -space-x-2 mr-1" title={`${connectedUsers.length} editing now`}>
+              {connectedUsers.slice(0, 5).map((u, i) => (
+                u.avatar ? (
+                  <img key={u.id || i} src={u.avatar} alt={u.name} title={u.name} className="w-7 h-7 rounded-full object-cover" style={{ border: `2px solid ${u.color || '#9b7bf7'}`, boxShadow: '0 0 0 2px var(--bg-app)' }} />
+                ) : (
+                  <div key={u.id || i} title={u.name} className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white" style={{ backgroundColor: u.color || '#9b7bf7', border: '2px solid var(--bg-app)' }}>
+                    {(u.name || '?')[0].toUpperCase()}
+                  </div>
+                )
+              ))}
+            </div>
+          )}
           {/* Mode tabs */}
           <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-default)', backgroundColor: 'var(--bg-surface)' }}>
             {modeTabs.map(tab => (
@@ -437,6 +477,12 @@ export default function SubpageClient({ params }) {
                 {title}
               </h1>
 
+              {roomFull && (
+                <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/25 text-[13px] text-[#d97706]">
+                  <ion-icon name="eye-outline" style={{ fontSize: '16px' }} />
+                  This sub-page already has 5 live editors — you're viewing in read-only until a slot frees up.
+                </div>
+              )}
               {/* Editor — blogId passed so Cloudinary uploads go to the parent blog's folder */}
               <div className="min-h-[60vh] pb-[100px]">
                 {!loading && (
@@ -445,6 +491,9 @@ export default function SubpageClient({ params }) {
                     onChange={handleEditorChange}
                     initialContent={content}
                     blogId={slugid}
+                    collaboration={collabConfig}
+                    editable={!roomFull}
+                    onCollabSeeded={needsSeed ? clearSeed : undefined}
                   />
                 )}
               </div>

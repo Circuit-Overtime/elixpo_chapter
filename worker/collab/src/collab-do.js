@@ -64,15 +64,22 @@ export class CollabDurableObject {
     }
   }
 
-  // Snapshot Yjs binary state to D1 blog_collab_state table
+  // Snapshot Yjs binary state to D1 — sub-page rooms persist to
+  // subpage_collab_state, main rooms to blog_collab_state (#11 D).
   async snapshotToD1() {
-    if (!this.blogId || !this.env.DB) return;
+    if (!this.env.DB) return;
     try {
       const state = Y.encodeStateAsUpdate(this.doc);
       const now = Math.floor(Date.now() / 1000);
-      await this.env.DB.prepare(
-        'INSERT OR REPLACE INTO blog_collab_state (blog_id, yjs_state, updated_at) VALUES (?, ?, ?)'
-      ).bind(this.blogId, state.buffer, now).run();
+      if (this.subpageId) {
+        await this.env.DB.prepare(
+          'INSERT OR REPLACE INTO subpage_collab_state (subpage_id, yjs_state, updated_at) VALUES (?, ?, ?)'
+        ).bind(this.subpageId, state.buffer, now).run();
+      } else if (this.blogId) {
+        await this.env.DB.prepare(
+          'INSERT OR REPLACE INTO blog_collab_state (blog_id, yjs_state, updated_at) VALUES (?, ?, ?)'
+        ).bind(this.blogId, state.buffer, now).run();
+      }
     } catch (err) {
       console.error('D1 snapshot failed:', err);
     }
