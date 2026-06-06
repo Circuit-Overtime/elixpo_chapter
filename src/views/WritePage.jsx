@@ -478,11 +478,37 @@ export default function WritePage({ slugid }) {
 
   // Real-time collaboration (enabled when blog has co-authors)
   const hasCollaborators = collaborators.length > 0;
-  const { collaboration: collabConfig, isConnected: collabConnected, connectedUsers, error: collabError, needsSeed, clearSeed } = useCollaboration({
+  const { collaboration: collabConfig, isConnected: collabConnected, connectedUsers, roomFull, error: collabError, needsSeed, clearSeed } = useCollaboration({
     blogId,
     user,
     enabled: hasCollaborators,
   });
+
+  // Version history (#11 E)
+  const [showHistory, setShowHistory] = useState(false);
+  const [versions, setVersions] = useState([]);
+  const openHistory = async () => {
+    setShowHistory(true);
+    try {
+      const r = await fetch(`/api/blogs/${blogId}/versions`);
+      if (r.ok) setVersions((await r.json()).versions || []);
+    } catch {}
+  };
+  const restoreVersion = async (versionId) => {
+    try {
+      const r = await fetch(`/api/blogs/${blogId}/versions`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ versionId }),
+      });
+      if (!r.ok) return;
+      const d = await r.json();
+      const ed = editorRef.current?.getEditor?.();
+      if (ed && Array.isArray(d.content)) {
+        try { ed.replaceBlocks(ed.document, d.content); } catch {}
+      }
+      setShowHistory(false);
+    } catch {}
+  };
 
   // When another collaborator publishes, follow them to the published view
   // (out of edit) — keeps everyone in the session in sync with the live post.
@@ -1325,6 +1351,74 @@ export default function WritePage({ slugid }) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2.5">
+          {/* Live collaborators — avatars of everyone currently editing (#11) */}
+          {collabConnected && connectedUsers.length > 1 && (
+            <div className="flex items-center -space-x-2 mr-1" title={`${connectedUsers.length} editing now`}>
+              {connectedUsers.slice(0, 5).map((u, i) => (
+                u.avatar ? (
+                  <img
+                    key={u.id || i}
+                    src={u.avatar}
+                    alt={u.name}
+                    title={u.name}
+                    className="w-7 h-7 rounded-full object-cover"
+                    style={{ border: `2px solid ${u.color || '#9b7bf7'}`, boxShadow: '0 0 0 2px var(--bg-app)' }}
+                  />
+                ) : (
+                  <div
+                    key={u.id || i}
+                    title={u.name}
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
+                    style={{ backgroundColor: u.color || '#9b7bf7', border: '2px solid var(--bg-app)' }}
+                  >
+                    {(u.name || '?')[0].toUpperCase()}
+                  </div>
+                )
+              ))}
+              {connectedUsers.length > 5 && (
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold bg-[var(--bg-elevated)] text-[var(--text-muted)]" style={{ border: '2px solid var(--bg-app)' }}>
+                  +{connectedUsers.length - 5}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Version history (#11 E) */}
+          <div className="relative">
+            <button
+              onClick={() => (showHistory ? setShowHistory(false) : openHistory())}
+              className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-[12px] font-medium transition-colors"
+              style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-muted)' }}
+              title="Version history"
+            >
+              <ion-icon name="time-outline" style={{ fontSize: '15px' }} />
+              <span className="hidden md:inline">History</span>
+            </button>
+            {showHistory && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
+                <div className="absolute right-0 top-10 z-50 w-72 max-h-[60vh] overflow-y-auto rounded-xl p-1.5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', boxShadow: '0 16px 48px rgba(0,0,0,0.4)' }}>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1.5" style={{ color: 'var(--text-faint)' }}>Version history</p>
+                  {versions.length === 0 ? (
+                    <p className="text-[12px] px-2.5 py-3" style={{ color: 'var(--text-faint)' }}>No versions yet — they accrue as you edit and publish.</p>
+                  ) : versions.map((v) => (
+                    <div key={v.id} className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg hover:bg-[var(--bg-active)]">
+                      <div className="min-w-0">
+                        <p className="text-[12px] truncate" style={{ color: 'var(--text-primary)' }}>
+                          {v.label === 'published' ? '🚀 Published' : v.label === 'pre-restore' ? '↩ Pre-restore' : '💾 Autosave'}
+                        </p>
+                        <p className="text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>
+                          {new Date(v.created_at * 1000).toLocaleString()}{v.username ? ` · @${v.username}` : ''}
+                        </p>
+                      </div>
+                      <button onClick={() => restoreVersion(v.id)} className="text-[11px] font-medium px-2 py-1 rounded-md flex-shrink-0" style={{ color: '#9b7bf7', backgroundColor: 'rgba(155,123,247,0.1)' }}>Restore</button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Hidden file input for markdown import (triggered from menu) */}
           <input ref={mdUploadRef} type="file" accept=".md,.markdown,.txt" className="hidden" onChange={handleMdUpload} />
 
@@ -1924,6 +2018,13 @@ export default function WritePage({ slugid }) {
                     </div>
                   )}
 
+                  {/* Read-only when the 5-editor cap is reached (#11 F) */}
+                  {roomFull && (
+                    <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/25 text-[13px] text-[#d97706]">
+                      <ion-icon name="eye-outline" style={{ fontSize: '16px' }} />
+                      This blog already has the maximum of 5 live editors — you're viewing in read-only until a slot frees up.
+                    </div>
+                  )}
                   <div className="min-h-[60vh] pb-[100px] relative">
                     <BlockNoteEditor
                       ref={editorRef}
@@ -1933,6 +2034,7 @@ export default function WritePage({ slugid }) {
                       onTitleChange={(newTitle) => { setTitle(newTitle); setAiTitleKey(k => k + 1); }}
                       blogId={blogId}
                       collaboration={collabConfig}
+                      editable={!roomFull}
                       onCollabSeeded={needsSeed ? clearSeed : undefined}
                     />
                     {/* Outline sidebar — shows heading positions with slider */}

@@ -16,15 +16,20 @@ export default {
       });
     }
 
-    // Route: /blog/:blogId (WebSocket upgrade)
-    // Route: /blog/:blogId/status (HTTP — get connected users)
-    const match = url.pathname.match(/^\/blog\/([a-zA-Z0-9_-]+)(\/status)?$/);
+    // Routes (room name mirrors the client's y-websocket room):
+    //   /blog/:blogId                       — main content WS
+    //   /blog/:blogId/sub/:subpageId        — sub-page WS (#11 D)
+    //   …/status                            — HTTP connected-user count
+    const match = url.pathname.match(/^\/blog\/([a-zA-Z0-9_-]+)(?:\/sub\/([a-zA-Z0-9_-]+))?(\/status)?$/);
     if (!match) {
       return new Response('Not found', { status: 404 });
     }
 
     const blogId = match[1];
-    const isStatus = !!match[2];
+    const subpageId = match[2] || null;
+    const isStatus = !!match[3];
+    // One Durable Object per editing surface — main vs each sub-page.
+    const roomKey = subpageId ? `${blogId}:sub:${subpageId}` : blogId;
 
     // Authenticate — validate session cookie
     const session = await validateSession(request, env);
@@ -46,11 +51,13 @@ export default {
       }
     }
 
-    // Get the Durable Object for this blog
-    const doId = env.COLLAB_DO.idFromName(blogId);
+    // Get the Durable Object for this editing surface (main or sub-page)
+    const doId = env.COLLAB_DO.idFromName(roomKey);
     const doStub = env.COLLAB_DO.get(doId);
 
-    // Add user info to the URL for the DO
+    // Add user + room info to the URL for the DO
+    url.searchParams.set('blogId', blogId);
+    if (subpageId) url.searchParams.set('subpageId', subpageId);
     if (session) {
       url.searchParams.set('userId', session.userId);
       url.searchParams.set('userName', session.displayName || session.username || 'Anonymous');
@@ -69,29 +76,43 @@ export default {
   },
 };
 
-// Validate session from cookie (shared with main app)
+// Validate the HMAC-signed session cookie — mirrors lib/auth.js in the main app.
+// Cookie format: base64url(payloadJSON) + "." + base64url(hmacSHA256(payload)).
+// Requires SESSION_SECRET in the worker env (pushed by deploy.sh secrets).
+function b64urlToBytes(str) {
+  const b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
 async function validateSession(request, env) {
   try {
     const cookie = request.headers.get('Cookie') || '';
-    const match = cookie.match(/lixblogs_session=([^;]+)/);
-    if (!match) return null;
+    const m = cookie.match(/lixblogs_session=([^;]+)/);
+    if (!m || !env.SESSION_SECRET) return null;
 
-    const sessionToken = match[1];
+    const raw = decodeURIComponent(m[1]);
+    const dot = raw.indexOf('.');
+    if (dot <= 0) return null;
 
-    // Decode the JWT-like session (same as lib/auth.js in the main app)
-    // For simplicity, we validate by querying D1 for the session
-    if (!env.DB) return null;
+    const payloadBytes = b64urlToBytes(raw.slice(0, dot));
+    const sigBytes = b64urlToBytes(raw.slice(dot + 1));
 
-    const row = await env.DB.prepare(
-      'SELECT user_id, username, display_name FROM sessions WHERE token = ? AND expires_at > ?'
-    ).bind(sessionToken, Math.floor(Date.now() / 1000)).first();
+    const key = await crypto.subtle.importKey(
+      'raw', new TextEncoder().encode(env.SESSION_SECRET),
+      { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'],
+    );
+    const valid = await crypto.subtle.verify('HMAC', key, sigBytes, payloadBytes);
+    if (!valid) return null;
 
-    if (!row) return null;
-
+    const payload = JSON.parse(new TextDecoder().decode(payloadBytes));
+    if (!payload?.userId) return null;
     return {
-      userId: row.user_id,
-      username: row.username,
-      displayName: row.display_name,
+      userId: payload.userId,
+      username: payload.profile?.username,
+      displayName: payload.profile?.display_name,
     };
   } catch {
     return null;
