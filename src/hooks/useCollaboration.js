@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 // Collab worker URL — set this to your deployed collab worker domain
 const COLLAB_WS_URL = process.env.NEXT_PUBLIC_COLLAB_URL || 'wss://blog_collab.elixpo.com';
 
-export function useCollaboration({ blogId, user, enabled = false }) {
+export function useCollaboration({ blogId, subpageId = null, user, enabled = false }) {
   const [isConnected, setIsConnected] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState([]);
   const [error, setError] = useState(null);
@@ -36,9 +36,13 @@ export function useCollaboration({ blogId, user, enabled = false }) {
         ydocRef.current = ydoc;
 
         const wsUrl = COLLAB_WS_URL.replace(/^http/, 'ws');
+        // Room mirrors the worker route: /blog/<id> (main) or
+        // /blog/<id>/sub/<subpageId> (sub-page). Previously "blog-<id>", which
+        // didn't match the worker's "/blog/<id>" route → every connect 404'd.
+        const room = subpageId ? `blog/${blogId}/sub/${subpageId}` : `blog/${blogId}`;
         const provider = new WebsocketProvider(
           wsUrl,
-          `blog-${blogId}`,
+          room,
           ydoc,
           {
             params: {
@@ -143,7 +147,7 @@ export function useCollaboration({ blogId, user, enabled = false }) {
         body: JSON.stringify({ blogId }),
       }).catch(() => {});
     };
-  }, [enabled, blogId, user?.id]);
+  }, [enabled, blogId, subpageId, user?.id]);
 
   return {
     collaboration,

@@ -83,11 +83,17 @@ export class CollabDurableObject {
 
     const url = new URL(request.url);
 
-    // Store blog ID from path
-    const pathBlogId = url.pathname.split('/').pop();
-    if (pathBlogId && pathBlogId !== 'websocket') {
-      this.blogId = pathBlogId;
-      await this.ctx.storage.put('blog_id', pathBlogId);
+    // blogId / subpageId come from query params set by the worker (the path can
+    // be /blog/<id> or /blog/<id>/sub/<subId>, so don't infer from the path).
+    const qpBlogId = url.searchParams.get('blogId');
+    if (qpBlogId) {
+      this.blogId = qpBlogId;
+      await this.ctx.storage.put('blog_id', qpBlogId);
+    }
+    const qpSubpageId = url.searchParams.get('subpageId');
+    if (qpSubpageId) {
+      this.subpageId = qpSubpageId;
+      await this.ctx.storage.put('subpage_id', qpSubpageId);
     }
 
     // Handle WebSocket upgrade
