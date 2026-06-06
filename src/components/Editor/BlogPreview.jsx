@@ -796,7 +796,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       {/* Gap before content */}
       <div style={{ height: '32px' }} />
 
-      <div>
+      <div className={hideHighlights ? 'hide-highlights' : ''}>
         {renderedHTML ? (
           <div
             ref={contentRef}

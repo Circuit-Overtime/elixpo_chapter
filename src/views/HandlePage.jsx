@@ -10,6 +10,7 @@ import BlogInteractionBar from '../components/BlogInteractionBar';
 import BlogComments from '../components/BlogComments';
 import BlogFollowCard, { FollowToggle } from '../components/BlogFollowButtons';
 import BlogRecommendations from '../components/BlogRecommendations';
+import BlogDotsMenu from '../components/BlogDotsMenu';
 import AuthorAttribution from '../components/AuthorAttribution';
 import FollowListModal from '../components/FollowListModal';
 import BlogInviteOverlay from '../components/BlogInviteOverlay';
@@ -84,6 +85,7 @@ function HandlePageInner({ path }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [followModal, setFollowModal] = useState(null); // 'followers' | 'following'
+  const [hideHighlights, setHideHighlights] = useState(false); // strip text colors/highlights
 
   // Parse: path[0] = name, path[1] = slug or collection, path[2] = slug (if collection)
   const name = (path?.[0] || '').toLowerCase();
@@ -190,13 +192,31 @@ function HandlePageInner({ path }) {
             memberOnly={!!blog.member_only}
             featured={blog.published_as === `org:${STAFF_ORG_ID}`}
             publishedAt={blog.published_at}
+            hideHighlights={hideHighlights}
             followSlot={!isAuthor ? (
               <>
                 {data.owner?.type === 'org' && <FollowToggle kind="org" handle={data.owner.slug} compact />}
                 {blog.author_username && <FollowToggle kind="user" handle={blog.author_username} compact />}
               </>
             ) : null}
-            headerActions={<BlogInteractionBar blogId={blog.id} blogAuthorId={blog.author_id} canRepost={!isAuthor} />}
+            headerActions={
+              <BlogInteractionBar
+                blogId={blog.id}
+                blogAuthorId={blog.author_id}
+                canRepost={!isAuthor}
+                dotsMenu={
+                  <BlogDotsMenu
+                    blogId={blog.id}
+                    authorId={blog.author_id}
+                    author={{ username: blog.author_username, display_name: blog.author_name }}
+                    org={data.owner?.type === 'org' ? { slug: data.owner.slug, name: data.owner.name, id: data.owner.id } : null}
+                    tags={blog.tags || []}
+                    hideHighlights={hideHighlights}
+                    onToggleHighlights={() => setHideHighlights(v => !v)}
+                  />
+                }
+              />
+            }
           />
 
           {/* End-of-blog follow card — author (+ org) */}
