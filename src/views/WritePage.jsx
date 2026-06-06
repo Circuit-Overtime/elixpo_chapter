@@ -1325,6 +1325,38 @@ export default function WritePage({ slugid }) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2.5">
+          {/* Live collaborators — avatars of everyone currently editing (#11) */}
+          {collabConnected && connectedUsers.length > 1 && (
+            <div className="flex items-center -space-x-2 mr-1" title={`${connectedUsers.length} editing now`}>
+              {connectedUsers.slice(0, 5).map((u, i) => (
+                u.avatar ? (
+                  <img
+                    key={u.id || i}
+                    src={u.avatar}
+                    alt={u.name}
+                    title={u.name}
+                    className="w-7 h-7 rounded-full object-cover"
+                    style={{ border: `2px solid ${u.color || '#9b7bf7'}`, boxShadow: '0 0 0 2px var(--bg-app)' }}
+                  />
+                ) : (
+                  <div
+                    key={u.id || i}
+                    title={u.name}
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
+                    style={{ backgroundColor: u.color || '#9b7bf7', border: '2px solid var(--bg-app)' }}
+                  >
+                    {(u.name || '?')[0].toUpperCase()}
+                  </div>
+                )
+              ))}
+              {connectedUsers.length > 5 && (
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold bg-[var(--bg-elevated)] text-[var(--text-muted)]" style={{ border: '2px solid var(--bg-app)' }}>
+                  +{connectedUsers.length - 5}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Hidden file input for markdown import (triggered from menu) */}
           <input ref={mdUploadRef} type="file" accept=".md,.markdown,.txt" className="hidden" onChange={handleMdUpload} />
 
@@ -1924,6 +1956,13 @@ export default function WritePage({ slugid }) {
                     </div>
                   )}
 
+                  {/* Read-only when the 5-editor cap is reached (#11 F) */}
+                  {roomFull && (
+                    <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/25 text-[13px] text-[#d97706]">
+                      <ion-icon name="eye-outline" style={{ fontSize: '16px' }} />
+                      This blog already has the maximum of 5 live editors — you're viewing in read-only until a slot frees up.
+                    </div>
+                  )}
                   <div className="min-h-[60vh] pb-[100px] relative">
                     <BlockNoteEditor
                       ref={editorRef}
@@ -1933,6 +1972,7 @@ export default function WritePage({ slugid }) {
                       onTitleChange={(newTitle) => { setTitle(newTitle); setAiTitleKey(k => k + 1); }}
                       blogId={blogId}
                       collaboration={collabConfig}
+                      editable={!roomFull}
                       onCollabSeeded={needsSeed ? clearSeed : undefined}
                     />
                     {/* Outline sidebar — shows heading positions with slider */}

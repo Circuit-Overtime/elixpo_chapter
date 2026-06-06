@@ -682,7 +682,7 @@ function doSanitize(blocks) {
   return result;
 }
 
-const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, collaboration, onCollabSeeded }, ref) {
+const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, collaboration, onCollabSeeded, editable = true }, ref) {
   const { isDark } = useTheme();
   const [pageMenu, setPageMenu] = useState(null); // {x,y} for the right-click page menu (#21)
   const [showMentionMenu, setShowMentionMenu] = useState(false);
@@ -2636,6 +2636,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       <BlockNoteView
         editor={editor}
         onChange={handleChange}
+        editable={editable}
         theme={isDark ? "dark" : "light"}
         slashMenu={false}
         filePanel={false}
