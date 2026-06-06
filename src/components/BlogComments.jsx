@@ -25,6 +25,8 @@ export default function BlogComments({ blogId, blogAuthorId }) {
   const [replyTo, setReplyTo] = useState(null); // { id, username }
   const [replyText, setReplyText] = useState('');
   const [editing, setEditing] = useState(null); // { id, content }
+  const [toast, setToast] = useState('');
+  const flashToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2200); };
 
   const fetchComments = useCallback(async () => {
     try {
@@ -53,6 +55,7 @@ export default function BlogComments({ blogId, blogAuthorId }) {
         if (parentId) { setReplyText(''); setReplyTo(null); }
         else setNewComment('');
         fetchComments();
+        flashToast(parentId ? 'Reply posted' : 'Comment posted');
       }
     } catch {}
     setPosting(false);
@@ -86,6 +89,11 @@ export default function BlogComments({ blogId, blogAuthorId }) {
 
   return (
     <div className="mt-10" id="comments">
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-app)', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+          <ion-icon name="checkmark-circle" style={{ fontSize: '15px' }} /> {toast}
+        </div>
+      )}
       <h3 className="text-[18px] font-bold mb-6" style={{ color: 'var(--text-primary)' }}>
         Comments {total > 0 && <span className="text-[14px] font-normal" style={{ color: 'var(--text-faint)' }}>({total})</span>}
       </h3>

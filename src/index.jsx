@@ -272,7 +272,7 @@ function FeedCardActions({ post, onHide }) {
   const [liked, setLiked] = useState(!!post.liked);
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
   const [saved, setSaved] = useState(!!post.bookmarked);
-  const [reposted, setReposted] = useState(false);
+  const [reposted, setReposted] = useState(!!post.reposted);
   const [repostCount, setRepostCount] = useState(post.repost_count || 0);
   const [toast, setToast] = useState('');
   const href = `/${(post.org?.slug) || post.author?.username || 'unknown'}/${post.slug}`;
@@ -301,7 +301,7 @@ function FeedCardActions({ post, onHide }) {
     if (cannotRepost) return;
     const was = reposted; setReposted(!was); setRepostCount(c => Math.max(0, c + (was ? -1 : 1)));
     fetch(`/api/blogs/${post.id}/repost`, { method: was ? 'DELETE' : 'POST' })
-      .then(r => r.ok ? r.json() : Promise.reject()).then(d => { setReposted(!!d.reposted); setRepostCount(d.count || 0); })
+      .then(r => r.ok ? r.json() : Promise.reject()).then(d => { setReposted(!!d.reposted); setRepostCount(d.count || 0); if (!was) flashToast('Reposted to your followers'); })
       .catch(() => { setReposted(was); setRepostCount(c => Math.max(0, c + (was ? 1 : -1))); });
   });
 
@@ -350,6 +350,12 @@ function FeedCard({ post, onHide }) {
   const allAuthors = [{ display_name: author.display_name, username: author.username, avatar_url: author.avatar_url }, ...(post.co_authors || [])];
   return (
     <article className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
+      {post.reshared_by && (
+        <div className="flex items-center gap-1.5 mb-2 text-[12px] font-medium" style={{ color: 'var(--text-faint)' }}>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg>
+          Reposted by {post.reshared_by.display_name || post.reshared_by.username}
+        </div>
+      )}
       <Link href={href} className="flex gap-5 cursor-pointer">
         <div className="flex-1 min-w-0">
           {(() => {
