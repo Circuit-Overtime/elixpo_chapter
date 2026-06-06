@@ -1129,12 +1129,17 @@ export default function WritePage({ slugid }) {
     }
   }, []);
 
-  // Grow the title textarea to fit its content (on load + whenever title changes),
-  // not just on keystroke — otherwise long titles get clipped to one row.
+  // Grow the title textarea to fit its content. Re-run when the editor becomes
+  // visible (draftLoading/editorReady) too — if it runs while hidden, scrollHeight
+  // is 0 and the title would otherwise stay clipped to height:0 (invisible).
   useEffect(() => {
     const el = titleTextareaRef.current;
-    if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
-  }, [title]);
+    if (!el) return;
+    el.style.height = 'auto';
+    const h = el.scrollHeight;
+    el.style.height = (h > 0 ? h : 0) + 'px';
+    el.style.minHeight = '1.2em';
+  }, [title, draftLoading, editorReady]);
 
   // Serialized publish-settings, used to detect "nothing changed" on Update.
   const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, pageEmoji, coverPreview, coverPos, coverZoom, slug });
