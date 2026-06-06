@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
  * Handles: view recording, read progress, likes, claps, bookmarks, share.
  * Also reports dwell time as a taste signal.
  */
-export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = false }) {
+export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = false, dotsMenu = null }) {
   const { user } = useAuth();
   const [interactions, setInteractions] = useState(null);
   const [clapAnim, setClapAnim] = useState(false);
@@ -322,29 +322,32 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
           )}
         </div>
 
-        {/* Report dropdown */}
-        <div className="relative" ref={reportRef}>
-          <button
-            onClick={() => !reported && setReportOpen(!reportOpen)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full transition-all"
-            style={{ color: reported ? '#f87171' : 'var(--text-muted)' }}
-            title={reported ? 'Reported' : 'Report this post'}
-          >
-            <ion-icon name={reported ? 'flag' : 'flag-outline'} style={{ fontSize: '17px' }} />
-          </button>
-          {reportOpen && !reported && (
-            <div className="absolute bottom-full mb-2 right-0 w-[210px] rounded-xl shadow-xl z-50 overflow-hidden py-1" style={{ backgroundColor: 'var(--dropdown-bg)', border: '1px solid var(--dropdown-border)' }}>
-              <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>Report for…</div>
-              {REPORT_REASONS.map(([value, label]) => (
-                <button key={value} onClick={() => submitReport(value)} className="w-full flex items-center px-4 py-2 text-[13px] transition-colors text-left" style={{ color: 'var(--text-secondary)' }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* "..." menu (report lives inside it) — falls back to the legacy report
+            dropdown when no dotsMenu is supplied. */}
+        {dotsMenu ? dotsMenu : (
+          <div className="relative" ref={reportRef}>
+            <button
+              onClick={() => !reported && setReportOpen(!reportOpen)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full transition-all"
+              style={{ color: reported ? '#f87171' : 'var(--text-muted)' }}
+              title={reported ? 'Reported' : 'Report this post'}
+            >
+              <ion-icon name={reported ? 'flag' : 'flag-outline'} style={{ fontSize: '17px' }} />
+            </button>
+            {reportOpen && !reported && (
+              <div className="absolute bottom-full mb-2 right-0 w-[210px] rounded-xl shadow-xl z-50 overflow-hidden py-1" style={{ backgroundColor: 'var(--dropdown-bg)', border: '1px solid var(--dropdown-border)' }}>
+                <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>Report for…</div>
+                {REPORT_REASONS.map(([value, label]) => (
+                  <button key={value} onClick={() => submitReport(value)} className="w-full flex items-center px-4 py-2 text-[13px] transition-colors text-left" style={{ color: 'var(--text-secondary)' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

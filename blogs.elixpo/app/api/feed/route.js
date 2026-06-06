@@ -130,7 +130,7 @@ async function queryInterests(db, userId, now, limit) {
         SELECT blog_id FROM blog_tags WHERE tag IN (
           SELECT tag FROM user_interests WHERE user_id = ?
           UNION
-          SELECT DISTINCT tag FROM user_signals WHERE user_id = ? AND tag IS NOT NULL AND created_at > ?
+          SELECT DISTINCT tag FROM user_signals WHERE user_id = ? AND tag IS NOT NULL AND weight > 0 AND created_at > ?
         )
       )
       AND b.author_id != ?
@@ -301,20 +301,38 @@ async function enrichPosts(db, posts, userId) {
     orgMemberSet = new Set(memberRows.map(r => r.key));
   }
 
+  // The viewer's like / bookmark / co-author state for these posts (batched).
+  let likedSet = new Set(), bookmarkedSet = new Set(), coAuthoredSet = new Set();
+  if (userId) {
+    const [likeRows, bmRows, caRows] = await Promise.all([
+      batchQuery(db, 'SELECT blog_id FROM likes WHERE user_id = ? AND blog_id IN', blogIds, [userId]),
+      batchQuery(db, 'SELECT blog_id FROM bookmarks WHERE user_id = ? AND blog_id IN', blogIds, [userId]),
+      batchQuery(db, "SELECT blog_id FROM blog_co_authors WHERE status = 'accepted' AND user_id = ? AND blog_id IN", blogIds, [userId]),
+    ]);
+    likedSet = new Set(likeRows.map(r => r.blog_id));
+    bookmarkedSet = new Set(bmRows.map(r => r.blog_id));
+    coAuthoredSet = new Set(caRows.map(r => r.blog_id));
+  }
+
   return posts.map(p => {
     const isAuthor = userId && p.author_id === userId;
     const orgId = p.published_as?.startsWith('org:') ? p.published_as.replace('org:', '') : null;
     const isOrgMember = orgId && orgMemberSet.has(`${orgId}:${userId}`);
     const org = orgId ? orgMap[orgId] || null : null;
+    const coAuthors = coAuthorsMap[p.id] || [];
     return {
       ...p,
       author: authorMap[p.author_id] || { username: 'unknown', display_name: 'Unknown' },
       org: org ? { id: org.id, slug: org.slug, name: org.name, logo_url: org.logo_r2_key } : null,
-      co_authors: coAuthorsMap[p.id] || [],
-      co_author_count: (coAuthorsMap[p.id] || []).length,
+      co_authors: coAuthors,
+      co_author_count: coAuthors.length,
       tags: tagMap[p.id] || [],
       is_staff: p.published_as === `org:${STAFF_ORG_ID}`,
       can_edit: !!(isAuthor || isOrgMember),
+      is_author: !!isAuthor,
+      is_co_author: coAuthoredSet.has(p.id),
+      liked: likedSet.has(p.id),
+      bookmarked: bookmarkedSet.has(p.id),
     };
   });
 }
