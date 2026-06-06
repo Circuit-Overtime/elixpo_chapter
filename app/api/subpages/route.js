@@ -18,10 +18,16 @@ export async function POST(request) {
     const { getDB } = await import('../../../lib/cloudflare');
     const db = getDB();
 
-    // Verify blog ownership
-    const blog = await db.prepare('SELECT author_id FROM blogs WHERE id = ?').bind(blogId).first();
+    // Resolve the parent by canonical id OR human slug — in production the edit
+    // URL carries the slug, so callers may pass either (#24). Sub-pages are
+    // always stored under the canonical blog id.
+    let blog = await db.prepare('SELECT id, author_id FROM blogs WHERE id = ?').bind(blogId).first();
+    if (!blog) {
+      blog = await db.prepare('SELECT id, author_id FROM blogs WHERE LOWER(slug) = LOWER(?) ORDER BY updated_at DESC LIMIT 1').bind(blogId).first();
+    }
     if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
     if (blog.author_id !== session.userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const canonicalBlogId = blog.id;
 
     // Cap sub-pages per kind: max 2 doc sub-pages and max 2 canvas sub-pages per blog.
     // (Nesting is structurally impossible — a sub-page's id is never a blogs row,
@@ -29,7 +35,7 @@ export async function POST(request) {
     const kindCap = subpageKind === 'canvas' ? MAX_CANVAS_PER_BLOG : MAX_SUBPAGES_PER_BLOG;
     const kindCount = await db.prepare(
       'SELECT COUNT(*) as n FROM subpages WHERE blog_id = ? AND kind = ?'
-    ).bind(blogId, subpageKind).first();
+    ).bind(canonicalBlogId, subpageKind).first();
     if ((kindCount?.n ?? 0) >= kindCap) {
       const label = subpageKind === 'canvas' ? 'Canvas' : 'Sub-page';
       return NextResponse.json({ error: `${label} limit reached (max ${kindCap} per blog)` }, { status: 409 });
@@ -42,9 +48,9 @@ export async function POST(request) {
 
     await db.prepare(
       'INSERT INTO subpages (id, blog_id, title, content, created_at, updated_at, kind, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    ).bind(id, blogId, title || 'Untitled', initialContent, now, now, subpageKind, metaStr).run();
+    ).bind(id, canonicalBlogId, title || 'Untitled', initialContent, now, now, subpageKind, metaStr).run();
 
-    return NextResponse.json({ id, blogId, title: title || 'Untitled', kind: subpageKind });
+    return NextResponse.json({ id, blogId: canonicalBlogId, title: title || 'Untitled', kind: subpageKind });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -94,9 +100,16 @@ export async function GET(request) {
 
     if (!blogId) return NextResponse.json({ error: 'Missing blogId or id' }, { status: 400 });
 
+    // Accept id or slug (edit URLs use the slug in prod) — sub-pages are keyed
+    // by the canonical blog id.
+    let canonicalBlogId = blogId;
+    const parentRow = await db.prepare('SELECT id FROM blogs WHERE id = ? OR LOWER(slug) = LOWER(?) ORDER BY (id = ?) DESC LIMIT 1')
+      .bind(blogId, blogId, blogId).first();
+    if (parentRow?.id) canonicalBlogId = parentRow.id;
+
     const { results } = await db.prepare(
       'SELECT id, blog_id, title, kind, created_at, updated_at FROM subpages WHERE blog_id = ? ORDER BY created_at ASC'
-    ).bind(blogId).all();
+    ).bind(canonicalBlogId).all();
 
     return NextResponse.json({ subpages: results || [] });
   } catch (err) {
