@@ -84,6 +84,7 @@ function HandlePageInner({ path }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [followModal, setFollowModal] = useState(null); // 'followers' | 'following'
+  const [hideHighlights, setHideHighlights] = useState(false); // strip text colors/highlights
 
   // Parse: path[0] = name, path[1] = slug or collection, path[2] = slug (if collection)
   const name = (path?.[0] || '').toLowerCase();
