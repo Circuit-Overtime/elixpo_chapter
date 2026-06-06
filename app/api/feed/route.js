@@ -322,6 +322,32 @@ async function enrichPosts(db, posts, userId) {
     coAuthoredSet = new Set(caRows.map(r => r.blog_id));
   }
 
+  // Lazily backfill excerpts for posts published before the excerpt column
+  // existed (compute once from content, write through).
+  const needEx = posts.filter(p => !p.excerpt);
+  if (needEx.length) {
+    try {
+      const ids = needEx.map(p => p.id);
+      const ph = ids.map(() => '?').join(',');
+      const rows = await db.prepare(`SELECT id, content FROM blogs WHERE id IN (${ph})`).bind(...ids).all();
+      const cmap = Object.fromEntries((rows?.results || []).map(r => [r.id, r.content]));
+      const { decompressBlogContent } = await import('../../../lib/compress');
+      const { excerptFromBlocks } = await import('../../../lib/excerpt');
+      const updates = [];
+      for (const p of needEx) {
+        try {
+          const raw = cmap[p.id];
+          if (!raw) continue;
+          let blocks = decompressBlogContent(raw);
+          if (typeof blocks === 'string') { try { blocks = JSON.parse(blocks); } catch { blocks = []; } }
+          const ex = excerptFromBlocks(Array.isArray(blocks) ? blocks : []);
+          if (ex) { p.excerpt = ex; updates.push(db.prepare('UPDATE blogs SET excerpt = ? WHERE id = ?').bind(ex, p.id)); }
+        } catch {}
+      }
+      if (updates.length) await db.batch(updates);
+    } catch {}
+  }
+
   return posts.map(p => {
     const isAuthor = userId && p.author_id === userId;
     const orgId = p.published_as?.startsWith('org:') ? p.published_as.replace('org:', '') : null;
