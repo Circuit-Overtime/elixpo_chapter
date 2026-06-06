@@ -434,6 +434,7 @@ export default function WritePage({ slugid }) {
   const [userOrgs, setUserOrgs] = useState([]);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
   const settingsSnapshotRef = useRef(''); // publish-settings as of load / last publish — for the no-change Update shortcut
+  const titleTextareaRef = useRef(null);
   const hadUserGestureRef = useRef(false);
   const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
   const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
@@ -775,7 +776,7 @@ export default function WritePage({ slugid }) {
         if (localNewer) {
           if (local.title) setTitle(local.title);
           if (local.subtitle) setSubtitle(local.subtitle);
-          if (local.tags) setTags(local.tags);
+          if (local.tags?.length) setTags(local.tags);
           if (local.coverPreview) setCoverPreview(local.coverPreview);
           if (local.coverPos) setCoverPos(local.coverPos);
           if (Number.isFinite(local.coverZoom)) setCoverZoom(local.coverZoom);
@@ -789,7 +790,7 @@ export default function WritePage({ slugid }) {
         // Brand-new blog not yet on the server — use the local buffer.
         if (local.title) setTitle(local.title);
         if (local.subtitle) setSubtitle(local.subtitle);
-        if (local.tags) setTags(local.tags);
+        if (local.tags?.length) setTags(local.tags);
         if (local.publishAs) setPublishAs(local.publishAs);
         if (local.coverPreview) setCoverPreview(local.coverPreview);
         if (local.coverPos) setCoverPos(local.coverPos);
@@ -1104,6 +1105,13 @@ export default function WritePage({ slugid }) {
       console.error('Failed to import markdown:', err);
     }
   }, []);
+
+  // Grow the title textarea to fit its content (on load + whenever title changes),
+  // not just on keystroke — otherwise long titles get clipped to one row.
+  useEffect(() => {
+    const el = titleTextareaRef.current;
+    if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+  }, [title]);
 
   // Serialized publish-settings, used to detect "nothing changed" on Update.
   const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, pageEmoji, coverPreview, coverPos, coverZoom, slug });
@@ -1449,11 +1457,12 @@ export default function WritePage({ slugid }) {
                         if (!canPublish) return;
                         if (isPublished) {
                           // No edits since publish → skip the update entirely, just view it.
+                          // Otherwise open the publish panel; the final confirm happens there.
                           if (hasNoChanges()) {
                             bypassUnloadRef.current = true;
                             window.location.href = publishedUrl;
                           } else {
-                            setShowPublishConfirm(true);
+                            setShowPublishPanel(true);
                           }
                         } else {
                           setShowPublishPanel(!showPublishPanel);
@@ -1945,6 +1954,7 @@ export default function WritePage({ slugid }) {
                   {/* Title */}
                   <div className="relative">
                     <textarea
+                      ref={titleTextareaRef}
                       value={title}
                       onChange={(e) => {
                         setTitle(e.target.value);
@@ -2045,7 +2055,7 @@ export default function WritePage({ slugid }) {
                       This blog already has the maximum of 5 live editors — you're viewing in read-only until a slot frees up.
                     </div>
                   )}
-                  <div className="min-h-[60vh] pb-[100px] relative">
+                  <div className="min-h-[60vh] mt-6 pb-[100px] relative">
                     <BlockNoteEditor
                       ref={editorRef}
                       onChange={handleEditorChange}
@@ -2302,7 +2312,7 @@ export default function WritePage({ slugid }) {
         {/* Bottom actions */}
         <div className="p-5 space-y-2" style={{ borderTop: '1px solid var(--border-default)' }}>
           <button
-            onClick={handlePublish}
+            onClick={() => { if (isPublished) setShowPublishConfirm(true); else handlePublish(); }}
             disabled={!title.trim() || publishing || !hasUnsavedEdits}
             className="w-full py-2.5 bg-[#9b7bf7] text-white font-bold rounded-xl text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
@@ -2407,7 +2417,7 @@ export default function WritePage({ slugid }) {
             ? 'This will push your changes live. Readers will see the updated version immediately.'
             : 'Your blog will be visible to everyone. You can unpublish it later from the publish settings.'}
           confirmLabel={isPublished ? 'Update' : 'Publish'}
-          onConfirm={() => { setShowPublishConfirm(false); setShowPublishPanel(true); }}
+          onConfirm={() => { setShowPublishConfirm(false); handlePublish(); }}
           onCancel={() => setShowPublishConfirm(false)}
         />
       )}
