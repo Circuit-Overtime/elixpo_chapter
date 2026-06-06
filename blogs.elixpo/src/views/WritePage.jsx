@@ -433,6 +433,7 @@ export default function WritePage({ slugid }) {
   const [lastKnownUpdatedAt, setLastKnownUpdatedAt] = useState(null);
   const [userOrgs, setUserOrgs] = useState([]);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+  const settingsSnapshotRef = useRef(''); // publish-settings as of load / last publish — for the no-change Update shortcut
   const hadUserGestureRef = useRef(false);
   const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
   const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
@@ -1104,6 +1105,18 @@ export default function WritePage({ slugid }) {
     }
   }, []);
 
+  // Serialized publish-settings, used to detect "nothing changed" on Update.
+  const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, pageEmoji, coverPreview, coverPos, coverZoom, slug });
+  // Capture a baseline once the blog has finished loading.
+  useEffect(() => {
+    if (!draftLoading && settingsSnapshotRef.current === '') settingsSnapshotRef.current = settingsKey();
+  }, [draftLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ownerSlug = publishAs === 'personal' ? username : (userOrgs.find(o => `org:${o.id}` === publishAs)?.slug || username);
+  const publishedUrl = `/${ownerSlug}/${slug || blogId}`;
+  // Nothing edited (content or settings) since load / last publish.
+  const hasNoChanges = () => !hasUnsavedEdits && settingsSnapshotRef.current === settingsKey();
+
   const doPublish = async (targetStatus) => {
     if (!title.trim() || publishing) return;
     setPublishing(true);
@@ -1135,6 +1148,7 @@ export default function WritePage({ slugid }) {
         setLastKnownUpdatedAt(data.updatedAt);
         setBlogVersion(v => v ? { ...v, isPublished: true, updatedAt: data.updatedAt, publishedAt: data.updatedAt, isDraftAhead: false } : v);
         setHasUnsavedEdits(false);
+        settingsSnapshotRef.current = settingsKey();
         setShowPublishPanel(false);
         // Redirect to published blog. Suppress the beforeunload leave-prompt —
         // state updates above haven't flushed yet, so the handler would still
@@ -1434,7 +1448,13 @@ export default function WritePage({ slugid }) {
                       onClick={() => {
                         if (!canPublish) return;
                         if (isPublished) {
-                          setShowPublishConfirm(true);
+                          // No edits since publish → skip the update entirely, just view it.
+                          if (hasNoChanges()) {
+                            bypassUnloadRef.current = true;
+                            window.location.href = publishedUrl;
+                          } else {
+                            setShowPublishConfirm(true);
+                          }
                         } else {
                           setShowPublishPanel(!showPublishPanel);
                         }
@@ -1504,7 +1524,7 @@ export default function WritePage({ slugid }) {
           <button
             onClick={toggleTheme}
             className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors"
-            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-faint)' }}
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             <ion-icon name={isDark ? 'sunny-outline' : 'moon-outline'} style={{ fontSize: '16px' }} />
@@ -1515,7 +1535,7 @@ export default function WritePage({ slugid }) {
             data-shortcuts-btn
             onClick={() => setShowShortcuts(true)}
             className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors text-sm font-bold"
-            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-faint)' }}
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
             title="Keyboard shortcuts"
           >
             ?
@@ -1908,9 +1928,9 @@ export default function WritePage({ slugid }) {
                   {/* Author bar — above title */}
                   <div className="flex items-center gap-3 mt-2 mb-2">
                     <div className="flex -space-x-2">
-                      <AvatarImg src={user?.avatar_url} name={user?.display_name || user?.username} size={28} />
+                      <AvatarImg src={user?.avatar_url} name={user?.display_name || user?.username} size={30} />
                     </div>
-                    <div className="flex items-center gap-2 text-[13px] text-[var(--text-faint)]">
+                    <div className="flex items-center gap-2 text-[15px] text-[var(--text-faint)]">
                       <span className="text-[var(--text-muted)] font-medium">{user?.display_name || user?.username || 'Author'}</span>
                       <span className="text-[var(--text-faint)]">·</span>
                       <span>{Math.max(1, Math.ceil(wordCount / 200))} min read</span>
@@ -1918,15 +1938,6 @@ export default function WritePage({ slugid }) {
                       <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
                     </div>
                   </div>
-
-                  {/* Tags — shown under author bar */}
-                  {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-0">
-                      {tags.map((tag) => (
-                        <span key={tag} className="px-2.5 py-0.5 bg-[#9b7bf70a] rounded-full text-[12px] text-[#9b7bf7]">#{tag}</span>
-                      ))}
-                    </div>
-                  )}
 
                   {/* 30px gap before title */}
                   <div style={{ height: '30px' }} />
@@ -1967,6 +1978,15 @@ export default function WritePage({ slugid }) {
                           )
                         ))}
                       </div>
+                    )}
+                  </div>
+
+                  {/* Tags — always shown under the title (edit + publish) */}
+                  <div className="flex flex-wrap gap-1.5 mt-1 mb-2 min-h-[24px]">
+                    {tags.length > 0 ? tags.map((tag) => (
+                      <span key={tag} className="px-2.5 py-0.5 bg-[#9b7bf70a] rounded-full text-[13px] text-[#9b7bf7]">#{tag}</span>
+                    )) : (
+                      <span className="text-[12px]" style={{ color: 'var(--text-faint)' }}>Add tags from the publish panel →</span>
                     )}
                   </div>
 
@@ -2224,13 +2244,13 @@ export default function WritePage({ slugid }) {
             <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>Punchline <span className="font-normal" style={{ color: 'var(--text-faint)' }}>— a short tagline shown under the title</span></label>
             <textarea
               value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value.slice(0, 160))}
+              onChange={(e) => setSubtitle(e.target.value.slice(0, 200))}
               rows={2}
               placeholder="e.g. Tested, ranked, and ready to use"
               className="w-full text-[14px] rounded-lg px-3 py-2 outline-none resize-none"
               style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
             />
-            <p className="text-[11px] mt-1 text-right" style={{ color: 'var(--text-faint)' }}>{(subtitle || '').length}/160</p>
+            <p className="text-[11px] mt-1 text-right" style={{ color: 'var(--text-faint)' }}>{(subtitle || '').length}/200</p>
           </div>
 
           {/* Tags */}

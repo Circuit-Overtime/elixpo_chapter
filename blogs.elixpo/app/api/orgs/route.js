@@ -59,11 +59,11 @@ export async function POST(request) {
     if (normWebsite == null) return NextResponse.json({ error: 'Website must be a valid https:// URL' }, { status: 400 });
   }
 
-  // Validate slug format
-  const cleanSlug = slug.toLowerCase().replace(/[^\w-]/g, '').slice(0, 40);
-  if (!cleanSlug) {
-    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
-  }
+  // Validate slug format (alphanumeric + single hyphens, 6–48 chars).
+  const { validateSlug } = await import('../../../lib/slugify');
+  const slugCheck = validateSlug(slug, { label: 'Org handle' });
+  if (!slugCheck.ok) return NextResponse.json({ error: slugCheck.error }, { status: 400 });
+  const cleanSlug = slugCheck.slug;
 
   try {
     const { getDB } = await import('../../../lib/cloudflare');

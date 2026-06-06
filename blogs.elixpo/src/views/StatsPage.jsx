@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
 import TabBar from '../components/TabBar';
@@ -138,15 +138,64 @@ export default function StatsPage() {
 
   const s = stats || { views: 0, reads: 0, likes: 0, followers: 0, published: 0, drafts: 0, comments: 0, following: 0, monthly: { labels: [], views: [], reads: [] }, topPosts: [] };
 
+  const chartsRef = useRef(null);
+
+  const exportCSV = () => {
+    const rows = [
+      ['Metric', 'Value'],
+      ['Views', s.views], ['Reads', s.reads], ['Likes', s.likes], ['Followers', s.followers],
+      ['Published', s.published], ['Drafts', s.drafts], ['Comments', s.comments],
+      [], ['Month', 'Views', 'Reads'],
+      ...(s.monthly.labels || []).map((l, i) => [l, s.monthly.views[i] || 0, s.monthly.reads[i] || 0]),
+    ];
+    if (s.topPosts?.length) {
+      rows.push([], ['Top posts', 'Views', 'Reads', 'Likes']);
+      s.topPosts.forEach(p => rows.push([p.title || 'Untitled', p.views || 0, p.reads || 0, p.likes || 0]));
+    }
+    const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'lixblogs-stats.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const exportPNG = () => {
+    const svg = chartsRef.current?.querySelector('svg');
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const xml = new XMLSerializer().serializeToString(svg);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const scale = 2;
+      canvas.width = (rect.width || 600) * scale;
+      canvas.height = (rect.height || 240) * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      ctx.fillStyle = getComputedStyle(document.body).backgroundColor || '#0b0b0f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, rect.width || 600, rect.height || 240);
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = 'lixblogs-stats.png';
+      a.click();
+    };
+    img.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(xml)))}`;
+  };
+
   return (
     <AppShell>
       <div className="max-w-4xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-[var(--text-muted)]xl font-bold text-[var(--text-primary)]">Stats</h1>
-          <div className="flex items-center gap-3 text-[13px] text-[var(--text-muted)]">
-            <span><strong className="text-[var(--text-primary)]">{s.published}</strong> published</span>
-            <span className="text-[#333]">&middot;</span>
-            <span><strong className="text-[var(--text-primary)]">{s.drafts}</strong> drafts</span>
+        <div className="flex items-center justify-between mb-8 gap-3 flex-wrap">
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Stats</h1>
+          <div className="flex items-center gap-2">
+            <button onClick={exportCSV} className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+              <ion-icon name="download-outline" style={{ fontSize: '14px' }} /> CSV
+            </button>
+            <button onClick={exportPNG} className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+              <ion-icon name="image-outline" style={{ fontSize: '14px' }} /> PNG
+            </button>
           </div>
         </div>
 
@@ -188,8 +237,10 @@ export default function StatsPage() {
                   />
                 </div>
 
-                <LineChart data={s.monthly.views} labels={s.monthly.labels} color="#9b7bf7" label="Views over time" />
-                <LineChart data={s.monthly.reads} labels={s.monthly.labels} color="#4ade80" label="Reads over time" />
+                <div ref={chartsRef} className="space-y-6">
+                  <LineChart data={s.monthly.views} labels={s.monthly.labels} color="#9b7bf7" label="Views over time" />
+                  <LineChart data={s.monthly.reads} labels={s.monthly.labels} color="#4ade80" label="Reads over time" />
+                </div>
               </div>
             )}
 
