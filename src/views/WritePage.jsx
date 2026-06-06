@@ -1524,7 +1524,7 @@ export default function WritePage({ slugid }) {
           <button
             onClick={toggleTheme}
             className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors"
-            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-faint)' }}
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             <ion-icon name={isDark ? 'sunny-outline' : 'moon-outline'} style={{ fontSize: '16px' }} />
@@ -1535,7 +1535,7 @@ export default function WritePage({ slugid }) {
             data-shortcuts-btn
             onClick={() => setShowShortcuts(true)}
             className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors text-sm font-bold"
-            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-faint)' }}
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
             title="Keyboard shortcuts"
           >
             ?
