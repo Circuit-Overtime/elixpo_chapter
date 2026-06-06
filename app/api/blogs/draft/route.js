@@ -6,14 +6,18 @@ import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { requestTooLarge, byteLength, MAX_BLOG_CONTENT_BYTES } from '../../../../lib/limits';
 
+// Never let any editor-data response be cached — a signed-out 401 (or one
+// user's data) must not be replayed to another state/user from cache.
+const NO_STORE = { 'Cache-Control': 'no-store, no-cache, must-revalidate' };
+
 // GET — fetch blog data for editing
 export async function GET(request) {
   const session = await getSession();
-  if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401, headers: NO_STORE });
 
   const { searchParams } = new URL(request.url);
   const slugid = searchParams.get('slugid');
-  if (!slugid) return NextResponse.json({ error: 'Missing slugid' }, { status: 400 });
+  if (!slugid) return NextResponse.json({ error: 'Missing slugid' }, { status: 400, headers: NO_STORE });
 
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
@@ -40,7 +44,7 @@ export async function GET(request) {
       `).bind(slugid, session.userId, session.userId, session.userId).first();
     }
 
-    if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
+    if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404, headers: NO_STORE });
 
     const blogId = blog.id;
 
@@ -63,9 +67,9 @@ export async function GET(request) {
             role: invite.role,
             status: invite.status,
           },
-        }, { status: 403 });
+        }, { status: 403, headers: NO_STORE });
       }
-      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403, headers: NO_STORE });
     }
 
     // Decompress content
@@ -102,10 +106,10 @@ export async function GET(request) {
         is_owner: isOwner,
       },
       version,
-    }, { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } });
+    }, { headers: NO_STORE });
   } catch (e) {
     console.error('Draft fetch error:', e);
-    return NextResponse.json({ error: 'Failed to load blog' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to load blog' }, { status: 500, headers: NO_STORE });
   }
 }
 
