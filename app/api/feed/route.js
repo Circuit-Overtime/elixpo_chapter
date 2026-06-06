@@ -60,7 +60,7 @@ export async function GET(request) {
         posts = await enrichPosts(db, posts, null);
         return { posts, page, hasMore: posts.length === limit };
       });
-      return NextResponse.json(cached);
+      return NextResponse.json(cached, { headers: { 'Cache-Control': 'no-store' } });
     }
 
     const { getDB } = await import('../../../lib/cloudflare');
@@ -87,7 +87,7 @@ export async function GET(request) {
       posts,
       page,
       hasMore: posts.length === limit,
-    });
+    }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {
     console.error('Feed error:', e?.message || e);
     return NextResponse.json({ posts: [], page, hasMore: false });
