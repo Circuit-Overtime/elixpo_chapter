@@ -273,6 +273,8 @@ function FeedCardActions({ post, onHide }) {
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
   const [saved, setSaved] = useState(!!post.bookmarked);
   const [reposted, setReposted] = useState(false);
+  const [repostCount, setRepostCount] = useState(post.repost_count || 0);
+  const [toast, setToast] = useState('');
   const href = `/${(post.org?.slug) || post.author?.username || 'unknown'}/${post.slug}`;
   // Author / co-authors / org members can't repost their own blog.
   const cannotRepost = !!(post.is_author || post.is_co_author || post.can_edit);
@@ -288,17 +290,19 @@ function FeedCardActions({ post, onHide }) {
       .then(r => r.ok ? r.json() : Promise.reject()).then(d => { setLiked(!!d.liked); setLikeCount(d.count || 0); })
       .catch(() => { setLiked(was); setLikeCount(c => Math.max(0, c + (was ? 1 : -1))); });
   });
+  const flashToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2200); };
   const save = guard(() => {
     const was = saved; setSaved(!was);
     (was ? fetch(`/api/library/bookmarks/${post.id}`, { method: 'DELETE' })
          : fetch('/api/library/bookmarks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ blogId: post.id }) }))
-      .then(r => { if (!r.ok) throw new Error(); }).catch(() => setSaved(was));
+      .then(r => { if (!r.ok) throw new Error(); if (!was) flashToast('Saved to your reading list'); }).catch(() => setSaved(was));
   });
   const repost = guard(() => {
     if (cannotRepost) return;
-    const was = reposted; setReposted(!was);
+    const was = reposted; setReposted(!was); setRepostCount(c => Math.max(0, c + (was ? -1 : 1)));
     fetch(`/api/blogs/${post.id}/repost`, { method: was ? 'DELETE' : 'POST' })
-      .then(r => r.ok ? r.json() : Promise.reject()).then(d => setReposted(!!d.reposted)).catch(() => setReposted(was));
+      .then(r => r.ok ? r.json() : Promise.reject()).then(d => { setReposted(!!d.reposted); setRepostCount(d.count || 0); })
+      .catch(() => { setReposted(was); setRepostCount(c => Math.max(0, c + (was ? 1 : -1))); });
   });
 
   return (
@@ -322,6 +326,7 @@ function FeedCardActions({ post, onHide }) {
         style={{ color: reposted ? '#16a34a' : 'var(--text-muted)', opacity: cannotRepost ? 0.4 : 1, cursor: cannotRepost ? 'not-allowed' : 'pointer' }}
       >
         <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg>
+        {repostCount > 0 && <span>{repostCount}</span>}
       </button>
       <div className="ml-auto flex items-center gap-1">
         <button onClick={save} className="flex items-center justify-center w-8 h-8 rounded-full transition-colors" style={{ color: saved ? '#9b7bf7' : 'var(--text-faint)' }} title="Save to reading list" onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
@@ -329,6 +334,11 @@ function FeedCardActions({ post, onHide }) {
         </button>
         <FeedCardMenu post={post} onHide={onHide} />
       </div>
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-app)', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+          <ion-icon name="bookmark" style={{ fontSize: '15px' }} /> {toast}
+        </div>
+      )}
     </div>
   );
 }
@@ -342,28 +352,38 @@ function FeedCard({ post, onHide }) {
     <article className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
       <Link href={href} className="flex gap-5 cursor-pointer">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-            <AuthorStack authors={allAuthors} />
-            <span className="truncate">
-              {post.org && <>In <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{post.org.name}</span> by </>}
-              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{author.display_name || author.username}</span>
-              {allAuthors.length > 1 && <span style={{ color: 'var(--text-faint)' }}> +{allAuthors.length - 1}</span>}
-            </span>
-            {post.is_staff && (
-              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
-            )}
-          </div>
+          {(() => {
+            const names = allAuthors.slice(0, 3).map(a => a.display_name || a.username);
+            const moreN = allAuthors.length - names.length;
+            const namesStr = names.join(' and ') + (moreN > 0 ? ` + ${moreN} more` : '');
+            const dateStr = post.published_at ? new Date(post.published_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+            return (
+              <div className="flex items-center gap-2 mb-2 text-[14px]" style={{ color: 'var(--text-secondary)' }}>
+                <AuthorStack authors={allAuthors} />
+                <span className="truncate">
+                  {post.org && <>in <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{post.org.name}</span> </>}
+                  by <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{namesStr}</span>
+                  {dateStr && <span style={{ color: 'var(--text-faint)' }}> · {dateStr}</span>}
+                </span>
+                {post.is_staff && (
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0" style={{ backgroundColor: '#9b7bf718', color: '#9b7bf7', border: '1px solid #9b7bf730' }}>Staff</span>
+                )}
+              </div>
+            );
+          })()}
 
           <h2 className="text-[20px] font-extrabold leading-[1.25] mb-1 group-hover:opacity-80 transition-opacity tracking-[-0.01em]" style={{ color: 'var(--text-primary)', fontFamily: "'Source Serif 4', Georgia, serif" }}>
             {post.title || 'Untitled'}
           </h2>
           {post.subtitle && (
-            <p className="text-[15px] leading-[1.5] line-clamp-2 mb-2" style={{ color: 'var(--text-muted)' }}>{post.subtitle}</p>
+            <p className="text-[15px] font-medium leading-[1.5] line-clamp-1 mb-1" style={{ color: 'var(--text-muted)' }}>{post.subtitle}</p>
           )}
-          <div className="flex items-center gap-3 text-[12px]" style={{ color: 'var(--text-faint)' }}>
-            <span>{timeAgo(post.published_at)}</span>
+          {post.excerpt && (
+            <p className="text-[14px] leading-[1.55] line-clamp-2 mb-2" style={{ color: 'var(--text-faint)' }}>{post.excerpt}</p>
+          )}
+          <div className="flex items-center gap-3 text-[13px]" style={{ color: 'var(--text-faint)' }}>
             {(post.tags || []).slice(0, 1).map(tag => (
-              <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-body)' }}>{tag}</span>
+              <span key={tag} className="text-[12px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-body)' }}>{tag}</span>
             ))}
             {post.read_time_minutes > 0 && <span>{post.read_time_minutes} min read</span>}
           </div>

@@ -426,18 +426,19 @@ export default function AppShell({ children }) {
               </>
             ) : (
               <>
+                {/* "Sign In" text is hidden on phones — the icon button below covers it */}
                 <Link
                   href="/sign-in"
-                  className="text-[14px] transition-colors px-3 py-1.5 rounded-lg"
+                  className="hidden sm:block text-[14px] transition-colors px-3 py-1.5 rounded-lg"
                   style={{ color: 'var(--text-muted)' }}
                   onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
                   onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
                 >
                   Sign In
                 </Link>
-                <button onClick={handleLogin} className="text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] transition-colors rounded-full px-2.5 py-2 sm:px-4 sm:py-1.5 flex items-center justify-center">
+                <button onClick={handleLogin} className="text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] transition-colors rounded-full flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:px-4 sm:py-1.5" title="Get started">
                   <span className="hidden sm:inline">Get Started</span>
-                  <span className="sm:hidden"><ion-icon name="log-in-outline" style={{ fontSize: '18px' }} /></span>
+                  <span className="sm:hidden flex items-center justify-center"><ion-icon name="log-in-outline" style={{ fontSize: '18px' }} /></span>
                 </button>
               </>
             )}
