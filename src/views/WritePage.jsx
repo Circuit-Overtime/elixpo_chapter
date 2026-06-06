@@ -2055,7 +2055,7 @@ export default function WritePage({ slugid }) {
                       This blog already has the maximum of 5 live editors — you're viewing in read-only until a slot frees up.
                     </div>
                   )}
-                  <div className="min-h-[60vh] pb-[100px] relative">
+                  <div className="min-h-[60vh] mt-6 pb-[100px] relative">
                     <BlockNoteEditor
                       ref={editorRef}
                       onChange={handleEditorChange}
