@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 // Collab worker URL — set this to your deployed collab worker domain
-const COLLAB_WS_URL = process.env.NEXT_PUBLIC_COLLAB_URL || 'wss://blog_collab.elixpo.com';
+const COLLAB_WS_URL = process.env.NEXT_PUBLIC_COLLAB_URL || 'wss://blog-collab.elixpo.com';
 
 const MAX_ACTIVE_USERS = 5;
 

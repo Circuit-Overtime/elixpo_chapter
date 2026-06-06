@@ -3,6 +3,11 @@ main = "src/index.js"
 compatibility_date = "2025-09-23"
 compatibility_flags = ["nodejs_compat"]
 
+# Custom domain: add blog-collab.elixpo.com to this worker via the Cloudflare
+# dashboard (Workers → elixpoblogs-collab → Settings → Domains & Routes). The
+# deploy token lacks zone "Workers Routes: Edit", so it can't be provisioned
+# here. Then set NEXT_PUBLIC_COLLAB_URL=wss://blog-collab.elixpo.com.
+
 # Yjs CRDT sync hub — one Durable Object per editing surface (blog / sub-page).
 [[durable_objects.bindings]]
 name = "COLLAB_DO"
