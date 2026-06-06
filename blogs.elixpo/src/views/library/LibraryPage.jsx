@@ -93,15 +93,8 @@ export default function LibraryPage() {
     );
   }
 
-  if (!user) {
-    return (
-      <AppShell><div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
-        <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Sign in to access your library</h2>
-        <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>Your bookmarks, collections, and reading history will appear here.</p>
-        <Link href="/sign-in" className="px-6 py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-full text-sm hover:bg-[#8b6ae6] transition-colors">Sign In</Link>
-      </div></AppShell>
-    );
-  }
+  // Auth is enforced by middleware (redirects to /sign-in?next=/library).
+  if (!user) return null;
 
   return (
     <AppShell>

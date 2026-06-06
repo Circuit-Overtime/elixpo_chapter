@@ -37,7 +37,11 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const cleanSlug = slug.toLowerCase().replace(/[^\w-]/g, '').slice(0, 40);
+  // Sanitize + validate the collection slug (alphanumeric, single hyphens, 6–48 chars).
+  const { validateSlug } = await import('../../../../lib/slugify');
+  const slugCheck = validateSlug(slug, { label: 'Collection slug' });
+  if (!slugCheck.ok) return NextResponse.json({ error: slugCheck.error }, { status: 400 });
+  const cleanSlug = slugCheck.slug;
 
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
