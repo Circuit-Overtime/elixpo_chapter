@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
+import MentionTextarea, { renderMentions } from './MentionTextarea';
 
 function timeAgo(ts) {
   if (!ts) return '';
@@ -100,11 +101,11 @@ export default function BlogComments({ blogId, blogAuthorId }) {
             </div>
           )}
           <div className="flex-1">
-            <textarea
+            <MentionTextarea
               value={newComment}
               onChange={e => setNewComment(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); postComment(newComment); } }}
-              placeholder="Add a comment..."
+              placeholder="Add a comment... (@ to mention)"
               rows={2}
               className="w-full px-1 py-3 outline-none text-[14px] resize-none bg-transparent"
               style={{ borderBottom: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
@@ -176,7 +177,7 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-[14px] leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-body)' }}>{c.content}</p>
+                    <p className="text-[14px] leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-body)' }}>{renderMentions(c.content, c.mentions, Link)}</p>
                   )}
 
                   {/* Actions: reply, edit, delete */}
@@ -201,13 +202,13 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                   {/* Reply input */}
                   {replyTo?.id === c.id && (
                     <div className="flex gap-2 mt-3">
-                      <textarea
+                      <MentionTextarea
                         value={replyText}
                         onChange={e => setReplyText(e.target.value)}
-                        placeholder={`Reply to ${replyTo.username}...`}
+                        placeholder={`Reply to ${replyTo.username}... (@ to mention)`}
                         rows={2}
-                        className="flex-1 rounded-lg px-3 py-2 outline-none text-[13px] resize-none"
-                        style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
+                        className="w-full rounded-lg px-3 py-2 outline-none text-[13px] resize-none"
+                        style={{ flex: 1, backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
                         autoFocus
                       />
                       <button
@@ -239,7 +240,7 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                               <Link href={`/${r.username}`} className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>{r.display_name || r.username}</Link>
                               <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(r.created_at)}</span>
                             </div>
-                            <p className="text-[13px] leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-body)' }}>{r.content}</p>
+                            <p className="text-[13px] leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-body)' }}>{renderMentions(r.content, r.mentions, Link)}</p>
                           </div>
                         </div>
                       ))}

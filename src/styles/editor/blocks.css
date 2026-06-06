@@ -40,8 +40,10 @@
 :root {
   --code-bg: #f8f8fb;
   --code-text: #3d3d50;
-  --code-lang-bg: #eeeef2;
-  --code-lang-text: #6b7280;
+  /* Darker label text on a slightly stronger chip so the language selector is
+     clearly visible in light mode (was #6b7280 on #eeeef2 — too low contrast). */
+  --code-lang-bg: #dfe3ea;
+  --code-lang-text: #44485a;
 }
 
 [data-theme="dark"] {

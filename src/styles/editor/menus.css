@@ -10,6 +10,16 @@
   scrollbar-color: var(--bg-elevated) transparent;
 }
 
+/* Cap the height of the slash + emoji (":") menus so they scroll internally
+   instead of overflowing off-screen behind the navbar (#18). The emoji picker
+   is BlockNote's built-in grid menu. */
+.blog-editor-wrapper .bn-suggestion-menu,
+.bn-suggestion-menu,
+.bn-grid-suggestion-menu {
+  max-height: min(320px, 50vh) !important;
+  overflow-y: auto !important;
+}
+
 .blog-editor-wrapper .bn-suggestion-menu::-webkit-scrollbar {
   width: 6px;
 }
