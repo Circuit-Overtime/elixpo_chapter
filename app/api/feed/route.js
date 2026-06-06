@@ -130,7 +130,7 @@ async function queryInterests(db, userId, now, limit) {
         SELECT blog_id FROM blog_tags WHERE tag IN (
           SELECT tag FROM user_interests WHERE user_id = ?
           UNION
-          SELECT DISTINCT tag FROM user_signals WHERE user_id = ? AND tag IS NOT NULL AND created_at > ?
+          SELECT DISTINCT tag FROM user_signals WHERE user_id = ? AND tag IS NOT NULL AND weight > 0 AND created_at > ?
         )
       )
       AND b.author_id != ?
