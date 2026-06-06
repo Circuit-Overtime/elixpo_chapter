@@ -557,7 +557,7 @@ export default function App() {
     if (tagFilter) url += `&tag=${encodeURIComponent(tagFilter)}`;
     else if (topics[activeTopic]?.filter) url += `&filter=${topics[activeTopic].filter}`;
 
-    fetch(url)
+    fetch(url, { cache: 'no-store' })
       .then(r => r.json())
       .then(data => setPosts(data.posts || []))
       .catch(() => setPosts([]))
