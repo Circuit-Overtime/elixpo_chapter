@@ -309,17 +309,19 @@ async function enrichPosts(db, posts, userId) {
     for (const r of (rows?.results || [])) repostMap[r.blog_id] = r.c;
   }
 
-  // The viewer's like / bookmark / co-author state for these posts (batched).
-  let likedSet = new Set(), bookmarkedSet = new Set(), coAuthoredSet = new Set();
+  // The viewer's like / bookmark / co-author / repost state for these posts (batched).
+  let likedSet = new Set(), bookmarkedSet = new Set(), coAuthoredSet = new Set(), repostedSet = new Set();
   if (userId) {
-    const [likeRows, bmRows, caRows] = await Promise.all([
+    const [likeRows, bmRows, caRows, rpRows] = await Promise.all([
       batchQuery(db, 'SELECT blog_id FROM likes WHERE user_id = ? AND blog_id IN', blogIds, [userId]),
       batchQuery(db, 'SELECT blog_id FROM bookmarks WHERE user_id = ? AND blog_id IN', blogIds, [userId]),
       batchQuery(db, "SELECT blog_id FROM blog_co_authors WHERE status = 'accepted' AND user_id = ? AND blog_id IN", blogIds, [userId]),
+      batchQuery(db, 'SELECT blog_id FROM reposts WHERE user_id = ? AND blog_id IN', blogIds, [userId]),
     ]);
     likedSet = new Set(likeRows.map(r => r.blog_id));
     bookmarkedSet = new Set(bmRows.map(r => r.blog_id));
     coAuthoredSet = new Set(caRows.map(r => r.blog_id));
+    repostedSet = new Set(rpRows.map(r => r.blog_id));
   }
 
   // Lazily backfill excerpts for posts published before the excerpt column
@@ -366,6 +368,7 @@ async function enrichPosts(db, posts, userId) {
       is_author: !!isAuthor,
       is_co_author: coAuthoredSet.has(p.id),
       repost_count: repostMap[p.id] || 0,
+      reposted: repostedSet.has(p.id),
       liked: likedSet.has(p.id),
       bookmarked: bookmarkedSet.has(p.id),
     };

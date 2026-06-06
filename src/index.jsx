@@ -272,7 +272,7 @@ function FeedCardActions({ post, onHide }) {
   const [liked, setLiked] = useState(!!post.liked);
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
   const [saved, setSaved] = useState(!!post.bookmarked);
-  const [reposted, setReposted] = useState(false);
+  const [reposted, setReposted] = useState(!!post.reposted);
   const [repostCount, setRepostCount] = useState(post.repost_count || 0);
   const [toast, setToast] = useState('');
   const href = `/${(post.org?.slug) || post.author?.username || 'unknown'}/${post.slug}`;
