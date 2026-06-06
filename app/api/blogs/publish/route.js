@@ -120,12 +120,14 @@ export async function POST(request) {
         ? (existing.status === 'draft' ? now : null)
         : null;
 
+      const { excerptFromBlocks } = await import('../../../../lib/excerpt');
+      const excerpt = editorContent ? excerptFromBlocks(editorContent) : '';
       let query = `
-        UPDATE blogs SET title = ?, subtitle = ?, slug = ?, content = ?, published_as = ?,
+        UPDATE blogs SET title = ?, subtitle = ?, slug = ?, content = ?, excerpt = ?, published_as = ?,
           status = ?, page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?,
           read_time_minutes = ?, updated_at = ?
       `;
-      const params = [title, subtitle || '', slug, compressedContent, publishAs || 'personal',
+      const params = [title, subtitle || '', slug, compressedContent, excerpt, publishAs || 'personal',
         targetStatus, pageEmoji || '', coverUrl || '', posX, posY, zoom, readTime, now];
 
       if (publishedAt) {
