@@ -100,6 +100,21 @@ export class CollabDurableObject {
       const userName = url.searchParams.get('userName') || 'Anonymous';
       const userColor = url.searchParams.get('userColor') || '#9b7bf7';
 
+      // Cap live editing at 5 DISTINCT users per blog (#11). Reconnects / extra
+      // tabs of an already-present user don't consume a slot; a genuinely new
+      // 6th user is rejected so the client can fall back to read-only.
+      const MAX_ACTIVE_USERS = 5;
+      const activeUsers = new Set();
+      for (const s of this.ctx.getWebSockets()) {
+        try { const m = s.deserializeAttachment(); if (m?.userId) activeUsers.add(m.userId); } catch {}
+      }
+      if (!activeUsers.has(userId) && activeUsers.size >= MAX_ACTIVE_USERS) {
+        return new Response(JSON.stringify({ error: 'collab_full', max: MAX_ACTIVE_USERS }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
       // Accept with hibernation API
       this.ctx.acceptWebSocket(server, [userId]);
 

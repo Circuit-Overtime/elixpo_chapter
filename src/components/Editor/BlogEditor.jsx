@@ -370,37 +370,15 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
       onItemClick: () => editor.insertBlocks([{ type: 'tabsBlock' }], editor.getTextCursorPosition().block, 'after'),
     },
     {
-      title: 'Canvas',
-      subtext: 'Sketch a diagram in a sub-page (max 2 per blog)',
+      // Canvas is a separate modality with known bugs — surfaced as "Coming
+      // soon" and not insertable for now (#11). Existing canvas sub-pages still
+      // render via the canvasBlock spec.
+      title: 'Canvas (Coming soon)',
+      subtext: 'Canvas sketching is coming soon',
       group: 'Custom Blocks',
       aliases: ['canvas', 'sketch', 'draw', 'whiteboard', 'lixsketch', 'diagram canvas'],
-      icon: <Icon d="M3 3h18v18H3zM3 9h18M9 21V9" color="#9b7bf7" />,
-      onItemClick: async () => {
-        // Use the resolved blog id (the URL may now carry the human slug).
-        const parentBlogId = callbacks.blogId || window.location.pathname.match(/\/edit\/([^/]+)/)?.[1];
-        if (!parentBlogId) return;
-        try {
-          const res = await fetch('/api/subpages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ blogId: parentBlogId, title: 'Untitled Canvas', kind: 'canvas' }),
-          });
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            window.alert(err.error || 'Could not create canvas sub-page');
-            return;
-          }
-          const data = await res.json();
-          editor.insertBlocks([
-            {
-              type: 'canvasBlock',
-              props: { subpageId: data.id, title: 'Untitled Canvas' },
-            },
-          ], editor.getTextCursorPosition().block, 'after');
-        } catch (e) {
-          window.alert('Could not create canvas sub-page');
-        }
-      },
+      icon: <Icon d="M3 3h18v18H3zM3 9h18M9 21V9" color="#6b7a8d" />,
+      onItemClick: () => {},
     },
     {
       title: 'Diagram',
