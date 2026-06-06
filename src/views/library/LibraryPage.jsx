@@ -141,14 +141,15 @@ export default function LibraryPage() {
             <div className="space-y-2.5">
               {collections.map(c => {
                 const shareable = c.id !== 'default';
+                const isDefault = c.id === 'default';
                 return (
-                  <div key={c.id} className="flex items-center gap-3 p-4 rounded-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+                  <div key={c.id} onClick={isDefault ? () => setActiveTab(1) : undefined} className="flex items-center gap-3 p-4 rounded-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', cursor: isDefault ? 'pointer' : 'default' }}>
                     <div className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--bg-elevated)' }}>
                       <ion-icon name="bookmark" style={{ fontSize: '18px', color: '#9b7bf7' }} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[15px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{c.name}{c.is_public ? <span className="text-[10px] font-bold uppercase ml-2 px-1.5 py-0.5 rounded" style={{ backgroundColor: '#16a34a22', color: '#16a34a' }}>Public</span> : null}</p>
-                      <p className="text-[12px]" style={{ color: 'var(--text-faint)' }}>{c.count} post{c.count !== 1 ? 's' : ''}</p>
+                      <p className="text-[12px]" style={{ color: 'var(--text-faint)' }}>{c.count} post{c.count !== 1 ? 's' : ''}{isDefault ? ' · view in Saved' : ''}</p>
                     </div>
                     {shareable && (
                       <>

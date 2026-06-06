@@ -1,10 +1,7 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
-
-function slugify(name) {
-  return (name || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'list';
-}
+import { validateSlug } from '../../../../lib/slugify';
 
 // GET — list the user's reading lists (collections).
 export async function GET() {
@@ -38,7 +35,8 @@ export async function POST(request) {
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   const { name, description, isPublic } = await request.json();
-  if (!name?.trim()) return NextResponse.json({ error: 'Name required' }, { status: 400 });
+  const valid = validateSlug(name, { label: 'List name' });
+  if (!valid.ok) return NextResponse.json({ error: valid.error }, { status: 400 });
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
@@ -46,7 +44,7 @@ export async function POST(request) {
     if ((count?.c || 0) >= 50) return NextResponse.json({ error: 'Max 50 lists' }, { status: 400 });
 
     // Unique slug within this user's lists.
-    let base = slugify(name), slug = base, n = 1;
+    let base = valid.slug, slug = base, n = 1;
     while (await db.prepare('SELECT 1 FROM bookmark_collections WHERE user_id = ? AND slug = ?').bind(session.userId, slug).first()) {
       slug = `${base}-${++n}`;
     }
@@ -72,7 +70,11 @@ export async function PATCH(request) {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
     const sets = [], binds = [];
-    if (typeof name === 'string' && name.trim()) { sets.push('name = ?', 'slug = ?'); binds.push(name.trim(), slugify(name)); }
+    if (typeof name === 'string' && name.trim()) {
+      const valid = validateSlug(name, { label: 'List name' });
+      if (!valid.ok) return NextResponse.json({ error: valid.error }, { status: 400 });
+      sets.push('name = ?', 'slug = ?'); binds.push(name.trim(), valid.slug);
+    }
     if (typeof isPublic !== 'undefined') { sets.push('is_public = ?'); binds.push(isPublic ? 1 : 0); }
     if (!sets.length) return NextResponse.json({ ok: true });
     sets.push('updated_at = unixepoch()');
