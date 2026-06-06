@@ -1,4 +1,7 @@
 export const runtime = 'edge';
+// Per-user editor data — must never be cached (CDN or browser), or one user can
+// get a stale/empty copy and the editor falls back to a local draft.
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { requestTooLarge, byteLength, MAX_BLOG_CONTENT_BYTES } from '../../../../lib/limits';
@@ -99,7 +102,7 @@ export async function GET(request) {
         is_owner: isOwner,
       },
       version,
-    });
+    }, { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } });
   } catch (e) {
     console.error('Draft fetch error:', e);
     return NextResponse.json({ error: 'Failed to load blog' }, { status: 500 });

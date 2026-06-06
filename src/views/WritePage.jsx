@@ -729,12 +729,17 @@ export default function WritePage({ slugid }) {
   }, [hasUnsavedEdits]);
 
   useEffect(() => {
+    // Re-arm the load guard so that, if the editor ever stays mounted across a
+    // slugid change, the next blog's initial load isn't treated as user edits,
+    // and the no-change snapshot re-captures for the new blog.
+    loadedRef.current = false;
+    settingsSnapshotRef.current = '';
     const timer = setTimeout(async () => {
       // Resolve the URL param (slug or id) against the server, which returns the
       // canonical blog id. localStorage is keyed by that id, so look it up after.
       let cloud = null, version = null;
       try {
-        const res = await fetch(`/api/blogs/draft?slugid=${encodeURIComponent(slugid)}`);
+        const res = await fetch(`/api/blogs/draft?slugid=${encodeURIComponent(slugid)}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           cloud = data.blog || null;
