@@ -14,6 +14,8 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
   const [clapAnim, setClapAnim] = useState(false);
   const [reposted, setReposted] = useState(false);
   const [repostCount, setRepostCount] = useState(0);
+  const [toast, setToast] = useState('');
+  const flashToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2200); };
 
   // Repost state — always fetch the count (shown even on your own blog).
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
     setReposted(!was); setRepostCount(c => c + (was ? -1 : 1));
     fetch(`/api/blogs/${blogId}/repost`, { method: was ? 'DELETE' : 'POST' })
       .then(r => r.ok ? r.json() : Promise.reject())
-      .then(d => { setReposted(!!d.reposted); setRepostCount(d.count || 0); })
+      .then(d => { setReposted(!!d.reposted); setRepostCount(d.count || 0); if (!was) flashToast('Reposted to your followers'); })
       .catch(() => { setReposted(was); setRepostCount(c => c + (was ? 1 : -1)); });
   };
   const startTime = useRef(Date.now());
@@ -215,6 +217,11 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
 
   return (
     <div className="flex items-center justify-between gap-x-1 gap-y-1 flex-wrap py-1">
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-app)', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+          <ion-icon name="checkmark-circle" style={{ fontSize: '15px' }} /> {toast}
+        </div>
+      )}
       {/* Left — engagement actions */}
       <div className="flex items-center gap-1">
         {/* Like */}
