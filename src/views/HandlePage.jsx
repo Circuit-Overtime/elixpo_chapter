@@ -162,7 +162,7 @@ function HandlePageInner({ path }) {
 
     return (
       <AppShell>
-        <div className="max-w-3xl mx-auto px-6 py-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 w-full overflow-x-hidden">
           {canEdit && (
             <div className="flex items-center justify-end mb-4">
               <Link
@@ -203,7 +203,7 @@ function HandlePageInner({ path }) {
               <BlogInteractionBar
                 blogId={blog.id}
                 blogAuthorId={blog.author_id}
-                canRepost={!isAuthor}
+                canRepost={!isAuthor && !myCoRole}
                 dotsMenu={
                   <BlogDotsMenu
                     blogId={blog.id}
