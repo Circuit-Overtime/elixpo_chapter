@@ -15,5 +15,8 @@ build/
 .claude/settings.local.json
 .claude/.credentials
 *.tgz
+# Vendored lixsketch package tarball — committed so CI (npm ci) resolves it
+# without the sibling sketch.elixpo checkout. Remove once 5.5.0 is on npm.
+!packages/lixsketch/*.tgz
 *.lixeditor
 .dev.vars
