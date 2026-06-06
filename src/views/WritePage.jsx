@@ -246,8 +246,10 @@ function HamburgerMenu({ onShareDraft, onChangeCover, onChangeTitle, onChangeTop
       <button
         onClick={() => setOpen(!open)}
         className="h-8 w-8 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] flex items-center justify-center hover:border-[var(--border-hover)] transition-colors"
+        style={{ color: 'var(--text-primary)' }}
+        title="More options"
       >
-        <ion-icon name="ellipsis-horizontal" style={{ color: '#888', fontSize: '16px' }} />
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
       </button>
       {open && (
         <div className="absolute right-0 top-full mt-2 w-[260px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl z-50 overflow-hidden">
