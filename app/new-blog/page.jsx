@@ -31,7 +31,7 @@ export default function New() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-[#131922] flex items-center justify-center">
+    <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-[#9b7bf7] border-t-transparent rounded-full animate-spin" />
     </div>
   );
