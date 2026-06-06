@@ -8,10 +8,30 @@ import { useAuth } from '../context/AuthContext';
  * Handles: view recording, read progress, likes, claps, bookmarks, share.
  * Also reports dwell time as a taste signal.
  */
-export default function BlogInteractionBar({ blogId }) {
+export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = false }) {
   const { user } = useAuth();
   const [interactions, setInteractions] = useState(null);
   const [clapAnim, setClapAnim] = useState(false);
+  const [reposted, setReposted] = useState(false);
+  const [repostCount, setRepostCount] = useState(0);
+
+  // Repost state
+  useEffect(() => {
+    if (!blogId || !canRepost) return;
+    fetch(`/api/blogs/${blogId}/repost`).then(r => r.ok ? r.json() : null).then(d => {
+      if (!d) return; setReposted(!!d.reposted); setRepostCount(d.count || 0);
+    }).catch(() => {});
+  }, [blogId, canRepost]);
+
+  const toggleRepost = () => {
+    if (!user) { window.location.href = `/sign-in?next=${typeof window !== 'undefined' ? window.location.pathname : '/'}`; return; }
+    const was = reposted;
+    setReposted(!was); setRepostCount(c => c + (was ? -1 : 1));
+    fetch(`/api/blogs/${blogId}/repost`, { method: was ? 'DELETE' : 'POST' })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(d => { setReposted(!!d.reposted); setRepostCount(d.count || 0); })
+      .catch(() => { setReposted(was); setRepostCount(c => c + (was ? 1 : -1)); });
+  };
   const startTime = useRef(Date.now());
   const progressReported = useRef(0);
 
@@ -235,6 +255,19 @@ export default function BlogInteractionBar({ blogId }) {
           <ion-icon name="chatbubble-outline" style={{ fontSize: '17px' }} />
           {interactions.commentCount > 0 && <span>{fmt(interactions.commentCount)}</span>}
         </div>
+
+        {/* Repost — hidden for the author / co-authors */}
+        {canRepost && (
+          <button
+            onClick={toggleRepost}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-medium transition-colors"
+            style={{ color: reposted ? '#16a34a' : 'var(--text-muted)', backgroundColor: reposted ? '#16a34a14' : 'transparent' }}
+            title={reposted ? 'Undo repost' : 'Repost to your followers'}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+            {repostCount > 0 && <span>{fmt(repostCount)}</span>}
+          </button>
+        )}
       </div>
 
       {/* Right — utility actions */}
