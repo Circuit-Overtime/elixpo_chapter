@@ -2088,7 +2088,13 @@ export default function WritePage({ slugid }) {
                       onChange={handleEditorChange}
                       initialContent={editorContent}
                       onReady={() => setEditorReady(true)}
-                      onTitleChange={(newTitle) => { setTitle(newTitle); setAiTitleKey(k => k + 1); }}
+                      onTitleChange={(newTitle) => {
+                        // Ignore until the initial load is done and ignore empties,
+                        // so a content-derived title can't wipe/hide the loaded title.
+                        if (!loadedRef.current || !newTitle) return;
+                        setTitle(newTitle);
+                        setAiTitleKey(k => k + 1);
+                      }}
                       blogId={blogId}
                       collaboration={collabConfig}
                       editable={!roomFull}
