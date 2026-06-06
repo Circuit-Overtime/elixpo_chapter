@@ -350,6 +350,12 @@ function FeedCard({ post, onHide }) {
   const allAuthors = [{ display_name: author.display_name, username: author.username, avatar_url: author.avatar_url }, ...(post.co_authors || [])];
   return (
     <article className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
+      {post.reshared_by && (
+        <div className="flex items-center gap-1.5 mb-2 text-[12px] font-medium" style={{ color: 'var(--text-faint)' }}>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg>
+          Reposted by {post.reshared_by.display_name || post.reshared_by.username}
+        </div>
+      )}
       <Link href={href} className="flex gap-5 cursor-pointer">
         <div className="flex-1 min-w-0">
           {(() => {

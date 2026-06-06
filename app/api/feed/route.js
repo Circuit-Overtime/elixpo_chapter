@@ -118,6 +118,23 @@ async function queryFollowing(db, userId, now, limit, offset) {
   return result?.results || [];
 }
 
+// ─── Reposts by people you follow (surfaced in the Following bucket) ──
+async function queryFollowedReposts(db, userId, now, limit) {
+  const cutoff = now - 30 * 86400;
+  const result = await db.prepare(`
+    SELECT ${BLOG_FIELDS}, r.user_id AS reshared_by_id, r.created_at AS reshared_at
+    FROM reposts r
+    JOIN blogs b ON b.id = r.blog_id
+    WHERE r.user_id IN (SELECT following_id FROM follows WHERE follower_id = ? AND following_type = 'user')
+      AND b.status = 'published'${EXCLUDE_TEST}
+      AND b.author_id != ?
+      AND r.created_at > ?
+    ORDER BY r.created_at DESC
+    LIMIT ?
+  `).bind(userId, userId, cutoff, limit).all();
+  return result?.results || [];
+}
+
 // ─── Bucket B: Interest-matched (explicit picks + implicit taste signals) ──
 async function queryInterests(db, userId, now, limit) {
   const cutoff = now - 14 * 86400;
@@ -204,27 +221,30 @@ async function queryRecent(db, limit, offset = 0) {
 
 // ─── Blended feed (3 buckets merged in JS) ───────────────────────────
 async function queryBlended(db, userId, now, limit) {
-  const [following, interests, trending] = await Promise.all([
+  const [reposts, following, interests, trending] = await Promise.all([
+    queryFollowedReposts(db, userId, now, 15),
     queryFollowing(db, userId, now, 15, 0),
     queryInterests(db, userId, now, 15),
     queryTrending(db, now, 20, 0),
   ]);
 
-  // Deduplicate by ID
+  // Deduplicate by ID. Reposts go FIRST so a post reshared by someone you follow
+  // claims the slot (carrying reshared_by_id) and gets top priority.
   const seen = new Set();
   const all = [];
-  for (const post of [...following, ...interests, ...trending]) {
+  for (const post of [...reposts, ...following, ...interests, ...trending]) {
     if (!seen.has(post.id)) {
       seen.add(post.id);
 
       // Score
+      const isReshared = !!post.reshared_by_id;
       const isFollowed = following.some(p => p.id === post.id);
       const isInterest = interests.some(p => p.id === post.id);
-      const hoursSince = Math.max(0, (now - post.published_at) / 3600);
+      const hoursSince = Math.max(0, (now - (post.reshared_at || post.published_at)) / 3600);
       const recency = Math.max(0, 20 - hoursSince / 12);
       const engagement = Math.min(20, (post.like_count || 0) * 0.5 + (post.comment_count || 0) * 1.5 + (post.recent_views || 0) * 0.1);
 
-      post._score = (isFollowed ? 50 : 0) + (isInterest ? 30 : 0) + engagement + recency;
+      post._score = (isReshared ? 70 : 0) + (isFollowed ? 50 : 0) + (isInterest ? 30 : 0) + engagement + recency;
       all.push(post);
     }
   }
@@ -250,7 +270,7 @@ async function queryBlended(db, userId, now, limit) {
 async function enrichPosts(db, posts, userId) {
   if (posts.length === 0) return posts;
 
-  const authorIds = [...new Set(posts.map(p => p.author_id))];
+  const authorIds = [...new Set([...posts.map(p => p.author_id), ...posts.filter(p => p.reshared_by_id).map(p => p.reshared_by_id)])];
   const blogIds = posts.map(p => p.id);
 
   const [authors, tags] = await Promise.all([
@@ -369,6 +389,7 @@ async function enrichPosts(db, posts, userId) {
       is_co_author: coAuthoredSet.has(p.id),
       repost_count: repostMap[p.id] || 0,
       reposted: repostedSet.has(p.id),
+      reshared_by: p.reshared_by_id ? (authorMap[p.reshared_by_id] || null) : null,
       liked: likedSet.has(p.id),
       bookmarked: bookmarkedSet.has(p.id),
     };
