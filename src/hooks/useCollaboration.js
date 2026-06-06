@@ -7,11 +7,14 @@ import { useState, useEffect, useRef } from 'react';
 // Collab worker URL — set this to your deployed collab worker domain
 const COLLAB_WS_URL = process.env.NEXT_PUBLIC_COLLAB_URL || 'wss://blog_collab.elixpo.com';
 
+const MAX_ACTIVE_USERS = 5;
+
 export function useCollaboration({ blogId, subpageId = null, user, enabled = false }) {
   const [isConnected, setIsConnected] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState([]);
   const [error, setError] = useState(null);
   const [needsSeed, setNeedsSeed] = useState(false);
+  const [roomFull, setRoomFull] = useState(false); // 5-editor cap reached (#11 F)
   const ydocRef = useRef(null);
   const providerRef = useRef(null);
   const heartbeatRef = useRef(null);
@@ -30,6 +33,23 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
         const Y = await import('yjs');
         const { WebsocketProvider } = await import('y-websocket');
 
+        if (cancelled) return;
+
+        // Pre-flight the room: if 5 distinct users are already editing and we're
+        // not one of them, don't connect — caller renders read-only (#11 F).
+        try {
+          const httpBase = COLLAB_WS_URL.replace(/^ws/, 'http');
+          const path = subpageId ? `blog/${blogId}/sub/${subpageId}/status` : `blog/${blogId}/status`;
+          const res = await fetch(`${httpBase}/${path}`, { credentials: 'include' });
+          if (res.ok) {
+            const { users = [], count = 0 } = await res.json();
+            const alreadyIn = users.some((u) => u.userId === user.id);
+            if (!alreadyIn && count >= MAX_ACTIVE_USERS) {
+              if (!cancelled) setRoomFull(true);
+              return;
+            }
+          }
+        } catch { /* status unavailable → proceed and let the DO enforce */ }
         if (cancelled) return;
 
         const ydoc = new Y.Doc();
@@ -76,22 +96,33 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
           }
         });
 
-        // Track connected users via awareness
-        provider.awareness.on('change', () => {
-          if (cancelled) return;
-          const users = [];
-          provider.awareness.getStates().forEach((state) => {
-            if (state.user) users.push(state.user);
-          });
-          setConnectedUsers(users);
+        // Our own presence record (incl. avatar) in a field BlockNote doesn't
+        // manage — BlockNote owns awareness.user for cursors (name + color).
+        const myColor = generateColor(user.id);
+        provider.awareness.setLocalStateField('presence', {
+          id: user.id,
+          name: user.display_name || user.username || 'Anonymous',
+          color: myColor,
+          avatar: user.avatar_url || null,
         });
 
-        // Set collaboration config for BlockNote
+        // Track connected users via awareness (dedupe by user id).
+        provider.awareness.on('change', () => {
+          if (cancelled) return;
+          const byId = new Map();
+          provider.awareness.getStates().forEach((state) => {
+            const p = state.presence || (state.user ? { name: state.user.name, color: state.user.color } : null);
+            if (p) byId.set(p.id || p.name, p);
+          });
+          setConnectedUsers([...byId.values()]);
+        });
+
+        // Set collaboration config for BlockNote (drives the colored remote cursors)
         setCollaboration({
           fragment: ydoc.getXmlFragment('prosemirror'),
           user: {
             name: user.display_name || user.username || 'Anonymous',
-            color: generateColor(user.id),
+            color: myColor,
           },
           provider,
         });
@@ -139,6 +170,7 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
       setIsConnected(false);
       setConnectedUsers([]);
       setNeedsSeed(false);
+      setRoomFull(false);
 
       // Release editing lock
       fetch('/api/collab/lock', {
@@ -153,6 +185,7 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
     collaboration,
     isConnected,
     connectedUsers,
+    roomFull,
     error,
     needsSeed,
     clearSeed: () => setNeedsSeed(false),

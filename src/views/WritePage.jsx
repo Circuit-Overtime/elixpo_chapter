@@ -478,7 +478,7 @@ export default function WritePage({ slugid }) {
 
   // Real-time collaboration (enabled when blog has co-authors)
   const hasCollaborators = collaborators.length > 0;
-  const { collaboration: collabConfig, isConnected: collabConnected, connectedUsers, error: collabError, needsSeed, clearSeed } = useCollaboration({
+  const { collaboration: collabConfig, isConnected: collabConnected, connectedUsers, roomFull, error: collabError, needsSeed, clearSeed } = useCollaboration({
     blogId,
     user,
     enabled: hasCollaborators,
