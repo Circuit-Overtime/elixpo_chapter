@@ -218,14 +218,9 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
       icon: <Icon d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" d2="M3 3h18v18H3z M8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3z M21 15l-5-5L5 21" />,
       onItemClick: () => editor.insertBlocks([{ type: 'image', props: { url: '' } }], editor.getTextCursorPosition().block, 'after'),
     },
-    {
-      title: 'Table of Contents',
-      subtext: 'Auto-generated page outline',
-      group: 'Custom Blocks',
-      aliases: ['toc', 'outline', 'contents', 'navigation'],
-      icon: <Icon d="M3 12h18M3 6h18M3 18h12" />,
-      onItemClick: () => editor.insertBlocks([{ type: 'tableOfContents' }], editor.getTextCursorPosition().block, 'after'),
-    },
+    // Table of Contents is no longer insertable — the floating TOC is rendered
+    // automatically at the top-right of every blog. The `tableOfContents` block
+    // spec stays mounted for backward compat with already-saved blogs (#19).
     {
       title: 'Block Equation',
       subtext: 'Render LaTeX as a block',

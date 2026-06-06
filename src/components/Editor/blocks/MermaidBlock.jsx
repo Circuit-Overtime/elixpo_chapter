@@ -321,7 +321,16 @@ export const MermaidBlock = createReactBlockSpec(
       const debounceRef = useRef(null);
 
       useEffect(() => {
-        if (editing && inputRef.current) inputRef.current.focus();
+        if (!editing) return;
+        // Focus the textarea once it's painted. A bare focus() can lose the
+        // race with BlockNote re-focusing the editor right after insert, so we
+        // focus on the next frame and again shortly after as a fallback (#17).
+        const raf = requestAnimationFrame(() => {
+          const el = inputRef.current;
+          if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+        });
+        const t = setTimeout(() => inputRef.current?.focus(), 80);
+        return () => { cancelAnimationFrame(raf); clearTimeout(t); };
       }, [editing]);
 
       // Debounced live preview update while typing
