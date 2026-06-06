@@ -435,6 +435,7 @@ export default function WritePage({ slugid }) {
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
   const settingsSnapshotRef = useRef(''); // publish-settings as of load / last publish — for the no-change Update shortcut
   const titleTextareaRef = useRef(null);
+  const loadedRef = useRef(false); // true once the initial cloud/local load has populated state
   const hadUserGestureRef = useRef(false);
   const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
   const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
@@ -771,8 +772,11 @@ export default function WritePage({ slugid }) {
         // Content: use the server copy unless localStorage holds strictly newer
         // unsaved edits (saved after the last cloud sync). This restores published
         // posts (incl. mentions) reliably while still preserving local work.
+        // Only prefer the local draft when we have a known cloud timestamp AND the
+        // local copy is strictly newer. Without a cloud time, trust the server copy
+        // (otherwise a stale localStorage draft hides the real title/tags/subtitle).
         const cloudUpdatedMs = (version?.updatedAt || 0) * 1000;
-        const localNewer = local?.editorContent && (local.savedAt || 0) > cloudUpdatedMs + 1500;
+        const localNewer = local?.editorContent && cloudUpdatedMs > 0 && (local.savedAt || 0) > cloudUpdatedMs + 1500;
         if (localNewer) {
           if (local.title) setTitle(local.title);
           if (local.subtitle) setSubtitle(local.subtitle);
@@ -800,11 +804,15 @@ export default function WritePage({ slugid }) {
         setEditorContent(local.editorContent);
       }
       setDraftLoading(false);
+      // Defer so the state updates above don't trip the autosave effect as "edits".
+      setTimeout(() => { loadedRef.current = true; }, 0);
     }, 80);
     return () => clearTimeout(timer);
   }, [slugid]);
 
   useEffect(() => {
+    // Ignore the state changes from the initial load — only real edits are dirty.
+    if (!loadedRef.current) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     setHasUnsavedEdits(true);
     dirtyRef.current = true;
