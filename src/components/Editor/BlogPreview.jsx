@@ -329,7 +329,7 @@ function renderBlocksToHTML(blocks) {
   return html;
 }
 
-export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount }) {
+export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount, followSlot = null }) {
   const { isDark } = useTheme();
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -750,6 +750,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
               <span className="text-[var(--text-faint)]">·</span>
               <span>{wordCount || 0} {(wordCount || 0) === 1 ? 'word' : 'words'}</span>
             </div>
+            {followSlot && <div className="ml-auto flex items-center gap-2">{followSlot}</div>}
           </div>
         );
       })()}
