@@ -743,12 +743,13 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
           { name: user.display_name || user.username || 'Author', avatar_url: user.avatar_url, username: user.username },
           ...coAuthors,
         ];
-        const shownAvatars = authors.slice(0, 5);
+        const shownAvatars = authors.slice(0, 3);
+        const moreAuthors = authors.length - shownAvatars.length;
         const shownNames = authors.slice(0, 3);
         const moreNames = authors.length - shownNames.length;
         return (
           <div className="flex items-center gap-3 mt-1 mb-2">
-            <div className="flex -space-x-2">
+            <div className="flex -space-x-2 items-center">
               {shownAvatars.map((a, i) => (
                 a.avatar_url ? (
                   <img key={i} src={a.avatar_url} alt="" title={a.name} className="w-7 h-7 rounded-full object-cover border-2 border-[var(--bg-app)]" />
@@ -758,6 +759,11 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
                   </div>
                 )
               ))}
+              {moreAuthors > 0 && (
+                <div title={`${moreAuthors} more`} className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] border-2 border-[var(--bg-app)] flex items-center justify-center text-[10px] font-bold text-[var(--text-muted)]">
+                  +{moreAuthors}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2 text-[13px] text-[var(--text-faint)] flex-wrap">
               {org && (
