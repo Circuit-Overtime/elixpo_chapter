@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const PROTECTED_PATHS = ['/settings', '/new-blog', '/notifications'];
+const PROTECTED_PATHS = ['/settings', '/new-blog', '/notifications', '/edit', '/intro', '/library', '/stats'];
 
 // All known app route prefixes — anything NOT in this set gets treated as a profile/blog handle
 const APP_ROUTES = new Set([
@@ -25,7 +25,9 @@ export function middleware(request) {
   if (isProtected) {
     const session = request.cookies.get('lixblogs_session')?.value;
     if (!session) {
-      return NextResponse.redirect(new URL('/sign-in', request.url));
+      const signIn = new URL('/sign-in', request.url);
+      signIn.searchParams.set('next', pathname);
+      return NextResponse.redirect(signIn);
     }
   }
 
