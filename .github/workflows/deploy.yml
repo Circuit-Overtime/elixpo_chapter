@@ -41,6 +41,14 @@ jobs:
         run: npm run pages:build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
+          # NEXT_PUBLIC_* are compiled into the client bundle (inherently public).
+          # The committed .env is SOPS-encrypted and .env.local is gitignored, so
+          # set them explicitly here — otherwise Next bakes the ENC[…] ciphertext
+          # (which broke OAuth: the client_id became the encrypted string).
+          NEXT_PUBLIC_URL: "https://blogs.elixpo.com"
+          NEXT_PUBLIC_ELIXPO_CLIENT_ID: ${{ vars.NEXT_PUBLIC_ELIXPO_CLIENT_ID || 'cli_aa1d55dfc2c1a1b3cb3a2fc0251ff744af9e41768e4e9d927ebe10a9fbe2578d' }}
+          NEXT_PUBLIC_COLLAB_URL: ${{ vars.NEXT_PUBLIC_COLLAB_URL || 'wss://elixpoblogs-collab.ayushbhatt633.workers.dev' }}
+          NEXT_PUBLIC_LIXSKETCH_EMBED_URL: ${{ vars.NEXT_PUBLIC_LIXSKETCH_EMBED_URL }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
