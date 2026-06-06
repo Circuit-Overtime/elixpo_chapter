@@ -48,6 +48,28 @@ export async function GET(request, { params }) {
         c.replies = (replyMap[c.id] || []).slice(0, 100);
         c.reply_count = (replyMap[c.id] || []).length;
       }
+
+      // Attach @mention usernames per comment/reply so the client can linkify
+      // only the tokens that resolved to real users (#10).
+      const allIds = [];
+      for (const c of comments) { allIds.push(c.id); for (const r of c.replies) allIds.push(r.id); }
+      if (allIds.length) {
+        // Guard: degrade gracefully if comment_mentions isn't migrated yet.
+        try {
+          const mp = allIds.map(() => '?').join(',');
+          const mres = await db.prepare(`
+            SELECT cm.comment_id, u.username
+            FROM comment_mentions cm JOIN users u ON u.id = cm.user_id
+            WHERE cm.comment_id IN (${mp})
+          `).bind(...allIds).all();
+          const byComment = {};
+          for (const row of (mres?.results || [])) (byComment[row.comment_id] ||= []).push(row.username);
+          for (const c of comments) {
+            c.mentions = byComment[c.id] || [];
+            for (const r of c.replies) r.mentions = byComment[r.id] || [];
+          }
+        } catch { /* table not migrated yet — skip mention linkification */ }
+      }
     }
 
     const total = await db.prepare('SELECT COUNT(*) as c FROM comments WHERE blog_id = ? AND parent_id IS NULL').bind(slugid).first();
@@ -119,16 +141,40 @@ export async function POST(request, { params }) {
         });
       }
 
+      const alreadyNotified = new Set([session.userId]);
+      if (blog.author_id !== session.userId) alreadyNotified.add(blog.author_id);
+
       // Notify parent comment author if reply (and not self)
       if (parentId) {
         const parent = await db.prepare('SELECT user_id FROM comments WHERE id = ?').bind(parentId).first();
         if (parent && parent.user_id !== session.userId && parent.user_id !== blog.author_id) {
+          alreadyNotified.add(parent.user_id);
           await notify(db, {
             userId: parent.user_id, type: 'mention',
             actorId: session.userId, actorName: user?.display_name || user?.username,
             actorAvatar: user?.avatar_url, targetId: slugid,
             targetTitle: blog.title, targetUrl: blogUrl,
           });
+        }
+      }
+
+      // @mentions in the comment body (#10): resolve real usernames, record
+      // them, and notify each mentioned user (skipping self / already-notified).
+      const unames = [...new Set([...content.matchAll(/(?:^|[^a-zA-Z0-9_])@([a-zA-Z0-9_-]+)/g)].map((m) => m[1].toLowerCase()))].slice(0, 20);
+      if (unames.length) {
+        const ph = unames.map(() => '?').join(',');
+        const found = await db.prepare(`SELECT id, username FROM users WHERE LOWER(username) IN (${ph})`).bind(...unames).all();
+        for (const u of (found?.results || [])) {
+          try { await db.prepare('INSERT OR IGNORE INTO comment_mentions (comment_id, user_id) VALUES (?, ?)').bind(id, u.id).run(); } catch {}
+          if (!alreadyNotified.has(u.id)) {
+            alreadyNotified.add(u.id);
+            await notify(db, {
+              userId: u.id, type: 'mention',
+              actorId: session.userId, actorName: user?.display_name || user?.username,
+              actorAvatar: user?.avatar_url, targetId: slugid,
+              targetTitle: blog.title, targetUrl: blogUrl,
+            });
+          }
         }
       }
     } catch {}
