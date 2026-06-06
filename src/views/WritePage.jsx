@@ -433,6 +433,7 @@ export default function WritePage({ slugid }) {
   const [lastKnownUpdatedAt, setLastKnownUpdatedAt] = useState(null);
   const [userOrgs, setUserOrgs] = useState([]);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+  const settingsSnapshotRef = useRef(''); // publish-settings as of load / last publish — for the no-change Update shortcut
   const hadUserGestureRef = useRef(false);
   const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
   const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
@@ -1104,6 +1105,18 @@ export default function WritePage({ slugid }) {
     }
   }, []);
 
+  // Serialized publish-settings, used to detect "nothing changed" on Update.
+  const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, pageEmoji, coverPreview, coverPos, coverZoom, slug });
+  // Capture a baseline once the blog has finished loading.
+  useEffect(() => {
+    if (!draftLoading && settingsSnapshotRef.current === '') settingsSnapshotRef.current = settingsKey();
+  }, [draftLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ownerSlug = publishAs === 'personal' ? username : (userOrgs.find(o => `org:${o.id}` === publishAs)?.slug || username);
+  const publishedUrl = `/${ownerSlug}/${slug || blogId}`;
+  // Nothing edited (content or settings) since load / last publish.
+  const hasNoChanges = () => !hasUnsavedEdits && settingsSnapshotRef.current === settingsKey();
+
   const doPublish = async (targetStatus) => {
     if (!title.trim() || publishing) return;
     setPublishing(true);
@@ -1135,6 +1148,7 @@ export default function WritePage({ slugid }) {
         setLastKnownUpdatedAt(data.updatedAt);
         setBlogVersion(v => v ? { ...v, isPublished: true, updatedAt: data.updatedAt, publishedAt: data.updatedAt, isDraftAhead: false } : v);
         setHasUnsavedEdits(false);
+        settingsSnapshotRef.current = settingsKey();
         setShowPublishPanel(false);
         // Redirect to published blog. Suppress the beforeunload leave-prompt —
         // state updates above haven't flushed yet, so the handler would still
@@ -1434,7 +1448,13 @@ export default function WritePage({ slugid }) {
                       onClick={() => {
                         if (!canPublish) return;
                         if (isPublished) {
-                          setShowPublishConfirm(true);
+                          // No edits since publish → skip the update entirely, just view it.
+                          if (hasNoChanges()) {
+                            bypassUnloadRef.current = true;
+                            window.location.href = publishedUrl;
+                          } else {
+                            setShowPublishConfirm(true);
+                          }
                         } else {
                           setShowPublishPanel(!showPublishPanel);
                         }
