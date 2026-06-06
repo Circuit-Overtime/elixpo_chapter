@@ -252,7 +252,7 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
     },
     {
       title: 'Sub Page',
-      subtext: 'Nested page within this blog',
+      subtext: 'Nested page within this blog (max 2 per blog)',
       group: 'Custom Blocks',
       aliases: ['subpage', 'sub page', 'tabs', 'nested', 'page in page', 'child page'],
       icon: <Icon d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" d2="M14 2v6h6M16 13H8M16 17H8" />,
