@@ -137,6 +137,8 @@ export async function POST(request) {
 
     // Compress content before storing
     const compressedContent = editorContent ? compressBlogContent(editorContent) : '';
+    const { excerptFromBlocks } = await import('../../../../lib/excerpt');
+    const excerpt = editorContent ? excerptFromBlocks(editorContent) : '';
 
     // Check if blog exists
     const existing = await db.prepare('SELECT id, author_id FROM blogs WHERE id = ?').bind(slugid).first();
@@ -147,11 +149,11 @@ export async function POST(request) {
       const perm = await canEditBlog(db, slugid, session.userId);
       if (!perm.ok) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
       await db.prepare(`
-        UPDATE blogs SET title = ?, subtitle = ?, content = ?, published_as = ?,
+        UPDATE blogs SET title = ?, subtitle = ?, content = ?, excerpt = ?, published_as = ?,
           page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?, updated_at = ?
         WHERE id = ?
       `).bind(
-        title || '', subtitle || '', compressedContent, publishAs || 'personal',
+        title || '', subtitle || '', compressedContent, excerpt, publishAs || 'personal',
         pageEmoji || '', coverPreview || '', posX, posY, zoom, now, slugid
       ).run();
       // Throttled version snapshot (≤ 1 / 5 min) so history accrues as people edit (#11 E).
@@ -166,10 +168,10 @@ export async function POST(request) {
         publishAs: publishAs || 'personal',
       });
       await db.prepare(`
-        INSERT INTO blogs (id, slug, title, subtitle, content, author_id, published_as, status, page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO blogs (id, slug, title, subtitle, content, excerpt, author_id, published_as, status, page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        slugid, slug, title || '', subtitle || '', compressedContent,
+        slugid, slug, title || '', subtitle || '', compressedContent, excerpt,
         session.userId, publishAs || 'personal', pageEmoji || '', coverPreview || '', posX, posY, zoom, now, now
       ).run();
     }

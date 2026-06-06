@@ -1908,9 +1908,9 @@ export default function WritePage({ slugid }) {
                   {/* Author bar — above title */}
                   <div className="flex items-center gap-3 mt-2 mb-2">
                     <div className="flex -space-x-2">
-                      <AvatarImg src={user?.avatar_url} name={user?.display_name || user?.username} size={28} />
+                      <AvatarImg src={user?.avatar_url} name={user?.display_name || user?.username} size={30} />
                     </div>
-                    <div className="flex items-center gap-2 text-[13px] text-[var(--text-faint)]">
+                    <div className="flex items-center gap-2 text-[15px] text-[var(--text-faint)]">
                       <span className="text-[var(--text-muted)] font-medium">{user?.display_name || user?.username || 'Author'}</span>
                       <span className="text-[var(--text-faint)]">·</span>
                       <span>{Math.max(1, Math.ceil(wordCount / 200))} min read</span>
@@ -1918,15 +1918,6 @@ export default function WritePage({ slugid }) {
                       <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
                     </div>
                   </div>
-
-                  {/* Tags — shown under author bar */}
-                  {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-0">
-                      {tags.map((tag) => (
-                        <span key={tag} className="px-2.5 py-0.5 bg-[#9b7bf70a] rounded-full text-[12px] text-[#9b7bf7]">#{tag}</span>
-                      ))}
-                    </div>
-                  )}
 
                   {/* 30px gap before title */}
                   <div style={{ height: '30px' }} />
@@ -1967,6 +1958,15 @@ export default function WritePage({ slugid }) {
                           )
                         ))}
                       </div>
+                    )}
+                  </div>
+
+                  {/* Tags — always shown under the title (edit + publish) */}
+                  <div className="flex flex-wrap gap-1.5 mt-1 mb-2 min-h-[24px]">
+                    {tags.length > 0 ? tags.map((tag) => (
+                      <span key={tag} className="px-2.5 py-0.5 bg-[#9b7bf70a] rounded-full text-[13px] text-[#9b7bf7]">#{tag}</span>
+                    )) : (
+                      <span className="text-[12px]" style={{ color: 'var(--text-faint)' }}>Add tags from the publish panel →</span>
                     )}
                   </div>
 

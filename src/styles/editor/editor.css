@@ -19,3 +19,20 @@
   background-color: transparent !important;
   background-image: none !important;
 }
+
+/* Prevent wide content (code, tables, images, embeds) from overflowing the
+   viewport on mobile in the blog reader. */
+.blog-preview-content img,
+.blog-preview-content table,
+.blog-preview-content iframe,
+.blog-preview-content video,
+.blog-preview-content pre {
+  max-width: 100%;
+}
+.blog-preview-content pre {
+  overflow-x: auto;
+}
+.blog-preview-content {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
