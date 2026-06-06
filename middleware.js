@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+// All auth-gated routes hard-redirect to /sign-in?next=… (no in-page gate).
 const PROTECTED_PATHS = ['/settings', '/new-blog', '/notifications', '/edit', '/intro', '/library', '/stats'];
 
 // All known app route prefixes — anything NOT in this set gets treated as a profile/blog handle
