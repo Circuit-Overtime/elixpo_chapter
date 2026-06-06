@@ -81,6 +81,7 @@ export async function GET(request) {
     }
 
     posts = await enrichPosts(db, posts, userId);
+    posts = await filterMuted(db, userId, posts);
 
     return NextResponse.json({
       posts,
@@ -315,6 +316,27 @@ async function enrichPosts(db, posts, userId) {
       is_staff: p.published_as === `org:${STAFF_ORG_ID}`,
       can_edit: !!(isAuthor || isOrgMember),
     };
+  });
+}
+
+// ─── Drop posts the user has muted (author / org / tag) ──────────────
+async function filterMuted(db, userId, posts) {
+  if (!posts.length) return posts;
+  let mutes;
+  try {
+    mutes = await db.prepare('SELECT target_type, target_id FROM mutes WHERE user_id = ?').bind(userId).all();
+  } catch { return posts; } // mutes table not migrated yet
+  const rows = mutes?.results || [];
+  if (rows.length === 0) return posts;
+  const mutedAuthors = new Set(rows.filter(r => r.target_type === 'author').map(r => r.target_id));
+  const mutedOrgs = new Set(rows.filter(r => r.target_type === 'org').map(r => r.target_id));
+  const mutedTags = new Set(rows.filter(r => r.target_type === 'tag').map(r => r.target_id.toLowerCase()));
+  return posts.filter(p => {
+    if (mutedAuthors.has(p.author_id)) return false;
+    const orgId = p.published_as?.startsWith('org:') ? p.published_as.slice(4) : null;
+    if (orgId && mutedOrgs.has(orgId)) return false;
+    if ((p.tags || []).some(t => mutedTags.has((t || '').toLowerCase()))) return false;
+    return true;
   });
 }
 
