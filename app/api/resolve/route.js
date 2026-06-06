@@ -67,7 +67,7 @@ export async function GET(request) {
       if (slug) {
         const blog = await db.prepare(`
           SELECT b.id, b.slug, b.title, b.subtitle, b.content, b.cover_image_r2_key,
-            b.cover_pos_x, b.cover_pos_y, b.cover_zoom,
+            b.cover_pos_x, b.cover_pos_y, b.cover_zoom, b.member_only,
             b.status, b.published_as, b.page_emoji, b.read_time_minutes,
             b.published_at, b.created_at, b.updated_at, b.author_id,
             u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar

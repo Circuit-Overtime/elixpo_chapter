@@ -13,6 +13,7 @@ import BlogRecommendations from '../components/BlogRecommendations';
 import AuthorAttribution from '../components/AuthorAttribution';
 import FollowListModal from '../components/FollowListModal';
 import BlogInviteOverlay from '../components/BlogInviteOverlay';
+import { STAFF_ORG_ID } from '../../lib/staff';
 import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
 
@@ -186,12 +187,16 @@ function HandlePageInner({ path }) {
             coAuthorCount={blog.co_author_count || 0}
             coAuthors={blog.co_authors || []}
             wordCount={wc}
+            memberOnly={!!blog.member_only}
+            featured={blog.published_as === `org:${STAFF_ORG_ID}`}
+            publishedAt={blog.published_at}
             followSlot={!isAuthor ? (
               <>
                 {data.owner?.type === 'org' && <FollowToggle kind="org" handle={data.owner.slug} compact />}
                 {blog.author_username && <FollowToggle kind="user" handle={blog.author_username} compact />}
               </>
             ) : null}
+            headerActions={<BlogInteractionBar blogId={blog.id} blogAuthorId={blog.author_id} canRepost={!isAuthor} />}
           />
 
           {/* End-of-blog follow card — author (+ org) */}
@@ -199,9 +204,6 @@ function HandlePageInner({ path }) {
             author={{ username: blog.author_username, display_name: blog.author_name, avatar_url: blog.author_avatar }}
             org={data.owner?.type === 'org' ? { slug: data.owner.slug, name: data.owner.name, logo_url: data.owner.logo_url || data.owner.logo_r2_key } : null}
           />
-
-          {/* Interaction bar — like, clap, bookmark, share, views */}
-          <BlogInteractionBar blogId={blog.id} />
 
           {/* Comments section — always expanded */}
           <BlogComments blogId={blog.id} blogAuthorId={blog.author_id} />

@@ -181,25 +181,154 @@ function SearchBar() {
   );
 }
 
-function FeedCard({ post }) {
+// Stacked author avatars (primary + co-authors).
+function AuthorStack({ authors }) {
+  const shown = authors.slice(0, 3);
+  return (
+    <div className="flex -space-x-1.5">
+      {shown.map((a, i) => (
+        a.avatar_url ? (
+          <img key={i} src={a.avatar_url} alt="" title={a.display_name || a.username} className="h-5 w-5 rounded-full object-cover" style={{ boxShadow: '0 0 0 2px var(--bg-app)' }} />
+        ) : (
+          <div key={i} title={a.display_name || a.username} className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)', boxShadow: '0 0 0 2px var(--bg-app)' }}>{(a.display_name || a.username || '?')[0].toUpperCase()}</div>
+        )
+      ))}
+    </div>
+  );
+}
+
+// "..." menu — follow author/publication, mute author/publication/topics, report.
+function FeedCardMenu({ post, onHide }) {
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const author = post.author || {};
+  const org = post.org || null;
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [open]);
+
+  const needAuth = () => { if (!user) { window.location.href = '/sign-in?next=/'; return true; } return false; };
+  const post_ = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
+
+  const followAuthor = () => { if (needAuth()) return; post_(`/api/users/${author.username}/follow`); setOpen(false); };
+  const followOrg = () => { if (needAuth()) return; post_(`/api/orgs/${org.slug}/follow`); setOpen(false); };
+  const muteAuthor = () => { if (needAuth()) return; post_('/api/mutes', { targetType: 'author', targetId: post.author_id }); setOpen(false); onHide?.(post.id); };
+  const muteOrg = () => { if (needAuth()) return; post_('/api/mutes', { targetType: 'org', targetId: org.id }); setOpen(false); onHide?.(post.id); };
+  const muteTopics = () => { if (needAuth()) return; (post.tags || []).forEach(t => post_('/api/mutes', { targetType: 'tag', targetId: t })); setOpen(false); onHide?.(post.id); };
+  const report = () => {
+    if (needAuth()) return;
+    setOpen(false);
+    if (!confirm('Report this story to the moderators?')) return;
+    post_(`/api/blogs/${post.id}/report`, { reason: 'other', detail: 'Reported from feed' });
+  };
+
+  const item = (label, fn, danger, badge) => (
+    <button onClick={fn} className="w-full text-left px-4 py-2 text-[13px] flex items-center gap-2 transition-colors"
+      style={{ color: danger ? '#f87171' : 'var(--text-body)' }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+      {label}{badge && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: '#16a34a', color: '#fff' }}>New</span>}
+    </button>
+  );
+
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={(e) => { e.preventDefault(); setOpen(o => !o); }} className="flex items-center justify-center w-8 h-8 rounded-full transition-colors" style={{ color: 'var(--text-faint)' }} title="More" onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+        <ion-icon name="ellipsis-horizontal" style={{ fontSize: '18px' }} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-9 z-50 w-56 rounded-xl py-1.5 overflow-hidden" style={{ backgroundColor: 'var(--dropdown-bg, var(--bg-surface))', border: '1px solid var(--border-default)', boxShadow: '0 12px 40px rgba(0,0,0,0.35)' }}>
+          {item(`Follow ${author.display_name || author.username}`, followAuthor)}
+          {org && item(`Follow ${org.name}`, followOrg)}
+          <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
+          {item('Mute author', muteAuthor)}
+          {org && item('Mute publication', muteOrg)}
+          {(post.tags || []).length > 0 && item('Mute topics', muteTopics, false, true)}
+          <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
+          {item('Report story…', report, true)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Action bar — clap, comment, repost, save, "..." menu.
+function FeedCardActions({ post, onHide }) {
+  const { user } = useAuth();
+  const [claps, setClaps] = useState(post.clap_total || post.like_count || 0);
+  const [saved, setSaved] = useState(false);
+  const [reposted, setReposted] = useState(false);
+  const href = `/${(post.org?.slug) || post.author?.username || 'unknown'}/${post.slug}`;
+  const isOwn = !!post.can_edit; // author / org member — can't repost own
+
+  const guard = (fn) => (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (!user) { window.location.href = '/sign-in?next=/'; return; }
+    fn();
+  };
+  const clap = guard(() => { setClaps(c => c + 1); fetch(`/api/blogs/${post.id}/clap`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ count: 1 }) }).then(r => r.ok ? r.json() : null).then(d => d && setClaps(d.totalClaps)).catch(() => {}); });
+  const save = guard(() => {
+    const was = saved; setSaved(!was);
+    (was ? fetch(`/api/library/bookmarks/${post.id}`, { method: 'DELETE' })
+         : fetch('/api/library/bookmarks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ blogId: post.id }) }))
+      .then(r => { if (!r.ok) throw new Error(); }).catch(() => setSaved(was));
+  });
+  const repost = guard(() => {
+    const was = reposted; setReposted(!was);
+    fetch(`/api/blogs/${post.id}/repost`, { method: was ? 'DELETE' : 'POST' })
+      .then(r => r.ok ? r.json() : Promise.reject()).then(d => setReposted(!!d.reposted)).catch(() => setReposted(was));
+  });
+
+  const Stat = ({ d, label, onClick, active, fill }) => (
+    <button onClick={onClick} title={label} className="flex items-center gap-1.5 text-[13px] transition-colors" style={{ color: active ? '#9b7bf7' : 'var(--text-muted)' }}>
+      <svg className="w-[18px] h-[18px]" fill={fill && active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+    </button>
+  );
+
+  return (
+    <div className="flex items-center gap-5 mt-3">
+      {/* claps */}
+      <button onClick={clap} className="flex items-center gap-1.5 text-[13px] transition-colors" style={{ color: 'var(--text-muted)' }} title="Clap">
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M7 11v8m0 0H5a1 1 0 01-1-1v-6a1 1 0 011-1h2m3-4l-1 5h6l-1 5" /></svg>
+        {claps > 0 && <span>{claps >= 1000 ? `${(claps / 1000).toFixed(1)}K` : claps}</span>}
+      </button>
+      {/* comments */}
+      <Link href={`${href}#comments`} className="flex items-center gap-1.5 text-[13px]" style={{ color: 'var(--text-muted)' }} title="Comments" onClick={e => e.stopPropagation()}>
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+        {post.comment_count > 0 && <span>{post.comment_count}</span>}
+      </Link>
+      {/* repost — not for own blog */}
+      {!isOwn && (
+        <button onClick={repost} className="flex items-center gap-1.5 text-[13px] transition-colors" style={{ color: reposted ? '#16a34a' : 'var(--text-muted)' }} title="Repost">
+          <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg>
+        </button>
+      )}
+      <div className="ml-auto flex items-center gap-1">
+        <button onClick={save} className="flex items-center justify-center w-8 h-8 rounded-full transition-colors" style={{ color: saved ? '#9b7bf7' : 'var(--text-faint)' }} title="Save to reading list" onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+          <ion-icon name={saved ? 'bookmark' : 'bookmark-outline'} style={{ fontSize: '18px' }} />
+        </button>
+        <FeedCardMenu post={post} onHide={onHide} />
+      </div>
+    </div>
+  );
+}
+
+function FeedCard({ post, onHide }) {
   const author = post.author || {};
   const cover = post.cover_image_r2_key || generateBlogBanner(post.id || post.slug);
   const href = `/${(post.org?.slug) || author.username || 'unknown'}/${post.slug}`;
-  const bylineName = post.org ? post.org.name : (author.display_name || author.username);
   const allAuthors = [{ display_name: author.display_name, username: author.username, avatar_url: author.avatar_url }, ...(post.co_authors || [])];
   return (
     <article className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
       <Link href={href} className="flex gap-5 cursor-pointer">
-        {/* Left: byline + title + subtitle + stats */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-            {post.org?.logo_url ? (
-              <img src={post.org.logo_url} alt="" className="h-5 w-5 rounded object-cover" />
-            ) : author.avatar_url ? (
-              <img src={author.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover" />
-            ) : (
-              <div className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>{(bylineName || '?')[0].toUpperCase()}</div>
-            )}
+            <AuthorStack authors={allAuthors} />
             <span className="truncate">
               {post.org && <>In <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{post.org.name}</span> by </>}
               <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{author.display_name || author.username}</span>
@@ -214,43 +343,29 @@ function FeedCard({ post }) {
             {post.title || 'Untitled'}
           </h2>
           {post.subtitle && (
-            <p className="text-[15px] leading-[1.5] line-clamp-2 mb-3" style={{ color: 'var(--text-muted)' }}>{post.subtitle}</p>
+            <p className="text-[15px] leading-[1.5] line-clamp-2 mb-2" style={{ color: 'var(--text-muted)' }}>{post.subtitle}</p>
           )}
-
-          <div className="flex items-center gap-3 text-[12px] flex-wrap" style={{ color: 'var(--text-faint)' }}>
+          <div className="flex items-center gap-3 text-[12px]" style={{ color: 'var(--text-faint)' }}>
             <span>{timeAgo(post.published_at)}</span>
             {(post.tags || []).slice(0, 1).map(tag => (
               <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-body)' }}>{tag}</span>
             ))}
             {post.read_time_minutes > 0 && <span>{post.read_time_minutes} min read</span>}
-            {(post.clap_total > 0 || post.like_count > 0) && (
-              <span className="flex items-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 11v8m0 0H5a1 1 0 01-1-1v-6a1 1 0 011-1h2m3-4l-1 5h6l-1 5" /></svg>
-                {post.clap_total || post.like_count}
-              </span>
-            )}
-            {post.comment_count > 0 && (
-              <span className="flex items-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                {post.comment_count}
-              </span>
-            )}
           </div>
         </div>
 
-        {/* Right: square cover thumbnail */}
         <div className="flex-shrink-0 self-center hidden sm:block">
           <img src={cover} alt="" className="w-[112px] h-[112px] rounded-md object-cover" style={{ backgroundColor: 'var(--bg-elevated)' }} />
         </div>
       </Link>
 
+      {/* Action bar */}
+      <FeedCardActions post={post} onHide={onHide} />
+
       {post.can_edit && (
         <div className="mt-3 flex items-center gap-2">
           <Link href={`/edit/${post.slug || post.id}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors" style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}>
             <ion-icon name="create-outline" style={{ fontSize: '13px' }} /> Edit
-          </Link>
-          <Link href={`/edit/${post.slug || post.id}?panel=settings`} className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors" style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }} title="Blog settings">
-            <ion-icon name="settings-outline" style={{ fontSize: '14px' }} />
           </Link>
         </div>
       )}
@@ -467,7 +582,7 @@ export default function App() {
             {loading ? (
               <FeedSkeleton />
             ) : posts.length > 0 ? (
-              posts.map(post => <FeedCard key={post.id} post={post} />)
+              posts.map(post => <FeedCard key={post.id} post={post} onHide={(id) => setPosts(ps => ps.filter(p => p.id !== id))} />)
             ) : (
               <div className="my-8 rounded-2xl border border-dashed flex flex-col items-center text-center px-6 py-14" style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-surface)' }}>
                 <div className="h-14 w-14 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--bg-elevated)' }}>
