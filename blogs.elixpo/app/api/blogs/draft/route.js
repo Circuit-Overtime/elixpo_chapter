@@ -154,6 +154,10 @@ export async function POST(request) {
         title || '', subtitle || '', compressedContent, publishAs || 'personal',
         pageEmoji || '', coverPreview || '', posX, posY, zoom, now, slugid
       ).run();
+      // Throttled version snapshot (≤ 1 / 5 min) so history accrues as people edit (#11 E).
+      if (compressedContent) {
+        try { const { snapshotVersion } = await import('../../../../lib/blogVersions'); await snapshotVersion(db, slugid, compressedContent, { label: 'autosave', userId: session.userId, throttleSeconds: 300 }); } catch {}
+      }
     } else {
       const { ensureUniqueBlogSlug } = await import('../../../../lib/namespace');
       const baseSlug = generateSlug(title);

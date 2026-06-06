@@ -32,6 +32,7 @@ import { DateInline } from './blocks/DateInline';
 import { MentionInline } from './blocks/MentionInline';
 import { BlogMentionInline } from './blocks/BlogMentionInline';
 import { OrgMentionInline } from './blocks/OrgMentionInline';
+import { InlineButton } from './blocks/InlineButton';
 
 // AI features (space-to-AI menu, AI block, AI selection toolbar, AI image gen)
 // are temporarily disabled and surfaced as "Coming soon". Flip to re-enable.
@@ -109,6 +110,7 @@ const schema = BlockNoteSchema.create({
     mention: MentionInline,
     blogMention: BlogMentionInline,
     orgMention: OrgMentionInline,
+    inlineButton: InlineButton,
   },
 });
 
@@ -368,37 +370,15 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
       onItemClick: () => editor.insertBlocks([{ type: 'tabsBlock' }], editor.getTextCursorPosition().block, 'after'),
     },
     {
-      title: 'Canvas',
-      subtext: 'Sketch a diagram in a sub-page (max 2 per blog)',
+      // Canvas is a separate modality with known bugs — surfaced as "Coming
+      // soon" and not insertable for now (#11). Existing canvas sub-pages still
+      // render via the canvasBlock spec.
+      title: 'Canvas (Coming soon)',
+      subtext: 'Canvas sketching is coming soon',
       group: 'Custom Blocks',
       aliases: ['canvas', 'sketch', 'draw', 'whiteboard', 'lixsketch', 'diagram canvas'],
-      icon: <Icon d="M3 3h18v18H3zM3 9h18M9 21V9" color="#9b7bf7" />,
-      onItemClick: async () => {
-        // Use the resolved blog id (the URL may now carry the human slug).
-        const parentBlogId = callbacks.blogId || window.location.pathname.match(/\/edit\/([^/]+)/)?.[1];
-        if (!parentBlogId) return;
-        try {
-          const res = await fetch('/api/subpages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ blogId: parentBlogId, title: 'Untitled Canvas', kind: 'canvas' }),
-          });
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            window.alert(err.error || 'Could not create canvas sub-page');
-            return;
-          }
-          const data = await res.json();
-          editor.insertBlocks([
-            {
-              type: 'canvasBlock',
-              props: { subpageId: data.id, title: 'Untitled Canvas' },
-            },
-          ], editor.getTextCursorPosition().block, 'after');
-        } catch (e) {
-          window.alert('Could not create canvas sub-page');
-        }
-      },
+      icon: <Icon d="M3 3h18v18H3zM3 9h18M9 21V9" color="#6b7a8d" />,
+      onItemClick: () => {},
     },
     {
       title: 'Diagram',
@@ -702,8 +682,9 @@ function doSanitize(blocks) {
   return result;
 }
 
-const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, collaboration, onCollabSeeded }, ref) {
+const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, collaboration, onCollabSeeded, editable = true }, ref) {
   const { isDark } = useTheme();
+  const [pageMenu, setPageMenu] = useState(null); // {x,y} for the right-click page menu (#21)
   const [showMentionMenu, setShowMentionMenu] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionPos, setMentionPos] = useState({ top: 0, left: 0 });
@@ -1042,9 +1023,61 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         return (
           <FormattingToolbar>
             {items}
+            {/* Convert the selection into an inline button (#22). */}
+            {link.kind === 'none' && (
+              <button
+                key="makeButton"
+                type="button"
+                className="bn-button"
+                title="Make button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  const text = (ed.getSelectedText?.() || '').trim();
+                  ed.insertInlineContent([{ type: 'inlineButton', props: { label: text || 'Button', href: '' } }]);
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28 }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="18" height="8" rx="2" /><path d="M8 12h8" /></svg>
+              </button>
+            )}
             <ToolbarStyleButton key="textColor" editor={ed} kind="text" />
             <ToolbarStyleButton key="highlight" editor={ed} kind="highlight" />
-            {link.kind === 'none' && <CreateLinkButton key="createLink" />}
+            {/* Create link via the custom editor so the selected text is wrapped
+                as the link's label (#12) — same flow as the Ctrl+K shortcut. */}
+            {link.kind === 'none' && (
+              <button
+                key="createLink"
+                type="button"
+                className="bn-button bn-link-edit-btn"
+                title="Create link (Ctrl+K)"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  try {
+                    const t = ed._tiptapEditor;
+                    const { from, to } = link;
+                    if (from == null || to == null) return;
+                    const text = t.state.doc.textBetween(from, to);
+                    const isUrl = /^https?:\/\/\S+$/.test(text.trim());
+                    let coords;
+                    try { coords = t.view.coordsAtPos(from); } catch { coords = { bottom: 120, left: 120 }; }
+                    setLinkEditor({
+                      anchorText: text,
+                      url: isUrl ? text.trim() : 'https://',
+                      from, to,
+                      top: coords.bottom + 6,
+                      left: Math.max(8, Math.min(coords.left, window.innerWidth - 340)),
+                    });
+                  } catch {}
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 8px', height: 28, fontSize: 13, fontWeight: 500 }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                </svg>
+                Link
+              </button>
+            )}
             {link.kind === 'full' && (
               <button
                 key="editLink"
@@ -1134,8 +1167,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         const code = (block.content || []).map(c => c.text || '').join('');
         return !code.trim();
       }
-      // For paragraph/heading: empty text
-      if (type === 'paragraph' || type === 'heading') {
+      // Paragraph / heading / list items: empty when there's no text content.
+      if (type === 'paragraph' || type === 'heading' || type === 'bulletListItem' || type === 'numberedListItem' || type === 'checkListItem') {
         if (!block.content || block.content.length === 0) return true;
         if (block.content.length === 1 && block.content[0].type === 'text' && !block.content[0].text) return true;
         return false;
@@ -1198,6 +1231,21 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
       if (e.key === 'Backspace') {
         if (!block) return; // let BlockNote / browser handle when no block context
+
+        // Backspace on an empty NESTED list item → outdent one level (keep the
+        // bullet) instead of letting it collapse to a plain line (#13).
+        const LIST_TYPES = new Set(['bulletListItem', 'numberedListItem', 'checkListItem']);
+        if (LIST_TYPES.has(block.type) && isBlockEmpty(block)) {
+          try {
+            if (editor.canUnnestBlock?.()) {
+              e.preventDefault();
+              e.stopPropagation();
+              editor.unnestBlock();
+              return;
+            }
+          } catch {}
+          // Top-level empty list item → fall through to BlockNote's default.
+        }
 
         // Convert empty heading to paragraph
         if (block.type === 'heading' && isBlockEmpty(block)) {
@@ -2574,10 +2622,21 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   }, [editor, getAiBlockIds, highlightAiBlocks, getFullBlogContext, blogId, handleAIKeep, aiMenuPos, hideSparkle, onTitleChange, replaceImagePlaceholder]);
 
   return (
-    <div className={`blog-editor-wrapper${aiGenerating ? ' ai-editor-locked' : ''}`} ref={wrapperRef} style={{ position: 'relative' }}>
+    <div
+      className={`blog-editor-wrapper${aiGenerating ? ' ai-editor-locked' : ''}`}
+      ref={wrapperRef}
+      style={{ position: 'relative' }}
+      onContextMenu={(e) => {
+        // Keep native menus on links/inputs/toolbars; otherwise show ours (#21).
+        if (e.target.closest('a, input, textarea, button, .bn-link-toolbar, [data-content-type="codeBlock"]')) return;
+        e.preventDefault();
+        setPageMenu({ x: Math.min(e.clientX, window.innerWidth - 230), y: Math.min(e.clientY, window.innerHeight - 320) });
+      }}
+    >
       <BlockNoteView
         editor={editor}
         onChange={handleChange}
+        editable={editable}
         theme={isDark ? "dark" : "light"}
         slashMenu={false}
         filePanel={false}
@@ -2590,6 +2649,41 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         <FormattingToolbarController formattingToolbar={LinkAwareFormattingToolbar} />
         <TableHandlesController />
       </BlockNoteView>
+
+      {/* Page context menu (#21) — quick block inserts on right-click */}
+      {pageMenu && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onMouseDown={() => setPageMenu(null)} onContextMenu={(e) => { e.preventDefault(); setPageMenu(null); }} />
+          <div className="page-context-menu" style={{ position: 'fixed', top: pageMenu.y, left: pageMenu.x, zIndex: 91 }}>
+            {[
+              { label: 'Heading', type: 'heading', props: { level: 2 }, d: 'M6 4v16M18 4v16M6 12h12' },
+              { label: 'Bullet list', type: 'bulletListItem', d: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01' },
+              { label: 'Image', type: 'image', props: { url: '' }, d: 'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M3 3h18v18H3z M21 15l-5-5L5 21' },
+              { label: 'Table', type: 'table', d: 'M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18' },
+              { label: 'Code block', type: 'codeBlock', d: 'M16 18l6-6-6-6M8 6l-6 6 6 6' },
+              { label: 'Quote', type: 'quote', d: 'M3 21c3 0 7-1 7-8V5H3v7h4M14 21c3 0 7-1 7-8V5h-7v7h4' },
+              { label: 'Divider', type: 'divider', d: 'M3 12h18' },
+            ].map((it) => (
+              <button
+                key={it.label}
+                type="button"
+                className="page-context-menu-item"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  try {
+                    const cur = editor.getTextCursorPosition().block;
+                    editor.insertBlocks([{ type: it.type, ...(it.props ? { props: it.props } : {}) }], cur, 'after');
+                  } catch {}
+                  setPageMenu(null);
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={it.d} /></svg>
+                {it.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* @ Mention menu */}
       {showMentionMenu && mentionQuery && (

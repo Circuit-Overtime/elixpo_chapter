@@ -7,6 +7,9 @@ out/
 dist/
 .wrangler/
 wrangler.toml
+# Collab worker config has no secrets (just bindings/ids) and is needed to
+# deploy worker/collab — keep it tracked.
+!worker/collab/wrangler.toml
 .vercel
 __pycache__
 output/
@@ -15,5 +18,8 @@ build/
 .claude/settings.local.json
 .claude/.credentials
 *.tgz
+# Vendored lixsketch package tarball — committed so CI (npm ci) resolves it
+# without the sibling sketch.elixpo checkout. Remove once 5.5.0 is on npm.
+!packages/lixsketch/*.tgz
 *.lixeditor
 .dev.vars

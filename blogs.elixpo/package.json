@@ -30,7 +30,7 @@
     "@blocknote/react": "^0.47.1",
     "@cloudflare/next-on-pages": "^1.13.0",
     "@elixpo/lixeditor": "file:./packages/lixeditor",
-    "@elixpo/lixsketch": "file:../sketch.elixpo/packages/lixsketch/elixpo-lixsketch-5.5.0.tgz",
+    "@elixpo/lixsketch": "file:./packages/lixsketch/elixpo-lixsketch-5.5.0.tgz",
     "cropperjs": "^2.1.0",
     "framer-motion": "^12.38.0",
     "katex": "^0.16.43",
