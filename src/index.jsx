@@ -301,7 +301,7 @@ function FeedCardActions({ post, onHide }) {
     if (cannotRepost) return;
     const was = reposted; setReposted(!was); setRepostCount(c => Math.max(0, c + (was ? -1 : 1)));
     fetch(`/api/blogs/${post.id}/repost`, { method: was ? 'DELETE' : 'POST' })
-      .then(r => r.ok ? r.json() : Promise.reject()).then(d => { setReposted(!!d.reposted); setRepostCount(d.count || 0); })
+      .then(r => r.ok ? r.json() : Promise.reject()).then(d => { setReposted(!!d.reposted); setRepostCount(d.count || 0); if (!was) flashToast('Reposted to your followers'); })
       .catch(() => { setReposted(was); setRepostCount(c => Math.max(0, c + (was ? 1 : -1))); });
   });
 
