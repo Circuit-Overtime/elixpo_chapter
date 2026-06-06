@@ -329,7 +329,7 @@ function renderBlocksToHTML(blocks) {
   return html;
 }
 
-export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount, followSlot = null }) {
+export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount, followSlot = null, memberOnly = false, featured = false, publishedAt = null, headerActions = null }) {
   const { isDark } = useTheme();
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -699,9 +699,25 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       {/* Spacer when emoji overlaps cover */}
       {pageEmoji && coverPreview && <div className="h-8" />}
 
+      {/* Badges — Member-only / Featured */}
+      {(memberOnly || featured) && (
+        <div className="flex items-center gap-2 mt-6 mb-3">
+          {memberOnly && (
+            <span className="flex items-center gap-1.5 text-[13px] px-3 py-1 rounded-full" style={{ border: '1px solid var(--border-default)', color: 'var(--text-body)' }}>
+              <ion-icon name="sparkles" style={{ fontSize: '13px', color: '#e8a840' }} /> Member-only story
+            </span>
+          )}
+          {featured && (
+            <span className="flex items-center gap-1.5 text-[13px] px-3 py-1 rounded-full" style={{ border: '1px solid var(--border-default)', color: 'var(--text-body)' }}>
+              <ion-icon name="ribbon-outline" style={{ fontSize: '14px', color: '#9b7bf7' }} /> Featured
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Title */}
       {title && (
-        <h1 className="text-[2.2em] font-extrabold leading-tight mt-6 mb-2" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>{title}</h1>
+        <h1 className={`text-[2.2em] font-extrabold leading-tight ${(memberOnly || featured) ? 'mt-0' : 'mt-6'} mb-2`} style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>{title}</h1>
       )}
 
       {/* Subtitle */}
@@ -747,13 +763,24 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
               )}
               <span className="text-[var(--text-faint)]">·</span>
               <span>{Math.max(1, Math.ceil((wordCount || 0) / 200))} min read</span>
-              <span className="text-[var(--text-faint)]">·</span>
-              <span>{wordCount || 0} {(wordCount || 0) === 1 ? 'word' : 'words'}</span>
+              {publishedAt && (
+                <>
+                  <span className="text-[var(--text-faint)]">·</span>
+                  <span>{new Date(publishedAt * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                </>
+              )}
             </div>
             {followSlot && <div className="ml-auto flex items-center gap-2">{followSlot}</div>}
           </div>
         );
       })()}
+
+      {/* Header action bar (clap / comment / repost / save / share) */}
+      {headerActions && (
+        <div className="py-2 mb-1" style={{ borderTop: '1px solid var(--divider)', borderBottom: '1px solid var(--divider)' }}>
+          {headerActions}
+        </div>
+      )}
 
       {/* Tags — under author bar */}
       {tags.length > 0 && (

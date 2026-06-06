@@ -2219,6 +2219,20 @@ export default function WritePage({ slugid }) {
             );
           })()}
 
+          {/* Punchline (subtitle) — shown under the title on the published blog */}
+          <div>
+            <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>Punchline <span className="font-normal" style={{ color: 'var(--text-faint)' }}>— a short tagline shown under the title</span></label>
+            <textarea
+              value={subtitle}
+              onChange={(e) => setSubtitle(e.target.value.slice(0, 160))}
+              rows={2}
+              placeholder="e.g. Tested, ranked, and ready to use"
+              className="w-full text-[14px] rounded-lg px-3 py-2 outline-none resize-none"
+              style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
+            />
+            <p className="text-[11px] mt-1 text-right" style={{ color: 'var(--text-faint)' }}>{(subtitle || '').length}/160</p>
+          </div>
+
           {/* Tags */}
           <div>
             <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>Tags (up to 5) <span className="font-normal" style={{ color: 'var(--text-faint)' }}>— press Enter to attach</span></label>
