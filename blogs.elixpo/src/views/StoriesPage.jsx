@@ -9,16 +9,36 @@ import Link from 'next/link';
 const TABS = [
   { label: 'Drafts', icon: 'document-outline' },
   { label: 'Published', icon: 'globe-outline' },
+  { label: 'Reshared', icon: 'repeat-outline' },
 ];
 
-function StoryCard({ story, onDelete }) {
+const SORTS = [
+  { key: '', label: 'Latest' },
+  { key: 'views', label: 'Most viewed' },
+  { key: 'likes', label: 'Most liked' },
+  { key: 'comments', label: 'Most commented' },
+];
+
+function StoryCard({ story, onDelete, reshared }) {
   const isDraft = story.status === 'draft';
   const editUrl = `/edit/${story.slug || story.slugid || story.id}`;
+  const viewUrl = `/${story.author_username || 'blog'}/${story.slug}`;
+  const href = reshared ? viewUrl : editUrl;
 
   return (
     <article className="flex gap-5 py-6 border-b border-[var(--border-default)] last:border-b-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-2">
+          {reshared && (
+            <span className="text-[11px] font-medium flex items-center gap-1 text-[#16a34a] bg-[#16a34a14] px-2 py-0.5 rounded-full">
+              <ion-icon name="repeat-outline" style={{ fontSize: '12px' }} /> Reshared{story.author_name ? ` · ${story.author_name}` : ''}
+            </span>
+          )}
+          {!reshared && story.is_reshared ? (
+            <span className="text-[11px] font-medium flex items-center gap-1 text-[#16a34a] bg-[#16a34a14] px-2 py-0.5 rounded-full">
+              <ion-icon name="repeat-outline" style={{ fontSize: '12px' }} /> Reshared
+            </span>
+          ) : null}
           {isDraft && (
             <span className="text-[11px] font-medium text-[#e8a840] bg-[#e8a84014] px-2 py-0.5 rounded-full">Draft</span>
           )}
@@ -36,7 +56,7 @@ function StoryCard({ story, onDelete }) {
             </span>
           )}
         </div>
-        <Link href={editUrl}>
+        <Link href={href}>
           <h3 className="text-[17px] font-bold leading-[1.35] mb-1 font-serif hover:opacity-75 transition-opacity" style={{ color: 'var(--text-primary)' }}>
             {story.title || 'Untitled'}
           </h3>
@@ -64,14 +84,16 @@ function StoryCard({ story, onDelete }) {
           {story.read_time_minutes > 0 && (
             <span>{story.read_time_minutes} min read</span>
           )}
-          <span className="ml-auto flex items-center gap-2">
-            <Link href={editUrl} className="hover:text-[var(--text-body)] transition-colors p-1" title="Edit">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-            </Link>
-            <button onClick={() => onDelete?.(story)} className="hover:text-red-400 transition-colors p-1" title="Delete">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </button>
-          </span>
+          {!reshared && (
+            <span className="ml-auto flex items-center gap-2">
+              <Link href={editUrl} className="hover:text-[var(--text-body)] transition-colors p-1" title="Edit">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              </Link>
+              <button onClick={() => onDelete?.(story)} className="hover:text-red-400 transition-colors p-1" title="Delete">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
+            </span>
+          )}
         </div>
       </div>
     </article>
@@ -81,21 +103,22 @@ function StoryCard({ story, onDelete }) {
 export default function StoriesPage() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
-  const [blogs, setBlogs] = useState([]);
+  const [sort, setSort] = useState('');
+  const [stories, setStories] = useState([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    fetch('/api/blogs/list')
+    setBlogsLoading(true);
+    const url = activeTab === 0 ? '/api/blogs/list?status=draft'
+      : activeTab === 1 ? `/api/blogs/list?status=published${sort ? `&sort=${sort}` : ''}`
+      : '/api/blogs/list?filter=reshared';
+    fetch(url)
       .then(r => r.ok ? r.json() : { blogs: [] })
-      .then(d => setBlogs(d.blogs || []))
-      .catch(() => {})
+      .then(d => setStories(d.blogs || []))
+      .catch(() => setStories([]))
       .finally(() => setBlogsLoading(false));
-  }, [user]);
-
-  const drafts = blogs.filter(b => b.status === 'draft');
-  const published = blogs.filter(b => b.status === 'published' || b.status === 'unlisted');
-  const stories = activeTab === 0 ? drafts : published;
+  }, [user, activeTab, sort]);
 
   const [confirmTarget, setConfirmTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -142,20 +165,31 @@ export default function StoriesPage() {
     <AppShell>
       <div className="max-w-3xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-[var(--text-muted)]xl font-bold text-[var(--text-primary)]">Your Stories</h1>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Your Stories</h1>
           <Link
             href="/new-blog"
-            className="px-5 py-2 text-[13px] font-medium text-[var(--text-primary)] bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors"
+            className="px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors"
           >
             Write a story
           </Link>
         </div>
 
-        <TabBar
-          tabs={TABS.map((t, i) => ({ ...t, count: i === 0 ? drafts.length : published.length }))}
-          active={activeTab}
-          onChange={setActiveTab}
-        />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+          {activeTab === 1 && (
+            <div className="flex items-center gap-1.5 text-[13px]">
+              <span style={{ color: 'var(--text-faint)' }}>Sort:</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="text-[13px] rounded-lg px-2 py-1 outline-none"
+                style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
+              >
+                {SORTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
 
         {blogsLoading ? (
           <div className="space-y-4">
@@ -164,7 +198,7 @@ export default function StoriesPage() {
         ) : stories.length > 0 ? (
           <div>
             {stories.map((story) => (
-              <StoryCard key={story.id} story={story} onDelete={setConfirmTarget} />
+              <StoryCard key={story.id} story={story} onDelete={setConfirmTarget} reshared={activeTab === 2} />
             ))}
           </div>
         ) : (
@@ -177,14 +211,18 @@ export default function StoriesPage() {
               )}
             </svg>
             <p className="text-[var(--text-muted)] text-[15px] font-medium mb-1.5">
-              {activeTab === 0 ? 'No drafts yet' : 'No published stories yet'}
+              {activeTab === 0 ? 'No drafts yet' : activeTab === 1 ? 'No published stories yet' : 'No reshared posts yet'}
             </p>
             <p className="text-[var(--text-muted)] text-[13px] mb-6">
-              {activeTab === 0 ? 'Start writing and your drafts will show up here.' : 'Once you publish a story, it will appear here.'}
+              {activeTab === 0 ? 'Start writing and your drafts will show up here.'
+                : activeTab === 1 ? 'Once you publish a story, it will appear here.'
+                : 'Posts you repost from others will appear here.'}
             </p>
-            <Link href="/new-blog" className="px-5 py-2 text-[13px] font-medium text-[var(--text-primary)] bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
-              Write a story
-            </Link>
+            {activeTab !== 2 && (
+              <Link href="/new-blog" className="px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
+                Write a story
+              </Link>
+            )}
           </div>
         )}
       </div>

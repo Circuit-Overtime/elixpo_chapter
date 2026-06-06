@@ -43,8 +43,31 @@ export async function POST(request, { params }) {
     const own = await isOwnBlog(db, slugid, session.userId);
     if (own.notFound) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
     if (own.own) return NextResponse.json({ error: "You can't repost your own blog" }, { status: 400 });
+    const wasNew = await db.prepare('SELECT 1 FROM reposts WHERE user_id = ? AND blog_id = ?').bind(session.userId, slugid).first();
     await db.prepare('INSERT OR IGNORE INTO reposts (user_id, blog_id) VALUES (?, ?)').bind(session.userId, slugid).run();
     const countRow = await db.prepare('SELECT COUNT(*) AS c FROM reposts WHERE blog_id = ?').bind(slugid).first();
+
+    // Notify the blog owner (best-effort, only on a fresh repost).
+    if (!wasNew) {
+      try {
+        const { notify } = await import('../../../../../lib/notify');
+        const blog = await db.prepare(
+          'SELECT b.author_id, b.slug, u.username FROM blogs b JOIN users u ON u.id = b.author_id WHERE b.id = ?'
+        ).bind(slugid).first();
+        if (blog && blog.author_id !== session.userId) {
+          const actor = session.profile || {};
+          await notify(db, {
+            userId: blog.author_id,
+            type: 'repost',
+            actorId: session.userId,
+            actorName: actor.display_name || actor.username || 'Someone',
+            actorAvatar: actor.avatar_url || '',
+            targetUrl: `/${blog.username}/${blog.slug}`,
+          });
+        }
+      } catch {}
+    }
+
     return NextResponse.json({ reposted: true, count: countRow?.c || 0 });
   } catch {
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
