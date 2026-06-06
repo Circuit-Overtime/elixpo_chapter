@@ -1457,11 +1457,12 @@ export default function WritePage({ slugid }) {
                         if (!canPublish) return;
                         if (isPublished) {
                           // No edits since publish → skip the update entirely, just view it.
+                          // Otherwise open the publish panel; the final confirm happens there.
                           if (hasNoChanges()) {
                             bypassUnloadRef.current = true;
                             window.location.href = publishedUrl;
                           } else {
-                            setShowPublishConfirm(true);
+                            setShowPublishPanel(true);
                           }
                         } else {
                           setShowPublishPanel(!showPublishPanel);
@@ -2311,7 +2312,7 @@ export default function WritePage({ slugid }) {
         {/* Bottom actions */}
         <div className="p-5 space-y-2" style={{ borderTop: '1px solid var(--border-default)' }}>
           <button
-            onClick={handlePublish}
+            onClick={() => { if (isPublished) setShowPublishConfirm(true); else handlePublish(); }}
             disabled={!title.trim() || publishing || !hasUnsavedEdits}
             className="w-full py-2.5 bg-[#9b7bf7] text-white font-bold rounded-xl text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
@@ -2416,7 +2417,7 @@ export default function WritePage({ slugid }) {
             ? 'This will push your changes live. Readers will see the updated version immediately.'
             : 'Your blog will be visible to everyone. You can unpublish it later from the publish settings.'}
           confirmLabel={isPublished ? 'Update' : 'Publish'}
-          onConfirm={() => { setShowPublishConfirm(false); setShowPublishPanel(true); }}
+          onConfirm={() => { setShowPublishConfirm(false); handlePublish(); }}
           onCancel={() => setShowPublishConfirm(false)}
         />
       )}
