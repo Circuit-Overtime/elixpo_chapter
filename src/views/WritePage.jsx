@@ -755,6 +755,14 @@ export default function WritePage({ slugid }) {
             setDraftLoading(false);
             return;
           }
+          // 403 with no invite → you can't edit this blog. Don't show a blank
+          // editor; send the reader to the home feed.
+          window.location.href = '/';
+          return;
+        } else if (res.status === 401) {
+          // Not signed in (middleware should catch this first) → sign-in, return here after.
+          window.location.href = `/sign-in?next=${encodeURIComponent('/edit/' + slugid)}`;
+          return;
         }
       } catch { /* offline or brand-new blog */ }
 
