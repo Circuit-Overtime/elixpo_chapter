@@ -37,7 +37,9 @@ export async function POST(request: NextRequest) {
                 )
                 .bind(userId)
                 .all();
-            connectedClientIds = (conn.results || []).map((r: any) => r.client_id);
+            connectedClientIds = (conn.results || []).map(
+                (r: any) => r.client_id,
+            );
         } catch {}
 
         // Delete in order: dependent tables first, then user
@@ -71,8 +73,14 @@ export async function POST(request: NextRequest) {
 
         // Notify connected first-party apps to hard-purge the user's data.
         try {
-            const { fireRevocationToAll } = await import("@/lib/revocation-webhook");
-            await fireRevocationToAll(connectedClientIds, userId, "user.deleted");
+            const { fireRevocationToAll } = await import(
+                "@/lib/revocation-webhook"
+            );
+            await fireRevocationToAll(
+                connectedClientIds,
+                userId,
+                "user.deleted",
+            );
         } catch {}
 
         // Clear auth cookies

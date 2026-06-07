@@ -23,8 +23,10 @@ export default function AdminLogin() {
     const [loading, setLoading] = useState(false);
     const [checking, setChecking] = useState(true);
 
+    // Auth check uses window.location so router isn't referenced inside the
+    // effect (prevents eslint-react-hooks autofix from looping the effect).
     useEffect(() => {
-        const checkAuth = async () => {
+        (async () => {
             try {
                 const response = await fetch("/api/auth/me", {
                     credentials: "include",
@@ -32,7 +34,7 @@ export default function AdminLogin() {
                 if (response.ok) {
                     const user: any = await response.json();
                     if (user.isAdmin) {
-                        router.push("/admin");
+                        window.location.assign("/admin");
                         return;
                     }
                 }
@@ -41,10 +43,8 @@ export default function AdminLogin() {
             } finally {
                 setChecking(false);
             }
-        };
-
-        checkAuth();
-    }, [router]);
+        })();
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

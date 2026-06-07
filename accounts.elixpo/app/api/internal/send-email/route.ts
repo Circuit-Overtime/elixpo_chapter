@@ -113,7 +113,7 @@ async function sendAdminNotificationEmail(
         <p style="color: #f1f5f9; margin: 4px 0; font-weight: 600;">${resourceName}</p>
       </div>`
               : ""
-      }
+}
       <hr style="border-color: #1e293b; margin: 24px 0;" />
       <p style="color: #475569; font-size: 12px;">Elixpo Accounts — Admin Notifications</p>
     </div>

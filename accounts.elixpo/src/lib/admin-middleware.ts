@@ -26,7 +26,7 @@ export async function verifyAdminSession(
         }
 
         const payload = await verifyJWT(token);
-        if (!payload || payload.type !== "access") {
+        if (payload?.type !== "access") {
             return null;
         }
 

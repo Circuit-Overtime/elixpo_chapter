@@ -26,12 +26,19 @@ export async function GET(request: NextRequest) {
             `username:taken:${username}`,
         );
         if (cached?.taken) {
-            return NextResponse.json({ available: false, reason: "That username is taken." });
+            return NextResponse.json({
+                available: false,
+                reason: "That username is taken.",
+            });
         }
 
         const db = await getDatabase();
         const taken = await isUsernameTaken(db, username);
-        await cacheSet(`username:taken:${username}`, { taken }, taken ? 86400 : 30);
+        await cacheSet(
+            `username:taken:${username}`,
+            { taken },
+            taken ? 86400 : 30,
+        );
 
         return NextResponse.json(
             taken
@@ -41,6 +48,9 @@ export async function GET(request: NextRequest) {
     } catch {
         // On infra failure, don't claim availability — let the authoritative
         // UNIQUE constraint reject at write time.
-        return NextResponse.json({ available: false, reason: "Could not check right now." });
+        return NextResponse.json({
+            available: false,
+            reason: "Could not check right now.",
+        });
     }
 }

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
     title: {
-        default: "Elixpo Accounts — Secure Sign In & Authentication",
+        default: "Elixpo Accounts: Secure Sign In & Authentication",
         template: "%s | Elixpo Accounts",
     },
     description:
@@ -45,24 +45,24 @@ export const metadata: Metadata = {
         locale: "en_US",
         url: "https://accounts.elixpo.com",
         siteName: "Elixpo Accounts",
-        title: "Elixpo Accounts — Secure Sign In & Authentication",
+        title: "Elixpo Accounts: Secure Sign In & Authentication",
         description:
             "Sign in to Elixpo Accounts with Google, GitHub, or email. Secure OAuth 2.0 single sign-on for all Elixpo services.",
         images: [
             {
-                url: "/LOGO/og-image.png",
-                width: 1200,
-                height: 630,
-                alt: "Elixpo Accounts — Secure Sign In & Authentication",
+                url: "/og-image.png",
+                width: 1845,
+                height: 880,
+                alt: "Elixpo Accounts: Secure Sign In & Authentication",
             },
         ],
     },
     twitter: {
-        card: "summary",
-        title: "Elixpo Accounts — Secure Sign In & Authentication",
+        card: "summary_large_image",
+        title: "Elixpo Accounts: Secure Sign In & Authentication",
         description:
             "Sign in with Google, GitHub, or email. Secure OAuth 2.0 authentication for all Elixpo services.",
-        images: ["/LOGO/og-image.png"],
+        images: ["/og-image.png"],
     },
     icons: {
         icon: "/LOGO/logo.png",

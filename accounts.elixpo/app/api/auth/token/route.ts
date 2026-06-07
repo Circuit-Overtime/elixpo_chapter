@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
 
             try {
                 const payload = await verifyJWT(refresh_token);
-                if (!payload || payload.type !== "refresh") {
+                if (payload?.type !== "refresh") {
                     return NextResponse.json(
                         {
                             error: "invalid_grant",

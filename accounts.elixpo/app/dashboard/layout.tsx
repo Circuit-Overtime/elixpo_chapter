@@ -55,18 +55,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const [authChecked, setAuthChecked] = useState(false);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
+    // Auth check. Uses window.location for redirects so router isn't
+    // referenced inside the effect body — that way eslint-react-hooks can't
+    // autofix `router` into the deps array (which loops because useRouter
+    // returns a new ref on every render under Next 15.2 + React 19).
     useEffect(() => {
         fetch("/api/auth/me", { credentials: "include" })
             .then((res) => {
                 if (res.ok) return res.json();
-                router.push("/login");
+                window.location.assign("/login");
                 return null;
             })
             .then((data: any) => {
                 if (!data) return;
-                // Handle is mandatory — bounce to setup if it's not set yet.
                 if (!data.username) {
-                    router.replace("/setup-name");
+                    window.location.replace("/setup-name");
                     return;
                 }
                 if (data.email) setUserEmail(data.email);
@@ -75,9 +78,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 setAuthChecked(true);
             })
             .catch(() => {
-                router.push("/login");
+                window.location.assign("/login");
             });
-    }, [router]);
+    }, []);
 
     const handleLogout = async () => {
         setAnchorEl(null);

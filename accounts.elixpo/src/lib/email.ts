@@ -341,7 +341,7 @@ export const emailTemplates = {
       </div>
       `
               : ""
-      }
+}
 
       <div class="notice">
         <p><strong>Security notice:</strong> Do not share this code with anyone. Elixpo staff will never ask for your verification code by phone, email, or chat.</p>

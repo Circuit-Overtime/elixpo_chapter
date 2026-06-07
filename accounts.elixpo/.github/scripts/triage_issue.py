@@ -228,21 +228,21 @@ def main() -> None:
 
     is_org_member = ISSUE_AUTHOR in ORG_MEMBERS
     if is_org_member:
-        print(f"Author @{ISSUE_AUTHOR} is an org member — forcing category to Dev")
+        print(f"Author @{ISSUE_AUTHOR} is an org member — auto-assigning")
         try:
             assign_issue(ISSUE_NUMBER, ISSUE_AUTHOR)
         except Exception as exc:
             print(f"[warn] Assign failed: {exc}")
 
     # ── Step 1: LLM triage ────────────────────────────────────────────────
-    category = "Dev" if is_org_member else DEFAULT_CATEGORY
+    category = DEFAULT_CATEGORY
     priority = DEFAULT_PRIORITY
     summary = DEFAULT_SUMMARY
 
     try:
         print("Calling LLM for triage...")
         llm_result = triage_llm(
-            issue_title, issue_body, include_category=not is_org_member
+            issue_title, issue_body, include_category=True  
         )
         print(f"LLM response: {json.dumps(llm_result)}")
 
@@ -250,9 +250,7 @@ def main() -> None:
         raw_priority = llm_result.get("priority", DEFAULT_PRIORITY)
         raw_summary = llm_result.get("summary", DEFAULT_SUMMARY)
 
-        if is_org_member:
-            category = "Dev"  # Always force Dev for org members
-        elif raw_category in CATEGORIES:
+        if raw_category in CATEGORIES:
             category = raw_category
         else:
             print(

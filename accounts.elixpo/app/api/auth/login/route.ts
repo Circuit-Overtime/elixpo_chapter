@@ -192,7 +192,13 @@ export async function POST(request: NextRequest) {
             }
 
             if (!user) {
-                user = { id: generateUUID(), email };
+                return NextResponse.json(
+                    {
+                        error: "No account found. Please register first.",
+                        action: "register",
+                    },
+                    { status: 404 },
+                );
             }
         } else {
             return NextResponse.json(

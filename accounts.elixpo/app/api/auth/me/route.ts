@@ -35,7 +35,7 @@ async function getUserIdentity(db: D1Database, userId: string) {
 async function tryAutoRefresh(_request: NextRequest, refreshToken: string) {
     try {
         const payload = await verifyJWT(refreshToken);
-        if (!payload || payload.type !== "refresh") {
+        if (payload?.type !== "refresh") {
             return NextResponse.json(
                 { error: "Invalid refresh token" },
                 { status: 401 },
@@ -174,15 +174,11 @@ export async function GET(request: NextRequest) {
         const payload = await verifyJWT(accessToken);
 
         // Access token expired but refresh token cookie exists — auto-refresh
-        if (
-            (!payload || payload.type !== "access") &&
-            refreshTokenCookie &&
-            cookieToken
-        ) {
+        if (payload?.type !== "access" && refreshTokenCookie && cookieToken) {
             return await tryAutoRefresh(request, refreshTokenCookie);
         }
 
-        if (!payload || payload.type !== "access") {
+        if (payload?.type !== "access") {
             return NextResponse.json(
                 { error: "Invalid token" },
                 { status: 401 },
@@ -264,7 +260,7 @@ export async function PATCH(request: NextRequest) {
         }
 
         const payload = await verifyJWT(accessToken);
-        if (!payload || payload.type !== "access") {
+        if (payload?.type !== "access") {
             return NextResponse.json(
                 { error: "Invalid token" },
                 { status: 401 },
@@ -411,14 +407,12 @@ export async function PATCH(request: NextRequest) {
                             { status: 400 },
                         );
                     }
-                    const changeCount =
-                        currentUser.username_change_count || 0;
+                    const changeCount = currentUser.username_change_count || 0;
                     const lastChanged = currentUser.username_changed_at
                         ? new Date(currentUser.username_changed_at).getTime()
                         : 0;
                     const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
-                    const windowExpired =
-                        Date.now() - lastChanged > twoWeeksMs;
+                    const windowExpired = Date.now() - lastChanged > twoWeeksMs;
                     const effectiveCount = windowExpired ? 0 : changeCount;
                     if (effectiveCount >= 2) {
                         const resetDate = new Date(lastChanged + twoWeeksMs);
