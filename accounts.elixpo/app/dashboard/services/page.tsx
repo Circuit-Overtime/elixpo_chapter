@@ -3,7 +3,7 @@
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { Box, Button, Chip, CircularProgress, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
 
 interface ConnectedService {
@@ -70,7 +70,7 @@ function ServiceIcon({
 }
 
 // Only allow post-revoke redirects back to first-party elixpo.com hosts.
-function isSafeReturn(url: string): boolean {
+function _isSafeReturn(url: string): boolean {
     try {
         const u = new URL(url);
         return (
@@ -81,6 +81,19 @@ function isSafeReturn(url: string): boolean {
         return false;
     }
 }
+
+const getSafeReturnPath = (value: string | null): string | null => {
+    if (!value || typeof window === "undefined") return null;
+    try {
+        const url = new URL(value, window.location.origin);
+        const isHttp = url.protocol === "http:" || url.protocol === "https:";
+        if (!isHttp) return null;
+        if (url.origin !== window.location.origin) return null;
+        return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+        return null;
+    }
+};
 
 const ServicesPage = () => {
     const [services, setServices] = useState<ConnectedService[]>([]);
@@ -96,6 +109,7 @@ const ServicesPage = () => {
         const sp = new URLSearchParams(window.location.search);
         const revoke = sp.get("revoke");
         const returnTo = sp.get("return_to");
+        const safeReturnPath = getSafeReturnPath(returnTo);
         if (!revoke) return;
         setParamHandled(true);
 
@@ -108,7 +122,7 @@ const ServicesPage = () => {
         );
         if (!target) {
             // Not connected (or already revoked) — just send them back.
-            if (returnTo && isSafeReturn(returnTo)) window.location.href = returnTo;
+            if (safeReturnPath) window.location.href = safeReturnPath;
             return;
         }
         (async () => {
@@ -126,8 +140,8 @@ const ServicesPage = () => {
                     setServices((prev) =>
                         prev.filter((s) => s.client_id !== target.client_id),
                     );
-                    if (returnTo && isSafeReturn(returnTo)) {
-                        window.location.href = returnTo;
+                    if (safeReturnPath) {
+                        window.location.href = safeReturnPath;
                         return;
                     }
                 }
@@ -139,11 +153,10 @@ const ServicesPage = () => {
     }, [loading, services, paramHandled]);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => {
-        fetchServices();
-    }, []);
 
-    const fetchServices = async () => {
+    // useCallback gives a stable reference so the effect doesn't loop when
+    // eslint-react-hooks puts fetchServices in deps.
+    const fetchServices = useCallback(async () => {
         try {
             setLoading(true);
             const res = await fetch("/api/auth/connected-services", {
@@ -158,7 +171,11 @@ const ServicesPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchServices();
+    }, [fetchServices]);
 
     const revokeService = async (clientId: string) => {
         if (

@@ -36,7 +36,7 @@ function slugifyHandle(s: string): string {
 }
 
 const SetupNameContent = () => {
-    const router = useRouter();
+    const _router = useRouter();
     const searchParams = useSearchParams();
     const next = searchParams.get("next");
     const [username, setUsername] = useState("");
@@ -53,6 +53,9 @@ const SetupNameContent = () => {
         severity: "success" | "error";
     }>({ open: false, message: "", severity: "success" });
 
+    // Uses window.location for the catch branch so router isn't referenced
+    // inside the effect — prevents eslint-react-hooks from autofixing it
+    // back into deps (which would loop the /me fetch).
     useEffect(() => {
         (async () => {
             try {
@@ -66,7 +69,6 @@ const SetupNameContent = () => {
                     return;
                 }
                 const data: any = await res.json();
-                // Already has a handle → setup complete, move on.
                 if (data.username) {
                     window.location.href = next || "/dashboard/oauth-apps";
                     return;
@@ -75,13 +77,12 @@ const SetupNameContent = () => {
                 setDisplayName(dn);
                 setUsername(slugifyHandle(dn));
             } catch {
-                router.push("/login");
+                window.location.href = "/login";
             } finally {
                 setPageLoading(false);
             }
         })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [next]);
 
     // Debounced availability check.
     useEffect(() => {
@@ -113,11 +114,19 @@ const SetupNameContent = () => {
         const dn = displayName.trim();
         const handle = username.trim().toLowerCase();
         if (dn.length < 2 || dn.length > 32) {
-            setToast({ open: true, message: "Display name must be 2-32 characters.", severity: "error" });
+            setToast({
+                open: true,
+                message: "Display name must be 2-32 characters.",
+                severity: "error",
+            });
             return;
         }
         if (check.state !== "available") {
-            setToast({ open: true, message: check.reason || "Pick an available username.", severity: "error" });
+            setToast({
+                open: true,
+                message: check.reason || "Pick an available username.",
+                severity: "error",
+            });
             return;
         }
 
@@ -230,18 +239,26 @@ const SetupNameContent = () => {
                     value={username}
                     onChange={(e) =>
                         setUsername(
-                            e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+                            e.target.value
+                                .toLowerCase()
+                                .replace(/[^a-z0-9_-]/g, ""),
                         )
                     }
                     placeholder="e.g. anwesha, swift-fox"
                     helperText={handleHelper}
-                    FormHelperTextProps={{ sx: { color: `${handleHelperColor} !important` } }}
+                    FormHelperTextProps={{
+                        sx: { color: `${handleHelperColor} !important` },
+                    }}
                     sx={{ ...textFieldSx, mb: 2.5 }}
                     disabled={loading}
                     inputProps={{ maxLength: 32 }}
                     InputProps={{
                         startAdornment: (
-                            <Typography sx={{ color: "rgba(255,255,255,0.4)", mr: 0.5 }}>@</Typography>
+                            <Typography
+                                sx={{ color: "rgba(255,255,255,0.4)", mr: 0.5 }}
+                            >
+                                @
+                            </Typography>
                         ),
                     }}
                 />

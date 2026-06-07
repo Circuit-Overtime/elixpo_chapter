@@ -4,7 +4,7 @@
 
 <br/>
 
-<img src="https://github.com/user-attachments/assets/a2057d99-fc2d-4e19-ab16-661a403bc0ec" alt="Elixpo Accounts Banner" width="620"/>
+<img src="https://raw.githubusercontent.com/elixpo/accounts.elixpo/main/public/og-image.png" alt="Elixpo Accounts Banner" width="720"/>
 
 <br/><br/>
 

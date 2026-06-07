@@ -10,7 +10,7 @@ async function getAuth(request: NextRequest) {
         request.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) return null;
     const payload = await verifyJWT(token);
-    if (!payload || payload.type !== "access") return null;
+    if (payload?.type !== "access") return null;
     return payload;
 }
 
@@ -85,7 +85,9 @@ export async function DELETE(request: NextRequest) {
             .run();
 
         // Notify the app to purge the user's data (first-party apps only).
-        const { fireRevocationWebhook } = await import("@/lib/revocation-webhook");
+        const { fireRevocationWebhook } = await import(
+            "@/lib/revocation-webhook"
+        );
         await fireRevocationWebhook(clientId, auth.sub, "app.revoked");
 
         return NextResponse.json({ success: true });

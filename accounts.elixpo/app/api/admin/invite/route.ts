@@ -190,7 +190,7 @@ export async function PATCH(request: NextRequest) {
 
         const { verifyJWT } = await import("@/lib/jwt");
         const payload = await verifyJWT(cookieToken);
-        if (!payload || payload.type !== "access") {
+        if (payload?.type !== "access") {
             return NextResponse.json(
                 { error: "Invalid session" },
                 { status: 401 },

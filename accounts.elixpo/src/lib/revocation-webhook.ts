@@ -56,7 +56,12 @@ export async function fireRevocationWebhook(
     if (!target) return false;
 
     const timestamp = new Date().toISOString();
-    const payload = JSON.stringify({ event, user_id: userId, client_id: clientId, timestamp });
+    const payload = JSON.stringify({
+        event,
+        user_id: userId,
+        client_id: clientId,
+        timestamp,
+    });
 
     try {
         const signature = await hmacHex(payload, target.secret);

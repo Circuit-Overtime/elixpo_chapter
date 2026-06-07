@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
         }
 
         const jwtPayload = await verifyJWT(accessToken);
-        if (!jwtPayload || jwtPayload.type !== "access") {
+        if (jwtPayload?.type !== "access") {
             return NextResponse.json(
                 {
                     error: "unauthorized",

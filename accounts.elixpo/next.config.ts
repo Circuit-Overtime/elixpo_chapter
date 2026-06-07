@@ -2,6 +2,30 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
     output: "standalone",
+    // MUI v7's prebuilt ESM has a circular-init hazard that surfaces during
+    // Next 15's page-data collection (TypeError: unstable_createUseMediaQuery
+    // is not a function). Re-transpiling through Next's webpack pipeline
+    // resolves the eval order.
+    transpilePackages: [
+        "@mui/material",
+        "@mui/system",
+        "@mui/icons-material",
+        "@mui/utils",
+        "@mui/private-theming",
+        "@mui/styled-engine",
+    ],
+    // Rewrite `import { Box } from "@mui/material"` to
+    // `import Box from "@mui/material/Box"` so we never load the barrel
+    // module. The barrel is what triggers the circular init that crashes
+    // page-data collection with "unstable_createUseMediaQuery is not a function".
+    modularizeImports: {
+        "@mui/material": {
+            transform: "@mui/material/{{member}}",
+        },
+        "@mui/icons-material": {
+            transform: "@mui/icons-material/{{member}}",
+        },
+    },
     eslint: {
         ignoreDuringBuilds: true,
     },

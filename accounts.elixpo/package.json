@@ -1,7 +1,39 @@
 {
   "name": "elixpo-accounts",
-  "version": "0.1.0",
+  "version": "1.2.15",
   "private": true,
+  "description": "Elixpo Accounts — open OAuth 2.0 single sign-on built on Cloudflare's edge. One identity for the Elixpo ecosystem and any third-party app.",
+  "homepage": "https://accounts.elixpo.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elixpo/accounts.elixpo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/elixpo/accounts.elixpo/issues"
+  },
+  "author": {
+    "name": "Elixpo",
+    "url": "https://elixpo.com"
+  },
+  "contributors": [
+    {
+      "name": "Circuit-Overtime",
+      "url": "https://github.com/Circuit-Overtime"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "oauth",
+    "oauth2",
+    "sso",
+    "single-sign-on",
+    "authentication",
+    "identity-provider",
+    "cloudflare",
+    "edge",
+    "nextjs",
+    "elixpo"
+  ],
   "engines": {
     "node": ">=22"
   },
@@ -28,8 +60,9 @@
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.7",
-    "@mui/material": "^7.3.7",
+    "@mui/icons-material": "7.0.2",
+    "@mui/material": "7.0.2",
+    "@mui/system": "7.0.2",
     "@simplewebauthn/server": "^13.0.0",
     "biome": "^0.3.3",
     "crypto": "^1.0.1",

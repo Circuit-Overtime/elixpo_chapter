@@ -228,8 +228,7 @@ function AuthorizeContent() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background:
-                        "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
+                    background: "transparent",
                     padding: 16,
                 }}
             >
@@ -308,8 +307,7 @@ function AuthorizeContent() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background:
-                        "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
+                    background: "transparent",
                 }}
             >
                 <div style={{ textAlign: "center" }}>
@@ -341,8 +339,7 @@ function AuthorizeContent() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background:
-                    "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
+                background: "transparent",
                 padding: 16,
             }}
         >

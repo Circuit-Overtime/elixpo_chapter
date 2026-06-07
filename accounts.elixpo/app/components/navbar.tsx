@@ -1,9 +1,21 @@
 "use client";
 
-import { AppBar, Box, Button, Chip, Toolbar, Typography } from "@mui/material";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import LoginIcon from "@mui/icons-material/Login";
+import {
+    AppBar,
+    Box,
+    Button,
+    Chip,
+    IconButton,
+    Toolbar,
+    Tooltip,
+    Typography,
+} from "@mui/material";
 import Link from "next/link";
 
 const ACCENT = "#9b7bf7";
+const REPO_URL = "https://github.com/elixpo/accounts.elixpo";
 
 const Navbar = () => (
     <AppBar
@@ -22,6 +34,7 @@ const Navbar = () => (
                 width: "100%",
                 mx: "auto",
                 px: { xs: 2, md: 4 },
+                minHeight: { xs: 60, md: 68 },
             }}
         >
             <Link
@@ -69,24 +82,68 @@ const Navbar = () => (
                 />
             </Link>
 
-            <Button
-                component={Link}
-                href="/login"
-                disableElevation
+            <Box
                 sx={{
-                    textTransform: "none",
-                    fontWeight: 600,
-                    fontSize: "0.9rem",
-                    color: "#fff",
-                    bgcolor: ACCENT,
-                    borderRadius: "8px",
-                    px: 2.2,
-                    py: 0.7,
-                    "&:hover": { bgcolor: "#b69aff" },
+                    display: "flex",
+                    alignItems: "center",
+                    gap: { xs: 1, md: 1.5 },
                 }}
             >
-                Sign in
-            </Button>
+                <Tooltip title="View source on GitHub" arrow>
+                    <IconButton
+                        component="a"
+                        href={REPO_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="View source on GitHub"
+                        sx={{
+                            color: "rgba(244,244,246,0.85)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: "10px",
+                            width: 38,
+                            height: 38,
+                            transition: "all 0.18s ease",
+                            "&:hover": {
+                                color: "#fff",
+                                borderColor: "rgba(155,123,247,0.45)",
+                                background: "rgba(155,123,247,0.08)",
+                            },
+                        }}
+                    >
+                        <GitHubIcon sx={{ fontSize: 20 }} />
+                    </IconButton>
+                </Tooltip>
+
+                <Button
+                    component={Link}
+                    href="/login"
+                    disableElevation
+                    startIcon={
+                        <LoginIcon sx={{ fontSize: "1rem !important" }} />
+                    }
+                    sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: "0.9rem",
+                        color: "#fff",
+                        background:
+                            "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                        borderRadius: "10px",
+                        px: 2.4,
+                        py: 0.9,
+                        boxShadow: "0 4px 14px rgba(155,123,247,0.32)",
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                            background:
+                                "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                            boxShadow: "0 6px 20px rgba(155,123,247,0.45)",
+                            transform: "translateY(-1px)",
+                        },
+                    }}
+                >
+                    Sign in
+                </Button>
+            </Box>
         </Toolbar>
     </AppBar>
 );

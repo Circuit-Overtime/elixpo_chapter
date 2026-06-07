@@ -32,7 +32,7 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface ApiKey {
     id: string;
@@ -91,13 +91,10 @@ export default function ApiKeysPage() {
         setFormData((prev) => ({ ...prev, scopes: defaultScopes }));
     }, []);
 
-    // Fetch API keys on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => {
-        fetchApiKeys();
-    }, []);
-
-    const fetchApiKeys = async () => {
+    // useCallback gives a stable reference. Declared BEFORE the useEffect
+    // so TS doesn't complain about block-scoped use-before-decl, and so
+    // eslint-react-hooks autofix can put it in deps without causing a loop.
+    const fetchApiKeys = useCallback(async () => {
         try {
             setLoading(true);
             const token = localStorage.getItem("jwt_token");
@@ -115,9 +112,11 @@ export default function ApiKeysPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    
+    useEffect(() => {
+        fetchApiKeys();
+    }, [fetchApiKeys]);
 
     const handleCreateApiKey = async () => {
         if (!formData.name.trim()) {

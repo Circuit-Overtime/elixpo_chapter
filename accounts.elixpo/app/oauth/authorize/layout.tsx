@@ -103,7 +103,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
         fetchUnreadCount();
         const interval = setInterval(fetchUnreadCount, 60000);
         return () => clearInterval(interval);
-    }, [fetchUnreadCount]);
+    }, [fetchUnreadCount]); // mount-only; inline fetches recreated each render cause a loop
 
     const handleNotifOpen = async (event: React.MouseEvent<HTMLElement>) => {
         setNotifAnchorEl(event.currentTarget);

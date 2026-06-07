@@ -361,7 +361,9 @@ export default function WebhookDetailPage() {
                             border: "1px solid rgba(155, 123, 247,0.3)",
                             fontWeight: 600,
                             textTransform: "none",
-                            "&:hover": { background: "rgba(155, 123, 247,0.25)" },
+                            "&:hover": {
+                                background: "rgba(155, 123, 247,0.25)",
+                            },
                         }}
                     >
                         {saving ? "Saving..." : "Save Changes"}

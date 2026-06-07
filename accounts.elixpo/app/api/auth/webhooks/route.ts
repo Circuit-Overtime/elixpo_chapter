@@ -10,7 +10,7 @@ async function getAuth(request: NextRequest) {
         request.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) return null;
     const payload = await verifyJWT(token);
-    if (!payload || payload.type !== "access") return null;
+    if (payload?.type !== "access") return null;
     return payload;
 }
 

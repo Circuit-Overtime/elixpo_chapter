@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
 
         // Verify the token is valid
         const payload = await verifyJWT(accessToken);
-        if (!payload || payload.type !== "access") {
+        if (payload?.type !== "access") {
             // Token present but invalid/expired — same as not logged in
             const pendingParams = new URLSearchParams({
                 response_type: responseType,

@@ -139,7 +139,7 @@ function ForgotPasswordContent() {
         e.preventDefault();
         setError("");
 
-        if (!otp || otp.length !== 6) {
+        if (otp?.length !== 6) {
             setError("Please enter a valid 6-digit OTP");
             return;
         }
@@ -221,8 +221,7 @@ function ForgotPasswordContent() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background:
-                        "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
+                    background: "transparent",
                 }}
             >
                 <CircularProgress sx={{ color: "#9b7bf7" }} />
@@ -237,8 +236,7 @@ function ForgotPasswordContent() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background:
-                    "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
+                background: "transparent",
                 p: 2,
             }}
         >
@@ -485,8 +483,7 @@ export default function ForgotPasswordPage() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        background:
-                            "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
+                        background: "transparent",
                     }}
                 >
                     <CircularProgress sx={{ color: "#9b7bf7" }} />
