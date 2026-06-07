@@ -1114,7 +1114,7 @@ export default function SettingsPage() {
   const { user, loading, refetchUser } = useAuth();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const initialTab = tabParam ? TABS.findIndex(t => t.toLowerCase() === tabParam.toLowerCase()) : 0;
+  const initialTab = tabParam ? TABS.findIndex(t => t.label.toLowerCase() === tabParam.toLowerCase()) : 0;
   const [activeTab, setActiveTab] = useState(initialTab >= 0 ? initialTab : 0);
 
   if (loading) {
