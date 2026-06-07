@@ -1,0 +1,279 @@
+"use client"
+
+import useSketchStore, { TOOLS } from '../../store/useSketchStore'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from '../../hooks/useTranslation'
+
+// Origin of the icons API. When the package runs same-origin with
+// sketch.elixpo this stays empty (relative path). External hosts (e.g.
+// blogs.elixpo) point at the public sketch.elixpo deploy via
+//   window.__lixsketchIconsOrigin = 'https://sketch.elixpo.com'
+// The endpoints are CORS-enabled so any origin can fetch.
+const DEFAULT_ICONS_ORIGIN = 'https://sketch.elixpo.com';
+function getIconsBaseUrl() {
+  if (typeof window === 'undefined') return '';
+  if (window.__lixsketchIconsOrigin) return window.__lixsketchIconsOrigin;
+  // Same-origin if the host is sketch.elixpo itself; otherwise default to prod.
+  if (typeof location !== 'undefined' && /sketch\.elixpo/.test(location.host)) return '';
+  return DEFAULT_ICONS_ORIGIN;
+}
+
+const iconResultCache = new Map()
+
+const CATEGORIES = [
+  { value: null, label: 'All', icon: 'bxs-grid-alt' },
+  { value: 'tech', label: 'Tech', icon: 'bxs-chip' },
+  { value: 'devops', label: 'DevOps', icon: 'bxs-server' },
+  { value: 'design', label: 'Design', icon: 'bxs-palette' },
+  { value: 'social media', label: 'Social', icon: 'bxs-share-alt' },
+  { value: 'navigation', label: 'Nav', icon: 'bxs-navigation' },
+  { value: 'business', label: 'Business', icon: 'bxs-briefcase' },
+  { value: 'media', label: 'Media', icon: 'bxs-videos' },
+]
+
+// Normalize an SVG string so it renders fully within a fixed box.
+// Ensures the inner <svg> has width/height="100%" and a viewBox.
+function normalizeSvg(raw) {
+  if (!raw) return raw
+  // Parse to a temp element so we can inspect attributes
+  const tmp = document.createElement('div')
+  tmp.innerHTML = raw
+  const svgEl = tmp.querySelector('svg')
+  if (!svgEl) return raw
+
+  // Ensure viewBox exists — derive from width/height if missing
+  if (!svgEl.getAttribute('viewBox')) {
+    const w = parseFloat(svgEl.getAttribute('width')) || 24
+    const h = parseFloat(svgEl.getAttribute('height')) || 24
+    svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`)
+  }
+  // Force the SVG to fill its container
+  svgEl.setAttribute('width', '100%')
+  svgEl.setAttribute('height', '100%')
+  return tmp.innerHTML
+}
+
+function IconCell({ icon, onClick }) {
+  const name = icon.filename?.replace('.svg', '').replace(/_/g, ' ') || ''
+  const normalizedSvg = typeof document !== 'undefined' && icon.svg ? normalizeSvg(icon.svg) : icon.svg
+  return (
+    <button
+      onClick={onClick}
+      title={name}
+      style={{ width: '44px', height: '44px', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', cursor: 'pointer', background: 'transparent', border: 'none', padding: 0 }}
+      className="hover:bg-surface-hover transition-colors duration-100"
+    >
+      {normalizedSvg ? (
+        <div
+          style={{ width: '24px', height: '24px', overflow: 'visible', flexShrink: 0, pointerEvents: 'none', filter: 'brightness(0) invert(1)' }}
+          dangerouslySetInnerHTML={{ __html: normalizedSvg }}
+        />
+      ) : (
+        <img
+          src={`/icons/${encodeURIComponent(icon.filename)}`}
+          alt=""
+          style={{ width: '24px', height: '24px', pointerEvents: 'none', filter: 'invert(1)' }}
+          loading="lazy"
+        />
+      )}
+    </button>
+  )
+}
+
+export default function IconSidebar() {
+  const { t } = useTranslation()
+  const activeTool = useSketchStore((s) => s.activeTool)
+  const setActiveTool = useSketchStore((s) => s.setActiveTool)
+  const visible = activeTool === TOOLS.ICON
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState(null)
+  const [icons, setIcons] = useState([])
+  const [loading, setLoading] = useState(false)
+  const debounceRef = useRef(null)
+
+  // Close on Escape
+  useEffect(() => {
+    if (!visible) return
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        setActiveTool(TOOLS.SELECT)
+      }
+    }
+    document.addEventListener('keydown', handler, true)
+    return () => document.removeEventListener('keydown', handler, true)
+  }, [visible, setActiveTool])
+
+  // Close when clicking on the canvas (outside the sidebar)
+  useEffect(() => {
+    if (!visible) return
+    const svgEl = document.getElementById('freehand-canvas')
+    if (!svgEl) return
+    const handleCanvasClick = () => setActiveTool(TOOLS.SELECT)
+    svgEl.addEventListener('mousedown', handleCanvasClick)
+    return () => svgEl.removeEventListener('mousedown', handleCanvasClick)
+  }, [visible, setActiveTool])
+
+  const fetchIcons = useCallback(async (searchQuery, cat) => {
+    const params = new URLSearchParams()
+    if (searchQuery) params.set('q', searchQuery)
+    if (cat) params.set('category', cat)
+    params.set('inline', '1')
+    const cacheKey = params.toString()
+
+    // Return cached results instantly if available
+    if (iconResultCache.has(cacheKey)) {
+      setIcons(iconResultCache.get(cacheKey))
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await fetch(`${getIconsBaseUrl()}/api/icons/search?${cacheKey}`)
+      if (res.ok) {
+        const data = await res.json()
+        const results = data.results || []
+        iconResultCache.set(cacheKey, results)
+        setIcons(results)
+      }
+    } catch (err) {
+      console.error('Icon fetch failed:', err)
+    }
+    setLoading(false)
+  }, [])
+
+  // Fetch icons when visibility, query, or category changes (debounced for query typing)
+  useEffect(() => {
+    if (!visible) return
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      fetchIcons(query, category)
+    }, query ? 300 : 0)
+    return () => clearTimeout(debounceRef.current)
+  }, [query, visible, category, fetchIcons])
+
+  // Preload all categories in background on first sidebar open
+  const hasPreloaded = useRef(false)
+  useEffect(() => {
+    if (!visible || hasPreloaded.current) return
+    hasPreloaded.current = true
+    // Fire-and-forget: preload each category so switching is instant
+    CATEGORIES.forEach((cat) => {
+      const params = new URLSearchParams()
+      if (cat.value) params.set('category', cat.value)
+      params.set('inline', '1')
+      const key = params.toString()
+      if (!iconResultCache.has(key)) {
+        fetch(`${getIconsBaseUrl()}/api/icons/search?${key}`)
+          .then((r) => r.ok ? r.json() : null)
+          .then((data) => { if (data?.results) iconResultCache.set(key, data.results) })
+          .catch(() => {})
+      }
+    })
+  }, [visible])
+
+  const handleIconClick = useCallback((icon) => {
+    if (typeof window === 'undefined') return
+    const place = (svgContent) => {
+      if (window.prepareIconPlacement) {
+        window.prepareIconPlacement(svgContent)
+      } else {
+        window.iconToPlace = svgContent
+      }
+    }
+    if (icon.svg) {
+      place(icon.svg)
+    } else {
+      fetch(`${getIconsBaseUrl()}/api/icons/serve?name=${encodeURIComponent(icon.filename)}`)
+        .then((r) => r.text())
+        .then(place)
+        .catch(() => {})
+    }
+  }, [])
+
+  return (
+    <div
+      className={`absolute top-[60px] right-2 bottom-[56px] w-[300px] bg-surface border border-border-light rounded-2xl z-[999] font-[lixFont] flex flex-col transition-transform duration-200 ${
+        visible ? 'translate-x-0' : 'translate-x-full'
+      }`}
+    >
+      {/* Header */}
+      <div className="px-3.5 pt-3.5 pb-2 shrink-0">
+        <div className="flex items-center justify-between mb-2.5">
+          <h3 className="text-text-primary text-sm font-medium">Icons</h3>
+          <button
+            onClick={() => setActiveTool(TOOLS.SELECT)}
+            className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors duration-100"
+            title="Close (Esc)"
+          >
+            <i className="bx bx-x text-lg" />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="flex items-center gap-2 bg-surface-hover border border-border-light rounded-lg px-2.5 py-2">
+          <i className="bx bxs-search text-text-muted text-sm" />
+          <input
+            id="iconSearchInput"
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search icons..."
+            className="flex-1 bg-transparent text-text-primary text-sm outline-none placeholder:text-text-dim"
+            spellCheck={false}
+          />
+          {query && (
+            <button onClick={() => setQuery('')} className="text-text-dim hover:text-text-secondary">
+              <i className="bx bxs-x-circle text-sm" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Categories */}
+      <div className="flex flex-wrap gap-1 px-3.5 pb-2.5 shrink-0">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.value || 'all'}
+            onClick={() => setCategory(cat.value)}
+            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs whitespace-nowrap transition-colors duration-100 ${
+              category === cat.value
+                ? 'bg-accent-blue/20 text-accent-blue-hover'
+                : 'text-text-muted hover:bg-surface-hover hover:text-text-primary'
+            }`}
+          >
+            <i className={`bx ${cat.icon} text-xs`} />
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Divider */}
+      <div className="h-px bg-surface-hover mx-3.5 shrink-0" />
+
+      {/* Icon grid — scrollable */}
+      <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2.5" id="iconsContainer">
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-text-muted text-sm">
+            <i className="bx bxs-hourglass bx-spin text-lg mr-2" />
+            Loading...
+          </div>
+        ) : icons.length === 0 ? (
+          <div className="flex items-center justify-center py-12 text-text-muted text-sm">
+            No icons found
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '2px' }}>
+            {icons.map((icon, i) => (
+              <IconCell
+                key={icon.filename || i}
+                icon={icon}
+                onClick={() => handleIconClick(icon)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

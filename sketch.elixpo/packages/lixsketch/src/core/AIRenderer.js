@@ -316,18 +316,22 @@ export function renderAIDiagram(diagram) {
     const ox = vcx - dw / 2 - minX;
     const oy = vcy - dh / 2 - minY;
 
-    // Create frame
-    let frame;
-    try {
-        frame = new window.Frame(vcx - dw / 2 - PADDING, vcy - dh / 2 - PADDING, dw + PADDING * 2, dh + PADDING * 2, {
-            stroke: '#888', strokeWidth: 2, fill: 'transparent', opacity: 1, frameName: title,
-        });
-        window.shapes.push(frame);
-        if (window.pushCreateAction) window.pushCreateAction(frame);
-    } catch (err) {
-        console.error('[AIRenderer] Frame creation failed:', err);
-        return false;
-    }
+    // Phase 5 (issue #22): no outer wrapper frame. Each generated shape
+    // (node, edge, subgraph container) gets the same `groupId` so the whole
+    // diagram behaves as one selectable group via Selection.js's existing
+    // group-expansion path. Drops the "solid background frame" symptom and
+    // makes the rendered content as interactive as user-drawn shapes.
+    const groupId = `aidiag-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    // Kept under the same name `frame` to minimise the diff inside this
+    // 600-line function — it's now a thin shim that catches `addShapeToFrame`
+    // calls and re-routes them to a groupId assignment. `selectFrame` /
+    // `removeSelection` no-op; selection is on the first node below.
+    const frame = {
+        addShapeToFrame(s) { if (s) s.groupId = groupId; },
+        selectFrame() {},
+        removeSelection() {},
+        shapeName: 'frame',
+    };
 
     const nodeMap = new Map();
 
@@ -593,12 +597,15 @@ export function renderAIDiagram(diagram) {
         }
     }
 
-    // Auto-select the frame and show its sidebar
-    window.currentShape = frame;
-    if (frame.selectFrame) frame.selectFrame();
-    if (window.__sketchStoreApi) window.__sketchStoreApi.setSelectedShapeSidebar('frame');
+    // Phase 5: select the first generated node — group expansion in
+    // Selection.js will pick up the rest via the shared groupId.
+    const first = nodeMap.values().next().value;
+    if (first && first.shape) {
+        window.currentShape = first.shape;
+        if (typeof first.shape.selectShape === 'function') first.shape.selectShape();
+    }
 
-    console.log(`[AIRenderer] Done: ${nodes.length} nodes, ${edges.length} edges, ${subgraphs.length} subgraphs → "${title}"`);
+    console.log(`[AIRenderer] Done: ${nodes.length} nodes, ${edges.length} edges, ${subgraphs.length} subgraphs → "${title}" (groupId=${groupId})`);
     return true;
 }
 
@@ -738,7 +745,7 @@ function cross(ax, ay, bx, by, cx, cy) {
  * Automatically attach an arrow endpoint to a shape.
  * This makes edges follow nodes when they're moved.
  */
-function autoAttach(arrow, shape, isStart, contactPoint) {
+export function autoAttach(arrow, shape, isStart, contactPoint) {
     if (!arrow || !shape) return;
     if (typeof arrow.attachToShape !== 'function') return;
 
@@ -1306,6 +1313,11 @@ export function generateFramePreviewSVG(frame, width = 500, height = 350) {
 // ============================================================
 
 export function initAIRenderer() {
+    // Expose the autoAttach helper so sibling renderers (Mermaid flowchart,
+    // Graph, LixScript) can wire arrow endpoints into shapes without
+    // import-cycling through this large module.
+    window.__autoAttach = autoAttach;
+
     // Lazy-load sequence renderer
     let _seqParser = null;
     let _seqPreview = null;

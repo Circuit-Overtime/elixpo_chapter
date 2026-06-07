@@ -38,10 +38,11 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "next dev --turbo",
+    "dev": "concurrently -k -n next,worker -c blue,magenta \"next dev --turbo\" \"wrangler dev --port 8787 --local\"",
+    "dev:next": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "worker:dev": "wrangler dev",
+    "worker:dev": "wrangler dev --port 8787 --local",
     "worker:deploy": "wrangler deploy",
     "db:create": "wrangler d1 create lixsketch",
     "db:migrate": "node scripts/db-migrate.mjs --remote",
@@ -57,17 +58,19 @@
     "@elixpo/lixsketch": "workspace:*",
     "@mantine/core": "^8.3.11",
     "@mantine/hooks": "^8.3.11",
+    "boxicons": "^2.1.4",
     "framer-motion": "^12.35.2",
     "fuse.js": "^7.1.0",
     "highlight.js": "^11.11.1",
     "next": "15.5.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "zustand": "^5.0.11"
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260310.1",
     "@tailwindcss/postcss": "^4.2.1",
+    "concurrently": "^10.0.3",
     "postcss": "^8.5.8",
     "raw-loader": "^4.0.2",
     "tailwindcss": "^4.2.1",

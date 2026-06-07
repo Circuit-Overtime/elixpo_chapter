@@ -27,7 +27,7 @@ import {
 
 let textSize = "30px";
 let textFont = "lixFont";
-let textColor = "#fff";
+let textColor = "#1a1a20";
 let textAlign = "left";
 
 let textColorOptions = document.querySelectorAll(".textColorSpan");
@@ -228,7 +228,7 @@ function makeTextEditable(textElement, groupElement) {
 
     const currentFontSize = textElement.getAttribute("font-size") || "30px";
     const currentFontFamily = textElement.getAttribute("font-family") || "lixFont";
-    const currentFill = textElement.getAttribute("fill") || "#fff";
+    const currentFill = textElement.getAttribute("fill") || "#1a1a20";
     const currentAnchor = textElement.getAttribute("text-anchor") || "start";
     // Scale font-size by zoom so the textarea matches what the user sees on canvas
     const rawSize = parseFloat(currentFontSize) || 30;
@@ -1578,7 +1578,7 @@ function convertTextToCode(textGroupElement) {
     const tx = currentTransform ? currentTransform.matrix.e : 0;
     const ty = currentTransform ? currentTransform.matrix.f : 0;
     const fontSize = textElement.getAttribute('font-size') || "25px";
-    const color = textElement.getAttribute('fill') || "#fff";
+    const color = textElement.getAttribute('fill') || "#1a1a20";
 
     // Find and remove old TextShape from shapes array
     let oldTextShape = null;
@@ -1670,7 +1670,7 @@ function convertCodeToText(codeGroupElement) {
     const tx = currentTransform ? currentTransform.matrix.e : 0;
     const ty = currentTransform ? currentTransform.matrix.f : 0;
     const fontSize = codeElement.getAttribute('font-size') || "30px";
-    const color = codeElement.getAttribute('fill') || "#fff";
+    const color = codeElement.getAttribute('fill') || "#1a1a20";
 
     // Find and remove old CodeShape from shapes array
     let oldCodeShape = null;

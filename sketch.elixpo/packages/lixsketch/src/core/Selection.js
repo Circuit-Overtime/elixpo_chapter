@@ -2,7 +2,7 @@
 // Multi-selection system - copied from selection.js
 
 import { cleanupAttachments } from '../tools/arrowTool.js';
-import { pushTransformAction } from './UndoRedo.js';
+import { pushTransformAction, pushFrameAttachmentAction } from './UndoRedo.js';
 import { calculateSnap, clearSnapGuides } from './SnapGuides.js';
 
 let isMultiSelecting = false;
@@ -1369,6 +1369,41 @@ createRotatedControls(angleDiff = 0) {
             // Restore isSelected flag (startDrag's removeSelection clears it)
             shape.isSelected = true;
         });
+
+        // Re-parent any selected shape that now sits inside a different frame
+        // (Issue #22, bug #9). The per-tool drag handlers (rectangleTool, etc.)
+        // do this for single-shape drags, but a multi-selection drag bypassed
+        // them and left the shape geometrically inside the frame yet logically
+        // outside its child list.
+        if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
+            this.selectedShapes.forEach(shape => {
+                if (!shape || shape.shapeName === 'frame') return;
+                // Find the deepest frame whose bounds contain the shape after the drag.
+                let target = null;
+                for (let i = shapes.length - 1; i >= 0; i--) {
+                    const f = shapes[i];
+                    if (f.shapeName !== 'frame') continue;
+                    if (this.selectedShapes.has(f)) continue; // moving with us — skip
+                    if (typeof f.isShapeInFrame === 'function' && f.isShapeInFrame(shape)) {
+                        target = f;
+                        break;
+                    }
+                }
+                const current = shape.parentFrame || null;
+                if (target === current) return;
+                if (current && typeof current.removeShapeFromFrame === 'function') {
+                    current.removeShapeFromFrame(shape);
+                }
+                if (target && typeof target.addShapeToFrame === 'function') {
+                    target.addShapeToFrame(shape);
+                    if (typeof pushFrameAttachmentAction === 'function') {
+                        pushFrameAttachmentAction(target, shape, 'attach', current);
+                    }
+                } else if (current && typeof pushFrameAttachmentAction === 'function') {
+                    pushFrameAttachmentAction(current, shape, 'detach', current);
+                }
+            });
+        }
 
         this.initialPositions.clear();
 

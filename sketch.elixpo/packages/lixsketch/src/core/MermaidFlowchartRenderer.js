@@ -359,117 +359,159 @@ export function renderFlowchartPreviewSVG(diagram) {
 }
 
 /**
- * Render a flowchart diagram onto the canvas inside a Frame.
+ * Render a flowchart diagram onto the canvas as a group of real engine
+ * shapes — Rectangle nodes (with embedded labels) joined by Arrow edges —
+ * sharing a single `groupId`. No wrapper frame, no stub container.
+ *
+ * Phase 5 of issue #22: rendered content is loose so each node behaves
+ * like any user-drawn shape (selectable, draggable, attachable from
+ * arrows across the boundary, picked up by the rect-drag, etc.). The
+ * shared groupId means Ctrl-click on any node selects the whole diagram
+ * via the existing group-expansion path in Selection.js.
  */
 export function renderFlowchartOnCanvas(diagram) {
     if (!diagram || !diagram.nodes || diagram.nodes.length === 0) return false;
-    if (!window.svg || !window.Frame) {
+    if (!window.svg || !window.Rectangle) {
         console.error('[FlowchartRenderer] Engine not initialized');
         return false;
     }
 
-    // Generate the SVG markup (no fixed size — use natural dimensions)
-    const svgMarkup = renderFlowchartSVG(diagram);
-    if (!svgMarkup) return false;
+    const nodes = diagram.nodes;
+    const edges = diagram.edges || [];
 
-    // Parse SVG to get dimensions
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgMarkup, 'image/svg+xml');
-    const svgEl = doc.querySelector('svg');
-    if (!svgEl) return false;
+    // Diagram bounds (in the renderer's natural coordinate space)
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach((n) => {
+        const nw = n.width || 140;
+        const nh = n.height || 60;
+        minX = Math.min(minX, n.x);
+        minY = Math.min(minY, n.y);
+        maxX = Math.max(maxX, n.x + nw);
+        maxY = Math.max(maxY, n.y + nh);
+    });
+    const dw = (maxX - minX) || 1;
+    const dh = (maxY - minY) || 1;
 
-    const gWidth = parseFloat(svgEl.getAttribute('width'));
-    const gHeight = parseFloat(svgEl.getAttribute('height'));
-
-    // Viewport center
+    // Center on the current viewport
     const vb = window.currentViewBox || { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
     const vcx = vb.x + vb.width / 2;
     const vcy = vb.y + vb.height / 2;
+    const ox = vcx - dw / 2 - minX;
+    const oy = vcy - dh / 2 - minY;
 
-    const framePad = 30;
-    const frameW = gWidth + framePad * 2;
-    const frameH = gHeight + framePad * 2;
-    const frameX = vcx - frameW / 2;
-    const frameY = vcy - frameH / 2;
+    // Shared groupId so the whole diagram behaves as one group under
+    // Ctrl+click / Ctrl+G — same mechanism EngineShortcuts uses.
+    const groupId = `mermaid-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 
-    const title = diagram.title || 'Flowchart';
+    const nodeMap = new Map(); // id → shape
 
-    // Create frame
-    let frame;
-    try {
-        frame = new window.Frame(frameX, frameY, frameW, frameH, {
-            stroke: '#888', strokeWidth: 2, fill: 'transparent', opacity: 1,
-            frameName: title,
-        });
-        frame._diagramType = 'flowchart';
-        frame._diagramData = diagram;
+    // ── Nodes ──────────────────────────────────────────────────────────
+    for (const n of nodes) {
+        const nw = n.width || 140;
+        const nh = n.height || 60;
+        const nx = n.x + ox;
+        const ny = n.y + oy;
+        const cx = nx + nw / 2;
+        const cy = ny + nh / 2;
 
-        window.shapes.push(frame);
-        if (window.pushCreateAction) window.pushCreateAction(frame);
-    } catch (err) {
-        console.error('[FlowchartRenderer] Frame creation failed:', err);
-        return false;
-    }
-
-    // Insert SVG content into the canvas
-    const NS = 'http://www.w3.org/2000/svg';
-    try {
-        const graphGroup = document.createElementNS(NS, 'g');
-        graphGroup.setAttribute('data-type', 'flowchart-diagram');
-        graphGroup.setAttribute('transform', `translate(${frameX + framePad}, ${frameY + framePad})`);
-
-        // Copy defs
-        const defs = svgEl.querySelector('defs');
-        if (defs) {
-            let mainDefs = window.svg.querySelector('defs');
-            if (!mainDefs) {
-                mainDefs = document.createElementNS(NS, 'defs');
-                window.svg.insertBefore(mainDefs, window.svg.firstChild);
-            }
-            while (defs.firstChild) {
-                mainDefs.appendChild(defs.firstChild);
-            }
-        }
-
-        // Copy all child elements (skip defs)
-        while (svgEl.childNodes.length > 0) {
-            const child = svgEl.childNodes[0];
-            if (child.nodeName === 'defs') {
-                svgEl.removeChild(child);
-                continue;
-            }
-            graphGroup.appendChild(child);
-        }
-
-        window.svg.appendChild(graphGroup);
-
-        // Wrap as a shape-like object for the frame
-        const fcShape = {
-            shapeName: 'flowchartContent',
-            group: graphGroup,
-            element: graphGroup,
-            x: frameX + framePad,
-            y: frameY + framePad,
-            width: gWidth,
-            height: gHeight,
-            move(dx, dy) {
-                this.x += dx;
-                this.y += dy;
-                this.group.setAttribute('transform', `translate(${this.x}, ${this.y})`);
-            },
-            updateAttachedArrows() {},
+        const opts = {
+            stroke: n.stroke || '#1a1a20',
+            strokeWidth: n.strokeWidth ?? 1.5,
+            fill: n.fill || 'transparent',
+            fillStyle: n.fill && n.fill !== 'transparent' ? 'solid' : 'none',
+            roughness: 1,
+            label: n.label || '',
         };
 
-        window.shapes.push(fcShape);
-        if (frame.addShapeToFrame) frame.addShapeToFrame(fcShape);
-    } catch (err) {
-        console.error('[FlowchartRenderer] SVG insertion failed:', err);
+        let shape = null;
+        try {
+            if (n.type === 'circle' && window.Circle) {
+                shape = new window.Circle(cx, cy, nw / 2, nh / 2, opts);
+            } else if (n.type === 'diamond') {
+                const sz = Math.max(nw, nh) * 0.75;
+                shape = new window.Rectangle(cx - sz / 2, cy - sz / 2, sz, sz, opts);
+                shape.rotation = 45;
+                if (typeof shape.draw === 'function') shape.draw();
+            } else if (n.type === 'roundrect') {
+                shape = new window.Rectangle(nx, ny, nw, nh, { ...opts, cornerRadius: Math.min(nw, nh) * 0.2 });
+            } else {
+                shape = new window.Rectangle(nx, ny, nw, nh, opts);
+            }
+        } catch (err) {
+            console.warn('[FlowchartRenderer] Node creation failed:', n.id, err);
+            continue;
+        }
+        if (!shape) continue;
+
+        shape.groupId = groupId;
+        window.shapes.push(shape);
+        if (window.pushCreateAction) window.pushCreateAction(shape);
+
+        nodeMap.set(n.id, { shape, x: nx, y: ny, width: nw, height: nh, centerX: cx, centerY: cy });
     }
 
-    // Select the frame
-    window.currentShape = frame;
-    if (frame.selectFrame) frame.selectFrame();
-    if (window.__sketchStoreApi) window.__sketchStoreApi.setSelectedShapeSidebar('frame');
+    // ── Edges ──────────────────────────────────────────────────────────
+    for (const e of edges) {
+        const fromNode = nodeMap.get(e.from);
+        const toNode = nodeMap.get(e.to);
+        if (!fromNode || !toNode) continue;
+
+        // Connect from the source center to the target center — autoAttach
+        // will snap each endpoint to the appropriate edge of the shape.
+        const sp = { x: fromNode.centerX, y: fromNode.centerY };
+        const ep = { x: toNode.centerX, y: toNode.centerY };
+
+        const directed = e.directed !== false;
+        const style = e.style || 'normal';
+        const isThick = style === 'thick';
+        const isDotted = style === 'dotted';
+
+        const opts = {
+            stroke: e.stroke || '#1a1a20',
+            strokeWidth: isThick ? 3 : 1.5,
+            roughness: 1,
+            strokeDasharray: isDotted ? '5 3' : '',
+            label: e.label || '',
+        };
+
+        let connector = null;
+        try {
+            if (directed && window.Arrow) {
+                connector = new window.Arrow(sp, ep, opts);
+            } else if (window.Line) {
+                connector = new window.Line(sp, ep, opts);
+            } else if (window.Arrow) {
+                connector = new window.Arrow(sp, ep, opts);
+            }
+        } catch (err) {
+            console.warn('[FlowchartRenderer] Edge creation failed:', e, err);
+            continue;
+        }
+        if (!connector) continue;
+
+        connector.groupId = groupId;
+        window.shapes.push(connector);
+        if (window.pushCreateAction) window.pushCreateAction(connector);
+
+        // Wire arrow endpoints into the source/target shapes so moving a
+        // node drags its connections along. window.__autoAttach is set up
+        // by AIRenderer.initAIRenderer() during engine init.
+        if (directed && connector.shapeName === 'arrow' && typeof window.__autoAttach === 'function') {
+            try {
+                window.__autoAttach(connector, fromNode.shape, true, sp);
+                window.__autoAttach(connector, toNode.shape, false, ep);
+            } catch (err) {
+                console.warn('[FlowchartRenderer] autoAttach failed:', err);
+            }
+        }
+    }
+
+    // Select the first node so the user has feedback that something landed.
+    const first = nodeMap.values().next().value;
+    if (first) {
+        window.currentShape = first.shape;
+        if (typeof first.shape.selectShape === 'function') first.shape.selectShape();
+    }
 
     return true;
 }
