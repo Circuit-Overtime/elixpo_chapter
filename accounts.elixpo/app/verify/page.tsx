@@ -3,6 +3,7 @@
 import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import BackgroundAurora from "../components/background-aurora";
 
 type Status = "loading" | "success" | "error";
 
@@ -39,8 +40,8 @@ function VerifyContent() {
                     }
                     return;
                 }
-
                 // 2. Auto-submit the OTP code to verify the email
+
                 const verifyRes = await fetch("/api/auth/verify-email", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -74,25 +75,28 @@ function VerifyContent() {
     return (
         <Box
             sx={{
+                position: "relative",
                 minHeight: "100vh",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background:
-                    "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                 p: 2,
             }}
         >
+            <BackgroundAurora variant="default" />
             <Box
                 sx={{
+                    position: "relative",
+                    zIndex: 1,
                     maxWidth: 420,
                     width: "100%",
                     textAlign: "center",
                     backdropFilter: "blur(20px)",
                     background:
                         "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "16px",
+                    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
                     p: 4,
                 }}
             >

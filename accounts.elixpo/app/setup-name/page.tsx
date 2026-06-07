@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import BackgroundAurora from "../components/background-aurora";
 
 const ACCENT = "#9b7bf7";
 
@@ -83,8 +84,8 @@ const SetupNameContent = () => {
             }
         })();
     }, [next]);
-
     // Debounced availability check.
+
     useEffect(() => {
         const u = username.trim().toLowerCase();
         if (!u) {
@@ -162,15 +163,21 @@ const SetupNameContent = () => {
         return (
             <Box
                 sx={{
+                    position: "relative",
                     minHeight: "100vh",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background:
-                        "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                 }}
             >
-                <Typography sx={{ color: "rgba(255,255,255,0.5)" }}>
+                <BackgroundAurora variant="default" />
+                <Typography
+                    sx={{
+                        position: "relative",
+                        zIndex: 1,
+                        color: "rgba(255,255,255,0.5)",
+                    }}
+                >
                     Loading...
                 </Typography>
             </Box>
@@ -195,23 +202,27 @@ const SetupNameContent = () => {
     return (
         <Box
             sx={{
+                position: "relative",
                 minHeight: "100vh",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background:
-                    "linear-gradient(135deg, #0f1117 0%, #131922 50%, #0f1117 100%)",
                 p: 2,
             }}
         >
+            <BackgroundAurora variant="default" />
             <Box
                 sx={{
+                    position: "relative",
+                    zIndex: 1,
                     maxWidth: "460px",
                     width: "100%",
                     backdropFilter: "blur(20px)",
-                    background: "#1a1d29",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "16px",
+                    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
                     p: 4,
                 }}
             >
