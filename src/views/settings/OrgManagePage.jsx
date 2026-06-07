@@ -193,8 +193,9 @@ export default function OrgManagePage({ slug }) {
     }
   };
 
-  // Link management
+  // Link management — capped at 5 custom links per org.
   const addLink = (preset) => {
+    if (links.length >= 5) { setSaveError('You can add up to 5 links.'); return; }
     setLinks([...links, { type: preset.key, label: preset.label, url: '' }]);
   };
   const updateLink = (index, field, value) => {
