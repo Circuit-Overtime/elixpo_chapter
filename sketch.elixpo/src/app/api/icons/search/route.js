@@ -64,6 +64,15 @@ export async function GET(request) {
 
   const sliced = results.slice(0, 60)
 
+  // CORS — the icons API is intentionally public so any client (the
+  // npm package, third-party embeds, etc.) can search and load icons
+  // without holding a sketch.elixpo session.
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  }
+
   if (inline) {
     const withSvg = await Promise.all(
       sliced.map(async (item) => {
@@ -72,11 +81,23 @@ export async function GET(request) {
       })
     )
     return NextResponse.json({ results: withSvg }, {
-      headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' },
+      headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' },
     })
   }
 
   return NextResponse.json({ results: sliced }, {
-    headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' },
+    headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' },
+  })
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
   })
 }

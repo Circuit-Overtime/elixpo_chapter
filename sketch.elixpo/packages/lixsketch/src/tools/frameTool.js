@@ -61,9 +61,21 @@ const handleMouseDown = (e) => {
                         }
                     }
                 }
-                // If a contained shape was clicked, don't select the frame — let the
-                // EventDispatcher fall through to shape-specific handlers
-                if (clickedContainedShape) return;
+                // If a contained shape was clicked, don't select the frame —
+                // and crucially, clear `currentShape` so the EventDispatcher's
+                // `if (handled && prevShape && !currentShape) handled=false` gate
+                // triggers and the dispatcher falls through to shape-specific
+                // handlers. Without this clear, the dispatcher returns with
+                // `handled=true` and the child shape is never selected (Issue
+                // #22, bug #2).
+                if (clickedContainedShape) {
+                    if (currentShape && currentShape.shapeName === 'frame'
+                        && typeof currentShape.removeSelection === 'function') {
+                        currentShape.removeSelection();
+                    }
+                    currentShape = null;
+                    return;
+                }
 
                 if (currentShape && currentShape !== clickedFrame) {
                     currentShape.removeSelection();

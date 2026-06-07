@@ -1,17 +1,26 @@
 {
   "name": "@elixpo/lixsketch",
-  "version": "5.4.7",
-  "description": "Open-source SVG whiteboard engine with hand-drawn aesthetics — the core of LixSketch",
+  "version": "5.5.0",
+  "description": "Open-source SVG whiteboard engine + React canvas component with hand-drawn aesthetics — the core of LixSketch",
   "type": "module",
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",
+    "./react": {
+      "import": "./dist/react/index.js",
+      "default": "./dist/react/index.js"
+    },
+    "./react/styles": "./dist/react/styles.css",
     "./src/*": "./src/*",
     "./fonts": "./fonts/fonts.css",
     "./fonts/*": "./fonts/*"
   },
+  "sideEffects": [
+    "**/*.css"
+  ],
   "files": [
     "src/",
+    "dist/",
     "fonts/",
     "README.md"
   ],
@@ -25,7 +34,8 @@
     "sketch",
     "excalidraw-alternative",
     "infinite-canvas",
-    "framework"
+    "framework",
+    "react"
   ],
   "author": {
     "name": "Ayushman Bhattacharya",
@@ -43,7 +53,31 @@
     "url": "https://github.com/elixpo/sketch.elixpo/issues"
   },
   "dependencies": {
-    "roughjs": "^4.6.6",
-    "perfect-freehand": "^1.2.3"
+    "boxicons": "^2.1.4",
+    "perfect-freehand": "^1.2.3",
+    "roughjs": "^4.6.6"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "zustand": "^5.0.13"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "zustand": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "prepublishOnly": "npm run build"
   }
 }

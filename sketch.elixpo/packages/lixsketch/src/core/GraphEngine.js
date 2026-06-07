@@ -48,39 +48,22 @@ function renderGraphOnCanvas(equations, settings) {
         ? 'Graph: ' + eqLabels.join(', ')
         : 'Graph';
 
-    // Create frame
-    let frame;
-    try {
-        frame = new window.Frame(frameX, frameY, frameW, frameH, {
-            stroke: '#4A90D9', strokeWidth: 2, fill: 'transparent', opacity: 1,
-            frameName: title,
-        });
-        // Store graph data for re-editing
-        frame._graphData = {
-            equations: equations.map(eq => ({ expression: eq.expression, color: eq.color })),
-            settings: { ...settings },
-        };
-        frame._frameType = 'graph';
-
-        window.shapes.push(frame);
-        if (window.pushCreateAction) window.pushCreateAction(frame);
-    } catch (err) {
-        console.error('[GraphEngine] Frame creation failed:', err);
-        return false;
-    }
-
-    // Parse SVG markup and insert elements into the frame
+    // Phase 5 (issue #22): no wrapper frame. The graph is conceptually a
+    // single rendering — axes, grid, curves all interlocked — so we don't
+    // split it into per-curve shapes. Instead the graph becomes ONE
+    // first-class shape on the canvas: a `graphShape` that implements the
+    // shape API the engine relies on (contains / selectShape / etc.) so
+    // it can be selected, dragged, attached to by arrows, picked up by
+    // the rect-drag — exactly like a user-drawn shape.
     try {
         const parser = new DOMParser();
         const doc = parser.parseFromString(svgMarkup, 'image/svg+xml');
         const svgEl = doc.querySelector('svg');
         if (!svgEl) return false;
 
-        // Create a group to hold all graph elements
         const graphGroup = document.createElementNS(NS, 'g');
         graphGroup.setAttribute('data-type', 'graph-group');
         graphGroup.setAttribute('transform', `translate(${frameX + 20}, ${frameY + 20})`);
-        graphGroup.style.pointerEvents = 'none';
 
         // Copy defs (clip paths)
         const defs = svgEl.querySelector('defs');
@@ -90,45 +73,85 @@ function renderGraphOnCanvas(equations, settings) {
                 window.svg.insertBefore(defsClone, window.svg.firstChild);
         }
 
-        // Copy all child elements
         while (svgEl.childNodes.length > 0) {
             const child = svgEl.childNodes[0];
-            if (child.nodeName === 'defs') {
-                svgEl.removeChild(child);
-                continue;
-            }
+            if (child.nodeName === 'defs') { svgEl.removeChild(child); continue; }
             graphGroup.appendChild(child);
         }
-
         window.svg.appendChild(graphGroup);
 
-        // Wrap as a simple shape-like object for the frame
         const graphShape = {
-            shapeName: 'graphContent',
+            shapeName: 'graph',                  // first-class shapeName
+            shapeID: `graph-${Date.now().toString(36)}-${Math.floor(Math.random() * 10000)}`,
             group: graphGroup,
             element: graphGroup,
             x: frameX + 20,
             y: frameY + 20,
             width: GRAPH_WIDTH,
             height: GRAPH_HEIGHT,
-            move(dx, dy) {
-                this.x += dx;
-                this.y += dy;
-                this.group.setAttribute('transform', `translate(${this.x}, ${this.y})`);
+            rotation: 0,
+            isSelected: false,
+            _selectionRect: null,
+            _graphData: {
+                equations: equations.map(eq => ({ expression: eq.expression, color: eq.color })),
+                settings: { ...settings },
             },
-            updateAttachedArrows() {},
+
+            // ── Shape API the engine relies on ────────────────────────
+            contains(px, py) {
+                return px >= this.x && px <= this.x + this.width
+                    && py >= this.y && py <= this.y + this.height;
+            },
+            move(dx, dy) {
+                this.x += dx; this.y += dy;
+                this.group.setAttribute('transform', `translate(${this.x}, ${this.y})`);
+                this._updateSelectionRect();
+            },
+            selectShape() {
+                this.isSelected = true;
+                if (this._selectionRect) return;
+                const r = document.createElementNS(NS, 'rect');
+                r.setAttribute('fill', 'none');
+                r.setAttribute('stroke', '#9b7bf7');
+                r.setAttribute('stroke-width', '1.5');
+                r.setAttribute('stroke-dasharray', '4 3');
+                r.setAttribute('pointer-events', 'none');
+                window.svg.appendChild(r);
+                this._selectionRect = r;
+                this._updateSelectionRect();
+            },
+            removeSelection() {
+                this.isSelected = false;
+                if (this._selectionRect && this._selectionRect.parentNode) {
+                    this._selectionRect.parentNode.removeChild(this._selectionRect);
+                }
+                this._selectionRect = null;
+            },
+            _updateSelectionRect() {
+                if (!this._selectionRect) return;
+                const pad = 4;
+                this._selectionRect.setAttribute('x', this.x - pad);
+                this._selectionRect.setAttribute('y', this.y - pad);
+                this._selectionRect.setAttribute('width', this.width + pad * 2);
+                this._selectionRect.setAttribute('height', this.height + pad * 2);
+            },
+            updateAttachedArrows() {
+                if (typeof window.updateAttachedArrows === 'function') {
+                    window.updateAttachedArrows(this);
+                }
+            },
         };
 
         window.shapes.push(graphShape);
-        if (frame.addShapeToFrame) frame.addShapeToFrame(graphShape);
+        if (window.pushCreateAction) window.pushCreateAction(graphShape);
+
+        // Auto-select so the user sees something landed.
+        window.currentShape = graphShape;
+        graphShape.selectShape();
     } catch (err) {
         console.error('[GraphEngine] SVG insertion failed:', err);
+        return false;
     }
-
-    // Select the frame
-    window.currentShape = frame;
-    if (frame.selectFrame) frame.selectFrame();
-    if (window.__sketchStoreApi) window.__sketchStoreApi.setSelectedShapeSidebar('frame');
 
     return true;
 }

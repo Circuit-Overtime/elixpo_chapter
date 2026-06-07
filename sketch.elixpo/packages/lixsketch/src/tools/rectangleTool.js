@@ -16,7 +16,7 @@ let startRotationMouseAngleSquare = 0;
 let startShapeRotationSquare = 0;
 const rc = rough.svg(svg); 
 let startX, startY;
-let squareStrokecolor = "#fff";
+let squareStrokecolor = "#1a1a20";
 let squareBackgroundColor = "transparent";
 let squareFillStyleValue = "none";
 let squareStrokeThicknes = 2;
