@@ -464,6 +464,16 @@ function TopPickCard({ post, index }) {
 function FollowSuggestion({ u }) {
   const { user } = useAuth();
   const [following, setFollowing] = useState(false);
+  // Reflect the real follow state so the button isn't always "Follow".
+  useEffect(() => {
+    if (!user || !u.username) return;
+    let active = true;
+    fetch(`/api/users/${encodeURIComponent(u.username)}/follow`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (active && d) setFollowing(!!d.following); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [u.username, user]);
   const toggle = (e) => {
     e.preventDefault(); e.stopPropagation();
     if (!user) { window.location.href = `/sign-in?next=/`; return; }

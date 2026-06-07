@@ -585,6 +585,7 @@ function HandlePageInner({ path }) {
                       Private
                     </span>
                   )}
+                  {!currentMember && <FollowToggle kind="org" handle={org.slug} />}
                   {canManage && (
                     <Link
                       href={`/settings/org/${org.slug}`}
