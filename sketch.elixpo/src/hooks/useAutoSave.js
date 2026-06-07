@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from 'react'
+import LZString from 'lz-string'
 import useCollabStore from '@/store/useCollabStore'
 import useUIStore from '@/store/useUIStore'
 import { WORKER_URL } from '@/store/useAuthStore'
@@ -12,13 +13,70 @@ import { useProfileStore } from '@/hooks/useGuestProfile'
 const LOCAL_SAVE_KEY_PREFIX = 'lixsketch-autosave'
 const LOCAL_SAVE_META_KEY_PREFIX = 'lixsketch-autosave-meta'
 
+// Issue #24 bug #8: localStorage acts as a buffer between the user and
+// the cloud. Compress the JSON payload before writing — image data URLs
+// and large scenes can blow past the ~5–10 MB localStorage quota fast.
+// LZString.compressToUTF16 keeps the result as a valid UTF-16 string
+// that localStorage can store as-is. The prefix lets the reader detect
+// the format and fall back to plain JSON for any legacy entries.
+const COMPRESSED_PREFIX = 'lzs:'
+
+export function writeLocalScene(key, sceneData) {
+  const json = JSON.stringify(sceneData)
+  const compressed = COMPRESSED_PREFIX + LZString.compressToUTF16(json)
+  try {
+    localStorage.setItem(key, compressed)
+    return true
+  } catch (err) {
+    if (err && (err.name === 'QuotaExceededError' || err.code === 22)) {
+      // Last-resort: drop any other sessions' caches and retry once.
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const k = localStorage.key(i)
+          if (k && k.startsWith(LOCAL_SAVE_KEY_PREFIX) && k !== key) localStorage.removeItem(k)
+        }
+        localStorage.setItem(key, compressed)
+        console.warn('[AutoSave] Quota exceeded — purged stale autosave entries to make room')
+        return true
+      } catch {
+        console.error('[AutoSave] Quota exceeded and could not free space — local save dropped')
+        return false
+      }
+    }
+    console.warn('[AutoSave] Local write failed:', err)
+    return false
+  }
+}
+
+export function readLocalScene(key) {
+  const raw = localStorage.getItem(key)
+  if (!raw) return null
+  try {
+    if (raw.startsWith(COMPRESSED_PREFIX)) {
+      const decompressed = LZString.decompressFromUTF16(raw.slice(COMPRESSED_PREFIX.length))
+      if (!decompressed) return null
+      return JSON.parse(decompressed)
+    }
+    // Legacy uncompressed entry — keep readable so existing users don't
+    // lose their scene on first load after the upgrade.
+    return JSON.parse(raw)
+  } catch (err) {
+    console.warn('[AutoSave] Local read parse failed:', err)
+    return null
+  }
+}
+
 function getLocalSaveKey() {
+  // Issue #24 bug #8: previously fell back to a sessionless `lixsketch-
+  // autosave` key when __sessionID hadn't been set yet, leaving an
+  // orphan that the cleanup pass explicitly skipped. Return null so the
+  // caller waits for a real session instead of writing garbage.
   const sessionId = window.__sessionID
-  return sessionId ? `${LOCAL_SAVE_KEY_PREFIX}-${sessionId}` : LOCAL_SAVE_KEY_PREFIX
+  return sessionId ? `${LOCAL_SAVE_KEY_PREFIX}-${sessionId}` : null
 }
 function getLocalSaveMetaKey() {
   const sessionId = window.__sessionID
-  return sessionId ? `${LOCAL_SAVE_META_KEY_PREFIX}-${sessionId}` : LOCAL_SAVE_META_KEY_PREFIX
+  return sessionId ? `${LOCAL_SAVE_META_KEY_PREFIX}-${sessionId}` : null
 }
 
 // ── Intervals ──
@@ -49,11 +107,17 @@ function saveToLocalStorage() {
   const shapes = window.shapes
   if (!serializer || !Array.isArray(shapes)) return false
 
+  // Wait for sessionID — without it we have no stable key to write to.
+  const key = getLocalSaveKey()
+  const metaKey = getLocalSaveMetaKey()
+  if (!key || !metaKey) return false
+
   try {
     const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
     const sceneData = serializer.save(workspaceName)
-    localStorage.setItem(getLocalSaveKey(), JSON.stringify(sceneData))
-    localStorage.setItem(getLocalSaveMetaKey(), JSON.stringify({
+    const ok = writeLocalScene(key, sceneData)
+    if (!ok) return false
+    localStorage.setItem(metaKey, JSON.stringify({
       workspaceName,
       savedAt: Date.now(),
       shapeCount: shapes.length,
@@ -97,11 +161,14 @@ async function saveToDb() {
     const authState = useAuthStore.getState()
     const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
 
-    // Read from localStorage buffer (single source of truth)
-    const localData = localStorage.getItem(getLocalSaveKey())
+    // Read from localStorage buffer (single source of truth). The buffer
+    // stores compressed payload now (issue #24 bug #8) — decompress before
+    // handing the JSON to the cloud encryption step.
     let sceneJSON
-    if (localData) {
-      sceneJSON = localData // already JSON string
+    const bufferKey = getLocalSaveKey()
+    const localScene = bufferKey ? readLocalScene(bufferKey) : null
+    if (localScene) {
+      sceneJSON = JSON.stringify(localScene)
     } else {
       // Fallback: serialize current state
       const sceneData = serializer.save(workspaceName)
@@ -217,16 +284,19 @@ export default function useAutoSave() {
         return
       }
 
-      // Clean up other sessions' localStorage entries
+      // Clean up other sessions' localStorage entries — and the legacy
+      // sessionless keys (issue #24 bug #8: getLocalSaveKey no longer
+      // falls back to those, so they're now safe to evict).
       const currentKey = getLocalSaveKey()
       const currentMetaKey = getLocalSaveMetaKey()
       try {
         const keysToRemove = []
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i)
-          if (key && key.startsWith(LOCAL_SAVE_KEY_PREFIX) && key !== currentKey && key !== currentMetaKey && key !== 'lixsketch-autosave' && key !== 'lixsketch-autosave-meta') {
-            keysToRemove.push(key)
-          }
+          if (!key) continue
+          if (!key.startsWith(LOCAL_SAVE_KEY_PREFIX)) continue
+          if (key === currentKey || key === currentMetaKey) continue
+          keysToRemove.push(key)
         }
         keysToRemove.forEach(k => localStorage.removeItem(k))
       } catch {}
@@ -250,8 +320,10 @@ export default function useAutoSave() {
                   const decrypted = await decrypt(data.encryptedData, encKey)
                   const sceneData = JSON.parse(decrypted)
                   if (sceneData && sceneData.format === 'lixsketch' && sceneData.shapes?.length > 0) {
-                    // Store in localStorage buffer first
-                    localStorage.setItem(currentKey, JSON.stringify(sceneData))
+                    // Store in localStorage buffer first — use the
+                    // compressed helper so the on-disk format matches
+                    // every other write path (issue #24 bug #8).
+                    if (currentKey) writeLocalScene(currentKey, sceneData)
                     // Then render
                     serializer.load(sceneData)
                     restoredFromCloud = true
@@ -273,17 +345,16 @@ export default function useAutoSave() {
       }
 
       // ── Fallback: restore from localStorage ──
-      if (!restoredFromCloud) {
-        const saved = localStorage.getItem(currentKey) || localStorage.getItem('lixsketch-autosave')
-        if (saved) {
+      if (!restoredFromCloud && currentKey) {
+        const sceneData = readLocalScene(currentKey)
+        if (sceneData) {
           try {
-            const sceneData = JSON.parse(saved)
             if (sceneData && sceneData.format === 'lixsketch' && sceneData.shapes?.length > 0) {
               serializer.load(sceneData)
               restoredFromLocal = true
               console.log(`[AutoSave] Restored ${sceneData.shapes.length} shapes from local cache`)
 
-              const meta = localStorage.getItem(currentMetaKey) || localStorage.getItem('lixsketch-autosave-meta')
+              const meta = currentMetaKey ? localStorage.getItem(currentMetaKey) : null
               if (meta) {
                 try {
                   const { workspaceName } = JSON.parse(meta)

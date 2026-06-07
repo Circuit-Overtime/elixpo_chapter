@@ -226,6 +226,27 @@ const handleMouseMove = (e) => {
         startX = x;
         startY = y;
 
+        // Issue #24 bug #4: track containing frame during drag of an
+        // existing arrow so mouseUp re-parents correctly. Without this
+        // hoveredFrameArrow stays null and the arrow is detached the
+        // moment the user nudges it inside its own parent frame.
+        let newHover = null;
+        for (const f of shapes) {
+            if (f.shapeName !== 'frame') continue;
+            if (f === currentShape) continue;
+            if (typeof f.isShapeInFrame === 'function' && f.isShapeInFrame(currentShape)) {
+                newHover = f;
+                break;
+            }
+        }
+        if (hoveredFrameArrow && hoveredFrameArrow !== newHover && typeof hoveredFrameArrow.removeHighlight === 'function') {
+            hoveredFrameArrow.removeHighlight();
+        }
+        if (newHover && newHover !== hoveredFrameArrow && typeof newHover.highlightFrame === 'function') {
+            newHover.highlightFrame();
+        }
+        hoveredFrameArrow = newHover;
+
         // Snap guides
         if (window.__sketchStoreApi && window.__sketchStoreApi.getState().snapToObjects) {
             const snap = calculateSnap(currentShape, e.shiftKey, e.clientX, e.clientY);

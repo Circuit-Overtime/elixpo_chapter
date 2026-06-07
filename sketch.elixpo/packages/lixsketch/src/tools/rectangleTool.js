@@ -241,6 +241,28 @@ const handleMouseMoveRect = (e) => {
         } else {
             clearSnapGuides();
         }
+
+        // Issue #24 bug #4: track the actual containing frame at every
+        // move so the mouseUp logic re-parents correctly. Without this
+        // hoveredFrame stays at null for existing-shape drags and the
+        // shape is detached the moment the user nudges it by 1 px inside
+        // its own parent frame.
+        let newHover = null;
+        for (const f of shapes) {
+            if (f.shapeName !== 'frame') continue;
+            if (f === currentShape) continue;
+            if (typeof f.isShapeInFrame === 'function' && f.isShapeInFrame(currentShape)) {
+                newHover = f;
+                break;
+            }
+        }
+        if (hoveredFrame && hoveredFrame !== newHover && typeof hoveredFrame.removeHighlight === 'function') {
+            hoveredFrame.removeHighlight();
+        }
+        if (newHover && newHover !== hoveredFrame && typeof newHover.highlightFrame === 'function') {
+            newHover.highlightFrame();
+        }
+        hoveredFrame = newHover;
     } else if (isResizingShapeSquare && currentShape && currentShape.isSelected && resizingAnchorIndexSquare !== null) {
         currentShape.updatePosition(resizingAnchorIndexSquare, mouseX, mouseY);
         currentShape._skipAnchors = true;

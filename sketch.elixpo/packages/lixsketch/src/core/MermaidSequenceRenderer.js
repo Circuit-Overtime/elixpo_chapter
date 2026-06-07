@@ -361,119 +361,166 @@ export function parseAndRenderSequence(src) {
 }
 
 /**
- * Render a sequence diagram onto the canvas inside a Frame.
- * Creates real SVG groups with data attributes so individual elements
- * can be selected and edited.
+ * Render a sequence diagram onto the canvas as LOOSE engine shapes
+ * (issue #24 follow-up to bug #1 — per-actor / per-message split).
+ *
+ * Each participant becomes a real Rectangle (top box) + a Line (lifeline)
+ * the user can edit, restyle, or delete individually. Each message becomes
+ * a real Arrow (or Line for `--x`/`-x`). All shapes share a `groupId` so
+ * the diagram still behaves as one Ctrl+G group under Selection.js's
+ * group-expansion path — click any node, the whole diagram selects.
+ *
+ * Notes and block-frames (alt/opt/loop) are skipped for now — they'd
+ * either need their own shape types or a richer label model. Self-
+ * messages are also skipped (would need a curved arrow). The parsed
+ * data is still retrievable via the underlying parser if a future
+ * iteration wants to surface them.
  */
 export function renderSequenceOnCanvas(diagram) {
     if (!diagram || diagram.type !== 'sequenceDiagram') return false;
-    if (!window.svg || !window.Frame) {
-        console.error('[SequenceRenderer] Engine not initialized');
+    if (!window.svg || !window.Rectangle || !window.Line || !window.Arrow) {
+        console.error('[SequenceRenderer] Engine not initialized (Rectangle / Line / Arrow missing)');
         return false;
     }
 
-    // Generate the SVG markup
-    const svgMarkup = renderSequenceSVG(diagram);
-    if (!svgMarkup) return false;
+    const participants = diagram.participants || [];
+    const messages = diagram.messages || [];
+    if (participants.length === 0) return false;
 
-    // Parse SVG to get dimensions
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgMarkup, 'image/svg+xml');
-    const svgEl = doc.querySelector('svg');
-    if (!svgEl) return false;
+    // Mirror the layout math from renderSequenceSVG so the canvas layout
+    // matches the modal preview.
+    const pCount = participants.length;
+    const contentWidth = (pCount - 1) * PARTICIPANT_GAP + PARTICIPANT_W;
+    const totalWidth = Math.max(contentWidth + SIDE_MARGIN * 2, 400);
+    const startX = (totalWidth - contentWidth) / 2;
+    const pCenters = participants.map((_, i) => startX + i * PARTICIPANT_GAP + PARTICIPANT_W / 2);
 
-    const gWidth = parseFloat(svgEl.getAttribute('width'));
-    const gHeight = parseFloat(svgEl.getAttribute('height'));
+    const topBoxBottom = TOP_MARGIN + PARTICIPANT_H;
+    const msgYPositions = [];
+    let currentY = topBoxBottom + 30;
+    for (let mi = 0; mi < messages.length; mi++) {
+        msgYPositions.push(currentY);
+        currentY += MSG_ROW_HEIGHT;
+    }
+    const bottomBoxTop = currentY + 20;
+    const totalHeight = bottomBoxTop + PARTICIPANT_H + BOTTOM_MARGIN;
 
-    // Viewport center
+    // Centre the diagram on the current viewport so the user sees it
+    // right where they invoked the renderer.
     const vb = window.currentViewBox || { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
-    const vcx = vb.x + vb.width / 2;
-    const vcy = vb.y + vb.height / 2;
+    const ox = vb.x + vb.width / 2 - totalWidth / 2;
+    const oy = vb.y + vb.height / 2 - totalHeight / 2;
 
-    const framePad = 30;
-    const frameW = gWidth + framePad * 2;
-    const frameH = gHeight + framePad * 2;
-    const frameX = vcx - frameW / 2;
-    const frameY = vcy - frameH / 2;
+    const groupId = `mermaid-seq-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    const created = [];
 
-    const title = diagram.title || 'Sequence Diagram';
+    // ── Participants: top box + lifeline (and bottom box) ─────────────
+    const pIndex = new Map();
+    for (let pi = 0; pi < pCount; pi++) {
+        const p = participants[pi];
+        pIndex.set(p.name, pi);
+        const cx = pCenters[pi] + ox;
+        const bx = cx - PARTICIPANT_W / 2;
 
-    // Create frame
-    let frame;
-    try {
-        frame = new window.Frame(frameX, frameY, frameW, frameH, {
-            stroke: '#888', strokeWidth: 2, fill: 'transparent', opacity: 1,
-            frameName: title,
-        });
-        frame._diagramType = 'sequence';
-        frame._diagramData = diagram;
+        try {
+            // Top participant box
+            const topBox = new window.Rectangle(bx, TOP_MARGIN + oy, PARTICIPANT_W, PARTICIPANT_H, {
+                stroke: THEME.participantBorder,
+                strokeWidth: 1.5,
+                fill: THEME.participantBg,
+                fillStyle: 'solid',
+                roughness: 1,
+                label: p.name,
+            });
+            topBox.groupId = groupId;
+            window.shapes.push(topBox);
+            if (window.pushCreateAction) window.pushCreateAction(topBox);
+            created.push(topBox);
 
-        window.shapes.push(frame);
-        if (window.pushCreateAction) window.pushCreateAction(frame);
-    } catch (err) {
-        console.error('[SequenceRenderer] Frame creation failed:', err);
-        return false;
+            // Lifeline (dashed vertical line spanning the diagram height)
+            const lifeline = new window.Line(
+                { x: cx, y: topBoxBottom + oy },
+                { x: cx, y: bottomBoxTop + oy },
+                {
+                    stroke: THEME.lifeline,
+                    strokeWidth: 1,
+                    strokeDasharray: '6 4',
+                    roughness: 0,
+                }
+            );
+            lifeline.groupId = groupId;
+            window.shapes.push(lifeline);
+            if (window.pushCreateAction) window.pushCreateAction(lifeline);
+            created.push(lifeline);
+
+            // Bottom participant box (mirrors top — Mermaid convention)
+            const bottomBox = new window.Rectangle(bx, bottomBoxTop + oy, PARTICIPANT_W, PARTICIPANT_H, {
+                stroke: THEME.participantBorder,
+                strokeWidth: 1.5,
+                fill: THEME.participantBg,
+                fillStyle: 'solid',
+                roughness: 1,
+                label: p.name,
+            });
+            bottomBox.groupId = groupId;
+            window.shapes.push(bottomBox);
+            if (window.pushCreateAction) window.pushCreateAction(bottomBox);
+            created.push(bottomBox);
+        } catch (err) {
+            console.warn('[SequenceRenderer] Participant creation failed:', p.name, err);
+        }
     }
 
-    // Insert SVG content into the canvas
-    const NS = 'http://www.w3.org/2000/svg';
-    try {
-        const graphGroup = document.createElementNS(NS, 'g');
-        graphGroup.setAttribute('data-type', 'sequence-diagram');
-        graphGroup.setAttribute('transform', `translate(${frameX + framePad}, ${frameY + framePad})`);
+    // ── Messages: arrow (or line for --x style) per row ───────────────
+    for (let mi = 0; mi < messages.length; mi++) {
+        const m = messages[mi];
+        const fromI = pIndex.get(m.from);
+        const toI = pIndex.get(m.to);
+        if (fromI == null || toI == null) continue;
+        if (fromI === toI) continue;  // skip self-messages (v1 limitation)
 
-        // Copy defs
-        const defs = svgEl.querySelector('defs');
-        if (defs) {
-            let mainDefs = window.svg.querySelector('defs');
-            if (!mainDefs) {
-                mainDefs = document.createElementNS(NS, 'defs');
-                window.svg.insertBefore(mainDefs, window.svg.firstChild);
-            }
-            while (defs.firstChild) {
-                mainDefs.appendChild(defs.firstChild);
-            }
-        }
+        const fromCx = pCenters[fromI] + ox;
+        const toCx = pCenters[toI] + ox;
+        const y = msgYPositions[mi] + oy;
 
-        // Copy all child elements (skip defs)
-        while (svgEl.childNodes.length > 0) {
-            const child = svgEl.childNodes[0];
-            if (child.nodeName === 'defs') {
-                svgEl.removeChild(child);
-                continue;
-            }
-            graphGroup.appendChild(child);
-        }
+        const labelText = m.number ? `${m.number}. ${m.text}` : m.text;
 
-        window.svg.appendChild(graphGroup);
-
-        // Wrap as a shape-like object for the frame
-        const seqShape = {
-            shapeName: 'sequenceContent',
-            group: graphGroup,
-            element: graphGroup,
-            x: frameX + framePad,
-            y: frameY + framePad,
-            width: gWidth,
-            height: gHeight,
-            move(dx, dy) {
-                this.x += dx;
-                this.y += dy;
-                this.group.setAttribute('transform', `translate(${this.x}, ${this.y})`);
-            },
-            updateAttachedArrows() {},
+        // Solid vs dashed (sync vs async response). `cross` style (-x)
+        // would render as a line with an X at the head — fall back to a
+        // line for that, arrow otherwise.
+        const isCross = !!m.cross && m.arrowHead === 'cross';
+        const opts = {
+            stroke: THEME.messageLine,
+            strokeWidth: 1.5,
+            roughness: 0,
+            strokeDasharray: m.solid ? '' : '6 4',
+            label: labelText || '',
         };
 
-        window.shapes.push(seqShape);
-        if (frame.addShapeToFrame) frame.addShapeToFrame(seqShape);
-    } catch (err) {
-        console.error('[SequenceRenderer] SVG insertion failed:', err);
+        try {
+            const sp = { x: fromCx, y };
+            const ep = { x: toCx, y };
+            const connector = isCross
+                ? new window.Line(sp, ep, opts)
+                : new window.Arrow(sp, ep, opts);
+            connector.groupId = groupId;
+            window.shapes.push(connector);
+            if (window.pushCreateAction) window.pushCreateAction(connector);
+            created.push(connector);
+        } catch (err) {
+            console.warn('[SequenceRenderer] Message creation failed:', m, err);
+        }
     }
 
-    // Select the frame
-    window.currentShape = frame;
-    if (frame.selectFrame) frame.selectFrame();
-    if (window.__sketchStoreApi) window.__sketchStoreApi.setSelectedShapeSidebar('frame');
+    // Auto-select the first node so the user sees something landed.
+    // Selection.js's group-expansion will pick up the rest via groupId.
+    const first = created[0];
+    if (first) {
+        window.currentShape = first;
+        if (typeof first.selectShape === 'function') first.selectShape();
+    }
 
+    console.log(`[SequenceRenderer] Done: ${pCount} participants, ${messages.length} messages (groupId=${groupId})`);
     return true;
 }
+

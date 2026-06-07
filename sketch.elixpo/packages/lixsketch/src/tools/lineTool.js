@@ -238,6 +238,26 @@ const handleMouseMove = (e) => {
         startX = x;
         startY = y;
 
+        // Issue #24 bug #4: track containing frame during existing-line
+        // drag so mouseUp re-parents from current geometry, not from a
+        // stale hoveredFrameLine.
+        let newHover = null;
+        for (const f of shapes) {
+            if (f.shapeName !== 'frame') continue;
+            if (f === currentShape) continue;
+            if (typeof f.isShapeInFrame === 'function' && f.isShapeInFrame(currentShape)) {
+                newHover = f;
+                break;
+            }
+        }
+        if (hoveredFrameLine && hoveredFrameLine !== newHover && typeof hoveredFrameLine.removeHighlight === 'function') {
+            hoveredFrameLine.removeHighlight();
+        }
+        if (newHover && newHover !== hoveredFrameLine && typeof newHover.highlightFrame === 'function') {
+            newHover.highlightFrame();
+        }
+        hoveredFrameLine = newHover;
+
         // Snap guides
         if (window.__sketchStoreApi && window.__sketchStoreApi.getState().snapToObjects) {
             const snap = calculateSnap(currentShape, e.shiftKey, e.clientX, e.clientY);

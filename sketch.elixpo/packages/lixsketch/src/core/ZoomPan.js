@@ -74,14 +74,24 @@ window.zoomFromCenter = function(direction) {
 };
 
 window.zoomReset = function() {
+  // Issue #24 bug #5: reset zoom in place around the current viewport
+  // centre — do NOT recenter to (0, 0). Recentering used to make whatever
+  // the user had on screen vanish until they panned back to it.
+  const cx = currentViewBox.x + currentViewBox.width / 2;
+  const cy = currentViewBox.y + currentViewBox.height / 2;
+
   currentZoom = 1;
-  currentViewBox.x = 0;
-  currentViewBox.y = 0;
-  currentViewBox.width = window.innerWidth;
-  currentViewBox.height = window.innerHeight;
+  const rect = freehandCanvas.getBoundingClientRect();
+  const vbW = rect.width || window.innerWidth;
+  const vbH = rect.height || window.innerHeight;
+
+  currentViewBox.x = cx - vbW / 2;
+  currentViewBox.y = cy - vbH / 2;
+  currentViewBox.width = vbW;
+  currentViewBox.height = vbH;
   freehandCanvas.setAttribute(
     "viewBox",
-    `0 0 ${window.innerWidth} ${window.innerHeight}`
+    `${currentViewBox.x} ${currentViewBox.y} ${vbW} ${vbH}`
   );
   updateZoomDisplay();
   if (window.__sketchStoreApi && window.__sketchStoreApi.setZoom) {

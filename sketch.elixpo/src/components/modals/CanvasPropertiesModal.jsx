@@ -150,7 +150,7 @@ export default function CanvasPropertiesModal() {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       <div
-        className="relative bg-surface-card border border-border-light rounded-2xl w-[380px] mx-4 max-h-[85vh] overflow-y-auto docs-scroll"
+        className="relative bg-surface-card border border-border-light rounded-2xl w-[640px] max-w-[94vw] mx-4 max-h-[85vh] overflow-y-auto docs-scroll"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

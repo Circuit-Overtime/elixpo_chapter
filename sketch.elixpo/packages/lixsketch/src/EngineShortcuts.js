@@ -189,6 +189,28 @@ export function installEngineShortcuts(engine, options = {}) {
             if (window.currentShape) {
                 const shape = window.currentShape;
                 const shapes = window.shapes;
+                const isFrame = shape.shapeName === 'frame';
+                const isDiagramFrame = isFrame && !!shape._diagramType;
+
+                // Issue #24 bug #7: regular frame → orphan children +
+                // snapshot for undo (mirrors deleteSelectedShapes).
+                let childSnapshot = null;
+                if (isFrame && !isDiagramFrame) {
+                    childSnapshot = [...(shape.containedShapes || [])];
+                    for (const child of childSnapshot) {
+                        if (!child || child === shape) continue;
+                        const el = child.group || child.element;
+                        if (el) {
+                            if (shape.clipGroup && el.parentNode === shape.clipGroup) {
+                                shape.clipGroup.removeChild(el);
+                            }
+                            if (window.svg && el.parentNode !== window.svg) window.svg.appendChild(el);
+                        }
+                        child.parentFrame = null;
+                        delete child.isBeingMovedByFrame;
+                    }
+                }
+
                 if (shapes) {
                     const idx = shapes.indexOf(shape);
                     if (idx !== -1) shapes.splice(idx, 1);
@@ -199,10 +221,20 @@ export function installEngineShortcuts(engine, options = {}) {
                 if (shape.parentFrame && typeof shape.parentFrame.removeShapeFromFrame === 'function') {
                     shape.parentFrame.removeShapeFromFrame(shape);
                 }
-                const el = shape.group || shape.element;
-                if (el && el.parentNode) el.parentNode.removeChild(el);
+
+                if (isFrame && !isDiagramFrame) {
+                    shape.containedShapes = [];
+                    if (shape.group && shape.group.parentNode) shape.group.parentNode.removeChild(shape.group);
+                    if (shape.clipGroup && shape.clipGroup.parentNode) shape.clipGroup.parentNode.removeChild(shape.clipGroup);
+                    if (shape.clipPath && shape.clipPath.parentNode) shape.clipPath.parentNode.removeChild(shape.clipPath);
+                } else {
+                    const el = shape.group || shape.element;
+                    if (el && el.parentNode) el.parentNode.removeChild(el);
+                }
+
                 if (typeof window.pushDeleteAction === 'function') {
-                    window.pushDeleteAction(shape);
+                    if (childSnapshot) window.pushDeleteAction(shape, { childSnapshot });
+                    else window.pushDeleteAction(shape);
                 }
                 window.currentShape = null;
                 if (typeof window.disableAllSideBars === 'function') {
