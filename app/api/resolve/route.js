@@ -133,6 +133,15 @@ export async function GET(request) {
 
       if (!org) return NextResponse.json({ error: 'Org not found' }, { status: 404 });
 
+      // Custom links from the dedicated table (name + url), newest schema wins
+      // over the legacy JSON `links` column when present.
+      try {
+        const lk = await db.prepare('SELECT name, url FROM org_links WHERE org_id = ? ORDER BY position').bind(org.id).all();
+        if ((lk?.results || []).length) {
+          org.links = JSON.stringify(lk.results.map(l => ({ label: l.name, url: l.url, type: 'website' })));
+        }
+      } catch {}
+
       // If collection + slug, find blog in collection
       if (collection && slug) {
         const col = await db.prepare('SELECT id FROM collections WHERE org_id = ? AND LOWER(slug) = ?')
