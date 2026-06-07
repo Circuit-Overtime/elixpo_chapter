@@ -4,7 +4,7 @@ import { useState } from 'react'
 import useUIStore from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
 import useAuthStore from '@/store/useAuthStore'
-import { triggerCloudSync } from '@/hooks/useAutoSave'
+import { triggerCloudSync, writeLocalScene } from '@/hooks/useAutoSave'
 import { triggerDocCloudSync, persistLayoutMode } from '@/hooks/useDocAutoSave'
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -75,6 +75,10 @@ export default function AppMenu() {
   const logout = useAuthStore((s) => s.logout)
 
   const [prefsOpen, setPrefsOpen] = useState(false)
+// Side-flyout for sub-menus (issue #24 bug #11). Mutually exclusive — only
+// one flyout open at a time. Both panels float to the LEFT of the main
+// menu since the menu itself is pinned to the top-right of the viewport.
+const [docOpen, setDocOpen] = useState(false)
 
   // Menu is always accessible (via floating button in view/zen mode)
 
@@ -95,8 +99,8 @@ export default function AppMenu() {
     <>
       {menuOpen && (
         <div
-          className="fixed inset-0 z-[999]"
-          onClick={() => { closeMenu(); setPrefsOpen(false) }}
+          className="fixed inset-0 z-999"
+          onClick={() => { closeMenu(); setPrefsOpen(false); setDocOpen(false) }}
         />
       )}
       <div
@@ -126,8 +130,9 @@ export default function AppMenu() {
               const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
               const sceneData = serializer.save(workspaceName)
               const sessionId = window.__sessionID
-              const key = sessionId ? `lixsketch-autosave-${sessionId}` : 'lixsketch-autosave'
-              localStorage.setItem(key, JSON.stringify(sceneData))
+              if (sessionId) {
+                writeLocalScene(`lixsketch-autosave-${sessionId}`, sceneData)
+              }
               useUIStore.getState().setSaveStatus('local')
               triggerCloudSync()
             }
@@ -216,36 +221,54 @@ export default function AppMenu() {
 
         <hr className="border-border-light my-1" />
 
-        {/* Document layout */}
-        <div className="px-3 py-1.5">
-          <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <i className="bx bx-file-blank text-[11px]" />
-            Document
-          </p>
-          <div className="flex items-center gap-1 bg-surface/60 border border-border-light rounded-lg p-0.5">
-            {[
-              { key: 'canvas', icon: 'bx-pen', label: 'Canvas' },
-              { key: 'split', icon: 'bx-layout', label: 'Split' },
-              { key: 'docs', icon: 'bxs-notepad', label: 'Docs' },
-            ].map((m) => {
-              const active = layoutMode === m.key
-              return (
-                <button
-                  key={m.key}
-                  onClick={() => handleSetLayout(m.key)}
-                  title={m.label}
-                  className={`flex-1 flex items-center justify-center gap-1 h-6 rounded-md text-[10.5px] transition-all duration-150 ${
-                    active
-                      ? 'bg-accent-blue text-text-primary'
-                      : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
-                  }`}
-                >
-                  <i className={`bx ${m.icon} text-[11px]`} />
-                  {m.label}
-                </button>
-              )
-            })}
-          </div>
+        <div className="relative">
+          <button
+            onClick={() => { setDocOpen((d) => !d); setPrefsOpen(false) }}
+            className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200 ${docOpen ? 'bg-surface-hover' : ''}`}
+          >
+            <span className="flex items-center gap-2">
+              <i className="bx bx-file-blank text-sm" />
+              Document
+            </span>
+            <i className="bx bx-chevron-left text-sm text-text-dim" />
+          </button>
+
+          {docOpen && (
+            <div
+              className="absolute right-full top-0 mr-2 w-[240px] bg-surface/95 backdrop-blur-lg rounded-2xl border border-border-light p-1.5 shadow-2xl shadow-black/40"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-text-dim text-[10px] uppercase tracking-wider px-2 pb-1.5 pt-0.5 flex items-center gap-1.5">
+                <i className="bx bx-file-blank text-[11px]" />
+                Document layout
+              </p>
+              {[
+                { key: 'canvas', icon: 'bx-pen',     label: 'Canvas', subtext: 'Drawing only' },
+                { key: 'split',  icon: 'bx-layout',  label: 'Split',  subtext: 'Canvas + docs side-by-side' },
+                { key: 'docs',   icon: 'bxs-notepad', label: 'Docs',   subtext: 'Document editor only' },
+              ].map((m) => {
+                const active = layoutMode === m.key
+                return (
+                  <button
+                    key={m.key}
+                    onClick={() => { handleSetLayout(m.key); setDocOpen(false) }}
+                    className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 ${
+                      active ? 'bg-accent-blue/15 text-text-primary' : 'text-text-secondary hover:bg-surface-hover'
+                    }`}
+                  >
+                    <i className={`bx ${m.icon} text-base mt-0.5 ${active ? 'text-accent-blue' : 'text-text-muted'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] flex items-center gap-1.5">
+                        {m.label}
+                        {active && <i className="bx bx-check text-sm text-accent-blue" />}
+                      </div>
+                      <div className="text-text-dim text-[10px]">{m.subtext}</div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Sync doc now (Ctrl+S triggers both, but explicit action is useful from menu) */}
@@ -266,73 +289,76 @@ export default function AppMenu() {
 
         <hr className="border-border-light my-1" />
 
-        {/* Preferences - inline expandable */}
-        <button
-          onClick={() => setPrefsOpen((p) => !p)}
-          className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200 ${prefsOpen ? 'bg-surface-hover' : ''}`}
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-cog text-sm" />
-            {t('menu.preferences')}
-          </span>
-          <i className={`bx bx-chevron-down text-sm text-text-dim transition-transform duration-150 ${prefsOpen ? 'rotate-180' : ''}`} />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => { setPrefsOpen((p) => !p); setDocOpen(false) }}
+            className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200 ${prefsOpen ? 'bg-surface-hover' : ''}`}
+          >
+            <span className="flex items-center gap-2">
+              <i className="bx bx-cog text-sm" />
+              {t('menu.preferences')}
+            </span>
+            <i className="bx bx-chevron-left text-sm text-text-dim" />
+          </button>
 
-        {prefsOpen && (
-          <div className="ml-2 border-l border-border-light pl-1">
-            {/* Language Switcher */}
-            <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] transition-all duration-200">
-              <span className="flex items-center gap-2">
-                {t('prefs.language')}
-              </span>
-              <select 
-                className="bg-surface-hover text-text-primary text-[10px] rounded px-1 outline-none border border-border-light"
-                value={language}
-                onChange={(e) => persistUIPrefs({ language: e.target.value })}
-              >
-                <option value="en">English</option>
-                <option value="bg">Български</option>
-                <option value="de">Deutsch</option>
-              </select>
-            </div>
-            
-            {PREFERENCE_ITEMS.map((item) => {
-              const isActive =
-                (item.id === 'toolLock' && toolLock) ||
-                (item.id === 'snapObjects' && snapToObjects) ||
-                (item.id === 'toggleGrid' && gridEnabled) ||
-                (item.id === 'zenMode' && zenMode) ||
-                (item.id === 'viewMode' && viewMode) ||
-                (item.toggle) // arrow binding, snap midpoints default on
-
-              const handleClick = () => {
-                if (item.id === 'toolLock') toggleToolLock()
-                else if (item.id === 'snapObjects') toggleSnapToObjects()
-                else if (item.id === 'toggleGrid') toggleGrid()
-                else if (item.id === 'zenMode') { toggleZenMode(); closeMenu() }
-                else if (item.id === 'viewMode') { toggleViewMode(); closeMenu() }
-              }
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={handleClick}
-                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          {prefsOpen && (
+            <div
+              className="absolute right-full top-0 mr-2 w-[240px] bg-surface/95 backdrop-blur-lg rounded-2xl border border-border-light p-1.5 shadow-2xl shadow-black/40 max-h-[60vh] overflow-y-auto no-scrollbar"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-text-dim text-[10px] uppercase tracking-wider px-2 pb-1.5 pt-0.5 flex items-center gap-1.5">
+                <i className="bx bx-cog text-[11px]" />
+                {t('menu.preferences')}
+              </p>
+              <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px]">
+                <span>{t('prefs.language')}</span>
+                <select
+                  className="bg-surface-hover text-text-primary text-[10px] rounded px-1 outline-none border border-border-light"
+                  value={language}
+                  onChange={(e) => persistUIPrefs({ language: e.target.value })}
                 >
-                  <span className="flex items-center gap-2">
-                    {isActive && (
-                      <i className="bx bx-check text-sm text-accent-blue" />
+                  <option value="en">English</option>
+                  <option value="bg">Български</option>
+                  <option value="de">Deutsch</option>
+                </select>
+              </div>
+
+              {PREFERENCE_ITEMS.map((item) => {
+                const isActive =
+                  (item.id === 'toolLock' && toolLock) ||
+                  (item.id === 'snapObjects' && snapToObjects) ||
+                  (item.id === 'toggleGrid' && gridEnabled) ||
+                  (item.id === 'zenMode' && zenMode) ||
+                  (item.id === 'viewMode' && viewMode) ||
+                  (item.toggle)
+
+                const handleClick = () => {
+                  if (item.id === 'toolLock') toggleToolLock()
+                  else if (item.id === 'snapObjects') toggleSnapToObjects()
+                  else if (item.id === 'toggleGrid') toggleGrid()
+                  else if (item.id === 'zenMode') { toggleZenMode(); closeMenu() }
+                  else if (item.id === 'viewMode') { toggleViewMode(); closeMenu() }
+                }
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={handleClick}
+                    className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      {isActive && <i className="bx bx-check text-sm text-accent-blue" />}
+                      {item.label}
+                    </span>
+                    {item.shortcut && (
+                      <span className="text-text-dim text-[10px]">{item.shortcut}</span>
                     )}
-                    {item.label}
-                  </span>
-                  {item.shortcut && (
-                    <span className="text-text-dim text-[10px]">{item.shortcut}</span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Grid toggle */}
         <button

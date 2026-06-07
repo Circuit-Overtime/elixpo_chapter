@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import useSketchStore, { TOOLS, SHORTCUT_MAP } from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
-import { triggerCloudSync } from '@/hooks/useAutoSave'
+import { triggerCloudSync, writeLocalScene } from '@/hooks/useAutoSave'
 import { triggerDocCloudSync } from '@/hooks/useDocAutoSave'
 import { showToast } from '@/utils/toast'
 
@@ -28,12 +28,16 @@ export default function useKeyboardShortcuts() {
             const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
             const sceneData = serializer.save(workspaceName)
             try {
-              localStorage.setItem('lixsketch-autosave', JSON.stringify(sceneData))
-              localStorage.setItem('lixsketch-autosave-meta', JSON.stringify({
-                workspaceName,
-                savedAt: Date.now(),
-                shapeCount: shapes.length,
-              }))
+              // Issue #24 bug #8: session-scoped key + compressed payload.
+              const sessionId = window.__sessionID
+              if (sessionId) {
+                writeLocalScene(`lixsketch-autosave-${sessionId}`, sceneData)
+                localStorage.setItem(`lixsketch-autosave-meta-${sessionId}`, JSON.stringify({
+                  workspaceName,
+                  savedAt: Date.now(),
+                  shapeCount: shapes.length,
+                }))
+              }
               useUIStore.getState().setSaveStatus('local')
             } catch {}
             // Trigger cloud sync immediately — both scene and doc together.

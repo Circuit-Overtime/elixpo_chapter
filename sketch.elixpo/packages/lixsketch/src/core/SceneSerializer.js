@@ -122,8 +122,14 @@ function serializeShape(shape) {
                 gridSize: shape.gridSize || 20,
                 gridColor: shape.gridColor || 'rgba(255,255,255,0.06)',
                 options: cloneOptions(shape.options),
+                // Issue #24 bug #10: filter out null / undefined / shapeID-less
+                // children. A stale reference would serialize as `null` and the
+                // load path would skip it (logging a misleading "missing shape"
+                // warning) — but also previously skewed the order tracking.
                 containedShapeIDs: shape.containedShapes
-                    ? Array.from(shape.containedShapes).map(s => s.shapeID)
+                    ? Array.from(shape.containedShapes)
+                        .filter(s => s && s.shapeID)
+                        .map(s => s.shapeID)
                     : [],
             };
 
@@ -312,9 +318,31 @@ export function saveScene(workspaceName = 'Untitled') {
     const allShapes = window.shapes || [];
     const serialized = [];
 
+    // Issue #24 bug #10: rebuild containment from each shape's own
+    // `parentFrame` ref before serialising. The `containedShapes` array
+    // on the frame side drifts over time (eraser, partial deletes, drag
+    // out + drag back, etc.), and a missing entry there means the child
+    // gets serialised as a top-level shape and the frame restores empty.
+    // Each shape knows its own parent, so we trust THAT and override the
+    // frame's array at save time.
+    const childrenByFrame = new Map();
+    for (const s of allShapes) {
+        if (s && s.parentFrame && s.shapeID && s !== s.parentFrame) {
+            const arr = childrenByFrame.get(s.parentFrame.shapeID) || [];
+            arr.push(s.shapeID);
+            childrenByFrame.set(s.parentFrame.shapeID, arr);
+        }
+    }
+
     for (const shape of allShapes) {
         const data = serializeShape(shape);
-        if (data) serialized.push(data);
+        if (!data) continue;
+        if (data.type === 'frame' && shape.shapeID && childrenByFrame.has(shape.shapeID)) {
+            const merged = new Set(data.containedShapeIDs || []);
+            for (const id of childrenByFrame.get(shape.shapeID)) merged.add(id);
+            data.containedShapeIDs = Array.from(merged);
+        }
+        serialized.push(data);
     }
 
     const scene = {
@@ -441,6 +469,62 @@ export function loadScene(sceneData) {
                 const target = idMap.get(data.endAttachmentID);
                 if (target && arrow.setEndAttachment) arrow.setEndAttachment(target);
             }
+        }
+    }
+
+    // ── Fourth pass: frame containment reconciliation (issue #24 bug #10) ──
+    //
+    // The pass above attaches each child via `frame.addShapeToFrame(child)`,
+    // which is supposed to move the child's <g> into the frame's clipGroup.
+    // In practice LixScript-rendered scenes were reloading with empty
+    // frames — children present in the shapes array, frame box drawn, but
+    // the children's <g> elements stranded at the svg root (so visually
+    // they look orphaned). The cause varies (transient `isBeingMovedByFrame`
+    // flag carried over from save time, ordering glitches when nested
+    // frames are restored, etc.). Rather than chase the source, repair the
+    // DOM state here from the authoritative `containedShapes` array.
+    for (const data of frameData) {
+        const frame = idMap.get(data.shapeID);
+        if (!frame) continue;
+
+        // Clear stale flags that suppress DOM mutation inside addShapeToFrame.
+        delete frame.isBeingMovedByFrame;
+        delete frame.isDraggedOutTemporarily;
+
+        // Ensure the frame's own clipGroup is direct child of svg — sub-frames
+        // that didn't get re-parented yet are handled in the next loop.
+        if (frame.clipGroup && frame.clipGroup.parentNode !== svgEl) {
+            svgEl.appendChild(frame.clipGroup);
+        }
+
+        for (const child of frame.containedShapes || []) {
+            if (!child) continue;
+            delete child.isBeingMovedByFrame;
+            delete child.isDraggedOutTemporarily;
+
+            const el = child.group || child.element;
+            if (el && el.parentNode !== frame.clipGroup) {
+                if (el.parentNode) el.parentNode.removeChild(el);
+                frame.clipGroup.appendChild(el);
+            }
+            // Sub-frames also carry their own clipGroup — nest it.
+            if (child.shapeName === 'frame' && child.clipGroup
+                && child.clipGroup.parentNode !== frame.clipGroup) {
+                if (child.clipGroup.parentNode) child.clipGroup.parentNode.removeChild(child.clipGroup);
+                frame.clipGroup.appendChild(child.clipGroup);
+            }
+            // Authoritative parent ref — `addShapeToFrame` should already
+            // have set this but the no-op early return when the child was
+            // already in containedShapes skips it.
+            child.parentFrame = frame;
+        }
+
+        // Force the clip rect + visual to match. Some saved frames came
+        // through with a stale clipRect from before the resize that lost
+        // the children visually.
+        if (typeof frame.updateClipPath === 'function') frame.updateClipPath();
+        if (typeof frame.draw === 'function') {
+            try { frame.draw(); } catch (err) { console.warn('[SceneSerializer] frame redraw failed:', err); }
         }
     }
 

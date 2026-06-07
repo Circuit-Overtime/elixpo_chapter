@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import useUIStore from '@/store/useUIStore'
 import useCollabStore from '@/store/useCollabStore'
 import { getSessionID } from '@/hooks/useSessionID'
-import { generateKey } from '@/utils/encryption'
+import { generateKey, encrypt } from '@/utils/encryption'
+import { WORKER_URL } from '@/lib/env'
 
 // ── Export helpers ────────────────────────────────────────────
 
@@ -64,6 +65,14 @@ export default function SaveModal() {
   const [collabError, setCollabError] = useState('')
   const collabConnected = useCollabStore((s) => s.connected)
 
+  // Issue #24 bug #9: one-time view-only share link. Creates a separate
+  // read-only snapshot of the current scene that anyone with the link can
+  // view, distinct from the editable session above.
+  const [shareLink, setShareLink] = useState('')
+  const [shareCopied, setShareCopied] = useState(false)
+  const [creatingShare, setCreatingShare] = useState(false)
+  const [shareError, setShareError] = useState('')
+
   // Export state
   const [bgMode, setBgMode] = useState('dark')
   const [exportScale, setExportScale] = useState(2)
@@ -121,6 +130,64 @@ export default function SaveModal() {
     } finally {
       setStartingCollab(false)
     }
+  }
+
+  // Snapshot the current scene, encrypt with a fresh key, save with
+  // permission='view' on the worker, and build a /s/<token>#key=<k> URL.
+  const handleCreateShareLink = async () => {
+    if (creatingShare) return
+    setCreatingShare(true)
+    setShareError('')
+    try {
+      const serializer = window.__sceneSerializer
+      if (!serializer || typeof serializer.save !== 'function') {
+        throw new Error('Scene serializer not ready')
+      }
+      const sceneData = serializer.save(workspaceName || 'Untitled')
+      const sceneJSON = JSON.stringify(sceneData)
+
+      // Independent key for the share snapshot — don't reuse the editable
+      // session's key so revoking the share later doesn't break the
+      // user's own session.
+      const shareKey = await generateKey()
+      const encryptedData = await encrypt(sceneJSON, shareKey)
+
+      // Independent sessionId so the worker treats this as a new scene
+      // (not an update to the user's editable record).
+      const snapSessionId = `snap-${crypto.randomUUID().slice(0, 16)}`
+
+      const res = await fetch(`${WORKER_URL}/api/scenes/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: snapSessionId,
+          encryptedData,
+          permission: 'view',
+          workspaceName: workspaceName || 'Untitled',
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || `Server returned ${res.status}`)
+      }
+      const { token } = await res.json()
+      if (!token) throw new Error('Server did not return a share token')
+      setShareLink(`${window.location.origin}/s/${token}#key=${shareKey}`)
+      setShareCopied(false)
+    } catch (err) {
+      console.error('[SaveModal] Failed to create share link:', err)
+      setShareError(err.message || 'Failed to create share link')
+    } finally {
+      setCreatingShare(false)
+    }
+  }
+
+  const handleCopyShareLink = () => {
+    if (!shareLink) return
+    navigator.clipboard.writeText(shareLink).then(() => {
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 1800)
+    }).catch(() => {})
   }
 
   const handleCopyCollabLink = () => {
@@ -214,7 +281,7 @@ export default function SaveModal() {
 
       {/* Modal */}
       <div
-        className="relative bg-surface-card border border-border-light rounded-2xl w-[420px] mx-4 max-h-[90vh] overflow-y-auto docs-scroll"
+        className="relative bg-surface-card border border-border-light rounded-2xl w-[640px] max-w-[94vw] mx-4 max-h-[90vh] overflow-y-auto docs-scroll"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -406,6 +473,56 @@ export default function SaveModal() {
 
             {collabError && (
               <p className="text-red-400 text-[10px] mt-2">{collabError}</p>
+            )}
+          </div>
+
+          {/* ── One-time view-only share (issue #24 bug #9) ── */}
+          <div className="p-3.5 rounded-xl border border-border-light bg-surface/50">
+            <div className="flex items-center gap-2 mb-2.5">
+              <i className="bx bx-link-alt text-lg text-accent-blue" />
+              <div className="flex-1">
+                <span className="text-text-primary text-sm font-medium">View-only share</span>
+                <p className="text-text-dim text-[10px] leading-relaxed">Snapshot the canvas — anyone with the link can view, no editing</p>
+              </div>
+              <span className="flex items-center gap-1 text-[10px] text-green-400/80">
+                <i className="bx bxs-lock-alt text-xs" />
+                Encrypted
+              </span>
+            </div>
+
+            {shareLink ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={shareLink}
+                  readOnly
+                  className="flex-1 bg-surface text-text-secondary text-xs border border-border-light rounded-lg px-2.5 py-2 outline-none truncate"
+                  onClick={(e) => e.target.select()}
+                />
+                <button
+                  onClick={handleCopyShareLink}
+                  className={`shrink-0 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 ${
+                    shareCopied
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-accent-blue hover:bg-accent-blue-hover text-text-primary'
+                  }`}
+                >
+                  {shareCopied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleCreateShareLink}
+                disabled={creatingShare}
+                className="w-full py-2.5 rounded-lg bg-accent-blue/15 hover:bg-accent-blue/25 text-accent-blue text-sm cursor-pointer transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <i className="bx bx-share-alt text-sm" />
+                {creatingShare ? 'Creating link…' : 'Create view-only link'}
+              </button>
+            )}
+
+            {shareError && (
+              <p className="text-red-400 text-[10px] mt-2">{shareError}</p>
             )}
           </div>
         </div>

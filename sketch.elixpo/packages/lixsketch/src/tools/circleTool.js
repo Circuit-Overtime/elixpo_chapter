@@ -261,6 +261,25 @@ const handleMouseMove = (e) => {
         } else {
             clearSnapGuides();
         }
+
+        // Issue #24 bug #4: track containing frame during drag (see same
+        // block in rectangleTool for the rationale).
+        let newHover = null;
+        for (const f of shapes) {
+            if (f.shapeName !== 'frame') continue;
+            if (f === currentShape) continue;
+            if (typeof f.isShapeInFrame === 'function' && f.isShapeInFrame(currentShape)) {
+                newHover = f;
+                break;
+            }
+        }
+        if (hoveredFrameCircle && hoveredFrameCircle !== newHover && typeof hoveredFrameCircle.removeHighlight === 'function') {
+            hoveredFrameCircle.removeHighlight();
+        }
+        if (newHover && newHover !== hoveredFrameCircle && typeof newHover.highlightFrame === 'function') {
+            newHover.highlightFrame();
+        }
+        hoveredFrameCircle = newHover;
     }
        
     else if(isResizingShapeCircle && currentShape && currentShape.isSelected)
