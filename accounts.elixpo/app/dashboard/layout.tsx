@@ -27,11 +27,44 @@ import { usePathname, useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useState } from "react";
 
+import BackgroundAurora from "../components/background-aurora";
+
 const darkTheme = createTheme({
     palette: {
         mode: "dark",
         primary: { main: "#9b7bf7" },
-        background: { default: "#0f1117", paper: "#1a1d29" },
+        background: {
+            default: "transparent",
+            paper: "rgba(255, 255, 255, 0.03)",
+        },
+    },
+    typography: {
+        fontFamily: "var(--font-geist-sans), Arial, sans-serif",
+    },
+    components: {
+        MuiCard: {
+            styleOverrides: {
+                root: {
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "16px",
+                    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
+                },
+            },
+        },
+        MuiPaper: {
+            styleOverrides: {
+                root: {
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "16px",
+                },
+            },
+        },
     },
 });
 
@@ -115,282 +148,292 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     return (
         <ThemeProvider theme={darkTheme}>
-            <Box sx={{ minHeight: "100vh", bgcolor: "#0f1117" }}>
-                {/* Top Navbar */}
-                <AppBar
-                    position="sticky"
-                    elevation={0}
-                    sx={{
-                        bgcolor: "rgba(20, 26, 22, 0.9)",
-                        backdropFilter: "blur(16px)",
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-                    }}
-                >
-                    <Toolbar
+            <Box sx={{ position: "relative", minHeight: "100vh" }}>
+                <BackgroundAurora variant="default" />
+                <Box sx={{ position: "relative", zIndex: 1 }}>
+                    {/* Top Navbar */}
+                    <AppBar
+                        position="sticky"
+                        elevation={0}
                         sx={{
-                            maxWidth: "1400px",
-                            width: "100%",
-                            mx: "auto",
-                            px: { xs: 2, md: 3 },
+                            bgcolor: "rgba(11, 13, 18, 0.4)",
+                            backdropFilter: "blur(16px)",
+                            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
                         }}
                     >
-                        {/* Logo + Brand */}
-                        <Box
-                            component={Link}
-                            href="/dashboard/oauth-apps"
+                        <Toolbar
                             sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1.5,
-                                textDecoration: "none",
-                                mr: 4,
-                                flexShrink: 0,
+                                maxWidth: "1400px",
+                                width: "100%",
+                                mx: "auto",
+                                px: { xs: 2, md: 3 },
                             }}
                         >
+                            {/* Logo + Brand */}
                             <Box
-                                component="img"
-                                src="/LOGO/logo.png"
-                                alt="Elixpo"
+                                component={Link}
+                                href="/dashboard/oauth-apps"
                                 sx={{
-                                    height: 32,
-                                    width: 32,
-                                    borderRadius: "8px",
-                                }}
-                            />
-                            <Typography
-                                sx={{
-                                    fontWeight: 700,
-                                    fontSize: "1.1rem",
-                                    color: "#f5f5f4",
-                                    display: { xs: "none", sm: "block" },
-                                    letterSpacing: "-0.01em",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1.5,
+                                    textDecoration: "none",
+                                    mr: 4,
+                                    flexShrink: 0,
                                 }}
                             >
-                                Elixpo Accounts
-                            </Typography>
-                        </Box>
-
-                        {/* Spacer */}
-                        <Box sx={{ flexGrow: 1 }} />
-
-                        {/* Nav Icons (right side) */}
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                                mr: 1,
-                            }}
-                        >
-                            {navItems.map((item) => (
-                                <IconButton
-                                    key={item.href}
-                                    component={Link}
-                                    href={item.href}
-                                    title={item.label}
+                                <Box
+                                    component="img"
+                                    src="/LOGO/logo.png"
+                                    alt="Elixpo"
                                     sx={{
-                                        color: isActive(item.href)
-                                            ? "#9b7bf7"
-                                            : "rgba(255, 255, 255, 0.45)",
-                                        bgcolor: isActive(item.href)
-                                            ? "rgba(155, 123, 247, 0.1)"
-                                            : "transparent",
+                                        height: 32,
+                                        width: 32,
                                         borderRadius: "8px",
-                                        width: 38,
-                                        height: 38,
-                                        transition: "all 0.2s ease",
-                                        "&:hover": {
-                                            bgcolor: isActive(item.href)
-                                                ? "rgba(155, 123, 247, 0.15)"
-                                                : "rgba(255, 255, 255, 0.06)",
+                                    }}
+                                />
+                                <Typography
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: "1.1rem",
+                                        color: "#f5f5f4",
+                                        display: { xs: "none", sm: "block" },
+                                        letterSpacing: "-0.01em",
+                                    }}
+                                >
+                                    Elixpo Accounts
+                                </Typography>
+                            </Box>
+                            {/* Spacer */}
+
+                            <Box sx={{ flexGrow: 1 }} />
+                            {/* Nav Icons (right side) */}
+
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                    mr: 1,
+                                }}
+                            >
+                                {navItems.map((item) => (
+                                    <IconButton
+                                        key={item.href}
+                                        component={Link}
+                                        href={item.href}
+                                        title={item.label}
+                                        sx={{
                                             color: isActive(item.href)
                                                 ? "#9b7bf7"
-                                                : "rgba(255, 255, 255, 0.8)",
+                                                : "rgba(255, 255, 255, 0.45)",
+                                            bgcolor: isActive(item.href)
+                                                ? "rgba(155, 123, 247, 0.1)"
+                                                : "transparent",
+                                            borderRadius: "8px",
+                                            width: 38,
+                                            height: 38,
+                                            transition: "all 0.2s ease",
+                                            "&:hover": {
+                                                bgcolor: isActive(item.href)
+                                                    ? "rgba(155, 123, 247, 0.15)"
+                                                    : "rgba(255, 255, 255, 0.06)",
+                                                color: isActive(item.href)
+                                                    ? "#9b7bf7"
+                                                    : "rgba(255, 255, 255, 0.8)",
+                                            },
+                                        }}
+                                    >
+                                        <item.icon
+                                            sx={{ fontSize: "1.25rem" }}
+                                        />
+                                    </IconButton>
+                                ))}
+                            </Box>
+                            {/* GitHub */}
+
+                            <IconButton
+                                component="a"
+                                href="https://github.com/elixpo/elixpoaccounts"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="GitHub"
+                                sx={{
+                                    color: "rgba(255,255,255,0.35)",
+                                    width: 38,
+                                    height: 38,
+                                    borderRadius: "8px",
+                                    "&:hover": {
+                                        color: "#fff",
+                                        bgcolor: "rgba(255,255,255,0.06)",
+                                    },
+                                }}
+                            >
+                                <GitHub sx={{ fontSize: "1.2rem" }} />
+                            </IconButton>
+                            {/* User Avatar / Menu */}
+
+                            <IconButton
+                                onClick={(e) => setAnchorEl(e.currentTarget)}
+                                sx={{ p: 0.5 }}
+                            >
+                                {userAvatar ? (
+                                    <Box
+                                        component="img"
+                                        src={userAvatar}
+                                        alt="Avatar"
+                                        sx={{
+                                            width: 34,
+                                            height: 34,
+                                            borderRadius: "50%",
+                                            border: "2px solid rgba(155, 123, 247, 0.3)",
+                                        }}
+                                    />
+                                ) : (
+                                    <Box
+                                        sx={{
+                                            width: 34,
+                                            height: 34,
+                                            borderRadius: "50%",
+                                            background:
+                                                "linear-gradient(135deg, #9b7bf7 0%, #65a30d 100%)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            fontSize: "0.95rem",
+                                            fontWeight: 700,
+                                            color: "#161816",
+                                        }}
+                                    >
+                                        {(displayName || userEmail)
+                                            ?.charAt(0)
+                                            .toUpperCase() || "E"}
+                                    </Box>
+                                )}
+                            </IconButton>
+
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={Boolean(anchorEl)}
+                                onClose={() => setAnchorEl(null)}
+                                transformOrigin={{
+                                    horizontal: "right",
+                                    vertical: "top",
+                                }}
+                                anchorOrigin={{
+                                    horizontal: "right",
+                                    vertical: "bottom",
+                                }}
+                                slotProps={{
+                                    paper: {
+                                        sx: {
+                                            mt: 1,
+                                            bgcolor: "rgba(20, 24, 18, 0.95)",
+                                            backdropFilter: "blur(16px)",
+                                            border: "1px solid rgba(255, 255, 255, 0.1)",
+                                            borderRadius: "12px",
+                                            minWidth: 220,
+                                            boxShadow:
+                                                "0 8px 32px rgba(0,0,0,0.4)",
+                                        },
+                                    },
+                                }}
+                            >
+                                <Box sx={{ px: 2, py: 1.5 }}>
+                                    <Typography
+                                        sx={{
+                                            color: "#f5f5f4",
+                                            fontWeight: 600,
+                                            fontSize: "0.9rem",
+                                        }}
+                                    >
+                                        {displayName || "User"}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            color: "rgba(255,255,255,0.4)",
+                                            fontSize: "0.8rem",
+                                        }}
+                                    >
+                                        {userEmail}
+                                    </Typography>
+                                </Box>
+                                <Divider
+                                    sx={{
+                                        borderColor: "rgba(255,255,255,0.08)",
+                                    }}
+                                />
+                                <MenuItem
+                                    component={Link}
+                                    href="/dashboard/profile"
+                                    onClick={() => setAnchorEl(null)}
+                                    sx={{
+                                        py: 1.25,
+                                        color: "rgba(255,255,255,0.7)",
+                                        "&:hover": {
+                                            bgcolor: "rgba(255,255,255,0.05)",
+                                            color: "#f5f5f4",
                                         },
                                     }}
                                 >
-                                    <item.icon sx={{ fontSize: "1.25rem" }} />
-                                </IconButton>
-                            ))}
-                        </Box>
-
-                        {/* GitHub */}
-                        <IconButton
-                            component="a"
-                            href="https://github.com/elixpo/elixpoaccounts"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="GitHub"
-                            sx={{
-                                color: "rgba(255,255,255,0.35)",
-                                width: 38,
-                                height: 38,
-                                borderRadius: "8px",
-                                "&:hover": {
-                                    color: "#fff",
-                                    bgcolor: "rgba(255,255,255,0.06)",
-                                },
-                            }}
-                        >
-                            <GitHub sx={{ fontSize: "1.2rem" }} />
-                        </IconButton>
-
-                        {/* User Avatar / Menu */}
-                        <IconButton
-                            onClick={(e) => setAnchorEl(e.currentTarget)}
-                            sx={{ p: 0.5 }}
-                        >
-                            {userAvatar ? (
-                                <Box
-                                    component="img"
-                                    src={userAvatar}
-                                    alt="Avatar"
+                                    <ListItemIcon
+                                        sx={{ color: "inherit", minWidth: 36 }}
+                                    >
+                                        <Person fontSize="small" />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primaryTypographyProps={{
+                                            fontSize: "0.875rem",
+                                        }}
+                                    >
+                                        Profile
+                                    </ListItemText>
+                                </MenuItem>
+                                <Divider
                                     sx={{
-                                        width: 34,
-                                        height: 34,
-                                        borderRadius: "50%",
-                                        border: "2px solid rgba(155, 123, 247, 0.3)",
+                                        borderColor: "rgba(255,255,255,0.08)",
                                     }}
                                 />
-                            ) : (
-                                <Box
+                                <MenuItem
+                                    onClick={handleLogout}
                                     sx={{
-                                        width: 34,
-                                        height: 34,
-                                        borderRadius: "50%",
-                                        background:
-                                            "linear-gradient(135deg, #9b7bf7 0%, #65a30d 100%)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        fontSize: "0.95rem",
-                                        fontWeight: 700,
-                                        color: "#161816",
+                                        py: 1.25,
+                                        color: "rgba(255,255,255,0.5)",
+                                        "&:hover": {
+                                            bgcolor: "rgba(239, 68, 68, 0.08)",
+                                            color: "#ef4444",
+                                        },
                                     }}
                                 >
-                                    {(displayName || userEmail)
-                                        ?.charAt(0)
-                                        .toUpperCase() || "E"}
-                                </Box>
-                            )}
-                        </IconButton>
+                                    <ListItemIcon
+                                        sx={{ color: "inherit", minWidth: 36 }}
+                                    >
+                                        <Logout fontSize="small" />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primaryTypographyProps={{
+                                            fontSize: "0.875rem",
+                                        }}
+                                    >
+                                        Logout
+                                    </ListItemText>
+                                </MenuItem>
+                            </Menu>
+                        </Toolbar>
+                    </AppBar>
+                    {/* Page Content */}
 
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={Boolean(anchorEl)}
-                            onClose={() => setAnchorEl(null)}
-                            transformOrigin={{
-                                horizontal: "right",
-                                vertical: "top",
-                            }}
-                            anchorOrigin={{
-                                horizontal: "right",
-                                vertical: "bottom",
-                            }}
-                            slotProps={{
-                                paper: {
-                                    sx: {
-                                        mt: 1,
-                                        bgcolor: "rgba(20, 24, 18, 0.95)",
-                                        backdropFilter: "blur(16px)",
-                                        border: "1px solid rgba(255, 255, 255, 0.1)",
-                                        borderRadius: "12px",
-                                        minWidth: 220,
-                                        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-                                    },
-                                },
-                            }}
-                        >
-                            <Box sx={{ px: 2, py: 1.5 }}>
-                                <Typography
-                                    sx={{
-                                        color: "#f5f5f4",
-                                        fontWeight: 600,
-                                        fontSize: "0.9rem",
-                                    }}
-                                >
-                                    {displayName || "User"}
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        color: "rgba(255,255,255,0.4)",
-                                        fontSize: "0.8rem",
-                                    }}
-                                >
-                                    {userEmail}
-                                </Typography>
-                            </Box>
-                            <Divider
-                                sx={{ borderColor: "rgba(255,255,255,0.08)" }}
-                            />
-                            <MenuItem
-                                component={Link}
-                                href="/dashboard/profile"
-                                onClick={() => setAnchorEl(null)}
-                                sx={{
-                                    py: 1.25,
-                                    color: "rgba(255,255,255,0.7)",
-                                    "&:hover": {
-                                        bgcolor: "rgba(255,255,255,0.05)",
-                                        color: "#f5f5f4",
-                                    },
-                                }}
-                            >
-                                <ListItemIcon
-                                    sx={{ color: "inherit", minWidth: 36 }}
-                                >
-                                    <Person fontSize="small" />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primaryTypographyProps={{
-                                        fontSize: "0.875rem",
-                                    }}
-                                >
-                                    Profile
-                                </ListItemText>
-                            </MenuItem>
-                            <Divider
-                                sx={{ borderColor: "rgba(255,255,255,0.08)" }}
-                            />
-                            <MenuItem
-                                onClick={handleLogout}
-                                sx={{
-                                    py: 1.25,
-                                    color: "rgba(255,255,255,0.5)",
-                                    "&:hover": {
-                                        bgcolor: "rgba(239, 68, 68, 0.08)",
-                                        color: "#ef4444",
-                                    },
-                                }}
-                            >
-                                <ListItemIcon
-                                    sx={{ color: "inherit", minWidth: 36 }}
-                                >
-                                    <Logout fontSize="small" />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primaryTypographyProps={{
-                                        fontSize: "0.875rem",
-                                    }}
-                                >
-                                    Logout
-                                </ListItemText>
-                            </MenuItem>
-                        </Menu>
-                    </Toolbar>
-                </AppBar>
-
-                {/* Page Content */}
-                <Box
-                    component="main"
-                    sx={{
-                        maxWidth: "1400px",
-                        mx: "auto",
-                        px: { xs: 2, md: 3 },
-                        py: 3,
-                    }}
-                >
-                    {children}
+                    <Box
+                        component="main"
+                        sx={{
+                            maxWidth: "1400px",
+                            mx: "auto",
+                            px: { xs: 2, md: 3 },
+                            py: 3,
+                        }}
+                    >
+                        {children}
+                    </Box>
                 </Box>
             </Box>
         </ThemeProvider>

@@ -2,12 +2,13 @@
 
 import { Box } from "@mui/material";
 
-type Variant = "default" | "auth" | "warm";
+type Variant = "default" | "auth" | "warm" | "docs";
 
 const PALETTES: Record<Variant, [string, string, string]> = {
     default: ["#9b7bf7", "#5fb6ff", "#7c5cff"],
     auth: ["#9b7bf7", "#ff7cc9", "#5fb6ff"],
     warm: ["#ff8a5b", "#ff5b9a", "#9b7bf7"],
+    docs: ["#6366f1", "#a855f7", "#3b82f6"],
 };
 
 interface Props {

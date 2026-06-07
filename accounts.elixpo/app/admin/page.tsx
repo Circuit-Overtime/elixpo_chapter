@@ -35,7 +35,7 @@ const StatCard = ({
     label,
     value,
     change,
-    color = "#22c55e",
+    color = "#9b7bf7",
 }: {
     icon: any;
     label: string;
@@ -45,8 +45,10 @@ const StatCard = ({
 }) => (
     <Card
         sx={{
-            bgcolor: "#1e2420",
-            border: "1px solid #333",
+            background:
+                "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
             borderRadius: "12px",
             "&:hover": {
                 borderColor: color,
@@ -109,8 +111,10 @@ const ChartCard = ({
 }) => (
     <Card
         sx={{
-            bgcolor: "#1e2420",
-            border: "1px solid #333",
+            background:
+                "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
             borderRadius: "12px",
             p: 2.5,
             height: "100%",
@@ -195,19 +199,19 @@ export default function AdminDashboard() {
                     exclusive
                     onChange={handleTimeRangeChange}
                     sx={{
-                        bgcolor: "#1e2420",
-                        border: "1px solid #333",
+                        background: "rgba(255, 255, 255, 0.02)",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
                         borderRadius: "8px",
                         "& .MuiToggleButton-root": {
                             color: "#9ca3af",
                             border: "none",
                             fontSize: "0.85rem",
                             "&.Mui-selected": {
-                                bgcolor: "rgba(34, 197, 94, 0.1)",
-                                color: "#22c55e",
+                                bgcolor: "rgba(155, 123, 247, 0.15)",
+                                color: "#9b7bf7",
                             },
                             "&:hover": {
-                                bgcolor: "rgba(34, 197, 94, 0.05)",
+                                bgcolor: "rgba(155, 123, 247, 0.08)",
                             },
                         },
                     }}
@@ -217,8 +221,8 @@ export default function AdminDashboard() {
                     <ToggleButton value="90d">90 Days</ToggleButton>
                 </ToggleButtonGroup>
             </Box>
-
             {/* Stats Grid */}
+
             {loading ? (
                 <Box
                     sx={{
@@ -228,7 +232,7 @@ export default function AdminDashboard() {
                         minHeight: "300px",
                     }}
                 >
-                    <CircularProgress sx={{ color: "#22c55e" }} />
+                    <CircularProgress sx={{ color: "#9b7bf7" }} />
                 </Box>
             ) : stats ? (
                 <>
@@ -248,7 +252,7 @@ export default function AdminDashboard() {
                                 label="Active Users"
                                 value={stats.activeUsers.toLocaleString()}
                                 change="+8.2%"
-                                color="#22c55e"
+                                color="#9b7bf7"
                             />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -270,8 +274,8 @@ export default function AdminDashboard() {
                             />
                         </Grid>
                     </Grid>
-
                     {/* Secondary Stats */}
+
                     <Grid container spacing={2} sx={{ mb: 4 }}>
                         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                             <StatCard
@@ -292,8 +296,8 @@ export default function AdminDashboard() {
                             />
                         </Grid>
                     </Grid>
-
                     {/* Charts Section */}
+
                     <Grid container spacing={2} sx={{ mb: 4 }}>
                         <Grid size={{ xs: 12, lg: 8 }}>
                             <ChartCard title="Request Trend (Last 7 Days)">
@@ -303,7 +307,8 @@ export default function AdminDashboard() {
                                         alignItems: "flex-end",
                                         gap: 1,
                                         height: "200px",
-                                        borderBottom: "1px solid #333",
+                                        borderBottom:
+                                            "1px solid rgba(255,255,255,0.08)",
                                         pb: 2,
                                     }}
                                 >
@@ -322,7 +327,7 @@ export default function AdminDashboard() {
                                                 sx={{
                                                     width: "100%",
                                                     height: `${(data.requests / 30000) * 150}px`,
-                                                    bgcolor: "#22c55e",
+                                                    bgcolor: "#9b7bf7",
                                                     borderRadius: "4px 4px 0 0",
                                                     opacity: 0.8,
                                                     "&:hover": { opacity: 1 },
@@ -363,7 +368,8 @@ export default function AdminDashboard() {
                                             key={app.id}
                                             sx={{
                                                 pb: 1.5,
-                                                borderBottom: "1px solid #333",
+                                                borderBottom:
+                                                    "1px solid rgba(255,255,255,0.08)",
                                                 "&:last-child": {
                                                     borderBottom: "none",
                                                 },
@@ -387,7 +393,7 @@ export default function AdminDashboard() {
                                                 <Typography
                                                     variant="caption"
                                                     sx={{
-                                                        color: "#22c55e",
+                                                        color: "#9b7bf7",
                                                         fontWeight: 600,
                                                     }}
                                                 >
@@ -420,15 +426,17 @@ export default function AdminDashboard() {
                             </ChartCard>
                         </Grid>
                     </Grid>
-
                     {/* Recent Activity Section */}
+
                     <Grid container spacing={2}>
                         {/* Recent Users */}
                         <Grid size={{ xs: 12, lg: 6 }}>
                             <Card
                                 sx={{
-                                    bgcolor: "#1e2420",
-                                    border: "1px solid #333",
+                                    background:
+                                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                                    backdropFilter: "blur(20px)",
+                                    border: "1px solid rgba(255, 255, 255, 0.08)",
                                     borderRadius: "12px",
                                 }}
                             >
@@ -613,13 +621,15 @@ export default function AdminDashboard() {
                                 </CardContent>
                             </Card>
                         </Grid>
-
                         {/* Recent OAuth Apps */}
+
                         <Grid size={{ xs: 12, lg: 6 }}>
                             <Card
                                 sx={{
-                                    bgcolor: "#1e2420",
-                                    border: "1px solid #333",
+                                    background:
+                                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                                    backdropFilter: "blur(20px)",
+                                    border: "1px solid rgba(255, 255, 255, 0.08)",
                                     borderRadius: "12px",
                                 }}
                             >

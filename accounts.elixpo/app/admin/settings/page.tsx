@@ -41,18 +41,18 @@ interface NotificationSettings {
 const fieldSx = {
     "& .MuiOutlinedInput-root": {
         color: "#e5e7eb",
-        "& fieldset": { borderColor: "#3a4a3e" },
-        "&:hover fieldset": { borderColor: "#555" },
-        "&.Mui-focused fieldset": { borderColor: "#22c55e" },
+        "& fieldset": { borderColor: "rgba(255, 255, 255, 0.12)" },
+        "&:hover fieldset": { borderColor: "#9b7bf7" },
+        "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
     },
     "& .MuiInputBase-input": { color: "#e5e7eb" },
     "& .MuiInputLabel-root": { color: "#9ca3af" },
 };
 
 const switchSx = {
-    "& .MuiSwitch-switchBase.Mui-checked": { color: "#22c55e" },
+    "& .MuiSwitch-switchBase.Mui-checked": { color: "#9b7bf7" },
     "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-        bgcolor: "#16a34a",
+        bgcolor: "rgba(155, 123, 247, 0.5)",
     },
 };
 
@@ -167,8 +167,8 @@ export default function SettingsPage() {
                     Configure system-wide parameters and security settings
                 </Typography>
             </Box>
-
             {/* Saved Alert */}
+
             {saved && (
                 <Alert
                     severity="success"
@@ -184,12 +184,14 @@ export default function SettingsPage() {
                     Settings saved successfully
                 </Alert>
             )}
-
             {/* Rate Limiting */}
+
             <Card
                 sx={{
-                    bgcolor: "#1e2420",
-                    border: "1px solid #333",
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "12px",
                     mb: 3,
                 }}
@@ -237,12 +239,16 @@ export default function SettingsPage() {
                     </Grid>
                 </CardContent>
             </Card>
-
             {/* JWT & Token Settings */}
+            {/* Email Verification Settings */}
+            {/* Security Settings */}
+
             <Card
                 sx={{
-                    bgcolor: "#1e2420",
-                    border: "1px solid #333",
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "12px",
                     mb: 3,
                 }}
@@ -291,11 +297,12 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
 
-            {/* Email Verification Settings */}
             <Card
                 sx={{
-                    bgcolor: "#1e2420",
-                    border: "1px solid #333",
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "12px",
                     mb: 3,
                 }}
@@ -346,11 +353,12 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
 
-            {/* Security Settings */}
             <Card
                 sx={{
-                    bgcolor: "#1e2420",
-                    border: "1px solid #333",
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "12px",
                     mb: 3,
                 }}
@@ -380,12 +388,14 @@ export default function SettingsPage() {
                     </Box>
                 </CardContent>
             </Card>
-
             {/* Feature Toggles */}
+
             <Card
                 sx={{
-                    bgcolor: "#1e2420",
-                    border: "1px solid #333",
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "12px",
                     mb: 3,
                 }}
@@ -439,7 +449,9 @@ export default function SettingsPage() {
                                 </Box>
                             }
                         />
-                        <Divider sx={{ borderColor: "#3a4a3e" }} />
+                        <Divider
+                            sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }}
+                        />
                         <FormControlLabel
                             control={
                                 <Switch
@@ -475,7 +487,9 @@ export default function SettingsPage() {
                                 </Box>
                             }
                         />
-                        <Divider sx={{ borderColor: "#3a4a3e" }} />
+                        <Divider
+                            sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }}
+                        />
                         <FormControlLabel
                             control={
                                 <Switch
@@ -514,8 +528,8 @@ export default function SettingsPage() {
                     </Box>
                 </CardContent>
             </Card>
-
             {/* Save Button */}
+
             <Box sx={{ display: "flex", gap: 2, mb: 6 }}>
                 <Button
                     variant="contained"
@@ -523,10 +537,10 @@ export default function SettingsPage() {
                     onClick={handleSave}
                     disabled={loading}
                     sx={{
-                        bgcolor: "#22c55e",
-                        color: "#000",
+                        bgcolor: "#9b7bf7",
+                        color: "#ffffff",
                         fontWeight: 600,
-                        "&:hover": { bgcolor: "#16a34a" },
+                        "&:hover": { bgcolor: "#7c5cff" },
                         "&:disabled": { opacity: 0.6 },
                     }}
                 >
@@ -535,26 +549,26 @@ export default function SettingsPage() {
                 <Button
                     variant="outlined"
                     sx={{
-                        borderColor: "#3a4a3e",
+                        borderColor: "rgba(255, 255, 255, 0.12)",
                         color: "#9ca3af",
-                        "&:hover": { borderColor: "#22c55e", color: "#22c55e" },
+                        "&:hover": { borderColor: "#9b7bf7", color: "#9b7bf7" },
                     }}
                 >
                     Cancel
                 </Button>
             </Box>
-
             {/* Notifications Section */}
+
             {notifSaved && (
                 <Alert
                     severity="success"
                     icon={<CheckCircle />}
                     sx={{
                         mb: 3,
-                        bgcolor: "rgba(34, 197, 94, 0.1)",
-                        color: "#22c55e",
-                        border: "1px solid #22c55e",
-                        "& .MuiAlert-icon": { color: "#22c55e" },
+                        bgcolor: "rgba(155, 123, 247, 0.1)",
+                        color: "#9b7bf7",
+                        border: "1px solid #9b7bf7",
+                        "& .MuiAlert-icon": { color: "#9b7bf7" },
                     }}
                 >
                     Notification settings saved
@@ -563,8 +577,10 @@ export default function SettingsPage() {
 
             <Card
                 sx={{
-                    bgcolor: "#1e2420",
-                    border: "1px solid #333",
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "12px",
                     mb: 3,
                 }}
@@ -578,7 +594,7 @@ export default function SettingsPage() {
                             mb: 2,
                         }}
                     >
-                        <Notifications sx={{ color: "#22c55e" }} />
+                        <Notifications sx={{ color: "#9b7bf7" }} />
                         <Typography
                             variant="h6"
                             sx={{ fontWeight: 600, color: "#fff" }}
@@ -635,7 +651,9 @@ export default function SettingsPage() {
                                 </Box>
                             }
                         />
-                        <Divider sx={{ borderColor: "#3a4a3e" }} />
+                        <Divider
+                            sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }}
+                        />
                         <FormControlLabel
                             control={
                                 <Switch
@@ -672,7 +690,9 @@ export default function SettingsPage() {
                                 </Box>
                             }
                         />
-                        <Divider sx={{ borderColor: "#3a4a3e" }} />
+                        <Divider
+                            sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }}
+                        />
                         <FormControlLabel
                             control={
                                 <Switch
@@ -709,7 +729,9 @@ export default function SettingsPage() {
                                 </Box>
                             }
                         />
-                        <Divider sx={{ borderColor: "#3a4a3e" }} />
+                        <Divider
+                            sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }}
+                        />
                         <FormControlLabel
                             control={
                                 <Switch
@@ -748,7 +770,9 @@ export default function SettingsPage() {
                                 </Box>
                             }
                         />
-                        <Divider sx={{ borderColor: "#3a4a3e" }} />
+                        <Divider
+                            sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }}
+                        />
                         <FormControlLabel
                             control={
                                 <Switch
@@ -811,20 +835,20 @@ export default function SettingsPage() {
                                                     freq
                                                         ? {
                                                               bgcolor:
-                                                                  "#22c55e",
-                                                              color: "#000",
+                                                                  "#9b7bf7",
+                                                              color: "#ffffff",
                                                               "&:hover": {
                                                                   bgcolor:
-                                                                      "#16a34a",
+                                                                      "#7c5cff",
                                                               },
                                                           }
                                                         : {
                                                               borderColor:
-                                                                  "#3a4a3e",
+                                                                  "rgba(255, 255, 255, 0.12)",
                                                               color: "#9ca3af",
                                                               "&:hover": {
                                                                   borderColor:
-                                                                      "#22c55e",
+                                                                      "#9b7bf7",
                                                               },
                                                           }),
                                                 }}
@@ -847,10 +871,10 @@ export default function SettingsPage() {
                     onClick={handleNotifSave}
                     disabled={notifLoading}
                     sx={{
-                        bgcolor: "#22c55e",
-                        color: "#000",
+                        bgcolor: "#9b7bf7",
+                        color: "#ffffff",
                         fontWeight: 600,
-                        "&:hover": { bgcolor: "#16a34a" },
+                        "&:hover": { bgcolor: "#7c5cff" },
                         "&:disabled": { opacity: 0.6 },
                     }}
                 >

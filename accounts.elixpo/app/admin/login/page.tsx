@@ -89,10 +89,10 @@ export default function AdminLogin() {
                     justifyContent: "center",
                     alignItems: "center",
                     minHeight: "100vh",
-                    bgcolor: "#161816",
+                    bgcolor: "transparent",
                 }}
             >
-                <CircularProgress sx={{ color: "#22c55e" }} />
+                <CircularProgress sx={{ color: "#9b7bf7" }} />
             </Box>
         );
     }
@@ -104,18 +104,19 @@ export default function AdminLogin() {
                 justifyContent: "center",
                 alignItems: "center",
                 minHeight: "100vh",
-                bgcolor: "#161816",
-                backgroundImage:
-                    "radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.1) 0%, transparent 50%)",
+                bgcolor: "transparent",
             }}
         >
             <Card
                 sx={{
                     width: "100%",
                     maxWidth: 420,
-                    bgcolor: "#1e2420",
-                    border: "1px solid #333",
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "16px",
+                    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
                 }}
             >
                 <CardContent sx={{ p: 4 }}>
@@ -126,7 +127,7 @@ export default function AdminLogin() {
                                 height: 60,
                                 borderRadius: "12px",
                                 background:
-                                    "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -137,7 +138,7 @@ export default function AdminLogin() {
                             <Lock sx={{ color: "#fff", fontSize: "1.8rem" }} />
                         </Box>
                         <Typography
-                            variant="h4"
+                            variant="h5"
                             sx={{ fontWeight: 700, color: "#fff", mb: 1 }}
                         >
                             Admin Panel
@@ -175,17 +176,20 @@ export default function AdminLogin() {
                             sx={{
                                 "& .MuiOutlinedInput-root": {
                                     color: "#e5e7eb",
-                                    "& fieldset": { borderColor: "#3a4a3e" },
+                                    "& fieldset": {
+                                        borderColor:
+                                            "rgba(255, 255, 255, 0.12)",
+                                    },
                                     "&:hover fieldset": {
-                                        borderColor: "#22c55e",
+                                        borderColor: "#9b7bf7",
                                     },
                                     "&.Mui-focused fieldset": {
-                                        borderColor: "#22c55e",
+                                        borderColor: "#9b7bf7",
                                     },
                                 },
                                 "& .MuiInputLabel-root": {
                                     color: "#9ca3af",
-                                    "&.Mui-focused": { color: "#22c55e" },
+                                    "&.Mui-focused": { color: "#9b7bf7" },
                                 },
                             }}
                         />
@@ -201,17 +205,20 @@ export default function AdminLogin() {
                             sx={{
                                 "& .MuiOutlinedInput-root": {
                                     color: "#e5e7eb",
-                                    "& fieldset": { borderColor: "#3a4a3e" },
+                                    "& fieldset": {
+                                        borderColor:
+                                            "rgba(255, 255, 255, 0.12)",
+                                    },
                                     "&:hover fieldset": {
-                                        borderColor: "#22c55e",
+                                        borderColor: "#9b7bf7",
                                     },
                                     "&.Mui-focused fieldset": {
-                                        borderColor: "#22c55e",
+                                        borderColor: "#9b7bf7",
                                     },
                                 },
                                 "& .MuiInputLabel-root": {
                                     color: "#9ca3af",
-                                    "&.Mui-focused": { color: "#22c55e" },
+                                    "&.Mui-focused": { color: "#9b7bf7" },
                                 },
                             }}
                         />
@@ -222,11 +229,12 @@ export default function AdminLogin() {
                             disabled={loading || !email || !password}
                             sx={{
                                 mt: 3,
-                                bgcolor: "#22c55e",
-                                color: "#000",
+                                bgcolor: "#9b7bf7",
+                                color: "#fff",
+                                textTransform: "none",
                                 fontWeight: 600,
                                 py: 1.5,
-                                "&:hover": { bgcolor: "#16a34a" },
+                                "&:hover": { bgcolor: "#7c5cff" },
                                 "&:disabled": { opacity: 0.6 },
                             }}
                         >

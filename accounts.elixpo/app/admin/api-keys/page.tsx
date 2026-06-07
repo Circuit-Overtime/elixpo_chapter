@@ -81,8 +81,8 @@ export default function ApiKeysPage() {
         expiresIn: "",
         scopes: {} as Record<string, boolean>,
     });
-
     // Initialize scopes
+
     useEffect(() => {
         const defaultScopes: Record<string, boolean> = {};
         AVAILABLE_SCOPES.forEach((scope) => {
@@ -90,7 +90,6 @@ export default function ApiKeysPage() {
         });
         setFormData((prev) => ({ ...prev, scopes: defaultScopes }));
     }, []);
-
     // useCallback gives a stable reference. Declared BEFORE the useEffect
     // so TS doesn't complain about block-scoped use-before-decl, and so
     // eslint-react-hooks autofix can put it in deps without causing a loop.
@@ -232,13 +231,13 @@ export default function ApiKeysPage() {
                     height: "400px",
                 }}
             >
-                <CircularProgress />
+                <CircularProgress sx={{ color: "#9b7bf7" }} />
             </Box>
         );
     }
 
     return (
-        <Box sx={{ p: 3 }}>
+        <Box>
             <Box
                 sx={{
                     mb: 4,
@@ -247,14 +246,22 @@ export default function ApiKeysPage() {
                     alignItems: "center",
                 }}
             >
-                <Typography variant="h4">API Keys</Typography>
+                <Typography
+                    variant="h5"
+                    sx={{ fontWeight: 700, color: "#fff" }}
+                >
+                    API Keys
+                </Typography>
                 <Button
                     variant="contained"
                     startIcon={<AddIcon />}
                     onClick={() => setOpenCreateDialog(true)}
                     sx={{
-                        backgroundColor: "#22c55e",
-                        "&:hover": { backgroundColor: "#16a34a" },
+                        backgroundColor: "#9b7bf7",
+                        color: "#fff",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        "&:hover": { backgroundColor: "#7c5cff" },
                     }}
                 >
                     Create API Key
@@ -302,7 +309,7 @@ export default function ApiKeysPage() {
                             display: "flex",
                             gap: 1,
                             alignItems: "center",
-                            backgroundColor: "#1e2420",
+                            background: "rgba(255, 255, 255, 0.05)",
                             p: 1.5,
                             borderRadius: 1,
                             fontFamily: "monospace",
@@ -333,7 +340,7 @@ export default function ApiKeysPage() {
                     <Button
                         size="small"
                         onClick={() => setNewKeyData(null)}
-                        sx={{ mt: 2 }}
+                        sx={{ mt: 2, color: "#9b7bf7" }}
                     >
                         Close & Continue
                     </Button>
@@ -342,19 +349,63 @@ export default function ApiKeysPage() {
 
             <TableContainer
                 component={Paper}
-                sx={{ backgroundColor: "#1e2420" }}
+                sx={{
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "12px",
+                    overflow: "hidden",
+                }}
             >
                 <Table>
                     <TableHead>
-                        <TableRow>
-                            <TableCell>Name</TableCell>
-                            <TableCell>Prefix</TableCell>
-                            <TableCell>Scopes</TableCell>
-                            <TableCell>Created</TableCell>
-                            <TableCell>Last Used</TableCell>
-                            <TableCell>Expires</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Actions</TableCell>
+                        <TableRow
+                            sx={{
+                                borderBottom:
+                                    "1px solid rgba(255, 255, 255, 0.08)",
+                            }}
+                        >
+                            <TableCell
+                                sx={{ color: "#9ca3af", fontWeight: 600 }}
+                            >
+                                Name
+                            </TableCell>
+                            <TableCell
+                                sx={{ color: "#9ca3af", fontWeight: 600 }}
+                            >
+                                Prefix
+                            </TableCell>
+                            <TableCell
+                                sx={{ color: "#9ca3af", fontWeight: 600 }}
+                            >
+                                Scopes
+                            </TableCell>
+                            <TableCell
+                                sx={{ color: "#9ca3af", fontWeight: 600 }}
+                            >
+                                Created
+                            </TableCell>
+                            <TableCell
+                                sx={{ color: "#9ca3af", fontWeight: 600 }}
+                            >
+                                Last Used
+                            </TableCell>
+                            <TableCell
+                                sx={{ color: "#9ca3af", fontWeight: 600 }}
+                            >
+                                Expires
+                            </TableCell>
+                            <TableCell
+                                sx={{ color: "#9ca3af", fontWeight: 600 }}
+                            >
+                                Status
+                            </TableCell>
+                            <TableCell
+                                sx={{ color: "#9ca3af", fontWeight: 600 }}
+                            >
+                                Actions
+                            </TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -372,9 +423,25 @@ export default function ApiKeysPage() {
                             </TableRow>
                         ) : (
                             apiKeys.map((key) => (
-                                <TableRow key={key.id}>
+                                <TableRow
+                                    key={key.id}
+                                    sx={{
+                                        borderBottom:
+                                            "1px solid rgba(255, 255, 255, 0.08)",
+                                        "&:hover": {
+                                            bgcolor:
+                                                "rgba(155, 123, 247, 0.05)",
+                                        },
+                                    }}
+                                >
                                     <TableCell>
-                                        <Typography variant="body2">
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                color: "#e5e7eb",
+                                                fontWeight: 600,
+                                            }}
+                                        >
                                             {key.name}
                                         </Typography>
                                         {key.description && (
@@ -389,9 +456,11 @@ export default function ApiKeysPage() {
                                     <TableCell>
                                         <code
                                             style={{
-                                                backgroundColor: "#161816",
+                                                backgroundColor:
+                                                    "rgba(255, 255, 255, 0.05)",
                                                 padding: "2px 6px",
                                                 borderRadius: "4px",
+                                                color: "#e5e7eb",
                                             }}
                                         >
                                             {key.prefix}...
@@ -412,17 +481,24 @@ export default function ApiKeysPage() {
                                                         key={scope}
                                                         label={scope}
                                                         size="small"
+                                                        sx={{
+                                                            bgcolor:
+                                                                "rgba(155, 123, 247, 0.15)",
+                                                            color: "#9b7bf7",
+                                                            border: "1px solid rgba(155, 123, 247, 0.3)",
+                                                            fontWeight: 600,
+                                                        }}
                                                     />
                                                 ))}
                                         </Box>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell sx={{ color: "#9ca3af" }}>
                                         {formatDate(key.createdAt)}
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell sx={{ color: "#9ca3af" }}>
                                         {formatDate(key.lastUsedAt)}
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell sx={{ color: "#9ca3af" }}>
                                         {key.expiresAt
                                             ? formatDate(key.expiresAt)
                                             : "∞"}
@@ -432,13 +508,23 @@ export default function ApiKeysPage() {
                                             <Chip
                                                 label="Revoked"
                                                 size="small"
-                                                color="error"
+                                                sx={{
+                                                    bgcolor:
+                                                        "rgba(239, 68, 68, 0.2)",
+                                                    color: "#ef4444",
+                                                    fontWeight: 600,
+                                                }}
                                             />
                                         ) : (
                                             <Chip
                                                 label="Active"
                                                 size="small"
-                                                color="success"
+                                                sx={{
+                                                    bgcolor:
+                                                        "rgba(155, 123, 247, 0.2)",
+                                                    color: "#9b7bf7",
+                                                    fontWeight: 600,
+                                                }}
                                             />
                                         )}
                                     </TableCell>
@@ -453,6 +539,12 @@ export default function ApiKeysPage() {
                                                         )
                                                     }
                                                     disabled={key.revoked}
+                                                    sx={{
+                                                        color: "rgba(255, 255, 255, 0.6)",
+                                                        "&:hover": {
+                                                            color: "#9b7bf7",
+                                                        },
+                                                    }}
                                                 >
                                                     <EditIcon fontSize="small" />
                                                 </IconButton>
@@ -464,6 +556,12 @@ export default function ApiKeysPage() {
                                                 onClick={() =>
                                                     handleDeleteApiKey(key.id)
                                                 }
+                                                sx={{
+                                                    color: "rgba(255, 255, 255, 0.6)",
+                                                    "&:hover": {
+                                                        color: "#ef4444",
+                                                    },
+                                                }}
                                             >
                                                 <DeleteIcon fontSize="small" />
                                             </IconButton>
@@ -475,13 +573,26 @@ export default function ApiKeysPage() {
                     </TableBody>
                 </Table>
             </TableContainer>
-
             {/* Create API Key Dialog */}
+
             <Dialog
                 open={openCreateDialog}
                 onClose={() => setOpenCreateDialog(false)}
                 maxWidth="sm"
                 fullWidth
+                slotProps={{
+                    paper: {
+                        sx: {
+                            background: "rgba(20, 24, 18, 0.95)",
+                            backdropFilter: "blur(16px)",
+                            border: "1px solid rgba(255, 255, 255, 0.08)",
+                            "& .MuiDialogTitle-root": {
+                                color: "#fff",
+                                fontWeight: 600,
+                            },
+                        },
+                    },
+                }}
             >
                 <DialogTitle>Create New API Key</DialogTitle>
                 <DialogContent sx={{ pt: 3 }}>
@@ -493,7 +604,24 @@ export default function ApiKeysPage() {
                         onChange={(e) =>
                             setFormData({ ...formData, name: e.target.value })
                         }
-                        sx={{ mb: 2 }}
+                        sx={{
+                            mb: 2,
+                            mt: 1,
+                            "& .MuiOutlinedInput-root": {
+                                color: "#e5e7eb",
+                                "& fieldset": {
+                                    borderColor: "rgba(255, 255, 255, 0.12)",
+                                },
+                                "&:hover fieldset": { borderColor: "#9b7bf7" },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "#9b7bf7",
+                                },
+                            },
+                            "& .MuiInputLabel-root": {
+                                color: "#6b7280",
+                                "&.Mui-focused": { color: "#9b7bf7" },
+                            },
+                        }}
                     />
                     <TextField
                         fullWidth
@@ -506,7 +634,23 @@ export default function ApiKeysPage() {
                                 description: e.target.value,
                             })
                         }
-                        sx={{ mb: 2 }}
+                        sx={{
+                            mb: 2,
+                            "& .MuiOutlinedInput-root": {
+                                color: "#e5e7eb",
+                                "& fieldset": {
+                                    borderColor: "rgba(255, 255, 255, 0.12)",
+                                },
+                                "&:hover fieldset": { borderColor: "#9b7bf7" },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "#9b7bf7",
+                                },
+                            },
+                            "& .MuiInputLabel-root": {
+                                color: "#6b7280",
+                                "&.Mui-focused": { color: "#9b7bf7" },
+                            },
+                        }}
                         multiline
                         rows={2}
                     />
@@ -522,13 +666,29 @@ export default function ApiKeysPage() {
                                 expiresIn: e.target.value,
                             })
                         }
-                        sx={{ mb: 3 }}
+                        sx={{
+                            mb: 3,
+                            "& .MuiOutlinedInput-root": {
+                                color: "#e5e7eb",
+                                "& fieldset": {
+                                    borderColor: "rgba(255, 255, 255, 0.12)",
+                                },
+                                "&:hover fieldset": { borderColor: "#9b7bf7" },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "#9b7bf7",
+                                },
+                            },
+                            "& .MuiInputLabel-root": {
+                                color: "#6b7280",
+                                "&.Mui-focused": { color: "#9b7bf7" },
+                            },
+                        }}
                         inputProps={{ min: 1 }}
                     />
 
                     <Typography
                         variant="subtitle2"
-                        sx={{ mb: 1, fontWeight: "bold" }}
+                        sx={{ mb: 2, fontWeight: "bold", color: "#e5e7eb" }}
                     >
                         Scopes
                     </Typography>
@@ -557,27 +717,56 @@ export default function ApiKeysPage() {
                                                 },
                                             })
                                         }
+                                        sx={{
+                                            "& .MuiSwitch-switchBase.Mui-checked":
+                                                { color: "#9b7bf7" },
+                                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track":
+                                                {
+                                                    bgcolor:
+                                                        "rgba(155, 123, 247, 0.5)",
+                                                },
+                                        }}
                                     />
                                 }
-                                label={scope.label}
+                                label={
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ color: "#d1d5db" }}
+                                    >
+                                        {scope.label}
+                                    </Typography>
+                                }
                             />
                         ))}
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenCreateDialog(false)}>
+                    <Button
+                        onClick={() => setOpenCreateDialog(false)}
+                        sx={{ color: "#9ca3af", textTransform: "none" }}
+                    >
                         Cancel
                     </Button>
                     <Button
                         onClick={handleCreateApiKey}
                         variant="contained"
                         sx={{
-                            backgroundColor: "#22c55e",
-                            "&:hover": { backgroundColor: "#16a34a" },
+                            backgroundColor: "#9b7bf7",
+                            color: "#fff",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            "&:hover": { backgroundColor: "#7c5cff" },
                         }}
                         disabled={loading}
                     >
-                        {loading ? <CircularProgress size={24} /> : "Create"}
+                        {loading ? (
+                            <CircularProgress
+                                size={24}
+                                sx={{ color: "#fff" }}
+                            />
+                        ) : (
+                            "Create"
+                        )}
                     </Button>
                 </DialogActions>
             </Dialog>

@@ -150,13 +150,13 @@ function ServiceIconSmall({ svc }: { svc: ConnectedService }) {
 
 const ProfilePage = () => {
     const router = useRouter();
-
     // Profile state
+
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [profileLoading, setProfileLoading] = useState(true);
     const [profileError, setProfileError] = useState("");
-
     // Update profile state
+
     const [bio, setBio] = useState("");
     const [country, setCountry] = useState("");
     const [city, setCity] = useState("");
@@ -166,8 +166,8 @@ const ProfilePage = () => {
     const [updateLoading, setUpdateLoading] = useState(false);
     const [updateSuccess, setUpdateSuccess] = useState("");
     const [updateError, setUpdateError] = useState("");
-
     // Notification preferences state
+
     const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>({
         email_login_alerts: false,
         email_app_activity: false,
@@ -178,13 +178,13 @@ const ProfilePage = () => {
     const [notifSaveLoading, setNotifSaveLoading] = useState(false);
     const [notifSuccess, setNotifSuccess] = useState("");
     const [notifError, setNotifError] = useState("");
-
     // Delete account state
+
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [deleteError, setDeleteError] = useState("");
-
     // Display name state
+
     const [editingName, setEditingName] = useState(false);
     const [newDisplayName, setNewDisplayName] = useState("");
     const [nameLoading, setNameLoading] = useState(false);
@@ -192,8 +192,8 @@ const ProfilePage = () => {
         text: string;
         type: "success" | "error";
     } | null>(null);
-
     // Username (handle) change state — changing a handle is destructive.
+
     const [usernameDialogOpen, setUsernameDialogOpen] = useState(false);
     const [newUsername, setNewUsername] = useState("");
     const [usernameLoading, setUsernameLoading] = useState(false);
@@ -205,8 +205,8 @@ const ProfilePage = () => {
         state: "idle" | "checking" | "available" | "taken";
         reason?: string;
     }>({ state: "idle" });
-
     // Debounced availability check while the change dialog is open.
+
     useEffect(() => {
         if (!usernameDialogOpen) return;
         const u = newUsername.trim().toLowerCase();
@@ -265,8 +265,8 @@ const ProfilePage = () => {
             setUsernameLoading(false);
         }
     };
-
     // Connected services state
+
     const [connectedServices, setConnectedServices] = useState<
         ConnectedService[]
     >([]);
@@ -274,8 +274,8 @@ const ProfilePage = () => {
     const [expandedServices, setExpandedServices] = useState<Set<string>>(
         new Set(),
     );
-
     // Email verification state
+
     const [verifyStep, setVerifyStep] = useState<"idle" | "sent" | "verifying">(
         "idle",
     );
@@ -591,8 +591,8 @@ const ProfilePage = () => {
                     Manage your account information and preferences
                 </Typography>
             </Box>
-
             {/* Bento Grid */}
+
             <Box
                 sx={{
                     display: "grid",
@@ -751,8 +751,8 @@ const ProfilePage = () => {
                                     </Box>
                                 </Box>
                             </Box>
-
                             {/* Username (handle) */}
+
                             <Box sx={{ mb: 3 }}>
                                 <Typography
                                     sx={{
@@ -822,8 +822,8 @@ const ProfilePage = () => {
                                     </Button>
                                 </Box>
                             </Box>
-
                             {/* Display Name */}
+
                             <Box>
                                 <Typography
                                     sx={{
@@ -1001,8 +1001,8 @@ const ProfilePage = () => {
                                     </Box>
                                 )}
                             </Box>
-
                             {/* Sign-in Method */}
+
                             <Box>
                                 <Typography
                                     sx={{
@@ -1084,8 +1084,8 @@ const ProfilePage = () => {
                                     </Typography>
                                 </Box>
                             </Box>
-
                             {/* Email Verification */}
+
                             {!profile.emailVerified && (
                                 <Box
                                     sx={{
@@ -1289,8 +1289,8 @@ const ProfilePage = () => {
                                     )}
                                 </Box>
                             )}
-
                             {/* Account ID */}
+
                             <Box>
                                 <Typography
                                     sx={{
@@ -1320,8 +1320,8 @@ const ProfilePage = () => {
                                     {profile.id}
                                 </Typography>
                             </Box>
-
                             {/* Badges */}
+
                             <Box>
                                 <Typography
                                     sx={{
@@ -1380,8 +1380,8 @@ const ProfilePage = () => {
                         </Box>
                     ) : null}
                 </Box>
-
                 {/* Connected Services — right column */}
+
                 <Box
                     sx={{
                         ...cardSx,
@@ -1678,8 +1678,8 @@ const ProfilePage = () => {
                         </Box>
                     )}
                 </Box>
-
                 {/* 2. Update Profile Card */}
+
                 <Box sx={cardSx}>
                     <Typography variant="h6" sx={sectionTitleSx}>
                         <EditIcon
@@ -1884,8 +1884,8 @@ const ProfilePage = () => {
                         </Button>
                     </Box>
                 </Box>
-
                 {/* 3. Notification Preferences Card */}
+
                 <Box sx={cardSx}>
                     <Typography variant="h6" sx={sectionTitleSx}>
                         <NotificationsIcon
@@ -2061,8 +2061,8 @@ const ProfilePage = () => {
                         </Box>
                     )}
                 </Box>
-
                 {/* 4. Danger Zone — full width */}
+
                 <Box
                     sx={{
                         ...cardSx,
@@ -2158,8 +2158,8 @@ const ProfilePage = () => {
                                 Disable
                             </Button>
                         </Box>
-
                         {/* Delete Account */}
+
                         <Box
                             sx={{
                                 flex: 1,
@@ -2215,15 +2215,16 @@ const ProfilePage = () => {
                     </Box>
                 </Box>
             </Box>
-
             {/* Username Change (destructive) Dialog */}
+
             <Dialog
                 open={usernameDialogOpen}
                 onClose={() => !usernameLoading && setUsernameDialogOpen(false)}
                 PaperProps={{
                     sx: {
-                        background: "#1a1d29",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "rgba(15, 18, 25, 0.95)",
+                        backdropFilter: "blur(16px)",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
                         borderRadius: "14px",
                         width: "100%",
                         maxWidth: 420,
@@ -2317,8 +2318,8 @@ const ProfilePage = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
-
             {/* Delete Account Confirmation Dialog */}
+
             <Dialog
                 open={deleteDialogOpen}
                 onClose={() => !deleteLoading && setDeleteDialogOpen(false)}

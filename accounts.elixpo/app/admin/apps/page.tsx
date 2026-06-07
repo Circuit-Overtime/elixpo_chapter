@@ -176,8 +176,10 @@ export default function AppsPage() {
 
             <Card
                 sx={{
-                    bgcolor: "#1e2420",
-                    border: "1px solid #333",
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "12px",
                     mb: 3,
                 }}
@@ -202,8 +204,13 @@ export default function AppsPage() {
                         sx={{
                             "& .MuiOutlinedInput-root": {
                                 color: "#e5e7eb",
-                                "& fieldset": { borderColor: "#3a4a3e" },
-                                "&:hover fieldset": { borderColor: "#22c55e" },
+                                "& fieldset": {
+                                    borderColor: "rgba(255, 255, 255, 0.12)",
+                                },
+                                "&:hover fieldset": { borderColor: "#9b7bf7" },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "#9b7bf7",
+                                },
                             },
                             "& .MuiOutlinedInput-input::placeholder": {
                                 color: "#6b7280",
@@ -216,8 +223,10 @@ export default function AppsPage() {
 
             <Card
                 sx={{
-                    bgcolor: "#1e2420",
-                    border: "1px solid #333",
+                    background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "12px",
                     overflow: "hidden",
                 }}
@@ -231,7 +240,7 @@ export default function AppsPage() {
                             minHeight: "300px",
                         }}
                     >
-                        <CircularProgress sx={{ color: "#22c55e" }} />
+                        <CircularProgress sx={{ color: "#9b7bf7" }} />
                     </Box>
                 ) : (
                     <Box sx={{ overflowX: "auto" }}>
@@ -239,8 +248,8 @@ export default function AppsPage() {
                             <TableHead>
                                 <TableRow
                                     sx={{
-                                        bgcolor: "#1a201c",
-                                        borderBottom: "1px solid #333",
+                                        borderBottom:
+                                            "1px solid rgba(255, 255, 255, 0.08)",
                                     }}
                                 >
                                     <TableCell
@@ -298,10 +307,11 @@ export default function AppsPage() {
                                     <TableRow
                                         key={app.id}
                                         sx={{
-                                            borderBottom: "1px solid #333",
+                                            borderBottom:
+                                                "1px solid rgba(255, 255, 255, 0.08)",
                                             "&:hover": {
                                                 bgcolor:
-                                                    "rgba(34, 197, 94, 0.05)",
+                                                    "rgba(155, 123, 247, 0.05)",
                                             },
                                         }}
                                     >
@@ -331,11 +341,11 @@ export default function AppsPage() {
                                                 sx={{
                                                     bgcolor:
                                                         app.status === "active"
-                                                            ? "rgba(34, 197, 94, 0.2)"
+                                                            ? "rgba(155, 123, 247, 0.2)"
                                                             : "rgba(239, 68, 68, 0.2)",
                                                     color:
                                                         app.status === "active"
-                                                            ? "#22c55e"
+                                                            ? "#9b7bf7"
                                                             : "#ef4444",
                                                     fontWeight: 600,
                                                 }}
@@ -369,8 +379,8 @@ export default function AppsPage() {
                     </Box>
                 )}
             </Card>
-
             {/* Pagination */}
+
             {data && data.pagination.pages > 1 && (
                 <Box
                     sx={{
@@ -405,8 +415,8 @@ export default function AppsPage() {
                     </Button>
                 </Box>
             )}
-
             {/* Context Menu */}
+
             <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
@@ -414,13 +424,14 @@ export default function AppsPage() {
                 slotProps={{
                     paper: {
                         sx: {
-                            bgcolor: "#1e2420",
-                            border: "1px solid #333",
+                            background: "rgba(20, 24, 18, 0.95)",
+                            backdropFilter: "blur(16px)",
+                            border: "1px solid rgba(255, 255, 255, 0.08)",
                             "& .MuiMenuItem-root": {
                                 color: "#e5e7eb",
                                 fontSize: "0.9rem",
                                 "&:hover": {
-                                    bgcolor: "rgba(34, 197, 94, 0.1)",
+                                    bgcolor: "rgba(155, 123, 247, 0.1)",
                                 },
                             },
                         },
@@ -448,16 +459,17 @@ export default function AppsPage() {
                     Delete
                 </MenuItem>
             </Menu>
-
             {/* Confirmation Dialog */}
+
             <Dialog
                 open={dialogOpen}
                 onClose={() => setDialogOpen(false)}
                 slotProps={{
                     paper: {
                         sx: {
-                            bgcolor: "#1e2420",
-                            border: "1px solid #333",
+                            background: "rgba(20, 24, 18, 0.95)",
+                            backdropFilter: "blur(16px)",
+                            border: "1px solid rgba(255, 255, 255, 0.08)",
                             minWidth: 400,
                             "& .MuiDialogTitle-root": {
                                 color: "#fff",
@@ -486,7 +498,7 @@ export default function AppsPage() {
                             color:
                                 dialogAction === "delete"
                                     ? "#ef4444"
-                                    : "#22c55e",
+                                    : "#9b7bf7",
                             fontWeight: 600,
                         }}
                     >
@@ -494,8 +506,8 @@ export default function AppsPage() {
                     </Button>
                 </DialogActions>
             </Dialog>
-
             {/* Toast */}
+
             <Snackbar
                 open={toast.open}
                 autoHideDuration={4000}
