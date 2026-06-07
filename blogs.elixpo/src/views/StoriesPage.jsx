@@ -128,7 +128,7 @@ export default function StoriesPage() {
     setDeleting(true);
     try {
       const res = await fetch(`/api/blogs/${confirmTarget.id}`, { method: 'DELETE' });
-      if (res.ok) setBlogs(prev => prev.filter(b => b.id !== confirmTarget.id));
+      if (res.ok) setStories(prev => prev.filter(b => b.id !== confirmTarget.id));
     } catch {}
     setDeleting(false);
     setConfirmTarget(null);
