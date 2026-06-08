@@ -36,7 +36,7 @@ export default function Footer() {
   return (
     <div className="absolute bottom-1 right-5 flex items-center gap-2.5 z-[1000] font-[lixFont]">
       {/* Undo/Redo */}
-      <div className="flex items-center bg-surface rounded-lg overflow-hidden">
+      <div className="flex items-center bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm">
         <button
           onClick={handleUndo}
           title="Undo (Ctrl+Z)"
@@ -55,7 +55,7 @@ export default function Footer() {
       </div>
 
       {/* Zoom controls */}
-      <div className="flex items-center bg-surface rounded-lg overflow-hidden">
+      <div className="flex items-center bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm">
         <button
           onClick={handleZoomOut}
           title="Zoom Out (Ctrl+-)"

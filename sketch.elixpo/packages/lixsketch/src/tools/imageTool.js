@@ -1117,9 +1117,15 @@ function stopInteracting() {
             ...oldPos,
             parentFrame: draggedShapeInitialFrameImage
         };
+        // Issue #34 bug #2: for drag, hoveredFrameImage tracks the actual
+        // destination — imageShape.parentFrame is still the OLD frame here.
+        // Resize / rotate don't move between frames, so fall back to the
+        // shape's own parent for those.
         const newPosWithFrame = {
             ...newPos,
-            parentFrame: imageShape ? imageShape.parentFrame : null
+            parentFrame: isDragging
+                ? (hoveredFrameImage || null)
+                : (imageShape ? imageShape.parentFrame : null),
         };
 
         // Only push transform action if something actually changed

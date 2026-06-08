@@ -28,8 +28,8 @@ export function ToolbarButton({ icon, preview, children, tooltip }) {
         title={tooltip}
         className={`h-9 flex items-center gap-1.5 px-3 rounded-lg transition-all duration-100 ${
           open
-            ? 'bg-white/[0.12] text-white'
-            : 'text-text-muted hover:text-white hover:bg-white/[0.06]'
+            ? 'bg-surface-active/40 text-text-primary'
+            : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
         }`}
       >
         {preview || (icon && <i className={`bx ${icon} text-base`} />)}
@@ -40,11 +40,11 @@ export function ToolbarButton({ icon, preview, children, tooltip }) {
 
       {open && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-20">
-          <div className="bg-[#252525] border border-white/[0.1] rounded-xl p-3 shadow-xl shadow-black/50 min-w-max">
+          <div className="bg-surface-card border border-border-light rounded-xl p-3 shadow-xl shadow-black/20 min-w-max">
             {children}
           </div>
           {/* Arrow pointer */}
-          <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rotate-45 bg-[#252525] border-r border-b border-white/[0.1]" />
+          <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rotate-45 bg-surface-card border-r border-b border-border-light" />
         </div>
       )}
     </div>
@@ -55,7 +55,7 @@ export function ToolbarButton({ icon, preview, children, tooltip }) {
  * Simple toolbar divider
  */
 function Divider() {
-  return <div className="w-px h-5 bg-white/[0.08] mx-0.5 shrink-0" />
+  return <div className="w-px h-5 bg-border-light mx-0.5 shrink-0" />
 }
 
 /**
@@ -67,7 +67,7 @@ export default function ShapeSidebar({ visible, children }) {
 
   return (
     <div
-      className={`absolute bottom-14 left-1/2 -translate-x-1/2 bg-[#1c1c1c] border border-white/[0.1] rounded-xl px-2 py-1.5 z-[999] font-[lixFont] transition-all duration-200 ${
+      className={`absolute bottom-14 left-1/2 -translate-x-1/2 bg-surface-card border border-border-light rounded-xl px-2 py-1.5 z-[999] font-[lixFont] shadow-lg shadow-black/20 transition-all duration-200 ${
         show
           ? 'opacity-100 pointer-events-auto translate-y-0'
           : 'opacity-0 pointer-events-none translate-y-2'
@@ -98,28 +98,28 @@ function LayerControls() {
       <button
         onClick={() => doLayer('sendToBack')}
         title={t('sidebar.sendToBack', { defaultValue: 'Send to back' })}
-        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
+        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-100"
       >
         <i className="bx bx-chevrons-down text-base" />
       </button>
       <button
         onClick={() => doLayer('sendBackward')}
         title={t('sidebar.sendBackward')}
-        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
+        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-100"
       >
         <i className="bx bx-chevron-down text-base" />
       </button>
       <button
         onClick={() => doLayer('bringForward')}
         title={t('sidebar.bringForward')}
-        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
+        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-100"
       >
         <i className="bx bx-chevron-up text-base" />
       </button>
       <button
         onClick={() => doLayer('bringToFront')}
         title={t('sidebar.bringToFront', { defaultValue: 'Bring to front' })}
-        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
+        className="h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-100"
       >
         <i className="bx bx-chevrons-up text-base" />
       </button>

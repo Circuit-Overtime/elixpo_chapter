@@ -11,6 +11,35 @@ const GRAPH_COLORS = [
     '#1ABC9C', '#E67E22', '#3498DB', '#E91E63', '#00BCD4',
 ];
 
+// Issue #38 follow-up: theme-aware graph chrome. Light mode flips every
+// hardcoded `rgba(255,255,255,X)` token (designed for dark canvas) to a
+// matching `rgba(60,60,80,X)` so the grid, axes, plot border, and tick
+// labels stay readable on the warm off-white canvas. The equation
+// curves themselves keep their colours from GRAPH_COLORS.
+function graphThemeTokens() {
+    const isDark = typeof document !== 'undefined'
+        && document.body
+        && document.body.classList.contains('theme-dark');
+    if (isDark) {
+        return {
+            outerBg:   '#0d1117',
+            plotBg:    '#111822',
+            gridStroke:'rgba(255,255,255,0.06)',
+            axisStroke:'rgba(255,255,255,0.25)',
+            borderStroke:'rgba(255,255,255,0.1)',
+            tickLabel: '#8b949e',
+        };
+    }
+    return {
+        outerBg:   '#fbfaf6',
+        plotBg:    '#ffffff',
+        gridStroke:'rgba(60,60,80,0.08)',
+        axisStroke:'rgba(60,60,80,0.35)',
+        borderStroke:'rgba(60,60,80,0.16)',
+        tickLabel: '#62627a',
+    };
+}
+
 /**
  * Calculate nice tick intervals for a given range.
  */
@@ -51,10 +80,11 @@ export function renderGraphSVG(equations, settings) {
     const toSvgY = (y) => pad.top + ((yMax - y) / yRange) * plotH;
 
     let svg = '';
+    const tk = graphThemeTokens();
 
     // Background
-    svg += `<rect x="0" y="0" width="${width}" height="${height}" fill="#0d1117" rx="8" />`;
-    svg += `<rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="#111822" />`;
+    svg += `<rect x="0" y="0" width="${width}" height="${height}" fill="${tk.outerBg}" rx="8" />`;
+    svg += `<rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="${tk.plotBg}" />`;
 
     // Grid & ticks
     const xTick = niceInterval(xRange);
@@ -66,11 +96,10 @@ export function renderGraphSVG(equations, settings) {
         const sx = toSvgX(x);
         if (sx < pad.left || sx > pad.left + plotW) continue;
         if (showGrid) {
-            svg += `<line x1="${sx}" y1="${pad.top}" x2="${sx}" y2="${pad.top + plotH}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" />`;
+            svg += `<line x1="${sx}" y1="${pad.top}" x2="${sx}" y2="${pad.top + plotH}" stroke="${tk.gridStroke}" stroke-width="0.5" />`;
         }
-        // Tick label
         const label = Math.abs(x) < 1e-10 ? '0' : (Number.isInteger(x) ? x : x.toFixed(1));
-        svg += `<text x="${sx}" y="${pad.top + plotH + 16}" text-anchor="middle" fill="#8b949e" font-size="10" font-family="lixCode, monospace">${label}</text>`;
+        svg += `<text x="${sx}" y="${pad.top + plotH + 16}" text-anchor="middle" fill="${tk.tickLabel}" font-size="10" font-family="lixCode, monospace">${label}</text>`;
     }
 
     // Horizontal grid lines + y labels
@@ -79,24 +108,24 @@ export function renderGraphSVG(equations, settings) {
         const sy = toSvgY(y);
         if (sy < pad.top || sy > pad.top + plotH) continue;
         if (showGrid) {
-            svg += `<line x1="${pad.left}" y1="${sy}" x2="${pad.left + plotW}" y2="${sy}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" />`;
+            svg += `<line x1="${pad.left}" y1="${sy}" x2="${pad.left + plotW}" y2="${sy}" stroke="${tk.gridStroke}" stroke-width="0.5" />`;
         }
         const label = Math.abs(y) < 1e-10 ? '0' : (Number.isInteger(y) ? y : y.toFixed(1));
-        svg += `<text x="${pad.left - 8}" y="${sy + 3}" text-anchor="end" fill="#8b949e" font-size="10" font-family="lixCode, monospace">${label}</text>`;
+        svg += `<text x="${pad.left - 8}" y="${sy + 3}" text-anchor="end" fill="${tk.tickLabel}" font-size="10" font-family="lixCode, monospace">${label}</text>`;
     }
 
     // Axes
     if (xMin <= 0 && xMax >= 0) {
         const ax = toSvgX(0);
-        svg += `<line x1="${ax}" y1="${pad.top}" x2="${ax}" y2="${pad.top + plotH}" stroke="rgba(255,255,255,0.25)" stroke-width="1" />`;
+        svg += `<line x1="${ax}" y1="${pad.top}" x2="${ax}" y2="${pad.top + plotH}" stroke="${tk.axisStroke}" stroke-width="1" />`;
     }
     if (yMin <= 0 && yMax >= 0) {
         const ay = toSvgY(0);
-        svg += `<line x1="${pad.left}" y1="${ay}" x2="${pad.left + plotW}" y2="${ay}" stroke="rgba(255,255,255,0.25)" stroke-width="1" />`;
+        svg += `<line x1="${pad.left}" y1="${ay}" x2="${pad.left + plotW}" y2="${ay}" stroke="${tk.axisStroke}" stroke-width="1" />`;
     }
 
     // Plot border
-    svg += `<rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1" />`;
+    svg += `<rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="none" stroke="${tk.borderStroke}" stroke-width="1" />`;
 
     // Equations
     const samplesPerPixel = 2;
@@ -194,39 +223,39 @@ export function renderGraphSVG(equations, settings) {
     // Remove the non-clipped curves from svg (we added them above for building)
     // Rebuild cleanly
     let cleanSvg = '';
-    cleanSvg += `<rect x="0" y="0" width="${width}" height="${height}" fill="#0d1117" rx="8" />`;
-    cleanSvg += `<rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="#111822" />`;
+    cleanSvg += `<rect x="0" y="0" width="${width}" height="${height}" fill="${tk.outerBg}" rx="8" />`;
+    cleanSvg += `<rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="${tk.plotBg}" />`;
 
     // Grid + ticks (re-add)
     for (let x = xStart; x <= xMax; x += xTick) {
         const sx = toSvgX(x);
         if (sx < pad.left || sx > pad.left + plotW) continue;
         if (showGrid) {
-            cleanSvg += `<line x1="${sx}" y1="${pad.top}" x2="${sx}" y2="${pad.top + plotH}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" />`;
+            cleanSvg += `<line x1="${sx}" y1="${pad.top}" x2="${sx}" y2="${pad.top + plotH}" stroke="${tk.gridStroke}" stroke-width="0.5" />`;
         }
         const label = Math.abs(x) < 1e-10 ? '0' : (Number.isInteger(x) ? x : x.toFixed(1));
-        cleanSvg += `<text x="${sx}" y="${pad.top + plotH + 16}" text-anchor="middle" fill="#8b949e" font-size="10" font-family="lixCode, monospace">${label}</text>`;
+        cleanSvg += `<text x="${sx}" y="${pad.top + plotH + 16}" text-anchor="middle" fill="${tk.tickLabel}" font-size="10" font-family="lixCode, monospace">${label}</text>`;
     }
     for (let y = yStart; y <= yMax; y += yTick) {
         const sy = toSvgY(y);
         if (sy < pad.top || sy > pad.top + plotH) continue;
         if (showGrid) {
-            cleanSvg += `<line x1="${pad.left}" y1="${sy}" x2="${pad.left + plotW}" y2="${sy}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" />`;
+            cleanSvg += `<line x1="${pad.left}" y1="${sy}" x2="${pad.left + plotW}" y2="${sy}" stroke="${tk.gridStroke}" stroke-width="0.5" />`;
         }
         const label = Math.abs(y) < 1e-10 ? '0' : (Number.isInteger(y) ? y : y.toFixed(1));
-        cleanSvg += `<text x="${pad.left - 8}" y="${sy + 3}" text-anchor="end" fill="#8b949e" font-size="10" font-family="lixCode, monospace">${label}</text>`;
+        cleanSvg += `<text x="${pad.left - 8}" y="${sy + 3}" text-anchor="end" fill="${tk.tickLabel}" font-size="10" font-family="lixCode, monospace">${label}</text>`;
     }
     // Axes
     if (xMin <= 0 && xMax >= 0) {
         const ax = toSvgX(0);
-        cleanSvg += `<line x1="${ax}" y1="${pad.top}" x2="${ax}" y2="${pad.top + plotH}" stroke="rgba(255,255,255,0.25)" stroke-width="1" />`;
+        cleanSvg += `<line x1="${ax}" y1="${pad.top}" x2="${ax}" y2="${pad.top + plotH}" stroke="${tk.axisStroke}" stroke-width="1" />`;
     }
     if (yMin <= 0 && yMax >= 0) {
         const ay = toSvgY(0);
-        cleanSvg += `<line x1="${pad.left}" y1="${ay}" x2="${pad.left + plotW}" y2="${ay}" stroke="rgba(255,255,255,0.25)" stroke-width="1" />`;
+        cleanSvg += `<line x1="${pad.left}" y1="${ay}" x2="${pad.left + plotW}" y2="${ay}" stroke="${tk.axisStroke}" stroke-width="1" />`;
     }
     // Plot border
-    cleanSvg += `<rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1" />`;
+    cleanSvg += `<rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="none" stroke="${tk.borderStroke}" stroke-width="1" />`;
 
     // Clipped curves
     cleanSvg += `<g clip-path="url(#${clipId})">${curves}</g>`;

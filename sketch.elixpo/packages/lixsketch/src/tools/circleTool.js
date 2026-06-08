@@ -4,6 +4,8 @@ import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransf
 import { cleanupAttachments } from './arrowTool.js';
 import { calculateSnap, clearSnapGuides } from '../core/SnapGuides.js';
 
+function getThemeStroke() { if (typeof document === "undefined") return "#fff"; return document.body && document.body.classList.contains("theme-dark") ? "#fff" : "#1a1a2e"; }
+
 let isDrawingCircle = false;
 let isDraggingShapeCircle = false;
 let isResizingShapeCircle = false;
@@ -16,7 +18,7 @@ const rc = rough.svg(svg);
 let startX, startY;
 
 
-let circleStrokecolor = "#1a1a20";
+let circleStrokecolor = null;
 let circleBackgroundColor = "transparent";
 let circleFillStyleValue = "none";
 let circleStrokeThicknes = 2;
@@ -83,7 +85,7 @@ const handleMouseDown = (e) => {
             disableAllSideBars();
         }
         let initialOptions = {
-            stroke: circleStrokecolor,
+            stroke: circleStrokecolor ?? getThemeStroke(),
             fill: circleBackgroundColor,
             fillStyle: circleFillStyleValue,
             strokeWidth: circleStrokeThicknes,
@@ -393,13 +395,16 @@ const handleMouseUp = (e) => {
     }
     
     if((isDraggingShapeCircle || isResizingShapeCircle || isRotatingShapeCircle) && dragOldPosCircle && currentShape) {
-        const newPos = { 
-            x: currentShape.x, 
-            y: currentShape.y, 
-            rx: currentShape.rx, 
-            ry: currentShape.ry, 
+        // Issue #34 bug #2: see rectangleTool — record the hovered frame
+        // as the destination, not the stale `parentFrame` (containment
+        // transfer happens later in this handler).
+        const newPos = {
+            x: currentShape.x,
+            y: currentShape.y,
+            rx: currentShape.rx,
+            ry: currentShape.ry,
             rotation: currentShape.rotation,
-            parentFrame: currentShape.parentFrame 
+            parentFrame: isDraggingShapeCircle ? (hoveredFrameCircle || null) : currentShape.parentFrame,
         };
         const oldPos = {
             ...dragOldPosCircle,

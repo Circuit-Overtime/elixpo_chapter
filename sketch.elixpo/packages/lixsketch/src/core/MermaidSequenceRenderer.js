@@ -26,7 +26,36 @@ const SIDE_MARGIN = 40;
 const FONT_FAMILY = 'lixFont, sans-serif';
 const CODE_FONT = 'lixCode, monospace';
 
-// Theme colors (dark theme matching the app)
+// Issue #38 follow-up: theme-aware palette. The on-canvas renderer reads
+// `themeColors()` at draw time so a single render call gets whichever
+// palette is active. The dark THEME object below is kept for the SVG-
+// string preview path (`renderSequenceSVG`), which is rendered inside
+// the modal's preview pane.
+function themeColors() {
+    const isDark = typeof document !== 'undefined'
+        && document.body
+        && document.body.classList.contains('theme-dark');
+    if (isDark) return THEME;
+    return {
+        bg: '#fbfaf6',
+        participantBg: '#ffffff',
+        participantBorder: '#9c9c9c',
+        participantText: '#38384e',
+        lifeline: '#b0b0b8',
+        messageLine: '#62627a',
+        messageDash: '#888',
+        messageText: '#38384e',
+        noteBg: '#fffce0',
+        noteBorder: '#c0b870',
+        noteText: '#5e5230',
+        blockBg: 'rgba(80,80,120,0.08)',
+        blockBorder: '#9c9c9c',
+        blockLabel: '#62627a',
+        crossColor: '#c2483a',
+    };
+}
+
+// Theme colors (dark theme — preview/SVG-string path).
 const THEME = {
     bg: '#1e1e28',
     participantBg: '#232329',
@@ -361,20 +390,20 @@ export function parseAndRenderSequence(src) {
 }
 
 /**
- * Render a sequence diagram onto the canvas as LOOSE engine shapes
- * (issue #24 follow-up to bug #1 — per-actor / per-message split).
+ * Render a sequence diagram onto the canvas as a real engine `Frame`
+ * containing independent shapes — top + bottom participant boxes,
+ * dashed lifelines, and a real Arrow (or Line for `--x`/`-x`) per
+ * message. Each child is fully independent for click / drag / resize;
+ * the Frame's `_diagramType` marker makes Frame.destroy() pull the
+ * children along on delete, so the diagram still behaves as one
+ * logical unit when discarded.
  *
- * Each participant becomes a real Rectangle (top box) + a Line (lifeline)
- * the user can edit, restyle, or delete individually. Each message becomes
- * a real Arrow (or Line for `--x`/`-x`). All shapes share a `groupId` so
- * the diagram still behaves as one Ctrl+G group under Selection.js's
- * group-expansion path — click any node, the whole diagram selects.
+ * Issue #34 bug #3 (follow-up to #24 per-actor split): drops the shared
+ * `groupId` glue so clicking one shape selects only that shape.
  *
  * Notes and block-frames (alt/opt/loop) are skipped for now — they'd
  * either need their own shape types or a richer label model. Self-
- * messages are also skipped (would need a curved arrow). The parsed
- * data is still retrievable via the underlying parser if a future
- * iteration wants to surface them.
+ * messages are also skipped (would need a curved arrow).
  */
 export function renderSequenceOnCanvas(diagram) {
     if (!diagram || diagram.type !== 'sequenceDiagram') return false;
@@ -411,7 +440,37 @@ export function renderSequenceOnCanvas(diagram) {
     const ox = vb.x + vb.width / 2 - totalWidth / 2;
     const oy = vb.y + vb.height / 2 - totalHeight / 2;
 
-    const groupId = `mermaid-seq-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    // ── Wrapper frame ──────────────────────────────────────────────────
+    // Issue #34 bug #3: drop the shared groupId glue. Each child is
+    // independent for click / drag / resize. The Frame's `_diagramType`
+    // marker makes Frame.destroy() pull the children along on delete,
+    // so the diagram still behaves as one logical unit when discarded.
+    if (!window.Frame) {
+        console.error('[SequenceRenderer] window.Frame missing — cannot wrap diagram');
+        return false;
+    }
+    // Padding bumped 24 → 60 so participant labels + message text near
+    // the frame's edges stay inside on the new wider light canvas.
+    const PADDING = 60;
+    const TK = themeColors();
+    const frameTitle = diagram.title || 'Sequence diagram';
+    const frame = new window.Frame(
+        ox - PADDING,
+        oy - PADDING,
+        totalWidth + PADDING * 2,
+        totalHeight + PADDING * 2,
+        {
+            stroke: TK.blockBorder,
+            strokeWidth: 1,
+            fill: 'transparent',
+            opacity: 0.7,
+            frameName: frameTitle,
+        }
+    );
+    frame._diagramType = 'mermaid-sequence';
+    window.shapes.push(frame);
+    if (window.pushCreateAction) window.pushCreateAction(frame);
+
     const created = [];
 
     // ── Participants: top box + lifeline (and bottom box) ─────────────
@@ -425,16 +484,17 @@ export function renderSequenceOnCanvas(diagram) {
         try {
             // Top participant box
             const topBox = new window.Rectangle(bx, TOP_MARGIN + oy, PARTICIPANT_W, PARTICIPANT_H, {
-                stroke: THEME.participantBorder,
+                stroke: TK.participantBorder,
                 strokeWidth: 1.5,
-                fill: THEME.participantBg,
+                fill: TK.participantBg,
                 fillStyle: 'solid',
                 roughness: 1,
                 label: p.name,
+                labelColor: TK.participantText,
             });
-            topBox.groupId = groupId;
             window.shapes.push(topBox);
             if (window.pushCreateAction) window.pushCreateAction(topBox);
+            frame.addShapeToFrame(topBox);
             created.push(topBox);
 
             // Lifeline (dashed vertical line spanning the diagram height)
@@ -442,29 +502,30 @@ export function renderSequenceOnCanvas(diagram) {
                 { x: cx, y: topBoxBottom + oy },
                 { x: cx, y: bottomBoxTop + oy },
                 {
-                    stroke: THEME.lifeline,
+                    stroke: TK.lifeline,
                     strokeWidth: 1,
                     strokeDasharray: '6 4',
                     roughness: 0,
                 }
             );
-            lifeline.groupId = groupId;
             window.shapes.push(lifeline);
             if (window.pushCreateAction) window.pushCreateAction(lifeline);
+            frame.addShapeToFrame(lifeline);
             created.push(lifeline);
 
             // Bottom participant box (mirrors top — Mermaid convention)
             const bottomBox = new window.Rectangle(bx, bottomBoxTop + oy, PARTICIPANT_W, PARTICIPANT_H, {
-                stroke: THEME.participantBorder,
+                stroke: TK.participantBorder,
                 strokeWidth: 1.5,
-                fill: THEME.participantBg,
+                fill: TK.participantBg,
                 fillStyle: 'solid',
                 roughness: 1,
                 label: p.name,
+                labelColor: TK.participantText,
             });
-            bottomBox.groupId = groupId;
             window.shapes.push(bottomBox);
             if (window.pushCreateAction) window.pushCreateAction(bottomBox);
+            frame.addShapeToFrame(bottomBox);
             created.push(bottomBox);
         } catch (err) {
             console.warn('[SequenceRenderer] Participant creation failed:', p.name, err);
@@ -490,11 +551,12 @@ export function renderSequenceOnCanvas(diagram) {
         // line for that, arrow otherwise.
         const isCross = !!m.cross && m.arrowHead === 'cross';
         const opts = {
-            stroke: THEME.messageLine,
+            stroke: TK.messageLine,
             strokeWidth: 1.5,
             roughness: 0,
             strokeDasharray: m.solid ? '' : '6 4',
             label: labelText || '',
+            labelColor: TK.messageText,
         };
 
         try {
@@ -503,24 +565,25 @@ export function renderSequenceOnCanvas(diagram) {
             const connector = isCross
                 ? new window.Line(sp, ep, opts)
                 : new window.Arrow(sp, ep, opts);
-            connector.groupId = groupId;
             window.shapes.push(connector);
             if (window.pushCreateAction) window.pushCreateAction(connector);
+            frame.addShapeToFrame(connector);
             created.push(connector);
         } catch (err) {
             console.warn('[SequenceRenderer] Message creation failed:', m, err);
         }
     }
 
-    // Auto-select the first node so the user sees something landed.
-    // Selection.js's group-expansion will pick up the rest via groupId.
+    // Auto-select the first node so the user has feedback that the
+    // diagram landed. Selecting a child (not the frame) reinforces the
+    // "independent shapes inside a frame" model from issue #34 bug #3.
     const first = created[0];
     if (first) {
         window.currentShape = first;
         if (typeof first.selectShape === 'function') first.selectShape();
     }
 
-    console.log(`[SequenceRenderer] Done: ${pCount} participants, ${messages.length} messages (groupId=${groupId})`);
+    console.log(`[SequenceRenderer] Done: ${pCount} participants, ${messages.length} messages`);
     return true;
 }
 

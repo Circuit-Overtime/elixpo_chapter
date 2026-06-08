@@ -23,12 +23,6 @@ const EXTERNAL = [
   'zustand',
   'zustand/middleware',
 ];
-
-// ── React subpath (ESM with code splitting) ───────────────────────────
-// SketchEngine uses dynamic import() to load shape/tool modules AFTER
-// setting up the engine's window globals (rough, svg, etc.). Code
-// splitting keeps those imports asynchronous at runtime so the shape
-// modules don't evaluate before init() has wired the globals up.
 await build({
   entryPoints: ['src/react/index.js'],
   bundle: true,

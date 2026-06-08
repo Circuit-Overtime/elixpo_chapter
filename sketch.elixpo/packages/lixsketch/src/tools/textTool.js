@@ -11,6 +11,8 @@ import {
     updateSelectedElement
 } from '../core/UndoRedo.js';
 import { cleanupAttachments, updateAttachedArrows } from './arrowTool.js';
+
+function getThemeStroke() { if (typeof document === "undefined") return "#fff"; return document.body && document.body.classList.contains("theme-dark") ? "#fff" : "#1a1a2e"; }
 import {
     addCodeBlock,
     wrapCodeElement,
@@ -27,7 +29,7 @@ import {
 
 let textSize = "30px";
 let textFont = "lixFont";
-let textColor = "#1a1a20";
+let textColor = null;
 let textAlign = "left";
 
 let textColorOptions = document.querySelectorAll(".textColorSpan");
@@ -118,20 +120,27 @@ function addText(event) {
 
     textElement.setAttribute("x", 0);
     textElement.setAttribute("y", 0);
-    textElement.setAttribute("fill", textColor);
+    textElement.setAttribute("fill", textColor ?? getThemeStroke());
     textElement.setAttribute("font-size", textSize);
     textElement.setAttribute("font-family", textFont);
     textElement.setAttribute("text-anchor", textAlignElement);
     textElement.setAttribute("cursor", "default");
     textElement.setAttribute("white-space", "pre");
     textElement.setAttribute("dominant-baseline", "hanging");
+    // Issue #34 bug #5b: SVG <text> only fires pointer events on the
+    // painted glyphs by default — so a click between letters or in the
+    // padding around the text never bubbles to the <g> and the selection
+    // tool can't pick the shape up. `bounding-box` extends the hit area
+    // to the entire bounding box (SVG 2; supported in Chromium/WebKit/
+    // Firefox), which is what every other shape tool relies on.
+    textElement.setAttribute("pointer-events", "bounding-box");
     textElement.textContent = "";
 
     gElement.setAttribute("data-x", x);
     gElement.setAttribute("data-y", y);
     textElement.setAttribute("data-initial-size", textSize);
     textElement.setAttribute("data-initial-font", textFont);
-    textElement.setAttribute("data-initial-color", textColor);
+    textElement.setAttribute("data-initial-color", textColor ?? getThemeStroke());
     textElement.setAttribute("data-initial-align", textAlign);
     textElement.setAttribute("data-type", "text");
     gElement.appendChild(textElement);
@@ -228,7 +237,7 @@ function makeTextEditable(textElement, groupElement) {
 
     const currentFontSize = textElement.getAttribute("font-size") || "30px";
     const currentFontFamily = textElement.getAttribute("font-family") || "lixFont";
-    const currentFill = textElement.getAttribute("fill") || "#1a1a20";
+    const currentFill = textElement.getAttribute("fill") || "#fff";
     const currentAnchor = textElement.getAttribute("text-anchor") || "start";
     // Scale font-size by zoom so the textarea matches what the user sees on canvas
     const rawSize = parseFloat(currentFontSize) || 30;
@@ -247,7 +256,12 @@ function makeTextEditable(textElement, groupElement) {
     input.style.lineHeight = "1.2em";
     input.style.textAlign = currentAnchor === "middle" ? "center" : currentAnchor === "end" ? "right" : "left";
     input.style.backgroundColor = "transparent";
-    input.style.border = "none";
+    // Issue #34 bug #5a: dashed creation outline that grows with the
+    // text — same visual cue the frame tool uses while drawing. Inset
+    // padding-box border so the dashes follow the textarea size as the
+    // user types instead of clipping behind the glyphs.
+    input.style.border = "1px dashed rgba(255,255,255,0.55)";
+    input.style.borderRadius = "3px";
     input.style.outline = "none";
     document.body.appendChild(input);
 
@@ -1001,11 +1015,14 @@ const handleMouseUp = (event) => {
                 rotation: extractRotationFromTransform(selectedElement) || 0,
                 parentFrame: draggedShapeInitialFrameText
             };
+            // Issue #34 bug #2: hoveredFrameText is the actual destination
+            // tracked during drag — textShape.parentFrame is still the OLD
+            // frame at this point.
             const newPosWithFrame = {
                 x: finalTranslateX,
                 y: finalTranslateY,
                 rotation: extractRotationFromTransform(selectedElement) || 0,
-                parentFrame: textShape ? textShape.parentFrame : null
+                parentFrame: hoveredFrameText || null,
             };
 
             const stateChanged = initialX !== finalTranslateX || initialY !== finalTranslateY;
@@ -1578,7 +1595,7 @@ function convertTextToCode(textGroupElement) {
     const tx = currentTransform ? currentTransform.matrix.e : 0;
     const ty = currentTransform ? currentTransform.matrix.f : 0;
     const fontSize = textElement.getAttribute('font-size') || "25px";
-    const color = textElement.getAttribute('fill') || "#1a1a20";
+    const color = textElement.getAttribute('fill') || "#fff";
 
     // Find and remove old TextShape from shapes array
     let oldTextShape = null;
@@ -1670,7 +1687,7 @@ function convertCodeToText(codeGroupElement) {
     const tx = currentTransform ? currentTransform.matrix.e : 0;
     const ty = currentTransform ? currentTransform.matrix.f : 0;
     const fontSize = codeElement.getAttribute('font-size') || "30px";
-    const color = codeElement.getAttribute('fill') || "#1a1a20";
+    const color = codeElement.getAttribute('fill') || "#fff";
 
     // Find and remove old CodeShape from shapes array
     let oldCodeShape = null;

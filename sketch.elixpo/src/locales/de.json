@@ -16,6 +16,11 @@
     "theme": "Design",
     "canvasBackground": "Leinwand-Hintergrund",
     "canvasBg": {
+      "white": "Weiß",
+      "cream": "Creme",
+      "paper": "Papier",
+      "skyTint": "Himmelton",
+      "sageTint": "Salbeiton",
       "black": "Schwarz",
       "darkGray": "Dunkelgrau",
       "blueBlack": "Blauschwarz",

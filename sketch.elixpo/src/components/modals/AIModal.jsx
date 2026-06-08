@@ -180,7 +180,7 @@ function DiagramPreview({ svgMarkup, className }) {
   return (
     <div
       ref={containerRef}
-      className={`rounded-xl bg-[#111] border border-white/[0.06] overflow-hidden relative select-none ${className || 'w-full h-[clamp(200px,40vh,400px)]'}`}
+      className={`rounded-xl bg-surface-card border border-border-light overflow-hidden relative select-none ${className || 'w-full h-[clamp(200px,40vh,400px)]'}`}
     >
       <div
         style={{

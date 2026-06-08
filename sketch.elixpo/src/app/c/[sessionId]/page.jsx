@@ -63,7 +63,7 @@ export default function CanvasPage() {
   const canvasVisible = layoutMode !== 'docs'
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black">
+    <div className="relative w-screen h-screen overflow-hidden bg-surface-dark">
       <Header />
 
       <SplitLayout

@@ -16,6 +16,11 @@
     "theme": "Theme",
     "canvasBackground": "Canvas Background",
     "canvasBg": {
+      "white": "White",
+      "cream": "Cream",
+      "paper": "Paper",
+      "skyTint": "Sky Tint",
+      "sageTint": "Sage Tint",
       "black": "Black",
       "darkGray": "Dark Gray",
       "blueBlack": "Blue Black",

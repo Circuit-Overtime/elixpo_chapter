@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @theme {
+  /* Site default = dark (landing, blog, /pricing, etc.). The canvas
+   * page overrides these to light via `body.canvas-mode` below — keeps
+   * the public-facing pages on the original dark palette. */
   --color-surface: #232329;
   --color-surface-hover: #343448;
   --color-surface-active: #444480;
@@ -12,11 +15,45 @@
   --color-accent-blue-hover: #6c67f3;
   --color-text-primary: #fff;
   --color-text-secondary: #e8e8ee;
-  --color-text-muted: #a0a0b0;
-  --color-text-dim: #787888;
+  /* PR #39 contrast bump kept here so dark-mode small labels stay legible. */
+  --color-text-muted: #b8b8c8;
+  --color-text-dim: #a0a0b0;
   --color-border: #333;
   --color-border-light: #3a3a50;
   --color-border-accent: #5555a0;
+}
+body.canvas-mode {
+  --color-surface: #f4f3ee;
+  --color-surface-hover: #eceae3;
+  --color-surface-active: #dcd9cd;
+  --color-surface-dark: #f4f3ee;
+  --color-surface-card: #fbfaf6;
+  --color-text-primary: #38384e;
+  --color-text-secondary: #4a4a60;
+  --color-text-muted: #62627a;
+  --color-text-dim: #80808f;
+  --color-border: #d6d4ca;
+  --color-border-light: #c5c3ba;
+  --color-border-accent: #8080c0;
+  --lixsketch-grid-fine: rgba(60, 60, 80, 0.07);
+  --lixsketch-grid-major: rgba(60, 60, 80, 0.14);
+}
+
+body.canvas-mode.theme-dark {
+  --color-surface: #25252f;
+  --color-surface-hover: #35354a;
+  --color-surface-active: #444480;
+  --color-surface-dark: #20202a;
+  --color-surface-card: #292932;
+  --color-text-primary: #f0f0f5;
+  --color-text-secondary: #d8d8e0;
+  --color-text-muted: #b0b0c0;
+  --color-text-dim: #92929e;
+  --color-border: #383848;
+  --color-border-light: #3e3e52;
+  --color-border-accent: #5555a0;
+  --lixsketch-grid-fine: rgba(255, 255, 255, 0.06);
+  --lixsketch-grid-major: rgba(255, 255, 255, 0.12);
 }
 
 /* Font faces — served from /public/fonts/ */

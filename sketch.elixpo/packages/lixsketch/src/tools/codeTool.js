@@ -11,9 +11,11 @@ import {
 } from '../core/UndoRedo.js';
 import { cleanupAttachments, updateAttachedArrows } from './arrowTool.js';
 
+function getThemeStroke() { if (typeof document === "undefined") return "#fff"; return document.body && document.body.classList.contains("theme-dark") ? "#fff" : "#1a1a2e"; }
+
 let codeTextSize = "25px";
 let codeTextFont = "lixCode";
-let codeTextColor = "#1a1a20";
+let codeTextColor = null;
 let codeTextAlign = "left";
 let codeLanguage = "auto";
 
@@ -118,7 +120,7 @@ function addCodeBlock(event) {
 
     codeElement.setAttribute("x", 0);
     codeElement.setAttribute("y", 0);
-    codeElement.setAttribute("fill", codeTextColor);
+    codeElement.setAttribute("fill", codeTextColor ?? getThemeStroke());
     codeElement.setAttribute("font-size", codeTextSize);
     codeElement.setAttribute("font-family", codeTextFont);
     codeElement.setAttribute("text-anchor", textAlignElement);
@@ -131,7 +133,7 @@ function addCodeBlock(event) {
     gElement.setAttribute("data-y", y);
     codeElement.setAttribute("data-initial-size", codeTextSize);
     codeElement.setAttribute("data-initial-font", codeTextFont);
-    codeElement.setAttribute("data-initial-color", codeTextColor);
+    codeElement.setAttribute("data-initial-color", codeTextColor ?? getThemeStroke());
     codeElement.setAttribute("data-initial-align", codeTextAlign);
     codeElement.setAttribute("data-language", codeLanguage);
     codeElement.setAttribute("data-type", "code");

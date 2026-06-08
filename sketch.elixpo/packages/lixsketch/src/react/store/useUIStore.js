@@ -49,48 +49,20 @@ function invertShapeColors(prevResolved, nextResolved) {
 }
 
 function applyTheme(theme) {
-  const html = document.documentElement
-  let resolved = theme
-  if (theme === 'system') {
-    resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  }
-  html.classList.remove('dark', 'light')
-  html.classList.add(resolved)
+  // Issue #38 bug #1: scope theme to body classes so light mode only
+  // affects the canvas, not the landing/blog pages. Token values live
+  // in `body.canvas-mode` (light default) and `body.canvas-mode.theme-
+  // dark` (toggle) rules in src/app/globals.css.
+  const body = document.body
+  if (!body) return
+  const resolved = theme === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : theme
+  body.classList.remove('theme-dark', 'theme-light')
+  if (resolved === 'dark') body.classList.add('theme-dark')
 
-  if (resolved === 'light') {
-    html.style.setProperty('--color-surface', '#f0f0f5')
-    html.style.setProperty('--color-surface-hover', '#e0e0ea')
-    html.style.setProperty('--color-surface-active', '#d0d0e0')
-    html.style.setProperty('--color-surface-dark', '#e8e8f0')
-    html.style.setProperty('--color-surface-card', '#ffffff')
-    html.style.setProperty('--color-text-primary', '#1a1a2e')
-    html.style.setProperty('--color-text-secondary', '#2a2a40')
-    html.style.setProperty('--color-text-muted', '#6a6a80')
-    html.style.setProperty('--color-text-dim', '#9090a0')
-    html.style.setProperty('--color-border', '#d0d0dd')
-    html.style.setProperty('--color-border-light', '#c0c0d0')
-    html.style.setProperty('--color-border-accent', '#8080c0')
-    document.body.style.background = '#e8e8f0'
-    // Update SVG canvas background
-    const svgEl = window.svg
-    if (svgEl) svgEl.style.background = '#e8e8f0'
-  } else {
-    html.style.setProperty('--color-surface', '#232329')
-    html.style.setProperty('--color-surface-hover', '#343448')
-    html.style.setProperty('--color-surface-active', '#444480')
-    html.style.setProperty('--color-surface-dark', '#1a1a20')
-    html.style.setProperty('--color-surface-card', '#1e1e28')
-    html.style.setProperty('--color-text-primary', '#fff')
-    html.style.setProperty('--color-text-secondary', '#e8e8ee')
-    html.style.setProperty('--color-text-muted', '#a0a0b0')
-    html.style.setProperty('--color-text-dim', '#787888')
-    html.style.setProperty('--color-border', '#333')
-    html.style.setProperty('--color-border-light', '#3a3a50')
-    html.style.setProperty('--color-border-accent', '#5555a0')
-    document.body.style.background = '#000'
-    const svgEl = window.svg
-    if (svgEl) svgEl.style.background = ''
-  }
+  const svgEl = window.svg
+  if (svgEl) svgEl.style.background = resolved === 'light' ? '#f4f3ee' : ''
 }
 
 const useUIStore = create((set, get) => ({
@@ -185,7 +157,8 @@ const useUIStore = create((set, get) => ({
   setCanvasLoading: (loading, message) => set({ canvasLoading: loading, canvasLoadingMessage: message || 'Loading canvas...' }),
 
   // --- Theme ---
-  theme: 'dark',
+  // Issue #38 bug #1: light by default. Dark stays available via toggle.
+  theme: 'light',
   setTheme: (newTheme) => {
     const prev = get().theme
     const resolve = (t) => t === 'system'

@@ -4,12 +4,14 @@ import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransf
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './arrowTool.js';
 import { calculateSnap, clearSnapGuides } from '../core/SnapGuides.js';
 
+function getThemeStroke() { if (typeof document === "undefined") return "#fff"; return document.body && document.body.classList.contains("theme-dark") ? "#fff" : "#1a1a2e"; }
+
 let isDrawingLine = false;
 let currentLine = null;
 let lineStartX = 0;      
 let lineStartY = 0;      
 let currentLineGroup = null;    
-let lineColor = "#1a1a20";
+let lineColor = null;
 let lineStrokeWidth = 3;
 let lineStrokeStyle = "solid";
 let lineEdgeType = 1;
@@ -71,7 +73,7 @@ const handleMouseDown = (e) => {
             { x, y },
             { x, y },
             {
-                stroke: lineColor,
+                stroke: lineColor ?? getThemeStroke(),
                 strokeWidth: lineStrokeWidth,
                 roughness: lineSktetchRate,
                 bowing: lineEdgeType,
@@ -319,11 +321,13 @@ const handleMouseUp = (e) => {
     }
     
     if (isDraggingLine && dragOldPosLine && currentShape) {
+        // Issue #34 bug #2: use hoveredFrameLine (actual destination) instead
+        // of the stale parentFrame — containment transfer hasn't happened yet.
         const newPos = {
             startPoint: { x: currentShape.startPoint.x, y: currentShape.startPoint.y },
             endPoint: { x: currentShape.endPoint.x, y: currentShape.endPoint.y },
             controlPoint: currentShape.controlPoint ? { x: currentShape.controlPoint.x, y: currentShape.controlPoint.y } : null,
-            parentFrame: currentShape.parentFrame
+            parentFrame: hoveredFrameLine || null,
         };
         const oldPos = {
             ...dragOldPosLine,

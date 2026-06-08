@@ -7,9 +7,19 @@ import useAuthStore from '@/store/useAuthStore'
 import { triggerCloudSync, writeLocalScene } from '@/hooks/useAutoSave'
 import { triggerDocCloudSync, persistLayoutMode } from '@/hooks/useDocAutoSave'
 import { useTranslation } from '@/hooks/useTranslation'
-
-const CANVAS_BACKGROUNDS = [
-  { color: '#000', label: 'menu.canvasBg.black' },
+// Issue #38 follow-up: swatches are paired per theme. The light set
+// pairs with the soothing warm-off-white canvas; the dark set restores
+// the original night palette. The menu picks the matching list at render
+// time based on the active theme.
+const CANVAS_BACKGROUNDS_LIGHT = [
+  { color: '#ffffff', label: 'menu.canvasBg.white' },
+  { color: '#faf9f5', label: 'menu.canvasBg.cream' },
+  { color: '#f5f3ed', label: 'menu.canvasBg.paper' },
+  { color: '#f0f5fb', label: 'menu.canvasBg.skyTint' },
+  { color: '#f0f5ef', label: 'menu.canvasBg.sageTint' },
+]
+const CANVAS_BACKGROUNDS_DARK = [
+  { color: '#000000', label: 'menu.canvasBg.black' },
   { color: '#161718', label: 'menu.canvasBg.darkGray' },
   { color: '#13171C', label: 'menu.canvasBg.blueBlack' },
   { color: '#181605', label: 'menu.canvasBg.darkYellow' },
@@ -104,7 +114,15 @@ const [docOpen, setDocOpen] = useState(false)
         />
       )}
       <div
-        className={`absolute top-14 right-4 w-[230px] max-h-[calc(100vh-140px)] overflow-y-auto no-scrollbar bg-surface/75 backdrop-blur-lg rounded-2xl z-[1000] border border-border-light p-1.5 font-[lixFont] text-[13px] transition-all duration-200 ${
+        className={`absolute top-14 right-4 w-[230px] max-h-[calc(100vh-140px)] no-scrollbar bg-surface/75 backdrop-blur-lg rounded-2xl z-[1000] border border-border-light p-1.5 font-[lixFont] text-[13px] transition-all duration-200 ${
+          // Issue #38 bug #2: per CSS spec, `overflow-y: auto` forces
+          // `overflow-x` to `auto` as well, which clipped the side-
+          // flyouts (`absolute right-full ...`) so the user saw nothing
+          // when they clicked Preferences or Document. Toggle the y-scroll
+          // off while a flyout is open so the flyout can escape the panel;
+          // restore it the moment the flyout closes.
+          (prefsOpen || docOpen) ? 'overflow-visible' : 'overflow-y-auto'
+        } ${
           menuOpen
             ? 'opacity-100 blur-0 pointer-events-auto'
             : 'opacity-0 blur-[20px] pointer-events-none'
@@ -222,6 +240,10 @@ const [docOpen, setDocOpen] = useState(false)
         <hr className="border-border-light my-1" />
 
         <div className="relative">
+          {/* Issue #38 follow-up: side-flyout swapped back to inline
+              expansion — the popped panel visually detached from the
+              parent menu (the user described it as "overflowing the
+              menu"). Inline keeps everything in one column. */}
           <button
             onClick={() => { setDocOpen((d) => !d); setPrefsOpen(false) }}
             className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200 ${docOpen ? 'bg-surface-hover' : ''}`}
@@ -230,40 +252,32 @@ const [docOpen, setDocOpen] = useState(false)
               <i className="bx bx-file-blank text-sm" />
               Document
             </span>
-            <i className="bx bx-chevron-left text-sm text-text-dim" />
+            <i className={`bx bx-chevron-down text-sm text-text-dim transition-transform duration-150 ${docOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {docOpen && (
-            <div
-              className="absolute right-full top-0 mr-2 w-[240px] bg-surface/95 backdrop-blur-lg rounded-2xl border border-border-light p-1.5 shadow-2xl shadow-black/40"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <p className="text-text-dim text-[10px] uppercase tracking-wider px-2 pb-1.5 pt-0.5 flex items-center gap-1.5">
-                <i className="bx bx-file-blank text-[11px]" />
-                Document layout
-              </p>
+            // Absolute dropdown: floats below the trigger, overlays the
+            // items further down instead of pushing them. The menu's
+            // outer overflow toggles to `visible` while a flyout is open
+            // (see the panel className) so the dropdown isn't clipped.
+            <div className="absolute top-full left-0 right-0 mt-1 bg-surface-card border border-border-light rounded-lg p-1 shadow-xl shadow-black/30 z-10">
               {[
-                { key: 'canvas', icon: 'bx-pen',     label: 'Canvas', subtext: 'Drawing only' },
-                { key: 'split',  icon: 'bx-layout',  label: 'Split',  subtext: 'Canvas + docs side-by-side' },
-                { key: 'docs',   icon: 'bxs-notepad', label: 'Docs',   subtext: 'Document editor only' },
+                { key: 'canvas', icon: 'bx-pen',     label: 'Canvas' },
+                { key: 'split',  icon: 'bx-layout',  label: 'Split' },
+                { key: 'docs',   icon: 'bxs-notepad', label: 'Docs' },
               ].map((m) => {
                 const active = layoutMode === m.key
                 return (
                   <button
                     key={m.key}
                     onClick={() => { handleSetLayout(m.key); setDocOpen(false) }}
-                    className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 ${
-                      active ? 'bg-accent-blue/15 text-text-primary' : 'text-text-secondary hover:bg-surface-hover'
-                    }`}
+                    className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
                   >
-                    <i className={`bx ${m.icon} text-base mt-0.5 ${active ? 'text-accent-blue' : 'text-text-muted'}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[12px] flex items-center gap-1.5">
-                        {m.label}
-                        {active && <i className="bx bx-check text-sm text-accent-blue" />}
-                      </div>
-                      <div className="text-text-dim text-[10px]">{m.subtext}</div>
-                    </div>
+                    <span className="flex items-center gap-2">
+                      {active && <i className="bx bx-check text-sm text-accent-blue" />}
+                      <i className={`bx ${m.icon} text-xs ${active ? 'text-accent-blue' : 'text-text-muted'}`} />
+                      {m.label}
+                    </span>
                   </button>
                 )
               })}
@@ -298,18 +312,11 @@ const [docOpen, setDocOpen] = useState(false)
               <i className="bx bx-cog text-sm" />
               {t('menu.preferences')}
             </span>
-            <i className="bx bx-chevron-left text-sm text-text-dim" />
+            <i className={`bx bx-chevron-down text-sm text-text-dim transition-transform duration-150 ${prefsOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {prefsOpen && (
-            <div
-              className="absolute right-full top-0 mr-2 w-[240px] bg-surface/95 backdrop-blur-lg rounded-2xl border border-border-light p-1.5 shadow-2xl shadow-black/40 max-h-[60vh] overflow-y-auto no-scrollbar"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <p className="text-text-dim text-[10px] uppercase tracking-wider px-2 pb-1.5 pt-0.5 flex items-center gap-1.5">
-                <i className="bx bx-cog text-[11px]" />
-                {t('menu.preferences')}
-              </p>
+            <div className="absolute top-full left-0 right-0 mt-1 bg-surface-card border border-border-light rounded-lg p-1 shadow-xl shadow-black/30 z-10 max-h-[55vh] overflow-y-auto no-scrollbar">
               <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px]">
                 <span>{t('prefs.language')}</span>
                 <select
@@ -478,7 +485,7 @@ const [docOpen, setDocOpen] = useState(false)
             {t('menu.canvasBackground')}
           </p>
           <div className="flex items-center gap-1.5">
-            {CANVAS_BACKGROUNDS.map((bg) => (
+            {(theme === 'dark' ? CANVAS_BACKGROUNDS_DARK : CANVAS_BACKGROUNDS_LIGHT).map((bg) => (
               <button
                 key={bg.color}
                 onClick={() => setCanvasBackground(bg.color)}
