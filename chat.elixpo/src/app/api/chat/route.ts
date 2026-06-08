@@ -1,83 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
+import { createOpenAI } from '@ai-sdk/openai';
+import { streamText } from 'ai';
 
-const SEARCH_BASE = "https://search.elixpo.com";
-const API_KEY = process.env.ELIXSEARCH_API_KEY || "";
+// Create a custom OpenAI provider instance pointing to Pollinations AI
+// Note: As per Pollinations docs, their endpoints can be used without auth for free models.
+// The user will provide their own api keys later for specific models.
+const pollinations = createOpenAI({
+  baseURL: 'https://gen.pollinations.ai/v1',
+  apiKey: process.env.POLLINATIONS_API_KEY || 'YOUR_API_KEY',
+});
 
-/**
- * Proxy all chat requests to search.elixpo.com to avoid CORS.
- * POST /api/chat — proxies to /v1/chat/completions (supports SSE)
- * GET /api/chat?action=create_session — proxies session create
- * GET /api/chat?action=get_session&session_id=X — proxies session get
- */
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const isStream = body.stream === true;
+// Optional: Allow responses up to 3 minutes
+export const maxDuration = 180;
 
-  const upstream = await fetch(`${SEARCH_BASE}/v1/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify(body),
-  });
+export async function POST(req: Request) {
+  try {
+    const { messages, model = 'openai' } = (await req.json()) as any;
 
-  if (!upstream.ok) {
-    const err = await upstream.text();
-    return NextResponse.json({ error: err }, { status: upstream.status });
-  }
-
-  if (isStream && upstream.body) {
-    // Forward SSE stream
-    return new Response(upstream.body, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
+    // Call the Pollinations API
+    const result = await streamText({
+      model: pollinations(model),
+      messages,
+      temperature: 0.7,
     });
+
+    return result.toUIMessageStreamResponse();
+  } catch (error: any) {
+    console.error('API Chat Error:', error);
+    return new Response(
+      JSON.stringify({ error: error.message || 'An error occurred during chat completion.' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
-
-  const data = await upstream.json();
-  return NextResponse.json(data);
-}
-
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const action = searchParams.get("action");
-  const sessionId = searchParams.get("session_id");
-
-  let url: string;
-  if (action === "create_session") {
-    url = `${SEARCH_BASE}/api/session/create`;
-  } else if (action === "get_session" && sessionId) {
-    url = `${SEARCH_BASE}/api/session/${sessionId}`;
-  } else {
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-  }
-
-  const upstream = await fetch(url, {
-    headers: { Authorization: `Bearer ${API_KEY}` },
-  });
-
-  if (!upstream.ok) {
-    const err = await upstream.text();
-    return NextResponse.json({ error: err }, { status: upstream.status });
-  }
-
-  const data = await upstream.json();
-  return NextResponse.json(data);
-}
-
-export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const sessionId = searchParams.get("session_id");
-  if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
-
-  await fetch(`${SEARCH_BASE}/api/session/${sessionId}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${API_KEY}` },
-  });
-
-  return NextResponse.json({ ok: true });
 }
