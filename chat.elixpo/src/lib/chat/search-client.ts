@@ -40,7 +40,7 @@ export async function chatCompletion(request: ChatRequest): Promise<ChatResponse
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+    const err: any = await res.json().catch(() => ({}));
     throw new Error(err.error?.message || `API error: ${res.status}`);
   }
 
@@ -69,7 +69,7 @@ export async function chatStream(
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const err: any = await res.json().catch(() => ({}));
       throw new Error(err.error?.message || `API error: ${res.status}`);
     }
 
@@ -124,7 +124,7 @@ export async function chatStream(
 export async function createSession(): Promise<string> {
   const res = await fetch(`${PROXY}?action=create_session`);
   if (!res.ok) throw new Error(`Session create failed: ${res.status}`);
-  const data = await res.json();
+  const data: any = await res.json();
   return data.session_id;
 }
 
@@ -134,7 +134,7 @@ export async function createSession(): Promise<string> {
 export async function getSession(sessionId: string): Promise<ChatMessage[]> {
   const res = await fetch(`${PROXY}?action=get_session&session_id=${sessionId}`);
   if (!res.ok) return [];
-  const data = await res.json();
+  const data: any = await res.json();
   return data.messages || [];
 }
 

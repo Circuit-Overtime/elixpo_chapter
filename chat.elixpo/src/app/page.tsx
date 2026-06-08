@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+const HeroCloud = dynamic(() => import('@/components/HeroCloud'), { ssr: false });
 
 /* ────────────────────── FAQ Data ────────────────────── */
 const faqItems = [
@@ -97,8 +100,11 @@ export default function LandingPage() {
 
       {/* ═══════════════════ HERO — FULL ACCENT VIEWPORT ═══════════════════ */}
       <section className="relative min-h-screen flex flex-col overflow-hidden bg-gradient-to-b from-[#4338ca] via-[#3730a3] to-[#0a0a0a]">
-        {/* Huge watermark */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] z-0 select-none">
+        {/* ═══ Three.js volumetric cloud canvas ═══ */}
+        <HeroCloud />
+
+        {/* Huge watermark — z-[2] sits above cloud canvas but below content */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] z-[2] select-none">
           <span className="text-[28vw] font-bold tracking-tighter leading-none text-[#f0ede6]" style={{ fontFamily: 'system-ui' }}>
             ELIXPO
           </span>
