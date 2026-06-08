@@ -4,7 +4,13 @@
 import { updateAttachedArrows as updateArrowsForShape } from '../tools/arrowTool.js';
 
 const rc = rough.svg(svg);
-const lineColor = "#1a1a20";
+// Issue #38 follow-up: read the default stroke from the active theme
+// instead of pinning to a single colour. White was invisible on the new
+// light canvas, near-black is invisible if the user toggles dark.
+function getThemeStroke() {
+    if (typeof document === 'undefined') return '#fff';
+    return document.body && document.body.classList.contains('theme-dark') ? '#fff' : '#1a1a2e';
+}
 const lineStrokeWidth = 2;
 let hoveredFrameLine = null;
 
@@ -136,7 +142,7 @@ class Line {
             const pathData = `M ${this.startPoint.x} ${this.startPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${this.endPoint.x} ${this.endPoint.y}`;
             lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             lineElement.setAttribute('d', pathData);
-            lineElement.setAttribute('stroke', this.options.stroke || lineColor);
+            lineElement.setAttribute('stroke', this.options.stroke || getThemeStroke());
             lineElement.setAttribute('stroke-width', this.options.strokeWidth || lineStrokeWidth);
             lineElement.setAttribute('fill', 'none');
             lineElement.setAttribute('stroke-linecap', 'round');
@@ -151,7 +157,7 @@ class Line {
             lineElement.setAttribute('y1', this.startPoint.y);
             lineElement.setAttribute('x2', this.endPoint.x);
             lineElement.setAttribute('y2', this.endPoint.y);
-            lineElement.setAttribute('stroke', this.options.stroke || lineColor);
+            lineElement.setAttribute('stroke', this.options.stroke || getThemeStroke());
             lineElement.setAttribute('stroke-width', this.options.strokeWidth || lineStrokeWidth);
             lineElement.setAttribute('stroke-linecap', 'round');
             if (this.options.strokeDasharray) {
@@ -548,7 +554,7 @@ removeSelection() {
             const pathData = `M ${this.startPoint.x} ${this.startPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${this.endPoint.x} ${this.endPoint.y}`;
             lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             lineElement.setAttribute('d', pathData);
-            lineElement.setAttribute('stroke', this.options.stroke || lineColor);
+            lineElement.setAttribute('stroke', this.options.stroke || getThemeStroke());
             lineElement.setAttribute('stroke-width', this.options.strokeWidth || lineStrokeWidth);
             lineElement.setAttribute('fill', 'none');
             lineElement.setAttribute('stroke-linecap', 'round');
@@ -562,7 +568,7 @@ removeSelection() {
             lineElement.setAttribute('y1', this.startPoint.y);
             lineElement.setAttribute('x2', this.endPoint.x);
             lineElement.setAttribute('y2', this.endPoint.y);
-            lineElement.setAttribute('stroke', this.options.stroke || lineColor);
+            lineElement.setAttribute('stroke', this.options.stroke || getThemeStroke());
             lineElement.setAttribute('stroke-width', this.options.strokeWidth || lineStrokeWidth);
             lineElement.setAttribute('stroke-linecap', 'round');
             lineElement.setAttribute('stroke-dasharray', this.options.strokeDasharray);

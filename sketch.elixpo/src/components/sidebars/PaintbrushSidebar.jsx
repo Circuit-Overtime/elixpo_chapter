@@ -5,7 +5,7 @@ import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSide
 import { useState, useCallback } from 'react'
 import { useTranslation } from '@/hooks/useTranslation'
 
-const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
+const STROKE_COLORS = ['#1a1a20', '#ffffff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 
 // Map taper UI values to perfect-freehand thinning values
 const TAPER_MAP = { uniform: 0, pen: 0.5, brush: 0.8 }

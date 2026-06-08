@@ -4,6 +4,8 @@ import { pushCreateAction, pushDeleteAction, pushOptionsChangeAction, pushTransf
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './arrowTool.js';
 import { calculateSnap, clearSnapGuides } from '../core/SnapGuides.js';
 
+function getThemeStroke() { if (typeof document === "undefined") return "#fff"; return document.body && document.body.classList.contains("theme-dark") ? "#fff" : "#1a1a2e"; }
+
 // Expose updateArrowsForShape globally so FreehandStroke.updateAttachedArrows() can call it
 // (FreehandStroke.js is a separate module and cannot import freehandTool's local bindings)
 window.__updateArrowsForShape = updateArrowsForShape;
@@ -13,7 +15,7 @@ const strokeThicknesses = document.querySelectorAll(".strokeThickness span");
 const strokeStyles = document.querySelectorAll(".strokeStyleSpan");
 const strokeTapers = document.querySelectorAll(".strokeTaperSpan");
 const strokeRoughnesses = document.querySelectorAll(".strokeRoughnessSpan");
-let strokeColor = "#1a1a20";
+let strokeColor = null;
 let strokeThickness = 2;
 let strokeStyleValue = "solid";
 let strokeThinning = 0;
@@ -140,7 +142,7 @@ function handleMouseDown(e) {
         lastTime = Date.now();
 
         currentStroke = new FreehandStroke(points, {
-            stroke: strokeColor,
+            stroke: strokeColor ?? getThemeStroke(),
             strokeWidth: strokeThickness
         });
 
@@ -411,9 +413,15 @@ function handleMouseUp(e) {
             ...dragOldPosStroke,
             parentFrame: draggedShapeInitialFrameStroke
         };
+        // Issue #34 bug #2: for drag, hoveredFrameStroke is the actual
+        // destination — currentShape.parentFrame at this point is still
+        // the OLD frame. Resize / rotate don't track hover, fall back to
+        // the shape's own parent.
         const newPosForUndo = {
             ...newPos,
-            parentFrame: currentShape.parentFrame
+            parentFrame: isDraggingStroke
+                ? (hoveredFrameStroke || null)
+                : currentShape.parentFrame,
         };
         
         const frameChanged = oldPos.parentFrame !== newPosForUndo.parentFrame;

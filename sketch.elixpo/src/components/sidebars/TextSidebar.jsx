@@ -5,7 +5,7 @@ import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSide
 import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from '@/hooks/useTranslation'
 
-const TEXT_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
+const TEXT_COLORS = ['#1a1a20', '#ffffff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 
 const FONTS = [
   { value: 'lixFont', label: 'Lix' },

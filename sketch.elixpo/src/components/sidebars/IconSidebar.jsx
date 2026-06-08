@@ -47,7 +47,7 @@ function IconCell({ icon, onClick }) {
       onClick={onClick}
       title={name}
       style={{ width: '44px', height: '44px', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', cursor: 'pointer', background: 'transparent', border: 'none', padding: 0 }}
-      className="hover:bg-white/10 transition-colors duration-100"
+      className="hover:bg-surface-hover transition-colors duration-100"
     >
       {normalizedSvg ? (
         <div
@@ -177,19 +177,22 @@ export default function IconSidebar() {
     }
   }, [])
 
+  // Issue #38 follow-up: every hardcoded `bg-[#18181c]` / `text-white/…`
+  // / `bg-white/…` swapped for the engine theme tokens so the icon
+  // picker follows the canvas theme (light by default, dark on toggle).
   return (
     <div
-      className={`absolute top-[60px] right-2 bottom-[56px] w-[300px] bg-[#18181c] border border-white/[0.06] rounded-2xl z-[999] font-[lixFont] flex flex-col transition-transform duration-200 ${
+      className={`absolute top-[60px] right-2 bottom-[56px] w-[300px] bg-surface-card border border-border-light rounded-2xl z-[999] font-[lixFont] flex flex-col transition-transform duration-200 ${
         visible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
       {/* Header */}
       <div className="px-3.5 pt-3.5 pb-2 shrink-0">
         <div className="flex items-center justify-between mb-2.5">
-          <h3 className="text-white/90 text-sm font-medium">Icons</h3>
+          <h3 className="text-text-primary text-sm font-medium">Icons</h3>
           <button
             onClick={() => setActiveTool(TOOLS.SELECT)}
-            className="w-6 h-6 flex items-center justify-center rounded-md text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors duration-100"
+            className="w-6 h-6 flex items-center justify-center rounded-md text-text-dim hover:text-text-primary hover:bg-surface-hover transition-colors duration-100"
             title="Close (Esc)"
           >
             <i className="bx bx-x text-lg" />
@@ -197,19 +200,19 @@ export default function IconSidebar() {
         </div>
 
         {/* Search */}
-        <div className="flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-lg px-2.5 py-2">
-          <i className="bx bxs-search text-white/40 text-sm" />
+        <div className="flex items-center gap-2 bg-surface-hover border border-border-light rounded-lg px-2.5 py-2">
+          <i className="bx bxs-search text-text-dim text-sm" />
           <input
             id="iconSearchInput"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search icons..."
-            className="flex-1 bg-transparent text-white/90 text-sm outline-none placeholder:text-white/30"
+            className="flex-1 bg-transparent text-text-primary text-sm outline-none placeholder:text-text-dim"
             spellCheck={false}
           />
           {query && (
-            <button onClick={() => setQuery('')} className="text-white/30 hover:text-white/60">
+            <button onClick={() => setQuery('')} className="text-text-dim hover:text-text-secondary">
               <i className="bx bxs-x-circle text-sm" />
             </button>
           )}
@@ -225,7 +228,7 @@ export default function IconSidebar() {
             className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs whitespace-nowrap transition-colors duration-100 ${
               category === cat.value
                 ? 'bg-accent-blue/20 text-accent-blue-hover'
-                : 'text-white/50 hover:bg-white/[0.06] hover:text-white/80'
+                : 'text-text-muted hover:bg-surface-hover hover:text-text-primary'
             }`}
           >
             <i className={`bx ${cat.icon} text-xs`} />
@@ -235,17 +238,17 @@ export default function IconSidebar() {
       </div>
 
       {/* Divider */}
-      <div className="h-px bg-white/[0.06] mx-3.5 shrink-0" />
+      <div className="h-px bg-border-light mx-3.5 shrink-0" />
 
       {/* Icon grid — scrollable */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2.5" id="iconsContainer">
         {loading ? (
-          <div className="flex items-center justify-center py-12 text-white/40 text-sm">
+          <div className="flex items-center justify-center py-12 text-text-dim text-sm">
             <i className="bx bxs-hourglass bx-spin text-lg mr-2" />
             Loading...
           </div>
         ) : icons.length === 0 ? (
-          <div className="flex items-center justify-center py-12 text-white/40 text-sm">
+          <div className="flex items-center justify-center py-12 text-text-dim text-sm">
             No icons found
           </div>
         ) : (

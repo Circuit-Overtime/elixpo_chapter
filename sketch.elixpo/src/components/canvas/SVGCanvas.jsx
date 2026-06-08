@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
+import useUIStore from '@/store/useUIStore'
 import useSketchEngine from '@/hooks/useSketchEngine'
 
 const GRID_SIZE = 20
@@ -11,6 +12,14 @@ export default function SVGCanvas() {
   const svgRef = useRef(null)
   const canvasBackground = useSketchStore((s) => s.canvasBackground)
   const gridEnabled = useSketchStore((s) => s.gridEnabled)
+  const theme = useUIStore((s) => s.theme)
+  // Issue #38 follow-up: grid strokes were hardcoded to white-on-dark
+  // (`rgba(255,255,255,0.06)`) — invisible on the new light canvas.
+  // Pick a dark-on-light stroke when the theme is light so the grid
+  // stays visible regardless of canvas background.
+  const isLight = theme !== 'dark'
+  const gridStrokeFine  = isLight ? 'rgba(40,40,60,0.10)'  : 'rgba(255,255,255,0.06)'
+  const gridStrokeMajor = isLight ? 'rgba(40,40,60,0.18)'  : 'rgba(255,255,255,0.12)'
   const getCursor = useSketchStore((s) => s.getCursor)
   const cursor = getCursor()
 
@@ -110,7 +119,7 @@ export default function SVGCanvas() {
             <path
               d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
               fill="none"
-              stroke="rgba(255,255,255,0.06)"
+              stroke={gridStrokeFine}
               strokeWidth="0.5"
             />
           </pattern>
@@ -124,7 +133,7 @@ export default function SVGCanvas() {
             <path
               d={`M ${GRID_SIZE * 5} 0 L 0 0 0 ${GRID_SIZE * 5}`}
               fill="none"
-              stroke="rgba(255,255,255,0.12)"
+              stroke={gridStrokeMajor}
               strokeWidth="0.8"
             />
           </pattern>

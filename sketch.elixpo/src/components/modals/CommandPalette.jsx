@@ -233,7 +233,7 @@ export default function CommandPalette() {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       <div
-        className="relative bg-surface-card border border-border-light rounded-2xl w-full max-w-[540px] mx-4 overflow-hidden"
+        className="relative bg-surface-card border border-border-light rounded-2xl w-full max-w-[760px] mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search */}

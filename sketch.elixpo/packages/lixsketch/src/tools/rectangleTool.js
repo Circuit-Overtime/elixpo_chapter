@@ -16,7 +16,16 @@ let startRotationMouseAngleSquare = 0;
 let startShapeRotationSquare = 0;
 const rc = rough.svg(svg); 
 let startX, startY;
-let squareStrokecolor = "#1a1a20";
+// Issue #38 follow-up: null sentinel means "use theme default at draw
+// time". The legacy `"#fff"` literal was invisible on the light canvas;
+// reading the body's `theme-dark` class lets the same code produce a
+// readable stroke in either mode. As soon as the user picks a colour
+// from the sidebar this var holds that value verbatim.
+function getThemeStroke() {
+    if (typeof document === 'undefined') return '#fff';
+    return document.body && document.body.classList.contains('theme-dark') ? '#fff' : '#1a1a2e';
+}
+let squareStrokecolor = null;
 let squareBackgroundColor = "transparent";
 let squareFillStyleValue = "none";
 let squareStrokeThicknes = 2;
@@ -76,7 +85,7 @@ const handleMouseDownRect = (e) => {
         }
 
         let initialOptions = {
-            stroke: squareStrokecolor,
+            stroke: squareStrokecolor ?? getThemeStroke(),
             fill: squareBackgroundColor,
             fillStyle: squareFillStyleValue,
             strokeWidth: squareStrokeThicknes,
@@ -363,13 +372,19 @@ const handleMouseUpRect = (e) => {
     }
 
     if ((isDraggingShapeSquare || isResizingShapeSquare || isRotatingShapeSquare) && dragOldPosSquare && currentShape) {
-        const newPos = { 
-            x: currentShape.x, 
-            y: currentShape.y, 
-            width: currentShape.width, 
-            height: currentShape.height, 
+        // Issue #34 bug #2: for drag operations the actual frame transfer
+        // happens AFTER this mouseUp block — so `currentShape.parentFrame`
+        // at this point still points at the OLD frame. Use the hovered
+        // frame (tracked during mousemove) as the authoritative new
+        // destination instead, so the undo action records a real
+        // attachment delta and Ctrl+Z re-attaches the shape correctly.
+        const newPos = {
+            x: currentShape.x,
+            y: currentShape.y,
+            width: currentShape.width,
+            height: currentShape.height,
             rotation: currentShape.rotation,
-            parentFrame: currentShape.parentFrame
+            parentFrame: isDraggingShapeSquare ? (hoveredFrame || null) : currentShape.parentFrame,
         };
         const oldPos = {
             ...dragOldPosSquare,

@@ -422,10 +422,22 @@ export function pushOptionsChangeAction(shape, oldOptions) {
     redoStack.length = 0;
 }
 
+// Issue #34 bug #4: refresh the multi-selection outline + handles so it
+// follows the reverted geometry. Without this the selection rect stays
+// pinned to the pre-undo coordinates and the user sees a ghost rect
+// floating away from the shapes it claims to wrap.
+function refreshSelectionAfterAction() {
+    const ms = (typeof window !== 'undefined') ? window.multiSelection : null;
+    if (!ms) return;
+    if (typeof ms.updateControls !== 'function') return;
+    if (!ms.selectedShapes || ms.selectedShapes.size === 0) return;
+    try { ms.updateControls(); } catch (err) { console.warn('[UndoRedo] selection refresh failed:', err); }
+}
+
 export function undo() {
     if (undoStack.length === 0) return;
     const action = undoStack.pop();
-    
+    try {
     if (action.type === 'frameTransform') {
         // Handle frame transformation undo
         action.shape.x = action.oldPos.x;
@@ -905,12 +917,13 @@ export function undo() {
         redoStack.push(action);
         return;
     }
+    } finally { refreshSelectionAfterAction(); }
 }
 
 export function redo() {
     if (redoStack.length === 0) return;
     const action = redoStack.pop();
-    
+    try {
     if (action.type === 'frameTransform') {
         // Handle frame transformation redo
         action.shape.x = action.newPos.x;
@@ -1382,6 +1395,7 @@ export function redo() {
         undoStack.push(action);
         return;
     }
+    } finally { refreshSelectionAfterAction(); }
 }
 
 // Optional: Keyboard shortcuts

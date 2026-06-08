@@ -49,48 +49,28 @@ function invertShapeColors(prevResolved, nextResolved) {
 }
 
 function applyTheme(theme) {
-  const html = document.documentElement
-  let resolved = theme
-  if (theme === 'system') {
-    resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  }
-  html.classList.remove('dark', 'light')
-  html.classList.add(resolved)
+  // Issue #38 bug #1: theme is scoped to the CANVAS page only — landing /
+  // blog / pricing stay on the dark @theme palette. We use body classes
+  // rather than html inline styles so the override:
+  //   • only kicks in when body.canvas-mode is present (canvas page),
+  //   • doesn't leak across SPA navigations (no persistent inline styles).
+  // The actual token values live in src/app/globals.css under
+  // `body.canvas-mode` (light = default) and
+  // `body.canvas-mode.theme-dark` (toggle override).
+  const body = document.body
+  if (!body) return
+  const resolved = theme === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : theme
+  body.classList.remove('theme-dark', 'theme-light')
+  if (resolved === 'dark') body.classList.add('theme-dark')
 
-  if (resolved === 'light') {
-    html.style.setProperty('--color-surface', '#f0f0f5')
-    html.style.setProperty('--color-surface-hover', '#e0e0ea')
-    html.style.setProperty('--color-surface-active', '#d0d0e0')
-    html.style.setProperty('--color-surface-dark', '#e8e8f0')
-    html.style.setProperty('--color-surface-card', '#ffffff')
-    html.style.setProperty('--color-text-primary', '#1a1a2e')
-    html.style.setProperty('--color-text-secondary', '#2a2a40')
-    html.style.setProperty('--color-text-muted', '#6a6a80')
-    html.style.setProperty('--color-text-dim', '#9090a0')
-    html.style.setProperty('--color-border', '#d0d0dd')
-    html.style.setProperty('--color-border-light', '#c0c0d0')
-    html.style.setProperty('--color-border-accent', '#8080c0')
-    document.body.style.background = '#e8e8f0'
-    // Update SVG canvas background
-    const svgEl = window.svg
-    if (svgEl) svgEl.style.background = '#e8e8f0'
-  } else {
-    html.style.setProperty('--color-surface', '#232329')
-    html.style.setProperty('--color-surface-hover', '#343448')
-    html.style.setProperty('--color-surface-active', '#444480')
-    html.style.setProperty('--color-surface-dark', '#1a1a20')
-    html.style.setProperty('--color-surface-card', '#1e1e28')
-    html.style.setProperty('--color-text-primary', '#fff')
-    html.style.setProperty('--color-text-secondary', '#e8e8ee')
-    html.style.setProperty('--color-text-muted', '#a0a0b0')
-    html.style.setProperty('--color-text-dim', '#787888')
-    html.style.setProperty('--color-border', '#333')
-    html.style.setProperty('--color-border-light', '#3a3a50')
-    html.style.setProperty('--color-border-accent', '#5555a0')
-    document.body.style.background = '#000'
-    const svgEl = window.svg
-    if (svgEl) svgEl.style.background = ''
-  }
+  // SVG canvas background flips with the theme so the artwork lives on
+  // top of a matching surface. Reset it when going dark so the
+  // `canvasBackground` store value (which the user picks from the menu)
+  // takes over again.
+  const svgEl = window.svg
+  if (svgEl) svgEl.style.background = resolved === 'light' ? '#f4f3ee' : ''
 }
 
 const useUIStore = create((set, get) => ({
@@ -182,7 +162,9 @@ const useUIStore = create((set, get) => ({
   setCanvasLoading: (loading, message) => set({ canvasLoading: loading, canvasLoadingMessage: message || 'Loading canvas...' }),
 
   // --- Theme ---
-  theme: 'dark',
+  // Issue #38 bug #1: light is the default. `applyTheme('dark')` is
+  // still wired below for the toggle path.
+  theme: 'light',
   setTheme: (newTheme) => {
     const prev = get().theme
     const resolve = (t) => t === 'system'
@@ -191,6 +173,26 @@ const useUIStore = create((set, get) => ({
     invertShapeColors(resolve(prev), resolve(newTheme))
     applyTheme(newTheme)
     set({ theme: newTheme })
+
+    // Issue #38 follow-up: when the user toggles themes, swap the canvas
+    // background to a matching swatch from the NEW theme's palette if it
+    // currently matches one from the OLD theme's. This keeps a swatch
+    // highlighted as "selected" in the menu and prevents the canvas from
+    // looking light in dark mode (or vice versa). User-customised colours
+    // (not in either list) stay untouched. Lazy-load the sketch store to
+    // avoid the cross-store import cycle.
+    const LIGHT_BGS = ['#ffffff', '#faf9f5', '#f5f3ed', '#f0f5fb', '#f0f5ef', '#f4f3ee']
+    const DARK_BGS  = ['#000000', '#161718', '#13171C', '#181605', '#1B1615']
+    const resolved = resolve(newTheme)
+    Promise.resolve().then(async () => {
+      const { default: useSketchStore } = await import('@/store/useSketchStore')
+      const ss = useSketchStore.getState()
+      const cur = (ss.canvasBackground || '').toLowerCase()
+      const inLight = LIGHT_BGS.some((c) => c.toLowerCase() === cur)
+      const inDark  = DARK_BGS .some((c) => c.toLowerCase() === cur)
+      if (resolved === 'dark' && inLight) ss.setCanvasBackground(DARK_BGS[2])  // blue-black, the previous default
+      else if (resolved === 'light' && inDark) ss.setCanvasBackground(LIGHT_BGS[1])  // cream
+    }).catch(() => {})
   },
 
   // --- Language / i18n ---

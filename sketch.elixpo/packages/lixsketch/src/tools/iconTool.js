@@ -1008,9 +1008,15 @@ function stopInteracting() {
             ...oldPos,
             parentFrame: draggedShapeInitialFrameIcon
         };
+        // Issue #34 bug #2: for drag, hoveredFrameIcon tracks the actual
+        // destination — currentShape.parentFrame is still the OLD frame.
+        // Resize / rotate don't track hover, so fall back to whatever the
+        // shape itself reports (parent doesn't change for those gestures).
         const newPosWithFrame = {
             ...newPos,
-            parentFrame: iconShape ? iconShape.parentFrame : null
+            parentFrame: isDragging
+                ? (hoveredFrameIcon || null)
+                : (iconShape ? iconShape.parentFrame : null),
         };
 
         const stateChanged = newPos.x !== oldPos.x || newPos.y !== oldPos.y ||

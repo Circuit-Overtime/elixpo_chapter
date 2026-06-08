@@ -27,7 +27,13 @@ class Frame {
         this.fillStyle = options.fillStyle || "transparent"; // 'transparent' | 'solid' | 'grid'
         this.fillColor = options.fillColor || "#1e1e28";
         this.gridSize = options.gridSize || 20;
-        this.gridColor = options.gridColor || "rgba(255,255,255,0.06)";
+        // Issue #38 follow-up: read the grid stroke from a CSS custom
+        // property so the frame grid stays visible in both themes. The
+        // var is defined in globals.css for both `body.canvas-mode`
+        // (dark-on-light) and `body.canvas-mode.theme-dark` (light-on-dark).
+        // The literal here is the dark-theme fallback for environments
+        // (tests, embeds) without the canvas-mode CSS in scope.
+        this.gridColor = options.gridColor || "var(--lixsketch-grid-fine, rgba(255,255,255,0.06))";
         this.options = {
             stroke: options.stroke || "#555",
             strokeWidth: options.strokeWidth || 1,
