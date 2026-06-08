@@ -64,6 +64,11 @@ load_env() {
   fi
   while IFS= read -r line || [ -n "$line" ]; do
     [[ -z "$line" || "$line" =~ ^# ]] && continue
+    # SOPS structural metadata rows (e.g. `sops_age__list_0__map_enc=
+    # -----BEGIN AGE ENCRYPTED FILE-----`) carry unquoted whitespace
+    # that `export` can't parse — they'd silently fall through the
+    # `2>/dev/null` below, but skipping explicitly is cleaner.
+    [[ "$line" =~ ^sops_ ]] && continue
     export "$line" 2>/dev/null || true
   done <<< "$_env_content"
 }
