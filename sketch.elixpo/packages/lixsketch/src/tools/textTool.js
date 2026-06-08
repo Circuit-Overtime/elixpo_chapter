@@ -127,13 +127,17 @@ function addText(event) {
     textElement.setAttribute("cursor", "default");
     textElement.setAttribute("white-space", "pre");
     textElement.setAttribute("dominant-baseline", "hanging");
-    // Issue #34 bug #5b: SVG <text> only fires pointer events on the
-    // painted glyphs by default — so a click between letters or in the
-    // padding around the text never bubbles to the <g> and the selection
-    // tool can't pick the shape up. `bounding-box` extends the hit area
-    // to the entire bounding box (SVG 2; supported in Chromium/WebKit/
-    // Firefox), which is what every other shape tool relies on.
-    textElement.setAttribute("pointer-events", "bounding-box");
+    // Issue #48 bugs #1 / #3: reverted the previous `bounding-box` hit
+    // area (introduced for #34 #5b) — extending the text's hit zone to
+    // its full bbox meant the negative space between glyphs and around
+    // the text was stealing clicks from shapes drawn ON TOP of the text
+    // (drag a rect over text → text intercepts; select text then click a
+    // different shape elsewhere → click lands in text's invisible bbox
+    // and the text stays selected). Default `painted` only fires on
+    // glyph pixels, which restores the expected pass-through. Trade-off:
+    // empty-padding clicks no longer select the text — the user has to
+    // click on the letters.
+    textElement.setAttribute("pointer-events", "painted");
     textElement.textContent = "";
 
     gElement.setAttribute("data-x", x);
@@ -190,17 +194,24 @@ function makeTextEditable(textElement, groupElement) {
     let input = document.createElement("textarea");
     input.className = "svg-text-editor";
 
-    let textContent = "";
-    const tspans = textElement.querySelectorAll('tspan');
-    if (tspans.length > 0) {
-        tspans.forEach((tspan, index) => {
-            textContent += tspan.textContent.replace(/ /g, '\u00A0');
-            if (index < tspans.length - 1) {
-                textContent += "\n";
-            }
-        });
+    // Issue #48 phase D follow-up: prefer the persisted `data-wrap-
+    // source` when present so re-opening the editor shows the user's
+    // original line breaks instead of the auto-wrap output. Falls back
+    // to tspan-concatenation for legacy text shapes.
+    let textContent = '';
+    const storedSource = textElement.getAttribute('data-wrap-source');
+    if (storedSource !== null && storedSource !== '') {
+        textContent = storedSource.replace(/ /g, '\u00A0');
     } else {
-        textContent = textElement.textContent.replace(/ /g, '\u00A0');
+        const tspans = textElement.querySelectorAll('tspan');
+        if (tspans.length > 0) {
+            tspans.forEach((tspan, index) => {
+                textContent += tspan.textContent.replace(/ /g, '\u00A0');
+                if (index < tspans.length - 1) textContent += '\n';
+            });
+        } else {
+            textContent = textElement.textContent.replace(/ /g, '\u00A0');
+        }
     }
 
     input.value = textContent;
@@ -256,11 +267,16 @@ function makeTextEditable(textElement, groupElement) {
     input.style.lineHeight = "1.2em";
     input.style.textAlign = currentAnchor === "middle" ? "center" : currentAnchor === "end" ? "right" : "left";
     input.style.backgroundColor = "transparent";
-    // Issue #34 bug #5a: dashed creation outline that grows with the
-    // text — same visual cue the frame tool uses while drawing. Inset
-    // padding-box border so the dashes follow the textarea size as the
-    // user types instead of clipping behind the glyphs.
-    input.style.border = "1px dashed rgba(255,255,255,0.55)";
+    // Issue #34 bug #5a + #48 bug #2: dashed creation outline that grows
+    // with the text. Originally `rgba(255,255,255,0.55)` — invisible on
+    // the new light canvas. Read the active theme so the dashes stay
+    // visible in both modes.
+    const _isDark = typeof document !== 'undefined'
+        && document.body
+        && document.body.classList.contains('theme-dark');
+    input.style.border = _isDark
+        ? "1px dashed rgba(255,255,255,0.55)"
+        : "1px dashed rgba(40,40,60,0.45)";
     input.style.borderRadius = "3px";
     input.style.outline = "none";
     document.body.appendChild(input);
@@ -329,6 +345,83 @@ function makeTextEditable(textElement, groupElement) {
     groupElement.style.display = "none";
 }
 
+/**
+ * Issue #48 phase D follow-up: true text wrapping driven by E/W width.
+ *
+ * `paint(textElement, source, wrapWidth)` renders the user-typed `source`
+ * string into tspans, soft-wrapping any line that exceeds `wrapWidth`
+ * pixels (in SVG units). `wrapWidth = null | 0` falls back to the old
+ * "explicit newlines only" behaviour so existing text shapes that have
+ * never been width-resized look identical.
+ *
+ * The raw `source` is persisted on the element as `data-wrap-source`
+ * so subsequent edits (textarea re-open) and serialisation can rebuild
+ * the original content even after auto-wrap inserted line breaks.
+ */
+function measureSegment(text, refTextElement) {
+    if (!text) return 0;
+    const NS = 'http://www.w3.org/2000/svg';
+    const probe = document.createElementNS(NS, 'tspan');
+    probe.textContent = text;
+    refTextElement.appendChild(probe);
+    let width = 0;
+    try { width = probe.getComputedTextLength(); } catch {}
+    refTextElement.removeChild(probe);
+    return width;
+}
+
+function paintTextContent(textElement, source, wrapWidth) {
+    while (textElement.firstChild) textElement.removeChild(textElement.firstChild);
+    const x = textElement.getAttribute('x') || 0;
+    const NS = 'http://www.w3.org/2000/svg';
+    const paragraphs = (source || '').split('\n');
+    const finalLines = [];
+
+    for (const paragraph of paragraphs) {
+        const para = paragraph.replace(/ /g, ' ');
+        if (!wrapWidth || wrapWidth <= 0) {
+            finalLines.push(para || ' ');
+            continue;
+        }
+        // Word-wrap the paragraph against wrapWidth.
+        const words = para.split(/(\s+)/);  // keep separators so spacing survives
+        let cur = '';
+        for (const token of words) {
+            const candidate = cur + token;
+            if (measureSegment(candidate, textElement) > wrapWidth && cur.trim().length > 0) {
+                finalLines.push(cur);
+                cur = token.replace(/^\s+/, '');  // drop the leading break-space
+            } else {
+                cur = candidate;
+            }
+        }
+        finalLines.push(cur.length ? cur : ' ');
+    }
+
+    finalLines.forEach((line, i) => {
+        const tspan = document.createElementNS(NS, 'tspan');
+        tspan.setAttribute('x', x);
+        tspan.setAttribute('dy', i === 0 ? '0' : '1.2em');
+        tspan.textContent = line.length ? line : ' ';
+        textElement.appendChild(tspan);
+    });
+}
+
+function getWrapSource(textElement) {
+    const stored = textElement.getAttribute('data-wrap-source');
+    if (stored !== null && stored !== '') return stored;
+    // Fallback: rebuild from existing tspans (legacy text shapes without
+    // the attribute). Join each tspan as a paragraph.
+    const tspans = textElement.querySelectorAll('tspan');
+    if (tspans.length === 0) return textElement.textContent || '';
+    return Array.from(tspans).map((t) => (t.textContent || '').replace(/ /g, ' ')).join('\n');
+}
+
+function getWrapWidth(textElement) {
+    const v = parseFloat(textElement.getAttribute('data-wrap-width') || '');
+    return Number.isFinite(v) && v > 0 ? v : 0;
+}
+
 function renderText(input, textElement, deleteIfEmpty = false) {
     if (!input || !document.body.contains(input)) {
          return;
@@ -386,23 +479,13 @@ function renderText(input, textElement, deleteIfEmpty = false) {
             removeSelectionFeedback();
         }
     } else {
-        while (textElement.firstChild) {
-            textElement.removeChild(textElement.firstChild);
-        }
-
-        const lines = text.split("\n");
-        const x = textElement.getAttribute("x") || 0;
-
-        lines.forEach((line, index) => {
-            let tspan = document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "tspan"
-            );
-            tspan.setAttribute("x", x);
-            tspan.setAttribute("dy", index === 0 ? "0" : "1.2em");
-            tspan.textContent = line.replace(/\u00A0/g, ' ') || " ";
-            textElement.appendChild(tspan);
-        });
+        // Persist the raw editor content so future E/W resizes can re-wrap
+        // from the user's original line breaks instead of the auto-inserted
+        // ones. Then call the shared paint helper \u2014 it falls back to the
+        // legacy "explicit newlines only" path when no wrap-width is set.
+        const cleanSource = text.replace(/\u00A0/g, ' ');
+        textElement.setAttribute('data-wrap-source', cleanSource);
+        paintTextContent(textElement, cleanSource, getWrapWidth(textElement));
 
         gElement.style.display = 'block';
 
@@ -464,11 +547,18 @@ function createSelectionFeedback(groupElement) {
     selectionBox.setAttribute("pointer-events", "none");
     groupElement.appendChild(selectionBox);
 
+    // Issue #48 bug #5 + phase D follow-up: E/W midpoint anchors drive
+    // TRUE word-wrap. Dragging E/W sets `data-wrap-width` on the text
+    // element; the paint helper re-flows tspans so the text wraps into
+    // multiple lines. Corner anchors keep their font-size scaling
+    // behaviour.
     const handlesData = [
         { name: 'nw', x: selX, y: selY, cursor: 'nwse-resize' },
         { name: 'ne', x: selX + selWidth, y: selY, cursor: 'nesw-resize' },
         { name: 'sw', x: selX, y: selY + selHeight, cursor: 'nesw-resize' },
-        { name: 'se', x: selX + selWidth, y: selY + selHeight, cursor: 'nwse-resize' }
+        { name: 'se', x: selX + selWidth, y: selY + selHeight, cursor: 'nwse-resize' },
+        { name: 'e',  x: selX + selWidth, y: selY + selHeight / 2, cursor: 'ew-resize' },
+        { name: 'w',  x: selX, y: selY + selHeight / 2, cursor: 'ew-resize' },
     ];
 
     resizeHandles = {};
@@ -573,7 +663,11 @@ function updateSelectionFeedback() {
         { name: 'nw', x: selX, y: selY },
         { name: 'ne', x: selX + selWidth, y: selY },
         { name: 'sw', x: selX, y: selY + selHeight },
-        { name: 'se', x: selX + selWidth, y: selY + selHeight }
+        { name: 'se', x: selX + selWidth, y: selY + selHeight },
+        // Issue #48 bug #5: keep E/W midpoint handles aligned with the
+        // resize so they follow the box as it scales.
+        { name: 'e',  x: selX + selWidth, y: selY + selHeight / 2 },
+        { name: 'w',  x: selX, y: selY + selHeight / 2 },
     ];
 
     handlesData.forEach(handle => {
@@ -865,6 +959,7 @@ const handleMouseMove = (event) => {
         const startHeight = startBBox.height;
 
         let anchorX, anchorY;
+        const isEdgeWidth = currentResizeHandle === 'e' || currentResizeHandle === 'w';
 
         switch (currentResizeHandle) {
             case 'nw':
@@ -883,11 +978,35 @@ const handleMouseMove = (event) => {
                 anchorX = startX;
                 anchorY = startY;
                 break;
+            case 'e':
+                anchorX = startX;
+                anchorY = startY + startHeight / 2;
+                break;
+            case 'w':
+                anchorX = startX + startWidth;
+                anchorY = startY + startHeight / 2;
+                break;
+        }
+
+        // Issue #48 phase D follow-up: E/W now drives TRUE word-wrap.
+        // The drag distance becomes the wrap-width target; we re-paint
+        // the text with the new width and short-circuit the font-size
+        // scaling path that the corners use.
+        if (isEdgeWidth) {
+            const newWrap = Math.abs(currentPoint.x - anchorX);
+            const minWrap = startFontSize * 2;  // at least ~one short word wide
+            const clampedWrap = Math.max(minWrap, newWrap);
+            textElement.setAttribute('data-wrap-width', String(clampedWrap));
+            const source = getWrapSource(textElement);
+            paintTextContent(textElement, source, clampedWrap);
+            if (typeof updateSelectionFeedback === 'function') {
+                setTimeout(updateSelectionFeedback, 0);
+            }
+            return;
         }
 
         const newWidth = Math.abs(currentPoint.x - anchorX);
         const newHeight = Math.abs(currentPoint.y - anchorY);
-
         const chosenScale = newHeight / startHeight;
 
         const minScale = 0.1;
@@ -920,6 +1039,14 @@ const handleMouseMove = (event) => {
             case 'se':
                 newAnchorX = currentBBox.x;
                 newAnchorY = currentBBox.y;
+                break;
+            case 'e':
+                newAnchorX = currentBBox.x;
+                newAnchorY = currentBBox.y + currentBBox.height / 2;
+                break;
+            case 'w':
+                newAnchorX = currentBBox.x + currentBBox.width;
+                newAnchorY = currentBBox.y + currentBBox.height / 2;
                 break;
         }
 

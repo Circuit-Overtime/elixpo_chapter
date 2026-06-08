@@ -1,5 +1,14 @@
 # Changelog
 
+## v5.5.4 (2026-06-08)
+
+### Other
+- corrected the deploy script
+- [ELIXPO] Text shape gains E/W midpoint anchors (#48 phase D) (#50)
+- [ELIXPO] Text tool: bordered swatch + selection lifecycle + light textbox outline (#48 A+B+C) (#49)
+- [ELIXPO] Port blogs.elixpo editor block styles to docs panel (light + dark) (#47)
+
+
 ## v5.4.8 (2026-04-24)
 
 ### Other

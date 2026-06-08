@@ -26,7 +26,7 @@ function ColorGrid({ colors, selected, onSelect }) {
             key={c}
             onClick={() => onSelect(c)}
             className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${
-              selected === c ? 'border-[#5B57D1] scale-110' : 'border-white/[0.08] hover:border-white/20'
+              selected === c ? 'border-[#5B57D1] scale-110' : 'border-border-light hover:border-text-dim'
             }`}
             style={!isTrans ? { backgroundColor: c } : undefined}
           >
@@ -68,7 +68,7 @@ export default function RectangleSidebar() {
       {/* Stroke color */}
       <ToolbarButton
         tooltip={t('sidebar.strokeColor')}
-        preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
+        preview={<span className="w-4 h-4 rounded-md border border-border-light" style={{ backgroundColor: strokeColor }} />}
       >
         <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.stroke')}</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
@@ -80,7 +80,7 @@ export default function RectangleSidebar() {
       <ToolbarButton
         tooltip={t('sidebar.fillColor')}
         preview={
-          <span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: bgColor === 'transparent' ? 'transparent' : bgColor }}>
+          <span className="w-4 h-4 rounded-md border border-border-light" style={{ backgroundColor: bgColor === 'transparent' ? 'transparent' : bgColor }}>
             {bgColor === 'transparent' && (
               <svg className="w-full h-full text-text-dim" viewBox="0 0 16 16"><line x1="2" y1="14" x2="14" y2="2" stroke="currentColor" strokeWidth="1.5" /></svg>
             )}

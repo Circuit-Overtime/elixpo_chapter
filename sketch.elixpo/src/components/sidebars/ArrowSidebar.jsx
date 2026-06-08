@@ -23,7 +23,7 @@ function ColorGrid({ colors, selected, onSelect }) {
     <div className="grid grid-cols-4 gap-1.5">
       {colors.map((c) => (
         <button key={c} onClick={() => onSelect(c)}
-          className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? 'border-[#5B57D1] scale-110' : 'border-white/[0.08] hover:border-white/20'}`}
+          className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? 'border-[#5B57D1] scale-110' : 'border-border-light hover:border-text-dim'}`}
           style={{ backgroundColor: c }}
         />
       ))}
@@ -98,7 +98,7 @@ export default function ArrowSidebar() {
       <Divider />
 
       <ToolbarButton tooltip={t('sidebar.strokeColor')}
-        preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
+        preview={<span className="w-4 h-4 rounded-md border border-border-light" style={{ backgroundColor: strokeColor }} />}
       >
         <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.stroke')}</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />

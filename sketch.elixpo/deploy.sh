@@ -52,9 +52,35 @@ load_env() {
     echo "Error: .env not found at $ENV_FILE"
     exit 1
   fi
-  set -a
-  source "$ENV_FILE"
-  set +a
+  # The committed .env is SOPS-encrypted. Bare `source .env` crashed
+  # with `AGE: command not found` because the structural fields
+  # (e.g. `sops_age__list_0__map_enc=-----BEGIN AGE ENCRYPTED FILE-----`)
+  # carry unquoted whitespace. Decrypt with sops, strip the `sops_*`
+  # metadata, then export each remaining `KEY=value` line.
+  local _env_content
+  if grep -q 'ENC\[' "$ENV_FILE" 2>/dev/null || grep -q '^sops' "$ENV_FILE" 2>/dev/null; then
+    if ! command -v sops >/dev/null 2>&1; then
+      echo "Error: .env is SOPS-encrypted but the 'sops' CLI is not installed."
+      echo "       Install it from https://github.com/getsops/sops/releases"
+      exit 1
+    fi
+    if [ -z "${SOPS_AGE_KEY:-}" ] && [ -f "$HOME/.sops/elixpo-age-key.txt" ]; then
+      export SOPS_AGE_KEY="$(grep 'AGE-SECRET-KEY' "$HOME/.sops/elixpo-age-key.txt" | head -1)"
+    fi
+    _env_content="$(sops -d "$ENV_FILE")" || {
+      echo "Error: failed to decrypt $ENV_FILE (set SOPS_AGE_KEY or ~/.sops/elixpo-age-key.txt)"
+      exit 1
+    }
+  else
+    _env_content="$(cat "$ENV_FILE")"
+  fi
+  while IFS= read -r line || [ -n "$line" ]; do
+    [[ -z "$line" || "$line" =~ ^# ]] && continue
+    # Skip the SOPS structural metadata — those rows carry unquoted
+    # spaces and aren't real env vars.
+    [[ "$line" =~ ^sops_ ]] && continue
+    export "$line" 2>/dev/null || true
+  done <<< "$_env_content"
 }
 
 get_binding_ids() {
@@ -242,13 +268,13 @@ do_release() {
   echo "==> Bumping versions ($BUMP)..."
 
   if $RELEASE_ENGINE; then
-    dry_run "sudo npm version $BUMP --no-git-tag-version -w packages/lixsketch"
+    dry_run " npm version $BUMP --no-git-tag-version -w packages/lixsketch"
   fi
   if $RELEASE_VSCODE; then
-    dry_run "sudo npm version $BUMP --no-git-tag-version -w packages/vscode"
+    dry_run " npm version $BUMP --no-git-tag-version -w packages/vscode"
   fi
   if $RELEASE_WEB; then
-    dry_run "sudo npm version $BUMP --no-git-tag-version"
+    dry_run " npm version $BUMP --no-git-tag-version"
   fi
 
   if $RELEASE_ENGINE; then
@@ -265,37 +291,37 @@ do_release() {
   # ── Build & Publish ──
   if $RELEASE_ENGINE; then
     echo "==> Publishing @elixpo/lixsketch to npm..."
-    dry_run "cd '$SCRIPT_DIR/packages/lixsketch' && sudo NPM_TOKEN='$_NPM_TOKEN' npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken='$_NPM_TOKEN'"
+    dry_run "cd '$SCRIPT_DIR/packages/lixsketch' &&  NPM_TOKEN='$_NPM_TOKEN' npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken='$_NPM_TOKEN'"
     echo "==> Publishing @elixpo/lixsketch to GitHub Packages..."
-    dry_run "cd '$SCRIPT_DIR/packages/lixsketch' && sudo npm publish --access public --registry https://npm.pkg.github.com/ --//npm.pkg.github.com/:_authToken='$_GH_TOKEN'"
+    dry_run "cd '$SCRIPT_DIR/packages/lixsketch' &&  npm publish --access public --registry https://npm.pkg.github.com/ --//npm.pkg.github.com/:_authToken='$_GH_TOKEN'"
     echo "==> Engine published (npm + GitHub Packages)"
   fi
 
   if $RELEASE_VSCODE; then
     echo "==> Building VS Code extension..."
-    dry_run "cd '$SCRIPT_DIR/packages/vscode' && sudo npm run build"
+    dry_run "cd '$SCRIPT_DIR/packages/vscode' &&  npm run build"
     echo "==> Packaging & publishing VS Code extension..."
-    dry_run "cd '$SCRIPT_DIR/packages/vscode' && sudo npx @vscode/vsce package --no-dependencies && sudo VSCE_PAT='$_VSCE_PAT' npx @vscode/vsce publish --no-dependencies --pat '$_VSCE_PAT'"
+    dry_run "cd '$SCRIPT_DIR/packages/vscode' &&  npx @vscode/vsce package --no-dependencies &&  VSCE_PAT='$_VSCE_PAT' npx @vscode/vsce publish --no-dependencies --pat '$_VSCE_PAT'"
     echo "==> VS Code extension published"
   fi
 
   if $RELEASE_WEB; then
     echo "==> Building & deploying website..."
-    dry_run "cd '$SCRIPT_DIR' && sudo npx @cloudflare/next-on-pages"
-    dry_run "cd '$SCRIPT_DIR' && sudo npx wrangler pages deploy .vercel/output/static --project-name lixsketch --branch main"
+    dry_run "cd '$SCRIPT_DIR' &&  npx @cloudflare/next-on-pages"
+    dry_run "cd '$SCRIPT_DIR' &&  npx wrangler pages deploy .vercel/output/static --project-name lixsketch --branch main"
     echo "==> Website deployed"
   fi
 
   # ── Git Tag & Push ──
   echo "==> Committing and tagging v${NEW_VERSION}..."
-  dry_run "sudo git add -A"
-  dry_run "sudo git commit -m 'release: v${NEW_VERSION}' || true"
-  dry_run "sudo git tag 'v${NEW_VERSION}'"
-  dry_run "sudo git push \"\$(auth_remote)\" main --tags"
+  dry_run " git add -A"
+  dry_run " git commit -m 'release: v${NEW_VERSION}' || true"
+  dry_run " git tag 'v${NEW_VERSION}'"
+  dry_run " git push \"\$(auth_remote)\" main --tags"
 
   # ── GitHub Release ──
   echo "==> Creating GitHub release..."
-  dry_run "sudo GH_TOKEN='$_GH_TOKEN' GITHUB_TOKEN='$_GH_TOKEN' gh release create 'v${NEW_VERSION}' --generate-notes --title 'v${NEW_VERSION}'"
+  dry_run " GH_TOKEN='$_GH_TOKEN' GITHUB_TOKEN='$_GH_TOKEN' gh release create 'v${NEW_VERSION}' --generate-notes --title 'v${NEW_VERSION}'"
 
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
