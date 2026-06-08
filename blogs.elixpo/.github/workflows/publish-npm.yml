@@ -87,9 +87,18 @@ jobs:
           fi
 
       # ── Publish to npmjs ────────────────────────────────────────────
+      # The `actions/setup-node@v4` step above with `registry-url` writes
+      # a project-level `.npmrc` that maps the registry to `${NODE_AUTH_
+      # TOKEN}`. Passing the auth via `NODE_AUTH_TOKEN` is the standard
+      # path (matches what npm-publish-action / Verdaccio docs recommend).
+      # Inline `--//registry/:_authToken=...` flags work in some setups
+      # but were producing E404 "Not Found - PUT" here — npm treats that
+      # as auth-failed and returns 404 rather than 403.
       - name: Publish to NPM
         working-directory: packages/lixeditor
-        run: npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken=${{ secrets.NPM_LIXEDITOR_PUBLISH_TOKEN }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_LIXEDITOR_PUBLISH_TOKEN }}
+        run: npm publish --access public
 
       # ── Mirror to GitHub Packages ───────────────────────────────────
       # GitHub Packages requires `repository.url` to match the running
