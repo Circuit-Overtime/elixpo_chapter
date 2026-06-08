@@ -21,3 +21,5 @@ wrangler.toml
 .claude/.credentials
 *.jpg
 tmp/
+.env
+tsconfig.tsbuildinfo

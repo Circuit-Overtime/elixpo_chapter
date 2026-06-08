@@ -113,7 +113,7 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
     sources.slice(0, 8).forEach((s, i) => {
       fetch(`/api/meta?url=${encodeURIComponent(s.url)}`)
         .then((r) => r.json())
-        .then((data) => {
+        .then((data: any) => {
           setMetas((prev) => {
             const updated = [...prev];
             if (updated[i]) {
@@ -160,7 +160,7 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
           {message.images?.map((img, i) => (
             <img key={i} src={img} alt="" className="rounded-xl mb-2 max-w-full max-h-48 object-cover ml-auto" />
           ))}
-          <div className="bg-neutral-800 text-white rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed shadow-sm">
+          <div className="bg-accent-500 text-white rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed shadow-sm">
             <p className="whitespace-pre-wrap">{message.content}</p>
           </div>
         </div>
