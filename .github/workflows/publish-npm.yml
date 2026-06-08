@@ -62,15 +62,33 @@ jobs:
         working-directory: packages/lixeditor
         run: |
           LOCAL=$(node -p "require('./package.json').version")
-          REMOTE=$(npm view @elixpo/lixeditor version 2>/dev/null || echo "0.0.0")
+          # `npm view` can timeout / rate-limit and return "0.0.0" via the
+          # fallback below, which then makes the LOCAL == REMOTE check
+          # fail and skips the bump — even though LOCAL IS already on npm.
+          # Treat any non-semver REMOTE as unknown and fall back to a
+          # direct "is LOCAL already published?" probe as the truth source.
+          REMOTE=$(npm view @elixpo/lixeditor version 2>/dev/null || echo "unknown")
           BUMP="${{ github.event.inputs.bump || 'patch' }}"
 
           echo "Local  version: $LOCAL"
           echo "Remote version: $REMOTE"
           echo "Bump kind: $BUMP"
 
+          # Decide whether we need to bump. Three cases:
+          #   1. LOCAL == REMOTE                          → bump
+          #   2. LOCAL is already published (probe hit)   → bump (publish would 409)
+          #   3. LOCAL strictly ahead of REMOTE           → respect manual bump
+          NEEDS_BUMP=false
           if [ "$LOCAL" = "$REMOTE" ]; then
-            echo "Versions match — auto-bumping ($BUMP)."
+            NEEDS_BUMP=true
+          elif [ "$REMOTE" = "unknown" ]; then
+            if npm view "@elixpo/lixeditor@${LOCAL}" version >/dev/null 2>&1; then
+              echo "LOCAL ($LOCAL) already exists on npm — bumping."
+              NEEDS_BUMP=true
+            fi
+          fi
+
+          if [ "$NEEDS_BUMP" = "true" ]; then
             # `npm version` in a workspace emits "<pkg-name>\nv<x.y.z>"
             # to stdout — capturing that produces a multi-line shell var
             # that corrupts $GITHUB_OUTPUT. Bump silently and read the
@@ -81,7 +99,7 @@ jobs:
             echo "version=$NEW" >> "$GITHUB_OUTPUT"
             echo "auto_bumped=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Local already differs from remote — using local ($LOCAL)."
+            echo "Local ($LOCAL) ahead of remote ($REMOTE) — using local as-is."
             echo "version=$LOCAL" >> "$GITHUB_OUTPUT"
             echo "auto_bumped=false" >> "$GITHUB_OUTPUT"
           fi
