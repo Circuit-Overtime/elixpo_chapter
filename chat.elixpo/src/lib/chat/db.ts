@@ -93,3 +93,28 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
     .all<Message>();
   return results;
 }
+
+export async function listConversations(userId: string): Promise<Conversation[]> {
+  const db = await getDB();
+  const { results } = await db
+    .prepare("SELECT * FROM conversations WHERE user_id = ? ORDER BY updated_at DESC")
+    .bind(userId)
+    .all<Conversation>();
+  return results;
+}
+
+export async function updateConversationTitle(id: string, title: string): Promise<void> {
+  const db = await getDB();
+  await db
+    .prepare("UPDATE conversations SET title = ?, updated_at = ? WHERE id = ?")
+    .bind(title, Date.now(), id)
+    .run();
+}
+
+export async function deleteConversation(id: string): Promise<void> {
+  const db = await getDB();
+  await db
+    .prepare("DELETE FROM conversations WHERE id = ?")
+    .bind(id)
+    .run();
+}

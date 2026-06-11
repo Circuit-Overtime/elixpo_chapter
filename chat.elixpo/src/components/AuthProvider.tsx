@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((data) => setUser(data.user || null))
+      .then((data: any) => setUser(data.user || null))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);

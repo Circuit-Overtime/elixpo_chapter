@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 
 export interface PricingCardProps {
@@ -10,6 +9,7 @@ export interface PricingCardProps {
   features: string[];
   isPopular?: boolean;
   buttonText: string;
+  accent?: string;
   onSelect: () => void;
 }
 
@@ -20,60 +20,63 @@ export default function PricingCard({
   features,
   isPopular,
   buttonText,
+  accent = "emerald",
   onSelect,
 }: PricingCardProps) {
-  return (
-    <motion.div
-      whileHover={{ y: -8 }}
-      transition={{ duration: 0.3 }}
-      className={`relative flex flex-col p-8 rounded-3xl backdrop-blur-md border ${
-        isPopular
-          ? "bg-white/90 dark:bg-neutral-900/90 border-amber-500/50 shadow-2xl shadow-amber-500/10"
-          : "bg-white/60 dark:bg-neutral-900/60 border-neutral-200 dark:border-neutral-800"
-      }`}
-    >
-      {isPopular && (
-        <div className="absolute -top-4 left-0 right-0 flex justify-center">
-          <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
-            Most Popular
-          </span>
-        </div>
-      )}
+  const isAmber = accent === "amber";
+  const isViolet = accent === "violet";
 
+  let titleColor = "text-emerald-400";
+  let checkColor = "text-emerald-500";
+
+  if (isAmber) {
+    titleColor = "text-amber-400";
+    checkColor = "text-amber-500";
+  } else if (isViolet) {
+    titleColor = "text-violet-400";
+    checkColor = "text-violet-500";
+  }
+
+  return (
+    <div className={`relative flex flex-col p-10 bg-[rgba(10,10,10,0.95)] hover:bg-[rgba(10,10,10,1)] transition-colors border-x border-[rgba(240,237,230,0.05)]`}>
+      {isPopular && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
+      )}
+      
       <div className="mb-6">
-        <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">{title}</h3>
-        <p className="text-neutral-500 dark:text-neutral-400 text-sm h-10">{description}</p>
+        <h3 className={`font-mono text-lg font-bold tracking-widest uppercase ${titleColor} mb-3`}>{title}</h3>
+        <p className="text-[rgba(240,237,230,0.4)] text-sm h-10 leading-relaxed">{description}</p>
       </div>
 
-      <div className="mb-6 flex items-baseline gap-1">
-        <span className="text-4xl font-extrabold text-neutral-900 dark:text-white">{price}</span>
-        {price !== "Custom" && <span className="text-neutral-500 dark:text-neutral-400 font-medium">/mo</span>}
+      <div className="mb-8 flex items-baseline gap-1">
+        <span className="text-5xl font-extrabold tracking-tight text-[#f0ede6]">{price}</span>
+        {price !== "Custom" && <span className="text-[rgba(240,237,230,0.3)] font-medium">/mo</span>}
       </div>
 
       <button
         onClick={onSelect}
-        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
-          isPopular
-            ? "bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 shadow-md"
-            : "bg-neutral-100 text-neutral-900 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700"
+        className={`w-full py-4 px-4 font-mono text-xs font-bold tracking-[0.05em] uppercase transition-colors overflow-visible mb-10 ${
+          isPopular 
+            ? "bg-[#f0ede6] text-[#0a0a0a] hover:bg-white" 
+            : "bg-[rgba(240,237,230,0.05)] text-[#f0ede6] hover:bg-[rgba(240,237,230,0.1)] border border-[rgba(240,237,230,0.1)]"
         }`}
+        style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))' }}
       >
         {buttonText}
       </button>
 
-      <div className="mt-8 space-y-4 flex-grow">
-        <p className="text-sm font-semibold text-neutral-900 dark:text-white uppercase tracking-wider">
-          Includes:
-        </p>
-        <ul className="space-y-3">
+      <div className="flex-grow">
+        <ul className="space-y-4">
           {features.map((feature, i) => (
-            <li key={i} className="flex items-start gap-3 text-sm text-neutral-600 dark:text-neutral-300">
-              <Check className="w-5 h-5 text-amber-500 shrink-0" />
+            <li key={i} className="flex items-start gap-3 text-sm text-[rgba(240,237,230,0.7)]">
+              <svg className={`w-5 h-5 shrink-0 ${checkColor}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
               <span>{feature}</span>
             </li>
           ))}
         </ul>
       </div>
-    </motion.div>
+    </div>
   );
 }

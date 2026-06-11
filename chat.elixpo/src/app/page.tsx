@@ -99,13 +99,13 @@ export default function LandingPage() {
       }} />
 
       {/* ═══════════════════ HERO — FULL ACCENT VIEWPORT ═══════════════════ */}
-      <section className="relative min-h-screen flex flex-col overflow-hidden bg-gradient-to-b from-[#4338ca] via-[#3730a3] to-[#0a0a0a]">
+      <section className="relative min-h-screen flex flex-col overflow-hidden bg-[#f0ede6]">
         {/* ═══ Three.js volumetric cloud canvas ═══ */}
         <HeroCloud />
 
         {/* Huge watermark — z-[2] sits above cloud canvas but below content */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] z-[2] select-none">
-          <span className="text-[28vw] font-bold tracking-tighter leading-none text-[#f0ede6]" style={{ fontFamily: 'system-ui' }}>
+          <span className="text-[28vw] font-bold tracking-tighter leading-none text-[#0a0a0a]" style={{ fontFamily: 'system-ui' }}>
             ELIXPO
           </span>
         </div>
@@ -129,7 +129,7 @@ export default function LandingPage() {
               </li>
               <li>
                 <Link
-                  href="/chat"
+                  href="/chat/new"
                   className="font-mono text-xs font-bold tracking-[0.05em] text-[#f0ede6] bg-[#0a0a0a] px-5 py-3 hover:bg-[#1a1a2e] transition-colors"
                   style={{ clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
                 >
@@ -153,7 +153,7 @@ export default function LandingPage() {
               style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
             >
               Build Smarter Conversations.<br />
-              <span className="text-[rgba(10,10,10,0.5)]">With a Powerful AI.</span>
+              <span className="text-emerald-600 drop-shadow-sm">Running on a powerful 3-tier CPU Architecture.</span>
             </h1>
             <p className="text-[#0a0a0a]/70 text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed" style={{ fontFamily: 'system-ui' }}>
               A modern AI interface designed for speed, privacy, and
@@ -161,10 +161,13 @@ export default function LandingPage() {
             </p>
             <div className="flex items-center justify-center gap-4 flex-wrap">
               <Link
-                href="/chat"
-                className="font-mono text-xs font-bold tracking-[0.05em] uppercase bg-[#0a0a0a] text-[#f0ede6] px-7 py-4 hover:bg-[#1a1a2e] transition-colors"
+                href="/chat/new"
+                className="relative font-mono text-xs font-bold tracking-[0.05em] uppercase bg-[#0a0a0a] text-[#f0ede6] px-7 py-4 hover:bg-[#1a1a2e] transition-colors overflow-visible"
                 style={{ clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
               >
+                <div className="absolute -top-3 -right-3 bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg whitespace-nowrap z-10" style={{ clipPath: "none" }}>
+                  CPU-POWERED
+                </div>
                 Start Chatting
               </Link>
               <a
@@ -183,7 +186,7 @@ export default function LandingPage() {
           <div className="flex animate-[ticker_20s_linear_infinite] whitespace-nowrap py-3">
             {Array(2).fill(null).map((_, i) => (
               <div key={i} className="flex items-center gap-6 px-3 shrink-0">
-                {['Multi-model AI', 'GPT-4o & Claude', 'File uploads', 'Voice input', 'Web search', 'Privacy-first', 'Real-time streaming', 'Markdown rendering'].map((t) => (
+                {['3-Tier Models', 'GPT-4o & Claude', 'CPU Inference', 'Voice input', 'Web search', 'Pollinations AI', 'Real-time streaming', 'Markdown rendering'].map((t) => (
                   <React.Fragment key={`${i}-${t}`}>
                     <span className="font-mono text-xs font-bold tracking-wide text-[#0a0a0a]/60 uppercase">{t}</span>
                     <span className="text-[#0a0a0a]/30">&bull;</span>
@@ -245,84 +248,86 @@ export default function LandingPage() {
             <div className="mb-16 flex justify-center">
               <svg viewBox="0 0 560 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-2xl">
                 <defs>
-                  <linearGradient id="trail-h1" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0" />
-                    <stop offset="70%" stopColor="#6366f1" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#6366f1" stopOpacity="0.8" />
+                  <linearGradient id="trail-in" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#f0ede6" stopOpacity="0" />
+                    <stop offset="70%" stopColor="#f0ede6" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#f0ede6" stopOpacity="0.8" />
                   </linearGradient>
-                  <linearGradient id="trail-h2" x1="0" y1="0" x2="1" y2="0">
+                  <linearGradient id="trail-out" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stopColor="#22c55e" stopOpacity="0" />
                     <stop offset="70%" stopColor="#22c55e" stopOpacity="0.4" />
                     <stop offset="100%" stopColor="#22c55e" stopOpacity="0.8" />
                   </linearGradient>
-                  <path id="path-user-elixpo" d="M130,110 L193,110" />
-                  <path id="path-elixpo-resp" d="M353,110 L423,110" />
-                  <path id="path-cloud-down" d="M273,30 L273,55" />
+                  <path id="path-user-elixpo" d="M110,110 L160,110" />
+                  <path id="path-elixpo-resp" d="M400,110 L450,110" />
                 </defs>
 
                 {/* Machine boundary */}
                 <rect x="5" y="55" width="550" height="112" fill="none" stroke="rgba(240,237,230,0.08)" strokeWidth="1" strokeDasharray="4 4" />
-                <rect x="15" y="48" width="96" height="14" fill="#0a0a0a" />
-                <text x="20" y="58" fontFamily="monospace" fontSize="6" letterSpacing="2" fill="rgba(240,237,230,0.3)">YOUR DEVICE</text>
+                <rect x="15" y="48" width="130" height="14" fill="#0a0a0a" />
+                <text x="20" y="58" fontFamily="monospace" fontSize="6" letterSpacing="2" fill="rgba(240,237,230,0.3)">CPU INFERENCE PIPELINE</text>
 
                 {/* YOUR PROMPT (left) */}
-                <rect x="20" y="85" width="110" height="50" fill="rgba(10,10,10,0.95)" stroke="rgba(240,237,230,0.15)" strokeWidth="1" />
-                <text x="75" y="106" textAnchor="middle" fontFamily="monospace" fontSize="7" letterSpacing="1.5" fill="rgba(240,237,230,0.4)">YOUR PROMPT</text>
-                <text x="75" y="118" textAnchor="middle" fontFamily="monospace" fontSize="5.5" letterSpacing="1" fill="rgba(240,237,230,0.25)">TEXT · FILES · VOICE</text>
+                <rect x="20" y="85" width="90" height="50" fill="rgba(10,10,10,0.95)" stroke="rgba(240,237,230,0.15)" strokeWidth="1" />
+                <text x="65" y="106" textAnchor="middle" fontFamily="monospace" fontSize="7" letterSpacing="1.5" fill="rgba(240,237,230,0.4)">YOUR PROMPT</text>
+                <text x="65" y="118" textAnchor="middle" fontFamily="monospace" fontSize="5.5" letterSpacing="1" fill="rgba(240,237,230,0.25)">TEXT · FILES · VOICE</text>
 
-                {/* Connector: Prompt → ELIXPO */}
-                <line x1="130" y1="110" x2="193" y2="110" stroke="rgba(99,102,241,0.15)" strokeWidth="1" />
-                <line x1="130" y1="110" x2="193" y2="110" stroke="url(#trail-h1)" strokeWidth="2">
+                {/* Connector In */}
+                <line x1="110" y1="110" x2="160" y2="110" stroke="rgba(240,237,230,0.1)" strokeWidth="1" />
+                <line x1="110" y1="110" x2="160" y2="110" stroke="url(#trail-in)" strokeWidth="2">
                   <animate attributeName="opacity" values="0.2;0.7;0.2" dur="2s" repeatCount="indefinite" />
                 </line>
-                {/* Data packet 1 */}
-                <rect x="-1.5" y="-1.5" width="3" height="3" fill="#6366f1">
+                <rect x="-1.5" y="-1.5" width="3" height="3" fill="#f0ede6">
                   <animateMotion dur="2s" repeatCount="indefinite"><mpath href="#path-user-elixpo" /></animateMotion>
                   <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.8;1" dur="2s" repeatCount="indefinite" />
                 </rect>
 
-                {/* ELIXPO core (center) */}
-                <rect x="193" y="63" width="160" height="94" fill="rgba(10,10,10,0.95)" stroke="rgba(240,237,230,0.2)" strokeWidth="1.5" />
-                <text x="274.5" y="93" textAnchor="middle" fontFamily="monospace" fontSize="12" letterSpacing="3" fill="#f0ede6">ELIXPO</text>
-                <text x="273" y="109" textAnchor="middle" fontFamily="monospace" fontSize="5.5" letterSpacing="1.5" fill="#6366f1">MULTI-MODEL AI</text>
-                <line x1="210" y1="130" x2="336" y2="130" stroke="rgba(240,237,230,0.08)" strokeWidth="0.5" />
-                <text x="230" y="145" textAnchor="middle" fontFamily="monospace" fontSize="5" letterSpacing="1" fill="rgba(240,237,230,0.25)">GPT-4o</text>
-                <text x="273" y="145" textAnchor="middle" fontFamily="monospace" fontSize="5" letterSpacing="1" fill="rgba(240,237,230,0.25)">CLAUDE</text>
-                <text x="316" y="145" textAnchor="middle" fontFamily="monospace" fontSize="5" letterSpacing="1" fill="rgba(240,237,230,0.25)">GEMINI</text>
+                {/* 3-TIER ARCHITECTURE */}
+                <rect x="160" y="65" width="240" height="90" fill="none" stroke="rgba(240,237,230,0.05)" strokeWidth="1" />
+                
+                {/* Tier: FREE */}
+                <rect x="170" y="75" width="220" height="20" fill="rgba(16,185,129,0.03)" stroke="rgba(16,185,129,0.3)" strokeWidth="1" />
+                <rect x="170" y="75" width="30" height="20" fill="rgba(16,185,129,0.1)" />
+                <text x="185" y="88" textAnchor="middle" fontFamily="monospace" fontSize="6" letterSpacing="1" fill="#34d399" fontWeight="bold">FREE</text>
+                <text x="210" y="88" fontFamily="monospace" fontSize="6" fill="rgba(240,237,230,0.6)">GPT-5 Mini · Mistral · DeepSeek · Gemini Flash</text>
 
-                {/* Connector: ELIXPO → Response */}
-                <line x1="353" y1="110" x2="423" y2="110" stroke="rgba(34,197,94,0.15)" strokeWidth="1" />
-                <line x1="353" y1="110" x2="423" y2="110" stroke="url(#trail-h2)" strokeWidth="2">
+                {/* Tier: PRO */}
+                <rect x="170" y="100" width="220" height="20" fill="rgba(245,158,11,0.03)" stroke="rgba(245,158,11,0.3)" strokeWidth="1" />
+                <rect x="170" y="100" width="30" height="20" fill="rgba(245,158,11,0.1)" />
+                <text x="185" y="113" textAnchor="middle" fontFamily="monospace" fontSize="6" letterSpacing="1" fill="#fbbf24" fontWeight="bold">PRO</text>
+                <text x="210" y="113" fontFamily="monospace" fontSize="6" fill="rgba(240,237,230,0.6)">GPT-5.2 · Gemini 3 Flash · Claude Sonnet</text>
+
+                {/* Tier: MAX */}
+                <rect x="170" y="125" width="220" height="20" fill="rgba(139,92,246,0.03)" stroke="rgba(139,92,246,0.3)" strokeWidth="1" />
+                <rect x="170" y="125" width="30" height="20" fill="rgba(139,92,246,0.1)" />
+                <text x="185" y="138" textAnchor="middle" fontFamily="monospace" fontSize="6" letterSpacing="1" fill="#a78bfa" fontWeight="bold">MAX</text>
+                <text x="210" y="138" fontFamily="monospace" fontSize="6" fill="rgba(240,237,230,0.6)">Claude Opus · Gemini 3.1 Pro · Grok Reasoning</text>
+
+                {/* Vertical active flow indicators */}
+                <circle cx="165" cy="110" r="2" fill="#22c55e">
+                  <animate attributeName="opacity" values="0.3;1;0.3" dur="1s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="395" cy="110" r="2" fill="#22c55e">
+                  <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" />
+                </circle>
+
+                {/* Connector Out */}
+                <line x1="400" y1="110" x2="450" y2="110" stroke="rgba(34,197,94,0.15)" strokeWidth="1" />
+                <line x1="400" y1="110" x2="450" y2="110" stroke="url(#trail-out)" strokeWidth="2">
                   <animate attributeName="opacity" values="0.2;0.7;0.2" dur="2s" begin="1s" repeatCount="indefinite" />
                 </line>
-                {/* Data packet 2 */}
                 <rect x="-1.5" y="-1.5" width="3" height="3" fill="#22c55e">
                   <animateMotion dur="2s" begin="1s" repeatCount="indefinite"><mpath href="#path-elixpo-resp" /></animateMotion>
                   <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.8;1" dur="2s" begin="1s" repeatCount="indefinite" />
                 </rect>
 
                 {/* RESPONSE (right) */}
-                <rect x="423" y="85" width="120" height="50" fill="rgba(10,10,10,0.95)" stroke="rgba(240,237,230,0.15)" strokeWidth="1" />
-                <text x="483" y="106" textAnchor="middle" fontFamily="monospace" fontSize="7" letterSpacing="1.5" fill="rgba(240,237,230,0.4)">RESPONSE</text>
-                <text x="483" y="118" textAnchor="middle" fontFamily="monospace" fontSize="5.5" letterSpacing="1" fill="#22c55e">STREAMING · FAST</text>
-
-                {/* TELEMETRY (top) — blocked */}
-                <rect x="213" y="2" width="120" height="28" fill="rgba(10,10,10,0.95)" stroke="rgba(240,237,230,0.1)" strokeWidth="1" />
-                <text x="273" y="18" textAnchor="middle" fontFamily="monospace" fontSize="7" letterSpacing="1.5" fill="rgba(240,237,230,0.4)">TELEMETRY</text>
-
-                {/* Blocked line */}
-                <line x1="273" y1="30" x2="273" y2="63" stroke="#ef4444" strokeWidth="0.5" strokeDasharray="3 5" opacity="0.5" />
-                <rect x="-1.5" y="-1.5" width="3" height="3" fill="#ef4444">
-                  <animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-cloud-down" /></animateMotion>
-                  <animate attributeName="opacity" values="0.8;0.8;0" keyTimes="0;0.6;1" dur="1.5s" repeatCount="indefinite" />
-                </rect>
-
-                {/* X mark */}
-                <line x1="267" y1="40" x2="279" y2="52" stroke="#ef4444" strokeWidth="1.5" />
-                <line x1="279" y1="40" x2="267" y2="52" stroke="#ef4444" strokeWidth="1.5" />
+                <rect x="450" y="85" width="90" height="50" fill="rgba(10,10,10,0.95)" stroke="rgba(240,237,230,0.15)" strokeWidth="1" />
+                <text x="495" y="106" textAnchor="middle" fontFamily="monospace" fontSize="7" letterSpacing="1.5" fill="rgba(240,237,230,0.4)">RESPONSE</text>
+                <text x="495" y="118" textAnchor="middle" fontFamily="monospace" fontSize="5.5" letterSpacing="1" fill="#22c55e">STREAMING · FAST</text>
 
                 {/* Privacy label */}
-                <text x="273" y="195" textAnchor="middle" fontFamily="monospace" fontSize="6" letterSpacing="2" fill="rgba(240,237,230,0.2)">ZERO TELEMETRY · YOUR DATA STAYS LOCAL</text>
+                <text x="280" y="195" textAnchor="middle" fontFamily="monospace" fontSize="6" letterSpacing="2" fill="rgba(240,237,230,0.2)">ZERO TELEMETRY · POLLINATIONS.AI · CPU OPTIMIZED</text>
               </svg>
             </div>
 
@@ -348,10 +353,10 @@ export default function LandingPage() {
                   desc: 'Share files, voice notes, code snippets, and images seamlessly. Elixpo understands multiple formats and context simultaneously.',
                 },
                 {
-                  label: 'Real-time',
+                  label: 'Architecture',
                   num: '004',
-                  title: 'Streaming at full speed.',
-                  desc: 'Server-sent events deliver responses as they are generated. No waiting for completion. Every token arrives the instant it is ready.',
+                  title: 'Runs on CPU. Seriously.',
+                  desc: 'No expensive GPU clusters required. Elixpo leverages Pollinations optimized CPU inference pipeline for fast, cost-effective AI generation across all model tiers.',
                 },
               ].map((card) => (
                 <div key={card.num} className="bg-[#0a0a0a] p-8 md:p-10 group hover:bg-[rgba(240,237,230,0.02)] transition-colors duration-300">
@@ -387,9 +392,15 @@ export default function LandingPage() {
               <span className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase text-[rgba(240,237,230,0.3)] block mb-3">
                 Powering next-generation AI workflows
               </span>
-              <span className="text-xl font-bold tracking-tight text-[rgba(240,237,230,0.5)]">
-                Pollinations.ai
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xl font-bold tracking-tight text-[rgba(240,237,230,0.5)]">
+                  Pollinations.ai
+                </span>
+                <span className="bg-[rgba(240,237,230,0.08)] px-2 py-0.5 rounded text-[10px] font-mono tracking-wider text-[rgba(240,237,230,0.6)]">
+                  CPU-POWERED
+                </span>
+              </div>
+              <p className="text-sm text-[rgba(240,237,230,0.4)] mt-2">Running on CPU · 3 Model Tiers</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 bg-emerald-500 animate-pulse" />

@@ -5,6 +5,7 @@ import { useMemo, useState, useEffect, memo } from "react";
 import { toast } from "sonner";
 import TaskGroup from "./TaskBlock";
 import { BookmarkButton } from "./BookmarkButton";
+import PollinationsBadge from "./PollinationsBadge";
 import type { DisplayMessage } from "@/lib/chat/use-chat";
 
 marked.setOptions({ breaks: true, gfm: true });
@@ -171,6 +172,17 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
   // Assistant message — left/center, no bubble bg
   return (
     <div className="max-w-3xl">
+      {/* Identity row */}
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+          </svg>
+        </div>
+        <span className="text-xs font-medium text-secondary">Elixpo Chat</span>
+        <PollinationsBadge />
+      </div>
+
       {/* Task group — single collapsible header for all tasks */}
       {message.taskBlocks && message.taskBlocks.length > 0 && (
         <TaskGroup tasks={message.taskBlocks} isStreaming={!!message.isStreaming} />
@@ -179,28 +191,30 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
       {/* Main content */}
       {message.content ? (
         <div
-          className="prose prose-neutral prose-sm max-w-none text-neutral-800 leading-relaxed select-text
+          className="prose prose-invert prose-sm max-w-none text-primary leading-relaxed select-text
             [&_img]:rounded-xl [&_img]:my-3 [&_img]:max-h-80
-            [&_a]:text-blue-600 [&_a]:no-underline [&_a:hover]:underline
-            [&_code]:bg-neutral-100 [&_code]:text-neutral-800 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[13px]
-            [&_pre]:bg-neutral-100 [&_pre]:text-neutral-800 [&_pre]:rounded-xl [&_pre]:p-4 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words
-            [&_pre_code]:bg-transparent [&_pre_code]:text-neutral-800 [&_pre_code]:p-0 [&_pre_code]:whitespace-pre-wrap [&_pre_code]:break-words
-            [&_blockquote]:border-l-neutral-300 [&_blockquote]:text-neutral-600
-            [&_table]:text-sm [&_th]:bg-neutral-50 [&_td]:border-neutral-200
+            [&_a]:text-blue-400 [&_a]:no-underline [&_a:hover]:underline
+            [&_code]:bg-white/10 [&_code]:text-primary [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[13px]
+            [&_pre]:bg-surface [&_pre]:border [&_pre]:border-border-default [&_pre]:text-primary [&_pre]:rounded-xl [&_pre]:p-4 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words
+            [&_pre_code]:bg-transparent [&_pre_code]:text-primary [&_pre_code]:p-0 [&_pre_code]:whitespace-pre-wrap [&_pre_code]:break-words
+            [&_blockquote]:border-l-border-strong [&_blockquote]:text-secondary
+            [&_table]:text-sm [&_th]:bg-overlay [&_td]:border-border-default
             [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm [&_h1]:font-bold [&_h2]:font-bold [&_h3]:font-semibold"
           dangerouslySetInnerHTML={{ __html: html || "" }}
         />
       ) : message.isStreaming && !(message.taskBlocks && message.taskBlocks.length > 0) ? (
-        <div className="flex gap-1.5 py-2">
-          <span className="w-2 h-2 rounded-full bg-neutral-300 animate-bounce" style={{ animationDelay: "0ms" }} />
-          <span className="w-2 h-2 rounded-full bg-neutral-300 animate-bounce" style={{ animationDelay: "150ms" }} />
-          <span className="w-2 h-2 rounded-full bg-neutral-300 animate-bounce" style={{ animationDelay: "300ms" }} />
+        <div className="flex items-center gap-2 text-xs text-neutral-500 py-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+          <span>Connecting to Pollinations...</span>
         </div>
       ) : null}
 
-      {/* Streaming cursor */}
+      {/* Streaming state */}
       {message.isStreaming && message.content && (
-        <span className="inline-block w-0.5 h-4 bg-neutral-500 animate-pulse rounded-full align-text-bottom" />
+        <div className="flex items-center gap-2 text-xs text-neutral-500 mt-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+          <span>Generating on CPU...</span>
+        </div>
       )}
 
       {/* Artifact cards */}
@@ -212,7 +226,7 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
               href={s.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-start gap-2.5 w-60 px-3 py-2.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 transition-colors"
+              className="flex items-start gap-2.5 w-60 px-3 py-2.5 rounded-xl border border-border-default bg-surface hover:bg-overlay hover:border-border-strong transition-colors"
             >
               <img
                 src={`https://www.google.com/s2/favicons?domain=${s.domain}&sz=32`}
@@ -228,8 +242,8 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
                 </div>
               ) : (
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-neutral-400 truncate">{s.domain}</p>
-                  <p className="text-[13px] text-neutral-700 leading-snug line-clamp-2">
+                  <p className="text-xs font-medium text-secondary truncate">{s.domain}</p>
+                  <p className="text-[13px] text-primary leading-snug line-clamp-2">
                     {s.description || s.title}
                   </p>
                 </div>
@@ -244,12 +258,12 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
           {relatedImages.map((src, i) => (
             <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="relative block">
-              <div className="w-full h-36 rounded-xl bg-neutral-100 animate-pulse absolute inset-0" />
+              <div className="w-full h-36 rounded-xl bg-surface animate-pulse absolute inset-0" />
               <img
                 src={src}
                 alt=""
                 loading="lazy"
-                className="relative w-full h-36 object-cover rounded-xl border border-neutral-200 hover:border-neutral-300 transition-colors bg-neutral-50"
+                className="relative w-full h-36 object-cover rounded-xl border border-border-default hover:border-border-strong transition-colors bg-surface"
                 onLoad={(e) => { (e.target as HTMLImageElement).previousElementSibling?.remove(); }}
                 onError={(e) => { const el = e.target as HTMLImageElement; el.previousElementSibling?.remove(); el.style.display = "none"; }}
               />
@@ -264,7 +278,7 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
           {/* Copy */}
           <button
             onClick={handleCopy}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-secondary hover:text-primary hover:bg-overlay transition-colors cursor-pointer"
             title="Copy response"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
@@ -281,7 +295,7 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
           {/* Like */}
           <button
             onClick={() => setLiked(liked === "like" ? null : "like")}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${liked === "like" ? "text-green-500 bg-green-50" : "text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100"}`}
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${liked === "like" ? "text-green-400 bg-green-500/10" : "text-secondary hover:text-primary hover:bg-overlay"}`}
             title="Good response"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill={liked === "like" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" /></svg>
@@ -290,7 +304,7 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
           {/* Dislike */}
           <button
             onClick={() => setLiked(liked === "dislike" ? null : "dislike")}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${liked === "dislike" ? "text-red-500 bg-red-50" : "text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100"}`}
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${liked === "dislike" ? "text-red-400 bg-red-500/10" : "text-secondary hover:text-primary hover:bg-overlay"}`}
             title="Bad response"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill={liked === "dislike" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3zm7-13h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17" /></svg>
@@ -300,7 +314,7 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
           {onRetry && (
             <button
               onClick={onRetry}
-              className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-secondary hover:text-primary hover:bg-overlay transition-colors cursor-pointer"
               title="Retry"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 102.13-9.36L1 10" /></svg>

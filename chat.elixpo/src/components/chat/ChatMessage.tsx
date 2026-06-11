@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import PollinationsBadge from './PollinationsBadge';
 import type { UIMessage } from 'ai';
 
 export function ChatMessage({ message }: { message: any }) {
@@ -30,17 +31,27 @@ export function ChatMessage({ message }: { message: any }) {
       >
         <div className="flex items-center gap-2 mb-2">
           {isUser ? (
-            <div className="w-5 h-5 bg-[#6366f1] flex items-center justify-center text-[9px] font-bold text-[#f0ede6]" style={{ clipPath: 'polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% 100%, 3px 100%, 0 calc(100% - 3px))' }}>
-              U
-            </div>
+            <>
+              <div className="w-5 h-5 bg-[#6366f1] flex items-center justify-center text-[9px] font-bold text-[#f0ede6]" style={{ clipPath: 'polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% 100%, 3px 100%, 0 calc(100% - 3px))' }}>
+                U
+              </div>
+              <span className="font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[rgba(240,237,230,0.4)]">
+                You
+              </span>
+            </>
           ) : (
-            <div className="w-5 h-5 bg-[#0a0a0a] border border-[rgba(240,237,230,0.3)] flex items-center justify-center text-[9px] font-bold text-[#f0ede6]">
-              AI
-            </div>
+            <>
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                  <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+                </svg>
+              </div>
+              <span className="font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[rgba(240,237,230,0.4)]">
+                Elixpo Chat
+              </span>
+              <PollinationsBadge />
+            </>
           )}
-          <span className="font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[rgba(240,237,230,0.4)]">
-            {isUser ? 'You' : 'Elixpo'}
-          </span>
         </div>
         
         {isUser ? (

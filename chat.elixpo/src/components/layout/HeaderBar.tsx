@@ -1,4 +1,5 @@
 import React from 'react';
+import PollinationsBadge from '../chat/PollinationsBadge';
 
 export function HeaderBar() {
   return (
@@ -20,12 +21,9 @@ export function HeaderBar() {
       </div>
       
       <div className="flex items-center gap-4">
-        <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[rgba(240,237,230,0.04)] border border-[rgba(240,237,230,0.08)] hover:bg-[rgba(240,237,230,0.08)] transition-colors font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[rgba(240,237,230,0.6)]" style={{ clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))' }}>
-          <span>GPT-4o</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </button>
+        <div className="hidden sm:flex">
+          <PollinationsBadge />
+        </div>
       </div>
     </header>
   );
