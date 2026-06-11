@@ -62,12 +62,12 @@ export default function DiscoverPage() {
   useEffect(() => {
     fetch("https://ipapi.co/json/")
       .then((r) => r.json())
-      .then((ipData) => {
+      .then((ipData: any) => {
         const loc = [ipData.city, ipData.latitude, ipData.longitude].filter(Boolean).join(", ");
         return fetch(`/api/weather?location=${encodeURIComponent(loc)}`);
       })
       .then((r) => r.json())
-      .then((data) => {
+      .then((data: any) => {
         setLoading(false);
         if (data.error) return;
         setWeather(data.structuredWeather);

@@ -29,6 +29,11 @@
   --color-warning: var(--warning);
   --color-error: var(--error);
   --color-info: var(--info);
+  
+  --color-cpu: var(--color-cpu-base);
+  --color-cpu-glow: var(--color-cpu-glow);
+  --color-cpu-border: var(--color-cpu-border);
+  --color-cpu-muted: var(--color-cpu-muted);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
@@ -88,6 +93,18 @@
   --error:          #EF4444;
   --error-glow:     rgba(239,68,68,0.15);
   --info:           #06B6D4;
+
+  /* CPU Accent */
+  --color-cpu-base: #F59E0B;
+  --color-cpu-glow: rgba(245, 158, 11, 0.15);
+  --color-cpu-border: rgba(245, 158, 11, 0.25);
+  --color-cpu-muted: rgba(245, 158, 11, 0.08);
+
+  /* Pollinations Chat */
+  --color-pollinations: #7C3AED;
+  --color-pollinations-glow: rgba(124, 58, 237, 0.15);
+  --color-pollinations-border: rgba(124, 58, 237, 0.25);
+  --color-pollinations-muted: rgba(124, 58, 237, 0.08);
 
   /* Gradients */
   --gradient-brand: linear-gradient(135deg, #1D4ED8 0%, #0EA5E9 50%, #06B6D4 100%);

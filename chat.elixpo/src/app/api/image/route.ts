@@ -1,7 +1,5 @@
 import { NextRequest } from "next/server";
 
-const IMAGE_KEY = "45e79d739c635215c56550a50e041f8ffba3a6ee2e79a9be1421c23eb193f23a";
-
 /**
  * GET /api/image?id=<uuid>
  * Proxies the image from search.elixpo.com with the API key so the key stays server-side.
@@ -9,6 +7,8 @@ const IMAGE_KEY = "45e79d739c635215c56550a50e041f8ffba3a6ee2e79a9be1421c23eb193f
 export async function GET(request: NextRequest) {
   const id = request.nextUrl.searchParams.get("id");
   if (!id) return new Response("Missing id", { status: 400 });
+
+  const IMAGE_KEY = process.env.ELIXSEARCH_API_KEY || "";
 
   const upstream = await fetch(
     `https://search.elixpo.com/api/image/${id}?key=${IMAGE_KEY}`,

@@ -26,8 +26,8 @@ export default function FeaturedContent() {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/news-details").then((r) => r.json()).then((d) => { if (!d.error) setNews(d); }).catch(() => {});
-    fetch("/api/podcast-details").then((r) => r.json()).then((d) => { if (!d.error) setPodcast(d); }).catch(() => {});
+    fetch("/api/news-details").then((r) => r.json()).then((d: any) => { if (!d.error) setNews(d); }).catch(() => {});
+    fetch("/api/podcast-details").then((r) => r.json()).then((d: any) => { if (!d.error) setPodcast(d); }).catch(() => {});
   }, []);
 
   useEffect(() => {

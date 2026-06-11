@@ -31,7 +31,7 @@ export default function NewsPage() {
   const headline = `Elixpo Daily — ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
 
   useEffect(() => {
-    fetch("/api/news").then((r) => r.json()).then((data) => {
+    fetch("/api/news").then((r) => r.json()).then((data: any) => {
       if (!data || !data.items) {
         setItems([]);
         setLoading(false);
@@ -61,7 +61,7 @@ export default function NewsPage() {
     } else if (item.image_url) {
       fetch(`/api/dominant-color?imageUrl=${encodeURIComponent(item.image_url)}`)
         .then((r) => r.json())
-        .then((d) => setGradientColor(d.color))
+        .then((d: any) => setGradientColor(d.color))
         .catch(() => {});
     }
   }, []);
