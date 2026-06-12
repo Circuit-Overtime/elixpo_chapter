@@ -68,28 +68,32 @@
 
 .statBlock {
   display: flex;
-  align-items: baseline;
-  gap: 1rem;
-  padding: 0 2.5rem;
+  align-items: center; /* Center-aligns the big number and small text vertically */
+  gap: 1.5rem; /* Ensures a clean separation gap between elements */
+  padding: 0 3rem;
   flex-shrink: 0;
-  white-space: nowrap;
+  white-space: nowrap; /* Prevents elements from breaking within the scrolling track */
 }
 
 .number {
   font-family: var(--font-family-display);
-  font-size: clamp(5rem, 14vw, 12rem);
+  font-size: clamp(4rem, 10vw, 8rem); /* Balanced maximum size */
   font-weight: 900;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
+  display: inline-block;
+  flex-shrink: 0; /* Ensures numbers never shrink or squeeze */
 }
 
 .label {
   font-family: var(--font-family-display);
-  font-size: clamp(1.2rem, 3vw, 2.5rem);
+  font-size: clamp(1rem, 2.2vw, 1.5rem);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.2;
   text-transform: uppercase;
-  max-width: 300px;
+  display: inline-block;
+  flex-shrink: 0; /* Ensures labels never shrink or overlap */
+  white-space: nowrap; /* Prevents descriptive text from wrapping into multiple lines */
 }
 
 @keyframes marqueeScroll {
@@ -103,16 +107,15 @@
   }
 
   .number {
-    font-size: clamp(3rem, 20vw, 6rem);
+    font-size: clamp(3rem, 14vw, 5rem);
   }
 
   .label {
-    font-size: clamp(0.9rem, 4vw, 1.4rem);
-    max-width: 180px;
+    font-size: clamp(0.9rem, 3.5vw, 1.2rem);
   }
 
   .statBlock {
-    padding: 0 1.5rem;
-    gap: 0.6rem;
+    padding: 0 2rem;
+    gap: 1rem;
   }
 }
