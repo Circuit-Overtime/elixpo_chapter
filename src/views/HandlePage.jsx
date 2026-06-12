@@ -200,6 +200,7 @@ function HandlePageInner({ path }) {
             coAuthorCount={blog.co_author_count || 0}
             coAuthors={blog.co_authors || []}
             wordCount={wc}
+            readTimeMinutes={blog.read_time_minutes || 0}
             memberOnly={!!blog.member_only}
             featured={blog.published_as === `org:${STAFF_ORG_ID}`}
             publishedAt={blog.published_at}
