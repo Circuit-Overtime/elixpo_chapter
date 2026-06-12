@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
+import { readTimeFromWords } from '../../../lib/readTime';
 
 function FloatingTOC({ headings }) {
   const [activeId, setActiveId] = useState('');
@@ -329,7 +330,7 @@ function renderBlocksToHTML(blocks) {
   return html;
 }
 
-export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount, followSlot = null, memberOnly = false, featured = false, publishedAt = null, headerActions = null, hideHighlights = false }) {
+export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount, followSlot = null, memberOnly = false, featured = false, publishedAt = null, headerActions = null, hideHighlights = false, readTimeMinutes = 0 }) {
   const { isDark } = useTheme();
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -779,7 +780,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
                 <span className="text-[var(--text-faint)]">+ {moreNames} more</span>
               )}
               <span className="text-[var(--text-faint)]">·</span>
-              <span>{Math.max(1, Math.ceil((wordCount || 0) / 200))} min read</span>
+              <span>{readTimeMinutes > 0 ? readTimeMinutes : readTimeFromWords(wordCount)} min read</span>
               {publishedAt && (
                 <>
                   <span className="text-[var(--text-faint)]">·</span>
