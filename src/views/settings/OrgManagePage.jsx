@@ -61,6 +61,7 @@ export default function OrgManagePage({ slug }) {
 
   // General editing state
   const [name, setName] = useState('');
+  const [slugInput, setSlugInput] = useState('');
   const [description, setDescription] = useState('');
   const [bio, setBio] = useState('');
   const [website, setWebsite] = useState('');
@@ -103,6 +104,7 @@ export default function OrgManagePage({ slug }) {
       if (found) {
         setOrg(found);
         setName(found.name || '');
+        setSlugInput(found.slug || '');
         setDescription(found.description || '');
         setBio(found.bio || '');
         setWebsite(found.website || '');
@@ -143,6 +145,7 @@ export default function OrgManagePage({ slug }) {
 
     setSaving(true);
     try {
+      const slugChanged = slugInput.trim() && slugInput.trim() !== org.slug;
       const res = await fetch('/api/orgs', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -150,21 +153,28 @@ export default function OrgManagePage({ slug }) {
           orgId: org.id, name, description, bio, website, visibility,
           timezone, location, contact_email: contactEmail,
           links: activeLinks,
+          ...(slugChanged ? { slug: slugInput.trim() } : {}),
         }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         setSaveError(data?.error || 'Failed to save');
       } else {
-        // Mirror the custom links into the dedicated org_links table (max 5,
-        // name + url) — this is what the public org page renders.
+        const newSlug = data.slug || org.slug;
+        // Mirror the custom links into the dedicated org_links table (max 5).
         try {
-          await fetch(`/api/orgs/${org.slug}/links`, {
+          await fetch(`/api/orgs/${newSlug}/links`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ links: activeLinks.slice(0, 5).map(l => ({ name: l.label || l.type || 'Link', url: l.url })) }),
           });
         } catch {}
+        // Handle changed → reflect it in state + the browser URL bar.
+        if (data.slug && data.slug !== org.slug) {
+          setOrg(prev => ({ ...prev, slug: data.slug, name }));
+          setSlugInput(data.slug);
+          router.replace(`/settings/org/${data.slug}`);
+        }
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       }
@@ -421,6 +431,20 @@ export default function OrgManagePage({ slug }) {
               <h3 className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-widest mb-4">Identity</h3>
               <div className="space-y-4">
                 <Input label="Organization name" value={name} onChange={e => setName(e.target.value)} placeholder="My Organization" />
+                <div>
+                  <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">Handle</label>
+                  <p className="text-[11px] text-[var(--text-faint)] mb-2">Your public URL: blogs.elixpo.com/{slugInput || org.slug}. Changing it updates your links.</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[13px]" style={{ color: 'var(--text-faint)' }}>@</span>
+                    <input
+                      value={slugInput}
+                      onChange={e => setSlugInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                      placeholder="my-org"
+                      className="flex-1 text-[13px] rounded-lg px-3 py-2 outline-none"
+                      style={{ backgroundColor: 'var(--bg-base)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                </div>
                 <div>
                   <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">Short description</label>
                   <p className="text-[11px] text-[var(--text-faint)] mb-2">A one-liner that appears under your org name</p>
