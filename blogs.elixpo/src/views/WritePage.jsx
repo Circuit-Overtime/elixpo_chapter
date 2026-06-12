@@ -11,6 +11,7 @@ import '@blocknote/mantine/style.css';
 import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
 import { compressCoverImage } from '../utils/compressImage';
+import { readTimeFromWords } from '../../lib/readTime';
 import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../utils/allowedImageTypes';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
 import { useCollaboration } from '../hooks/useCollaboration';
@@ -1251,7 +1252,7 @@ export default function WritePage({ slugid }) {
     } catch { /* silent */ }
   };
 
-  const readTime = Math.max(1, Math.ceil(wordCount / 250));
+  const readTime = readTimeFromWords(wordCount);
 
   const formatSavedTime = (ts) => {
     if (!ts) return null;
@@ -1974,7 +1975,7 @@ export default function WritePage({ slugid }) {
                     <div className="flex items-center gap-2 text-[15px] text-[var(--text-faint)]">
                       <span className="text-[var(--text-muted)] font-medium">{user?.display_name || user?.username || 'Author'}</span>
                       <span className="text-[var(--text-faint)]">·</span>
-                      <span>{Math.max(1, Math.ceil(wordCount / 200))} min read</span>
+                      <span>{readTimeFromWords(wordCount)} min read</span>
                       <span className="text-[var(--text-faint)]">·</span>
                       <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
                     </div>
