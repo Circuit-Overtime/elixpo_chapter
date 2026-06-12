@@ -2,6 +2,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { requestTooLarge, byteLength, MAX_BLOG_CONTENT_BYTES, MAX_TITLE_LEN, MAX_SUBTITLE_LEN } from '../../../../lib/limits';
+import { readTimeFromWords } from '../../../../lib/readTime';
 
 export async function POST(request) {
   const session = await getSession();
@@ -55,7 +56,7 @@ export async function POST(request) {
     const { checkPublishSafety } = await import('../../../../lib/blog-version');
     const db = getDB();
     const now = Math.floor(Date.now() / 1000);
-    const readTime = Math.max(1, Math.ceil(countWords(editorContent) / 250));
+    const readTime = readTimeFromWords(countWords(editorContent));
     const compressedContent = editorContent ? compressBlogContent(editorContent) : '';
     const { excerptFromBlocks } = await import('../../../../lib/excerpt');
     const excerpt = editorContent ? excerptFromBlocks(editorContent) : '';
