@@ -174,6 +174,21 @@ export default function OrgManagePage({ slug }) {
     setSaving(false);
   };
 
+  const handleDeleteOrg = async () => {
+    if (!org || deleting) return;
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/orgs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgId: org.id }),
+      });
+      if (res.ok) { router.push('/'); return; }
+    } catch {}
+    setDeleting(false);
+    setDeleteConfirm(false);
+  };
+
   const handleLogoFile = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = ''; // allow re-selecting the same file
@@ -510,6 +525,23 @@ export default function OrgManagePage({ slug }) {
               {saved && <span className="text-[12px] text-[#4ade80] flex items-center gap-1"><ion-icon name="checkmark-circle" style={{ fontSize: '14px' }} /> Changes saved</span>}
               {saveError && <span className="text-[12px] text-red-400 flex items-center gap-1"><ion-icon name="alert-circle" style={{ fontSize: '14px' }} /> {saveError}</span>}
             </div>
+
+            {/* ── Danger zone (owner only) ── */}
+            {org.owner_id === user?.id && (
+              <section className="mt-8 pt-6 rounded-xl p-5" style={{ border: '1px solid #ef444440', backgroundColor: '#ef44440a' }}>
+                <h3 className="text-[14px] font-semibold mb-1" style={{ color: '#ef4444' }}>Danger zone</h3>
+                <p className="text-[12px] mb-4" style={{ color: 'var(--text-muted)' }}>
+                  Deleting this organization is permanent. Its profile, collections, and memberships are removed. Blogs published under it remain with their authors.
+                </p>
+                <button
+                  onClick={() => setDeleteConfirm(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
+                  style={{ color: '#ef4444', border: '1px solid #ef444460' }}
+                >
+                  <ion-icon name="trash-outline" style={{ fontSize: '15px' }} /> Delete organization
+                </button>
+              </section>
+            )}
           </div>
         )}
 
@@ -790,6 +822,23 @@ export default function OrgManagePage({ slug }) {
           </div>
         )}
       </div>
+
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4" onClick={() => !deleting && setDeleteConfirm(false)}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }} onClick={e => e.stopPropagation()}>
+            <h3 className="text-[17px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Delete “{org.name}”?</h3>
+            <p className="text-[13px] mb-5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              This permanently deletes the organization, its collections and memberships. This can’t be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setDeleteConfirm(false)} disabled={deleting} className="px-4 py-2 text-[13px] rounded-full disabled:opacity-60" style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}>Cancel</button>
+              <button onClick={handleDeleteOrg} disabled={deleting} className="px-4 py-2 text-[13px] font-semibold rounded-full text-white bg-red-500 hover:bg-red-600 disabled:opacity-60">
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
