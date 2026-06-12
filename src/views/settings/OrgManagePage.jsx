@@ -370,10 +370,9 @@ export default function OrgManagePage({ slug }) {
             title="Change organization logo"
           >
             <img src={org.logo_url || generatePixelAvatar(org.slug)} alt="" className="h-10 w-10 rounded-xl object-cover" />
-            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/50 transition-colors">
-              {logoUploading
-                ? <ion-icon name="hourglass-outline" style={{ fontSize: '16px', color: '#fff' }} />
-                : <ion-icon name="camera-outline" style={{ fontSize: '16px', color: '#fff' }} className="opacity-0 group-hover:opacity-100 transition-opacity" />}
+            {/* Always-visible edit affordance (hover-only is invisible on touch). */}
+            <span className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/50 transition-colors">
+              <ion-icon name={logoUploading ? 'hourglass-outline' : 'camera-outline'} style={{ fontSize: '15px', color: '#fff' }} />
             </span>
           </button>
           <div className="flex-1 min-w-0">

@@ -39,12 +39,14 @@ export async function POST(request, { params }) {
     if (!target) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     if (target.id === session.userId) return NextResponse.json({ error: 'Cannot follow yourself' }, { status: 400 });
 
-    await db.prepare(
+    const ins = await db.prepare(
       "INSERT OR IGNORE INTO follows (follower_id, following_id, following_type) VALUES (?, ?, 'user')"
     ).bind(session.userId, target.id).run();
 
-    // Best-effort follow notification.
-    try {
+    // Notify ONLY when this created a new follow row — repeated POSTs (already
+    // following) must not stack duplicate "started following you" notifications.
+    const isNewFollow = (ins?.meta?.changes ?? 1) > 0;
+    if (isNewFollow) try {
       const { notify } = await import('../../../../../lib/notify');
       const actor = session.profile || {};
       await notify(db, {
