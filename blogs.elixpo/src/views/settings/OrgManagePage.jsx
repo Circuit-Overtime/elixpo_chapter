@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import AppShell from '../../components/AppShell';
 import TabBar from '../../components/TabBar';
@@ -48,6 +49,9 @@ function Input({ label, sublabel, value, onChange, placeholder, type = 'text', .
 
 export default function OrgManagePage({ slug }) {
   const { user } = useAuth();
+  const router = useRouter();
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [org, setOrg] = useState(null);
   const [members, setMembers] = useState([]);
   const [collections, setCollections] = useState([]);
@@ -57,6 +61,7 @@ export default function OrgManagePage({ slug }) {
 
   // General editing state
   const [name, setName] = useState('');
+  const [slugInput, setSlugInput] = useState('');
   const [description, setDescription] = useState('');
   const [bio, setBio] = useState('');
   const [website, setWebsite] = useState('');
@@ -99,6 +104,7 @@ export default function OrgManagePage({ slug }) {
       if (found) {
         setOrg(found);
         setName(found.name || '');
+        setSlugInput(found.slug || '');
         setDescription(found.description || '');
         setBio(found.bio || '');
         setWebsite(found.website || '');
@@ -139,6 +145,7 @@ export default function OrgManagePage({ slug }) {
 
     setSaving(true);
     try {
+      const slugChanged = slugInput.trim() && slugInput.trim() !== org.slug;
       const res = await fetch('/api/orgs', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -146,21 +153,28 @@ export default function OrgManagePage({ slug }) {
           orgId: org.id, name, description, bio, website, visibility,
           timezone, location, contact_email: contactEmail,
           links: activeLinks,
+          ...(slugChanged ? { slug: slugInput.trim() } : {}),
         }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         setSaveError(data?.error || 'Failed to save');
       } else {
-        // Mirror the custom links into the dedicated org_links table (max 5,
-        // name + url) — this is what the public org page renders.
+        const newSlug = data.slug || org.slug;
+        // Mirror the custom links into the dedicated org_links table (max 5).
         try {
-          await fetch(`/api/orgs/${org.slug}/links`, {
+          await fetch(`/api/orgs/${newSlug}/links`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ links: activeLinks.slice(0, 5).map(l => ({ name: l.label || l.type || 'Link', url: l.url })) }),
           });
         } catch {}
+        // Handle changed → reflect it in state + the browser URL bar.
+        if (data.slug && data.slug !== org.slug) {
+          setOrg(prev => ({ ...prev, slug: data.slug, name }));
+          setSlugInput(data.slug);
+          router.replace(`/settings/org/${data.slug}`);
+        }
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       }
@@ -168,6 +182,21 @@ export default function OrgManagePage({ slug }) {
       setSaveError('Failed to save');
     }
     setSaving(false);
+  };
+
+  const handleDeleteOrg = async () => {
+    if (!org || deleting) return;
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/orgs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgId: org.id }),
+      });
+      if (res.ok) { router.push('/'); return; }
+    } catch {}
+    setDeleting(false);
+    setDeleteConfirm(false);
   };
 
   const handleLogoFile = async (e) => {
@@ -370,10 +399,9 @@ export default function OrgManagePage({ slug }) {
             title="Change organization logo"
           >
             <img src={org.logo_url || generatePixelAvatar(org.slug)} alt="" className="h-10 w-10 rounded-xl object-cover" />
-            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/50 transition-colors">
-              {logoUploading
-                ? <ion-icon name="hourglass-outline" style={{ fontSize: '16px', color: '#fff' }} />
-                : <ion-icon name="camera-outline" style={{ fontSize: '16px', color: '#fff' }} className="opacity-0 group-hover:opacity-100 transition-opacity" />}
+            {/* Always-visible edit affordance (hover-only is invisible on touch). */}
+            <span className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/50 transition-colors">
+              <ion-icon name={logoUploading ? 'hourglass-outline' : 'camera-outline'} style={{ fontSize: '15px', color: '#fff' }} />
             </span>
           </button>
           <div className="flex-1 min-w-0">
@@ -403,6 +431,20 @@ export default function OrgManagePage({ slug }) {
               <h3 className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-widest mb-4">Identity</h3>
               <div className="space-y-4">
                 <Input label="Organization name" value={name} onChange={e => setName(e.target.value)} placeholder="My Organization" />
+                <div>
+                  <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">Handle</label>
+                  <p className="text-[11px] text-[var(--text-faint)] mb-2">Your public URL: blogs.elixpo.com/{slugInput || org.slug}. Changing it updates your links.</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[13px]" style={{ color: 'var(--text-faint)' }}>@</span>
+                    <input
+                      value={slugInput}
+                      onChange={e => setSlugInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                      placeholder="my-org"
+                      className="flex-1 text-[13px] rounded-lg px-3 py-2 outline-none"
+                      style={{ backgroundColor: 'var(--bg-base)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                </div>
                 <div>
                   <label className="text-[13px] text-[var(--text-primary)] mb-1 block font-medium">Short description</label>
                   <p className="text-[11px] text-[var(--text-faint)] mb-2">A one-liner that appears under your org name</p>
@@ -507,6 +549,23 @@ export default function OrgManagePage({ slug }) {
               {saved && <span className="text-[12px] text-[#4ade80] flex items-center gap-1"><ion-icon name="checkmark-circle" style={{ fontSize: '14px' }} /> Changes saved</span>}
               {saveError && <span className="text-[12px] text-red-400 flex items-center gap-1"><ion-icon name="alert-circle" style={{ fontSize: '14px' }} /> {saveError}</span>}
             </div>
+
+            {/* ── Danger zone (owner only) ── */}
+            {org.owner_id === user?.id && (
+              <section className="mt-8 pt-6 rounded-xl p-5" style={{ border: '1px solid #ef444440', backgroundColor: '#ef44440a' }}>
+                <h3 className="text-[14px] font-semibold mb-1" style={{ color: '#ef4444' }}>Danger zone</h3>
+                <p className="text-[12px] mb-4" style={{ color: 'var(--text-muted)' }}>
+                  Deleting this organization is permanent. Its profile, collections, and memberships are removed. Blogs published under it remain with their authors.
+                </p>
+                <button
+                  onClick={() => setDeleteConfirm(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
+                  style={{ color: '#ef4444', border: '1px solid #ef444460' }}
+                >
+                  <ion-icon name="trash-outline" style={{ fontSize: '15px' }} /> Delete organization
+                </button>
+              </section>
+            )}
           </div>
         )}
 
@@ -787,6 +846,23 @@ export default function OrgManagePage({ slug }) {
           </div>
         )}
       </div>
+
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4" onClick={() => !deleting && setDeleteConfirm(false)}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }} onClick={e => e.stopPropagation()}>
+            <h3 className="text-[17px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Delete “{org.name}”?</h3>
+            <p className="text-[13px] mb-5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              This permanently deletes the organization, its collections and memberships. This can’t be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setDeleteConfirm(false)} disabled={deleting} className="px-4 py-2 text-[13px] rounded-full disabled:opacity-60" style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}>Cancel</button>
+              <button onClick={handleDeleteOrg} disabled={deleting} className="px-4 py-2 text-[13px] font-semibold rounded-full text-white bg-red-500 hover:bg-red-600 disabled:opacity-60">
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
