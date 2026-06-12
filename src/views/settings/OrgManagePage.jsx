@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import AppShell from '../../components/AppShell';
 import TabBar from '../../components/TabBar';
@@ -48,6 +49,9 @@ function Input({ label, sublabel, value, onChange, placeholder, type = 'text', .
 
 export default function OrgManagePage({ slug }) {
   const { user } = useAuth();
+  const router = useRouter();
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [org, setOrg] = useState(null);
   const [members, setMembers] = useState([]);
   const [collections, setCollections] = useState([]);
