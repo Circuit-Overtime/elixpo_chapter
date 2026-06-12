@@ -112,7 +112,7 @@ export async function PUT(request) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  const { orgId, name, description, bio, website, links, visibility, featured_blog_ids, timezone, location, contact_email } = await request.json();
+  const { orgId, slug, name, description, bio, website, links, visibility, featured_blog_ids, timezone, location, contact_email } = await request.json();
   if (!orgId) {
     return NextResponse.json({ error: 'Missing orgId' }, { status: 400 });
   }
@@ -153,6 +153,25 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
     }
 
+    // Handle a slug (handle) change — owner/admin only, validated + uniquely
+    // reserved in the namespace, releasing the old one. Returned so the client
+    // can update the URL bar.
+    let finalSlug = null;
+    if (typeof slug === 'string' && slug.trim()) {
+      const { validateSlug } = await import('../../../lib/slugify');
+      const cur = await db.prepare('SELECT slug FROM orgs WHERE id = ?').bind(orgId).first();
+      const check = validateSlug(slug, { label: 'Org handle' });
+      if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
+      if (cur && check.slug !== cur.slug) {
+        const { reserveName, releaseName } = await import('../../../lib/namespace');
+        const res = await reserveName(db, check.slug, 'org', orgId);
+        if (!res.success) return NextResponse.json({ error: 'That handle is already taken' }, { status: 409 });
+        await releaseName(db, cur.slug);
+        await db.prepare('UPDATE orgs SET slug = ? WHERE id = ?').bind(check.slug, orgId).run();
+        finalSlug = check.slug;
+      }
+    }
+
     const now = Math.floor(Date.now() / 1000);
     await db.prepare(`
       UPDATE orgs SET name = COALESCE(?, name), description = COALESCE(?, description),
@@ -169,7 +188,7 @@ export async function PUT(request) {
       timezone || null, location || null, contact_email || null, now, orgId
     ).run();
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, slug: finalSlug });
   } catch (e) {
     console.error('Update org error:', e);
     return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
