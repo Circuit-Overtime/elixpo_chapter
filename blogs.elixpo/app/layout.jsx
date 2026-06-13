@@ -14,8 +14,15 @@ export const metadata = {
   },
   description: SITE_DESC,
   icons: {
-    icon: '/base-logo.png',
-    apple: '/base-logo.png',
+    icon: [
+      // Adaptive SVG: embeds both logos and swaps via prefers-color-scheme inside the file,
+      // so it stays visible on both light and dark tab bars (Chrome/Firefox/Edge/Safari 16.4+).
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      // Fallback for browsers without SVG-favicon support, and the path crawlers request first.
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/logo-dark.png',
   },
   openGraph: {
     type: 'website',
