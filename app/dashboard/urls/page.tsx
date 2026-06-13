@@ -36,8 +36,8 @@ export default async function UrlsPage({
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-        <h1 className="text-2xl font-display font-bold text-text-primary">My URLs</h1>
-        <Link href="/dashboard/new" className="btn-lime no-underline">+ Shorten URL</Link>
+        <h1 className="text-2xl font-sans font-bold text-text-primary">My URLs</h1>
+        <Link href="/dashboard/new" className="btn-accent no-underline">+ Shorten URL</Link>
       </div>
 
       <div className="glass-card p-6">
@@ -68,7 +68,7 @@ export default async function UrlsPage({
               results.map((u) => (
                 <tr key={u.short_code} className="border-t border-border-light">
                   <td className="py-3">
-                    <Link href={`/dashboard/urls/${u.short_code}`} className="text-lime-main text-sm no-underline hover:underline">
+                    <Link href={`/dashboard/urls/${u.short_code}`} className="text-accent-main text-sm no-underline hover:underline">
                       {u.short_code}
                     </Link>
                   </td>

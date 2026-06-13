@@ -44,7 +44,7 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-display font-bold text-text-primary mb-6">User Management</h1>
+      <h1 className="text-2xl font-sans font-bold text-text-primary mb-6">User Management</h1>
 
       <div className="glass-card p-6">
         <table className="w-full">
@@ -65,7 +65,7 @@ export default function AdminUsersPage() {
               <tr key={u.id} className="border-t border-border-light">
                 <td className="py-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-lime-dim border border-lime-border flex items-center justify-center text-xs font-semibold text-lime-main">
+                    <div className="w-7 h-7 rounded-full bg-accent-dim border border-accent-border flex items-center justify-center text-xs font-semibold text-accent-main">
                       {u.display_name?.charAt(0)?.toUpperCase() || '?'}
                     </div>
                     <span className="text-sm">{u.display_name}</span>

@@ -34,7 +34,7 @@ export default async function DashboardPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-display font-bold text-text-primary mb-6">Dashboard</h1>
+      <h1 className="text-2xl font-sans font-bold text-text-primary mb-6">Dashboard</h1>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -66,7 +66,7 @@ export default async function DashboardPage({
           <div className="flex gap-2">
             {[7, 30, 90].map((d) => (
               <Link key={d} href={`/dashboard?days=${d}`}
-                className={`text-xs px-2 py-1 rounded-lg no-underline transition-all ${days === d ? 'text-lime-main bg-lime-dim' : 'text-text-disabled hover:text-text-secondary'}`}>
+                className={`text-xs px-2 py-1 rounded-lg no-underline transition-all ${days === d ? 'text-accent-main bg-accent-dim' : 'text-text-disabled hover:text-text-secondary'}`}>
                 {d}d
               </Link>
             ))}
@@ -106,7 +106,7 @@ export default async function DashboardPage({
               topUrls.results.map((u) => (
                 <tr key={u.short_code} className="border-t border-border-light">
                   <td className="py-3">
-                    <Link href={`/dashboard/urls/${u.short_code}`} className="text-lime-main text-sm no-underline hover:underline">
+                    <Link href={`/dashboard/urls/${u.short_code}`} className="text-accent-main text-sm no-underline hover:underline">
                       {u.short_code}
                     </Link>
                   </td>
@@ -118,7 +118,7 @@ export default async function DashboardPage({
             ) : (
               <tr>
                 <td colSpan={4} className="py-8 text-center text-text-disabled text-sm italic">
-                  No URLs yet. <Link href="/dashboard/new" className="text-lime-main no-underline">Create your first short URL!</Link>
+                  No URLs yet. <Link href="/dashboard/new" className="text-accent-main no-underline">Create your first short URL!</Link>
                 </td>
               </tr>
             )}

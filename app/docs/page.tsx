@@ -82,7 +82,7 @@ Include your key in the Authorization header:`,
 
 export default function DocsPage() {
   return (
-    <div className="min-h-screen bg-gradient-page overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-bg-deep overflow-hidden flex flex-col">
       {/* Nav */}
       <motion.nav
         initial={{ opacity: 0, y: -20 }}
@@ -92,15 +92,15 @@ export default function DocsPage() {
       >
         <Link href="/" className="flex items-center gap-2.5 no-underline">
           <Image src="/logo.png" alt="ElixpoURL" width={32} height={32} className="rounded-lg" />
-          <span className="text-xl font-display font-bold text-text-primary">
-            <span className="text-lime-main">Elixpo</span>URL
+          <span className="text-xl font-sans font-bold text-text-primary">
+            <span className="text-accent-main">Elixpo</span>URL
           </span>
         </Link>
         <div className="hidden sm:flex items-center gap-6">
           <Link href="/pricing" className="text-sm text-text-secondary hover:text-text-primary transition-colors no-underline">
             Pricing
           </Link>
-          <Link href="/docs" className="text-sm text-lime-main no-underline">
+          <Link href="/docs" className="text-sm text-accent-main no-underline">
             Docs
           </Link>
           <Link href="/profile/keys" className="text-sm text-text-secondary hover:text-text-primary transition-colors no-underline">
@@ -109,7 +109,7 @@ export default function DocsPage() {
           <Link href="/api/auth/login" className="text-sm text-text-secondary hover:text-text-primary transition-colors no-underline">
             Sign In
           </Link>
-          <Link href="/api/auth/login" className="btn-lime no-underline text-sm">
+          <Link href="/api/auth/login" className="btn-accent no-underline text-sm">
             Get Started
           </Link>
         </div>
@@ -121,9 +121,9 @@ export default function DocsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="text-3xl sm:text-5xl font-display font-bold mb-4"
+          className="text-3xl sm:text-5xl font-sans font-bold mb-4"
         >
-          API <span className="text-gradient">Documentation</span>
+          API <span className="text-gradient-accent">Documentation</span>
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -147,7 +147,7 @@ export default function DocsPage() {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="text-sm text-text-secondary hover:text-lime-main transition-colors no-underline px-3 py-1.5 rounded-lg hover:bg-bg-glass"
+                className="text-sm text-text-secondary hover:text-accent-main transition-colors no-underline px-3 py-1.5 rounded-lg hover:bg-bg-glass"
               >
                 {s.title}
               </a>
@@ -168,8 +168,8 @@ export default function DocsPage() {
             transition={{ duration: 0.5, delay: 0.05 }}
             className="mb-12 scroll-mt-8"
           >
-            <h2 className="text-xl font-display font-bold text-text-primary mb-3 flex items-center gap-2">
-              <span className="w-1.5 h-6 rounded-full bg-lime-main opacity-60" />
+            <h2 className="text-xl font-sans font-bold text-text-primary mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-6 rounded-full bg-accent-main opacity-60" />
               {s.title}
             </h2>
             <p className="text-sm text-text-secondary mb-4 leading-relaxed">{s.content}</p>
@@ -194,7 +194,7 @@ export default function DocsPage() {
                     border: '1px solid rgba(163,230,53,0.08)',
                   }}
                 >
-                  <code className="text-sage-main">{s.response}</code>
+                  <code className="text-accent-light">{s.response}</code>
                 </pre>
               </div>
             )}

@@ -111,7 +111,7 @@ export default function ApiKeysPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1
-            className="text-3xl font-display font-bold mb-2"
+            className="text-3xl font-sans font-bold mb-2"
             style={{
               background: 'linear-gradient(135deg, #f5f5f4 0%, #a3e635 60%, #86efac 100%)',
               WebkitBackgroundClip: 'text',
@@ -123,7 +123,7 @@ export default function ApiKeysPage() {
           </h1>
           <p className="text-sm text-text-muted">
             Manage keys for programmatic access &middot;{' '}
-            <Link href="/docs#auth" className="text-lime-main no-underline hover:underline">
+            <Link href="/docs#auth" className="text-accent-main no-underline hover:underline">
               Read the docs
             </Link>
           </p>
@@ -149,7 +149,7 @@ export default function ApiKeysPage() {
                 className="w-1.5 h-1.5 rounded-full"
                 style={{ background: '#a3e635', boxShadow: '0 0 6px rgba(163,230,53,0.5)' }}
               />
-              <span className="text-[0.65rem] text-lime-main font-semibold uppercase tracking-wider">
+              <span className="text-[0.65rem] text-accent-main font-semibold uppercase tracking-wider">
                 Create New Key
               </span>
             </div>
@@ -196,7 +196,7 @@ export default function ApiKeysPage() {
                             className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-all"
                             style={{ border: `2px solid ${selected ? '#a3e635' : 'rgba(255,255,255,0.2)'}` }}
                           >
-                            {selected && <span className="w-2 h-2 rounded-full bg-lime-main" />}
+                            {selected && <span className="w-2 h-2 rounded-full bg-accent-main" />}
                           </span>
                           <span
                             className="text-sm font-medium transition-colors"
@@ -424,7 +424,7 @@ export default function ApiKeysPage() {
               </div>
 
               <div className="text-center mb-6">
-                <h3 className="text-lg font-display font-bold text-text-primary mb-1">Your API Key</h3>
+                <h3 className="text-lg font-sans font-bold text-text-primary mb-1">Your API Key</h3>
                 <p className="text-xs text-text-muted">
                   This key will only be shown once. Copy it now and store it somewhere safe.
                 </p>

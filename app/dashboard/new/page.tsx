@@ -96,7 +96,7 @@ export default function ShortenPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1
-            className="text-3xl font-display font-bold mb-2"
+            className="text-3xl font-sans font-bold mb-2"
             style={{
               background: 'linear-gradient(135deg, #f5f5f4 0%, #a3e635 60%, #86efac 100%)',
               WebkitBackgroundClip: 'text',
@@ -111,7 +111,7 @@ export default function ShortenPage() {
             {!isPro && (
               <>
                 &middot;{' '}
-                <Link href="/pricing" className="text-lime-main no-underline hover:underline">
+                <Link href="/pricing" className="text-accent-main no-underline hover:underline">
                   Upgrade for more features
                 </Link>
               </>
@@ -175,7 +175,7 @@ export default function ShortenPage() {
                       className="w-1.5 h-1.5 rounded-full"
                       style={{ background: '#a3e635', boxShadow: '0 0 6px rgba(163,230,53,0.5)' }}
                     />
-                    <span className="text-[0.65rem] text-lime-main font-semibold uppercase tracking-wider">
+                    <span className="text-[0.65rem] text-accent-main font-semibold uppercase tracking-wider">
                       Pro Features
                     </span>
                   </div>
@@ -215,11 +215,11 @@ export default function ShortenPage() {
                     color: 'rgba(245,245,244,0.65)',
                   }}
                 >
-                  <span className="text-honey-main font-semibold">Free plan</span>{' '}
+                  <span className="text-accent-light font-semibold">Free plan</span>{' '}
                   &middot; Links with no clicks for 7 days are auto-removed.{' '}
                   <Link
                     href="/pricing"
-                    className="text-lime-main no-underline hover:underline font-medium"
+                    className="text-accent-main no-underline hover:underline font-medium"
                   >
                     Upgrade to Pro
                   </Link>{' '}

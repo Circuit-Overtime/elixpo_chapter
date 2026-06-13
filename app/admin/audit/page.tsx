@@ -30,7 +30,7 @@ export default function AuditLogPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-display font-bold text-text-primary mb-6">Audit Log</h1>
+      <h1 className="text-2xl font-sans font-bold text-text-primary mb-6">Audit Log</h1>
 
       <div className="glass-card p-6">
         {loading ? (

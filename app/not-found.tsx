@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gradient-page flex flex-col items-center justify-center px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-bg-deep flex flex-col items-center justify-center px-8 relative overflow-hidden">
       {/* Ambient glow */}
       <div className="absolute top-[30%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-[0.06] pointer-events-none"
         style={{ background: 'radial-gradient(circle, #a3e635, transparent 70%)' }} />
@@ -30,7 +30,7 @@ export default function NotFound() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="text-8xl font-display font-bold text-gradient mb-4"
+          className="text-8xl font-sans font-bold text-gradient-accent mb-4"
         >
           404
         </motion.div>
@@ -39,7 +39,7 @@ export default function NotFound() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className="text-2xl font-display font-bold text-text-primary mb-3"
+          className="text-2xl font-sans font-bold text-text-primary mb-3"
         >
           Link not found
         </motion.h1>
@@ -60,7 +60,7 @@ export default function NotFound() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="flex items-center justify-center gap-4"
         >
-          <Link href="/" className="btn-lime no-underline px-6 py-2.5 rounded-xl">
+          <Link href="/" className="btn-accent no-underline px-6 py-2.5 rounded-xl">
             Go Home
           </Link>
           <Link href="/api/auth/login" className="btn-glass no-underline px-6 py-2.5 rounded-xl">
@@ -73,7 +73,7 @@ export default function NotFound() {
       {[...Array(6)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute w-1 h-1 rounded-full bg-lime-main"
+          className="absolute w-1 h-1 rounded-full bg-accent-main"
           style={{
             top: `${20 + Math.random() * 60}%`,
             left: `${10 + Math.random() * 80}%`,

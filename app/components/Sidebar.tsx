@@ -128,7 +128,7 @@ export default function Sidebar({ user }: { user: User }) {
       href={href}
       className={`relative group flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 no-underline ${
         isActive(href)
-          ? 'text-lime-main bg-[rgba(163,230,53,0.12)]'
+          ? 'text-accent-main bg-[rgba(163,230,53,0.12)]'
           : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
       }`}
     >
@@ -150,8 +150,8 @@ export default function Sidebar({ user }: { user: User }) {
       {/* Left: Logo */}
       <Link href="/dashboard" className="flex items-center gap-2 no-underline shrink-0">
         <Image src="/logo.png" alt="ElixpoURL" width={26} height={26} className="rounded-lg" />
-        <span className="text-base font-display font-bold text-text-primary hidden sm:inline">
-          <span className="text-lime-main">Elixpo</span>URL
+        <span className="text-base font-sans font-bold text-text-primary hidden sm:inline">
+          <span className="text-accent-main">Elixpo</span>URL
         </span>
       </Link>
 
@@ -181,7 +181,7 @@ export default function Sidebar({ user }: { user: User }) {
           onClick={() => setAccountOpen(!accountOpen)}
           className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-bg-glass transition-all duration-200 bg-transparent border-none cursor-pointer group"
         >
-          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-border-medium group-hover:border-lime-main/40 transition-colors">
+          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-border-medium group-hover:border-accent-main/40 transition-colors">
             <img
               src={avatarUrl}
               alt={user.display_name}
@@ -218,7 +218,7 @@ export default function Sidebar({ user }: { user: User }) {
                   onClick={() => setAccountOpen(false)}
                   className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 no-underline ${
                     isActive(item.href)
-                      ? 'text-lime-main bg-[rgba(163,230,53,0.06)]'
+                      ? 'text-accent-main bg-[rgba(163,230,53,0.06)]'
                       : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
                   }`}
                 >

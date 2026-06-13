@@ -29,7 +29,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   return (
     <div>
-      <h1 className="text-2xl font-display font-bold text-text-primary mb-6">Admin Monitoring</h1>
+      <h1 className="text-2xl font-sans font-bold text-text-primary mb-6">Admin Monitoring</h1>
 
       <div className="grid grid-cols-5 gap-4 mb-6">
         <div className="stat-card">
@@ -60,7 +60,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <div className="flex gap-2">
             {[7, 30, 90].map((d) => (
               <Link key={d} href={`/admin?days=${d}`}
-                className={`text-xs px-2 py-1 rounded-lg no-underline transition-all ${days === d ? 'text-lime-main bg-lime-dim' : 'text-text-disabled hover:text-text-secondary'}`}>
+                className={`text-xs px-2 py-1 rounded-lg no-underline transition-all ${days === d ? 'text-accent-main bg-accent-dim' : 'text-text-disabled hover:text-text-secondary'}`}>
                 {d}d
               </Link>
             ))}
@@ -94,7 +94,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <tbody>
               {topUrls.results?.map((u: any) => (
                 <tr key={u.short_code} className="border-t border-border-light">
-                  <td className="py-2.5 text-sm font-mono text-lime-main">{u.short_code}</td>
+                  <td className="py-2.5 text-sm font-mono text-accent-main">{u.short_code}</td>
                   <td className="py-2.5 text-sm text-text-secondary max-w-[200px] truncate">{u.original_url}</td>
                   <td className="py-2.5 text-sm">{u.clicks}</td>
                   <td className="py-2.5 text-sm text-text-muted">{u.owner}</td>

@@ -6,9 +6,9 @@
 
 :root {
   --bg-deep: #0c0f0a;
-  --lime-main: #a3e635;
-  --lime-dim: rgba(163, 230, 53, 0.15);
-  --lime-border: rgba(163, 230, 53, 0.3);
+  --accent-main: #a3e635;
+  --accent-dim: rgba(163, 230, 53, 0.15);
+  --accent-border: rgba(163, 230, 53, 0.3);
 }
 
 * {
@@ -83,13 +83,13 @@ body {
     transform: translateY(-2px);
   }
 
-  .btn-lime {
+  .btn-accent {
     @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer;
     background: rgba(163, 230, 53, 0.15);
     color: #a3e635;
     border: 1px solid rgba(163, 230, 53, 0.3);
   }
-  .btn-lime:hover {
+  .btn-accent:hover {
     background: rgba(163, 230, 53, 0.25);
     border-color: rgba(163, 230, 53, 0.5);
     box-shadow: 0 0 20px rgba(163, 230, 53, 0.15);
@@ -181,14 +181,14 @@ body {
 }
 
 /* Gradient text utility */
-.text-gradient {
+.text-gradient-accent {
   background: linear-gradient(135deg, #a3e635 0%, #86efac 50%, #fbbf24 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.text-gradient-hero {
+.text-gradient-accent-accent {
   background: linear-gradient(135deg, #f5f5f4 0%, #a3e635 30%, #86efac 60%, #fbbf24 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -196,10 +196,10 @@ body {
 }
 
 /* Glow effects */
-.glow-lime {
+.glow-accent {
   box-shadow: 0 0 60px rgba(163, 230, 53, 0.15), 0 0 120px rgba(163, 230, 53, 0.05);
 }
 
-.glow-lime-sm {
+.glow-accent {
   box-shadow: 0 0 20px rgba(163, 230, 53, 0.2);
 }
