@@ -3,7 +3,14 @@ import { resolveUser, auditLog } from '@/lib/auth';
 import { getDB, getKV, getEnv } from '@/lib/db';
 import { generateShortCode } from '@/lib/utils';
 import { TIER_LIMITS, type UrlRecord } from '@/lib/types';
-import { validateUrl, validateLength, validateFutureDate, clampInt, badRequest } from '@/lib/validate';
+import {
+  badRequest,
+  clampInt,
+  validateFutureDate,
+  validateLength,
+  validateSlug,
+  validateUrl,
+} from '@/lib/validate';
 import { rateLimit } from '@/lib/ratelimit';
 
 export const runtime = 'edge';
@@ -53,21 +60,35 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Validate custom code
+  // Validate custom code (reserved/NSFW check + DB uniqueness)
   if (custom_code) {
     if (!limits.customCodes) {
       return NextResponse.json({ error: 'Custom short codes require Pro tier or above' }, { status: 403 });
     }
     if (typeof custom_code !== 'string') return badRequest('custom_code must be a string');
-    if (!/^[a-zA-Z0-9_-]+$/.test(custom_code)) return badRequest('Custom code must be alphanumeric, hyphens, or underscores');
-    const codeErr = validateLength(custom_code, 'Custom code', 3, 32);
-    if (codeErr) return badRequest(codeErr);
+
+    const slugErr = validateSlug(custom_code);
+    if (slugErr) return badRequest(slugErr);
 
     const existing = await db.prepare('SELECT id FROM urls WHERE short_code = ?').bind(custom_code).first();
     if (existing) return NextResponse.json({ error: 'Short code already taken' }, { status: 409 });
   }
 
-  const shortCode = custom_code || generateShortCode();
+  // For auto-generated codes, retry up to 5 times if we hit a
+  // reserved/NSFW collision (extremely rare with a 6-char alphanum space).
+  let shortCode = custom_code;
+  if (!shortCode) {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = generateShortCode();
+      if (!validateSlug(candidate)) {
+        shortCode = candidate;
+        break;
+      }
+    }
+    if (!shortCode) {
+      return NextResponse.json({ error: 'Could not generate a safe slug, please retry' }, { status: 500 });
+    }
+  }
 
   const result = await db
     .prepare('INSERT INTO urls (user_id, short_code, original_url, title, expires_at) VALUES (?, ?, ?, ?, ?) RETURNING *')

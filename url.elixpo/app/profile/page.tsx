@@ -24,7 +24,7 @@ export default async function ProfilePage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-display font-bold text-text-primary mb-6">Profile</h1>
+      <h1 className="text-2xl font-sans font-bold text-text-primary mb-6">Profile</h1>
 
       <div className="grid grid-cols-2 gap-4 mb-6">
         {/* Account */}
@@ -42,9 +42,9 @@ export default async function ProfilePage() {
               <div className="text-lg font-semibold">{user.display_name}</div>
               <div className="text-sm text-text-secondary">{user.email}</div>
               <div className="flex gap-1.5 mt-1">
-                <span className="badge bg-lime-dim text-lime-main border border-lime-border capitalize">{user.tier}</span>
+                <span className="badge bg-accent-dim text-accent-main border border-accent-border capitalize">{user.tier}</span>
                 {user.role === 'admin' && (
-                  <span className="badge bg-honey-dim text-honey-main border border-honey-border">Admin</span>
+                  <span className="badge bg-accent-dim text-accent-light border border-accent-border">Admin</span>
                 )}
               </div>
             </div>
@@ -76,7 +76,7 @@ export default async function ProfilePage() {
               </div>
               {limits.maxUrls !== -1 && (
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                  <div className="h-full rounded-full bg-lime-main transition-all" style={{ width: `${Math.min(((urlCount?.count || 0) / limits.maxUrls) * 100, 100)}%` }} />
+                  <div className="h-full rounded-full bg-accent-main transition-all" style={{ width: `${Math.min(((urlCount?.count || 0) / limits.maxUrls) * 100, 100)}%` }} />
                 </div>
               )}
             </div>
@@ -86,7 +86,7 @@ export default async function ProfilePage() {
                 <span>{keyCount?.count || 0} / {limits.maxApiKeys}</span>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                <div className="h-full rounded-full bg-sage-main transition-all" style={{ width: `${Math.min(((keyCount?.count || 0) / limits.maxApiKeys) * 100, 100)}%` }} />
+                <div className="h-full rounded-full bg-accent-light transition-all" style={{ width: `${Math.min(((keyCount?.count || 0) / limits.maxApiKeys) * 100, 100)}%` }} />
               </div>
             </div>
             <div>

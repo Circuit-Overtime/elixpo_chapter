@@ -1,293 +1,220 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useState } from 'react';
+import BackgroundAurora from '../components/BackgroundAurora';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 
-const tiers = [
+const ACCENT = '#9b7bf7';
+
+const PLANNED_TIERS = [
   {
     name: 'Free',
-    price: '$0',
-    period: 'forever',
-    description: 'For personal projects and trying things out.',
-    accent: '#a1a1aa',
-    features: [
-      '25 short URLs',
-      '1 API key',
-      '7-day inactive link TTL',
-      'Auto-generated codes',
-      'Basic click counts',
-    ],
-    cta: 'Get Started',
-    popular: false,
+    tagline: 'For personal projects and trying things out.',
+    highlights: ['Generous link quota', '1 API key', 'Basic click analytics'],
   },
   {
-    name: 'Pro',
-    price: '$9',
-    period: '/month',
-    description: 'For creators and growing projects that need more control.',
-    accent: '#a3e635',
-    features: [
-      '500 short URLs',
-      '5 API keys',
-      '30-day analytics retention',
-      'No auto-removal of links',
-      'Custom short codes',
-      'Full analytics dashboard',
-      'Expiring links',
+    name: 'Core',
+    tagline: 'For makers shipping real apps.',
+    highlights: [
+      'Higher monthly limit',
+      'Multiple API keys',
+      'Click analytics, 30 days',
     ],
-    cta: 'Upgrade to Pro',
-    popular: true,
   },
   {
-    name: 'Business',
-    price: '$29',
-    period: '/month',
-    description: 'For teams and businesses that need scale and deep insights.',
-    accent: '#86efac',
-    features: [
-      '5,000 short URLs',
-      '20 API keys',
-      '90-day analytics retention',
-      'No auto-removal of links',
-      'Custom short codes',
-      'Full analytics dashboard',
-      'Expiring links',
-      'Priority support',
+    name: 'Growth',
+    tagline: 'For teams that need branded links and headroom.',
+    highlights: [
+      'Branded short domain',
+      'Long-retention analytics',
+      'Webhook delivery',
     ],
-    cta: 'Upgrade to Business',
-    popular: false,
   },
   {
     name: 'Enterprise',
-    price: 'Custom',
-    period: '',
-    description: 'For organizations with custom needs and unlimited scale.',
-    accent: '#fbbf24',
-    features: [
-      'Unlimited short URLs',
-      '100 API keys',
-      '365-day analytics retention',
-      'No auto-removal of links',
-      'Custom short codes',
-      'Full analytics dashboard',
-      'Expiring links',
-      'Dedicated support',
-      'Custom SLA',
-    ],
-    cta: 'Contact Us',
-    popular: false,
+    tagline: 'Talk to us.',
+    highlights: ['Custom limits', 'SLA + support', 'Single sign-on'],
   },
 ];
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: 0.2 + i * 0.12, duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
-  }),
-};
-
 export default function PricingPage() {
-  const [hoveredTier, setHoveredTier] = useState<string | null>(null);
-
   return (
-    <div className="min-h-screen bg-gradient-page overflow-hidden flex flex-col">
-      {/* Ambient glow */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div
-          className="absolute top-[10%] right-[20%] w-[500px] h-[500px] rounded-full opacity-[0.035]"
-          style={{ background: 'radial-gradient(circle, #a3e635, transparent 70%)' }}
-        />
-        <div
-          className="absolute bottom-[10%] left-[15%] w-[400px] h-[400px] rounded-full opacity-[0.025]"
-          style={{ background: 'radial-gradient(circle, #fbbf24, transparent 70%)' }}
-        />
+    <div className="min-h-screen flex flex-col text-[#f5f5f4] relative">
+      <BackgroundAurora variant="default" />
+
+      <div className="relative z-10">
+        <Navbar />
       </div>
 
-      <Navbar />
+      <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-4 md:px-6 pt-10 md:pt-16 pb-16">
+        <section className="text-center max-w-[720px] mx-auto flex flex-col items-center gap-5">
+          <span
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase"
+            style={{
+              background: 'rgba(155, 123, 247, 0.12)',
+              color: ACCENT,
+              border: '1px solid rgba(155, 123, 247, 0.3)',
+            }}
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{ background: ACCENT }}
+            />
+            Pricing — Coming soon
+          </span>
 
-      {/* Header */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 pt-20 pb-4 text-center">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="text-3xl sm:text-5xl md:text-6xl font-display font-bold leading-tight mb-5"
-        >
-          Simple, transparent{' '}
-          <span className="text-gradient">pricing</span>
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="text-lg text-text-secondary max-w-xl mx-auto"
-        >
-          Start free. Scale when you&apos;re ready. No hidden fees, no surprises.
-        </motion.p>
-      </section>
+          <h1
+            className="text-[2.2rem] md:text-[3.2rem] font-extrabold leading-[1.08] tracking-tight"
+            style={{
+              background: 'linear-gradient(180deg, #ffffff 0%, #c8c4d8 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Paid tiers are{' '}
+            <span style={{ color: ACCENT }}>almost ready.</span>
+          </h1>
 
-      {/* Pricing cards */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-16 flex-1">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
-          {tiers.map((tier, i) => {
-            const isHovered = hoveredTier === tier.name;
-            const isPopular = tier.popular;
+          <p
+            className="text-base md:text-[1.1rem] text-white/65 max-w-[620px] leading-relaxed"
+            style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
+          >
+            Until then, every account uses the Free tier — generous limits, no
+            credit card, no surprises. Drop us a line if you want first dibs
+            when Core, Growth, or Enterprise go live.
+          </p>
 
-            return (
-              <motion.div
-                key={tier.name}
-                custom={i}
-                initial="hidden"
-                animate="visible"
-                variants={cardVariants}
-                onMouseEnter={() => setHoveredTier(tier.name)}
-                onMouseLeave={() => setHoveredTier(null)}
-                className="relative flex flex-col rounded-2xl p-[1px] transition-all duration-500"
-                style={{
-                  background: isPopular
-                    ? 'linear-gradient(135deg, rgba(163,230,53,0.4), rgba(134,239,172,0.2), rgba(251,191,36,0.3))'
-                    : isHovered
-                      ? `linear-gradient(135deg, ${tier.accent}33, transparent)`
-                      : 'rgba(255,255,255,0.06)',
-                }}
-              >
-                <div
-                  className="flex flex-col flex-1 rounded-2xl p-7 transition-all duration-500"
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Link
+              href="/api/auth/login"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-semibold text-base text-white no-underline transition-all"
+              style={{
+                background:
+                  'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                boxShadow: '0 8px 24px rgba(155,123,247,0.35)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background =
+                  'linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)';
+                e.currentTarget.style.boxShadow =
+                  '0 12px 32px rgba(155,123,247,0.5)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background =
+                  'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)';
+                e.currentTarget.style.boxShadow =
+                  '0 8px 24px rgba(155,123,247,0.35)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              Start with Free
+            </Link>
+            <Link
+              href="/docs"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-medium text-base text-white/85 no-underline transition-all"
+              style={{ border: '1px solid rgba(255,255,255,0.12)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(155,123,247,0.4)';
+                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              Read the docs
+            </Link>
+          </div>
+        </section>
+
+        {/* Teaser cards — labelled "Coming soon" so expectations are clear */}
+        <section className="mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {PLANNED_TIERS.map((t) => (
+            <div
+              key={t.name}
+              className="p-6 rounded-[16px] relative"
+              style={{
+                background:
+                  'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(20px)',
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3
+                  className="text-[1.1rem] font-bold text-white"
+                  style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
+                >
+                  {t.name}
+                </h3>
+                <span
+                  className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full"
                   style={{
-                    background: isPopular
-                      ? 'linear-gradient(135deg, rgba(16,24,12,0.97), rgba(12,15,10,0.98))'
-                      : 'linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))',
-                    backdropFilter: 'blur(20px)',
-                    boxShadow: isPopular
-                      ? '0 0 60px rgba(163,230,53,0.08), 0 8px 32px rgba(0,0,0,0.4)'
-                      : isHovered
-                        ? '0 20px 40px -10px rgba(0,0,0,0.4)'
-                        : '0 8px 32px rgba(0,0,0,0.2)',
+                    background: 'rgba(255,255,255,0.06)',
+                    color: 'rgba(255,255,255,0.7)',
+                    border: '1px solid rgba(255,255,255,0.12)',
                   }}
                 >
-                  {/* Popular badge */}
-                  {isPopular && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.6, duration: 0.4 }}
-                      className="mb-4 self-start px-3 py-1 rounded-full text-[0.65rem] font-semibold uppercase tracking-wider"
-                      style={{
-                        background: 'rgba(163, 230, 53, 0.12)',
-                        border: '1px solid rgba(163, 230, 53, 0.25)',
-                        color: '#a3e635',
-                      }}
-                    >
-                      Most Popular
-                    </motion.div>
-                  )}
-
-                  {/* Tier name */}
-                  <h3
-                    className="text-lg font-display font-bold mb-1 transition-colors duration-300"
-                    style={{ color: isHovered || isPopular ? tier.accent : '#f5f5f4' }}
+                  Soon
+                </span>
+              </div>
+              <p
+                className="text-[0.9rem] text-white/60 leading-relaxed mb-4"
+                style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
+              >
+                {t.tagline}
+              </p>
+              <ul className="space-y-1.5 list-none p-0">
+                {t.highlights.map((h) => (
+                  <li
+                    key={h}
+                    className="text-[0.88rem] text-white/70 flex items-start gap-2"
                   >
-                    {tier.name}
-                  </h3>
-
-                  {/* Price */}
-                  <div className="flex items-baseline gap-1 mb-2">
                     <span
-                      className="text-4xl font-display font-extrabold tracking-tight transition-colors duration-300"
-                      style={{ color: tier.accent }}
-                    >
-                      {tier.price}
-                    </span>
-                    {tier.period && (
-                      <span className="text-sm text-text-disabled">{tier.period}</span>
-                    )}
-                  </div>
+                      className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full"
+                      style={{ background: ACCENT }}
+                    />
+                    {h}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
 
-                  {/* Description */}
-                  <p className="text-xs text-text-muted leading-relaxed mb-6">
-                    {tier.description}
-                  </p>
-
-                  {/* Divider */}
-                  <div
-                    className="h-px mb-6 transition-all duration-500"
-                    style={{
-                      background: isHovered || isPopular
-                        ? `linear-gradient(90deg, transparent, ${tier.accent}40, transparent)`
-                        : 'rgba(255,255,255,0.06)',
-                    }}
-                  />
-
-                  {/* Features */}
-                  <ul className="space-y-3 flex-1 mb-8">
-                    {tier.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2.5 text-sm text-text-secondary">
-                        <span
-                          className="mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 text-[0.6rem] font-bold"
-                          style={{
-                            background: `${tier.accent}18`,
-                            color: tier.accent,
-                            border: `1px solid ${tier.accent}30`,
-                          }}
-                        >
-                          &#10003;
-                        </span>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA */}
-                  <Link
-                    href="/api/auth/login"
-                    className="no-underline text-center py-3 rounded-xl text-sm font-semibold transition-all duration-300"
-                    style={{
-                      background: isPopular
-                        ? 'rgba(163, 230, 53, 0.15)'
-                        : isHovered
-                          ? `${tier.accent}15`
-                          : 'rgba(255,255,255,0.06)',
-                      color: isPopular || isHovered ? tier.accent : '#f5f5f4',
-                      border: `1px solid ${isPopular ? 'rgba(163,230,53,0.3)' : isHovered ? `${tier.accent}30` : 'rgba(255,255,255,0.1)'}`,
-                      boxShadow: isPopular
-                        ? '0 0 20px rgba(163,230,53,0.1)'
-                        : 'none',
-                    }}
-                  >
-                    {tier.cta}
-                  </Link>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* FAQ / Bottom CTA */}
-      <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-8 pb-24 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+        <section
+          className="mt-14 md:mt-20 p-6 md:p-8 rounded-[20px] text-center"
+          style={{
+            background:
+              'linear-gradient(135deg, rgba(155,123,247,0.12) 0%, rgba(95,182,255,0.05) 100%)',
+            border: '1px solid rgba(155,123,247,0.25)',
+          }}
         >
-          <p className="text-text-muted text-sm mb-2">
-            Need something custom?
+          <h2 className="text-[1.3rem] md:text-[1.7rem] font-bold text-white tracking-tight mb-2">
+            Building something on ElixpoURL?
+          </h2>
+          <p className="text-white/65 max-w-[520px] mx-auto mb-5 text-sm md:text-base">
+            Tell us what limits matter to your use case. Your input shapes the
+            paid tiers before they ship.
           </p>
-          <p className="text-text-secondary text-sm">
-            Contact us at{' '}
-            <span className="text-lime-main font-medium">support@elixpo.com</span>{' '}
-            for enterprise plans, volume discounts, or custom integrations.
-          </p>
-        </motion.div>
-      </section>
+          <a
+            href="mailto:hello@elixpo.com?subject=ElixpoURL%20pricing%20feedback"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] font-semibold text-sm text-white no-underline transition-all"
+            style={{
+              background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+              boxShadow: '0 6px 20px rgba(155,123,247,0.32)',
+            }}
+          >
+            Tell us what you need
+          </a>
+        </section>
+      </main>
 
-      <Footer />
+      <div className="relative z-10">
+        <Footer />
+      </div>
     </div>
   );
 }
