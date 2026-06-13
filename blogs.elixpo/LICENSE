@@ -1,6 +1,17 @@
-MIT License
+LixBlogs is provided under:
 
-Copyright (c) 2026 Ayushman Bhattacharya
+	SPDX-License-Identifier: MIT WITH Elixpo-trademarks
+
+Being under the terms of the MIT License, with an explicit trademark
+and naming exception, as stated below.
+
+All contributions to LixBlogs are subject to this LICENSE file.
+
+================================================================================
+MIT License
+================================================================================
+
+Copyright (c) 2026 Elixpo (Ayushman Bhattacharya) and the LixBlogs authors.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +30,38 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+================================================================================
+Elixpo-trademarks exception
+================================================================================
+
+Valid-License-Identifier: Elixpo-trademarks
+SPDX-Exception-Identifier: Elixpo-trademarks
+SPDX-Licenses: MIT
+
+The MIT License granted above covers the source code, configuration, and
+assets contained in this repository. It does NOT grant rights to the following
+names, marks, and brand assets:
+
+  - "Elixpo"
+  - "LixBlogs"
+  - "LixEditor" and "LixSketch"
+  - The Elixpo logo and any associated mascot character.
+
+These trademarks are reserved by Elixpo (Ayushman Bhattacharya) and the
+project's authors.
+
+You may:
+  - Use these names to identify the original project and to give credit to its
+    authors (e.g. "Powered by LixBlogs", "built with LixEditor").
+  - Reference them in articles, talks, tutorials, classroom material, and
+    documentation about the project.
+  - Show the logo in screenshots and demos of unmodified builds.
+
+You may not, without prior written permission:
+  - Use these names to brand a fork, derivative work, or hosted service.
+  - Imply endorsement of a derivative work by the original authors.
+  - Use the logo or mascot as the primary branding of a derivative product.
+
+For permission requests or trademark questions, contact:
+  hello@elixpo.com

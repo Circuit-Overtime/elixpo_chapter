@@ -8,6 +8,7 @@ const APP_ROUTES = new Set([
   'about', 'api', 'callback', 'edit', 'feed', 'handle', 'intro', 'library',
   'login', 'new-blog', 'notifications', 'profile', 'pricing', 'register', 'settings',
   'sign-in', 'sign-up', 'stats', 'stories', 'org',
+  'help', 'docs', 'privacy', 'terms',
   '_next', 'favicon.ico', 'logo.png', 'logo-dark.png', 'logo-light.png', 'base-logo.png',
 ]);
 
