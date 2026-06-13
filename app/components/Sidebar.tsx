@@ -88,6 +88,14 @@ const accountItems = [
   { href: '/profile/keys', label: 'API Keys', icon: Icons.key },
 ];
 
+// Marketing-surface text links rendered next to the brand. Kept as plain
+// text (not icons) so they read as navigation to a different surface than
+// the app-icon row on the right.
+const marketingLinks = [
+  { href: '/pricing', label: 'Pricing' },
+  { href: '/docs', label: 'Docs' },
+];
+
 export default function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
   const avatarUrl = getAvatarUrl(user);
@@ -141,13 +149,33 @@ export default function Sidebar({ user }: { user: User }) {
       className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 sm:px-6 h-14 border-b border-border-light"
       style={{ background: 'rgba(16, 18, 28, 0.92)', backdropFilter: 'blur(20px)' }}
     >
-      {/* Left: Logo */}
-      <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
-        <Image src="/logo.png" alt="ElixpoURL" width={26} height={26} className="rounded-lg" />
-        <span className="text-base font-sans font-bold text-text-primary hidden sm:inline">
-          <span className="text-accent-main">Elixpo</span>URL
-        </span>
-      </Link>
+      {/* Left: Logo + marketing links */}
+      <div className="flex items-center gap-1 sm:gap-4 shrink-0">
+        <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
+          <Image src="/logo.png" alt="ElixpoURL" width={26} height={26} className="rounded-lg" />
+          <span className="text-base font-sans font-bold text-text-primary hidden sm:inline">
+            <span className="text-accent-main">Elixpo</span>URL
+          </span>
+        </Link>
+        <nav className="hidden md:flex items-center gap-0.5 ml-2">
+          {marketingLinks.map((l) => {
+            const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="px-3 py-1.5 rounded-lg text-[0.85rem] font-medium no-underline transition-colors"
+                style={{
+                  color: active ? '#c8b6ff' : 'rgba(255,255,255,0.65)',
+                  background: active ? 'rgba(155,123,247,0.1)' : 'transparent',
+                }}
+              >
+                {l.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
 
       {/* Right: Nav icons + Account dropdown */}
       <div className="flex items-center gap-1 sm:gap-2">
