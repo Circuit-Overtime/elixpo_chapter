@@ -88,12 +88,28 @@ const accountItems = [
   { href: '/profile/keys', label: 'API Keys', icon: Icons.key },
 ];
 
-// Marketing-surface text links rendered next to the brand. Kept as plain
-// text (not icons) so they read as navigation to a different surface than
-// the app-icon row on the right.
+// Marketing-surface links next to the brand. Icon + label.
 const marketingLinks = [
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/docs', label: 'Docs' },
+  {
+    href: '/pricing',
+    label: 'Pricing',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]">
+        <circle cx="10" cy="10" r="7.5" />
+        <path d="M10 5v10M7 8.5h4.5a1.5 1.5 0 010 3H7m0 0H12a1.5 1.5 0 010 3H7" />
+      </svg>
+    ),
+  },
+  {
+    href: '/docs',
+    label: 'Docs',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]">
+        <path d="M5 3h8a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
+        <path d="M6 7h6M6 10h6M6 13h4" />
+      </svg>
+    ),
+  },
 ];
 
 export default function Sidebar({ user }: { user: User }) {
@@ -164,12 +180,15 @@ export default function Sidebar({ user }: { user: User }) {
               <Link
                 key={l.href}
                 href={l.href}
-                className="px-3 py-1.5 rounded-lg text-[0.85rem] font-medium no-underline transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.85rem] font-medium no-underline transition-colors"
                 style={{
                   color: active ? '#c8b6ff' : 'rgba(255,255,255,0.65)',
                   background: active ? 'rgba(155,123,247,0.1)' : 'transparent',
                 }}
               >
+                <span className={active ? 'opacity-100' : 'opacity-70'}>
+                  {l.icon}
+                </span>
                 {l.label}
               </Link>
             );
