@@ -8,13 +8,16 @@ export const metadata = {
 export default function HelpPage() {
   return (
     <AppShell>
-      <div className="max-w-2xl mx-auto px-6 py-12">
+      <div className="w-full max-w-3xl mx-auto px-6 py-20 flex flex-col items-center text-center">
+        <div className="h-14 w-14 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: 'var(--accent-subtle, rgba(155,123,247,0.1))' }}>
+          <ion-icon name="help-buoy-outline" style={{ fontSize: '28px', color: '#9b7bf7' }} />
+        </div>
         <h1 className="text-3xl font-extrabold mb-2" style={{ color: 'var(--text-primary)' }}>Help &amp; support</h1>
-        <p className="text-[15px] mb-8" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-[15px] mb-8 max-w-md" style={{ color: 'var(--text-muted)' }}>
           Need a hand, found a bug, or have a feature idea? Reach us either way:
         </p>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 w-full text-left">
           <a
             href="mailto:hello@elixpo.com"
             className="block rounded-2xl p-5 transition-colors"

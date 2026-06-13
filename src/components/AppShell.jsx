@@ -455,22 +455,11 @@ export default function AppShell({ children }) {
                 <ProfileDropdown user={user} logout={logout} />
               </>
             ) : (
-              <>
-                {/* "Sign In" text is hidden on phones — the icon button below covers it */}
-                <Link
-                  href="/sign-in"
-                  className="hidden sm:block text-[14px] transition-colors px-3 py-1.5 rounded-lg"
-                  style={{ color: 'var(--text-muted)' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
-                >
-                  Sign In
-                </Link>
-                <button onClick={handleLogin} className="text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] transition-colors rounded-full flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:px-4 sm:py-1.5" title="Get started">
-                  <span className="hidden sm:inline">Get Started</span>
-                  <span className="sm:hidden flex items-center justify-center"><ion-icon name="log-in-outline" style={{ fontSize: '18px' }} /></span>
-                </button>
-              </>
+              // Single sign-in entry point (Sign In and Get Started did the same thing).
+              <button onClick={handleLogin} className="text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] transition-colors rounded-full flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:px-4 sm:py-1.5" title="Sign in">
+                <span className="hidden sm:inline">Sign In</span>
+                <span className="sm:hidden flex items-center justify-center"><ion-icon name="log-in-outline" style={{ fontSize: '18px' }} /></span>
+              </button>
             )}
           </div>
         </div>
@@ -481,7 +470,7 @@ export default function AppShell({ children }) {
         {/* Left Sidebar */}
         <aside className="hidden lg:flex flex-col w-[220px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] px-4 py-6 justify-between" style={{ borderRight: '1px solid var(--border-default)' }}>
           <nav className="flex flex-col gap-1">
-            {NAV_ITEMS.map((item) => {
+            {NAV_ITEMS.filter((item) => user || item.href === '/').map((item) => {
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
               return (
                 <Link
@@ -500,7 +489,8 @@ export default function AppShell({ children }) {
                 </Link>
               );
             })}
-            {/* Settings — kept above the divider with the primary nav */}
+            {/* Settings — kept above the divider with the primary nav (signed-in only) */}
+            {user && (
             <Link
               href="/settings"
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] transition-colors"
@@ -514,6 +504,7 @@ export default function AppShell({ children }) {
               <ion-icon name="settings-outline" style={{ fontSize: '18px' }} />
               Settings
             </Link>
+            )}
           </nav>
 
           {/* Bottom: docs + legal (above the account), then the account card */}

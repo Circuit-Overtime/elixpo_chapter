@@ -8,7 +8,7 @@ export const metadata = {
 export default function TermsPage() {
   return (
     <AppShell>
-      <div className="max-w-2xl mx-auto px-6 py-12" style={{ color: 'var(--text-secondary)' }}>
+      <div className="w-full max-w-4xl mx-auto px-6 py-12 block" style={{ color: 'var(--text-secondary)' }}>
         <h1 className="text-3xl font-extrabold mb-1" style={{ color: 'var(--text-primary)' }}>Terms of Service</h1>
         <p className="text-[13px] mb-8" style={{ color: 'var(--text-faint)' }}>Last updated: June 2026</p>
 
@@ -28,6 +28,16 @@ export default function TermsPage() {
             <p className="text-[14px] leading-relaxed">{b}</p>
           </section>
         ))}
+
+        <section className="mb-6">
+          <h2 className="text-[16px] font-bold mb-1.5" style={{ color: 'var(--text-primary)' }}>License</h2>
+          <p className="text-[14px] leading-relaxed">
+            LixBlogs is open source under MIT with an Elixpo trademark exception. Read the full license at{' '}
+            <a href="https://github.com/elixpo/blogs.elixpo/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: 'var(--accent)' }}>
+              github.com/elixpo/blogs.elixpo/blob/main/LICENSE
+            </a>.
+          </p>
+        </section>
       </div>
     </AppShell>
   );
