@@ -1,10 +1,21 @@
 import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 
+const geistSans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+});
+
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+});
+
 const siteUrl = 'https://url.elixpo.com';
-const title = 'ElixpoURL - Fast URL Shortener on the Edge';
+const title = 'ElixpoURL: Fast URL Shortener on the Edge';
 const description =
-  'Shorten URLs at the speed of light. Lightning-fast redirects, powerful analytics, and a developer-first API — all running on Cloudflare\'s edge network.';
+  "Shorten URLs at the speed of light. Lightning-fast redirects, powerful analytics, and a developer-first API, all running on Cloudflare's edge network.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -13,20 +24,28 @@ export const metadata: Metadata = {
     template: '%s | ElixpoURL',
   },
   description,
+  applicationName: 'ElixpoURL',
+  alternates: {
+    canonical: '/',
+  },
   keywords: [
     'url shortener',
     'link shortener',
     'short links',
     'elixpo',
+    'elixpourl',
     'edge network',
-    'cloudflare',
-    'analytics',
-    'api',
+    'cloudflare workers',
+    'cloudflare d1',
+    'link analytics',
+    'short url api',
     'developer tools',
+    'open source',
   ],
   authors: [{ name: 'Elixpo', url: 'https://elixpo.com' }],
   creator: 'Elixpo',
   publisher: 'Elixpo',
+  category: 'developer tools',
   robots: {
     index: true,
     follow: true,
@@ -38,10 +57,6 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
-  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -52,9 +67,9 @@ export const metadata: Metadata = {
     images: [
       {
         url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'ElixpoURL — Fast URL Shortener on the Edge',
+        width: 1822,
+        height: 825,
+        alt: 'ElixpoURL: Fast URL Shortener on the Edge',
         type: 'image/png',
       },
     ],
@@ -65,6 +80,12 @@ export const metadata: Metadata = {
     description,
     images: ['/og-image.png'],
     creator: '@elixpo',
+    site: '@elixpo',
+  },
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
   },
 };
 
@@ -74,8 +95,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="overflow-x-hidden">
-      <body className="font-body antialiased overflow-x-hidden">{children}</body>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} overflow-x-hidden`}
+      suppressHydrationWarning
+    >
+      <body className="antialiased overflow-x-hidden font-sans">{children}</body>
     </html>
   );
 }
