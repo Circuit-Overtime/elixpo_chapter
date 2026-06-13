@@ -1,11 +1,13 @@
 'use client';
 
-type Variant = 'default' | 'auth' | 'warm';
+type Variant = 'default' | 'auth' | 'warm' | 'docs';
 
+// Palettes mirror accounts.elixpo so the ecosystem feels continuous.
 const PALETTES: Record<Variant, [string, string, string]> = {
   default: ['#9b7bf7', '#5fb6ff', '#7c5cff'],
   auth: ['#9b7bf7', '#ff7cc9', '#5fb6ff'],
   warm: ['#ff8a5b', '#ff5b9a', '#9b7bf7'],
+  docs: ['#6366f1', '#a855f7', '#3b82f6'],
 };
 
 interface Props {
@@ -18,8 +20,12 @@ export default function BackgroundAurora({ variant = 'default' }: Props) {
   return (
     <div
       aria-hidden
-      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden"
+      className="fixed inset-0 pointer-events-none overflow-hidden"
       style={{
+        // z-index 0 (not negative) so the aurora sits OVER the page wrapper's
+        // bg and UNDER content that's explicitly z-10+. A negative z-index
+        // would put it behind any wrapper with a solid background.
+        zIndex: 0,
         background:
           'linear-gradient(180deg, #0b0d12 0%, #11151c 50%, #0b0d12 100%)',
       }}

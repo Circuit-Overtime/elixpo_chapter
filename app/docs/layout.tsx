@@ -282,8 +282,8 @@ export default function DocsLayout({
   );
 
   return (
-    <div className="relative min-h-screen text-[#f5f5f4]" style={{ background: '#0b0d12' }}>
-      <BackgroundAurora variant="default" />
+    <div className="relative min-h-screen text-[#f5f5f4]">
+      <BackgroundAurora variant="docs" />
 
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Top app bar */}

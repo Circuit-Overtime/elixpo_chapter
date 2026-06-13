@@ -14,9 +14,9 @@ export default async function DashboardLayout({
   if (!user) redirect('/login');
 
   return (
-    <div className="min-h-screen relative" style={{ background: '#0b0d12' }}>
+    <div className="min-h-screen relative">
       <BackgroundAurora variant="default" />
-      <div className="relative z-10">
+      <div className="relative" style={{ zIndex: 1 }}>
         <Sidebar user={user} />
         <main className="px-4 sm:px-8 pb-4 sm:pb-8 pt-20 sm:pt-24">
           {children}

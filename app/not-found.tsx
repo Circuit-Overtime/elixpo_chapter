@@ -7,7 +7,7 @@ import BackgroundAurora from './components/BackgroundAurora';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-8 relative overflow-hidden" style={{ background: '#0b0d12' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-8 relative overflow-hidden">
       <BackgroundAurora variant="default" />
 
       <motion.div
