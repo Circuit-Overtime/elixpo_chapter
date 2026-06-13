@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveUser, auditLog } from '@/lib/auth';
+import { requireSameOrigin } from '@/lib/csrf';
 import { getDB, getKV } from '@/lib/db';
 import { validateUrl, validateLength, validateFutureDate, badRequest } from '@/lib/validate';
 import type { UrlRecord } from '@/lib/types';
@@ -20,6 +21,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ code: string }> }) {
+  const csrfErr = requireSameOrigin(request);
+  if (csrfErr) return csrfErr;
+
   const user = await resolveUser(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -82,6 +86,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ code: string }> }) {
+  const csrfErr = requireSameOrigin(request);
+  if (csrfErr) return csrfErr;
+
   const user = await resolveUser(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveUser, auditLog } from '@/lib/auth';
+import { requireSameOrigin } from '@/lib/csrf';
 import { getDB } from '@/lib/db';
 
 export const runtime = 'edge';
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const csrfErr = requireSameOrigin(request);
+  if (csrfErr) return csrfErr;
+
   const user = await resolveUser(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

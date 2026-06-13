@@ -6,7 +6,15 @@ export const runtime = 'edge';
 
 const SKIP_PATHS = new Set(['favicon.ico', 'robots.txt', 'sitemap.xml', '_next']);
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ code: string }> }) {
+// Sentinel value stored in KV when we've negatively cached a missing code.
+// Saves D1 reads when scanners hammer random slugs.
+const NEG_CACHE_VALUE = '__missing__';
+const NEG_CACHE_TTL = 60; // seconds — short enough that a real create wipes it
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ code: string }> },
+) {
   const { code } = await params;
 
   if (SKIP_PATHS.has(code)) {
@@ -18,10 +26,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // FAST PATH: KV cache — no DB hit at all
   const cached = await kv.get(`url:${code}`);
   if (cached) {
-    const { url, id } = JSON.parse(cached);
-    const db = getDB();
-    scheduleTracking(db, id, request);
-    return redirect(url);
+    // Negative cache hit — code is known-bad. Short-circuit to 404
+    // without touching D1.
+    if (cached === NEG_CACHE_VALUE) {
+      return notFoundPage(request);
+    }
+    try {
+      const { url, id } = JSON.parse(cached);
+      const db = getDB();
+      scheduleTracking(db, id, request);
+      return redirect(url);
+    } catch {
+      // Corrupted cache entry — fall through to D1 lookup and re-cache.
+      kv.delete(`url:${code}`).catch(() => {});
+    }
   }
 
   // SLOW PATH: D1 lookup
@@ -32,6 +50,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .first<{ id: number; original_url: string; is_active: number; expires_at: string | null }>();
 
   if (!urlRecord || !urlRecord.is_active) {
+    // Negative cache the miss so scanners don't keep burning D1 reads.
+    // Real creates populate the KV entry directly (see api/urls POST),
+    // which overwrites this sentinel.
+    kv.put(`url:${code}`, NEG_CACHE_VALUE, {
+      expirationTtl: NEG_CACHE_TTL,
+    }).catch(() => {});
     return notFoundPage(request);
   }
 
@@ -45,8 +69,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     ? Math.max(Math.floor((new Date(urlRecord.expires_at).getTime() - Date.now()) / 1000), 60)
     : 86400; // 24h default
 
-  kv.put(`url:${code}`, JSON.stringify({ url: urlRecord.original_url, id: urlRecord.id }), { expirationTtl: ttl })
-    .catch(() => {});
+  kv.put(
+    `url:${code}`,
+    JSON.stringify({ url: urlRecord.original_url, id: urlRecord.id }),
+    { expirationTtl: ttl },
+  ).catch(() => {});
 
   scheduleTracking(db, urlRecord.id, request);
   return redirect(urlRecord.original_url);

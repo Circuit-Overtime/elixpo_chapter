@@ -11,11 +11,16 @@ import {
   validateSlug,
   validateUrl,
 } from '@/lib/validate';
+import { requireSameOrigin } from '@/lib/csrf';
 import { rateLimit } from '@/lib/ratelimit';
 
 export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
+  // CSRF defense-in-depth (Lax cookie already blocks the common vector)
+  const csrfErr = requireSameOrigin(request);
+  if (csrfErr) return csrfErr;
+
   // 30 URL creations per minute per IP
   const limited = await rateLimit(request, 'url:create', 30, 60);
   if (limited) return limited;
