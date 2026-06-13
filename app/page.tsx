@@ -95,129 +95,125 @@ export default function LandingPage() {
         <Navbar />
       </div>
 
-      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 pt-8 md:pt-12 pb-16 md:pb-20">
-        {/* Hero */}
-        <section className="max-w-[820px] mx-auto text-center flex flex-col items-center gap-5">
-          <span
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase"
-            style={{
-              background: 'rgba(155, 123, 247, 0.12)',
-              color: ACCENT,
-              border: '1px solid rgba(155, 123, 247, 0.3)',
-            }}
-          >
+      {/* Video hero header — dimmed product pitch underneath, vignette pulls the gaze to the centered copy. */}
+      <section className="relative z-10 w-full max-w-7xl mx-auto px-4 md:px-6 mt-4 md:mt-6">
+        <div
+          className="video-hero w-full"
+          style={{
+            border: '1px solid rgba(155,123,247,0.18)',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.55)',
+          }}
+        >
+          <video
+            src="/product_pitch.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster="/og-image.png"
+            aria-hidden="true"
+          />
+
+          <div className="video-hero-content flex flex-col items-center text-center px-5 md:px-10 py-16 md:py-28 lg:py-32 max-w-[860px] mx-auto">
             <span
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ background: ACCENT }}
-            />
-            Built on Cloudflare&rsquo;s edge
-          </span>
-
-          <h1
-            className="text-[2.4rem] md:text-[3.6rem] font-extrabold leading-[1.08] tracking-tight"
-            style={{
-              background: 'linear-gradient(180deg, #ffffff 0%, #c8c4d8 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Short links.{' '}
-            <span style={{ color: ACCENT }}>For any app you ship.</span>
-          </h1>
-
-          <p
-            className="text-base md:text-[1.15rem] text-white/65 max-w-[640px] leading-relaxed"
-            style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
-          >
-            Open URL shortener with edge-fast redirects, real-time click
-            analytics, and a developer-first API. Born inside the Elixpo
-            ecosystem, free for any product or developer to use.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Link
-              href="/api/auth/login"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-semibold text-base text-white no-underline transition-all"
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase mb-5"
               style={{
-                background:
-                  'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                boxShadow: '0 8px 24px rgba(155,123,247,0.35)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background =
-                  'linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)';
-                e.currentTarget.style.boxShadow =
-                  '0 12px 32px rgba(155,123,247,0.5)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background =
-                  'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)';
-                e.currentTarget.style.boxShadow =
-                  '0 8px 24px rgba(155,123,247,0.35)';
-                e.currentTarget.style.transform = 'translateY(0)';
+                background: 'rgba(155, 123, 247, 0.18)',
+                color: '#fff',
+                border: '1px solid rgba(155, 123, 247, 0.45)',
+                backdropFilter: 'blur(8px)',
               }}
             >
-              Get started
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <span
+                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ background: ACCENT }}
+              />
+              Built on Cloudflare&rsquo;s edge
+            </span>
+
+            <h1
+              className="text-[2.2rem] md:text-[3.6rem] lg:text-[4rem] font-extrabold leading-[1.05] tracking-tight mb-5 text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)]"
+            >
+              Short links.{' '}
+              <span style={{ color: '#c8b6ff' }}>For any app you ship.</span>
+            </h1>
+
+            <p
+              className="text-base md:text-[1.15rem] text-white/85 max-w-[640px] leading-relaxed mb-7 drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
+              style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
+            >
+              Open URL shortener with edge-fast redirects, real-time click
+              analytics, and a developer-first API. Born inside the Elixpo
+              ecosystem, free for any product or developer to use.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/api/auth/login"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-semibold text-base text-white no-underline transition-all"
+                style={{
+                  background:
+                    'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                  boxShadow:
+                    '0 8px 24px rgba(155,123,247,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background =
+                    'linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background =
+                    'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
               >
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
-            </Link>
-            <Link
-              href="/docs"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-medium text-base text-white/85 no-underline transition-all"
-              style={{ border: '1px solid rgba(255,255,255,0.12)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(155,123,247,0.4)';
-                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              Integrator docs
-            </Link>
+                Get started
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </Link>
+              <Link
+                href="/docs"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-medium text-base text-white no-underline transition-all"
+                style={{
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  background: 'rgba(11,13,18,0.35)',
+                  backdropFilter: 'blur(8px)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor =
+                    'rgba(155,123,247,0.55)';
+                  e.currentTarget.style.background =
+                    'rgba(155,123,247,0.12)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor =
+                    'rgba(255,255,255,0.25)';
+                  e.currentTarget.style.background = 'rgba(11,13,18,0.35)';
+                }}
+              >
+                Integrator docs
+              </Link>
+            </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Product video */}
-        <section className="mt-12 md:mt-16 max-w-[960px] mx-auto">
-          <div
-            className="rounded-[20px] overflow-hidden"
-            style={{
-              border: '1px solid rgba(155,123,247,0.25)',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.45)',
-              background: 'rgba(11,13,18,0.5)',
-              backdropFilter: 'blur(12px)',
-            }}
-          >
-            <video
-              src="/product_pitch.mp4"
-              controls
-              playsInline
-              preload="metadata"
-              poster="/og-image.png"
-              className="w-full h-auto block"
-            >
-              <track kind="captions" />
-              Your browser does not support embedded video.
-            </video>
-          </div>
-        </section>
-
+      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 pt-12 md:pt-16 pb-16 md:pb-20">
         {/* Features */}
-        <section className="mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {FEATURES.map((f) => (
             <div
               key={f.title}
