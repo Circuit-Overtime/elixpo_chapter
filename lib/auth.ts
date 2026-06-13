@@ -85,7 +85,7 @@ export async function getUserFromApiKey(authHeader: string): Promise<User | null
     .run()
     .catch(() => {});
 
-  return {
+  return applyDevTierOverride({
     id: row.id,
     elixpo_id: row.elixpo_id,
     email: row.email,
@@ -96,7 +96,7 @@ export async function getUserFromApiKey(authHeader: string): Promise<User | null
     is_active: row.is_active,
     created_at: row.created_at,
     updated_at: row.updated_at,
-  };
+  });
 }
 
 // ─── Resolve user from session or API key ───────────────────

@@ -10,11 +10,11 @@ interface Props {
 }
 
 const QR_SIZE = 512; // canvas backbuffer px — sharp at any displayed size + clean for downloads
-// Logo coverage is conservative on purpose: smaller logo = fewer QR modules
-// obscured = better scan reliability. With a transparent PNG the QR is
-// already visible through the logo's negative space, so we don't need it
-// big to "feel embedded".
-const LOGO_RATIO = 0.18;
+// Logo coverage with the alpha-blend treatment below. 22% with an 85%
+// opacity overlay obscures very few QR modules — well inside H-level
+// ECC's 30% damage budget — and gives the panda enough presence to read.
+const LOGO_RATIO = 0.22;
+const LOGO_ALPHA = 0.85; // blend factor — QR modules show through under the panda
 const QR_DISPLAY = 220; // on-screen display size — locked in pixels so flex/grid can't blow it up
 
 /**
@@ -74,11 +74,16 @@ export default function QrCard({ shortUrl }: Props) {
         const x = (QR_SIZE - logoSize) / 2;
         const y = (QR_SIZE - logoSize) / 2;
 
-        // The logo PNG has transparent areas — we don't paint a white
-        // knockout behind it, so the QR modules show through the logo's
-        // transparency. Only the opaque pixels (the panda + chain art)
-        // sit on top of the QR. H-level ECC tolerates the obscured cells.
+        // Per-pixel alpha blend. The PNG's transparent regions reveal
+        // the QR underneath; the opaque panda art is drawn at LOGO_ALPHA
+        // (~85%), so even those pixels let the QR modules show through
+        // at reduced contrast. Net effect: the panda looks woven into
+        // the QR instead of pasted on top, and almost no modules are
+        // fully obscured.
+        ctx.save();
+        ctx.globalAlpha = LOGO_ALPHA;
         ctx.drawImage(img, x, y, logoSize, logoSize);
+        ctx.restore();
 
         if (!cancelled) setReady(true);
       } catch (err) {
@@ -110,6 +115,12 @@ export default function QrCard({ shortUrl }: Props) {
     <div
       className="p-6 rounded-2xl"
       style={{
+        // Hard width clamp so the QR card can never push past its grid
+        // column (320 desktop) or its mobile single-column row width.
+        width: '100%',
+        maxWidth: '320px',
+        boxSizing: 'border-box',
+        marginInline: 'auto',
         background:
           'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
         border: '1px solid rgba(255,255,255,0.08)',
@@ -133,18 +144,29 @@ export default function QrCard({ shortUrl }: Props) {
       </div>
 
       <div className="flex flex-col items-center gap-4 w-full">
-        {/* QR canvas — fixed pixel size so flex/grid context can't blow it
-            up. The internal canvas backbuffer is still 512px for clean
-            downloads; we just CSS-scale it to QR_DISPLAY on screen. */}
+        {/* QR canvas — sized in pixels with min/max constraints so neither
+            flex nor grid context can expand it. The internal canvas
+            backbuffer stays QR_SIZE px for sharp downloads; the CSS just
+            scales it down to QR_DISPLAY on screen. */}
         <div
-          className="rounded-xl flex items-center justify-center"
+          className="rounded-xl"
           style={{
             width: QR_DISPLAY + 16,
             height: QR_DISPLAY + 16,
+            minWidth: QR_DISPLAY + 16,
+            minHeight: QR_DISPLAY + 16,
+            maxWidth: QR_DISPLAY + 16,
+            maxHeight: QR_DISPLAY + 16,
+            flexShrink: 0,
+            flexGrow: 0,
             padding: 8,
+            boxSizing: 'border-box',
             background: '#ffffff',
             boxShadow:
               '0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(155,123,247,0.18)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <canvas
@@ -152,9 +174,12 @@ export default function QrCard({ shortUrl }: Props) {
             width={QR_SIZE}
             height={QR_SIZE}
             style={{
-              width: QR_DISPLAY,
-              height: QR_DISPLAY,
+              width: `${QR_DISPLAY}px`,
+              height: `${QR_DISPLAY}px`,
+              maxWidth: `${QR_DISPLAY}px`,
+              maxHeight: `${QR_DISPLAY}px`,
               display: 'block',
+              flexShrink: 0,
             }}
             aria-label={`QR code for ${shortUrl}`}
           />

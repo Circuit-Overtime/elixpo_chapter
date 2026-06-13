@@ -36,6 +36,15 @@ export default async function UrlDetailPage({
   }
 
   let analyticsData = null;
+  // Independent of analytics access: power the Export card with a real
+  // count + last-clicked stamp so it doesn't look empty.
+  const exportMeta = await db
+    .prepare(
+      'SELECT COUNT(*) as rows, MAX(clicked_at) as latest FROM clicks WHERE url_id = ? AND clicked_at >= ?',
+    )
+    .bind(url.id, since)
+    .first<{ rows: number; latest: string | null }>();
+
   if (limits.analytics) {
     const [timeline, countries, browsers, devices] = await Promise.all([
       db.prepare('SELECT DATE(clicked_at) as date, COUNT(*) as count FROM clicks WHERE url_id = ? AND clicked_at >= ? GROUP BY DATE(clicked_at) ORDER BY date')
@@ -122,29 +131,136 @@ export default async function UrlDetailPage({
           </div>
 
           {limits.analytics ? (
-            <div className="flex flex-col justify-between gap-4 h-[calc(100%-2.5rem)]">
-              <p className="text-sm text-white/65 leading-relaxed">
-                Download every click on this link as CSV — one row per
-                click, with timestamp, country, browser, device, and
-                referer. Useful for piping into your own BI tool.
-              </p>
-              <a
-                href={`/api/urls/${code}/clicks.csv`}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold no-underline text-white transition-all self-start"
-                style={{
-                  background:
-                    'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                  boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Download CSV
-              </a>
-            </div>
+            (() => {
+              const rows = exportMeta?.rows || 0;
+              const latest = exportMeta?.latest
+                ? new Date(exportMeta.latest)
+                : null;
+              const sizeEstimate = rows < 1 ? '< 1 KB' : `~${Math.max(1, Math.round((rows * 90) / 1024))} KB`;
+              return (
+                <div className="flex flex-col gap-4">
+                  <p className="text-sm text-white/65 leading-relaxed">
+                    Download every click on this link as CSV — one row per
+                    click, with timestamp, country, browser, device, and
+                    referer. Useful for piping into your own BI tool.
+                  </p>
+
+                  {/* Real numbers — keeps the card from feeling empty */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div
+                      className="px-3 py-2.5 rounded-lg"
+                      style={{
+                        background: 'rgba(255,255,255,0.025)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                      }}
+                    >
+                      <div className="text-[0.62rem] uppercase tracking-wider text-white/40 mb-0.5">
+                        Rows
+                      </div>
+                      <div className="text-base font-bold text-white tabular-nums">
+                        {rows.toLocaleString()}
+                      </div>
+                    </div>
+                    <div
+                      className="px-3 py-2.5 rounded-lg"
+                      style={{
+                        background: 'rgba(255,255,255,0.025)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                      }}
+                    >
+                      <div className="text-[0.62rem] uppercase tracking-wider text-white/40 mb-0.5">
+                        Size
+                      </div>
+                      <div className="text-base font-bold text-white tabular-nums">
+                        {sizeEstimate}
+                      </div>
+                    </div>
+                    <div
+                      className="px-3 py-2.5 rounded-lg"
+                      style={{
+                        background: 'rgba(255,255,255,0.025)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                      }}
+                    >
+                      <div className="text-[0.62rem] uppercase tracking-wider text-white/40 mb-0.5">
+                        Latest click
+                      </div>
+                      <div className="text-base font-bold text-white">
+                        {latest
+                          ? latest.toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                            })
+                          : '—'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Column preview — sets expectations for what's in the file */}
+                  <div>
+                    <div className="text-[0.62rem] uppercase tracking-wider text-white/40 mb-1.5">
+                      Columns
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        'clicked_at',
+                        'country',
+                        'city',
+                        'region',
+                        'device',
+                        'browser',
+                        'os',
+                        'referer',
+                        'ip_hash',
+                      ].map((col) => (
+                        <span
+                          key={col}
+                          className="text-[0.7rem] font-mono px-2 py-0.5 rounded-md text-white/70"
+                          style={{
+                            background: 'rgba(155,123,247,0.08)',
+                            border: '1px solid rgba(155,123,247,0.2)',
+                          }}
+                        >
+                          {col}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <a
+                    href={`/api/urls/${code}/clicks.csv`}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold no-underline transition-all self-start ${
+                      rows > 0 ? 'text-white' : 'pointer-events-none'
+                    }`}
+                    style={
+                      rows > 0
+                        ? {
+                            background:
+                              'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                            boxShadow:
+                              '0 4px 14px rgba(155,123,247,0.35)',
+                          }
+                        : {
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            color: 'rgba(255,255,255,0.4)',
+                          }
+                    }
+                    aria-disabled={rows === 0}
+                    tabIndex={rows > 0 ? 0 : -1}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    {rows > 0
+                      ? `Download CSV (${rows.toLocaleString()} row${rows === 1 ? '' : 's'})`
+                      : 'No clicks yet'}
+                  </a>
+                </div>
+              );
+            })()
           ) : (
             /* Free-tier upgrade prompt — centered both axes */
             <div className="flex flex-col items-center justify-center text-center gap-3 py-8 min-h-[180px]">
