@@ -226,6 +226,5 @@ body {
   z-index: 2;
 }
 .video-hero > .video-hero-content {
-  position: relative;
   z-index: 3;
 }
