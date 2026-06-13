@@ -1,9 +1,9 @@
-# Elixpo Pull Request Review — AI assistant via Pollinations
+# Elixpo Pull Request Review - AI assistant via Pollinations
 # Model is read from .github/ci_config.py (LLM_MODEL_AGENT)
 # Trigger: mention "@elixpoo" in an issue or PR comment
 # Whitelist: Elixpo org members (Circuit-Overtime, anwe-ch, elixpoo, ez-vivek)
 #
-# The bot acts as @elixpoo (via CI_AGENT_TOKEN — a PAT on that account).
+# The bot acts as @elixpoo (via CI_AGENT_TOKEN - a PAT on that account).
 # All comments, reviews, commits, and PRs are attributed to @elixpoo.
 
 name: Elixpo Pull Request Review
@@ -16,7 +16,7 @@ concurrency:
 
 on:
   # PR-side only. Issue events (including @elixpoo mentions in issue bodies
-  # or comments) are owned by issue-auto-fix.yml + issue-triage.yml — this
+  # or comments) are owned by issue-auto-fix.yml + issue-triage.yml - this
   # workflow must never fire on a plain issue, or we get dual-fire.
   issue_comment:                # only PR comments, filtered by the if: block
     types: [created]
@@ -29,7 +29,7 @@ on:
 
 jobs:
   elixpo:
-    # Skip if the triggering actor is elixpoo itself — loop prevention.
+    # Skip if the triggering actor is elixpoo itself - loop prevention.
     # PR-side work only. Issue comments go to issue-auto-fix.yml via the
     # `!github.event.issue.pull_request` guard there; we use the inverse
     # (`github.event.issue.pull_request` truthy) so the two workflows are
@@ -60,7 +60,7 @@ jobs:
         with:
           github-token: ${{ secrets.CI_AGENT_TOKEN }}
           script: |
-            // review_requested is a structured action (no free-text mention) —
+            // review_requested is a structured action (no free-text mention) -
             // the job-level `if` already checked the requested reviewer is
             // elixpoo. Skip the mention-regex check for this event.
             if (context.eventName !== 'pull_request') {
@@ -81,7 +81,7 @@ jobs:
 
               // Reject substring-only matches (e.g. @elixpoooo, @elixpoo-bot).
               if (!/(^|[^A-Za-z0-9_.+-])@elixpoo([^A-Za-z0-9_.+-]|$)/.test(body)) {
-                console.log('@elixpoo substring only, not a real mention — skipping.');
+                console.log('@elixpoo substring only, not a real mention - skipping.');
                 core.setOutput('authorized', 'false');
                 return;
               }
@@ -150,13 +150,13 @@ jobs:
           cp config-src/.github/ccr-adapters/*.js $HOME/.claude-code-router/ 2>/dev/null || true
           NORMALIZE_ADAPTER="$HOME/.claude-code-router/openai-normalize.js"
           TOOL_PATCHER="$HOME/.claude-code-router/tool-schema-patcher.js"
-          # Two providers — main (cheap key, gemini) + coder (separate key for
+          # Two providers - main (cheap key, gemini) + coder (separate key for
           # qwen-coder). Background subagent work (code-heavy) goes to coder
           # to keep costs split from the main agentic thread.
           #
           # Transformer order for coder: openai → tool-schema-patcher → maxtoken.
           # tool-schema-patcher backfills `parameters: {type:"object",...}` on any
-          # tool missing it — qwen-coder rejects tool lists without it with a 400,
+          # tool missing it - qwen-coder rejects tool lists without it with a 400,
           # and WebSearch / some MCP tools ship without a parameters schema.
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
@@ -217,7 +217,7 @@ jobs:
           token: ${{ secrets.CI_AGENT_TOKEN }}
 
       # When the checkout ref is refs/pull/N/head, `origin/main` may not be
-      # resolvable locally — `git diff origin/main...HEAD` then fails with
+      # resolvable locally - `git diff origin/main...HEAD` then fails with
       # "no merge base". Fetch main explicitly so the three-dot diff works.
       - name: Fetch main for diffs
         if: steps.whitelist.outputs.authorized == 'true'
@@ -246,13 +246,13 @@ jobs:
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
 
       # Build the prompt by inlining the repo context snapshot. The model
-      # gets the cold repo context up front — same advantage a human using
-      # ccr in their terminal has — so it doesn't waste turns on discovery.
+      # gets the cold repo context up front - same advantage a human using
+      # ccr in their terminal has - so it doesn't waste turns on discovery.
       - name: Build prompt body
         if: steps.whitelist.outputs.authorized == 'true'
         id: build_prompt
         run: |
-          CTX="(context artifact missing — fall back to Glob/Grep discovery)"
+          CTX="(context artifact missing - fall back to Glob/Grep discovery)"
           if [ -f .elixpo-context/context.md ]; then
             CTX=$(cat .elixpo-context/context.md)
           fi
@@ -268,28 +268,28 @@ jobs:
             echo ""
             echo "## Your task"
             echo ""
-            echo "This is a PR-side event. Read the trigger ONCE (gh pr view --comments) and pick ONE of four paths. Aim to finish in under 3 minutes — pick the tool that minimises CCR roundtrips."
+            echo "This is a PR-side event. Read the trigger ONCE (gh pr view --comments) and pick ONE of four paths. Aim to finish in under 3 minutes - pick the tool that minimises CCR roundtrips."
             echo ""
-            echo "1. **REVIEW** — user asked for a review, approval, LGTM, or 'look at this'."
+            echo "1. **REVIEW** - user asked for a review, approval, LGTM, or 'look at this'."
             echo "   - Submit ONE 'gh pr review --approve' or 'gh pr review --request-changes' with a short bullet body ending in 'Merge-readiness: READY' or 'Merge-readiness: NEEDS CHANGES'. Stop."
             echo ""
-            echo "2. **SMALL CODE FIX (1-3 files, ~3 min)** — a targeted fix. Covers: user reports something broken, review spotted an issue, a small tweak requested in the thread, a nit to apply. Up to ~3 files, medium-easy."
+            echo "2. **SMALL CODE FIX (1-3 files, ~3 min)** - a targeted fix. Covers: user reports something broken, review spotted an issue, a small tweak requested in the thread, a nit to apply. Up to ~3 files, medium-easy."
             echo "   - 1-3 file surgical edits → Read + Edit/MultiEdit."
             echo "   - Bulk find/replace across several spots → python .github/scripts/apply_refactor.py with a JSON plan on stdin (one call, deterministic)."
-            echo "   - You are ALREADY on the PR's head branch — commit + push there directly, do NOT open a new PR."
-            echo "   - Do NOT run ./biome.sh — the CI biome workflow checks the PR separately."
+            echo "   - You are ALREADY on the PR's head branch - commit + push there directly, do NOT open a new PR."
+            echo "   - Do NOT run ./biome.sh - the CI biome workflow checks the PR separately."
             echo "   - End with ONE 'gh pr comment' summarising the fix (what you changed, which files). Stop."
             echo ""
-            echo "3. **DECLINE (too big / architectural)** — large feature work, cross-module refactor, security-sensitive logic, DB migration-heavy, anything you can't confidently ship in <3 min."
+            echo "3. **DECLINE (too big / architectural)** - large feature work, cross-module refactor, security-sensitive logic, DB migration-heavy, anything you can't confidently ship in <3 min."
             echo "   - Post ONE 'gh pr comment' politely saying the scope is beyond an auto-fix, with a 1-2 sentence reason suggesting how the author could split it. Stop."
             echo ""
-            echo "4. **CONVERSE / CLARIFY** — the ask is a question, discussion, or requires editing the PR description itself."
+            echo "4. **CONVERSE / CLARIFY** - the ask is a question, discussion, or requires editing the PR description itself."
             echo "   - For a question / explanation → post ONE 'gh pr comment' with a helpful reply."
             echo "   - To improve the PR DESCRIPTION (author asks you to rewrite, tighten, or enrich the PR body) → use 'gh pr edit ${{ github.event.issue.number || github.event.pull_request.number }} --body \"<new body>\"'. Preserve any intent the author explicitly expressed. Do NOT @-tag the author inside the body."
             echo "   - For an ambiguous ask → post ONE 'gh pr comment' with the specific clarifying questions needed."
             echo "   - After the single action, STOP."
             echo ""
-            echo "Identity: you are elixpoo, a teammate — never mention Claude, Claude Code, AI, or LLMs. Bullets, not verbose prose. Never commit to main. The repo context above is cold but current — prefer it over re-exploring the tree."
+            echo "Identity: you are elixpoo, a teammate - never mention Claude, Claude Code, AI, or LLMs. Bullets, not verbose prose. Never commit to main. The repo context above is cold but current - prefer it over re-exploring the tree."
             echo 'PROMPT_EOF'
           } >> "$GITHUB_OUTPUT"
 
@@ -307,10 +307,10 @@ jobs:
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           trigger_phrase: "@elixpoo"
           branch_prefix: "elixpo/"
-          # No allowed_tools cap — every Claude Code tool is available.
+          # No allowed_tools cap - every Claude Code tool is available.
           # Task routes to CCR 'background' = qwen-coder for code-heavy work.
           prompt: ${{ steps.build_prompt.outputs.prompt }}
-          # Required for CI — without this, claude-code's default permission
+          # Required for CI - without this, claude-code's default permission
           # mode prompts for approval on Bash/Edit/Write and the agent stalls
           # with `"This command requires approval"`. Safe here: ephemeral
           # sandbox, branch-protected main, every change lands through a PR.
@@ -338,7 +338,7 @@ jobs:
           COMMENT_ID=$(gh api "repos/$REPO/issues/$ISSUE_OR_PR/comments" --paginate \
             --jq '[.[] | select(.user.login=="elixpoo" and ((.body|contains("Claude finished")) or (.body|contains("Claude Code")) or (.body|contains("Generated with Claude"))))] | last | .id')
           if [ -z "$COMMENT_ID" ] || [ "$COMMENT_ID" = "null" ]; then
-            echo "No Claude-branded comment found — nothing to strip."
+            echo "No Claude-branded comment found - nothing to strip."
             exit 0
           fi
 
@@ -381,7 +381,7 @@ jobs:
           done
 
           if [ -z "$BRANCH" ]; then
-            echo "No elixpo/issue-$ISSUE_NUMBER-* branch without an open PR — nothing to do."
+            echo "No elixpo/issue-$ISSUE_NUMBER-* branch without an open PR - nothing to do."
             exit 0
           fi
           echo "Found branch: $BRANCH (no open PR)"
@@ -442,7 +442,7 @@ jobs:
             | grep -vE "^\s*$" \
             | tail -8)
           if [ -z "$ERROR_TAIL" ]; then
-            ERROR_TAIL="(no structured error captured — open the run logs)"
+            ERROR_TAIL="(no structured error captured - open the run logs)"
           fi
           # Strip any accidental token leakage and keep it under GitHub's
           # comment size sanity limit.

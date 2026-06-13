@@ -1,4 +1,4 @@
-# Elixpo CI — Drop-in workflow for all elixpo projects.
+# Elixpo CI - Drop-in workflow for all elixpo projects.
 # Copy this file to .github/workflows/elixpo-ci.yml in your project.
 # Configure your project in .elixpo/project.yml
 #
@@ -24,7 +24,7 @@ on:
   issue_comment:
     types: [created]
   schedule:
-    - cron: "0 9 * * 1"  # Weekly Monday 9 AM UTC — stale cleanup
+    - cron: "0 9 * * 1"  # Weekly Monday 9 AM UTC - stale cleanup
 
 jobs:
   # ── Common CI (no LLM) ──────────────────────────────
@@ -71,7 +71,7 @@ jobs:
       POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
       GIST_TOKEN: ${{ secrets.CI_GIST_TOKEN }}
 
-  # ── Agentic (full agent engine) — COMING SOON ───────
+  # ── Agentic (full agent engine) - COMING SOON ───────
   #
   # solve-issue:
   #   if: github.event_name == 'issues' && github.event.label.name == 'elixpo'

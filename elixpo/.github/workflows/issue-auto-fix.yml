@@ -1,7 +1,7 @@
-# Elixpo Auto Code — handle issue work
+# Elixpo Auto Code - handle issue work
 # Triggers:
 #   - ELIXPO label added (from triage or manually)
-#   - @elixpoo mentioned in a comment on an issue (NOT a PR — pr-review-request.yml owns that)
+#   - @elixpoo mentioned in a comment on an issue (NOT a PR - pr-review-request.yml owns that)
 # Whitelist: Elixpo org members (Circuit-Overtime, anwe-ch, elixpoo, ez-vivek)
 #
 # The bot reads the issue, then either:
@@ -58,7 +58,7 @@ jobs:
             if (context.eventName === 'issue_comment') {
               const body = context.payload.comment?.body || '';
               if (!/(^|[^A-Za-z0-9_.+-])@elixpoo([^A-Za-z0-9_.+-]|$)/.test(body)) {
-                console.log('@elixpoo substring only — skipping.');
+                console.log('@elixpoo substring only - skipping.');
                 core.setOutput('authorized', 'false');
                 return;
               }
@@ -115,7 +115,7 @@ jobs:
             gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=rocket || true
           fi
 
-          # Pull models from ci_config.py — single source of truth
+          # Pull models from ci_config.py - single source of truth
           cd config-src
           AGENT_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_AGENT; print(LLM_MODEL_AGENT)")
           CODE_MODEL=$(python3 -c "import sys; sys.path.insert(0,'.github'); from ci_config import LLM_MODEL_CODE; print(LLM_MODEL_CODE)")
@@ -124,10 +124,10 @@ jobs:
           cd ..
 
           # Router wiring (models come from ci_config.py, NOT hardcoded here):
-          #   default    → AGENT_MODEL  — main agentic thread
-          #   background → CODE_MODEL   — delegated code-heavy subagent work
-          #   rocket   → THINK_MODEL  — reasoning-heavy steps
-          #   webSearch  → SEARCH_MODEL — when explicit web lookup is needed
+          #   default    → AGENT_MODEL  - main agentic thread
+          #   background → CODE_MODEL   - delegated code-heavy subagent work
+          #   rocket   → THINK_MODEL  - reasoning-heavy steps
+          #   webSearch  → SEARCH_MODEL - when explicit web lookup is needed
           echo "Router models: default=$AGENT_MODEL, background=$CODE_MODEL, rocket=$THINK_MODEL, webSearch=$SEARCH_MODEL"
 
           mkdir -p $HOME/.claude-code-router
@@ -135,7 +135,7 @@ jobs:
           # router can load them by absolute path.
           cp config-src/.github/ccr-adapters/*.js $HOME/.claude-code-router/ 2>/dev/null || true
           NORMALIZE_ADAPTER="$HOME/.claude-code-router/openai-normalize.js"
-          # Two providers — main (cheap key) + coder (separate key for qwen-coder).
+          # Two providers - main (cheap key) + coder (separate key for qwen-coder).
           # Transformer order: openai-normalize → openai → maxtoken.
           # openai-normalize flattens Anthropic-style structured content
           # (multi-block text arrays, cache_control, tool_use/tool_result) to
@@ -143,7 +143,7 @@ jobs:
           # (kimi, qwen-coder, perplexity-*, gemini, glm) require. Anthropic-
           # native models pass through unchanged.
           # Custom transformers MUST be registered at top-level "transformers"
-          # — CCR resolves strings in "use" as registered names, not paths.
+          # - CCR resolves strings in "use" as registered names, not paths.
           cat > $HOME/.claude-code-router/config.json <<EOF
           {
             "LOG": false,
@@ -183,7 +183,7 @@ jobs:
 
           # Start router
           bunx @musistudio/claude-code-router start &
-          # Wait up to 60s for the router to be ready — fail fast if bunx
+          # Wait up to 60s for the router to be ready - fail fast if bunx
           # couldn't install or exited.
           for i in $(seq 1 120); do
             curl -s http://localhost:3456 >/dev/null && break
@@ -207,7 +207,7 @@ jobs:
       # Pull the pre-built repo-context artifact (.elixpo-context/context.md)
       # produced by artifact-update.yml on every push to main. Injected
       # inline into the agent's prompt below so the model never has to
-      # ls/tree/Glob-to-discover — it already has the cold repo context
+      # ls/tree/Glob-to-discover - it already has the cold repo context
       # the way a human using ccr in their terminal does.
       - name: Download repo-context artifact
         if: steps.whitelist.outputs.authorized == 'true'
@@ -225,7 +225,7 @@ jobs:
         if: steps.whitelist.outputs.authorized == 'true'
         id: build_prompt
         run: |
-          CTX="(context artifact missing — fall back to Glob/Grep discovery)"
+          CTX="(context artifact missing - fall back to Glob/Grep discovery)"
           if [ -f .elixpo-context/context.md ]; then
             CTX=$(cat .elixpo-context/context.md)
           fi
@@ -241,27 +241,27 @@ jobs:
             echo "Fetch the full issue body + comments once:"
             echo "  gh issue view ${{ github.event.issue.number }} --comments"
             echo ""
-            echo "Then pick ONE of four paths. Aim to finish in under 3 minutes — pick the tool that minimises CCR roundtrips."
+            echo "Then pick ONE of four paths. Aim to finish in under 3 minutes - pick the tool that minimises CCR roundtrips."
             echo ""
-            echo "1. **IMPLEMENT (small PR)** — only if the ask is small and clear: up to ~10 files, mechanical or surgical, no ambiguous design choices."
+            echo "1. **IMPLEMENT (small PR)** - only if the ask is small and clear: up to ~10 files, mechanical or surgical, no ambiguous design choices."
             echo "   - Bulk find/replace / renames / theme swaps → python .github/scripts/apply_refactor.py with a JSON plan on stdin (one call, deterministic, no per-file roundtrip)."
             echo "   - 1-3 file surgical edits → Read + Edit/MultiEdit."
             echo "   - Branch: elixpo/issue-${{ github.event.issue.number }}-<hex>. Commit, push, open PR titled '[ELIXPO] <title>' with body ending 'Fixes #${{ github.event.issue.number }}'."
-            echo "   - Do NOT run ./biome.sh — the CI biome workflow checks the PR separately."
+            echo "   - Do NOT run ./biome.sh - the CI biome workflow checks the PR separately."
             echo ""
-            echo "2. **DECLINE (too big / needs judgement)** — multi-module features, architectural changes, security-sensitive logic, DB-migration-heavy work. Anything you can't confidently ship in <3 min."
+            echo "2. **DECLINE (too big / needs judgement)** - multi-module features, architectural changes, security-sensitive logic, DB-migration-heavy work. Anything you can't confidently ship in <3 min."
             echo "   - Post ONE 'gh issue comment ${{ github.event.issue.number }}' politely saying the scope needs manual implementation, with a 1-2 sentence reason. Stop."
             echo ""
-            echo "3. **CONVERSE** — the ask is a question, discussion, clarification, or a request to improve the issue itself."
+            echo "3. **CONVERSE** - the ask is a question, discussion, clarification, or a request to improve the issue itself."
             echo "   - For a question / LGTM / explanation → post ONE 'gh issue comment ${{ github.event.issue.number }}' with a helpful reply."
             echo "   - To improve the ISSUE DESCRIPTION (the reporter asks you to rewrite, tighten, or enrich it) → use 'gh issue edit ${{ github.event.issue.number }} --body \"<new body>\"'. Preserve anything the reporter explicitly wrote; do NOT tag the reporter inside the body. End the body with: '### Questions from @elixpoo' (only if any), then tag '@elixpoo' (not the reporter) and say 'answering these will make the description richer, or label the issue with ELIXPO to let elixpoo solve it.'"
             echo "   - To add supplementary information → post ONE 'gh issue comment' with the extra info."
             echo "   - After the single action, STOP."
             echo ""
-            echo "4. **CLARIFY (ambiguous ask)** — you cannot tell what the user wants."
+            echo "4. **CLARIFY (ambiguous ask)** - you cannot tell what the user wants."
             echo "   - Post ONE 'gh issue comment' with the specific questions needed to proceed. Stop."
             echo ""
-            echo "Never commit to main. Never fabricate test results. The repo context above is cold but current — prefer it over re-exploring the tree."
+            echo "Never commit to main. Never fabricate test results. The repo context above is cold but current - prefer it over re-exploring the tree."
             echo 'PROMPT_EOF'
           } >> "$GITHUB_OUTPUT"
 
@@ -278,13 +278,13 @@ jobs:
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           branch_prefix: "elixpo/"
-          # No allowed_tools cap — every Claude Code tool is available
+          # No allowed_tools cap - every Claude Code tool is available
           # (Read / Edit / Write / MultiEdit / Glob / Grep / Bash / BashOutput /
           # TodoWrite / Task / WebFetch / WebSearch / NotebookEdit / Skill / ...).
           # Task routes to CCR 'background' = qwen-coder, so code-heavy
           # multi-file work can be delegated to the coder-tuned model.
           prompt: ${{ steps.build_prompt.outputs.prompt }}
-          # Required for CI — without this, claude-code's default permission
+          # Required for CI - without this, claude-code's default permission
           # mode prompts for approval on Bash/Edit/Write and the agent stalls
           # with `"This command requires approval"`. Safe here: ephemeral
           # sandbox, branch-protected main, every change lands through a PR.
@@ -310,7 +310,7 @@ jobs:
           COMMENT_ID=$(gh api "repos/$REPO/issues/$ISSUE_NUMBER/comments" --paginate \
             --jq '[.[] | select(.user.login=="elixpoo" and ((.body|contains("Claude finished")) or (.body|contains("Claude Code")) or (.body|contains("Generated with Claude"))))] | last | .id')
           if [ -z "$COMMENT_ID" ] || [ "$COMMENT_ID" = "null" ]; then
-            echo "No Claude-branded comment found — nothing to strip."
+            echo "No Claude-branded comment found - nothing to strip."
             exit 0
           fi
 
@@ -342,7 +342,7 @@ jobs:
           set -e
 
           # Pick the first elixpo/* branch for this issue that has no OPEN PR.
-          # Closed/merged PRs don't count — those represent previous attempts,
+          # Closed/merged PRs don't count - those represent previous attempts,
           # so we create a fresh PR for the new branch.
           BRANCHES=$(gh api "repos/$REPO/branches?per_page=100" --paginate \
             --jq ".[] | select(.name | startswith(\"elixpo/\") and contains(\"issue-$ISSUE_NUMBER\")) | .name")
@@ -357,7 +357,7 @@ jobs:
           done
 
           if [ -z "$BRANCH" ]; then
-            echo "No elixpo/issue-$ISSUE_NUMBER-* branch without an open PR — nothing to do."
+            echo "No elixpo/issue-$ISSUE_NUMBER-* branch without an open PR - nothing to do."
             exit 0
           fi
           echo "Found branch: $BRANCH (no open PR)"

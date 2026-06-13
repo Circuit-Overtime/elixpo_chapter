@@ -9,5 +9,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
     },
     sitemap: "https://elixpo.com/sitemap.xml",
+    host: "https://elixpo.com",
   };
 }

@@ -3,7 +3,7 @@
 #   2. Categorize, set priority, assign to the right project board (triage_issue.py)
 #
 # Both run sequentially on the same runner so triage always sees the final
-# body — triage_issue.py re-fetches title/body from the API to get the fresh
+# body - triage_issue.py re-fetches title/body from the API to get the fresh
 # value written by the description step.
 
 name: Issue Triage

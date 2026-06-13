@@ -1,5 +1,5 @@
 """
-pr_assign.py — Assign PRs when opened.
+pr_assign.py - Assign PRs when opened.
 
 Always assigns the PR author. For external contributors (not in ORG_MEMBERS),
 uses the LLM to pick the best maintainer as a reviewer based on changed files,
@@ -91,12 +91,12 @@ def main():
     )
     print(f"Assigned PR #{pr_number} to author @{pr_author}")
 
-    # 2. Org member? Nothing more to do — assignee is visible in the sidebar.
+    # 2. Org member? Nothing more to do - assignee is visible in the sidebar.
     if pr_author in ORG_MEMBERS:
         print("Org member opened PR; assignee set, no further action")
         return
 
-    # 3. External contributor — fetch changed files and pick a reviewer.
+    # 3. External contributor - fetch changed files and pick a reviewer.
     files_data = safe_api(
         "GET",
         f"/repos/{repo}/pulls/{pr_number}/files?per_page=100",
@@ -106,7 +106,7 @@ def main():
     print(f"Changed files ({len(changed_files)}): {changed_files[:10]}{'...' if len(changed_files) > 10 else ''}")
 
     chosen, reason = pick_reviewer(pr_title, pr_body, changed_files)
-    print(f"Chosen reviewer: {chosen} — {reason}")
+    print(f"Chosen reviewer: {chosen} - {reason}")
 
     # 4. Request review (PR author cannot review their own PR).
     if chosen != pr_author:
@@ -128,7 +128,7 @@ def main():
         description="assign maintainer",
     )
     print(f"Added @{chosen} as assignee")
-    # No summary comment — the assignee + review-request are already visible
+    # No summary comment - the assignee + review-request are already visible
     # in the PR sidebar. (LLM's reasoning stays in the job log.)
     print(f"Reviewer reasoning (log-only): {reason}")
 

@@ -1,7 +1,7 @@
 {
   "brand": {
     "name": "Elixpo",
-    "logo": "/logo.png"
+    "logo": "/logos/logo.webp"
   },
   "links": [
     { "label": "Projects", "href": "/projects" },

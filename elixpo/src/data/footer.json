@@ -4,14 +4,14 @@
     "tagline": "Open, Ethical, Accessible AI for Everyone."
   },
   "contact": {
-    "email": "contact@elixpo.com"
+    "email": "hello@elixpo.com"
   },
   "columns": [
     {
       "title": "Community",
       "links": [
         { "label": "GitHub", "href": "https://github.com/elixpo/elixpo_chapter" },
-        { "label": "Discussions", "href": "https://github.com/elixpo/elixpo_chapter/discussions" },
+        { "label": "Discussions", "href": "https://github.com/orgs/elixpo/discussions" },
         { "label": "Contributing Guide", "href": "/contributing" },
         { "label": "Code of Conduct", "href": "/code-of-conduct" }
       ]
@@ -28,8 +28,8 @@
   ],
   "socials": [
     { "platform": "github", "href": "https://github.com/elixpo/elixpo_chapter" },
-    { "platform": "discord", "href": "https://discord.gg/elixpo" },
+    { "platform": "discussions", "href": "https://github.com/orgs/elixpo/discussions" },
     { "platform": "twitter", "href": "https://twitter.com/elixpo" }
   ],
-  "copyright": "2023-2026 Elixpo. Licensed under GNU GPL-3.0."
+  "copyright": "2023-2026 Elixpo. Licensed under MIT & CC-BY-4.0."
 }

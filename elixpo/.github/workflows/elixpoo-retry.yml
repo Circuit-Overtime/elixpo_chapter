@@ -68,5 +68,5 @@ jobs:
               --body "🔄 Re-running: $RUN_URL"
           else
             gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
-              --body "> Failed to trigger retry for $RUN_URL — re-run manually from the Actions tab."
+              --body "> Failed to trigger retry for $RUN_URL - re-run manually from the Actions tab."
           fi

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Issue Triage Bot — accounts.elixpo
+Issue Triage Bot - accounts.elixpo
 Categorizes and prioritizes new GitHub issues via LLM, then files them
 into the matching per-category GitHub Project V2 with labels and a comment.
 """
@@ -40,7 +40,7 @@ DEFAULT_CATEGORY = "Support"
 DEFAULT_PRIORITY = "Medium"
 DEFAULT_SUMMARY = "Awaiting manual triage"
 
-# ── Label colors (hex, no #) — all labels are UPPERCASE ──────────────────
+# ── Label colors (hex, no #) - all labels are UPPERCASE ──────────────────
 LABEL_COLORS = {
     "FEATURE": "a2eeef",
     "BUGS": "d73a4a",
@@ -76,7 +76,7 @@ def triage_llm(title: str, body: str, include_category: bool) -> dict:
     else:
         system_prompt = (
             f"You are an issue triage bot for {PROJECT_NAME} ({PROJECT_DESCRIPTION}).\n"
-            "This issue is from an org member — category is already set to Dev.\n"
+            "This issue is from an org member - category is already set to Dev.\n"
             "Pick a priority only.\n\n"
             "Priority levels:\n"
             "- Urgent: security issues, data loss, production down\n"
@@ -95,7 +95,7 @@ def triage_llm(title: str, body: str, include_category: bool) -> dict:
 def fetch_issue(issue_number: str) -> dict:
     """Fetch the full issue payload (node_id, title, body) from the REST API.
 
-    This is the freshest source of truth — we use it instead of the event
+    This is the freshest source of truth - we use it instead of the event
     payload because an earlier pipeline step may have rewritten the body.
     """
     return github_rest("GET", f"/repos/{REPO}/issues/{issue_number}")
@@ -228,7 +228,7 @@ def main() -> None:
 
     is_org_member = ISSUE_AUTHOR in ORG_MEMBERS
     if is_org_member:
-        print(f"Author @{ISSUE_AUTHOR} is an org member — forcing category to Dev")
+        print(f"Author @{ISSUE_AUTHOR} is an org member - forcing category to Dev")
         try:
             assign_issue(ISSUE_NUMBER, ISSUE_AUTHOR)
         except Exception as exc:
@@ -341,7 +341,7 @@ def main() -> None:
             except Exception as exc:
                 print(f"[warn] Failed to set Status=Todo: {exc}")
         else:
-            print("[warn] Status field or 'Todo' option not found on project — skipping status set")
+            print("[warn] Status field or 'Todo' option not found on project - skipping status set")
 
     # ── Step 5: Apply labels ──────────────────────────────────────────────
     cat_label = category.upper()

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-apply_refactor.py — Deterministic bulk find/replace across files.
+apply_refactor.py - Deterministic bulk find/replace across files.
 
 Reads a JSON plan from stdin and applies replacements atomically. Used
 by the agent workflows (issue-auto-fix.yml, pr-review-request.yml) to
 execute mechanical refactors (theme swaps, renames, constant migrations)
-without routing each edit through an LLM — one shell call instead of N
+without routing each edit through an LLM - one shell call instead of N
 Read+Edit roundtrips.
 
 Input JSON (on stdin):
@@ -22,9 +22,9 @@ Input JSON (on stdin):
 Output (stdout): a short summary of files touched and per-file replacement counts.
 
 Exit codes:
-  0 — at least one replacement was made
-  2 — input / plan error (bad JSON, missing keys, bad regex)
-  3 — plan was valid but matched zero files (catches typos early)
+  0 - at least one replacement was made
+  2 - input / plan error (bad JSON, missing keys, bad regex)
+  3 - plan was valid but matched zero files (catches typos early)
 
 Usage from an agent workflow:
 
@@ -48,7 +48,7 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
-# Dirs we never descend into — saves walk time AND prevents accidentally
+# Dirs we never descend into - saves walk time AND prevents accidentally
 # rewriting vendored / generated code.
 SKIP_DIRS: set[str] = {
     ".git",
@@ -72,7 +72,7 @@ SKIP_DIRS: set[str] = {
     ".ruff_cache",
 }
 
-# File suffixes we skip regardless of include glob — typically lockfiles,
+# File suffixes we skip regardless of include glob - typically lockfiles,
 # minified bundles, and tsbuild metadata.
 SKIP_FILE_SUFFIXES: tuple[str, ...] = (
     ".lock",
@@ -217,7 +217,7 @@ def apply_plan(plan: dict) -> int:
         print(f"  {p}: {touched[p]}")
 
     if total_subs == 0:
-        print("warning: no matches — check 'find' strings / scope", file=sys.stderr)
+        print("warning: no matches - check 'find' strings / scope", file=sys.stderr)
         return 3
     return 0
 

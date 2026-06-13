@@ -1,0 +1,9 @@
+NOTICES
+=======
+
+This project incorporates and depends on third-party components, each
+distributed under its own license. Source code in this repository is
+licensed under MIT (see LICENSE and LICENSES/preferred/MIT).
+
+If you believe an upstream component is missing from this list, please
+open an issue or email hello@elixpo.com.
