@@ -16,6 +16,16 @@ export function getEnv() {
     NEXT_PUBLIC_ELIXPO_CLIENT_ID: (ctx as any).NEXT_PUBLIC_ELIXPO_CLIENT_ID || process.env.NEXT_PUBLIC_ELIXPO_CLIENT_ID || '',
     ELIXPO_CLIENT_SECRET: (ctx as any).ELIXPO_CLIENT_SECRET || process.env.ELIXPO_CLIENT_SECRET || '',
     BASE_URL: (ctx as any).BASE_URL || process.env.BASE_URL || '',
+    SAFE_BROWSING_API_KEY: (ctx as any).SAFE_BROWSING_API_KEY || process.env.SAFE_BROWSING_API_KEY || '',
+    // DEV-ONLY: when set (e.g. `pro` / `business` / `enterprise`),
+    // every authenticated user is promoted to this tier in-memory. Used
+    // for local QA of paid-only flows without mutating D1. Leave unset
+    // in production.
+    DEV_TIER_OVERRIDE: (ctx as any).DEV_TIER_OVERRIDE || process.env.DEV_TIER_OVERRIDE || '',
+    // Shared secret with Elixpo Accounts for signed webhooks. Used to
+    // verify the HMAC on /api/webhooks/elixpo. Must match the secret
+    // configured on the accounts.elixpo side.
+    ELIXPO_WEBHOOK_SECRET: (ctx as any).ELIXPO_WEBHOOK_SECRET || process.env.ELIXPO_WEBHOOK_SECRET || '',
   };
 }
 

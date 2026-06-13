@@ -1,7 +1,28 @@
 import Link from 'next/link';
+import ClicksChart, {
+  type ChartPoint,
+} from '@/app/components/ClicksChart';
 import { getCurrentUser } from '@/lib/auth';
 import { getDB } from '@/lib/db';
 import { TIER_LIMITS, type UrlRecord } from '@/lib/types';
+
+/** Fill missing days with zero so the chart has continuous bars. */
+function buildTimeline(
+  rows: Array<{ date: string; count: number }>,
+  days: number,
+): ChartPoint[] {
+  const byDate = new Map(rows.map((r) => [r.date, r.count]));
+  const out: ChartPoint[] = [];
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setUTCDate(d.getUTCDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    out.push({ date: iso, count: byDate.get(iso) ?? 0 });
+  }
+  return out;
+}
 
 export const runtime = 'edge';
 
@@ -94,7 +115,7 @@ export default async function DashboardPage({
         .all<UrlRecord>(),
     ]);
 
-  const maxC = Math.max(...(timeline.results?.map((r) => r.count) || [1]), 1);
+  const chartData = buildTimeline(timeline.results || [], days);
   const used = urlCount?.count || 0;
   const isUnlimited = limits.maxUrls === -1;
   const usagePct = isUnlimited ? 0 : pct(used, limits.maxUrls);
@@ -301,25 +322,7 @@ export default async function DashboardPage({
             ))}
           </div>
         </div>
-        {timeline.results && timeline.results.length > 0 ? (
-          <div className="chart-bar">
-            {timeline.results.map((r) => (
-              <div
-                key={r.date}
-                className="bar"
-                style={{ height: `${Math.max((r.count / maxC) * 100, 4)}%` }}
-              >
-                <span className="tip">
-                  {r.date}: {r.count}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 text-white/40 text-sm italic">
-            No click data yet — share a short link and check back.
-          </div>
-        )}
+        <ClicksChart data={chartData} />
       </div>
 
       {/* Two-column: Top URLs + Recently created */}

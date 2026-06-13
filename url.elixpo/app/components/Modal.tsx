@@ -49,9 +49,21 @@ export default function Modal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
+  // Keep the latest onClose in a ref so it doesn't drive the focus
+  // effect's deps. Parents that re-render on every keystroke (e.g. the
+  // shorten-URL form) pass a fresh onClose each render — if we depend
+  // on it, the effect re-fires and re-focuses the first focusable
+  // element, stealing focus from the input the user is typing in.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => setMounted(true), []);
 
-  // Esc to dismiss + body scroll lock + focus management
+  // Esc to dismiss + body scroll lock + focus management.
+  // Only `open` is a real dep — when the dialog transitions open we set
+  // up the focus + listener; on close we tear them down.
   useEffect(() => {
     if (!open) return;
 
@@ -73,7 +85,7 @@ export default function Modal({
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === 'Tab' && dialogRef.current) {
@@ -103,7 +115,7 @@ export default function Modal({
       document.body.style.overflow = originalOverflow;
       previouslyFocused.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   const handleBackdropClick = useCallback(() => {
     if (disableBackdropClose) return;

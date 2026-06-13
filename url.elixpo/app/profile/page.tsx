@@ -123,30 +123,83 @@ export default async function ProfilePage() {
             <span className="text-xs text-text-secondary">{sessionCount?.count || 0} active</span>
           </div>
           <div className="flex items-center justify-between py-3">
-            <div>
+            <div className="min-w-0 pr-3">
               <div className="text-sm font-medium">Connected account</div>
-              <div className="text-xs text-text-muted mt-0.5">Managed by Elixpo Accounts SSO</div>
+              <div className="text-xs text-text-muted mt-0.5">
+                Profile, email, avatar, and account deletion are all
+                managed from Elixpo Accounts — your single sign-on for the
+                ecosystem.
+              </div>
             </div>
             <a
-              href="https://accounts.elixpo.com"
+              href="https://accounts.elixpo.com/dashboard/services"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-glass text-xs no-underline"
+              className="btn-glass text-xs no-underline whitespace-nowrap inline-flex items-center gap-1.5"
             >
-              Manage Account
+              Manage on Elixpo
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
             </a>
           </div>
         </div>
       </div>
 
-      {/* Danger zone */}
-      <div className="glass-card p-6" style={{ borderColor: 'rgba(239, 68, 68, 0.15)' }}>
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-sm font-semibold text-[#f87171]">Sign Out</h2>
-            <p className="text-xs text-text-muted mt-0.5">End your current session on this device</p>
+      {/* Account actions */}
+      <div className="space-y-3">
+        {/* Sign out — this session only */}
+        <div
+          className="glass-card p-5 flex items-center justify-between gap-3"
+          style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+        >
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-white">Sign out</h2>
+            <p className="text-xs text-text-muted mt-0.5">
+              Ends your session on this device only. Your account stays
+              intact.
+            </p>
           </div>
           <LogoutButton />
+        </div>
+
+        {/* Delete account — explicit redirect to Elixpo Accounts */}
+        <div
+          className="glass-card p-5 flex items-center justify-between gap-3"
+          style={{ borderColor: 'rgba(239, 68, 68, 0.18)' }}
+        >
+          <div className="min-w-0 pr-3">
+            <h2 className="text-sm font-semibold text-[#f87171]">
+              Delete account
+            </h2>
+            <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
+              Your ElixpoURL account is bound to your Elixpo Account.
+              Deleting it has to happen from Elixpo Accounts so your
+              identity is removed across the whole ecosystem in one place
+              — chat, art, blogs, sketch, and any other service you use.
+              Your links and click history here will be deleted alongside
+              the Elixpo Account.
+            </p>
+          </div>
+          <a
+            href="https://accounts.elixpo.com/dashboard/services"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-glass text-xs no-underline whitespace-nowrap inline-flex items-center gap-1.5"
+            style={{
+              borderColor: 'rgba(239, 68, 68, 0.4)',
+              color: '#f87171',
+            }}
+          >
+            Open Elixpo Accounts
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </a>
         </div>
       </div>
     </div>

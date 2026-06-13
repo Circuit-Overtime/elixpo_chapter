@@ -1,108 +1,219 @@
+import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth';
 import { getDB } from '@/lib/db';
 import type { UrlRecord } from '@/lib/types';
-import Link from 'next/link';
+import UrlsListClient from './UrlsListClient';
 
 export const runtime = 'edge';
+
+const CARD_STYLE = {
+  background:
+    'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  backdropFilter: 'blur(20px)',
+} as const;
+
+type StatusFilter = 'all' | 'active' | 'inactive' | 'expired';
+
+const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'expired', label: 'Expired' },
+];
+
+const PAGE_SIZE = 20;
 
 export default async function UrlsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; search?: string }>;
+  searchParams: Promise<{ page?: string; search?: string; status?: string }>;
 }) {
-  const { page: pageParam, search: searchParam } = await searchParams;
+  const {
+    page: pageParam,
+    search: searchParam,
+    status: statusParam,
+  } = await searchParams;
+
   const user = (await getCurrentUser())!;
   const db = getDB();
-  const page = parseInt(pageParam || '1');
-  const limit = 20;
-  const offset = (page - 1) * limit;
-  const search = searchParam || '';
+  const page = Math.max(1, Number.parseInt(pageParam || '1') || 1);
+  const search = (searchParam || '').slice(0, 100);
+  const status: StatusFilter =
+    statusParam === 'active' ||
+    statusParam === 'inactive' ||
+    statusParam === 'expired'
+      ? statusParam
+      : 'all';
+  const offset = (page - 1) * PAGE_SIZE;
 
-  let query = 'SELECT * FROM urls WHERE user_id = ?';
+  // Build query — proper LIKE-wildcard escaping so a user typing `%` or `_`
+  // doesn't get a runaway match. ESCAPE clause uses backslash.
+  let where = 'user_id = ?';
   const params: any[] = [user.id];
+
   if (search) {
-    query += ' AND (short_code LIKE ? OR original_url LIKE ? OR title LIKE ?)';
-    const like = `%${search}%`;
+    const escaped = search.replace(/[%_]/g, '\\$&');
+    const like = `%${escaped}%`;
+    where +=
+      " AND (short_code LIKE ? ESCAPE '\\' OR original_url LIKE ? ESCAPE '\\' OR title LIKE ? ESCAPE '\\')";
     params.push(like, like, like);
   }
-  query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-  params.push(limit, offset);
 
-  const { results } = await db.prepare(query).bind(...params).all<UrlRecord>();
-  const total = await db.prepare('SELECT COUNT(*) as count FROM urls WHERE user_id = ?')
-    .bind(user.id).first<{ count: number }>();
-  const totalPages = Math.ceil((total?.count || 0) / limit);
+  if (status === 'active') {
+    where += ' AND is_active = 1 AND (expires_at IS NULL OR expires_at > ?)';
+    params.push(new Date().toISOString());
+  } else if (status === 'inactive') {
+    where += ' AND is_active = 0';
+  } else if (status === 'expired') {
+    where += ' AND expires_at IS NOT NULL AND expires_at <= ?';
+    params.push(new Date().toISOString());
+  }
+
+  const listQuery = `SELECT * FROM urls WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+  const countQuery = `SELECT COUNT(*) as count FROM urls WHERE ${where}`;
+
+  const [{ results }, total] = await Promise.all([
+    db
+      .prepare(listQuery)
+      .bind(...params, PAGE_SIZE, offset)
+      .all<UrlRecord>(),
+    db.prepare(countQuery).bind(...params).first<{ count: number }>(),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil((total?.count || 0) / PAGE_SIZE));
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-        <h1 className="text-2xl font-sans font-bold text-text-primary">My URLs</h1>
-        <Link href="/dashboard/new" className="btn-accent no-underline">+ Shorten URL</Link>
+    <div className="w-full max-w-6xl mx-auto py-2 px-2">
+      {/* Header */}
+      <div className="flex items-end justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl md:text-[1.8rem] font-bold text-white tracking-tight">
+            My URLs
+          </h1>
+          <p className="text-sm text-white/55 mt-1">
+            {total?.count ?? 0} link{(total?.count ?? 0) === 1 ? '' : 's'}{' '}
+            total
+            {search ? ` · filtered by "${search}"` : ''}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/urls/export.csv"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-[10px] text-sm font-medium text-white/85 no-underline transition-colors"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}
+            title="Download every link as CSV"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Export CSV
+          </a>
+          <Link
+            href="/dashboard/new"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-semibold text-white no-underline transition-all"
+            style={{
+              background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+              boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Shorten URL
+          </Link>
+        </div>
       </div>
 
-      <div className="glass-card p-6">
-        <form method="get" className="mb-4">
-          <input
-            type="text"
-            name="search"
-            placeholder="Search URLs..."
-            defaultValue={search}
-            className="input-field max-w-xs"
-          />
-        </form>
-
-        <div className="overflow-x-auto">
-        <table className="w-full min-w-[700px]">
-          <thead>
-            <tr>
-              <th className="text-left text-[0.7rem] text-text-disabled uppercase tracking-wider pb-3">Code</th>
-              <th className="text-left text-[0.7rem] text-text-disabled uppercase tracking-wider pb-3">Destination</th>
-              <th className="text-left text-[0.7rem] text-text-disabled uppercase tracking-wider pb-3">Title</th>
-              <th className="text-left text-[0.7rem] text-text-disabled uppercase tracking-wider pb-3">Clicks</th>
-              <th className="text-left text-[0.7rem] text-text-disabled uppercase tracking-wider pb-3">Status</th>
-              <th className="text-left text-[0.7rem] text-text-disabled uppercase tracking-wider pb-3">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results && results.length > 0 ? (
-              results.map((u) => (
-                <tr key={u.short_code} className="border-t border-border-light">
-                  <td className="py-3">
-                    <Link href={`/dashboard/urls/${u.short_code}`} className="text-accent-main text-sm no-underline hover:underline">
-                      {u.short_code}
-                    </Link>
-                  </td>
-                  <td className="py-3 text-sm text-text-secondary max-w-[250px] truncate">{u.original_url}</td>
-                  <td className="py-3 text-sm text-text-muted">{u.title || '-'}</td>
-                  <td className="py-3 text-sm">{u.clicks}</td>
-                  <td className="py-3">
-                    <span className={`badge ${u.is_active ? 'bg-[rgba(34,197,94,0.1)] text-[#4ade80] border border-[rgba(34,197,94,0.3)]' : 'bg-[rgba(239,68,68,0.1)] text-[#f87171] border border-[rgba(239,68,68,0.3)]'}`}>
-                      {u.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="py-3 text-sm text-text-muted">{new Date(u.created_at).toLocaleDateString()}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} className="py-8 text-center text-text-disabled text-sm italic">No URLs found</td>
-              </tr>
+      <div className="p-6 rounded-2xl" style={CARD_STYLE}>
+        {/* Search + filter chips */}
+        <div className="flex flex-col md:flex-row md:items-center gap-3 mb-5">
+          <form method="get" className="flex-1 max-w-md">
+            {status !== 'all' && (
+              <input type="hidden" name="status" value={status} />
             )}
-          </tbody>
-        </table>
+            <div className="relative">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                name="search"
+                placeholder="Search by slug, destination, or title…"
+                defaultValue={search}
+                className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none text-white placeholder-white/40"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+              />
+            </div>
+          </form>
+
+          <div className="flex gap-1 flex-wrap">
+            {STATUS_FILTERS.map((f) => {
+              const active = f.value === status;
+              const params = new URLSearchParams();
+              if (search) params.set('search', search);
+              if (f.value !== 'all') params.set('status', f.value);
+              const href = params.toString()
+                ? `/dashboard/urls?${params.toString()}`
+                : '/dashboard/urls';
+              return (
+                <Link
+                  key={f.value}
+                  href={href}
+                  className="text-xs px-3 py-1.5 rounded-lg no-underline transition-colors font-medium"
+                  style={{
+                    background: active
+                      ? 'rgba(155,123,247,0.12)'
+                      : 'transparent',
+                    color: active ? '#c8b6ff' : 'rgba(255,255,255,0.55)',
+                    border: '1px solid',
+                    borderColor: active
+                      ? 'rgba(155,123,247,0.4)'
+                      : 'rgba(255,255,255,0.08)',
+                  }}
+                >
+                  {f.label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex gap-2 justify-center mt-4">
-            {page > 1 && (
-              <Link href={`/dashboard/urls?page=${page - 1}&search=${search}`} className="btn-glass text-xs no-underline">Prev</Link>
-            )}
-            <span className="text-xs text-text-disabled px-3 py-1.5">Page {page} of {totalPages}</span>
-            {page < totalPages && (
-              <Link href={`/dashboard/urls?page=${page + 1}&search=${search}`} className="btn-glass text-xs no-underline">Next</Link>
-            )}
-          </div>
-        )}
+        {/* Client-side selection + bulk actions + table render */}
+        <UrlsListClient
+          urls={results || []}
+          page={page}
+          totalPages={totalPages}
+          search={search}
+          status={status}
+        />
       </div>
     </div>
   );

@@ -88,6 +88,30 @@ const accountItems = [
   { href: '/profile/keys', label: 'API Keys', icon: Icons.key },
 ];
 
+// Marketing-surface links next to the brand. Icon + label.
+const marketingLinks = [
+  {
+    href: '/pricing',
+    label: 'Pricing',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]">
+        <circle cx="10" cy="10" r="7.5" />
+        <path d="M10 5v10M7 8.5h4.5a1.5 1.5 0 010 3H7m0 0H12a1.5 1.5 0 010 3H7" />
+      </svg>
+    ),
+  },
+  {
+    href: '/docs',
+    label: 'Docs',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]">
+        <path d="M5 3h8a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
+        <path d="M6 7h6M6 10h6M6 13h4" />
+      </svg>
+    ),
+  },
+];
+
 export default function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
   const avatarUrl = getAvatarUrl(user);
@@ -142,7 +166,7 @@ export default function Sidebar({ user }: { user: User }) {
       style={{ background: 'rgba(16, 18, 28, 0.92)', backdropFilter: 'blur(20px)' }}
     >
       {/* Left: Logo */}
-      <Link href="/dashboard" className="flex items-center gap-2 no-underline shrink-0">
+      <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
         <Image src="/logo.png" alt="ElixpoURL" width={26} height={26} className="rounded-lg" />
         <span className="text-base font-sans font-bold text-text-primary hidden sm:inline">
           <span className="text-accent-main">Elixpo</span>URL
@@ -151,8 +175,14 @@ export default function Sidebar({ user }: { user: User }) {
 
       {/* Right: Nav icons + Account dropdown */}
       <div className="flex items-center gap-1 sm:gap-2">
-        {/* Main nav icons */}
+        {/* App nav icons */}
         {navItems.map((item) => (
+          <NavIcon key={item.href} {...item} />
+        ))}
+
+        {/* Marketing icons (Pricing, Docs) — same icon-row treatment */}
+        <div className="w-px h-6 bg-border-light mx-1" />
+        {marketingLinks.map((item) => (
           <NavIcon key={item.href} {...item} />
         ))}
 
