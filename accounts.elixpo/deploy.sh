@@ -60,7 +60,15 @@ do_deploy() {
   fi
 
   echo "=== Deploying to Cloudflare Pages ==="
-   npx wrangler pages deploy ./.vercel/output/static --project-name "$PROJECT"
+  # CF Pages treats `main` as Production. Without --branch, wrangler tags the
+  # deploy as Preview for whatever git branch you're on — which won't update
+  # accounts.elixpo.com. Override with DEPLOY_BRANCH=<branch> if you really
+  # want a preview from CLI.
+  BRANCH="${DEPLOY_BRANCH:-main}"
+  echo "  Branch: $BRANCH"
+  npx wrangler pages deploy ./.vercel/output/static \
+    --project-name "$PROJECT" \
+    --branch "$BRANCH"
   echo "Deploy complete."
   echo ""
 }
