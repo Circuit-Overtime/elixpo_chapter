@@ -124,8 +124,13 @@ export default function Navbar() {
                 '0 4px 14px rgba(155,123,247,0.32)';
               e.currentTarget.style.transform = 'translateY(0)';
             }}
+            title={
+              isLoggedIn
+                ? 'Open dashboard'
+                : 'Sign in with your Elixpo account'
+            }
           >
-            {isLoggedIn ? 'Dashboard' : 'Sign in'}
+            {isLoggedIn ? 'Dashboard' : 'Sign in with Elixpo'}
           </Link>
         </div>
       </div>

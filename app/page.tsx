@@ -84,103 +84,98 @@ export default function LandingPage() {
             aria-hidden="true"
           />
 
-          <div className="video-hero-content absolute inset-0 flex flex-col">
-            {/* Spacer pushes content to the bottom of the panel */}
-            <div className="flex-1" />
+          {/* Two-column overlay. Left column anchors the wordmark at the
+              bottom; right column centers the tagline + CTA vertically.
+              Mirrors the elixpo.com hero composition. */}
+          <div className="video-hero-content absolute inset-0 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr]">
+            {/* Left — wordmark pinned bottom-left */}
+            <div className="flex flex-col justify-end px-6 sm:px-10 md:px-14 lg:px-20 pb-8 md:pb-12 lg:pb-16">
+              <h1
+                className="font-extrabold leading-[0.9] tracking-[-0.045em] text-white drop-shadow-[0_8px_40px_rgba(0,0,0,0.7)]"
+                style={{
+                  fontSize: 'clamp(3rem, 11vw, 10rem)',
+                }}
+              >
+                Elixpo
+                <span style={{ color: '#c8b6ff' }}>URL</span>
+              </h1>
+            </div>
 
-            <div className="px-6 sm:px-10 md:px-14 lg:px-20 pb-10 md:pb-14 lg:pb-16">
-              <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-8 lg:gap-12 items-end">
-                {/* Oversized brand wordmark — bottom-left */}
-                <h1
-                  className="font-extrabold leading-[0.92] tracking-[-0.04em] text-white drop-shadow-[0_8px_40px_rgba(0,0,0,0.7)]"
+            {/* Right — pill + tagline + CTA, vertically centered */}
+            <div className="flex flex-col justify-center items-start gap-5 px-6 sm:px-10 md:px-14 lg:pr-20 lg:pl-4 pb-10 lg:pb-0 max-w-[420px]">
+              <span
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase"
+                style={{
+                  background: 'rgba(155, 123, 247, 0.18)',
+                  color: '#fff',
+                  border: '1px solid rgba(155, 123, 247, 0.45)',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: ACCENT }}
+                />
+                Built on Cloudflare&rsquo;s edge
+              </span>
+
+              <p
+                className="text-base md:text-[1.05rem] text-white/90 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
+                style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
+              >
+                An open URL shortener built on Cloudflare&rsquo;s edge.
+                Lightning-fast redirects, click analytics, and a
+                developer-first API — for any app you ship, Elixpo or
+                yours.
+              </p>
+
+              <Link
+                href="/api/auth/login"
+                className="group inline-flex items-center gap-3 pl-6 pr-2 py-2 rounded-full font-semibold text-[0.95rem] text-white no-underline transition-all"
+                style={{
+                  background: 'rgba(11,13,18,0.85)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(8px)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background =
+                    'rgba(155,123,247,0.22)';
+                  e.currentTarget.style.borderColor =
+                    'rgba(155,123,247,0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background =
+                    'rgba(11,13,18,0.85)';
+                  e.currentTarget.style.borderColor =
+                    'rgba(255,255,255,0.15)';
+                }}
+              >
+                <span className="tracking-wider uppercase text-[0.78rem]">
+                  Get Started
+                </span>
+                <span
+                  className="inline-flex items-center justify-center w-9 h-9 rounded-full text-white transition-all group-hover:translate-x-0.5"
                   style={{
-                    fontSize: 'clamp(3.5rem, 12vw, 11rem)',
+                    background:
+                      'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                    boxShadow: '0 4px 14px rgba(155,123,247,0.5)',
                   }}
                 >
-                  Elixpo
-                  <span style={{ color: '#c8b6ff' }}>URL</span>
-                </h1>
-
-                {/* Right column — tagline + CTA */}
-                <div className="flex flex-col gap-5 max-w-md lg:pl-2 lg:pb-3">
-                  <span
-                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase self-start"
-                    style={{
-                      background: 'rgba(155, 123, 247, 0.18)',
-                      color: '#fff',
-                      border: '1px solid rgba(155, 123, 247, 0.45)',
-                      backdropFilter: 'blur(8px)',
-                    }}
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <span
-                      className="w-1.5 h-1.5 rounded-full animate-pulse"
-                      style={{ background: ACCENT }}
-                    />
-                    Built on Cloudflare&rsquo;s edge
-                  </span>
-
-                  <p
-                    className="text-base md:text-[1.05rem] text-white/90 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
-                    style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
-                  >
-                    An open URL shortener built on Cloudflare&rsquo;s edge.
-                    Lightning-fast redirects, click analytics, and a
-                    developer-first API — for any app you ship, Elixpo or
-                    yours.
-                  </p>
-
-                  <div className="flex items-center gap-3 mt-1">
-                    <Link
-                      href="/api/auth/login"
-                      className="group inline-flex items-center gap-3 pl-6 pr-2 py-2 rounded-full font-semibold text-[0.95rem] text-white no-underline transition-all"
-                      style={{
-                        background: 'rgba(11,13,18,0.85)',
-                        border: '1px solid rgba(255,255,255,0.15)',
-                        backdropFilter: 'blur(8px)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background =
-                          'rgba(155,123,247,0.22)';
-                        e.currentTarget.style.borderColor =
-                          'rgba(155,123,247,0.5)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background =
-                          'rgba(11,13,18,0.85)';
-                        e.currentTarget.style.borderColor =
-                          'rgba(255,255,255,0.15)';
-                      }}
-                    >
-                      <span className="tracking-wider uppercase text-[0.78rem]">
-                        Get Started
-                      </span>
-                      <span
-                        className="inline-flex items-center justify-center w-9 h-9 rounded-full text-white transition-all group-hover:translate-x-0.5"
-                        style={{
-                          background:
-                            'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                          boxShadow:
-                            '0 4px 14px rgba(155,123,247,0.5)',
-                        }}
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.4"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                          <polyline points="12 5 19 12 12 19" />
-                        </svg>
-                      </span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </span>
+              </Link>
             </div>
           </div>
         </div>

@@ -1,208 +1,125 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
 import Link from 'next/link';
-import Footer from '../components/Footer';
 
-const sections = [
-  {
-    title: 'Authentication',
-    id: 'auth',
-    content: `ElixpoURL uses API keys for programmatic access. Create keys from your dashboard under Profile > API Keys.
+const H1 = 'text-[2.1rem] md:text-[2.4rem] font-extrabold tracking-tight text-white mb-4 leading-tight';
+const LEDE = 'text-white/70 text-base md:text-[1.05rem] leading-relaxed mb-8';
+const H2 = 'text-[1.4rem] font-bold text-white tracking-tight mt-12 mb-3';
+const P = 'text-white/70 text-[0.96rem] leading-relaxed mb-4';
+const CARD = 'p-5 rounded-xl transition-colors no-underline block';
+const CARD_STYLE = {
+  background: 'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
+  border: '1px solid rgba(255,255,255,0.08)',
+};
 
-Include your key in the Authorization header:`,
-    code: `Authorization: Bearer elu_YOUR_API_KEY`,
-  },
-  {
-    title: 'Shorten a URL',
-    id: 'shorten',
-    content: 'Create a new short URL by sending a POST request.',
-    code: `curl -X POST https://url.elixpo.com/api/urls \\
-  -H "Authorization: Bearer elu_YOUR_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "url": "https://example.com/long-url",
-    "title": "My Link",
-    "custom_code": "my-link"
-  }'`,
-    response: `{
-  "short_url": "https://url.elixpo.com/my-link",
-  "short_code": "my-link",
-  "original_url": "https://example.com/long-url",
-  "title": "My Link",
-  "created_at": "2026-03-20T12:00:00Z"
-}`,
-  },
-  {
-    title: 'List URLs',
-    id: 'list',
-    content: 'Retrieve all your short URLs with pagination and search.',
-    code: `curl https://url.elixpo.com/api/urls?limit=20&offset=0&search=example \\
-  -H "Authorization: Bearer elu_YOUR_KEY"`,
-  },
-  {
-    title: 'Get URL Details',
-    id: 'details',
-    content: 'Fetch details for a specific short URL.',
-    code: `curl https://url.elixpo.com/api/urls/my-link \\
-  -H "Authorization: Bearer elu_YOUR_KEY"`,
-  },
-  {
-    title: 'Update a URL',
-    id: 'update',
-    content: 'Update the destination, title, or status of a short URL.',
-    code: `curl -X PATCH https://url.elixpo.com/api/urls/my-link \\
-  -H "Authorization: Bearer elu_YOUR_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{"url": "https://new-destination.com", "is_active": true}'`,
-  },
-  {
-    title: 'Delete a URL',
-    id: 'delete',
-    content: 'Permanently delete a short URL and its analytics data.',
-    code: `curl -X DELETE https://url.elixpo.com/api/urls/my-link \\
-  -H "Authorization: Bearer elu_YOUR_KEY"`,
-  },
-  {
-    title: 'Analytics',
-    id: 'analytics',
-    content: 'Get click analytics for a URL. Requires Pro tier or above.',
-    code: `curl https://url.elixpo.com/api/urls/my-link/analytics?days=30 \\
-  -H "Authorization: Bearer elu_YOUR_KEY"`,
-    response: `{
-  "timeline": [{"date": "2026-03-19", "count": 42}],
-  "countries": [{"country": "US", "count": 30}],
-  "browsers": [{"browser": "Chrome", "count": 25}],
-  "devices": [{"device": "desktop", "count": 35}],
-  "referers": [{"referer": "twitter.com", "count": 12}]
-}`,
-  },
-];
-
-export default function DocsPage() {
+export default function OverviewPage() {
   return (
-    <div className="min-h-screen bg-bg-deep overflow-hidden flex flex-col">
-      {/* Nav */}
-      <motion.nav
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative z-10 flex items-center justify-between px-4 sm:px-8 py-5 max-w-7xl mx-auto w-full"
-      >
-        <Link href="/" className="flex items-center gap-2.5 no-underline">
-          <Image src="/logo.png" alt="ElixpoURL" width={32} height={32} className="rounded-lg" />
-          <span className="text-xl font-sans font-bold text-text-primary">
-            <span className="text-accent-main">Elixpo</span>URL
-          </span>
-        </Link>
-        <div className="hidden sm:flex items-center gap-6">
-          <Link href="/pricing" className="text-sm text-text-secondary hover:text-text-primary transition-colors no-underline">
-            Pricing
-          </Link>
-          <Link href="/docs" className="text-sm text-accent-main no-underline">
-            Docs
-          </Link>
-          <Link href="/profile/keys" className="text-sm text-text-secondary hover:text-text-primary transition-colors no-underline">
-            API Keys
-          </Link>
-          <Link href="/api/auth/login" className="text-sm text-text-secondary hover:text-text-primary transition-colors no-underline">
-            Sign In
-          </Link>
-          <Link href="/api/auth/login" className="btn-accent no-underline text-sm">
-            Get Started
-          </Link>
-        </div>
-      </motion.nav>
+    <article>
+      <h1 className={H1}>Overview</h1>
+      <p className={LEDE}>
+        ElixpoURL is an open URL shortener built on Cloudflare&apos;s edge.
+        Short links, real-time click analytics, and a developer-first REST
+        API — for any app you ship, Elixpo or not.
+      </p>
 
-      {/* Header */}
-      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8 pt-16 pb-8">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="text-3xl sm:text-5xl font-sans font-bold mb-4"
-        >
-          API <span className="text-gradient-accent">Documentation</span>
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.7 }}
-          className="text-text-secondary"
-        >
-          Everything you need to integrate ElixpoURL into your applications.
-        </motion.p>
-
-        {/* TOC */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="mt-8 glass-card p-5"
-        >
-          <div className="text-xs text-text-disabled uppercase tracking-wider mb-3 font-medium">On this page</div>
-          <div className="flex flex-wrap gap-2">
-            {sections.map((s) => (
-              <a
-                key={s.id}
-                href={`#${s.id}`}
-                className="text-sm text-text-secondary hover:text-accent-main transition-colors no-underline px-3 py-1.5 rounded-lg hover:bg-bg-glass"
-              >
-                {s.title}
-              </a>
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Sections */}
-      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8 pb-24 flex-1">
-        {sections.map((s, i) => (
-          <motion.div
-            key={s.id}
-            id={s.id}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-50px' }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="mb-12 scroll-mt-8"
-          >
-            <h2 className="text-xl font-sans font-bold text-text-primary mb-3 flex items-center gap-2">
-              <span className="w-1.5 h-6 rounded-full bg-accent-main opacity-60" />
-              {s.title}
-            </h2>
-            <p className="text-sm text-text-secondary mb-4 leading-relaxed">{s.content}</p>
-            <pre
-              className="p-5 rounded-xl text-xs overflow-x-auto font-mono leading-relaxed"
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.08)',
-              }}
-            >
-              <code className="text-text-secondary">{s.code}</code>
-            </pre>
-            {s.response && (
-              <div className="mt-3">
-                <div className="text-[0.65rem] text-text-disabled uppercase tracking-wider mb-2 ml-1">
-                  Response
-                </div>
-                <pre
-                  className="p-5 rounded-xl text-xs overflow-x-auto font-mono leading-relaxed"
-                  style={{
-                    background: 'rgba(163,230,53,0.02)',
-                    border: '1px solid rgba(163,230,53,0.08)',
-                  }}
-                >
-                  <code className="text-accent-light">{s.response}</code>
-                </pre>
-              </div>
-            )}
-          </motion.div>
+      <h2 id="what-you-get" className={H2}>What you get</h2>
+      <ul className="space-y-2 list-none p-0 mb-6">
+        {[
+          'Edge-native redirects — every short link resolves on Cloudflare\'s edge, sub-50ms anywhere.',
+          'Click analytics — counts, geo, referrers, devices, browsers; no third-party script.',
+          'REST API + API keys with scoped permissions.',
+          'Custom slugs, bulk operations, soft-delete, and TTLs.',
+          'Sign in via Elixpo Accounts SSO — no separate password.',
+        ].map((line) => (
+          <li key={line} className="text-white/70 text-[0.96rem] flex gap-2.5">
+            <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
+            {line}
+          </li>
         ))}
-      </section>
+      </ul>
 
-      <Footer />
-    </div>
+      <h2 id="get-started" className={H2}>Get started</h2>
+      <p className={P}>
+        Three ways into ElixpoURL, depending on how you like to work.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+        <Link href="/docs/quickstart" className={CARD} style={CARD_STYLE}>
+          <div className="font-semibold text-white mb-1">Quickstart</div>
+          <div className="text-sm text-white/55">
+            Sign in, mint a key, shorten your first URL in under 5 minutes.
+          </div>
+        </Link>
+        <Link href="/docs/api" className={CARD} style={CARD_STYLE}>
+          <div className="font-semibold text-white mb-1">Shortening API</div>
+          <div className="text-sm text-white/55">
+            Endpoints to create, list, update, and delete short links.
+          </div>
+        </Link>
+        <Link href="/docs/analytics" className={CARD} style={CARD_STYLE}>
+          <div className="font-semibold text-white mb-1">Click Analytics</div>
+          <div className="text-sm text-white/55">
+            Pull counts, geo, browser, and referrer breakdowns over any window.
+          </div>
+        </Link>
+        <Link href="/docs/keys" className={CARD} style={CARD_STYLE}>
+          <div className="font-semibold text-white mb-1">API Keys</div>
+          <div className="text-sm text-white/55">
+            Create, rotate, and scope keys for programmatic access.
+          </div>
+        </Link>
+      </div>
+
+      <h2 id="how-auth-works" className={H2}>How sign-in works</h2>
+      <p className={P}>
+        ElixpoURL doesn&apos;t store passwords. Every user signs in through{' '}
+        <a
+          href="https://accounts.elixpo.com"
+          className="underline decoration-white/30 hover:text-white hover:decoration-white/70 transition-colors"
+        >
+          Elixpo Accounts SSO
+        </a>{' '}
+        — the same login that opens chat, art, blogs, and the rest of the
+        ecosystem. Hit{' '}
+        <a
+          href="/api/auth/login"
+          className="underline decoration-white/30 hover:text-white hover:decoration-white/70 transition-colors"
+        >
+          /api/auth/login
+        </a>{' '}
+        to start the OAuth flow; we handle the callback, set the session
+        cookie, and bounce you to your dashboard.
+      </p>
+      <p className={P}>
+        For machine-to-machine access, mint an{' '}
+        <Link
+          href="/docs/keys"
+          className="underline decoration-white/30 hover:text-white hover:decoration-white/70 transition-colors"
+        >
+          API key
+        </Link>{' '}
+        from your dashboard and send it in the <code>Authorization</code>{' '}
+        header.
+      </p>
+
+      <h2 id="conventions" className={H2}>Conventions</h2>
+      <ul className="space-y-2 list-none p-0">
+        <li className="text-white/70 text-[0.96rem] flex gap-2.5">
+          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
+          Base URL: <code className="font-mono text-white">https://url.elixpo.com</code>
+        </li>
+        <li className="text-white/70 text-[0.96rem] flex gap-2.5">
+          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
+          API path prefix: <code className="font-mono text-white">/api</code>
+        </li>
+        <li className="text-white/70 text-[0.96rem] flex gap-2.5">
+          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
+          All requests/responses are JSON unless stated otherwise.
+        </li>
+        <li className="text-white/70 text-[0.96rem] flex gap-2.5">
+          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
+          Errors follow the format <code className="font-mono text-white">{'{ "error": "code", "message": "..." }'}</code> — see <Link href="/docs/errors" className="underline decoration-white/30 hover:text-white">Error Reference</Link>.
+        </li>
+      </ul>
+    </article>
   );
 }
