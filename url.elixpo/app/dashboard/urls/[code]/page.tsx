@@ -55,7 +55,7 @@ export default async function UrlDetailPage({
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div className="min-w-0">
-          <h1 className="text-2xl font-display font-bold text-text-primary">/{code}</h1>
+          <h1 className="text-2xl font-sans font-bold text-text-primary">/{code}</h1>
           <p className="text-sm text-text-secondary mt-1 max-w-lg truncate">{url.original_url}</p>
         </div>
         <div className="flex gap-2 shrink-0">
@@ -153,7 +153,7 @@ export default async function UrlDetailPage({
       ) : (
         <div className="glass-card p-8 text-center">
           <p className="text-text-disabled mb-3">Detailed analytics require <strong className="text-text-secondary">Pro</strong> tier or above.</p>
-          <Link href="/profile" className="btn-lime no-underline text-sm">Upgrade Plan</Link>
+          <Link href="/profile" className="btn-accent no-underline text-sm">Upgrade Plan</Link>
         </div>
       )}
     </div>

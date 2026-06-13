@@ -88,12 +88,6 @@ const accountItems = [
   { href: '/profile/keys', label: 'API Keys', icon: Icons.key },
 ];
 
-const adminItems = [
-  { href: '/admin', label: 'Monitoring', icon: Icons.monitor },
-  { href: '/admin/users', label: 'Users', icon: Icons.users },
-  { href: '/admin/audit', label: 'Audit Log', icon: Icons.audit },
-];
-
 export default function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
   const avatarUrl = getAvatarUrl(user);
@@ -101,7 +95,7 @@ export default function Sidebar({ user }: { user: User }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isActive = (href: string) => {
-    if (href === '/dashboard' || href === '/profile' || href === '/admin') {
+    if (href === '/dashboard' || href === '/profile') {
       return pathname === href;
     }
     return pathname.startsWith(href);
@@ -128,7 +122,7 @@ export default function Sidebar({ user }: { user: User }) {
       href={href}
       className={`relative group flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 no-underline ${
         isActive(href)
-          ? 'text-lime-main bg-[rgba(163,230,53,0.12)]'
+          ? 'text-accent-main bg-[rgba(155,123,247,0.12)]'
           : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
       }`}
     >
@@ -136,7 +130,7 @@ export default function Sidebar({ user }: { user: User }) {
         {icon}
       </span>
       {/* Tooltip */}
-      <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 text-xs font-medium rounded-md bg-[#1a2614] border border-border-light text-text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
+      <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 text-xs font-medium rounded-md bg-[#161828] border border-border-light text-text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
         {label}
       </span>
     </Link>
@@ -145,13 +139,13 @@ export default function Sidebar({ user }: { user: User }) {
   return (
     <header
       className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 sm:px-6 h-14 border-b border-border-light"
-      style={{ background: 'rgba(16, 24, 12, 0.92)', backdropFilter: 'blur(20px)' }}
+      style={{ background: 'rgba(16, 18, 28, 0.92)', backdropFilter: 'blur(20px)' }}
     >
       {/* Left: Logo */}
       <Link href="/dashboard" className="flex items-center gap-2 no-underline shrink-0">
         <Image src="/logo.png" alt="ElixpoURL" width={26} height={26} className="rounded-lg" />
-        <span className="text-base font-display font-bold text-text-primary hidden sm:inline">
-          <span className="text-lime-main">Elixpo</span>URL
+        <span className="text-base font-sans font-bold text-text-primary hidden sm:inline">
+          <span className="text-accent-main">Elixpo</span>URL
         </span>
       </Link>
 
@@ -162,16 +156,6 @@ export default function Sidebar({ user }: { user: User }) {
           <NavIcon key={item.href} {...item} />
         ))}
 
-        {/* Admin icons */}
-        {user.role === 'admin' && (
-          <>
-            <div className="w-px h-6 bg-border-light mx-1 sm:mx-2" />
-            {adminItems.map((item) => (
-              <NavIcon key={item.href} {...item} />
-            ))}
-          </>
-        )}
-
         {/* Divider before account */}
         <div className="w-px h-6 bg-border-light ml-1 sm:ml-2" />
 
@@ -181,7 +165,7 @@ export default function Sidebar({ user }: { user: User }) {
           onClick={() => setAccountOpen(!accountOpen)}
           className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-bg-glass transition-all duration-200 bg-transparent border-none cursor-pointer group"
         >
-          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-border-medium group-hover:border-lime-main/40 transition-colors">
+          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-border-medium group-hover:border-accent-main/40 transition-colors">
             <img
               src={avatarUrl}
               alt={user.display_name}
@@ -201,7 +185,7 @@ export default function Sidebar({ user }: { user: User }) {
         {accountOpen && (
           <div
             className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border-light overflow-hidden shadow-xl z-50"
-            style={{ background: 'rgba(16, 24, 12, 0.97)', backdropFilter: 'blur(20px)' }}
+            style={{ background: 'rgba(16, 18, 28, 0.97)', backdropFilter: 'blur(20px)' }}
           >
             {/* User info */}
             <div className="px-4 py-3 border-b border-border-light">
@@ -218,7 +202,7 @@ export default function Sidebar({ user }: { user: User }) {
                   onClick={() => setAccountOpen(false)}
                   className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 no-underline ${
                     isActive(item.href)
-                      ? 'text-lime-main bg-[rgba(163,230,53,0.06)]'
+                      ? 'text-accent-main bg-[rgba(155,123,247,0.06)]'
                       : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
                   }`}
                 >
