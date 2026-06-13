@@ -9,9 +9,9 @@ interface Props {
   canCustomize?: boolean;
 }
 
-const QR_SIZE = 320; // canvas px — high enough for a sharp 1024px PNG download
-const LOGO_RATIO = 0.22; // logo covers ~22% of QR width (well within error-correction H budget)
-const ACCENT = '#9b7bf7';
+const QR_SIZE = 512; // canvas backbuffer px — sharp at any displayed size + clean for downloads
+const LOGO_RATIO = 0.26; // logo covers ~26% of QR width — comfortably inside H-level ECC budget
+const QR_DISPLAY = 220; // on-screen display size — locked in pixels so flex/grid can't blow it up
 
 /**
  * Per-URL QR card.
@@ -55,7 +55,9 @@ export default function QrCard({ shortUrl }: Props) {
 
         const img = new Image();
         img.crossOrigin = 'anonymous';
-        img.src = '/base_logo.png';
+        // High-res source — keeps the center mark crisp even at the
+        // 1024px+ download size.
+        img.src = '/logo.png';
 
         await new Promise<void>((resolve, reject) => {
           img.onload = () => resolve();
@@ -68,34 +70,11 @@ export default function QrCard({ shortUrl }: Props) {
         const x = (QR_SIZE - logoSize) / 2;
         const y = (QR_SIZE - logoSize) / 2;
 
-        // Knock out the QR modules behind the logo with a white square +
-        // a thin purple border so the logo stays legible. The H-level
-        // ECC absorbs the missing data.
-        const pad = 6;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x - pad, y - pad, logoSize + pad * 2, logoSize + pad * 2);
-        ctx.strokeStyle = ACCENT;
-        ctx.lineWidth = 3;
-        ctx.strokeRect(
-          x - pad + 1.5,
-          y - pad + 1.5,
-          logoSize + pad * 2 - 3,
-          logoSize + pad * 2 - 3,
-        );
-
-        // Draw logo with rounded clip
-        ctx.save();
-        const r = logoSize * 0.18;
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.arcTo(x + logoSize, y, x + logoSize, y + r, r);
-        ctx.arcTo(x + logoSize, y + logoSize, x + logoSize - r, y + logoSize, r);
-        ctx.arcTo(x, y + logoSize, x, y + logoSize - r, r);
-        ctx.arcTo(x, y, x + r, y, r);
-        ctx.closePath();
-        ctx.clip();
+        // The logo PNG has transparent areas — we don't paint a white
+        // knockout behind it, so the QR modules show through the logo's
+        // transparency. Only the opaque pixels (the panda + chain art)
+        // sit on top of the QR. H-level ECC tolerates the obscured cells.
         ctx.drawImage(img, x, y, logoSize, logoSize);
-        ctx.restore();
 
         if (!cancelled) setReady(true);
       } catch (err) {
@@ -149,21 +128,30 @@ export default function QrCard({ shortUrl }: Props) {
         </span>
       </div>
 
-      <div className="flex flex-col items-center gap-4">
-        {/* QR canvas */}
+      <div className="flex flex-col items-center gap-4 w-full">
+        {/* QR canvas — fixed pixel size so flex/grid context can't blow it
+            up. The internal canvas backbuffer is still 512px for clean
+            downloads; we just CSS-scale it to QR_DISPLAY on screen. */}
         <div
-          className="rounded-xl overflow-hidden p-3"
+          className="rounded-xl flex items-center justify-center"
           style={{
+            width: QR_DISPLAY + 16,
+            height: QR_DISPLAY + 16,
+            padding: 8,
             background: '#ffffff',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            boxShadow:
+              '0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(155,123,247,0.18)',
           }}
         >
           <canvas
             ref={canvasRef}
             width={QR_SIZE}
             height={QR_SIZE}
-            className="block"
-            style={{ width: 220, height: 220 }}
+            style={{
+              width: QR_DISPLAY,
+              height: QR_DISPLAY,
+              display: 'block',
+            }}
             aria-label={`QR code for ${shortUrl}`}
           />
         </div>
