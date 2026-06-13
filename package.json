@@ -3,7 +3,7 @@
   "version": "3.1.4",
   "description": "Fast URL shortener built on Cloudflare's edge network — lightning-fast redirects, powerful analytics, and a developer-first API for the Elixpo ecosystem.",
   "author": "Elixpo <hello@elixpo.com> (https://elixpo.com)",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "homepage": "https://url.elixpo.com",
   "repository": {
     "type": "git",

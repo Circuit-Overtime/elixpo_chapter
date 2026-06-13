@@ -12,16 +12,7 @@ const FEATURES = [
     title: 'Edge-native redirects',
     body: "Every short link resolves on Cloudflare's edge — sub-50ms anywhere on the planet, no cold starts, no proxies in between.",
     icon: (
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
       </svg>
     ),
@@ -30,16 +21,7 @@ const FEATURES = [
     title: 'Click analytics out of the box',
     body: 'Real-time counts, country breakdown, referrers, devices — no extra setup, no third-party script. Your data stays on your account.',
     icon: (
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <line x1="18" y1="20" x2="18" y2="10" />
         <line x1="12" y1="20" x2="12" y2="4" />
         <line x1="6" y1="20" x2="6" y2="14" />
@@ -50,16 +32,7 @@ const FEATURES = [
     title: 'Developer-first API',
     body: 'A clean REST API with API keys, scoped permissions, and predictable JSON. Drop it into any app, Elixpo or yours.',
     icon: (
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="16 18 22 12 16 6" />
         <polyline points="8 6 2 12 8 18" />
       </svg>
@@ -69,16 +42,7 @@ const FEATURES = [
     title: 'Custom slugs & branded links',
     body: 'Pick the slug yourself or let us generate one. Branded domains coming on the Growth tier so your links wear your name.',
     icon: (
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
         <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
       </svg>
@@ -88,20 +52,25 @@ const FEATURES = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col text-[#f5f5f4] relative">
+    <div className="min-h-screen flex flex-col text-[#f5f5f4] relative bg-black">
       <BackgroundAurora variant="default" />
 
       <div className="relative z-10">
         <Navbar />
       </div>
 
-      {/* Video hero header — dimmed product pitch underneath, vignette pulls the gaze to the centered copy. */}
-      <section className="relative z-10 w-full max-w-7xl mx-auto px-4 md:px-6 mt-4 md:mt-6">
+      {/* Hero panel: full-bleed rounded video card. Video sits behind a vignette
+          + dim layer; oversized wordmark anchors the bottom-left while the
+          description + CTA float to the right. Matches the elixpo.com hero. */}
+      <section className="relative z-10 w-full px-3 md:px-5 mt-3 md:mt-4">
         <div
-          className="video-hero w-full"
+          className="video-hero relative w-full mx-auto overflow-hidden"
           style={{
-            border: '1px solid rgba(155,123,247,0.18)',
-            boxShadow: '0 30px 80px rgba(0,0,0,0.55)',
+            maxWidth: '1480px',
+            minHeight: 'min(78vh, 760px)',
+            borderRadius: '28px',
+            border: '1px solid rgba(255,255,255,0.06)',
+            boxShadow: '0 40px 120px rgba(0,0,0,0.7)',
           }}
         >
           <video
@@ -115,103 +84,109 @@ export default function LandingPage() {
             aria-hidden="true"
           />
 
-          <div className="video-hero-content flex flex-col items-center text-center px-5 md:px-10 py-16 md:py-28 lg:py-32 max-w-[860px] mx-auto">
-            <span
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase mb-5"
-              style={{
-                background: 'rgba(155, 123, 247, 0.18)',
-                color: '#fff',
-                border: '1px solid rgba(155, 123, 247, 0.45)',
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full animate-pulse"
-                style={{ background: ACCENT }}
-              />
-              Built on Cloudflare&rsquo;s edge
-            </span>
+          <div className="video-hero-content absolute inset-0 flex flex-col">
+            {/* Spacer pushes content to the bottom of the panel */}
+            <div className="flex-1" />
 
-            <h1
-              className="text-[2.2rem] md:text-[3.6rem] lg:text-[4rem] font-extrabold leading-[1.05] tracking-tight mb-5 text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)]"
-            >
-              Short links.{' '}
-              <span style={{ color: '#c8b6ff' }}>For any app you ship.</span>
-            </h1>
-
-            <p
-              className="text-base md:text-[1.15rem] text-white/85 max-w-[640px] leading-relaxed mb-7 drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
-              style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
-            >
-              Open URL shortener with edge-fast redirects, real-time click
-              analytics, and a developer-first API. Born inside the Elixpo
-              ecosystem, free for any product or developer to use.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link
-                href="/api/auth/login"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-semibold text-base text-white no-underline transition-all"
-                style={{
-                  background:
-                    'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                  boxShadow:
-                    '0 8px 24px rgba(155,123,247,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background =
-                    'linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background =
-                    'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                Get started
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+            <div className="px-6 sm:px-10 md:px-14 lg:px-20 pb-10 md:pb-14 lg:pb-16">
+              <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-8 lg:gap-12 items-end">
+                {/* Oversized brand wordmark — bottom-left */}
+                <h1
+                  className="font-extrabold leading-[0.92] tracking-[-0.04em] text-white drop-shadow-[0_8px_40px_rgba(0,0,0,0.7)]"
+                  style={{
+                    fontSize: 'clamp(3.5rem, 12vw, 11rem)',
+                  }}
                 >
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
-              </Link>
-              <Link
-                href="/docs"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-medium text-base text-white no-underline transition-all"
-                style={{
-                  border: '1px solid rgba(255,255,255,0.25)',
-                  background: 'rgba(11,13,18,0.35)',
-                  backdropFilter: 'blur(8px)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor =
-                    'rgba(155,123,247,0.55)';
-                  e.currentTarget.style.background =
-                    'rgba(155,123,247,0.12)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor =
-                    'rgba(255,255,255,0.25)';
-                  e.currentTarget.style.background = 'rgba(11,13,18,0.35)';
-                }}
-              >
-                Integrator docs
-              </Link>
+                  Elixpo
+                  <span style={{ color: '#c8b6ff' }}>URL</span>
+                </h1>
+
+                {/* Right column — tagline + CTA */}
+                <div className="flex flex-col gap-5 max-w-md lg:pl-2 lg:pb-3">
+                  <span
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase self-start"
+                    style={{
+                      background: 'rgba(155, 123, 247, 0.18)',
+                      color: '#fff',
+                      border: '1px solid rgba(155, 123, 247, 0.45)',
+                      backdropFilter: 'blur(8px)',
+                    }}
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full animate-pulse"
+                      style={{ background: ACCENT }}
+                    />
+                    Built on Cloudflare&rsquo;s edge
+                  </span>
+
+                  <p
+                    className="text-base md:text-[1.05rem] text-white/90 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
+                    style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
+                  >
+                    An open URL shortener built on Cloudflare&rsquo;s edge.
+                    Lightning-fast redirects, click analytics, and a
+                    developer-first API — for any app you ship, Elixpo or
+                    yours.
+                  </p>
+
+                  <div className="flex items-center gap-3 mt-1">
+                    <Link
+                      href="/api/auth/login"
+                      className="group inline-flex items-center gap-3 pl-6 pr-2 py-2 rounded-full font-semibold text-[0.95rem] text-white no-underline transition-all"
+                      style={{
+                        background: 'rgba(11,13,18,0.85)',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        backdropFilter: 'blur(8px)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background =
+                          'rgba(155,123,247,0.22)';
+                        e.currentTarget.style.borderColor =
+                          'rgba(155,123,247,0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background =
+                          'rgba(11,13,18,0.85)';
+                        e.currentTarget.style.borderColor =
+                          'rgba(255,255,255,0.15)';
+                      }}
+                    >
+                      <span className="tracking-wider uppercase text-[0.78rem]">
+                        Get Started
+                      </span>
+                      <span
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-full text-white transition-all group-hover:translate-x-0.5"
+                        style={{
+                          background:
+                            'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                          boxShadow:
+                            '0 4px 14px rgba(155,123,247,0.5)',
+                        }}
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                          <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 pt-12 md:pt-16 pb-16 md:pb-20">
+      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 pt-16 md:pt-24 pb-16 md:pb-20">
         {/* Features */}
         <section className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {FEATURES.map((f) => (
