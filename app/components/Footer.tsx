@@ -32,7 +32,7 @@ const RESOURCE_LINKS: FooterLink[] = [
 ];
 
 const LEGAL_LINKS: FooterLink[] = [
-  { label: 'License (MIT)', href: LICENSE_URL, external: true },
+  { label: 'License', href: LICENSE_URL, external: true },
   { label: 'Privacy', href: `${ECOSYSTEM_URL}/privacy`, external: true },
   { label: 'Terms', href: `${ECOSYSTEM_URL}/terms`, external: true },
   { label: 'Trademark notice', href: `${REPO_URL}/blob/main/LICENSES/exceptions/Oreo-trademarks`, external: true },
@@ -221,7 +221,7 @@ export default function Footer() {
             </span>
             <span className="hidden sm:inline text-white/25">·</span>
             <span>
-              Code under{' '}
+              Code{' '}
               <a
                 href={LICENSE_URL}
                 target="_blank"
@@ -230,7 +230,16 @@ export default function Footer() {
               >
                 MIT
               </a>
-              , brand assets reserved
+              , assets{' '}
+              <a
+                href={LICENSE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline decoration-white/20 hover:text-white hover:decoration-white/60 transition-colors"
+              >
+                CC-BY-4.0
+              </a>
+              , brand reserved
             </span>
           </div>
           <div className="flex items-center gap-3">

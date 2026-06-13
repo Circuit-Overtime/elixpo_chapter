@@ -309,7 +309,7 @@ export default function DocsLayout({
               </svg>
             </button>
 
-            <Link href="/docs" className="flex items-center gap-2 no-underline text-white">
+            <Link href="/" className="flex items-center gap-2 no-underline text-white">
               <img
                 src="/base_logo.png"
                 alt="ElixpoURL"

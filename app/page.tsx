@@ -89,11 +89,11 @@ export default function LandingPage() {
               Mirrors the elixpo.com hero composition. */}
           <div className="video-hero-content absolute inset-0 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr]">
             {/* Left — wordmark pinned bottom-left */}
-            <div className="flex flex-col justify-end px-6 sm:px-10 md:px-14 lg:px-20 pb-8 md:pb-12 lg:pb-16">
+            <div className="flex flex-col justify-end px-6 sm:px-10 md:px-14 lg:px-20 pb-8 md:pb-12 lg:pb-14">
               <h1
                 className="font-extrabold leading-[0.9] tracking-[-0.045em] text-white drop-shadow-[0_8px_40px_rgba(0,0,0,0.7)]"
                 style={{
-                  fontSize: 'clamp(3rem, 11vw, 10rem)',
+                  fontSize: 'clamp(2.5rem, 8.5vw, 8rem)',
                 }}
               >
                 Elixpo
@@ -101,8 +101,9 @@ export default function LandingPage() {
               </h1>
             </div>
 
-            {/* Right — pill + tagline + CTA, vertically centered */}
-            <div className="flex flex-col justify-center items-start gap-5 px-6 sm:px-10 md:px-14 lg:pr-20 lg:pl-4 pb-10 lg:pb-0 max-w-[420px]">
+            {/* Right — pill + tagline + CTA, baseline-aligned with the
+                wordmark (justify-end pushes everything to the bottom). */}
+            <div className="flex flex-col justify-end items-start gap-5 px-6 sm:px-10 md:px-14 lg:pr-20 lg:pl-4 pb-10 md:pb-12 lg:pb-14 max-w-[420px]">
               <span
                 className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase"
                 style={{

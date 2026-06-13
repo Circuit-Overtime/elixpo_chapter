@@ -88,12 +88,6 @@ const accountItems = [
   { href: '/profile/keys', label: 'API Keys', icon: Icons.key },
 ];
 
-const adminItems = [
-  { href: '/admin', label: 'Monitoring', icon: Icons.monitor },
-  { href: '/admin/users', label: 'Users', icon: Icons.users },
-  { href: '/admin/audit', label: 'Audit Log', icon: Icons.audit },
-];
-
 export default function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
   const avatarUrl = getAvatarUrl(user);
@@ -101,7 +95,7 @@ export default function Sidebar({ user }: { user: User }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isActive = (href: string) => {
-    if (href === '/dashboard' || href === '/profile' || href === '/admin') {
+    if (href === '/dashboard' || href === '/profile') {
       return pathname === href;
     }
     return pathname.startsWith(href);
@@ -161,16 +155,6 @@ export default function Sidebar({ user }: { user: User }) {
         {navItems.map((item) => (
           <NavIcon key={item.href} {...item} />
         ))}
-
-        {/* Admin icons */}
-        {user.role === 'admin' && (
-          <>
-            <div className="w-px h-6 bg-border-light mx-1 sm:mx-2" />
-            {adminItems.map((item) => (
-              <NavIcon key={item.href} {...item} />
-            ))}
-          </>
-        )}
 
         {/* Divider before account */}
         <div className="w-px h-6 bg-border-light ml-1 sm:ml-2" />
