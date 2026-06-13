@@ -3,13 +3,12 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import BackgroundAurora from '../components/BackgroundAurora';
 
 export default function NotFoundPage() {
   return (
-    <div className="min-h-screen bg-bg-deep flex flex-col items-center justify-center px-8 relative overflow-hidden">
-      {/* Ambient glow */}
-      <div className="absolute top-[30%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-[0.06] pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #9b7bf7, transparent 70%)' }} />
+    <div className="min-h-screen flex flex-col items-center justify-center px-8 relative overflow-hidden" style={{ background: '#0b0d12' }}>
+      <BackgroundAurora variant="default" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
