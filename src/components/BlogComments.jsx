@@ -113,7 +113,7 @@ export default function BlogComments({ blogId, blogAuthorId }) {
               value={newComment}
               onChange={e => setNewComment(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); postComment(newComment); } }}
-              placeholder="Add a comment... (@ to mention)"
+              placeholder="Add a comment... (@ to mention, :emoji:)"
               rows={2}
               className="w-full px-1 py-3 outline-none text-[14px] resize-none bg-transparent"
               style={{ borderBottom: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
@@ -213,7 +213,7 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                       <MentionTextarea
                         value={replyText}
                         onChange={e => setReplyText(e.target.value)}
-                        placeholder={`Reply to ${replyTo.username}... (@ to mention)`}
+                        placeholder={`Reply to ${replyTo.username}... (@ to mention, :emoji:)`}
                         rows={2}
                         className="w-full rounded-lg px-3 py-2 outline-none text-[13px] resize-none"
                         style={{ flex: 1, backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
