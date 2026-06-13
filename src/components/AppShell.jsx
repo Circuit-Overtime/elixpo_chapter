@@ -509,15 +509,23 @@ export default function AppShell({ children }) {
 
           {/* Bottom: docs + legal (above the account), then the account card */}
           <div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1.5 px-3 py-3 mb-1 text-[12px]" style={{ borderTop: '1px solid var(--divider)', color: 'var(--text-faint)' }}>
+            <div className="flex flex-col gap-1 pt-3 pb-2 mb-1" style={{ borderTop: '1px solid var(--divider)' }}>
               {[
                 { href: '/docs', icon: 'document-text-outline', label: 'Docs' },
                 { href: '/help', icon: 'help-buoy-outline', label: 'Help' },
                 { href: '/privacy', icon: 'shield-checkmark-outline', label: 'Privacy' },
                 { href: '/terms', icon: 'document-outline', label: 'Terms' },
               ].map(l => (
-                <Link key={l.href} href={l.href} className="flex items-center gap-1 hover:text-[var(--text-secondary)] transition-colors" title={l.label}>
-                  <ion-icon name={l.icon} style={{ fontSize: '14px' }} />
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] transition-colors"
+                  style={{ color: 'var(--text-muted)' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                  title={l.label}
+                >
+                  <ion-icon name={l.icon} style={{ fontSize: '16px' }} />
                   {l.label}
                 </Link>
               ))}
