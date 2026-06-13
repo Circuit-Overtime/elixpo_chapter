@@ -16,6 +16,7 @@ export function getEnv() {
     NEXT_PUBLIC_ELIXPO_CLIENT_ID: (ctx as any).NEXT_PUBLIC_ELIXPO_CLIENT_ID || process.env.NEXT_PUBLIC_ELIXPO_CLIENT_ID || '',
     ELIXPO_CLIENT_SECRET: (ctx as any).ELIXPO_CLIENT_SECRET || process.env.ELIXPO_CLIENT_SECRET || '',
     BASE_URL: (ctx as any).BASE_URL || process.env.BASE_URL || '',
+    SAFE_BROWSING_API_KEY: (ctx as any).SAFE_BROWSING_API_KEY || process.env.SAFE_BROWSING_API_KEY || '',
   };
 }
 

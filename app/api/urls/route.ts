@@ -13,6 +13,7 @@ import {
 } from '@/lib/validate';
 import { requireSameOrigin } from '@/lib/csrf';
 import { rateLimit } from '@/lib/ratelimit';
+import { checkSafeBrowsing, threatMessage } from '@/lib/safebrowsing';
 
 export const runtime = 'edge';
 
@@ -35,10 +36,21 @@ export async function POST(request: NextRequest) {
   const kv = getKV();
   const env = getEnv();
 
-  // Validate URL
+  // Validate URL — static checks first (free, instant)
   if (!url || typeof url !== 'string') return badRequest('url is required');
   const urlErr = validateUrl(url);
   if (urlErr) return badRequest(urlErr);
+
+  // Safe Browsing — paid signal, only runs if SAFE_BROWSING_API_KEY is set.
+  // Treated as a non-blocker if the API is down (fail-open by design — see
+  // lib/safebrowsing.ts). Real positives DO block.
+  const threat = await checkSafeBrowsing(url, env.SAFE_BROWSING_API_KEY);
+  if (threat) {
+    return NextResponse.json(
+      { error: threatMessage(threat) },
+      { status: 422 },
+    );
+  }
 
   // Validate title length
   if (title) {
