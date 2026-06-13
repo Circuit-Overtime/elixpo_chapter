@@ -522,7 +522,7 @@ export default function AppShell({ children }) {
                 </Link>
               ))}
             </div>
-            {user && (
+            {user ? (
               <Link href="/profile" className="block px-3 py-3 rounded-xl transition-colors cursor-pointer" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
                 <div className="flex items-center gap-2.5">
                   <UserAvatar src={user.avatar_url} name={user.display_name || user.username} size={32} className="flex-shrink-0" />
@@ -532,6 +532,22 @@ export default function AppShell({ children }) {
                   </div>
                 </div>
               </Link>
+            ) : (
+              <div className="px-3 py-3 rounded-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-default)' }}>
+                    <ion-icon name="person-outline" style={{ fontSize: '16px', color: 'var(--text-muted)' }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>Guest</p>
+                    <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>Not signed in</p>
+                  </div>
+                </div>
+                <button onClick={handleLogin} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-colors" style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+                  <ion-icon name="log-in-outline" style={{ fontSize: '15px' }} />
+                  Sign In
+                </button>
+              </div>
             )}
           </div>
         </aside>

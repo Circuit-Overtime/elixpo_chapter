@@ -32,12 +32,14 @@ Cover images, avatars, organization logos, and in-post images you upload are **c
 
 ## Open source & transparency
 
-LixBlogs is open source. You can read exactly how your data is handled in the code at **[github.com/elixpo/blogs.elixpo](https://github.com/elixpo/blogs.elixpo)**. Found a privacy concern? Open an issue or email us.
+LixBlogs is open source. You can read exactly how your data is handled in the code at **[LixBlogs Open Source Code](https://github.com/elixpo/blogs.elixpo)**. Found a privacy concern? Open an issue or email us.
 
 ## Your choices
 
-You can edit or delete your content anytime. **Account deletion and app revocation** are handled at **accounts.elixpo.com → Connected apps**.
+You can edit or delete your content anytime. **Account deletion and app revocation** are handled at [Connected Apps](https://accounts.elixpo.com/dashboard/services)
+
 
 ## Contact
 
-Questions about your data? Email **hello@elixpo.com**.
+- Questions about your data? Email **hello@elixpo.com**.
+- Or leave us an issue at [Blogs Issues](https://github.com/elixpo/blogs.elixpo/issues/new)
