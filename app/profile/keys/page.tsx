@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import Modal, { ConfirmDialog } from '@/app/components/Modal';
 
 interface ApiKey {
   id: number;
@@ -14,20 +15,36 @@ interface ApiKey {
 }
 
 const scopeOptions = [
-  { value: 'read,write', label: 'Read & Write', desc: 'Full access to create, read, update, and delete URLs' },
-  { value: 'read', label: 'Read only', desc: 'Can only list and view URLs and analytics' },
+  {
+    value: 'read,write',
+    label: 'Read & Write',
+    desc: 'Full access to create, read, update, and delete URLs',
+  },
+  {
+    value: 'read',
+    label: 'Read only',
+    desc: 'Can only list and view URLs and analytics',
+  },
 ];
 
 export default function ApiKeysPage() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Create modal state
+  const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState('');
   const [scopes, setScopes] = useState('read,write');
-  const [newKey, setNewKey] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+
+  // "Save this key once" modal state
+  const [newKey, setNewKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [mounted, setMounted] = useState(false);
+
+  // Revoke confirm state
+  const [revokeTarget, setRevokeTarget] = useState<ApiKey | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   const fetchKeys = async () => {
     const res = await fetch('/api/keys');
@@ -37,14 +54,12 @@ export default function ApiKeysPage() {
   };
 
   useEffect(() => {
-    setMounted(true);
     fetchKeys();
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setNewKey('');
+    setCreateError('');
     setCreating(true);
 
     try {
@@ -57,21 +72,28 @@ export default function ApiKeysPage() {
       if (data.key) {
         setNewKey(data.key);
         setName('');
+        setCreateOpen(false);
         fetchKeys();
       } else {
-        setError(data.error || 'Failed to create key');
+        setCreateError(data.error || 'Failed to create key');
       }
     } catch {
-      setError('Network error');
+      setCreateError('Network error');
     } finally {
       setCreating(false);
     }
   };
 
-  const handleRevoke = async (id: number) => {
-    if (!confirm('Revoke this API key? This cannot be undone.')) return;
-    const res = await fetch(`/api/keys/${id}`, { method: 'DELETE' });
-    if (res.ok) fetchKeys();
+  const handleRevokeConfirm = async () => {
+    if (!revokeTarget) return;
+    setRevoking(true);
+    try {
+      await fetch(`/api/keys/${revokeTarget.id}`, { method: 'DELETE' });
+      setRevokeTarget(null);
+      fetchKeys();
+    } finally {
+      setRevoking(false);
+    }
   };
 
   const handleCopy = (text: string) => {
@@ -81,421 +103,386 @@ export default function ApiKeysPage() {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-[calc(100vh-4rem)] relative">
-      {/* Ambient background glows */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute top-[15%] right-[30%] w-[500px] h-[500px] rounded-full"
-          style={{
-            background: 'radial-gradient(circle, rgba(155,123,247,0.06), transparent 70%)',
-            animation: 'pulse-glow 6s ease-in-out infinite',
-          }}
-        />
-        <div
-          className="absolute bottom-[20%] left-[25%] w-[400px] h-[400px] rounded-full"
-          style={{
-            background: 'radial-gradient(circle, rgba(155, 123, 247,0.04), transparent 70%)',
-            animation: 'pulse-glow 8s ease-in-out infinite 2s',
-          }}
-        />
-      </div>
-
-      <div
-        className="w-full max-w-xl relative z-10 py-8"
-        style={{
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.98)',
-          transition: 'all 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-        }}
-      >
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1
-            className="text-3xl font-sans font-bold mb-2"
-            style={{
-              background: 'linear-gradient(135deg, #f5f5f4 0%, #9b7bf7 60%, #b094ff 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
+    <div className="w-full max-w-4xl mx-auto py-8 px-2">
+      {/* Header row — title + primary CTA */}
+      <div className="flex items-end justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl md:text-[1.8rem] font-bold text-white tracking-tight">
             API Keys
           </h1>
-          <p className="text-sm text-text-muted">
-            Manage keys for programmatic access &middot;{' '}
-            <Link href="/docs#auth" className="text-accent-main no-underline hover:underline">
+          <p className="text-sm text-white/55 mt-1">
+            Manage keys for programmatic access ·{' '}
+            <Link
+              href="/docs/keys"
+              className="text-[#9b7bf7] no-underline hover:underline"
+            >
               Read the docs
             </Link>
           </p>
         </div>
-
-        {/* Create key card */}
-        <div
-          className="rounded-2xl p-[1px] mb-6"
+        <button
+          type="button"
+          onClick={() => {
+            setCreateError('');
+            setCreateOpen(true);
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-semibold text-white transition-all"
           style={{
-            background: 'linear-gradient(135deg, rgba(155,123,247,0.2), rgba(155, 123, 247,0.08), rgba(255,255,255,0.05))',
+            background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+            boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background =
+              'linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background =
+              'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)';
+            e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
-          <div
-            className="rounded-2xl p-7"
-            style={{
-              background: 'linear-gradient(135deg, rgba(16, 18, 28,0.85), rgba(12, 14, 22,0.95))',
-              backdropFilter: 'blur(24px)',
-              boxShadow: '0 25px 60px -15px rgba(0,0,0,0.5), 0 0 80px rgba(155,123,247,0.04)',
-            }}
-          >
-            <div className="flex items-center gap-2 mb-5">
-              <div
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: '#9b7bf7', boxShadow: '0 0 6px rgba(155,123,247,0.5)' }}
-              />
-              <span className="text-[0.65rem] text-accent-main font-semibold uppercase tracking-wider">
-                Create New Key
-              </span>
-            </div>
-
-            <form onSubmit={handleCreate}>
-              <div className="mb-5">
-                <label className="block text-[0.7rem] text-text-secondary mb-1.5 uppercase tracking-wider font-medium">
-                  Key Name
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Production Server, CI Pipeline"
-                  required
-                  className="input-field"
-                />
-              </div>
-
-              {/* Scope selector */}
-              <div className="mb-6">
-                <label className="block text-[0.7rem] text-text-secondary mb-2 uppercase tracking-wider font-medium">
-                  Permissions
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {scopeOptions.map((opt) => {
-                    const selected = scopes === opt.value;
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setScopes(opt.value)}
-                        className="text-left p-3.5 rounded-xl transition-all duration-200 cursor-pointer"
-                        style={{
-                          background: selected
-                            ? 'linear-gradient(135deg, rgba(155,123,247,0.06), rgba(155, 123, 247,0.03))'
-                            : 'rgba(255,255,255,0.03)',
-                          border: `1.5px solid ${selected ? 'rgba(155,123,247,0.35)' : 'rgba(255,255,255,0.08)'}`,
-                          boxShadow: selected ? '0 0 16px rgba(155,123,247,0.06)' : 'none',
-                        }}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span
-                            className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-all"
-                            style={{ border: `2px solid ${selected ? '#9b7bf7' : 'rgba(255,255,255,0.2)'}` }}
-                          >
-                            {selected && <span className="w-2 h-2 rounded-full bg-accent-main" />}
-                          </span>
-                          <span
-                            className="text-sm font-medium transition-colors"
-                            style={{ color: selected ? '#9b7bf7' : '#f5f5f4' }}
-                          >
-                            {opt.label}
-                          </span>
-                        </div>
-                        <p className="text-[0.7rem] text-text-disabled ml-6 leading-relaxed">{opt.desc}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Error */}
-              {error && (
-                <div
-                  className="mb-5 p-3.5 rounded-xl text-sm font-medium"
-                  style={{
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    border: '1px solid rgba(239, 68, 68, 0.25)',
-                    color: '#f87171',
-                    animation: 'shake 0.4s ease-in-out',
-                  }}
-                >
-                  {error}
-                </div>
-              )}
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={creating}
-                className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 cursor-pointer"
-                style={{
-                  background: creating
-                    ? 'rgba(155, 123, 247, 0.08)'
-                    : 'linear-gradient(135deg, rgba(155,123,247,0.18), rgba(155, 123, 247,0.12))',
-                  color: '#9b7bf7',
-                  border: '1px solid rgba(155, 123, 247, 0.3)',
-                  boxShadow: creating ? 'none' : '0 0 30px rgba(155,123,247,0.08)',
-                }}
-              >
-                {creating ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span
-                      className="w-4 h-4 rounded-full border-2 border-current"
-                      style={{ borderTopColor: 'transparent', animation: 'spin 0.6s linear infinite' }}
-                    />
-                    Creating...
-                  </span>
-                ) : (
-                  'Create Key'
-                )}
-              </button>
-            </form>
-
-          </div>
-        </div>
-
-        {/* Keys list card */}
-        <div
-          className="rounded-2xl p-[1px]"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
-          }}
-        >
-          <div
-            className="rounded-2xl p-7"
-            style={{
-              background: 'linear-gradient(135deg, rgba(16, 18, 28,0.8), rgba(12, 14, 22,0.9))',
-              backdropFilter: 'blur(24px)',
-              boxShadow: '0 15px 40px -10px rgba(0,0,0,0.4)',
-            }}
-          >
-            <div className="flex items-center gap-2 mb-5">
-              <div
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: 'rgba(255,255,255,0.4)' }}
-              />
-              <span className="text-[0.65rem] text-text-secondary font-semibold uppercase tracking-wider">
-                Your Keys
-              </span>
-            </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center py-8 gap-2 text-text-disabled text-sm">
-                <span
-                  className="w-4 h-4 rounded-full border-2 border-current"
-                  style={{ borderTopColor: 'transparent', animation: 'spin 0.6s linear infinite' }}
-                />
-                Loading...
-              </div>
-            ) : keys.length > 0 ? (
-              <div className="space-y-3">
-                {keys.map((k, i) => (
-                  <div
-                    key={k.id}
-                    className="flex items-center gap-4 p-4 rounded-xl transition-all duration-200"
-                    style={{
-                      background: k.is_active ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.01)',
-                      border: `1px solid ${k.is_active ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)'}`,
-                      opacity: k.is_active ? 1 : 0.5,
-                      animation: `fade-in-up 0.3s ease-out ${i * 0.05}s both`,
-                    }}
-                  >
-                    {/* Key icon */}
-                    <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                      style={{
-                        background: k.is_active ? 'rgba(155,123,247,0.08)' : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${k.is_active ? 'rgba(155,123,247,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                      }}
-                    >
-                      <svg viewBox="0 0 20 20" fill="none" stroke={k.is_active ? '#9b7bf7' : '#71717a'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                        <circle cx="7.5" cy="12.5" r="3.5" />
-                        <path d="M10.2 9.8L16 4M14 4l2 2M12.5 6.5l2 2" />
-                      </svg>
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium truncate">{k.name}</span>
-                        <span
-                          className="text-[0.6rem] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded"
-                          style={{
-                            background: k.scopes.includes('write') ? 'rgba(155,123,247,0.1)' : 'rgba(155, 123, 247,0.1)',
-                            color: k.scopes.includes('write') ? '#9b7bf7' : '#b094ff',
-                            border: `1px solid ${k.scopes.includes('write') ? 'rgba(155,123,247,0.2)' : 'rgba(155, 123, 247,0.2)'}`,
-                          }}
-                        >
-                          {k.scopes.includes('write') ? 'R/W' : 'Read'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs text-text-disabled font-mono">{k.key_prefix}...</span>
-                        <span className="text-xs text-text-disabled">
-                          {k.last_used_at ? `Used ${new Date(k.last_used_at).toLocaleDateString()}` : 'Never used'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Status + Action */}
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span
-                        className="text-[0.6rem] font-medium uppercase tracking-wider px-2 py-1 rounded-lg"
-                        style={{
-                          background: k.is_active ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
-                          color: k.is_active ? '#4ade80' : '#f87171',
-                          border: `1px solid ${k.is_active ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
-                        }}
-                      >
-                        {k.is_active ? 'Active' : 'Revoked'}
-                      </span>
-                      {k.is_active ? (
-                        <button
-                          onClick={() => handleRevoke(k.id)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer"
-                          style={{
-                            background: 'rgba(239,68,68,0.08)',
-                            color: '#f87171',
-                            border: '1px solid rgba(239,68,68,0.2)',
-                          }}
-                        >
-                          Revoke
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-10 text-center text-text-disabled text-sm italic">
-                No API keys yet — create one above
-              </div>
-            )}
-          </div>
-        </div>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          New API key
+        </button>
       </div>
 
-      {/* API Key Modal */}
-      {newKey && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ animation: 'modal-in 0.3s ease-out' }}
-        >
-          {/* Blurred backdrop */}
-          <div
-            className="absolute inset-0"
-            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)' }}
-          />
+      {/* Keys list */}
+      <div
+        className="rounded-2xl p-6"
+        style={{
+          background:
+            'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(20px)',
+        }}
+      >
+        <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-white/45 mb-4">
+          Your keys
+        </div>
 
-          {/* Modal card */}
-          <div
-            className="relative w-full max-w-md rounded-2xl p-[1px]"
-            style={{
-              background: 'linear-gradient(135deg, rgba(251,191,36,0.3), rgba(155,123,247,0.15), rgba(255,255,255,0.05))',
-              animation: 'fade-in-up 0.4s ease-out',
-            }}
-          >
-            <div
-              className="rounded-2xl p-8"
+        {loading ? (
+          <div className="flex items-center justify-center py-8 gap-2 text-white/40 text-sm">
+            <span
+              className="w-4 h-4 rounded-full border-2 border-current"
               style={{
-                background: 'linear-gradient(135deg, rgba(16, 18, 28,0.97), rgba(12, 14, 22,0.98))',
-                boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7), 0 0 60px rgba(251,191,36,0.06)',
+                borderTopColor: 'transparent',
+                animation: 'spin 0.6s linear infinite',
+              }}
+            />
+            Loading...
+          </div>
+        ) : keys.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-white/55 mb-4">
+              No API keys yet. Mint one to start hitting the API
+              programmatically.
+            </p>
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-semibold text-white transition-all"
+              style={{
+                background:
+                  'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
               }}
             >
-              {/* Warning icon */}
-              <div className="flex justify-center mb-5">
+              Create your first key
+            </button>
+          </div>
+        ) : (
+          <ul className="space-y-2 list-none p-0">
+            {keys.map((k) => (
+              <li
+                key={k.id}
+                className="flex items-center gap-4 p-4 rounded-xl transition-all"
+                style={{
+                  background: k.is_active
+                    ? 'rgba(255,255,255,0.025)'
+                    : 'rgba(255,255,255,0.01)',
+                  border: `1px solid ${k.is_active ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)'}`,
+                  opacity: k.is_active ? 1 : 0.5,
+                }}
+              >
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                   style={{
-                    background: 'rgba(251,191,36,0.1)',
-                    border: '1px solid rgba(251,191,36,0.25)',
-                    boxShadow: '0 0 20px rgba(251,191,36,0.08)',
+                    background: k.is_active
+                      ? 'rgba(155,123,247,0.1)'
+                      : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${k.is_active ? 'rgba(155,123,247,0.25)' : 'rgba(255,255,255,0.06)'}`,
                   }}
                 >
-                  <svg viewBox="0 0 20 20" fill="none" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke={k.is_active ? '#9b7bf7' : '#71717a'}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-4 h-4"
+                  >
                     <circle cx="7.5" cy="12.5" r="3.5" />
                     <path d="M10.2 9.8L16 4M14 4l2 2M12.5 6.5l2 2" />
                   </svg>
                 </div>
-              </div>
 
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-sans font-bold text-text-primary mb-1">Your API Key</h3>
-                <p className="text-xs text-text-muted">
-                  This key will only be shown once. Copy it now and store it somewhere safe.
-                </p>
-              </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-white truncate">
+                      {k.name}
+                    </span>
+                    <span
+                      className="text-[0.6rem] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded"
+                      style={{
+                        background: 'rgba(155,123,247,0.12)',
+                        color: '#b094ff',
+                        border: '1px solid rgba(155,123,247,0.25)',
+                      }}
+                    >
+                      {k.scopes.includes('write') ? 'R/W' : 'Read'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    <span className="text-xs text-white/40 font-mono">
+                      {k.key_prefix}...
+                    </span>
+                    <span className="text-xs text-white/40">
+                      {k.last_used_at
+                        ? `Used ${new Date(k.last_used_at).toLocaleDateString()}`
+                        : 'Never used'}
+                    </span>
+                  </div>
+                </div>
 
-              {/* Key field with inline copy */}
-              <div
-                className="relative flex items-center rounded-xl mb-6"
-                style={{
-                  background: 'rgba(0,0,0,0.4)',
-                  border: '1px solid rgba(251,191,36,0.2)',
-                }}
-              >
-                <code className="text-sm text-text-primary break-all flex-1 font-mono px-4 py-3.5 pr-20">
-                  {newKey}
-                </code>
-                <button
-                  onClick={() => handleCopy(newKey)}
-                  className="absolute right-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer"
-                  style={{
-                    background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.08)',
-                    color: copied ? '#22c55e' : '#f5f5f4',
-                    border: `1px solid ${copied ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.15)'}`,
-                  }}
-                >
-                  {copied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span
+                    className="text-[0.6rem] font-medium uppercase tracking-wider px-2 py-1 rounded-lg"
+                    style={{
+                      background: k.is_active
+                        ? 'rgba(34,197,94,0.1)'
+                        : 'rgba(239,68,68,0.1)',
+                      color: k.is_active ? '#86efac' : '#f87171',
+                      border: `1px solid ${k.is_active ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                    }}
+                  >
+                    {k.is_active ? 'Active' : 'Revoked'}
+                  </span>
+                  {k.is_active === 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setRevokeTarget(k)}
+                      className="text-xs text-white/55 hover:text-[#f87171] transition-colors px-2 py-1"
+                      style={{ background: 'transparent', border: 'none' }}
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-              {/* Dismiss button */}
-              <button
-                onClick={() => setNewKey('')}
-                className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 cursor-pointer"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(155,123,247,0.18), rgba(155, 123, 247,0.12))',
-                  color: '#9b7bf7',
-                  border: '1px solid rgba(155, 123, 247, 0.3)',
-                  boxShadow: '0 0 30px rgba(155,123,247,0.08)',
-                }}
-              >
-                I have saved my credentials
-              </button>
+      {/* ─────── Create API key modal ─────── */}
+      <Modal
+        open={createOpen}
+        onClose={() => !creating && setCreateOpen(false)}
+        title="Create API key"
+        description="Name it after the app or environment it'll be used in. You can revoke and rotate any time."
+        size="md"
+        disableBackdropClose={creating}
+      >
+        <form onSubmit={handleCreate}>
+          <div className="mb-4">
+            <label
+              htmlFor="key-name"
+              className="block text-[0.7rem] text-white/65 mb-1.5 uppercase tracking-wider font-medium"
+            >
+              Key name
+            </label>
+            <input
+              id="key-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Production server, CI pipeline"
+              required
+              autoFocus
+              className="w-full px-3 py-2.5 rounded-lg text-sm outline-none text-white placeholder-white/40 transition-colors"
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.1)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#9b7bf7';
+                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+              }}
+            />
+          </div>
+
+          <div className="mb-5">
+            <div className="block text-[0.7rem] text-white/65 mb-2 uppercase tracking-wider font-medium">
+              Permissions
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {scopeOptions.map((opt) => {
+                const selected = scopes === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setScopes(opt.value)}
+                    className="text-left p-3 rounded-xl transition-all cursor-pointer"
+                    style={{
+                      background: selected
+                        ? 'rgba(155,123,247,0.08)'
+                        : 'rgba(255,255,255,0.025)',
+                      border: `1.5px solid ${selected ? 'rgba(155,123,247,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span
+                        className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                        style={{
+                          border: `2px solid ${selected ? '#9b7bf7' : 'rgba(255,255,255,0.25)'}`,
+                        }}
+                      >
+                        {selected && (
+                          <span
+                            className="w-2 h-2 rounded-full"
+                            style={{ background: '#9b7bf7' }}
+                          />
+                        )}
+                      </span>
+                      <span
+                        className="text-sm font-medium"
+                        style={{ color: selected ? '#fff' : '#f5f5f4' }}
+                      >
+                        {opt.label}
+                      </span>
+                    </div>
+                    <p className="text-[0.72rem] text-white/50 ml-6 leading-relaxed">
+                      {opt.desc}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        </div>
-      )}
 
-      <style jsx>{`
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.5; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.1); }
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          20% { transform: translateX(-6px); }
-          40% { transform: translateX(6px); }
-          60% { transform: translateX(-4px); }
-          80% { transform: translateX(4px); }
-        }
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes modal-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `}</style>
+          {createError && (
+            <div
+              className="mb-4 p-3 rounded-lg text-sm"
+              style={{
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                color: '#f87171',
+              }}
+            >
+              {createError}
+            </div>
+          )}
+
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={() => setCreateOpen(false)}
+              disabled={creating}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 transition-colors"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.12)',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={creating || !name.trim()}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all"
+              style={{
+                background:
+                  'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                boxShadow: '0 4px 14px rgba(155,123,247,0.4)',
+                opacity: creating || !name.trim() ? 0.6 : 1,
+              }}
+            >
+              {creating ? 'Creating...' : 'Create key'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ─────── "Save this key once" modal ─────── */}
+      <Modal
+        open={!!newKey}
+        onClose={() => setNewKey(null)}
+        title="Your new API key"
+        description="Copy this now — we hash it on save and won't show it again."
+        size="md"
+      >
+        <div
+          className="p-4 rounded-xl mb-4 font-mono text-sm break-all"
+          style={{
+            background: 'rgba(0,0,0,0.45)',
+            border: '1px solid rgba(155,123,247,0.25)',
+            color: '#e8e8ed',
+          }}
+        >
+          {newKey}
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => newKey && handleCopy(newKey)}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 transition-colors inline-flex items-center gap-2"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+            </svg>
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setNewKey(null)}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+            style={{
+              background:
+                'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+              boxShadow: '0 4px 14px rgba(155,123,247,0.4)',
+            }}
+          >
+            I&apos;ve saved it
+          </button>
+        </div>
+      </Modal>
+
+      {/* ─────── Revoke confirm ─────── */}
+      <ConfirmDialog
+        open={!!revokeTarget}
+        onClose={() => !revoking && setRevokeTarget(null)}
+        onConfirm={handleRevokeConfirm}
+        title={`Revoke "${revokeTarget?.name ?? ''}"?`}
+        description="Any app using this key will lose access immediately. This cannot be undone."
+        confirmLabel="Revoke key"
+        variant="danger"
+        loading={revoking}
+      />
     </div>
   );
 }
