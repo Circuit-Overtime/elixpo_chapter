@@ -241,6 +241,35 @@ const NAV_ITEMS = [
   { label: 'Stats', icon: 'stats-chart-outline', href: '/stats' },
 ];
 
+// GitHub star counter (stars only) → links to the repo.
+function GitHubStars() {
+  const [stars, setStars] = useState(null);
+  useEffect(() => {
+    let active = true;
+    fetch('https://api.github.com/repos/elixpo/blogs.elixpo')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (active && d && typeof d.stargazers_count === 'number') setStars(d.stargazers_count); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+  return (
+    <a
+      href="https://github.com/elixpo/blogs.elixpo"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hidden sm:flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-[13px] transition-colors"
+      style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}
+      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+      title="Star us on GitHub"
+    >
+      <ion-icon name="logo-github" style={{ fontSize: '16px' }} />
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.401 8.169L12 18.896l-7.335 3.857 1.401-8.169L.132 9.21l8.2-1.192z" /></svg>
+      <span className="font-medium tabular-nums">{stars ?? '—'}</span>
+    </a>
+  );
+}
+
 function ProfileDropdown({ user, logout }) {
   const [open, setOpen] = useState(false);
   const [orgs, setOrgs] = useState([]);
@@ -395,6 +424,7 @@ export default function AppShell({ children }) {
             </Link>
           </div>
           <div className="flex items-center gap-2">
+            <GitHubStars />
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
@@ -470,33 +500,49 @@ export default function AppShell({ children }) {
                 </Link>
               );
             })}
-            <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--divider)' }}>
-              <Link
-                href="/settings"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] transition-colors"
-                style={{
-                  color: pathname.startsWith('/settings') ? 'var(--text-primary)' : 'var(--text-muted)',
-                  backgroundColor: pathname.startsWith('/settings') ? 'var(--bg-active)' : 'transparent',
-                }}
-                onMouseEnter={e => { if (!pathname.startsWith('/settings')) { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}}
-                onMouseLeave={e => { if (!pathname.startsWith('/settings')) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}}
-              >
-                <ion-icon name="settings-outline" style={{ fontSize: '18px' }} />
-                Settings
-              </Link>
-            </div>
-          </nav>
-          {user && (
-            <Link href="/profile" className="block px-3 py-3 rounded-xl transition-colors cursor-pointer" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
-              <div className="flex items-center gap-2.5">
-                <UserAvatar src={user.avatar_url} name={user.display_name || user.username} size={32} className="flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{user.display_name || user.username}</p>
-                  <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>@{user.username}</p>
-                </div>
-              </div>
+            {/* Settings — kept above the divider with the primary nav */}
+            <Link
+              href="/settings"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] transition-colors"
+              style={{
+                color: pathname.startsWith('/settings') ? 'var(--text-primary)' : 'var(--text-muted)',
+                backgroundColor: pathname.startsWith('/settings') ? 'var(--bg-active)' : 'transparent',
+              }}
+              onMouseEnter={e => { if (!pathname.startsWith('/settings')) { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}}
+              onMouseLeave={e => { if (!pathname.startsWith('/settings')) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}}
+            >
+              <ion-icon name="settings-outline" style={{ fontSize: '18px' }} />
+              Settings
             </Link>
-          )}
+          </nav>
+
+          {/* Bottom: docs + legal (above the account), then the account card */}
+          <div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5 px-3 py-3 mb-1 text-[12px]" style={{ borderTop: '1px solid var(--divider)', color: 'var(--text-faint)' }}>
+              {[
+                { href: '/docs', icon: 'document-text-outline', label: 'Docs' },
+                { href: '/help', icon: 'help-buoy-outline', label: 'Help' },
+                { href: '/privacy', icon: 'shield-checkmark-outline', label: 'Privacy' },
+                { href: '/terms', icon: 'document-outline', label: 'Terms' },
+              ].map(l => (
+                <Link key={l.href} href={l.href} className="flex items-center gap-1 hover:text-[var(--text-secondary)] transition-colors" title={l.label}>
+                  <ion-icon name={l.icon} style={{ fontSize: '14px' }} />
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+            {user && (
+              <Link href="/profile" className="block px-3 py-3 rounded-xl transition-colors cursor-pointer" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+                <div className="flex items-center gap-2.5">
+                  <UserAvatar src={user.avatar_url} name={user.display_name || user.username} size={32} className="flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{user.display_name || user.username}</p>
+                    <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>@{user.username}</p>
+                  </div>
+                </div>
+              </Link>
+            )}
+          </div>
         </aside>
 
         {/* Main Content */}
