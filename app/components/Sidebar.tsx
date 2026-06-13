@@ -165,41 +165,24 @@ export default function Sidebar({ user }: { user: User }) {
       className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 sm:px-6 h-14 border-b border-border-light"
       style={{ background: 'rgba(16, 18, 28, 0.92)', backdropFilter: 'blur(20px)' }}
     >
-      {/* Left: Logo + marketing links */}
-      <div className="flex items-center gap-1 sm:gap-4 shrink-0">
-        <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
-          <Image src="/logo.png" alt="ElixpoURL" width={26} height={26} className="rounded-lg" />
-          <span className="text-base font-sans font-bold text-text-primary hidden sm:inline">
-            <span className="text-accent-main">Elixpo</span>URL
-          </span>
-        </Link>
-        <nav className="hidden md:flex items-center gap-0.5 ml-2">
-          {marketingLinks.map((l) => {
-            const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.85rem] font-medium no-underline transition-colors"
-                style={{
-                  color: active ? '#c8b6ff' : 'rgba(255,255,255,0.65)',
-                  background: active ? 'rgba(155,123,247,0.1)' : 'transparent',
-                }}
-              >
-                <span className={active ? 'opacity-100' : 'opacity-70'}>
-                  {l.icon}
-                </span>
-                {l.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+      {/* Left: Logo */}
+      <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
+        <Image src="/logo.png" alt="ElixpoURL" width={26} height={26} className="rounded-lg" />
+        <span className="text-base font-sans font-bold text-text-primary hidden sm:inline">
+          <span className="text-accent-main">Elixpo</span>URL
+        </span>
+      </Link>
 
       {/* Right: Nav icons + Account dropdown */}
       <div className="flex items-center gap-1 sm:gap-2">
-        {/* Main nav icons */}
+        {/* App nav icons */}
         {navItems.map((item) => (
+          <NavIcon key={item.href} {...item} />
+        ))}
+
+        {/* Marketing icons (Pricing, Docs) — same icon-row treatment */}
+        <div className="w-px h-6 bg-border-light mx-1" />
+        {marketingLinks.map((item) => (
           <NavIcon key={item.href} {...item} />
         ))}
 
