@@ -10,7 +10,11 @@ interface Props {
 }
 
 const QR_SIZE = 512; // canvas backbuffer px — sharp at any displayed size + clean for downloads
-const LOGO_RATIO = 0.26; // logo covers ~26% of QR width — comfortably inside H-level ECC budget
+// Logo coverage is conservative on purpose: smaller logo = fewer QR modules
+// obscured = better scan reliability. With a transparent PNG the QR is
+// already visible through the logo's negative space, so we don't need it
+// big to "feel embedded".
+const LOGO_RATIO = 0.18;
 const QR_DISPLAY = 220; // on-screen display size — locked in pixels so flex/grid can't blow it up
 
 /**

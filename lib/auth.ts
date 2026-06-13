@@ -1,10 +1,27 @@
 import { cookies } from 'next/headers';
 import { getDB, getKV, getEnv, getOrigin } from './db';
 import { generateSessionId, hashApiKey } from './utils';
-import type { User, ElixpoUserInfo, OAuthTokenResponse } from './types';
+import type { User, ElixpoUserInfo, OAuthTokenResponse, Tier } from './types';
 
 const SESSION_DURATION = 15 * 24 * 60 * 60; // 15 days
 const ELIXPO_ACCOUNTS_BASE = 'https://accounts.elixpo.com';
+
+// Dev-only tier elevation. If DEV_TIER_OVERRIDE is set (e.g. in .env.local),
+// every resolved user gets bumped to that tier in-memory. Lets you exercise
+// Pro-gated UX without mutating D1. Returns the user unchanged if the env
+// var is unset or invalid.
+const VALID_TIERS = new Set<Tier>(['free', 'pro', 'business', 'enterprise']);
+function applyDevTierOverride(user: User): User {
+  try {
+    const override = getEnv().DEV_TIER_OVERRIDE;
+    if (override && VALID_TIERS.has(override as Tier)) {
+      return { ...user, tier: override as Tier };
+    }
+  } catch {
+    // getEnv may throw outside a request context — ignore.
+  }
+  return user;
+}
 
 // ─── Get current user from session ──────────────────────────
 
@@ -23,7 +40,7 @@ export async function getCurrentUser(): Promise<User | null> {
       .prepare('SELECT * FROM users WHERE id = ? AND is_active = 1')
       .bind(parseInt(cachedUserId))
       .first<User>();
-    if (user) return user;
+    if (user) return applyDevTierOverride(user);
   }
 
   // D1 fallback
@@ -39,7 +56,7 @@ export async function getCurrentUser(): Promise<User | null> {
 
   // Re-cache
   await kv.put(`session:${sessionId}`, String(user.id), { expirationTtl: SESSION_DURATION });
-  return user;
+  return applyDevTierOverride(user);
 }
 
 // ─── Get user from API key (for API routes) ─────────────────
