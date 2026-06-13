@@ -139,7 +139,7 @@ export default function ApiKeysPage() {
           <div
             className="rounded-2xl p-7"
             style={{
-              background: 'linear-gradient(135deg, rgba(16,24,12,0.85), rgba(12,15,10,0.95))',
+              background: 'linear-gradient(135deg, rgba(16, 18, 28,0.85), rgba(12, 14, 22,0.95))',
               backdropFilter: 'blur(24px)',
               boxShadow: '0 25px 60px -15px rgba(0,0,0,0.5), 0 0 80px rgba(155,123,247,0.04)',
             }}
@@ -268,7 +268,7 @@ export default function ApiKeysPage() {
           <div
             className="rounded-2xl p-7"
             style={{
-              background: 'linear-gradient(135deg, rgba(16,24,12,0.8), rgba(12,15,10,0.9))',
+              background: 'linear-gradient(135deg, rgba(16, 18, 28,0.8), rgba(12, 14, 22,0.9))',
               backdropFilter: 'blur(24px)',
               boxShadow: '0 15px 40px -10px rgba(0,0,0,0.4)',
             }}
@@ -402,7 +402,7 @@ export default function ApiKeysPage() {
             <div
               className="rounded-2xl p-8"
               style={{
-                background: 'linear-gradient(135deg, rgba(16,24,12,0.97), rgba(12,15,10,0.98))',
+                background: 'linear-gradient(135deg, rgba(16, 18, 28,0.97), rgba(12, 14, 22,0.98))',
                 boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7), 0 0 60px rgba(251,191,36,0.06)',
               }}
             >

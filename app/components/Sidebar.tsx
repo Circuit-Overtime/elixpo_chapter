@@ -130,7 +130,7 @@ export default function Sidebar({ user }: { user: User }) {
         {icon}
       </span>
       {/* Tooltip */}
-      <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 text-xs font-medium rounded-md bg-[#1a2614] border border-border-light text-text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
+      <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 text-xs font-medium rounded-md bg-[#161828] border border-border-light text-text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
         {label}
       </span>
     </Link>
@@ -139,7 +139,7 @@ export default function Sidebar({ user }: { user: User }) {
   return (
     <header
       className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 sm:px-6 h-14 border-b border-border-light"
-      style={{ background: 'rgba(16, 24, 12, 0.92)', backdropFilter: 'blur(20px)' }}
+      style={{ background: 'rgba(16, 18, 28, 0.92)', backdropFilter: 'blur(20px)' }}
     >
       {/* Left: Logo */}
       <Link href="/dashboard" className="flex items-center gap-2 no-underline shrink-0">
@@ -185,7 +185,7 @@ export default function Sidebar({ user }: { user: User }) {
         {accountOpen && (
           <div
             className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border-light overflow-hidden shadow-xl z-50"
-            style={{ background: 'rgba(16, 24, 12, 0.97)', backdropFilter: 'blur(20px)' }}
+            style={{ background: 'rgba(16, 18, 28, 0.97)', backdropFilter: 'blur(20px)' }}
           >
             {/* User info */}
             <div className="px-4 py-3 border-b border-border-light">

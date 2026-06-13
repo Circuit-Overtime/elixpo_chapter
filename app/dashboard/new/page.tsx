@@ -129,7 +129,7 @@ export default function ShortenPage() {
           <div
             className="rounded-2xl p-7"
             style={{
-              background: 'linear-gradient(135deg, rgba(16,24,12,0.85), rgba(12,15,10,0.95))',
+              background: 'linear-gradient(135deg, rgba(16, 18, 28,0.85), rgba(12, 14, 22,0.95))',
               backdropFilter: 'blur(24px)',
               boxShadow: '0 25px 60px -15px rgba(0,0,0,0.5), 0 0 80px rgba(155,123,247,0.04)',
             }}
