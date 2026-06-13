@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * tool-schema-patcher.js — CCR transformer that backfills missing
+ * tool-schema-patcher.js - CCR transformer that backfills missing
  * `parameters` on OpenAI-format tool definitions before they hit the provider.
  *
  * Pollinations' qwen-coder backend strictly validates OpenAI function schemas
@@ -9,7 +9,7 @@
  *   "Failed to deserialize: tools[0].function: missing field `parameters`"
  *
  * WebSearch and some MCP tools ship without a parameters schema (valid per
- * OpenAI spec — parameters is optional). Gemini tolerates this; qwen-coder
+ * OpenAI spec - parameters is optional). Gemini tolerates this; qwen-coder
  * does not. Rather than route background subagent calls away from qwen-coder
  * (losing the cost split), this transformer injects a minimum valid schema:
  *   { "type": "object", "properties": {} }
@@ -53,7 +53,7 @@ class ToolSchemaPatcher {
                 continue;
             }
             // Tool shipped a parameters object but it's missing required fields
-            // — qwen-coder also rejects `{}` with no `type`.
+            // - qwen-coder also rejects `{}` with no `type`.
             if (!fn.parameters.type) fn.parameters.type = "object";
             if (
                 fn.parameters.type === "object" &&

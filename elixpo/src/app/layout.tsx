@@ -1,8 +1,28 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import type { CSSProperties } from "react";
+import { Geist, Geist_Mono, Almarai, Instrument_Serif } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import { SmoothScroll } from "@/components/SmoothScroll";
+import { MegaNavbar } from "@/components/MegaNavbar";
+import { Footer } from "@/components/Footer";
+
+// Global dark shell - overrides the semantic theme tokens to dark so every
+// route matches, and applies the design font.
+const darkShell = {
+  "--background": "#000000",
+  "--foreground": "#E1E0CC",
+  "--card": "#161616",
+  "--card-hover": "#1d1d1d",
+  "--muted": "#9a988c",
+  "--border": "rgba(255,255,255,0.12)",
+  "--accent": "#DEDBC8",
+  "--accent-light": "#E1E0CC",
+  fontFamily: "var(--font-almarai), sans-serif",
+} as CSSProperties;
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+};
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,65 +34,87 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Display fonts for the revamped homepage design.
+const almarai = Almarai({
+  variable: "--font-almarai",
+  weight: ["300", "400", "700", "800"],
+  subsets: ["latin"],
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument",
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+});
+
 const SITE_URL = "https://elixpo.com";
+
+const SITE_DESCRIPTION =
+  "Elixpo is a developer-first, open-source ecosystem of interconnected AI and developer tools - LixSketch whiteboards, LixEditor, Elixpo Blogs, Accounts, URL, and more. Free and open under MIT and CC-BY-4.0, built by 45+ contributors.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  applicationName: "Elixpo",
   title: {
-    default: "Elixpo — Enhanced Learning and Intelligence Process Optimization",
+    default: "Elixpo - Open Source Ecosystem of AI and Developer Tools",
     template: "%s | Elixpo",
   },
-  description:
-    "A developer-first open-source ecosystem of 13+ interconnected projects — AI art, intelligent search, collaborative sketching, and more. 100% free, forever.",
+  description: SITE_DESCRIPTION,
   keywords: [
     "Elixpo",
     "open source",
-    "AI",
+    "AI tools",
     "developer tools",
-    "art generation",
-    "search engine",
-    "collaborative canvas",
-    "discord bot",
-    "URL shortener",
+    "LixSketch",
+    "LixEditor",
+    "Elixpo Blogs",
+    "Elixpo Accounts",
+    "SVG whiteboard",
+    "block editor",
+    "AI art generation",
     "Next.js",
     "Cloudflare",
     "Pollinations AI",
     "Hacktoberfest",
+    "MIT license",
   ],
   authors: [{ name: "Ayushman Bhattacharya", url: "https://github.com/Circuit-Overtime" }],
   creator: "Elixpo",
   publisher: "Elixpo",
+  category: "technology",
+  formatDetection: { email: false, address: false, telephone: false },
   icons: {
     icon: [
-      { url: "/logo.png", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logos/logo.webp", type: "image/webp" },
     ],
-    apple: [
-      { url: "/logo.png", type: "image/png" },
-    ],
+    shortcut: ["/favicon.ico"],
+    apple: [{ url: "/apple-icon.png" }],
   },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: SITE_URL,
     siteName: "Elixpo",
-    title: "Elixpo — Developer-First Open Source Ecosystem",
-    description:
-      "13+ interconnected open-source projects spanning AI, web, and developer tools. Built by a global community of 35+ contributors.",
+    title: "Elixpo - Open Source Ecosystem of AI and Developer Tools",
+    description: SITE_DESCRIPTION,
     images: [
       {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Elixpo — Enhanced Learning and Intelligence Process Optimization",
+        url: "/og-image.webp",
+        width: 1852,
+        height: 813,
+        type: "image/webp",
+        alt: "Elixpo - Open Source Ecosystem of AI and Developer Tools",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Elixpo — Developer-First Open Source Ecosystem",
+    title: "Elixpo - Open Source Ecosystem of AI and Developer Tools",
     description:
-      "13+ interconnected open-source projects spanning AI, web, and developer tools. 100% free, forever.",
-    images: ["/og-image.png"],
+      "A free, open-source ecosystem of interconnected AI and developer tools, built by 45+ contributors.",
+    images: ["/og-image.webp"],
     creator: "@elixpo",
   },
   robots: {
@@ -96,12 +138,19 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      data-scroll-behavior="smooth"
+      className={`${geistSans.variable} ${geistMono.variable} ${almarai.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+      <body className="min-h-full">
+        <SmoothScroll />
+        <div
+          className="bg-background text-foreground min-h-screen flex flex-col overflow-x-hidden antialiased selection:bg-primary selection:text-black"
+          style={darkShell}
+        >
+          <MegaNavbar />
+          <div className="flex-1">{children}</div>
+          <Footer />
+        </div>
       </body>
     </html>
   );

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-build_artifact.py — Builds a repo context artifact for AI-powered CI.
+build_artifact.py - Builds a repo context artifact for AI-powered CI.
 
 Runs on a GitHub Actions runner after a PR is merged. Produces
-`.elixpo-context/context.md` — a concise Markdown snapshot of the repo
+`.elixpo-context/context.md` - a concise Markdown snapshot of the repo
 (description, recent PRs, top-level structure, recently modified files,
 and key docs) that downstream AI CI steps attach to LLM prompts for
 grounding.
@@ -64,7 +64,7 @@ def is_skipped(name):
 def section_recent_prs():
     """Last 20 merged PRs as Markdown bullets. Returns string."""
     if not REPO:
-        return "_(REPO env var not set — skipping PR fetch)_"
+        return "_(REPO env var not set - skipping PR fetch)_"
     try:
         data = github_rest(
             "GET",
@@ -200,7 +200,7 @@ def main():
 
     # AGENTS.md holds the real operating manual (architecture, edge-runtime
     # constraints, migrations, common mistakes). We embed it here because it's
-    # NOT auto-loaded by claude-code — CLAUDE.md is. CLAUDE.md on this repo
+    # NOT auto-loaded by claude-code - CLAUDE.md is. CLAUDE.md on this repo
     # just points to AGENTS.md, so duplicating it would be pointless; and
     # README.md is on disk if the agent needs it.
     #
@@ -218,7 +218,7 @@ def main():
     agents_block = agents_snippet or "_No AGENTS.md found._"
 
     md = (
-        f"# {project_name} — Repo Context\n"
+        f"# {project_name} - Repo Context\n"
         f"> Auto-generated on {now_iso}. Used by CI to give AI better context.\n"
         f"\n"
         f"## Description\n"

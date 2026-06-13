@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-merge_gist.py — Runs on PR merge.
+merge_gist.py - Runs on PR merge.
   1. Creates/updates a Gist changelog entry (via Pollinations LLM).
   2. Closes issues linked to the merged PR.
 
@@ -20,7 +20,7 @@ from ci_config import *  # noqa: F401, F403
 from _common import github_rest, call_llm
 
 # ── Environment ────────────────────────────────────────
-# AGENT_TOKEN is a PAT for @elixpoo with both repo and gist scopes — used for
+# AGENT_TOKEN is a PAT for @elixpoo with both repo and gist scopes - used for
 # PR/issue ops AND gist ops so every action appears as the @elixpoo user.
 AGENT_TOKEN = os.environ["AGENT_TOKEN"]
 POLLINATIONS_KEY = os.environ["POLLINATIONS_KEY"]
@@ -73,7 +73,7 @@ def run_gist_digest():
         key_files += f" (+{len(filenames) - 10} more)"
 
     entry = (
-        f"## PR #{PR_NUMBER} — {title} ({date_str})\n"
+        f"## PR #{PR_NUMBER} - {title} ({date_str})\n"
         f"Merged by: @{merged_by}\n"
         f"{summary}\n"
         f"Files: {key_files}\n"
@@ -87,7 +87,7 @@ def run_gist_digest():
     gist_url = ""
 
     if gist_id:
-        # Update existing gist — prepend new entry
+        # Update existing gist - prepend new entry
         gist_data = github_rest("GET", f"/gists/{gist_id}")
         existing = gist_data["files"].get(gist_filename, {}).get("content", "")
         new_content = entry + existing
@@ -101,7 +101,7 @@ def run_gist_digest():
     else:
         # Create new public gist
         gist_payload = {
-            "description": f"{PROJECT_NAME} — Change Log",
+            "description": f"{PROJECT_NAME} - Change Log",
             "public": True,
             "files": {gist_filename: {"content": entry}},
         }
@@ -207,7 +207,7 @@ def close_linked_issues():
 
 # ── Main ──────────────────────────────────────────────
 def main():
-    print(f"=== merge_gist.py — PR #{PR_NUMBER} in {REPO} ===")
+    print(f"=== merge_gist.py - PR #{PR_NUMBER} in {REPO} ===")
 
     print("\n--- Part 1: Gist Digest ---")
     try:

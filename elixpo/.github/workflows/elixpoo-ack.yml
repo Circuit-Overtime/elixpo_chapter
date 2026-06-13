@@ -48,7 +48,7 @@ jobs:
             exit 0
           fi
 
-          # Idempotency marker — prevents double-append on re-run
+          # Idempotency marker - prevents double-append on re-run
           MARKER="<!-- elixpoo-ack -->"
           if [[ "$COMMENT_BODY" == *"$MARKER"* ]]; then
             echo "Ack marker already present, skipping."
@@ -59,9 +59,9 @@ jobs:
           ACKS=(
             "Hold up! Looking into it."
             "Just a minute, reading the comment."
-            "On my way — give me a sec."
+            "On my way - give me a sec."
             "Pulling up the context, be right with you."
-            "One moment — scanning things now."
+            "One moment - scanning things now."
           )
           IDX=$(( COMMENT_ID % 5 ))
           ACK="${ACKS[$IDX]}"
@@ -80,7 +80,7 @@ jobs:
             exit 0
           fi
 
-          # Single curl PATCH — no deps, no setup
+          # Single curl PATCH - no deps, no setup
           echo "{}" | jq --arg body "$NEW_BODY" '{body: $body}' | \
             curl -sS -X PATCH \
               -H "Authorization: Bearer $GH_TOKEN" \

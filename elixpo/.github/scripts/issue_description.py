@@ -1,5 +1,5 @@
 """
-issue_description.py — Auto-generate a structured description for issues
+issue_description.py - Auto-generate a structured description for issues
 opened with no body (or a very thin body).
 
 Env vars: AGENT_TOKEN, POLLINATIONS_KEY, ISSUE_NUMBER, ISSUE_AUTHOR, REPO
@@ -57,8 +57,8 @@ def fallback_body(title, author="reporter"):
     New format per product direction:
       - Description + Tasks + Checklist come first (self-contained issue body).
       - Questions, if any, appear LAST as a small `### Questions from @elixpoo`
-        subsection with a short note tagging **@elixpoo** (the bot) — never
-        tagging the reporter — asking them to answer or label `ELIXPO`.
+        subsection with a short note tagging **@elixpoo** (the bot) - never
+        tagging the reporter - asking them to answer or label `ELIXPO`.
     """
     return (
         "## Problem Statement\n"
@@ -74,7 +74,7 @@ def fallback_body(title, author="reporter"):
         "- What is the exact scope of this change?\n"
         "- Which files or components should be affected?\n"
         "- What is the expected behavior after the change?\n\n"
-        "Answering these will make the description richer — tag **@elixpoo** "
+        "Answering these will make the description richer - tag **@elixpoo** "
         "and ask me to update the issue description, or label the issue with "
         "**`ELIXPO`** to let me solve it.\n"
     )
@@ -84,7 +84,7 @@ def looks_valid(body):
     """Check that the generated body has the new structure.
 
     Required: Problem Statement + Tasks + Checklist. Questions section is
-    optional (the model may write 'None — title is clear.' and omit the block).
+    optional (the model may write 'None - title is clear.' and omit the block).
     """
     if not body:
         return False
@@ -130,11 +130,11 @@ def main():
     #     of the issue, not a conversation with them.
     #   - Any clarifying questions go LAST, under a small `### Questions
     #     from @elixpoo` subsection with a short footer tagging @elixpoo
-    #     (the bot) — never the reporter — asking to answer or label ELIXPO.
+    #     (the bot) - never the reporter - asking to answer or label ELIXPO.
     system_prompt = (
         f"You are structuring a GitHub issue for {PROJECT_NAME} ({PROJECT_DESCRIPTION}).\n"
         "The reporter left only a title. Your job is to produce a structured "
-        "skeleton — NOT to invent requirements. The issue body describes the "
+        "skeleton - NOT to invent requirements. The issue body describes the "
         "issue; it is NOT a message addressed to the reporter.\n\n"
         "STRICT RULES:\n"
         "1. ONLY reference files, directories, functions, or components that appear VERBATIM "
@@ -146,7 +146,7 @@ def main():
         "4. Do NOT @-tag the reporter anywhere in the body. The description is about the issue, "
         "not a direct message to anyone.\n"
         "5. If the title leaves things unclear, put concise questions in the final "
-        "`### Questions from @elixpoo` block — this is the primary way to move the issue forward.\n\n"
+        "`### Questions from @elixpoo` block - this is the primary way to move the issue forward.\n\n"
         "Output EXACTLY this markdown (no preamble, no closing text):\n\n"
         "## Problem Statement\n"
         "<1-3 sentences restating what the title conveys. If the title is vague, say so plainly "
@@ -157,13 +157,13 @@ def main():
         "- <If the scope is unclear, write a single bullet: 'Scope to be defined once the questions below are answered.'>\n\n"
         "## Checklist\n"
         "- [ ] <verification items that are objectively required, e.g., 'Change reviewed', 'Tests pass', "
-        "'Docs updated if behavior changes'. Keep to 3-5 items. Do not include 'questions answered' here — "
+        "'Docs updated if behavior changes'. Keep to 3-5 items. Do not include 'questions answered' here - "
         "that belongs in the Questions block below.>\n\n"
         "---\n\n"
         "### Questions from @elixpoo\n"
         "- <concrete question needed before work starts>\n"
-        "- <2-5 questions total; if the title is fully self-explanatory, OMIT this entire `---` + `### Questions from @elixpoo` section (do not write 'None — title is clear.' — just leave it out).>\n\n"
-        "Answering these will make the description richer — tag **@elixpoo** and ask me to update the "
+        "- <2-5 questions total; if the title is fully self-explanatory, OMIT this entire `---` + `### Questions from @elixpoo` section (do not write 'None - title is clear.' - just leave it out).>\n\n"
+        "Answering these will make the description richer - tag **@elixpoo** and ask me to update the "
         "issue description, or label the issue with **`ELIXPO`** to let me solve it."
     )
 

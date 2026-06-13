@@ -1,5 +1,5 @@
 """
-Elixpo CI Configuration — accounts.elixpo
+Elixpo CI Configuration - accounts.elixpo
 Single source of truth for all CI workflows and scripts.
 """
 
@@ -11,7 +11,7 @@ LLM_MODEL_CHAT = "perplexity-fast"
 LLM_MODEL_THINKING = "perplexity-reasoning"  
 LLM_MODEL_SEARCH = "gemini-search"    
 
-# Back-compat alias — scripts that haven't been migrated still import LLM_MODEL.
+# Back-compat alias - scripts that haven't been migrated still import LLM_MODEL.
 LLM_MODEL = LLM_MODEL_CHAT
 
 # ── Repository ──────────────────────────────────────
@@ -21,7 +21,7 @@ PROJECT_DESCRIPTION = "Elixpo org landing page"
 
 # ── GitHub Projects V2 ──────────────────────────────
 # Shared org-wide projects (linked to all elixpo repos).
-# One project per category — Repository column shows which repo each issue came from.
+# One project per category - Repository column shows which repo each issue came from.
 # Each project has its own Priority field with Urgent/High/Medium/Low.
 PROJECT_OWNER = "elixpo"
 
@@ -81,7 +81,7 @@ CATEGORIES = list(PROJECTS.keys())
 PRIORITIES = ["Urgent", "High", "Medium", "Low"]
 
 # ── GitHub Issue Types (sidebar "Type") ─────────────
-# Org-wide issue types — fetched once with the GraphQL API.
+# Org-wide issue types - fetched once with the GraphQL API.
 # We map our Project categories → these native GitHub issue types.
 ISSUE_TYPES = {
     "Task": "IT_kwDOCZpXlc4BRtJ8",
@@ -100,11 +100,11 @@ CATEGORY_TO_TYPE = {
 # ── Organization ────────────────────────────────────
 ORG_MEMBERS = ["Circuit-Overtime", "anwe-ch", "elixpoo", "ez-vivek"]
 
-# Maintainer skill map — used for LLM-driven PR reviewer assignment
+# Maintainer skill map - used for LLM-driven PR reviewer assignment
 MAINTAINERS = {
     "Circuit-Overtime": {
         "skills": ["agent", "agentic", "breaking", "urgent", "backend", "python", "ci", "devops", "llm", "core"],
-        "role": "Lead — handles agentic work, breaking fixes, and urgent issues",
+        "role": "Lead - handles agentic work, breaking fixes, and urgent issues",
     },
     "ez-vivek": {
         "skills": ["frontend", "ui", "ux", "nextjs", "react", "css", "components", "styling", "design"],
@@ -125,6 +125,6 @@ AGENT_TRIGGER = "@elixpoo"
 AGENT_LABEL = "ELIXPO"
 
 # ── README update heuristics ────────────────────────
-# Path prefixes that count as "core" for this repo — changes touching these
+# Path prefixes that count as "core" for this repo - changes touching these
 # are more likely to warrant a README update. Override per-repo.
 CORE_PATHS = ()  # TODO: list path prefixes that count as "core" for README-update heuristics

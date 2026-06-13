@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * openai-normalize.js — CCR transformer for any non-Anthropic provider.
+ * openai-normalize.js - CCR transformer for any non-Anthropic provider.
  *
  * Originally written for Vertex Gemini's `thought_signature` requirement, the
  * same flatten-and-strip pass is needed for every non-Anthropic model served
@@ -19,7 +19,7 @@
  *   1. Tool exchanges (tool_use → tool_result) become user-role narrative
  *      notes like "Earlier I ran X(args). It returned: Y".
  *   2. Assistant messages that contained ONLY tool_use (no real text) are
- *      dropped entirely — no placeholders to copy.
+ *      dropped entirely - no placeholders to copy.
  *   3. Assistant messages with real text keep that text only; any tool_use
  *      blocks inside are discarded (their context moves to the next user
  *      note).

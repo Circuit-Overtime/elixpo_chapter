@@ -22,9 +22,9 @@
     { "name": "OSCI", "description": "Open Source Community Initiative" }
   ],
   "values": [
-    "100% Open Source — GNU GPL-3.0",
-    "Completely Free — No paywalls ever",
-    "AI-Powered — Intelligence at the core",
-    "Community-Driven — Built by contributors worldwide"
+    "100% Open Source - MIT & CC-BY-4.0",
+    "Completely Free - No paywalls ever",
+    "AI-Powered - Intelligence at the core",
+    "Community-Driven - Built by contributors worldwide"
   ]
 }

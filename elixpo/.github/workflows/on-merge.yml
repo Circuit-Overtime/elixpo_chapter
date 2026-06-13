@@ -52,7 +52,7 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           # Create or update the repo variable so future runs pick it up.
-          # POST creates, PATCH updates — try POST first, fall back to PATCH.
+          # POST creates, PATCH updates - try POST first, fall back to PATCH.
           if ! gh api -X POST "repos/$REPO/actions/variables" \
                  -f name=CI_GIST_ID -f value="$NEW_ID" 2>/dev/null; then
             gh api -X PATCH "repos/$REPO/actions/variables/CI_GIST_ID" \

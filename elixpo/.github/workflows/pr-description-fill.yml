@@ -1,5 +1,5 @@
 # Rewrite a PR body when a whitelisted author embeds `@elixpoo fill` in it.
-# Single LLM call (no CCR, no tracking comments) — see scripts/pr_fill_description.py.
+# Single LLM call (no CCR, no tracking comments) - see scripts/pr_fill_description.py.
 
 name: Elixpo PR Description Fill
 

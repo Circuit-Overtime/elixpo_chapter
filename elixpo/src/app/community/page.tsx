@@ -1,15 +1,16 @@
-import Image from "next/image";
+import { ContributorAvatar } from "@/components/ContributorAvatar";
 import contributorsData from "@/data/contributors.json";
 
 export const metadata = {
   title: "Community",
   description:
     "Meet the contributors powering the Elixpo ecosystem. Join discussions, contribute code, and help shape the future of open-source AI tools.",
+  alternates: { canonical: "/community" },
   openGraph: {
     title: "Community | Elixpo",
     description:
       "Meet the contributors powering the Elixpo ecosystem.",
-    images: ["/og-image.png"],
+    images: ["/og-image.webp"],
   },
 };
 
@@ -55,6 +56,93 @@ export default async function CommunityPage() {
     0
   );
 
+  // Rank by contributions (desc) for the solar system + top-3 badges.
+  const ranked = [...displayContributors].sort(
+    (a, b) => b.contributions - a.contributions
+  );
+  const center = ranked[0];
+  const orbit1 = ranked.slice(1, 7);
+  const orbit2 = ranked.slice(7, 16);
+  const orbit3 = ranked.slice(16);
+
+  const rankStyles = [
+    "from-yellow-300 to-amber-500 text-black", // 1
+    "from-slate-200 to-slate-400 text-black", // 2
+    "from-orange-300 to-orange-600 text-black", // 3
+  ];
+
+  function Avatar({
+    c,
+    rank,
+    size,
+  }: {
+    c: Contributor;
+    rank: number;
+    size: number;
+  }) {
+    return (
+      <a
+        href={c.html_url || `https://github.com/${c.login}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={`${c.login}${c.contributions ? ` · ${c.contributions} contributions` : ""}`}
+        className="relative block group/av"
+      >
+        <ContributorAvatar
+          login={c.login}
+          src={c.avatar_url}
+          size={size}
+          className={`border-2 ${rank < 3 ? "border-primary" : "border-[#DEDBC8]/30"} shadow-md group-hover/av:border-primary transition-colors`}
+        />
+        {rank < 3 && (
+          <span
+            className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gradient-to-br ${rankStyles[rank]} text-[10px] font-bold flex items-center justify-center shadow-md ring-2 ring-black`}
+          >
+            {rank + 1}
+          </span>
+        )}
+      </a>
+    );
+  }
+
+  function Ring({
+    items,
+    inset,
+    spin,
+    counter,
+    size,
+    startRank,
+  }: {
+    items: Contributor[];
+    inset: string;
+    spin: string;
+    counter: string;
+    size: number;
+    startRank: number;
+  }) {
+    return (
+      <div className={`absolute ${inset} rounded-full border border-white/10`}>
+        <div className={`relative w-full h-full ${spin}`}>
+          {items.map((c, i) => {
+            const angle = (i / items.length) * 360;
+            const rad = (angle * Math.PI) / 180;
+            const x = 50 + 50 * Math.cos(rad);
+            const y = 50 + 50 * Math.sin(rad);
+            return (
+              <div
+                key={c.login}
+                className={`absolute ${counter}`}
+                style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)" }}
+              >
+                <Avatar c={c} rank={startRank + i} size={size} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <section className="py-24 md:py-32 overflow-hidden">
       {/* Hero */}
@@ -84,19 +172,19 @@ export default async function CommunityPage() {
       {/* Stats bar */}
       <div className="max-w-4xl mx-auto px-6 mb-20">
         <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-2xl bg-white border border-border p-6 text-center animate-fade-in-up community-stagger-1">
+          <div className="rounded-2xl bg-card border border-border p-6 text-center animate-fade-in-up community-stagger-1">
             <p className="text-3xl md:text-4xl font-bold text-accent">
               {displayContributors.length}
             </p>
             <p className="text-sm text-muted mt-1">Contributors</p>
           </div>
-          <div className="rounded-2xl bg-white border border-border p-6 text-center animate-fade-in-up community-stagger-2">
+          <div className="rounded-2xl bg-card border border-border p-6 text-center animate-fade-in-up community-stagger-2">
             <p className="text-3xl md:text-4xl font-bold text-accent">
               {totalContributions > 0 ? `${totalContributions}+` : "500+"}
             </p>
             <p className="text-sm text-muted mt-1">Contributions</p>
           </div>
-          <div className="rounded-2xl bg-white border border-border p-6 text-center animate-fade-in-up community-stagger-3">
+          <div className="rounded-2xl bg-card border border-border p-6 text-center animate-fade-in-up community-stagger-3">
             <p className="text-3xl md:text-4xl font-bold text-accent">13+</p>
             <p className="text-sm text-muted mt-1">Projects</p>
           </div>
@@ -120,59 +208,34 @@ export default async function CommunityPage() {
           </a>
         </p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {displayContributors.map((contributor, i) => (
-            <a
-              key={contributor.login}
-              href={contributor.html_url || `https://github.com/${contributor.login}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative rounded-2xl bg-white border border-border p-5 flex flex-col items-center text-center hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 hover:-translate-y-1"
-              style={{ animationDelay: `${Math.min(i * 50, 1500)}ms` }}
-            >
-              {/* Rank badge for top 3 */}
-              {i < 3 && (
-                <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center shadow-md">
-                  {i + 1}
-                </div>
-              )}
+        {/* Solar system - ranked by contributions, top 3 badged */}
+        <div className="relative w-full aspect-square max-w-[760px] mx-auto">
+          {/* Ambient glow */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[55%] h-[55%] rounded-full bg-primary/[0.06] blur-[120px] pointer-events-none" />
 
-              <div className="relative mb-3">
-                <Image
-                  src={contributor.avatar_url || `https://github.com/${contributor.login}.png`}
-                  alt={contributor.login}
-                  width={64}
-                  height={64}
-                  className="w-16 h-16 rounded-full border-2 border-border group-hover:border-accent/50 transition-colors duration-300"
-                  unoptimized
-                />
-                {/* Glow effect on hover */}
-                <div className="absolute inset-0 rounded-full bg-accent/0 group-hover:bg-accent/10 transition-colors duration-300" />
-              </div>
+          {/* Center - #1 contributor */}
+          {center && (
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+              <Avatar c={center} rank={0} size={96} />
+            </div>
+          )}
 
-              <p className="text-sm font-semibold truncate w-full group-hover:text-accent transition-colors">
-                {contributor.login}
-              </p>
-
-              {contributor.contributions > 0 && (
-                <p className="text-xs text-muted mt-1">
-                  {contributor.contributions}{" "}
-                  {contributor.contributions === 1
-                    ? "contribution"
-                    : "contributions"}
-                </p>
-              )}
-            </a>
-          ))}
+          <Ring items={orbit1} inset="inset-[28%]" spin="animate-orbit-slow" counter="animate-counter-orbit-slow" size={48} startRank={1} />
+          <Ring items={orbit2} inset="inset-[14%]" spin="animate-orbit-medium" counter="animate-counter-orbit-medium" size={40} startRank={7} />
+          <Ring items={orbit3} inset="inset-0" spin="animate-orbit-outer" counter="animate-counter-orbit-outer" size={34} startRank={16} />
         </div>
+
+        <p className="text-center text-sm text-muted mt-10 font-mono">
+          {displayContributors.length}+ contributors · ranked by contributions
+        </p>
       </div>
 
       {/* Join the conversation CTA */}
       <div className="max-w-5xl mx-auto px-6">
-        <div className="relative rounded-3xl bg-gradient-to-br from-accent/5 via-purple-50 to-pink-50 border border-accent/10 p-10 md:p-16 overflow-hidden">
+        <div className="relative rounded-3xl bg-gradient-to-br from-[#161616] via-[#101010] to-black border border-white/10 p-10 md:p-16 overflow-hidden noise-overlay">
           {/* Decorative circles */}
-          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-accent/5 blur-2xl" />
-          <div className="absolute -bottom-20 -left-20 w-48 h-48 rounded-full bg-purple-200/20 blur-2xl" />
+          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/10 blur-2xl" />
+          <div className="absolute -bottom-20 -left-20 w-48 h-48 rounded-full bg-[#44386e]/20 blur-2xl" />
 
           <div className="relative text-center">
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
@@ -188,7 +251,7 @@ export default async function CommunityPage() {
                 href={`https://github.com/${GITHUB_ORG}/${GITHUB_REPO}/discussions`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-accent text-white font-medium text-sm hover:opacity-90 transition-opacity shadow-lg shadow-accent/25"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-primary text-black font-medium text-sm hover:opacity-90 transition-opacity shadow-lg shadow-primary/25"
               >
                 <svg
                   className="w-5 h-5"
@@ -204,7 +267,7 @@ export default async function CommunityPage() {
                 href={`https://github.com/${GITHUB_ORG}/${GITHUB_REPO}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full border border-border text-foreground font-medium text-sm hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full border border-border text-foreground font-medium text-sm hover:bg-card transition-colors"
               >
                 <svg
                   className="w-5 h-5"

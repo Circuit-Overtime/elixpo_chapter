@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PR Triage Bot — accounts.elixpo
+PR Triage Bot - accounts.elixpo
 
 Categorizes new pull requests and files them into the matching per-category
 GitHub Project V2 board with an UPPERCASE category label.
@@ -40,7 +40,7 @@ REPO = os.environ["REPO"]
 # ── Defaults ───────────────────────────────────────────────────────────────
 DEFAULT_CATEGORY = "Dev"
 
-# Label colors (same as issues — keep the palette consistent)
+# Label colors (same as issues - keep the palette consistent)
 LABEL_COLORS = {
     "FEATURE": "a2eeef",
     "BUGS": "d73a4a",
@@ -58,7 +58,7 @@ def triage_llm(title: str, body: str, files: list[str]) -> dict:
         "- Feature: adds new capability, enhancement, or UX improvement\n"
         "- Bugs: fixes a bug, regression, crash, or broken behavior\n"
         "- Support: answers a question, adds docs or examples for users\n"
-        "- Dev: internal dev work — refactor, infra, CI, dependencies, chores\n\n"
+        "- Dev: internal dev work - refactor, infra, CI, dependencies, chores\n\n"
         'Respond in JSON only: {"category": "Feature|Bugs|Support|Dev", "summary": "one sentence"}'
     )
 
@@ -109,7 +109,7 @@ def add_to_project(project_id: str, pr_node_id: str) -> str | None:
 
 def find_status_todo(project_id: str) -> tuple[str | None, str | None]:
     """Return (status_field_id, todo_option_id) for the project's Status field.
-    Returns (None, None) if the field or Todo option isn't found — caller
+    Returns (None, None) if the field or Todo option isn't found - caller
     should log and skip rather than fail the whole triage.
     """
     query = """
@@ -148,7 +148,7 @@ def set_status_todo(project_id: str, item_id: str) -> bool:
     """Set the project item's Status field to 'Todo'. Idempotent on re-runs."""
     field_id, option_id = find_status_todo(project_id)
     if not field_id or not option_id:
-        print("[warn] Status field or 'Todo' option not found on project — skipping status set")
+        print("[warn] Status field or 'Todo' option not found on project - skipping status set")
         return False
     mutation = """
     mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
@@ -186,9 +186,9 @@ def main() -> None:
     category = DEFAULT_CATEGORY
 
     if is_org_member:
-        print(f"@{PR_AUTHOR} is an org member — defaulting category to Dev")
+        print(f"@{PR_AUTHOR} is an org member - defaulting category to Dev")
     else:
-        print("External contributor — asking LLM for category")
+        print("External contributor - asking LLM for category")
         try:
             files = fetch_pr_files(PR_NUMBER)
             print(f"Changed files: {len(files)}")
