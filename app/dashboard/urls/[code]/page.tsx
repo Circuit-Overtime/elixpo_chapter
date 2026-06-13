@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth';
 import { getDB, getEnv } from '@/lib/db';
 import { TIER_LIMITS, type UrlRecord } from '@/lib/types';
-import ClicksChart, { type ChartPoint } from './ClicksChart';
+import ClicksChart, {
+  type ChartPoint,
+} from '@/app/components/ClicksChart';
 import CopyButton from './CopyButton';
 import DeleteButton from './DeleteButton';
 import QrCard from './QrCard';

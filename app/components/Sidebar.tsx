@@ -142,7 +142,7 @@ export default function Sidebar({ user }: { user: User }) {
       style={{ background: 'rgba(16, 18, 28, 0.92)', backdropFilter: 'blur(20px)' }}
     >
       {/* Left: Logo */}
-      <Link href="/dashboard" className="flex items-center gap-2 no-underline shrink-0">
+      <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
         <Image src="/logo.png" alt="ElixpoURL" width={26} height={26} className="rounded-lg" />
         <span className="text-base font-sans font-bold text-text-primary hidden sm:inline">
           <span className="text-accent-main">Elixpo</span>URL
