@@ -9,7 +9,7 @@ export default function NotFound() {
     <div className="min-h-screen bg-bg-deep flex flex-col items-center justify-center px-8 relative overflow-hidden">
       {/* Ambient glow */}
       <div className="absolute top-[30%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-[0.06] pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #a3e635, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(circle, #9b7bf7, transparent 70%)' }} />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}

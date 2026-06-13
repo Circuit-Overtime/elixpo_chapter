@@ -72,14 +72,14 @@ export default function ShortenPage() {
         <div
           className="absolute top-[20%] left-[40%] w-[500px] h-[500px] rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(163,230,53,0.06), transparent 70%)',
+            background: 'radial-gradient(circle, rgba(155,123,247,0.06), transparent 70%)',
             animation: 'pulse-glow 6s ease-in-out infinite',
           }}
         />
         <div
           className="absolute bottom-[10%] right-[20%] w-[400px] h-[400px] rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(134,239,172,0.04), transparent 70%)',
+            background: 'radial-gradient(circle, rgba(155, 123, 247,0.04), transparent 70%)',
             animation: 'pulse-glow 8s ease-in-out infinite 2s',
           }}
         />
@@ -98,7 +98,7 @@ export default function ShortenPage() {
           <h1
             className="text-3xl font-sans font-bold mb-2"
             style={{
-              background: 'linear-gradient(135deg, #f5f5f4 0%, #a3e635 60%, #86efac 100%)',
+              background: 'linear-gradient(135deg, #f5f5f4 0%, #9b7bf7 60%, #b094ff 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
@@ -123,7 +123,7 @@ export default function ShortenPage() {
         <div
           className="rounded-2xl p-[1px]"
           style={{
-            background: 'linear-gradient(135deg, rgba(163,230,53,0.2), rgba(134,239,172,0.08), rgba(255,255,255,0.05))',
+            background: 'linear-gradient(135deg, rgba(155,123,247,0.2), rgba(155, 123, 247,0.08), rgba(255,255,255,0.05))',
           }}
         >
           <div
@@ -131,7 +131,7 @@ export default function ShortenPage() {
             style={{
               background: 'linear-gradient(135deg, rgba(16,24,12,0.85), rgba(12,15,10,0.95))',
               backdropFilter: 'blur(24px)',
-              boxShadow: '0 25px 60px -15px rgba(0,0,0,0.5), 0 0 80px rgba(163,230,53,0.04)',
+              boxShadow: '0 25px 60px -15px rgba(0,0,0,0.5), 0 0 80px rgba(155,123,247,0.04)',
             }}
           >
             <form onSubmit={handleSubmit}>
@@ -168,12 +168,12 @@ export default function ShortenPage() {
               {isPro ? (
                 <div
                   className="space-y-5 mb-6 pt-5"
-                  style={{ borderTop: '1px solid rgba(163,230,53,0.1)' }}
+                  style={{ borderTop: '1px solid rgba(155,123,247,0.1)' }}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <div
                       className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: '#a3e635', boxShadow: '0 0 6px rgba(163,230,53,0.5)' }}
+                      style={{ background: '#9b7bf7', boxShadow: '0 0 6px rgba(155,123,247,0.5)' }}
                     />
                     <span className="text-[0.65rem] text-accent-main font-semibold uppercase tracking-wider">
                       Pro Features
@@ -210,7 +210,7 @@ export default function ShortenPage() {
                 <div
                   className="mb-6 p-4 rounded-xl text-xs leading-relaxed"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(251,191,36,0.04), rgba(163,230,53,0.02))',
+                    background: 'linear-gradient(135deg, rgba(251,191,36,0.04), rgba(155,123,247,0.02))',
                     border: '1px solid rgba(251,191,36,0.12)',
                     color: 'rgba(245,245,244,0.65)',
                   }}
@@ -249,11 +249,11 @@ export default function ShortenPage() {
                 className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 cursor-pointer relative overflow-hidden"
                 style={{
                   background: loading
-                    ? 'rgba(163, 230, 53, 0.08)'
-                    : 'linear-gradient(135deg, rgba(163,230,53,0.18), rgba(134,239,172,0.12))',
-                  color: '#a3e635',
-                  border: '1px solid rgba(163, 230, 53, 0.3)',
-                  boxShadow: loading ? 'none' : '0 0 30px rgba(163,230,53,0.08)',
+                    ? 'rgba(155, 123, 247, 0.08)'
+                    : 'linear-gradient(135deg, rgba(155,123,247,0.18), rgba(155, 123, 247,0.12))',
+                  color: '#9b7bf7',
+                  border: '1px solid rgba(155, 123, 247, 0.3)',
+                  boxShadow: loading ? 'none' : '0 0 30px rgba(155,123,247,0.08)',
                 }}
               >
                 {loading ? (
@@ -278,8 +278,8 @@ export default function ShortenPage() {
               <div
                 className="mt-6 p-4 rounded-xl"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(163,230,53,0.06), rgba(134,239,172,0.03))',
-                  border: '1px solid rgba(163, 230, 53, 0.2)',
+                  background: 'linear-gradient(135deg, rgba(155,123,247,0.06), rgba(155, 123, 247,0.03))',
+                  border: '1px solid rgba(155, 123, 247, 0.2)',
                   animation: 'fade-in-up 0.4s ease-out',
                 }}
               >
@@ -293,7 +293,7 @@ export default function ShortenPage() {
                     rel="noopener"
                     className="text-lg font-semibold font-mono no-underline truncate transition-colors duration-200"
                     style={{
-                      background: 'linear-gradient(90deg, #a3e635, #86efac)',
+                      background: 'linear-gradient(90deg, #9b7bf7, #b094ff)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',

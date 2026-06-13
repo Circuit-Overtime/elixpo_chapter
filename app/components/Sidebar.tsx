@@ -122,7 +122,7 @@ export default function Sidebar({ user }: { user: User }) {
       href={href}
       className={`relative group flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 no-underline ${
         isActive(href)
-          ? 'text-accent-main bg-[rgba(163,230,53,0.12)]'
+          ? 'text-accent-main bg-[rgba(155,123,247,0.12)]'
           : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
       }`}
     >
@@ -202,7 +202,7 @@ export default function Sidebar({ user }: { user: User }) {
                   onClick={() => setAccountOpen(false)}
                   className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 no-underline ${
                     isActive(item.href)
-                      ? 'text-accent-main bg-[rgba(163,230,53,0.06)]'
+                      ? 'text-accent-main bg-[rgba(155,123,247,0.06)]'
                       : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
                   }`}
                 >

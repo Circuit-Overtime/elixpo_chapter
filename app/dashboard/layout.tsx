@@ -1,8 +1,9 @@
 export const runtime = 'edge';
 
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import BackgroundAurora from '@/app/components/BackgroundAurora';
 import Sidebar from '@/app/components/Sidebar';
+import { getCurrentUser } from '@/lib/auth';
 
 export default async function DashboardLayout({
   children,
@@ -13,9 +14,14 @@ export default async function DashboardLayout({
   if (!user) redirect('/login');
 
   return (
-    <div className="min-h-screen bg-bg-deep">
-      <Sidebar user={user} />
-      <main className="px-4 sm:px-8 pb-4 sm:pb-8 pt-20 sm:pt-24">{children}</main>
+    <div className="min-h-screen relative" style={{ background: '#0b0d12' }}>
+      <BackgroundAurora variant="default" />
+      <div className="relative z-10">
+        <Sidebar user={user} />
+        <main className="px-4 sm:px-8 pb-4 sm:pb-8 pt-20 sm:pt-24">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

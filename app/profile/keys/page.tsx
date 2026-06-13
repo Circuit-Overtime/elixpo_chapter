@@ -87,14 +87,14 @@ export default function ApiKeysPage() {
         <div
           className="absolute top-[15%] right-[30%] w-[500px] h-[500px] rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(163,230,53,0.06), transparent 70%)',
+            background: 'radial-gradient(circle, rgba(155,123,247,0.06), transparent 70%)',
             animation: 'pulse-glow 6s ease-in-out infinite',
           }}
         />
         <div
           className="absolute bottom-[20%] left-[25%] w-[400px] h-[400px] rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(134,239,172,0.04), transparent 70%)',
+            background: 'radial-gradient(circle, rgba(155, 123, 247,0.04), transparent 70%)',
             animation: 'pulse-glow 8s ease-in-out infinite 2s',
           }}
         />
@@ -113,7 +113,7 @@ export default function ApiKeysPage() {
           <h1
             className="text-3xl font-sans font-bold mb-2"
             style={{
-              background: 'linear-gradient(135deg, #f5f5f4 0%, #a3e635 60%, #86efac 100%)',
+              background: 'linear-gradient(135deg, #f5f5f4 0%, #9b7bf7 60%, #b094ff 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
@@ -133,7 +133,7 @@ export default function ApiKeysPage() {
         <div
           className="rounded-2xl p-[1px] mb-6"
           style={{
-            background: 'linear-gradient(135deg, rgba(163,230,53,0.2), rgba(134,239,172,0.08), rgba(255,255,255,0.05))',
+            background: 'linear-gradient(135deg, rgba(155,123,247,0.2), rgba(155, 123, 247,0.08), rgba(255,255,255,0.05))',
           }}
         >
           <div
@@ -141,13 +141,13 @@ export default function ApiKeysPage() {
             style={{
               background: 'linear-gradient(135deg, rgba(16,24,12,0.85), rgba(12,15,10,0.95))',
               backdropFilter: 'blur(24px)',
-              boxShadow: '0 25px 60px -15px rgba(0,0,0,0.5), 0 0 80px rgba(163,230,53,0.04)',
+              boxShadow: '0 25px 60px -15px rgba(0,0,0,0.5), 0 0 80px rgba(155,123,247,0.04)',
             }}
           >
             <div className="flex items-center gap-2 mb-5">
               <div
                 className="w-1.5 h-1.5 rounded-full"
-                style={{ background: '#a3e635', boxShadow: '0 0 6px rgba(163,230,53,0.5)' }}
+                style={{ background: '#9b7bf7', boxShadow: '0 0 6px rgba(155,123,247,0.5)' }}
               />
               <span className="text-[0.65rem] text-accent-main font-semibold uppercase tracking-wider">
                 Create New Key
@@ -185,22 +185,22 @@ export default function ApiKeysPage() {
                         className="text-left p-3.5 rounded-xl transition-all duration-200 cursor-pointer"
                         style={{
                           background: selected
-                            ? 'linear-gradient(135deg, rgba(163,230,53,0.06), rgba(134,239,172,0.03))'
+                            ? 'linear-gradient(135deg, rgba(155,123,247,0.06), rgba(155, 123, 247,0.03))'
                             : 'rgba(255,255,255,0.03)',
-                          border: `1.5px solid ${selected ? 'rgba(163,230,53,0.35)' : 'rgba(255,255,255,0.08)'}`,
-                          boxShadow: selected ? '0 0 16px rgba(163,230,53,0.06)' : 'none',
+                          border: `1.5px solid ${selected ? 'rgba(155,123,247,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                          boxShadow: selected ? '0 0 16px rgba(155,123,247,0.06)' : 'none',
                         }}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <span
                             className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-all"
-                            style={{ border: `2px solid ${selected ? '#a3e635' : 'rgba(255,255,255,0.2)'}` }}
+                            style={{ border: `2px solid ${selected ? '#9b7bf7' : 'rgba(255,255,255,0.2)'}` }}
                           >
                             {selected && <span className="w-2 h-2 rounded-full bg-accent-main" />}
                           </span>
                           <span
                             className="text-sm font-medium transition-colors"
-                            style={{ color: selected ? '#a3e635' : '#f5f5f4' }}
+                            style={{ color: selected ? '#9b7bf7' : '#f5f5f4' }}
                           >
                             {opt.label}
                           </span>
@@ -234,11 +234,11 @@ export default function ApiKeysPage() {
                 className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 cursor-pointer"
                 style={{
                   background: creating
-                    ? 'rgba(163, 230, 53, 0.08)'
-                    : 'linear-gradient(135deg, rgba(163,230,53,0.18), rgba(134,239,172,0.12))',
-                  color: '#a3e635',
-                  border: '1px solid rgba(163, 230, 53, 0.3)',
-                  boxShadow: creating ? 'none' : '0 0 30px rgba(163,230,53,0.08)',
+                    ? 'rgba(155, 123, 247, 0.08)'
+                    : 'linear-gradient(135deg, rgba(155,123,247,0.18), rgba(155, 123, 247,0.12))',
+                  color: '#9b7bf7',
+                  border: '1px solid rgba(155, 123, 247, 0.3)',
+                  boxShadow: creating ? 'none' : '0 0 30px rgba(155,123,247,0.08)',
                 }}
               >
                 {creating ? (
@@ -308,11 +308,11 @@ export default function ApiKeysPage() {
                     <div
                       className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                       style={{
-                        background: k.is_active ? 'rgba(163,230,53,0.08)' : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${k.is_active ? 'rgba(163,230,53,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                        background: k.is_active ? 'rgba(155,123,247,0.08)' : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${k.is_active ? 'rgba(155,123,247,0.2)' : 'rgba(255,255,255,0.06)'}`,
                       }}
                     >
-                      <svg viewBox="0 0 20 20" fill="none" stroke={k.is_active ? '#a3e635' : '#71717a'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                      <svg viewBox="0 0 20 20" fill="none" stroke={k.is_active ? '#9b7bf7' : '#71717a'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                         <circle cx="7.5" cy="12.5" r="3.5" />
                         <path d="M10.2 9.8L16 4M14 4l2 2M12.5 6.5l2 2" />
                       </svg>
@@ -325,9 +325,9 @@ export default function ApiKeysPage() {
                         <span
                           className="text-[0.6rem] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded"
                           style={{
-                            background: k.scopes.includes('write') ? 'rgba(163,230,53,0.1)' : 'rgba(134,239,172,0.1)',
-                            color: k.scopes.includes('write') ? '#a3e635' : '#86efac',
-                            border: `1px solid ${k.scopes.includes('write') ? 'rgba(163,230,53,0.2)' : 'rgba(134,239,172,0.2)'}`,
+                            background: k.scopes.includes('write') ? 'rgba(155,123,247,0.1)' : 'rgba(155, 123, 247,0.1)',
+                            color: k.scopes.includes('write') ? '#9b7bf7' : '#b094ff',
+                            border: `1px solid ${k.scopes.includes('write') ? 'rgba(155,123,247,0.2)' : 'rgba(155, 123, 247,0.2)'}`,
                           }}
                         >
                           {k.scopes.includes('write') ? 'R/W' : 'Read'}
@@ -395,7 +395,7 @@ export default function ApiKeysPage() {
           <div
             className="relative w-full max-w-md rounded-2xl p-[1px]"
             style={{
-              background: 'linear-gradient(135deg, rgba(251,191,36,0.3), rgba(163,230,53,0.15), rgba(255,255,255,0.05))',
+              background: 'linear-gradient(135deg, rgba(251,191,36,0.3), rgba(155,123,247,0.15), rgba(255,255,255,0.05))',
               animation: 'fade-in-up 0.4s ease-out',
             }}
           >
@@ -459,10 +459,10 @@ export default function ApiKeysPage() {
                 onClick={() => setNewKey('')}
                 className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 cursor-pointer"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(163,230,53,0.18), rgba(134,239,172,0.12))',
-                  color: '#a3e635',
-                  border: '1px solid rgba(163, 230, 53, 0.3)',
-                  boxShadow: '0 0 30px rgba(163,230,53,0.08)',
+                  background: 'linear-gradient(135deg, rgba(155,123,247,0.18), rgba(155, 123, 247,0.12))',
+                  color: '#9b7bf7',
+                  border: '1px solid rgba(155, 123, 247, 0.3)',
+                  boxShadow: '0 0 30px rgba(155,123,247,0.08)',
                 }}
               >
                 I have saved my credentials
