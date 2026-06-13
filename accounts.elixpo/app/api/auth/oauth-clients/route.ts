@@ -6,6 +6,12 @@ import { createOAuthClient, getOAuthClientById, getUserById } from "@/lib/db";
 import { sendAppRegisteredEmail } from "@/lib/email";
 import { verifyJWT } from "@/lib/jwt";
 import { generateRandomString, hashString } from "@/lib/webcrypto";
+import {
+    mintWebhookSecret,
+    VALID_EVENTS,
+    type AppWebhookEvent,
+} from "@/lib/app-webhooks";
+import { getRequestContext } from "@cloudflare/next-on-pages";
 
 async function getAuth(request: NextRequest) {
     const token =
@@ -72,6 +78,8 @@ export async function POST(request: NextRequest) {
             description,
             homepage_url,
             scopes,
+            webhook_url,
+            webhook_events,
         } = body;
 
         // Validate required fields
@@ -136,10 +144,75 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        // Validate optional webhook subscription
+        let webhookUrlValid: string | null = null;
+        let webhookEventsValid: AppWebhookEvent[] | null = null;
+        if (webhook_url !== undefined && webhook_url !== null) {
+            if (typeof webhook_url !== "string") {
+                return NextResponse.json(
+                    { error: "webhook_url must be a string" },
+                    { status: 400 },
+                );
+            }
+            try {
+                const parsed = new URL(webhook_url);
+                if (
+                    parsed.protocol !== "https:" &&
+                    parsed.protocol !== "http:"
+                ) {
+                    return NextResponse.json(
+                        {
+                            error: "webhook_url must use https (http allowed for localhost only)",
+                        },
+                        { status: 400 },
+                    );
+                }
+                webhookUrlValid = webhook_url;
+            } catch {
+                return NextResponse.json(
+                    { error: "Invalid webhook_url" },
+                    { status: 400 },
+                );
+            }
+
+            if (!Array.isArray(webhook_events) || webhook_events.length === 0) {
+                return NextResponse.json(
+                    {
+                        error: "webhook_events must be a non-empty array when webhook_url is set",
+                    },
+                    { status: 400 },
+                );
+            }
+            for (const ev of webhook_events) {
+                if (
+                    typeof ev !== "string" ||
+                    !VALID_EVENTS.includes(ev as AppWebhookEvent)
+                ) {
+                    return NextResponse.json(
+                        {
+                            error: `Invalid event: ${ev}. Valid events: ${VALID_EVENTS.join(", ")}`,
+                        },
+                        { status: 400 },
+                    );
+                }
+            }
+            webhookEventsValid = webhook_events as AppWebhookEvent[];
+        }
+
         // Generate secure credentials
         const clientId = `cli_${generateRandomString(32)}`;
         const clientSecret = `secret_${generateRandomString(64)}`;
         const clientSecretHash = await hashString(clientSecret);
+
+        // Optional per-app webhook secret. Plaintext goes to KV; only the
+        // hash lands in D1.
+        let webhookSecretPlaintext: string | null = null;
+        let webhookSecretHash: string | null = null;
+        if (webhookUrlValid) {
+            const minted = await mintWebhookSecret();
+            webhookSecretPlaintext = minted.plaintext;
+            webhookSecretHash = minted.hash;
+        }
 
         const now = new Date().toISOString();
 
@@ -154,7 +227,30 @@ export async function POST(request: NextRequest) {
                 ownerId: auth.sub,
                 description,
                 homepageUrl: homepage_url,
+                webhookUrl: webhookUrlValid,
+                webhookSecretHash,
+                webhookEvents: webhookEventsValid
+                    ? JSON.stringify(webhookEventsValid)
+                    : null,
             });
+
+            // Stash the webhook plaintext in KV under the per-app key the
+            // dispatcher reads (see lib/app-webhooks.ts defaultSecretResolver).
+            // D1 only ever sees the hash.
+            if (webhookSecretPlaintext) {
+                try {
+                    const ctx = getRequestContext();
+                    await (ctx.env as any).KV.put(
+                        `webhook_secret:${clientId}`,
+                        webhookSecretPlaintext,
+                    );
+                } catch (kvErr) {
+                    console.error(
+                        "[OAuth Client] Failed to store webhook secret in KV:",
+                        kvErr,
+                    );
+                }
+            }
             console.log(`[OAuth Client] Registered: ${name} (${clientId})`);
 
             // Notify owner via email (fire-and-forget)
@@ -184,7 +280,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Return credentials (client_secret shown only once)
+        // Return credentials (client_secret + webhook_secret shown only once)
         return NextResponse.json(
             {
                 client_id: clientId,
@@ -195,9 +291,12 @@ export async function POST(request: NextRequest) {
                 logo_uri,
                 description,
                 scopes: scopes || validScopes,
+                webhook_url: webhookUrlValid,
+                webhook_events: webhookEventsValid,
+                webhook_secret: webhookSecretPlaintext,
                 created_at: now,
                 _notice:
-                    "Store client_secret securely. It will NOT be retrievable after this response.",
+                    "Store client_secret and webhook_secret securely. Neither will be retrievable after this response. Rotate via the management endpoint if leaked.",
             },
             { status: 201 },
         );

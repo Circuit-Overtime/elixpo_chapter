@@ -72,6 +72,31 @@ export async function POST(request: NextRequest) {
         console.log(`[Account] Deleted user: ${userId}`);
 
         // Notify connected first-party apps to hard-purge the user's data.
+        // App-scoped webhook dispatch — the new model. Targets any OAuth
+        // app that registered a webhook_url + subscribed to "user.deleted"
+        // at registration time. Works for both first-party and third-party
+        // integrators (e.g. ElixpoURL).
+        try {
+            const { dispatchAppEvent, defaultSecretResolver } = await import(
+                "@/lib/app-webhooks"
+            );
+            const { getRequestContext } = await import(
+                "@cloudflare/next-on-pages"
+            );
+            const kv = (getRequestContext().env as any).KV as KVNamespace;
+            await dispatchAppEvent(
+                "user.deleted",
+                { elixpo_id: userId, deleted_at: new Date().toISOString() },
+                connectedClientIds,
+                defaultSecretResolver(kv),
+            );
+        } catch (err) {
+            console.error("[delete-account] app webhook dispatch failed:", err);
+        }
+
+        // Legacy env-var-configured first-party receivers. Keep until every
+        // first-party app has been re-registered with a webhook_url so no
+        // deletion notifications are dropped during the migration window.
         try {
             const { fireRevocationToAll } = await import(
                 "@/lib/revocation-webhook"

@@ -77,6 +77,31 @@ export default function OAuthAppSettingsPage() {
         redirect_uris: [""] as string[],
     });
 
+    // ── Webhook subscription state ──────────────────────────────────────
+    const WEBHOOK_EVENTS = [
+        "user.deleted",
+        "user.updated",
+        "app.revoked",
+        "app.authorized",
+    ] as const;
+    const [webhookForm, setWebhookForm] = useState({
+        webhook_url: "",
+        webhook_events: [] as string[],
+    });
+    const [webhookMeta, setWebhookMeta] = useState<{
+        webhook_secret_set_at: string | null;
+        webhook_last_delivery_at: string | null;
+    }>({ webhook_secret_set_at: null, webhook_last_delivery_at: null });
+    const [savingWebhook, setSavingWebhook] = useState(false);
+    const [rotatingWebhook, setRotatingWebhook] = useState(false);
+    const [rotatedWebhookSecret, setRotatedWebhookSecret] = useState<
+        string | null
+    >(null);
+    const [webhookMessage, setWebhookMessage] = useState<{
+        text: string;
+        type: "success" | "error";
+    } | null>(null);
+
     useEffect(() => {
         const fetchApp = async () => {
             try {
@@ -97,6 +122,19 @@ export default function OAuthAppSettingsPage() {
                     homepage_url: data.homepage_url || "",
                     redirect_uris: uris.length > 0 ? uris : [""],
                 });
+                setWebhookForm({
+                    webhook_url: data.webhook_url || "",
+                    webhook_events: Array.isArray(data.webhook_events)
+                        ? data.webhook_events
+                        : data.webhook_events
+                          ? JSON.parse(data.webhook_events)
+                          : [],
+                });
+                setWebhookMeta({
+                    webhook_secret_set_at: data.webhook_secret_set_at || null,
+                    webhook_last_delivery_at:
+                        data.webhook_last_delivery_at || null,
+                });
             } catch {
                 router.push("/dashboard/oauth-apps");
             } finally {
@@ -110,6 +148,75 @@ export default function OAuthAppSettingsPage() {
         navigator.clipboard.writeText(text);
         setCopiedField(field);
         setTimeout(() => setCopiedField(null), 2000);
+    };
+
+    const handleWebhookSave = async () => {
+        setSavingWebhook(true);
+        setWebhookMessage(null);
+        try {
+            const url = webhookForm.webhook_url.trim();
+            const body: Record<string, unknown> = {
+                webhook_url: url || null,
+                webhook_events: webhookForm.webhook_events,
+            };
+            const res = await fetch(
+                `/api/auth/oauth-clients/${clientId}/webhook`,
+                {
+                    method: "PATCH",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                },
+            );
+            const data: any = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to save");
+            setWebhookMeta({
+                webhook_secret_set_at: data.webhook_secret_set_at,
+                webhook_last_delivery_at: data.webhook_last_delivery_at,
+            });
+            setWebhookMessage({
+                text: url
+                    ? "Webhook subscription updated"
+                    : "Webhook disabled",
+                type: "success",
+            });
+        } catch (err: any) {
+            setWebhookMessage({ text: err.message, type: "error" });
+        } finally {
+            setSavingWebhook(false);
+        }
+    };
+
+    const handleWebhookRotate = async () => {
+        if (
+            !confirm(
+                "Rotate the webhook secret? The previous secret stops being honored immediately. You'll need to update the env var on your receiver.",
+            )
+        )
+            return;
+        setRotatingWebhook(true);
+        setWebhookMessage(null);
+        try {
+            const res = await fetch(
+                `/api/auth/oauth-clients/${clientId}/webhook/rotate`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                },
+            );
+            const data: any = await res.json();
+            if (!res.ok) throw new Error(data.error || "Rotation failed");
+            setRotatedWebhookSecret(data.webhook_secret);
+            setWebhookMeta((m) => ({
+                ...m,
+                webhook_secret_set_at:
+                    data.rotated_at || new Date().toISOString(),
+            }));
+        } catch (err: any) {
+            setWebhookMessage({ text: err.message, type: "error" });
+        } finally {
+            setRotatingWebhook(false);
+        }
     };
 
     const handleSave = async () => {
@@ -735,6 +842,349 @@ export default function OAuthAppSettingsPage() {
                         </Box>
                     )}
                 </Box>
+            </Box>
+
+            {/* Webhooks panel — per-app event subscription */}
+            <Box sx={{ ...cardSx, mb: 3 }}>
+                <Typography
+                    sx={{ color: "#f5f5f4", fontWeight: 600, mb: 0.5 }}
+                >
+                    Webhooks
+                </Typography>
+                <Typography
+                    sx={{
+                        color: "rgba(255,255,255,0.55)",
+                        fontSize: "0.85rem",
+                        mb: 2.5,
+                    }}
+                >
+                    Subscribe to user-lifecycle events. Each delivery is
+                    signed with a per-app secret. See the{" "}
+                    <a
+                        href="https://github.com/elixpo/accounts.elixpo/blob/main/docs/WEBHOOKS_APP_SUBSCRIPTION.md"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                            color: "#9b7bf7",
+                            textDecoration: "underline",
+                            textDecorationColor: "rgba(155,123,247,0.4)",
+                        }}
+                    >
+                        integration guide
+                    </a>{" "}
+                    for the signature contract.
+                </Typography>
+
+                {/* URL */}
+                <Typography
+                    sx={{
+                        color: "rgba(255,255,255,0.5)",
+                        fontSize: "0.78rem",
+                        fontWeight: 600,
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        mb: 0.75,
+                    }}
+                >
+                    Webhook URL
+                </Typography>
+                <TextField
+                    fullWidth
+                    placeholder="https://yourapp.com/api/webhooks/elixpo"
+                    value={webhookForm.webhook_url}
+                    onChange={(e) =>
+                        setWebhookForm((p) => ({
+                            ...p,
+                            webhook_url: e.target.value,
+                        }))
+                    }
+                    InputProps={{
+                        sx: {
+                            color: "#f5f5f4",
+                            fontFamily:
+                                "var(--font-geist-mono), monospace",
+                            fontSize: "0.85rem",
+                        },
+                    }}
+                    sx={{
+                        mb: 2.5,
+                        "& .MuiOutlinedInput-root": {
+                            background: "rgba(255,255,255,0.03)",
+                            "& fieldset": {
+                                borderColor: "rgba(255,255,255,0.1)",
+                            },
+                            "&:hover fieldset": {
+                                borderColor: "rgba(155,123,247,0.4)",
+                            },
+                            "&.Mui-focused fieldset": {
+                                borderColor: "#9b7bf7",
+                            },
+                        },
+                    }}
+                />
+
+                {/* Events */}
+                <Typography
+                    sx={{
+                        color: "rgba(255,255,255,0.5)",
+                        fontSize: "0.78rem",
+                        fontWeight: 600,
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        mb: 1,
+                    }}
+                >
+                    Subscribed events
+                </Typography>
+                <Box
+                    sx={{
+                        display: "flex",
+                        gap: 0.75,
+                        flexWrap: "wrap",
+                        mb: 2.5,
+                    }}
+                >
+                    {WEBHOOK_EVENTS.map((ev) => {
+                        const checked =
+                            webhookForm.webhook_events.includes(ev);
+                        return (
+                            <Chip
+                                key={ev}
+                                label={ev}
+                                onClick={() =>
+                                    setWebhookForm((p) => ({
+                                        ...p,
+                                        webhook_events: checked
+                                            ? p.webhook_events.filter(
+                                                  (e) => e !== ev,
+                                              )
+                                            : [...p.webhook_events, ev],
+                                    }))
+                                }
+                                sx={{
+                                    cursor: "pointer",
+                                    fontFamily:
+                                        "var(--font-geist-mono), monospace",
+                                    bgcolor: checked
+                                        ? "rgba(155,123,247,0.15)"
+                                        : "rgba(255,255,255,0.04)",
+                                    color: checked
+                                        ? "#c8b6ff"
+                                        : "rgba(255,255,255,0.6)",
+                                    border: `1px solid ${
+                                        checked
+                                            ? "rgba(155,123,247,0.4)"
+                                            : "rgba(255,255,255,0.1)"
+                                    }`,
+                                }}
+                            />
+                        );
+                    })}
+                </Box>
+
+                {/* Metadata strip */}
+                <Box
+                    sx={{
+                        display: "flex",
+                        gap: 3,
+                        flexWrap: "wrap",
+                        py: 1.5,
+                        px: 2,
+                        mb: 2.5,
+                        borderRadius: "10px",
+                        background: "rgba(255,255,255,0.025)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                >
+                    <Box>
+                        <Typography
+                            sx={{
+                                color: "rgba(255,255,255,0.4)",
+                                fontSize: "0.7rem",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                            }}
+                        >
+                            Secret set
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "#f5f5f4",
+                                fontSize: "0.85rem",
+                                fontWeight: 600,
+                            }}
+                        >
+                            {webhookMeta.webhook_secret_set_at
+                                ? new Date(
+                                      webhookMeta.webhook_secret_set_at,
+                                  ).toLocaleString()
+                                : "—"}
+                        </Typography>
+                    </Box>
+                    <Box>
+                        <Typography
+                            sx={{
+                                color: "rgba(255,255,255,0.4)",
+                                fontSize: "0.7rem",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                            }}
+                        >
+                            Last delivery
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "#f5f5f4",
+                                fontSize: "0.85rem",
+                                fontWeight: 600,
+                            }}
+                        >
+                            {webhookMeta.webhook_last_delivery_at
+                                ? new Date(
+                                      webhookMeta.webhook_last_delivery_at,
+                                  ).toLocaleString()
+                                : "—"}
+                        </Typography>
+                    </Box>
+                </Box>
+
+                {/* Result message */}
+                {webhookMessage && (
+                    <Typography
+                        sx={{
+                            mb: 2,
+                            color:
+                                webhookMessage.type === "error"
+                                    ? "#f87171"
+                                    : "#86efac",
+                            fontSize: "0.85rem",
+                        }}
+                    >
+                        {webhookMessage.text}
+                    </Typography>
+                )}
+
+                {/* Actions */}
+                <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                    <Button
+                        variant="contained"
+                        onClick={handleWebhookSave}
+                        disabled={savingWebhook}
+                        sx={{
+                            textTransform: "none",
+                            background:
+                                "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                            "&:hover": {
+                                background:
+                                    "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                            },
+                        }}
+                    >
+                        {savingWebhook ? "Saving…" : "Save webhook settings"}
+                    </Button>
+                    {webhookMeta.webhook_secret_set_at && (
+                        <Button
+                            variant="outlined"
+                            onClick={handleWebhookRotate}
+                            disabled={rotatingWebhook}
+                            sx={{
+                                textTransform: "none",
+                                color: "rgba(255,255,255,0.85)",
+                                borderColor: "rgba(255,255,255,0.18)",
+                                "&:hover": {
+                                    borderColor: "rgba(155,123,247,0.5)",
+                                    background: "rgba(155,123,247,0.06)",
+                                },
+                            }}
+                        >
+                            {rotatingWebhook
+                                ? "Rotating…"
+                                : "Rotate secret"}
+                        </Button>
+                    )}
+                </Box>
+
+                {/* Freshly-rotated secret display */}
+                {rotatedWebhookSecret && (
+                    <Box
+                        sx={{
+                            mt: 2.5,
+                            p: 2.5,
+                            borderRadius: "10px",
+                            background:
+                                "linear-gradient(135deg, rgba(155,123,247,0.12) 0%, rgba(95,182,255,0.05) 100%)",
+                            border: "1px solid rgba(155,123,247,0.35)",
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                color: "#fde7a4",
+                                fontSize: "0.75rem",
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                mb: 1,
+                            }}
+                        >
+                            Copy this secret now
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "rgba(255,255,255,0.65)",
+                                fontSize: "0.82rem",
+                                mb: 1.5,
+                            }}
+                        >
+                            We won&apos;t show it again. Update your
+                            receiver&apos;s <code>ELIXPO_WEBHOOK_SECRET</code>{" "}
+                            (or equivalent) before the next delivery.
+                        </Typography>
+                        <Box sx={monoBox}>
+                            <Box
+                                component="code"
+                                sx={{
+                                    color: "#e8e8ed",
+                                    fontFamily:
+                                        "var(--font-geist-mono), monospace",
+                                    fontSize: "0.85rem",
+                                    wordBreak: "break-all",
+                                    flex: 1,
+                                }}
+                            >
+                                {rotatedWebhookSecret}
+                            </Box>
+                            <Button
+                                size="small"
+                                onClick={() =>
+                                    copyToClipboard(
+                                        rotatedWebhookSecret,
+                                        "webhook-secret",
+                                    )
+                                }
+                                sx={{
+                                    textTransform: "none",
+                                    color: "#c8b6ff",
+                                    minWidth: 0,
+                                }}
+                            >
+                                {copiedField === "webhook-secret"
+                                    ? "Copied"
+                                    : "Copy"}
+                            </Button>
+                        </Box>
+                        <Button
+                            size="small"
+                            onClick={() => setRotatedWebhookSecret(null)}
+                            sx={{
+                                mt: 1.5,
+                                textTransform: "none",
+                                color: "rgba(255,255,255,0.5)",
+                            }}
+                        >
+                            I&apos;ve saved it
+                        </Button>
+                    </Box>
+                )}
             </Box>
 
             {/* Save Button */}
