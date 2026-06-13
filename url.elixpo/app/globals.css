@@ -140,7 +140,10 @@ body {
   background: linear-gradient(to top, rgba(155, 123, 247, 0.4), rgba(155, 123, 247, 0.8));
   border-radius: 4px 4px 0 0;
   min-width: 6px;
-  flex: 1;
+  /* Cap bar width so 1–2 data points don't visually stretch into a
+     solid block. With many bars the gap + flex-grow keeps them packed. */
+  max-width: 56px;
+  flex: 1 1 0;
   position: relative;
   transition: all 0.2s;
 }

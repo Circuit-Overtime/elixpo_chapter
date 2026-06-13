@@ -4,11 +4,15 @@ import { getDB } from '@/lib/db';
 import { generateApiKey, hashApiKey } from '@/lib/utils';
 import { TIER_LIMITS } from '@/lib/types';
 import { validateLength, isValidScopes, badRequest } from '@/lib/validate';
+import { requireSameOrigin } from '@/lib/csrf';
 import { rateLimit } from '@/lib/ratelimit';
 
 export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
+  const csrfErr = requireSameOrigin(request);
+  if (csrfErr) return csrfErr;
+
   // 10 key creations per minute per IP
   const limited = await rateLimit(request, 'key:create', 10, 60);
   if (limited) return limited;
