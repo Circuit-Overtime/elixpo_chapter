@@ -2,7 +2,9 @@ import { getCurrentUser } from '@/lib/auth';
 import { getDB, getEnv } from '@/lib/db';
 import { TIER_LIMITS, type UrlRecord } from '@/lib/types';
 import Link from 'next/link';
+import CopyButton from './CopyButton';
 import DeleteButton from './DeleteButton';
+import QrCard from './QrCard';
 
 export const runtime = 'edge';
 
@@ -59,13 +61,7 @@ export default async function UrlDetailPage({
           <p className="text-sm text-text-secondary mt-1 max-w-lg truncate">{url.original_url}</p>
         </div>
         <div className="flex gap-2 shrink-0">
-          <button
-            onClick={() => {}}
-            className="btn-glass text-sm"
-            data-copy={shortUrl}
-          >
-            Copy Link
-          </button>
+          <CopyButton value={shortUrl} />
           <DeleteButton code={code} />
         </div>
       </div>
@@ -88,6 +84,55 @@ export default async function UrlDetailPage({
           <div className="text-[0.7rem] text-text-disabled uppercase tracking-wider">Created</div>
           <div className="text-sm font-medium mt-2">{new Date(url.created_at).toLocaleDateString()}</div>
         </div>
+      </div>
+
+      {/* QR + per-URL CSV export — visible to all tiers */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 mb-6">
+        <div className="glass-card p-6 flex flex-col justify-between gap-4">
+          <div>
+            <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-white/45 mb-3">
+              Export click data
+            </div>
+            <p className="text-sm text-white/65 leading-relaxed">
+              Download every click on this link as CSV — one row per click,
+              with timestamp, country, browser, device, and referer.
+              {!limits.analytics && (
+                <span className="block mt-2 text-[#f87171]">
+                  Per-click export requires Pro tier or above.
+                </span>
+              )}
+            </p>
+          </div>
+          <a
+            href={`/api/urls/${code}/clicks.csv`}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold no-underline transition-all self-start ${
+              limits.analytics ? 'text-white' : 'pointer-events-none'
+            }`}
+            style={
+              limits.analytics
+                ? {
+                    background:
+                      'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                    boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+                  }
+                : {
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'rgba(255,255,255,0.4)',
+                  }
+            }
+            aria-disabled={!limits.analytics}
+            tabIndex={limits.analytics ? 0 : -1}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download CSV
+          </a>
+        </div>
+        <QrCard shortUrl={shortUrl} canCustomize={limits.analytics} />
       </div>
 
       {/* Analytics */}
