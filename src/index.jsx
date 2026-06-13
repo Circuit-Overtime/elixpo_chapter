@@ -714,14 +714,10 @@ export default function App() {
             </Link>
           </div>
 
-          {/* Footer Links */}
-          <div className="mt-8 flex flex-wrap gap-x-4 gap-y-1 text-[12px]" style={{ color: 'var(--text-faint)' }}>
-            <span className="cursor-pointer transition-colors hover:opacity-70">Help</span>
-            <span className="cursor-pointer transition-colors hover:opacity-70">Status</span>
-            <span className="cursor-pointer transition-colors hover:opacity-70">About</span>
-            <span className="cursor-pointer transition-colors hover:opacity-70">Blog</span>
-            <span className="cursor-pointer transition-colors hover:opacity-70">Privacy</span>
-            <span className="cursor-pointer transition-colors hover:opacity-70">Terms</span>
+          {/* Status — help/legal/docs now live in the left sidebar above the account */}
+          <div className="mt-8 flex items-center gap-1.5 text-[12px]" style={{ color: 'var(--text-faint)' }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+            <span>All systems operational</span>
           </div>
         </aside>
       </div>

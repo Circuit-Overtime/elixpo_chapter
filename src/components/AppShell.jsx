@@ -353,7 +353,7 @@ function ProfileDropdown({ user, logout }) {
           <div style={{ height: '1px', backgroundColor: 'var(--divider)' }} />
 
           <div className="py-1.5">
-            <DropdownItem href="/about" onClick={() => setOpen(false)} icon="help-circle-outline" faint>Help</DropdownItem>
+            <DropdownItem href="/help" onClick={() => setOpen(false)} icon="help-circle-outline" faint>Help</DropdownItem>
             <DropdownItem href="/pricing" onClick={() => setOpen(false)} icon="diamond-outline" faint>Pricing</DropdownItem>
           </div>
 
