@@ -52,15 +52,36 @@ jobs:
         working-directory: packages/lixsketch
         run: |
           LOCAL=$(node -p "require('./package.json').version")
-          REMOTE=$(npm view @elixpo/lixsketch version 2>/dev/null || echo "0.0.0")
+          # `npm view` can timeout / rate-limit and return "0.0.0" via the
+          # fallback below, which then makes the LOCAL == REMOTE check
+          # fail and skips the bump — even though the local version IS
+          # already on npm. Treat any non-semver REMOTE as unknown and
+          # fall back to "is LOCAL already published?" as the truth source.
+          REMOTE=$(npm view @elixpo/lixsketch version 2>/dev/null || echo "unknown")
           BUMP="${{ github.event.inputs.bump || 'patch' }}"
 
           echo "Local  version: $LOCAL"
           echo "Remote version: $REMOTE"
           echo "Bump kind: $BUMP"
 
+          # Decide whether we need to bump. Three cases:
+          #   1. Versions match exactly                  → bump
+          #   2. LOCAL already exists in the npm registry → bump (publish would 409)
+          #   3. LOCAL is strictly ahead of REMOTE        → respect manual bump, use LOCAL
+          NEEDS_BUMP=false
           if [ "$LOCAL" = "$REMOTE" ]; then
-            echo "Versions match — auto-bumping ($BUMP)."
+            NEEDS_BUMP=true
+          elif [ "$REMOTE" = "unknown" ]; then
+            # `npm view` failed. Probe `npm view @scope/pkg@LOCAL` directly
+            # — if that returns the version string, LOCAL is already on
+            # npm and we must bump or the publish below 409's.
+            if npm view "@elixpo/lixsketch@${LOCAL}" version >/dev/null 2>&1; then
+              echo "LOCAL ($LOCAL) already exists on npm — bumping."
+              NEEDS_BUMP=true
+            fi
+          fi
+
+          if [ "$NEEDS_BUMP" = "true" ]; then
             # `npm version` in a workspace prints "<pkg-name>\nv<x.y.z>" —
             # capturing that into a shell var produces a multi-line value
             # which corrupts $GITHUB_OUTPUT. Bump silently and read the
@@ -71,13 +92,21 @@ jobs:
             echo "version=$NEW" >> "$GITHUB_OUTPUT"
             echo "auto_bumped=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Local already ahead of remote — using $LOCAL."
+            echo "Local ($LOCAL) ahead of remote ($REMOTE) — using local as-is."
             echo "version=$LOCAL" >> "$GITHUB_OUTPUT"
             echo "auto_bumped=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish to NPM
-        run: npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken=${{ secrets.NPM_LIXSKETCH_PUBLISH_TOKEN }}
+        # `actions/setup-node@v4` above wires `.npmrc` to use
+        # ${NODE_AUTH_TOKEN}. The previous inline
+        # `--//registry.npmjs.org/:_authToken=...` flag was producing
+        # spurious E404 "Not Found - PUT" (= npm's auth-failed response)
+        # on blogs.elixpo — switching to the env-var pattern fixed it
+        # there, applying the same fix here pre-emptively.
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_LIXSKETCH_PUBLISH_TOKEN }}
+        run: npm publish --access public
         working-directory: packages/lixsketch
 
       # ── Mirror to GitHub Packages ───────────────────────────────────
