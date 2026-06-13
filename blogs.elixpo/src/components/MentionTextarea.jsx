@@ -1,28 +1,59 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { searchEmojiShortcodes, lookupEmojiShortcode } from '../data/emojiShortcodes';
 
-// A <textarea> with @username autocomplete (#10). Reuses /api/search?scope=users.
+// A <textarea> with @username autocomplete (#10) and :emoji: shortcodes.
+// Reuses /api/search?scope=users for mentions; emoji are resolved locally.
 // Drop-in: same value/onChange/placeholder/rows/className/style/onKeyDown props.
-// On select, replaces the active "@query" token with "@username ".
+//  - "@query" → menu of users; on select replaces with "@username ".
+//  - ":query" → menu of emoji; on select replaces with the emoji glyph.
+//  - typing a full ":name:" auto-converts to the emoji inline.
 export default function MentionTextarea({
   value, onChange, placeholder, rows = 2, className, style, onKeyDown, autoFocus,
 }) {
   const taRef = useRef(null);
-  const [menu, setMenu] = useState(null); // { query, start, results, active }
+  const [menu, setMenu] = useState(null); // { kind: 'mention'|'emoji', query, start, results, active }
   const debounceRef = useRef(null);
 
-  // Find an @token immediately before the caret (no whitespace inside).
+  // Find an @mention or :emoji: token immediately before the caret.
   const detect = useCallback((el) => {
     const caret = el.selectionStart;
     const upto = el.value.slice(0, caret);
-    const m = upto.match(/(?:^|\s)@([a-zA-Z0-9_-]*)$/);
-    if (!m) return null;
-    return { query: m[1], start: caret - m[1].length - 1 }; // index of '@'
+    const mention = upto.match(/(?:^|\s)@([a-zA-Z0-9_-]*)$/);
+    if (mention) return { kind: 'mention', query: mention[1], start: caret - mention[1].length - 1 };
+    const emoji = upto.match(/(?:^|\s):([a-zA-Z0-9_+-]+)$/);
+    if (emoji) return { kind: 'emoji', query: emoji[1], start: caret - emoji[1].length - 1 };
+    return null;
   }, []);
 
+  // Replace the textarea's current value[start..end] with `insert`, then place
+  // the caret after it. Slices against the live el.value (not the stale `value`
+  // prop) so mid-text conversions don't drop a character. `end` defaults to caret.
+  const replaceToken = useCallback((start, insert, end) => {
+    const el = taRef.current;
+    if (!el) return;
+    const src = el.value;
+    const endPos = end == null ? el.selectionStart : end;
+    const before = src.slice(0, start);
+    const after = src.slice(endPos);
+    const next = `${before}${insert}${after}`;
+    onChange({ target: { value: next } });
+    setMenu(null);
+    requestAnimationFrame(() => {
+      const pos = (before + insert).length;
+      try { el.focus(); el.setSelectionRange(pos, pos); } catch {}
+    });
+  }, [onChange]);
+
+  // Mention results come from the API (debounced); emoji results are local.
   useEffect(() => {
     if (!menu || menu.query == null) return;
+    if (menu.kind === 'emoji') {
+      if (menu.query.length < 2) { setMenu((p) => p && { ...p, results: [] }); return; }
+      setMenu((p) => p && { ...p, results: searchEmojiShortcodes(p.query), active: 0 });
+      return;
+    }
     clearTimeout(debounceRef.current);
     if (menu.query.length < 1) { setMenu((p) => p && { ...p, results: [] }); return; }
     debounceRef.current = setTimeout(async () => {
@@ -33,27 +64,32 @@ export default function MentionTextarea({
       } catch { setMenu((p) => p && { ...p, results: [] }); }
     }, 250);
     return () => clearTimeout(debounceRef.current);
-  }, [menu?.query]);
+  }, [menu?.query, menu?.kind]);
 
   const handleChange = (e) => {
     onChange(e);
-    const d = detect(e.target);
+    const el = e.target;
+
+    // Auto-convert a completed ":name:" token to its emoji.
+    const upto = el.value.slice(0, el.selectionStart);
+    const closed = upto.match(/(?:^|\s):([a-zA-Z0-9_+-]+):$/);
+    if (closed) {
+      const emoji = lookupEmojiShortcode(closed[1]);
+      if (emoji) {
+        const start = el.selectionStart - closed[1].length - 2; // first ':'
+        replaceToken(start, emoji, el.selectionStart);
+        return;
+      }
+    }
+
+    const d = detect(el);
     setMenu(d ? { ...d, results: [], active: 0 } : null);
   };
 
-  const pick = (u) => {
-    const el = taRef.current;
-    if (!el || !menu) return;
-    const before = value.slice(0, menu.start);
-    const after = value.slice(el.selectionStart);
-    const next = `${before}@${u.username} ${after}`;
-    // Synthesize a change event so the parent state updates.
-    onChange({ target: { value: next } });
-    setMenu(null);
-    requestAnimationFrame(() => {
-      const pos = (before + `@${u.username} `).length;
-      try { el.focus(); el.setSelectionRange(pos, pos); } catch {}
-    });
+  const pick = (item) => {
+    if (!menu) return;
+    if (menu.kind === 'emoji') replaceToken(menu.start, `${item.emoji} `);
+    else replaceToken(menu.start, `@${item.username} `);
   };
 
   const handleKeyDown = (e) => {
@@ -85,23 +121,36 @@ export default function MentionTextarea({
           className="absolute left-0 z-50 mt-1 w-64 rounded-lg overflow-hidden"
           style={{ top: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-default)', boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }}
         >
-          {menu.results.map((u, i) => (
-            <button
-              key={u.id}
-              type="button"
-              onMouseDown={(e) => { e.preventDefault(); pick(u); }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-left"
-              style={{ background: i === menu.active ? 'var(--bg-active)' : 'transparent' }}
-            >
-              {u.avatar_url
-                ? <img src={u.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                : <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>{(u.display_name || u.username || '?')[0].toUpperCase()}</span>}
-              <span className="min-w-0">
-                <span className="block text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u.display_name || u.username}</span>
-                <span className="block text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>@{u.username}</span>
-              </span>
-            </button>
-          ))}
+          {menu.kind === 'emoji'
+            ? menu.results.map((em, i) => (
+                <button
+                  key={em.code}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); pick(em); }}
+                  className="flex items-center gap-3 w-full px-3 py-2 text-left"
+                  style={{ background: i === menu.active ? 'var(--bg-active)' : 'transparent' }}
+                >
+                  <span className="text-[18px] leading-none w-6 text-center">{em.emoji}</span>
+                  <span className="text-[13px] truncate" style={{ color: 'var(--text-primary)' }}>:{em.code}:</span>
+                </button>
+              ))
+            : menu.results.map((u, i) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); pick(u); }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-left"
+                  style={{ background: i === menu.active ? 'var(--bg-active)' : 'transparent' }}
+                >
+                  {u.avatar_url
+                    ? <img src={u.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                    : <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>{(u.display_name || u.username || '?')[0].toUpperCase()}</span>}
+                  <span className="min-w-0">
+                    <span className="block text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u.display_name || u.username}</span>
+                    <span className="block text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>@{u.username}</span>
+                  </span>
+                </button>
+              ))}
         </div>
       )}
     </div>
