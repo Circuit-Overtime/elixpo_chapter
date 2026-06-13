@@ -49,17 +49,41 @@ export async function GET(request) {
     const ns = await db.prepare('SELECT owner_type, owner_id FROM namespaces WHERE name = ?')
       .bind(name).first();
 
+    let ownerType = ns?.owner_type;
+    let ownerId = ns?.owner_id;
+
+    // Fallback: the namespace row may be missing if seeding failed at signup
+    // (the callback reserves the name in a best-effort try/catch). Resolve
+    // straight from the source tables so the profile still loads, then
+    // self-heal the namespace so future lookups hit the fast path.
     if (!ns) {
-      return NextResponse.json({ error: 'Not found', type: null }, { status: 404 });
+      const u = await db.prepare('SELECT id FROM users WHERE LOWER(username) = ?').bind(name).first();
+      if (u) {
+        ownerType = 'user';
+        ownerId = u.id;
+      } else {
+        const o = await db.prepare('SELECT id FROM orgs WHERE LOWER(slug) = ?').bind(name).first();
+        if (o) { ownerType = 'org'; ownerId = o.id; }
+      }
+
+      if (!ownerType) {
+        return NextResponse.json({ error: 'Not found', type: null }, { status: 404 });
+      }
+
+      try {
+        await db.prepare(
+          'INSERT OR IGNORE INTO namespaces (name, owner_type, owner_id, created_at) VALUES (?, ?, ?, unixepoch())'
+        ).bind(name, ownerType, ownerId).run();
+      } catch { /* best-effort backfill */ }
     }
 
     // Resolve profile
-    if (ns.owner_type === 'user') {
+    if (ownerType === 'user') {
       const user = await db.prepare(`
         SELECT id, username, display_name, bio, avatar_url, banner_r2_key,
           location, timezone, pronouns, website, company, links, created_at
         FROM users WHERE id = ?
-      `).bind(ns.owner_id).first();
+      `).bind(ownerId).first();
 
       if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
@@ -74,7 +98,7 @@ export async function GET(request) {
           FROM blogs b
           JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.author_id = ? AND b.status IN ('published', 'unlisted')
-        `).bind(slug, ns.owner_id).first();
+        `).bind(slug, ownerId).first();
 
         if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
 
@@ -106,15 +130,15 @@ export async function GET(request) {
                ))
           AND b.status IN ('published', 'unlisted')
         ORDER BY b.published_at DESC LIMIT 20
-      `).bind(ns.owner_id, ns.owner_id, ns.owner_id).all();
+      `).bind(ownerId, ownerId, ownerId).all();
 
       const followerCount = await db.prepare(
         "SELECT COUNT(*) as c FROM follows WHERE following_id = ? AND following_type = 'user'"
-      ).bind(ns.owner_id).first();
+      ).bind(ownerId).first();
 
       const followingCount = await db.prepare(
         'SELECT COUNT(*) as c FROM follows WHERE follower_id = ?'
-      ).bind(ns.owner_id).first();
+      ).bind(ownerId).first();
 
       return NextResponse.json({
         type: 'user',
@@ -123,13 +147,13 @@ export async function GET(request) {
       });
     }
 
-    if (ns.owner_type === 'org') {
+    if (ownerType === 'org') {
       const org = await db.prepare(`
         SELECT id, slug, name, description, bio, website, links, visibility,
           logo_url, logo_r2_key, banner_url, banner_r2_key, featured_blog_ids,
           timezone, location, contact_email, owner_id, created_at
         FROM orgs WHERE id = ?
-      `).bind(ns.owner_id).first();
+      `).bind(ownerId).first();
 
       if (!org) return NextResponse.json({ error: 'Org not found' }, { status: 404 });
 
@@ -145,7 +169,7 @@ export async function GET(request) {
       // If collection + slug, find blog in collection
       if (collection && slug) {
         const col = await db.prepare('SELECT id FROM collections WHERE org_id = ? AND LOWER(slug) = ?')
-          .bind(ns.owner_id, collection).first();
+          .bind(ownerId, collection).first();
         if (!col) return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
 
         const blog = await db.prepare(`
@@ -173,7 +197,7 @@ export async function GET(request) {
         // Check if slug matches a collection under this org
         const col = await db.prepare(
           'SELECT id, slug, name, description FROM collections WHERE org_id = ? AND LOWER(slug) = ?'
-        ).bind(ns.owner_id, slug).first();
+        ).bind(ownerId, slug).first();
 
         if (col) {
           // Return collection listing with its blogs
@@ -215,7 +239,7 @@ export async function GET(request) {
           SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
           FROM blogs b JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.published_as = ? AND b.status IN ('published', 'unlisted')
-        `).bind(slug, `org:${ns.owner_id}`).first();
+        `).bind(slug, `org:${ownerId}`).first();
 
         if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
 
@@ -240,14 +264,14 @@ export async function GET(request) {
           SELECT u.id, u.username, u.display_name, u.avatar_url, om.role, om.joined_at
           FROM org_members om JOIN users u ON u.id = om.user_id
           WHERE om.org_id = ? ORDER BY om.joined_at LIMIT 50
-        `).bind(ns.owner_id).all(),
+        `).bind(ownerId).all(),
         db.prepare('SELECT id, slug, name, description FROM collections WHERE org_id = ? ORDER BY created_at')
-          .bind(ns.owner_id).all(),
+          .bind(ownerId).all(),
         db.prepare(`
           SELECT id, slug, title, subtitle, cover_image_r2_key, page_emoji, read_time_minutes, published_at
           FROM blogs WHERE published_as = ? AND status IN ('published', 'unlisted')
           ORDER BY published_at DESC LIMIT 20
-        `).bind(`org:${ns.owner_id}`).all(),
+        `).bind(`org:${ownerId}`).all(),
       ]);
 
       return NextResponse.json({
