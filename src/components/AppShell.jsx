@@ -241,6 +241,35 @@ const NAV_ITEMS = [
   { label: 'Stats', icon: 'stats-chart-outline', href: '/stats' },
 ];
 
+// GitHub star counter (stars only) → links to the repo.
+function GitHubStars() {
+  const [stars, setStars] = useState(null);
+  useEffect(() => {
+    let active = true;
+    fetch('https://api.github.com/repos/elixpo/blogs.elixpo')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (active && d && typeof d.stargazers_count === 'number') setStars(d.stargazers_count); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+  return (
+    <a
+      href="https://github.com/elixpo/blogs.elixpo"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hidden sm:flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-[13px] transition-colors"
+      style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}
+      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+      title="Star us on GitHub"
+    >
+      <ion-icon name="logo-github" style={{ fontSize: '16px' }} />
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.401 8.169L12 18.896l-7.335 3.857 1.401-8.169L.132 9.21l8.2-1.192z" /></svg>
+      <span className="font-medium tabular-nums">{stars ?? '—'}</span>
+    </a>
+  );
+}
+
 function ProfileDropdown({ user, logout }) {
   const [open, setOpen] = useState(false);
   const [orgs, setOrgs] = useState([]);
@@ -324,7 +353,7 @@ function ProfileDropdown({ user, logout }) {
           <div style={{ height: '1px', backgroundColor: 'var(--divider)' }} />
 
           <div className="py-1.5">
-            <DropdownItem href="/about" onClick={() => setOpen(false)} icon="help-circle-outline" faint>Help</DropdownItem>
+            <DropdownItem href="/help" onClick={() => setOpen(false)} icon="help-circle-outline" faint>Help</DropdownItem>
             <DropdownItem href="/pricing" onClick={() => setOpen(false)} icon="diamond-outline" faint>Pricing</DropdownItem>
           </div>
 
@@ -395,6 +424,7 @@ export default function AppShell({ children }) {
             </Link>
           </div>
           <div className="flex items-center gap-2">
+            <GitHubStars />
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
@@ -425,22 +455,11 @@ export default function AppShell({ children }) {
                 <ProfileDropdown user={user} logout={logout} />
               </>
             ) : (
-              <>
-                {/* "Sign In" text is hidden on phones — the icon button below covers it */}
-                <Link
-                  href="/sign-in"
-                  className="hidden sm:block text-[14px] transition-colors px-3 py-1.5 rounded-lg"
-                  style={{ color: 'var(--text-muted)' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
-                >
-                  Sign In
-                </Link>
-                <button onClick={handleLogin} className="text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] transition-colors rounded-full flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:px-4 sm:py-1.5" title="Get started">
-                  <span className="hidden sm:inline">Get Started</span>
-                  <span className="sm:hidden flex items-center justify-center"><ion-icon name="log-in-outline" style={{ fontSize: '18px' }} /></span>
-                </button>
-              </>
+              // Single sign-in entry point (Sign In and Get Started did the same thing).
+              <button onClick={handleLogin} className="text-[14px] font-medium text-white bg-[#9b7bf7] hover:bg-[#8b6ae6] transition-colors rounded-full flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:px-4 sm:py-1.5" title="Sign in">
+                <span className="hidden sm:inline">Sign In</span>
+                <span className="sm:hidden flex items-center justify-center"><ion-icon name="log-in-outline" style={{ fontSize: '18px' }} /></span>
+              </button>
             )}
           </div>
         </div>
@@ -451,7 +470,7 @@ export default function AppShell({ children }) {
         {/* Left Sidebar */}
         <aside className="hidden lg:flex flex-col w-[220px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] px-4 py-6 justify-between" style={{ borderRight: '1px solid var(--border-default)' }}>
           <nav className="flex flex-col gap-1">
-            {NAV_ITEMS.map((item) => {
+            {NAV_ITEMS.filter((item) => user || item.href === '/').map((item) => {
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
               return (
                 <Link
@@ -470,33 +489,75 @@ export default function AppShell({ children }) {
                 </Link>
               );
             })}
-            <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--divider)' }}>
-              <Link
-                href="/settings"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] transition-colors"
-                style={{
-                  color: pathname.startsWith('/settings') ? 'var(--text-primary)' : 'var(--text-muted)',
-                  backgroundColor: pathname.startsWith('/settings') ? 'var(--bg-active)' : 'transparent',
-                }}
-                onMouseEnter={e => { if (!pathname.startsWith('/settings')) { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}}
-                onMouseLeave={e => { if (!pathname.startsWith('/settings')) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}}
-              >
-                <ion-icon name="settings-outline" style={{ fontSize: '18px' }} />
-                Settings
-              </Link>
-            </div>
-          </nav>
-          {user && (
-            <Link href="/profile" className="block px-3 py-3 rounded-xl transition-colors cursor-pointer" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
-              <div className="flex items-center gap-2.5">
-                <UserAvatar src={user.avatar_url} name={user.display_name || user.username} size={32} className="flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{user.display_name || user.username}</p>
-                  <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>@{user.username}</p>
-                </div>
-              </div>
+            {/* Settings — kept above the divider with the primary nav (signed-in only) */}
+            {user && (
+            <Link
+              href="/settings"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] transition-colors"
+              style={{
+                color: pathname.startsWith('/settings') ? 'var(--text-primary)' : 'var(--text-muted)',
+                backgroundColor: pathname.startsWith('/settings') ? 'var(--bg-active)' : 'transparent',
+              }}
+              onMouseEnter={e => { if (!pathname.startsWith('/settings')) { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}}
+              onMouseLeave={e => { if (!pathname.startsWith('/settings')) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}}
+            >
+              <ion-icon name="settings-outline" style={{ fontSize: '18px' }} />
+              Settings
             </Link>
-          )}
+            )}
+          </nav>
+
+          {/* Bottom: docs + legal (above the account), then the account card */}
+          <div>
+            <div className="flex flex-col gap-1 pt-3 pb-2 mb-1" style={{ borderTop: '1px solid var(--divider)' }}>
+              {[
+                { href: '/docs', icon: 'document-text-outline', label: 'Docs' },
+                { href: '/help', icon: 'help-buoy-outline', label: 'Help' },
+                { href: '/privacy', icon: 'shield-checkmark-outline', label: 'Privacy' },
+                { href: '/terms', icon: 'document-outline', label: 'Terms' },
+              ].map(l => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] transition-colors"
+                  style={{ color: 'var(--text-muted)' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                  title={l.label}
+                >
+                  <ion-icon name={l.icon} style={{ fontSize: '16px' }} />
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+            {user ? (
+              <Link href="/profile" className="block px-3 py-3 rounded-xl transition-colors cursor-pointer" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+                <div className="flex items-center gap-2.5">
+                  <UserAvatar src={user.avatar_url} name={user.display_name || user.username} size={32} className="flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{user.display_name || user.username}</p>
+                    <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>@{user.username}</p>
+                  </div>
+                </div>
+              </Link>
+            ) : (
+              <div className="px-3 py-3 rounded-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-default)' }}>
+                    <ion-icon name="person-outline" style={{ fontSize: '16px', color: 'var(--text-muted)' }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>Guest</p>
+                    <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>Not signed in</p>
+                  </div>
+                </div>
+                <button onClick={handleLogin} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-colors" style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+                  <ion-icon name="log-in-outline" style={{ fontSize: '15px' }} />
+                  Sign In
+                </button>
+              </div>
+            )}
+          </div>
         </aside>
 
         {/* Main Content */}
