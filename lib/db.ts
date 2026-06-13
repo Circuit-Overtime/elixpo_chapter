@@ -22,6 +22,10 @@ export function getEnv() {
     // for local QA of paid-only flows without mutating D1. Leave unset
     // in production.
     DEV_TIER_OVERRIDE: (ctx as any).DEV_TIER_OVERRIDE || process.env.DEV_TIER_OVERRIDE || '',
+    // Shared secret with Elixpo Accounts for signed webhooks. Used to
+    // verify the HMAC on /api/webhooks/elixpo. Must match the secret
+    // configured on the accounts.elixpo side.
+    ELIXPO_WEBHOOK_SECRET: (ctx as any).ELIXPO_WEBHOOK_SECRET || process.env.ELIXPO_WEBHOOK_SECRET || '',
   };
 }
 
