@@ -164,7 +164,7 @@ const useUIStore = create((set, get) => ({
   // --- Theme ---
   // Issue #38 bug #1: light is the default. `applyTheme('dark')` is
   // still wired below for the toggle path.
-  theme: 'light',
+  theme: 'dark',
   setTheme: (newTheme) => {
     const prev = get().theme
     const resolve = (t) => t === 'system'

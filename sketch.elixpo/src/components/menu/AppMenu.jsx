@@ -240,10 +240,11 @@ const [docOpen, setDocOpen] = useState(false)
         <hr className="border-border-light my-1" />
 
         <div className="relative">
-          {/* Issue #38 follow-up: side-flyout swapped back to inline
-              expansion — the popped panel visually detached from the
-              parent menu (the user described it as "overflowing the
-              menu"). Inline keeps everything in one column. */}
+          {/* Side flyout — floats to the LEFT of the menu (which is pinned
+              to the top-right of the viewport) so the panel never grows
+              the menu's vertical bounds. The outer panel's overflow
+              toggles to `visible` while a flyout is open so the flyout
+              isn't clipped. */}
           <button
             onClick={() => { setDocOpen((d) => !d); setPrefsOpen(false) }}
             className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200 ${docOpen ? 'bg-surface-hover' : ''}`}
@@ -252,15 +253,14 @@ const [docOpen, setDocOpen] = useState(false)
               <i className="bx bx-file-blank text-sm" />
               Document
             </span>
-            <i className={`bx bx-chevron-down text-sm text-text-dim transition-transform duration-150 ${docOpen ? 'rotate-180' : ''}`} />
+            <i className="bx bx-chevron-left text-sm text-text-dim" />
           </button>
 
           {docOpen && (
-            // Absolute dropdown: floats below the trigger, overlays the
-            // items further down instead of pushing them. The menu's
-            // outer overflow toggles to `visible` while a flyout is open
-            // (see the panel className) so the dropdown isn't clipped.
-            <div className="absolute top-full left-0 right-0 mt-1 bg-surface-card border border-border-light rounded-lg p-1 shadow-xl shadow-black/30 z-10">
+            <div
+              className="absolute right-full top-0 mr-2 w-[220px] bg-surface-card border border-border-light rounded-2xl p-1.5 shadow-2xl shadow-black/40 z-20"
+              onClick={(e) => e.stopPropagation()}
+            >
               {[
                 { key: 'canvas', icon: 'bx-pen',     label: 'Canvas' },
                 { key: 'split',  icon: 'bx-layout',  label: 'Split' },
@@ -312,11 +312,14 @@ const [docOpen, setDocOpen] = useState(false)
               <i className="bx bx-cog text-sm" />
               {t('menu.preferences')}
             </span>
-            <i className={`bx bx-chevron-down text-sm text-text-dim transition-transform duration-150 ${prefsOpen ? 'rotate-180' : ''}`} />
+            <i className="bx bx-chevron-left text-sm text-text-dim" />
           </button>
 
           {prefsOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-surface-card border border-border-light rounded-lg p-1 shadow-xl shadow-black/30 z-10 max-h-[55vh] overflow-y-auto no-scrollbar">
+            <div
+              className="absolute right-full top-0 mr-2 w-[240px] bg-surface-card border border-border-light rounded-2xl p-1.5 shadow-2xl shadow-black/40 max-h-[60vh] overflow-y-auto no-scrollbar z-20"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px]">
                 <span>{t('prefs.language')}</span>
                 <select
