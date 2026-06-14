@@ -491,6 +491,190 @@ export async function rotateOAuthClientWebhookSecret(
     return (result.meta?.changes ?? 0) > 0;
 }
 
+/**
+ * Multi-endpoint webhook helpers
+ * One OAuth app → many webhook endpoints. Each endpoint has its own URL,
+ * its own secret hash, and its own event subscription. Plaintext secrets
+ * are stored in KV at `webhook_secret:<endpoint_id>`; this layer only
+ * touches D1.
+ */
+
+export interface WebhookEndpointRow {
+    id: string;
+    client_id: string;
+    url: string;
+    secret_hash: string;
+    events: string; // JSON array
+    is_active: number;
+    label: string | null;
+    created_at: string;
+    secret_set_at: string;
+    last_delivery_at: string | null;
+    last_status_code: number | null;
+    last_error: string | null;
+}
+
+export async function listAppWebhookEndpoints(
+    db: D1Database,
+    clientId: string,
+): Promise<WebhookEndpointRow[]> {
+    const r = await db
+        .prepare(
+            `SELECT id, client_id, url, secret_hash, events, is_active, label,
+              created_at, secret_set_at, last_delivery_at, last_status_code, last_error
+             FROM oauth_client_webhook_endpoints
+             WHERE client_id = ?
+             ORDER BY created_at ASC`,
+        )
+        .bind(clientId)
+        .all<WebhookEndpointRow>();
+    return r.results || [];
+}
+
+export async function getAppWebhookEndpoint(
+    db: D1Database,
+    endpointId: string,
+): Promise<WebhookEndpointRow | null> {
+    const r = await db
+        .prepare(
+            `SELECT id, client_id, url, secret_hash, events, is_active, label,
+              created_at, secret_set_at, last_delivery_at, last_status_code, last_error
+             FROM oauth_client_webhook_endpoints
+             WHERE id = ?`,
+        )
+        .bind(endpointId)
+        .first<WebhookEndpointRow>();
+    return r ?? null;
+}
+
+export async function createAppWebhookEndpoint(
+    db: D1Database,
+    row: {
+        id: string;
+        clientId: string;
+        url: string;
+        secretHash: string;
+        events: string;
+        label?: string | null;
+    },
+): Promise<void> {
+    await db
+        .prepare(
+            `INSERT INTO oauth_client_webhook_endpoints
+                (id, client_id, url, secret_hash, events, is_active, label, created_at, secret_set_at)
+             VALUES (?, ?, ?, ?, ?, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        )
+        .bind(
+            row.id,
+            row.clientId,
+            row.url,
+            row.secretHash,
+            row.events,
+            row.label ?? null,
+        )
+        .run();
+}
+
+/**
+ * Update an endpoint's mutable fields. ownerId is checked via a subquery on
+ * oauth_clients so we can't accidentally let one app's owner touch
+ * another's endpoint by id-guessing.
+ */
+export async function updateAppWebhookEndpoint(
+    db: D1Database,
+    endpointId: string,
+    ownerId: string,
+    patch: {
+        url?: string;
+        events?: string; // JSON array
+        is_active?: boolean;
+        label?: string | null;
+    },
+): Promise<boolean> {
+    const sets: string[] = [];
+    const values: (string | number | null)[] = [];
+    if ("url" in patch && patch.url !== undefined) {
+        sets.push("url = ?");
+        values.push(patch.url);
+    }
+    if ("events" in patch && patch.events !== undefined) {
+        sets.push("events = ?");
+        values.push(patch.events);
+    }
+    if ("is_active" in patch && patch.is_active !== undefined) {
+        sets.push("is_active = ?");
+        values.push(patch.is_active ? 1 : 0);
+    }
+    if ("label" in patch) {
+        sets.push("label = ?");
+        values.push(patch.label ?? null);
+    }
+    if (sets.length === 0) return false;
+    values.push(endpointId, ownerId);
+    const r = await db
+        .prepare(
+            `UPDATE oauth_client_webhook_endpoints
+             SET ${sets.join(", ")}
+             WHERE id = ?
+               AND client_id IN (SELECT client_id FROM oauth_clients WHERE owner_id = ?)`,
+        )
+        .bind(...values)
+        .run();
+    return (r.meta?.changes ?? 0) > 0;
+}
+
+export async function deleteAppWebhookEndpoint(
+    db: D1Database,
+    endpointId: string,
+    ownerId: string,
+): Promise<boolean> {
+    const r = await db
+        .prepare(
+            `DELETE FROM oauth_client_webhook_endpoints
+             WHERE id = ?
+               AND client_id IN (SELECT client_id FROM oauth_clients WHERE owner_id = ?)`,
+        )
+        .bind(endpointId, ownerId)
+        .run();
+    return (r.meta?.changes ?? 0) > 0;
+}
+
+export async function rotateAppWebhookEndpointSecret(
+    db: D1Database,
+    endpointId: string,
+    ownerId: string,
+    newSecretHash: string,
+): Promise<boolean> {
+    const r = await db
+        .prepare(
+            `UPDATE oauth_client_webhook_endpoints
+             SET secret_hash = ?, secret_set_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+               AND client_id IN (SELECT client_id FROM oauth_clients WHERE owner_id = ?)`,
+        )
+        .bind(newSecretHash, endpointId, ownerId)
+        .run();
+    return (r.meta?.changes ?? 0) > 0;
+}
+
+export async function stampWebhookEndpointDelivery(
+    db: D1Database,
+    endpointId: string,
+    statusCode: number | null,
+    errorText: string | null,
+): Promise<void> {
+    await db
+        .prepare(
+            `UPDATE oauth_client_webhook_endpoints
+             SET last_delivery_at = CURRENT_TIMESTAMP,
+                 last_status_code = ?,
+                 last_error = ?
+             WHERE id = ?`,
+        )
+        .bind(statusCode, errorText, endpointId)
+        .run();
+}
+
 export async function listOAuthClients(
     db: D1Database,
     limit: number = 50,
@@ -836,10 +1020,13 @@ export async function logAdminAction(
 }
 
 export async function listUserOAuthClients(db: D1Database, userId: string) {
+    // webhook_url is selected because the dashboard webhooks page filters
+    // dropdown options on it. Don't drop it without updating that filter.
     return db
         .prepare(
             `SELECT client_id, name, description, logo_url, homepage_url, redirect_uris, scopes,
-              is_active, created_at, last_used, request_count
+              is_active, created_at, last_used, request_count,
+              webhook_url, webhook_events, webhook_secret_set_at, webhook_last_delivery_at
        FROM oauth_clients
        WHERE owner_id = ? AND is_active = 1
        ORDER BY created_at DESC`,

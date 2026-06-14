@@ -71,39 +71,38 @@ function bytesToHex(bytes: Uint8Array): string {
 // ── Dispatcher ───────────────────────────────────────────────────────────
 
 interface AppWebhookTarget {
+    endpointId: string;
     clientId: string;
     url: string;
-    secretPlaintext: string; // we need the plaintext to sign; see note below
+    secretPlaintext: string;
     events: AppWebhookEvent[];
 }
 
 /**
- * Fire an app-scoped event to every OAuth app that:
- *   1. The user has authorized (clientId in `authorizedClientIds`)
- *   2. Is active (is_active = 1)
- *   3. Has webhook_url configured
- *   4. Subscribes to `event` (event ∈ webhook_events)
+ * Fire an app-scoped event to every webhook endpoint registered for an
+ * app the user has authorized that is:
+ *   1. On a client_id in `authorizedClientIds`
+ *   2. Active (oauth_clients.is_active = 1 AND endpoint.is_active = 1)
+ *   3. Subscribed to `event` (event ∈ endpoint.events)
  *
  * `authorizedClientIds` should come from the calling site (e.g. the
  * delete-account route already collects this from refresh_tokens).
  *
- * NOTE on secrets: the DB only stores the hash, but signing requires the
- * plaintext. The caller resolves this by passing in a `getSecretPlaintext`
- * function — usually a KV lookup that the registration / rotation flow
- * populated with a short-TTL cache, or a long-lived hot-secret cache the
- * platform team maintains. If the function returns null for a clientId,
- * that delivery is skipped and logged. This keeps us from needing to store
- * plaintext in D1.
+ * Fan-out: one POST per endpoint. An app with 3 endpoints subscribed to
+ * `user.deleted` receives 3 deliveries on that event.
  *
- * For the common case where you want a simple "secret stored in KV with
- * the hash as the key" pattern, see `defaultSecretResolver` below.
+ * NOTE on secrets: the DB only stores the hash; signing needs the
+ * plaintext. The caller passes a `getSecretPlaintext(endpointId)` resolver
+ * — typically a KV lookup populated at registration/rotation time. If the
+ * resolver returns null, that single delivery is skipped (logged). Other
+ * endpoints on the same app still attempt independently.
  */
 export async function dispatchAppEvent(
     event: AppWebhookEvent,
     payload: Record<string, unknown>,
     authorizedClientIds: string[],
     getSecretPlaintext: (
-        clientId: string,
+        endpointId: string,
         secretHash: string,
     ) => Promise<string | null>,
 ): Promise<{
@@ -118,25 +117,29 @@ export async function dispatchAppEvent(
 
     const db = await getDatabase();
 
-    // Single query for all candidate targets.
+    // JOIN keeps a deleted/disabled app from leaking deliveries even if
+    // an endpoint row is somehow stale — the cascade FK should already
+    // prevent this, but this is the read-side belt to the write-side
+    // suspenders.
     const placeholders = authorizedClientIds.map(() => "?").join(",");
     const result = await db
         .prepare(
-            `SELECT client_id, webhook_url, webhook_secret_hash, webhook_events
-            FROM oauth_clients
-            WHERE client_id IN (${placeholders})
-                AND is_active = 1
-                AND webhook_url IS NOT NULL
-                AND webhook_secret_hash IS NOT NULL`,
+            `SELECT e.id, e.client_id, e.url, e.secret_hash, e.events
+            FROM oauth_client_webhook_endpoints e
+            JOIN oauth_clients c ON c.client_id = e.client_id
+            WHERE e.client_id IN (${placeholders})
+                AND c.is_active = 1
+                AND e.is_active = 1`,
         )
         .bind(...authorizedClientIds)
         .all();
 
     const candidates = ((result as any).results || []) as Array<{
+        id: string;
         client_id: string;
-        webhook_url: string;
-        webhook_secret_hash: string;
-        webhook_events: string | null;
+        url: string;
+        secret_hash: string;
+        events: string | null;
     }>;
 
     const targets: AppWebhookTarget[] = [];
@@ -145,27 +148,25 @@ export async function dispatchAppEvent(
     for (const row of candidates) {
         let events: AppWebhookEvent[];
         try {
-            events = row.webhook_events ? JSON.parse(row.webhook_events) : [];
+            events = row.events ? JSON.parse(row.events) : [];
         } catch {
             events = [];
         }
         if (!events.includes(event)) continue;
 
-        const plaintext = await getSecretPlaintext(
-            row.client_id,
-            row.webhook_secret_hash,
-        );
+        const plaintext = await getSecretPlaintext(row.id, row.secret_hash);
         if (!plaintext) {
             skipped++;
             console.warn(
-                `[app-webhooks] no plaintext for ${row.client_id} — delivery skipped`,
+                `[app-webhooks] no plaintext for endpoint ${row.id} (app ${row.client_id}) — skipped`,
             );
             continue;
         }
 
         targets.push({
+            endpointId: row.id,
             clientId: row.client_id,
-            url: row.webhook_url,
+            url: row.url,
             secretPlaintext: plaintext,
             events,
         });
@@ -177,23 +178,48 @@ export async function dispatchAppEvent(
 
     let delivered = 0;
     let failed = 0;
-    for (const d of deliveries) {
-        if (d.status === "fulfilled" && d.value) delivered++;
-        else failed++;
+    const stamps: Array<{
+        endpointId: string;
+        statusCode: number | null;
+        error: string | null;
+    }> = [];
+    for (let i = 0; i < deliveries.length; i++) {
+        const d = deliveries[i];
+        const t = targets[i];
+        if (d.status === "fulfilled") {
+            const { ok, statusCode, error } = d.value;
+            if (ok) delivered++;
+            else failed++;
+            stamps.push({
+                endpointId: t.endpointId,
+                statusCode,
+                error,
+            });
+        } else {
+            failed++;
+            stamps.push({
+                endpointId: t.endpointId,
+                statusCode: null,
+                error: String((d as PromiseRejectedResult).reason).slice(0, 500),
+            });
+        }
     }
 
-    // Stamp last_delivery_at on successful deliveries.
-    const stamped = targets.filter((_, i) => deliveries[i].status === "fulfilled");
-    if (stamped.length > 0) {
-        const ph = stamped.map(() => "?").join(",");
-        const now = new Date().toISOString();
-        await db
-            .prepare(
-                `UPDATE oauth_clients SET webhook_last_delivery_at = ? WHERE client_id IN (${ph})`,
-            )
-            .bind(now, ...stamped.map((s) => s.clientId))
-            .run()
-            .catch(() => {});
+    if (stamps.length > 0) {
+        await Promise.allSettled(
+            stamps.map((s) =>
+                db
+                    .prepare(
+                        `UPDATE oauth_client_webhook_endpoints
+                            SET last_delivery_at = CURRENT_TIMESTAMP,
+                                last_status_code = ?,
+                                last_error = ?
+                            WHERE id = ?`,
+                    )
+                    .bind(s.statusCode, s.error, s.endpointId)
+                    .run(),
+            ),
+        );
     }
 
     return { attempted: targets.length, delivered, failed, skipped };
@@ -203,7 +229,7 @@ async function deliverOne(
     target: AppWebhookTarget,
     event: AppWebhookEvent,
     payload: Record<string, unknown>,
-): Promise<boolean> {
+): Promise<{ ok: boolean; statusCode: number | null; error: string | null }> {
     const eventId = crypto.randomUUID();
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const body = JSON.stringify(payload);
@@ -227,13 +253,18 @@ async function deliverOne(
             },
             body,
         });
-        return res.ok;
+        return {
+            ok: res.ok,
+            statusCode: res.status,
+            error: res.ok ? null : `HTTP ${res.status}`,
+        };
     } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
         console.warn(
             `[app-webhooks] delivery to ${target.url} failed:`,
-            err instanceof Error ? err.message : err,
+            msg,
         );
-        return false;
+        return { ok: false, statusCode: null, error: msg.slice(0, 500) };
     } finally {
         clearTimeout(tm);
     }
@@ -258,23 +289,25 @@ async function hmacSha256Hex(secret: string, message: string): Promise<string> {
 // ── Default KV-backed secret resolver ────────────────────────────────────
 
 /**
- * Build a secret resolver that reads `webhook_secret:<clientId>` from KV.
+ * Build a secret resolver that reads `webhook_secret:<endpointId>` from KV.
  *
- * Populate this key on registration and on rotation:
+ * Populate this key on endpoint creation and on rotation:
  *
- *   await env.KV.put(`webhook_secret:${clientId}`, plaintext);
+ *   await env.KV.put(`webhook_secret:${endpointId}`, plaintext);
  *
  * Plaintext is never written to D1 — D1 holds the SHA-256 hash and KV holds
- * the plaintext. KV is a tightly-scoped operational store; D1 is the
- * authoritative record. Losing the KV value means rotating the secret (and
- * the registered app updates their .env).
+ * the plaintext. Losing the KV value means rotating the endpoint's secret.
+ *
+ * For migrated legacy endpoints (where endpoint_id == client_id by
+ * backfill rule), the same KV key path keeps working — see migration
+ * 0013_oauth_client_webhook_endpoints.sql.
  */
 export function defaultSecretResolver(
     kv: KVNamespace,
-): (clientId: string, _hash: string) => Promise<string | null> {
-    return async (clientId, _hash) => {
+): (endpointId: string, _hash: string) => Promise<string | null> {
+    return async (endpointId, _hash) => {
         try {
-            return await kv.get(`webhook_secret:${clientId}`);
+            return await kv.get(`webhook_secret:${endpointId}`);
         } catch {
             return null;
         }

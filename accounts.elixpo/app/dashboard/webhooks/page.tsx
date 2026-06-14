@@ -15,9 +15,13 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    FormControl,
     FormControlLabel,
     IconButton,
+    InputLabel,
+    MenuItem,
     Paper,
+    Select,
     Snackbar,
     Switch,
     Table,
@@ -95,10 +99,24 @@ export default function WebhooksPage() {
     });
 
     const [form, setForm] = useState({
-        url: "",
+        client_id: "",
         events: [] as string[],
         secret: "",
     });
+
+    // Apps the caller owns AND that have a webhook_url configured. Only
+    // these are valid destinations per the safety policy (the URL is
+    // resolved server-side from the chosen app, no free-text URLs).
+    interface OwnedApp {
+        client_id: string;
+        name: string;
+        webhook_url: string | null;
+    }
+    const [ownedApps, setOwnedApps] = useState<OwnedApp[]>([]);
+    const eligibleApps = ownedApps.filter((a) => !!a.webhook_url);
+    const selectedApp = eligibleApps.find(
+        (a) => a.client_id === form.client_id,
+    );
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
 
@@ -142,7 +160,8 @@ export default function WebhooksPage() {
     };
 
     const handleCreate = async () => {
-        if (!form.url) return showSnack("URL is required", "error");
+        if (!form.client_id)
+            return showSnack("Pick a connected app", "error");
         if (form.events.length === 0)
             return showSnack("Select at least one event", "error");
 
@@ -153,7 +172,7 @@ export default function WebhooksPage() {
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    url: form.url,
+                    client_id: form.client_id,
                     events: form.events,
                     secret: form.secret || undefined,
                 }),
@@ -163,7 +182,7 @@ export default function WebhooksPage() {
                 throw new Error(err.error || "Failed to create webhook");
             }
             setOpenDialog(false);
-            setForm({ url: "", events: [], secret: "" });
+            setForm({ client_id: "", events: [], secret: "" });
             await fetchWebhooks();
             showSnack("Webhook created successfully", "success");
         } catch (err: any) {
@@ -172,6 +191,39 @@ export default function WebhooksPage() {
             setCreating(false);
         }
     };
+
+    // Load the caller's OAuth apps once on mount. We use the existing
+    // /api/auth/oauth-apps endpoint which lists apps owned by the user.
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch("/api/auth/oauth-apps", {
+                    credentials: "include",
+                });
+                if (!res.ok) return;
+                const data: any = await res.json();
+                if (cancelled) return;
+                const apps = (data.apps || []) as Array<{
+                    client_id: string;
+                    name: string;
+                    webhook_url?: string | null;
+                }>;
+                setOwnedApps(
+                    apps.map((a) => ({
+                        client_id: a.client_id,
+                        name: a.name,
+                        webhook_url: a.webhook_url ?? null,
+                    })),
+                );
+            } catch {
+                /* non-fatal — the dropdown just shows no options */
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const handleDelete = async (id: string) => {
         if (!confirm("Delete this webhook? This cannot be undone.")) return;
@@ -497,18 +549,160 @@ export default function WebhooksPage() {
                     Add Webhook
                 </DialogTitle>
                 <DialogContent sx={{ pt: 3 }}>
-                    <TextField
+                    {/* Connected-app dropdown — replaces the old free-text
+                        Payload URL. Per the safety policy the URL is
+                        resolved from the chosen app's registered
+                        webhook_url, so we never send to arbitrary hosts. */}
+                    <FormControl
                         fullWidth
-                        label="Payload URL"
-                        placeholder="https://example.com/webhooks/elixpo"
-                        value={form.url}
-                        onChange={(e) =>
-                            setForm({ ...form, url: e.target.value })
-                        }
                         margin="dense"
-                        helperText="Must be HTTPS"
-                        sx={textFieldSx}
-                    />
+                        sx={{
+                            ...textFieldSx,
+                            "& .MuiInputLabel-root": {
+                                color: "rgba(255,255,255,0.7)",
+                            },
+                            "& .MuiInputLabel-root.Mui-focused": {
+                                color: "#9b7bf7",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                                color: "#f5f5f4",
+                                "& fieldset": {
+                                    borderColor: "rgba(255,255,255,0.15)",
+                                },
+                                "&:hover fieldset": {
+                                    borderColor: "rgba(155,123,247,0.4)",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "#9b7bf7",
+                                },
+                            },
+                            "& .MuiSelect-icon": {
+                                color: "rgba(255,255,255,0.6)",
+                            },
+                        }}
+                    >
+                        <InputLabel id="wh-app-select">
+                            Connected app
+                        </InputLabel>
+                        <Select
+                            labelId="wh-app-select"
+                            label="Connected app"
+                            value={form.client_id}
+                            onChange={(e) =>
+                                setForm({
+                                    ...form,
+                                    client_id: e.target.value as string,
+                                })
+                            }
+                            displayEmpty
+                            renderValue={(val) => {
+                                if (!val)
+                                    return (
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                color: "rgba(255,255,255,0.4)",
+                                            }}
+                                        >
+                                            Choose one of your OAuth apps
+                                        </Box>
+                                    );
+                                const app = eligibleApps.find(
+                                    (a) => a.client_id === val,
+                                );
+                                return app?.name || (val as string);
+                            }}
+                            MenuProps={{
+                                PaperProps: {
+                                    sx: {
+                                        background: "rgba(20,22,30,0.97)",
+                                        backdropFilter: "blur(20px)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        color: "#f5f5f4",
+                                    },
+                                },
+                            }}
+                        >
+                            {eligibleApps.length === 0 ? (
+                                <MenuItem disabled value="">
+                                    No eligible apps — register an OAuth app
+                                    with a webhook_url first
+                                </MenuItem>
+                            ) : (
+                                eligibleApps.map((a) => (
+                                    <MenuItem
+                                        key={a.client_id}
+                                        value={a.client_id}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                py: 0.25,
+                                            }}
+                                        >
+                                            <Box
+                                                component="span"
+                                                sx={{ fontWeight: 600 }}
+                                            >
+                                                {a.name}
+                                            </Box>
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    fontFamily:
+                                                        "var(--font-geist-mono), monospace",
+                                                    fontSize: "0.72rem",
+                                                    color: "rgba(255,255,255,0.5)",
+                                                }}
+                                            >
+                                                {a.webhook_url}
+                                            </Box>
+                                        </Box>
+                                    </MenuItem>
+                                ))
+                            )}
+                        </Select>
+                    </FormControl>
+
+                    {/* Read-only echo of the resolved URL, so the user can
+                        see exactly what they're committing to. */}
+                    {selectedApp?.webhook_url && (
+                        <Box
+                            sx={{
+                                mt: 1.5,
+                                p: 1.25,
+                                borderRadius: "8px",
+                                background: "rgba(155,123,247,0.06)",
+                                border: "1px solid rgba(155,123,247,0.2)",
+                            }}
+                        >
+                            <Box
+                                component="div"
+                                sx={{
+                                    color: "rgba(255,255,255,0.45)",
+                                    fontSize: "0.7rem",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.05em",
+                                    mb: 0.25,
+                                }}
+                            >
+                                Payload will be sent to
+                            </Box>
+                            <Box
+                                component="code"
+                                sx={{
+                                    color: "#c8b6ff",
+                                    fontFamily:
+                                        "var(--font-geist-mono), monospace",
+                                    fontSize: "0.82rem",
+                                    wordBreak: "break-all",
+                                }}
+                            >
+                                {selectedApp.webhook_url}
+                            </Box>
+                        </Box>
+                    )}
                     <TextField
                         fullWidth
                         label="Secret (optional)"
