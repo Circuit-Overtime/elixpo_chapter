@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
+import JoinedToast from './JoinedToast';
 
 // ─── Notification type config ───
 const NOTIF_CONFIG = {
@@ -414,6 +415,7 @@ export default function AppShell({ children }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
+      <JoinedToast />
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-md" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-app) 92%, transparent)', borderBottom: '1px solid var(--border-default)' }}>
         <div className="max-w-[1400px] mx-auto px-6 h-14 flex items-center justify-between">
