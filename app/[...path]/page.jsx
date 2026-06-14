@@ -44,15 +44,15 @@ export async function generateMetadata({ params, searchParams }) {
         const dn = data.user.display_name || data.user.username || name;
         const handle = `@${data.user.username || name}`;
         const description = (data.user.bio || `${handle} on LixBlogs`).slice(0, 200);
-        const og = ogUrl({ type: 'profile', kind: 'Profile', title: dn, sub: handle, avatar: httpImg(data.user.avatar_url) });
-        return cardMeta({ title: dn, description, url, og, ogType: 'profile' });
+        const og = ogUrl({ type: 'profile', kind: 'Author Profile', title: dn, sub: handle, subtitle: data.user.bio || '', avatar: httpImg(data.user.avatar_url) });
+        return cardMeta({ title: `${dn} — LixBlogs Author Profile`, description, url, og, ogType: 'profile' });
       }
       if (data.type === 'org' && data.org) {
         const dn = data.org.name || name;
         const ownerName = data.owner?.display_name || data.owner?.username || '';
         const description = (data.org.description || data.org.bio || `${dn} on LixBlogs`).slice(0, 200);
-        const og = ogUrl({ type: 'profile', kind: 'Organization', title: dn, sub: ownerName ? `by ${ownerName}` : `@${data.org.slug || name}`, avatar: httpImg(data.org.logo_url || data.org.logo_r2_key) });
-        return cardMeta({ title: dn, description, url, og, ogType: 'profile' });
+        const og = ogUrl({ type: 'profile', kind: 'Organisation', title: dn, sub: ownerName ? `by ${ownerName}` : `@${data.org.slug || name}`, subtitle: data.org.description || data.org.bio || '', avatar: httpImg(data.org.logo_url || data.org.logo_r2_key) });
+        return cardMeta({ title: `${dn} — LixBlogs Organisation`, description, url, og, ogType: 'profile' });
       }
       return {};
     }
@@ -70,8 +70,8 @@ export async function generateMetadata({ params, searchParams }) {
       const orgName = data.owner?.name || name;
       const title = data.collection.name || 'Collection';
       const description = (data.collection.description || `A collection by ${orgName} on LixBlogs`).slice(0, 200);
-      const og = ogUrl({ type: 'profile', kind: 'Collection', title, sub: orgName, avatar: httpImg(data.owner?.logo_url || data.owner?.logo_r2_key) });
-      return cardMeta({ title, description, url, og, ogType: 'website' });
+      const og = ogUrl({ type: 'profile', kind: 'Collection', title, sub: orgName, subtitle: data.collection.description || '', avatar: httpImg(data.owner?.logo_url || data.owner?.logo_r2_key) });
+      return cardMeta({ title: `${title} — ${orgName} on LixBlogs`, description, url, og, ogType: 'website' });
     }
 
     if (data.type !== 'blog' || !data.blog) return {};
@@ -95,7 +95,8 @@ export async function generateMetadata({ params, searchParams }) {
     const authorList = [primary, ...coAuthors].filter(Boolean);
     const sub = authorList.length ? `by ${authorList.slice(0, 4).join(', ')}${authorList.length > 4 ? ` +${authorList.length - 4}` : ''}` : '';
     const description = (b.subtitle || '').slice(0, 200) || (primary ? `By ${primary} on LixBlogs` : 'On LixBlogs');
-    const og = ogUrl({ type: 'blog', title, subtitle: b.subtitle || '', sub, avatar: httpImg(b.author_avatar) });
+    const readTime = b.read_time_minutes ? `${b.read_time_minutes} min read` : '';
+    const og = ogUrl({ type: 'blog', title, subtitle: b.subtitle || '', sub, readTime, cover: httpImg(b.cover_image_r2_key), avatar: httpImg(b.author_avatar) });
 
     return {
       title,
