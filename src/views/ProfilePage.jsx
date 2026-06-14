@@ -29,7 +29,7 @@ function UsageBar({ label, used, limit, unit, color = '#9b7bf7' }) {
 }
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { user, loading, refetchUser } = useAuth();
   const [showBannerModal, setShowBannerModal] = useState(false);
   const [localBanner, setLocalBanner] = useState(null);
   const [bannerError, setBannerError] = useState(null);
@@ -104,8 +104,21 @@ export default function ProfilePage() {
 
   async function handleBannerSave(blob) {
     if (!blob) {
-      setLocalBanner(null);
+      // Remove → clear server-side so it stays blank after reload.
       setShowBannerModal(false);
+      setBannerError(null);
+      try {
+        const res = await fetch('/api/media/upload', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'banner' }),
+        });
+        if (!res.ok) throw new Error('Failed to remove banner');
+        setLocalBanner(null);
+        await refetchUser?.();
+      } catch (e) {
+        setBannerError(e?.message || 'Failed to remove banner');
+      }
       return;
     }
 
@@ -135,7 +148,24 @@ export default function ProfilePage() {
   const avatarSrc = localAvatar || user.avatar_url || null;
 
   async function handleAvatarSave(blob) {
-    if (!blob) { setLocalAvatar(null); setShowAvatarModal(false); return; }
+    if (!blob) {
+      // Remove → revert to the default initials avatar.
+      setShowAvatarModal(false);
+      setAvatarError(null);
+      try {
+        const res = await fetch('/api/media/upload', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'avatar' }),
+        });
+        if (!res.ok) throw new Error('Failed to remove photo');
+        setLocalAvatar(null);
+        await refetchUser?.();
+      } catch (e) {
+        setAvatarError(e?.message || 'Failed to remove photo');
+      }
+      return;
+    }
     const previewUrl = URL.createObjectURL(blob);
     setLocalAvatar(previewUrl);
     setShowAvatarModal(false);
@@ -398,7 +428,8 @@ export default function ProfilePage() {
           title="Edit banner"
           aspectRatio={16 / 5}
           outputWidth={1200}
-          quality={0.6}
+          quality={0.55}
+          maxSizeKB={90}
           currentImage={bannerSrc}
           onSave={handleBannerSave}
           onClose={() => setShowBannerModal(false)}
@@ -411,7 +442,8 @@ export default function ProfilePage() {
           title="Edit photo"
           aspectRatio={1}
           outputWidth={512}
-          quality={0.85}
+          quality={0.7}
+          maxSizeKB={40}
           round
           currentImage={avatarSrc}
           onSave={handleAvatarSave}

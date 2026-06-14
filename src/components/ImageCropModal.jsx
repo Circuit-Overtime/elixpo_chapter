@@ -13,7 +13,8 @@ export default function ImageCropModal({
   title = 'Edit Image',
   aspectRatio = 16 / 5,
   outputWidth = 1200,
-  quality = 0.6,
+  quality = 0.55,         // starting WebP quality; lowered further to hit maxSizeKB
+  maxSizeKB = 120,        // hard target — output is re-encoded down until it fits
   round = false,          // circular crop guide (avatars)
   currentImage = null,    // shows a "Remove" action when set
   initialSrc = null,      // open straight into crop with this image (skips the source tabs)
@@ -172,20 +173,41 @@ export default function ImageCropModal({
     };
   }, [dragging, handleMouseMove, handleMouseUp, handleTouchMove]);
 
-  const handleWheel = (e) => {
-    e.preventDefault();
-    setCrop((prev) => ({ ...prev, scale: Math.max(0.3, Math.min(4, prev.scale + (e.deltaY > 0 ? -0.05 : 0.05))) }));
-  };
+  // Lock background page scroll while the modal is open.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
 
-  const handleSave = () => {
+  // Wheel-to-zoom: attach a NON-passive listener so preventDefault actually stops
+  // the page (and the modal) from scrolling. React's onWheel is passive, so it can't.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !imageSrc) return;
+    const onWheel = (e) => {
+      e.preventDefault();
+      setCrop((prev) => ({ ...prev, scale: Math.max(0.3, Math.min(4, prev.scale + (e.deltaY > 0 ? -0.05 : 0.05))) }));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [imageSrc]);
+
+  const handleSave = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     setSaving(true);
-    canvas.toBlob(
-      (blob) => { if (blob) onSave(blob); setSaving(false); },
-      'image/webp',
-      quality,
-    );
+    // Always lossy WebP; step quality down until the blob fits maxSizeKB so every
+    // image hitting the site is heavily compressed regardless of source size.
+    const toBlob = (q) => new Promise((res) => canvas.toBlob(res, 'image/webp', q));
+    const maxBytes = maxSizeKB * 1024;
+    let blob = null;
+    for (let q = quality; q >= 0.3; q -= 0.1) {
+      blob = await toBlob(q);
+      if (blob && blob.size <= maxBytes) break;
+    }
+    if (blob) onSave(blob);
+    setSaving(false);
   };
 
   const handleRemove = () => { onSave(null); onClose(); };
@@ -287,7 +309,6 @@ export default function ImageCropModal({
                     : { width: '100%', aspectRatio: `${aspectRatio}` }}
                   onMouseDown={handleMouseDown}
                   onTouchStart={handleTouchStart}
-                  onWheel={handleWheel}
                 >
                   <canvas ref={canvasRef} className="w-full h-full block" />
                   <div className="absolute bottom-2 right-2 bg-black/50 rounded-md px-2 py-1 text-[10px] text-[#ccc] pointer-events-none">

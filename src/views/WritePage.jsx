@@ -1928,7 +1928,8 @@ export default function WritePage({ slugid }) {
                         title="Crop cover"
                         aspectRatio={16 / 5}
                         outputWidth={1600}
-                        quality={0.7}
+                        quality={0.55}
+                        maxSizeKB={120}
                         initialSrc={coverCropSrc}
                         onSave={handleCoverCropSave}
                         onClose={() => setCoverCropSrc(null)}

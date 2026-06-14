@@ -179,8 +179,9 @@ export async function POST(request) {
       if (db) {
         try {
           if (mediaType === 'avatar') {
-            await db.prepare('UPDATE users SET avatar_r2_key = ? WHERE id = ?')
-              .bind(result.public_id, session.userId).run();
+            // Display reads avatar_url, so set both (else the new avatar won't show).
+            await db.prepare('UPDATE users SET avatar_r2_key = ?, avatar_url = ? WHERE id = ?')
+              .bind(result.public_id, result.secure_url, session.userId).run();
           } else if (mediaType === 'banner') {
             await db.prepare('UPDATE users SET banner_r2_key = ? WHERE id = ?')
               .bind(result.public_id, session.userId).run();
@@ -245,5 +246,51 @@ export async function POST(request) {
   } catch (e) {
     console.error('[media/upload] Unhandled error:', e);
     return NextResponse.json({ error: e.message || 'Internal server error' }, { status: 500 });
+  }
+}
+
+// Remove a profile image → clears the DB pointer so it falls back to the default
+// (avatar → initials, banner → blank, org logo → pixel avatar). Body: { type, orgId }.
+export async function DELETE(request) {
+  const session = await getSession();
+  if (!session?.userId) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  const { type, orgId } = await request.json().catch(() => ({}));
+  if (!PROFILE_TYPES.includes(type)) {
+    return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+  }
+
+  try {
+    const { getDB } = await import('../../../../lib/cloudflare');
+    const db = getDB();
+
+    if (type === 'org_avatar' || type === 'org_banner') {
+      if (!orgId) return NextResponse.json({ error: 'Missing orgId' }, { status: 400 });
+      // Only org admins/maintainers (or the owner) may clear org media.
+      const membership = await db.prepare('SELECT role FROM org_members WHERE org_id = ? AND user_id = ?')
+        .bind(orgId, session.userId).first();
+      const org = await db.prepare('SELECT owner_id FROM orgs WHERE id = ?').bind(orgId).first();
+      if (org?.owner_id !== session.userId && membership?.role !== 'admin' && membership?.role !== 'maintain') {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+      }
+      if (type === 'org_avatar') {
+        await db.prepare('UPDATE orgs SET logo_r2_key = NULL, logo_url = NULL WHERE id = ?').bind(orgId).run();
+      } else {
+        await db.prepare('UPDATE orgs SET banner_r2_key = NULL, banner_url = NULL WHERE id = ?').bind(orgId).run();
+      }
+    } else if (type === 'avatar') {
+      await db.prepare('UPDATE users SET avatar_r2_key = NULL, avatar_url = NULL WHERE id = ?').bind(session.userId).run();
+      try { const { kvInvalidate } = await import('../../../../lib/cache'); await kvInvalidate(`v1:user:${session.userId}`); } catch {}
+    } else if (type === 'banner') {
+      await db.prepare('UPDATE users SET banner_r2_key = NULL WHERE id = ?').bind(session.userId).run();
+      try { const { kvInvalidate } = await import('../../../../lib/cache'); await kvInvalidate(`v1:user:${session.userId}`); } catch {}
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error('[media/upload] DELETE failed:', e);
+    return NextResponse.json({ error: 'Failed to remove image' }, { status: 500 });
   }
 }
