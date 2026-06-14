@@ -87,6 +87,21 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+  // Icons declared explicitly so they're emitted as <link> tags pointing
+  // at static files in public/. Putting these files under app/ (the
+  // Next.js icon convention) would compile them into route handlers,
+  // which Cloudflare Pages can't run because they default to the Node
+  // runtime — the same break that hit accounts.elixpo earlier.
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/icon0.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon1.png', type: 'image/png', sizes: '512x512' },
+    ],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+    shortcut: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
