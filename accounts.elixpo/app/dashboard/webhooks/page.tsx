@@ -99,23 +99,27 @@ export default function WebhooksPage() {
     });
 
     const [form, setForm] = useState({
-        client_id: "",
+        endpoint_id: "",
         events: [] as string[],
         secret: "",
     });
 
-    // Apps the caller owns AND that have a webhook_url configured. Only
-    // these are valid destinations per the safety policy (the URL is
-    // resolved server-side from the chosen app, no free-text URLs).
-    interface OwnedApp {
+    // One option per webhook endpoint across all of the caller's apps.
+    // The dropdown shows "App name · endpoint URL" so it's clear which
+    // app + URL each row maps to. URL resolution is server-side from the
+    // endpoint row — no free-text URLs ever cross the boundary.
+    interface EligibleEndpoint {
+        endpoint_id: string;
         client_id: string;
-        name: string;
-        webhook_url: string | null;
+        app_name: string;
+        url: string;
+        label: string | null;
     }
-    const [ownedApps, setOwnedApps] = useState<OwnedApp[]>([]);
-    const eligibleApps = ownedApps.filter((a) => !!a.webhook_url);
-    const selectedApp = eligibleApps.find(
-        (a) => a.client_id === form.client_id,
+    const [eligibleEndpoints, setEligibleEndpoints] = useState<
+        EligibleEndpoint[]
+    >([]);
+    const selectedEndpoint = eligibleEndpoints.find(
+        (e) => e.endpoint_id === form.endpoint_id,
     );
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,8 +164,8 @@ export default function WebhooksPage() {
     };
 
     const handleCreate = async () => {
-        if (!form.client_id)
-            return showSnack("Pick a connected app", "error");
+        if (!form.endpoint_id)
+            return showSnack("Pick a webhook endpoint", "error");
         if (form.events.length === 0)
             return showSnack("Select at least one event", "error");
 
@@ -172,7 +176,7 @@ export default function WebhooksPage() {
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    client_id: form.client_id,
+                    endpoint_id: form.endpoint_id,
                     events: form.events,
                     secret: form.secret || undefined,
                 }),
@@ -182,7 +186,7 @@ export default function WebhooksPage() {
                 throw new Error(err.error || "Failed to create webhook");
             }
             setOpenDialog(false);
-            setForm({ client_id: "", events: [], secret: "" });
+            setForm({ endpoint_id: "", events: [], secret: "" });
             await fetchWebhooks();
             showSnack("Webhook created successfully", "success");
         } catch (err: any) {
@@ -192,30 +196,46 @@ export default function WebhooksPage() {
         }
     };
 
-    // Load the caller's OAuth apps once on mount. We use the existing
-    // /api/auth/oauth-apps endpoint which lists apps owned by the user.
+    // Fan out one fetch per owned app to collect its endpoints. Apps with
+    // no endpoints contribute zero rows — that's the user's cue to go set
+    // some up on the OAuth app detail page first.
     useEffect(() => {
         let cancelled = false;
         (async () => {
             try {
-                const res = await fetch("/api/auth/oauth-apps", {
+                const appsRes = await fetch("/api/auth/oauth-apps", {
                     credentials: "include",
                 });
-                if (!res.ok) return;
-                const data: any = await res.json();
-                if (cancelled) return;
-                const apps = (data.apps || []) as Array<{
+                if (!appsRes.ok) return;
+                const appsData: any = await appsRes.json();
+                const apps = (appsData.apps || []) as Array<{
                     client_id: string;
                     name: string;
-                    webhook_url?: string | null;
                 }>;
-                setOwnedApps(
-                    apps.map((a) => ({
-                        client_id: a.client_id,
-                        name: a.name,
-                        webhook_url: a.webhook_url ?? null,
-                    })),
-                );
+                const all: EligibleEndpoint[] = [];
+                for (const app of apps) {
+                    try {
+                        const r = await fetch(
+                            `/api/auth/oauth-clients/${app.client_id}/webhooks`,
+                            { credentials: "include" },
+                        );
+                        if (!r.ok) continue;
+                        const d: any = await r.json();
+                        for (const ep of d.endpoints || []) {
+                            if (!ep.is_active) continue;
+                            all.push({
+                                endpoint_id: ep.id,
+                                client_id: app.client_id,
+                                app_name: app.name,
+                                url: ep.url,
+                                label: ep.label ?? null,
+                            });
+                        }
+                    } catch {
+                        /* skip this app on error */
+                    }
+                }
+                if (!cancelled) setEligibleEndpoints(all);
             } catch {
                 /* non-fatal — the dropdown just shows no options */
             }
@@ -581,17 +601,17 @@ export default function WebhooksPage() {
                             },
                         }}
                     >
-                        <InputLabel id="wh-app-select">
-                            Connected app
+                        <InputLabel id="wh-endpoint-select">
+                            Webhook endpoint
                         </InputLabel>
                         <Select
-                            labelId="wh-app-select"
-                            label="Connected app"
-                            value={form.client_id}
+                            labelId="wh-endpoint-select"
+                            label="Webhook endpoint"
+                            value={form.endpoint_id}
                             onChange={(e) =>
                                 setForm({
                                     ...form,
-                                    client_id: e.target.value as string,
+                                    endpoint_id: e.target.value as string,
                                 })
                             }
                             displayEmpty
@@ -604,13 +624,16 @@ export default function WebhooksPage() {
                                                 color: "rgba(255,255,255,0.4)",
                                             }}
                                         >
-                                            Choose one of your OAuth apps
+                                            Choose an endpoint from one of
+                                            your OAuth apps
                                         </Box>
                                     );
-                                const app = eligibleApps.find(
-                                    (a) => a.client_id === val,
+                                const ep = eligibleEndpoints.find(
+                                    (e) => e.endpoint_id === val,
                                 );
-                                return app?.name || (val as string);
+                                return ep
+                                    ? `${ep.app_name} · ${ep.url}`
+                                    : (val as string);
                             }}
                             MenuProps={{
                                 PaperProps: {
@@ -623,16 +646,16 @@ export default function WebhooksPage() {
                                 },
                             }}
                         >
-                            {eligibleApps.length === 0 ? (
+                            {eligibleEndpoints.length === 0 ? (
                                 <MenuItem disabled value="">
-                                    No eligible apps — register an OAuth app
-                                    with a webhook_url first
+                                    No endpoints yet — go to OAuth Apps →
+                                    settings and add one first
                                 </MenuItem>
                             ) : (
-                                eligibleApps.map((a) => (
+                                eligibleEndpoints.map((ep) => (
                                     <MenuItem
-                                        key={a.client_id}
-                                        value={a.client_id}
+                                        key={ep.endpoint_id}
+                                        value={ep.endpoint_id}
                                     >
                                         <Box
                                             sx={{
@@ -645,7 +668,21 @@ export default function WebhooksPage() {
                                                 component="span"
                                                 sx={{ fontWeight: 600 }}
                                             >
-                                                {a.name}
+                                                {ep.app_name}
+                                                {ep.label && (
+                                                    <Box
+                                                        component="span"
+                                                        sx={{
+                                                            ml: 1,
+                                                            color: "rgba(155,123,247,0.85)",
+                                                            fontSize:
+                                                                "0.72rem",
+                                                            fontWeight: 500,
+                                                        }}
+                                                    >
+                                                        {ep.label}
+                                                    </Box>
+                                                )}
                                             </Box>
                                             <Box
                                                 component="span"
@@ -656,7 +693,7 @@ export default function WebhooksPage() {
                                                     color: "rgba(255,255,255,0.5)",
                                                 }}
                                             >
-                                                {a.webhook_url}
+                                                {ep.url}
                                             </Box>
                                         </Box>
                                     </MenuItem>
@@ -667,7 +704,7 @@ export default function WebhooksPage() {
 
                     {/* Read-only echo of the resolved URL, so the user can
                         see exactly what they're committing to. */}
-                    {selectedApp?.webhook_url && (
+                    {selectedEndpoint?.url && (
                         <Box
                             sx={{
                                 mt: 1.5,
@@ -699,7 +736,7 @@ export default function WebhooksPage() {
                                     wordBreak: "break-all",
                                 }}
                             >
-                                {selectedApp.webhook_url}
+                                {selectedEndpoint.url}
                             </Box>
                         </Box>
                     )}

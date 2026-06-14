@@ -293,6 +293,11 @@ export async function PATCH(request: NextRequest) {
         // Track username change for KV cache updates after a successful write.
         let usernameChange: { old: string | null; next: string } | null = null;
 
+        // Track display_name change for webhook dispatch after a successful
+        // write — receivers (e.g. url.elixpo) subscribe to user.updated to
+        // mirror the profile.
+        let displayNameChange: string | null = null;
+
         const setClauses: string[] = ["updated_at = CURRENT_TIMESTAMP"];
         const values: (string | number | null)[] = [];
 
@@ -374,6 +379,7 @@ export async function PATCH(request: NextRequest) {
             setClauses.push("display_name_changed_at = CURRENT_TIMESTAMP");
             setClauses.push("display_name_change_count = ?");
             values.push(effectiveCount + 1);
+            displayNameChange = trimmed;
         }
 
         if (username !== undefined) {
@@ -482,6 +488,18 @@ export async function PATCH(request: NextRequest) {
                 if (usernameChange.old) {
                     await cacheDel(`username:taken:${usernameChange.old}`);
                 }
+            }
+
+            // Fire user.updated webhook to every authorized OAuth app.
+            // Awaited so caller-visible state stays consistent in the dev
+            // logs, but the helper catches its own errors so we never 500.
+            if (displayNameChange !== null) {
+                const { fireUserUpdated } = await import(
+                    "@/lib/user-events"
+                );
+                await fireUserUpdated(payload.sub, {
+                    display_name: displayNameChange,
+                });
             }
 
             return NextResponse.json({
