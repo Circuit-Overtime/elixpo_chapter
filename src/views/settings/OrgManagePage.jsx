@@ -95,6 +95,9 @@ export default function OrgManagePage({ slug }) {
   const [newColName, setNewColName] = useState('');
   const [newColSlug, setNewColSlug] = useState('');
   const [newColDesc, setNewColDesc] = useState('');
+  const [editingCol, setEditingCol] = useState(null); // { id, name, slug, description }
+  const [editColError, setEditColError] = useState('');
+  const [savingCol, setSavingCol] = useState(false);
 
   const fetchOrg = useCallback(async () => {
     try {
@@ -351,6 +354,22 @@ export default function OrgManagePage({ slug }) {
       body: JSON.stringify({ collectionId: colId }),
     });
     fetchOrg();
+  };
+
+  const handleSaveCollection = async () => {
+    if (!editingCol || !editingCol.name.trim() || savingCol) return;
+    setSavingCol(true); setEditColError('');
+    try {
+      const res = await fetch('/api/orgs/collections', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collectionId: editingCol.id, name: editingCol.name.trim(), slug: editingCol.slug, description: editingCol.description }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) { setEditingCol(null); fetchOrg(); }
+      else setEditColError(data.error || 'Failed to save');
+    } catch { setEditColError('Failed to save'); }
+    setSavingCol(false);
   };
 
   const handleDeleteInvite = async (inviteId) => {
@@ -675,6 +694,16 @@ export default function OrgManagePage({ slug }) {
         {/* ═══════════ Members Tab ═══════════ */}
         {activeTab === 'members' && (
           <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[13px] text-[var(--text-muted)]">{members.length} member{members.length === 1 ? '' : 's'}</p>
+              <button
+                onClick={() => setActiveTab('invites')}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#9b7bf7] text-white font-medium rounded-lg text-[12px] hover:bg-[#b69aff] transition-colors"
+              >
+                <ion-icon name="person-add-outline" style={{ fontSize: '15px' }} />
+                Invite member
+              </button>
+            </div>
             {members.map(m => (
               <div key={m.id} className="flex items-center gap-3 p-3.5 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl">
                 {m.avatar_url ? (
@@ -711,18 +740,56 @@ export default function OrgManagePage({ slug }) {
         {activeTab === 'collections' && (
           <div className="space-y-4">
             {collections.map(c => (
-              <div key={c.id} className="flex items-center gap-3 p-4 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl">
-                <div className="h-9 w-9 rounded-lg bg-[var(--bg-base)] flex items-center justify-center shrink-0">
-                  <ion-icon name="folder" style={{ fontSize: '18px', color: '#60a5fa' }} />
+              editingCol?.id === c.id ? (
+                <div key={c.id} className="border border-[#9b7bf7]/40 rounded-xl p-4 space-y-3 bg-[var(--card-bg)]">
+                  <div>
+                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">Name</label>
+                    <input value={editingCol.name} onChange={e => setEditingCol(s => ({ ...s, name: e.target.value }))} placeholder="Collection name"
+                      className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">Handle</label>
+                    <div className="flex items-center bg-[var(--bg-base)] rounded-lg px-3 border border-[var(--border-default)] focus-within:border-[#9b7bf7]/50 transition-colors">
+                      <span className="text-[13px] text-[var(--text-faint)]">/</span>
+                      <input value={editingCol.slug} onChange={e => setEditingCol(s => ({ ...s, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))} placeholder="handle"
+                        className="flex-1 bg-transparent text-[var(--text-primary)] py-2.5 px-1 outline-none text-[13px]" />
+                    </div>
+                    <p className="text-[11px] text-[var(--text-faint)] mt-1">Must be unique within this org. Changing it updates the collection&apos;s URL.</p>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">Description</label>
+                    <input value={editingCol.description || ''} onChange={e => setEditingCol(s => ({ ...s, description: e.target.value }))} placeholder="Description (optional)"
+                      className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors" />
+                  </div>
+                  {editColError && <p className="text-[12px] text-[#f87171]">{editColError}</p>}
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleSaveCollection} disabled={!editingCol.name.trim() || savingCol}
+                      className="px-4 py-2 bg-[#9b7bf7] text-white font-medium rounded-lg text-[12px] hover:bg-[#b69aff] disabled:opacity-40 transition-colors">
+                      {savingCol ? 'Saving…' : 'Save'}
+                    </button>
+                    <button onClick={() => { setEditingCol(null); setEditColError(''); }}
+                      className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] font-medium rounded-lg text-[12px] transition-colors">
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] text-[var(--text-primary)] font-medium">{c.name}</p>
-                  <p className="text-[11px] text-[var(--text-faint)]">/{c.slug} &middot; {c.blog_count || 0} blog{(c.blog_count || 0) !== 1 ? 's' : ''}</p>
+              ) : (
+                <div key={c.id} className="flex items-center gap-3 p-4 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl">
+                  <div className="h-9 w-9 rounded-lg bg-[var(--bg-base)] flex items-center justify-center shrink-0">
+                    <ion-icon name="folder" style={{ fontSize: '18px', color: '#60a5fa' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] text-[var(--text-primary)] font-medium">{c.name}</p>
+                    <p className="text-[11px] text-[var(--text-faint)]">/{c.slug} &middot; {c.blog_count || 0} blog{(c.blog_count || 0) !== 1 ? 's' : ''}</p>
+                  </div>
+                  <button onClick={() => { setEditingCol({ id: c.id, name: c.name, slug: c.slug, description: c.description || '' }); setEditColError(''); }} className="text-[var(--text-muted)] hover:text-[#9b7bf7] transition-colors p-1">
+                    <ion-icon name="create-outline" style={{ fontSize: '16px' }} />
+                  </button>
+                  <button onClick={() => handleDeleteCollection(c.id)} className="text-[var(--text-muted)] hover:text-[#f87171] transition-colors p-1">
+                    <ion-icon name="trash-outline" style={{ fontSize: '16px' }} />
+                  </button>
                 </div>
-                <button onClick={() => handleDeleteCollection(c.id)} className="text-[var(--text-muted)] hover:text-[#f87171] transition-colors p-1">
-                  <ion-icon name="trash-outline" style={{ fontSize: '16px' }} />
-                </button>
-              </div>
+              )
             ))}
 
             <div className="border border-[var(--border-default)] rounded-xl p-5 space-y-4 bg-[var(--card-bg)]">

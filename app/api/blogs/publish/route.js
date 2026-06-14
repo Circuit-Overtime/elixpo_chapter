@@ -15,7 +15,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, coverPos, coverZoom, status, lastKnownUpdatedAt, slug: requestedSlug } = body;
+  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, coverPos, coverZoom, status, lastKnownUpdatedAt, slug: requestedSlug, collectionId } = body;
   const posX = Number.isFinite(coverPos?.x) ? coverPos.x : 50;
   const posY = Number.isFinite(coverPos?.y) ? coverPos.y : 50;
   const zoom = Number.isFinite(coverZoom) ? coverZoom : 1;
@@ -80,6 +80,19 @@ export async function POST(request) {
       }
     }
 
+    // A collection belongs to exactly one org, so it's only valid when the blog
+    // is published under that org. Publishing personally — or naming a collection
+    // from a different org — clears it. (Co-author access stays blog-scoped either
+    // way; filing under a collection never grants org/collection-level rights.)
+    let finalCollectionId = null;
+    const effectivePublishAs = publishAs || existing?.published_as || 'personal';
+    if (collectionId && effectivePublishAs.startsWith('org:')) {
+      const orgId = effectivePublishAs.slice(4);
+      const col = await db.prepare('SELECT id FROM collections WHERE id = ? AND org_id = ?')
+        .bind(collectionId, orgId).first();
+      if (col) finalCollectionId = collectionId;
+    }
+
     // Slugs are unique per owner (the URL is /owner/slug), not globally.
     const slugScope = {
       authorId: session.userId,
@@ -125,11 +138,11 @@ export async function POST(request) {
 
       let query = `
         UPDATE blogs SET title = ?, subtitle = ?, slug = ?, content = ?, excerpt = ?, published_as = ?,
-          status = ?, page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?,
+          collection_id = ?, status = ?, page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?,
           read_time_minutes = ?, updated_at = ?
       `;
       const params = [title, subtitle || '', slug, compressedContent, excerpt, publishAs || 'personal',
-        targetStatus, pageEmoji || '', coverUrl || '', posX, posY, zoom, readTime, now];
+        finalCollectionId, targetStatus, pageEmoji || '', coverUrl || '', posX, posY, zoom, readTime, now];
 
       if (publishedAt) {
         query += ', published_at = ?';
@@ -142,12 +155,12 @@ export async function POST(request) {
     } else {
       // Create and publish in one step
       await db.prepare(`
-        INSERT INTO blogs (id, slug, title, subtitle, content, excerpt, author_id, published_as, status,
+        INSERT INTO blogs (id, slug, title, subtitle, content, excerpt, author_id, published_as, collection_id, status,
           page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, read_time_minutes, created_at, updated_at, published_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         slugid, slug, title, subtitle || '', compressedContent, excerpt,
-        session.userId, publishAs || 'personal', targetStatus,
+        session.userId, publishAs || 'personal', finalCollectionId, targetStatus,
         pageEmoji || '', coverUrl || '', posX, posY, zoom, readTime, now, now,
         (targetStatus === 'published' || targetStatus === 'unlisted') ? now : null
       ).run();
