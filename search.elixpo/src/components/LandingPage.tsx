@@ -227,7 +227,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
             <PackageCard
               icon={BookOpen}
               iconColor="bg-indigo-500/20 border border-indigo-500/30"
@@ -306,6 +306,7 @@ export default function LandingPage() {
             <pre className="p-5 text-sm font-mono text-white/60 overflow-x-auto leading-relaxed">
               <code>{`curl -X POST https://search.elixpo.com/api/search \\
   -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
   -d '{"query": "how does RLHF work?", "stream": true}'`}</code>
             </pre>
           </div>
