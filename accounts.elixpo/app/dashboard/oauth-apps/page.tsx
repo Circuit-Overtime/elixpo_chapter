@@ -485,9 +485,21 @@ const OAuthAppsPage = () => {
                                                     />
                                                     <Box>
                                                         <Typography
+                                                            component={Link}
+                                                            href={`/dashboard/oauth-apps/${app.client_id}`}
                                                             sx={{
                                                                 fontWeight: 500,
                                                                 color: "#f5f5f4",
+                                                                textDecoration:
+                                                                    "none",
+                                                                cursor: "pointer",
+                                                                "&:hover": {
+                                                                    color: "#c8b6ff",
+                                                                    textDecoration:
+                                                                        "underline",
+                                                                    textUnderlineOffset:
+                                                                        "3px",
+                                                                },
                                                             }}
                                                         >
                                                             {app.name}

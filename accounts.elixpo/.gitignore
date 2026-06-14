@@ -21,7 +21,6 @@ yarn-error.log*
 .vercel
 *.tsbuildinfo
 create-admin.mjs
-wrangler.toml
 # SOPS: unencrypted local env
 .env.local
 __pycache__/

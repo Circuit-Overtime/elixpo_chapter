@@ -271,17 +271,40 @@ const ServicesPage = () => {
                                   }
                               })()
                             : "";
+                        // Make the whole card a link to the per-app detail
+                        // page. Inner interactive elements (revoke button,
+                        // hostname external link) stopPropagation so they
+                        // don't navigate through the card.
                         return (
                             <Box
                                 key={svc.client_id}
+                                role="link"
+                                tabIndex={0}
+                                onClick={() => {
+                                    window.location.href = `/dashboard/services/${svc.client_id}`;
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        window.location.href = `/dashboard/services/${svc.client_id}`;
+                                    }
+                                }}
                                 sx={{
                                     p: 2.5,
                                     borderRadius: "14px",
                                     bgcolor: "rgba(255,255,255,0.03)",
                                     border: "1px solid rgba(255,255,255,0.07)",
-                                    transition: "border-color 0.2s",
+                                    transition:
+                                        "border-color 0.2s, background-color 0.2s, transform 0.2s",
+                                    cursor: "pointer",
                                     "&:hover": {
-                                        borderColor: "rgba(255,255,255,0.15)",
+                                        borderColor: "rgba(155,123,247,0.45)",
+                                        bgcolor: "rgba(155,123,247,0.04)",
+                                        transform: "translateY(-1px)",
+                                    },
+                                    "&:focus-visible": {
+                                        outline: "2px solid #9b7bf7",
+                                        outlineOffset: 2,
                                     },
                                     display: "flex",
                                     flexDirection: "column",
@@ -313,6 +336,9 @@ const ServicesPage = () => {
                                                 href={svc.homepage_url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
+                                                }
                                                 sx={{
                                                     color: "rgba(255,255,255,0.3)",
                                                     fontSize: "0.75rem",
@@ -336,9 +362,10 @@ const ServicesPage = () => {
                                     <Button
                                         size="small"
                                         startIcon={<LinkOffIcon />}
-                                        onClick={() =>
-                                            revokeService(svc.client_id)
-                                        }
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            revokeService(svc.client_id);
+                                        }}
                                         disabled={revoking === svc.client_id}
                                         sx={{
                                             color: "rgba(255,255,255,0.35)",

@@ -46,17 +46,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body: any = await request.json();
-    const { url, events, secret } = body as {
-        url: string;
+    const { endpoint_id, events, secret } = body as {
+        endpoint_id: string;
         events: string[];
         secret?: string;
     };
 
-    if (!url)
-        return NextResponse.json({ error: "url is required" }, { status: 400 });
-    if (!url.startsWith("https://")) {
+    // Per the safety policy, a user-scoped webhook must target a specific
+    // webhook endpoint registered on one of the caller's own OAuth apps.
+    // Apps can now have multiple endpoints (e.g. localhost + production),
+    // so the caller picks which one. The URL is resolved server-side from
+    // the endpoint row — never trusted from the request body.
+    if (!endpoint_id || typeof endpoint_id !== "string") {
         return NextResponse.json(
-            { error: "Webhook URL must use HTTPS" },
+            { error: "endpoint_id is required" },
             { status: 400 },
         );
     }
@@ -67,22 +70,63 @@ export async function POST(request: NextRequest) {
         );
     }
 
+    const db = await getDatabase();
+    const endpoint = await db
+        .prepare(
+            `SELECT e.id, e.url, e.client_id, c.name AS app_name, c.owner_id
+             FROM oauth_client_webhook_endpoints e
+             JOIN oauth_clients c ON c.client_id = e.client_id
+             WHERE e.id = ? AND c.is_active = 1 AND e.is_active = 1`,
+        )
+        .bind(endpoint_id)
+        .first<{
+            id: string;
+            url: string;
+            client_id: string;
+            app_name: string;
+            owner_id: string;
+        }>();
+
+    if (!endpoint)
+        return NextResponse.json(
+            { error: "Endpoint not found or inactive" },
+            { status: 404 },
+        );
+    if (endpoint.owner_id !== auth.sub) {
+        return NextResponse.json(
+            {
+                error: "You can only target webhook endpoints on OAuth apps you own",
+            },
+            { status: 403 },
+        );
+    }
+
     const id = crypto.randomUUID();
     const webhookSecret = secret || crypto.randomUUID().replace(/-/g, "");
 
-    const db = await getDatabase();
     await db
         .prepare(
-            `INSERT INTO webhooks (id, user_id, url, events, secret, is_active, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            `INSERT INTO webhooks (id, user_id, client_id, endpoint_id, url, events, secret, is_active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         )
-        .bind(id, auth.sub, url, JSON.stringify(events), webhookSecret)
+        .bind(
+            id,
+            auth.sub,
+            endpoint.client_id,
+            endpoint.id,
+            endpoint.url,
+            JSON.stringify(events),
+            webhookSecret,
+        )
         .run();
 
     return NextResponse.json(
         {
             id,
-            url,
+            client_id: endpoint.client_id,
+            client_name: endpoint.app_name,
+            endpoint_id: endpoint.id,
+            url: endpoint.url,
             events,
             secret: webhookSecret,
             is_active: true,

@@ -65,8 +65,19 @@ export const metadata: Metadata = {
         images: ["/og-image.png"],
     },
     icons: {
-        icon: "/LOGO/logo.png",
-        apple: "/LOGO/logo.png",
+        // Served as static assets from public/. Keeping them out of app/
+        // avoids @cloudflare/next-on-pages turning each into an edge
+        // route that needs `export const runtime = 'edge'`.
+        icon: [
+            { url: "/icon.png", sizes: "32x32", type: "image/png" },
+            { url: "/icon0.png", sizes: "192x192", type: "image/png" },
+            { url: "/icon1.png", sizes: "512x512", type: "image/png" },
+        ],
+        apple: {
+            url: "/apple-icon.png",
+            sizes: "180x180",
+            type: "image/png",
+        },
     },
     robots: {
         index: true,
