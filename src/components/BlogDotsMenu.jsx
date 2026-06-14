@@ -72,7 +72,7 @@ export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null
             </div>
           ) : (
             <>
-              <Row icon="thumbs-down-outline" label="Show less like this" onClick={showLess} />
+              {!isSelf && <Row icon="thumbs-down-outline" label="Show less like this" onClick={showLess} />}
               <Row icon={hideHighlights ? 'eye-outline' : 'color-wand-outline'} label={hideHighlights ? 'Show highlights' : 'Hide highlights'} onClick={toggleHi} kbd="Ctrl /" />
               <Divider />
               {!isSelf && <Row label={fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`} onClick={followAuthor} disabled={fAuthor} />}
@@ -82,7 +82,7 @@ export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null
               {org && <Row label="Mute publication" onClick={muteOrg} />}
               {tags.length > 0 && <Row label="Mute topics" onClick={muteTopics} badge />}
               <Divider />
-              <Row label="Report story…" onClick={report} danger />
+              {!isSelf && <Row label="Report story…" onClick={report} danger />}
             </>
           )}
         </div>

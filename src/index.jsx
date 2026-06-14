@@ -260,7 +260,7 @@ function FeedCardMenu({ post, onHide }) {
           {org && item('Mute publication', muteOrg)}
           {(post.tags || []).length > 0 && item('Mute topics', muteTopics, false, true)}
           <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
-          {item('Report story…', report, true)}
+          {!isSelf && item('Report story…', report, true)}
         </div>
       )}
     </div>
