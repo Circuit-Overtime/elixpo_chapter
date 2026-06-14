@@ -158,7 +158,38 @@ export async function GET(
         );
 
         if (existingIdentity) {
-            // Identity exists — this is a returning user
+            // Identity exists — this is a returning user.
+            //
+            // If the provider's avatar URL changed since we last saw them,
+            // refresh `identities.provider_profile_url` and fire a
+            // user.updated webhook so subscribed apps can sync their
+            // mirrored avatar. Cheap to compare — single column read.
+            const storedPicture =
+                (existingIdentity as any).provider_profile_url || null;
+            const newPicture = userInfo.picture || null;
+            if (newPicture && newPicture !== storedPicture) {
+                try {
+                    await db
+                        .prepare(
+                            "UPDATE identities SET provider_profile_url = ? WHERE id = ?",
+                        )
+                        .bind(newPicture, (existingIdentity as any).id)
+                        .run();
+                    const { fireUserUpdated } = await import(
+                        "@/lib/user-events"
+                    );
+                    await fireUserUpdated(
+                        (existingIdentity as any).user_id,
+                        { avatar_url: newPicture },
+                    );
+                } catch (err) {
+                    console.error(
+                        "[callback] avatar refresh failed (non-fatal):",
+                        err,
+                    );
+                }
+            }
+
             if (oauthMode === "register") {
                 // They're trying to register but already have an account — just log them in
                 const existingUser = await getUserById(
