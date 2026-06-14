@@ -59,10 +59,49 @@ _PLAIN_TOOL_CALL_RE = re.compile(
 )
 
 
+# Anthropic-style XML tool calls. Some Pollinations routes (notably kimi) return
+# `<function_calls><invoke name="X"><parameter name="Y">val</parameter>…</invoke></function_calls>`
+# in `delta.content` instead of OpenAI `delta.tool_calls`.
+_ANTHROPIC_INVOKE_RE = re.compile(
+    r"<invoke\s+name\s*=\s*[\"'](\w+)[\"']\s*>(.*?)</invoke\s*>",
+    re.DOTALL | re.IGNORECASE,
+)
+_ANTHROPIC_PARAM_RE = re.compile(
+    r"<parameter\s+name\s*=\s*[\"'](\w+)[\"']\s*>(.*?)</parameter\s*>",
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def _coerce_param_value(raw: str):
+    s = raw.strip()
+    if not s:
+        return ""
+    # JSON-ish values: object, array, bool/null, number
+    if (s[0] in "{[" or s in ("true", "false", "null")
+            or (s[0] in "-0123456789" and re.fullmatch(r"-?\d+(?:\.\d+)?", s))):
+        try:
+            return json.loads(s)
+        except json.JSONDecodeError:
+            pass
+    return s
+
+
 def extract_leaked_tool_call(content: str) -> tuple:
 
     if not content:
         return None, None
+
+    # Anthropic XML format: <function_calls><invoke name="X">…</invoke></function_calls>
+    invoke_match = _ANTHROPIC_INVOKE_RE.search(content)
+    if invoke_match:
+        function_name = invoke_match.group(1)
+        body = invoke_match.group(2) or ""
+        args = {
+            param.group(1): _coerce_param_value(param.group(2))
+            for param in _ANTHROPIC_PARAM_RE.finditer(body)
+        }
+        logger.info(f"[RECOVERY] Extracted Anthropic-XML tool call: {function_name}({list(args.keys())})")
+        return function_name, args
 
     # Detect plain text tool calls: "export_to_pdf\n{ ... }"
     plain_match = _PLAIN_TOOL_CALL_RE.search(content)
@@ -186,6 +225,66 @@ def extract_leaked_tool_call(content: str) -> tuple:
     except Exception as e:
         logger.debug(f"[RECOVERY] Failed to parse leaked tool call: {e}")
         return None, None
+
+
+_XML_LEAK_HINTS = (
+    "<function_calls", "</function_calls",
+    "<invoke", "</invoke",
+    "<parameter", "</parameter",
+    "<|tool_call",
+)
+
+
+class StreamingTagFilter:
+    # Suppresses XML/special-token tool-call leakage from streamed content so
+    # the user never sees raw `<function_calls>…</function_calls>` deltas.
+    # Once a leak prefix is detected, the rest of the stream is silenced;
+    # the post-stream `extract_leaked_tool_call` recovery still sees the full
+    # raw content and re-issues the call.
+
+    __slots__ = ("_buffer", "_silenced")
+
+    def __init__(self) -> None:
+        self._buffer = ""
+        self._silenced = False
+
+    def feed(self, chunk: str) -> str:
+        if self._silenced or not chunk:
+            return ""
+        self._buffer += chunk
+
+        idx = self._buffer.find("<")
+        if idx == -1:
+            out = self._buffer
+            self._buffer = ""
+            return out
+
+        out = self._buffer[:idx]
+        tail = self._buffer[idx:]
+
+        # Tail starts a known leak prefix → silence the rest of the stream.
+        if any(tail.startswith(h) for h in _XML_LEAK_HINTS):
+            self._silenced = True
+            self._buffer = ""
+            return out
+
+        # Tail might be a partial leak prefix waiting for more data → buffer it.
+        if any(h.startswith(tail) for h in _XML_LEAK_HINTS):
+            self._buffer = tail
+            return out
+
+        # Plain '<' that isn't a leak — emit it and re-scan the rest.
+        out += tail[0]
+        self._buffer = tail[1:]
+        return out + self.feed("")
+
+    def flush(self) -> str:
+        if self._silenced or not self._buffer:
+            self._buffer = ""
+            return ""
+        out = self._buffer
+        self._buffer = ""
+        return out
 
 
 def get_user_message(operation: str) -> str:

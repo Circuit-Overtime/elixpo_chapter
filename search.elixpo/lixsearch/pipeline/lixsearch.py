@@ -22,6 +22,7 @@ from pipeline.helpers import (
     _evaluate_fetch_quality,
     sanitize_final_response,
     extract_leaked_tool_call,
+    StreamingTagFilter,
 )
 from pipeline.synthesis import (
     run_standard_synthesis,
@@ -465,6 +466,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     try:
                         _stream_payload = {**payload, "model": _stream_model}
                         _streamed_content = ""
+                        _tag_filter = StreamingTagFilter()
                         async for _stype, _sdata in _stream_llm_call(_stream_payload, headers):
                             if _stype == "keepalive":
                                 _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
@@ -473,9 +475,14 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                                 status_tracker.touch()
                             elif _stype == "content":
                                 _streamed_content += _sdata
-                                yield format_sse("RESPONSE", _sdata)
+                                _safe = _tag_filter.feed(_sdata)
+                                if _safe:
+                                    yield format_sse("RESPONSE", _safe)
                                 status_tracker.touch()
                             elif _stype == "done":
+                                _tail = _tag_filter.flush()
+                                if _tail:
+                                    yield format_sse("RESPONSE", _tail)
                                 assistant_message = _sdata
                         if assistant_message and assistant_message.get("content"):
                             break  # success
