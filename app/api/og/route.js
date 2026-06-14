@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { LIX_LOGO } from './lixLogo';
 
 export const runtime = 'edge';
 
@@ -11,7 +12,7 @@ export const runtime = 'edge';
 //   sub      — @handle (profile) or author list (blog)
 //   kind     — small badge ("Author Profile", "Organisation", "Collection", …)
 export async function GET(request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const type = searchParams.get('type') || 'blog';
   const title = (searchParams.get('title') || 'Untitled').slice(0, 120);
   const subtitle = (searchParams.get('subtitle') || '').slice(0, 220);
@@ -34,18 +35,10 @@ export async function GET(request) {
   const hasAvatar = !!avatar;
   const hasCover = !!cover;
 
-  // Embed the real LixBlogs logo (public/logo-dark.png — dark mark on white) as a
-  // data URI so it renders reliably inside the edge OG runtime.
-  let logoSrc = '';
-  try {
-    const r = await fetch(`${origin}/logo-dark.png`);
-    if (r.ok) {
-      const bytes = new Uint8Array(await r.arrayBuffer());
-      let binary = '';
-      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-      logoSrc = `data:image/png;base64,${btoa(binary)}`;
-    }
-  } catch { /* fall back to the drawn mark */ }
+  // Real LixBlogs logo, inlined as a data URI (see ./lixLogo). Inlining avoids a
+  // request-time self-fetch, which is unreliable in the Cloudflare edge runtime
+  // and was falling back to the drawn "L" in production.
+  const logoSrc = LIX_LOGO;
 
   const INK = '#0d1117';
   const MUTED = '#57606a';
