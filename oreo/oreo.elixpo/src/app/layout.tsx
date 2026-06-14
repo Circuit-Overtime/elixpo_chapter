@@ -57,14 +57,21 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [OG_IMAGE],
   },
-  // Icons — pulled from the same mascot.png the header + footer use,
-  // so the favicon/apple-touch-icon look identical to the in-page
-  // wordmark. Pixel-art works at every favicon size; Cloudflare Pages
-  // serves the file verbatim from /public.
+  // Icons — generated from public/oreo.elixpo.png (the brand mark) into a
+  // full favicon set. .ico carries 16/32/48 for legacy + tab pinning; the
+  // PNG sizes cover modern browsers; apple-touch + 192/512 cover iOS and
+  // PWA installs. Cloudflare Pages serves each file verbatim from /public.
   icons: {
-    icon:     [{ url: "/favicon.png", type: "image/png" }],
-    shortcut: "/favicon.png",
-    apple:    "/favicon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-48x48.png", type: "image/png", sizes: "48x48" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
   formatDetection: { telephone: false, email: false, address: false },
 };
