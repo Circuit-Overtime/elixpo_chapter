@@ -92,12 +92,46 @@ export async function PUT(request) {
   }
 }
 
-// List invites for an org
+// GET — single-invite preview (?inviteId, auth-optional for OG + join page) OR
+// the org's invite list (?orgId, requires auth).
 export async function GET(request) {
   const session = await getSession();
-  if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-
   const { searchParams } = new URL(request.url);
+  const inviteId = searchParams.get('inviteId');
+
+  // Invite preview: org identity + validity (+ membership when signed in).
+  if (inviteId) {
+    try {
+      const { getDB } = await import('../../../../lib/cloudflare');
+      const db = getDB();
+      const invite = await db.prepare('SELECT * FROM org_invites WHERE id = ?').bind(inviteId).first();
+      if (!invite) return NextResponse.json({ error: 'Invite not found' }, { status: 404 });
+
+      const now = Math.floor(Date.now() / 1000);
+      const expired = !!(invite.expires_at && invite.expires_at < now);
+      const maxed = !!(invite.max_uses && invite.uses >= invite.max_uses);
+      const org = await db.prepare('SELECT slug, name, description, logo_url, logo_r2_key, owner_id FROM orgs WHERE id = ?')
+        .bind(invite.org_id).first();
+      const owner = org ? await db.prepare('SELECT display_name, username FROM users WHERE id = ?').bind(org.owner_id).first() : null;
+      let alreadyMember = false;
+      if (session?.userId) {
+        const m = await db.prepare('SELECT user_id FROM org_members WHERE org_id = ? AND user_id = ?')
+          .bind(invite.org_id, session.userId).first();
+        alreadyMember = !!m;
+      }
+      return NextResponse.json({
+        invite: { role: invite.role, expired, maxed, valid: !expired && !maxed },
+        org: org ? { slug: org.slug, name: org.name, description: org.description, logo_url: org.logo_url || null } : null,
+        owner: owner ? { display_name: owner.display_name, username: owner.username } : null,
+        alreadyMember,
+        authed: !!session?.userId,
+      });
+    } catch {
+      return NextResponse.json({ error: 'Failed to load invite' }, { status: 500 });
+    }
+  }
+
+  if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   const orgId = searchParams.get('orgId');
   if (!orgId) return NextResponse.json({ error: 'Missing orgId' }, { status: 400 });
 
