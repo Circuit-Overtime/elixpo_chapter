@@ -2,19 +2,20 @@
   "heading": "Sessions & Talks",
   "description": "Selected highlights from talks, workshops, and community sessions on open source, DevOps, and building developer communities.",
   "sessions": [
-    {
-      "title": "How to Be the Contributor Maintainers Actually Want",
-      "venue": "GitHub Maintainer Month 2026",
-      "date": "31st May 2026",
-      "location": "Remote",
-      "status": "upcoming"
-    },
+    
     {
       "title": "Building the Contributor Pipeline at Pollinations.ai",
       "venue": "GitHub Open Source Friday",
       "date": "10th July 2026",
       "location": "Remote",
       "status": "upcoming"
+    },
+    {
+      "title": "How to Be the Contributor Maintainers Actually Want",
+      "venue": "GitHub Maintainer Month 2026",
+      "date": "31st May 2026",
+      "location": "Remote",
+      "status": "past"
     },
     {
       "title": "Cracking Google Summer of Code — GSoC Info Session 2026",
