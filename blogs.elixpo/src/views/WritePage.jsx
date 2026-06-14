@@ -10,7 +10,6 @@ import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
-import { compressCoverImage } from '../utils/compressImage';
 import { readTimeFromWords } from '../../lib/readTime';
 import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../utils/allowedImageTypes';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
@@ -45,8 +44,8 @@ const BlogCodeView = dynamic(
   { ssr: false }
 );
 
-const CoverUploadModal = dynamic(
-  () => import('../components/Editor/CoverUploadModal'),
+const ImageCropModal = dynamic(
+  () => import('../components/ImageCropModal'),
   { ssr: false }
 );
 
@@ -416,6 +415,7 @@ export default function WritePage({ slugid }) {
   });
   const [showPublishMenu, setShowPublishMenu] = useState(false);
   const [showCoverModal, setShowCoverModal] = useState(false);
+  const [coverCropSrc, setCoverCropSrc] = useState(null); // device image awaiting crop+stylise
   const [coverUrlMode, setCoverUrlMode] = useState(false);
   const [coverUrlInput, setCoverUrlInput] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -435,6 +435,8 @@ export default function WritePage({ slugid }) {
   const [blogVersion, setBlogVersion] = useState(null);
   const [lastKnownUpdatedAt, setLastKnownUpdatedAt] = useState(null);
   const [userOrgs, setUserOrgs] = useState([]);
+  const [collectionId, setCollectionId] = useState(null); // org collection to file under (null = org root)
+  const [orgCollections, setOrgCollections] = useState([]); // collections of the selected org
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
   const settingsSnapshotRef = useRef(''); // publish-settings as of load / last publish — for the no-change Update shortcut
   const titleTextareaRef = useRef(null);
@@ -559,10 +561,10 @@ export default function WritePage({ slugid }) {
   }, []);
 
   // Refs to always hold latest draft data (avoids stale closures in intervals/beforeunload)
-  const draftDataRef = useRef({ title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
+  const draftDataRef = useRef({ title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
   useEffect(() => {
-    draftDataRef.current = { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom };
-  }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom]);
+    draftDataRef.current = { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom };
+  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom]);
 
   // Sync any buffered subpage drafts from localStorage to cloud
   const syncSubpageDrafts = useCallback(async () => {
@@ -779,6 +781,7 @@ export default function WritePage({ slugid }) {
         if (cloud.subtitle) setSubtitle(cloud.subtitle);
         if (cloud.tags?.length) setTags(cloud.tags);
         if (cloud.published_as) setPublishAs(cloud.published_as);
+        setCollectionId(cloud.collection_id || null);
         if (cloud.cover_image_r2_key) setCoverPreview(cloud.cover_image_r2_key);
         if (Number.isFinite(cloud.cover_pos_x) && Number.isFinite(cloud.cover_pos_y)) setCoverPos({ x: cloud.cover_pos_x, y: cloud.cover_pos_y });
         if (Number.isFinite(cloud.cover_zoom)) setCoverZoom(cloud.cover_zoom);
@@ -812,6 +815,7 @@ export default function WritePage({ slugid }) {
         if (local.subtitle) setSubtitle(local.subtitle);
         if (local.tags?.length) setTags(local.tags);
         if (local.publishAs) setPublishAs(local.publishAs);
+        if (local.collectionId) setCollectionId(local.collectionId);
         if (local.coverPreview) setCoverPreview(local.coverPreview);
         if (local.coverPos) setCoverPos(local.coverPos);
         if (Number.isFinite(local.coverZoom)) setCoverZoom(local.coverZoom);
@@ -834,12 +838,12 @@ export default function WritePage({ slugid }) {
     dirtyRef.current = true;
     autoSaveTimer.current = setTimeout(() => {
       if (title || editorContent) {
-        saveDraft(blogId, { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
+        saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
         setLastSaved(Date.now());
       }
     }, 2000);
     return () => clearTimeout(autoSaveTimer.current);
-  }, [title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, blogId]);
+  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, blogId]);
 
   // Background cloud flush — localStorage is the instant buffer, but beforeunload/
   // sendBeacon is unreliable, so flush unsynced edits to the cloud every 20s.
@@ -976,6 +980,19 @@ export default function WritePage({ slugid }) {
       .catch(() => {});
   }, []);
 
+  // Load collections for the selected org (publish-destination dropdown). Cleared
+  // when publishing personally so a stale org's collections can't be selected.
+  useEffect(() => {
+    if (!publishAs.startsWith('org:')) { setOrgCollections([]); return; }
+    const orgId = publishAs.slice(4);
+    let active = true;
+    fetch(`/api/orgs/collections?orgId=${encodeURIComponent(orgId)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (active && d?.collections) setOrgCollections(d.collections); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [publishAs]);
+
   // Close owner dropdown on outside click
   useEffect(() => {
     if (!showOwnerDropdown) return;
@@ -1007,8 +1024,27 @@ export default function WritePage({ slugid }) {
     return null;
   }, [blogId]);
 
+  // Read a chosen device file into a data URL and open the crop+stylise modal.
+  const openCoverCropper = useCallback((file) => {
+    if (!file || !isAllowedImage(file)) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setCoverCropSrc(ev.target.result);
+    reader.readAsDataURL(file);
+  }, []);
+
+  // Cropped + stylised cover → optimistic preview, then upload.
+  const handleCoverCropSave = useCallback((blob) => {
+    setCoverCropSrc(null);
+    setShowCoverModal(false);
+    if (!blob) return;
+    setCoverPreview(URL.createObjectURL(blob));
+    setCoverZoom(1);
+    setCoverPos({ x: 50, y: 50 });
+    uploadCover(blob);
+  }, [uploadCover]);
+
   const handleSaveDraft = async () => {
-    saveDraft(blogId, { title, subtitle, tags, publishAs, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
+    saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
     setLastSaved(Date.now());
     setShowPublishMenu(false);
     syncToCloud({ showToast: true });
@@ -1143,7 +1179,7 @@ export default function WritePage({ slugid }) {
   }, [title, draftLoading, editorReady]);
 
   // Serialized publish-settings, used to detect "nothing changed" on Update.
-  const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, pageEmoji, coverPreview, coverPos, coverZoom, slug });
+  const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, collectionId, pageEmoji, coverPreview, coverPos, coverZoom, slug });
   // Capture a baseline once the blog has finished loading.
   useEffect(() => {
     if (!draftLoading && settingsSnapshotRef.current === '') settingsSnapshotRef.current = settingsKey();
@@ -1164,7 +1200,7 @@ export default function WritePage({ slugid }) {
       const res = await fetch('/api/blogs/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl: coverPreview, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt }),
+        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, coverUrl: coverPreview, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt }),
       });
 
       if (res.status === 409) {
@@ -1215,7 +1251,7 @@ export default function WritePage({ slugid }) {
       await fetch('/api/blogs/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, editorContent, pageEmoji, slug, status: 'unlisted', lastKnownUpdatedAt }),
+        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, slug, status: 'unlisted', lastKnownUpdatedAt }),
       });
       setShowPublishPanel(false);
     } catch { /* silent */ }
@@ -1480,7 +1516,7 @@ export default function WritePage({ slugid }) {
               const canPublish = titleWords >= 2;
               return (
                 <>
-                  <div className="flex items-center rounded-full overflow-hidden" style={{ boxShadow: canPublish ? '0 2px 8px rgba(155,123,247,0.25)' : 'none', opacity: canPublish ? 1 : 0.5 }}>
+                  <div className="flex items-stretch rounded-full overflow-hidden" style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #8b6ae6 100%)', boxShadow: canPublish ? '0 2px 8px rgba(155,123,247,0.25)' : 'none', opacity: canPublish ? 1 : 0.5 }}>
                     <button
                       onClick={() => {
                         if (!canPublish) return;
@@ -1498,8 +1534,7 @@ export default function WritePage({ slugid }) {
                         }
                       }}
                       disabled={!canPublish}
-                      className="px-4 py-1.5 text-white font-semibold text-[13px] transition-colors flex items-center gap-1.5 disabled:cursor-not-allowed"
-                      style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #8b6ae6 100%)' }}
+                      className="px-4 py-1.5 text-white font-semibold text-[13px] transition-colors flex items-center gap-1.5 disabled:cursor-not-allowed hover:bg-black/10 active:bg-black/20"
                     >
                       <ion-icon name={isPublished ? 'cloud-upload-outline' : 'send-outline'} style={{ fontSize: '14px' }} />
                       {isPublished ? 'Update' : 'Publish'}
@@ -1507,8 +1542,7 @@ export default function WritePage({ slugid }) {
                     <button
                       onClick={() => canPublish && setShowPublishMenu(!showPublishMenu)}
                       disabled={!canPublish}
-                      className="px-2 py-1.5 text-white transition-colors border-l border-white/15 disabled:cursor-not-allowed"
-                      style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #8b6ae6 100%)' }}
+                      className="px-2.5 py-1.5 text-white transition-colors border-l border-white/15 disabled:cursor-not-allowed flex items-center justify-center hover:bg-black/10 active:bg-black/20"
                     >
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="6 9 12 15 18 9" />
@@ -1742,17 +1776,7 @@ export default function WritePage({ slugid }) {
                               type="file"
                               accept={IMAGE_ACCEPT_ATTR}
                               className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file && isAllowedImage(file)) {
-                                  compressCoverImage(file).then(({ blob, url }) => {
-                                    setCoverPreview(url);
-                                    setCoverZoom(1);
-                                    setCoverPos({ x: 50, y: 50 });
-                                    uploadCover(blob);
-                                  });
-                                }
-                              }}
+                              onChange={(e) => { openCoverCropper(e.target.files?.[0]); e.target.value = ''; }}
                             />
                           </label>
                           {/* Remove */}
@@ -1788,16 +1812,7 @@ export default function WritePage({ slugid }) {
                               type="file"
                               accept={IMAGE_ACCEPT_ATTR}
                               className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file && isAllowedImage(file)) {
-                                  compressCoverImage(file).then(({ blob, url }) => {
-                                    setCoverPreview(url);
-                                    setShowCoverModal(false);
-                                    uploadCover(blob);
-                                  });
-                                }
-                              }}
+                              onChange={(e) => { openCoverCropper(e.target.files?.[0]); e.target.value = ''; }}
                             />
                           </label>
                           <button
@@ -1906,6 +1921,20 @@ export default function WritePage({ slugid }) {
                         </button>
                       </div>
                     ) : null}
+
+                    {/* Cover crop + stylise (opens when a device image is chosen) */}
+                    {coverCropSrc && (
+                      <ImageCropModal
+                        title="Crop cover"
+                        aspectRatio={16 / 5}
+                        outputWidth={1600}
+                        quality={0.55}
+                        maxSizeKB={120}
+                        initialSrc={coverCropSrc}
+                        onSave={handleCoverCropSave}
+                        onClose={() => setCoverCropSrc(null)}
+                      />
+                    )}
 
                     {/* Emoji overlapping banner bottom-left */}
                     {pageEmoji && (
@@ -2209,7 +2238,7 @@ export default function WritePage({ slugid }) {
                   <div className="absolute top-full mt-1 left-0 right-0 rounded-lg shadow-xl z-10 overflow-hidden" style={{ backgroundColor: 'var(--dropdown-bg)', border: '1px solid var(--dropdown-border)' }}>
                     <div className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-faint)', borderBottom: '1px solid var(--divider)' }}>Choose an owner</div>
                     <button
-                      onClick={() => { setPublishAs('personal'); setShowOwnerDropdown(false); }}
+                      onClick={() => { setPublishAs('personal'); setCollectionId(null); setShowOwnerDropdown(false); }}
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] transition-colors"
                       style={{ backgroundColor: publishAs === 'personal' ? 'var(--bg-hover)' : 'transparent' }}
                     >
@@ -2226,7 +2255,7 @@ export default function WritePage({ slugid }) {
                     {userOrgs.map(org => (
                       <button
                         key={org.id}
-                        onClick={() => { setPublishAs(`org:${org.id}`); setShowOwnerDropdown(false); }}
+                        onClick={() => { setPublishAs(`org:${org.id}`); setCollectionId(null); setShowOwnerDropdown(false); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] transition-colors"
                         style={{ backgroundColor: publishAs === `org:${org.id}` ? 'var(--bg-hover)' : 'transparent' }}
                       >
@@ -2240,6 +2269,33 @@ export default function WritePage({ slugid }) {
               </div>
             )}
           </div>
+
+          {/* Collection — only when publishing under an org. Files the post under
+              an org collection (URL becomes /org/collection/slug). Optional. */}
+          {publishAs.startsWith('org:') && (
+            <div>
+              <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
+                Collection <span className="font-normal" style={{ color: 'var(--text-faint)' }}>— optional, files this post under a collection</span>
+              </label>
+              <select
+                value={collectionId || ''}
+                onChange={(e) => setCollectionId(e.target.value || null)}
+                disabled={isPublished && !isOwner}
+                className="w-full rounded-lg px-3 py-2.5 text-[13px] outline-none disabled:opacity-70 disabled:cursor-not-allowed"
+                style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
+              >
+                <option value="">No collection (org root)</option>
+                {orgCollections.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>
+                {orgCollections.length === 0
+                  ? 'This org has no collections yet — create one in the org settings.'
+                  : 'Collaborators stay scoped to this post regardless of collection.'}
+              </p>
+            </div>
+          )}
 
           {/* URL slug — editable before publish; after publish only the owner can
               change it (destructive — old links break). Non-owners see it locked. */}

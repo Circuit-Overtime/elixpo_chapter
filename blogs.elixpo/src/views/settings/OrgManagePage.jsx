@@ -7,7 +7,7 @@ import AppShell from '../../components/AppShell';
 import TabBar from '../../components/TabBar';
 import Link from 'next/link';
 import { generatePixelAvatar } from '../../utils/pixelAvatar';
-import { compressImage } from '../../utils/compressImage';
+import ImageCropModal from '../../components/ImageCropModal';
 import { isHttpsUrl } from '../../../lib/validate';
 
 const ROLE_LABELS = { admin: 'Admin', maintain: 'Maintain', write: 'Write', read: 'Read' };
@@ -73,9 +73,9 @@ export default function OrgManagePage({ slug }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const logoInputRef = useRef(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState('');
+  const [showLogoModal, setShowLogoModal] = useState(false);
 
   // Invite state
   const [inviteRole, setInviteRole] = useState('write');
@@ -95,6 +95,9 @@ export default function OrgManagePage({ slug }) {
   const [newColName, setNewColName] = useState('');
   const [newColSlug, setNewColSlug] = useState('');
   const [newColDesc, setNewColDesc] = useState('');
+  const [editingCol, setEditingCol] = useState(null); // { id, name, slug, description }
+  const [editColError, setEditColError] = useState('');
+  const [savingCol, setSavingCol] = useState(false);
 
   const fetchOrg = useCallback(async () => {
     try {
@@ -199,22 +202,35 @@ export default function OrgManagePage({ slug }) {
     setDeleteConfirm(false);
   };
 
-  const handleLogoFile = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = ''; // allow re-selecting the same file
-    if (!file || !org) return;
-    setLogoError('');
-    setLogoUploading(true);
+  const uploadOrgImage = async (blob, type, filename) => {
+    const form = new FormData();
+    form.append('file', blob, filename);
+    form.append('type', type);
+    form.append('orgId', org.id);
+    const res = await fetch('/api/media/upload', { method: 'POST', body: form });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || 'Upload failed');
+    return data.url;
+  };
+
+  const handleLogoSave = async (blob) => {
+    setShowLogoModal(false);
+    if (!org) return;
+    setLogoError(''); setLogoUploading(true);
     try {
-      const { blob } = await compressImage(file, { maxWidth: 400, maxHeight: 400 });
-      const form = new FormData();
-      form.append('file', blob, 'logo.webp');
-      form.append('type', 'org_avatar');
-      form.append('orgId', org.id);
-      const res = await fetch('/api/media/upload', { method: 'POST', body: form });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || 'Upload failed');
-      if (data.url) setOrg(prev => ({ ...prev, logo_url: data.url }));
+      if (blob === null) {
+        // Remove → revert to the default pixel avatar.
+        const res = await fetch('/api/media/upload', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'org_avatar', orgId: org.id }),
+        });
+        if (!res.ok) throw new Error('Failed to remove logo');
+        setOrg(prev => ({ ...prev, logo_url: null, logo_r2_key: null }));
+      } else {
+        const url = await uploadOrgImage(blob, 'org_avatar', 'logo.webp');
+        if (url) setOrg(prev => ({ ...prev, logo_url: url }));
+      }
     } catch (err) {
       setLogoError(err?.message || 'Failed to update logo');
     } finally {
@@ -340,6 +356,22 @@ export default function OrgManagePage({ slug }) {
     fetchOrg();
   };
 
+  const handleSaveCollection = async () => {
+    if (!editingCol || !editingCol.name.trim() || savingCol) return;
+    setSavingCol(true); setEditColError('');
+    try {
+      const res = await fetch('/api/orgs/collections', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collectionId: editingCol.id, name: editingCol.name.trim(), slug: editingCol.slug, description: editingCol.description }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) { setEditingCol(null); fetchOrg(); }
+      else setEditColError(data.error || 'Failed to save');
+    } catch { setEditColError('Failed to save'); }
+    setSavingCol(false);
+  };
+
   const handleDeleteInvite = async (inviteId) => {
     await fetch('/api/orgs/invite', {
       method: 'DELETE',
@@ -390,10 +422,9 @@ export default function OrgManagePage({ slug }) {
           <Link href="/settings" className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors p-1">
             <ion-icon name="arrow-back" style={{ fontSize: '18px' }} />
           </Link>
-          <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoFile} />
           <button
             type="button"
-            onClick={() => logoInputRef.current?.click()}
+            onClick={() => setShowLogoModal(true)}
             disabled={logoUploading}
             className="relative group h-10 w-10 rounded-xl overflow-hidden flex-shrink-0"
             title="Change organization logo"
@@ -419,6 +450,19 @@ export default function OrgManagePage({ slug }) {
 
         {logoError && (
           <p className="text-[12px] text-red-400 mb-3 -mt-3">{logoError}</p>
+        )}
+
+        {showLogoModal && (
+          <ImageCropModal
+            title="Edit organization logo"
+            aspectRatio={1}
+            outputWidth={512}
+            quality={0.7}
+            maxSizeKB={40}
+            currentImage={org.logo_url || null}
+            onSave={handleLogoSave}
+            onClose={() => setShowLogoModal(false)}
+          />
         )}
 
         <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} keyField="key" />
@@ -650,6 +694,16 @@ export default function OrgManagePage({ slug }) {
         {/* ═══════════ Members Tab ═══════════ */}
         {activeTab === 'members' && (
           <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[13px] text-[var(--text-muted)]">{members.length} member{members.length === 1 ? '' : 's'}</p>
+              <button
+                onClick={() => setActiveTab('invites')}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#9b7bf7] text-white font-medium rounded-lg text-[12px] hover:bg-[#b69aff] transition-colors"
+              >
+                <ion-icon name="person-add-outline" style={{ fontSize: '15px' }} />
+                Invite member
+              </button>
+            </div>
             {members.map(m => (
               <div key={m.id} className="flex items-center gap-3 p-3.5 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl">
                 {m.avatar_url ? (
@@ -686,18 +740,56 @@ export default function OrgManagePage({ slug }) {
         {activeTab === 'collections' && (
           <div className="space-y-4">
             {collections.map(c => (
-              <div key={c.id} className="flex items-center gap-3 p-4 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl">
-                <div className="h-9 w-9 rounded-lg bg-[var(--bg-base)] flex items-center justify-center shrink-0">
-                  <ion-icon name="folder" style={{ fontSize: '18px', color: '#60a5fa' }} />
+              editingCol?.id === c.id ? (
+                <div key={c.id} className="border border-[#9b7bf7]/40 rounded-xl p-4 space-y-3 bg-[var(--card-bg)]">
+                  <div>
+                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">Name</label>
+                    <input value={editingCol.name} onChange={e => setEditingCol(s => ({ ...s, name: e.target.value }))} placeholder="Collection name"
+                      className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">Handle</label>
+                    <div className="flex items-center bg-[var(--bg-base)] rounded-lg px-3 border border-[var(--border-default)] focus-within:border-[#9b7bf7]/50 transition-colors">
+                      <span className="text-[13px] text-[var(--text-faint)]">/</span>
+                      <input value={editingCol.slug} onChange={e => setEditingCol(s => ({ ...s, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))} placeholder="handle"
+                        className="flex-1 bg-transparent text-[var(--text-primary)] py-2.5 px-1 outline-none text-[13px]" />
+                    </div>
+                    <p className="text-[11px] text-[var(--text-faint)] mt-1">Must be unique within this org. Changing it updates the collection&apos;s URL.</p>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">Description</label>
+                    <input value={editingCol.description || ''} onChange={e => setEditingCol(s => ({ ...s, description: e.target.value }))} placeholder="Description (optional)"
+                      className="w-full bg-[var(--bg-base)] text-[var(--text-primary)] rounded-lg px-3.5 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[#9b7bf7]/50 transition-colors" />
+                  </div>
+                  {editColError && <p className="text-[12px] text-[#f87171]">{editColError}</p>}
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleSaveCollection} disabled={!editingCol.name.trim() || savingCol}
+                      className="px-4 py-2 bg-[#9b7bf7] text-white font-medium rounded-lg text-[12px] hover:bg-[#b69aff] disabled:opacity-40 transition-colors">
+                      {savingCol ? 'Saving…' : 'Save'}
+                    </button>
+                    <button onClick={() => { setEditingCol(null); setEditColError(''); }}
+                      className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] font-medium rounded-lg text-[12px] transition-colors">
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] text-[var(--text-primary)] font-medium">{c.name}</p>
-                  <p className="text-[11px] text-[var(--text-faint)]">/{c.slug} &middot; {c.blog_count || 0} blog{(c.blog_count || 0) !== 1 ? 's' : ''}</p>
+              ) : (
+                <div key={c.id} className="flex items-center gap-3 p-4 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl">
+                  <div className="h-9 w-9 rounded-lg bg-[var(--bg-base)] flex items-center justify-center shrink-0">
+                    <ion-icon name="folder" style={{ fontSize: '18px', color: '#60a5fa' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] text-[var(--text-primary)] font-medium">{c.name}</p>
+                    <p className="text-[11px] text-[var(--text-faint)]">/{c.slug} &middot; {c.blog_count || 0} blog{(c.blog_count || 0) !== 1 ? 's' : ''}</p>
+                  </div>
+                  <button onClick={() => { setEditingCol({ id: c.id, name: c.name, slug: c.slug, description: c.description || '' }); setEditColError(''); }} className="text-[var(--text-muted)] hover:text-[#9b7bf7] transition-colors p-1">
+                    <ion-icon name="create-outline" style={{ fontSize: '16px' }} />
+                  </button>
+                  <button onClick={() => handleDeleteCollection(c.id)} className="text-[var(--text-muted)] hover:text-[#f87171] transition-colors p-1">
+                    <ion-icon name="trash-outline" style={{ fontSize: '16px' }} />
+                  </button>
                 </div>
-                <button onClick={() => handleDeleteCollection(c.id)} className="text-[var(--text-muted)] hover:text-[#f87171] transition-colors p-1">
-                  <ion-icon name="trash-outline" style={{ fontSize: '16px' }} />
-                </button>
-              </div>
+              )
             ))}
 
             <div className="border border-[var(--border-default)] rounded-xl p-5 space-y-4 bg-[var(--card-bg)]">

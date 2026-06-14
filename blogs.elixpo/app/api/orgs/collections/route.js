@@ -78,14 +78,23 @@ export async function PUT(request) {
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const { collectionId, name, description } = await request.json();
+  const { collectionId, name, description, slug } = await request.json();
   if (!collectionId) return NextResponse.json({ error: 'Missing collectionId' }, { status: 400 });
+
+  // Validate the new handle up-front (alphanumeric, single hyphens, 6–48 chars).
+  let cleanSlug = null;
+  if (typeof slug === 'string' && slug.trim()) {
+    const { validateSlug } = await import('../../../../lib/slugify');
+    const slugCheck = validateSlug(slug, { label: 'Collection handle' });
+    if (!slugCheck.ok) return NextResponse.json({ error: slugCheck.error }, { status: 400 });
+    cleanSlug = slugCheck.slug;
+  }
 
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
 
-    const col = await db.prepare('SELECT org_id FROM collections WHERE id = ?').bind(collectionId).first();
+    const col = await db.prepare('SELECT org_id, slug FROM collections WHERE id = ?').bind(collectionId).first();
     if (!col) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     const myRole = await db.prepare('SELECT role FROM org_members WHERE org_id = ? AND user_id = ?')
@@ -96,11 +105,26 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
     }
 
-    const now = Math.floor(Date.now() / 1000);
-    await db.prepare('UPDATE collections SET name = COALESCE(?, name), description = COALESCE(?, description), updated_at = ? WHERE id = ?')
-      .bind(name || null, description || null, now, collectionId).run();
+    // Handle rename: collections are unique per (org_id, slug). Reject a clash
+    // before writing so the user gets a clear message, not a 500.
+    if (cleanSlug && cleanSlug !== col.slug) {
+      const clash = await db.prepare('SELECT 1 FROM collections WHERE org_id = ? AND slug = ? AND id != ?')
+        .bind(col.org_id, cleanSlug, collectionId).first();
+      if (clash) return NextResponse.json({ error: 'That handle is already used by another collection in this org' }, { status: 409 });
+    }
 
-    return NextResponse.json({ ok: true });
+    const now = Math.floor(Date.now() / 1000);
+    try {
+      await db.prepare('UPDATE collections SET name = COALESCE(?, name), description = COALESCE(?, description), slug = COALESCE(?, slug), updated_at = ? WHERE id = ?')
+        .bind(name || null, description || null, cleanSlug, now, collectionId).run();
+    } catch (e) {
+      if (e.message?.includes('UNIQUE')) {
+        return NextResponse.json({ error: 'That handle is already used by another collection in this org' }, { status: 409 });
+      }
+      throw e;
+    }
+
+    return NextResponse.json({ ok: true, slug: cleanSlug || col.slug });
   } catch {
     return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
   }
