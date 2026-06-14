@@ -6,6 +6,7 @@ export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [fAuthor, setFAuthor] = useState(false);
+  const [isSelf, setIsSelf] = useState(false);
   const [fOrg, setFOrg] = useState(false);
   const [done, setDone] = useState('');
   const ref = useRef(null);
@@ -27,7 +28,7 @@ export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null
   // Resolve follow state on open.
   useEffect(() => {
     if (!open || !user) return;
-    if (author?.username) fetch(`/api/users/${author.username}/follow`).then(r => r.ok ? r.json() : null).then(d => d && setFAuthor(!!d.following)).catch(() => {});
+    if (author?.username) fetch(`/api/users/${author.username}/follow`).then(r => r.ok ? r.json() : null).then(d => { if (d) { setFAuthor(!!d.following); setIsSelf(!!d.self); } }).catch(() => {});
     if (org?.slug) fetch(`/api/orgs/${org.slug}/follow`).then(r => r.ok ? r.json() : null).then(d => d && setFOrg(!!d.following)).catch(() => {});
   }, [open, user]);
 
@@ -74,10 +75,10 @@ export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null
               <Row icon="thumbs-down-outline" label="Show less like this" onClick={showLess} />
               <Row icon={hideHighlights ? 'eye-outline' : 'color-wand-outline'} label={hideHighlights ? 'Show highlights' : 'Hide highlights'} onClick={toggleHi} kbd="Ctrl /" />
               <Divider />
-              <Row label={fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`} onClick={followAuthor} disabled={fAuthor} />
+              {!isSelf && <Row label={fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`} onClick={followAuthor} disabled={fAuthor} />}
               {org && <Row label={fOrg ? `Following ${org.name}` : `Follow ${org.name}`} onClick={followOrg} disabled={fOrg} />}
               <Divider />
-              <Row label="Mute author" onClick={muteAuthor} />
+              {!isSelf && <Row label="Mute author" onClick={muteAuthor} />}
               {org && <Row label="Mute publication" onClick={muteOrg} />}
               {tags.length > 0 && <Row label="Mute topics" onClick={muteTopics} badge />}
               <Divider />

@@ -202,6 +202,7 @@ function FeedCardMenu({ post, onHide }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [fAuthor, setFAuthor] = useState(false);
+  const [isSelf, setIsSelf] = useState(false);
   const [fOrg, setFOrg] = useState(false);
   const ref = useRef(null);
   const author = post.author || {};
@@ -217,7 +218,7 @@ function FeedCardMenu({ post, onHide }) {
   // Resolve current follow state when the menu opens, to grey out what's already followed.
   useEffect(() => {
     if (!open || !user) return;
-    if (author.username) fetch(`/api/users/${author.username}/follow`).then(r => r.ok ? r.json() : null).then(d => d && setFAuthor(!!d.following)).catch(() => {});
+    if (author.username) fetch(`/api/users/${author.username}/follow`).then(r => r.ok ? r.json() : null).then(d => { if (d) { setFAuthor(!!d.following); setIsSelf(!!d.self); } }).catch(() => {});
     if (org?.slug) fetch(`/api/orgs/${org.slug}/follow`).then(r => r.ok ? r.json() : null).then(d => d && setFOrg(!!d.following)).catch(() => {});
   }, [open, user]);
 
@@ -252,10 +253,10 @@ function FeedCardMenu({ post, onHide }) {
       </button>
       {open && (
         <div className="absolute right-0 top-9 z-50 w-56 rounded-xl py-1.5 overflow-hidden" style={{ backgroundColor: 'var(--dropdown-bg, var(--bg-surface))', border: '1px solid var(--border-default)', boxShadow: '0 12px 40px rgba(0,0,0,0.35)' }}>
-          {item(fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`, followAuthor, false, false, fAuthor)}
+          {!isSelf && item(fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`, followAuthor, false, false, fAuthor)}
           {org && item(fOrg ? `Following ${org.name}` : `Follow ${org.name}`, followOrg, false, false, fOrg)}
           <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
-          {item('Mute author', muteAuthor)}
+          {!isSelf && item('Mute author', muteAuthor)}
           {org && item('Mute publication', muteOrg)}
           {(post.tags || []).length > 0 && item('Mute topics', muteTopics, false, true)}
           <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
