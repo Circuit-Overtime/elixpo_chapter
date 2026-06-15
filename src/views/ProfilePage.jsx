@@ -40,6 +40,7 @@ export default function ProfilePage() {
   const [usageLoading, setUsageLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
   const [blogs, setBlogs] = useState([]);
+  const [coAuthored, setCoAuthored] = useState([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
   const [counts, setCounts] = useState({ followers: 0, following: 0 });
   const [followModal, setFollowModal] = useState(null); // 'followers' | 'following'
@@ -71,6 +72,10 @@ export default function ProfilePage() {
       .then(d => setBlogs(d.blogs || []))
       .catch(() => {})
       .finally(() => setBlogsLoading(false));
+    fetch('/api/blogs/list?filter=coauthored')
+      .then(r => r.ok ? r.json() : { blogs: [] })
+      .then(d => setCoAuthored(d.blogs || []))
+      .catch(() => {});
   }, [user]);
 
   if (loading) {
@@ -367,7 +372,7 @@ export default function ProfilePage() {
         {(() => {
           const published = blogs.filter(b => b.status === 'published' || b.status === 'unlisted');
           const drafts = blogs.filter(b => b.status === 'draft');
-          const list = activeTab === 0 ? published : drafts;
+          const list = activeTab === 0 ? published : activeTab === 1 ? drafts : coAuthored;
           const fmt = (ts) => ts ? new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
           return (
             <>
@@ -375,6 +380,7 @@ export default function ProfilePage() {
                 tabs={[
                   { label: 'Published', icon: 'globe-outline', count: published.length },
                   { label: 'Drafts', icon: 'document-outline', count: drafts.length },
+                  { label: 'Co-authored', icon: 'people-outline', count: coAuthored.length },
                 ]}
                 active={activeTab}
                 onChange={setActiveTab}
