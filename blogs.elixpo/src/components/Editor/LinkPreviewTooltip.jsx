@@ -90,6 +90,32 @@ export default function LinkPreviewTooltip({ anchorEl, url, onClose }) {
     return () => clearTimeout(hideTimerRef.current);
   }, []);
 
+  // Safety net: dismiss on Escape, and hide if the pointer wanders away from
+  // both the link and the tooltip — covers cases where the anchor's mouseleave
+  // never fires (e.g. the link is re-rendered out from under the cursor), which
+  // is what left the preview stuck on screen.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const within = (el, e, pad = 28) => {
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return e.clientX >= r.left - pad && e.clientX <= r.right + pad
+        && e.clientY >= r.top - pad && e.clientY <= r.bottom + pad;
+    };
+    const onMove = (e) => {
+      if (!within(anchorEl, e) && !within(tooltipRef.current, e)) {
+        hoverRef.current = false;
+        scheduleHide();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointermove', onMove, { passive: true });
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointermove', onMove);
+    };
+  }, [anchorEl, onClose, scheduleHide]);
+
   if (!url || !posRef.current) return null;
 
   const style = posRef.current.useBottom

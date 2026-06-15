@@ -98,12 +98,20 @@ export async function GET(request) {
       isOwner = !!ownerRow;
     }
 
+    // The real author — so collaborators see the actual owner in publish settings,
+    // not themselves.
+    const author = await db.prepare('SELECT username, display_name, avatar_url FROM users WHERE id = ?')
+      .bind(blog.author_id).first();
+
     return NextResponse.json({
       blog: {
         ...blog,
         content,
         tags: (tags?.results || []).map(t => t.tag),
         is_owner: isOwner,
+        owner_username: author?.username || null,
+        owner_display_name: author?.display_name || null,
+        owner_avatar: author?.avatar_url || null,
       },
       version,
     }, { headers: NO_STORE });

@@ -460,6 +460,7 @@ export default function WritePage({ slugid }) {
   const [slugManual, setSlugManual] = useState(false); // user typed a custom slug → stop auto-deriving from title
   const [slugAvail, setSlugAvail] = useState({ state: 'idle' }); // idle | checking | available | taken
   const [isOwner, setIsOwner] = useState(true); // owner (author / org admin) — only owners may change a published slug
+  const [ownerInfo, setOwnerInfo] = useState(null); // real author {username, display_name, avatar_url} — shown to collaborators
   const [publishing, setPublishing] = useState(false);
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
   const [inviteUsername, setInviteUsername] = useState('');
@@ -778,6 +779,7 @@ export default function WritePage({ slugid }) {
         if (cloud.title) setTitle(cloud.title);
         if (cloud.slug) { setSlug(cloud.slug); setSlugManual(true); }
         setIsOwner(cloud.is_owner !== false);
+        if (cloud.owner_username) setOwnerInfo({ username: cloud.owner_username, display_name: cloud.owner_display_name, avatar_url: cloud.owner_avatar });
         if (cloud.subtitle) setSubtitle(cloud.subtitle);
         if (cloud.tags?.length) setTags(cloud.tags);
         if (cloud.published_as) setPublishAs(cloud.published_as);
@@ -1185,7 +1187,16 @@ export default function WritePage({ slugid }) {
     if (!draftLoading && settingsSnapshotRef.current === '') settingsSnapshotRef.current = settingsKey();
   }, [draftLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const ownerSlug = publishAs === 'personal' ? username : (userOrgs.find(o => `org:${o.id}` === publishAs)?.slug || username);
+  const ownerSlug = publishAs === 'personal' ? (ownerInfo?.username || username) : (userOrgs.find(o => `org:${o.id}` === publishAs)?.slug || username);
+  // Owner shown in publish settings = the REAL author (not the current collaborator) for personal blogs, or the org for org blogs.
+  const ownerOrg = publishAs !== 'personal' ? userOrgs.find(o => `org:${o.id}` === publishAs) : null;
+  const ownerName = publishAs === 'personal'
+    ? (ownerInfo?.display_name || ownerInfo?.username || username)
+    : (ownerOrg?.name || publishAs.replace('org:', ''));
+  const ownerAvatar = publishAs === 'personal'
+    ? (ownerInfo?.avatar_url || (isOwner ? user?.avatar_url : ''))
+    : (ownerOrg?.logo_url || '');
+  const ownerInitial = (ownerName || '?').charAt(0).toUpperCase();
   const publishedUrl = `/${ownerSlug}/${slug || blogId}`;
   // Nothing edited (content or settings) since load / last publish.
   const hasNoChanges = () => !hasUnsavedEdits && settingsSnapshotRef.current === settingsKey();
@@ -2199,16 +2210,14 @@ export default function WritePage({ slugid }) {
             {isPublished ? (
               /* Locked — show current owner, no dropdown */
               <div className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px]" style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', opacity: 0.7 }}>
-                {user?.avatar_url ? (
-                  <img src={user.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover" />
+                {ownerAvatar ? (
+                  <img src={ownerAvatar} alt="" className="w-5 h-5 rounded-full object-cover" />
                 ) : (
                   <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-body)' }}>
-                    {(user?.display_name || username || '?')[0].toUpperCase()}
+                    {ownerInitial}
                   </div>
                 )}
-                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                  {publishAs === 'personal' ? username : (userOrgs.find(o => `org:${o.id}` === publishAs)?.name || publishAs.replace('org:', ''))}
-                </span>
+                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{ownerName}</span>
                 <ion-icon name="lock-closed" style={{ fontSize: '12px', color: 'var(--text-faint)', marginLeft: 'auto' }} />
               </div>
             ) : (
@@ -2219,16 +2228,14 @@ export default function WritePage({ slugid }) {
                   className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] transition-colors"
                   style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)' }}
                 >
-                  {user?.avatar_url ? (
-                    <img src={user.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover" />
+                  {ownerAvatar ? (
+                    <img src={ownerAvatar} alt="" className="w-5 h-5 rounded-full object-cover" />
                   ) : (
                     <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-body)' }}>
-                      {(user?.display_name || username || '?')[0].toUpperCase()}
+                      {ownerInitial}
                     </div>
                   )}
-                  <span className="font-medium flex-1 text-left" style={{ color: 'var(--text-primary)' }}>
-                    {publishAs === 'personal' ? username : (userOrgs.find(o => `org:${o.id}` === publishAs)?.name || publishAs.replace('org:', ''))}
-                  </span>
+                  <span className="font-medium flex-1 text-left" style={{ color: 'var(--text-primary)' }}>{ownerName}</span>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-faint)' }}>
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
@@ -2309,7 +2316,7 @@ export default function WritePage({ slugid }) {
             </label>
             <div className="flex items-center gap-1 rounded-lg px-3 py-2.5 text-[13px]" style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', opacity: slugLocked ? 0.7 : 1 }}>
               <span className="shrink-0" style={{ color: 'var(--text-faint)' }}>
-                /{publishAs === 'personal' ? username : (userOrgs.find(o => `org:${o.id}` === publishAs)?.slug || '')}/
+                /{ownerSlug}/
               </span>
               <input
                 type="text"
@@ -2408,20 +2415,20 @@ export default function WritePage({ slugid }) {
         <div className="p-5 space-y-2" style={{ borderTop: '1px solid var(--border-default)' }}>
           <button
             onClick={() => { if (isPublished) setShowPublishConfirm(true); else handlePublish(); }}
-            disabled={!title.trim() || publishing || !hasUnsavedEdits}
+            disabled={!title.trim() || publishing || hasNoChanges()}
             className="w-full py-2.5 bg-[#9b7bf7] text-white font-bold rounded-xl text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {publishing ? (isPublished ? 'Updating...' : 'Publishing...') : (isPublished ? 'Update now' : 'Publish now')}
           </button>
           <button
             onClick={handleSaveDraft}
-            disabled={publishing || !hasUnsavedEdits}
+            disabled={publishing || hasNoChanges()}
             className="w-full py-2 font-medium rounded-xl text-[12px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}
           >
             Save Draft
           </button>
-          {!hasUnsavedEdits && (
+          {hasNoChanges() && (
             <p className="text-center text-[11px]" style={{ color: 'var(--text-faint)' }}>No changes to save</p>
           )}
         </div>

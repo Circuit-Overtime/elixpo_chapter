@@ -419,7 +419,8 @@
 .link-editor-popup {
   position: fixed;
   z-index: 99;
-  width: 320px;
+  width: min(520px, 92vw);
+  max-width: 92vw;
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: 12px;
