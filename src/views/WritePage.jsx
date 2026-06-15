@@ -2408,20 +2408,20 @@ export default function WritePage({ slugid }) {
         <div className="p-5 space-y-2" style={{ borderTop: '1px solid var(--border-default)' }}>
           <button
             onClick={() => { if (isPublished) setShowPublishConfirm(true); else handlePublish(); }}
-            disabled={!title.trim() || publishing || !hasUnsavedEdits}
+            disabled={!title.trim() || publishing || hasNoChanges()}
             className="w-full py-2.5 bg-[#9b7bf7] text-white font-bold rounded-xl text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {publishing ? (isPublished ? 'Updating...' : 'Publishing...') : (isPublished ? 'Update now' : 'Publish now')}
           </button>
           <button
             onClick={handleSaveDraft}
-            disabled={publishing || !hasUnsavedEdits}
+            disabled={publishing || hasNoChanges()}
             className="w-full py-2 font-medium rounded-xl text-[12px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}
           >
             Save Draft
           </button>
-          {!hasUnsavedEdits && (
+          {hasNoChanges() && (
             <p className="text-center text-[11px]" style={{ color: 'var(--text-faint)' }}>No changes to save</p>
           )}
         </div>
