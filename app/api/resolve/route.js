@@ -126,7 +126,7 @@ export async function GET(request) {
         FROM blogs b
         JOIN users au ON au.id = b.author_id
         WHERE (b.author_id = ? OR b.id IN (
-                 SELECT blog_id FROM blog_co_authors WHERE user_id = ? AND status = 'accepted'
+                 SELECT blog_id FROM blog_co_authors WHERE user_id = ? AND status = 'accepted' AND show_on_profile = 1
                ))
           AND b.status IN ('published', 'unlisted')
         ORDER BY b.published_at DESC LIMIT 20

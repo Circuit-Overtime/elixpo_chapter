@@ -40,6 +40,7 @@ export default function ProfilePage() {
   const [usageLoading, setUsageLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
   const [blogs, setBlogs] = useState([]);
+  const [coAuthored, setCoAuthored] = useState([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
   const [counts, setCounts] = useState({ followers: 0, following: 0 });
   const [followModal, setFollowModal] = useState(null); // 'followers' | 'following'
@@ -71,6 +72,10 @@ export default function ProfilePage() {
       .then(d => setBlogs(d.blogs || []))
       .catch(() => {})
       .finally(() => setBlogsLoading(false));
+    fetch('/api/blogs/list?filter=coauthored')
+      .then(r => r.ok ? r.json() : { blogs: [] })
+      .then(d => setCoAuthored(d.blogs || []))
+      .catch(() => {});
   }, [user]);
 
   if (loading) {
@@ -367,7 +372,7 @@ export default function ProfilePage() {
         {(() => {
           const published = blogs.filter(b => b.status === 'published' || b.status === 'unlisted');
           const drafts = blogs.filter(b => b.status === 'draft');
-          const list = activeTab === 0 ? published : drafts;
+          const list = activeTab === 0 ? published : activeTab === 1 ? drafts : coAuthored;
           const fmt = (ts) => ts ? new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
           return (
             <>
@@ -375,6 +380,7 @@ export default function ProfilePage() {
                 tabs={[
                   { label: 'Published', icon: 'globe-outline', count: published.length },
                   { label: 'Drafts', icon: 'document-outline', count: drafts.length },
+                  { label: 'Co-authored', icon: 'people-outline', count: coAuthored.length },
                 ]}
                 active={activeTab}
                 onChange={setActiveTab}
@@ -387,7 +393,9 @@ export default function ProfilePage() {
               ) : list.length > 0 ? (
                 <div>
                   {list.map((b) => {
-                    const href = activeTab === 0 ? `/${user.username}/${b.slug}` : `/edit/${b.slug || b.id}`;
+                    const href = activeTab === 0 ? `/${user.username}/${b.slug}`
+                      : activeTab === 2 ? `/${b.author_username}/${b.slug}`
+                      : `/edit/${b.slug || b.id}`;
                     return (
                       <article key={b.id} className="flex gap-4 py-5 border-b border-[var(--border-default)] last:border-b-0">
                         <div className="flex-1 min-w-0">
@@ -411,10 +419,12 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="text-center py-16">
-                  <p className="text-[var(--text-muted)] text-sm">{activeTab === 0 ? 'No published blogs yet.' : 'No drafts yet.'}</p>
-                  <Link href="/new-blog" className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-[var(--text-primary)] bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
-                    Write your first blog
-                  </Link>
+                  <p className="text-[var(--text-muted)] text-sm">{activeTab === 0 ? 'No published blogs yet.' : activeTab === 2 ? "You haven't co-authored any posts yet." : 'No drafts yet.'}</p>
+                  {activeTab !== 2 && (
+                    <Link href="/new-blog" className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-[var(--text-primary)] bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
+                      Write your first blog
+                    </Link>
+                  )}
                 </div>
               )}
             </>
