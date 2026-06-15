@@ -9,6 +9,7 @@ export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null
   const [isSelf, setIsSelf] = useState(false);
   const [fOrg, setFOrg] = useState(false);
   const [done, setDone] = useState('');
+  const [coAuthorVisible, setCoAuthorVisible] = useState(null); // null = not a co-author; true/false = show_on_profile
   const ref = useRef(null);
 
   useEffect(() => {
@@ -30,7 +31,28 @@ export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null
     if (!open || !user) return;
     if (author?.username) fetch(`/api/users/${author.username}/follow`).then(r => r.ok ? r.json() : null).then(d => { if (d) { setFAuthor(!!d.following); setIsSelf(!!d.self); } }).catch(() => {});
     if (org?.slug) fetch(`/api/orgs/${org.slug}/follow`).then(r => r.ok ? r.json() : null).then(d => d && setFOrg(!!d.following)).catch(() => {});
-  }, [open, user]);
+    // Am I an accepted co-author here (not the primary author)? If so, surface
+    // a "show on my profile" toggle.
+    if (blogId && user.id !== authorId) {
+      fetch(`/api/blogs/invite?slugid=${encodeURIComponent(blogId)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          const mine = (d?.collaborators || []).find(c => c.id === user.id && c.status === 'accepted');
+          setCoAuthorVisible(mine ? mine.show_on_profile !== 0 : null);
+        }).catch(() => {});
+    }
+  }, [open, user, blogId, authorId]);
+
+  const toggleProfileVisibility = () => {
+    if (needAuth() || coAuthorVisible === null) return;
+    const next = !coAuthorVisible;
+    setCoAuthorVisible(next);
+    fetch('/api/blogs/invite', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slugid: blogId, showOnProfile: next }),
+    }).catch(() => {});
+    flash(next ? 'Showing on your profile' : 'Hidden from your profile');
+  };
 
   const needAuth = () => { if (!user) { window.location.href = `/sign-in?next=${typeof window !== 'undefined' ? window.location.pathname : '/'}`; return true; } return false; };
   const post_ = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
@@ -74,6 +96,13 @@ export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null
             <>
               {!isSelf && <Row icon="thumbs-down-outline" label="Show less like this" onClick={showLess} />}
               <Row icon={hideHighlights ? 'eye-outline' : 'color-wand-outline'} label={hideHighlights ? 'Show highlights' : 'Hide highlights'} onClick={toggleHi} kbd="Ctrl /" />
+              {coAuthorVisible !== null && (
+                <Row
+                  icon={coAuthorVisible ? 'eye-off-outline' : 'person-outline'}
+                  label={coAuthorVisible ? 'Hide from my profile' : 'Show on my profile'}
+                  onClick={toggleProfileVisibility}
+                />
+              )}
               <Divider />
               {!isSelf && <Row label={fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`} onClick={followAuthor} disabled={fAuthor} />}
               {org && <Row label={fOrg ? `Following ${org.name}` : `Follow ${org.name}`} onClick={followOrg} disabled={fOrg} />}
