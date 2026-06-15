@@ -16,10 +16,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 AGE_KEY_FILE="$HOME/.sops/elixpo-age-key.txt"
 
-PROJECTS=(
-  accounts.elixpo agent.elixpo art.elixpo blogs.elixpo
-  chat.elixpo claudeOps.elixpo sketch.elixpo url.elixpo wish.elixpo elixpo
-)
+PROJECTS=(".")
 
 # Load AGE key
 if [ -z "${SOPS_AGE_KEY:-}" ]; then
