@@ -6,7 +6,6 @@ email/preview/
 out/
 dist/
 .wrangler/
-wrangler.toml
 # Collab worker config has no secrets (just bindings/ids) and is needed to
 # deploy worker/collab — keep it tracked.
 !worker/collab/wrangler.toml
