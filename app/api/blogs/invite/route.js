@@ -41,7 +41,7 @@ export async function GET(request) {
     `).bind(slugid).first();
 
     const collabs = await db.prepare(`
-      SELECT u.id, u.username, u.display_name, u.avatar_url, bc.role, bc.status, bc.added_at
+      SELECT u.id, u.username, u.display_name, u.avatar_url, bc.role, bc.status, bc.added_at, bc.show_on_profile
       FROM blog_co_authors bc JOIN users u ON u.id = bc.user_id
       WHERE bc.blog_id = ? ORDER BY bc.added_at
     `).bind(slugid).all();
