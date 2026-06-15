@@ -10,7 +10,7 @@ pages_build_output_dir = ".vercel/output/static"
 binding = "DB"
 database_name = "elixpo_pay"
 database_id = "e12163b1-a199-4fe8-9605-ade36936ba07"
-migrations_dir = "src/db/migrations"
+migrations_dir = "src/workers/migrations"
 
 # Cloudflare KV — idempotency keys, handoff/session cache, webhook replay guard
 [[kv_namespaces]]
@@ -25,7 +25,7 @@ vars = { ENVIRONMENT = "production" }
   binding = "DB"
   database_name = "elixpo_pay"
   database_id = "e12163b1-a199-4fe8-9605-ade36936ba07"
-  migrations_dir = "src/db/migrations"
+  migrations_dir = "src/workers/migrations"
 
   [[env.production.kv_namespaces]]
   binding = "KV"
@@ -39,7 +39,7 @@ vars = { ENVIRONMENT = "preview" }
   binding = "DB"
   database_name = "elixpo_pay"
   database_id = "e12163b1-a199-4fe8-9605-ade36936ba07"
-  migrations_dir = "src/db/migrations"
+  migrations_dir = "src/workers/migrations"
 
   [[env.preview.kv_namespaces]]
   binding = "KV"
