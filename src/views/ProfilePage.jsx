@@ -419,10 +419,12 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="text-center py-16">
-                  <p className="text-[var(--text-muted)] text-sm">{activeTab === 0 ? 'No published blogs yet.' : 'No drafts yet.'}</p>
-                  <Link href="/new-blog" className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-[var(--text-primary)] bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
-                    Write your first blog
-                  </Link>
+                  <p className="text-[var(--text-muted)] text-sm">{activeTab === 0 ? 'No published blogs yet.' : activeTab === 2 ? "You haven't co-authored any posts yet." : 'No drafts yet.'}</p>
+                  {activeTab !== 2 && (
+                    <Link href="/new-blog" className="inline-block mt-4 px-5 py-2 text-[13px] font-medium text-[var(--text-primary)] bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
+                      Write your first blog
+                    </Link>
+                  )}
                 </div>
               )}
             </>

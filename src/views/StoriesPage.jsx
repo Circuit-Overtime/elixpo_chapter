@@ -10,6 +10,7 @@ const TABS = [
   { label: 'Drafts', icon: 'document-outline' },
   { label: 'Published', icon: 'globe-outline' },
   { label: 'Reshared', icon: 'repeat-outline' },
+  { label: 'Co-authored', icon: 'people-outline' },
 ];
 
 const SORTS = [
@@ -112,7 +113,8 @@ export default function StoriesPage() {
     setBlogsLoading(true);
     const url = activeTab === 0 ? '/api/blogs/list?status=draft'
       : activeTab === 1 ? `/api/blogs/list?status=published${sort ? `&sort=${sort}` : ''}`
-      : '/api/blogs/list?filter=reshared';
+      : activeTab === 2 ? '/api/blogs/list?filter=reshared'
+      : '/api/blogs/list?filter=coauthored';
     fetch(url)
       .then(r => r.ok ? r.json() : { blogs: [] })
       .then(d => setStories(d.blogs || []))
@@ -198,7 +200,7 @@ export default function StoriesPage() {
         ) : stories.length > 0 ? (
           <div>
             {stories.map((story) => (
-              <StoryCard key={story.id} story={story} onDelete={setConfirmTarget} reshared={activeTab === 2} />
+              <StoryCard key={story.id} story={story} onDelete={setConfirmTarget} reshared={activeTab === 2 || activeTab === 3} />
             ))}
           </div>
         ) : (
@@ -211,14 +213,15 @@ export default function StoriesPage() {
               )}
             </svg>
             <p className="text-[var(--text-muted)] text-[15px] font-medium mb-1.5">
-              {activeTab === 0 ? 'No drafts yet' : activeTab === 1 ? 'No published stories yet' : 'No reshared posts yet'}
+              {activeTab === 0 ? 'No drafts yet' : activeTab === 1 ? 'No published stories yet' : activeTab === 2 ? 'No reshared posts yet' : 'No co-authored posts yet'}
             </p>
             <p className="text-[var(--text-muted)] text-[13px] mb-6">
               {activeTab === 0 ? 'Start writing and your drafts will show up here.'
                 : activeTab === 1 ? 'Once you publish a story, it will appear here.'
-                : 'Posts you repost from others will appear here.'}
+                : activeTab === 2 ? 'Posts you repost from others will appear here.'
+                : 'Posts where you are an accepted co-author will appear here.'}
             </p>
-            {activeTab !== 2 && (
+            {activeTab < 2 && (
               <Link href="/new-blog" className="px-5 py-2 text-[13px] font-medium text-white bg-[#9b7bf7] hover:bg-[#b69aff] rounded-full transition-colors">
                 Write a story
               </Link>
