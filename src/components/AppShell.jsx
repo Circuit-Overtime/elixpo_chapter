@@ -34,6 +34,7 @@ function NotificationDropdown() {
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(false);
   const ref = useRef(null);
+  const seenIdsRef = useRef(new Set()); // notif ids already surfaced — opening the panel marks all seen
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -43,13 +44,22 @@ function NotificationDropdown() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  const fetchNotifications = useCallback(async () => {
+  // markSeen=true (panel opened) clears the badge and remembers every current
+  // notification, so the count stays hidden until genuinely NEW ones arrive —
+  // even if the user never marks them read.
+  const fetchNotifications = useCallback(async (markSeen = false) => {
     try {
       const res = await fetch('/api/notifications?limit=20');
       if (res.ok) {
         const data = await res.json();
-        setNotifications(data.notifications || []);
-        setUnread(data.unread || 0);
+        const list = data.notifications || [];
+        setNotifications(list);
+        if (markSeen) {
+          list.forEach(n => seenIdsRef.current.add(n.id));
+          setUnread(0);
+        } else {
+          setUnread(list.filter(n => !n.read && !seenIdsRef.current.has(n.id)).length);
+        }
       }
     } catch {}
   }, []);
@@ -57,13 +67,13 @@ function NotificationDropdown() {
   // Poll every 30s for new notifications
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+    const interval = setInterval(() => fetchNotifications(), 30000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  // Fetch fresh data when opening
+  // Opening the panel clears the badge immediately, then fetches + marks seen.
   useEffect(() => {
-    if (open) fetchNotifications();
+    if (open) { setUnread(0); fetchNotifications(true); }
   }, [open, fetchNotifications]);
 
   const markAllRead = async () => {
