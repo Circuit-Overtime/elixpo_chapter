@@ -682,6 +682,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionPos, setMentionPos] = useState({ top: 0, left: 0 });
   const mentionStartRef = useRef(null);
+  const mentionDismissedRef = useRef(null); // @-position the user ESC-dismissed, so we don't reopen it
   const [showAIMenu, setShowAIMenu] = useState(false);
   const [aiMenuPos, setAiMenuPos] = useState({ top: 0, left: 0, anchorBlockId: null });
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -1850,10 +1851,15 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
         const textUpToCursor = anchorNode.textContent.slice(0, domSel.anchorOffset);
         const atIdx = textUpToCursor.lastIndexOf('@');
-        if (atIdx === -1) { setShowMentionMenu(false); return; }
+        if (atIdx === -1) { setShowMentionMenu(false); mentionDismissedRef.current = null; return; }
 
         const afterAt = textUpToCursor.slice(atIdx + 1);
         if (afterAt.includes(' ') || afterAt.length > 30) { setShowMentionMenu(false); return; }
+
+        // The user pressed ESC on this @token — keep it closed until they move to
+        // a different @ (so typing more text doesn't pop the menu back open).
+        if (mentionDismissedRef.current === atIdx) { setShowMentionMenu(false); return; }
+        mentionDismissedRef.current = null;
 
         const range = domSel.getRangeAt(0);
         const rect = range.getBoundingClientRect();
@@ -1882,6 +1888,15 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     setShowMentionMenu(false);
     setMentionQuery('');
     mentionStartRef.current = null;
+    mentionDismissedRef.current = null;
+  }, []);
+
+  // ESC: dismiss the menu but keep the typed @text, and remember this @-position
+  // so it doesn't pop back open as the user keeps typing.
+  const handleMentionDismiss = useCallback(() => {
+    mentionDismissedRef.current = mentionStartRef.current;
+    setShowMentionMenu(false);
+    setMentionQuery('');
   }, []);
 
   const handleAIStop = useCallback(() => {
@@ -2688,6 +2703,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
             editor={editor}
             query={mentionQuery}
             onClose={handleMentionClose}
+            onDismiss={handleMentionDismiss}
           />
         </div>
       )}

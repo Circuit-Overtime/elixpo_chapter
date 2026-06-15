@@ -43,6 +43,24 @@ export async function GET(request) {
       return NextResponse.json({ blogs: rows?.results || [] });
     }
 
+    // Co-authored = published blogs where THIS user is an accepted co-author
+    // (authored by someone else). Shown on the user's own profile/stories tabs.
+    if (filter === 'coauthored') {
+      const rows = await db.prepare(`
+        SELECT b.id, b.id as slugid, b.slug, b.title, b.subtitle, b.status,
+          b.page_emoji, b.cover_image_r2_key, b.read_time_minutes,
+          b.published_as, b.created_at, b.updated_at, b.published_at,
+          u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar,
+          bc.role as co_author_role, bc.show_on_profile, ${COUNTS}
+        FROM blog_co_authors bc
+        JOIN blogs b ON b.id = bc.blog_id AND b.status IN ('published', 'unlisted')
+        JOIN users u ON u.id = b.author_id
+        WHERE bc.user_id = ? AND bc.status = 'accepted' AND b.author_id != ?
+        ORDER BY b.published_at DESC LIMIT 50
+      `).bind(session.userId, session.userId).all();
+      return NextResponse.json({ blogs: rows?.results || [] });
+    }
+
     let query = `
       SELECT b.id, b.id as slugid, b.slug, b.title, b.subtitle, b.status,
         b.page_emoji, b.cover_image_r2_key, b.read_time_minutes,

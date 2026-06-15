@@ -10,6 +10,7 @@ export default function BlogInviteOverlay() {
   const { user } = useAuth();
   const [invite, setInvite] = useState(null);  // { blogId, slug, title, role, status }
   const [busy, setBusy] = useState(false);
+  const [showOnProfile, setShowOnProfile] = useState(true);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -43,7 +44,7 @@ export default function BlogInviteOverlay() {
     try {
       const res = await fetch('/api/blogs/invite', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid: invite.blogId, accept: true }),
+        body: JSON.stringify({ slugid: invite.blogId, accept: true, showOnProfile }),
       });
       if (!res.ok) throw new Error();
       // Editors/admins go to the editor; viewers just read (now cross-posted).
@@ -85,7 +86,16 @@ export default function BlogInviteOverlay() {
             <h1 className="text-xl font-bold mb-2 text-[var(--text-primary)]">Collaboration invite</h1>
             <p className="text-[var(--text-muted)] text-[14px] mb-1">You've been invited to collaborate on</p>
             <p className="text-[var(--text-primary)] font-semibold text-[15px] mb-3">“{invite.title || 'Untitled blog'}”</p>
-            <p className="text-[var(--text-faint)] text-[13px] mb-6">Role: <span className="text-[#9b7bf7] font-medium">{roleLabel}</span></p>
+            <p className="text-[var(--text-faint)] text-[13px] mb-4">Role: <span className="text-[#9b7bf7] font-medium">{roleLabel}</span></p>
+            <label className="flex items-center gap-2.5 justify-center mb-6 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showOnProfile}
+                onChange={(e) => setShowOnProfile(e.target.checked)}
+                className="w-4 h-4 accent-[#9b7bf7] cursor-pointer"
+              />
+              <span className="text-[13px] text-[var(--text-body)]">Show this post on my profile</span>
+            </label>
             <div className="flex items-center gap-3 justify-center">
               <button onClick={decline} disabled={busy}
                 className="px-5 py-2 rounded-full text-[13px] font-medium border border-[var(--border-default)] text-[var(--text-body)] hover:border-[var(--border-hover)] transition-colors disabled:opacity-50">

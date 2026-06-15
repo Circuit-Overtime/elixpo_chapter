@@ -41,7 +41,7 @@ export async function GET(request) {
     `).bind(slugid).first();
 
     const collabs = await db.prepare(`
-      SELECT u.id, u.username, u.display_name, u.avatar_url, bc.role, bc.status, bc.added_at
+      SELECT u.id, u.username, u.display_name, u.avatar_url, bc.role, bc.status, bc.added_at, bc.show_on_profile
       FROM blog_co_authors bc JOIN users u ON u.id = bc.user_id
       WHERE bc.blog_id = ? ORDER BY bc.added_at
     `).bind(slugid).all();
@@ -126,25 +126,37 @@ export async function PUT(request) {
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const { slugid, userId, role, accept } = await request.json();
+  const { slugid, userId, role, accept, showOnProfile } = await request.json();
   if (!slugid) return NextResponse.json({ error: 'Missing slugid' }, { status: 400 });
 
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
 
-    // Accept invite — the invitee accepts their own invite
+    // Accept invite — the invitee accepts their own invite, choosing whether the
+    // post cross-posts to their profile.
     if (accept) {
       const existing = await db.prepare(
         'SELECT status FROM blog_co_authors WHERE blog_id = ? AND user_id = ?'
       ).bind(slugid, session.userId).first();
       if (!existing) return NextResponse.json({ error: 'No invite found' }, { status: 404 });
 
+      const sop = showOnProfile === false ? 0 : 1;
       await db.prepare(
-        "UPDATE blog_co_authors SET status = 'accepted' WHERE blog_id = ? AND user_id = ?"
-      ).bind(slugid, session.userId).run();
+        "UPDATE blog_co_authors SET status = 'accepted', show_on_profile = ? WHERE blog_id = ? AND user_id = ?"
+      ).bind(sop, slugid, session.userId).run();
 
-      return NextResponse.json({ ok: true, status: 'accepted' });
+      return NextResponse.json({ ok: true, status: 'accepted', show_on_profile: sop });
+    }
+
+    // Self visibility toggle — a co-author changes whether THIS post shows on their profile.
+    if (showOnProfile !== undefined && !role) {
+      const mine = await db.prepare('SELECT 1 FROM blog_co_authors WHERE blog_id = ? AND user_id = ?')
+        .bind(slugid, session.userId).first();
+      if (!mine) return NextResponse.json({ error: 'Not a co-author' }, { status: 403 });
+      await db.prepare('UPDATE blog_co_authors SET show_on_profile = ? WHERE blog_id = ? AND user_id = ?')
+        .bind(showOnProfile ? 1 : 0, slugid, session.userId).run();
+      return NextResponse.json({ ok: true, show_on_profile: showOnProfile ? 1 : 0 });
     }
 
     // Change role — requires manage permission
