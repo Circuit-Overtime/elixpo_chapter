@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  * Custom @ mention suggestion menu.
  * Searches users, orgs, and blogs and renders grouped results.
  */
-export default function MentionMenu({ editor, query, onClose }) {
+export default function MentionMenu({ editor, query, onClose, onDismiss }) {
   const [results, setResults] = useState({ users: [], orgs: [], blogs: [] });
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -137,26 +137,33 @@ export default function MentionMenu({ editor, query, onClose }) {
   // Keyboard navigation
   useEffect(() => {
     function handleKeyDown(e) {
+      // Escape must work even with no results — the user wants plain text, not a tag.
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        (onDismiss || onClose)?.();
+        return;
+      }
       if (allItems.length === 0) return;
 
+      // stopPropagation (capture phase) is essential: otherwise the keydown also
+      // reaches ProseMirror, so Enter splits the block and the mention chip ends
+      // up on a new line / overwrites the line below.
       if (e.key === 'ArrowDown') {
-        e.preventDefault();
+        e.preventDefault(); e.stopPropagation();
         setActiveIndex((i) => (i + 1) % allItems.length);
       } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
+        e.preventDefault(); e.stopPropagation();
         setActiveIndex((i) => (i - 1 + allItems.length) % allItems.length);
       } else if (e.key === 'Enter' || e.key === 'Tab') {
-        e.preventDefault();
+        e.preventDefault(); e.stopPropagation();
         if (allItems[activeIndex]) insertMention(allItems[activeIndex]);
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose?.();
       }
     }
 
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [allItems, activeIndex, insertMention, onClose]);
+  }, [allItems, activeIndex, insertMention, onClose, onDismiss]);
 
   // Scroll active item into view
   useEffect(() => {
