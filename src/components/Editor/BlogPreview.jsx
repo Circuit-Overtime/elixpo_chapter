@@ -742,7 +742,13 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       {user && (() => {
         const authors = [
           { name: user.display_name || user.username || 'Author', avatar_url: user.avatar_url, username: user.username },
-          ...coAuthors,
+          // Co-authors come from /api/resolve with display_name/username — normalize
+          // to `name` so their names actually render (not just the primary author).
+          ...coAuthors.map((c) => ({
+            name: c.name || c.display_name || c.username || 'Author',
+            avatar_url: c.avatar_url,
+            username: c.username,
+          })),
         ];
         const shownAvatars = authors.slice(0, 3);
         const moreAuthors = authors.length - shownAvatars.length;
