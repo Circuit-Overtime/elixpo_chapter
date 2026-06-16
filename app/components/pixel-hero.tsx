@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 /* -----------------------------------------------------------------------------
  * Staggered pixel-field physics engine (vanilla canvas — no deps).
@@ -168,71 +168,66 @@ const PIXELS = [
     "#7c5cff",
 ];
 
-type Service = { name: string; color: string; svg?: ReactNode; letter?: string };
+/* Raw payment-brand logos for the hero strip (no boxes). Brand colours are
+ * lifted slightly so they stay legible on the dark hero. */
+const wordmark: CSSProperties = {
+    fontFamily: "var(--font-geist-sans), sans-serif",
+    fontWeight: 800,
+    fontSize: "1.35rem",
+    letterSpacing: "-0.01em",
+    whiteSpace: "nowrap",
+    display: "inline-flex",
+    alignItems: "center",
+    opacity: 0.95,
+    lineHeight: 1,
+};
+const tint = (color: string): CSSProperties => ({ ...wordmark, color });
 
-const SERVICES: Service[] = [
-    {
-        name: "Cloudflare",
-        color: "#f6821f",
-        svg: (
-            <path
-                d="M6.5 18a4 4 0 0 1-.4-7.98A5.2 5.2 0 0 1 16.4 9.4 4 4 0 0 1 16 18H6.5z"
-                fill="#f6821f"
-            />
-        ),
-    },
-    { name: "Next.js", color: "#ffffff", letter: "N" },
-    {
-        name: "Razorpay",
-        color: "#3395ff",
-        svg: <path d="M14.5 3 8 14h3l-2 7 8-12h-3.2l2.1-6z" fill="#3395ff" />,
-    },
-    {
-        name: "React",
-        color: "#61dafb",
-        svg: (
-            <g stroke="#61dafb" fill="none" strokeWidth="1">
-                <ellipse cx="12" cy="12" rx="10" ry="4" />
-                <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)" />
-                <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)" />
-                <circle cx="12" cy="12" r="1.7" fill="#61dafb" stroke="none" />
-            </g>
-        ),
-    },
-    { name: "TypeScript", color: "#3178c6", letter: "TS" },
-    { name: "Elixpo Accounts", color: "#9b7bf7", letter: "E" },
-];
-
-function ServiceIcon({ s }: { s: Service }) {
+function MastercardMark() {
     return (
-        <span
-            title={s.name}
-            aria-label={s.name}
-            style={{
-                display: "grid",
-                placeItems: "center",
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: `${s.color}1a`,
-                border: `1px solid ${s.color}4d`,
-                color: s.color,
-                fontSize: "1rem",
-                fontWeight: 800,
-                fontFamily: "var(--font-geist-mono), monospace",
-                flexShrink: 0,
-            }}
-        >
-            {s.svg ? (
-                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-                    {s.svg}
-                </svg>
-            ) : (
-                s.letter
-            )}
-        </span>
+        <svg width="42" height="26" viewBox="0 0 42 26" aria-hidden="true" style={{ display: "block" }}>
+            <circle cx="16" cy="13" r="11" fill="#eb001b" />
+            <circle cx="26" cy="13" r="11" fill="#f79e1b" />
+            <path d="M21 4.6a11 11 0 0 1 0 16.8 11 11 0 0 1 0-16.8z" fill="#ff5f00" />
+        </svg>
     );
 }
+
+const PAY_BRANDS: { name: string; node: ReactNode }[] = [
+    { name: "Razorpay", node: <span style={tint("#5b9bff")}>Razorpay</span> },
+    { name: "Stripe", node: <span style={{ ...tint("#8b85ff"), letterSpacing: "-0.04em" }}>stripe</span> },
+    { name: "Visa", node: <span style={{ ...tint("#eef1ff"), fontStyle: "italic", letterSpacing: "0.04em" }}>VISA</span> },
+    { name: "Mastercard", node: <MastercardMark /> },
+    {
+        name: "UPI",
+        node: (
+            <span style={wordmark}>
+                <b style={{ color: "#2ecc71" }}>U</b>
+                <b style={{ color: "#ff7a2f" }}>P</b>
+                <b style={{ color: "#2ecc71" }}>I</b>
+            </span>
+        ),
+    },
+    {
+        name: "RuPay",
+        node: (
+            <span style={wordmark}>
+                <b style={{ color: "#7e9bff" }}>Ru</b>
+                <b style={{ color: "#ff8a3d" }}>Pay</b>
+            </span>
+        ),
+    },
+    {
+        name: "PayPal",
+        node: (
+            <span style={{ ...wordmark, fontStyle: "italic" }}>
+                <b style={{ color: "#4d94ff" }}>Pay</b>
+                <b style={{ color: "#7fd3ff" }}>Pal</b>
+            </span>
+        ),
+    },
+    { name: "Amex", node: <span style={tint("#4a9fe0")}>AMEX</span> },
+];
 
 const ArrowRight = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -463,7 +458,7 @@ export default function PixelHero() {
                     style={{
                         position: "relative",
                         width: "100%",
-                        maxWidth: 760,
+                        maxWidth: 880,
                         overflow: "hidden",
                         WebkitMaskImage:
                             "linear-gradient(to right, transparent, white 15%, white 85%, transparent)",
@@ -471,11 +466,13 @@ export default function PixelHero() {
                             "linear-gradient(to right, transparent, white 15%, white 85%, transparent)",
                     }}
                 >
-                    <div className="pay-marquee" style={{ display: "flex", width: "max-content", gap: 44, padding: "4px 0" }}>
+                    <div className="pay-marquee" style={{ display: "flex", width: "max-content", gap: 52, padding: "4px 0" }}>
                         {[0, 1].map((dup) => (
-                            <div key={dup} style={{ display: "flex", gap: 44, alignItems: "center" }} aria-hidden={dup === 1}>
-                                {SERVICES.map((s) => (
-                                    <ServiceIcon key={`${dup}-${s.name}`} s={s} />
+                            <div key={dup} style={{ display: "flex", gap: 52, alignItems: "center" }} aria-hidden={dup === 1}>
+                                {PAY_BRANDS.map((b) => (
+                                    <span key={`${dup}-${b.name}`} aria-label={b.name} style={{ display: "inline-flex", alignItems: "center" }}>
+                                        {b.node}
+                                    </span>
                                 ))}
                             </div>
                         ))}
