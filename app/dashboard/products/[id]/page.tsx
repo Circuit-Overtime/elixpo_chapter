@@ -48,6 +48,8 @@ export default function ProductDetailPage() {
     const [archiveBusy, setArchiveBusy] = useState(false);
     const [webhook, setWebhook] = useState<any>(null);
     const [webhookUrl, setWebhookUrl] = useState("");
+    const [availableEvents, setAvailableEvents] = useState<any[]>([]);
+    const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
     const [webhookSecretOnce, setWebhookSecretOnce] = useState<string | null>(null);
     const [webhookSecretHidden, setWebhookSecretHidden] = useState(false);
     const [webhookBusy, setWebhookBusy] = useState(false);
@@ -80,6 +82,17 @@ export default function ProductDetailPage() {
         const d: any = await r.json();
         setWebhook(d.endpoint);
         setWebhookUrl(d.endpoint?.url || "");
+        setAvailableEvents(d.available_events || []);
+        setWebhookEvents(
+            d.endpoint?.events ||
+                (d.available_events || []).filter((e: any) => e.required).map((e: any) => e.type),
+        );
+    };
+
+    const toggleWebhookEvent = (type: string, on: boolean) => {
+        setWebhookEvents((prev) =>
+            on ? [...new Set([...prev, type])] : prev.filter((t) => t !== type),
+        );
     };
 
     const saveWebhook = async () => {
@@ -90,7 +103,7 @@ export default function ProductDetailPage() {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ url: webhookUrl.trim() }),
+                body: JSON.stringify({ url: webhookUrl.trim(), events: webhookEvents }),
             });
             const d: any = await r.json();
             if (!r.ok) throw new Error(d.error_description || d.error || "failed");
