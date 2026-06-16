@@ -318,7 +318,7 @@ export default function PixelHero() {
                         backdropFilter: "blur(8px)",
                     }}
                 >
-                    Payments-as-a-Service · Cloudflare edge
+                    Centralized Distributed Payments
                 </span>
             </div>
 

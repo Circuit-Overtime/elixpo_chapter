@@ -1,6 +1,13 @@
 "use client";
 
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import HubIcon from "@mui/icons-material/Hub";
+import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
+import VpnKeyIcon from "@mui/icons-material/VpnKey";
+import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import Link from "next/link";
 import BackgroundAurora from "./components/background-aurora";
 import Footer from "./components/footer";
@@ -9,6 +16,7 @@ import PixelHero from "./components/pixel-hero";
 import RoadmapSteps from "./components/roadmap-steps";
 
 interface Tile {
+    icon: SvgIconComponent;
     title: string;
     body: string;
     accent: string;
@@ -16,31 +24,37 @@ interface Tile {
 
 const TILES: Tile[] = [
     {
+        icon: ShoppingCartCheckoutIcon,
         title: "Hosted checkout",
         body: "A signed handoff opens a branded, edge-served checkout — your code never touches a card.",
         accent: "#9b7bf7",
     },
     {
+        icon: WorkspacePremiumIcon,
         title: "Entitlements & grants",
         body: "Each charge grants a tier with an expiry, fires a signed webhook, and is queryable via API.",
         accent: "#86efac",
     },
     {
+        icon: VpnKeyIcon,
         title: "Bring your own keys",
         body: "Connect your own Razorpay/Stripe, or let Elixpo be merchant-of-record. You own the funds.",
         accent: "#5fb6ff",
     },
     {
+        icon: AccountBalanceIcon,
         title: "Unified ledger",
         body: "Immutable double-entry, idempotent money ops, and replay-safe webhooks from day one.",
         accent: "#fbbf24",
     },
     {
+        icon: AccountBalanceWalletIcon,
         title: "Creator payouts",
         body: "Pool splits, marketplace and revenue-share — settled via RazorpayX or Stripe Connect.",
         accent: "#c4b5fd",
     },
     {
+        icon: HubIcon,
         title: "One identity, one API",
         body: "Sign in with Elixpo Accounts, manage products and pricing, and call a single API.",
         accent: "#ff7cc9",
@@ -86,7 +100,8 @@ export default function Home() {
                         <Box
                             sx={{
                                 display: "grid",
-                                gap: 1.5,
+                                rowGap: { xs: 4, md: 6 },
+                                columnGap: 3,
                                 gridTemplateColumns: {
                                     xs: "1fr",
                                     sm: "repeat(2, 1fr)",
@@ -95,35 +110,34 @@ export default function Home() {
                             }}
                         >
                             {TILES.map((tile) => (
-                                <Box
+                                <Stack
                                     key={tile.title}
-                                    sx={{
-                                        display: "flex",
-                                        gap: 1.6,
-                                        p: 2.2,
-                                        borderRadius: "14px",
-                                        background: "#0e1117",
-                                        border: "1px solid rgba(255,255,255,0.04)",
-                                        boxShadow:
-                                            "6px 6px 18px rgba(0,0,0,0.45), -5px -5px 14px rgba(255,255,255,0.018)",
-                                        transition: "transform 0.25s ease, box-shadow 0.25s ease",
-                                        "&:hover": {
-                                            transform: "translateY(-2px)",
-                                            boxShadow:
-                                                "8px 8px 22px rgba(0,0,0,0.52), -6px -6px 16px rgba(255,255,255,0.026)",
-                                        },
-                                    }}
+                                    alignItems="center"
+                                    spacing={1.4}
+                                    sx={{ textAlign: "center", maxWidth: 280, mx: "auto" }}
                                 >
-                                    <AccentDot accent={tile.accent} />
-                                    <Box sx={{ minWidth: 0 }}>
-                                        <Typography sx={{ fontWeight: 700, fontSize: "0.98rem", mb: 0.4 }}>
-                                            {tile.title}
-                                        </Typography>
-                                        <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.82rem", lineHeight: 1.55 }}>
-                                            {tile.body}
-                                        </Typography>
+                                    <Box
+                                        sx={{
+                                            width: 54,
+                                            height: 54,
+                                            borderRadius: "16px",
+                                            display: "grid",
+                                            placeItems: "center",
+                                            color: tile.accent,
+                                            background: `${tile.accent}14`,
+                                            border: `1px solid ${tile.accent}40`,
+                                            boxShadow: `0 8px 26px ${tile.accent}26`,
+                                        }}
+                                    >
+                                        <tile.icon sx={{ fontSize: 26 }} />
                                     </Box>
-                                </Box>
+                                    <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: "#f5f5f4" }}>
+                                        {tile.title}
+                                    </Typography>
+                                    <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.88rem", lineHeight: 1.6 }}>
+                                        {tile.body}
+                                    </Typography>
+                                </Stack>
                             ))}
                         </Box>
 
@@ -175,35 +189,6 @@ export default function Home() {
 
                 <Footer />
             </Box>
-        </Box>
-    );
-}
-
-/* Neumorphic embossed icon chip used in each platform tile. */
-function AccentDot({ accent }: { accent: string }) {
-    return (
-        <Box
-            sx={{
-                flexShrink: 0,
-                width: 34,
-                height: 34,
-                borderRadius: "10px",
-                display: "grid",
-                placeItems: "center",
-                background: "#0e1117",
-                boxShadow:
-                    "inset 2px 2px 5px rgba(0,0,0,0.55), inset -2px -2px 5px rgba(255,255,255,0.03)",
-            }}
-        >
-            <Box
-                sx={{
-                    width: 11,
-                    height: 11,
-                    borderRadius: "4px",
-                    background: accent,
-                    boxShadow: `0 0 10px ${accent}aa`,
-                }}
-            />
         </Box>
     );
 }

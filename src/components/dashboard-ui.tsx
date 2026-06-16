@@ -4,12 +4,17 @@ import { Box, Typography } from "@mui/material";
 import { createTheme } from "@mui/material/styles";
 import type React from "react";
 
-/** Shared dark glass theme for all dashboard surfaces (matches accounts.elixpo). */
+/** Surface tokens — solid, neutral, commercial. No gradients. */
+export const SURFACE = "#13161d";
+export const SURFACE_HOVER = "#171b23";
+export const BORDER = "rgba(255,255,255,0.07)";
+
+/** Shared dark theme for all dashboard surfaces. */
 export const dashboardTheme = createTheme({
     palette: {
         mode: "dark",
         primary: { main: "#9b7bf7" },
-        background: { default: "transparent", paper: "rgba(255,255,255,0.03)" },
+        background: { default: "#0c0e13", paper: SURFACE },
     },
     typography: { fontFamily: "var(--font-geist-sans), Arial, sans-serif" },
     components: {
@@ -17,11 +22,9 @@ export const dashboardTheme = createTheme({
             styleOverrides: {
                 root: {
                     backgroundImage: "none",
-                    background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                    backdropFilter: "blur(20px)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: "16px",
+                    background: SURFACE,
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: "12px",
                 },
             },
         },
@@ -65,12 +68,11 @@ export function GlassCard({
     return (
         <Box
             sx={{
-                background:
-                    "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                backdropFilter: "blur(20px)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "16px",
+                background: SURFACE,
+                border: `1px solid ${BORDER}`,
+                borderRadius: "12px",
                 p: { xs: 2.5, md: 3 },
+                boxShadow: "0 1px 2px rgba(0,0,0,0.35)",
                 ...sx,
             }}
         >
@@ -80,11 +82,11 @@ export function GlassCard({
 }
 
 const STATUS_COLORS: Record<string, { c: string; bg: string; b: string }> = {
-    captured: { c: "#4ade80", bg: "rgba(34,197,94,0.1)", b: "rgba(34,197,94,0.3)" },
-    active: { c: "#4ade80", bg: "rgba(34,197,94,0.1)", b: "rgba(34,197,94,0.3)" },
-    created: { c: "#fbbf24", bg: "rgba(251,191,36,0.1)", b: "rgba(251,191,36,0.3)" },
-    open: { c: "#fbbf24", bg: "rgba(251,191,36,0.1)", b: "rgba(251,191,36,0.3)" },
-    failed: { c: "#f87171", bg: "rgba(239,68,68,0.1)", b: "rgba(239,68,68,0.3)" },
+    captured: { c: "#4ade80", bg: "rgba(34,197,94,0.1)", b: "rgba(34,197,94,0.25)" },
+    active: { c: "#4ade80", bg: "rgba(34,197,94,0.1)", b: "rgba(34,197,94,0.25)" },
+    created: { c: "#fbbf24", bg: "rgba(251,191,36,0.1)", b: "rgba(251,191,36,0.25)" },
+    open: { c: "#fbbf24", bg: "rgba(251,191,36,0.1)", b: "rgba(251,191,36,0.25)" },
+    failed: { c: "#f87171", bg: "rgba(239,68,68,0.1)", b: "rgba(239,68,68,0.25)" },
     expired: { c: "#9ca3af", bg: "rgba(156,163,175,0.1)", b: "rgba(156,163,175,0.2)" },
     none: { c: "#9ca3af", bg: "rgba(156,163,175,0.1)", b: "rgba(156,163,175,0.2)" },
 };
@@ -98,7 +100,7 @@ export function StatusChip({ status }: { status: string }) {
                 display: "inline-block",
                 px: 1.1,
                 py: 0.3,
-                borderRadius: "999px",
+                borderRadius: "6px",
                 fontSize: "0.72rem",
                 fontWeight: 600,
                 color: s.c,
@@ -124,34 +126,26 @@ export function StatCard({
     accent?: string;
 }) {
     return (
-        <GlassCard sx={{ position: "relative", overflow: "hidden" }}>
-            <Box
-                sx={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: 3,
-                    background: accent,
-                    opacity: 0.8,
-                }}
-            />
-            <Typography
-                sx={{
-                    color: "rgba(245,245,244,0.5)",
-                    fontSize: "0.78rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    fontWeight: 600,
-                }}
-            >
-                {label}
-            </Typography>
-            <Typography sx={{ fontWeight: 800, fontSize: "1.9rem", mt: 0.5, color: "#f5f5f4" }}>
+        <GlassCard>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.2 }}>
+                <Box sx={{ width: 7, height: 7, borderRadius: "50%", background: accent }} />
+                <Typography
+                    sx={{
+                        color: "rgba(245,245,244,0.5)",
+                        fontSize: "0.76rem",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        fontWeight: 600,
+                    }}
+                >
+                    {label}
+                </Typography>
+            </Box>
+            <Typography sx={{ fontWeight: 700, fontSize: "1.85rem", color: "#f5f5f4", lineHeight: 1.1 }}>
                 {value}
             </Typography>
             {sub && (
-                <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.82rem", mt: 0.3 }}>
+                <Typography sx={{ color: "rgba(245,245,244,0.42)", fontSize: "0.82rem", mt: 0.6 }}>
                     {sub}
                 </Typography>
             )}
