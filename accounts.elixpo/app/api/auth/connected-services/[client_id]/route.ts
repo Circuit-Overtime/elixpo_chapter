@@ -103,10 +103,7 @@ export async function GET(
     // leak its existence. 404 instead of a 403 so we don't tell scanners
     // whether a client_id is valid.
     if (!tokenStats?.first_authorized) {
-        return NextResponse.json(
-            { error: "Not connected" },
-            { status: 404 },
-        );
+        return NextResponse.json({ error: "Not connected" }, { status: 404 });
     }
 
     let scopes: string[] = [];

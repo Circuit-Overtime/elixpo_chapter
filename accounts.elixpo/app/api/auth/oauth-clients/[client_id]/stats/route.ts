@@ -50,8 +50,7 @@ export async function GET(
             created_at: string;
         }>();
 
-    if (!app)
-        return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!app) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (app.owner_id !== auth.sub)
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 

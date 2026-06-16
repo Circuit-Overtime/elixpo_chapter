@@ -8,10 +8,7 @@ import {
     VALID_EVENTS,
 } from "@/lib/app-webhooks";
 import { getDatabase } from "@/lib/d1-client";
-import {
-    createAppWebhookEndpoint,
-    listAppWebhookEndpoints,
-} from "@/lib/db";
+import { createAppWebhookEndpoint, listAppWebhookEndpoints } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
 
 async function getAuth(request: NextRequest) {
@@ -35,8 +32,7 @@ async function assertOwnership(
         )
         .bind(clientId)
         .first<{ owner_id: string }>();
-    if (!row)
-        return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (row.owner_id !== userId)
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     return null;

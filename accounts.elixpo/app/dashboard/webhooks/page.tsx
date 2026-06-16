@@ -624,8 +624,8 @@ export default function WebhooksPage() {
                                                 color: "rgba(255,255,255,0.4)",
                                             }}
                                         >
-                                            Choose an endpoint from one of
-                                            your OAuth apps
+                                            Choose an endpoint from one of your
+                                            OAuth apps
                                         </Box>
                                     );
                                 const ep = eligibleEndpoints.find(
@@ -675,8 +675,7 @@ export default function WebhooksPage() {
                                                         sx={{
                                                             ml: 1,
                                                             color: "rgba(155,123,247,0.85)",
-                                                            fontSize:
-                                                                "0.72rem",
+                                                            fontSize: "0.72rem",
                                                             fontWeight: 500,
                                                         }}
                                                     >

@@ -27,7 +27,7 @@
  */
 
 import { getRequestContext } from "@cloudflare/next-on-pages";
-import { dispatchAppEvent, defaultSecretResolver } from "./app-webhooks";
+import { defaultSecretResolver, dispatchAppEvent } from "./app-webhooks";
 import { getDatabase } from "./d1-client";
 
 export interface UserUpdatedFields {

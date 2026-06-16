@@ -200,7 +200,10 @@ export async function dispatchAppEvent(
             stamps.push({
                 endpointId: t.endpointId,
                 statusCode: null,
-                error: String((d as PromiseRejectedResult).reason).slice(0, 500),
+                error: String((d as PromiseRejectedResult).reason).slice(
+                    0,
+                    500,
+                ),
             });
         }
     }
@@ -260,10 +263,7 @@ async function deliverOne(
         };
     } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        console.warn(
-            `[app-webhooks] delivery to ${target.url} failed:`,
-            msg,
-        );
+        console.warn(`[app-webhooks] delivery to ${target.url} failed:`, msg);
         return { ok: false, statusCode: null, error: msg.slice(0, 500) };
     } finally {
         clearTimeout(tm);

@@ -42,7 +42,7 @@ const darkTheme = createTheme({
         mode: "dark",
         primary: { main: "#9b7bf7" },
         background: {
-            default: "transparent",
+            default: "rgba(0, 0, 0, 0)",
             paper: "rgba(255, 255, 255, 0.03)",
         },
     },
