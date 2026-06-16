@@ -43,6 +43,14 @@ export const metadata: Metadata = {
         title: "Elixpo Pay — Payments & Payouts",
         description:
             "Hosted checkout, unified ledger, entitlements, and creator payouts for the Elixpo ecosystem.",
+        images: [{ url: "/og-image.png", alt: "Elixpo Pay" }],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Elixpo Pay — Payments & Payouts",
+        description:
+            "The complete money stack for modern software — checkout, subscriptions, entitlements, and payouts.",
+        images: ["/og-image.png"],
     },
     robots: { index: true, follow: true },
 };
