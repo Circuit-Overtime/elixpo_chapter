@@ -127,10 +127,21 @@ export async function fulfillPayment(
 
     const view = toView(input.appSlug, entRow, session.external_uid);
 
-    // 7. Notify the consuming app (best-effort; logged either way).
+    // 7. Notify the consuming app (best-effort; logged either way). Each call is
+    //    a no-op unless the endpoint is subscribed to that event type.
     const endpoint = await getWebhookEndpoint(db, session.app_id);
     if (endpoint) {
         await fireEntitlementUpdated(db, endpoint, view);
+        await firePaymentCaptured(db, endpoint, {
+            app: input.appSlug,
+            uid: session.external_uid,
+            transaction_id: txn.id,
+            provider_payment_id: input.providerPaymentId,
+            provider_order_id: input.providerOrderId,
+            currency: input.currency,
+            amount: input.amount,
+            tier,
+        });
     }
 
     return { alreadyFulfilled: false, entitlement: view };
