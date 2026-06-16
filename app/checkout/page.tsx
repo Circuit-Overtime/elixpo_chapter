@@ -1,7 +1,19 @@
 "use client";
 
-import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import { Suspense, useEffect, useState } from "react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import LockIcon from "@mui/icons-material/Lock";
+import {
+    Alert,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Snackbar,
+    Stack,
+    Typography,
+} from "@mui/material";
+import { type ReactNode, Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BackgroundAurora from "../components/background-aurora";
 
@@ -20,18 +32,34 @@ interface SessionData {
     currency: string;
     product_name: string;
     tier: string;
+    app?: string;
+    app_name?: string;
+    interval?: string;
+    interval_count?: number;
     prefill: { email?: string };
     return_url: string | null;
 }
 
-const SYMBOLS: Record<string, string> = { INR: "₹", USD: "$" };
+type Toast = { msg: string; severity: "error" | "info" | "success" } | null;
+type Phase = "loading" | "ready" | "paying" | "success" | "error";
+
+const SYMBOLS: Record<string, string> = { INR: "₹", USD: "$", EUR: "€", GBP: "£" };
 
 function formatAmount(minor: number, currency: string): string {
-    const symbol = SYMBOLS[currency] ?? "";
+    const symbol = SYMBOLS[currency] ?? `${currency} `;
     return `${symbol}${(minor / 100).toLocaleString(undefined, {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
     })}`;
+}
+
+function periodLabel(interval = "month", count = 1): string {
+    if (count > 1) return `every ${count} ${interval}s`;
+    return { day: "daily", week: "weekly", month: "monthly", year: "yearly" }[interval] ?? `per ${interval}`;
+}
+
+function periodShort(interval = "month", count = 1): string {
+    return `/ ${count > 1 ? `${count} ` : ""}${interval}`;
 }
 
 function loadRazorpayScript(): Promise<boolean> {
@@ -45,21 +73,20 @@ function loadRazorpayScript(): Promise<boolean> {
     });
 }
 
-type Phase = "loading" | "ready" | "paying" | "success" | "error";
-
 function CheckoutInner() {
     const params = useSearchParams();
     const token = params.get("token");
 
     const [phase, setPhase] = useState<Phase>("loading");
-    const [error, setError] = useState<string>("");
+    const [error, setError] = useState("");
     const [session, setSession] = useState<SessionData | null>(null);
+    const [toast, setToast] = useState<Toast>(null);
 
     useEffect(() => {
         let cancelled = false;
         (async () => {
             if (!token) {
-                setError("Missing checkout token.");
+                setError("This checkout link is missing or has already been used.");
                 setPhase("error");
                 return;
             }
@@ -79,7 +106,7 @@ function CheckoutInner() {
                 setPhase("ready");
             } catch (e: any) {
                 if (cancelled) return;
-                setError(e?.message || "Failed to start checkout.");
+                setError(e?.message || "We couldn't start your checkout. Please go back and try again.");
                 setPhase("error");
             }
         })();
@@ -88,10 +115,18 @@ function CheckoutInner() {
         };
     }, [token]);
 
+    const goBack = () => {
+        const back = session?.return_url;
+        if (back) window.location.href = back;
+        else if (window.history.length > 1) window.history.back();
+        else window.location.href = "/";
+    };
+
     const finishSuccess = (returnUrl?: string | null) => {
         setPhase("success");
+        setToast({ msg: "Payment successful — access activated.", severity: "success" });
         const back = returnUrl || session?.return_url;
-        if (back) setTimeout(() => (window.location.href = back), 2200);
+        if (back) setTimeout(() => (window.location.href = back), 2600);
     };
 
     const payTest = async () => {
@@ -107,15 +142,18 @@ function CheckoutInner() {
             if (!v.ok) throw new Error(vd.error || "test_failed");
             finishSuccess(vd.return_url);
         } catch (e: any) {
-            setError(e?.message || "Test payment failed.");
-            setPhase("error");
+            setToast({ msg: e?.message || "Test payment failed. Try again.", severity: "error" });
+            setPhase("ready");
         }
     };
 
     const pay = async () => {
         if (!session) return;
         if (session.test_mode) return payTest();
-        if (!window.Razorpay) return;
+        if (!window.Razorpay) {
+            setToast({ msg: "Payment library failed to load. Check your connection and retry.", severity: "error" });
+            return;
+        }
         setPhase("paying");
         const rzp = new window.Razorpay({
             key: session.key_id,
@@ -123,7 +161,7 @@ function CheckoutInner() {
             amount: session.amount,
             currency: session.currency,
             name: "Elixpo Pay",
-            description: `${session.product_name}`,
+            description: session.product_name,
             prefill: { email: session.prefill?.email || "" },
             theme: { color: "#9b7bf7" },
             handler: async (resp: any) => {
@@ -140,151 +178,120 @@ function CheckoutInner() {
                     });
                     const vd: any = await v.json();
                     if (!v.ok) throw new Error(vd.error || "verification_failed");
-                    setPhase("success");
-                    const back = vd.return_url || session.return_url;
-                    if (back) setTimeout(() => (window.location.href = back), 2200);
+                    finishSuccess(vd.return_url);
                 } catch (e: any) {
-                    setError(e?.message || "Payment verification failed.");
-                    setPhase("error");
+                    setToast({
+                        msg: "Payment received but verification failed. If you were charged, contact support.",
+                        severity: "error",
+                    });
+                    setPhase("ready");
                 }
             },
             modal: {
-                ondismiss: () => setPhase("ready"),
+                ondismiss: () => {
+                    setPhase("ready");
+                    setToast({ msg: "Payment cancelled — you can try again.", severity: "info" });
+                },
             },
         });
         rzp.on("payment.failed", (resp: any) => {
-            setError(resp?.error?.description || "Payment failed.");
-            setPhase("error");
+            setToast({ msg: resp?.error?.description || "Payment failed. Please try another method.", severity: "error" });
+            setPhase("ready");
         });
         rzp.open();
     };
 
     return (
-        <Card>
+        <Card testMode={session?.test_mode}>
             {phase === "loading" && (
-                <Stack spacing={2} alignItems="center" sx={{ py: 4 }}>
+                <Stack spacing={2} alignItems="center" sx={{ py: 5 }}>
                     <CircularProgress sx={{ color: "#9b7bf7" }} />
                     <Typography sx={{ color: "rgba(245,245,244,0.7)" }}>
-                        Preparing your checkout…
+                        Preparing your secure checkout…
                     </Typography>
                 </Stack>
             )}
 
             {phase === "error" && (
-                <Stack spacing={2} alignItems="center" sx={{ py: 3 }}>
+                <Stack spacing={2.5} alignItems="center" sx={{ py: 3 }}>
                     <Typography sx={{ fontSize: "2rem" }}>⚠️</Typography>
-                    <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                        Something went wrong
+                    <Typography sx={{ fontWeight: 700, fontSize: "1.15rem" }}>
+                        Checkout unavailable
                     </Typography>
-                    <Typography
-                        sx={{
-                            color: "rgba(245,245,244,0.6)",
-                            textAlign: "center",
-                            fontSize: "0.9rem",
-                        }}
-                    >
+                    <Typography sx={{ color: "rgba(245,245,244,0.6)", textAlign: "center", fontSize: "0.9rem", lineHeight: 1.6 }}>
                         {error}
                     </Typography>
+                    <Button onClick={goBack} startIcon={<ArrowBackIcon />} sx={ghostBtn}>
+                        Go back
+                    </Button>
                 </Stack>
             )}
 
             {phase === "success" && (
                 <Stack spacing={2} alignItems="center" sx={{ py: 3 }}>
-                    <Box
-                        sx={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: "50%",
-                            display: "grid",
-                            placeItems: "center",
-                            fontSize: "1.6rem",
-                            background: "rgba(134,239,172,0.15)",
-                            border: "1px solid rgba(134,239,172,0.4)",
-                        }}
-                    >
-                        ✓
-                    </Box>
-                    <Typography sx={{ fontWeight: 700, fontSize: "1.2rem" }}>
+                    <CheckCircleIcon sx={{ fontSize: 58, color: "#4ade80" }} />
+                    <Typography sx={{ fontWeight: 700, fontSize: "1.25rem" }}>
                         Payment successful
                     </Typography>
-                    <Typography
-                        sx={{
-                            color: "rgba(245,245,244,0.6)",
-                            textAlign: "center",
-                            fontSize: "0.9rem",
-                        }}
-                    >
-                        Your {session?.tier} access is active. Redirecting you
-                        back…
+                    <Typography sx={{ color: "rgba(245,245,244,0.6)", textAlign: "center", fontSize: "0.9rem" }}>
+                        Your {session?.tier} access is active. Redirecting you back…
                     </Typography>
+                    {session?.return_url && (
+                        <Button onClick={goBack} sx={{ ...primaryBtn, mt: 1 }}>
+                            Continue
+                        </Button>
+                    )}
                 </Stack>
             )}
 
             {(phase === "ready" || phase === "paying") && session && (
-                <Stack spacing={3}>
+                <Stack spacing={2.5}>
+                    {/* merchant + product */}
                     <Box>
-                        <Typography
-                            sx={{
-                                color: "rgba(245,245,244,0.5)",
-                                fontSize: "0.8rem",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.06em",
-                            }}
-                        >
-                            You're paying for
+                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                            {session.app_name || "Subscription"}
                         </Typography>
-                        <Typography
-                            sx={{ fontWeight: 700, fontSize: "1.4rem", mt: 0.5 }}
-                        >
-                            {session.product_name}
-                        </Typography>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }} flexWrap="wrap">
+                            <Typography sx={{ fontWeight: 700, fontSize: "1.35rem" }}>
+                                {session.product_name}
+                            </Typography>
+                            <Chip
+                                label={session.tier}
+                                size="small"
+                                sx={{ height: 22, fontSize: "0.7rem", color: "#86efac", bgcolor: "rgba(134,239,172,0.12)", border: "1px solid rgba(134,239,172,0.3)" }}
+                            />
+                        </Stack>
                     </Box>
 
+                    {/* line items */}
                     <Box
                         sx={{
-                            display: "flex",
-                            alignItems: "baseline",
-                            gap: 1,
-                            py: 2,
-                            borderTop: "1px solid rgba(255,255,255,0.08)",
-                            borderBottom: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: "14px",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            background: "rgba(255,255,255,0.02)",
+                            px: 2,
+                            py: 1.5,
                         }}
                     >
-                        <Typography
-                            sx={{ fontWeight: 800, fontSize: "2.4rem" }}
-                        >
-                            {formatAmount(session.amount, session.currency)}
-                        </Typography>
-                        <Typography
-                            sx={{ color: "rgba(245,245,244,0.5)" }}
-                        >
-                            / 30 days
-                        </Typography>
+                        <Row label="Plan" value={`${session.product_name} (${session.tier})`} />
+                        <Row label="Billing" value={periodLabel(session.interval, session.interval_count)} />
+                        {session.prefill?.email && <Row label="Account" value={session.prefill.email} />}
                     </Box>
 
-                    <Button
-                        onClick={pay}
-                        disabled={phase === "paying"}
-                        sx={{
-                            textTransform: "none",
-                            fontWeight: 700,
-                            fontSize: "1rem",
-                            color: "#fff",
-                            py: 1.4,
-                            borderRadius: "12px",
-                            background:
-                                "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                            boxShadow: "0 6px 20px rgba(155,123,247,0.4)",
-                            "&:hover": {
-                                background:
-                                    "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
-                            },
-                            "&.Mui-disabled": {
-                                opacity: 0.6,
-                                color: "#fff",
-                            },
-                        }}
-                    >
+                    {/* total */}
+                    <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", py: 1, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                        <Typography sx={{ color: "rgba(245,245,244,0.7)", fontWeight: 600 }}>Total due</Typography>
+                        <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.7 }}>
+                            <Typography sx={{ fontWeight: 800, fontSize: "2rem" }}>
+                                {formatAmount(session.amount, session.currency)}
+                            </Typography>
+                            <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.85rem" }}>
+                                {periodShort(session.interval, session.interval_count)}
+                            </Typography>
+                        </Box>
+                    </Box>
+
+                    <Button onClick={pay} disabled={phase === "paying"} sx={primaryBtn}>
                         {phase === "paying"
                             ? session.test_mode
                                 ? "Completing…"
@@ -292,83 +299,85 @@ function CheckoutInner() {
                             : `${session.test_mode ? "Simulate payment · " : "Pay "}${formatAmount(session.amount, session.currency)}`}
                     </Button>
 
-                    {session.test_mode && (
-                        <Box
-                            sx={{
-                                mt: 1,
-                                textAlign: "center",
-                                fontSize: "0.72rem",
-                                fontWeight: 600,
-                                letterSpacing: "0.04em",
-                                textTransform: "uppercase",
-                                color: "#fbbf24",
-                            }}
-                        >
-                            Test mode — no real charge
-                        </Box>
-                    )}
+                    <Button onClick={goBack} disabled={phase === "paying"} startIcon={<ArrowBackIcon sx={{ fontSize: "1rem !important" }} />} sx={cancelBtn}>
+                        Cancel and go back
+                    </Button>
 
-                    <Typography
-                        sx={{
-                            textAlign: "center",
-                            color: "rgba(245,245,244,0.4)",
-                            fontSize: "0.78rem",
-                        }}
-                    >
-                        Secured by Razorpay · Powered by Elixpo Pay
-                    </Typography>
+                    <Stack direction="row" spacing={0.7} alignItems="center" justifyContent="center" sx={{ pt: 0.5 }}>
+                        <LockIcon sx={{ fontSize: 13, color: "rgba(245,245,244,0.4)" }} />
+                        <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.76rem" }}>
+                            Secured by Razorpay · Powered by Elixpo Pay
+                        </Typography>
+                    </Stack>
                 </Stack>
             )}
+
+            <Snackbar
+                open={!!toast}
+                autoHideDuration={4000}
+                onClose={() => setToast(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+            >
+                {toast ? (
+                    <Alert
+                        onClose={() => setToast(null)}
+                        severity={toast.severity}
+                        variant="filled"
+                        sx={{ borderRadius: "12px", alignItems: "center" }}
+                    >
+                        {toast.msg}
+                    </Alert>
+                ) : undefined}
+            </Snackbar>
         </Card>
     );
 }
 
-function Card({ children }: { children: React.ReactNode }) {
+function Row({ label, value }: { label: string; value: string }) {
     return (
-        <Box
-            sx={{
-                position: "relative",
-                minHeight: "100vh",
-                display: "grid",
-                placeItems: "center",
-                p: 2,
-                color: "#f5f5f4",
-            }}
-        >
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 0.5, gap: 2 }}>
+            <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.85rem", flexShrink: 0 }}>
+                {label}
+            </Typography>
+            <Typography sx={{ color: "rgba(245,245,244,0.85)", fontSize: "0.85rem", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {value}
+            </Typography>
+        </Stack>
+    );
+}
+
+function Card({ children, testMode }: { children: ReactNode; testMode?: boolean }) {
+    return (
+        <Box sx={{ position: "relative", minHeight: "100vh", display: "grid", placeItems: "center", p: 2, color: "#f5f5f4" }}>
             <BackgroundAurora variant="auth" />
             <Box
                 sx={{
                     position: "relative",
                     zIndex: 1,
                     width: "100%",
-                    maxWidth: 420,
+                    maxWidth: 440,
                     p: { xs: 3, md: 4 },
                     borderRadius: "20px",
-                    background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.025) 100%)",
+                    background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.025) 100%)",
                     backdropFilter: "blur(24px)",
                     border: "1px solid rgba(255,255,255,0.12)",
                     boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
                 }}
             >
-                <Stack
-                    direction="row"
-                    spacing={1.2}
-                    alignItems="center"
-                    sx={{ mb: 3 }}
-                >
-                    <Box
-                        component="img"
-                        src="/mark.png"
-                        alt="Elixpo Pay"
-                        sx={{ height: 30, width: 30, borderRadius: "8px", display: "block" }}
-                    />
-                    <Typography sx={{ fontWeight: 700 }}>
-                        Elixpo{" "}
-                        <Box component="span" sx={{ color: "#9b7bf7" }}>
-                            Pay
-                        </Box>
-                    </Typography>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
+                    <Stack direction="row" spacing={1.2} alignItems="center">
+                        <Box component="img" src="/mark.png" alt="Elixpo Pay" sx={{ height: 28, width: 28, borderRadius: "8px", display: "block" }} />
+                        <Typography sx={{ fontWeight: 700 }}>
+                            Elixpo <Box component="span" sx={{ color: "#9b7bf7" }}>Pay</Box>
+                        </Typography>
+                    </Stack>
+                    {testMode && (
+                        <Chip
+                            label="TEST MODE"
+                            size="small"
+                            sx={{ height: 20, fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.04em", color: "#fbbf24", bgcolor: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)" }}
+                        />
+                    )}
                 </Stack>
                 {children}
             </Box>
@@ -376,18 +385,46 @@ function Card({ children }: { children: React.ReactNode }) {
     );
 }
 
+const primaryBtn = {
+    textTransform: "none",
+    fontWeight: 700,
+    fontSize: "1rem",
+    color: "#fff",
+    py: 1.4,
+    borderRadius: "12px",
+    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+    boxShadow: "0 6px 20px rgba(155,123,247,0.4)",
+    "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
+    "&.Mui-disabled": { opacity: 0.6, color: "#fff" },
+};
+
+const cancelBtn = {
+    textTransform: "none",
+    fontWeight: 600,
+    fontSize: "0.9rem",
+    color: "rgba(245,245,244,0.6)",
+    py: 0.8,
+    borderRadius: "12px",
+    "&:hover": { color: "#fff", background: "rgba(255,255,255,0.04)" },
+    "&.Mui-disabled": { opacity: 0.4 },
+};
+
+const ghostBtn = {
+    textTransform: "none",
+    fontWeight: 600,
+    color: "#f5f5f4",
+    px: 2.6,
+    py: 1,
+    borderRadius: "12px",
+    border: "1px solid rgba(255,255,255,0.16)",
+    "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
+};
+
 export default function CheckoutPage() {
     return (
         <Suspense
             fallback={
-                <Box
-                    sx={{
-                        minHeight: "100vh",
-                        display: "grid",
-                        placeItems: "center",
-                        bgcolor: "#0b0d12",
-                    }}
-                >
+                <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", bgcolor: "#0b0d12" }}>
                     <CircularProgress sx={{ color: "#9b7bf7" }} />
                 </Box>
             }

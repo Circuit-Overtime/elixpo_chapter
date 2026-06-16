@@ -92,6 +92,20 @@ export async function POST(request: NextRequest) {
             metadata: { plan: p.plan, source: "handoff" },
         });
 
+        // Shared order details surfaced to the hosted checkout page.
+        const details = {
+            amount,
+            currency: p.currency,
+            product_name: resolved.product.name,
+            tier: resolved.product.tier,
+            app: p.app,
+            app_name: app.name,
+            interval: resolved.price?.interval ?? "month",
+            interval_count: resolved.price?.interval_count ?? 1,
+            prefill: { email: p.email ?? "" },
+            return_url: p.return ?? app.return_url,
+        };
+
         const razorpay = await razorpayFromEnv(getEnv);
         if (!razorpay) {
             // Test payment mode: outside production, let checkout complete without
@@ -103,12 +117,7 @@ export async function POST(request: NextRequest) {
                     session_id: sessionId,
                     provider: "test",
                     test_mode: true,
-                    amount,
-                    currency: p.currency,
-                    product_name: resolved.product.name,
-                    tier: resolved.product.tier,
-                    prefill: { email: p.email ?? "" },
-                    return_url: p.return ?? app.return_url,
+                    ...details,
                 });
             }
             return NextResponse.json(
@@ -135,12 +144,7 @@ export async function POST(request: NextRequest) {
             provider: "razorpay",
             key_id: await getEnv("NEXT_PUBLIC_RAZORPAY_KEY_ID"),
             order_id: order.providerOrderId,
-            amount,
-            currency: p.currency,
-            product_name: resolved.product.name,
-            tier: resolved.product.tier,
-            prefill: { email: p.email ?? "" },
-            return_url: p.return ?? app.return_url,
+            ...details,
         });
     } catch (err: any) {
         console.error("[checkout/session] error:", err);
