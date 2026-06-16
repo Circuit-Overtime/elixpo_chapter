@@ -24,7 +24,7 @@ export interface SessionData {
 
 export async function signSession(
     data: Omit<SessionData, "iat" | "exp">,
-    ttlSeconds = 7 * 86400,
+    ttlSeconds = 15 * 86400,
 ): Promise<string> {
     const secret = await requireEnv("ELIXPO_PAY_SESSION_SECRET");
     const now = Math.floor(Date.now() / 1000);

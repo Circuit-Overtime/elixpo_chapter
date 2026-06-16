@@ -258,7 +258,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                         {avatarNode}
                                     </Box>
                                     <Box sx={{ minWidth: 0 }}>
-                                        <Typography sx={{ fontWeight: 600, fontSize: "0.92rem", color: "#f5f5f4", noWrap: true, overflow: "hidden", textOverflow: "ellipsis" }}>
+                                        <Typography sx={{ fontWeight: 600, fontSize: "0.92rem", color: "#f5f5f4", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                                             {me?.name}
                                         </Typography>
                                         <Typography sx={{ color: "rgba(255,255,255,0.45)", fontSize: "0.78rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>

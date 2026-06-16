@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
-            maxAge: 7 * 86400,
+            maxAge: 15 * 86400,
             path: "/",
         });
         res.cookies.delete(STATE_COOKIE);

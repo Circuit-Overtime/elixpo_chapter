@@ -234,6 +234,66 @@ function ServiceIcon({ s }: { s: Service }) {
     );
 }
 
+const HERO_POINTS: { label: string; color: string; icon: ReactNode }[] = [
+    {
+        label: "Accept payments & subscriptions",
+        color: "#9b7bf7",
+        icon: (
+            <>
+                <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+                <path d="M2.5 9.5h19" />
+            </>
+        ),
+    },
+    {
+        label: "Grant entitlements instantly",
+        color: "#86efac",
+        icon: (
+            <>
+                <path d="M12 3l7 2.6v5.2c0 4.3-3 6.8-7 7.9-4-1.1-7-3.6-7-7.9V5.6z" />
+                <path d="M9 12l2 2 4-4" />
+            </>
+        ),
+    },
+    {
+        label: "Settle creator payouts",
+        color: "#fbbf24",
+        icon: (
+            <>
+                <path d="M21 3 10.5 13.5" />
+                <path d="M21 3l-6.5 18-4-8-8-4z" />
+            </>
+        ),
+    },
+];
+
+function HeroPoint({ label, color, icon }: { label: string; color: string; icon: ReactNode }) {
+    return (
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+            <span
+                style={{
+                    display: "grid",
+                    placeItems: "center",
+                    width: 38,
+                    height: 38,
+                    borderRadius: 11,
+                    background: `${color}1a`,
+                    border: `1px solid ${color}40`,
+                    color,
+                    flexShrink: 0,
+                }}
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    {icon}
+                </svg>
+            </span>
+            <span style={{ fontSize: "0.95rem", fontWeight: 600, color: "rgba(245,245,244,0.82)" }}>
+                {label}
+            </span>
+        </div>
+    );
+}
+
 const ArrowRight = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -364,25 +424,25 @@ export default function PixelHero() {
                 </span>
             </h1>
 
-            {/* subhead */}
-            <p
+            {/* subhead — three points */}
+            <div
                 style={{
                     position: "relative",
                     zIndex: 1,
-                    maxWidth: 620,
-                    margin: "1.6rem auto 0",
-                    fontSize: "clamp(1rem, 2.5vw, 1.18rem)",
-                    lineHeight: 1.7,
-                    color: "rgba(245,245,244,0.72)",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                    gap: "14px 30px",
+                    maxWidth: 780,
+                    margin: "1.9rem auto 0",
                     opacity: mounted ? 1 : 0,
                     animation: mounted ? "pay-rise 0.8s ease 0.15s both" : undefined,
                 }}
             >
-                The complete money stack for modern software — accept payments,
-                run subscriptions, grant entitlements, and settle payouts through
-                one API and a unified ledger. Powering billing across the Elixpo
-                suite, and open to every business building on it.
-            </p>
+                {HERO_POINTS.map((p) => (
+                    <HeroPoint key={p.label} {...p} />
+                ))}
+            </div>
 
             {/* CTAs — Tahoe glass buttons */}
             <div

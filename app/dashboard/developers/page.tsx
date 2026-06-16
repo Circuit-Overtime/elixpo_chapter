@@ -21,6 +21,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/dashboard-ui";
 
+function slugPreview(name: string): string {
+    return (
+        name
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+            .slice(0, 38) || "app"
+    );
+}
+
 const field = {
     "& .MuiOutlinedInput-root": {
         color: "#e5e7eb",
@@ -139,10 +150,13 @@ export default function DevelopersPage() {
             {newKey && (
                 <GlassCard sx={{ mb: 3, border: "1px solid rgba(134,239,172,0.35)" }}>
                     <Typography sx={{ fontWeight: 700, color: "#86efac", mb: 0.5 }}>
-                        Secret key for {newKey.slug} — copy it now
+                        App created — copy your secret key now
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.85rem", mb: 1.5 }}>
-                        This is shown once and never again. Store it in your server env as <code>ELIXPO_PAY_API_KEY</code>.
+                    <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.85rem", mb: 1.5 }}>
+                        Your API id (slug) is{" "}
+                        <Box component="code" sx={codeSx}>{newKey.slug}</Box> — use it as{" "}
+                        <Box component="code" sx={codeSx}>app={newKey.slug}</Box> in the checkout handoff and entitlements API.
+                        The secret key below is shown <strong>once</strong>; store it in your server env as <code>ELIXPO_PAY_API_KEY</code>.
                     </Typography>
                     <Stack direction="row" spacing={1} alignItems="center">
                         <Box
@@ -253,9 +267,22 @@ export default function DevelopersPage() {
                 <DialogTitle sx={{ fontWeight: 700 }}>New app</DialogTitle>
                 <DialogContent>
                     <Stack spacing={2.2} sx={{ mt: 1 }}>
-                        <TextField label="App slug" placeholder="my-app" helperText="Lowercase, a-z 0-9 and hyphens" value={slug} onChange={(e) => setSlug(e.target.value)} sx={field} fullWidth />
-                        <TextField label="Display name" placeholder="My App" value={name} onChange={(e) => setName(e.target.value)} sx={field} fullWidth />
-                        <TextField label="Return URL (optional)" placeholder="https://myapp.com/billing" value={returnUrl} onChange={(e) => setReturnUrl(e.target.value)} sx={field} fullWidth />
+                        <TextField
+                            label="App name"
+                            placeholder="My App"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            helperText={
+                                name.trim().length >= 2
+                                    ? `API id (slug): ${slugPreview(name)} — used in the checkout handoff and /v1/entitlements`
+                                    : "Shown to buyers at checkout; we derive a stable API slug from it"
+                            }
+                            sx={field}
+                            fullWidth
+                        />
+                        <TextField label="Description" placeholder="What this app sells" multiline minRows={2} value={description} onChange={(e) => setDescription(e.target.value)} sx={field} fullWidth />
+                        <TextField label="Homepage URL" placeholder="https://myapp.com" value={homepageUrl} onChange={(e) => setHomepageUrl(e.target.value)} sx={field} fullWidth />
+                        <TextField label="Pricing page URL" placeholder="https://myapp.com/pricing" helperText="Where buyers return after checkout" value={pricingUrl} onChange={(e) => setPricingUrl(e.target.value)} sx={field} fullWidth />
                         {err && <Typography sx={{ color: "#f87171", fontSize: "0.85rem" }}>{err}</Typography>}
                     </Stack>
                 </DialogContent>
@@ -264,7 +291,7 @@ export default function DevelopersPage() {
                         Cancel
                     </Button>
                     <Button
-                        disabled={busy || !slug || !name}
+                        disabled={busy || name.trim().length < 2}
                         onClick={createApp}
                         sx={{
                             textTransform: "none",
