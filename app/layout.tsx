@@ -52,6 +52,15 @@ export const metadata: Metadata = {
             "The complete money stack for modern software — checkout, subscriptions, entitlements, and payouts.",
         images: ["/og-image.png"],
     },
+    icons: {
+        // Served as static assets from public/. Kept out of app/ so
+        // @cloudflare/next-on-pages doesn't turn each into an edge route.
+        icon: [
+            { url: "/icon.png", sizes: "256x256", type: "image/png" },
+            { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+        ],
+        apple: { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    },
     robots: { index: true, follow: true },
 };
 
