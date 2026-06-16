@@ -25,10 +25,10 @@ export default function DocsOverview() {
 
             <DocH2>How it fits together</DocH2>
             <DocP>
-                Your app never touches card data. You redirect a buyer to our
-                hosted checkout with a signed token; we charge them through a
-                provider (Razorpay for INR in P0), then grant an entitlement and
-                tell your app about it two ways:
+                Your app never touches card data. Your server creates a checkout
+                session with your secret key and redirects the buyer to our hosted
+                checkout; we charge them through a provider (Razorpay for INR in P0),
+                then grant an entitlement and tell your app about it two ways:
             </DocP>
             <DocList
                 items={[

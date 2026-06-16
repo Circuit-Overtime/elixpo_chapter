@@ -12,33 +12,22 @@ import {
 } from "@/components/docs-prose";
 
 const FLOW = `// In your app (server-side), when a user upgrades:
-import crypto from "node:crypto";
+const res = await fetch("https://payouts.elixpo.com/v1/checkout/sessions", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer " + process.env.ELIXPO_PAY_API_KEY,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    tier: "member",                 // the product tier
+    currency: "INR",                // we resolve the catalog price
+    customer: { uid: user.id, email: user.email },
+    success_url: "https://blogs.elixpo.com/settings",
+  }),
+});
 
-const payload = {
-  app: "lixblogs",        // your app slug
-  plan: "member",         // the product tier
-  uid: user.id,           // your user id
-  currency: "INR",
-  amount: 19900,          // minor units (paise) — authoritative
-  return: "https://blogs.elixpo.com/pricing",
-  email: user.email,      // optional
-  iat: Math.floor(Date.now() / 1000),
-  exp: Math.floor(Date.now() / 1000) + 1800, // 30 min
-};
-
-const body = base64url(JSON.stringify(payload));
-const sig = crypto
-  .createHmac("sha256", process.env.ELIXPO_PAY_HANDOFF_SECRET)
-  .update(body)
-  .digest("hex");
-const token = body + "." + sig;
-
-// Redirect the user to hosted checkout:
-redirect("https://payouts.elixpo.com/checkout?token=" + token);
-
-function base64url(s) {
-  return Buffer.from(s).toString("base64url");
-}`;
+const session = await res.json();
+redirect(session.url); // hosted checkout — no card data touches your app`;
 
 const READ = `// After payment, read the entitlement any time:
 const res = await fetch(
@@ -53,25 +42,29 @@ export default function Quickstart() {
         <Box>
             <DocTitle>Quickstart</DocTitle>
             <DocLead>
-                Three steps: hand off to checkout, receive the grant webhook, and
-                read entitlements. You'll need two shared secrets and an API key —
-                create your app in the dashboard's Developers tab to get them.
+                Three steps: create a checkout session, receive the grant webhook,
+                and read entitlements. You need just two credentials — a secret key
+                and a webhook signing secret — from your product's page in the
+                dashboard.
             </DocLead>
 
             <DocH2>1. Get your credentials</DocH2>
             <DocList
                 items={[
-                    <><Code>ELIXPO_PAY_HANDOFF_SECRET</Code> — HMAC secret signing the checkout handoff token.</>,
-                    <><Code>ELIXPO_PAY_WEBHOOK_SECRET</Code> — HMAC secret you verify inbound webhooks with.</>,
-                    <><Code>ELIXPO_PAY_API_KEY</Code> — your app's secret key for the entitlements API (shown once on app creation).</>,
+                    <><Code>ELIXPO_PAY_API_KEY</Code> — your app's secret key. Authenticates the checkout and entitlements APIs (shown once on creation; roll it from the product page).</>,
+                    <><Code>ELIXPO_PAY_WEBHOOK_SECRET</Code> — the per-app signing secret (<Code>whsec_…</Code>) you verify inbound webhooks with. Set your webhook URL and reveal it under <strong>Entitlement webhook</strong>.</>,
                 ]}
             />
-
-            <DocH2>2. Hand off to checkout</DocH2>
             <DocP>
-                Build a short-lived signed token and redirect the user. The token
-                is the only trusted source for the amount — never the loose query
-                params.
+                There is no shared handoff secret — the secret key both starts
+                checkout and reads entitlements.
+            </DocP>
+
+            <DocH2>2. Create a checkout session</DocH2>
+            <DocP>
+                Call the API with your secret key and redirect the buyer to the
+                returned URL. Elixpo Pay resolves the price from your catalog, so the
+                amount is never sent by you and can't be tampered with.
             </DocP>
             <CodeBlock code={FLOW} language="javascript" />
 

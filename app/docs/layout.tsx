@@ -32,7 +32,7 @@ import BackgroundAurora from "../components/background-aurora";
 const DOCS_NAV = [
     { label: "Overview", href: "/docs" },
     { label: "Quickstart", href: "/docs/quickstart" },
-    { label: "Checkout handoff", href: "/docs/checkout" },
+    { label: "Checkout sessions", href: "/docs/checkout" },
     { label: "Webhooks", href: "/docs/webhooks" },
     { label: "Entitlements API", href: "/docs/entitlements" },
 ];
