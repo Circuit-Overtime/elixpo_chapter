@@ -109,19 +109,42 @@ export async function POST(request: NextRequest) {
         .run();
 
     // 1 app = 1 product: auto-create the app's product so it's sellable at once.
+    const productId = newId("product");
     await db
         .prepare(
             "INSERT INTO products (id, app_id, name, tier, description, active) VALUES (?, ?, ?, 'default', ?, 1)",
         )
-        .bind(newId("product"), id, name, description)
+        .bind(productId, id, name, description)
         .run();
+
+    // Optional initial price (the product's sell price).
+    let price: any = null;
+    const p = body.price;
+    if (p && CURRENCIES.includes(String(p.currency).toUpperCase()) && Number.isInteger(p.unit_amount) && p.unit_amount > 0) {
+        const interval = INTERVALS.includes(p.interval) ? p.interval : "month";
+        const intervalCount = Math.max(1, Number(p.interval_count || 1));
+        const priceId = newId("price");
+        await db
+            .prepare(
+                `INSERT INTO prices (id, product_id, currency, unit_amount, type, interval, interval_count, provider, active)
+                 VALUES (?, ?, ?, ?, 'one_time', ?, ?, 'razorpay', 1)`,
+            )
+            .bind(priceId, productId, String(p.currency).toUpperCase(), p.unit_amount, interval, intervalCount)
+            .run();
+        price = { id: priceId, currency: String(p.currency).toUpperCase(), unit_amount: p.unit_amount, interval, interval_count: intervalCount };
+    }
 
     return NextResponse.json({
         app: { id, slug, name, description, homepage_url: homepageUrl, pricing_url: pricingUrl },
+        product_id: productId,
+        price,
         client_id: slug,
         client_secret: clientSecret, // shown once
     });
 }
+
+const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
+const INTERVALS = ["day", "week", "month", "year"];
 
 /** Returns the URL only if it's https and responds 2xx; else null (kept empty). */
 async function verifiedHttpsUrl(input: unknown): Promise<string | null> {

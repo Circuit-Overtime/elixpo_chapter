@@ -36,9 +36,8 @@ import BackgroundAurora from "../components/background-aurora";
 
 const NAV = [
     { label: "Overview", icon: SpaceDashboardIcon, href: "/dashboard" },
-    { label: "Products & Pricing", icon: InventoryIcon, href: "/dashboard/products" },
+    { label: "Products", icon: InventoryIcon, href: "/dashboard/products" },
     { label: "Transactions", icon: ReceiptLongIcon, href: "/dashboard/transactions" },
-    { label: "Developers", icon: CodeIcon, href: "/dashboard/developers" },
 ];
 
 interface Me {
@@ -296,7 +295,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 <Divider sx={{ borderColor: "rgba(255,255,255,0.07)" }} />
                                 <SectionLabel>Account</SectionLabel>
                                 <AccountItem icon={<PersonIcon fontSize="small" />} label="Account settings" href={ACCOUNTS_PROFILE} external onClick={() => setAnchorEl(null)} />
-                                <AccountItem icon={<CodeIcon fontSize="small" />} label="Developers & API keys" href="/dashboard/developers" onClick={() => setAnchorEl(null)} />
+                                <AccountItem icon={<CodeIcon fontSize="small" />} label="Products & API keys" href="/dashboard/products" onClick={() => setAnchorEl(null)} />
                                 <AccountItem icon={<CreditCardIcon fontSize="small" />} label="Billing & plans" href="/pricing" onClick={() => setAnchorEl(null)} />
 
                                 <Divider sx={{ borderColor: "rgba(255,255,255,0.07)" }} />

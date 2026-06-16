@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
     const products = await db
         .prepare(
             `SELECT p.id, p.app_id, p.name, p.tier, p.description, p.active, p.created_at,
-                    a.slug AS app_slug, a.name AS app_name
+                    a.slug AS app_slug, a.name AS app_name,
+                    a.slug AS client_id, a.homepage_url, a.pricing_url
              FROM products p JOIN apps a ON p.app_id = a.id
              WHERE a.merchant_id = ?1 ${appId ? "AND p.app_id = ?2" : ""}
              ORDER BY p.created_at DESC`,

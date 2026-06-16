@@ -3,6 +3,10 @@
 export const runtime = "edge";
 
 import AddIcon from "@mui/icons-material/Add";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import LaunchIcon from "@mui/icons-material/Launch";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
 import {
     Box,
     Button,
@@ -25,33 +29,21 @@ import { formatMoney, GlassCard } from "@/components/dashboard-ui";
 const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
 const INTERVALS = ["day", "week", "month", "year"];
 
-const field = {
-    "& .MuiOutlinedInput-root": {
-        color: "#e5e7eb",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-        "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
-        "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
-    },
-    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
-};
-
 export default function ProductsPage() {
     const [loading, setLoading] = useState(true);
-    const [apps, setApps] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
 
-    const [productDlg, setProductDlg] = useState(false);
-    const [priceDlg, setPriceDlg] = useState<string | null>(null); // productId
+    const [registerDlg, setRegisterDlg] = useState(false);
+    const [priceDlg, setPriceDlg] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState("");
 
+    const [creds, setCreds] = useState<{ clientId: string; secret: string } | null>(null);
+    const [copied, setCopied] = useState(false);
+    const [secretHidden, setSecretHidden] = useState(false);
+
     const load = async () => {
-        const [a, p] = (await Promise.all([
-            fetch("/api/dashboard/apps", { credentials: "include" }).then((r) => r.json()),
-            fetch("/api/dashboard/products", { credentials: "include" }).then((r) => r.json()),
-        ])) as any[];
-        setApps(a.apps || []);
+        const p: any = await fetch("/api/dashboard/products", { credentials: "include" }).then((r) => r.json());
         setProducts(p.products || []);
         setLoading(false);
     };
@@ -60,19 +52,41 @@ export default function ProductsPage() {
         load();
     }, []);
 
-    const createProduct = async (form: { app_id: string; name: string; tier: string; description: string }) => {
+    const register = async (form: {
+        name: string;
+        description: string;
+        homepage_url: string;
+        pricing_url: string;
+        currency: string;
+        major: string;
+        interval: string;
+    }) => {
         setBusy(true);
         setErr("");
         try {
-            const r = await fetch("/api/dashboard/products", {
+            const r = await fetch("/api/dashboard/apps", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify(form),
+                body: JSON.stringify({
+                    name: form.name,
+                    description: form.description || null,
+                    homepage_url: form.homepage_url || null,
+                    pricing_url: form.pricing_url || null,
+                    price: {
+                        currency: form.currency,
+                        unit_amount: Math.round(parseFloat(form.major) * 100),
+                        interval: form.interval,
+                        interval_count: 1,
+                    },
+                }),
             });
             const d: any = await r.json();
             if (!r.ok) throw new Error(d.error_description || d.error);
-            setProductDlg(false);
+            setRegisterDlg(false);
+            setCopied(false);
+            setSecretHidden(false);
+            setCreds({ clientId: d.client_id, secret: d.client_secret });
             await load();
         } catch (e: any) {
             setErr(e.message);
@@ -81,14 +95,13 @@ export default function ProductsPage() {
         }
     };
 
-    const createPrice = async (
+    const addPrice = async (
         productId: string,
         form: { currency: string; major: string; interval: string; interval_count: string; region: string },
     ) => {
         setBusy(true);
         setErr("");
         try {
-            const minor = Math.round(parseFloat(form.major) * 100);
             const r = await fetch("/api/dashboard/prices", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -96,7 +109,7 @@ export default function ProductsPage() {
                 body: JSON.stringify({
                     product_id: productId,
                     currency: form.currency,
-                    unit_amount: minor,
+                    unit_amount: Math.round(parseFloat(form.major) * 100),
                     interval: form.interval,
                     interval_count: Number(form.interval_count) || 1,
                     region: form.region || null,
@@ -123,12 +136,20 @@ export default function ProductsPage() {
         await load();
     };
 
-    const deactivateProduct = async (productId: string) => {
-        await fetch(`/api/dashboard/products/${productId}`, {
-            method: "DELETE",
-            credentials: "include",
-        });
+    const archive = async (productId: string) => {
+        await fetch(`/api/dashboard/products/${productId}`, { method: "DELETE", credentials: "include" });
         await load();
+    };
+
+    const copySecret = async () => {
+        if (!creds) return;
+        try {
+            await navigator.clipboard.writeText(creds.secret);
+            setCopied(true);
+            setSecretHidden(true);
+        } catch {
+            // ignore
+        }
     };
 
     if (loading) {
@@ -150,268 +171,259 @@ export default function ProductsPage() {
             >
                 <Box>
                     <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", letterSpacing: "-0.02em" }}>
-                        Products & Pricing
+                        Products
                     </Typography>
                     <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.92rem" }}>
-                        Define what you sell and the regional price points checkout offers.
+                        Register a product to get its Client ID + secret and start selling. One product, one set of credentials.
                     </Typography>
                 </Box>
                 <Button
                     startIcon={<AddIcon />}
-                    disabled={apps.length === 0}
                     onClick={() => {
                         setErr("");
-                        setProductDlg(true);
+                        setRegisterDlg(true);
                     }}
-                    sx={{
-                        textTransform: "none",
-                        fontWeight: 700,
-                        color: "#fff",
-                        px: 2.2,
-                        py: 1,
-                        borderRadius: "10px",
-                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
-                        "&.Mui-disabled": { opacity: 0.4, color: "#fff" },
-                    }}
+                    sx={primaryBtn}
                 >
-                    New product
+                    Register product
                 </Button>
             </Stack>
 
-            {apps.length === 0 && (
+            {creds && (
+                <GlassCard sx={{ mb: 3, border: "1px solid rgba(134,239,172,0.35)" }}>
+                    <Typography sx={{ fontWeight: 700, color: "#86efac", mb: 1.2 }}>
+                        Product registered — copy your client secret now
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.72rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                        Client ID
+                    </Typography>
+                    <Box sx={{ ...mono, mb: 2, color: "#c4b5fd" }}>{creds.clientId}</Box>
+                    <Typography sx={{ fontSize: "0.72rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                        Client secret
+                    </Typography>
+                    {secretHidden ? (
+                        <Box sx={{ ...mono, display: "flex", alignItems: "center", gap: 1, color: "rgba(245,245,244,0.5)" }}>
+                            <CheckCircleIcon sx={{ fontSize: 16, color: "#86efac" }} />
+                            Copied & hidden — for your security it won't be shown again.
+                        </Box>
+                    ) : (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Box sx={{ ...mono, flexGrow: 1, overflowX: "auto", whiteSpace: "nowrap" }}>{creds.secret}</Box>
+                            <Button
+                                onClick={copySecret}
+                                startIcon={<ContentCopyIcon sx={{ fontSize: "1rem !important" }} />}
+                                sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2, background: "#7c5cff", borderRadius: "10px", "&:hover": { background: "#8a6dff" } }}
+                            >
+                                Copy
+                            </Button>
+                        </Stack>
+                    )}
+                </GlassCard>
+            )}
+
+            {products.length === 0 ? (
                 <GlassCard sx={{ textAlign: "center", py: 6 }}>
-                    <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 1 }}>
-                        Create an app first
-                    </Typography>
+                    <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 1 }}>No products yet</Typography>
                     <Typography sx={{ color: "rgba(245,245,244,0.55)", mb: 3, fontSize: "0.9rem" }}>
-                        Products belong to an app. Spin one up in Developers to get an API key and start listing plans.
+                        Register your first product to receive a Client ID and secret, then start accepting payments.
                     </Typography>
-                    <Button
-                        component={Link}
-                        href="/dashboard/developers"
-                        sx={{
-                            textTransform: "none",
-                            fontWeight: 700,
-                            color: "#fff",
-                            px: 2.4,
-                            py: 1,
-                            borderRadius: "10px",
-                            background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        }}
-                    >
-                        Go to Developers
+                    <Button startIcon={<AddIcon />} onClick={() => setRegisterDlg(true)} sx={primaryBtn}>
+                        Register product
                     </Button>
                 </GlassCard>
-            )}
-
-            {apps.length > 0 && products.length === 0 && (
-                <GlassCard sx={{ textAlign: "center", py: 6 }}>
-                    <Typography sx={{ color: "rgba(245,245,244,0.55)" }}>
-                        No products yet — click <strong>New product</strong> to add your first listing.
-                    </Typography>
-                </GlassCard>
-            )}
-
-            <Stack spacing={2}>
-                {products.map((p) => (
-                    <GlassCard key={p.id} sx={{ opacity: p.active ? 1 : 0.55 }}>
-                        <Stack
-                            direction={{ xs: "column", sm: "row" }}
-                            justifyContent="space-between"
-                            alignItems={{ xs: "flex-start", sm: "center" }}
-                            spacing={1.5}
-                            sx={{ mb: 2 }}
-                        >
-                            <Box>
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <Typography sx={{ fontWeight: 700, fontSize: "1.15rem" }}>
-                                        {p.name}
-                                    </Typography>
-                                    <Chip
-                                        label={p.tier}
-                                        size="small"
-                                        sx={{
-                                            height: 22,
-                                            fontSize: "0.72rem",
-                                            color: "#86efac",
-                                            bgcolor: "rgba(134,239,172,0.12)",
-                                            border: "1px solid rgba(134,239,172,0.3)",
-                                        }}
-                                    />
-                                    <Chip
-                                        label={p.app_slug}
-                                        size="small"
-                                        sx={{
-                                            height: 22,
-                                            fontSize: "0.72rem",
-                                            color: "#c4b5fd",
-                                            bgcolor: "rgba(155,123,247,0.12)",
-                                            border: "1px solid rgba(155,123,247,0.3)",
-                                        }}
-                                    />
-                                </Stack>
-                                {p.description && (
-                                    <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.85rem", mt: 0.5 }}>
-                                        {p.description}
-                                    </Typography>
-                                )}
-                            </Box>
-                            <Stack direction="row" spacing={1}>
-                                <Button
-                                    size="small"
-                                    startIcon={<AddIcon sx={{ fontSize: "1rem !important" }} />}
-                                    onClick={() => {
-                                        setErr("");
-                                        setPriceDlg(p.id);
-                                    }}
-                                    sx={{
-                                        textTransform: "none",
-                                        fontWeight: 600,
-                                        color: "#c4b5fd",
-                                        border: "1px solid rgba(155,123,247,0.3)",
-                                        borderRadius: "8px",
-                                        px: 1.5,
-                                    }}
-                                >
-                                    Add price
-                                </Button>
-                                {p.active === 1 && (
+            ) : (
+                <Stack spacing={2}>
+                    {products.map((p) => (
+                        <GlassCard key={p.id} sx={{ opacity: p.active ? 1 : 0.55 }}>
+                            <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                justifyContent="space-between"
+                                alignItems={{ xs: "flex-start", sm: "center" }}
+                                spacing={1.5}
+                                sx={{ mb: 2 }}
+                            >
+                                <Box sx={{ minWidth: 0 }}>
+                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                                        <Typography sx={{ fontWeight: 700, fontSize: "1.15rem" }}>{p.name}</Typography>
+                                        <Chip
+                                            label={p.active ? "Active" : "Archived"}
+                                            size="small"
+                                            sx={{
+                                                height: 22,
+                                                fontSize: "0.7rem",
+                                                color: p.active ? "#4ade80" : "#9ca3af",
+                                                bgcolor: p.active ? "rgba(34,197,94,0.1)" : "rgba(156,163,175,0.1)",
+                                                border: `1px solid ${p.active ? "rgba(34,197,94,0.25)" : "rgba(156,163,175,0.2)"}`,
+                                            }}
+                                        />
+                                    </Stack>
+                                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 0.6 }} flexWrap="wrap">
+                                        <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.78rem", color: "#c4b5fd" }}>
+                                            {p.client_id}
+                                        </Typography>
+                                        {p.homepage_url && (
+                                            <Box component="a" href={p.homepage_url} target="_blank" rel="noopener noreferrer" sx={linkSx}>
+                                                <LaunchIcon sx={{ fontSize: 13 }} /> Homepage
+                                            </Box>
+                                        )}
+                                        {p.pricing_url && (
+                                            <Box component="a" href={p.pricing_url} target="_blank" rel="noopener noreferrer" sx={linkSx}>
+                                                <LaunchIcon sx={{ fontSize: 13 }} /> Pricing
+                                            </Box>
+                                        )}
+                                    </Stack>
+                                    {p.description && (
+                                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.85rem", mt: 0.8 }}>
+                                            {p.description}
+                                        </Typography>
+                                    )}
+                                </Box>
+                                <Stack direction="row" spacing={1}>
                                     <Button
                                         size="small"
-                                        onClick={() => deactivateProduct(p.id)}
-                                        sx={{
-                                            textTransform: "none",
-                                            fontWeight: 600,
-                                            color: "rgba(248,113,113,0.8)",
-                                            border: "1px solid rgba(239,68,68,0.25)",
-                                            borderRadius: "8px",
-                                            px: 1.5,
+                                        startIcon={<AddIcon sx={{ fontSize: "1rem !important" }} />}
+                                        onClick={() => {
+                                            setErr("");
+                                            setPriceDlg(p.id);
                                         }}
+                                        sx={{ textTransform: "none", fontWeight: 600, color: "#c4b5fd", border: "1px solid rgba(155,123,247,0.3)", borderRadius: "8px", px: 1.5 }}
                                     >
-                                        Archive
+                                        Add price
                                     </Button>
-                                )}
+                                    {p.active === 1 && (
+                                        <Button
+                                            size="small"
+                                            onClick={() => archive(p.id)}
+                                            sx={{ textTransform: "none", fontWeight: 600, color: "rgba(248,113,113,0.8)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "8px", px: 1.5 }}
+                                        >
+                                            Archive
+                                        </Button>
+                                    )}
+                                </Stack>
                             </Stack>
-                        </Stack>
 
-                        {p.prices.length === 0 ? (
-                            <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.85rem", py: 1 }}>
-                                No prices — add one so this product can be sold.
-                            </Typography>
-                        ) : (
-                            <Box
-                                sx={{
-                                    display: "grid",
-                                    gap: 1.5,
-                                    gridTemplateColumns: { xs: "1fr", sm: "repeat(auto-fill, minmax(220px, 1fr))" },
-                                }}
-                            >
-                                {p.prices.map((pr: any) => (
-                                    <Box
-                                        key={pr.id}
-                                        sx={{
-                                            p: 1.8,
-                                            borderRadius: "12px",
-                                            border: "1px solid rgba(255,255,255,0.08)",
-                                            background: "rgba(255,255,255,0.02)",
-                                            opacity: pr.active ? 1 : 0.5,
-                                        }}
-                                    >
-                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                            <Typography sx={{ fontWeight: 800, fontSize: "1.25rem" }}>
-                                                {formatMoney(pr.unit_amount, pr.currency)}
+                            {p.prices.length === 0 ? (
+                                <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.85rem", py: 1 }}>
+                                    No prices — add one so this product can be sold.
+                                </Typography>
+                            ) : (
+                                <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(auto-fill, minmax(220px, 1fr))" } }}>
+                                    {p.prices.map((pr: any) => (
+                                        <Box
+                                            key={pr.id}
+                                            sx={{
+                                                p: 1.8,
+                                                borderRadius: "12px",
+                                                border: "1px solid rgba(255,255,255,0.08)",
+                                                background: "rgba(255,255,255,0.02)",
+                                                opacity: pr.active ? 1 : 0.5,
+                                            }}
+                                        >
+                                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                                <Typography sx={{ fontWeight: 800, fontSize: "1.25rem" }}>
+                                                    {formatMoney(pr.unit_amount, pr.currency)}
+                                                </Typography>
+                                                <Switch size="small" checked={!!pr.active} onChange={(e) => togglePrice(pr.id, e.target.checked)} />
+                                            </Stack>
+                                            <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.8rem" }}>
+                                                per {pr.interval_count > 1 ? `${pr.interval_count} ` : ""}
+                                                {pr.interval}
+                                                {pr.region ? ` · ${pr.region}` : ""}
                                             </Typography>
-                                            <Switch
-                                                size="small"
-                                                checked={!!pr.active}
-                                                onChange={(e) => togglePrice(pr.id, e.target.checked)}
-                                            />
-                                        </Stack>
-                                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.8rem" }}>
-                                            per {pr.interval_count > 1 ? `${pr.interval_count} ` : ""}
-                                            {pr.interval}
-                                            {pr.region ? ` · ${pr.region}` : ""}
-                                        </Typography>
-                                    </Box>
-                                ))}
-                            </Box>
-                        )}
-                    </GlassCard>
-                ))}
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
+                        </GlassCard>
+                    ))}
+                </Stack>
+            )}
+
+            <Stack alignItems="center" sx={{ mt: 4 }}>
+                <Button
+                    component={Link}
+                    href="/docs/quickstart"
+                    startIcon={<MenuBookIcon sx={{ fontSize: "1.1rem !important" }} />}
+                    sx={{
+                        textTransform: "none",
+                        fontWeight: 700,
+                        fontSize: "0.95rem",
+                        color: "#f5f5f4",
+                        px: 3,
+                        py: 1.2,
+                        borderRadius: "12px",
+                        border: "1px solid rgba(255,255,255,0.14)",
+                        "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
+                    }}
+                >
+                    Read Integration Docs
+                </Button>
             </Stack>
 
-            <ProductDialog
-                open={productDlg}
-                apps={apps}
-                busy={busy}
-                err={err}
-                onClose={() => setProductDlg(false)}
-                onSubmit={createProduct}
-            />
+            <RegisterDialog open={registerDlg} busy={busy} err={err} onClose={() => setRegisterDlg(false)} onSubmit={register} />
             <PriceDialog
                 open={!!priceDlg}
                 busy={busy}
                 err={err}
                 onClose={() => setPriceDlg(null)}
-                onSubmit={(form: any) => priceDlg && createPrice(priceDlg, form)}
+                onSubmit={(form: any) => priceDlg && addPrice(priceDlg, form)}
             />
         </Box>
     );
 }
 
-function ProductDialog({
-    open,
-    apps,
-    busy,
-    err,
-    onClose,
-    onSubmit,
-}: {
-    open: boolean;
-    apps: any[];
-    busy: boolean;
-    err: string;
-    onClose: () => void;
-    onSubmit: (form: { app_id: string; name: string; tier: string; description: string }) => void;
-}) {
-    const [appId, setAppId] = useState("");
+function RegisterDialog({ open, busy, err, onClose, onSubmit }: any) {
     const [name, setName] = useState("");
-    const [tier, setTier] = useState("");
     const [description, setDescription] = useState("");
+    const [homepage, setHomepage] = useState("");
+    const [pricing, setPricing] = useState("");
+    const [currency, setCurrency] = useState("INR");
+    const [major, setMajor] = useState("");
+    const [interval, setIntervalVal] = useState("month");
 
-    useEffect(() => {
-        if (open && apps.length) setAppId(apps[0].id);
-    }, [open, apps]);
+    const valid = name.trim().length >= 2 && parseFloat(major) > 0;
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaper }}>
-            <DialogTitle sx={{ fontWeight: 700 }}>New product</DialogTitle>
+            <DialogTitle sx={{ fontWeight: 700 }}>Register product</DialogTitle>
             <DialogContent>
                 <Stack spacing={2.2} sx={{ mt: 1 }}>
-                    <TextField select label="App" value={appId} onChange={(e) => setAppId(e.target.value)} sx={field} fullWidth>
-                        {apps.map((a: any) => (
-                            <MenuItem key={a.id} value={a.id}>
-                                {a.name} ({a.slug})
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                    <TextField label="Product name" placeholder="Blogs Member" value={name} onChange={(e) => setName(e.target.value)} sx={field} fullWidth />
-                    <TextField label="Tier slug" placeholder="member" helperText="The entitlement tier granted on purchase (a-z 0-9 _)" value={tier} onChange={(e) => setTier(e.target.value)} sx={field} fullWidth />
+                    <TextField
+                        label="Product name"
+                        placeholder="My Pro Plan"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        helperText={name.trim().length >= 2 ? `Client ID: ${slugPreview(name)}` : "We derive a stable Client ID from this"}
+                        sx={field}
+                        fullWidth
+                    />
                     <TextField label="Description" multiline minRows={2} value={description} onChange={(e) => setDescription(e.target.value)} sx={field} fullWidth />
+                    <TextField label="Homepage URL" placeholder="http://localhost:3000 or https://myapp.com" value={homepage} onChange={(e) => setHomepage(e.target.value)} sx={field} fullWidth />
+                    <TextField label="Pricing page URL" placeholder="https://myapp.com/pricing" helperText="Must be https and return 200, else left empty" value={pricing} onChange={(e) => setPricing(e.target.value)} sx={field} fullWidth />
+                    <Stack direction="row" spacing={2}>
+                        <TextField select label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)} sx={{ ...field, minWidth: 110 }}>
+                            {CURRENCIES.map((c) => (
+                                <MenuItem key={c} value={c}>{c}</MenuItem>
+                            ))}
+                        </TextField>
+                        <TextField label="Price" type="number" placeholder="199" value={major} onChange={(e) => setMajor(e.target.value)} helperText="Major units (e.g. 199)" sx={field} fullWidth />
+                        <TextField select label="Per" value={interval} onChange={(e) => setIntervalVal(e.target.value)} sx={{ ...field, minWidth: 110 }}>
+                            {INTERVALS.map((i) => (
+                                <MenuItem key={i} value={i}>{i}</MenuItem>
+                            ))}
+                        </TextField>
+                    </Stack>
                     {err && <Typography sx={{ color: "#f87171", fontSize: "0.85rem" }}>{err}</Typography>}
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} sx={{ textTransform: "none", color: "rgba(255,255,255,0.6)" }}>
-                    Cancel
-                </Button>
+                <Button onClick={onClose} sx={{ textTransform: "none", color: "rgba(255,255,255,0.6)" }}>Cancel</Button>
                 <Button
-                    disabled={busy || !appId || !name || !tier}
-                    onClick={() => onSubmit({ app_id: appId, name, tier, description })}
+                    disabled={busy || !valid}
+                    onClick={() => onSubmit({ name, description, homepage_url: homepage, pricing_url: pricing, currency, major, interval })}
                     sx={primaryBtn}
                 >
-                    {busy ? "Creating…" : "Create product"}
+                    {busy ? "Registering…" : "Register product"}
                 </Button>
             </DialogActions>
         </Dialog>
@@ -421,7 +433,7 @@ function ProductDialog({
 function PriceDialog({ open, busy, err, onClose, onSubmit }: any) {
     const [currency, setCurrency] = useState("INR");
     const [major, setMajor] = useState("");
-    const [interval, setInterval] = useState("month");
+    const [interval, setIntervalVal] = useState("month");
     const [intervalCount, setIntervalCount] = useState("1");
     const [region, setRegion] = useState("");
 
@@ -433,19 +445,15 @@ function PriceDialog({ open, busy, err, onClose, onSubmit }: any) {
                     <Stack direction="row" spacing={2}>
                         <TextField select label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)} sx={{ ...field, minWidth: 120 }}>
                             {CURRENCIES.map((c) => (
-                                <MenuItem key={c} value={c}>
-                                    {c}
-                                </MenuItem>
+                                <MenuItem key={c} value={c}>{c}</MenuItem>
                             ))}
                         </TextField>
-                        <TextField label="Amount" placeholder="199" type="number" value={major} onChange={(e) => setMajor(e.target.value)} helperText="Major units (e.g. 199 = ₹199.00)" sx={field} fullWidth />
+                        <TextField label="Amount" type="number" placeholder="199" value={major} onChange={(e) => setMajor(e.target.value)} helperText="Major units" sx={field} fullWidth />
                     </Stack>
                     <Stack direction="row" spacing={2}>
-                        <TextField select label="Interval" value={interval} onChange={(e) => setInterval(e.target.value)} sx={{ ...field, minWidth: 140 }}>
+                        <TextField select label="Interval" value={interval} onChange={(e) => setIntervalVal(e.target.value)} sx={{ ...field, minWidth: 140 }}>
                             {INTERVALS.map((i) => (
-                                <MenuItem key={i} value={i}>
-                                    {i}
-                                </MenuItem>
+                                <MenuItem key={i} value={i}>{i}</MenuItem>
                             ))}
                         </TextField>
                         <TextField label="Count" type="number" value={intervalCount} onChange={(e) => setIntervalCount(e.target.value)} sx={{ ...field, minWidth: 100 }} />
@@ -455,14 +463,8 @@ function PriceDialog({ open, busy, err, onClose, onSubmit }: any) {
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} sx={{ textTransform: "none", color: "rgba(255,255,255,0.6)" }}>
-                    Cancel
-                </Button>
-                <Button
-                    disabled={busy || !major}
-                    onClick={() => onSubmit({ currency, major, interval, interval_count: intervalCount, region })}
-                    sx={primaryBtn}
-                >
+                <Button onClick={onClose} sx={{ textTransform: "none", color: "rgba(255,255,255,0.6)" }}>Cancel</Button>
+                <Button disabled={busy || !(parseFloat(major) > 0)} onClick={() => onSubmit({ currency, major, interval, interval_count: intervalCount, region })} sx={primaryBtn}>
                     {busy ? "Adding…" : "Add price"}
                 </Button>
             </DialogActions>
@@ -470,9 +472,49 @@ function PriceDialog({ open, busy, err, onClose, onSubmit }: any) {
     );
 }
 
+function slugPreview(name: string): string {
+    return (
+        name
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+            .slice(0, 38) || "app"
+    );
+}
+
+const field = {
+    "& .MuiOutlinedInput-root": {
+        color: "#e5e7eb",
+        background: "rgba(255,255,255,0.02)",
+        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
+        "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
+        "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
+    },
+    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
+};
+
+const mono = {
+    fontFamily: "var(--font-geist-mono)",
+    fontSize: "0.85rem",
+    p: 1.2,
+    borderRadius: "10px",
+    background: "rgba(0,0,0,0.3)",
+    border: "1px solid rgba(255,255,255,0.1)",
+};
+
+const linkSx = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 0.4,
+    color: "rgba(245,245,244,0.55)",
+    fontSize: "0.78rem",
+    textDecoration: "none",
+    "&:hover": { color: "#c4b5fd" },
+};
+
 const dialogPaper = {
-    bgcolor: "rgba(17,21,28,0.97)",
-    backdropFilter: "blur(20px)",
+    bgcolor: "#14171e",
     border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: "16px",
     color: "#f5f5f4",
@@ -484,8 +526,9 @@ const primaryBtn = {
     fontWeight: 700,
     color: "#fff",
     px: 2.4,
+    py: 1,
     borderRadius: "10px",
-    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-    "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
+    background: "#7c5cff",
+    "&:hover": { background: "#8a6dff" },
     "&.Mui-disabled": { opacity: 0.4, color: "#fff" },
 };
