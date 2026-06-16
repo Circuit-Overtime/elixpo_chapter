@@ -86,7 +86,11 @@ function loadRazorpayScript(): Promise<boolean> {
 
 function CheckoutInner() {
     const params = useSearchParams();
+    // Primary: server-created session id (?session=). Legacy: signed handoff
+    // token (?token=) for callers that haven't migrated to /v1/checkout/sessions.
+    const sessionParam = params.get("session");
     const token = params.get("token");
+    const handle = sessionParam || token;
 
     const [phase, setPhase] = useState<Phase>("loading");
     const [error, setError] = useState("");
@@ -98,17 +102,18 @@ function CheckoutInner() {
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            if (!token) {
+            if (!handle) {
                 setError("This checkout link is missing or has already been used.");
                 setPhase("error");
                 return;
             }
+            const reqBody = sessionParam ? { session_id: sessionParam } : { token };
             try {
                 const [res] = await Promise.all([
                     fetch("/api/checkout/session", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ token }),
+                        body: JSON.stringify(reqBody),
                     }),
                     loadRazorpayScript(),
                 ]);
@@ -126,7 +131,7 @@ function CheckoutInner() {
         return () => {
             cancelled = true;
         };
-    }, [token]);
+    }, [handle, sessionParam, token]);
 
     const goBack = () => {
         const back = session?.return_url;

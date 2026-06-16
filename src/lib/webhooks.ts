@@ -10,7 +10,9 @@
  * Body: { id, type, created, data: <EntitlementView> }
  *
  * The consumer recomputes HMAC_SHA256(secret, `${timestamp}.${rawBody}`) with
- * the shared ELIXPO_PAY_WEBHOOK_SECRET and rejects on mismatch or stale ts.
+ * its per-app signing secret (`whsec_…`, shown in the merchant dashboard) and
+ * rejects on mismatch or stale ts. Older endpoints without a stored
+ * signing_secret fall back to the env var named by `secret_ref`.
  */
 
 import type { D1Database } from "@cloudflare/workers-types";
@@ -24,7 +26,21 @@ export interface WebhookEndpointRow {
     app_id: string;
     url: string;
     secret_ref: string;
+    signing_secret?: string | null;
     events: string;
+}
+
+/**
+ * Resolve the HMAC secret for an endpoint. Prefer the per-app `signing_secret`
+ * stored on the row (Stripe-style `whsec_…`); fall back to the env var named by
+ * `secret_ref` for legacy endpoints created before per-app secrets existed.
+ */
+async function endpointSecret(
+    endpoint: WebhookEndpointRow,
+): Promise<string | null> {
+    if (endpoint.signing_secret) return endpoint.signing_secret;
+    if (endpoint.secret_ref) return (await getEnv(endpoint.secret_ref)) ?? null;
+    return null;
 }
 
 export async function fireEntitlementUpdated(
@@ -32,10 +48,10 @@ export async function fireEntitlementUpdated(
     endpoint: WebhookEndpointRow,
     data: EntitlementView,
 ): Promise<void> {
-    const secret = await getEnv(endpoint.secret_ref);
+    const secret = await endpointSecret(endpoint);
     if (!secret) {
         console.error(
-            `[webhook] missing secret env ${endpoint.secret_ref} for endpoint ${endpoint.id}`,
+            `[webhook] no signing secret for endpoint ${endpoint.id} (app ${endpoint.app_id})`,
         );
         return;
     }

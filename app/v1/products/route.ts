@@ -1,32 +1,12 @@
 export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
-import { sha256Hex, timingSafeEqual } from "@/lib/crypto";
+import { appFromApiKey } from "@/lib/api-auth";
 import { getDatabase } from "@/lib/d1-client";
 import { newId } from "@/lib/ids";
-import type { D1Database } from "@cloudflare/workers-types";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
 const INTERVALS = ["day", "week", "month", "year"];
-
-/** Resolve the app from its secret key (Bearer / X-Elixpo-Pay-Key). */
-async function appFromKey(db: D1Database, request: NextRequest): Promise<any | null> {
-    const auth = request.headers.get("authorization");
-    const key = auth?.startsWith("Bearer ")
-        ? auth.slice(7)
-        : request.headers.get("x-elixpo-pay-key");
-    if (!key) return null;
-    const hash = await sha256Hex(key);
-    // Look up by hash; compare in constant time as a belt-and-suspenders guard.
-    const app = (await db
-        .prepare("SELECT * FROM apps WHERE api_key_hash = ? AND status = 'active'")
-        .bind(hash)
-        .first()) as any;
-    if (!app || !app.api_key_hash || !timingSafeEqual(hash, app.api_key_hash)) {
-        return null;
-    }
-    return app;
-}
 
 const priceKey = (currency: string, region: string | null, interval: string) =>
     `${currency}|${region || ""}|${interval}`;
@@ -52,7 +32,7 @@ const priceKey = (currency: string, region: string | null, interval: string) =>
 export async function POST(request: NextRequest) {
     try {
         const db = await getDatabase();
-        const app = await appFromKey(db, request);
+        const app = await appFromApiKey(db, request);
         if (!app) {
             return NextResponse.json({ error: "unauthorized" }, { status: 401 });
         }

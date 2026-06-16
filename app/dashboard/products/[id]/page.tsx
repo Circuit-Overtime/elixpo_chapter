@@ -46,6 +46,11 @@ export default function ProductDetailPage() {
     const [confirmArchive, setConfirmArchive] = useState(false);
     const [confirmRegen, setConfirmRegen] = useState(false);
     const [archiveBusy, setArchiveBusy] = useState(false);
+    const [webhook, setWebhook] = useState<any>(null);
+    const [webhookUrl, setWebhookUrl] = useState("");
+    const [webhookSecretOnce, setWebhookSecretOnce] = useState<string | null>(null);
+    const [webhookBusy, setWebhookBusy] = useState(false);
+    const [confirmWebhookRegen, setConfirmWebhookRegen] = useState(false);
 
     const load = async () => {
         const r = await fetch(`/api/dashboard/products/${id}`, { credentials: "include" });
@@ -58,8 +63,59 @@ export default function ProductDetailPage() {
         setLoading(false);
     };
 
+    const loadWebhook = async () => {
+        const r = await fetch(`/api/dashboard/products/${id}/webhook`, { credentials: "include" });
+        if (!r.ok) return;
+        const d: any = await r.json();
+        setWebhook(d.endpoint);
+        setWebhookUrl(d.endpoint?.url || "");
+    };
+
+    const saveWebhook = async () => {
+        setWebhookBusy(true);
+        setErr("");
+        try {
+            const r = await fetch(`/api/dashboard/products/${id}/webhook`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ url: webhookUrl.trim() }),
+            });
+            const d: any = await r.json();
+            if (!r.ok) throw new Error(d.error_description || d.error || "failed");
+            if (d.signing_secret) setWebhookSecretOnce(d.signing_secret);
+            await loadWebhook();
+        } catch (e: any) {
+            setErr(e?.message || "Could not save webhook");
+        } finally {
+            setWebhookBusy(false);
+        }
+    };
+
+    const regenWebhookSecret = async () => {
+        setWebhookBusy(true);
+        setErr("");
+        try {
+            const r = await fetch(`/api/dashboard/products/${id}/webhook`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+            });
+            const d: any = await r.json();
+            if (!r.ok) throw new Error(d.error_description || d.error || "failed");
+            setWebhookSecretOnce(d.signing_secret);
+            await loadWebhook();
+        } catch (e: any) {
+            setErr(e?.message || "Could not regenerate secret");
+        } finally {
+            setWebhookBusy(false);
+            setConfirmWebhookRegen(false);
+        }
+    };
+
     useEffect(() => {
         load();
+        loadWebhook();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
@@ -325,6 +381,74 @@ export default function ProductDetailPage() {
                 {err && <Typography sx={{ color: "#f87171", fontSize: "0.85rem", mt: 1 }}>{err}</Typography>}
             </GlassCard>
 
+            {/* Entitlement webhook */}
+            <GlassCard sx={{ mb: 2 }}>
+                <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ mb: 1.5 }}>
+                    <Box>
+                        <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Entitlement webhook</Typography>
+                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem" }}>
+                            We POST <code>entitlement.updated</code> here after each payment. Your app verifies it with the signing secret.
+                        </Typography>
+                    </Box>
+                    {webhook?.has_secret && (
+                        <Button
+                            onClick={() => setConfirmWebhookRegen(true)}
+                            disabled={webhookBusy}
+                            startIcon={<AutorenewIcon sx={{ fontSize: "1rem !important" }} />}
+                            sx={{ textTransform: "none", fontWeight: 600, color: "#c4b5fd", border: "1px solid rgba(155,123,247,0.3)", borderRadius: "10px", px: 1.8, "&.Mui-disabled": { opacity: 0.5 } }}
+                        >
+                            Roll secret
+                        </Button>
+                    )}
+                </Stack>
+
+                <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                    Endpoint URL
+                </Typography>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ xs: "stretch", sm: "center" }}>
+                    <TextField
+                        value={webhookUrl}
+                        onChange={(e) => setWebhookUrl(e.target.value)}
+                        placeholder="https://yourapp.com/api/billing/grant"
+                        size="small"
+                        fullWidth
+                        sx={field}
+                    />
+                    <Button
+                        onClick={saveWebhook}
+                        disabled={webhookBusy || !webhookUrl.trim() || webhookUrl.trim() === webhook?.url}
+                        sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2.4, py: 0.9, borderRadius: "10px", background: "#7c5cff", whiteSpace: "nowrap", "&:hover": { background: "#8a6dff" }, "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}
+                    >
+                        {webhookBusy ? "Saving…" : webhook ? "Update" : "Save"}
+                    </Button>
+                </Stack>
+
+                {webhookSecretOnce ? (
+                    <Box sx={{ mt: 2 }}>
+                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                            Signing secret — shown once
+                        </Typography>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Box sx={{ ...mono, flexGrow: 1, overflowX: "auto", whiteSpace: "nowrap" }}>{webhookSecretOnce}</Box>
+                            <Button
+                                onClick={() => { navigator.clipboard?.writeText(webhookSecretOnce); }}
+                                startIcon={<ContentCopyIcon sx={{ fontSize: "1rem !important" }} />}
+                                sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2, background: "#7c5cff", borderRadius: "10px", "&:hover": { background: "#8a6dff" } }}
+                            >
+                                Copy
+                            </Button>
+                        </Stack>
+                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.78rem", mt: 0.8 }}>
+                            Store this as <code>ELIXPO_PAY_WEBHOOK_SECRET</code> in your app. It won't be shown again.
+                        </Typography>
+                    </Box>
+                ) : webhook?.secret_preview ? (
+                    <Typography sx={{ ...mono, color: "rgba(245,245,244,0.5)", mt: 1.5 }}>
+                        Signing secret: {webhook.secret_preview}
+                    </Typography>
+                ) : null}
+            </GlassCard>
+
             {/* Pricing tiers */}
             <GlassCard>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -429,6 +553,24 @@ export default function ProductDetailPage() {
                 }
                 onConfirm={doRegenerate}
                 onClose={() => setConfirmRegen(false)}
+            />
+
+            <ConfirmDialog
+                open={confirmWebhookRegen}
+                destructive
+                busy={webhookBusy}
+                title="Roll the webhook signing secret?"
+                confirmLabel="Roll secret"
+                message={
+                    <>
+                        The <strong>current signing secret stops working immediately</strong>.
+                        Your app will reject our <code>entitlement.updated</code> webhooks —
+                        and members won't be granted access — until you update{" "}
+                        <code>ELIXPO_PAY_WEBHOOK_SECRET</code> with the new value.
+                    </>
+                }
+                onConfirm={regenWebhookSecret}
+                onClose={() => setConfirmWebhookRegen(false)}
             />
         </Box>
     );
