@@ -12,12 +12,11 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import BackgroundAurora from "../components/background-aurora";
 
-const ACCOUNTS_URL = "https://accounts.elixpo.com";
+const ACCOUNTS_URL = "https://accounts.elixpo.com/docs";
 
 const BENEFITS = [
     "One account across every Elixpo product — sign in once, use them all.",
-    "Secure OAuth 2.0 — your password stays with Elixpo, we never see it.",
-    "New to Elixpo? You'll create your account in a few seconds.",
+    "Secure OAuth 2.0 — your password stays with Elixpo, we never see it."
 ];
 
 const ghostBtn = {
