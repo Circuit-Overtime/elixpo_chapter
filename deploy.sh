@@ -24,6 +24,13 @@ ENV_FILE=".env.local"
 #  - CLOUDFLARE_*           : local REST-fallback creds only (prod uses bindings)
 skip_var() {
   case "$1" in
+    # These NEXT_PUBLIC_* vars are read SERVER-SIDE at runtime (OAuth client id,
+    # accounts base URL) via dynamic env access, which Next does NOT inline — so
+    # they must exist as runtime Pages vars. Push them. (Same value local/prod.)
+    NEXT_PUBLIC_ELIXPO_CLIENT_ID|NEXT_PUBLIC_ACCOUNTS_URL)
+      return 1 ;;
+    # Everything else NEXT_PUBLIC_* is baked into the client at build time; and
+    # ENVIRONMENT/RAZORPAY_MODE come from wrangler.toml; CLOUDFLARE_* are local-only.
     NEXT_PUBLIC_*|ENVIRONMENT|NODE_ENV|RAZORPAY_MODE|\
     CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID|CLOUDFLARE_DATABASE_ID|CLOUDFLARE_KV_NAMESPACE_ID)
       return 0 ;;

@@ -2,7 +2,6 @@ export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
-import { appUrl, getEnv } from "@/lib/env";
 import { getOrBootstrapMerchant } from "@/lib/merchant";
 import { SESSION_COOKIE, signSession } from "@/lib/session";
 import { exchangeCodeForUser } from "@/lib/sso";
@@ -15,7 +14,7 @@ export async function GET(request: NextRequest) {
     const code = sp.get("code");
     const state = sp.get("state");
     const err = sp.get("error");
-    const origin = await appUrl();
+    const origin = request.nextUrl.origin;
 
     if (err) {
         return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(err)}`);
@@ -32,8 +31,8 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const redirectUri =
-            (await getEnv("CALLBACK_URL")) || `${origin}/api/auth/callback`;
+        // Must exactly match the redirect_uri sent in /api/auth/login.
+        const redirectUri = `${origin}/api/auth/callback`;
         const user = await exchangeCodeForUser(code, redirectUri);
 
         const db = await getDatabase();

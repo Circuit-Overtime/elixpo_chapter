@@ -4,6 +4,9 @@ export const runtime = "edge";
 
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import AutorenewIcon from "@mui/icons-material/Autorenew";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import LaunchIcon from "@mui/icons-material/Launch";
 import {
     Box,
@@ -37,6 +40,10 @@ export default function ProductDetailPage() {
     const [tierDlg, setTierDlg] = useState(false);
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState("");
+    const [creds, setCreds] = useState<{ clientId: string; secret: string } | null>(null);
+    const [copied, setCopied] = useState(false);
+    const [secretHidden, setSecretHidden] = useState(false);
+    const [regenBusy, setRegenBusy] = useState(false);
 
     const load = async () => {
         const r = await fetch(`/api/dashboard/products/${id}`, { credentials: "include" });
@@ -96,6 +103,38 @@ export default function ProductDetailPage() {
     const archive = async () => {
         await fetch(`/api/dashboard/products/${id}`, { method: "DELETE", credentials: "include" });
         router.push("/dashboard/products");
+    };
+
+    const regenerate = async () => {
+        if (!window.confirm("Regenerate the client secret? The current secret stops working immediately.")) return;
+        setRegenBusy(true);
+        setErr("");
+        try {
+            const r = await fetch(`/api/dashboard/products/${id}/regenerate-secret`, {
+                method: "POST",
+                credentials: "include",
+            });
+            const d: any = await r.json();
+            if (!r.ok) throw new Error(d.error_description || d.error || "failed");
+            setCopied(false);
+            setSecretHidden(false);
+            setCreds({ clientId: d.client_id, secret: d.client_secret });
+        } catch (e: any) {
+            setErr(e.message);
+        } finally {
+            setRegenBusy(false);
+        }
+    };
+
+    const copySecret = async () => {
+        if (!creds) return;
+        try {
+            await navigator.clipboard.writeText(creds.secret);
+            setCopied(true);
+            setSecretHidden(true);
+        } catch {
+            // ignore
+        }
     };
 
     if (loading) {
@@ -192,6 +231,57 @@ export default function ProductDetailPage() {
                 <StatCard label="Active members" value={String(stats.activeMembers)} sub="entitlements live" accent="#9b7bf7" />
                 <StatCard label="Paid txns" value={String(stats.paidTransactions)} sub="lifetime" accent="#fbbf24" />
             </Box>
+
+            {/* Developer credentials */}
+            <GlassCard sx={{ mb: 2 }}>
+                <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ mb: 1.5 }}>
+                    <Box>
+                        <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Developer credentials</Typography>
+                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem" }}>
+                            Use the Client ID + secret to call the entitlements API.
+                        </Typography>
+                    </Box>
+                    <Button
+                        onClick={regenerate}
+                        disabled={regenBusy}
+                        startIcon={<AutorenewIcon sx={{ fontSize: "1rem !important" }} />}
+                        sx={{ textTransform: "none", fontWeight: 600, color: "#c4b5fd", border: "1px solid rgba(155,123,247,0.3)", borderRadius: "10px", px: 1.8, "&.Mui-disabled": { opacity: 0.5 } }}
+                    >
+                        {regenBusy ? "Regenerating…" : "Regenerate secret"}
+                    </Button>
+                </Stack>
+
+                <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                    Client ID
+                </Typography>
+                <Box sx={{ ...mono, color: "#c4b5fd", mb: creds ? 2 : 0 }}>{product.client_id}</Box>
+
+                {creds && (
+                    <>
+                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                            New client secret
+                        </Typography>
+                        {secretHidden ? (
+                            <Box sx={{ ...mono, display: "flex", alignItems: "center", gap: 1, color: "rgba(245,245,244,0.5)" }}>
+                                <CheckCircleIcon sx={{ fontSize: 16, color: "#86efac" }} />
+                                Copied & hidden — the old secret no longer works. Store this as ELIXPO_PAY_API_KEY.
+                            </Box>
+                        ) : (
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <Box sx={{ ...mono, flexGrow: 1, overflowX: "auto", whiteSpace: "nowrap" }}>{creds.secret}</Box>
+                                <Button
+                                    onClick={copySecret}
+                                    startIcon={<ContentCopyIcon sx={{ fontSize: "1rem !important" }} />}
+                                    sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2, background: "#7c5cff", borderRadius: "10px", "&:hover": { background: "#8a6dff" } }}
+                                >
+                                    Copy
+                                </Button>
+                            </Stack>
+                        )}
+                    </>
+                )}
+                {err && <Typography sx={{ color: "#f87171", fontSize: "0.85rem", mt: 1 }}>{err}</Typography>}
+            </GlassCard>
 
             {/* Pricing tiers */}
             <GlassCard>
