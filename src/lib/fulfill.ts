@@ -14,7 +14,7 @@ import {
     recordTransaction,
     upsertOneTimeSubscription,
 } from "./repo";
-import { fireEntitlementUpdated } from "./webhooks";
+import { fireEntitlementUpdated, firePaymentCaptured } from "./webhooks";
 
 function periodDaysFromInterval(interval: string, count: number): number {
     const base =

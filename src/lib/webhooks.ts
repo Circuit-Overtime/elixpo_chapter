@@ -4,15 +4,19 @@
  * ── Contract (consumer must verify) ─────────────────────────────────────────
  * POST <endpoint.url>
  *   Content-Type: application/json
- *   X-Elixpo-Pay-Event:     entitlement.updated
+ *   X-Elixpo-Pay-Event:     <event type, e.g. entitlement.updated>
  *   X-Elixpo-Pay-Timestamp: <unix seconds>
  *   X-Elixpo-Pay-Signature: sha256=<hex HMAC of `${timestamp}.${rawBody}`>
- * Body: { id, type, created, data: <EntitlementView> }
+ * Body: { id, type, created, data }
  *
  * The consumer recomputes HMAC_SHA256(secret, `${timestamp}.${rawBody}`) with
  * its per-app signing secret (`whsec_…`, shown in the merchant dashboard) and
  * rejects on mismatch or stale ts. Older endpoints without a stored
  * signing_secret fall back to the env var named by `secret_ref`.
+ *
+ * Each endpoint subscribes to a SUBSET of event types (the `events` column).
+ * We only deliver an event the endpoint is subscribed to — so a merchant can
+ * receive just the fulfillment event, or also opt into payment notifications.
  */
 
 import type { D1Database } from "@cloudflare/workers-types";
@@ -20,6 +24,59 @@ import { hmacSha256Hex } from "./crypto";
 import type { EntitlementView } from "./entitlements";
 import { getEnv } from "./env";
 import { newId } from "./ids";
+
+/**
+ * The events Elixpo Pay can emit. Surfaced in the dashboard so merchants pick
+ * which to receive. Keep in sync with the docs (app/docs/webhooks).
+ */
+export const WEBHOOK_EVENT_TYPES = [
+    {
+        type: "entitlement.updated",
+        label: "Entitlement updated",
+        description:
+            "A buyer's access was granted, changed, or expired. Required to fulfill purchases.",
+        required: true,
+    },
+    {
+        type: "payment.captured",
+        label: "Payment captured",
+        description:
+            "A payment succeeded. Useful for receipts, analytics, or your own ledger.",
+        required: false,
+    },
+] as const;
+
+export type WebhookEventType = (typeof WEBHOOK_EVENT_TYPES)[number]["type"];
+
+const KNOWN_EVENTS = new Set(WEBHOOK_EVENT_TYPES.map((e) => e.type));
+const REQUIRED_EVENTS = WEBHOOK_EVENT_TYPES.filter((e) => e.required).map(
+    (e) => e.type,
+);
+
+/** Parse the stored `events` JSON, falling back to the required set. */
+export function parseEvents(raw: string | null | undefined): string[] {
+    if (!raw) return [...REQUIRED_EVENTS];
+    try {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr.filter((e) => typeof e === "string");
+    } catch {
+        // ignore
+    }
+    return [...REQUIRED_EVENTS];
+}
+
+/** Sanitise a requested subscription: keep known events, always keep required. */
+export function normaliseEvents(requested: unknown): string[] {
+    const set = new Set<string>(REQUIRED_EVENTS);
+    if (Array.isArray(requested)) {
+        for (const e of requested) {
+            if (typeof e === "string" && KNOWN_EVENTS.has(e as WebhookEventType)) {
+                set.add(e);
+            }
+        }
+    }
+    return [...set];
+}
 
 export interface WebhookEndpointRow {
     id: string;
@@ -43,11 +100,20 @@ async function endpointSecret(
     return null;
 }
 
-export async function fireEntitlementUpdated(
+/**
+ * Sign and deliver one event to an endpoint, recording the attempt. No-op if
+ * the endpoint isn't subscribed to `eventType`.
+ */
+export async function fireWebhook(
     db: D1Database,
     endpoint: WebhookEndpointRow,
-    data: EntitlementView,
+    eventType: WebhookEventType,
+    data: unknown,
 ): Promise<void> {
+    if (!parseEvents(endpoint.events).includes(eventType)) {
+        return; // not subscribed — skip silently
+    }
+
     const secret = await endpointSecret(endpoint);
     if (!secret) {
         console.error(
@@ -56,7 +122,6 @@ export async function fireEntitlementUpdated(
         return;
     }
 
-    const eventType = "entitlement.updated";
     const payload = {
         id: newId("webhookDelivery"),
         type: eventType,
@@ -111,4 +176,33 @@ export async function fireEntitlementUpdated(
             .bind(String(err?.message || err).slice(0, 1000), deliveryId)
             .run();
     }
+}
+
+/** Deliver the fulfillment event (access granted/changed/expired). */
+export async function fireEntitlementUpdated(
+    db: D1Database,
+    endpoint: WebhookEndpointRow,
+    data: EntitlementView,
+): Promise<void> {
+    await fireWebhook(db, endpoint, "entitlement.updated", data);
+}
+
+export interface PaymentCapturedData {
+    app: string;
+    uid: string;
+    transaction_id: string;
+    provider_payment_id: string | null;
+    provider_order_id: string | null;
+    currency: string;
+    amount: number;
+    tier: string;
+}
+
+/** Deliver the optional payment-captured notification. */
+export async function firePaymentCaptured(
+    db: D1Database,
+    endpoint: WebhookEndpointRow,
+    data: PaymentCapturedData,
+): Promise<void> {
+    await fireWebhook(db, endpoint, "payment.captured", data);
 }
