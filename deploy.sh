@@ -24,7 +24,7 @@ ENV_FILE=".env.local"
 #  - CLOUDFLARE_*           : local REST-fallback creds only (prod uses bindings)
 skip_var() {
   case "$1" in
-    NEXT_PUBLIC_*|ENVIRONMENT|NODE_ENV|\
+    NEXT_PUBLIC_*|ENVIRONMENT|NODE_ENV|RAZORPAY_MODE|\
     CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID|CLOUDFLARE_DATABASE_ID|CLOUDFLARE_KV_NAMESPACE_ID)
       return 0 ;;
     *) return 1 ;;

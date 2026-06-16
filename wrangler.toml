@@ -19,7 +19,7 @@ id = "5fcc8927beed4a6690d7f5b168fe1a62"
 
 # Production environment
 [env.production]
-vars = { ENVIRONMENT = "production" }
+vars = { ENVIRONMENT = "production", RAZORPAY_MODE = "live" }
 
   [[env.production.d1_databases]]
   binding = "DB"
