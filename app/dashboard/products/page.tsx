@@ -16,9 +16,7 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    MenuItem,
     Stack,
-    Switch,
     TextField,
     Typography,
 } from "@mui/material";
@@ -26,15 +24,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatMoney, GlassCard } from "@/components/dashboard-ui";
 
-const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
-const INTERVALS = ["day", "week", "month", "year"];
-
 export default function ProductsPage() {
     const [loading, setLoading] = useState(true);
     const [products, setProducts] = useState<any[]>([]);
 
     const [registerDlg, setRegisterDlg] = useState(false);
-    const [priceDlg, setPriceDlg] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState("");
 
@@ -52,15 +46,7 @@ export default function ProductsPage() {
         load();
     }, []);
 
-    const register = async (form: {
-        name: string;
-        description: string;
-        homepage_url: string;
-        pricing_url: string;
-        currency: string;
-        major: string;
-        interval: string;
-    }) => {
+    const register = async (form: { name: string; description: string; homepage_url: string; pricing_url: string }) => {
         setBusy(true);
         setErr("");
         try {
@@ -73,12 +59,6 @@ export default function ProductsPage() {
                     description: form.description || null,
                     homepage_url: form.homepage_url || null,
                     pricing_url: form.pricing_url || null,
-                    price: {
-                        currency: form.currency,
-                        unit_amount: Math.round(parseFloat(form.major) * 100),
-                        interval: form.interval,
-                        interval_count: 1,
-                    },
                 }),
             });
             const d: any = await r.json();
@@ -93,52 +73,6 @@ export default function ProductsPage() {
         } finally {
             setBusy(false);
         }
-    };
-
-    const addPrice = async (
-        productId: string,
-        form: { currency: string; major: string; interval: string; interval_count: string; region: string },
-    ) => {
-        setBusy(true);
-        setErr("");
-        try {
-            const r = await fetch("/api/dashboard/prices", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                    product_id: productId,
-                    currency: form.currency,
-                    unit_amount: Math.round(parseFloat(form.major) * 100),
-                    interval: form.interval,
-                    interval_count: Number(form.interval_count) || 1,
-                    region: form.region || null,
-                }),
-            });
-            const d: any = await r.json();
-            if (!r.ok) throw new Error(d.error_description || d.error);
-            setPriceDlg(null);
-            await load();
-        } catch (e: any) {
-            setErr(e.message);
-        } finally {
-            setBusy(false);
-        }
-    };
-
-    const togglePrice = async (priceId: string, active: boolean) => {
-        await fetch(`/api/dashboard/prices/${priceId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ active }),
-        });
-        await load();
-    };
-
-    const archive = async (productId: string) => {
-        await fetch(`/api/dashboard/products/${productId}`, { method: "DELETE", credentials: "include" });
-        await load();
     };
 
     const copySecret = async () => {
@@ -174,7 +108,7 @@ export default function ProductsPage() {
                         Products
                     </Typography>
                     <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.92rem" }}>
-                        Register a product to get its Client ID + secret and start selling. One product, one set of credentials.
+                        Register a product to get its Client ID + secret, then add pricing tiers inside it.
                     </Typography>
                 </Box>
                 <Button
@@ -225,7 +159,7 @@ export default function ProductsPage() {
                 <GlassCard sx={{ textAlign: "center", py: 6 }}>
                     <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 1 }}>No products yet</Typography>
                     <Typography sx={{ color: "rgba(245,245,244,0.55)", mb: 3, fontSize: "0.9rem" }}>
-                        Register your first product to receive a Client ID and secret, then start accepting payments.
+                        Register your first product to receive a Client ID and secret, then add pricing tiers.
                     </Typography>
                     <Button startIcon={<AddIcon />} onClick={() => setRegisterDlg(true)} sx={primaryBtn}>
                         Register product
@@ -233,109 +167,65 @@ export default function ProductsPage() {
                 </GlassCard>
             ) : (
                 <Stack spacing={2}>
-                    {products.map((p) => (
-                        <GlassCard key={p.id} sx={{ opacity: p.active ? 1 : 0.55 }}>
-                            <Stack
-                                direction={{ xs: "column", sm: "row" }}
-                                justifyContent="space-between"
-                                alignItems={{ xs: "flex-start", sm: "center" }}
-                                spacing={1.5}
-                                sx={{ mb: 2 }}
+                    {products.map((p) => {
+                        const tiers = p.prices?.length ?? 0;
+                        const minPrice = tiers ? p.prices.reduce((m: any, x: any) => (x.unit_amount < m.unit_amount ? x : m)) : null;
+                        return (
+                            <GlassCard
+                                key={p.id}
+                                sx={{
+                                    opacity: p.active ? 1 : 0.55,
+                                    transition: "border-color 0.2s ease",
+                                    "&:hover": { borderColor: "rgba(155,123,247,0.4)" },
+                                }}
                             >
-                                <Box sx={{ minWidth: 0 }}>
-                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                                        <Typography sx={{ fontWeight: 700, fontSize: "1.15rem" }}>{p.name}</Typography>
-                                        <Chip
-                                            label={p.active ? "Active" : "Archived"}
-                                            size="small"
-                                            sx={{
-                                                height: 22,
-                                                fontSize: "0.7rem",
-                                                color: p.active ? "#4ade80" : "#9ca3af",
-                                                bgcolor: p.active ? "rgba(34,197,94,0.1)" : "rgba(156,163,175,0.1)",
-                                                border: `1px solid ${p.active ? "rgba(34,197,94,0.25)" : "rgba(156,163,175,0.2)"}`,
-                                            }}
-                                        />
-                                    </Stack>
-                                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 0.6 }} flexWrap="wrap">
-                                        <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.78rem", color: "#c4b5fd" }}>
-                                            {p.client_id}
-                                        </Typography>
-                                        {p.homepage_url && (
-                                            <Box component="a" href={p.homepage_url} target="_blank" rel="noopener noreferrer" sx={linkSx}>
-                                                <LaunchIcon sx={{ fontSize: 13 }} /> Homepage
-                                            </Box>
-                                        )}
-                                        {p.pricing_url && (
-                                            <Box component="a" href={p.pricing_url} target="_blank" rel="noopener noreferrer" sx={linkSx}>
-                                                <LaunchIcon sx={{ fontSize: 13 }} /> Pricing
-                                            </Box>
-                                        )}
-                                    </Stack>
-                                    {p.description && (
-                                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.85rem", mt: 0.8 }}>
-                                            {p.description}
-                                        </Typography>
-                                    )}
-                                </Box>
-                                <Stack direction="row" spacing={1}>
-                                    <Button
-                                        size="small"
-                                        startIcon={<AddIcon sx={{ fontSize: "1rem !important" }} />}
-                                        onClick={() => {
-                                            setErr("");
-                                            setPriceDlg(p.id);
-                                        }}
-                                        sx={{ textTransform: "none", fontWeight: 600, color: "#c4b5fd", border: "1px solid rgba(155,123,247,0.3)", borderRadius: "8px", px: 1.5 }}
-                                    >
-                                        Add price
-                                    </Button>
-                                    {p.active === 1 && (
-                                        <Button
-                                            size="small"
-                                            onClick={() => archive(p.id)}
-                                            sx={{ textTransform: "none", fontWeight: 600, color: "rgba(248,113,113,0.8)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "8px", px: 1.5 }}
-                                        >
-                                            Archive
-                                        </Button>
-                                    )}
-                                </Stack>
-                            </Stack>
-
-                            {p.prices.length === 0 ? (
-                                <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.85rem", py: 1 }}>
-                                    No prices — add one so this product can be sold.
-                                </Typography>
-                            ) : (
-                                <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(auto-fill, minmax(220px, 1fr))" } }}>
-                                    {p.prices.map((pr: any) => (
-                                        <Box
-                                            key={pr.id}
-                                            sx={{
-                                                p: 1.8,
-                                                borderRadius: "12px",
-                                                border: "1px solid rgba(255,255,255,0.08)",
-                                                background: "rgba(255,255,255,0.02)",
-                                                opacity: pr.active ? 1 : 0.5,
-                                            }}
-                                        >
-                                            <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                                <Typography sx={{ fontWeight: 800, fontSize: "1.25rem" }}>
-                                                    {formatMoney(pr.unit_amount, pr.currency)}
-                                                </Typography>
-                                                <Switch size="small" checked={!!pr.active} onChange={(e) => togglePrice(pr.id, e.target.checked)} />
-                                            </Stack>
-                                            <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.8rem" }}>
-                                                per {pr.interval_count > 1 ? `${pr.interval_count} ` : ""}
-                                                {pr.interval}
-                                                {pr.region ? ` · ${pr.region}` : ""}
+                                <Stack
+                                    component={Link}
+                                    href={`/dashboard/products/${p.id}`}
+                                    direction={{ xs: "column", sm: "row" }}
+                                    justifyContent="space-between"
+                                    alignItems={{ xs: "flex-start", sm: "center" }}
+                                    spacing={1.5}
+                                    sx={{ textDecoration: "none", color: "inherit" }}
+                                >
+                                    <Box sx={{ minWidth: 0 }}>
+                                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                                            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", color: "#f5f5f4" }}>{p.name}</Typography>
+                                            <Chip
+                                                label={p.active ? "Active" : "Archived"}
+                                                size="small"
+                                                sx={{
+                                                    height: 22,
+                                                    fontSize: "0.7rem",
+                                                    color: p.active ? "#4ade80" : "#9ca3af",
+                                                    bgcolor: p.active ? "rgba(34,197,94,0.1)" : "rgba(156,163,175,0.1)",
+                                                    border: `1px solid ${p.active ? "rgba(34,197,94,0.25)" : "rgba(156,163,175,0.2)"}`,
+                                                }}
+                                            />
+                                        </Stack>
+                                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 0.6 }} flexWrap="wrap">
+                                            <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.78rem", color: "#c4b5fd" }}>
+                                                {p.client_id}
                                             </Typography>
-                                        </Box>
-                                    ))}
-                                </Box>
-                            )}
-                        </GlassCard>
-                    ))}
+                                            {p.homepage_url && (
+                                                <Box component="span" sx={linkSx}>
+                                                    <LaunchIcon sx={{ fontSize: 13 }} /> Homepage
+                                                </Box>
+                                            )}
+                                        </Stack>
+                                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.85rem", mt: 0.8 }}>
+                                            {tiers === 0
+                                                ? "No pricing tiers yet — add one inside"
+                                                : `${tiers} tier${tiers === 1 ? "" : "s"}${minPrice ? ` · from ${formatMoney(minPrice.unit_amount, minPrice.currency)}` : ""}`}
+                                        </Typography>
+                                    </Box>
+                                    <Typography sx={{ color: "#9b7bf7", fontWeight: 600, fontSize: "0.9rem", whiteSpace: "nowrap" }}>
+                                        Manage →
+                                    </Typography>
+                                </Stack>
+                            </GlassCard>
+                        );
+                    })}
                 </Stack>
             )}
 
@@ -361,13 +251,6 @@ export default function ProductsPage() {
             </Stack>
 
             <RegisterDialog open={registerDlg} busy={busy} err={err} onClose={() => setRegisterDlg(false)} onSubmit={register} />
-            <PriceDialog
-                open={!!priceDlg}
-                busy={busy}
-                err={err}
-                onClose={() => setPriceDlg(null)}
-                onSubmit={(form: any) => priceDlg && addPrice(priceDlg, form)}
-            />
         </Box>
     );
 }
@@ -377,11 +260,6 @@ function RegisterDialog({ open, busy, err, onClose, onSubmit }: any) {
     const [description, setDescription] = useState("");
     const [homepage, setHomepage] = useState("");
     const [pricing, setPricing] = useState("");
-    const [currency, setCurrency] = useState("INR");
-    const [major, setMajor] = useState("");
-    const [interval, setIntervalVal] = useState("month");
-
-    const valid = name.trim().length >= 2 && parseFloat(major) > 0;
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaper }}>
@@ -390,7 +268,7 @@ function RegisterDialog({ open, busy, err, onClose, onSubmit }: any) {
                 <Stack spacing={2.2} sx={{ mt: 1 }}>
                     <TextField
                         label="Product name"
-                        placeholder="My Pro Plan"
+                        placeholder="My App"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         helperText={name.trim().length >= 2 ? `Client ID: ${slugPreview(name)}` : "We derive a stable Client ID from this"}
@@ -400,72 +278,20 @@ function RegisterDialog({ open, busy, err, onClose, onSubmit }: any) {
                     <TextField label="Description" multiline minRows={2} value={description} onChange={(e) => setDescription(e.target.value)} sx={field} fullWidth />
                     <TextField label="Homepage URL" placeholder="http://localhost:3000 or https://myapp.com" value={homepage} onChange={(e) => setHomepage(e.target.value)} sx={field} fullWidth />
                     <TextField label="Pricing page URL" placeholder="https://myapp.com/pricing" helperText="Must be https and return 200, else left empty" value={pricing} onChange={(e) => setPricing(e.target.value)} sx={field} fullWidth />
-                    <Stack direction="row" spacing={2}>
-                        <TextField select label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)} sx={{ ...field, minWidth: 110 }}>
-                            {CURRENCIES.map((c) => (
-                                <MenuItem key={c} value={c}>{c}</MenuItem>
-                            ))}
-                        </TextField>
-                        <TextField label="Price" type="number" placeholder="199" value={major} onChange={(e) => setMajor(e.target.value)} helperText="Major units (e.g. 199)" sx={field} fullWidth />
-                        <TextField select label="Per" value={interval} onChange={(e) => setIntervalVal(e.target.value)} sx={{ ...field, minWidth: 110 }}>
-                            {INTERVALS.map((i) => (
-                                <MenuItem key={i} value={i}>{i}</MenuItem>
-                            ))}
-                        </TextField>
-                    </Stack>
+                    <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.82rem" }}>
+                        You'll add pricing tiers after registering, inside the product.
+                    </Typography>
                     {err && <Typography sx={{ color: "#f87171", fontSize: "0.85rem" }}>{err}</Typography>}
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
                 <Button onClick={onClose} sx={{ textTransform: "none", color: "rgba(255,255,255,0.6)" }}>Cancel</Button>
                 <Button
-                    disabled={busy || !valid}
-                    onClick={() => onSubmit({ name, description, homepage_url: homepage, pricing_url: pricing, currency, major, interval })}
+                    disabled={busy || name.trim().length < 2}
+                    onClick={() => onSubmit({ name, description, homepage_url: homepage, pricing_url: pricing })}
                     sx={primaryBtn}
                 >
                     {busy ? "Registering…" : "Register product"}
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
-}
-
-function PriceDialog({ open, busy, err, onClose, onSubmit }: any) {
-    const [currency, setCurrency] = useState("INR");
-    const [major, setMajor] = useState("");
-    const [interval, setIntervalVal] = useState("month");
-    const [intervalCount, setIntervalCount] = useState("1");
-    const [region, setRegion] = useState("");
-
-    return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaper }}>
-            <DialogTitle sx={{ fontWeight: 700 }}>Add price</DialogTitle>
-            <DialogContent>
-                <Stack spacing={2.2} sx={{ mt: 1 }}>
-                    <Stack direction="row" spacing={2}>
-                        <TextField select label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)} sx={{ ...field, minWidth: 120 }}>
-                            {CURRENCIES.map((c) => (
-                                <MenuItem key={c} value={c}>{c}</MenuItem>
-                            ))}
-                        </TextField>
-                        <TextField label="Amount" type="number" placeholder="199" value={major} onChange={(e) => setMajor(e.target.value)} helperText="Major units" sx={field} fullWidth />
-                    </Stack>
-                    <Stack direction="row" spacing={2}>
-                        <TextField select label="Interval" value={interval} onChange={(e) => setIntervalVal(e.target.value)} sx={{ ...field, minWidth: 140 }}>
-                            {INTERVALS.map((i) => (
-                                <MenuItem key={i} value={i}>{i}</MenuItem>
-                            ))}
-                        </TextField>
-                        <TextField label="Count" type="number" value={intervalCount} onChange={(e) => setIntervalCount(e.target.value)} sx={{ ...field, minWidth: 100 }} />
-                        <TextField label="Region (optional)" placeholder="IN" value={region} onChange={(e) => setRegion(e.target.value)} sx={field} fullWidth />
-                    </Stack>
-                    {err && <Typography sx={{ color: "#f87171", fontSize: "0.85rem" }}>{err}</Typography>}
-                </Stack>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} sx={{ textTransform: "none", color: "rgba(255,255,255,0.6)" }}>Cancel</Button>
-                <Button disabled={busy || !(parseFloat(major) > 0)} onClick={() => onSubmit({ currency, major, interval, interval_count: intervalCount, region })} sx={primaryBtn}>
-                    {busy ? "Adding…" : "Add price"}
                 </Button>
             </DialogActions>
         </Dialog>
@@ -509,8 +335,6 @@ const linkSx = {
     gap: 0.4,
     color: "rgba(245,245,244,0.55)",
     fontSize: "0.78rem",
-    textDecoration: "none",
-    "&:hover": { color: "#c4b5fd" },
 };
 
 const dialogPaper = {
