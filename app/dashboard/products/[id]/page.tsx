@@ -49,8 +49,19 @@ export default function ProductDetailPage() {
     const [webhook, setWebhook] = useState<any>(null);
     const [webhookUrl, setWebhookUrl] = useState("");
     const [webhookSecretOnce, setWebhookSecretOnce] = useState<string | null>(null);
+    const [webhookSecretHidden, setWebhookSecretHidden] = useState(false);
     const [webhookBusy, setWebhookBusy] = useState(false);
     const [confirmWebhookRegen, setConfirmWebhookRegen] = useState(false);
+
+    const copyWebhookSecret = async () => {
+        if (!webhookSecretOnce) return;
+        try {
+            await navigator.clipboard.writeText(webhookSecretOnce);
+            setWebhookSecretHidden(true);
+        } catch {
+            // ignore
+        }
+    };
 
     const load = async () => {
         const r = await fetch(`/api/dashboard/products/${id}`, { credentials: "include" });
@@ -83,7 +94,10 @@ export default function ProductDetailPage() {
             });
             const d: any = await r.json();
             if (!r.ok) throw new Error(d.error_description || d.error || "failed");
-            if (d.signing_secret) setWebhookSecretOnce(d.signing_secret);
+            if (d.signing_secret) {
+                setWebhookSecretHidden(false);
+                setWebhookSecretOnce(d.signing_secret);
+            }
             await loadWebhook();
         } catch (e: any) {
             setErr(e?.message || "Could not save webhook");
@@ -103,6 +117,7 @@ export default function ProductDetailPage() {
             });
             const d: any = await r.json();
             if (!r.ok) throw new Error(d.error_description || d.error || "failed");
+            setWebhookSecretHidden(false);
             setWebhookSecretOnce(d.signing_secret);
             await loadWebhook();
         } catch (e: any) {
@@ -428,19 +443,28 @@ export default function ProductDetailPage() {
                         <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
                             Signing secret — shown once
                         </Typography>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <Box sx={{ ...mono, flexGrow: 1, overflowX: "auto", whiteSpace: "nowrap" }}>{webhookSecretOnce}</Box>
-                            <Button
-                                onClick={() => { navigator.clipboard?.writeText(webhookSecretOnce); }}
-                                startIcon={<ContentCopyIcon sx={{ fontSize: "1rem !important" }} />}
-                                sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2, background: "#7c5cff", borderRadius: "10px", "&:hover": { background: "#8a6dff" } }}
-                            >
-                                Copy
-                            </Button>
-                        </Stack>
-                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.78rem", mt: 0.8 }}>
-                            Store this as <code>ELIXPO_PAY_WEBHOOK_SECRET</code> in your app. It won't be shown again.
-                        </Typography>
+                        {webhookSecretHidden ? (
+                            <Box sx={{ ...mono, display: "flex", alignItems: "center", gap: 1, color: "rgba(245,245,244,0.5)" }}>
+                                <CheckCircleIcon sx={{ fontSize: 16, color: "#86efac" }} />
+                                Copied &amp; hidden — store it as ELIXPO_PAY_WEBHOOK_SECRET. It won't be shown again.
+                            </Box>
+                        ) : (
+                            <>
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <Box sx={{ ...mono, flexGrow: 1, overflowX: "auto", whiteSpace: "nowrap" }}>{webhookSecretOnce}</Box>
+                                    <Button
+                                        onClick={copyWebhookSecret}
+                                        startIcon={<ContentCopyIcon sx={{ fontSize: "1rem !important" }} />}
+                                        sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2, background: "#7c5cff", borderRadius: "10px", "&:hover": { background: "#8a6dff" } }}
+                                    >
+                                        Copy
+                                    </Button>
+                                </Stack>
+                                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.78rem", mt: 0.8 }}>
+                                    Store this as <code>ELIXPO_PAY_WEBHOOK_SECRET</code> in your app. It won't be shown again.
+                                </Typography>
+                            </>
+                        )}
                     </Box>
                 ) : webhook?.secret_preview ? (
                     <Typography sx={{ ...mono, color: "rgba(245,245,244,0.5)", mt: 1.5 }}>
