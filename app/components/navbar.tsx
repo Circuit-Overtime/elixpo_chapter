@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Chip, Toolbar, Typography } from "@mui/material";
+import { Box, Button, Chip, Stack, Toolbar, Typography } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Link from "next/link";
 
@@ -81,6 +81,45 @@ const Navbar = () => (
                     }}
                 />
             </Link>
+
+            <Stack direction="row" spacing={{ xs: 1, md: 1.5 }} alignItems="center">
+                <Button
+                    component={Link}
+                    href="/docs"
+                    sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: "0.9rem",
+                        color: "rgba(244,244,246,0.75)",
+                        display: { xs: "none", sm: "inline-flex" },
+                        "&:hover": { color: "#fff", background: "rgba(255,255,255,0.05)" },
+                    }}
+                >
+                    Docs
+                </Button>
+                <Button
+                    component={Link}
+                    href="/login"
+                    disableElevation
+                    sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: "0.9rem",
+                        color: "#fff",
+                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                        borderRadius: "10px",
+                        px: 2.2,
+                        py: 0.8,
+                        boxShadow: "0 4px 14px rgba(155,123,247,0.32)",
+                        "&:hover": {
+                            background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                            boxShadow: "0 6px 20px rgba(155,123,247,0.45)",
+                        },
+                    }}
+                >
+                    Sign in
+                </Button>
+            </Stack>
         </Toolbar>
     </AppBar>
 );
