@@ -61,19 +61,11 @@ const Footer = () => {
                     <Box sx={{ maxWidth: 360 }}>
                         <Stack direction="row" alignItems="center" spacing={1.2} sx={{ mb: 1.2 }}>
                             <Box
-                                sx={{
-                                    height: 28,
-                                    width: 28,
-                                    borderRadius: "8px",
-                                    display: "grid",
-                                    placeItems: "center",
-                                    fontWeight: 800,
-                                    color: "#fff",
-                                    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                                }}
-                            >
-                                ₹
-                            </Box>
+                                component="img"
+                                src="/mark.png"
+                                alt="Elixpo Pay"
+                                sx={{ height: 28, width: 28, borderRadius: "7px", display: "block" }}
+                            />
                             <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "#f4f4f6" }}>
                                 Elixpo{" "}
                                 <Box component="span" sx={{ color: ACCENT }}>
