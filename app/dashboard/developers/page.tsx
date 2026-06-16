@@ -41,9 +41,10 @@ export default function DevelopersPage() {
     const [newKey, setNewKey] = useState<{ slug: string; key: string } | null>(null);
     const [copied, setCopied] = useState(false);
 
-    const [slug, setSlug] = useState("");
     const [name, setName] = useState("");
-    const [returnUrl, setReturnUrl] = useState("");
+    const [description, setDescription] = useState("");
+    const [homepageUrl, setHomepageUrl] = useState("");
+    const [pricingUrl, setPricingUrl] = useState("");
 
     const load = async () => {
         const a: any = await fetch("/api/dashboard/apps", { credentials: "include" }).then((r) => r.json());
@@ -63,14 +64,20 @@ export default function DevelopersPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ slug, name, return_url: returnUrl || null }),
+                body: JSON.stringify({
+                    name,
+                    description: description || null,
+                    homepage_url: homepageUrl || null,
+                    pricing_url: pricingUrl || null,
+                }),
             });
             const d: any = await r.json();
             if (!r.ok) throw new Error(d.error_description || d.error);
             setDlg(false);
-            setSlug("");
             setName("");
-            setReturnUrl("");
+            setDescription("");
+            setHomepageUrl("");
+            setPricingUrl("");
             setNewKey({ slug: d.app.slug, key: d.api_key });
             await load();
         } catch (e: any) {
