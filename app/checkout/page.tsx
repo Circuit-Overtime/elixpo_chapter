@@ -15,6 +15,7 @@ interface SessionData {
     session_id: string;
     key_id: string;
     order_id: string;
+    test_mode?: boolean;
     amount: number;
     currency: string;
     product_name: string;
@@ -87,8 +88,34 @@ function CheckoutInner() {
         };
     }, [token]);
 
+    const finishSuccess = (returnUrl?: string | null) => {
+        setPhase("success");
+        const back = returnUrl || session?.return_url;
+        if (back) setTimeout(() => (window.location.href = back), 2200);
+    };
+
+    const payTest = async () => {
+        if (!session) return;
+        setPhase("paying");
+        try {
+            const v = await fetch("/api/checkout/test-complete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ session_id: session.session_id }),
+            });
+            const vd: any = await v.json();
+            if (!v.ok) throw new Error(vd.error || "test_failed");
+            finishSuccess(vd.return_url);
+        } catch (e: any) {
+            setError(e?.message || "Test payment failed.");
+            setPhase("error");
+        }
+    };
+
     const pay = async () => {
-        if (!session || !window.Razorpay) return;
+        if (!session) return;
+        if (session.test_mode) return payTest();
+        if (!window.Razorpay) return;
         setPhase("paying");
         const rzp = new window.Razorpay({
             key: session.key_id,
@@ -259,9 +286,27 @@ function CheckoutInner() {
                         }}
                     >
                         {phase === "paying"
-                            ? "Opening Razorpay…"
-                            : `Pay ${formatAmount(session.amount, session.currency)}`}
+                            ? session.test_mode
+                                ? "Completing…"
+                                : "Opening Razorpay…"
+                            : `${session.test_mode ? "Simulate payment · " : "Pay "}${formatAmount(session.amount, session.currency)}`}
                     </Button>
+
+                    {session.test_mode && (
+                        <Box
+                            sx={{
+                                mt: 1,
+                                textAlign: "center",
+                                fontSize: "0.72rem",
+                                fontWeight: 600,
+                                letterSpacing: "0.04em",
+                                textTransform: "uppercase",
+                                color: "#fbbf24",
+                            }}
+                        >
+                            Test mode — no real charge
+                        </Box>
+                    )}
 
                     <Typography
                         sx={{

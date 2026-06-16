@@ -94,6 +94,23 @@ export async function POST(request: NextRequest) {
 
         const razorpay = await razorpayFromEnv(getEnv);
         if (!razorpay) {
+            // Test payment mode: outside production, let checkout complete without
+            // a real provider so the full handoff -> grant -> entitlement loop can
+            // be exercised before Razorpay/Stripe bank accounts are connected.
+            const environment = await getEnv("ENVIRONMENT");
+            if (environment !== "production") {
+                return NextResponse.json({
+                    session_id: sessionId,
+                    provider: "test",
+                    test_mode: true,
+                    amount,
+                    currency: p.currency,
+                    product_name: resolved.product.name,
+                    tier: resolved.product.tier,
+                    prefill: { email: p.email ?? "" },
+                    return_url: p.return ?? app.return_url,
+                });
+            }
             return NextResponse.json(
                 {
                     error: "provider_unconfigured",
