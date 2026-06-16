@@ -17,6 +17,5 @@ yarn-error.log*
 next-env.d.ts
 
 # Local env (secrets) — never commit
-.env
 .env.local
 .env*.local
