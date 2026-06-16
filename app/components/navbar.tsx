@@ -1,29 +1,42 @@
 "use client";
 
+import GitHubIcon from "@mui/icons-material/GitHub";
+import LoginIcon from "@mui/icons-material/Login";
 import { Box, Button, Chip, Stack, Toolbar, Typography } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
+import IconButton from "@mui/material/IconButton";
 import Link from "next/link";
 
 const ACCENT = "#9b7bf7";
+const REPO_URL = "https://github.com/elixpo";
+
+const LINKS = [
+    { label: "Platform", href: "/#platform" },
+    { label: "Pricing", href: "/#start" },
+    { label: "Docs", href: "/docs" },
+    { label: "Developers", href: "/docs/quickstart" },
+    { label: "Dashboard", href: "/dashboard" },
+];
 
 const Navbar = () => (
     <AppBar
         position="sticky"
         elevation={0}
         sx={{
-            background: "rgba(15, 17, 23, 0.85)",
+            background: "rgba(11, 13, 18, 0.72)",
             backdropFilter: "blur(20px)",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
             zIndex: 1000,
         }}
     >
         <Toolbar
             sx={{
-                maxWidth: "1200px",
+                maxWidth: "1240px",
                 width: "100%",
                 mx: "auto",
                 px: { xs: 2, md: 4 },
                 minHeight: { xs: 60, md: 68 },
+                gap: 1,
             }}
         >
             <Link
@@ -34,7 +47,6 @@ const Navbar = () => (
                     display: "flex",
                     alignItems: "center",
                     gap: "12px",
-                    flexGrow: 1,
                 }}
             >
                 <Box
@@ -47,8 +59,7 @@ const Navbar = () => (
                         fontWeight: 800,
                         fontSize: "0.95rem",
                         color: "#fff",
-                        background:
-                            "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
                         boxShadow: "0 4px 14px rgba(155,123,247,0.35)",
                     }}
                 >
@@ -71,6 +82,7 @@ const Navbar = () => (
                     label="PAYMENTS"
                     size="small"
                     sx={{
+                        display: { xs: "none", sm: "inline-flex" },
                         bgcolor: "rgba(155, 123, 247, 0.12)",
                         color: ACCENT,
                         fontSize: "10px",
@@ -82,25 +94,62 @@ const Navbar = () => (
                 />
             </Link>
 
-            <Stack direction="row" spacing={{ xs: 1, md: 1.5 }} alignItems="center">
-                <Button
-                    component={Link}
-                    href="/docs"
+            {/* Center nav links */}
+            <Stack
+                direction="row"
+                spacing={0.5}
+                sx={{ flexGrow: 1, justifyContent: "center", display: { xs: "none", md: "flex" } }}
+            >
+                {LINKS.map((l) => (
+                    <Button
+                        key={l.label}
+                        component={Link}
+                        href={l.href}
+                        sx={{
+                            textTransform: "none",
+                            fontWeight: 600,
+                            fontSize: "0.88rem",
+                            color: "rgba(244,244,246,0.7)",
+                            px: 1.6,
+                            borderRadius: "9px",
+                            "&:hover": { color: "#fff", background: "rgba(255,255,255,0.05)" },
+                        }}
+                    >
+                        {l.label}
+                    </Button>
+                ))}
+            </Stack>
+
+            <Box sx={{ flexGrow: { xs: 1, md: 0 } }} />
+
+            <Stack direction="row" spacing={{ xs: 1, md: 1.2 }} alignItems="center">
+                <IconButton
+                    component="a"
+                    href={REPO_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="GitHub"
                     sx={{
-                        textTransform: "none",
-                        fontWeight: 600,
-                        fontSize: "0.9rem",
-                        color: "rgba(244,244,246,0.75)",
                         display: { xs: "none", sm: "inline-flex" },
-                        "&:hover": { color: "#fff", background: "rgba(255,255,255,0.05)" },
+                        color: "rgba(244,244,246,0.8)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "10px",
+                        width: 38,
+                        height: 38,
+                        "&:hover": {
+                            color: "#fff",
+                            borderColor: "rgba(155,123,247,0.45)",
+                            background: "rgba(155,123,247,0.08)",
+                        },
                     }}
                 >
-                    Docs
-                </Button>
+                    <GitHubIcon sx={{ fontSize: 20 }} />
+                </IconButton>
                 <Button
                     component={Link}
                     href="/login"
                     disableElevation
+                    startIcon={<LoginIcon sx={{ fontSize: "1rem !important" }} />}
                     sx={{
                         textTransform: "none",
                         fontWeight: 600,
