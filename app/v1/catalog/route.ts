@@ -4,6 +4,18 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getAppBySlug } from "@/lib/repo";
 
+// Public read endpoint — allow any origin so a consuming app can render its
+// pricing page client-side.
+const CORS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export function OPTIONS() {
+    return new Response(null, { status: 204, headers: CORS });
+}
+
 /**
  * GET /v1/catalog?app=<slug>
  *
@@ -61,10 +73,10 @@ export async function GET(request: NextRequest) {
                     region: t.region,
                 })),
             },
-            { headers: { "Cache-Control": "public, max-age=60" } },
+            { headers: { ...CORS, "Cache-Control": "public, max-age=60" } },
         );
     } catch (err: any) {
         console.error("[v1/catalog] error:", err);
-        return NextResponse.json({ error: "server_error" }, { status: 500 });
+        return NextResponse.json({ error: "server_error" }, { status: 500, headers: CORS });
     }
 }

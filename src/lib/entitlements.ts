@@ -164,3 +164,48 @@ export async function applyGrant(
         input.externalUid,
     )) as EntitlementRow;
 }
+
+/**
+ * Mark an active entitlement expired (membership lapsed). Bumps version, logs
+ * an immutable grant row, and expires the backing subscription. The caller
+ * fires the entitlement.updated webhook so the consuming app downgrades.
+ */
+export async function expireEntitlement(
+    db: D1Database,
+    row: EntitlementRow,
+): Promise<EntitlementRow> {
+    const version = row.version + 1;
+    await db
+        .prepare(
+            "UPDATE entitlements SET status = 'expired', version = ?, updated_at = datetime('now') WHERE id = ?",
+        )
+        .bind(version, row.id)
+        .run();
+
+    await db
+        .prepare(
+            `INSERT INTO grants (id, entitlement_id, app_id, external_uid, subscription_id, tier, action, expires_at)
+             VALUES (?, ?, ?, ?, ?, ?, 'expired', ?)`,
+        )
+        .bind(
+            newId("grant"),
+            row.id,
+            row.app_id,
+            row.external_uid,
+            row.subscription_id,
+            row.tier,
+            row.expires_at,
+        )
+        .run();
+
+    if (row.subscription_id) {
+        await db
+            .prepare(
+                "UPDATE subscriptions SET status = 'expired', updated_at = datetime('now') WHERE id = ?",
+            )
+            .bind(row.subscription_id)
+            .run();
+    }
+
+    return { ...row, status: "expired", version };
+}
