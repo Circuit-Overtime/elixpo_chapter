@@ -24,8 +24,9 @@ import {
     Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import ConfirmDialog from "@/components/confirm-dialog";
 import { formatMoney, GlassCard, StatCard } from "@/components/dashboard-ui";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
@@ -33,7 +34,6 @@ const INTERVALS = ["day", "week", "month", "year"];
 
 export default function ProductDetailPage() {
     const id = String(useParams().id);
-    const router = useRouter();
 
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
@@ -41,9 +41,11 @@ export default function ProductDetailPage() {
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState("");
     const [creds, setCreds] = useState<{ clientId: string; secret: string } | null>(null);
-    const [copied, setCopied] = useState(false);
     const [secretHidden, setSecretHidden] = useState(false);
     const [regenBusy, setRegenBusy] = useState(false);
+    const [confirmArchive, setConfirmArchive] = useState(false);
+    const [confirmRegen, setConfirmRegen] = useState(false);
+    const [archiveBusy, setArchiveBusy] = useState(false);
 
     const load = async () => {
         const r = await fetch(`/api/dashboard/products/${id}`, { credentials: "include" });
@@ -100,13 +102,27 @@ export default function ProductDetailPage() {
         await load();
     };
 
-    const archive = async () => {
+    const doArchive = async () => {
+        setArchiveBusy(true);
         await fetch(`/api/dashboard/products/${id}`, { method: "DELETE", credentials: "include" });
-        router.push("/dashboard/products");
+        setArchiveBusy(false);
+        setConfirmArchive(false);
+        await load();
     };
 
-    const regenerate = async () => {
-        if (!window.confirm("Regenerate the client secret? The current secret stops working immediately.")) return;
+    const doUnarchive = async () => {
+        setArchiveBusy(true);
+        await fetch(`/api/dashboard/products/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ active: true }),
+        });
+        setArchiveBusy(false);
+        await load();
+    };
+
+    const doRegenerate = async () => {
         setRegenBusy(true);
         setErr("");
         try {
@@ -116,13 +132,13 @@ export default function ProductDetailPage() {
             });
             const d: any = await r.json();
             if (!r.ok) throw new Error(d.error_description || d.error || "failed");
-            setCopied(false);
             setSecretHidden(false);
             setCreds({ clientId: d.client_id, secret: d.client_secret });
         } catch (e: any) {
             setErr(e.message);
         } finally {
             setRegenBusy(false);
+            setConfirmRegen(false);
         }
     };
 
@@ -130,7 +146,6 @@ export default function ProductDetailPage() {
         if (!creds) return;
         try {
             await navigator.clipboard.writeText(creds.secret);
-            setCopied(true);
             setSecretHidden(true);
         } catch {
             // ignore
@@ -215,15 +230,42 @@ export default function ProductDetailPage() {
                         </Typography>
                     )}
                 </Box>
-                {product.active === 1 && (
+                {product.active === 1 ? (
                     <Button
-                        onClick={archive}
+                        onClick={() => setConfirmArchive(true)}
                         sx={{ textTransform: "none", fontWeight: 600, color: "rgba(248,113,113,0.85)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "10px", px: 2 }}
                     >
                         Archive
                     </Button>
+                ) : (
+                    <Button
+                        onClick={doUnarchive}
+                        disabled={archiveBusy}
+                        sx={{ textTransform: "none", fontWeight: 700, color: "#fff", borderRadius: "10px", px: 2.2, background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)", "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" }, "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}
+                    >
+                        {archiveBusy ? "Unarchiving…" : "Unarchive"}
+                    </Button>
                 )}
             </Stack>
+
+            {product.active !== 1 && (
+                <Box
+                    sx={{
+                        mb: 3,
+                        px: 2,
+                        py: 1.4,
+                        borderRadius: "12px",
+                        background: "rgba(239,68,68,0.08)",
+                        border: "1px solid rgba(239,68,68,0.25)",
+                        color: "rgba(248,113,113,0.9)",
+                        fontSize: "0.88rem",
+                    }}
+                >
+                    <strong>This product is archived — payments are paused.</strong> Checkout
+                    can't resolve it and entitlements won't be granted. Click{" "}
+                    <strong>Unarchive</strong> to resume.
+                </Box>
+            )}
 
             {/* Stats */}
             <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(3, 1fr)" }, mb: 3 }}>
@@ -242,7 +284,7 @@ export default function ProductDetailPage() {
                         </Typography>
                     </Box>
                     <Button
-                        onClick={regenerate}
+                        onClick={() => setConfirmRegen(true)}
                         disabled={regenBusy}
                         startIcon={<AutorenewIcon sx={{ fontSize: "1rem !important" }} />}
                         sx={{ textTransform: "none", fontWeight: 600, color: "#c4b5fd", border: "1px solid rgba(155,123,247,0.3)", borderRadius: "10px", px: 1.8, "&.Mui-disabled": { opacity: 0.5 } }}
@@ -353,6 +395,41 @@ export default function ProductDetailPage() {
             </GlassCard>
 
             <TierDialog open={tierDlg} busy={busy} err={err} onClose={() => setTierDlg(false)} onSubmit={addTier} />
+
+            <ConfirmDialog
+                open={confirmArchive}
+                destructive
+                busy={archiveBusy}
+                title="Archive this product?"
+                confirmLabel="Archive product"
+                message={
+                    <>
+                        This <strong>pauses all payments</strong> for{" "}
+                        <strong>{product.name}</strong> — checkout stops working and no new
+                        entitlements are granted. Existing members keep their access until it
+                        expires. You can unarchive anytime to resume.
+                    </>
+                }
+                onConfirm={doArchive}
+                onClose={() => setConfirmArchive(false)}
+            />
+
+            <ConfirmDialog
+                open={confirmRegen}
+                destructive
+                busy={regenBusy}
+                title="Regenerate client secret?"
+                confirmLabel="Regenerate secret"
+                message={
+                    <>
+                        The <strong>current secret stops working immediately</strong>. Any
+                        integration using it (checkout, entitlements API) will fail until you
+                        update it with the new secret.
+                    </>
+                }
+                onConfirm={doRegenerate}
+                onClose={() => setConfirmRegen(false)}
+            />
         </Box>
     );
 }

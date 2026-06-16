@@ -124,7 +124,12 @@ export async function PATCH(
     return NextResponse.json({ ok: true });
 }
 
-/** DELETE /api/dashboard/products/:id — soft-delete (deactivate). */
+/**
+ * DELETE /api/dashboard/products/:id — archive (soft-delete) the product.
+ * Deactivates the product only (prices keep their state) so it can be cleanly
+ * un-archived later via PATCH { active: true }. While archived, checkout can't
+ * resolve it and the catalog omits it — i.e. payments are paused.
+ */
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> },
@@ -139,10 +144,6 @@ export async function DELETE(
     }
     await db
         .prepare("UPDATE products SET active = 0 WHERE id = ?")
-        .bind(id)
-        .run();
-    await db
-        .prepare("UPDATE prices SET active = 0 WHERE product_id = ?")
         .bind(id)
         .run();
     return NextResponse.json({ ok: true });
