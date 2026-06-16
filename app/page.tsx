@@ -198,61 +198,142 @@ export default function Home() {
     );
 }
 
-/* Accent dot used in each bento tile. */
+/* Neumorphic embossed icon chip used in each bento tile. */
 function AccentDot({ accent }: { accent: string }) {
     return (
         <Box
             sx={{
-                width: 38,
-                height: 38,
-                borderRadius: "11px",
+                width: 40,
+                height: 40,
+                borderRadius: "12px",
                 display: "grid",
                 placeItems: "center",
-                background: `${accent}1f`,
-                border: `1px solid ${accent}55`,
+                background: "#0e1117",
+                boxShadow:
+                    "inset 3px 3px 6px rgba(0,0,0,0.55), inset -3px -3px 6px rgba(255,255,255,0.03)",
             }}
         >
-            <Box sx={{ width: 12, height: 12, borderRadius: "4px", background: accent }} />
+            <Box
+                sx={{
+                    width: 13,
+                    height: 13,
+                    borderRadius: "4px",
+                    background: accent,
+                    boxShadow: `0 0 12px ${accent}aa`,
+                }}
+            />
         </Box>
     );
 }
 
-/* Decorative faux checkout card for the featured tile. */
+/**
+ * A faithful but NON-INTERACTIVE artifact of the hosted checkout — framed in a
+ * faux browser window and tagged "preview" so it reads as an interface render,
+ * not a button a visitor could click by mistake. pointerEvents disabled.
+ */
 function MockCheckout() {
     return (
         <Box
+            aria-hidden
             sx={{
-                borderRadius: "14px",
-                border: "1px solid rgba(255,255,255,0.1)",
-                background: "rgba(0,0,0,0.28)",
-                p: 2,
-                maxWidth: 320,
+                position: "relative",
+                maxWidth: 360,
+                borderRadius: "16px",
+                overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "#0b0d12",
+                boxShadow: "0 24px 60px rgba(0,0,0,0.55)",
+                userSelect: "none",
+                pointerEvents: "none",
             }}
         >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-                <Box sx={{ width: 20, height: 20, borderRadius: "6px", background: "linear-gradient(135deg, #9b7bf7, #7c5cff)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 800, color: "#fff" }}>
-                    ₹
-                </Box>
-                <Typography sx={{ fontSize: "0.8rem", color: "rgba(245,245,244,0.6)" }}>Elixpo Pay</Typography>
-            </Box>
-            <Typography sx={{ fontSize: "0.75rem", color: "rgba(245,245,244,0.45)" }}>Blogs Member</Typography>
-            <Typography sx={{ fontWeight: 800, fontSize: "1.6rem", mt: 0.2 }}>
-                ₹199 <Box component="span" sx={{ fontSize: "0.8rem", fontWeight: 400, color: "rgba(245,245,244,0.45)" }}>/ 30 days</Box>
-            </Typography>
+            {/* window chrome */}
             <Box
                 sx={{
-                    mt: 1.5,
-                    height: 38,
-                    borderRadius: "10px",
-                    display: "grid",
-                    placeItems: "center",
-                    fontSize: "0.85rem",
-                    fontWeight: 700,
-                    color: "#fff",
-                    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    px: 1.5,
+                    py: 1,
+                    borderBottom: "1px solid rgba(255,255,255,0.06)",
+                    background: "rgba(255,255,255,0.025)",
                 }}
             >
-                Pay ₹199
+                <Box sx={{ display: "flex", gap: 0.6 }}>
+                    {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
+                        <Box key={c} sx={{ width: 9, height: 9, borderRadius: "50%", background: c, opacity: 0.55 }} />
+                    ))}
+                </Box>
+                <Box
+                    sx={{
+                        flexGrow: 1,
+                        ml: 0.5,
+                        px: 1,
+                        py: 0.3,
+                        borderRadius: "6px",
+                        background: "rgba(0,0,0,0.35)",
+                        fontFamily: "var(--font-geist-mono)",
+                        fontSize: "0.66rem",
+                        color: "rgba(245,245,244,0.4)",
+                        textAlign: "center",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                    }}
+                >
+                    payouts.elixpo.com/checkout
+                </Box>
+            </Box>
+
+            {/* preview tag */}
+            <Box
+                sx={{
+                    position: "absolute",
+                    top: 44,
+                    right: 12,
+                    px: 0.9,
+                    py: 0.2,
+                    borderRadius: "999px",
+                    fontSize: "0.6rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "rgba(245,245,244,0.5)",
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                }}
+            >
+                Preview
+            </Box>
+
+            {/* checkout body */}
+            <Box sx={{ p: 2.2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                    <Box sx={{ width: 20, height: 20, borderRadius: "6px", background: "linear-gradient(135deg, #9b7bf7, #7c5cff)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 800, color: "#fff" }}>
+                        ₹
+                    </Box>
+                    <Typography sx={{ fontSize: "0.8rem", color: "rgba(245,245,244,0.6)" }}>Elixpo Pay</Typography>
+                </Box>
+                <Typography sx={{ fontSize: "0.75rem", color: "rgba(245,245,244,0.45)" }}>Blogs Member</Typography>
+                <Typography sx={{ fontWeight: 800, fontSize: "1.6rem", mt: 0.2 }}>
+                    ₹199 <Box component="span" sx={{ fontSize: "0.8rem", fontWeight: 400, color: "rgba(245,245,244,0.45)" }}>/ 30 days</Box>
+                </Typography>
+                <Box
+                    sx={{
+                        mt: 1.5,
+                        height: 38,
+                        borderRadius: "10px",
+                        display: "grid",
+                        placeItems: "center",
+                        fontSize: "0.85rem",
+                        fontWeight: 700,
+                        color: "#fff",
+                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                        opacity: 0.92,
+                    }}
+                >
+                    Pay ₹199
+                </Box>
             </Box>
         </Box>
     );

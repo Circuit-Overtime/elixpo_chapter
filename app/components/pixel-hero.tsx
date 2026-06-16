@@ -387,10 +387,10 @@ export default function PixelHero() {
                     animation: mounted ? "pay-rise 0.8s ease 0.15s both" : undefined,
                 }}
             >
-                The billing layer of the Elixpo ecosystem — and an open SaaS for
-                any developer. Checkout, subscriptions, entitlements, and creator
-                payouts behind one API. It's what Elixpo Accounts is to identity,
-                for money.
+                The complete money stack for modern software — accept payments,
+                run subscriptions, grant entitlements, and settle payouts through
+                one API and a unified ledger. Powering billing across the Elixpo
+                suite, and open to every business building on it.
             </p>
 
             {/* CTAs — Tahoe glass buttons */}
