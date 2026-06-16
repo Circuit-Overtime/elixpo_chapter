@@ -3,6 +3,7 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import LockIcon from "@mui/icons-material/Lock";
+import StorefrontIcon from "@mui/icons-material/Storefront";
 import {
     Alert,
     Box,
@@ -62,6 +63,15 @@ function periodShort(interval = "month", count = 1): string {
     return `/ ${count > 1 ? `${count} ` : ""}${interval}`;
 }
 
+function hostOf(url?: string | null): string | null {
+    if (!url) return null;
+    try {
+        return new URL(url).host;
+    } catch {
+        return null;
+    }
+}
+
 function loadRazorpayScript(): Promise<boolean> {
     return new Promise((resolve) => {
         if (window.Razorpay) return resolve(true);
@@ -81,6 +91,8 @@ function CheckoutInner() {
     const [error, setError] = useState("");
     const [session, setSession] = useState<SessionData | null>(null);
     const [toast, setToast] = useState<Toast>(null);
+    // Timestamp the buyer reached this checkout (client-side, their local time).
+    const [startedAt] = useState<Date>(() => new Date());
 
     useEffect(() => {
         let cancelled = false;
@@ -179,7 +191,7 @@ function CheckoutInner() {
                     const vd: any = await v.json();
                     if (!v.ok) throw new Error(vd.error || "verification_failed");
                     finishSuccess(vd.return_url);
-                } catch (e: any) {
+                } catch {
                     setToast({
                         msg: "Payment received but verification failed. If you were charged, contact support.",
                         severity: "error",
@@ -201,115 +213,56 @@ function CheckoutInner() {
         rzp.open();
     };
 
+    const split = (phase === "ready" || phase === "paying") && !!session;
+
     return (
-        <Card testMode={session?.test_mode}>
+        <Shell split={split}>
             {phase === "loading" && (
-                <Stack spacing={2} alignItems="center" sx={{ py: 5 }}>
+                <Centered>
                     <CircularProgress sx={{ color: "#9b7bf7" }} />
-                    <Typography sx={{ color: "rgba(245,245,244,0.7)" }}>
+                    <Typography sx={{ color: "rgba(245,245,244,0.7)", mt: 2 }}>
                         Preparing your secure checkout…
                     </Typography>
-                </Stack>
+                </Centered>
             )}
 
             {phase === "error" && (
-                <Stack spacing={2.5} alignItems="center" sx={{ py: 3 }}>
+                <Centered>
                     <Typography sx={{ fontSize: "2rem" }}>⚠️</Typography>
-                    <Typography sx={{ fontWeight: 700, fontSize: "1.15rem" }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", mt: 1 }}>
                         Checkout unavailable
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.6)", textAlign: "center", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                    <Typography sx={{ color: "rgba(245,245,244,0.6)", textAlign: "center", fontSize: "0.9rem", lineHeight: 1.6, mt: 1, maxWidth: 360 }}>
                         {error}
                     </Typography>
-                    <Button onClick={goBack} startIcon={<ArrowBackIcon />} sx={ghostBtn}>
+                    <Button onClick={goBack} startIcon={<ArrowBackIcon />} sx={{ ...ghostBtn, mt: 2.5 }}>
                         Go back
                     </Button>
-                </Stack>
+                </Centered>
             )}
 
             {phase === "success" && (
-                <Stack spacing={2} alignItems="center" sx={{ py: 3 }}>
+                <Centered>
                     <CheckCircleIcon sx={{ fontSize: 58, color: "#4ade80" }} />
-                    <Typography sx={{ fontWeight: 700, fontSize: "1.25rem" }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: "1.25rem", mt: 1.5 }}>
                         Payment successful
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.6)", textAlign: "center", fontSize: "0.9rem" }}>
+                    <Typography sx={{ color: "rgba(245,245,244,0.6)", textAlign: "center", fontSize: "0.9rem", mt: 1 }}>
                         Your {session?.tier} access is active. Redirecting you back…
                     </Typography>
                     {session?.return_url && (
-                        <Button onClick={goBack} sx={{ ...primaryBtn, mt: 1 }}>
+                        <Button onClick={goBack} sx={{ ...primaryBtn, mt: 2.5, px: 4 }}>
                             Continue
                         </Button>
                     )}
-                </Stack>
+                </Centered>
             )}
 
-            {(phase === "ready" || phase === "paying") && session && (
-                <Stack spacing={2.5}>
-                    {/* merchant + product */}
-                    <Box>
-                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                            {session.app_name || "Subscription"}
-                        </Typography>
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }} flexWrap="wrap">
-                            <Typography sx={{ fontWeight: 700, fontSize: "1.35rem" }}>
-                                {session.product_name}
-                            </Typography>
-                            <Chip
-                                label={session.tier}
-                                size="small"
-                                sx={{ height: 22, fontSize: "0.7rem", color: "#86efac", bgcolor: "rgba(134,239,172,0.12)", border: "1px solid rgba(134,239,172,0.3)" }}
-                            />
-                        </Stack>
-                    </Box>
-
-                    {/* line items */}
-                    <Box
-                        sx={{
-                            borderRadius: "14px",
-                            border: "1px solid rgba(255,255,255,0.08)",
-                            background: "rgba(255,255,255,0.02)",
-                            px: 2,
-                            py: 1.5,
-                        }}
-                    >
-                        <Row label="Plan" value={`${session.product_name} (${session.tier})`} />
-                        <Row label="Billing" value={periodLabel(session.interval, session.interval_count)} />
-                        {session.prefill?.email && <Row label="Account" value={session.prefill.email} />}
-                    </Box>
-
-                    {/* total */}
-                    <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", py: 1, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                        <Typography sx={{ color: "rgba(245,245,244,0.7)", fontWeight: 600 }}>Total due</Typography>
-                        <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.7 }}>
-                            <Typography sx={{ fontWeight: 800, fontSize: "2rem" }}>
-                                {formatAmount(session.amount, session.currency)}
-                            </Typography>
-                            <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.85rem" }}>
-                                {periodShort(session.interval, session.interval_count)}
-                            </Typography>
-                        </Box>
-                    </Box>
-
-                    <Button onClick={pay} disabled={phase === "paying"} sx={primaryBtn}>
-                        {phase === "paying"
-                            ? session.test_mode
-                                ? "Completing…"
-                                : "Opening Razorpay…"
-                            : `${session.test_mode ? "Simulate payment · " : "Pay "}${formatAmount(session.amount, session.currency)}`}
-                    </Button>
-
-                    <Button onClick={goBack} disabled={phase === "paying"} startIcon={<ArrowBackIcon sx={{ fontSize: "1rem !important" }} />} sx={cancelBtn}>
-                        Cancel and go back
-                    </Button>
-
-                    <Stack direction="row" spacing={0.7} alignItems="center" justifyContent="center" sx={{ pt: 0.5 }}>
-                        <LockIcon sx={{ fontSize: 13, color: "rgba(245,245,244,0.4)" }} />
-                        <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.76rem" }}>
-                            Secured by Razorpay · Powered by Elixpo Pay
-                        </Typography>
-                    </Stack>
-                </Stack>
+            {split && session && (
+                <>
+                    <SummaryPanel session={session} startedAt={startedAt} />
+                    <ActionPanel session={session} phase={phase} onPay={pay} onCancel={goBack} />
+                </>
             )}
 
             <Snackbar
@@ -319,34 +272,163 @@ function CheckoutInner() {
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             >
                 {toast ? (
-                    <Alert
-                        onClose={() => setToast(null)}
-                        severity={toast.severity}
-                        variant="filled"
-                        sx={{ borderRadius: "12px", alignItems: "center" }}
-                    >
+                    <Alert onClose={() => setToast(null)} severity={toast.severity} variant="filled" sx={{ borderRadius: "12px", alignItems: "center" }}>
                         {toast.msg}
                     </Alert>
                 ) : undefined}
             </Snackbar>
-        </Card>
+        </Shell>
     );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+/* ── Left: branded order summary + official details ────────────────────────── */
+function SummaryPanel({ session, startedAt }: { session: SessionData; startedAt: Date }) {
+    const ref = session.order_id || session.session_id;
+    const returnHost = hostOf(session.return_url);
     return (
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 0.5, gap: 2 }}>
-            <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.85rem", flexShrink: 0 }}>
-                {label}
+        <Box
+            sx={{
+                flex: { xs: "1 1 auto", md: "0 0 46%" },
+                p: { xs: 3, md: 3.5 },
+                background:
+                    "linear-gradient(160deg, rgba(155,123,247,0.22) 0%, rgba(124,92,255,0.10) 45%, rgba(255,255,255,0.02) 100%)",
+                borderRight: { md: "1px solid rgba(255,255,255,0.08)" },
+                borderBottom: { xs: "1px solid rgba(255,255,255,0.08)", md: "none" },
+                display: "flex",
+                flexDirection: "column",
+            }}
+        >
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
+                <Stack direction="row" spacing={1.2} alignItems="center">
+                    <Box component="img" src="/mark.png" alt="Elixpo Pay" sx={{ height: 28, width: 28, borderRadius: "8px", display: "block" }} />
+                    <Typography sx={{ fontWeight: 700 }}>
+                        Elixpo <Box component="span" sx={{ color: "#c4b5fd" }}>Pay</Box>
+                    </Typography>
+                </Stack>
+                {session.test_mode && (
+                    <Chip label="TEST" size="small" sx={{ height: 20, fontSize: "0.6rem", fontWeight: 700, color: "#fbbf24", bgcolor: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)" }} />
+                )}
+            </Stack>
+
+            {session.app_name && (
+                <Stack direction="row" spacing={0.7} alignItems="center" sx={{ mb: 1.5 }}>
+                    <StorefrontIcon sx={{ fontSize: 14, color: "rgba(245,245,244,0.5)" }} />
+                    <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.8rem" }}>
+                        Payment for <strong style={{ color: "#f5f5f4" }}>{session.app_name}</strong>
+                    </Typography>
+                </Stack>
+            )}
+
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mb: 0.5 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: "1.3rem" }}>{session.product_name}</Typography>
+                <Chip label={session.tier} size="small" sx={{ height: 22, fontSize: "0.7rem", color: "#86efac", bgcolor: "rgba(134,239,172,0.12)", border: "1px solid rgba(134,239,172,0.3)" }} />
+            </Stack>
+
+            <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.7, mt: 1.5, mb: 2.5 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: "2.4rem", lineHeight: 1 }}>
+                    {formatAmount(session.amount, session.currency)}
+                </Typography>
+                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.9rem" }}>
+                    {periodShort(session.interval, session.interval_count)}
+                </Typography>
+            </Box>
+
+            <Box sx={{ borderTop: "1px solid rgba(255,255,255,0.08)", pt: 2, mt: "auto" }}>
+                <Meta label="Billing" value={periodLabel(session.interval, session.interval_count)} />
+                {session.prefill?.email && <Meta label="Account" value={session.prefill.email} />}
+                <Meta label="Date" value={startedAt.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} />
+                <Meta label="Order ref" value={ref} mono />
+                {returnHost && <Meta label="Returns to" value={returnHost} />}
+            </Box>
+
+            <Stack direction="row" spacing={0.7} alignItems="center" sx={{ mt: 2.5 }}>
+                <LockIcon sx={{ fontSize: 13, color: "rgba(245,245,244,0.4)" }} />
+                <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.74rem" }}>
+                    Secured by Razorpay
+                </Typography>
+            </Stack>
+        </Box>
+    );
+}
+
+/* ── Right: the pay action ─────────────────────────────────────────────────── */
+function ActionPanel({
+    session,
+    phase,
+    onPay,
+    onCancel,
+}: {
+    session: SessionData;
+    phase: Phase;
+    onPay: () => void;
+    onCancel: () => void;
+}) {
+    const paying = phase === "paying";
+    return (
+        <Box sx={{ flex: "1 1 auto", p: { xs: 3, md: 4 }, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", mb: 0.5 }}>
+                Complete your payment
             </Typography>
-            <Typography sx={{ color: "rgba(245,245,244,0.85)", fontSize: "0.85rem", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.9rem", mb: 3 }}>
+                You'll be charged{" "}
+                <strong style={{ color: "#f5f5f4" }}>{formatAmount(session.amount, session.currency)}</strong>{" "}
+                {periodLabel(session.interval, session.interval_count)} — cancel anytime.
+                {session.test_mode ? " (Test mode — no real charge.)" : ""}
+            </Typography>
+
+            <Button onClick={onPay} disabled={paying} sx={primaryBtn}>
+                {paying
+                    ? session.test_mode
+                        ? "Completing…"
+                        : "Opening Razorpay…"
+                    : `${session.test_mode ? "Simulate payment · " : "Pay "}${formatAmount(session.amount, session.currency)}`}
+            </Button>
+
+            <Button onClick={onCancel} disabled={paying} startIcon={<ArrowBackIcon sx={{ fontSize: "1rem !important" }} />} sx={{ ...cancelBtn, mt: 1.2 }}>
+                Cancel and go back
+            </Button>
+
+            <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.76rem", textAlign: "center", mt: 2.5 }}>
+                By paying you agree to our{" "}
+                <Box component="a" href="/terms" target="_blank" sx={{ color: "#9b7bf7", textDecoration: "none" }}>Terms</Box>{" "}
+                &{" "}
+                <Box component="a" href="/refunds" target="_blank" sx={{ color: "#9b7bf7", textDecoration: "none" }}>Refund policy</Box>.
+            </Typography>
+        </Box>
+    );
+}
+
+function Meta({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+    return (
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 0.45, gap: 2 }}>
+            <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.78rem", flexShrink: 0 }}>{label}</Typography>
+            <Typography
+                sx={{
+                    color: "rgba(245,245,244,0.8)",
+                    fontSize: "0.78rem",
+                    textAlign: "right",
+                    fontFamily: mono ? "var(--font-geist-mono)" : undefined,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    maxWidth: 200,
+                }}
+            >
                 {value}
             </Typography>
         </Stack>
     );
 }
 
-function Card({ children, testMode }: { children: ReactNode; testMode?: boolean }) {
+function Centered({ children }: { children: ReactNode }) {
+    return (
+        <Box sx={{ flex: "1 1 auto", p: { xs: 4, md: 6 }, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 280 }}>
+            {children}
+        </Box>
+    );
+}
+
+function Shell({ children, split }: { children: ReactNode; split: boolean }) {
     return (
         <Box sx={{ position: "relative", minHeight: "100vh", display: "grid", placeItems: "center", p: 2, color: "#f5f5f4" }}>
             <BackgroundAurora variant="auth" />
@@ -355,30 +437,17 @@ function Card({ children, testMode }: { children: ReactNode; testMode?: boolean 
                     position: "relative",
                     zIndex: 1,
                     width: "100%",
-                    maxWidth: 440,
-                    p: { xs: 3, md: 4 },
+                    maxWidth: split ? { xs: 440, md: 760 } : 460,
                     borderRadius: "20px",
-                    background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.025) 100%)",
+                    overflow: "hidden",
+                    background: "linear-gradient(135deg, rgba(20,23,30,0.92) 0%, rgba(14,17,23,0.94) 100%)",
                     backdropFilter: "blur(24px)",
                     border: "1px solid rgba(255,255,255,0.12)",
-                    boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+                    boxShadow: "0 24px 60px rgba(0,0,0,0.55)",
+                    display: "flex",
+                    flexDirection: { xs: "column", md: split ? "row" : "column" },
                 }}
             >
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
-                    <Stack direction="row" spacing={1.2} alignItems="center">
-                        <Box component="img" src="/mark.png" alt="Elixpo Pay" sx={{ height: 28, width: 28, borderRadius: "8px", display: "block" }} />
-                        <Typography sx={{ fontWeight: 700 }}>
-                            Elixpo <Box component="span" sx={{ color: "#9b7bf7" }}>Pay</Box>
-                        </Typography>
-                    </Stack>
-                    {testMode && (
-                        <Chip
-                            label="TEST MODE"
-                            size="small"
-                            sx={{ height: 20, fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.04em", color: "#fbbf24", bgcolor: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)" }}
-                        />
-                    )}
-                </Stack>
                 {children}
             </Box>
         </Box>
