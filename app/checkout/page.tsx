@@ -372,7 +372,7 @@ function ActionPanel({
             <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.9rem", mb: 3 }}>
                 You'll be charged{" "}
                 <strong style={{ color: "#f5f5f4" }}>{formatAmount(session.amount, session.currency)}</strong>{" "}
-                {periodLabel(session.interval, session.interval_count)} — cancel anytime.
+                {periodLabel(session.interval, session.interval_count)}, you can cancel anytime.
                 {session.test_mode ? " (Test mode — no real charge.)" : ""}
             </Typography>
 
