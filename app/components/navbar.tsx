@@ -74,21 +74,11 @@ const Navbar = () => {
                     }}
                 >
                     <Box
-                        sx={{
-                            height: 30,
-                            width: 30,
-                            borderRadius: "9px",
-                            display: "grid",
-                            placeItems: "center",
-                            fontWeight: 800,
-                            fontSize: "0.95rem",
-                            color: "#fff",
-                            background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                            boxShadow: "0 4px 14px rgba(155,123,247,0.35)",
-                        }}
-                    >
-                        ₹
-                    </Box>
+                        component="img"
+                        src="/mark.png"
+                        alt="Elixpo Pay"
+                        sx={{ height: 32, width: 32, borderRadius: "8px", display: "block" }}
+                    />
                     <Typography
                         sx={{
                             fontWeight: 700,
