@@ -20,6 +20,7 @@ export const TabsBlock = createReactBlockSpec(
       const [adding, setAdding] = useState(tabs.length === 0);
       const [newPageName, setNewPageName] = useState('');
       const [creating, setCreating] = useState(false);
+      const [gateError, setGateError] = useState('');
       const inputRef = useRef(null);
       const wrapperRef = useRef(null);
 
@@ -60,6 +61,7 @@ export const TabsBlock = createReactBlockSpec(
       const addPage = useCallback(async () => {
         const name = newPageName.trim() || 'Untitled Page';
         setCreating(true);
+        setGateError('');
         try {
           const blogId = getBlogId();
           const res = await fetch('/api/subpages', {
@@ -73,6 +75,8 @@ export const TabsBlock = createReactBlockSpec(
             editor.updateBlock(block, { props: { tabs: JSON.stringify(updated) } });
             setNewPageName('');
             setAdding(false);
+          } else if (res.status === 402) {
+            setGateError('Sub-pages are a Member feature.');
           }
         } catch {}
         setCreating(false);
@@ -140,6 +144,11 @@ export const TabsBlock = createReactBlockSpec(
                 <button onClick={addPage} disabled={!newPageName.trim()} className="subpage-create-btn">Create</button>
               )}
             </div>
+            {gateError && (
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px', paddingLeft: '4px' }}>
+                {gateError} <a href="/pricing" style={{ color: '#9b7bf7', fontWeight: 600 }}>Upgrade →</a>
+              </div>
+            )}
           </div>
         );
       }

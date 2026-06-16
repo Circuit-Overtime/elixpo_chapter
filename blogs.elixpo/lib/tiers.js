@@ -9,6 +9,7 @@ export const TIER_LIMITS = {
     ownedOrgs: 1,
     canReadMemberOnly: false,
     canMarkMemberOnly: false,
+    canUseSubpages: false,
   },
   member: {
     totalStorageBytes: 2 * 1024 * 1024 * 1024,  // 2 GB
@@ -18,6 +19,7 @@ export const TIER_LIMITS = {
     ownedOrgs: 5,
     canReadMemberOnly: true,
     canMarkMemberOnly: true,
+    canUseSubpages: true,
   },
 };
 

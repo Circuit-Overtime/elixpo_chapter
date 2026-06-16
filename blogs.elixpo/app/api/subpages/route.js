@@ -29,6 +29,13 @@ export async function POST(request) {
     if (blog.author_id !== session.userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     const canonicalBlogId = blog.id;
 
+    // Sub-pages are a Member feature — gate creation by tier.
+    const { getLimits } = await import('../../../lib/tiers');
+    const me = await db.prepare('SELECT tier FROM users WHERE id = ?').bind(session.userId).first();
+    if (!getLimits(me?.tier).canUseSubpages) {
+      return NextResponse.json({ error: 'Sub-pages are a Member feature.', upgrade: true }, { status: 402 });
+    }
+
     // Cap sub-pages per kind: max 2 doc sub-pages and max 2 canvas sub-pages per blog.
     // (Nesting is structurally impossible — a sub-page's id is never a blogs row,
     //  so creating a sub-page "under" a sub-page 404s on the ownership check above.)
