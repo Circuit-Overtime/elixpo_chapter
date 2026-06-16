@@ -19,6 +19,70 @@ async function ownsProduct(
     return !!row;
 }
 
+/** GET /api/dashboard/products/:id — product + tiers + stats (1 app = 1 product). */
+export async function GET(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> },
+) {
+    const ctx = await requireDashboard(request);
+    if (ctx instanceof NextResponse) return ctx;
+    const { db, merchantId } = ctx;
+    const { id } = await params;
+
+    const product = (await db
+        .prepare(
+            `SELECT p.id, p.app_id, p.name, p.tier, p.description, p.active,
+                    a.slug AS client_id, a.name AS app_name, a.homepage_url, a.pricing_url
+             FROM products p JOIN apps a ON p.app_id = a.id
+             WHERE p.id = ? AND a.merchant_id = ?`,
+        )
+        .bind(id, merchantId)
+        .first()) as any;
+    if (!product) {
+        return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+
+    const prices = await db
+        .prepare(
+            `SELECT id, nickname, currency, unit_amount, type, interval, interval_count, region, active
+             FROM prices WHERE product_id = ? ORDER BY active DESC, unit_amount`,
+        )
+        .bind(id)
+        .all();
+
+    const appId = product.app_id;
+    const counts = (await db
+        .prepare(
+            `SELECT
+               (SELECT COUNT(*) FROM transactions t WHERE t.app_id = ?1 AND t.status = 'captured') AS paid,
+               (SELECT COUNT(*) FROM entitlements e WHERE e.app_id = ?1 AND e.status = 'active'
+                  AND (e.expires_at IS NULL OR e.expires_at > datetime('now'))) AS active_members`,
+        )
+        .bind(appId)
+        .first()) as any;
+
+    const revenue = await db
+        .prepare(
+            `SELECT currency, COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total
+             FROM transactions WHERE app_id = ? AND status = 'captured' GROUP BY currency`,
+        )
+        .bind(appId)
+        .all();
+
+    return NextResponse.json(
+        {
+            product,
+            prices: prices.results ?? [],
+            stats: {
+                paidTransactions: counts?.paid ?? 0,
+                activeMembers: counts?.active_members ?? 0,
+                revenue: revenue.results ?? [],
+            },
+        },
+        { headers: { "Cache-Control": "no-store" } },
+    );
+}
+
 /** PATCH /api/dashboard/products/:id — update name/description/active. */
 export async function PATCH(
     request: NextRequest,

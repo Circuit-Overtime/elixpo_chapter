@@ -2,13 +2,15 @@
 
 import GitHubIcon from "@mui/icons-material/GitHub";
 import LoginIcon from "@mui/icons-material/Login";
+import StarIcon from "@mui/icons-material/Star";
 import { Box, Button, Chip, Stack, Toolbar, Typography } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
-import IconButton from "@mui/material/IconButton";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const ACCENT = "#9b7bf7";
-const REPO_URL = "https://github.com/elixpo";
+const REPO = "elixpo/payouts.elixpo";
+const REPO_URL = `https://github.com/${REPO}`;
 
 const LINKS = [
     { label: "Platform", href: "/about" },
@@ -18,159 +20,198 @@ const LINKS = [
     { label: "Dashboard", href: "/dashboard" },
 ];
 
-const Navbar = () => (
-    <AppBar
-        position="sticky"
-        elevation={0}
-        sx={{
-            background: "rgba(11, 13, 18, 0.72)",
-            backdropFilter: "blur(20px)",
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
-            zIndex: 1000,
-        }}
-    >
-        <Toolbar
+function formatStars(n: number): string {
+    return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+}
+
+const Navbar = () => {
+    const [stars, setStars] = useState<number | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch(`https://api.github.com/repos/${REPO}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d: any) => {
+                if (!cancelled && d && typeof d.stargazers_count === "number") {
+                    setStars(d.stargazers_count);
+                }
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    return (
+        <AppBar
+            position="sticky"
+            elevation={0}
             sx={{
-                maxWidth: "1240px",
-                width: "100%",
-                mx: "auto",
-                px: { xs: 2, md: 4 },
-                minHeight: { xs: 60, md: 68 },
-                gap: 1,
+                background: "rgba(11, 13, 18, 0.72)",
+                backdropFilter: "blur(20px)",
+                borderBottom: "1px solid rgba(255,255,255,0.07)",
+                zIndex: 1000,
             }}
         >
-            <Link
-                href="/"
-                style={{
-                    textDecoration: "none",
-                    color: "inherit",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
+            <Toolbar
+                sx={{
+                    maxWidth: "1240px",
+                    width: "100%",
+                    mx: "auto",
+                    px: { xs: 2, md: 4 },
+                    minHeight: { xs: 60, md: 68 },
+                    gap: 1,
                 }}
             >
-                <Box
-                    sx={{
-                        height: 30,
-                        width: 30,
-                        borderRadius: "9px",
-                        display: "grid",
-                        placeItems: "center",
-                        fontWeight: 800,
-                        fontSize: "0.95rem",
-                        color: "#fff",
-                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        boxShadow: "0 4px 14px rgba(155,123,247,0.35)",
+                <Link
+                    href="/"
+                    style={{
+                        textDecoration: "none",
+                        color: "inherit",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
                     }}
                 >
-                    ₹
-                </Box>
-                <Typography
-                    sx={{
-                        fontWeight: 700,
-                        fontSize: "1.15rem",
-                        color: "#f4f4f6",
-                        letterSpacing: "-0.01em",
-                    }}
-                >
-                    Elixpo{" "}
-                    <Box component="span" sx={{ color: ACCENT }}>
-                        Pay
+                    <Box
+                        sx={{
+                            height: 30,
+                            width: 30,
+                            borderRadius: "9px",
+                            display: "grid",
+                            placeItems: "center",
+                            fontWeight: 800,
+                            fontSize: "0.95rem",
+                            color: "#fff",
+                            background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                            boxShadow: "0 4px 14px rgba(155,123,247,0.35)",
+                        }}
+                    >
+                        ₹
                     </Box>
-                </Typography>
-                <Chip
-                    label="PAYMENTS"
-                    size="small"
-                    sx={{
-                        display: { xs: "none", sm: "inline-flex" },
-                        bgcolor: "rgba(155, 123, 247, 0.12)",
-                        color: ACCENT,
-                        fontSize: "10px",
-                        height: "22px",
-                        fontWeight: 600,
-                        letterSpacing: "0.04em",
-                        border: "1px solid rgba(155, 123, 247, 0.3)",
-                    }}
-                />
-            </Link>
+                    <Typography
+                        sx={{
+                            fontWeight: 700,
+                            fontSize: "1.15rem",
+                            color: "#f4f4f6",
+                            letterSpacing: "-0.01em",
+                        }}
+                    >
+                        Elixpo{" "}
+                        <Box component="span" sx={{ color: ACCENT }}>
+                            Pay
+                        </Box>
+                    </Typography>
+                    <Chip
+                        label="PAYMENTS"
+                        size="small"
+                        sx={{
+                            display: { xs: "none", sm: "inline-flex" },
+                            bgcolor: "rgba(155, 123, 247, 0.12)",
+                            color: ACCENT,
+                            fontSize: "10px",
+                            height: "22px",
+                            fontWeight: 600,
+                            letterSpacing: "0.04em",
+                            border: "1px solid rgba(155, 123, 247, 0.3)",
+                        }}
+                    />
+                </Link>
 
-            {/* Center nav links */}
-            <Stack
-                direction="row"
-                spacing={0.5}
-                sx={{ flexGrow: 1, justifyContent: "center", display: { xs: "none", md: "flex" } }}
-            >
-                {LINKS.map((l) => (
+                <Stack
+                    direction="row"
+                    spacing={0.5}
+                    sx={{ flexGrow: 1, justifyContent: "center", display: { xs: "none", md: "flex" } }}
+                >
+                    {LINKS.map((l) => (
+                        <Button
+                            key={l.label}
+                            component={Link}
+                            href={l.href}
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 600,
+                                fontSize: "0.88rem",
+                                color: "rgba(244,244,246,0.7)",
+                                px: 1.6,
+                                borderRadius: "9px",
+                                "&:hover": { color: "#fff", background: "rgba(255,255,255,0.05)" },
+                            }}
+                        >
+                            {l.label}
+                        </Button>
+                    ))}
+                </Stack>
+
+                <Box sx={{ flexGrow: { xs: 1, md: 0 } }} />
+
+                <Stack direction="row" spacing={{ xs: 1, md: 1.2 }} alignItems="center">
+                    {/* GitHub: icon | star count */}
+                    <Box
+                        component="a"
+                        href={REPO_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="GitHub repository"
+                        sx={{
+                            display: { xs: "none", sm: "inline-flex" },
+                            alignItems: "center",
+                            height: 38,
+                            px: 1.3,
+                            gap: 0.9,
+                            borderRadius: "10px",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            color: "rgba(244,244,246,0.8)",
+                            textDecoration: "none",
+                            fontSize: "0.85rem",
+                            fontWeight: 700,
+                            transition: "all 0.18s ease",
+                            "&:hover": {
+                                color: "#fff",
+                                borderColor: "rgba(155,123,247,0.45)",
+                                background: "rgba(155,123,247,0.08)",
+                            },
+                        }}
+                    >
+                        <GitHubIcon sx={{ fontSize: 19 }} />
+                        {stars !== null && (
+                            <>
+                                <Box sx={{ width: "1px", height: 16, background: "rgba(255,255,255,0.15)" }} />
+                                <Stack direction="row" spacing={0.3} alignItems="center">
+                                    <StarIcon sx={{ fontSize: 14, color: "#fbbf24" }} />
+                                    <Box component="span">{formatStars(stars)}</Box>
+                                </Stack>
+                            </>
+                        )}
+                    </Box>
+
                     <Button
-                        key={l.label}
                         component={Link}
-                        href={l.href}
+                        href="/login"
+                        disableElevation
+                        startIcon={<LoginIcon sx={{ fontSize: "1rem !important" }} />}
                         sx={{
                             textTransform: "none",
                             fontWeight: 600,
-                            fontSize: "0.88rem",
-                            color: "rgba(244,244,246,0.7)",
-                            px: 1.6,
-                            borderRadius: "9px",
-                            "&:hover": { color: "#fff", background: "rgba(255,255,255,0.05)" },
+                            fontSize: "0.9rem",
+                            color: "#fff",
+                            background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                            borderRadius: "10px",
+                            px: 2.2,
+                            py: 0.8,
+                            boxShadow: "0 4px 14px rgba(155,123,247,0.32)",
+                            "&:hover": {
+                                background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                boxShadow: "0 6px 20px rgba(155,123,247,0.45)",
+                            },
                         }}
                     >
-                        {l.label}
+                        Sign in
                     </Button>
-                ))}
-            </Stack>
-
-            <Box sx={{ flexGrow: { xs: 1, md: 0 } }} />
-
-            <Stack direction="row" spacing={{ xs: 1, md: 1.2 }} alignItems="center">
-                <IconButton
-                    component="a"
-                    href={REPO_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="GitHub"
-                    sx={{
-                        display: { xs: "none", sm: "inline-flex" },
-                        color: "rgba(244,244,246,0.8)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: "10px",
-                        width: 38,
-                        height: 38,
-                        "&:hover": {
-                            color: "#fff",
-                            borderColor: "rgba(155,123,247,0.45)",
-                            background: "rgba(155,123,247,0.08)",
-                        },
-                    }}
-                >
-                    <GitHubIcon sx={{ fontSize: 20 }} />
-                </IconButton>
-                <Button
-                    component={Link}
-                    href="/login"
-                    disableElevation
-                    startIcon={<LoginIcon sx={{ fontSize: "1rem !important" }} />}
-                    sx={{
-                        textTransform: "none",
-                        fontWeight: 600,
-                        fontSize: "0.9rem",
-                        color: "#fff",
-                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        borderRadius: "10px",
-                        px: 2.2,
-                        py: 0.8,
-                        boxShadow: "0 4px 14px rgba(155,123,247,0.32)",
-                        "&:hover": {
-                            background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
-                            boxShadow: "0 6px 20px rgba(155,123,247,0.45)",
-                        },
-                    }}
-                >
-                    Sign in
-                </Button>
-            </Stack>
-        </Toolbar>
-    </AppBar>
-);
+                </Stack>
+            </Toolbar>
+        </AppBar>
+    );
+};
 
 export default Navbar;

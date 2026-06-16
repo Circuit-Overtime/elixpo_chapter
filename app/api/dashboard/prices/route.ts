@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     const interval = String(body.interval || "month");
     const intervalCount = Math.max(1, Number(body.interval_count || 1));
     const region = body.region ? String(body.region).toUpperCase().slice(0, 2) : null;
+    const nickname = body.nickname ? String(body.nickname).trim().slice(0, 40) : null;
 
     if (!productId || !CURRENCIES.includes(currency)) {
         return NextResponse.json({ error: "invalid_currency" }, { status: 400 });
@@ -49,16 +50,17 @@ export async function POST(request: NextRequest) {
     const id = newId("price");
     await db
         .prepare(
-            `INSERT INTO prices (id, product_id, currency, unit_amount, type, interval, interval_count, region, provider, active)
-             VALUES (?, ?, ?, ?, 'one_time', ?, ?, ?, 'razorpay', 1)`,
+            `INSERT INTO prices (id, product_id, nickname, currency, unit_amount, type, interval, interval_count, region, provider, active)
+             VALUES (?, ?, ?, ?, ?, 'one_time', ?, ?, ?, 'razorpay', 1)`,
         )
-        .bind(id, productId, currency, unitAmount, interval, intervalCount, region)
+        .bind(id, productId, nickname, currency, unitAmount, interval, intervalCount, region)
         .run();
 
     return NextResponse.json({
         price: {
             id,
             product_id: productId,
+            nickname,
             currency,
             unit_amount: unitAmount,
             interval,

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     const prices = await db
         .prepare(
-            `SELECT pr.id, pr.product_id, pr.currency, pr.unit_amount, pr.type,
+            `SELECT pr.id, pr.product_id, pr.nickname, pr.currency, pr.unit_amount, pr.type,
                     pr.interval, pr.interval_count, pr.region, pr.provider, pr.active
              FROM prices pr
              JOIN products p ON pr.product_id = p.id
