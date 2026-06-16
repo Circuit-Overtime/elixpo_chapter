@@ -29,6 +29,7 @@ interface SessionData {
     key_id: string;
     order_id: string;
     test_mode?: boolean;
+    mode?: "test" | "live";
     amount: number;
     currency: string;
     product_name: string;
@@ -305,7 +306,7 @@ function SummaryPanel({ session, startedAt }: { session: SessionData; startedAt:
                         Elixpo <Box component="span" sx={{ color: "#c4b5fd" }}>Pay</Box>
                     </Typography>
                 </Stack>
-                {session.test_mode && (
+                {(session.test_mode || session.mode === "test") && (
                     <Chip label="TEST" size="small" sx={{ height: 20, fontSize: "0.6rem", fontWeight: 700, color: "#fbbf24", bgcolor: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)" }} />
                 )}
             </Stack>
@@ -373,7 +374,7 @@ function ActionPanel({
                 You'll be charged{" "}
                 <strong style={{ color: "#f5f5f4" }}>{formatAmount(session.amount, session.currency)}</strong>{" "}
                 {periodLabel(session.interval, session.interval_count)}, you can cancel anytime.
-                {session.test_mode ? " (Test mode — no real charge.)" : ""}
+                {session.test_mode || session.mode === "test" ? " (Test mode — no real charge.)" : ""}
             </Typography>
 
             <Button onClick={onPay} disabled={paying} sx={primaryBtn}>
