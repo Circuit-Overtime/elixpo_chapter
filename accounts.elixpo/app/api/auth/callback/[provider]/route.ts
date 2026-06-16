@@ -178,10 +178,9 @@ export async function GET(
                     const { fireUserUpdated } = await import(
                         "@/lib/user-events"
                     );
-                    await fireUserUpdated(
-                        (existingIdentity as any).user_id,
-                        { avatar_url: newPicture },
-                    );
+                    await fireUserUpdated((existingIdentity as any).user_id, {
+                        avatar_url: newPicture,
+                    });
                 } catch (err) {
                     console.error(
                         "[callback] avatar refresh failed (non-fatal):",

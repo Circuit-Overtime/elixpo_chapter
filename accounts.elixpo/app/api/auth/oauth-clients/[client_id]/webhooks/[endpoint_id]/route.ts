@@ -2,10 +2,7 @@ export const runtime = "edge";
 
 import { getRequestContext } from "@cloudflare/next-on-pages";
 import { type NextRequest, NextResponse } from "next/server";
-import {
-    type AppWebhookEvent,
-    VALID_EVENTS,
-} from "@/lib/app-webhooks";
+import { type AppWebhookEvent, VALID_EVENTS } from "@/lib/app-webhooks";
 import { getDatabase } from "@/lib/d1-client";
 import {
     deleteAppWebhookEndpoint,
@@ -94,9 +91,7 @@ function validateUrl(input: unknown): string | NextResponse {
  */
 export async function PATCH(
     request: NextRequest,
-    {
-        params,
-    }: { params: Promise<{ client_id: string; endpoint_id: string }> },
+    { params }: { params: Promise<{ client_id: string; endpoint_id: string }> },
 ) {
     const auth = await getAuth(request);
     if (!auth)
@@ -182,17 +177,9 @@ export async function PATCH(
         );
     }
 
-    const ok = await updateAppWebhookEndpoint(
-        db,
-        endpoint_id,
-        auth.sub,
-        patch,
-    );
+    const ok = await updateAppWebhookEndpoint(db, endpoint_id, auth.sub, patch);
     if (!ok) {
-        return NextResponse.json(
-            { error: "Update failed" },
-            { status: 400 },
-        );
+        return NextResponse.json({ error: "Update failed" }, { status: 400 });
     }
 
     const fresh = await getAppWebhookEndpoint(db, endpoint_id);
@@ -221,9 +208,7 @@ export async function PATCH(
  */
 export async function DELETE(
     request: NextRequest,
-    {
-        params,
-    }: { params: Promise<{ client_id: string; endpoint_id: string }> },
+    { params }: { params: Promise<{ client_id: string; endpoint_id: string }> },
 ) {
     const auth = await getAuth(request);
     if (!auth)
@@ -241,10 +226,7 @@ export async function DELETE(
 
     const ok = await deleteAppWebhookEndpoint(db, endpoint_id, auth.sub);
     if (!ok) {
-        return NextResponse.json(
-            { error: "Delete failed" },
-            { status: 400 },
-        );
+        return NextResponse.json({ error: "Delete failed" }, { status: 400 });
     }
 
     // Cleanup KV. Non-fatal on failure — orphan plaintext is unreachable

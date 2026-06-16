@@ -20,9 +20,7 @@ import { verifyJWT } from "@/lib/jwt";
  */
 export async function POST(
     request: NextRequest,
-    {
-        params,
-    }: { params: Promise<{ client_id: string; endpoint_id: string }> },
+    { params }: { params: Promise<{ client_id: string; endpoint_id: string }> },
 ) {
     const token =
         request.cookies.get("access_token")?.value ||
@@ -75,10 +73,7 @@ export async function POST(
         } catch {
             /* swallow */
         }
-        return NextResponse.json(
-            { error: "Rotation failed" },
-            { status: 500 },
-        );
+        return NextResponse.json({ error: "Rotation failed" }, { status: 500 });
     }
 
     return NextResponse.json({

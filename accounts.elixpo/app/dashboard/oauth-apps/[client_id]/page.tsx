@@ -203,7 +203,7 @@ export default function OAuthAppSettingsPage() {
     useEffect(() => {
         loadEndpoints();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [clientId]);
+    }, [loadEndpoints]);
 
     const handleCreateEndpoint = async () => {
         const url = newEndpoint.url.trim();
@@ -1060,9 +1060,7 @@ export default function OAuthAppSettingsPage() {
                             Last used:{" "}
                             <strong style={{ color: "#e5e7eb" }}>
                                 {stats.last_used
-                                    ? new Date(
-                                          stats.last_used,
-                                      ).toLocaleString()
+                                    ? new Date(stats.last_used).toLocaleString()
                                     : "Never"}
                             </strong>
                         </span>
@@ -1085,9 +1083,7 @@ export default function OAuthAppSettingsPage() {
 
             {/* Webhooks panel — multi-endpoint event subscription */}
             <Box sx={{ ...cardSx, mb: 3 }}>
-                <Typography
-                    sx={{ color: "#f5f5f4", fontWeight: 600, mb: 0.5 }}
-                >
+                <Typography sx={{ color: "#f5f5f4", fontWeight: 600, mb: 0.5 }}>
                     Webhook endpoints
                 </Typography>
                 <Typography
@@ -1141,10 +1137,7 @@ export default function OAuthAppSettingsPage() {
                             color: "rgba(255,255,255,0.4)",
                         }}
                     >
-                        <CircularProgress
-                            size={20}
-                            sx={{ color: "#9b7bf7" }}
-                        />
+                        <CircularProgress size={20} sx={{ color: "#9b7bf7" }} />
                     </Box>
                 ) : endpoints.length === 0 ? (
                     <Box
@@ -1709,8 +1702,7 @@ function EndpointRow({
                             component="code"
                             sx={{
                                 color: "#e8e8ed",
-                                fontFamily:
-                                    "var(--font-geist-mono), monospace",
+                                fontFamily: "var(--font-geist-mono), monospace",
                                 fontSize: "0.82rem",
                                 wordBreak: "break-all",
                                 flex: 1,

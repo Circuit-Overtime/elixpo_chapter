@@ -494,9 +494,7 @@ export async function PATCH(request: NextRequest) {
             // Awaited so caller-visible state stays consistent in the dev
             // logs, but the helper catches its own errors so we never 500.
             if (displayNameChange !== null) {
-                const { fireUserUpdated } = await import(
-                    "@/lib/user-events"
-                );
+                const { fireUserUpdated } = await import("@/lib/user-events");
                 await fireUserUpdated(payload.sub, {
                     display_name: displayNameChange,
                 });

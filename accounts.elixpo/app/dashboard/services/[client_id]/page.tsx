@@ -1,6 +1,5 @@
 "use client";
-export const runtime = "edge"
-
+export const runtime = "edge";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
@@ -150,10 +149,7 @@ const ServiceDetailPage = ({
           })()
         : "";
 
-    const maxC = Math.max(
-        1,
-        ...svc.sign_in_timeline.map((p) => p.count),
-    );
+    const maxC = Math.max(1, ...svc.sign_in_timeline.map((p) => p.count));
 
     // Icon: explicit logo_url > favicon (via google's s2 service) > first
     // letter fallback. The state machine is rendered below in the JSX.
@@ -301,9 +297,7 @@ const ServiceDetailPage = ({
                     >
                         Permissions granted
                     </Typography>
-                    <Box
-                        sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}
-                    >
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
                         {svc.scopes.length > 0 ? (
                             svc.scopes.map((s) => (
                                 <Chip
@@ -347,29 +341,28 @@ const ServiceDetailPage = ({
                 }}
             >
                 <StatTile label="Total sign-ins" value={svc.total_sign_ins} />
-                <StatTile
-                    label="Active sessions"
-                    value={svc.active_sessions}
-                />
+                <StatTile label="Active sessions" value={svc.active_sessions} />
                 <StatTile
                     label="First authorized"
-                    value={new Date(
-                        svc.first_authorized,
-                    ).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                    })}
+                    value={new Date(svc.first_authorized).toLocaleDateString(
+                        undefined,
+                        {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                        },
+                    )}
                 />
                 <StatTile
                     label="Last sign-in"
-                    value={new Date(
-                        svc.last_authorized,
-                    ).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                    })}
+                    value={new Date(svc.last_authorized).toLocaleDateString(
+                        undefined,
+                        {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                        },
+                    )}
                 />
             </Box>
 
