@@ -51,7 +51,6 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef(null);
-  const scrollRef = useRef(null);
 
   const checkAuth = () => {
     setSignedIn(isSignedIn());
@@ -80,17 +79,6 @@ export default function Navbar() {
     };
   }, []);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      const el = scrollRef.current;
-      const timer = setTimeout(() => {
-        const center = (el.scrollWidth - el.clientWidth) / 2;
-        el.scrollLeft = center;
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
   // Close menus on outside click
   useEffect(() => {
     const handler = (e) => {
@@ -108,18 +96,6 @@ export default function Navbar() {
     window.location.href = '/';
   };
 
-  const handleScrollLeft = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -140, behavior: 'smooth' });
-    }
-  };
-
-  const handleScrollRight = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 140, behavior: 'smooth' });
-    }
-  };
-
   return (
     <nav className={`${styles.nav} ${scrolled ? styles.scrolled : ''}`}>
       <div className={styles.inner}>
@@ -128,36 +104,25 @@ export default function Navbar() {
           <span className={styles.brandName}>Elixpo Art</span>
         </a>
 
-        <div className={styles.sliderContainer}>
-          <button className={styles.arrowBtn} onClick={handleScrollLeft} aria-label="Scroll left">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          
-          <div className={styles.viewport} ref={scrollRef}>
-            <div className={styles.track}>
-              {navLinks.map((link) => (
-                <a 
-                  key={link.label} 
-                  href={link.href} 
-                  className={`${styles.link} ${link.isHighlight ? styles.linkHighlight : ''}`}
-                >
-                  {link.icon}
-                  <span>{link.label}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <button className={styles.arrowBtn} onClick={handleScrollRight} aria-label="Scroll right">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
+        <div className={styles.links}>
+          {navLinks.filter(link => link.label !== 'Pricing').map((link) => (
+            <a 
+              key={link.label} 
+              href={link.href} 
+              className={`${styles.link} ${link.isHighlight ? styles.linkHighlight : ''}`}
+              title={link.label}
+            >
+              {link.icon}
+              <span className={styles.linkLabel}>{link.label}</span>
+            </a>
+          ))}
         </div>
 
         <div className={styles.actions}>
+          <a href="/pricing" className={styles.pricingActionLink}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>
+            <span>Pricing</span>
+          </a>
           {signedIn ? (
             <div className={styles.userWrap} ref={menuRef}>
               <button className={styles.pfpBtn} onClick={() => setUserMenuOpen(!userMenuOpen)}>
