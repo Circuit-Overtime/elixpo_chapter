@@ -3,7 +3,9 @@
 export const runtime = "edge";
 
 import AddIcon from "@mui/icons-material/Add";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
 import {
     Box,
     Button,
@@ -49,8 +51,9 @@ export default function DevelopersPage() {
     const [dlg, setDlg] = useState(false);
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState("");
-    const [newKey, setNewKey] = useState<{ slug: string; key: string } | null>(null);
+    const [newKey, setNewKey] = useState<{ clientId: string; secret: string } | null>(null);
     const [copied, setCopied] = useState(false);
+    const [secretHidden, setSecretHidden] = useState(false);
 
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -89,7 +92,9 @@ export default function DevelopersPage() {
             setDescription("");
             setHomepageUrl("");
             setPricingUrl("");
-            setNewKey({ slug: d.app.slug, key: d.api_key });
+            setCopied(false);
+            setSecretHidden(false);
+            setNewKey({ clientId: d.client_id, secret: d.client_secret });
             await load();
         } catch (e: any) {
             setErr(e.message);
@@ -101,9 +106,10 @@ export default function DevelopersPage() {
     const copyKey = async () => {
         if (!newKey) return;
         try {
-            await navigator.clipboard.writeText(newKey.key);
+            await navigator.clipboard.writeText(newKey.secret);
             setCopied(true);
-            setTimeout(() => setCopied(false), 1800);
+            // Once copied, hide the secret for good — it's never shown again.
+            setSecretHidden(true);
         } catch {
             // ignore
         }
@@ -149,44 +155,85 @@ export default function DevelopersPage() {
 
             {newKey && (
                 <GlassCard sx={{ mb: 3, border: "1px solid rgba(134,239,172,0.35)" }}>
-                    <Typography sx={{ fontWeight: 700, color: "#86efac", mb: 0.5 }}>
-                        App created — copy your secret key now
+                    <Typography sx={{ fontWeight: 700, color: "#86efac", mb: 1.2 }}>
+                        App created — copy your client secret now
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.85rem", mb: 1.5 }}>
-                        Your API id (slug) is{" "}
-                        <Box component="code" sx={codeSx}>{newKey.slug}</Box> — use it as{" "}
-                        <Box component="code" sx={codeSx}>app={newKey.slug}</Box> in the checkout handoff and entitlements API.
-                        The secret key below is shown <strong>once</strong>; store it in your server env as <code>ELIXPO_PAY_API_KEY</code>.
+
+                    {/* Client ID (public, always visible) */}
+                    <Typography sx={{ fontSize: "0.72rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                        Client ID
                     </Typography>
-                    <Stack direction="row" spacing={1} alignItems="center">
+                    <Box
+                        sx={{
+                            fontFamily: "var(--font-geist-mono)",
+                            fontSize: "0.85rem",
+                            p: 1.2,
+                            mb: 2,
+                            borderRadius: "10px",
+                            background: "rgba(0,0,0,0.3)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            color: "#c4b5fd",
+                        }}
+                    >
+                        {newKey.clientId}
+                    </Box>
+
+                    {/* Client secret (shown once, hidden after copy) */}
+                    <Typography sx={{ fontSize: "0.72rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                        Client secret
+                    </Typography>
+                    {secretHidden ? (
                         <Box
                             sx={{
-                                flexGrow: 1,
-                                fontFamily: "var(--font-geist-mono)",
-                                fontSize: "0.85rem",
                                 p: 1.2,
                                 borderRadius: "10px",
                                 background: "rgba(0,0,0,0.3)",
                                 border: "1px solid rgba(255,255,255,0.1)",
-                                overflowX: "auto",
-                                whiteSpace: "nowrap",
+                                color: "rgba(245,245,244,0.45)",
+                                fontSize: "0.85rem",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
                             }}
                         >
-                            {newKey.key}
+                            <CheckCircleIcon sx={{ fontSize: 16, color: "#86efac" }} />
+                            Copied & hidden — for your security it won't be shown again. Store it as{" "}
+                            <Box component="code" sx={codeSx}>ELIXPO_PAY_API_KEY</Box>.
                         </Box>
-                        <Button
-                            onClick={copyKey}
-                            startIcon={<ContentCopyIcon sx={{ fontSize: "1rem !important" }} />}
-                            sx={{
-                                textTransform: "none",
-                                color: copied ? "#86efac" : "#fff",
-                                border: "1px solid rgba(255,255,255,0.15)",
-                                borderRadius: "10px",
-                            }}
-                        >
-                            {copied ? "Copied" : "Copy"}
-                        </Button>
-                    </Stack>
+                    ) : (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Box
+                                sx={{
+                                    flexGrow: 1,
+                                    fontFamily: "var(--font-geist-mono)",
+                                    fontSize: "0.85rem",
+                                    p: 1.2,
+                                    borderRadius: "10px",
+                                    background: "rgba(0,0,0,0.3)",
+                                    border: "1px solid rgba(255,255,255,0.1)",
+                                    overflowX: "auto",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                {newKey.secret}
+                            </Box>
+                            <Button
+                                onClick={copyKey}
+                                startIcon={<ContentCopyIcon sx={{ fontSize: "1rem !important" }} />}
+                                sx={{
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    color: "#fff",
+                                    px: 2,
+                                    background: "#7c5cff",
+                                    borderRadius: "10px",
+                                    "&:hover": { background: "#8a6dff" },
+                                }}
+                            >
+                                Copy
+                            </Button>
+                        </Stack>
+                    )}
                 </GlassCard>
             )}
 
@@ -238,30 +285,26 @@ export default function DevelopersPage() {
                 </Stack>
             )}
 
-            <GlassCard sx={{ mt: 3 }}>
-                <Typography sx={{ fontWeight: 700, mb: 1.5 }}>Integrate in three calls</Typography>
-                <Stack spacing={1.2} sx={{ color: "rgba(245,245,244,0.7)", fontSize: "0.9rem" }}>
-                    <Box>
-                        <strong>1. Hand off to checkout</strong> — redirect users to{" "}
-                        <Box component="code" sx={codeSx}>payouts.elixpo.com/checkout?token=…</Box> with a signed handoff token.
-                    </Box>
-                    <Box>
-                        <strong>2. Receive the grant</strong> — we POST a signed{" "}
-                        <Box component="code" sx={codeSx}>entitlement.updated</Box> webhook to your app on payment.
-                    </Box>
-                    <Box>
-                        <strong>3. Read entitlements</strong> — call{" "}
-                        <Box component="code" sx={codeSx}>GET /v1/entitlements?app=…&uid=…</Box> with your secret key.
-                    </Box>
-                </Stack>
+            <Stack alignItems="center" sx={{ mt: 4 }}>
                 <Button
                     component={Link}
-                    href="/docs"
-                    sx={{ mt: 2, textTransform: "none", color: "#9b7bf7", fontWeight: 600, px: 0 }}
+                    href="/docs/quickstart"
+                    startIcon={<MenuBookIcon sx={{ fontSize: "1.1rem !important" }} />}
+                    sx={{
+                        textTransform: "none",
+                        fontWeight: 700,
+                        fontSize: "0.95rem",
+                        color: "#f5f5f4",
+                        px: 3,
+                        py: 1.2,
+                        borderRadius: "12px",
+                        border: "1px solid rgba(255,255,255,0.14)",
+                        "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
+                    }}
                 >
-                    Read the full integration docs →
+                    Read Integration Docs
                 </Button>
-            </GlassCard>
+            </Stack>
 
             <Dialog open={dlg} onClose={() => setDlg(false)} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaper }}>
                 <DialogTitle sx={{ fontWeight: 700 }}>New app</DialogTitle>

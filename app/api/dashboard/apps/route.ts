@@ -75,8 +75,6 @@ export async function POST(request: NextRequest) {
     const body: any = await request.json().catch(() => ({}));
     const name = String(body.name || "").trim();
     const description = body.description ? String(body.description).trim().slice(0, 280) : null;
-    const homepageUrl = validUrl(body.homepage_url);
-    const pricingUrl = validUrl(body.pricing_url);
 
     if (name.length < 2) {
         return NextResponse.json(
@@ -84,17 +82,22 @@ export async function POST(request: NextRequest) {
             { status: 400 },
         );
     }
+
+    // Homepage may be http (app not deployed yet) or https — just well-formed.
+    const homepageUrl = validUrl(body.homepage_url);
     if (body.homepage_url && !homepageUrl) {
         return NextResponse.json({ error: "invalid_homepage_url" }, { status: 400 });
     }
-    if (body.pricing_url && !pricingUrl) {
-        return NextResponse.json({ error: "invalid_pricing_url" }, { status: 400 });
-    }
+
+    // Pricing page must be https AND actually reachable (2xx). Otherwise we
+    // silently keep it empty rather than blocking app creation.
+    const pricingUrl = await verifiedHttpsUrl(body.pricing_url);
 
     const slug = await uniqueSlug(db, slugify(name));
 
-    const apiKey = `pay_sk_${crypto.randomUUID().replace(/-/g, "")}${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
-    const apiKeyHash = await sha256Hex(apiKey);
+    // Client credentials: slug is the public Client ID; the secret is shown once.
+    const clientSecret = `lix_pay_${crypto.randomUUID().replace(/-/g, "")}${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
+    const secretHash = await sha256Hex(clientSecret);
     const id = newId("app");
 
     await db
@@ -102,11 +105,36 @@ export async function POST(request: NextRequest) {
             `INSERT INTO apps (id, merchant_id, slug, name, description, homepage_url, pricing_url, api_key_hash, return_url, status)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
         )
-        .bind(id, merchantId, slug, name, description, homepageUrl, pricingUrl, apiKeyHash, pricingUrl)
+        .bind(id, merchantId, slug, name, description, homepageUrl, pricingUrl, secretHash, pricingUrl)
+        .run();
+
+    // 1 app = 1 product: auto-create the app's product so it's sellable at once.
+    await db
+        .prepare(
+            "INSERT INTO products (id, app_id, name, tier, description, active) VALUES (?, ?, ?, 'default', ?, 1)",
+        )
+        .bind(newId("product"), id, name, description)
         .run();
 
     return NextResponse.json({
         app: { id, slug, name, description, homepage_url: homepageUrl, pricing_url: pricingUrl },
-        api_key: apiKey, // shown once
+        client_id: slug,
+        client_secret: clientSecret, // shown once
     });
+}
+
+/** Returns the URL only if it's https and responds 2xx; else null (kept empty). */
+async function verifiedHttpsUrl(input: unknown): Promise<string | null> {
+    const u = validUrl(input);
+    if (!u || !u.startsWith("https://")) return null;
+    try {
+        const res = await fetch(u, {
+            method: "GET",
+            redirect: "follow",
+            signal: AbortSignal.timeout(4000),
+        });
+        return res.ok ? u : null;
+    } catch {
+        return null;
+    }
 }
