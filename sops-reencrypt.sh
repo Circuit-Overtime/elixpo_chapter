@@ -6,15 +6,11 @@
 #   ./sops-reencrypt.sh blogs.elixpo     # single project
 #   ./sops-reencrypt.sh --decrypt        # decrypt .env → .env.local for all
 #
-# Requires:
-#   - sops installed
-#   - AGE private key at ~/.sops/elixpo-age-key.txt
-#     OR exported as SOPS_AGE_KEY env var
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-AGE_KEY_FILE="$HOME/.sops/elixpo-age-key.txt"
+AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
 
 PROJECTS=(".")
 
