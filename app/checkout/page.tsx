@@ -358,20 +358,11 @@ function Card({ children }: { children: React.ReactNode }) {
                     sx={{ mb: 3 }}
                 >
                     <Box
-                        sx={{
-                            height: 28,
-                            width: 28,
-                            borderRadius: "8px",
-                            display: "grid",
-                            placeItems: "center",
-                            fontWeight: 800,
-                            color: "#fff",
-                            background:
-                                "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        }}
-                    >
-                        ₹
-                    </Box>
+                        component="img"
+                        src="/mark.png"
+                        alt="Elixpo Pay"
+                        sx={{ height: 30, width: 30, borderRadius: "8px", display: "block" }}
+                    />
                     <Typography sx={{ fontWeight: 700 }}>
                         Elixpo{" "}
                         <Box component="span" sx={{ color: "#9b7bf7" }}>

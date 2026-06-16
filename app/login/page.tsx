@@ -60,24 +60,19 @@ function LoginInner() {
             >
                 {/* logo badge */}
                 <Box
+                    component="img"
+                    src="/mark.png"
+                    alt="Elixpo Pay"
                     sx={{
-                        height: 56,
-                        width: 56,
+                        height: 60,
+                        width: 60,
                         mx: "auto",
                         mb: 2.5,
                         borderRadius: "16px",
-                        display: "grid",
-                        placeItems: "center",
-                        fontWeight: 800,
-                        fontSize: "1.6rem",
-                        color: "#fff",
-                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        boxShadow:
-                            "inset 0 1px 1px rgba(255,255,255,0.4), 0 10px 28px rgba(124,92,255,0.45)",
+                        display: "block",
+                        filter: "drop-shadow(0 10px 24px rgba(124,92,255,0.35))",
                     }}
-                >
-                    ₹
-                </Box>
+                />
 
                 <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", letterSpacing: "-0.01em" }}>
                     Merchant sign in

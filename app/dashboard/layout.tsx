@@ -155,19 +155,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 }}
                             >
                                 <Box
-                                    sx={{
-                                        height: 30,
-                                        width: 30,
-                                        borderRadius: "8px",
-                                        display: "grid",
-                                        placeItems: "center",
-                                        fontWeight: 800,
-                                        color: "#fff",
-                                        background: "#7c5cff",
-                                    }}
-                                >
-                                    ₹
-                                </Box>
+                                    component="img"
+                                    src="/mark.png"
+                                    alt="Elixpo Pay"
+                                    sx={{ height: 30, width: 30, borderRadius: "8px", display: "block" }}
+                                />
                                 <Typography
                                     sx={{
                                         fontWeight: 700,
