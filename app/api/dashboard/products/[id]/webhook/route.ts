@@ -71,11 +71,12 @@ export async function GET(
     const ep = await getEndpoint(db, app.id);
     return NextResponse.json(
         {
+            available_events: WEBHOOK_EVENT_TYPES,
             endpoint: ep
                 ? {
                       id: ep.id,
                       url: ep.url,
-                      events: ep.events,
+                      events: parseEvents(ep.events),
                       status: ep.status,
                       secret_preview: maskSecret(ep.signing_secret),
                       has_secret: !!ep.signing_secret,
@@ -106,13 +107,15 @@ export async function PUT(
             { status: 400 },
         );
     }
+    // Required events are always kept; unknown ones dropped.
+    const events = JSON.stringify(normaliseEvents(body.events));
 
     const ep = await getEndpoint(db, app.id);
     let secretOnce: string | null = null;
     if (ep) {
         await db
-            .prepare("UPDATE webhook_endpoints SET url = ?, status = 'active' WHERE id = ?")
-            .bind(url, ep.id)
+            .prepare("UPDATE webhook_endpoints SET url = ?, events = ?, status = 'active' WHERE id = ?")
+            .bind(url, events, ep.id)
             .run();
         // Mint a secret if this endpoint somehow never had one.
         if (!ep.signing_secret) {
@@ -127,9 +130,9 @@ export async function PUT(
         await db
             .prepare(
                 `INSERT INTO webhook_endpoints (id, app_id, url, secret_ref, signing_secret, events, status)
-                 VALUES (?, ?, ?, '', ?, '["entitlement.updated"]', 'active')`,
+                 VALUES (?, ?, ?, '', ?, ?, 'active')`,
             )
-            .bind(newId("webhookEndpoint"), app.id, url, secretOnce)
+            .bind(newId("webhookEndpoint"), app.id, url, secretOnce, events)
             .run();
     }
 
