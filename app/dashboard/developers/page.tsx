@@ -46,7 +46,7 @@ export default function DevelopersPage() {
     const [returnUrl, setReturnUrl] = useState("");
 
     const load = async () => {
-        const a = await fetch("/api/dashboard/apps", { credentials: "include" }).then((r) => r.json());
+        const a: any = await fetch("/api/dashboard/apps", { credentials: "include" }).then((r) => r.json());
         setApps(a.apps || []);
         setLoading(false);
     };
@@ -65,7 +65,7 @@ export default function DevelopersPage() {
                 credentials: "include",
                 body: JSON.stringify({ slug, name, return_url: returnUrl || null }),
             });
-            const d = await r.json();
+            const d: any = await r.json();
             if (!r.ok) throw new Error(d.error_description || d.error);
             setDlg(false);
             setSlug("");

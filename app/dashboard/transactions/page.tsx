@@ -18,7 +18,7 @@ export default function TransactionsPage() {
     useEffect(() => {
         fetch("/api/dashboard/transactions?limit=100", { credentials: "include" })
             .then((r) => (r.ok ? r.json() : { transactions: [] }))
-            .then((d) => {
+            .then((d: any) => {
                 setRows(d.transactions || []);
                 setLoading(false);
             })

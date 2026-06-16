@@ -1,209 +1,262 @@
 "use client";
 
-import { Box, Button, Chip, Container, Stack, Typography } from "@mui/material";
-import Link from "next/link";
-import BackgroundAurora from "./components/background-aurora";
+import { Box, Container, Typography } from "@mui/material";
 import Footer from "./components/footer";
 import Navbar from "./components/navbar";
+import PixelHero from "./components/pixel-hero";
 
-const FEATURES = [
+interface Tile {
+    title: string;
+    body: string;
+    accent: string;
+    area: { xs: string; md: string };
+    big?: boolean;
+}
+
+const TILES: Tile[] = [
     {
         title: "Hosted checkout",
-        body: "A signed handoff from your app opens a branded, edge-served checkout. Razorpay (INR) today; Stripe, PayPal and more behind the same adapter.",
+        body: "A signed handoff from your app opens a branded, edge-served checkout. Razorpay (INR) today; Stripe, PayPal and more behind the same adapter — your code never touches a card.",
         accent: "#9b7bf7",
-    },
-    {
-        title: "Bring your own keys",
-        body: "Connect your own Razorpay/Stripe accounts, or let Elixpo be merchant-of-record. You own the customer and the funds — we own the plumbing.",
-        accent: "#5fb6ff",
+        area: { xs: "auto", md: "span 7 / span 7" },
+        big: true,
     },
     {
         title: "Entitlements & grants",
-        body: "Every charge grants a tier with an expiry, fires a signed webhook to your app, and is queryable at /v1/entitlements. No reconciliation glue to write.",
+        body: "Every charge grants a tier with an expiry, fires a signed webhook, and is queryable at /v1/entitlements.",
         accent: "#86efac",
+        area: { xs: "auto", md: "span 5 / span 5" },
+    },
+    {
+        title: "Bring your own keys",
+        body: "Connect your own Razorpay/Stripe accounts, or let Elixpo be merchant-of-record. You own the customer and the funds.",
+        accent: "#5fb6ff",
+        area: { xs: "auto", md: "span 5 / span 5" },
     },
     {
         title: "Unified ledger",
         body: "Immutable, double-entry by design. Idempotent money ops and replay-safe webhooks from day one — wallets, payouts and pools build on top.",
         accent: "#fbbf24",
+        area: { xs: "auto", md: "span 4 / span 4" },
     },
     {
         title: "Creator payouts",
-        body: "Subscriber-pool splits, marketplace payouts, and revenue-share — credited to creator wallets and settled via RazorpayX or Stripe Connect.",
+        body: "Subscriber-pool splits, marketplace payouts and revenue-share — settled via RazorpayX or Stripe Connect.",
         accent: "#c4b5fd",
+        area: { xs: "auto", md: "span 4 / span 4" },
     },
     {
         title: "One identity, one API",
-        body: "Merchants sign in with Elixpo Accounts, manage products and pricing in the dashboard, and call one API. Like SSO — but for money.",
+        body: "Merchants sign in with Elixpo Accounts, manage products and pricing in the dashboard, and call one API.",
         accent: "#ff7cc9",
+        area: { xs: "auto", md: "span 4 / span 4" },
     },
 ];
 
 const STEPS = [
-    { n: "01", t: "Connect", d: "Sign in with Elixpo Accounts, create an app, and add your provider keys." },
+    { n: "01", t: "Connect", d: "Sign in with Elixpo Accounts, create an app, add your provider keys." },
     { n: "02", t: "List", d: "Define products and regional prices in the dashboard — or via the API." },
-    { n: "03", t: "Collect", d: "Redirect to hosted checkout; receive grants, entitlements, and payouts." },
+    { n: "03", t: "Collect", d: "Redirect to hosted checkout; receive grants, entitlements and payouts." },
 ];
 
 export default function Home() {
     return (
-        <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}>
-            <BackgroundAurora variant="default" />
-            <Box sx={{ position: "relative", zIndex: 1 }}>
+        <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4", bgcolor: "#0b0d12" }}>
+            <Box sx={{ position: "sticky", top: 0, zIndex: 1000 }}>
                 <Navbar />
-                <Container maxWidth="md" sx={{ pt: { xs: 8, md: 13 }, pb: 4 }}>
-                    <Stack spacing={3} alignItems="center" textAlign="center">
-                        <Chip
-                            label="Payments-as-a-Service · Cloudflare edge"
-                            sx={{
-                                bgcolor: "rgba(155,123,247,0.1)",
-                                color: "#b69aff",
-                                border: "1px solid rgba(155,123,247,0.25)",
-                                fontWeight: 600,
-                            }}
-                        />
-                        <Typography
-                            component="h1"
-                            sx={{
-                                fontSize: { xs: "2.4rem", md: "3.7rem" },
-                                fontWeight: 800,
-                                lineHeight: 1.05,
-                                letterSpacing: "-0.03em",
-                                background:
-                                    "linear-gradient(135deg, #f5f5f4 0%, #9b7bf7 35%, #86efac 65%, #fbbf24 100%)",
-                                WebkitBackgroundClip: "text",
-                                WebkitTextFillColor: "transparent",
-                                backgroundClip: "text",
-                            }}
-                        >
-                            Payments infrastructure
-                            <br />
-                            for every product
+            </Box>
+
+            <PixelHero />
+
+            {/* ── Bento feature section ───────────────────────────────────── */}
+            <Box sx={{ position: "relative", py: { xs: 7, md: 12 } }}>
+                <Box
+                    sx={{
+                        position: "absolute",
+                        inset: 0,
+                        background:
+                            "radial-gradient(60vmax 40vmax at 80% 0%, rgba(95,182,255,0.06), transparent 60%), radial-gradient(50vmax 40vmax at 10% 100%, rgba(155,123,247,0.07), transparent 60%)",
+                        pointerEvents: "none",
+                    }}
+                />
+                <Container maxWidth="lg" sx={{ position: "relative" }}>
+                    <Box sx={{ mb: { xs: 4, md: 6 }, maxWidth: 640 }}>
+                        <Typography sx={{ color: "#b69aff", fontWeight: 700, fontSize: "0.8rem", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
+                            The platform
                         </Typography>
-                        <Typography
-                            sx={{
-                                maxWidth: 640,
-                                fontSize: { xs: "1rem", md: "1.18rem" },
-                                color: "rgba(245,245,244,0.7)",
-                                lineHeight: 1.7,
-                            }}
-                        >
-                            Elixpo Pay is the billing layer of the Elixpo ecosystem —
-                            and an open SaaS for any developer. Run checkout,
-                            subscriptions, entitlements, and creator payouts behind one
-                            API, with your own provider keys. It's what Elixpo Accounts
-                            is to identity, for money.
+                        <Typography sx={{ fontWeight: 800, fontSize: { xs: "1.9rem", md: "2.6rem" }, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+                            Everything billing needs, on one rail
                         </Typography>
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ pt: 1 }}>
-                            <Button
-                                component={Link}
-                                href="/login"
-                                sx={{
-                                    textTransform: "none",
-                                    fontWeight: 700,
-                                    fontSize: "1rem",
-                                    color: "#fff",
-                                    px: 3.2,
-                                    py: 1.2,
-                                    borderRadius: "12px",
-                                    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                                    boxShadow: "0 6px 20px rgba(155,123,247,0.4)",
-                                    "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
-                                }}
-                            >
-                                Start building
-                            </Button>
-                            <Button
-                                component={Link}
-                                href="/docs"
-                                sx={{
-                                    textTransform: "none",
-                                    fontWeight: 700,
-                                    fontSize: "1rem",
-                                    color: "#f5f5f4",
-                                    px: 3.2,
-                                    py: 1.2,
-                                    borderRadius: "12px",
-                                    border: "1px solid rgba(255,255,255,0.18)",
-                                    "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
-                                }}
-                            >
-                                Read the docs
-                            </Button>
-                        </Stack>
-                    </Stack>
+                        <Typography sx={{ color: "rgba(245,245,244,0.6)", mt: 1.5, fontSize: "1.02rem", lineHeight: 1.7 }}>
+                            Charge-in and pay-out, abstracted behind a single API, ledger and dashboard — so you ship monetization instead of plumbing.
+                        </Typography>
+                    </Box>
 
                     <Box
                         sx={{
-                            mt: { xs: 6, md: 10 },
                             display: "grid",
-                            gap: 2.5,
-                            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "repeat(3, 1fr)" },
+                            gap: 2,
+                            gridTemplateColumns: { xs: "1fr", md: "repeat(12, 1fr)" },
+                            gridAutoRows: { md: "minmax(150px, auto)" },
                         }}
                     >
-                        {FEATURES.map((f) => (
+                        {TILES.map((tile) => (
                             <Box
-                                key={f.title}
+                                key={tile.title}
                                 sx={{
-                                    p: 3,
-                                    borderRadius: "16px",
+                                    gridColumn: tile.area,
+                                    gridRow: tile.big ? { md: "span 2" } : undefined,
+                                    position: "relative",
+                                    overflow: "hidden",
+                                    p: { xs: 3, md: 3.5 },
+                                    borderRadius: "18px",
+                                    display: "flex",
+                                    flexDirection: "column",
                                     background:
-                                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                                        "linear-gradient(150deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)",
+                                    border: "1px solid rgba(255,255,255,0.09)",
                                     backdropFilter: "blur(20px)",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    transition: "all 0.3s ease",
-                                    "&:hover": { borderColor: "rgba(255,255,255,0.3)", transform: "translateY(-4px)" },
+                                    transition: "border-color 0.3s ease, transform 0.3s ease",
+                                    "&:hover": { borderColor: "rgba(255,255,255,0.22)", transform: "translateY(-3px)" },
                                 }}
                             >
-                                <Box sx={{ width: 36, height: 4, borderRadius: 2, mb: 2, background: f.accent }} />
-                                <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 1 }}>
-                                    {f.title}
+                                <Box
+                                    sx={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        height: 2,
+                                        background: `linear-gradient(90deg, ${tile.accent}, transparent 70%)`,
+                                    }}
+                                />
+                                <AccentDot accent={tile.accent} />
+                                <Typography sx={{ fontWeight: 700, fontSize: tile.big ? "1.5rem" : "1.15rem", mb: 1, mt: 1.5 }}>
+                                    {tile.title}
                                 </Typography>
-                                <Typography sx={{ color: "rgba(245,245,244,0.65)", fontSize: "0.92rem", lineHeight: 1.6 }}>
-                                    {f.body}
+                                <Typography
+                                    sx={{
+                                        color: "rgba(245,245,244,0.62)",
+                                        fontSize: tile.big ? "1rem" : "0.92rem",
+                                        lineHeight: 1.65,
+                                        maxWidth: tile.big ? 460 : "none",
+                                    }}
+                                >
+                                    {tile.body}
                                 </Typography>
+
+                                {tile.big && (
+                                    <Box sx={{ mt: "auto", pt: 3 }}>
+                                        <MockCheckout />
+                                    </Box>
+                                )}
                             </Box>
                         ))}
                     </Box>
-
-                    <Box sx={{ mt: { xs: 7, md: 11 } }}>
-                        <Typography sx={{ textAlign: "center", fontWeight: 800, fontSize: { xs: "1.6rem", md: "2rem" }, letterSpacing: "-0.02em", mb: 1 }}>
-                            Live in three steps
-                        </Typography>
-                        <Typography sx={{ textAlign: "center", color: "rgba(245,245,244,0.55)", mb: 4 }}>
-                            From sign-in to your first captured payment.
-                        </Typography>
-                        <Box sx={{ display: "grid", gap: 2.5, gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" } }}>
-                            {STEPS.map((s) => (
-                                <Box
-                                    key={s.n}
-                                    sx={{
-                                        p: 3,
-                                        borderRadius: "16px",
-                                        border: "1px solid rgba(255,255,255,0.08)",
-                                        background: "rgba(255,255,255,0.02)",
-                                    }}
-                                >
-                                    <Typography sx={{ fontWeight: 800, fontSize: "1.6rem", color: "#9b7bf7", opacity: 0.8 }}>
-                                        {s.n}
-                                    </Typography>
-                                    <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mt: 0.5 }}>
-                                        {s.t}
-                                    </Typography>
-                                    <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.9rem", mt: 0.5, lineHeight: 1.6 }}>
-                                        {s.d}
-                                    </Typography>
-                                </Box>
-                            ))}
-                        </Box>
-                    </Box>
-
-                    <Typography sx={{ mt: 7, textAlign: "center", color: "rgba(245,245,244,0.4)", fontSize: "0.85rem" }}>
-                        P0 · first-party billing for blogs.elixpo · Razorpay INR · multi-tenant SaaS rolling out
-                    </Typography>
                 </Container>
+            </Box>
 
-                <Footer />
+            {/* ── Steps ───────────────────────────────────────────────────── */}
+            <Container maxWidth="lg" sx={{ pb: { xs: 7, md: 12 } }}>
+                <Typography sx={{ textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", md: "2.2rem" }, letterSpacing: "-0.02em", mb: 1 }}>
+                    Live in three steps
+                </Typography>
+                <Typography sx={{ textAlign: "center", color: "rgba(245,245,244,0.55)", mb: { xs: 4, md: 6 } }}>
+                    From sign-in to your first captured payment.
+                </Typography>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gap: 2.5,
+                        gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
+                        position: "relative",
+                    }}
+                >
+                    {STEPS.map((s) => (
+                        <Box
+                            key={s.n}
+                            sx={{
+                                p: 3.5,
+                                borderRadius: "16px",
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                background: "rgba(255,255,255,0.02)",
+                            }}
+                        >
+                            <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", color: "#9b7bf7", opacity: 0.85, fontFamily: "var(--font-geist-mono)" }}>
+                                {s.n}
+                            </Typography>
+                            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", mt: 0.8 }}>{s.t}</Typography>
+                            <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.92rem", mt: 0.6, lineHeight: 1.65 }}>
+                                {s.d}
+                            </Typography>
+                        </Box>
+                    ))}
+                </Box>
+                <Typography sx={{ mt: 6, textAlign: "center", color: "rgba(245,245,244,0.38)", fontSize: "0.85rem" }}>
+                    P0 · first-party billing for blogs.elixpo · Razorpay INR · multi-tenant SaaS rolling out
+                </Typography>
+            </Container>
+
+            <Footer />
+        </Box>
+    );
+}
+
+/* Accent dot used in each bento tile. */
+function AccentDot({ accent }: { accent: string }) {
+    return (
+        <Box
+            sx={{
+                width: 38,
+                height: 38,
+                borderRadius: "11px",
+                display: "grid",
+                placeItems: "center",
+                background: `${accent}1f`,
+                border: `1px solid ${accent}55`,
+            }}
+        >
+            <Box sx={{ width: 12, height: 12, borderRadius: "4px", background: accent }} />
+        </Box>
+    );
+}
+
+/* Decorative faux checkout card for the featured tile. */
+function MockCheckout() {
+    return (
+        <Box
+            sx={{
+                borderRadius: "14px",
+                border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(0,0,0,0.28)",
+                p: 2,
+                maxWidth: 320,
+            }}
+        >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                <Box sx={{ width: 20, height: 20, borderRadius: "6px", background: "linear-gradient(135deg, #9b7bf7, #7c5cff)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 800, color: "#fff" }}>
+                    ₹
+                </Box>
+                <Typography sx={{ fontSize: "0.8rem", color: "rgba(245,245,244,0.6)" }}>Elixpo Pay</Typography>
+            </Box>
+            <Typography sx={{ fontSize: "0.75rem", color: "rgba(245,245,244,0.45)" }}>Blogs Member</Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: "1.6rem", mt: 0.2 }}>
+                ₹199 <Box component="span" sx={{ fontSize: "0.8rem", fontWeight: 400, color: "rgba(245,245,244,0.45)" }}>/ 30 days</Box>
+            </Typography>
+            <Box
+                sx={{
+                    mt: 1.5,
+                    height: 38,
+                    borderRadius: "10px",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: "0.85rem",
+                    fontWeight: 700,
+                    color: "#fff",
+                    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                }}
+            >
+                Pay ₹199
             </Box>
         </Box>
     );

@@ -47,10 +47,10 @@ export default function ProductsPage() {
     const [err, setErr] = useState("");
 
     const load = async () => {
-        const [a, p] = await Promise.all([
+        const [a, p] = (await Promise.all([
             fetch("/api/dashboard/apps", { credentials: "include" }).then((r) => r.json()),
             fetch("/api/dashboard/products", { credentials: "include" }).then((r) => r.json()),
-        ]);
+        ])) as any[];
         setApps(a.apps || []);
         setProducts(p.products || []);
         setLoading(false);
@@ -70,7 +70,7 @@ export default function ProductsPage() {
                 credentials: "include",
                 body: JSON.stringify(form),
             });
-            const d = await r.json();
+            const d: any = await r.json();
             if (!r.ok) throw new Error(d.error_description || d.error);
             setProductDlg(false);
             await load();
@@ -102,7 +102,7 @@ export default function ProductsPage() {
                     region: form.region || null,
                 }),
             });
-            const d = await r.json();
+            const d: any = await r.json();
             if (!r.ok) throw new Error(d.error_description || d.error);
             setPriceDlg(null);
             await load();
@@ -354,13 +354,27 @@ export default function ProductsPage() {
                 busy={busy}
                 err={err}
                 onClose={() => setPriceDlg(null)}
-                onSubmit={(form) => priceDlg && createPrice(priceDlg, form)}
+                onSubmit={(form: any) => priceDlg && createPrice(priceDlg, form)}
             />
         </Box>
     );
 }
 
-function ProductDialog({ open, apps, busy, err, onClose, onSubmit }: any) {
+function ProductDialog({
+    open,
+    apps,
+    busy,
+    err,
+    onClose,
+    onSubmit,
+}: {
+    open: boolean;
+    apps: any[];
+    busy: boolean;
+    err: string;
+    onClose: () => void;
+    onSubmit: (form: { app_id: string; name: string; tier: string; description: string }) => void;
+}) {
     const [appId, setAppId] = useState("");
     const [name, setName] = useState("");
     const [tier, setTier] = useState("");

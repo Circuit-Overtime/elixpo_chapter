@@ -31,7 +31,7 @@ export default function OverviewPage() {
     useEffect(() => {
         fetch("/api/dashboard/overview", { credentials: "include" })
             .then((r) => (r.ok ? r.json() : null))
-            .then((d) => {
+            .then((d: any) => {
                 setData(d);
                 setLoading(false);
             })

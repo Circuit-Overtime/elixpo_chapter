@@ -71,7 +71,7 @@ function CheckoutInner() {
                     }),
                     loadRazorpayScript(),
                 ]);
-                const data = await res.json();
+                const data: any = await res.json();
                 if (!res.ok) throw new Error(data.error_description || data.error);
                 if (cancelled) return;
                 setSession(data);
@@ -111,7 +111,7 @@ function CheckoutInner() {
                             razorpay_signature: resp.razorpay_signature,
                         }),
                     });
-                    const vd = await v.json();
+                    const vd: any = await v.json();
                     if (!v.ok) throw new Error(vd.error || "verification_failed");
                     setPhase("success");
                     const back = vd.return_url || session.return_url;

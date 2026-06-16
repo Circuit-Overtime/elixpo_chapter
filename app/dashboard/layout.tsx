@@ -57,7 +57,7 @@ export default function DashboardLayout({
     useEffect(() => {
         fetch("/api/auth/me", { credentials: "include" })
             .then((r) => (r.ok ? r.json() : null))
-            .then((data) => {
+            .then((data: any) => {
                 if (!data) {
                     window.location.assign("/login");
                     return;
