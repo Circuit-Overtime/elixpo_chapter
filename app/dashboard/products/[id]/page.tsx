@@ -444,12 +444,61 @@ export default function ProductDetailPage() {
                     />
                     <Button
                         onClick={saveWebhook}
-                        disabled={webhookBusy || !webhookUrl.trim() || webhookUrl.trim() === webhook?.url}
+                        disabled={
+                            webhookBusy ||
+                            !webhookUrl.trim() ||
+                            (webhookUrl.trim() === webhook?.url &&
+                                JSON.stringify([...webhookEvents].sort()) ===
+                                    JSON.stringify([...(webhook?.events || [])].sort()))
+                        }
                         sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2.4, py: 0.9, borderRadius: "10px", background: "#7c5cff", whiteSpace: "nowrap", "&:hover": { background: "#8a6dff" }, "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}
                     >
                         {webhookBusy ? "Saving…" : webhook ? "Update" : "Save"}
                     </Button>
                 </Stack>
+
+                {availableEvents.length > 0 && (
+                    <Box sx={{ mt: 2.5 }}>
+                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 1 }}>
+                            Events to send
+                        </Typography>
+                        <Stack spacing={1}>
+                            {availableEvents.map((ev: any) => {
+                                const on = ev.required || webhookEvents.includes(ev.type);
+                                return (
+                                    <Stack
+                                        key={ev.type}
+                                        direction="row"
+                                        alignItems="flex-start"
+                                        justifyContent="space-between"
+                                        spacing={1.5}
+                                        sx={{ p: 1.4, borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
+                                    >
+                                        <Box sx={{ minWidth: 0 }}>
+                                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.2 }}>
+                                                <Box component="code" sx={{ ...mono, fontSize: "0.8rem", color: "#c4b5fd", p: 0, background: "none", border: "none" }}>
+                                                    {ev.type}
+                                                </Box>
+                                                {ev.required && (
+                                                    <Chip label="required" size="small" sx={{ height: 18, fontSize: "0.6rem", color: "rgba(245,245,244,0.6)", bgcolor: "rgba(255,255,255,0.06)" }} />
+                                                )}
+                                            </Stack>
+                                            <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.8rem" }}>
+                                                {ev.description}
+                                            </Typography>
+                                        </Box>
+                                        <Switch
+                                            size="small"
+                                            checked={on}
+                                            disabled={ev.required}
+                                            onChange={(e) => toggleWebhookEvent(ev.type, e.target.checked)}
+                                        />
+                                    </Stack>
+                                );
+                            })}
+                        </Stack>
+                    </Box>
+                )}
 
                 {webhookSecretOnce ? (
                     <Box sx={{ mt: 2 }}>
