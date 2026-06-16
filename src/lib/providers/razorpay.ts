@@ -20,9 +20,10 @@ export class RazorpayProvider implements PaymentProvider {
     readonly name = "razorpay";
 
     constructor(
-        private readonly keyId: string,
+        readonly keyId: string,
         private readonly keySecret: string,
         private readonly webhookSecret: string,
+        readonly mode: "test" | "live" = "test",
     ) {}
 
     private authHeader(): string {
@@ -109,13 +110,26 @@ export class RazorpayProvider implements PaymentProvider {
     }
 }
 
-/** Build a Razorpay provider from env. Returns null if keys are unset. */
+/**
+ * Build a Razorpay provider from env. Selects test vs live keys by RAZORPAY_MODE
+ * (default "test"), preferring RAZORPAY_{TEST,LIVE}_* and falling back to the
+ * legacy unsuffixed RAZORPAY_* vars. Returns null if no usable keys.
+ */
 export async function razorpayFromEnv(
     getEnv: (k: string) => Promise<string | undefined>,
 ): Promise<RazorpayProvider | null> {
-    const keyId = await getEnv("RAZORPAY_KEY_ID");
-    const keySecret = await getEnv("RAZORPAY_KEY_SECRET");
-    const webhookSecret = await getEnv("RAZORPAY_WEBHOOK_SECRET");
+    const mode =
+        ((await getEnv("RAZORPAY_MODE")) || "test").toLowerCase() === "live"
+            ? "live"
+            : "test";
+    const M = mode.toUpperCase();
+    const pick = async (suffix: string) =>
+        (await getEnv(`RAZORPAY_${M}_${suffix}`)) ||
+        (await getEnv(`RAZORPAY_${suffix}`));
+
+    const keyId = await pick("KEY_ID");
+    const keySecret = await pick("KEY_SECRET");
+    const webhookSecret = await pick("WEBHOOK_SECRET");
     if (!keyId || !keySecret) return null;
-    return new RazorpayProvider(keyId, keySecret, webhookSecret || "");
+    return new RazorpayProvider(keyId, keySecret, webhookSecret || "", mode);
 }

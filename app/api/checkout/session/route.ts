@@ -142,7 +142,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             session_id: sessionId,
             provider: "razorpay",
-            key_id: await getEnv("NEXT_PUBLIC_RAZORPAY_KEY_ID"),
+            mode: razorpay.mode,
+            key_id: razorpay.keyId,
             order_id: order.providerOrderId,
             ...details,
         });
