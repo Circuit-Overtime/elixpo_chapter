@@ -69,7 +69,7 @@ export default function Home() {
             <PixelHero />
 
             {/* ── Bento feature section ───────────────────────────────────── */}
-            <Box sx={{ position: "relative", py: { xs: 7, md: 12 } }}>
+            <Box id="platform" sx={{ position: "relative", py: { xs: 7, md: 12 }, scrollMarginTop: "80px" }}>
                 <Box
                     sx={{
                         position: "absolute",
@@ -109,27 +109,21 @@ export default function Home() {
                                     position: "relative",
                                     overflow: "hidden",
                                     p: { xs: 3, md: 3.5 },
-                                    borderRadius: "18px",
+                                    borderRadius: "20px",
                                     display: "flex",
                                     flexDirection: "column",
-                                    background:
-                                        "linear-gradient(150deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)",
-                                    border: "1px solid rgba(255,255,255,0.09)",
-                                    backdropFilter: "blur(20px)",
-                                    transition: "border-color 0.3s ease, transform 0.3s ease",
-                                    "&:hover": { borderColor: "rgba(255,255,255,0.22)", transform: "translateY(-3px)" },
+                                    background: "#0e1117",
+                                    border: "1px solid rgba(255,255,255,0.04)",
+                                    boxShadow:
+                                        "10px 10px 30px rgba(0,0,0,0.5), -8px -8px 22px rgba(255,255,255,0.022)",
+                                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                                    "&:hover": {
+                                        transform: "translateY(-3px)",
+                                        boxShadow:
+                                            "14px 14px 40px rgba(0,0,0,0.58), -10px -10px 26px rgba(255,255,255,0.03)",
+                                    },
                                 }}
                             >
-                                <Box
-                                    sx={{
-                                        position: "absolute",
-                                        top: 0,
-                                        left: 0,
-                                        right: 0,
-                                        height: 2,
-                                        background: `linear-gradient(90deg, ${tile.accent}, transparent 70%)`,
-                                    }}
-                                />
                                 <AccentDot accent={tile.accent} />
                                 <Typography sx={{ fontWeight: 700, fontSize: tile.big ? "1.5rem" : "1.15rem", mb: 1, mt: 1.5 }}>
                                     {tile.title}
@@ -157,7 +151,7 @@ export default function Home() {
             </Box>
 
             {/* ── Steps ───────────────────────────────────────────────────── */}
-            <Container maxWidth="lg" sx={{ pb: { xs: 7, md: 12 } }}>
+            <Container id="start" maxWidth="lg" sx={{ pb: { xs: 7, md: 12 }, scrollMarginTop: "80px" }}>
                 <Typography sx={{ textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", md: "2.2rem" }, letterSpacing: "-0.02em", mb: 1 }}>
                     Live in three steps
                 </Typography>
@@ -177,9 +171,11 @@ export default function Home() {
                             key={s.n}
                             sx={{
                                 p: 3.5,
-                                borderRadius: "16px",
-                                border: "1px solid rgba(255,255,255,0.08)",
-                                background: "rgba(255,255,255,0.02)",
+                                borderRadius: "18px",
+                                background: "#0e1117",
+                                border: "1px solid rgba(255,255,255,0.04)",
+                                boxShadow:
+                                    "8px 8px 24px rgba(0,0,0,0.45), -6px -6px 18px rgba(255,255,255,0.02)",
                             }}
                         >
                             <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", color: "#9b7bf7", opacity: 0.85, fontFamily: "var(--font-geist-mono)" }}>
