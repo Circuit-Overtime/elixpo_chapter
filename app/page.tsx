@@ -9,47 +9,38 @@ interface Tile {
     title: string;
     body: string;
     accent: string;
-    area: { xs: string; md: string };
-    big?: boolean;
 }
 
 const TILES: Tile[] = [
     {
         title: "Hosted checkout",
-        body: "A signed handoff from your app opens a branded, edge-served checkout. Razorpay (INR) today; Stripe, PayPal and more behind the same adapter — your code never touches a card.",
+        body: "A signed handoff opens a branded, edge-served checkout — your code never touches a card.",
         accent: "#9b7bf7",
-        area: { xs: "auto", md: "span 7 / span 7" },
-        big: true,
     },
     {
         title: "Entitlements & grants",
-        body: "Every charge grants a tier with an expiry, fires a signed webhook, and is queryable at /v1/entitlements.",
+        body: "Each charge grants a tier with an expiry, fires a signed webhook, and is queryable via API.",
         accent: "#86efac",
-        area: { xs: "auto", md: "span 5 / span 5" },
     },
     {
         title: "Bring your own keys",
-        body: "Connect your own Razorpay/Stripe accounts, or let Elixpo be merchant-of-record. You own the customer and the funds.",
+        body: "Connect your own Razorpay/Stripe, or let Elixpo be merchant-of-record. You own the funds.",
         accent: "#5fb6ff",
-        area: { xs: "auto", md: "span 5 / span 5" },
     },
     {
         title: "Unified ledger",
-        body: "Immutable, double-entry by design. Idempotent money ops and replay-safe webhooks from day one — wallets, payouts and pools build on top.",
+        body: "Immutable double-entry, idempotent money ops, and replay-safe webhooks from day one.",
         accent: "#fbbf24",
-        area: { xs: "auto", md: "span 4 / span 4" },
     },
     {
         title: "Creator payouts",
-        body: "Subscriber-pool splits, marketplace payouts and revenue-share — settled via RazorpayX or Stripe Connect.",
+        body: "Pool splits, marketplace and revenue-share — settled via RazorpayX or Stripe Connect.",
         accent: "#c4b5fd",
-        area: { xs: "auto", md: "span 4 / span 4" },
     },
     {
         title: "One identity, one API",
-        body: "Merchants sign in with Elixpo Accounts, manage products and pricing in the dashboard, and call one API.",
+        body: "Sign in with Elixpo Accounts, manage products and pricing, and call a single API.",
         accent: "#ff7cc9",
-        area: { xs: "auto", md: "span 4 / span 4" },
     },
 ];
 
@@ -95,57 +86,69 @@ export default function Home() {
                     <Box
                         sx={{
                             display: "grid",
-                            gap: 2,
-                            gridTemplateColumns: { xs: "1fr", md: "repeat(12, 1fr)" },
-                            gridAutoRows: { md: "minmax(150px, auto)" },
+                            gap: 1.5,
+                            gridTemplateColumns: {
+                                xs: "1fr",
+                                sm: "repeat(2, 1fr)",
+                                md: "repeat(3, 1fr)",
+                            },
                         }}
                     >
                         {TILES.map((tile) => (
                             <Box
                                 key={tile.title}
                                 sx={{
-                                    gridColumn: tile.area,
-                                    gridRow: tile.big ? { md: "span 2" } : undefined,
-                                    position: "relative",
-                                    overflow: "hidden",
-                                    p: { xs: 3, md: 3.5 },
-                                    borderRadius: "20px",
                                     display: "flex",
-                                    flexDirection: "column",
+                                    gap: 1.6,
+                                    p: 2.2,
+                                    borderRadius: "14px",
                                     background: "#0e1117",
                                     border: "1px solid rgba(255,255,255,0.04)",
                                     boxShadow:
-                                        "10px 10px 30px rgba(0,0,0,0.5), -8px -8px 22px rgba(255,255,255,0.022)",
-                                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                                        "6px 6px 18px rgba(0,0,0,0.45), -5px -5px 14px rgba(255,255,255,0.018)",
+                                    transition: "transform 0.25s ease, box-shadow 0.25s ease",
                                     "&:hover": {
-                                        transform: "translateY(-3px)",
+                                        transform: "translateY(-2px)",
                                         boxShadow:
-                                            "14px 14px 40px rgba(0,0,0,0.58), -10px -10px 26px rgba(255,255,255,0.03)",
+                                            "8px 8px 22px rgba(0,0,0,0.52), -6px -6px 16px rgba(255,255,255,0.026)",
                                     },
                                 }}
                             >
                                 <AccentDot accent={tile.accent} />
-                                <Typography sx={{ fontWeight: 700, fontSize: tile.big ? "1.5rem" : "1.15rem", mb: 1, mt: 1.5 }}>
-                                    {tile.title}
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        color: "rgba(245,245,244,0.62)",
-                                        fontSize: tile.big ? "1rem" : "0.92rem",
-                                        lineHeight: 1.65,
-                                        maxWidth: tile.big ? 460 : "none",
-                                    }}
-                                >
-                                    {tile.body}
-                                </Typography>
-
-                                {tile.big && (
-                                    <Box sx={{ mt: "auto", pt: 3 }}>
-                                        <MockCheckout />
-                                    </Box>
-                                )}
+                                <Box sx={{ minWidth: 0 }}>
+                                    <Typography sx={{ fontWeight: 700, fontSize: "0.98rem", mb: 0.4 }}>
+                                        {tile.title}
+                                    </Typography>
+                                    <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.82rem", lineHeight: 1.55 }}>
+                                        {tile.body}
+                                    </Typography>
+                                </Box>
                             </Box>
                         ))}
+                    </Box>
+
+                    {/* Checkout artifact showcase */}
+                    <Box
+                        sx={{
+                            mt: { xs: 5, md: 7 },
+                            display: "flex",
+                            flexDirection: { xs: "column", md: "row" },
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: { xs: 3, md: 6 },
+                        }}
+                    >
+                        <Box sx={{ maxWidth: 380, textAlign: { xs: "center", md: "left" } }}>
+                            <Typography sx={{ fontWeight: 700, fontSize: "1.3rem", mb: 1 }}>
+                                A checkout your customers trust
+                            </Typography>
+                            <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.92rem", lineHeight: 1.65 }}>
+                                Branded, edge-served, and PCI-light — the buyer sees your
+                                plan and pays in two taps, while you receive a signed grant
+                                the moment money clears.
+                            </Typography>
+                        </Box>
+                        <MockCheckout />
                     </Box>
                 </Container>
             </Box>
@@ -203,23 +206,24 @@ function AccentDot({ accent }: { accent: string }) {
     return (
         <Box
             sx={{
-                width: 40,
-                height: 40,
-                borderRadius: "12px",
+                flexShrink: 0,
+                width: 34,
+                height: 34,
+                borderRadius: "10px",
                 display: "grid",
                 placeItems: "center",
                 background: "#0e1117",
                 boxShadow:
-                    "inset 3px 3px 6px rgba(0,0,0,0.55), inset -3px -3px 6px rgba(255,255,255,0.03)",
+                    "inset 2px 2px 5px rgba(0,0,0,0.55), inset -2px -2px 5px rgba(255,255,255,0.03)",
             }}
         >
             <Box
                 sx={{
-                    width: 13,
-                    height: 13,
+                    width: 11,
+                    height: 11,
                     borderRadius: "4px",
                     background: accent,
-                    boxShadow: `0 0 12px ${accent}aa`,
+                    boxShadow: `0 0 10px ${accent}aa`,
                 }}
             />
         </Box>

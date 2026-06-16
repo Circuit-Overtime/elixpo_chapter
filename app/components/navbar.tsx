@@ -11,8 +11,8 @@ const ACCENT = "#9b7bf7";
 const REPO_URL = "https://github.com/elixpo";
 
 const LINKS = [
-    { label: "Platform", href: "/#platform" },
-    { label: "Pricing", href: "/#start" },
+    { label: "Platform", href: "/about" },
+    { label: "Pricing", href: "/pricing" },
     { label: "Docs", href: "/docs" },
     { label: "Developers", href: "/docs/quickstart" },
     { label: "Dashboard", href: "/dashboard" },
