@@ -205,41 +205,32 @@ const SERVICES: Service[] = [
 
 function ServiceIcon({ s }: { s: Service }) {
     return (
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
-            <span
-                style={{
-                    display: "grid",
-                    placeItems: "center",
-                    width: 26,
-                    height: 26,
-                    borderRadius: 8,
-                    background: `${s.color}1f`,
-                    border: `1px solid ${s.color}55`,
-                    color: s.color,
-                    fontSize: "0.72rem",
-                    fontWeight: 800,
-                    fontFamily: "var(--font-geist-mono), monospace",
-                }}
-            >
-                {s.svg ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-                        {s.svg}
-                    </svg>
-                ) : (
-                    s.letter
-                )}
-            </span>
-            <span
-                style={{
-                    fontFamily: "var(--font-geist-sans), sans-serif",
-                    fontSize: "0.92rem",
-                    fontWeight: 600,
-                    color: "rgba(245,245,244,0.6)",
-                }}
-            >
-                {s.name}
-            </span>
-        </div>
+        <span
+            title={s.name}
+            aria-label={s.name}
+            style={{
+                display: "grid",
+                placeItems: "center",
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: `${s.color}1a`,
+                border: `1px solid ${s.color}4d`,
+                color: s.color,
+                fontSize: "1rem",
+                fontWeight: 800,
+                fontFamily: "var(--font-geist-mono), monospace",
+                flexShrink: 0,
+            }}
+        >
+            {s.svg ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                    {s.svg}
+                </svg>
+            ) : (
+                s.letter
+            )}
+        </span>
     );
 }
 
@@ -470,17 +461,6 @@ export default function PixelHero() {
                     transitionDelay: "0.55s",
                 }}
             >
-                <span
-                    style={{
-                        fontSize: "0.72rem",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.12em",
-                        color: "rgba(245,245,244,0.4)",
-                        fontWeight: 600,
-                    }}
-                >
-                    Built on the edge stack
-                </span>
                 <div
                     style={{
                         position: "relative",

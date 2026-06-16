@@ -1,9 +1,12 @@
 "use client";
 
-import { Box, Container, Typography } from "@mui/material";
+import { Box, Button, Container, Stack, Typography } from "@mui/material";
+import Link from "next/link";
+import BackgroundAurora from "./components/background-aurora";
 import Footer from "./components/footer";
 import Navbar from "./components/navbar";
 import PixelHero from "./components/pixel-hero";
+import RoadmapSteps from "./components/roadmap-steps";
 
 interface Tile {
     title: string;
@@ -44,164 +47,139 @@ const TILES: Tile[] = [
     },
 ];
 
-const STEPS = [
-    { n: "01", t: "Connect", d: "Sign in with Elixpo Accounts, create an app, add your provider keys." },
-    { n: "02", t: "List", d: "Define products and regional prices in the dashboard — or via the API." },
-    { n: "03", t: "Collect", d: "Redirect to hosted checkout; receive grants, entitlements and payouts." },
-];
-
 export default function Home() {
     return (
-        <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4", bgcolor: "#0b0d12" }}>
-            <Box sx={{ position: "sticky", top: 0, zIndex: 1000 }}>
-                <Navbar />
-            </Box>
+        <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}>
+            <BackgroundAurora variant="default" />
+            <Box sx={{ position: "relative", zIndex: 1 }}>
+                <Box sx={{ position: "sticky", top: 0, zIndex: 1000 }}>
+                    <Navbar />
+                </Box>
 
-            <PixelHero />
+                <PixelHero />
 
-            {/* ── Bento feature section ───────────────────────────────────── */}
-            <Box id="platform" sx={{ position: "relative", py: { xs: 7, md: 12 }, scrollMarginTop: "80px" }}>
-                <Box
-                    sx={{
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                            "radial-gradient(60vmax 40vmax at 80% 0%, rgba(95,182,255,0.06), transparent 60%), radial-gradient(50vmax 40vmax at 10% 100%, rgba(155,123,247,0.07), transparent 60%)",
-                        pointerEvents: "none",
-                    }}
-                />
-                <Container maxWidth="lg" sx={{ position: "relative" }}>
-                    <Box sx={{ mb: { xs: 4, md: 6 }, maxWidth: 640 }}>
-                        <Typography sx={{ color: "#b69aff", fontWeight: 700, fontSize: "0.8rem", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
-                            The platform
-                        </Typography>
-                        <Typography sx={{ fontWeight: 800, fontSize: { xs: "1.9rem", md: "2.6rem" }, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
-                            Everything billing needs, on one rail
-                        </Typography>
-                        <Typography sx={{ color: "rgba(245,245,244,0.6)", mt: 1.5, fontSize: "1.02rem", lineHeight: 1.7 }}>
-                            Charge-in and pay-out, abstracted behind a single API, ledger and dashboard — so you ship monetization instead of plumbing.
-                        </Typography>
-                    </Box>
+                {/* ── Section 2: roadmap, right after the hero ────────────────── */}
+                <RoadmapSteps />
 
-                    <Box
-                        sx={{
-                            display: "grid",
-                            gap: 1.5,
-                            gridTemplateColumns: {
-                                xs: "1fr",
-                                sm: "repeat(2, 1fr)",
-                                md: "repeat(3, 1fr)",
-                            },
-                        }}
-                    >
-                        {TILES.map((tile) => (
-                            <Box
-                                key={tile.title}
+                {/* ── Section 3: The platform ─────────────────────────────────── */}
+                <Box id="platform" sx={{ position: "relative", py: { xs: 7, md: 11 }, scrollMarginTop: "80px" }}>
+                    <Container maxWidth="lg" sx={{ position: "relative" }}>
+                        <Stack alignItems="center" textAlign="center" spacing={1.5} sx={{ mb: { xs: 4, md: 6 } }}>
+                            <Typography
                                 sx={{
-                                    display: "flex",
-                                    gap: 1.6,
-                                    p: 2.2,
-                                    borderRadius: "14px",
-                                    background: "#0e1117",
-                                    border: "1px solid rgba(255,255,255,0.04)",
-                                    boxShadow:
-                                        "6px 6px 18px rgba(0,0,0,0.45), -5px -5px 14px rgba(255,255,255,0.018)",
-                                    transition: "transform 0.25s ease, box-shadow 0.25s ease",
-                                    "&:hover": {
-                                        transform: "translateY(-2px)",
-                                        boxShadow:
-                                            "8px 8px 22px rgba(0,0,0,0.52), -6px -6px 16px rgba(255,255,255,0.026)",
-                                    },
+                                    fontWeight: 800,
+                                    fontSize: { xs: "2.2rem", md: "3rem" },
+                                    letterSpacing: "-0.02em",
+                                    lineHeight: 1.05,
+                                    color: "#f5f5f4",
                                 }}
                             >
-                                <AccentDot accent={tile.accent} />
-                                <Box sx={{ minWidth: 0 }}>
-                                    <Typography sx={{ fontWeight: 700, fontSize: "0.98rem", mb: 0.4 }}>
-                                        {tile.title}
-                                    </Typography>
-                                    <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.82rem", lineHeight: 1.55 }}>
-                                        {tile.body}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        ))}
-                    </Box>
-
-                    {/* Checkout artifact showcase */}
-                    <Box
-                        sx={{
-                            mt: { xs: 5, md: 7 },
-                            display: "flex",
-                            flexDirection: { xs: "column", md: "row" },
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: { xs: 3, md: 6 },
-                        }}
-                    >
-                        <Box sx={{ maxWidth: 380, textAlign: { xs: "center", md: "left" } }}>
-                            <Typography sx={{ fontWeight: 700, fontSize: "1.3rem", mb: 1 }}>
-                                A checkout your customers trust
+                                The platform
                             </Typography>
-                            <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.92rem", lineHeight: 1.65 }}>
-                                Branded, edge-served, and PCI-light — the buyer sees your
-                                plan and pays in two taps, while you receive a signed grant
-                                the moment money clears.
+                            <Typography sx={{ maxWidth: 600, color: "rgba(245,245,244,0.65)", fontSize: "1.05rem", lineHeight: 1.7 }}>
+                                Charge-in and pay-out, abstracted behind a single API,
+                                ledger and dashboard — so you ship monetization instead
+                                of plumbing.
                             </Typography>
-                        </Box>
-                        <MockCheckout />
-                    </Box>
-                </Container>
-            </Box>
+                        </Stack>
 
-            {/* ── Steps ───────────────────────────────────────────────────── */}
-            <Container id="start" maxWidth="lg" sx={{ pb: { xs: 7, md: 12 }, scrollMarginTop: "80px" }}>
-                <Typography sx={{ textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", md: "2.2rem" }, letterSpacing: "-0.02em", mb: 1 }}>
-                    Live in three steps
-                </Typography>
-                <Typography sx={{ textAlign: "center", color: "rgba(245,245,244,0.55)", mb: { xs: 4, md: 6 } }}>
-                    From sign-in to your first captured payment.
-                </Typography>
-                <Box
-                    sx={{
-                        display: "grid",
-                        gap: 2.5,
-                        gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
-                        position: "relative",
-                    }}
-                >
-                    {STEPS.map((s) => (
                         <Box
-                            key={s.n}
                             sx={{
-                                p: 3.5,
-                                borderRadius: "18px",
-                                background: "#0e1117",
-                                border: "1px solid rgba(255,255,255,0.04)",
-                                boxShadow:
-                                    "8px 8px 24px rgba(0,0,0,0.45), -6px -6px 18px rgba(255,255,255,0.02)",
+                                display: "grid",
+                                gap: 1.5,
+                                gridTemplateColumns: {
+                                    xs: "1fr",
+                                    sm: "repeat(2, 1fr)",
+                                    md: "repeat(3, 1fr)",
+                                },
                             }}
                         >
-                            <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", color: "#9b7bf7", opacity: 0.85, fontFamily: "var(--font-geist-mono)" }}>
-                                {s.n}
-                            </Typography>
-                            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", mt: 0.8 }}>{s.t}</Typography>
-                            <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.92rem", mt: 0.6, lineHeight: 1.65 }}>
-                                {s.d}
-                            </Typography>
+                            {TILES.map((tile) => (
+                                <Box
+                                    key={tile.title}
+                                    sx={{
+                                        display: "flex",
+                                        gap: 1.6,
+                                        p: 2.2,
+                                        borderRadius: "14px",
+                                        background: "#0e1117",
+                                        border: "1px solid rgba(255,255,255,0.04)",
+                                        boxShadow:
+                                            "6px 6px 18px rgba(0,0,0,0.45), -5px -5px 14px rgba(255,255,255,0.018)",
+                                        transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                                        "&:hover": {
+                                            transform: "translateY(-2px)",
+                                            boxShadow:
+                                                "8px 8px 22px rgba(0,0,0,0.52), -6px -6px 16px rgba(255,255,255,0.026)",
+                                        },
+                                    }}
+                                >
+                                    <AccentDot accent={tile.accent} />
+                                    <Box sx={{ minWidth: 0 }}>
+                                        <Typography sx={{ fontWeight: 700, fontSize: "0.98rem", mb: 0.4 }}>
+                                            {tile.title}
+                                        </Typography>
+                                        <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.82rem", lineHeight: 1.55 }}>
+                                            {tile.body}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            ))}
                         </Box>
-                    ))}
-                </Box>
-                <Typography sx={{ mt: 6, textAlign: "center", color: "rgba(245,245,244,0.38)", fontSize: "0.85rem" }}>
-                    P0 · first-party billing for blogs.elixpo · Razorpay INR · multi-tenant SaaS rolling out
-                </Typography>
-            </Container>
 
-            <Footer />
+                        {/* Checkout artifact showcase */}
+                        <Box
+                            sx={{
+                                mt: { xs: 5, md: 7 },
+                                display: "flex",
+                                flexDirection: { xs: "column", md: "row" },
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: { xs: 3, md: 6 },
+                            }}
+                        >
+                            <Box sx={{ maxWidth: 380, textAlign: { xs: "center", md: "left" } }}>
+                                <Typography sx={{ fontWeight: 700, fontSize: "1.3rem", mb: 1 }}>
+                                    A checkout your customers trust
+                                </Typography>
+                                <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.92rem", lineHeight: 1.65 }}>
+                                    Branded, edge-served, and PCI-light — the buyer sees
+                                    your plan and pays in two taps, while you receive a
+                                    signed grant the moment money clears.
+                                </Typography>
+                            </Box>
+                            <MockCheckout />
+                        </Box>
+
+                        <Stack alignItems="center" sx={{ mt: { xs: 5, md: 7 } }}>
+                            <Button
+                                component={Link}
+                                href="/about"
+                                sx={{
+                                    textTransform: "none",
+                                    fontWeight: 700,
+                                    fontSize: "0.95rem",
+                                    color: "#f5f5f4",
+                                    px: 3,
+                                    py: 1.2,
+                                    borderRadius: "12px",
+                                    border: "1px solid rgba(255,255,255,0.16)",
+                                    "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
+                                }}
+                            >
+                                Explore the full platform →
+                            </Button>
+                        </Stack>
+                    </Container>
+                </Box>
+
+                <Footer />
+            </Box>
         </Box>
     );
 }
 
-/* Neumorphic embossed icon chip used in each bento tile. */
+/* Neumorphic embossed icon chip used in each platform tile. */
 function AccentDot({ accent }: { accent: string }) {
     return (
         <Box
@@ -242,6 +220,7 @@ function MockCheckout() {
             sx={{
                 position: "relative",
                 maxWidth: 360,
+                width: "100%",
                 borderRadius: "16px",
                 overflow: "hidden",
                 border: "1px solid rgba(255,255,255,0.08)",
@@ -251,7 +230,6 @@ function MockCheckout() {
                 pointerEvents: "none",
             }}
         >
-            {/* window chrome */}
             <Box
                 sx={{
                     display: "flex",
@@ -289,7 +267,6 @@ function MockCheckout() {
                 </Box>
             </Box>
 
-            {/* preview tag */}
             <Box
                 sx={{
                     position: "absolute",
@@ -310,7 +287,6 @@ function MockCheckout() {
                 Preview
             </Box>
 
-            {/* checkout body */}
             <Box sx={{ p: 2.2 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
                     <Box sx={{ width: 20, height: 20, borderRadius: "6px", background: "linear-gradient(135deg, #9b7bf7, #7c5cff)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 800, color: "#fff" }}>
