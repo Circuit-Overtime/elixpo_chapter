@@ -549,24 +549,27 @@ export default function ProductDetailPage() {
                 )}
             </GlassCard>
 
-            {/* Sync tiers from code */}
-            <GlassCard sx={{ mt: 2 }}>
-                <Typography sx={{ fontWeight: 700, fontSize: "1rem", mb: 1 }}>Sync tiers from code</Typography>
-                <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.88rem", mb: 1.5 }}>
-                    Keep a catalog JSON in your repo and push it with your secret key —
-                    this is the only way to add or change tiers.
-                </Typography>
-                <Box sx={{ ...mono, color: "#c4b5fd", mb: 1.5 }}>
-                    POST https://payouts.elixpo.com/v1/sync
-                    {"\n"}Authorization: Bearer &lt;ELIXPO_PAY_API_KEY&gt;
-                </Box>
-                <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.82rem", mb: 0.6 }}>
-                    Read the active tiers back any time (no secret needed):
-                </Typography>
-                <Box sx={{ ...mono, color: "#c4b5fd" }}>
-                    GET https://payouts.elixpo.com/v1/catalog?app={product.client_id}
-                </Box>
-            </GlassCard>
+            {/* Developer: how to sync tiers (full guide lives in the docs) */}
+            <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
+                <Button
+                    component={Link}
+                    href="/docs/catalog"
+                    target="_blank"
+                    endIcon={<LaunchIcon sx={{ fontSize: "1rem !important" }} />}
+                    sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                        color: "#c4b5fd",
+                        border: "1px solid rgba(155,123,247,0.3)",
+                        borderRadius: "12px",
+                        px: 3,
+                        py: 1.1,
+                        "&:hover": { borderColor: "rgba(155,123,247,0.6)", background: "rgba(155,123,247,0.06)" },
+                    }}
+                >
+                    Sync tiers from code — developer guide
+                </Button>
+            </Box>
 
             <ConfirmDialog
                 open={confirmArchive}
