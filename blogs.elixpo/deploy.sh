@@ -55,10 +55,15 @@ load_env() {
   # value comes through as ENC[...] and API calls fail.
   local _env_content
   if grep -q 'ENC\[' "$ENV_FILE" 2>/dev/null || grep -q '^sops' "$ENV_FILE" 2>/dev/null; then
-    if [ -z "${SOPS_AGE_KEY:-}" ] && [ -f "$HOME/.sops/elixpo-age-key.txt" ]; then
-      export SOPS_AGE_KEY="$(grep 'AGE-SECRET-KEY' "$HOME/.sops/elixpo-age-key.txt" | head -1)"
+    if [ -z "${SOPS_AGE_KEY:-}" ]; then
+      for _age_key in "$HOME/.config/sops/age/keys.txt" "$HOME/.sops/elixpo-age-key.txt"; do
+        if [ -f "$_age_key" ]; then
+          export SOPS_AGE_KEY="$(grep 'AGE-SECRET-KEY' "$_age_key" | head -1)"
+          break
+        fi
+      done
     fi
-    _env_content="$(sops -d "$ENV_FILE")" || { echo "Error: failed to decrypt $ENV_FILE (set SOPS_AGE_KEY or ~/.sops/elixpo-age-key.txt)"; exit 1; }
+    _env_content="$(sops -d "$ENV_FILE")" || { echo "Error: failed to decrypt $ENV_FILE (set SOPS_AGE_KEY or create ~/.config/sops/age/keys.txt)"; exit 1; }
   else
     _env_content="$(cat "$ENV_FILE")"
   fi

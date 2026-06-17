@@ -52,7 +52,10 @@ export async function POST(request) {
     return NextResponse.json({ ok: true, ignored: evt.type });
   }
   const d = evt.data || {};
-  if (d.app !== 'lixblogs' || !d.uid) {
+  // Our app id on Elixpo Pay (the slug it signs grants for). Accept the legacy
+  // 'lixblogs' too in case an old endpoint is still configured.
+  const ourApp = process.env.ELIXPO_PAY_ID || 'lixblogs';
+  if ((d.app !== ourApp && d.app !== 'lixblogs') || !d.uid) {
     return NextResponse.json({ ok: true, ignored: 'scope' });
   }
 
