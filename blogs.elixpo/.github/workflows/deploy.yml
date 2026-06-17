@@ -4,6 +4,7 @@
 # Required repo secrets:
 #   CLOUDFLARE_API_TOKEN   — token with "Cloudflare Pages: Edit" permission
 #   CLOUDFLARE_ACCOUNT_ID  — your Cloudflare account id
+#   ELIXPO_PAY_API_KEY     — Elixpo Pay secret key (for the post-deploy catalog sync)
 name: Deploy
 
 on:
@@ -56,6 +57,28 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy .vercel/output/static --project-name lixblogs --branch main
+
+  # Push payouts.catalog.json to Elixpo Pay after a successful deploy so the
+  # central catalog (prices/tiers) always matches what's shipped. Idempotent —
+  # safe to run every deploy. The sync script uses only Node built-ins (no install).
+  sync-catalog:
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Sync pricing catalog to Elixpo Pay
+        env:
+          ELIXPO_PAY_API_KEY: ${{ secrets.ELIXPO_PAY_API_KEY }}
+        run: |
+          if [ -z "$ELIXPO_PAY_API_KEY" ]; then
+            echo "::warning::ELIXPO_PAY_API_KEY not set — skipping catalog sync"
+            exit 0
+          fi
+          node scripts/sync-payouts-tiers.mjs
 
   # Note: D1 migrations are NOT auto-applied here — schema changes stay manual
   # via `npm run db:migrate` to avoid an unexpected prod migration on every push.
