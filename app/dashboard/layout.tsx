@@ -39,6 +39,7 @@ const NAV = [
     { label: "Overview", icon: SpaceDashboardIcon, href: "/dashboard" },
     { label: "Products", icon: InventoryIcon, href: "/dashboard/products" },
     { label: "Transactions", icon: ReceiptLongIcon, href: "/dashboard/transactions" },
+    { label: "My subscriptions", icon: CardMembershipIcon, href: "/dashboard/subscriptions" },
 ];
 
 interface Me {
