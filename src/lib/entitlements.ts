@@ -209,3 +209,48 @@ export async function expireEntitlement(
 
     return { ...row, status: "expired", version };
 }
+
+/**
+ * Revoke an entitlement because the account was deleted or the app's access was
+ * revoked on accounts.elixpo. Marks the entitlement `revoked` and cancels its
+ * subscription so it never renews (billing stops). Audited as a `revoked` grant.
+ */
+export async function revokeEntitlement(
+    db: D1Database,
+    row: EntitlementRow,
+): Promise<EntitlementRow> {
+    const version = row.version + 1;
+    await db
+        .prepare(
+            "UPDATE entitlements SET status = 'revoked', version = ?, updated_at = datetime('now') WHERE id = ?",
+        )
+        .bind(version, row.id)
+        .run();
+
+    await db
+        .prepare(
+            `INSERT INTO grants (id, entitlement_id, app_id, external_uid, subscription_id, tier, action, expires_at)
+             VALUES (?, ?, ?, ?, ?, ?, 'revoked', ?)`,
+        )
+        .bind(
+            newId("grant"),
+            row.id,
+            row.app_id,
+            row.external_uid,
+            row.subscription_id,
+            row.tier,
+            row.expires_at,
+        )
+        .run();
+
+    if (row.subscription_id) {
+        await db
+            .prepare(
+                "UPDATE subscriptions SET status = 'cancelled', cancel_at = datetime('now'), updated_at = datetime('now') WHERE id = ?",
+            )
+            .bind(row.subscription_id)
+            .run();
+    }
+
+    return { ...row, status: "revoked", version };
+}
