@@ -1,6 +1,20 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+
+const SITE_URL = "https://payouts.elixpo.com";
+const OG_IMAGE = {
+    url: "/og-image.png",
+    width: 1423,
+    height: 747,
+    type: "image/png",
+    alt: "Elixpo Pay — Payments & Payouts",
+};
+
+export const viewport: Viewport = {
+    themeColor: "#0b0d12",
+    colorScheme: "dark",
+};
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
