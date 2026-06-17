@@ -127,6 +127,22 @@ export default function WebhooksDocs() {
                     <>The same grant may arrive from both the instant client confirmation and the provider webhook — fulfillment is idempotent on our side.</>,
                 ]}
             />
+
+            <DocH2>Revocation & account deletion</DocH2>
+            <DocP>
+                Elixpo Pay is wired to <strong>Elixpo Accounts</strong> (the identity
+                source of truth). When a buyer <strong>deletes their account</strong> or
+                revokes your app there, Elixpo Pay automatically <strong>cancels their
+                subscription</strong> (it never renews — billing stops) and <strong>revokes
+                the entitlement</strong>.
+            </DocP>
+            <DocList
+                items={[
+                    <>You receive a final <Code>entitlement.updated</Code> with <Code>status: "revoked"</Code> and <Code>active: false</Code> — handle it like any downgrade and drop the user to your free tier.</>,
+                    <>This is automatic; you don't call anything. It happens whether or not the buyer still has time left on the period.</>,
+                    <>For one-time (P0) plans there's no recurring charge to stop — cancelling the subscription just prevents the next grant. For future recurring plans, the provider mandate is cancelled too.</>,
+                ]}
+            />
         </Box>
     );
 }
