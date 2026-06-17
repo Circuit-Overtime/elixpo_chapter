@@ -2,6 +2,7 @@
 
 export const runtime = "edge";
 
+import CardMembershipIcon from "@mui/icons-material/CardMembership";
 import CodeIcon from "@mui/icons-material/Code";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
