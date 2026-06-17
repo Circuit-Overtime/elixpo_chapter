@@ -81,6 +81,12 @@ export async function GET(
                       status: ep.status,
                       secret_preview: maskSecret(ep.signing_secret),
                       has_secret: !!ep.signing_secret,
+                      prev_secret_expires_at:
+                          ep.prev_signing_secret &&
+                          ep.prev_signing_secret_expires_at &&
+                          new Date(ep.prev_signing_secret_expires_at.replace(" ", "T") + "Z") > new Date()
+                              ? ep.prev_signing_secret_expires_at
+                              : null,
                   }
                 : null,
         },

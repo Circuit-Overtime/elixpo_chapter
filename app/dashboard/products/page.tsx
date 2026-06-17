@@ -35,6 +35,17 @@ export default function ProductsPage() {
     const [creds, setCreds] = useState<{ clientId: string; secret: string } | null>(null);
     const [copied, setCopied] = useState(false);
     const [secretHidden, setSecretHidden] = useState(false);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+
+    const copyId = async (clientId: string) => {
+        try {
+            await navigator.clipboard.writeText(clientId);
+            setCopiedId(clientId);
+            setTimeout(() => setCopiedId((c) => (c === clientId ? null : c)), 1500);
+        } catch {
+            // ignore
+        }
+    };
 
     const load = async () => {
         const p: any = await fetch("/api/dashboard/products", { credentials: "include" }).then((r) => r.json());
@@ -167,61 +178,83 @@ export default function ProductsPage() {
                 </GlassCard>
             ) : (
                 <Stack spacing={2}>
-                    {products.map((p) => {
-                        const tiers = p.prices?.length ?? 0;
-                        const minPrice = tiers ? p.prices.reduce((m: any, x: any) => (x.unit_amount < m.unit_amount ? x : m)) : null;
+                    {groupByApp(products).map((app) => {
+                        const minPrice = app.prices.length
+                            ? app.prices.reduce((m: any, x: any) => (x.unit_amount < m.unit_amount ? x : m))
+                            : null;
                         return (
                             <GlassCard
-                                key={p.id}
+                                key={app.app_id}
                                 sx={{
-                                    opacity: p.active ? 1 : 0.55,
+                                    opacity: app.active ? 1 : 0.55,
                                     transition: "border-color 0.2s ease",
                                     "&:hover": { borderColor: "rgba(155,123,247,0.4)" },
                                 }}
                             >
                                 <Stack
-                                    component={Link}
-                                    href={`/dashboard/products/${p.id}`}
                                     direction={{ xs: "column", sm: "row" }}
                                     justifyContent="space-between"
                                     alignItems={{ xs: "flex-start", sm: "center" }}
                                     spacing={1.5}
-                                    sx={{ textDecoration: "none", color: "inherit" }}
                                 >
                                     <Box sx={{ minWidth: 0 }}>
                                         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                                            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", color: "#f5f5f4" }}>{p.name}</Typography>
+                                            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", color: "#f5f5f4" }}>{app.name}</Typography>
                                             <Chip
-                                                label={p.active ? "Active" : "Archived"}
+                                                label={app.active ? "Active" : "Archived"}
                                                 size="small"
                                                 sx={{
                                                     height: 22,
                                                     fontSize: "0.7rem",
-                                                    color: p.active ? "#4ade80" : "#9ca3af",
-                                                    bgcolor: p.active ? "rgba(34,197,94,0.1)" : "rgba(156,163,175,0.1)",
-                                                    border: `1px solid ${p.active ? "rgba(34,197,94,0.25)" : "rgba(156,163,175,0.2)"}`,
+                                                    color: app.active ? "#4ade80" : "#9ca3af",
+                                                    bgcolor: app.active ? "rgba(34,197,94,0.1)" : "rgba(156,163,175,0.1)",
+                                                    border: `1px solid ${app.active ? "rgba(34,197,94,0.25)" : "rgba(156,163,175,0.2)"}`,
                                                 }}
                                             />
                                         </Stack>
-                                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 0.6 }} flexWrap="wrap">
-                                            <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.78rem", color: "#c4b5fd" }}>
-                                                {p.client_id}
-                                            </Typography>
-                                            {p.homepage_url && (
-                                                <Box component="span" sx={linkSx}>
-                                                    <LaunchIcon sx={{ fontSize: 13 }} /> Homepage
-                                                </Box>
+                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.9 }} flexWrap="wrap">
+                                            <Box sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.78rem", color: "#c4b5fd" }}>
+                                                {app.client_id}
+                                            </Box>
+                                            <Button
+                                                onClick={() => copyId(app.client_id)}
+                                                startIcon={
+                                                    copiedId === app.client_id ? (
+                                                        <CheckCircleIcon sx={{ fontSize: "0.9rem !important", color: "#86efac" }} />
+                                                    ) : (
+                                                        <ContentCopyIcon sx={{ fontSize: "0.9rem !important" }} />
+                                                    )
+                                                }
+                                                sx={chipBtn}
+                                            >
+                                                {copiedId === app.client_id ? "Copied" : "Copy ID"}
+                                            </Button>
+                                            {app.homepage_url && (
+                                                <Button
+                                                    component="a"
+                                                    href={app.homepage_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    startIcon={<LaunchIcon sx={{ fontSize: "0.9rem !important" }} />}
+                                                    sx={chipBtn}
+                                                >
+                                                    Homepage
+                                                </Button>
                                             )}
                                         </Stack>
-                                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.85rem", mt: 0.8 }}>
-                                            {tiers === 0
-                                                ? "No pricing tiers yet — add one inside"
-                                                : `${tiers} tier${tiers === 1 ? "" : "s"}${minPrice ? ` · from ${formatMoney(minPrice.unit_amount, minPrice.currency)}` : ""}`}
+                                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.85rem", mt: 0.9 }}>
+                                            {app.tierCount === 0
+                                                ? "No pricing tiers yet — sync them from code"
+                                                : `${app.tierCount} tier${app.tierCount === 1 ? "" : "s"}${minPrice ? ` · from ${formatMoney(minPrice.unit_amount, minPrice.currency)}` : ""}`}
                                         </Typography>
                                     </Box>
-                                    <Typography sx={{ color: "#9b7bf7", fontWeight: 600, fontSize: "0.9rem", whiteSpace: "nowrap" }}>
+                                    <Button
+                                        component={Link}
+                                        href={`/dashboard/products/${app.firstProductId}`}
+                                        sx={{ textTransform: "none", color: "#9b7bf7", fontWeight: 700, fontSize: "0.9rem", whiteSpace: "nowrap", "&:hover": { background: "rgba(155,123,247,0.06)" } }}
+                                    >
                                         Manage →
-                                    </Typography>
+                                    </Button>
                                 </Stack>
                             </GlassCard>
                         );
@@ -298,6 +331,27 @@ function RegisterDialog({ open, busy, err, onClose, onSubmit }: any) {
     );
 }
 
+/** Group products-rows into one entry per app (the app IS the "product"). */
+function groupByApp(products: any[]) {
+    const acc: Record<string, any> = {};
+    for (const p of products) {
+        const a = (acc[p.app_id] ||= {
+            app_id: p.app_id,
+            name: p.app_name || p.name,
+            client_id: p.client_id,
+            homepage_url: p.homepage_url,
+            active: false,
+            tierCount: 0,
+            prices: [] as any[],
+            firstProductId: p.id,
+        });
+        a.tierCount += 1;
+        a.active = a.active || !!p.active;
+        a.prices.push(...(p.prices || []));
+    }
+    return Object.values(acc);
+}
+
 function slugPreview(name: string): string {
     return (
         name
@@ -329,12 +383,17 @@ const mono = {
     border: "1px solid rgba(255,255,255,0.1)",
 };
 
-const linkSx = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 0.4,
-    color: "rgba(245,245,244,0.55)",
-    fontSize: "0.78rem",
+const chipBtn = {
+    textTransform: "none",
+    fontWeight: 600,
+    fontSize: "0.74rem",
+    color: "rgba(245,245,244,0.7)",
+    minWidth: 0,
+    px: 1.1,
+    py: 0.2,
+    borderRadius: "8px",
+    border: "1px solid rgba(255,255,255,0.12)",
+    "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)", color: "#fff" },
 };
 
 const dialogPaper = {

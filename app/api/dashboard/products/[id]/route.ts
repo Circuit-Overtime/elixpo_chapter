@@ -32,7 +32,8 @@ export async function GET(
     const product = (await db
         .prepare(
             `SELECT p.id, p.app_id, p.name, p.tier, p.description, p.active,
-                    a.slug AS client_id, a.name AS app_name, a.homepage_url, a.pricing_url
+                    a.slug AS client_id, a.name AS app_name, a.homepage_url, a.pricing_url,
+                    a.prev_slug, a.prev_slug_expires_at, a.prev_api_key_expires_at
              FROM products p JOIN apps a ON p.app_id = a.id
              WHERE p.id = ? AND a.merchant_id = ?`,
         )
@@ -42,15 +43,37 @@ export async function GET(
         return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
 
-    const prices = await db
-        .prepare(
-            `SELECT id, nickname, currency, unit_amount, type, interval, interval_count, region, active
-             FROM prices WHERE product_id = ? ORDER BY active DESC, unit_amount`,
-        )
-        .bind(id)
-        .all();
-
     const appId = product.app_id;
+
+    // All tiers of this app (the app IS the product; each products-row is a tier).
+    const tierRows = ((
+        await db
+            .prepare(
+                `SELECT id, name, tier, description, active
+                 FROM products WHERE app_id = ? ORDER BY active DESC, created_at`,
+            )
+            .bind(appId)
+            .all()
+    ).results ?? []) as any[];
+
+    const allPrices = ((
+        await db
+            .prepare(
+                `SELECT pr.id, pr.product_id, pr.nickname, pr.currency, pr.unit_amount, pr.type,
+                        pr.interval, pr.interval_count, pr.region, pr.active
+                 FROM prices pr JOIN products p ON pr.product_id = p.id
+                 WHERE p.app_id = ? ORDER BY pr.active DESC, pr.unit_amount`,
+            )
+            .bind(appId)
+            .all()
+    ).results ?? []) as any[];
+
+    const pricesByTier: Record<string, any[]> = {};
+    for (const pr of allPrices) (pricesByTier[pr.product_id] ||= []).push(pr);
+    const tiers = tierRows.map((t) => ({ ...t, prices: pricesByTier[t.id] ?? [] }));
+
+    // The representative product's own prices (kept for backward compatibility).
+    const prices = pricesByTier[id] ?? [];
     const counts = (await db
         .prepare(
             `SELECT
@@ -72,7 +95,8 @@ export async function GET(
     return NextResponse.json(
         {
             product,
-            prices: prices.results ?? [],
+            tiers,
+            prices,
             stats: {
                 paidTransactions: counts?.paid ?? 0,
                 activeMembers: counts?.active_members ?? 0,
@@ -83,7 +107,12 @@ export async function GET(
     );
 }
 
-/** PATCH /api/dashboard/products/:id — update name/description/active. */
+/**
+ * PATCH /api/dashboard/products/:id
+ *   { app_name }    — rename the app (the "product" title)
+ *   { name, description } — update this tier (products-row)
+ *   { active }      — archive/unarchive the WHOLE app (all its tiers)
+ */
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> },
@@ -98,6 +127,33 @@ export async function PATCH(
     }
 
     const body: any = await request.json().catch(() => ({}));
+    let touched = false;
+
+    // App-level: rename the app (shown as the product title).
+    if (body.app_name !== undefined) {
+        await db
+            .prepare(
+                `UPDATE apps SET name = ?, updated_at = datetime('now')
+                 WHERE id = (SELECT app_id FROM products WHERE id = ?)`,
+            )
+            .bind(String(body.app_name).trim().slice(0, 80), id)
+            .run();
+        touched = true;
+    }
+
+    // App-level: archive / unarchive every tier of the app at once.
+    if (body.active !== undefined) {
+        await db
+            .prepare(
+                `UPDATE products SET active = ?
+                 WHERE app_id = (SELECT app_id FROM products WHERE id = ?)`,
+            )
+            .bind(body.active ? 1 : 0, id)
+            .run();
+        touched = true;
+    }
+
+    // Tier-level: this products-row's own name/description.
     const sets: string[] = [];
     const vals: any[] = [];
     if (body.name !== undefined) {
@@ -108,27 +164,23 @@ export async function PATCH(
         sets.push("description = ?");
         vals.push(body.description ? String(body.description).trim() : null);
     }
-    if (body.active !== undefined) {
-        sets.push("active = ?");
-        vals.push(body.active ? 1 : 0);
+    if (sets.length) {
+        vals.push(id);
+        await db.prepare(`UPDATE products SET ${sets.join(", ")} WHERE id = ?`).bind(...vals).run();
+        touched = true;
     }
-    if (!sets.length) {
+
+    if (!touched) {
         return NextResponse.json({ error: "no_fields" }, { status: 400 });
     }
-    vals.push(id);
-    await db
-        .prepare(`UPDATE products SET ${sets.join(", ")} WHERE id = ?`)
-        .bind(...vals)
-        .run();
-
     return NextResponse.json({ ok: true });
 }
 
 /**
- * DELETE /api/dashboard/products/:id — archive (soft-delete) the product.
- * Deactivates the product only (prices keep their state) so it can be cleanly
- * un-archived later via PATCH { active: true }. While archived, checkout can't
- * resolve it and the catalog omits it — i.e. payments are paused.
+ * DELETE /api/dashboard/products/:id — archive the whole app (all tiers).
+ * Deactivates every products-row of the app (prices keep their state) so it can
+ * be cleanly un-archived via PATCH { active: true }. While archived, checkout
+ * can't resolve any tier and the catalog omits them — i.e. payments are paused.
  */
 export async function DELETE(
     request: NextRequest,
@@ -143,7 +195,10 @@ export async function DELETE(
         return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
     await db
-        .prepare("UPDATE products SET active = 0 WHERE id = ?")
+        .prepare(
+            `UPDATE products SET active = 0
+             WHERE app_id = (SELECT app_id FROM products WHERE id = ?)`,
+        )
         .bind(id)
         .run();
     return NextResponse.json({ ok: true });

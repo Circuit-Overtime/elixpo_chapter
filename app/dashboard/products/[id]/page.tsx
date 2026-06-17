@@ -6,6 +6,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import EditIcon from "@mui/icons-material/Edit";
 import LaunchIcon from "@mui/icons-material/Launch";
 import {
     Box,
@@ -118,7 +119,7 @@ export default function ProductDetailPage() {
         }
     };
 
-    const regenWebhookSecret = async () => {
+    const regenWebhookSecret = async (grace: GraceKey) => {
         setWebhookBusy(true);
         setErr("");
         try {
@@ -126,6 +127,7 @@ export default function ProductDetailPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
+                body: JSON.stringify({ grace }),
             });
             const d: any = await r.json();
             if (!r.ok) throw new Error(d.error_description || d.error || "failed");
@@ -137,6 +139,52 @@ export default function ProductDetailPage() {
         } finally {
             setWebhookBusy(false);
             setConfirmWebhookRegen(false);
+        }
+    };
+
+    const saveName = async () => {
+        const name = nameDraft.trim();
+        if (!name || name === data?.product?.app_name) {
+            setEditingName(false);
+            return;
+        }
+        setNameBusy(true);
+        try {
+            const r = await fetch(`/api/dashboard/products/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ app_name: name }),
+            });
+            if (!r.ok) throw new Error("failed");
+            await load();
+            setEditingName(false);
+        } catch {
+            setErr("Could not rename product");
+        } finally {
+            setNameBusy(false);
+        }
+    };
+
+    const doChangeId = async (next: string) => {
+        setChangeIdBusy(true);
+        setChangeIdErr("");
+        try {
+            const r = await fetch(`/api/dashboard/products/${id}/change-id`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ client_id: next }),
+            });
+            const d: any = await r.json();
+            if (!r.ok) throw new Error(d.error_description || d.error || "failed");
+            setChangeIdOpen(false);
+            await load();
+            await loadWebhook();
+        } catch (e: any) {
+            setChangeIdErr(e?.message || "Could not change client id");
+        } finally {
+            setChangeIdBusy(false);
         }
     };
 
@@ -166,13 +214,15 @@ export default function ProductDetailPage() {
         await load();
     };
 
-    const doRegenerate = async () => {
+    const doRegenerate = async (grace: GraceKey) => {
         setRegenBusy(true);
         setErr("");
         try {
             const r = await fetch(`/api/dashboard/products/${id}/regenerate-secret`, {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
                 credentials: "include",
+                body: JSON.stringify({ grace }),
             });
             const d: any = await r.json();
             if (!r.ok) throw new Error(d.error_description || d.error || "failed");
@@ -214,8 +264,19 @@ export default function ProductDetailPage() {
         );
     }
 
-    const { product, prices, stats } = data;
+    const { product, stats } = data;
+    const tiers: any[] = data.tiers ?? [];
     const primary = stats.revenue?.[0];
+
+    const graceUntil = (s?: string | null) => {
+        if (!s) return null;
+        const d = new Date(s.replace(" ", "T") + "Z");
+        if (d <= new Date()) return null;
+        return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    };
+    const slugGrace = graceUntil(product.prev_slug_expires_at);
+    const keyGrace = graceUntil(product.prev_api_key_expires_at);
+    const webhookGrace = graceUntil(webhook?.prev_secret_expires_at);
 
     return (
         <Box>
@@ -238,9 +299,55 @@ export default function ProductDetailPage() {
             >
                 <Box>
                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                        <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", letterSpacing: "-0.02em" }}>
-                            {product.name}
-                        </Typography>
+                        {editingName ? (
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <TextField
+                                    value={nameDraft}
+                                    onChange={(e) => setNameDraft(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") saveName();
+                                        if (e.key === "Escape") setEditingName(false);
+                                    }}
+                                    size="small"
+                                    autoFocus
+                                    sx={{ ...field, "& .MuiOutlinedInput-input": { fontSize: "1.3rem", fontWeight: 800, py: 0.6 } }}
+                                />
+                                <Button onClick={saveName} disabled={nameBusy} sx={{ minWidth: 0, textTransform: "none", fontWeight: 700, color: "#c4b5fd" }}>
+                                    {nameBusy ? "…" : "Save"}
+                                </Button>
+                                <Button onClick={() => setEditingName(false)} disabled={nameBusy} sx={{ minWidth: 0, textTransform: "none", color: "rgba(255,255,255,0.5)" }}>
+                                    Cancel
+                                </Button>
+                            </Stack>
+                        ) : (
+                            <>
+                                <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", letterSpacing: "-0.02em" }}>
+                                    {product.app_name}
+                                </Typography>
+                                <Box
+                                    component="button"
+                                    onClick={() => {
+                                        setNameDraft(product.app_name);
+                                        setEditingName(true);
+                                    }}
+                                    aria-label="Rename product"
+                                    sx={{
+                                        display: "grid",
+                                        placeItems: "center",
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: "8px",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        color: "rgba(245,245,244,0.5)",
+                                        background: "transparent",
+                                        "&:hover": { color: "#c4b5fd", background: "rgba(155,123,247,0.08)" },
+                                    }}
+                                >
+                                    <EditIcon sx={{ fontSize: 16 }} />
+                                </Box>
+                            </>
+                        )}
                         <Chip
                             label={product.active ? "Active" : "Archived"}
                             size="small"
@@ -257,6 +364,30 @@ export default function ProductDetailPage() {
                         <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.8rem", color: "#c4b5fd" }}>
                             Client ID: {product.client_id}
                         </Typography>
+                        <Box
+                            component="button"
+                            onClick={() => {
+                                setChangeIdErr("");
+                                setChangeIdOpen(true);
+                            }}
+                            sx={{
+                                border: "none",
+                                cursor: "pointer",
+                                background: "transparent",
+                                color: "rgba(245,245,244,0.5)",
+                                fontSize: "0.76rem",
+                                textDecoration: "underline",
+                                textUnderlineOffset: "2px",
+                                "&:hover": { color: "#c4b5fd" },
+                            }}
+                        >
+                            Change ID
+                        </Box>
+                        {slugGrace && (
+                            <Typography sx={{ fontSize: "0.72rem", color: "#fbbf24" }}>
+                                old ID <strong>{product.prev_slug}</strong> works until {slugGrace}
+                            </Typography>
+                        )}
                     </Stack>
                     {product.description && (
                         <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.9rem", mt: 1, maxWidth: 620 }}>
@@ -342,6 +473,11 @@ export default function ProductDetailPage() {
                         <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem" }}>
                             Use the Client ID + secret to call the entitlements API.
                         </Typography>
+                        {keyGrace && (
+                            <Typography sx={{ fontSize: "0.74rem", color: "#fbbf24", mt: 0.4 }}>
+                                Previous key still works until {keyGrace}.
+                            </Typography>
+                        )}
                     </Box>
                     <Button
                         onClick={() => setConfirmRegen(true)}
@@ -509,69 +645,111 @@ export default function ProductDetailPage() {
                         Signing secret: {webhook.secret_preview}
                     </Typography>
                 ) : null}
+                {webhookGrace && (
+                    <Typography sx={{ fontSize: "0.74rem", color: "#fbbf24", mt: 1 }}>
+                        Dual-signing with the previous secret until {webhookGrace}.
+                    </Typography>
+                )}
             </GlassCard>
 
-            {/* Pricing tiers (read-only — managed from code via the sync API) */}
+            {/* Tiers (read-only — managed from code via the sync API) */}
             <GlassCard>
-                <Box sx={{ mb: 2 }}>
-                    <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Pricing tiers</Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem" }}>
-                        Managed from your code — committed as a catalog file and pushed
-                        with your secret key. They can't be edited here.
-                    </Typography>
-                </Box>
-
-                {prices.length === 0 ? (
-                    <Box sx={{ borderRadius: "12px", border: "1px dashed rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.02)", p: 2.5, textAlign: "center" }}>
-                        <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.9rem", mb: 0.5 }}>
-                            No tiers yet.
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+                    <Box>
+                        <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Tiers</Typography>
+                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem" }}>
+                            Each tier and its regional prices, managed from your code. They
+                            can't be edited here.
                         </Typography>
+                    </Box>
+                    {tiers.length > 0 && (
+                        <Chip
+                            label={`${tiers.length} tier${tiers.length === 1 ? "" : "s"}`}
+                            size="small"
+                            sx={{ height: 22, fontSize: "0.7rem", fontWeight: 600, color: "#c4b5fd", bgcolor: "rgba(155,123,247,0.12)", border: "1px solid rgba(155,123,247,0.25)" }}
+                        />
+                    )}
+                </Stack>
+
+                {tiers.length === 0 ? (
+                    <Box sx={{ borderRadius: "12px", border: "1px dashed rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.02)", p: 2.5, textAlign: "center" }}>
+                        <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.9rem", mb: 0.5 }}>No tiers yet.</Typography>
                         <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.82rem" }}>
-                            Define them in your catalog file and run the sync (below) so this
-                            product can be sold.
+                            Define them in your catalog file and run the sync (below) so they can be sold.
                         </Typography>
                     </Box>
                 ) : (
-                    <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(auto-fill, minmax(230px, 1fr))" } }}>
-                        {prices.map((pr: any) => (
+                    <Stack spacing={1.5}>
+                        {tiers.map((t: any) => (
                             <Box
-                                key={pr.id}
+                                key={t.id}
                                 sx={{
-                                    p: 2,
-                                    borderRadius: "12px",
+                                    borderRadius: "14px",
                                     border: "1px solid rgba(255,255,255,0.08)",
                                     background: "rgba(255,255,255,0.02)",
-                                    opacity: pr.active ? 1 : 0.5,
+                                    p: { xs: 1.8, sm: 2.2 },
+                                    opacity: t.active ? 1 : 0.5,
                                 }}
                             >
-                                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                                    <Typography sx={{ fontWeight: 600, fontSize: "0.92rem", color: "#f5f5f4" }}>
-                                        {pr.nickname || "Tier"}
-                                    </Typography>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.4 }}>
+                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                                        <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "#f5f5f4" }}>{t.name}</Typography>
+                                        <Box component="code" sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.72rem", color: "#c4b5fd", px: 0.8, py: 0.2, borderRadius: "6px", background: "rgba(155,123,247,0.1)" }}>
+                                            {t.tier}
+                                        </Box>
+                                    </Stack>
                                     <Chip
-                                        label={pr.active ? "active" : "inactive"}
+                                        label={t.active ? "active" : "inactive"}
                                         size="small"
                                         sx={{
                                             height: 20,
                                             fontSize: "0.62rem",
                                             fontWeight: 700,
-                                            color: pr.active ? "#86efac" : "#9ca3af",
-                                            bgcolor: pr.active ? "rgba(134,239,172,0.12)" : "rgba(156,163,175,0.12)",
-                                            border: `1px solid ${pr.active ? "rgba(134,239,172,0.3)" : "rgba(156,163,175,0.25)"}`,
+                                            color: t.active ? "#86efac" : "#9ca3af",
+                                            bgcolor: t.active ? "rgba(134,239,172,0.12)" : "rgba(156,163,175,0.12)",
+                                            border: `1px solid ${t.active ? "rgba(134,239,172,0.3)" : "rgba(156,163,175,0.25)"}`,
                                         }}
                                     />
                                 </Stack>
-                                <Typography sx={{ fontWeight: 800, fontSize: "1.4rem", mt: 0.3 }}>
-                                    {formatMoney(pr.unit_amount, pr.currency)}
-                                </Typography>
-                                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.8rem" }}>
-                                    per {pr.interval_count > 1 ? `${pr.interval_count} ` : ""}
-                                    {pr.interval}
-                                    {pr.region ? ` · ${pr.region}` : ""}
-                                </Typography>
+
+                                {t.prices.length === 0 ? (
+                                    <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.82rem" }}>
+                                        No prices on this tier yet.
+                                    </Typography>
+                                ) : (
+                                    <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: { xs: "1fr", sm: "repeat(auto-fill, minmax(180px, 1fr))" } }}>
+                                        {t.prices.map((pr: any) => (
+                                            <Box
+                                                key={pr.id}
+                                                sx={{
+                                                    p: 1.4,
+                                                    borderRadius: "10px",
+                                                    border: "1px solid rgba(255,255,255,0.07)",
+                                                    background: "rgba(0,0,0,0.18)",
+                                                    opacity: pr.active ? 1 : 0.5,
+                                                }}
+                                            >
+                                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                                    <Typography sx={{ fontWeight: 800, fontSize: "1.25rem" }}>
+                                                        {formatMoney(pr.unit_amount, pr.currency)}
+                                                    </Typography>
+                                                    {pr.region && (
+                                                        <Box sx={{ fontSize: "0.66rem", fontWeight: 700, color: "rgba(245,245,244,0.6)", px: 0.7, py: 0.15, borderRadius: "6px", border: "1px solid rgba(255,255,255,0.12)" }}>
+                                                            {pr.region}
+                                                        </Box>
+                                                    )}
+                                                </Stack>
+                                                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.76rem", mt: 0.2 }}>
+                                                    {pr.nickname ? `${pr.nickname} · ` : ""}
+                                                    per {pr.interval_count > 1 ? `${pr.interval_count} ` : ""}{pr.interval}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                )}
                             </Box>
                         ))}
-                    </Box>
+                    </Stack>
                 )}
             </GlassCard>
 
@@ -606,7 +784,7 @@ export default function ProductDetailPage() {
                 message={
                     <>
                         This <strong>pauses all payments</strong> for{" "}
-                        <strong>{product.name}</strong> — checkout stops working and no new
+                        <strong>{product.app_name}</strong> — checkout stops working and no new
                         entitlements are granted. Existing members keep their access until it
                         expires. You can unarchive anytime to resume.
                     </>
@@ -615,39 +793,50 @@ export default function ProductDetailPage() {
                 onClose={() => setConfirmArchive(false)}
             />
 
-            <ConfirmDialog
+            <RotateDialog
                 open={confirmRegen}
-                destructive
                 busy={regenBusy}
-                title="Regenerate client secret?"
-                confirmLabel="Regenerate secret"
+                title="Rotate the secret key?"
+                confirmLabel="Rotate key"
                 message={
                     <>
-                        The <strong>current secret stops working immediately</strong>. Any
-                        integration using it (checkout, entitlements API) will fail until you
-                        update it with the new secret.
+                        A new secret key is issued. Pick how long the{" "}
+                        <strong>current key</strong> keeps working so your app
+                        (checkout + entitlements API) can redeploy without failures.
                     </>
                 }
                 onConfirm={doRegenerate}
                 onClose={() => setConfirmRegen(false)}
             />
 
-            <ConfirmDialog
+            <RotateDialog
                 open={confirmWebhookRegen}
-                destructive
                 busy={webhookBusy}
                 title="Roll the webhook signing secret?"
                 confirmLabel="Roll secret"
                 message={
                     <>
-                        The <strong>current signing secret stops working immediately</strong>.
-                        Your app will reject our <code>entitlement.updated</code> webhooks —
-                        and members won't be granted access — until you update{" "}
-                        <code>ELIXPO_PAY_WEBHOOK_SECRET</code> with the new value.
+                        A new <code>whsec_</code> is issued. During the grace window we
+                        sign each delivery with <strong>both</strong> secrets, so your app
+                        keeps verifying while you update{" "}
+                        <code>ELIXPO_PAY_WEBHOOK_SECRET</code>.
                     </>
                 }
                 onConfirm={regenWebhookSecret}
                 onClose={() => setConfirmWebhookRegen(false)}
+            />
+
+            <ChangeIdDialog
+                open={changeIdOpen}
+                currentId={product.client_id}
+                graceHours={5}
+                busy={changeIdBusy}
+                error={changeIdErr}
+                onConfirm={doChangeId}
+                onClose={() => {
+                    setChangeIdOpen(false);
+                    setChangeIdErr("");
+                }}
             />
         </Box>
     );

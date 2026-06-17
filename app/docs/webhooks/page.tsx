@@ -46,16 +46,22 @@ const VERIFY = `import crypto from "node:crypto";
 export async function POST(req) {
   const raw = await req.text();
   const ts = req.headers.get("x-elixpo-pay-timestamp");
-  const sig = (req.headers.get("x-elixpo-pay-signature") || "").replace("sha256=", "");
 
   const expected = crypto
     .createHmac("sha256", process.env.ELIXPO_PAY_WEBHOOK_SECRET)
     .update(ts + "." + raw)
     .digest("hex");
 
-  if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) {
-    return new Response("bad signature", { status: 401 });
-  }
+  // The header may carry several comma-separated signatures during a secret
+  // rotation grace window — accept if ANY matches.
+  const sigs = (req.headers.get("x-elixpo-pay-signature") || "")
+    .split(",")
+    .map((s) => s.trim().replace("sha256=", ""));
+  const ok = sigs.some(
+    (s) => s.length === expected.length &&
+      crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(s))
+  );
+  if (!ok) return new Response("bad signature", { status: 401 });
 
   const evt = JSON.parse(raw);
   if (evt.type === "entitlement.updated") {
@@ -106,7 +112,10 @@ export default function WebhooksDocs() {
                 using your <Code>ELIXPO_PAY_WEBHOOK_SECRET</Code> (the{" "}
                 <Code>whsec_…</Code> from the dashboard) and compare in constant time.
                 Reject stale timestamps. Branch on <Code>type</Code> since one
-                endpoint may receive several event types.
+                endpoint may receive several event types. When you roll the secret
+                with a grace window, the signature header carries{" "}
+                <strong>several comma-separated values</strong> (new + old) — accept
+                if any matches, so you can redeploy without dropping deliveries.
             </DocP>
             <CodeBlock code={VERIFY} language="javascript" />
 
