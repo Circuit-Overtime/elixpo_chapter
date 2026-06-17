@@ -6,13 +6,15 @@
  *   Content-Type: application/json
  *   X-Elixpo-Pay-Event:     <event type, e.g. entitlement.updated>
  *   X-Elixpo-Pay-Timestamp: <unix seconds>
- *   X-Elixpo-Pay-Signature: sha256=<hex HMAC of `${timestamp}.${rawBody}`>
+ *   X-Elixpo-Pay-Signature: sha256=<hex>[,sha256=<hex>…]
  * Body: { id, type, created, data }
  *
  * The consumer recomputes HMAC_SHA256(secret, `${timestamp}.${rawBody}`) with
  * its per-app signing secret (`whsec_…`, shown in the merchant dashboard) and
- * rejects on mismatch or stale ts. Older endpoints without a stored
- * signing_secret fall back to the env var named by `secret_ref`.
+ * rejects on mismatch or stale ts. During a secret-rotation grace window the
+ * header carries MULTIPLE comma-separated signatures (current + previous) — the
+ * consumer accepts if ANY matches, so a redeploy can lag the rotation. Older
+ * endpoints without a stored signing_secret fall back to `secret_ref`.
  *
  * Each endpoint subscribes to a SUBSET of event types (the `events` column).
  * We only deliver an event the endpoint is subscribed to — so a merchant can
@@ -84,20 +86,35 @@ export interface WebhookEndpointRow {
     url: string;
     secret_ref: string;
     signing_secret?: string | null;
+    prev_signing_secret?: string | null;
+    prev_signing_secret_expires_at?: string | null;
     events: string;
 }
 
 /**
- * Resolve the HMAC secret for an endpoint. Prefer the per-app `signing_secret`
- * stored on the row (Stripe-style `whsec_…`); fall back to the env var named by
- * `secret_ref` for legacy endpoints created before per-app secrets existed.
+ * Resolve the HMAC secret(s) to sign with. The first is the current secret;
+ * during a rotation grace window the previous secret is also returned so the
+ * consumer can verify with whichever it still has configured (dual-sign). Falls
+ * back to the env var named by `secret_ref` for legacy endpoints.
  */
-async function endpointSecret(
+async function endpointSecrets(
     endpoint: WebhookEndpointRow,
-): Promise<string | null> {
-    if (endpoint.signing_secret) return endpoint.signing_secret;
-    if (endpoint.secret_ref) return (await getEnv(endpoint.secret_ref)) ?? null;
-    return null;
+): Promise<string[]> {
+    const out: string[] = [];
+    if (endpoint.signing_secret) out.push(endpoint.signing_secret);
+    else if (endpoint.secret_ref) {
+        const env = await getEnv(endpoint.secret_ref);
+        if (env) out.push(env);
+    }
+    if (
+        endpoint.prev_signing_secret &&
+        endpoint.prev_signing_secret_expires_at &&
+        new Date(endpoint.prev_signing_secret_expires_at.replace(" ", "T") + "Z") >
+            new Date()
+    ) {
+        out.push(endpoint.prev_signing_secret);
+    }
+    return out;
 }
 
 /**
@@ -114,8 +131,8 @@ export async function fireWebhook(
         return; // not subscribed — skip silently
     }
 
-    const secret = await endpointSecret(endpoint);
-    if (!secret) {
+    const secrets = await endpointSecrets(endpoint);
+    if (secrets.length === 0) {
         console.error(
             `[webhook] no signing secret for endpoint ${endpoint.id} (app ${endpoint.app_id})`,
         );
@@ -130,7 +147,13 @@ export async function fireWebhook(
     };
     const rawBody = JSON.stringify(payload);
     const timestamp = String(Math.floor(Date.now() / 1000));
-    const signature = await hmacSha256Hex(secret, `${timestamp}.${rawBody}`);
+    // Sign with every valid secret (current + any in-grace previous). The header
+    // is a comma-separated list of `sha256=…`; the consumer accepts if ANY match.
+    const signature = (
+        await Promise.all(
+            secrets.map(async (s) => `sha256=${await hmacSha256Hex(s, `${timestamp}.${rawBody}`)}`),
+        )
+    ).join(",");
 
     const deliveryId = payload.id;
     await db
@@ -148,7 +171,7 @@ export async function fireWebhook(
                 "Content-Type": "application/json",
                 "X-Elixpo-Pay-Event": eventType,
                 "X-Elixpo-Pay-Timestamp": timestamp,
-                "X-Elixpo-Pay-Signature": `sha256=${signature}`,
+                "X-Elixpo-Pay-Signature": signature,
             },
             body: rawBody,
         });

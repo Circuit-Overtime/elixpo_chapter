@@ -20,8 +20,16 @@ export async function getAppBySlug(
     db: D1Database,
     slug: string,
 ): Promise<AppRow | null> {
+    // Resolve by current slug, or a previous slug still inside its grace window.
     return (await db
-        .prepare("SELECT * FROM apps WHERE slug = ? AND status = 'active'")
+        .prepare(
+            `SELECT * FROM apps
+             WHERE status = 'active'
+               AND (slug = ?1
+                    OR (prev_slug = ?1
+                        AND prev_slug_expires_at IS NOT NULL
+                        AND prev_slug_expires_at > datetime('now')))`,
+        )
         .bind(slug)
         .first()) as AppRow | null;
 }

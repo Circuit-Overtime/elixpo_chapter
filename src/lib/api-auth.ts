@@ -17,6 +17,8 @@ export interface ApiKeyApp {
     slug: string;
     name: string;
     api_key_hash: string | null;
+    prev_api_key_hash?: string | null;
+    prev_api_key_expires_at?: string | null;
     return_url: string | null;
     status: string;
     [key: string]: unknown;
@@ -37,14 +39,22 @@ export async function appFromApiKey(
     const key = readApiKey(request);
     if (!key) return null;
     const hash = await sha256Hex(key);
+    // Match the current key, or a previous key still inside its grace window.
     const app = (await db
-        .prepare("SELECT * FROM apps WHERE api_key_hash = ? AND status = 'active'")
+        .prepare(
+            `SELECT * FROM apps
+             WHERE status = 'active'
+               AND (api_key_hash = ?1
+                    OR (prev_api_key_hash = ?1
+                        AND prev_api_key_expires_at IS NOT NULL
+                        AND prev_api_key_expires_at > datetime('now')))`,
+        )
         .bind(hash)
         .first()) as ApiKeyApp | null;
-    // Belt-and-suspenders: the WHERE already matched on hash, but compare in
-    // constant time so a partial-index edge case can't become a timing oracle.
-    if (!app || !app.api_key_hash || !timingSafeEqual(hash, app.api_key_hash)) {
-        return null;
-    }
+    if (!app) return null;
+    // Belt-and-suspenders constant-time compare against whichever value matched.
+    const matchesCurrent = !!app.api_key_hash && timingSafeEqual(hash, app.api_key_hash);
+    const matchesPrev = !!app.prev_api_key_hash && timingSafeEqual(hash, app.prev_api_key_hash);
+    if (!matchesCurrent && !matchesPrev) return null;
     return app;
 }
