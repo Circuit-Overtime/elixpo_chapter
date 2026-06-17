@@ -47,24 +47,28 @@ export const metadata: Metadata = {
     authors: [{ name: "Elixpo", url: "https://elixpo.com" }],
     creator: "Elixpo",
     publisher: "Elixpo",
-    metadataBase: new URL("https://payouts.elixpo.com"),
+    applicationName: "Elixpo Pay",
+    category: "finance",
+    metadataBase: new URL(SITE_URL),
     alternates: { canonical: "/" },
+    manifest: "/manifest.webmanifest",
+    formatDetection: { telephone: false, email: false, address: false },
     openGraph: {
         type: "website",
         locale: "en_US",
-        url: "https://payouts.elixpo.com",
+        url: SITE_URL,
         siteName: "Elixpo Pay",
         title: "Elixpo Pay — Payments & Payouts",
         description:
             "Hosted checkout, unified ledger, entitlements, and creator payouts for the Elixpo ecosystem.",
-        images: [{ url: "/og-image.png", alt: "Elixpo Pay" }],
+        images: [OG_IMAGE],
     },
     twitter: {
         card: "summary_large_image",
         title: "Elixpo Pay — Payments & Payouts",
         description:
             "The complete money stack for modern software — checkout, subscriptions, entitlements, and payouts.",
-        images: ["/og-image.png"],
+        images: [OG_IMAGE.url],
     },
     icons: {
         // Served as static assets from public/. Kept out of app/ so
@@ -75,7 +79,49 @@ export const metadata: Metadata = {
         ],
         apple: { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
     },
-    robots: { index: true, follow: true },
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            "max-image-preview": "large",
+            "max-snippet": -1,
+            "max-video-preview": -1,
+        },
+    },
+};
+
+// Structured data so search engines render rich results for the org + product.
+const JSON_LD = {
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "Organization",
+            "@id": `${SITE_URL}/#organization`,
+            name: "Elixpo",
+            url: "https://elixpo.com",
+            logo: `${SITE_URL}/icon-512.png`,
+        },
+        {
+            "@type": "WebSite",
+            "@id": `${SITE_URL}/#website`,
+            url: SITE_URL,
+            name: "Elixpo Pay",
+            publisher: { "@id": `${SITE_URL}/#organization` },
+        },
+        {
+            "@type": "SoftwareApplication",
+            name: "Elixpo Pay",
+            applicationCategory: "FinanceApplication",
+            operatingSystem: "Web",
+            url: SITE_URL,
+            description:
+                "Payments and payouts for the Elixpo ecosystem — hosted checkout, a unified ledger, entitlements, and creator payouts on Cloudflare's edge.",
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+            publisher: { "@id": `${SITE_URL}/#organization` },
+        },
+    ],
 };
 
 export default function RootLayout({
@@ -86,6 +132,11 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
+                <script
+                    type="application/ld+json"
+                    // eslint-disable-next-line react/no-danger
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+                />
                 {children}
             </body>
         </html>

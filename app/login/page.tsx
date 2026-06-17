@@ -6,10 +6,10 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ShieldIcon from "@mui/icons-material/VerifiedUser";
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import BackgroundAurora from "../components/background-aurora";
 
 const ACCOUNTS_URL = "https://accounts.elixpo.com/docs";
@@ -34,6 +34,33 @@ const ghostBtn = {
 
 function LoginInner() {
     const error = useSearchParams().get("error");
+    // If already signed in, skip the login screen and go to the dashboard.
+    const [checking, setChecking] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/auth/me", { credentials: "include" })
+            .then((r) => {
+                if (cancelled) return;
+                if (r.ok) window.location.replace("/dashboard");
+                else setChecking(false);
+            })
+            .catch(() => {
+                if (!cancelled) setChecking(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    if (checking) {
+        return (
+            <Box sx={{ position: "relative", minHeight: "100vh", display: "grid", placeItems: "center", p: 2, color: "#f5f5f4" }}>
+                <BackgroundAurora variant="auth" />
+                <CircularProgress sx={{ color: "#9b7bf7", position: "relative", zIndex: 1 }} />
+            </Box>
+        );
+    }
 
     return (
         <Box sx={{ position: "relative", minHeight: "100vh", display: "grid", placeItems: "center", p: 2, color: "#f5f5f4" }}>
