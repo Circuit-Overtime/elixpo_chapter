@@ -173,14 +173,21 @@ function CheckoutInner() {
             return;
         }
         setPhase("paying");
+        // Branding shown to the buyer at payment time: who they're paying
+        // (the merchant app), what for (product + billing period), and a logo —
+        // so the charge is recognizable in the Razorpay sheet and UPI apps.
+        const payName = session.app_name || "Elixpo Pay";
+        const payDesc = `${session.product_name} · ${periodLabel(session.interval, session.interval_count)}`;
         const rzp = new window.Razorpay({
             key: session.key_id,
             order_id: session.order_id,
             amount: session.amount,
             currency: session.currency,
-            name: "Elixpo Pay",
-            description: session.product_name,
+            name: payName,
+            description: payDesc,
+            image: `${window.location.origin}/mark.png`,
             prefill: { email: session.prefill?.email || "" },
+            notes: { product: session.product_name, plan: session.tier },
             theme: { color: "#9b7bf7" },
             handler: async (resp: any) => {
                 try {
