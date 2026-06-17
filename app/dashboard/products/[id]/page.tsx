@@ -2,7 +2,6 @@
 
 export const runtime = "edge";
 
-import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -13,11 +12,6 @@ import {
     Button,
     Chip,
     CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    MenuItem,
     Stack,
     Switch,
     TextField,
@@ -29,16 +23,11 @@ import { useEffect, useState } from "react";
 import ConfirmDialog from "@/components/confirm-dialog";
 import { formatMoney, GlassCard, StatCard } from "@/components/dashboard-ui";
 
-const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
-const INTERVALS = ["day", "week", "month", "year"];
-
 export default function ProductDetailPage() {
     const id = String(useParams().id);
 
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
-    const [tierDlg, setTierDlg] = useState(false);
-    const [busy, setBusy] = useState(false);
     const [err, setErr] = useState("");
     const [creds, setCreds] = useState<{ clientId: string; secret: string } | null>(null);
     const [secretHidden, setSecretHidden] = useState(false);
@@ -146,45 +135,6 @@ export default function ProductDetailPage() {
         loadWebhook();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
-
-    const addTier = async (form: any) => {
-        setBusy(true);
-        setErr("");
-        try {
-            const r = await fetch("/api/dashboard/prices", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                    product_id: id,
-                    nickname: form.nickname || null,
-                    currency: form.currency,
-                    unit_amount: Math.round(parseFloat(form.major) * 100),
-                    interval: form.interval,
-                    interval_count: Number(form.interval_count) || 1,
-                    region: form.region || null,
-                }),
-            });
-            const d: any = await r.json();
-            if (!r.ok) throw new Error(d.error_description || d.error);
-            setTierDlg(false);
-            await load();
-        } catch (e: any) {
-            setErr(e.message);
-        } finally {
-            setBusy(false);
-        }
-    };
-
-    const toggleTier = async (priceId: string, active: boolean) => {
-        await fetch(`/api/dashboard/prices/${priceId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ active }),
-        });
-        await load();
-    };
 
     const doArchive = async () => {
         setArchiveBusy(true);
@@ -535,31 +485,26 @@ export default function ProductDetailPage() {
                 ) : null}
             </GlassCard>
 
-            {/* Pricing tiers */}
+            {/* Pricing tiers (read-only — managed from code via the sync API) */}
             <GlassCard>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                    <Box>
-                        <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Pricing tiers</Typography>
-                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem" }}>
-                            Exposed to your app via the catalog API below.
-                        </Typography>
-                    </Box>
-                    <Button
-                        startIcon={<AddIcon sx={{ fontSize: "1rem !important" }} />}
-                        onClick={() => {
-                            setErr("");
-                            setTierDlg(true);
-                        }}
-                        sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2, py: 0.8, borderRadius: "10px", background: "#7c5cff", "&:hover": { background: "#8a6dff" } }}
-                    >
-                        Add tier
-                    </Button>
-                </Stack>
+                <Box sx={{ mb: 2 }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Pricing tiers</Typography>
+                    <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem" }}>
+                        Managed from your code — committed as a catalog file and pushed
+                        with your secret key. They can't be edited here.
+                    </Typography>
+                </Box>
 
                 {prices.length === 0 ? (
-                    <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.9rem", py: 2 }}>
-                        No tiers yet — add one so this product can be sold.
-                    </Typography>
+                    <Box sx={{ borderRadius: "12px", border: "1px dashed rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.02)", p: 2.5, textAlign: "center" }}>
+                        <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.9rem", mb: 0.5 }}>
+                            No tiers yet.
+                        </Typography>
+                        <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.82rem" }}>
+                            Define them in your catalog file and run the sync (below) so this
+                            product can be sold.
+                        </Typography>
+                    </Box>
                 ) : (
                     <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(auto-fill, minmax(230px, 1fr))" } }}>
                         {prices.map((pr: any) => (
@@ -577,7 +522,18 @@ export default function ProductDetailPage() {
                                     <Typography sx={{ fontWeight: 600, fontSize: "0.92rem", color: "#f5f5f4" }}>
                                         {pr.nickname || "Tier"}
                                     </Typography>
-                                    <Switch size="small" checked={!!pr.active} onChange={(e) => toggleTier(pr.id, e.target.checked)} />
+                                    <Chip
+                                        label={pr.active ? "active" : "inactive"}
+                                        size="small"
+                                        sx={{
+                                            height: 20,
+                                            fontSize: "0.62rem",
+                                            fontWeight: 700,
+                                            color: pr.active ? "#86efac" : "#9ca3af",
+                                            bgcolor: pr.active ? "rgba(134,239,172,0.12)" : "rgba(156,163,175,0.12)",
+                                            border: `1px solid ${pr.active ? "rgba(134,239,172,0.3)" : "rgba(156,163,175,0.25)"}`,
+                                        }}
+                                    />
                                 </Stack>
                                 <Typography sx={{ fontWeight: 800, fontSize: "1.4rem", mt: 0.3 }}>
                                     {formatMoney(pr.unit_amount, pr.currency)}
@@ -593,18 +549,24 @@ export default function ProductDetailPage() {
                 )}
             </GlassCard>
 
-            {/* Catalog API */}
+            {/* Sync tiers from code */}
             <GlassCard sx={{ mt: 2 }}>
-                <Typography sx={{ fontWeight: 700, fontSize: "1rem", mb: 1 }}>Share tiers via the catalog API</Typography>
+                <Typography sx={{ fontWeight: 700, fontSize: "1rem", mb: 1 }}>Sync tiers from code</Typography>
                 <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.88rem", mb: 1.5 }}>
-                    Fetch this product's active tiers from your app to render a pricing page — no secret needed.
+                    Keep a catalog JSON in your repo and push it with your secret key —
+                    this is the only way to add or change tiers.
+                </Typography>
+                <Box sx={{ ...mono, color: "#c4b5fd", mb: 1.5 }}>
+                    POST https://payouts.elixpo.com/v1/sync
+                    {"\n"}Authorization: Bearer &lt;ELIXPO_PAY_API_KEY&gt;
+                </Box>
+                <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.82rem", mb: 0.6 }}>
+                    Read the active tiers back any time (no secret needed):
                 </Typography>
                 <Box sx={{ ...mono, color: "#c4b5fd" }}>
                     GET https://payouts.elixpo.com/v1/catalog?app={product.client_id}
                 </Box>
             </GlassCard>
-
-            <TierDialog open={tierDlg} busy={busy} err={err} onClose={() => setTierDlg(false)} onSubmit={addTier} />
 
             <ConfirmDialog
                 open={confirmArchive}
@@ -662,54 +624,6 @@ export default function ProductDetailPage() {
     );
 }
 
-function TierDialog({ open, busy, err, onClose, onSubmit }: any) {
-    const [nickname, setNickname] = useState("");
-    const [currency, setCurrency] = useState("INR");
-    const [major, setMajor] = useState("");
-    const [interval, setIntervalVal] = useState("month");
-    const [intervalCount, setIntervalCount] = useState("1");
-    const [region, setRegion] = useState("");
-
-    return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaper }}>
-            <DialogTitle sx={{ fontWeight: 700 }}>Add pricing tier</DialogTitle>
-            <DialogContent>
-                <Stack spacing={2.2} sx={{ mt: 1 }}>
-                    <TextField label="Tier name" placeholder="Pro" value={nickname} onChange={(e) => setNickname(e.target.value)} sx={field} fullWidth />
-                    <Stack direction="row" spacing={2}>
-                        <TextField select label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)} sx={{ ...field, minWidth: 120 }}>
-                            {CURRENCIES.map((c) => (
-                                <MenuItem key={c} value={c}>{c}</MenuItem>
-                            ))}
-                        </TextField>
-                        <TextField label="Amount" type="number" placeholder="199" value={major} onChange={(e) => setMajor(e.target.value)} helperText="Major units" sx={field} fullWidth />
-                    </Stack>
-                    <Stack direction="row" spacing={2}>
-                        <TextField select label="Interval" value={interval} onChange={(e) => setIntervalVal(e.target.value)} sx={{ ...field, minWidth: 140 }}>
-                            {INTERVALS.map((i) => (
-                                <MenuItem key={i} value={i}>{i}</MenuItem>
-                            ))}
-                        </TextField>
-                        <TextField label="Count" type="number" value={intervalCount} onChange={(e) => setIntervalCount(e.target.value)} sx={{ ...field, minWidth: 100 }} />
-                        <TextField label="Region (optional)" placeholder="IN" value={region} onChange={(e) => setRegion(e.target.value)} sx={field} fullWidth />
-                    </Stack>
-                    {err && <Typography sx={{ color: "#f87171", fontSize: "0.85rem" }}>{err}</Typography>}
-                </Stack>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} sx={{ textTransform: "none", color: "rgba(255,255,255,0.6)" }}>Cancel</Button>
-                <Button
-                    disabled={busy || !(parseFloat(major) > 0)}
-                    onClick={() => onSubmit({ nickname, currency, major, interval, interval_count: intervalCount, region })}
-                    sx={{ textTransform: "none", fontWeight: 700, color: "#fff", px: 2.4, borderRadius: "10px", background: "#7c5cff", "&:hover": { background: "#8a6dff" }, "&.Mui-disabled": { opacity: 0.4, color: "#fff" } }}
-                >
-                    {busy ? "Adding…" : "Add tier"}
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
-}
-
 const field = {
     "& .MuiOutlinedInput-root": {
         color: "#e5e7eb",
@@ -740,12 +654,4 @@ const linkSx = {
     fontSize: "0.78rem",
     textDecoration: "none",
     "&:hover": { color: "#c4b5fd" },
-};
-
-const dialogPaper = {
-    bgcolor: "#14171e",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: "16px",
-    color: "#f5f5f4",
-    backgroundImage: "none",
 };
