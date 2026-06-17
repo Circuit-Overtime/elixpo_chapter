@@ -5,6 +5,10 @@ import CodeBlock from "../../components/code-block";
 import { Code, DocH2, DocLead, DocList, DocP, DocTitle } from "@/components/docs-prose";
 
 const FILE = `{
+  "app": {
+    "homepage_url": "https://blogs.elixpo.com",
+    "pricing_url":  "https://blogs.elixpo.com/pricing"
+  },
   "products": [
     {
       "tier": "member",
@@ -55,7 +59,8 @@ export default function CatalogDocs() {
             <DocP>
                 Commit a <Code>payouts.catalog.json</Code> describing each product
                 (by <Code>tier</Code>) and its regional prices. <Code>unit_amount</Code>{" "}
-                is in minor units (paise/cents).
+                is in minor units (paise/cents). The optional <Code>app</Code> block
+                sets your homepage and pricing links (shown on your product page).
             </DocP>
             <CodeBlock code={FILE} language="json" />
 

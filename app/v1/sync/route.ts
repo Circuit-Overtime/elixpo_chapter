@@ -18,6 +18,10 @@ import { getDatabase } from "@/lib/d1-client";
  *
  * Body (the catalog file):
  * {
+ *   "app": {                       // optional — app-level metadata
+ *     "homepage_url": "https://blogs.elixpo.com",
+ *     "pricing_url":  "https://blogs.elixpo.com/pricing"
+ *   },
  *   "products": [
  *     {
  *       "tier": "member",
@@ -60,6 +64,32 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Optional app-level metadata (homepage / pricing links shown in the
+        // dashboard). Only https URLs are accepted; unset fields are left as-is.
+        let appUpdated = false;
+        if (body.app && typeof body.app === "object") {
+            const sets: string[] = [];
+            const vals: any[] = [];
+            const httpsUrl = (v: unknown) =>
+                typeof v === "string" && /^https:\/\/.+/i.test(v.trim()) ? v.trim() : null;
+            if ("homepage_url" in body.app) {
+                sets.push("homepage_url = ?");
+                vals.push(httpsUrl(body.app.homepage_url));
+            }
+            if ("pricing_url" in body.app) {
+                sets.push("pricing_url = ?");
+                vals.push(httpsUrl(body.app.pricing_url));
+            }
+            if (sets.length) {
+                vals.push(app.id);
+                await db
+                    .prepare(`UPDATE apps SET ${sets.join(", ")} WHERE id = ?`)
+                    .bind(...vals)
+                    .run();
+                appUpdated = true;
+            }
+        }
+
         const synced: any[] = [];
         const errors: any[] = [];
         for (const p of products) {
@@ -77,6 +107,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             ok: errors.length === 0,
             app: app.slug,
+            app_updated: appUpdated,
             synced,
             errors,
         });

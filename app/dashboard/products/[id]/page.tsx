@@ -247,16 +247,6 @@ export default function ProductDetailPage() {
                         <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.8rem", color: "#c4b5fd" }}>
                             Client ID: {product.client_id}
                         </Typography>
-                        {product.homepage_url && (
-                            <Box component="a" href={product.homepage_url} target="_blank" rel="noopener noreferrer" sx={linkSx}>
-                                <LaunchIcon sx={{ fontSize: 13 }} /> Homepage
-                            </Box>
-                        )}
-                        {product.pricing_url && (
-                            <Box component="a" href={product.pricing_url} target="_blank" rel="noopener noreferrer" sx={linkSx}>
-                                <LaunchIcon sx={{ fontSize: 13 }} /> Pricing page
-                            </Box>
-                        )}
                     </Stack>
                     {product.description && (
                         <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.9rem", mt: 1, maxWidth: 620 }}>
@@ -264,22 +254,48 @@ export default function ProductDetailPage() {
                         </Typography>
                     )}
                 </Box>
-                {product.active === 1 ? (
-                    <Button
-                        onClick={() => setConfirmArchive(true)}
-                        sx={{ textTransform: "none", fontWeight: 600, color: "rgba(248,113,113,0.85)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "10px", px: 2 }}
-                    >
-                        Archive
-                    </Button>
-                ) : (
-                    <Button
-                        onClick={doUnarchive}
-                        disabled={archiveBusy}
-                        sx={{ textTransform: "none", fontWeight: 700, color: "#fff", borderRadius: "10px", px: 2.2, background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)", "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" }, "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}
-                    >
-                        {archiveBusy ? "Unarchiving…" : "Unarchive"}
-                    </Button>
-                )}
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ justifyContent: { xs: "flex-start", sm: "flex-end" } }}>
+                    {product.homepage_url && (
+                        <Button
+                            component="a"
+                            href={product.homepage_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            startIcon={<LaunchIcon sx={{ fontSize: "0.95rem !important" }} />}
+                            sx={purpleOutlineBtn}
+                        >
+                            Homepage
+                        </Button>
+                    )}
+                    {product.pricing_url && (
+                        <Button
+                            component="a"
+                            href={product.pricing_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            startIcon={<LaunchIcon sx={{ fontSize: "0.95rem !important" }} />}
+                            sx={purpleOutlineBtn}
+                        >
+                            Pricing
+                        </Button>
+                    )}
+                    {product.active === 1 ? (
+                        <Button
+                            onClick={() => setConfirmArchive(true)}
+                            sx={{ textTransform: "none", fontWeight: 600, color: "rgba(248,113,113,0.85)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "10px", px: 2 }}
+                        >
+                            Archive
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={doUnarchive}
+                            disabled={archiveBusy}
+                            sx={{ textTransform: "none", fontWeight: 700, color: "#fff", borderRadius: "10px", px: 2.2, background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)", "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" }, "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}
+                        >
+                            {archiveBusy ? "Unarchiving…" : "Unarchive"}
+                        </Button>
+                    )}
+                </Stack>
             </Stack>
 
             {product.active !== 1 && (
@@ -649,12 +665,12 @@ const mono = {
     whiteSpace: "nowrap",
 };
 
-const linkSx = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 0.4,
-    color: "rgba(245,245,244,0.55)",
-    fontSize: "0.78rem",
-    textDecoration: "none",
-    "&:hover": { color: "#c4b5fd" },
+const purpleOutlineBtn = {
+    textTransform: "none",
+    fontWeight: 600,
+    color: "#c4b5fd",
+    border: "1px solid rgba(155,123,247,0.3)",
+    borderRadius: "10px",
+    px: 2,
+    "&:hover": { borderColor: "rgba(155,123,247,0.6)", background: "rgba(155,123,247,0.06)" },
 };
