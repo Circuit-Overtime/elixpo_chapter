@@ -78,6 +78,9 @@ function AuthorizeContent() {
     const [error, setError] = useState<string | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<number>(600);
     const [hasTimedOut, setHasTimedOut] = useState(false);
+    // The signed-in user this authorization is for — shown so the person can
+    // confirm which account they're authorizing with.
+    const [account, setAccount] = useState<{ email: string; displayName: string | null } | null>(null);
 
     useEffect(() => {
         const load = async () => {
@@ -101,6 +104,14 @@ function AuthorizeContent() {
                 const currentUrl = `/authorize?${searchParams.toString()}`;
                 window.location.href = `/login?next=${encodeURIComponent(currentUrl)}`;
                 return;
+            }
+            try {
+                const meData: any = await meRes.clone().json();
+                if (meData?.email) {
+                    setAccount({ email: meData.email, displayName: meData.displayName ?? null });
+                }
+            } catch {
+                // non-fatal — header just won't show the account line
             }
 
             try {
@@ -465,6 +476,28 @@ function AuthorizeContent() {
                             )}
                         </div>
                     </div>
+
+                    {/* Which account this authorization is for */}
+                    {account && (
+                        <div
+                            style={{
+                                padding: "0 16px 14px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                flexWrap: "wrap",
+                            }}
+                        >
+                            <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 12.5 }}>
+                                Signing in as
+                            </span>
+                            <span style={{ color: "#c4b5fd", fontSize: 12.5, fontWeight: 600 }}>
+                                {account.displayName
+                                    ? `${account.displayName} · ${account.email}`
+                                    : account.email}
+                            </span>
+                        </div>
+                    )}
 
                     {/* Bento grid */}
                     <div
