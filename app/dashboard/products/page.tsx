@@ -199,7 +199,19 @@ export default function ProductsPage() {
                                 >
                                     <Box sx={{ minWidth: 0 }}>
                                         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                                            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", color: "#f5f5f4" }}>{app.name}</Typography>
+                                            <Typography
+                                                component={Link}
+                                                href={`/dashboard/products/${app.firstProductId}`}
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    fontSize: "1.15rem",
+                                                    color: "#f5f5f4",
+                                                    textDecoration: "none",
+                                                    "&:hover": { color: "#c4b5fd", textDecoration: "underline", textUnderlineOffset: "3px" },
+                                                }}
+                                            >
+                                                {app.name}
+                                            </Typography>
                                             <Chip
                                                 label={app.active ? "Active" : "Archived"}
                                                 size="small"
