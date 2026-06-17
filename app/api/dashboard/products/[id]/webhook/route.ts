@@ -3,6 +3,7 @@ export const runtime = "edge";
 import { type NextRequest, NextResponse } from "next/server";
 import type { D1Database } from "@cloudflare/workers-types";
 import { requireDashboard } from "@/lib/dashboard-auth";
+import { resolveGrace } from "@/lib/grace";
 import { newId } from "@/lib/ids";
 import {
     normaliseEvents,
@@ -139,6 +140,11 @@ export async function PUT(
     return NextResponse.json({ ok: true, url, signing_secret: secretOnce });
 }
 
+/**
+ * POST — rotate the signing secret. With a grace option the OLD secret is kept
+ * and Elixpo Pay DUAL-SIGNS deliveries (current + old) until it expires, so a
+ * consumer redeploy can lag the rotation. Body: { grace?: "immediate"|"5m"|"10m"|"1h" }
+ */
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> },
@@ -151,19 +157,45 @@ export async function POST(
     const app = await appForProduct(db, merchantId, id);
     if (!app) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-    const secret = genSigningSecret();
     const ep = await getEndpoint(db, app.id);
-    if (ep) {
-        await db
-            .prepare("UPDATE webhook_endpoints SET signing_secret = ? WHERE id = ?")
-            .bind(secret, ep.id)
-            .run();
-    } else {
+    if (!ep) {
         return NextResponse.json(
             { error: "no_endpoint", error_description: "Set a webhook URL first." },
             { status: 400 },
         );
     }
 
-    return NextResponse.json({ signing_secret: secret });
+    const body: any = await request.json().catch(() => ({}));
+    const grace = resolveGrace(body.grace);
+    const secret = genSigningSecret();
+
+    if (grace.sql && ep.signing_secret) {
+        await db
+            .prepare(
+                `UPDATE webhook_endpoints
+                 SET prev_signing_secret = signing_secret,
+                     prev_signing_secret_expires_at = datetime('now', ?2),
+                     signing_secret = ?3
+                 WHERE id = ?1`,
+            )
+            .bind(ep.id, grace.sql, secret)
+            .run();
+    } else {
+        await db
+            .prepare(
+                `UPDATE webhook_endpoints
+                 SET signing_secret = ?2,
+                     prev_signing_secret = NULL,
+                     prev_signing_secret_expires_at = NULL
+                 WHERE id = ?1`,
+            )
+            .bind(ep.id, secret)
+            .run();
+    }
+
+    return NextResponse.json({
+        signing_secret: secret,
+        grace: grace.key,
+        previous_valid_minutes: grace.minutes,
+    });
 }

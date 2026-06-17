@@ -20,7 +20,9 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import ChangeIdDialog from "@/components/change-id-dialog";
 import ConfirmDialog from "@/components/confirm-dialog";
+import RotateDialog, { type GraceKey } from "@/components/rotate-dialog";
 import { formatMoney, GlassCard, StatCard } from "@/components/dashboard-ui";
 
 export default function ProductDetailPage() {
@@ -43,6 +45,14 @@ export default function ProductDetailPage() {
     const [webhookSecretHidden, setWebhookSecretHidden] = useState(false);
     const [webhookBusy, setWebhookBusy] = useState(false);
     const [confirmWebhookRegen, setConfirmWebhookRegen] = useState(false);
+    // Name editing
+    const [editingName, setEditingName] = useState(false);
+    const [nameDraft, setNameDraft] = useState("");
+    const [nameBusy, setNameBusy] = useState(false);
+    // Change client_id
+    const [changeIdOpen, setChangeIdOpen] = useState(false);
+    const [changeIdBusy, setChangeIdBusy] = useState(false);
+    const [changeIdErr, setChangeIdErr] = useState("");
 
     const copyWebhookSecret = async () => {
         if (!webhookSecretOnce) return;
