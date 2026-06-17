@@ -37,15 +37,20 @@ You never touch card numbers, and you never have to track who paid for what — 
 
 ## How it works
 
-```
-   Your app                Elixpo Pay                 Payment provider
-      │                        │                            │
-  1.  │ "start a checkout" ───▶│                            │
-      │ ◀─── hosted page URL   │                            │
-  2.  │  send buyer to page ──────────────▶  buyer pays ───▶│
-      │                        │ ◀─── payment confirmed ────│
-  3.  │ ◀── "this user is now a member" (webhook)           │
-      │      …and the buyer lands back on your site         │
+```mermaid
+sequenceDiagram
+    participant App as Your app
+    participant Pay as Elixpo Pay
+    participant Buyer
+    participant Provider as Payment provider
+
+    App->>Pay: 1. Start a checkout (buyer + plan)
+    Pay-->>App: Secure hosted checkout link
+    App->>Buyer: Redirect to checkout
+    Buyer->>Provider: 2. Pays on the hosted page
+    Provider-->>Pay: Payment confirmed
+    Pay->>App: 3. Webhook — "this user is now a member"
+    Pay->>Buyer: Redirect back to your site
 ```
 
 1. **Start checkout.** Your app asks Elixpo Pay to open a checkout for a buyer and a plan. We hand back a secure link.
@@ -58,7 +63,7 @@ You never touch card numbers, and you never have to track who paid for what — 
 
 Sign in with **Elixpo Accounts** and you get a merchant dashboard to:
 
-- Create a **product** and set **pricing tiers** (per region/currency).
+- Create a **product** and review its **pricing tiers** (defined in code — see below).
 - Grab your **secret key** and **webhook signing secret**.
 - Point your **webhook** at your app and choose which events you want (membership changes, payment notifications).
 - Watch **revenue, active members, and transactions** at a glance.
@@ -71,6 +76,7 @@ Sign in with **Elixpo Accounts** and you get a merchant dashboard to:
 Everything is one hosted checkout plus a small REST API. The full guide lives at **[payouts.elixpo.com/docs](https://payouts.elixpo.com/docs)**:
 
 - **Quickstart** — create a session, receive the webhook, read entitlements.
+- **Catalog sync** — manage products & prices from a JSON file with `POST /v1/sync`.
 - **Checkout sessions** — `POST /v1/checkout/sessions` with your secret key.
 - **Webhooks** — verify signed `entitlement.updated` / `payment.captured` events.
 - **Entitlements API** — read a buyer's current plan any time.

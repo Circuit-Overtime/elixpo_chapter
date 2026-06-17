@@ -60,7 +60,15 @@ export default function Quickstart() {
                 checkout and reads entitlements.
             </DocP>
 
-            <DocH2>2. Create a checkout session</DocH2>
+            <DocH2>2. Define your tiers (in code)</DocH2>
+            <DocP>
+                Products and prices are managed from a catalog file in your repo,
+                pushed with your secret key — not from the dashboard. See{" "}
+                <Code>Catalog sync</Code>. Until a tier has an active price, checkout
+                for it will 404.
+            </DocP>
+
+            <DocH2>3. Create a checkout session</DocH2>
             <DocP>
                 Call the API with your secret key and redirect the buyer to the
                 returned URL. Elixpo Pay resolves the price from your catalog, so the
@@ -68,7 +76,7 @@ export default function Quickstart() {
             </DocP>
             <CodeBlock code={FLOW} language="javascript" />
 
-            <DocH2>3. Read entitlements</DocH2>
+            <DocH2>4. Read entitlements</DocH2>
             <DocP>
                 After a successful payment we push a webhook (see Webhooks). You can
                 also pull the current state at any time:
