@@ -1,0 +1,43 @@
+# Push payouts.catalog.json to Elixpo Pay on demand — without a full site deploy.
+# Use this after editing prices/tiers in payouts.catalog.json to update the
+# central catalog (payouts.elixpo.com) immediately. The deploy workflow also runs
+# this automatically after each successful deploy; both are idempotent.
+#
+# Required repo secret:
+#   ELIXPO_PAY_API_KEY — Elixpo Pay secret key
+name: Sync payouts catalog
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Payouts base URL to sync to (leave blank for production)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-payouts-catalog
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Sync pricing catalog to Elixpo Pay
+        env:
+          ELIXPO_PAY_API_KEY: ${{ secrets.ELIXPO_PAY_API_KEY }}
+          PAYOUTS_SYNC_URL: ${{ github.event.inputs.target_url }}
+        run: |
+          if [ -z "$ELIXPO_PAY_API_KEY" ]; then
+            echo "::error::ELIXPO_PAY_API_KEY is not set — add it as a repo secret."
+            exit 1
+          fi
+          node scripts/sync-payouts-tiers.mjs

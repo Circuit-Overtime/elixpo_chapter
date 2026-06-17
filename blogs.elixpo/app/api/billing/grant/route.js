@@ -24,7 +24,6 @@ export async function POST(request) {
 
   const raw = await request.text();
   const ts = request.headers.get('x-elixpo-pay-timestamp') || '';
-  const sig = (request.headers.get('x-elixpo-pay-signature') || '').replace(/^sha256=/, '');
 
   // Reject stale deliveries (replay window: 5 min).
   const now = Math.floor(Date.now() / 1000);
@@ -32,7 +31,16 @@ export async function POST(request) {
     return NextResponse.json({ error: 'stale_timestamp' }, { status: 400 });
   }
 
-  const valid = await verifyHmacHex(`${ts}.${raw}`, sig, secret);
+  // The signature header may carry several comma-separated values during a
+  // secret-rotation grace window (current + previous). Accept if ANY matches.
+  const sigs = (request.headers.get('x-elixpo-pay-signature') || '')
+    .split(',')
+    .map((s) => s.trim().replace(/^sha256=/, ''))
+    .filter(Boolean);
+  let valid = false;
+  for (const sig of sigs) {
+    if (await verifyHmacHex(`${ts}.${raw}`, sig, secret)) { valid = true; break; }
+  }
   if (!valid) {
     return NextResponse.json({ error: 'bad_signature' }, { status: 401 });
   }
