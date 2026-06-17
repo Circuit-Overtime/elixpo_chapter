@@ -142,7 +142,7 @@ function CheckoutInner() {
 
     const finishSuccess = (returnUrl?: string | null) => {
         setPhase("success");
-        setToast({ msg: "Payment successful — access activated.", severity: "success" });
+        // No toast here — the full-card success state already says it clearly.
         const back = returnUrl || session?.return_url;
         if (back) setTimeout(() => (window.location.href = back), 2600);
     };
@@ -256,13 +256,21 @@ function CheckoutInner() {
 
             {phase === "success" && (
                 <Centered>
-                    <CheckCircleIcon sx={{ fontSize: 58, color: "#4ade80" }} />
-                    <Typography sx={{ fontWeight: 700, fontSize: "1.25rem", mt: 1.5 }}>
-                        Payment successful
+                    <Box sx={{ width: 64, height: 64, borderRadius: "50%", display: "grid", placeItems: "center", background: "rgba(74,222,128,0.12)", border: "1px solid rgba(74,222,128,0.3)", mb: 0.5 }}>
+                        <CheckCircleIcon sx={{ fontSize: 40, color: "#4ade80" }} />
+                    </Box>
+                    <Typography sx={{ fontWeight: 800, fontSize: "1.35rem", mt: 1 }}>
+                        You're all set
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.6)", textAlign: "center", fontSize: "0.9rem", mt: 1 }}>
-                        Your {session?.tier} access is active. Redirecting you back…
+                    <Typography sx={{ color: "rgba(245,245,244,0.7)", textAlign: "center", fontSize: "0.95rem", mt: 1, maxWidth: 360, lineHeight: 1.6 }}>
+                        Your <strong>{session?.product_name || session?.tier}</strong>
+                        {session?.app_name ? <> on <strong>{session.app_name}</strong></> : null} is now active.
                     </Typography>
+                    {hostOf(session?.return_url) && (
+                        <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.82rem", mt: 1 }}>
+                            Taking you back to {hostOf(session?.return_url)}…
+                        </Typography>
+                    )}
                     {session?.return_url && (
                         <Button onClick={goBack} sx={{ ...primaryBtn, mt: 2.5, px: 4 }}>
                             Continue

@@ -1,12 +1,17 @@
 "use client";
 
 import GitHubIcon from "@mui/icons-material/GitHub";
-import LoginIcon from "@mui/icons-material/Login";
 import StarIcon from "@mui/icons-material/Star";
-import { Box, Button, Chip, Stack, Toolbar, Typography } from "@mui/material";
+import { Avatar, Box, Button, Chip, Stack, Toolbar, Typography } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
+interface Me {
+    name: string;
+    email: string;
+    avatar: string | null;
+}
 
 const ACCENT = "#9b7bf7";
 const REPO = "elixpo/payouts.elixpo";
@@ -26,6 +31,23 @@ function formatStars(n: number): string {
 
 const Navbar = () => {
     const [stars, setStars] = useState<number | null>(null);
+    // undefined = checking, null = signed out, Me = signed in
+    const [me, setMe] = useState<Me | null | undefined>(undefined);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/auth/me", { credentials: "include" })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d: any) => {
+                if (!cancelled) setMe(d && d.uid ? { name: d.name, email: d.email, avatar: d.avatar } : null);
+            })
+            .catch(() => {
+                if (!cancelled) setMe(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -175,29 +197,63 @@ const Navbar = () => {
                         )}
                     </Box>
 
-                    <Button
-                        component={Link}
-                        href="/login"
-                        disableElevation
-                        startIcon={<LoginIcon sx={{ fontSize: "1rem !important" }} />}
-                        sx={{
-                            textTransform: "none",
-                            fontWeight: 600,
-                            fontSize: "0.9rem",
-                            color: "#fff",
-                            background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                            borderRadius: "10px",
-                            px: 2.2,
-                            py: 0.8,
-                            boxShadow: "0 4px 14px rgba(155,123,247,0.32)",
-                            "&:hover": {
-                                background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
-                                boxShadow: "0 6px 20px rgba(155,123,247,0.45)",
-                            },
-                        }}
-                    >
-                        Sign in
-                    </Button>
+                    {me === undefined ? (
+                        // Placeholder while we resolve the session — avoids flashing
+                        // "Sign in" to an already-signed-in user.
+                        <Box sx={{ width: 104, height: 38 }} />
+                    ) : me ? (
+                        <Button
+                            component={Link}
+                            href="/dashboard"
+                            disableElevation
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 600,
+                                fontSize: "0.9rem",
+                                color: "#f4f4f6",
+                                borderRadius: "10px",
+                                pl: 0.6,
+                                pr: 1.4,
+                                py: 0.5,
+                                gap: 0.9,
+                                border: "1px solid rgba(255,255,255,0.1)",
+                                "&:hover": { borderColor: "rgba(155,123,247,0.45)", background: "rgba(155,123,247,0.08)" },
+                            }}
+                        >
+                            <Avatar
+                                src={me.avatar || undefined}
+                                sx={{ width: 26, height: 26, fontSize: "0.8rem", bgcolor: "rgba(155,123,247,0.4)" }}
+                            >
+                                {(me.name || me.email || "?").charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {me.name || me.email}
+                            </Box>
+                        </Button>
+                    ) : (
+                        <Button
+                            component={Link}
+                            href="/login"
+                            disableElevation
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 600,
+                                fontSize: "0.9rem",
+                                color: "#fff",
+                                background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                borderRadius: "10px",
+                                px: 2.2,
+                                py: 0.8,
+                                boxShadow: "0 4px 14px rgba(155,123,247,0.32)",
+                                "&:hover": {
+                                    background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                    boxShadow: "0 6px 20px rgba(155,123,247,0.45)",
+                                },
+                            }}
+                        >
+                            Sign in
+                        </Button>
+                    )}
                 </Stack>
             </Toolbar>
         </AppBar>

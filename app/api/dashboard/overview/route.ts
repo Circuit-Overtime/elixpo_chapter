@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
         .prepare(
             `SELECT
                (SELECT COUNT(*) FROM apps WHERE merchant_id = ?1) AS apps,
-               (SELECT COUNT(*) FROM products p JOIN apps a ON p.app_id = a.id
+               (SELECT COUNT(DISTINCT a.id) FROM products p JOIN apps a ON p.app_id = a.id
                   WHERE a.merchant_id = ?1 AND p.active = 1) AS products,
                (SELECT COUNT(*) FROM entitlements e JOIN apps a ON e.app_id = a.id
                   WHERE a.merchant_id = ?1 AND e.status = 'active'
