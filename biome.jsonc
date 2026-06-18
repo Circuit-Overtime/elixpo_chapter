@@ -22,7 +22,6 @@
                 "noArrayIndexKey": "info"
             },
             "performance": {
-                "noImgElement": "info",
                 "noAccumulatingSpread": "info"
             },
             "a11y": {
