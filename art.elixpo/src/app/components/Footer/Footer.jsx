@@ -53,7 +53,7 @@ export default function Footer() {
             <span className={styles.brandName}>Elixpo Art</span>
           </div>
           <p className={styles.tagline}>
-            The creator-first generative AI platform. Open source, free, and built for artists.
+            The creator-first generative platform. Open source, free, and built for artists.
           </p>
           <div className={styles.socials}>
             <a href="https://github.com/Circuit-Overtime/elixpo-art" className={styles.socialLink} aria-label="GitHub">
