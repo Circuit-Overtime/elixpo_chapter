@@ -2,16 +2,17 @@ import './globals.css'
 import 'highlight.js/styles/github-dark-dimmed.css'
 import InitHljs from '@/components/InitHljs'
 const SITE_URL = 'https://sketch.elixpo.com'
-const SITE_NAME = 'LixSketch'
+const SITE_NAME = 'Elixpo Sketch'
+const SITE_TAGLINE = 'Open Source Infinite Canvas, Hand Drawn Aesthetics, Built In Docs Editor'
 const SITE_DESCRIPTION =
-  'Open-source infinite canvas with hand-drawn aesthetics, real-time collaboration, docs editor, and LixScript diagram DSL. Free forever.'
+  'Elixpo Sketch is an open source infinite canvas for sketching, diagrams, wireframes, and architecture drawings. It pairs a Notion style WYSIWYG docs editor with a hand drawn RoughJS canvas, end to end encrypted save and share, optional real time collaboration, and LixScript, a one line DSL for generating flowcharts, sequence diagrams, and graphs without leaving the canvas. Free forever, runs entirely in the browser, no account required.'
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default: SITE_NAME,
-    template: `%s · ${SITE_NAME}`,
+    default: `${SITE_NAME} | ${SITE_TAGLINE}`,
+    template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
 
@@ -22,37 +23,58 @@ export const metadata = {
   generator: 'Next.js',
 
   keywords: [
-    'LixSketch',
-    'open source',
-    'whiteboard',
+    'Elixpo Sketch',
+    'Elixpo',
+    'open source whiteboard',
     'infinite canvas',
+    'sketching tool',
+    'wireframing tool',
     'diagram tool',
     'eraser.io alternative',
     'excalidraw alternative',
-    'hand-drawn diagrams',
-    'RoughJS',
-    'real-time collaboration',
-    'docs editor',
+    'tldraw alternative',
+    'hand drawn diagrams',
+    'roughjs',
+    'perfect freehand',
+    'real time collaboration',
+    'end to end encrypted whiteboard',
+    'block editor',
+    'WYSIWYG docs editor',
     'LixScript',
+    'mermaid diagrams',
+    'graph plotting',
     'SVG canvas',
     'architecture diagrams',
-    'wireframes',
     'flowcharts',
+    'sequence diagrams',
     'developer tools',
+    'product design',
+    'system design',
   ],
 
   icons: {
     icon: [
-      { url: '/Images/logo.png', type: 'image/png', sizes: '128x128' },
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon-96x96.png', type: 'image/png', sizes: '96x96' },
+      { url: '/favicon-192x192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon.png', type: 'image/png', sizes: '1024x1024' },
     ],
-    apple: '/Images/logo.png',
-    shortcut: '/Images/logo.png',
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    other: [
+      { rel: 'mask-icon', url: '/icon.svg', color: '#5B57D1' },
+    ],
   },
+  manifest: '/site.webmanifest',
 
   openGraph: {
     type: 'website',
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — Open-Source Infinite Canvas & Diagram Tool`,
+    title: `${SITE_NAME} | ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     locale: 'en_US',
@@ -61,7 +83,7 @@ export const metadata = {
         url: '/Images/og-image.png',
         width: 1322,
         height: 612,
-        alt: 'LixSketch — hand-drawn infinite canvas with real-time collaboration',
+        alt: 'Elixpo Sketch, hand drawn infinite canvas with real time collaboration and built in docs editor',
         type: 'image/png',
       },
     ],
@@ -69,10 +91,11 @@ export const metadata = {
 
   twitter: {
     card: 'summary_large_image',
-    title: `${SITE_NAME} — Open-Source Infinite Canvas`,
+    title: `${SITE_NAME} | ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
     images: ['/Images/og-image.png'],
     creator: '@elixpo',
+    site: '@elixpo',
   },
 
   robots: {
@@ -95,7 +118,7 @@ export const metadata = {
 }
 
 export const viewport = {
-  themeColor: '#121212',
+  themeColor: '#13171C',
   width: 'device-width',
   initialScale: 1,
   colorScheme: 'dark',
