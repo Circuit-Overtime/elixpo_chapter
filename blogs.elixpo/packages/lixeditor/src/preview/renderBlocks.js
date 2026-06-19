@@ -112,6 +112,8 @@ export function renderBlocksToHTML(blocks) {
       case 'mermaidBlock':
         if (block.props?.diagram) return `<div class="lix-mermaid-block" data-diagram="${encodeURIComponent(block.props.diagram)}"></div>${childrenHTML}`;
         return childrenHTML;
+      case 'quote':
+        return `<blockquote${alignAttr}>${content}</blockquote>${childrenHTML}`;
       case 'divider':
         return `<hr class="lix-divider" />${childrenHTML}`;
       case 'codeBlock': {

@@ -254,9 +254,10 @@ const LixEditor = forwardRef(function LixEditor({
   // Host-supplied merge-variable suggestions for the {{variable}} chip.
   useEffect(() => { setVariableSuggestions(variableSuggestions || []); }, [variableSuggestions]);
 
-  // Auto-convert ![alt](url) to image block and [text](url) to link as you type
+  // Markdown-as-you-type: "> " \u2192 quote (always), plus ![alt](url)/[text](url)
+  // conversions (gated on markdownLinks).
   useEffect(() => {
-    if (!f.markdownLinks || !editor) return;
+    if (!editor) return;
     const tiptap = editor._tiptapEditor;
     if (!tiptap) return;
 
@@ -264,6 +265,20 @@ const LixEditor = forwardRef(function LixEditor({
       const { state, view } = tiptap;
       const { $from } = state.selection;
       const textBefore = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
+
+      // "> " at the start of a line \u2192 turn the block into a blockquote.
+      if (textBefore === '> ') {
+        try {
+          const block = editor.getTextCursorPosition().block;
+          if (block && block.type !== 'quote') {
+            view.dispatch(state.tr.delete($from.pos - 2, $from.pos)); // strip the "> " marker
+            editor.updateBlock(block, { type: 'quote' });
+            return;
+          }
+        } catch {}
+      }
+
+      if (!f.markdownLinks) return;
 
       // Image syntax: ![alt](url)
       const imgMatch = textBefore.match(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)$/);
@@ -300,6 +315,22 @@ const LixEditor = forwardRef(function LixEditor({
     tiptap.on('update', handleInput);
     return () => tiptap.off('update', handleInput);
   }, [editor, f.markdownLinks]);
+
+  // Shift+Arrow should extend the text selection, not move/rearrange blocks.
+  // BlockNote binds block-move to Shift+ArrowUp/Down; intercept it in the capture
+  // phase (before ProseMirror's handler) so the native selection happens instead.
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const onKeyDown = (e) => {
+      if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey
+        && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        e.stopImmediatePropagation();
+      }
+    };
+    el.addEventListener('keydown', onKeyDown, true);
+    return () => el.removeEventListener('keydown', onKeyDown, true);
+  }, [editor]);
 
   // Link preview hover
   useEffect(() => {
