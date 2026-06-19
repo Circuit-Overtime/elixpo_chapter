@@ -33,6 +33,8 @@ export interface LixEditorHandle {
   /** BlockNote's lossy editor-DOM HTML. */
   getHTMLLossy(): Promise<string>;
   getMarkdown(): Promise<string>;
+  /** Insert a ready image block with the URL already set (host-driven insert). */
+  insertImage(url: string, opts?: { alt?: string; align?: 'left' | 'center' | 'right'; name?: string }): void;
 }
 
 export interface LixEditorProps {
@@ -51,6 +53,8 @@ export interface LixEditorProps {
   variableSuggestions?: string[];
   editable?: boolean;
   linkPreviewEndpoint?: string;
+  /** "host" → no in-block Upload/Embed-URL card; images appear only with a URL. */
+  imageInsert?: 'default' | 'host';
 
   codeLanguages?: Record<string, any>;
   extraBlockSpecs?: any[];

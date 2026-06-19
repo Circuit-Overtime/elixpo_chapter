@@ -65,27 +65,43 @@ export const ButtonBlock = createReactBlockSpec(
         setEditing(false);
       };
 
-      const input = 'w-full bg-[var(--bg-app)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-[13px] text-[var(--text-primary)] outline-none focus:border-[var(--border-hover)] placeholder-[#6b7a8d]';
-
       if (editing) {
         return (
-          <div className="border border-[var(--border-default)] rounded-xl bg-[var(--bg-surface)] p-4 my-2 space-y-3">
-            <p className="text-[11px] text-[var(--text-muted)] font-medium">Button</p>
-            <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Button text — e.g. Get started" className={input} />
-            <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…  (supports {{variables}})" className={input} />
-            <div className="flex gap-2 flex-wrap">
-              <select value={align} onChange={(e) => setAlign(e.target.value)} className="bg-[var(--bg-app)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-[13px] text-[var(--text-primary)] outline-none">
-                {ALIGN.map((a) => <option key={a} value={a}>{a}</option>)}
-              </select>
-              <select value={variant} onChange={(e) => setVariant(e.target.value)} className="bg-[var(--bg-app)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-[13px] text-[var(--text-primary)] outline-none">
-                {BUTTON_VARIANTS.map((v) => <option key={v.value} value={v.value}>{v.label}</option>)}
-              </select>
-              <input type="color" value={color} onChange={(e) => setColor(e.target.value)} title="Color" className="w-9 h-9 rounded-lg border border-[var(--border-default)] bg-transparent cursor-pointer" />
-              <input type="number" min="0" max="40" value={radius} onChange={(e) => setRadius(e.target.value)} title="Corner radius (px)" className="w-16 bg-[var(--bg-app)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-[13px] text-[var(--text-primary)] outline-none" />
+          <div className="lix-btn-editor">
+            <p className="lix-btn-editor-title">Button</p>
+            <label className="lix-btn-editor-field">
+              <span className="lix-btn-editor-label">Text</span>
+              <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. Get started" className="lix-btn-editor-input" />
+            </label>
+            <label className="lix-btn-editor-field">
+              <span className="lix-btn-editor-label">Link URL</span>
+              <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…  (supports {{variables}})" className="lix-btn-editor-input" />
+            </label>
+            <div className="lix-btn-editor-row">
+              <label className="lix-btn-editor-field">
+                <span className="lix-btn-editor-label">Align</span>
+                <select value={align} onChange={(e) => setAlign(e.target.value)} className="lix-btn-editor-select">
+                  {ALIGN.map((a) => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </label>
+              <label className="lix-btn-editor-field">
+                <span className="lix-btn-editor-label">Style</span>
+                <select value={variant} onChange={(e) => setVariant(e.target.value)} className="lix-btn-editor-select">
+                  {BUTTON_VARIANTS.map((v) => <option key={v.value} value={v.value}>{v.label}</option>)}
+                </select>
+              </label>
+              <label className="lix-btn-editor-field">
+                <span className="lix-btn-editor-label">Color</span>
+                <input type="color" value={color} onChange={(e) => setColor(e.target.value)} title="Color" className="lix-btn-editor-color" />
+              </label>
+              <label className="lix-btn-editor-field">
+                <span className="lix-btn-editor-label">Radius</span>
+                <input type="number" min="0" max="40" value={radius} onChange={(e) => setRadius(e.target.value)} title="Corner radius (px)" className="lix-btn-editor-input lix-btn-editor-radius" />
+              </label>
             </div>
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setEditing(false)} className="px-3 py-1 text-[12px] text-[#888] hover:text-[var(--text-primary)] transition-colors">Cancel</button>
-              <button onClick={save} className="px-3 py-1 text-[12px] bg-[#9b7bf7] text-white rounded-md font-medium hover:bg-[#b69aff] transition-colors">Done</button>
+            <div className="lix-btn-editor-actions">
+              <button onClick={() => setEditing(false)} className="lix-btn-editor-cancel">Cancel</button>
+              <button onClick={save} className="lix-btn-editor-done">Done</button>
             </div>
           </div>
         );
@@ -97,10 +113,10 @@ export const ButtonBlock = createReactBlockSpec(
         : { background: 'transparent', color, border: `2px solid ${color}` };
 
       return (
-        <div className="my-2" style={{ textAlign: align }} onDoubleClick={() => setEditing(true)}>
+        <div className="lix-btn-wrap" style={{ textAlign: align }} onDoubleClick={() => setEditing(true)}>
           <button
-            className="px-5 py-2.5 text-[14px] font-semibold transition-opacity hover:opacity-90"
-            style={{ ...btnStyle, borderRadius: `${Number(radius) || 0}px`, cursor: 'pointer' }}
+            className="lix-btn"
+            style={{ ...btnStyle, borderRadius: `${Number(radius) || 0}px` }}
           >
             {text || 'Button'}
           </button>
