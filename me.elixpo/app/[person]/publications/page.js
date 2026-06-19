@@ -14,12 +14,12 @@ export async function generateMetadata({ params }) {
   const { person } = await params;
   const profile = getPersonContent(person, "profile");
   const title = `${profile.siteName} - Publications`;
-  const description = `Publications by ${profile.siteName} — ${profile.siteDescription}`;
+  const description = `Publications by ${profile.siteName} - ${profile.siteDescription}`;
   return {
     title,
     description,
-    openGraph: { title, description, images: [{ url: "/assets/og-image.webp", width: 1200, height: 630, alt: profile.siteName }] },
-    twitter: { card: "summary_large_image", title, description, images: ["/assets/og-image.webp"] },
+    openGraph: { title, description, images: [{ url: `/${person}/og.webp`, width: 1200, height: 630, alt: profile.siteName }] },
+    twitter: { card: "summary_large_image", title, description, images: [`/${person}/og.webp`] },
   };
 }
 
@@ -48,7 +48,7 @@ export default async function PublicationsPage({ params }) {
         </div>
       </section>
 
-      {/* Pre-publication images — hidden on mobile */}
+      {/* Pre-publication images - hidden on mobile */}
       {pubs.images?.length > 0 && (
         <section className="prePublication relative mt-5 p-3 sm:p-6 md:p-10 hidden sm:flex flex-row w-full justify-center gap-5">
           {pubs.images.map((img, i) => (

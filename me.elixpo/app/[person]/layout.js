@@ -12,17 +12,17 @@ export async function generateMetadata({ params }) {
   const profile = getPersonContent(person, "profile");
   return {
     title: `${profile.siteName} - Home`,
-    description: `${profile.siteDescription} — ${profile.siteName}'s personal portfolio`,
+    description: `${profile.siteDescription} - ${profile.siteName}'s personal portfolio`,
     openGraph: {
       title: `${profile.siteName} - Home`,
-      description: `${profile.siteDescription} — ${profile.siteName}'s personal portfolio`,
-      images: [{ url: "/assets/og-image.webp", width: 1200, height: 630, alt: profile.siteName }],
+      description: `${profile.siteDescription} - ${profile.siteName}'s personal portfolio`,
+      images: [{ url: `/${person}/og.webp`, width: 1200, height: 630, alt: profile.siteName }],
     },
     twitter: {
       card: "summary_large_image",
       title: `${profile.siteName} - Home`,
-      description: `${profile.siteDescription} — ${profile.siteName}'s personal portfolio`,
-      images: ["/assets/og-image.webp"],
+      description: `${profile.siteDescription} - ${profile.siteName}'s personal portfolio`,
+      images: [`/${person}/og.webp`],
     },
   };
 }

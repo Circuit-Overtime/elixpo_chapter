@@ -115,7 +115,7 @@ export default function LandingClient({ profiles }) {
             className="uppercase tracking-[4px] text-[0.65rem] sm:text-sm text-[#8c856f]"
             style={{ fontFamily: "'Pathway Gothic One', sans-serif" }}
           >
-            Contents — {profiles.length} Members
+            Contents - {profiles.length} Members
           </span>
           <span className="flex-1 h-0.5 bg-[#3a382f]" />
         </motion.div>

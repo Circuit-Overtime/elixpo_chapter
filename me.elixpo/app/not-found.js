@@ -18,7 +18,7 @@ export default function NotFound() {
         </p>
 
         <p className="text-sm sm:text-base md:text-[1.4em] text-[#555] leading-relaxed" style={{ fontFamily: "'Pathway Gothic One', sans-serif" }}>
-          The member or page you&apos;re looking for isn&apos;t part of Elixpo — or at least not yet.
+          The member or page you&apos;re looking for isn&apos;t part of Elixpo - or at least not yet.
           If you think they should be, raise a query and let us know.
         </p>
 

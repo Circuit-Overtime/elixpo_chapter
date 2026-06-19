@@ -12,7 +12,7 @@ export default function Masthead({ hero, person }) {
         <span className="hidden sm:block flex-1 h-[2px] bg-[#888] ml-2" />
       </div>
 
-      {/* Charcoal headline block — the role statement */}
+      {/* Charcoal headline block - the role statement */}
       <div className="mastheadHeadlineBlock w-full flex items-center bg-[#1B1B19] opacity-90 select-none rounded-[10px] sm:rounded-[15px] px-5 sm:px-10 py-6 sm:py-10 md:py-12">
         <h1 className="text-[#E2D9C8] font-[Canopee,serif] tracking-[1px] sm:tracking-[2px] text-3xl sm:text-5xl md:text-6xl lg:text-[5em] leading-[1.05]">
           {hero.headline}

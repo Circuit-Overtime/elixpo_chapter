@@ -47,7 +47,7 @@
     "subheading": "DEV-S",
     "description": "As a solo developer for a consistent period of time, I had the pleasure of exploring a lot of strategic moves in development, which made me explore different sections rather than just focusing on one! I believe that for building a complete project, one must start from the pen and paper, and work upto scalability and deployment. In the mid way also keeping the working ecosystem clean for better user-experience. With my 7+ years in development and being with a number of notable individuals and organizations, I have been able to explore a lot of technologies and frameworks, which I am really happy about.",
     "reading": [
-      { "title": "Designing Data-Intensive Applications", "author": "Martin Kleppmann", "status": "Reading", "note": "The systems bible — storage, replication, consistency." },
+      { "title": "Designing Data-Intensive Applications", "author": "Martin Kleppmann", "status": "Reading", "note": "The systems bible - storage, replication, consistency." },
       { "title": "The Pragmatic Programmer", "author": "Hunt & Thomas", "status": "Reading", "note": "Craft, habits, and thinking like an engineer." },
       { "title": "Site Reliability Engineering", "author": "Google SRE Team", "status": "Next up", "note": "How Google runs production systems." }
     ],

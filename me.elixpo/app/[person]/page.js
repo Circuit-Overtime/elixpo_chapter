@@ -62,7 +62,7 @@ export default async function HomePage({ params }) {
         })}
       </SpotlightScroller>
 
-      {/* Intro Section — only for members without a masthead hero block */}
+      {/* Intro Section - only for members without a masthead hero block */}
       {!home.hero && (
       <section className="introSection relative mt-[10px] w-full flex flex-col border-b-2 border-[#111] p-2 sm:p-5">
         <div className="nameContainer text-base sm:text-6xl md:text-8xl lg:text-[12em] xl:text-[20em] w-full py-2 sm:py-0 sm:h-[250px] md:h-[300px] lg:h-[350px] flex justify-center items-center bg-[#1B1B19] text-center opacity-90 select-none rounded-[10px] sm:rounded-[15px] tracking-[2px] sm:tracking-[3px] md:tracking-[5px]">
