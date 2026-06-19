@@ -7,21 +7,19 @@ export const metadata = {
     template: "%s | Elixpo",
   },
   description: "Personalized portfolio showcase for Elixpo organization members",
-  icons: {
-    icon: "/icon.png",
-  },
+  manifest: "/site.webmanifest",
   openGraph: {
     type: "website",
     siteName: "Elixpo",
     title: "Elixpo",
     description: "Personalized portfolio showcase for Elixpo organization members",
-    images: [{ url: "/assets/og-image.webp", width: 1200, height: 630, alt: "Elixpo" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Elixpo" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Elixpo",
     description: "Personalized portfolio showcase for Elixpo organization members",
-    images: ["/assets/og-image.webp"],
+    images: ["/og-image.webp"],
   },
   metadataBase: new URL("https://me.elixpo.com"),
 };
