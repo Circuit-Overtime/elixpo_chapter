@@ -76,7 +76,7 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",
-    "esbuild": "^0.20.0",
+    "esbuild": "^0.28.1",
     "@vscode/vsce": "^2.24.0"
   },
   "repository": {
