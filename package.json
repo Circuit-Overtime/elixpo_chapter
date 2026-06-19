@@ -1,13 +1,46 @@
 {
     "name": "elixpo-pay",
-    "version": "0.1.0",
+    "version": "1.1.12",
     "private": true,
-    "description": "Elixpo Pay — centralized payments + payouts SaaS for the Elixpo ecosystem. Hosted checkout, unified ledger, entitlements, and creator payouts on Cloudflare's edge.",
+    "description": "Elixpo Pay — the multi-tenant payments & payouts SaaS for the Elixpo ecosystem and any developer. A hosted, branded checkout, a unified ledger, entitlement grants with signed webhooks, per-app API credentials with rotation, code-managed pricing catalogs, and creator payouts — built edge-native on Cloudflare Pages, D1 & KV with Razorpay (INR) and Elixpo Accounts SSO.",
     "homepage": "https://payouts.elixpo.com",
     "author": {
         "name": "Elixpo",
+        "email": "hello@elixpo.com",
         "url": "https://elixpo.com"
     },
+    "contributors": [
+        {
+            "name": "Ayushman Bhattacharya",
+            "url": "https://github.com/Circuit-Overtime"
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/elixpo/payouts.elixpo.git"
+    },
+    "bugs": {
+        "url": "https://github.com/elixpo/payouts.elixpo/issues"
+    },
+    "keywords": [
+        "elixpo",
+        "elixpo-pay",
+        "payments",
+        "payouts",
+        "checkout",
+        "billing",
+        "subscriptions",
+        "entitlements",
+        "razorpay",
+        "webhooks",
+        "saas",
+        "multi-tenant",
+        "cloudflare",
+        "cloudflare-pages",
+        "d1",
+        "edge",
+        "nextjs"
+    ],
     "license": "MIT",
     "engines": {
         "node": ">=22"
