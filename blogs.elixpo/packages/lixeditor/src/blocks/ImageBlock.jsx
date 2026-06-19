@@ -36,7 +36,7 @@ export const BlogImageBlock = createReactBlockSpec(
 
 function ImageRenderer({ block, editor }) {
   const { url, caption } = block.props;
-  const { uploadFile: hostUpload, acceptImageTypes, maxFileSizeBytes, onUploadError } = useUploadConfig();
+  const { uploadFile: hostUpload, acceptImageTypes, maxFileSizeBytes, onUploadError, imageInsert } = useUploadConfig();
   const [mode, setMode] = useState('idle'); // idle | embed | uploading
   const [embedUrl, setEmbedUrl] = useState('');
   const [embedError, setEmbedError] = useState('');
@@ -176,6 +176,9 @@ function ImageRenderer({ block, editor }) {
 
   // ─── No image yet ───
   if (!url) {
+    // Host-driven insert: never show the default Upload/Embed-URL card. The host
+    // inserts ready image blocks (with a URL) via its own toolbar / insertImage().
+    if (imageInsert === 'host') return null;
     return (
       <div
         ref={blockRef}

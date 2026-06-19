@@ -16,7 +16,11 @@ export function buttonBlockToHTML(props = {}) {
     : `border-radius:${radius}px;background:${color};`;
   const aColor = outline ? color : '#ffffff';
   const aStyle = `display:inline-block;padding:12px 22px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:${aColor};text-decoration:none;border-radius:${radius}px;`;
-  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="${align}" style="margin:8px 0;"><tr><td style="${td}"><a href="${escAttr(url)}" target="_blank" rel="noopener noreferrer" style="${aStyle}">${esc(text)}</a></td></tr></table>`;
+  // Block-level (own line, never inline): a block <div> wrapper drives alignment
+  // in modern clients (text-align + inline-block table), while align="" on the
+  // table keeps Outlook correct. The wrapper also prevents float-into-text.
+  const table = `<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="${align}" style="display:inline-block;"><tr><td style="${td}"><a href="${escAttr(url)}" target="_blank" rel="noopener noreferrer" style="${aStyle}">${esc(text)}</a></td></tr></table>`;
+  return `<div class="lix-btn-block" style="display:block;margin:12px 0;text-align:${align};">${table}</div>`;
 }
 
 /**
@@ -80,6 +84,9 @@ export function renderBlocksToHTML(blocks) {
   function renderBlock(block) {
     const content = inlineToHTML(block.content);
     const childrenHTML = block.children?.length ? renderListGroup(block.children) : '';
+    // BlockNote stores block alignment in props.textAlignment — preserve it on export.
+    const ta = block.props?.textAlignment;
+    const alignAttr = ta && ta !== 'left' ? ` style="text-align:${ta}"` : '';
 
     switch (block.type) {
       case 'tableOfContents':
@@ -88,7 +95,7 @@ export function renderBlocksToHTML(blocks) {
         const level = block.props?.level || 1;
         const text = (block.content || []).map(c => c.text || '').join('');
         const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
-        return `<h${level} id="${id}">${content}</h${level}>${childrenHTML}`;
+        return `<h${level} id="${id}"${alignAttr}>${content}</h${level}>${childrenHTML}`;
       }
       case 'bulletListItem':
         return `<li class="lix-bullet">${content}${childrenHTML}</li>`;
@@ -147,7 +154,7 @@ export function renderBlocksToHTML(blocks) {
       }
       case 'paragraph':
       default:
-        if (content) return `<p>${content}</p>${childrenHTML}`;
+        if (content) return `<p${alignAttr}>${content}</p>${childrenHTML}`;
         return childrenHTML || '';
     }
   }

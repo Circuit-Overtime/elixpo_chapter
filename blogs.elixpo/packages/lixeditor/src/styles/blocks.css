@@ -1152,3 +1152,35 @@
   background-color: rgba(248, 113, 113, 0.08);
   border-color: rgba(248, 113, 113, 0.3);
 }
+
+/* ── Button block: inline editor + preview (2.7.1) ──────────────────────────
+   Real classes (no Tailwind) so the editor is styled inside any host app. */
+.lix-btn-editor {
+  display: flex; flex-direction: column; gap: 12px;
+  background: var(--bg-surface); border: 1px solid var(--border-default);
+  border-radius: 12px; padding: 16px; margin: 8px 0; max-width: 460px;
+  box-shadow: var(--shadow-lg, 0 12px 40px rgba(0,0,0,0.25));
+}
+.lix-btn-editor-title { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
+.lix-btn-editor-field { display: flex; flex-direction: column; gap: 4px; }
+.lix-btn-editor-label { font-size: 11px; color: var(--text-faint); }
+.lix-btn-editor-input, .lix-btn-editor-select {
+  width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 13px; outline: none;
+  background: var(--bg-app); color: var(--text-primary);
+  border: 1px solid var(--border-default); border-radius: 8px;
+}
+.lix-btn-editor-input:focus, .lix-btn-editor-select:focus { border-color: var(--border-hover); }
+.lix-btn-editor-input::placeholder { color: var(--text-faint); }
+.lix-btn-editor-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.lix-btn-editor-row .lix-btn-editor-field { flex: 0 0 auto; }
+.lix-btn-editor-color { width: 38px; height: 36px; padding: 2px; cursor: pointer; background: var(--bg-app); border: 1px solid var(--border-default); border-radius: 8px; }
+.lix-btn-editor-radius { width: 64px; }
+.lix-btn-editor-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.lix-btn-editor-cancel, .lix-btn-editor-done { padding: 7px 14px; font-size: 12px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
+.lix-btn-editor-cancel { background: var(--bg-elevated); color: var(--text-muted); }
+.lix-btn-editor-cancel:hover { color: var(--text-primary); }
+.lix-btn-editor-done { background: #9b7bf7; color: #fff; }
+.lix-btn-editor-done:hover { background: #b69aff; }
+.lix-btn-wrap { margin: 10px 0; }
+.lix-btn { padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .15s ease; }
+.lix-btn:hover { opacity: .9; }

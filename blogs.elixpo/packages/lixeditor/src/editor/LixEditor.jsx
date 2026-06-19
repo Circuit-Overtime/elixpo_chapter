@@ -120,6 +120,7 @@ const LixEditor = forwardRef(function LixEditor({
   variableSuggestions,
   editable = true,
   linkPreviewEndpoint,
+  imageInsert = 'default',
 }, ref) {
   const { isDark } = useLixTheme();
   const wrapperRef = useRef(null);
@@ -203,7 +204,37 @@ const LixEditor = forwardRef(function LixEditor({
     // BlockNote's lossy HTML, if a consumer wants the editor-DOM flavour instead.
     getHTMLLossy: async () => await editor.blocksToHTMLLossy(editor.document),
     getMarkdown: async () => await editor.blocksToMarkdownLossy(editor.document),
+    // Insert a ready image block with the URL already set (host-driven insert).
+    insertImage: (url, opts = {}) => {
+      if (!url) return;
+      const props = { url, alt: opts.alt || '', align: opts.align || '', name: opts.name || '' };
+      const ref = editor.getTextCursorPosition?.()?.block || editor.document[editor.document.length - 1];
+      if (ref) editor.insertBlocks([{ type: 'image', props }], ref, 'after');
+      else editor.insertBlocks([{ type: 'image', props }], editor.document[0], 'before');
+    },
   }), [editor]);
+
+  // Host image picker — file → uploadFile → insertImage (used by the slash item
+  // when imageInsert='host', so users never hit the embed-URL card).
+  const pickHostImage = useCallback(() => {
+    if (!uploadFile) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = (acceptImageTypes || ['image/png', 'image/jpeg', 'image/gif', 'image/webp']).join(',');
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const url = await uploadFile(file);
+        if (!url) throw new Error('no url');
+        const ref = editor.getTextCursorPosition?.()?.block || editor.document[editor.document.length - 1];
+        if (ref) editor.insertBlocks([{ type: 'image', props: { url, name: file.name } }], ref, 'after');
+      } catch (err) {
+        onUploadError?.(err instanceof Error ? err : new Error(String(err)), file);
+      }
+    };
+    input.click();
+  }, [editor, uploadFile, acceptImageTypes, onUploadError]);
 
   // Notify parent when ready
   useEffect(() => { if (onReady) onReady(); }, []);
@@ -352,9 +383,23 @@ const LixEditor = forwardRef(function LixEditor({
   // BlockNote items had no `title` field for the current schema).
   const getItems = useCallback(async (query) => {
     const defaults = getDefaultReactSlashMenuItems(editor)
-      .filter(item => !['video', 'audio', 'file'].includes(item.key));
+      .filter(item => !['video', 'audio', 'file'].includes(item.key))
+      // Host-driven image insert: drop BlockNote's default image item (it opens
+      // the Upload/Embed-URL card we're suppressing) — replaced below.
+      .filter(item => !(imageInsert === 'host' && f.images && item.key === 'image'));
 
     const custom = [];
+
+    if (f.images && imageInsert === 'host' && uploadFile) {
+      custom.push({
+        title: 'Image',
+        subtext: 'Upload an image',
+        group: 'Basic',
+        aliases: ['image', 'img', 'photo', 'picture', 'upload'],
+        icon: <span style={{ fontSize: 14 }}>🖼️</span>,
+        onItemClick: () => pickHostImage(),
+      });
+    }
 
     if (f.equations) {
       custom.push({
@@ -454,15 +499,15 @@ const LixEditor = forwardRef(function LixEditor({
       .map((item, i) => ({ item, i, gIdx: groupOrder.get(item.group ?? '') }))
       .sort((a, b) => a.gIdx - b.gIdx || a.i - b.i)
       .map((x) => x.item);
-  }, [editor, f, extraSlashItems, buttonDefaults]);
+  }, [editor, f, extraSlashItems, buttonDefaults, imageInsert, uploadFile, pickHostImage]);
 
   const handleChange = useCallback(() => {
     if (onChange) onChange(editor);
   }, [editor, onChange]);
 
   const uploadCfg = useMemo(
-    () => ({ uploadFile, acceptImageTypes, maxFileSizeBytes, onUploadError }),
-    [uploadFile, acceptImageTypes, maxFileSizeBytes, onUploadError],
+    () => ({ uploadFile, acceptImageTypes, maxFileSizeBytes, onUploadError, imageInsert }),
+    [uploadFile, acceptImageTypes, maxFileSizeBytes, onUploadError, imageInsert],
   );
 
   return (

@@ -24,5 +24,8 @@ export function useUploadConfig() {
     acceptImageTypes: ctx?.acceptImageTypes || DEFAULT_IMAGE_TYPES,
     maxFileSizeBytes: ctx?.maxFileSizeBytes || 0, // 0 = unlimited
     onUploadError: ctx?.onUploadError || null,
+    // 'default' → in-block Upload/Embed-URL card; 'host' → no placeholder, images
+    // appear only once they have a URL (host inserts via its own toolbar/picker).
+    imageInsert: ctx?.imageInsert || 'default',
   };
 }
