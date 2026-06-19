@@ -1,3 +1,24 @@
+const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const escAttr = (s) => String(s ?? '').replace(/"/g, '&quot;');
+
+// Email-safe "bulletproof" CTA button (table/anchor, inline styles, Outlook-safe).
+// Reads the 2.7.0 props (text/url/align/variant/color/radius) with legacy
+// (label/action/actionValue) fallbacks. {{variables}} in url/text are left intact.
+export function buttonBlockToHTML(props = {}) {
+  const text = props.text || props.label || 'Button';
+  const url = props.url || (props.action === 'link' ? props.actionValue : '') || '#';
+  const align = ['left', 'center', 'right'].includes(props.align) ? props.align : 'left';
+  const outline = props.variant === 'outline' || props.variant === 'secondary';
+  const color = props.color || '#7c5cff';
+  const radius = Number.isFinite(props.radius) ? props.radius : 8;
+  const td = outline
+    ? `border-radius:${radius}px;background:transparent;border:2px solid ${color};`
+    : `border-radius:${radius}px;background:${color};`;
+  const aColor = outline ? color : '#ffffff';
+  const aStyle = `display:inline-block;padding:12px 22px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:${aColor};text-decoration:none;border-radius:${radius}px;`;
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="${align}" style="margin:8px 0;"><tr><td style="${td}"><a href="${escAttr(url)}" target="_blank" rel="noopener noreferrer" style="${aStyle}">${esc(text)}</a></td></tr></table>`;
+}
+
 /**
  * Converts BlockNote document blocks to HTML string.
  * Used by LixPreview for server-side or static rendering.
@@ -10,6 +31,10 @@ export function renderBlocksToHTML(blocks) {
     return content.map((c) => {
       if (c.type === 'inlineEquation' && c.props?.latex) {
         return `<span class="lix-inline-equation" data-latex="${encodeURIComponent(c.props.latex)}"></span>`;
+      }
+      // Merge-variable chip → round-trips to literal {{name}} text.
+      if (c.type === 'lixVariable' && c.props?.name) {
+        return `{{${c.props.name}}}`;
       }
       if (c.type === 'dateInline' && c.props?.date) {
         let formatted;
@@ -87,9 +112,17 @@ export function renderBlocksToHTML(blocks) {
         const code = (block.content || []).map(c => c.text || '').join('');
         return `<pre><code class="language-${lang}">${code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>${childrenHTML}`;
       }
+      case 'buttonBlock':
+        return buttonBlockToHTML(block.props) + childrenHTML;
       case 'image':
         if (block.props?.url) {
-          return `<figure><img src="${block.props.url}" alt="${block.props?.caption || ''}" />${block.props?.caption ? `<figcaption>${block.props.caption}</figcaption>` : ''}</figure>${childrenHTML}`;
+          const ip = block.props;
+          const alt = escAttr(ip.alt || ip.caption || '');
+          const widthAttr = ip.width ? ` width="${escAttr(ip.width)}"` : '';
+          const align = ['left', 'center', 'right'].includes(ip.align) ? ip.align : null;
+          let img = `<img src="${escAttr(ip.url)}" alt="${alt}"${widthAttr} style="max-width:100%;height:auto;${align === 'center' ? 'display:block;margin:0 auto;' : ''}" />`;
+          if (ip.link) img = `<a href="${escAttr(ip.link)}" target="_blank" rel="noopener noreferrer">${img}</a>`;
+          return `<figure${align ? ` style="text-align:${align}"` : ''}>${img}${ip.caption ? `<figcaption>${ip.caption}</figcaption>` : ''}</figure>${childrenHTML}`;
         }
         return childrenHTML;
       case 'table': {

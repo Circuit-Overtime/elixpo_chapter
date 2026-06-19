@@ -26,6 +26,7 @@ import { MermaidBlock } from '../blocks/MermaidBlock';
 import { TableOfContents } from '../blocks/TableOfContents';
 import { InlineEquation } from '../blocks/InlineEquation';
 import { DateInline } from '../blocks/DateInline';
+import { VariableInline, setVariableSuggestions } from '../blocks/VariableInline';
 
 // Optional blocks — imported but can be disabled via config
 import { BlogImageBlock as ImageBlock } from '../blocks/ImageBlock';
@@ -33,7 +34,9 @@ import { ButtonBlock } from '../blocks/ButtonBlock';
 import { PDFEmbedBlock } from '../blocks/PDFEmbedBlock';
 
 // Utilities
-import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
+import LinkPreviewTooltip, { useLinkPreview, setLinkPreviewEndpoint } from './LinkPreviewTooltip';
+import { LixUploadContext } from './uploadConfig';
+import { renderBlocksToHTML } from '../preview/renderBlocks';
 
 // Default code block languages
 const DEFAULT_LANGUAGES = {
@@ -108,6 +111,15 @@ const LixEditor = forwardRef(function LixEditor({
   collaboration,
   onReady,
   children,
+  // NEW in 2.7.0
+  uploadFile,
+  acceptImageTypes,
+  maxFileSizeBytes,
+  onUploadError,
+  buttonDefaults,
+  variableSuggestions,
+  editable = true,
+  linkPreviewEndpoint,
 }, ref) {
   const { isDark } = useLixTheme();
   const wrapperRef = useRef(null);
@@ -154,6 +166,7 @@ const LixEditor = forwardRef(function LixEditor({
     const inlineContentSpecs = { ...defaultInlineContentSpecs };
     if (f.equations) inlineContentSpecs.inlineEquation = InlineEquation;
     if (f.dates) inlineContentSpecs.dateInline = DateInline;
+    inlineContentSpecs.lixVariable = VariableInline;
 
     // Register extra inline specs
     for (const spec of extraInlineSpecs) {
@@ -185,12 +198,30 @@ const LixEditor = forwardRef(function LixEditor({
     getDocument: () => editor.document,
     getEditor: () => editor,
     getBlocks: () => editor.document,
-    getHTML: async () => await editor.blocksToHTMLLossy(editor.document),
+    // Email-safe HTML: bulletproof buttons, inline-styled images, {{vars}} round-trip.
+    getHTML: () => renderBlocksToHTML(editor.document),
+    // BlockNote's lossy HTML, if a consumer wants the editor-DOM flavour instead.
+    getHTMLLossy: async () => await editor.blocksToHTMLLossy(editor.document),
     getMarkdown: async () => await editor.blocksToMarkdownLossy(editor.document),
   }), [editor]);
 
   // Notify parent when ready
   useEffect(() => { if (onReady) onReady(); }, []);
+
+  // Host-configurable link-preview endpoint (prop mirrors setLinkPreviewEndpoint).
+  useEffect(() => {
+    if (linkPreviewEndpoint) setLinkPreviewEndpoint(linkPreviewEndpoint);
+  }, [linkPreviewEndpoint]);
+
+  // Toggle editability (read-only previews).
+  useEffect(() => {
+    if (editor?.isEditable !== undefined) {
+      try { editor.isEditable = editable; } catch {}
+    }
+  }, [editor, editable]);
+
+  // Host-supplied merge-variable suggestions for the {{variable}} chip.
+  useEffect(() => { setVariableSuggestions(variableSuggestions || []); }, [variableSuggestions]);
 
   // Auto-convert ![alt](url) to image block and [text](url) to link as you type
   useEffect(() => {
@@ -377,6 +408,34 @@ const LixEditor = forwardRef(function LixEditor({
       });
     }
 
+    custom.push({
+      title: 'Variable',
+      subtext: 'Insert a {{merge variable}} (exports as literal text)',
+      group: 'Advanced',
+      aliases: ['variable', 'merge', 'token', 'field', '{{'],
+      icon: <span style={{ fontSize: 13, fontFamily: 'monospace' }}>{'{}'}</span>,
+      onItemClick: () => {
+        try {
+          editor._tiptapEditor.commands.insertContent({ type: 'lixVariable', attrs: { name: '' } });
+        } catch {}
+      },
+    });
+
+    if (f.buttons) {
+      custom.push({
+        title: 'Button',
+        subtext: 'Call-to-action button (email-safe export)',
+        group: 'Basic',
+        aliases: ['button', 'cta', 'link button'],
+        icon: <span style={{ fontSize: 14 }}>▭</span>,
+        onItemClick: () => editor.insertBlocks(
+          [{ type: 'buttonBlock', props: { ...(buttonDefaults || {}) } }],
+          editor.getTextCursorPosition().block,
+          'after',
+        ),
+      });
+    }
+
     const all = [...defaults, ...custom, ...extraSlashItems];
     const filtered = filterSuggestionItems(all, query);
 
@@ -395,16 +454,23 @@ const LixEditor = forwardRef(function LixEditor({
       .map((item, i) => ({ item, i, gIdx: groupOrder.get(item.group ?? '') }))
       .sort((a, b) => a.gIdx - b.gIdx || a.i - b.i)
       .map((x) => x.item);
-  }, [editor, f, extraSlashItems]);
+  }, [editor, f, extraSlashItems, buttonDefaults]);
 
   const handleChange = useCallback(() => {
     if (onChange) onChange(editor);
   }, [editor, onChange]);
 
+  const uploadCfg = useMemo(
+    () => ({ uploadFile, acceptImageTypes, maxFileSizeBytes, onUploadError }),
+    [uploadFile, acceptImageTypes, maxFileSizeBytes, onUploadError],
+  );
+
   return (
+    <LixUploadContext.Provider value={uploadCfg}>
     <div className={`lix-editor-wrapper${''}`} ref={wrapperRef} style={{ position: 'relative' }}>
       <BlockNoteView
         editor={editor}
+        editable={editable}
         onChange={handleChange}
         theme={isDark ? 'dark' : 'light'}
         slashMenu={false}
@@ -436,6 +502,7 @@ const LixEditor = forwardRef(function LixEditor({
         />
       )}
     </div>
+    </LixUploadContext.Provider>
   );
 });
 

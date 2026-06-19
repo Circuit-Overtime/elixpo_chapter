@@ -34,8 +34,12 @@ export {
   PDFEmbedBlock,
   ImageBlock,
 } from './blocks/index';
+export { VariableInline, setVariableSuggestions } from './blocks/VariableInline';
 
 // Utilities
-export { renderBlocksToHTML } from './preview/renderBlocks';
+export { renderBlocksToHTML, buttonBlockToHTML } from './preview/renderBlocks';
 export { default as LinkPreviewTooltip, useLinkPreview, setLinkPreviewEndpoint } from './editor/LinkPreviewTooltip';
 export { default as KeyboardShortcutsModal } from './editor/KeyboardShortcutsModal';
+
+// Host-controlled media upload (module-level alternative to the uploadFile prop)
+export { setImageUploader, LixUploadContext, useUploadConfig } from './editor/uploadConfig';
