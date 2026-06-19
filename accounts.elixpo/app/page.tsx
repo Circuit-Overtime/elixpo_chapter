@@ -5,11 +5,13 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import FingerprintIcon from "@mui/icons-material/Fingerprint";
 import HubIcon from "@mui/icons-material/Hub";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import { Box, Button, Chip, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Typography } from "@mui/material";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import BackgroundAurora from "./components/background-aurora";
 import Footer from "./components/footer";
 import Navbar from "./components/navbar";
+import PixelHero from "./components/pixel-hero";
 
 const ACCENT = "#9b7bf7";
 
@@ -41,6 +43,24 @@ const FEATURES = [
 ];
 
 export default function LandingPage() {
+    // undefined = checking, true = signed in, false = signed out.
+    const [authed, setAuthed] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/auth/me", { credentials: "include" })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d: any) => {
+                if (!cancelled) setAuthed(!!(d && d.email));
+            })
+            .catch(() => {
+                if (!cancelled) setAuthed(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     return (
         <Box
             sx={{
@@ -57,6 +77,10 @@ export default function LandingPage() {
                 <Navbar />
             </Box>
 
+            <Box sx={{ position: "relative", zIndex: 1 }}>
+                <PixelHero authed={authed} />
+            </Box>
+
             <Box
                 component="main"
                 sx={{
@@ -71,113 +95,6 @@ export default function LandingPage() {
                     zIndex: 1,
                 }}
             >
-                <Stack
-                    spacing={3}
-                    alignItems="center"
-                    textAlign="center"
-                    sx={{ maxWidth: "820px", mx: "auto" }}
-                >
-                    <Chip
-                        label="Open SSO for any app"
-                        size="small"
-                        sx={{
-                            bgcolor: "rgba(155, 123, 247, 0.12)",
-                            color: ACCENT,
-                            border: "1px solid rgba(155, 123, 247, 0.3)",
-                            fontWeight: 600,
-                            letterSpacing: "0.04em",
-                            fontSize: "0.72rem",
-                            height: 26,
-                        }}
-                    />
-                    <Typography
-                        component="h1"
-                        sx={{
-                            fontWeight: 800,
-                            fontSize: { xs: "2.4rem", md: "3.6rem" },
-                            lineHeight: 1.08,
-                            letterSpacing: "-0.025em",
-                            background:
-                                "linear-gradient(180deg, #ffffff 0%, #c8c4d8 100%)",
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
-                        }}
-                    >
-                        One sign-in.{" "}
-                        <Box component="span" sx={{ color: ACCENT }}>
-                            Every app you ship.
-                        </Box>
-                    </Typography>
-                    <Typography
-                        sx={{
-                            color: "rgba(255,255,255,0.65)",
-                            fontSize: { xs: "1rem", md: "1.15rem" },
-                            maxWidth: "640px",
-                            lineHeight: 1.55,
-                            fontFamily: "var(--font-geist-sans)",
-                        }}
-                    >
-                        Secure OAuth 2.0 single sign-on built on the edge. Born
-                        inside the Elixpo ecosystem, open for any product or
-                        developer to use — drop it into your app and let users
-                        sign in in seconds.
-                    </Typography>
-
-                    <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        spacing={1.5}
-                        sx={{ pt: 1 }}
-                    >
-                        <Button
-                            component={Link}
-                            href="/login"
-                            endIcon={<ArrowForwardIcon />}
-                            sx={{
-                                textTransform: "none",
-                                fontWeight: 600,
-                                fontSize: "1rem",
-                                color: "#fff",
-                                background:
-                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                                borderRadius: "12px",
-                                px: 3,
-                                py: 1.3,
-                                boxShadow: "0 8px 24px rgba(155,123,247,0.35)",
-                                transition: "all 0.2s ease",
-                                "&:hover": {
-                                    background:
-                                        "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
-                                    boxShadow:
-                                        "0 12px 32px rgba(155,123,247,0.5)",
-                                    transform: "translateY(-1px)",
-                                },
-                            }}
-                        >
-                            Get started
-                        </Button>
-                        <Button
-                            component={Link}
-                            href="/docs"
-                            sx={{
-                                textTransform: "none",
-                                fontWeight: 500,
-                                fontSize: "1rem",
-                                color: "rgba(255,255,255,0.85)",
-                                border: "1px solid rgba(255,255,255,0.12)",
-                                borderRadius: "12px",
-                                px: 3,
-                                py: 1.3,
-                                "&:hover": {
-                                    borderColor: "rgba(155,123,247,0.4)",
-                                    background: "rgba(255,255,255,0.04)",
-                                },
-                            }}
-                        >
-                            Integrator docs
-                        </Button>
-                    </Stack>
-                </Stack>
-
                 <Box
                     sx={{
                         display: "grid",

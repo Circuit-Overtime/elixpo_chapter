@@ -9,7 +9,6 @@
 /coverage
 .wrangler
 /.next/
-*.toml
 /out/
 /build
 .DS_Store

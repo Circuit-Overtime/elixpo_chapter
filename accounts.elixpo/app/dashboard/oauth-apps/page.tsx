@@ -82,46 +82,29 @@ const tableBodySx = {
     },
 };
 
-function AppIcon({ app, size = 28 }: { app: OAuthApp; size?: number }) {
-    const [failed, setFailed] = useState(false);
-    const hostname = app.homepage_url
-        ? (() => {
-              try {
-                  return new URL(app.homepage_url).hostname;
-              } catch {
-                  return "";
-              }
-          })()
-        : "";
-
-    if (app.homepage_url && hostname && !failed) {
-        return (
-            <Box
-                component="img"
-                src={`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`}
-                alt=""
-                sx={{
-                    width: size,
-                    height: size,
-                    borderRadius: "6px",
-                    flexShrink: 0,
-                }}
-                onError={() => setFailed(true)}
-            />
-        );
+// Favicon sources tried in order: the app's OWN /favicon.ico (real brand icon),
+// then Google's favicon service (cached), then a generated pixel avatar.
+function faviconSources(homepageUrl?: string): string[] {
+    if (!homepageUrl) return [];
+    try {
+        const u = new URL(homepageUrl);
+        return [`${u.origin}/favicon.ico`, `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=64`];
+    } catch {
+        return [];
     }
+}
 
+function AppIcon({ app, size = 28 }: { app: OAuthApp; size?: number }) {
+    const [stage, setStage] = useState(0);
+    const sources = faviconSources(app.homepage_url);
+    const src = stage < sources.length ? sources[stage] : generatePixelAvatar(app.client_id + app.name, size);
     return (
         <Box
             component="img"
-            src={generatePixelAvatar(app.client_id + app.name, size)}
+            src={src}
             alt=""
-            sx={{
-                width: size,
-                height: size,
-                borderRadius: "6px",
-                flexShrink: 0,
-            }}
+            sx={{ width: size, height: size, borderRadius: "6px", flexShrink: 0, background: "rgba(255,255,255,0.04)" }}
+            onError={() => stage < sources.length && setStage((s) => s + 1)}
         />
     );
 }
@@ -506,13 +489,20 @@ const OAuthAppsPage = () => {
                                                         </Typography>
                                                         {app.homepage_url && (
                                                             <Typography
+                                                                component="a"
+                                                                href={app.homepage_url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
                                                                 variant="caption"
                                                                 sx={{
-                                                                    color: "rgba(255,255,255,0.35)",
+                                                                    display: "block",
+                                                                    color: "rgba(255,255,255,0.4)",
                                                                     fontFamily:
                                                                         "monospace",
                                                                     fontSize:
                                                                         "0.7rem",
+                                                                    textDecoration: "none",
+                                                                    "&:hover": { color: "#c8b6ff", textDecoration: "underline" },
                                                                 }}
                                                             >
                                                                 {(() => {
