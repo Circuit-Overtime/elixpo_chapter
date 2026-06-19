@@ -201,6 +201,10 @@ export default function WebhooksPage() {
                                 }}
                             >
                                 Triggered when a user deletes their account.
+                                Register a <code>webhook_url</code> and subscribe to
+                                this to purge the user&apos;s data and stop any billing
+                                — e.g. Elixpo Pay cancels their subscriptions and
+                                revokes entitlements on this event.
                             </TableCell>
                         </TableRow>
                         <TableRow>

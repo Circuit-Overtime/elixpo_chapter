@@ -33,26 +33,28 @@ function ClientIcon({
     clientId: string;
     size?: number;
 }) {
-    const [failed, setFailed] = useState(false);
-    const hostname = homepageUrl
-        ? (() => {
-              try {
-                  return new URL(homepageUrl).hostname;
-              } catch {
-                  return "";
-              }
-          })()
-        : "";
+    const [stage, setStage] = useState(0);
+    // Try the app's OWN /favicon.ico first (the real brand icon), then Google's
+    // favicon service, then fall back to a generated pixel avatar.
+    const sources = (() => {
+        if (!homepageUrl) return [] as string[];
+        try {
+            const u = new URL(homepageUrl);
+            return [`${u.origin}/favicon.ico`, `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=64`];
+        } catch {
+            return [] as string[];
+        }
+    })();
 
-    if (homepageUrl && hostname && !failed) {
+    if (stage < sources.length) {
         return (
             <img
-                src={`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`}
+                src={sources[stage]}
                 alt=""
                 width={size}
                 height={size}
-                style={{ borderRadius: 10, flexShrink: 0 }}
-                onError={() => setFailed(true)}
+                style={{ borderRadius: 10, flexShrink: 0, background: "rgba(255,255,255,0.04)" }}
+                onError={() => setStage((s) => s + 1)}
             />
         );
     }
