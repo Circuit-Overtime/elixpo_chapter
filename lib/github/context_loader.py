@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import structlog
 
-from elixpo.github.api import GitHubAPI
+from lib.github.api import GitHubAPI
 
 log = structlog.get_logger()
 

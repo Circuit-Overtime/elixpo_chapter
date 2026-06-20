@@ -8,7 +8,7 @@ import httpx
 import jwt
 import structlog
 
-from elixpo.config import settings
+from lib.config import settings
 
 log = structlog.get_logger()
 
@@ -27,18 +27,20 @@ class GitHubApp:
     def __init__(
         self,
         app_id: str | None = None,
-        private_key_path: str | None = None,
+        private_key: str | None = None,
     ):
         self.app_id = app_id or settings.github.app_id
-        self._private_key_path = private_key_path or settings.github.private_key_path
-        self._private_key: str | None = None
+        # PEM string preferred (CI secret); resolved_private_key() falls back to a file path.
+        self._private_key: str | None = private_key or settings.github.resolved_private_key() or None
         self._installation_tokens: dict[int, tuple[str, float]] = {}  # id -> (token, expires_at)
 
     @property
     def private_key(self) -> str:
-        if self._private_key is None:
-            with open(self._private_key_path, "r") as f:
-                self._private_key = f.read()
+        if not self._private_key:
+            raise RuntimeError(
+                "no GitHub App private key — set ELIXPO_GH_PRIVATE_KEY (PEM) or "
+                "ELIXPO_GH_PRIVATE_KEY_PATH in .env.local"
+            )
         return self._private_key
 
     def generate_jwt(self) -> str:
