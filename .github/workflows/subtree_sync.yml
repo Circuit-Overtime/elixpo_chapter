@@ -36,6 +36,9 @@ jobs:
           set -u
 
           repos=(
+            "payouts.elixpo https://github.com/elixpo/payouts.elixpo"
+            "mails.elixpo https://github.com/elixpo/mail.elixpo"
+            "admin.elixpo https://github.com/elixpo/admin.elixpo"
             "agent.elixpo https://github.com/elixpo/agent.elixpo.git"
             "elixpo https://github.com/elixpo/elixpo.git"
             "art.elixpo https://github.com/elixpo/art.elixpo.git"
