@@ -1,7 +1,7 @@
 "use client";
 
 import { marked } from "marked";
-import { useMemo, useState, useEffect, memo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import TaskGroup from "./TaskBlock";
 import { BookmarkButton } from "./BookmarkButton";
@@ -278,7 +278,7 @@ const MessageBubble = memo(function MessageBubble({ message, onRetry, isBookmark
           {/* Copy */}
           <button
             onClick={handleCopy}
-            className="p-1.5 rounded-lg text-secondary hover:text-primary hover:bg-overlay transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
             title="Copy response"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
