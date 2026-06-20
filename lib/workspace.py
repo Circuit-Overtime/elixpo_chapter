@@ -24,7 +24,7 @@ class Workspace:
         os.makedirs(self.root, exist_ok=True)
 
         if clone_url:
-            cmd = f"git clone --depth 1"
+            cmd = "git clone --depth 1"
             if branch:
                 cmd += f" --branch {branch}"
             cmd += f" {clone_url} {self.root}"

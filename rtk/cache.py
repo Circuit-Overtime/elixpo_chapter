@@ -22,7 +22,6 @@ from typing import Protocol, runtime_checkable
 
 from rtk.models import Message
 
-
 # --- prefix caching (server-side, free) ---
 
 def prefix_hash(messages: list[Message], n: int = 1) -> str:
