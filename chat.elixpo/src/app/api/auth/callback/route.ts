@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { exchangeCode, setSessionCookie, getRedirectUri } from "@/lib/auth";
 
-export const runtime = "edge";
-
 export async function GET(request: NextRequest) {
   const url = request.nextUrl;
   const code = url.searchParams.get("code");
