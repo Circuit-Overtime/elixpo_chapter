@@ -1,0 +1,6 @@
+default: 100000
+ceiling: 300000
+per_task:
+  scout: 50000
+  triage: 80000
+  solve: 150000
